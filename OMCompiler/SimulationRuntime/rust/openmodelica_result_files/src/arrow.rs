@@ -18,7 +18,11 @@ use std::collections::HashMap;
 use std::io::Cursor;
 
 use arrow_array::types::Int32Type;
-use arrow_array::{Array, ArrayRef, BooleanArray, DictionaryArray, Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array, LargeStringArray, RecordBatch, RunArray, StringArray, UInt16Array, UInt32Array, UInt64Array, UInt8Array, UnionArray};
+use arrow_array::{
+    Array, ArrayRef, BooleanArray, DictionaryArray, Float32Array, Float64Array, Int8Array, Int16Array, Int32Array,
+    Int64Array, LargeStringArray, RecordBatch, RunArray, StringArray, UInt8Array, UInt16Array, UInt32Array,
+    UInt64Array, UnionArray,
+};
 use arrow_ipc::reader::{FileReader, StreamReader};
 use arrow_schema::{DataType, SchemaRef};
 use openmodelica_arrow_writer::units::{self, BaseUnit, DisplayUnit, UnitDef};
@@ -73,7 +77,10 @@ fn read_streams(bytes: &[u8]) -> Result<Vec<Table>, String> {
     if bytes.starts_with(b"ARROW1") {
         let reader = FileReader::try_new(Cursor::new(bytes), None).map_err(|e| e.to_string())?;
         let schema = reader.schema();
-        return Ok(vec![Table { schema, batches: reader.map_while(Result::ok).collect() }]);
+        return Ok(vec![Table {
+            schema,
+            batches: reader.map_while(Result::ok).collect(),
+        }]);
     }
     let mut out = Vec::new();
     let mut cursor = Cursor::new(bytes);
@@ -134,9 +141,23 @@ macro_rules! numeric {
 /// One field of a batch as row values, run-end encoding expanded.
 fn column(a: &dyn Array) -> Result<Col, String> {
     let any = a.as_any();
-    numeric!(any, Float64Array, Float32Array, Int8Array, Int16Array, Int32Array, Int64Array, UInt8Array, UInt16Array, UInt32Array, UInt64Array);
+    numeric!(
+        any,
+        Float64Array,
+        Float32Array,
+        Int8Array,
+        Int16Array,
+        Int32Array,
+        Int64Array,
+        UInt8Array,
+        UInt16Array,
+        UInt32Array,
+        UInt64Array
+    );
     if let Some(x) = any.downcast_ref::<BooleanArray>() {
-        Ok(Col::Num((0..x.len()).map(|i| if x.value(i) { 1.0 } else { 0.0 }).collect()))
+        Ok(Col::Num(
+            (0..x.len()).map(|i| if x.value(i) { 1.0 } else { 0.0 }).collect(),
+        ))
     } else if let Some(x) = any.downcast_ref::<StringArray>() {
         Ok(Col::Str((0..x.len()).map(|i| x.value(i).to_owned()).collect()))
     } else if let Some(x) = any.downcast_ref::<LargeStringArray>() {
@@ -163,11 +184,23 @@ fn column(a: &dyn Array) -> Result<Col, String> {
             (ends[k].min(offset + n as i32) - start).max(0) as usize
         };
         Ok(match column(x.values().as_ref())? {
-            Col::Num(v) => Col::Num((0..ends.len()).flat_map(|k| std::iter::repeat_n(v[k], expand(k))).collect()),
-            Col::Str(v) => Col::Str((0..ends.len()).flat_map(|k| std::iter::repeat_n(v[k].clone(), expand(k))).collect()),
+            Col::Num(v) => Col::Num(
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(v[k], expand(k)))
+                    .collect(),
+            ),
+            Col::Str(v) => Col::Str(
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(v[k].clone(), expand(k)))
+                    .collect(),
+            ),
             Col::Enum(n, t) => Col::Enum(
-                (0..ends.len()).flat_map(|k| std::iter::repeat_n(n[k], expand(k))).collect(),
-                (0..ends.len()).flat_map(|k| std::iter::repeat_n(t[k].clone(), expand(k))).collect(),
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(n[k], expand(k)))
+                    .collect(),
+                (0..ends.len())
+                    .flat_map(|k| std::iter::repeat_n(t[k].clone(), expand(k)))
+                    .collect(),
             ),
         })
     } else {
@@ -196,14 +229,27 @@ struct Param {
 fn parameters(table: Option<&Table>) -> Result<Vec<Param>, String> {
     let mut out = Vec::new();
     for batch in table.iter().flat_map(|t| &t.batches) {
-        let Some(u) = batch.columns().first().and_then(|c| c.as_any().downcast_ref::<UnionArray>()) else {
+        let Some(u) = batch
+            .columns()
+            .first()
+            .and_then(|c| c.as_any().downcast_ref::<UnionArray>())
+        else {
             return Err("parameter table has no union column".into());
         };
-        let DataType::Union(fields, _) = u.data_type() else { unreachable!() };
+        let DataType::Union(fields, _) = u.data_type() else {
+            unreachable!()
+        };
         let mut decoded: HashMap<i8, (Col, Option<Vec<String>>, String)> = HashMap::new();
         for (id, field) in fields.iter() {
             let child = u.child(id);
-            decoded.insert(id, (column(child.as_ref())?, literals(child.as_ref()), type_name(field.data_type())));
+            decoded.insert(
+                id,
+                (
+                    column(child.as_ref())?,
+                    literals(child.as_ref()),
+                    type_name(field.data_type()),
+                ),
+            );
         }
         for i in 0..u.len() {
             let (col, lits, ty) = &decoded[&u.type_id(i)];
@@ -213,7 +259,12 @@ fn parameters(table: Option<&Table>) -> Result<Vec<Param>, String> {
                 Col::Str(s) => (f64::NAN, Some(s[at].clone())),
                 Col::Enum(v, _) => (v[at], None),
             };
-            out.push(Param { value, text, literals: lits.clone(), ty: ty.clone() });
+            out.push(Param {
+                value,
+                text,
+                literals: lits.clone(),
+                ty: ty.clone(),
+            });
         }
     }
     Ok(out)
@@ -228,7 +279,9 @@ fn num_col<'a, T: Array + 'static>(batch: &'a RecordBatch, name: &str) -> Option
 }
 
 fn f64_at(batch: &RecordBatch, name: &str, i: usize, dflt: f64) -> f64 {
-    num_col::<Float64Array>(batch, name).filter(|c| c.is_valid(i)).map_or(dflt, |c| c.value(i))
+    num_col::<Float64Array>(batch, name)
+        .filter(|c| c.is_valid(i))
+        .map_or(dflt, |c| c.value(i))
 }
 
 fn bool_at(batch: &RecordBatch, name: &str, i: usize) -> bool {
@@ -236,7 +289,9 @@ fn bool_at(batch: &RecordBatch, name: &str, i: usize) -> bool {
 }
 
 fn str_at<'a>(batch: &'a RecordBatch, name: &str, i: usize) -> &'a str {
-    str_col(batch, name).filter(|c| c.is_valid(i)).map_or("", |c| c.value(i))
+    str_col(batch, name)
+        .filter(|c| c.is_valid(i))
+        .map_or("", |c| c.value(i))
 }
 
 /// The `modelica.units` and `modelica.displayUnits` tables as definitions: a
@@ -252,11 +307,20 @@ fn unit_defs(units: Option<&Table>, display: Option<&Table>) -> Vec<UnitDef> {
             }
             let mut exponents = [0i32; 8];
             for (e, k) in units::BASE_EXPONENTS.iter().enumerate() {
-                exponents[e] = num_col::<Int8Array>(batch, k).filter(|c| c.is_valid(i)).map_or(0, |c| i32::from(c.value(i)));
+                exponents[e] = num_col::<Int8Array>(batch, k)
+                    .filter(|c| c.is_valid(i))
+                    .map_or(0, |c| i32::from(c.value(i)));
             }
-            let base = (num_col::<BooleanArray>(batch, "baseUnit").is_none_or(|c| c.value(i)))
-                .then(|| BaseUnit { exponents, factor: f64_at(batch, "factor", i, 1.0), offset: f64_at(batch, "offset", i, 0.0) });
-            out.push(UnitDef { name: name.to_owned(), base, display_units: Vec::new() });
+            let base = (num_col::<BooleanArray>(batch, "baseUnit").is_none_or(|c| c.value(i))).then(|| BaseUnit {
+                exponents,
+                factor: f64_at(batch, "factor", i, 1.0),
+                offset: f64_at(batch, "offset", i, 0.0),
+            });
+            out.push(UnitDef {
+                name: name.to_owned(),
+                base,
+                display_units: Vec::new(),
+            });
         }
     }
     for batch in display.iter().flat_map(|t| &t.batches) {
@@ -265,10 +329,19 @@ fn unit_defs(units: Option<&Table>, display: Option<&Table>) -> Vec<UnitDef> {
             if unit.is_empty() || name.is_empty() {
                 continue;
             }
-            let d = DisplayUnit { name: name.to_owned(), factor: f64_at(batch, "factor", i, 1.0), offset: f64_at(batch, "offset", i, 0.0), inverse: bool_at(batch, "inverse", i) };
+            let d = DisplayUnit {
+                name: name.to_owned(),
+                factor: f64_at(batch, "factor", i, 1.0),
+                offset: f64_at(batch, "offset", i, 0.0),
+                inverse: bool_at(batch, "inverse", i),
+            };
             match out.iter_mut().find(|u| u.name == unit) {
                 Some(u) => u.display_units.push(d),
-                None => out.push(UnitDef { name: unit.to_owned(), base: None, display_units: vec![d] }),
+                None => out.push(UnitDef {
+                    name: unit.to_owned(),
+                    base: None,
+                    display_units: vec![d],
+                }),
             }
         }
     }
@@ -293,7 +366,9 @@ impl ArrowReader {
         };
         // Major version 0 is development: only the exact version is read.
         if let Some(v) = variables.and_then(|t| t.schema.metadata().get(FORMAT_KEY)) {
-            if v != FORMAT_VERSION && (v.starts_with("0.") || !v.starts_with(FORMAT_VERSION.split('.').next().unwrap_or(""))) {
+            if v != FORMAT_VERSION
+                && (v.starts_with("0.") || !v.starts_with(FORMAT_VERSION.split('.').next().unwrap_or("")))
+            {
                 return Err(format!("arrow.modelica format {v}; this reader knows {FORMAT_VERSION}"));
             }
         }
@@ -306,7 +381,11 @@ impl ArrowReader {
         let mut strs: Vec<Option<Vec<String>>> = vec![None; nfields];
         let mut text_only = vec![false; nfields];
         let mut literals: Vec<Option<Vec<String>>> = vec![None; nfields];
-        let mut ree: Vec<bool> = schema.fields().iter().map(|f| matches!(f.data_type(), DataType::RunEndEncoded(..))).collect();
+        let mut ree: Vec<bool> = schema
+            .fields()
+            .iter()
+            .map(|f| matches!(f.data_type(), DataType::RunEndEncoded(..)))
+            .collect();
         for batch in &data.batches {
             for (c, col) in batch.columns().iter().enumerate() {
                 match column(col.as_ref())? {
@@ -334,7 +413,12 @@ impl ArrowReader {
         // A foreign file's time column need not be first: it is swapped into
         // place, and the field it displaces takes its slot.
         let is_time = |f: &arrow_schema::Field| f.name() == "time" || f.name() == "Time";
-        let time_at = schema.fields().iter().position(|f| is_time(f)).filter(|_| variables.is_none()).unwrap_or(0);
+        let time_at = schema
+            .fields()
+            .iter()
+            .position(|f| is_time(f))
+            .filter(|_| variables.is_none())
+            .unwrap_or(0);
         if time_at != 0 {
             cols.swap(0, time_at);
             strs.swap(0, time_at);
@@ -351,7 +435,9 @@ impl ArrowReader {
         match variables {
             Some(table) => {
                 for batch in &table.batches {
-                    let Some(names) = str_col(batch, "name") else { return Err("variable table has no name column".into()) };
+                    let Some(names) = str_col(batch, "name") else {
+                        return Err("variable table has no name column".into());
+                    };
                     let column_ix = num_col::<Int32Array>(batch, "column");
                     for i in 0..batch.num_rows() {
                         let name = names.value(i);
@@ -362,7 +448,9 @@ impl ArrowReader {
                         let at = column_ix.map_or(0, |c| c.value(i)).max(0) as usize;
                         let (scale, offset) = (f64_at(batch, "scale", i, 1.0), f64_at(batch, "offset", i, 0.0));
                         let (ty, literals_of, index) = if is_param {
-                            let p = params_in.get(at).ok_or_else(|| format!("{name}: parameter row {at} is not in the file"))?;
+                            let p = params_in
+                                .get(at)
+                                .ok_or_else(|| format!("{name}: parameter row {at} is not in the file"))?;
                             params.push(scale * p.value + offset);
                             if let Some(text) = &p.text {
                                 string_params.insert(params.len() - 1, text.clone());
@@ -375,17 +463,34 @@ impl ArrowReader {
                             } else if scale == -1.0 && offset == 0.0 {
                                 -ix
                             } else {
-                                let derived = cols.get(at).map(|c| c.iter().map(|v| scale * v + offset).collect()).unwrap_or_default();
+                                let derived = cols
+                                    .get(at)
+                                    .map(|c| c.iter().map(|v| scale * v + offset).collect())
+                                    .unwrap_or_default();
                                 cols.push(derived);
                                 strs.push(None);
                                 text_only.push(false);
                                 ree.push(ree.get(at).copied().unwrap_or(false));
                                 cols.len() as i32
                             };
-                            (field_types.get(at).cloned().unwrap_or_default(), literals.get(at).cloned().flatten(), index)
+                            (
+                                field_types.get(at).cloned().unwrap_or_default(),
+                                literals.get(at).cloned().flatten(),
+                                index,
+                            )
                         };
-                        allInfo.push(MatVariable { name: name.to_owned(), descr: str_at(batch, "description", i).to_owned(), isParam: is_param, index });
-                        meta.push((str_at(batch, "unit", i).to_owned(), str_at(batch, "displayUnit", i).to_owned(), ty, bool_at(batch, "relativeQuantity", i)));
+                        allInfo.push(MatVariable {
+                            name: name.to_owned(),
+                            descr: str_at(batch, "description", i).to_owned(),
+                            isParam: is_param,
+                            index,
+                        });
+                        meta.push((
+                            str_at(batch, "unit", i).to_owned(),
+                            str_at(batch, "displayUnit", i).to_owned(),
+                            ty,
+                            bool_at(batch, "relativeQuantity", i),
+                        ));
                         enums.push(literals_of);
                     }
                 }
@@ -394,9 +499,25 @@ impl ArrowReader {
                 for (i, f) in schema.fields().iter().enumerate() {
                     let md = f.metadata();
                     let get = |k: &str| md.get(k).cloned().unwrap_or_default();
-                    let ix = if is_time(f) { 1 } else if i == 0 { time_at as i32 + 1 } else { i as i32 + 1 };
-                    allInfo.push(MatVariable { name: f.name().clone(), descr: get("description"), isParam: false, index: ix });
-                    meta.push((get("unit"), get("displayUnit"), field_types[i].clone(), get("relativeQuantity") == "true"));
+                    let ix = if is_time(f) {
+                        1
+                    } else if i == 0 {
+                        time_at as i32 + 1
+                    } else {
+                        i as i32 + 1
+                    };
+                    allInfo.push(MatVariable {
+                        name: f.name().clone(),
+                        descr: get("description"),
+                        isParam: false,
+                        index: ix,
+                    });
+                    meta.push((
+                        get("unit"),
+                        get("displayUnit"),
+                        field_types[i].clone(),
+                        get("relativeQuantity") == "true",
+                    ));
                     enums.push(literals[i].clone());
                 }
             }
@@ -406,10 +527,35 @@ impl ArrowReader {
         let allInfo: Vec<MatVariable> = order.iter().map(|&i| allInfo[i].clone()).collect();
         let meta: Vec<(String, String, String, bool)> = order.iter().map(|&i| meta[i].clone()).collect();
         let enums: Vec<Option<Vec<String>>> = order.iter().map(|&i| enums[i].clone()).collect();
-        let ends = (cols.first().and_then(|c| c.first()).copied().unwrap_or(f64::NAN), cols.first().and_then(|c| c.last()).copied().unwrap_or(f64::NAN));
-        let time_md = |k: &str| variables.and_then(|t| t.schema.metadata().get(k)).and_then(|v| v.parse::<f64>().ok());
-        let span = (time_md(START_TIME_KEY).unwrap_or(ends.0), time_md(STOP_TIME_KEY).unwrap_or(ends.1));
-        Ok(ArrowReader { allInfo, nparam: params.len(), params, string_params, nrows, nvar: cols.len(), span, meta, enums, cols, strs, text_only, ree, units })
+        let ends = (
+            cols.first().and_then(|c| c.first()).copied().unwrap_or(f64::NAN),
+            cols.first().and_then(|c| c.last()).copied().unwrap_or(f64::NAN),
+        );
+        let time_md = |k: &str| {
+            variables
+                .and_then(|t| t.schema.metadata().get(k))
+                .and_then(|v| v.parse::<f64>().ok())
+        };
+        let span = (
+            time_md(START_TIME_KEY).unwrap_or(ends.0),
+            time_md(STOP_TIME_KEY).unwrap_or(ends.1),
+        );
+        Ok(ArrowReader {
+            allInfo,
+            nparam: params.len(),
+            params,
+            string_params,
+            nrows,
+            nvar: cols.len(),
+            span,
+            meta,
+            enums,
+            cols,
+            strs,
+            text_only,
+            ree,
+            units,
+        })
     }
 
     /// The definition of `name`: the file's own entry over the predefined one.
@@ -477,7 +623,11 @@ impl ResultTable for ArrowReader {
             return None;
         }
         let col = self.cols.get(field)?;
-        Some(if index < 0 { col.iter().map(|v| -v).collect() } else { col.clone() })
+        Some(if index < 0 {
+            col.iter().map(|v| -v).collect()
+        } else {
+            col.clone()
+        })
     }
     fn read_strings(&mut self, index: i32) -> Option<Vec<String>> {
         if index == 0 {
@@ -542,8 +692,13 @@ impl ResultTable for ArrowReader {
     }
     /// The encoding is the statement: a run-end encoded column is discrete-time.
     fn discrete(&self, idx: usize) -> bool {
-        let Some(i) = self.allInfo.get(idx).filter(|i| !i.isParam && i.index != 0) else { return false };
-        self.ree.get(i.index.unsigned_abs() as usize - 1).copied().unwrap_or(false)
+        let Some(i) = self.allInfo.get(idx).filter(|i| !i.isParam && i.index != 0) else {
+            return false;
+        };
+        self.ree
+            .get(i.index.unsigned_abs() as usize - 1)
+            .copied()
+            .unwrap_or(false)
     }
     fn enumeration(&self, idx: usize) -> Option<Vec<String>> {
         self.enums.get(idx).cloned().flatten()
@@ -560,14 +715,30 @@ impl ResultTable for ArrowReader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openmodelica_arrow_writer::{Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, VarTy, no_strings, write_arrow};
+    use openmodelica_arrow_writer::{
+        Affine, ArrowKind, ArrowStream, ArrowVar, ColTy, FileMeta, VarTy, no_strings, write_arrow,
+    };
 
     fn var<'a>(name: &'a str, ty: VarTy, kind: ArrowKind) -> ArrowVar<'a> {
-        ArrowVar { name, comment: "", unit: "", display_unit: "", relative_quantity: false, ty, discrete: false, kind, unvarying: false, enumeration: None }
+        ArrowVar {
+            name,
+            comment: "",
+            unit: "",
+            display_unit: "",
+            relative_quantity: false,
+            ty,
+            discrete: false,
+            kind,
+            unvarying: false,
+            enumeration: None,
+        }
     }
 
     fn time() -> ArrowVar<'static> {
-        ArrowVar { unit: "s", ..var("time", VarTy::Real, ArrowKind::Time) }
+        ArrowVar {
+            unit: "s",
+            ..var("time", VarTy::Real, ArrowKind::Time)
+        }
     }
 
     #[test]
@@ -575,11 +746,39 @@ mod tests {
         let e: Vec<String> = ["one", "two", "three"].map(String::from).to_vec();
         let vars = [
             time(),
-            ArrowVar { discrete: true, enumeration: Some(&e), ..var("e", VarTy::Integer, ArrowKind::Column { col: 1, affine: Affine::IDENTITY }) },
-            ArrowVar { enumeration: Some(&e), ..var("ep", VarTy::Integer, ArrowKind::Param { affine: Affine::IDENTITY }) },
+            ArrowVar {
+                discrete: true,
+                enumeration: Some(&e),
+                ..var(
+                    "e",
+                    VarTy::Integer,
+                    ArrowKind::Column {
+                        col: 1,
+                        affine: Affine::IDENTITY,
+                    },
+                )
+            },
+            ArrowVar {
+                enumeration: Some(&e),
+                ..var(
+                    "ep",
+                    VarTy::Integer,
+                    ArrowKind::Param {
+                        affine: Affine::IDENTITY,
+                    },
+                )
+            },
         ];
         let rows = [0.0, 1.0, 0.5, 1.0, 1.0, 3.0];
-        let bytes = write_arrow(&vars, &rows, 2, &[2.0], &[ColTy::F64, ColTy::I32], no_strings(), &FileMeta::default());
+        let bytes = write_arrow(
+            &vars,
+            &rows,
+            2,
+            &[2.0],
+            &[ColTy::F64, ColTy::I32],
+            no_strings(),
+            &FileMeta::default(),
+        );
         let mut r = ArrowReader::from_bytes(bytes).expect("readable");
         let v = r.find_var("e").expect("e");
         assert_eq!(r.var_type(v), "enumeration");
@@ -587,7 +786,10 @@ mod tests {
         assert!(r.discrete(v));
         let index = r.all_info()[v].index;
         assert_eq!(r.read_vals(index), Some(vec![1.0, 1.0, 3.0]));
-        assert_eq!(r.read_strings(index), Some(["one", "one", "three"].map(String::from).to_vec()));
+        assert_eq!(
+            r.read_strings(index),
+            Some(["one", "one", "three"].map(String::from).to_vec())
+        );
         let p = r.find_var("ep").expect("ep");
         assert_eq!(r.val(p, 0.0), Some(2.0));
         assert_eq!(r.var_type(p), "enumeration");
@@ -599,11 +801,60 @@ mod tests {
         let param = |name, ty, affine| var(name, ty, ArrowKind::Param { affine });
         let vars = [
             time(),
-            ArrowVar { unit: "m", display_unit: "mm", comment: "a state", ..var("x", VarTy::Real, ArrowKind::Column { col: 1, affine: Affine::IDENTITY }) },
-            var("mx", VarTy::Real, ArrowKind::Column { col: 1, affine: Affine::NEGATE }),
-            var("y", VarTy::Real, ArrowKind::Column { col: 1, affine: Affine { scale: 2.0, offset: 3.0 } }),
-            ArrowVar { discrete: true, ..var("b", VarTy::Boolean, ArrowKind::Column { col: 2, affine: Affine::IDENTITY }) },
-            ArrowVar { discrete: true, ..var("nb", VarTy::Boolean, ArrowKind::Column { col: 2, affine: Affine::NOT }) },
+            ArrowVar {
+                unit: "m",
+                display_unit: "mm",
+                comment: "a state",
+                ..var(
+                    "x",
+                    VarTy::Real,
+                    ArrowKind::Column {
+                        col: 1,
+                        affine: Affine::IDENTITY,
+                    },
+                )
+            },
+            var(
+                "mx",
+                VarTy::Real,
+                ArrowKind::Column {
+                    col: 1,
+                    affine: Affine::NEGATE,
+                },
+            ),
+            var(
+                "y",
+                VarTy::Real,
+                ArrowKind::Column {
+                    col: 1,
+                    affine: Affine {
+                        scale: 2.0,
+                        offset: 3.0,
+                    },
+                },
+            ),
+            ArrowVar {
+                discrete: true,
+                ..var(
+                    "b",
+                    VarTy::Boolean,
+                    ArrowKind::Column {
+                        col: 2,
+                        affine: Affine::IDENTITY,
+                    },
+                )
+            },
+            ArrowVar {
+                discrete: true,
+                ..var(
+                    "nb",
+                    VarTy::Boolean,
+                    ArrowKind::Column {
+                        col: 2,
+                        affine: Affine::NOT,
+                    },
+                )
+            },
             param("bp", VarTy::Boolean, Affine::IDENTITY),
             param("n", VarTy::Integer, Affine::NEGATE),
             param("p", VarTy::Real, Affine::IDENTITY),
@@ -611,7 +862,18 @@ mod tests {
         ];
         let rows = [0.0, 1.0, 1.0, 0.5, 2.0, 0.0, 1.0, 3.0, 1.0];
         let resolve: openmodelica_arrow_writer::Resolve = Box::new(|_| "hello".to_owned());
-        let bytes = write_arrow(&vars, &rows, 3, &[1.0, 3.0, 2.5, 0.0], &[ColTy::F64, ColTy::F64, ColTy::Bool], resolve, &FileMeta { span: Some((0.0, 1.0)), ..FileMeta::default() });
+        let bytes = write_arrow(
+            &vars,
+            &rows,
+            3,
+            &[1.0, 3.0, 2.5, 0.0],
+            &[ColTy::F64, ColTy::F64, ColTy::Bool],
+            resolve,
+            &FileMeta {
+                span: Some((0.0, 1.0)),
+                ..FileMeta::default()
+            },
+        );
         let mut r = ArrowReader::from_bytes(bytes).expect("readable");
         assert_eq!(r.nrows, 3);
         assert_eq!(r.nparam, 4);
@@ -644,10 +906,33 @@ mod tests {
 
     #[test]
     fn a_file_without_trailer_reads_up_to_the_last_block() {
-        let vars = [time(), var("x", VarTy::Real, ArrowKind::Column { col: 1, affine: Affine::IDENTITY })];
+        let vars = [
+            time(),
+            var(
+                "x",
+                VarTy::Real,
+                ArrowKind::Column {
+                    col: 1,
+                    affine: Affine::IDENTITY,
+                },
+            ),
+        ];
         let rows: Vec<f64> = (0..7).flat_map(|i| [i as f64, 10.0 * i as f64]).collect();
         let mut out = Vec::new();
-        let mut s = ArrowStream::begin(&mut out, &vars, &[], &rows[..2], 2, &[ColTy::F64, ColTy::F64], 3, no_strings(), &FileMeta { span: Some((0.0, 6.0)), ..FileMeta::default() });
+        let mut s = ArrowStream::begin(
+            &mut out,
+            &vars,
+            &[],
+            &rows[..2],
+            2,
+            &[ColTy::F64, ColTy::F64],
+            3,
+            no_strings(),
+            &FileMeta {
+                span: Some((0.0, 6.0)),
+                ..FileMeta::default()
+            },
+        );
         s.push_rows(&mut out, &rows);
         // Two complete blocks (6 rows) are on disk; the seventh row is pending, no trailer.
         let mut r = ArrowReader::from_bytes(out.clone()).expect("unfinished file");
@@ -662,22 +947,68 @@ mod tests {
     #[test]
     fn units_come_back_merged_with_the_predefined_ones() {
         let mut k = UnitDef::new("K");
-        k.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], ..BaseUnit::default() });
+        k.base = Some(BaseUnit {
+            exponents: [0, 0, 0, 0, 1, 0, 0, 0],
+            ..BaseUnit::default()
+        });
         k.display_units.push(DisplayUnit::new("degF", 1.8, -459.67));
         let mut thing = UnitDef::new("thing");
-        thing.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 0, 0, 0, 3], ..BaseUnit::default() });
+        thing.base = Some(BaseUnit {
+            exponents: [0, 0, 0, 0, 0, 0, 0, 3],
+            ..BaseUnit::default()
+        });
         thing.display_units.push(DisplayUnit::new("kthing", 1e-3, 0.0));
         let vars = [
             time(),
-            ArrowVar { unit: "K", display_unit: "degF", ..var("t", VarTy::Real, ArrowKind::Column { col: 1, affine: Affine::IDENTITY }) },
-            ArrowVar { unit: "thing", ..var("w", VarTy::Real, ArrowKind::Column { col: 2, affine: Affine::IDENTITY }) },
+            ArrowVar {
+                unit: "K",
+                display_unit: "degF",
+                ..var(
+                    "t",
+                    VarTy::Real,
+                    ArrowKind::Column {
+                        col: 1,
+                        affine: Affine::IDENTITY,
+                    },
+                )
+            },
+            ArrowVar {
+                unit: "thing",
+                ..var(
+                    "w",
+                    VarTy::Real,
+                    ArrowKind::Column {
+                        col: 2,
+                        affine: Affine::IDENTITY,
+                    },
+                )
+            },
         ];
-        let bytes = write_arrow(&vars, &[0.0, 300.0, 1.0], 3, &[], &[ColTy::F64; 3], no_strings(), &FileMeta { units: &[k, thing], ..FileMeta::default() });
+        let bytes = write_arrow(
+            &vars,
+            &[0.0, 300.0, 1.0],
+            3,
+            &[],
+            &[ColTy::F64; 3],
+            no_strings(),
+            &FileMeta {
+                units: &[k, thing],
+                ..FileMeta::default()
+            },
+        );
         let r = ArrowReader::from_bytes(bytes).expect("readable");
         let k = r.unit_def("K").expect("K");
         assert_eq!(k.base.as_ref().map(|b| b.exponents[4]), Some(1));
-        assert_eq!(k.display_unit("degF").map(|d| d.offset), Some(-459.67), "the file's own");
-        assert_eq!(k.display_unit("degC").map(|d| d.offset), Some(-273.15), "the predefined one");
+        assert_eq!(
+            k.display_unit("degF").map(|d| d.offset),
+            Some(-459.67),
+            "the file's own"
+        );
+        assert_eq!(
+            k.display_unit("degC").map(|d| d.offset),
+            Some(-273.15),
+            "the predefined one"
+        );
         let thing = r.unit_def("thing").expect("thing");
         assert_eq!(thing.base.as_ref().map(|b| b.exponents[7]), Some(3));
         assert_eq!(thing.display_units.len(), 1);
@@ -690,8 +1021,18 @@ mod tests {
         use arrow_ipc::writer::StreamWriter;
         use arrow_schema::{Field, Schema};
         use std::sync::Arc;
-        let schema = Schema::new(vec![Field::new("y", DataType::Float64, false), Field::new("time", DataType::Float64, false)]);
-        let batch = RecordBatch::try_new(Arc::new(schema.clone()), vec![Arc::new(Float64Array::from(vec![5.0, 6.0])), Arc::new(Float64Array::from(vec![0.0, 1.0]))]).unwrap();
+        let schema = Schema::new(vec![
+            Field::new("y", DataType::Float64, false),
+            Field::new("time", DataType::Float64, false),
+        ]);
+        let batch = RecordBatch::try_new(
+            Arc::new(schema.clone()),
+            vec![
+                Arc::new(Float64Array::from(vec![5.0, 6.0])),
+                Arc::new(Float64Array::from(vec![0.0, 1.0])),
+            ],
+        )
+        .unwrap();
         let mut out = Vec::new();
         let mut w = StreamWriter::try_new(&mut out, &schema).unwrap();
         w.write(&batch).unwrap();

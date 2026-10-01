@@ -66,22 +66,22 @@ pub mod atomic64;
 pub mod clock;
 pub mod counters;
 pub mod dassl;
+pub mod delay;
 pub mod events;
 pub mod fixedstep;
 pub mod fmath;
-pub mod delay;
 pub mod gbode;
 pub mod klu;
 pub mod omclog;
 pub mod simflags;
 pub mod solverflags;
 pub mod spatial;
-pub mod symsolver;
-pub mod sysstat;
 #[cfg(sundials)]
 pub mod sundials;
 #[cfg(sundials)]
 pub mod sundials_ode;
+pub mod symsolver;
+pub mod sysstat;
 
 /// Whether this build has the real CVODE and IDA linked in (`build.rs`).
 pub const CVODE: bool = cfg!(sundials);

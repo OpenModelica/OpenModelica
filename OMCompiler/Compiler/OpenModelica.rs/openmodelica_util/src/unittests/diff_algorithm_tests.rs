@@ -13,11 +13,11 @@
 // Known bugs / limitations found while writing these tests are documented
 // inline with "Bug:" prefixes.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::ArcStr;
 use crate::DiffAlgorithm::{self, Diff};
+use arcstr::ArcStr;
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ---------------------------------------------------------------------------
 // helper function types
@@ -40,9 +40,7 @@ fn to_str(s: ArcStr) -> Result<ArcStr> {
 // helper: collect result list into a Vec<(Diff, Vec<ArcStr>)>
 // ---------------------------------------------------------------------------
 
-fn collect_diff(
-    result: metamodelica::List<(Diff, metamodelica::List<ArcStr>)>,
-) -> Vec<(Diff, Vec<String>)> {
+fn collect_diff(result: metamodelica::List<(Diff, metamodelica::List<ArcStr>)>) -> Vec<(Diff, Vec<String>)> {
     let mut out = Vec::new();
     let mut node = result;
     loop {
@@ -78,14 +76,7 @@ fn run_diff(seq1: &[&str], seq2: &[&str]) -> Result<Vec<(Diff, Vec<String>)>> {
         .rev()
         .fold(metamodelica::nil(), |acc, &s| cons(arcstr::format!("{}", s), acc));
 
-    let result = DiffAlgorithm::diff(
-        list1,
-        list2,
-        &str_equals,
-        &not_whitespace,
-        &not_whitespace,
-        &to_str,
-    )?;
+    let result = DiffAlgorithm::diff(list1, list2, &str_equals, &not_whitespace, &not_whitespace, &to_str)?;
     Ok(collect_diff(result))
 }
 
@@ -97,10 +88,7 @@ fn run_diff(seq1: &[&str], seq2: &[&str]) -> Result<Vec<(Diff, Vec<String>)>> {
 #[test]
 fn diff_both_empty_gives_empty_result() -> Result<()> {
     let result = run_diff(&[], &[])?;
-    assert!(
-        result.is_empty(),
-        "expected empty diff result, got: {:?}", result
-    );
+    assert!(result.is_empty(), "expected empty diff result, got: {:?}", result);
     Ok(())
 }
 
@@ -196,11 +184,12 @@ fn diff_suffix_addition_produces_equal_then_add() -> Result<()> {
     assert!(add_tokens.contains(&"b".to_string()), "Add chunk must contain 'b'");
     // Check ordering: Equal must come before Add in the result.
     let first_equal_pos = result.iter().position(|(d, _)| *d == Diff::Equal).unwrap();
-    let first_add_pos  = result.iter().position(|(d, _)| *d == Diff::Add).unwrap();
+    let first_add_pos = result.iter().position(|(d, _)| *d == Diff::Add).unwrap();
     assert!(
         first_equal_pos < first_add_pos,
         "Equal chunk should appear before Add chunk, positions: equal={}, add={}",
-        first_equal_pos, first_add_pos
+        first_equal_pos,
+        first_add_pos
     );
     Ok(())
 }
@@ -215,11 +204,11 @@ fn diff_suffix_addition_produces_equal_then_add() -> Result<()> {
 fn diff_prefix_deletion_produces_delete_then_equal() -> Result<()> {
     let result = run_diff(&["a", "b"], &["b"])?;
     let delete_chunks: Vec<_> = result.iter().filter(|(d, _)| *d == Diff::Delete).collect();
-    let equal_chunks: Vec<_>  = result.iter().filter(|(d, _)| *d == Diff::Equal).collect();
+    let equal_chunks: Vec<_> = result.iter().filter(|(d, _)| *d == Diff::Equal).collect();
     assert!(!delete_chunks.is_empty(), "expected at least one Delete chunk");
     assert!(!equal_chunks.is_empty(), "expected at least one Equal chunk");
     let del_tokens: Vec<String> = delete_chunks.iter().flat_map(|(_, ts)| ts.iter().cloned()).collect();
-    let eq_tokens:  Vec<String> = equal_chunks.iter().flat_map(|(_, ts)| ts.iter().cloned()).collect();
+    let eq_tokens: Vec<String> = equal_chunks.iter().flat_map(|(_, ts)| ts.iter().cloned()).collect();
     assert!(del_tokens.contains(&"a".to_string()), "Delete chunk must contain 'a'");
     assert!(eq_tokens.contains(&"b".to_string()), "Equal chunk must contain 'b'");
     Ok(())
@@ -241,22 +230,38 @@ fn diff_middle_substitution_preserves_surrounding_context() -> Result<()> {
         .filter(|(d, _)| *d == Diff::Equal)
         .flat_map(|(_, ts)| ts.iter().cloned())
         .collect();
-    assert!(equal_tokens.contains(&"a".to_string()), "'a' must be Equal; chunks={:?}", result);
-    assert!(equal_tokens.contains(&"c".to_string()), "'c' must be Equal; chunks={:?}", result);
+    assert!(
+        equal_tokens.contains(&"a".to_string()),
+        "'a' must be Equal; chunks={:?}",
+        result
+    );
+    assert!(
+        equal_tokens.contains(&"c".to_string()),
+        "'c' must be Equal; chunks={:?}",
+        result
+    );
     // 'X' must appear in a Delete chunk.
     let del_tokens: Vec<String> = result
         .iter()
         .filter(|(d, _)| *d == Diff::Delete)
         .flat_map(|(_, ts)| ts.iter().cloned())
         .collect();
-    assert!(del_tokens.contains(&"X".to_string()), "'X' must be Deleted; chunks={:?}", result);
+    assert!(
+        del_tokens.contains(&"X".to_string()),
+        "'X' must be Deleted; chunks={:?}",
+        result
+    );
     // 'Y' must appear in an Add chunk.
     let add_tokens: Vec<String> = result
         .iter()
         .filter(|(d, _)| *d == Diff::Add)
         .flat_map(|(_, ts)| ts.iter().cloned())
         .collect();
-    assert!(add_tokens.contains(&"Y".to_string()), "'Y' must be Added; chunks={:?}", result);
+    assert!(
+        add_tokens.contains(&"Y".to_string()),
+        "'Y' must be Added; chunks={:?}",
+        result
+    );
     Ok(())
 }
 
@@ -269,9 +274,9 @@ fn diff_middle_substitution_preserves_surrounding_context() -> Result<()> {
 /// stable.
 #[test]
 fn diff_enum_ordinals_match_metamodelica_source() {
-    assert_eq!(Diff::Add    as i32, 1);
+    assert_eq!(Diff::Add as i32, 1);
     assert_eq!(Diff::Delete as i32, 2);
-    assert_eq!(Diff::Equal  as i32, 3);
+    assert_eq!(Diff::Equal as i32, 3);
 }
 
 // ---------------------------------------------------------------------------
@@ -327,7 +332,22 @@ fn print_diff_terminal_color_brackets_changes() {
 /// All three printers return the empty string for an empty diff.
 #[test]
 fn print_functions_empty_input() {
-    assert_eq!(DiffAlgorithm::printActual::<ArcStr>(metamodelica::nil(), Arc::new(to_str)).unwrap().as_str(), "");
-    assert_eq!(DiffAlgorithm::printDiffXml::<ArcStr>(metamodelica::nil(), Arc::new(to_str)).unwrap().as_str(), "");
-    assert_eq!(DiffAlgorithm::printDiffTerminalColor::<ArcStr>(metamodelica::nil(), Arc::new(to_str)).unwrap().as_str(), "");
+    assert_eq!(
+        DiffAlgorithm::printActual::<ArcStr>(metamodelica::nil(), Arc::new(to_str))
+            .unwrap()
+            .as_str(),
+        ""
+    );
+    assert_eq!(
+        DiffAlgorithm::printDiffXml::<ArcStr>(metamodelica::nil(), Arc::new(to_str))
+            .unwrap()
+            .as_str(),
+        ""
+    );
+    assert_eq!(
+        DiffAlgorithm::printDiffTerminalColor::<ArcStr>(metamodelica::nil(), Arc::new(to_str))
+            .unwrap()
+            .as_str(),
+        ""
+    );
 }

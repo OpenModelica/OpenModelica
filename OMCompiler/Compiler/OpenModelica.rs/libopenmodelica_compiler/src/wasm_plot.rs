@@ -73,10 +73,24 @@ unsafe extern "C" fn plot_callback(
 ) {
     let raw = unsafe {
         vec![
-            cs(filename), cs(title), cs(grid), cs(plot_type), cs(log_x), cs(log_y),
-            cs(x_label), cs(y_label), cs(x1), cs(x2), cs(y1), cs(y2),
-            cs(curve_width), cs(curve_style), cs(legend_position), cs(footer),
-            cs(auto_scale), cs(variables),
+            cs(filename),
+            cs(title),
+            cs(grid),
+            cs(plot_type),
+            cs(log_x),
+            cs(log_y),
+            cs(x_label),
+            cs(y_label),
+            cs(x1),
+            cs(x2),
+            cs(y1),
+            cs(y2),
+            cs(curve_width),
+            cs(curve_style),
+            cs(legend_position),
+            cs(footer),
+            cs(auto_scale),
+            cs(variables),
         ]
     };
     PLOT_QUEUE.with(|q| q.borrow_mut().push(raw));
@@ -156,8 +170,7 @@ fn render(a: &PlotArgs) -> Result<String, String> {
     let names: Vec<String> = if a.variables.split_whitespace().next().is_some() {
         a.variables.split_whitespace().map(str::to_owned).collect()
     } else {
-        let all = SimulationResults::readVariables(filename.clone(), false, false)
-            .map_err(|e| e.to_string())?;
+        let all = SimulationResults::readVariables(filename.clone(), false, false).map_err(|e| e.to_string())?;
         // Drop the independent variable and internal helper variables.
         list_to_vec(&all)
             .into_iter()
@@ -289,7 +302,9 @@ fn list_to_vec(l: &List<ArcStr>) -> Vec<ArcStr> {
 fn insert_html(html: &str) {
     let Some(win) = web_sys::window() else { return };
     let Some(doc) = win.document() else { return };
-    let Ok(Some(log)) = doc.query_selector("#log") else { return };
+    let Ok(Some(log)) = doc.query_selector("#log") else {
+        return;
+    };
     let Ok(div) = doc.create_element("div") else { return };
     div.set_inner_html(html);
     let _ = log.append_child(&div);

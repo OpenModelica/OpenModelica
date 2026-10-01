@@ -173,15 +173,14 @@ impl Scene {
             }
         };
         for s in &self.shapes {
-            for a in s
-                .t
-                .iter()
-                .chain(&s.r)
-                .chain(&s.r_shape)
-                .chain(&s.length_dir)
-                .chain(&s.width_dir)
-                .chain(&s.color)
-                .chain([&s.length, &s.width, &s.height, &s.extra, &s.spec_coeff])
+            for a in
+                s.t.iter()
+                    .chain(&s.r)
+                    .chain(&s.r_shape)
+                    .chain(&s.length_dir)
+                    .chain(&s.width_dir)
+                    .chain(&s.color)
+                    .chain([&s.length, &s.width, &s.height, &s.extra, &s.spec_coeff])
             {
                 push(a);
             }

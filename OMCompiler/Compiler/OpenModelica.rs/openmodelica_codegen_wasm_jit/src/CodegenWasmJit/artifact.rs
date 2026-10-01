@@ -24,10 +24,10 @@ use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 
 use openmodelica_fmi::{Fmu, InterfaceKind};
-use openmodelica_sim_meta::omclog;
 use openmodelica_fmi_driver::api::Fmi3;
 use openmodelica_fmi_driver::component::WasmArtifact;
-use openmodelica_fmi_driver::{cs, me, Options, Solver};
+use openmodelica_fmi_driver::{Options, Solver, cs, me};
+use openmodelica_sim_meta::omclog;
 use openmodelica_wasm_jit::sim_runtime::ArtifactLib;
 
 use super::dylink_fmi::DylinkInstance;
@@ -39,27 +39,37 @@ use super::{split_simflags, write_output};
 /// The export compiles the component to machine code; a run in the same session
 /// would otherwise write that out, read it back and relocate it for nothing.
 /// Keyed by path, so a re-export of the same name replaces it.
-static COMPILED: LazyLock<Mutex<HashMap<PathBuf, Arc<WasmArtifact>>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+static COMPILED: LazyLock<Mutex<HashMap<PathBuf, Arc<WasmArtifact>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// An absolute key for `path`, resolvable *before* it exists: the export
 /// remembers what it compiled under the name it is about to write, and the run
 /// that follows looks it up under the name it now finds.
 fn canonical(path: &Path) -> PathBuf {
-    let Some(name) = path.file_name() else { return path.to_path_buf() };
+    let Some(name) = path.file_name() else {
+        return path.to_path_buf();
+    };
     let parent = match path.parent() {
         Some(p) if !p.as_os_str().is_empty() => p.to_path_buf(),
         _ => PathBuf::from("."),
     };
-    std::fs::canonicalize(parent).map(|d| d.join(name)).unwrap_or_else(|_| path.to_path_buf())
+    std::fs::canonicalize(parent)
+        .map(|d| d.join(name))
+        .unwrap_or_else(|_| path.to_path_buf())
 }
 
 pub fn remember(path: &Path, artifact: Arc<WasmArtifact>) {
-    COMPILED.lock().unwrap_or_else(|e| e.into_inner()).insert(canonical(path), artifact);
+    COMPILED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(canonical(path), artifact);
 }
 
 fn recall(path: &Path) -> Option<Arc<WasmArtifact>> {
-    COMPILED.lock().unwrap_or_else(|e| e.into_inner()).get(&canonical(path)).cloned()
+    COMPILED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&canonical(path))
+        .cloned()
 }
 
 /// Which of the artifact's three faces a run asked for.
@@ -149,7 +159,11 @@ pub fn translated(path: &Path, simflags: &str) -> Option<String> {
         return None;
     }
     let prefix = path.file_stem()?.to_str()?.to_string();
-    super::sim_models().lock().unwrap_or_else(|e| e.into_inner()).contains_key(&prefix).then_some(prefix)
+    super::sim_models()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .contains_key(&prefix)
+        .then_some(prefix)
 }
 
 /// The result name `simulate` derived from `resimulateExecutable` (`M.fmu_res.mat`),
@@ -165,7 +179,10 @@ fn result_path(flags: &openmodelica_sim_meta::simflags::SimFlags, derived: &str)
     }
     let cleaned = plain_result_name(derived);
     match &flags.output_path {
-        Some(dir) => format!("{dir}/{}", Path::new(&cleaned).file_name().unwrap_or_default().to_string_lossy()),
+        Some(dir) => format!(
+            "{dir}/{}",
+            Path::new(&cleaned).file_name().unwrap_or_default().to_string_lossy()
+        ),
         None => cleaned,
     }
 }
@@ -174,7 +191,12 @@ fn result_path(flags: &openmodelica_sim_meta::simflags::SimFlags, derived: &str)
 /// kernel it links against the adapter itself.
 enum Form {
     Component(Arc<WasmArtifact>),
-    Dylink { model: Vec<u8>, ext: Vec<ArtifactLib>, external_c: bool, lapack: bool },
+    Dylink {
+        model: Vec<u8>,
+        ext: Vec<ArtifactLib>,
+        external_c: bool,
+        lapack: bool,
+    },
 }
 
 struct Loaded {
@@ -199,9 +221,13 @@ thread_local! {
 }
 
 impl Loaded {
-        fn resources(&self) -> String {
+    fn resources(&self) -> String {
         let r = self.dir.join("resources");
-        if r.is_dir() { r.to_string_lossy().into_owned() } else { "/".to_string() }
+        if r.is_dir() {
+            r.to_string_lossy().into_owned()
+        } else {
+            "/".to_string()
+        }
     }
 
     /// Run `f` against the linked artifact, standing or newly linked. The adapter
@@ -210,7 +236,13 @@ impl Loaded {
         &self,
         f: impl FnOnce(&mut DylinkInstance) -> std::result::Result<R, String>,
     ) -> std::result::Result<R, String> {
-        let Form::Dylink { model, ext, external_c, lapack } = &self.form else {
+        let Form::Dylink {
+            model,
+            ext,
+            external_c,
+            lapack,
+        } = &self.form
+        else {
             return Err("wasm artifact: not a linkable artifact".to_string());
         };
         let standing = LINKED.with(|c| {
@@ -226,8 +258,15 @@ impl Loaded {
                 i.free_instance();
                 i
             }
-            None => DylinkInstance::load(model, compiled_kernel(model), ext, *external_c, *lapack, &self.resources())
-                .map_err(|e| e.to_string())?,
+            None => DylinkInstance::load(
+                model,
+                compiled_kernel(model),
+                ext,
+                *external_c,
+                *lapack,
+                &self.resources(),
+            )
+            .map_err(|e| e.to_string())?,
         };
         let out = f(&mut inst);
         LINKED.with(|c| *c.borrow_mut() = Some((self.dir.clone(), inst)));
@@ -295,7 +334,10 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
             let mut paths: Vec<PathBuf> = rd.flatten().map(|e| e.path()).collect();
             paths.sort();
             for p in paths {
-                let name = p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+                let name = p
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+                    .unwrap_or_default();
                 if let Ok(bytes) = std::fs::read(&p) {
                     let fixed = name != super::NATIVE_STUB;
                     ext.push(ArtifactLib { name, bytes, fixed });
@@ -305,7 +347,12 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
         let size = model.len();
         return Ok(Loaded {
             dir,
-            form: Form::Dylink { model, ext, external_c: flag("externalC"), lapack: flag("lapack") },
+            form: Form::Dylink {
+                model,
+                ext,
+                external_c: flag("externalC"),
+                lapack: flag("lapack"),
+            },
             how: format!(
                 "model kernel linked against the cached adapter{}{}",
                 mb(size as u64),
@@ -321,8 +368,16 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
     // Beside the platform's loader; `resources/<platform>.cwasm` in older exports.
     let cwasm = openmodelica_ext_native::binaries_dir(&dir)
         .and_then(|d| std::fs::read_dir(d).ok())
-        .and_then(|rd| rd.flatten().map(|e| e.path()).find(|p| p.extension().is_some_and(|e| e == "cwasm")))
-        .or_else(|| platform().map(|p| dir.join(format!("resources/{p}.cwasm"))).filter(|p| p.is_file()));
+        .and_then(|rd| {
+            rd.flatten()
+                .map(|e| e.path())
+                .find(|p| p.extension().is_some_and(|e| e == "cwasm"))
+        })
+        .or_else(|| {
+            platform()
+                .map(|p| dir.join(format!("resources/{p}.cwasm")))
+                .filter(|p| p.is_file())
+        });
     // A `.cwasm` is tied to one wasmtime build and one engine configuration; if
     // this omc is not the one that wrote it, compiling the component still works.
     if let Some(cwasm) = &cwasm {
@@ -349,7 +404,9 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
             "wasm artifact {}: no artifact this omc can load. It carries no {} and no wasm \
              component to compile one from; export it again with this omc.",
             path.display(),
-            cwasm.map(|p| p.display().to_string()).unwrap_or_else(|| "*.cwasm".to_string())
+            cwasm
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|| "*.cwasm".to_string())
         )
     })?;
     let artifact = WasmArtifact::compile(&component, resources.as_deref())
@@ -364,7 +421,11 @@ fn load(path: &Path) -> std::result::Result<Loaded, String> {
 
 fn dylink_model(dir: &Path) -> Option<Vec<u8>> {
     let d = dir.join(super::DYLINK_DIR);
-    let entry = std::fs::read_dir(d).ok()?.flatten().map(|e| e.path()).find(|p| p.extension().is_some_and(|e| e == "wasm"))?;
+    let entry = std::fs::read_dir(d)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.extension().is_some_and(|e| e == "wasm"))?;
     std::fs::read(entry).ok()
 }
 
@@ -378,7 +439,10 @@ fn compiled_kernel(model: &[u8]) -> Option<wasmtime::Module> {
 
 /// Where the artifact is unpacked, beside itself so a second run finds it there.
 fn unpacked_dir(path: &Path) -> PathBuf {
-    let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
     path.with_file_name(format!("{stem}_artifact"))
 }
 
@@ -412,7 +476,11 @@ fn component_bytes(fmu: &Fmu) -> Option<Vec<u8>> {
         .names()
         .iter()
         .find(|n| n.starts_with("binaries/wasm32-wasip2/") && n.ends_with(".wasm"))
-        .or_else(|| fmu.names().iter().find(|n| n.starts_with("resources/") && n.ends_with(".wasm")))?
+        .or_else(|| {
+            fmu.names()
+                .iter()
+                .find(|n| n.starts_with("resources/") && n.ends_with(".wasm"))
+        })?
         .clone();
     fmu.read(&name).map(|b| b.into_owned())
 }
@@ -423,12 +491,7 @@ fn ms(t: Instant) -> f64 {
 
 /// Run `path` the way `face` says, writing the result file and returning the log
 /// the caller puts in `<prefix>.log`.
-pub fn run(
-    path: &Path,
-    face: Face,
-    result_file: &str,
-    simflags: &str,
-) -> (std::result::Result<(), String>, String) {
+pub fn run(path: &Path, face: Face, result_file: &str, simflags: &str) -> (std::result::Result<(), String>, String) {
     let mut log = String::new();
     let loaded = match load(path) {
         Ok(l) => l,
@@ -474,7 +537,7 @@ pub fn run(
                             s.as_str()
                         )),
                         log,
-                    )
+                    );
                 }
             };
             run_fmi(&loaded, &flags, &out, Some(solver), &mut log)
@@ -505,7 +568,10 @@ fn compile_output_filter(
     flags: &openmodelica_sim_meta::simflags::SimFlags,
     log: &mut String,
 ) -> Option<openmodelica_util::System::Regex> {
-    let pattern = flags.variable_filter.as_deref().filter(|p| !p.is_empty() && *p != ".*")?;
+    let pattern = flags
+        .variable_filter
+        .as_deref()
+        .filter(|p| !p.is_empty() && *p != ".*")?;
     match openmodelica_util::System::Regex::new(&format!("^({pattern})$")) {
         Ok(re) => Some(re),
         Err(e) => {
@@ -622,7 +688,12 @@ fn place_prof_files(run: &super::dylink_fmi::SimRun, log: &mut String) {
 fn run_shell(cmd: &str) -> bool {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::process::Command::new("sh").arg("-c").arg(cmd).status().map(|s| s.success()).unwrap_or(false)
+        std::process::Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -641,8 +712,11 @@ fn run_fmi(
 ) -> std::result::Result<(), String> {
     let fmu = loaded.model_description()?;
     let md = &fmu.model_description;
-    let kind =
-        if me_solver.is_some() { InterfaceKind::ModelExchange } else { InterfaceKind::CoSimulation };
+    let kind = if me_solver.is_some() {
+        InterfaceKind::ModelExchange
+    } else {
+        InterfaceKind::CoSimulation
+    };
     if md.interface(kind).is_none() {
         return Err(format!(
             "wasm artifact: it has no {} interface; export it with fmuType=\"me_cs\"",
@@ -683,7 +757,7 @@ fn run_fmi(
                         "wasm artifact: -daeMode asks for fmi-ls-dae, which this FMU does not declare \
                          (export the model with --daeMode)"
                             .to_string(),
-                    )
+                    );
                 }
             });
         }
@@ -818,8 +892,11 @@ where
                 "{} steps, {} evaluations, {} Jacobians, {} state events, {} time events{retried}",
                 run.steps, run.calls, run.jacobians, run.state_events, run.time_events
             );
-            let events: Vec<(f64, bool, Option<u32>)> =
-                run.event_times.iter().map(|e| (e.time, e.time_event, e.indicator)).collect();
+            let events: Vec<(f64, bool, Option<u32>)> = run
+                .event_times
+                .iter()
+                .map(|e| (e.time, e.time_event, e.indicator))
+                .collect();
             Ok((run.recorder, s, events_log(&events)))
         }
         _ => {
@@ -864,8 +941,10 @@ fn override_target<'a>(
     }
     let (base, subscripts) = name.strip_suffix(']')?.split_once('[')?;
     let v = md.variables.iter().find(|v| v.name == base)?;
-    let subscripts: Vec<u64> =
-        subscripts.split(',').map(|s| s.trim().parse().ok()).collect::<Option<_>>()?;
+    let subscripts: Vec<u64> = subscripts
+        .split(',')
+        .map(|s| s.trim().parse().ok())
+        .collect::<Option<_>>()?;
     let extents: Vec<u64> = v
         .dimensions
         .iter()
@@ -888,5 +967,9 @@ fn override_target<'a>(
 }
 
 fn instance_name(md: &openmodelica_fmi::ModelDescription) -> String {
-    if md.model_name.is_empty() { "model".to_string() } else { md.model_name.clone() }
+    if md.model_name.is_empty() {
+        "model".to_string()
+    } else {
+        md.model_name.clone()
+    }
 }

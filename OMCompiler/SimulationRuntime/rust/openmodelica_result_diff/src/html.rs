@@ -18,7 +18,14 @@ pub fn tube_html(
     reltol_diff_max_min: f64,
     range_delta: f64,
 ) -> String {
-    let TubeCmp { calibrated: calibrated_values, high, low, error, n, abstol } = cmp;
+    let TubeCmp {
+        calibrated: calibrated_values,
+        high,
+        low,
+        error,
+        n,
+        abstol,
+    } = cmp;
     let (n, abstol) = (*n, *abstol);
     let error = error.as_deref();
     let mut html = String::new();
@@ -75,16 +82,25 @@ g = new Dygraph(document.getElementById(\"graphdiv\"),\n\
 
     let mut j = 0usize;
     for i in 0..ref_size {
-        html.push_str(&format!("[{},{},", format_g_prec15(reftime[i]), format_g_prec15(refdata[i])));
+        html.push_str(&format!(
+            "[{},{},",
+            format_g_prec15(reftime[i]),
+            format_g_prec15(refdata[i])
+        ));
         if i < n {
             match error {
                 Some(e) if !e[i].is_nan() => html.push_str(&format!(
                     "{},{},{},{}",
-                    format_g_prec15(calibrated_values[i]), format_g_prec15(high[i]), format_g_prec15(low[i]), format_g_prec15(e[i])
+                    format_g_prec15(calibrated_values[i]),
+                    format_g_prec15(high[i]),
+                    format_g_prec15(low[i]),
+                    format_g_prec15(e[i])
                 )),
                 _ => html.push_str(&format!(
                     "{},{},{},null",
-                    format_g_prec15(calibrated_values[i]), format_g_prec15(high[i]), format_g_prec15(low[i])
+                    format_g_prec15(calibrated_values[i]),
+                    format_g_prec15(high[i]),
+                    format_g_prec15(low[i])
                 )),
             }
             if j < data.len() && reftime[i] == time[j] {
@@ -99,7 +115,8 @@ g = new Dygraph(document.getElementById(\"graphdiv\"),\n\
         while j < data.len() && reftime[i] > time[j] {
             html.push_str(&format!(
                 "[{},null,null,null,null,null,{}],\n",
-                format_g_prec15(time[j]), format_g_prec15(data[j])
+                format_g_prec15(time[j]),
+                format_g_prec15(data[j])
             ));
             j += 1;
         }

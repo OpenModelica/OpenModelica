@@ -172,7 +172,10 @@ impl SdfStream {
         let vlen_ref = vlen_of(&ref_ty)?;
         for t in &traj {
             let mut one = [time_ref];
-            let vl = [Hvl { len: 1, p: one.as_mut_ptr().cast() }];
+            let vl = [Hvl {
+                len: 1,
+                p: one.as_mut_ptr().cast(),
+            }];
             t.ds.attr_array("DIMENSION_LIST", &vlen_ref, &vl)?;
         }
 
@@ -253,12 +256,20 @@ impl SdfStream {
         let entries: Vec<RefListEntry> = self
             .traj
             .iter()
-            .map(|t| Ok(RefListEntry { dataset: t.ds.reference(&self.file, &t.path)?, index: 0 }))
+            .map(|t| {
+                Ok(RefListEntry {
+                    dataset: t.ds.reference(&self.file, &t.path)?,
+                    index: 0,
+                })
+            })
             .collect::<Result<_, String>>()?;
         if !entries.is_empty() {
             let ty = Type::compound(
                 size_of::<RefListEntry>(),
-                &[("dataset", 0, &Type::obj_ref()), ("index", size_of::<hobj_ref_t>(), &Type::i32())],
+                &[
+                    ("dataset", 0, &Type::obj_ref()),
+                    ("index", size_of::<hobj_ref_t>(), &Type::i32()),
+                ],
             )?;
             self.time.attr_array("REFERENCE_LIST", &ty, &entries)?;
         }
@@ -288,7 +299,14 @@ fn write_scalar(ds: &Dataset, ty: VarTy, single: bool, value: f64) -> Result<(),
     }
 }
 
-fn write_column(ds: &Dataset, ty: VarTy, single: bool, start: &[u64], count: &[u64], col: &[f64]) -> Result<(), String> {
+fn write_column(
+    ds: &Dataset,
+    ty: VarTy,
+    single: bool,
+    start: &[u64],
+    count: &[u64],
+    col: &[f64],
+) -> Result<(), String> {
     match ty {
         VarTy::Real if single => {
             let v: Vec<f32> = col.iter().map(|x| *x as f32).collect();
@@ -347,7 +365,11 @@ fn ensure_group<'a>(
 /// `H5Tvlen_create(base)`: the element type of a `DIMENSION_LIST`.
 fn vlen_of(base: &Type) -> Result<Type, String> {
     let id = unsafe { hdf5_metno_sys::h5t::H5Tvlen_create(base.id()) };
-    if id < 0 { Err("HDF5: H5Tvlen_create failed".into()) } else { Ok(Type::from_raw(id)) }
+    if id < 0 {
+        Err("HDF5: H5Tvlen_create failed".into())
+    } else {
+        Ok(Type::from_raw(id))
+    }
 }
 
 /// An opened SDF file: the group tree walked once into a flat variable list,
@@ -386,8 +408,16 @@ impl SdfFile {
             .position(|v| v.value.is_none() && is_scale(&file, &v.path))
             .or_else(|| vars.iter().position(|v| v.name == "time" || v.name == "Time"))
             .ok_or("SDF: no dimension scale")?;
-        let n_rows = Dataset::open(&file, &vars[time].path)?.space()?.dims().map(|d| d[0] as usize)?;
-        Ok(SdfFile { file, vars, n_rows, time })
+        let n_rows = Dataset::open(&file, &vars[time].path)?
+            .space()?
+            .dims()
+            .map(|d| d[0] as usize)?;
+        Ok(SdfFile {
+            file,
+            vars,
+            n_rows,
+            time,
+        })
     }
 
     pub fn read_column(&self, idx: usize) -> Result<Vec<f64>, String> {
@@ -405,13 +435,21 @@ impl SdfFile {
 }
 
 fn is_scale(file: &File, path: &str) -> bool {
-    Dataset::open(file, path).ok().and_then(|d| d.read_attr_str("CLASS")).as_deref() == Some("DIMENSION_SCALE")
+    Dataset::open(file, path)
+        .ok()
+        .and_then(|d| d.read_attr_str("CLASS"))
+        .as_deref()
+        == Some("DIMENSION_SCALE")
 }
 
 /// Depth-first over the group tree, rebuilding the dotted Modelica name.
 fn walk(group: &Group, prefix: &str, path: &str, out: &mut Vec<Info>) -> Result<(), String> {
     for (name, kind) in group.links()? {
-        let dotted = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let dotted = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         let full = format!("{path}/{name}");
         match kind {
             h5::LinkKind::Group => {

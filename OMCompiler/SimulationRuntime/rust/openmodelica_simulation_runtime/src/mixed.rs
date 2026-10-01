@@ -142,11 +142,7 @@ pub fn initialize_mixed_systems(data: *mut DATA, thread_data: *mut threadData_t)
 /// C's `solve_mixed_system` over `solveMixedSearch`. Always returns 0, as C's
 /// does; `check_mixed_solutions` is what reports a failure.
 #[unsafe(no_mangle)]
-pub extern "C" fn solve_mixed_system(
-    data: *mut DATA,
-    thread_data: *mut threadData_t,
-    sys_number: c_int,
-) -> c_int {
+pub extern "C" fn solve_mixed_system(data: *mut DATA, thread_data: *mut threadData_t, sys_number: c_int) -> c_int {
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     // C reads `system->logActive`, the first system's, whichever is solved.
@@ -159,11 +155,7 @@ pub extern "C" fn solve_mixed_system(
     0
 }
 
-fn solve_mixed_search(
-    data: *mut DATA,
-    thread_data: *mut threadData_t,
-    sys_number: c_int,
-) -> bool {
+fn solve_mixed_search(data: *mut DATA, thread_data: *mut threadData_t, sys_number: c_int) -> bool {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
     let sys = unsafe { &mut *si.mixedSystemData.add(sys_number as usize) };
@@ -172,7 +164,11 @@ fn solve_mixed_search(
     let time = unsafe { (**(*data).localData).timeValue };
     let n_rel = md.nRelations.max(0) as usize;
 
-    omclog::info!(omclog::MIXED, true, "\n#### Start solver mixed equation system at time {time}.");
+    omclog::info!(
+        omclog::MIXED,
+        true,
+        "\n#### Start solver mixed equation system at time {time}."
+    );
     // C's `memset(stateofSearch, 0, systemData->size)` clears `size` *bytes* of a
     // `modelica_boolean` (an `int`) array, so its flip mask starts partly
     // uninitialised. This clears the whole thing, which is a deliberate divergence:
@@ -180,8 +176,7 @@ fn solve_mixed_search(
     // faithful way to reproduce reading uninitialised memory.
     sd.state.iter_mut().for_each(|v| *v = false);
     // C's `iterationVarsPre`: the values the search flips against, read once.
-    let pre: Vec<modelica_boolean> =
-        (0..size).map(|i| unsafe { **sys.iterationVarsPtr.add(i) }).collect();
+    let pre: Vec<modelica_boolean> = (0..size).map(|i| unsafe { **sys.iterationVarsPtr.add(i) }).collect();
 
     let mut iterations = 0;
     let mut success = false;

@@ -44,8 +44,7 @@
  */
 #![allow(non_upper_case_globals, non_snake_case, dead_code)]
 
-
-use arcstr::{literal, ArcStr};
+use arcstr::{ArcStr, literal};
 use metamodelica::list;
 
 pub const configureCommandLine: &str =
@@ -151,89 +150,99 @@ const win_ldflags_runtime_fmu: &str = const_str::concat!(
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE") {
     Some(s) => s,
-    None => if msvc_is_target {
-        const_str::concat!("OpenModelicaRuntimeC.lib ", msvc_ldflags_basic)
-    } else if cfg!(windows) {
-        const_str::concat!(" -lOpenModelicaRuntimeC", win_ldflags_basic)
-    } else if cfg!(target_os = "macos") {
-        " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
-    } else {
-        " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm -lpthread -rdynamic"
-    },
+    None => {
+        if msvc_is_target {
+            const_str::concat!("OpenModelicaRuntimeC.lib ", msvc_ldflags_basic)
+        } else if cfg!(windows) {
+            const_str::concat!(" -lOpenModelicaRuntimeC", win_ldflags_basic)
+        } else if cfg!(target_os = "macos") {
+            " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
+        } else {
+            " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm -lpthread -rdynamic"
+        }
+    }
 };
 
 /// `@RT_LDFLAGS_GENERATED_CODE_MMC@`: a MetaModelica function library is
 /// dlopened into omc and shares its runtime.
 pub const ldflags_runtime_mmc: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_MMC") {
     Some(s) => s,
-    None => if msvc_is_target {
-        const_str::concat!("OpenModelicaRuntimeMMC.lib omcgc.lib ", msvc_ldflags_basic)
-    } else if cfg!(windows) {
-        const_str::concat!(" -lOpenModelicaRuntimeMMC -lomcgc", win_ldflags_basic)
-    } else if cfg!(target_os = "macos") {
-        " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm"
-    } else {
-        " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm -lpthread -rdynamic"
-    },
+    None => {
+        if msvc_is_target {
+            const_str::concat!("OpenModelicaRuntimeMMC.lib omcgc.lib ", msvc_ldflags_basic)
+        } else if cfg!(windows) {
+            const_str::concat!(" -lOpenModelicaRuntimeMMC -lomcgc", win_ldflags_basic)
+        } else if cfg!(target_os = "macos") {
+            " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm"
+        } else {
+            " -lOpenModelicaRuntimeMMC -lomcgc -llapack -lblas -lm -lpthread -rdynamic"
+        }
+    }
 };
 
 /// `@RT_LDFLAGS_GENERATED_CODE_SIM@` (CMake-configured via OMC_RT_LDFLAGS_*; the
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM") {
     Some(s) => s,
-    None => if msvc_is_target {
-        const_str::concat!("SimulationRuntimeC.lib ", msvc_ldflags_basic)
-    } else if cfg!(windows) {
-        // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
-        // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
-        // matching note in Autoconf.mo.omdev.mingw).
-        const_str::concat!(
-            "-Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
-            win_linkType,
-            " -lstdc++ -Wl,-Bdynamic "
-        )
-    } else if cfg!(target_os = "macos") {
-        " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
-    } else {
-        " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
-    },
+    None => {
+        if msvc_is_target {
+            const_str::concat!("SimulationRuntimeC.lib ", msvc_ldflags_basic)
+        } else if cfg!(windows) {
+            // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
+            // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
+            // matching note in Autoconf.mo.omdev.mingw).
+            const_str::concat!(
+                "-Wl,--allow-multiple-definition -lSimulationRuntimeC -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
+                win_linkType,
+                " -lstdc++ -Wl,-Bdynamic "
+            )
+        } else if cfg!(target_os = "macos") {
+            " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
+        } else {
+            " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
+        }
+    }
 };
 
 /// `@RT_LDFLAGS_GENERATED_CODE_SIM_RUST@` (CMake-configured via OMC_RT_LDFLAGS_*; the
 /// fallback matches the C runtime build per platform).
 pub const ldflags_runtime_sim_rust: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SIM_RUST") {
     Some(s) => s,
-    None => if msvc_is_target {
-        const_str::concat!("SimulationRuntimeRust.lib ", msvc_ldflags_basic)
-    } else if cfg!(windows) {
-        // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
-        // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
-        // matching note in Autoconf.mo.omdev.mingw).
-        const_str::concat!(
-            "-Wl,--allow-multiple-definition -lSimulationRuntimeRust -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
-            win_linkType,
-            " -lstdc++ -Wl,-Bdynamic "
-        )
-    } else if cfg!(target_os = "macos") {
-        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
-    } else {
-        " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
-    },
+    None => {
+        if msvc_is_target {
+            const_str::concat!("SimulationRuntimeRust.lib ", msvc_ldflags_basic)
+        } else if cfg!(windows) {
+            // -Wl,--allow-multiple-definition: both runtime DLLs re-export the same __imp_ import
+            // descriptors; recent binutils ld errors on the duplicates, so keep the first (see the
+            // matching note in Autoconf.mo.omdev.mingw).
+            const_str::concat!(
+                "-Wl,--allow-multiple-definition -lSimulationRuntimeRust -lOpenModelicaRuntimeC -Wl,-Bdynamic -lomcgc -lopenblas",
+                win_linkType,
+                " -lstdc++ -Wl,-Bdynamic "
+            )
+        } else if cfg!(target_os = "macos") {
+            " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm"
+        } else {
+            " -lSimulationRuntimeRust -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -rdynamic "
+        }
+    }
 };
 
 /// `@RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU@` (CMake-configured via OMC_RT_LDFLAGS_*;
 /// the fallback matches the C runtime build per platform).
 pub const ldflags_runtime_fmu: &str = match option_env!("OMC_RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU") {
     Some(s) => s,
-    None => if msvc_is_target {
-        "libopenblas.lib pthreadVC3.lib"
-    } else if cfg!(windows) {
-        win_ldflags_runtime_fmu
-    } else if cfg!(target_os = "macos") {
-        " -llapack -lblas -lm"
-    } else {
-        " -llapack -lblas -lm -lpthread -rdynamic "
-    },
+    None => {
+        if msvc_is_target {
+            "libopenblas.lib pthreadVC3.lib"
+        } else if cfg!(windows) {
+            win_ldflags_runtime_fmu
+        } else if cfg!(target_os = "macos") {
+            " -llapack -lblas -lm"
+        } else {
+            " -llapack -lblas -lm -lpthread -rdynamic "
+        }
+    }
 };
 
 /// `@OMC_HDF5_LDFLAGS@`: the HDF5 a link line naming ModelicaMatIO needs, empty
@@ -260,21 +269,20 @@ pub const parModelicaAutoLibs: &str = " -lParModelicaAuto -ltbb ";
 /// requested at configure time; mirror the default.
 pub const hwloc: &str = "";
 
-pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> =
-    std::sync::LazyLock::new(|| {
-        if isWindows {
-            // Autoconf.mo.omdev.mingw: constant list<String> systemLibs = {};
-            metamodelica::nil()
-        } else {
-            list![
-                literal!("-lomcruntime"),
-                literal!("-lexpat"),
-                literal!("-lsqlite3"),
-                literal!("-lomcgc"),
-                arcstr::literal!(hwloc)
-            ]
-        }
-    });
+pub static systemLibs: std::sync::LazyLock<metamodelica::List<ArcStr>> = std::sync::LazyLock::new(|| {
+    if isWindows {
+        // Autoconf.mo.omdev.mingw: constant list<String> systemLibs = {};
+        metamodelica::nil()
+    } else {
+        list![
+            literal!("-lomcruntime"),
+            literal!("-lexpat"),
+            literal!("-lsqlite3"),
+            literal!("-lomcgc"),
+            arcstr::literal!(hwloc)
+        ]
+    }
+});
 
 /// `$host_cpu` for the compilation target. Extend the chain when porting to
 /// a new architecture — an explicit "unknown" keeps path construction

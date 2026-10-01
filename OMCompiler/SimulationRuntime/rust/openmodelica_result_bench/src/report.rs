@@ -79,7 +79,10 @@ impl Report {
     }
 
     fn short(&self, model: &str) -> String {
-        self.datasets.iter().find(|d| d.name == model).map_or_else(|| model.to_owned(), |d| d.short.clone())
+        self.datasets
+            .iter()
+            .find(|d| d.name == model)
+            .map_or_else(|| model.to_owned(), |d| d.short.clone())
     }
 
     pub fn add_dataset(&mut self, d: &Dataset) {
@@ -154,7 +157,14 @@ impl Report {
             out.push_str(&format!(" {} |", s.block_rows));
         }
         if self.varies.chunk_cols {
-            out.push_str(&format!(" {} |", if s.chunk_cols == 0 { "all".to_owned() } else { s.chunk_cols.to_string() }));
+            out.push_str(&format!(
+                " {} |",
+                if s.chunk_cols == 0 {
+                    "all".to_owned()
+                } else {
+                    s.chunk_cols.to_string()
+                }
+            ));
         }
         out
     }
@@ -197,7 +207,13 @@ impl Report {
         for d in &self.datasets {
             s.push_str(&format!(
                 "| {} | {} | {} | {} | {} | {} | {:.1} MB |\n",
-                d.short, d.n_vars, d.n_cols, d.n_aliases, d.n_params, d.n_rows, d.payload_bytes as f64 / 1e6
+                d.short,
+                d.n_vars,
+                d.n_cols,
+                d.n_aliases,
+                d.n_params,
+                d.n_rows,
+                d.payload_bytes as f64 / 1e6
             ));
         }
         s.push_str("\nThe tables below name each model by the tail of its path:\n\n");
@@ -269,7 +285,9 @@ impl Report {
         if self.varies.writer {
             s.push_str(" stall ms |");
         }
-        s.push_str(" close ms | fsync ms | total ms | sys ms | ns/value | MB/s | file | vs payload | step % | spread |\n");
+        s.push_str(
+            " close ms | fsync ms | total ms | sys ms | ns/value | MB/s | file | vs payload | step % | spread |\n",
+        );
         s.push_str(&format!("|-------|--------|{rule}"));
         if self.varies.writer {
             s.push_str("--------|");
@@ -278,7 +296,9 @@ impl Report {
         if self.varies.writer {
             s.push_str("---------:|");
         }
-        s.push_str("---------:|---------:|---------:|-------:|---------:|-----:|-----:|-----------:|-------:|-------:|\n");
+        s.push_str(
+            "---------:|---------:|---------:|-------:|---------:|-----:|-----:|-----------:|-------:|-------:|\n",
+        );
         for r in &self.writes {
             let open = Stats::of(&r.begin);
             let emit = Stats::of(&r.emit);
@@ -290,12 +310,26 @@ impl Report {
             let total = open.median + emit.median + close.median + fsync.median;
             let values = (r.payload_bytes / 8).max(1) as f64;
             // Without a delay there is no step to be a fraction of.
-            let step_pct = if r.delay_ns > 0 { total / base.median * 100.0 } else { f64::NAN };
-            s.push_str(&format!("| {} | {} |{}", self.short(&r.model), r.format.name(), self.setting_cells(r.setting)));
+            let step_pct = if r.delay_ns > 0 {
+                total / base.median * 100.0
+            } else {
+                f64::NAN
+            };
+            s.push_str(&format!(
+                "| {} | {} |{}",
+                self.short(&r.model),
+                r.format.name(),
+                self.setting_cells(r.setting)
+            ));
             if self.varies.writer {
                 s.push_str(&format!(" {} |", r.mode.name()));
             }
-            s.push_str(&format!(" {} | {:.1} | {:.2} |", duration(r.delay_ns), open.median, emit.median));
+            s.push_str(&format!(
+                " {} | {:.1} | {:.2} |",
+                duration(r.delay_ns),
+                open.median,
+                emit.median
+            ));
             if self.varies.writer {
                 s.push_str(&format!(" {:.2} |", stall.median));
             }
@@ -309,7 +343,11 @@ impl Report {
                 throughput(r.payload_bytes, open.median + emit.median + close.median),
                 r.file_bytes as f64 / 1e6,
                 r.file_bytes as f64 / r.payload_bytes.max(1) as f64,
-                if step_pct.is_nan() { "-".to_owned() } else { format!("{step_pct:.1}") },
+                if step_pct.is_nan() {
+                    "-".to_owned()
+                } else {
+                    format!("{step_pct:.1}")
+                },
                 emit.spread_pct(),
             ));
         }
@@ -324,8 +362,12 @@ impl Report {
              with what the writer was given. A non-zero `mismatches` invalidates the timings \
              above it.\n\n",
         );
-        s.push_str(&format!("| model | format |{head} trajectories | parameters | mismatches | max relative error |\n"));
-        s.push_str(&format!("|-------|--------|{rule}-------------:|-----------:|-----------:|-------------------:|\n"));
+        s.push_str(&format!(
+            "| model | format |{head} trajectories | parameters | mismatches | max relative error |\n"
+        ));
+        s.push_str(&format!(
+            "|-------|--------|{rule}-------------:|-----------:|-----------:|-------------------:|\n"
+        ));
         for (model, c) in &self.checks {
             s.push_str(&format!(
                 "| {} | {} |{} {} | {} | {} | {:.1e}{} |\n",
@@ -336,7 +378,11 @@ impl Report {
                 c.parameters,
                 c.mismatches,
                 c.max_rel_error,
-                if c.note.is_empty() { String::new() } else { format!(" ({})", c.note) }
+                if c.note.is_empty() {
+                    String::new()
+                } else {
+                    format!(" ({})", c.note)
+                }
             ));
         }
         s
@@ -432,8 +478,14 @@ impl Report {
     pub fn json(&self) -> String {
         let mut s = String::from("{\n");
         s.push_str(&format!("  \"spin_iters_per_us\": {:.3},\n", self.spin_iters_per_us));
-        s.push_str(&format!("  \"filesystem\": {},\n", quote(&crate::bench::filesystem(&self.out))));
-        s.push_str(&format!("  \"hdf5\": {},\n", quote(&openmodelica_hdf5_result::h5::version())));
+        s.push_str(&format!(
+            "  \"filesystem\": {},\n",
+            quote(&crate::bench::filesystem(&self.out))
+        ));
+        s.push_str(&format!(
+            "  \"hdf5\": {},\n",
+            quote(&openmodelica_hdf5_result::h5::version())
+        ));
         s.push_str(&format!("  \"hdf5_concurrency\": {},\n", quote(hdf5_concurrency())));
         s.push_str(&format!("  \"arrow\": {},\n", quote(ARROW_VERSION)));
         s.push_str(&format!("  \"reps\": {},\n", self.reps));
@@ -451,7 +503,11 @@ impl Report {
         for (i, (model, t)) in self.structures.iter().enumerate() {
             s.push_str(&format!(
                 "    {{\"model\": {}, \"format\": {}, {}, \"objects\": {}, \"blocks\": {}}}{}\n",
-                quote(&self.short(model)), quote(t.format.name()), setting_json(t.setting), t.objects, t.blocks,
+                quote(&self.short(model)),
+                quote(t.format.name()),
+                setting_json(t.setting),
+                t.objects,
+                t.blocks,
                 comma(i, self.structures.len())
             ));
         }

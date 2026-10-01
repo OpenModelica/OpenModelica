@@ -17,97 +17,414 @@ use openmodelica_lapack as om;
 
 #[link(name = "lapack")]
 unsafe extern "C" {
-    fn dgesv_(n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
-              b: *mut f64, ldb: *const i32, info: *mut i32);
+    fn dgesv_(
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        ipiv: *mut i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
+    );
     #[allow(clippy::too_many_arguments)]
-    fn dsyevx_(jobz: *const c_char, range: *const c_char, uplo: *const c_char, n: *const i32,
-               a: *mut f64, lda: *const i32, vl: *const f64, vu: *const f64, il: *const i32,
-               iu: *const i32, abstol: *const f64, m: *mut i32, w: *mut f64, z: *mut f64,
-               ldz: *const i32, work: *mut f64, lwork: *const i32, iwork: *mut i32,
-               ifail: *mut i32, info: *mut i32);
+    fn dsyevx_(
+        jobz: *const c_char,
+        range: *const c_char,
+        uplo: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        vl: *const f64,
+        vu: *const f64,
+        il: *const i32,
+        iu: *const i32,
+        abstol: *const f64,
+        m: *mut i32,
+        w: *mut f64,
+        z: *mut f64,
+        ldz: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        iwork: *mut i32,
+        ifail: *mut i32,
+        info: *mut i32,
+    );
     #[allow(clippy::too_many_arguments)]
-    fn dsygvx_(itype: *const i32, jobz: *const c_char, range: *const c_char, uplo: *const c_char,
-               n: *const i32, a: *mut f64, lda: *const i32, b: *mut f64, ldb: *const i32,
-               vl: *const f64, vu: *const f64, il: *const i32, iu: *const i32,
-               abstol: *const f64, m: *mut i32, w: *mut f64, z: *mut f64, ldz: *const i32,
-               work: *mut f64, lwork: *const i32, iwork: *mut i32, ifail: *mut i32,
-               info: *mut i32);
+    fn dsygvx_(
+        itype: *const i32,
+        jobz: *const c_char,
+        range: *const c_char,
+        uplo: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        vl: *const f64,
+        vu: *const f64,
+        il: *const i32,
+        iu: *const i32,
+        abstol: *const f64,
+        m: *mut i32,
+        w: *mut f64,
+        z: *mut f64,
+        ldz: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        iwork: *mut i32,
+        ifail: *mut i32,
+        info: *mut i32,
+    );
     fn dlarnv_(idist: *const i32, iseed: *mut i32, n: *const i32, x: *mut f64);
-    fn dgetrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
-               info: *mut i32);
-    fn dgetrs_(trans: *const c_char, n: *const i32, nrhs: *const i32, a: *const f64,
-               lda: *const i32, ipiv: *const i32, b: *mut f64, ldb: *const i32, info: *mut i32);
-    fn dgetri_(n: *const i32, a: *mut f64, lda: *const i32, ipiv: *const i32, work: *mut f64,
-               lwork: *const i32, info: *mut i32);
-    fn dgecon_(norm: *const c_char, n: *const i32, a: *const f64, lda: *const i32,
-               anorm: *const f64, rcond: *mut f64, work: *mut f64, iwork: *mut i32,
-               info: *mut i32);
-    fn dlange_(norm: *const c_char, m: *const i32, n: *const i32, a: *const f64, lda: *const i32,
-               work: *mut f64) -> f64;
+    fn dgetrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32, info: *mut i32);
+    fn dgetrs_(
+        trans: *const c_char,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *const f64,
+        lda: *const i32,
+        ipiv: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
+    );
+    fn dgetri_(
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        ipiv: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgecon_(
+        norm: *const c_char,
+        n: *const i32,
+        a: *const f64,
+        lda: *const i32,
+        anorm: *const f64,
+        rcond: *mut f64,
+        work: *mut f64,
+        iwork: *mut i32,
+        info: *mut i32,
+    );
+    fn dlange_(
+        norm: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        a: *const f64,
+        lda: *const i32,
+        work: *mut f64,
+    ) -> f64;
     fn dpotrf_(uplo: *const c_char, n: *const i32, a: *mut f64, lda: *const i32, info: *mut i32);
-    fn dpotrs_(uplo: *const c_char, n: *const i32, nrhs: *const i32, a: *const f64,
-               lda: *const i32, b: *mut f64, ldb: *const i32, info: *mut i32);
-    fn dgeqrf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, tau: *mut f64,
-               work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dgeqp3_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, jpvt: *mut i32,
-               tau: *mut f64, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dorgqr_(m: *const i32, n: *const i32, k: *const i32, a: *mut f64, lda: *const i32,
-               tau: *const f64, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dormqr_(side: *const c_char, trans: *const c_char, m: *const i32, n: *const i32,
-               k: *const i32, a: *const f64, lda: *const i32, tau: *const f64, c: *mut f64,
-               ldc: *const i32, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dgels_(trans: *const c_char, m: *const i32, n: *const i32, nrhs: *const i32, a: *mut f64,
-              lda: *const i32, b: *mut f64, ldb: *const i32, work: *mut f64, lwork: *const i32,
-              info: *mut i32);
-    fn dgelsy_(m: *const i32, n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32,
-               b: *mut f64, ldb: *const i32, jpvt: *mut i32, rcond: *const f64, rank: *mut i32,
-               work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dgglse_(m: *const i32, n: *const i32, p: *const i32, a: *mut f64, lda: *const i32,
-               b: *mut f64, ldb: *const i32, c: *mut f64, d: *mut f64, x: *mut f64,
-               work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dgesvd_(jobu: *const c_char, jobvt: *const c_char, m: *const i32, n: *const i32,
-               a: *mut f64, lda: *const i32, s: *mut f64, u: *mut f64, ldu: *const i32,
-               vt: *mut f64, ldvt: *const i32, work: *mut f64, lwork: *const i32,
-               info: *mut i32);
-    fn dgeev_(jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64,
-              lda: *const i32, wr: *mut f64, wi: *mut f64, vl: *mut f64, ldvl: *const i32,
-              vr: *mut f64, ldvr: *const i32, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dgehrd_(n: *const i32, ilo: *const i32, ihi: *const i32, a: *mut f64, lda: *const i32,
-               tau: *mut f64, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dorghr_(n: *const i32, ilo: *const i32, ihi: *const i32, a: *mut f64, lda: *const i32,
-               tau: *const f64, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dhseqr_(job: *const c_char, compz: *const c_char, n: *const i32, ilo: *const i32,
-               ihi: *const i32, h: *mut f64, ldh: *const i32, wr: *mut f64, wi: *mut f64,
-               z: *mut f64, ldz: *const i32, work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dtrsyl_(trana: *const c_char, tranb: *const c_char, isgn: *const i32, m: *const i32,
-               n: *const i32, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
-               c: *mut f64, ldc: *const i32, scale: *mut f64, info: *mut i32);
-    fn dgtsv_(n: *const i32, nrhs: *const i32, dl: *mut f64, d: *mut f64, du: *mut f64,
-              b: *mut f64, ldb: *const i32, info: *mut i32);
-    fn dgbsv_(n: *const i32, kl: *const i32, ku: *const i32, nrhs: *const i32, ab: *mut f64,
-              ldab: *const i32, ipiv: *mut i32, b: *mut f64, ldb: *const i32, info: *mut i32);
-    fn dggev_(jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64,
-              lda: *const i32, b: *mut f64, ldb: *const i32, alphar: *mut f64,
-              alphai: *mut f64, beta: *mut f64, vl: *mut f64, ldvl: *const i32,
-              vr: *mut f64, ldvr: *const i32, work: *mut f64, lwork: *const i32,
-              info: *mut i32);
-    fn dhgeqz_(job: *const c_char, compq: *const c_char, compz: *const c_char, n: *const i32,
-               ilo: *const i32, ihi: *const i32, h: *mut f64, ldh: *const i32, t: *mut f64,
-               ldt: *const i32, alphar: *mut f64, alphai: *mut f64, beta: *mut f64,
-               q: *mut f64, ldq: *const i32, z: *mut f64, ldz: *const i32, work: *mut f64,
-               lwork: *const i32, info: *mut i32);
-    fn dtrevc_(side: *const c_char, howmny: *const c_char, select: *mut i32, n: *const i32,
-               t: *const f64, ldt: *const i32, vl: *mut f64, ldvl: *const i32, vr: *mut f64,
-               ldvr: *const i32, mm: *const i32, m: *mut i32, work: *mut f64, info: *mut i32);
-    fn dgegv_(jobvl: *const c_char, jobvr: *const c_char, n: *const i32, a: *mut f64,
-              lda: *const i32, b: *mut f64, ldb: *const i32, alphar: *mut f64, alphai: *mut f64,
-              beta: *mut f64, vl: *mut f64, ldvl: *const i32, vr: *mut f64, ldvr: *const i32,
-              work: *mut f64, lwork: *const i32, info: *mut i32);
-    fn dgelsx_(m: *const i32, n: *const i32, nrhs: *const i32, a: *mut f64, lda: *const i32,
-               b: *mut f64, ldb: *const i32, jpvt: *mut i32, rcond: *const f64, rank: *mut i32,
-               work: *mut f64, info: *mut i32);
-    fn dgeqpf_(m: *const i32, n: *const i32, a: *mut f64, lda: *const i32, jpvt: *mut i32,
-               tau: *mut f64, work: *mut f64, info: *mut i32);
+    fn dpotrs_(
+        uplo: *const c_char,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *const f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
+    );
+    fn dgeqrf_(
+        m: *const i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        tau: *mut f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgeqp3_(
+        m: *const i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        jpvt: *mut i32,
+        tau: *mut f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dorgqr_(
+        m: *const i32,
+        n: *const i32,
+        k: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        tau: *const f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dormqr_(
+        side: *const c_char,
+        trans: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        k: *const i32,
+        a: *const f64,
+        lda: *const i32,
+        tau: *const f64,
+        c: *mut f64,
+        ldc: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgels_(
+        trans: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgelsy_(
+        m: *const i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        jpvt: *mut i32,
+        rcond: *const f64,
+        rank: *mut i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgglse_(
+        m: *const i32,
+        n: *const i32,
+        p: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        c: *mut f64,
+        d: *mut f64,
+        x: *mut f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgesvd_(
+        jobu: *const c_char,
+        jobvt: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        s: *mut f64,
+        u: *mut f64,
+        ldu: *const i32,
+        vt: *mut f64,
+        ldvt: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgeev_(
+        jobvl: *const c_char,
+        jobvr: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        wr: *mut f64,
+        wi: *mut f64,
+        vl: *mut f64,
+        ldvl: *const i32,
+        vr: *mut f64,
+        ldvr: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgehrd_(
+        n: *const i32,
+        ilo: *const i32,
+        ihi: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        tau: *mut f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dorghr_(
+        n: *const i32,
+        ilo: *const i32,
+        ihi: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        tau: *const f64,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dhseqr_(
+        job: *const c_char,
+        compz: *const c_char,
+        n: *const i32,
+        ilo: *const i32,
+        ihi: *const i32,
+        h: *mut f64,
+        ldh: *const i32,
+        wr: *mut f64,
+        wi: *mut f64,
+        z: *mut f64,
+        ldz: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dtrsyl_(
+        trana: *const c_char,
+        tranb: *const c_char,
+        isgn: *const i32,
+        m: *const i32,
+        n: *const i32,
+        a: *const f64,
+        lda: *const i32,
+        b: *const f64,
+        ldb: *const i32,
+        c: *mut f64,
+        ldc: *const i32,
+        scale: *mut f64,
+        info: *mut i32,
+    );
+    fn dgtsv_(
+        n: *const i32,
+        nrhs: *const i32,
+        dl: *mut f64,
+        d: *mut f64,
+        du: *mut f64,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
+    );
+    fn dgbsv_(
+        n: *const i32,
+        kl: *const i32,
+        ku: *const i32,
+        nrhs: *const i32,
+        ab: *mut f64,
+        ldab: *const i32,
+        ipiv: *mut i32,
+        b: *mut f64,
+        ldb: *const i32,
+        info: *mut i32,
+    );
+    fn dggev_(
+        jobvl: *const c_char,
+        jobvr: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        alphar: *mut f64,
+        alphai: *mut f64,
+        beta: *mut f64,
+        vl: *mut f64,
+        ldvl: *const i32,
+        vr: *mut f64,
+        ldvr: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dhgeqz_(
+        job: *const c_char,
+        compq: *const c_char,
+        compz: *const c_char,
+        n: *const i32,
+        ilo: *const i32,
+        ihi: *const i32,
+        h: *mut f64,
+        ldh: *const i32,
+        t: *mut f64,
+        ldt: *const i32,
+        alphar: *mut f64,
+        alphai: *mut f64,
+        beta: *mut f64,
+        q: *mut f64,
+        ldq: *const i32,
+        z: *mut f64,
+        ldz: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dtrevc_(
+        side: *const c_char,
+        howmny: *const c_char,
+        select: *mut i32,
+        n: *const i32,
+        t: *const f64,
+        ldt: *const i32,
+        vl: *mut f64,
+        ldvl: *const i32,
+        vr: *mut f64,
+        ldvr: *const i32,
+        mm: *const i32,
+        m: *mut i32,
+        work: *mut f64,
+        info: *mut i32,
+    );
+    fn dgegv_(
+        jobvl: *const c_char,
+        jobvr: *const c_char,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        alphar: *mut f64,
+        alphai: *mut f64,
+        beta: *mut f64,
+        vl: *mut f64,
+        ldvl: *const i32,
+        vr: *mut f64,
+        ldvr: *const i32,
+        work: *mut f64,
+        lwork: *const i32,
+        info: *mut i32,
+    );
+    fn dgelsx_(
+        m: *const i32,
+        n: *const i32,
+        nrhs: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+        jpvt: *mut i32,
+        rcond: *const f64,
+        rank: *mut i32,
+        work: *mut f64,
+        info: *mut i32,
+    );
+    fn dgeqpf_(
+        m: *const i32,
+        n: *const i32,
+        a: *mut f64,
+        lda: *const i32,
+        jpvt: *mut i32,
+        tau: *mut f64,
+        work: *mut f64,
+        info: *mut i32,
+    );
 }
 
 // ───────────────────────────── harness ─────────────────────────────
@@ -118,9 +435,19 @@ unsafe extern "C" {
 // DTRSM is BLAS, not LAPACK.
 #[link(name = "blas")]
 unsafe extern "C" {
-    fn dtrsm_(side: *const c_char, uplo: *const c_char, transa: *const c_char,
-              diag: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
-              a: *const f64, lda: *const i32, b: *mut f64, ldb: *const i32);
+    fn dtrsm_(
+        side: *const c_char,
+        uplo: *const c_char,
+        transa: *const c_char,
+        diag: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        alpha: *const f64,
+        a: *const f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+    );
 }
 
 fn rand_mat(m: usize, n: usize, seed: u64) -> Vec<f64> {
@@ -219,8 +546,16 @@ fn dgesv_matches() {
         let mut winfo = 0;
         let info = om::dgesv(n, 2, &mut a, n, &mut ipiv, &mut b, n);
         unsafe {
-            dgesv_(&i(n), &i(2), want_a.as_mut_ptr(), &i(n), wipiv.as_mut_ptr(), want_b.as_mut_ptr(),
-                   &i(n), &mut winfo)
+            dgesv_(
+                &i(n),
+                &i(2),
+                want_a.as_mut_ptr(),
+                &i(n),
+                wipiv.as_mut_ptr(),
+                want_b.as_mut_ptr(),
+                &i(n),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "dgesv {n}: INFO");
         same_i(&ipiv, &wipiv, &format!("dgesv {n}: IPIV"));
@@ -232,7 +567,10 @@ fn dgesv_matches() {
 /// Equal, a NaN matching a NaN.
 fn same_bits(got: &[f64], want: &[f64], what: &str) {
     let eq = got.iter().zip(want).all(|(g, w)| g == w || (g.is_nan() && w.is_nan()));
-    assert!(eq && got.len() == want.len(), "{what}\n  got    {got:?}\n  LAPACK {want:?}");
+    assert!(
+        eq && got.len() == want.len(),
+        "{what}\n  got    {got:?}\n  LAPACK {want:?}"
+    );
 }
 
 /// Below `FAER_LU_MIN` the LU pair is reference LAPACK's arithmetic exactly: a torn
@@ -274,8 +612,16 @@ fn small_dgesv_is_bitwise_reference() {
             let mut winfo = 0;
             let info = om::dgesv(n, 2, &mut a, n, &mut ipiv, &mut b, n);
             unsafe {
-                dgesv_(&i(n), &i(2), want_a.as_mut_ptr(), &i(n), wipiv.as_mut_ptr(), want_b.as_mut_ptr(),
-                       &i(n), &mut winfo)
+                dgesv_(
+                    &i(n),
+                    &i(2),
+                    want_a.as_mut_ptr(),
+                    &i(n),
+                    wipiv.as_mut_ptr(),
+                    want_b.as_mut_ptr(),
+                    &i(n),
+                    &mut winfo,
+                )
             };
             assert_eq!(info, winfo, "dgesv {n}/{k}: INFO");
             same_i(&ipiv, &wipiv, &format!("dgesv {n}/{k}: IPIV"));
@@ -301,8 +647,17 @@ fn dgetrs_matches() {
             let mut winfo = 0;
             let info = om::dgetrs(t, n, 3, &lu, n, &ipiv, &mut b, n);
             unsafe {
-                dgetrs_(&c(t), &i(n), &i(3), lu.as_ptr(), &i(n), ipiv.as_ptr(), want.as_mut_ptr(),
-                        &i(n), &mut winfo)
+                dgetrs_(
+                    &c(t),
+                    &i(n),
+                    &i(3),
+                    lu.as_ptr(),
+                    &i(n),
+                    ipiv.as_ptr(),
+                    want.as_mut_ptr(),
+                    &i(n),
+                    &mut winfo,
+                )
             };
             assert_eq!(info, winfo, "dgetrs {n} {t}: INFO");
             same(&b, &want, &format!("dgetrs {n} {t}: X"));
@@ -320,8 +675,15 @@ fn dgetri_matches() {
     let (mut work, mut winfo) = (vec![0.0f64; n * 64], 0);
     let info = om::dgetri(n, &mut inv, n, &ipiv);
     unsafe {
-        dgetri_(&i(n), want.as_mut_ptr(), &i(n), ipiv.as_ptr(), work.as_mut_ptr(),
-                &i(n * 64), &mut winfo)
+        dgetri_(
+            &i(n),
+            want.as_mut_ptr(),
+            &i(n),
+            ipiv.as_ptr(),
+            work.as_mut_ptr(),
+            &i(n * 64),
+            &mut winfo,
+        )
     };
     assert_eq!(info, winfo, "dgetri: INFO");
     same(&inv, &want, "dgetri: A^-1");
@@ -334,8 +696,7 @@ fn dlange_matches() {
     let mut work = vec![0.0f64; m];
     for norm in ["1", "I", "F", "M"] {
         let got = om::dlange(norm, m, n, &a, m);
-        let want =
-            unsafe { dlange_(&c(norm), &i(m), &i(n), a.as_ptr(), &i(m), work.as_mut_ptr()) };
+        let want = unsafe { dlange_(&c(norm), &i(m), &i(n), a.as_ptr(), &i(m), work.as_mut_ptr()) };
         same(&[got], &[want], &format!("dlange '{norm}'"));
     }
 }
@@ -347,15 +708,23 @@ fn dgecon_matches() {
     let mut work = vec![0.0f64; 4 * n];
     let mut iwork = vec![0i32; n];
     for norm in ["1", "I"] {
-        let anorm =
-            unsafe { dlange_(&c(norm), &i(n), &i(n), a0.as_ptr(), &i(n), work.as_mut_ptr()) };
+        let anorm = unsafe { dlange_(&c(norm), &i(n), &i(n), a0.as_ptr(), &i(n), work.as_mut_ptr()) };
         let (mut lu, mut ipiv) = (a0.clone(), vec![0i32; n]);
         om::dgetrf(n, n, &mut lu, n, &mut ipiv);
         let (got, info) = om::dgecon(norm, n, &lu, n, anorm);
         let (mut want, mut winfo) = (0.0f64, 0);
         unsafe {
-            dgecon_(&c(norm), &i(n), lu.as_ptr(), &i(n), &anorm, &mut want, work.as_mut_ptr(),
-                    iwork.as_mut_ptr(), &mut winfo)
+            dgecon_(
+                &c(norm),
+                &i(n),
+                lu.as_ptr(),
+                &i(n),
+                &anorm,
+                &mut want,
+                work.as_mut_ptr(),
+                iwork.as_mut_ptr(),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "dgecon '{norm}': INFO");
         // The condition estimator is a heuristic (DLACN2's random restarts), so
@@ -392,8 +761,16 @@ fn dpotrf_dpotrs_match() {
         let (mut b, mut wb) = (b0.clone(), b0.clone());
         let info = om::dpotrs(uplo, n, 2, &a, n, &mut b, n);
         unsafe {
-            dpotrs_(&c(uplo), &i(n), &i(2), want.as_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
-                    &mut winfo)
+            dpotrs_(
+                &c(uplo),
+                &i(n),
+                &i(2),
+                want.as_ptr(),
+                &i(n),
+                wb.as_mut_ptr(),
+                &i(n),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "dpotrs {uplo}: INFO");
         same(&b, &wb, &format!("dpotrs {uplo}: X"));
@@ -411,8 +788,16 @@ fn dgeqrf_matches() {
         let (mut work, mut winfo) = (vec![0.0f64; n * 64], 0);
         om::dgeqrf(m, n, &mut a, m, &mut tau);
         unsafe {
-            dgeqrf_(&i(m), &i(n), want.as_mut_ptr(), &i(m), wtau.as_mut_ptr(),
-                    work.as_mut_ptr(), &i(n * 64), &mut winfo)
+            dgeqrf_(
+                &i(m),
+                &i(n),
+                want.as_mut_ptr(),
+                &i(m),
+                wtau.as_mut_ptr(),
+                work.as_mut_ptr(),
+                &i(n * 64),
+                &mut winfo,
+            )
         };
         same(&tau, &wtau, &format!("dgeqrf {m}x{n}: TAU"));
         same(&a, &want, &format!("dgeqrf {m}x{n}: packed R and reflectors"));
@@ -428,13 +813,30 @@ fn dorgqr_matches() {
     let (mut work, mut winfo) = (vec![0.0f64; n * 64], 0);
     om::dgeqrf(m, n, &mut a, m, &mut tau);
     unsafe {
-        dgeqrf_(&i(m), &i(n), want.as_mut_ptr(), &i(m), wtau.as_mut_ptr(), work.as_mut_ptr(),
-                &i(n * 64), &mut winfo)
+        dgeqrf_(
+            &i(m),
+            &i(n),
+            want.as_mut_ptr(),
+            &i(m),
+            wtau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(n * 64),
+            &mut winfo,
+        )
     };
     om::dorgqr(m, n, n, &mut a, m, &tau);
     unsafe {
-        dorgqr_(&i(m), &i(n), &i(n), want.as_mut_ptr(), &i(m), wtau.as_ptr(),
-                work.as_mut_ptr(), &i(n * 64), &mut winfo)
+        dorgqr_(
+            &i(m),
+            &i(n),
+            &i(n),
+            want.as_mut_ptr(),
+            &i(m),
+            wtau.as_ptr(),
+            work.as_mut_ptr(),
+            &i(n * 64),
+            &mut winfo,
+        )
     };
     same(&a, &want, "dorgqr: Q");
 }
@@ -449,15 +851,36 @@ fn dormqr_matches() {
     let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
     om::dgeqrf(m, n, &mut qr, m, &mut tau);
     unsafe {
-        dgeqrf_(&i(m), &i(n), wqr.as_mut_ptr(), &i(m), wtau.as_mut_ptr(), work.as_mut_ptr(),
-                &i(64 * n), &mut winfo)
+        dgeqrf_(
+            &i(m),
+            &i(n),
+            wqr.as_mut_ptr(),
+            &i(m),
+            wtau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     for trans in ["N", "T"] {
         let (mut cc, mut wc) = (c0.clone(), c0.clone());
         om::dormqr("L", trans, m, 3, n, &qr, m, &tau, &mut cc, m);
         unsafe {
-            dormqr_(&c("L"), &c(trans), &i(m), &i(3), &i(n), wqr.as_ptr(), &i(m), wtau.as_ptr(),
-                    wc.as_mut_ptr(), &i(m), work.as_mut_ptr(), &i(64 * n), &mut winfo)
+            dormqr_(
+                &c("L"),
+                &c(trans),
+                &i(m),
+                &i(3),
+                &i(n),
+                wqr.as_ptr(),
+                &i(m),
+                wtau.as_ptr(),
+                wc.as_mut_ptr(),
+                &i(m),
+                work.as_mut_ptr(),
+                &i(64 * n),
+                &mut winfo,
+            )
         };
         same(&cc, &wc, &format!("dormqr L/{trans}"));
     }
@@ -473,8 +896,17 @@ fn dgeqp3_permutation_matches() {
     let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
     om::dgeqp3(m, n, &mut a, m, &mut jpvt, &mut tau);
     unsafe {
-        dgeqp3_(&i(m), &i(n), want.as_mut_ptr(), &i(m), wjpvt.as_mut_ptr(), wtau.as_mut_ptr(),
-                work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        dgeqp3_(
+            &i(m),
+            &i(n),
+            want.as_mut_ptr(),
+            &i(m),
+            wjpvt.as_mut_ptr(),
+            wtau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     // The pivot order is what `Matrices.QR` returns to Modelica, so it must be
     // LAPACK's; `R` follows from it.
@@ -494,14 +926,29 @@ fn dgels_matches() {
         let (mut work, mut winfo) = (vec![0.0f64; 64 * ldb], 0);
         let info = om::dgels("N", m, n, 2, &mut a, m, &mut b, ldb);
         unsafe {
-            dgels_(&c("N"), &i(m), &i(n), &i(2), wa.as_mut_ptr(), &i(m), wb.as_mut_ptr(),
-                   &i(ldb), work.as_mut_ptr(), &i(64 * ldb), &mut winfo)
+            dgels_(
+                &c("N"),
+                &i(m),
+                &i(n),
+                &i(2),
+                wa.as_mut_ptr(),
+                &i(m),
+                wb.as_mut_ptr(),
+                &i(ldb),
+                work.as_mut_ptr(),
+                &i(64 * ldb),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "dgels {m}x{n}: INFO");
         // Only the solution is compared: this crate factors `A` differently (and
         // does not leave `A` factored), while `X` is unique for a full-rank `A`.
         for j in 0..2 {
-            same(&b[j * ldb..j * ldb + n], &wb[j * ldb..j * ldb + n], &format!("dgels {m}x{n}: X"));
+            same(
+                &b[j * ldb..j * ldb + n],
+                &wb[j * ldb..j * ldb + n],
+                &format!("dgels {m}x{n}: X"),
+            );
         }
     }
 }
@@ -514,14 +961,19 @@ fn dgelsy_matches() {
     let cases: &[(usize, usize, Vec<f64>, u64)] = &[
         (6, 3, rand_mat(6, 3, 131), 132),
         (3, 6, rand_mat(3, 6, 133), 134),
-        (6, 4, {
-            // Column 3 = column 0 + column 1: rank 3 of 4.
-            let mut a = rand_mat(6, 4, 135);
-            for r in 0..6 {
-                a[r + 3 * 6] = a[r] + a[r + 6];
-            }
-            a
-        }, 136),
+        (
+            6,
+            4,
+            {
+                // Column 3 = column 0 + column 1: rank 3 of 4.
+                let mut a = rand_mat(6, 4, 135);
+                for r in 0..6 {
+                    a[r + 3 * 6] = a[r] + a[r + 6];
+                }
+                a
+            },
+            136,
+        ),
         (2, 3, vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0], 137),
         (2, 3, vec![1.0, 4.0, 0.0, 0.0, 0.0, 0.0], 138),
     ];
@@ -537,14 +989,30 @@ fn dgelsy_matches() {
         let what = format!("dgelsy {m}x{n}");
         let (rank, info) = om::dgelsy(m, n, 2, &mut a, m, &mut b, ldb, &mut jpvt, rcond);
         unsafe {
-            dgelsy_(&i(m), &i(n), &i(2), wa.as_mut_ptr(), &i(m), wb.as_mut_ptr(), &i(ldb),
-                    wjpvt.as_mut_ptr(), &rcond, &mut wrank, work.as_mut_ptr(),
-                    &i(64 * ldb.max(m)), &mut winfo)
+            dgelsy_(
+                &i(m),
+                &i(n),
+                &i(2),
+                wa.as_mut_ptr(),
+                &i(m),
+                wb.as_mut_ptr(),
+                &i(ldb),
+                wjpvt.as_mut_ptr(),
+                &rcond,
+                &mut wrank,
+                work.as_mut_ptr(),
+                &i(64 * ldb.max(m)),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "{what}: INFO");
         assert_eq!(rank as i32, wrank, "{what}: RANK");
         for j in 0..2 {
-            same(&b[j * ldb..j * ldb + n], &wb[j * ldb..j * ldb + n], &format!("{what}: X"));
+            same(
+                &b[j * ldb..j * ldb + n],
+                &wb[j * ldb..j * ldb + n],
+                &format!("{what}: X"),
+            );
         }
         // Pivots only where they are determined: the deficient case below leaves
         // two columns with equal residual norms, and rounding breaks that tie.
@@ -568,9 +1036,21 @@ fn dgglse_matches() {
     let (mut work, mut winfo) = (vec![0.0f64; 64 * (m + n + p)], 0);
     let info = om::dgglse(m, n, p, &a0, m, &b0, p, &c0, &d0, &mut x);
     unsafe {
-        dgglse_(&i(m), &i(n), &i(p), wa.as_mut_ptr(), &i(m), wb.as_mut_ptr(), &i(p),
-                wc.as_mut_ptr(), wd.as_mut_ptr(), wx.as_mut_ptr(), work.as_mut_ptr(),
-                &i(64 * (m + n + p)), &mut winfo)
+        dgglse_(
+            &i(m),
+            &i(n),
+            &i(p),
+            wa.as_mut_ptr(),
+            &i(m),
+            wb.as_mut_ptr(),
+            &i(p),
+            wc.as_mut_ptr(),
+            wd.as_mut_ptr(),
+            wx.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * (m + n + p)),
+            &mut winfo,
+        )
     };
     assert_eq!(info, winfo, "dgglse: INFO");
     same(&x, &wx, "dgglse: X");
@@ -589,8 +1069,25 @@ fn dgglse_matches() {
 #[test]
 fn dgesvd_every_job_matches() {
     const SHAPES: &[(usize, usize)] = &[
-        (1, 1), (1, 3), (3, 1), (2, 2), (3, 2), (2, 3), (4, 4), (5, 3), (3, 5), (6, 6),
-        (8, 3), (3, 8), (9, 7), (7, 9), (12, 12), (20, 4), (4, 20), (37, 25), (25, 37),
+        (1, 1),
+        (1, 3),
+        (3, 1),
+        (2, 2),
+        (3, 2),
+        (2, 3),
+        (4, 4),
+        (5, 3),
+        (3, 5),
+        (6, 6),
+        (8, 3),
+        (3, 8),
+        (9, 7),
+        (7, 9),
+        (12, 12),
+        (20, 4),
+        (4, 20),
+        (37, 25),
+        (25, 37),
     ];
     const JOBS: &[&str] = &["A", "S", "O", "N"];
 
@@ -611,9 +1108,22 @@ fn dgesvd_every_job_matches() {
                     let (mut work, mut winfo) = (vec![0.0f64; lw], 0);
                     let info = om::dgesvd(ju, jvt, m, n, &mut a, m, &mut s, &mut u, m, &mut vt, n);
                     unsafe {
-                        dgesvd_(&c(ju), &c(jvt), &i(m), &i(n), wa.as_mut_ptr(), &i(m),
-                                ws.as_mut_ptr(), wu.as_mut_ptr(), &i(m), wvt.as_mut_ptr(),
-                                &i(n), work.as_mut_ptr(), &i(lw), &mut winfo)
+                        dgesvd_(
+                            &c(ju),
+                            &c(jvt),
+                            &i(m),
+                            &i(n),
+                            wa.as_mut_ptr(),
+                            &i(m),
+                            ws.as_mut_ptr(),
+                            wu.as_mut_ptr(),
+                            &i(m),
+                            wvt.as_mut_ptr(),
+                            &i(n),
+                            work.as_mut_ptr(),
+                            &i(lw),
+                            &mut winfo,
+                        )
                     };
                     let what = format!("dgesvd {ju}/{jvt} {m}x{n} kind {kind}");
                     assert_eq!(info, winfo, "{what}: INFO");
@@ -629,8 +1139,11 @@ fn dgesvd_every_job_matches() {
                     for r in 0..m {
                         for cl in 0..n {
                             let got: f64 = (0..k).map(|t| uu(t, r) * s[t] * vv(t, cl)).sum();
-                            assert!((got - a0[r + cl * m]).abs() <= TOL * scale,
-                                "{what}: (U*S*VT)[{r},{cl}] = {got}, A = {}", a0[r + cl * m]);
+                            assert!(
+                                (got - a0[r + cl * m]).abs() <= TOL * scale,
+                                "{what}: (U*S*VT)[{r},{cl}] = {got}, A = {}",
+                                a0[r + cl * m]
+                            );
                         }
                     }
                     if ju == "A" {
@@ -650,29 +1163,39 @@ fn dgesvd_every_job_matches() {
 fn svd_input(m: usize, n: usize, seed: u64, kind: u32) -> Vec<f64> {
     let mut a = rand_mat(m, n, seed);
     match kind {
-        1 => for j in (1..n).step_by(2) {
-            // Repeated singular values.
-            for k in 0..m {
-                a[k + j * m] = a[k + (j - 1) * m];
+        1 => {
+            for j in (1..n).step_by(2) {
+                // Repeated singular values.
+                for k in 0..m {
+                    a[k + j * m] = a[k + (j - 1) * m];
+                }
             }
-        },
-        2 => for v in a.iter_mut() {
-            *v *= 1e-300; // below DGESVD's scaling threshold
-        },
-        3 => for v in a.iter_mut() {
-            *v *= 1e300; // above it
-        },
-        4 => for (k, v) in a.iter_mut().enumerate() {
-            if k % 3 != 0 {
-                *v = 0.0;
+        }
+        2 => {
+            for v in a.iter_mut() {
+                *v *= 1e-300; // below DGESVD's scaling threshold
             }
-        },
+        }
+        3 => {
+            for v in a.iter_mut() {
+                *v *= 1e300; // above it
+            }
+        }
+        4 => {
+            for (k, v) in a.iter_mut().enumerate() {
+                if k % 3 != 0 {
+                    *v = 0.0;
+                }
+            }
+        }
         5 => a.fill(0.0),
-        6 => for j in 0..n {
-            for k in 0..m {
-                a[k + j * m] *= 10f64.powf((j as f64 / n as f64) * 200.0 - 100.0);
+        6 => {
+            for j in 0..n {
+                for k in 0..m {
+                    a[k + j * m] *= 10f64.powf((j as f64 / n as f64) * 200.0 - 100.0);
+                }
             }
-        },
+        }
         7 => {
             // A single entry, a few ulp from zero: the case
             // ModelicaTest.Math.TestMatrices2 hit.
@@ -717,7 +1240,9 @@ fn in_order(wr: &[f64], wi: &[f64]) -> Vec<f64> {
 /// reference loops nor reproducible across thread counts. So a pair is compared
 /// by its row moduli `sqrt(re^2 + im^2)`, which that rotation leaves alone.
 fn same_eigenvectors(got: &[f64], want: &[f64], n: usize, wi: &[f64], what: &str) {
-    fn col(v: &[f64], j: usize, n: usize) -> &[f64] { &v[j * n..j * n + n] }
+    fn col(v: &[f64], j: usize, n: usize) -> &[f64] {
+        &v[j * n..j * n + n]
+    }
     let mut j = 0;
     while j < n {
         if wi[j] == 0.0 {
@@ -726,7 +1251,9 @@ fn same_eigenvectors(got: &[f64], want: &[f64], n: usize, wi: &[f64], what: &str
         } else {
             // sqrt(re^2 + im^2) per row: invariant under the pair's rotation.
             let mag = |v: &[f64]| -> Vec<f64> {
-                (0..n).map(|i| (v[j * n + i].powi(2) + v[(j + 1) * n + i].powi(2)).sqrt()).collect()
+                (0..n)
+                    .map(|i| (v[j * n + i].powi(2) + v[(j + 1) * n + i].powi(2)).sqrt())
+                    .collect()
             };
             same(&mag(got), &mag(want), &format!("{what} pair at {j}"));
             j += 2;
@@ -737,7 +1264,15 @@ fn same_eigenvectors(got: &[f64], want: &[f64], n: usize, wi: &[f64], what: &str
 #[test]
 fn dgeev_eigenvalues_match() {
     // Sizes past a single 2x2 block, so a complex pair's placement is exercised.
-    for (n, seed) in [(2usize, 160u64), (3, 161), (4, 162), (5, 163), (8, 164), (12, 165), (20, 166)] {
+    for (n, seed) in [
+        (2usize, 160u64),
+        (3, 161),
+        (4, 162),
+        (5, 163),
+        (8, 164),
+        (12, 165),
+        (20, 166),
+    ] {
         let a0 = rand_mat(n, n, seed);
         let (mut wr, mut wi) = (vec![0.0f64; n], vec![0.0f64; n]);
         let (mut lwr, mut lwi) = (vec![0.0f64; n], vec![0.0f64; n]);
@@ -747,9 +1282,22 @@ fn dgeev_eigenvalues_match() {
         let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
         let info = om::dgeev("V", "V", n, &a0, n, &mut wr, &mut wi, &mut vl, n, &mut vr, n);
         unsafe {
-            dgeev_(&c("V"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), lwr.as_mut_ptr(),
-                   lwi.as_mut_ptr(), lvl.as_mut_ptr(), &i(n), lvr.as_mut_ptr(), &i(n),
-                   work.as_mut_ptr(), &i(64 * n), &mut winfo)
+            dgeev_(
+                &c("V"),
+                &c("V"),
+                &i(n),
+                wa.as_mut_ptr(),
+                &i(n),
+                lwr.as_mut_ptr(),
+                lwi.as_mut_ptr(),
+                lvl.as_mut_ptr(),
+                &i(n),
+                lvr.as_mut_ptr(),
+                &i(n),
+                work.as_mut_ptr(),
+                &i(64 * n),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "dgeev {n}x{n} seed {seed}: INFO");
         same(&in_order(&wr, &wi), &in_order(&lwr, &lwi), "dgeev: eigenvalues");
@@ -776,9 +1324,22 @@ fn dhseqr_eigenvalues_match() {
     let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
     let info = om::dhseqr("E", "N", n, &mut hh, n, &mut wr, &mut wi, &mut z, n);
     unsafe {
-        dhseqr_(&c("E"), &c("N"), &i(n), &i(1), &i(n), wh.as_mut_ptr(), &i(n), lwr.as_mut_ptr(),
-                lwi.as_mut_ptr(), wz.as_mut_ptr(), &i(n), work.as_mut_ptr(), &i(64 * n),
-                &mut winfo)
+        dhseqr_(
+            &c("E"),
+            &c("N"),
+            &i(n),
+            &i(1),
+            &i(n),
+            wh.as_mut_ptr(),
+            &i(n),
+            lwr.as_mut_ptr(),
+            lwi.as_mut_ptr(),
+            wz.as_mut_ptr(),
+            &i(n),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     assert_eq!(info, winfo, "dhseqr: INFO");
     same(&in_order(&wr, &wi), &in_order(&lwr, &lwi), "dhseqr: eigenvalues");
@@ -793,15 +1354,33 @@ fn dgehrd_dorghr_match() {
     let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
     om::dgehrd(n, 1, n, &mut a, n, &mut tau);
     unsafe {
-        dgehrd_(&i(n), &i(1), &i(n), want.as_mut_ptr(), &i(n), wtau.as_mut_ptr(),
-                work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        dgehrd_(
+            &i(n),
+            &i(1),
+            &i(n),
+            want.as_mut_ptr(),
+            &i(n),
+            wtau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     same(&tau, &wtau, "dgehrd: TAU");
     same(&a, &want, "dgehrd: packed H and reflectors");
     om::dorghr(n, 1, n, &mut a, n, &tau);
     unsafe {
-        dorghr_(&i(n), &i(1), &i(n), want.as_mut_ptr(), &i(n), wtau.as_ptr(),
-                work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        dorghr_(
+            &i(n),
+            &i(1),
+            &i(n),
+            want.as_mut_ptr(),
+            &i(n),
+            wtau.as_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     same(&a, &want, "dorghr: Q");
 }
@@ -820,19 +1399,59 @@ fn dgees_eigenvalues_match() {
     // so DHSEQR on the Hessenberg reduction is the same factorization by a path
     // that needs no callback.
     unsafe {
-        dgehrd_(&i(n), &i(1), &i(n), wa.as_mut_ptr(), &i(n), vec![0.0f64; n - 1].as_mut_ptr(),
-                work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        dgehrd_(
+            &i(n),
+            &i(1),
+            &i(n),
+            wa.as_mut_ptr(),
+            &i(n),
+            vec![0.0f64; n - 1].as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     let mut wa2 = a0.clone();
     let mut wtau = vec![0.0f64; n - 1];
     unsafe {
-        dgehrd_(&i(n), &i(1), &i(n), wa2.as_mut_ptr(), &i(n), wtau.as_mut_ptr(),
-                work.as_mut_ptr(), &i(64 * n), &mut winfo);
-        dorghr_(&i(n), &i(1), &i(n), lvs.as_mut_ptr(), &i(n), wtau.as_ptr(), work.as_mut_ptr(),
-                &i(64 * n), &mut winfo);
-        dhseqr_(&c("S"), &c("V"), &i(n), &i(1), &i(n), wa2.as_mut_ptr(), &i(n),
-                lwr.as_mut_ptr(), lwi.as_mut_ptr(), lvs.as_mut_ptr(), &i(n), work.as_mut_ptr(),
-                &i(64 * n), &mut winfo)
+        dgehrd_(
+            &i(n),
+            &i(1),
+            &i(n),
+            wa2.as_mut_ptr(),
+            &i(n),
+            wtau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        );
+        dorghr_(
+            &i(n),
+            &i(1),
+            &i(n),
+            lvs.as_mut_ptr(),
+            &i(n),
+            wtau.as_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        );
+        dhseqr_(
+            &c("S"),
+            &c("V"),
+            &i(n),
+            &i(1),
+            &i(n),
+            wa2.as_mut_ptr(),
+            &i(n),
+            lwr.as_mut_ptr(),
+            lwi.as_mut_ptr(),
+            lvs.as_mut_ptr(),
+            &i(n),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     assert_eq!(info, 0, "dgees: INFO");
     same(&in_order(&wr, &wi), &in_order(&lwr, &lwi), "dgees: eigenvalues");
@@ -865,8 +1484,21 @@ fn dtrsyl_matches() {
             let (mut wscale, mut winfo) = (0.0f64, 0);
             let (scale, info) = om::dtrsyl(ta, tb, isgn, m, n, &a, m, &b, n, &mut cc, m);
             unsafe {
-                dtrsyl_(&c(ta), &c(tb), &isgn, &i(m), &i(n), a.as_ptr(), &i(m), b.as_ptr(),
-                        &i(n), wc.as_mut_ptr(), &i(m), &mut wscale, &mut winfo)
+                dtrsyl_(
+                    &c(ta),
+                    &c(tb),
+                    &isgn,
+                    &i(m),
+                    &i(n),
+                    a.as_ptr(),
+                    &i(m),
+                    b.as_ptr(),
+                    &i(n),
+                    wc.as_mut_ptr(),
+                    &i(m),
+                    &mut wscale,
+                    &mut winfo,
+                )
             };
             let what = format!("dtrsyl {ta}/{tb} isgn={isgn}");
             assert_eq!(info, winfo, "{what}: INFO");
@@ -885,11 +1517,33 @@ fn schur_form(n: usize, seed: u64) -> Vec<f64> {
     let mut z = vec![0.0f64; n * n];
     let (mut work, mut info) = (vec![0.0f64; 64 * n], 0);
     unsafe {
-        dgehrd_(&i(n), &i(1), &i(n), a.as_mut_ptr(), &i(n), tau.as_mut_ptr(), work.as_mut_ptr(),
-                &i(64 * n), &mut info);
-        dhseqr_(&c("S"), &c("N"), &i(n), &i(1), &i(n), a.as_mut_ptr(), &i(n), wr.as_mut_ptr(),
-                wi.as_mut_ptr(), z.as_mut_ptr(), &i(n), work.as_mut_ptr(), &i(64 * n),
-                &mut info);
+        dgehrd_(
+            &i(n),
+            &i(1),
+            &i(n),
+            a.as_mut_ptr(),
+            &i(n),
+            tau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut info,
+        );
+        dhseqr_(
+            &c("S"),
+            &c("N"),
+            &i(n),
+            &i(1),
+            &i(n),
+            a.as_mut_ptr(),
+            &i(n),
+            wr.as_mut_ptr(),
+            wi.as_mut_ptr(),
+            z.as_mut_ptr(),
+            &i(n),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut info,
+        );
     }
     // DHSEQR leaves the reflectors below the subdiagonal untouched; the Schur
     // form is the quasi-triangular part.
@@ -913,8 +1567,16 @@ fn dgeqpf_matches() {
     let (mut work, mut winfo) = (vec![0.0f64; 3 * n], 0);
     om::dgeqpf(m, n, &mut a, m, &mut jpvt, &mut tau);
     unsafe {
-        dgeqpf_(&i(m), &i(n), want.as_mut_ptr(), &i(m), wjpvt.as_mut_ptr(), wtau.as_mut_ptr(),
-                work.as_mut_ptr(), &mut winfo)
+        dgeqpf_(
+            &i(m),
+            &i(n),
+            want.as_mut_ptr(),
+            &i(m),
+            wjpvt.as_mut_ptr(),
+            wtau.as_mut_ptr(),
+            work.as_mut_ptr(),
+            &mut winfo,
+        )
     };
     same_i(&jpvt, &wjpvt, "dgeqpf: JPVT");
     same(&tau, &wtau, "dgeqpf: TAU");
@@ -934,8 +1596,20 @@ fn dgelsx_matches() {
     let rcond = 1e-12;
     let (rank, info) = om::dgelsx(m, n, 2, &mut a, m, &mut b, ldb, &mut jpvt, rcond);
     unsafe {
-        dgelsx_(&i(m), &i(n), &i(2), wa.as_mut_ptr(), &i(m), wb.as_mut_ptr(), &i(ldb),
-                wjpvt.as_mut_ptr(), &rcond, &mut wrank, work.as_mut_ptr(), &mut winfo)
+        dgelsx_(
+            &i(m),
+            &i(n),
+            &i(2),
+            wa.as_mut_ptr(),
+            &i(m),
+            wb.as_mut_ptr(),
+            &i(ldb),
+            wjpvt.as_mut_ptr(),
+            &rcond,
+            &mut wrank,
+            work.as_mut_ptr(),
+            &mut winfo,
+        )
     };
     assert_eq!(info, winfo, "dgelsx: INFO");
     assert_eq!(rank as i32, wrank, "dgelsx: RANK");
@@ -959,13 +1633,32 @@ fn dgegv_eigenvalues_match() {
         let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
         let info = om::dgegv("N", "N", n, &a0, n, &b0, n, &mut ar, &mut ai, &mut be);
         unsafe {
-            dgegv_(&c("N"), &c("N"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
-                   lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(),
-                   core::ptr::null_mut(), &i(1), core::ptr::null_mut(), &i(1),
-                   work.as_mut_ptr(), &i(64 * n), &mut winfo)
+            dgegv_(
+                &c("N"),
+                &c("N"),
+                &i(n),
+                wa.as_mut_ptr(),
+                &i(n),
+                wb.as_mut_ptr(),
+                &i(n),
+                lar.as_mut_ptr(),
+                lai.as_mut_ptr(),
+                lbe.as_mut_ptr(),
+                core::ptr::null_mut(),
+                &i(1),
+                core::ptr::null_mut(),
+                &i(1),
+                work.as_mut_ptr(),
+                &i(64 * n),
+                &mut winfo,
+            )
         };
         assert_eq!(info, winfo, "dgegv seed {seed}: INFO");
-        same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe), &format!("dgegv seed {seed}"));
+        same(
+            &ratios(&ar, &ai, &be),
+            &ratios(&lar, &lai, &lbe),
+            &format!("dgegv seed {seed}"),
+        );
     }
 }
 
@@ -983,19 +1676,41 @@ fn dgegv_refuses_a_singular_b() {
         b[r + (n - 1) * n] = b[r];
     }
     let (mut ar, mut ai, mut be) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
-    assert_eq!(om::dgegv("N", "N", n, &a, n, &b, n, &mut ar, &mut ai, &mut be), (n + 1) as i32);
+    assert_eq!(
+        om::dgegv("N", "N", n, &a, n, &b, n, &mut ar, &mut ai, &mut be),
+        (n + 1) as i32
+    );
 
     // LAPACK does answer it, with a BETA of zero — what the reduction cannot do.
     let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
     let (mut wa, mut wb) = (a.clone(), b.clone());
     let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
     unsafe {
-        dgegv_(&c("N"), &c("N"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
-               lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(), core::ptr::null_mut(),
-               &i(1), core::ptr::null_mut(), &i(1), work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        dgegv_(
+            &c("N"),
+            &c("N"),
+            &i(n),
+            wa.as_mut_ptr(),
+            &i(n),
+            wb.as_mut_ptr(),
+            &i(n),
+            lar.as_mut_ptr(),
+            lai.as_mut_ptr(),
+            lbe.as_mut_ptr(),
+            core::ptr::null_mut(),
+            &i(1),
+            core::ptr::null_mut(),
+            &i(1),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     assert_eq!(winfo, 0);
-    assert!(lbe.iter().any(|v| v.abs() < 1e-12), "LAPACK reports an infinite eigenvalue: {lbe:?}");
+    assert!(
+        lbe.iter().any(|v| v.abs() < 1e-12),
+        "LAPACK reports an infinite eigenvalue: {lbe:?}"
+    );
 }
 
 /// `(ALPHAR + i*ALPHAI)/BETA` as a sorted list, with an infinite eigenvalue
@@ -1005,7 +1720,13 @@ fn dgegv_refuses_a_singular_b() {
 fn ratios(ar: &[f64], ai: &[f64], be: &[f64]) -> Vec<f64> {
     const INF: f64 = 1e300;
     let mut v: Vec<(f64, f64)> = (0..ar.len())
-        .map(|k| if be[k] == 0.0 { (INF, 0.0) } else { (ar[k] / be[k], (ai[k] / be[k]).abs()) })
+        .map(|k| {
+            if be[k] == 0.0 {
+                (INF, 0.0)
+            } else {
+                (ar[k] / be[k], (ai[k] / be[k]).abs())
+            }
+        })
         .collect();
     v.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
     v.into_iter().flat_map(|(r, i)| [r, i]).collect()
@@ -1037,8 +1758,16 @@ fn dgtsv_matches() {
     let mut winfo = 0;
     let info = om::dgtsv(n, 2, &mut dl, &mut d, &mut du, &mut b, n);
     unsafe {
-        dgtsv_(&i(n), &i(2), wdl.as_mut_ptr(), wd.as_mut_ptr(), wdu.as_mut_ptr(),
-               wb.as_mut_ptr(), &i(n), &mut winfo)
+        dgtsv_(
+            &i(n),
+            &i(2),
+            wdl.as_mut_ptr(),
+            wd.as_mut_ptr(),
+            wdu.as_mut_ptr(),
+            wb.as_mut_ptr(),
+            &i(n),
+            &mut winfo,
+        )
     };
     assert_eq!(info, winfo, "dgtsv: INFO");
     same(&b, &wb, "dgtsv: X");
@@ -1063,8 +1792,18 @@ fn dgbsv_matches() {
     let mut winfo = 0;
     let info = om::dgbsv(n, kl, ku, 2, &mut a, ldab, &mut ipiv, &mut b, n);
     unsafe {
-        dgbsv_(&i(n), &i(kl), &i(ku), &i(2), wa.as_mut_ptr(), &i(ldab), wipiv.as_mut_ptr(),
-               wb.as_mut_ptr(), &i(n), &mut winfo)
+        dgbsv_(
+            &i(n),
+            &i(kl),
+            &i(ku),
+            &i(2),
+            wa.as_mut_ptr(),
+            &i(ldab),
+            wipiv.as_mut_ptr(),
+            wb.as_mut_ptr(),
+            &i(n),
+            &mut winfo,
+        )
     };
     assert_eq!(info, winfo, "dgbsv: INFO");
     same(&b, &wb, "dgbsv: X");
@@ -1087,16 +1826,49 @@ fn dggev_matches() {
         let mut lvr = vec![0.0f64; n * n];
         let (mut wa, mut wb) = (a0.clone(), b0.clone());
         let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
-        let info = om::gev::dggev("N", "V", n, &a0, n, &b0, n, &mut ar, &mut ai, &mut be,
-                                  &mut [], 1, &mut vr, n);
+        let info = om::gev::dggev(
+            "N",
+            "V",
+            n,
+            &a0,
+            n,
+            &b0,
+            n,
+            &mut ar,
+            &mut ai,
+            &mut be,
+            &mut [],
+            1,
+            &mut vr,
+            n,
+        );
         unsafe {
-            dggev_(&c("N"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
-                   lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(),
-                   core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n),
-                   work.as_mut_ptr(), &i(64 * n), &mut winfo)
+            dggev_(
+                &c("N"),
+                &c("V"),
+                &i(n),
+                wa.as_mut_ptr(),
+                &i(n),
+                wb.as_mut_ptr(),
+                &i(n),
+                lar.as_mut_ptr(),
+                lai.as_mut_ptr(),
+                lbe.as_mut_ptr(),
+                core::ptr::null_mut(),
+                &i(1),
+                lvr.as_mut_ptr(),
+                &i(n),
+                work.as_mut_ptr(),
+                &i(64 * n),
+                &mut winfo,
+            )
         };
         assert_eq!((info, winfo), (0, 0), "dggev {n}x{n}: INFO");
-        same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe), &format!("dggev {n}x{n}"));
+        same(
+            &ratios(&ar, &ai, &be),
+            &ratios(&lar, &lai, &lbe),
+            &format!("dggev {n}x{n}"),
+        );
 
         // beta*A*x = alpha*B*x, with a conjugate pair read out of two columns.
         let scale = a0.iter().chain(&b0).fold(1.0f64, |m, v| m.max(v.abs()));
@@ -1115,9 +1887,10 @@ fn dggev_matches() {
                 // (ar + i*ai) * (bre + i*bim) vs beta * (are + i*aim)
                 let lre = ar[k] * bre - ai[k] * bim;
                 let lim = ar[k] * bim + ai[k] * bre;
-                assert!((be[k] * are - lre).abs() <= 1e-9 * scale
-                        && (be[k] * aim - lim).abs() <= 1e-9 * scale,
-                    "dggev {n}x{n}: eigenvector {k} row {r} residual");
+                assert!(
+                    (be[k] * are - lre).abs() <= 1e-9 * scale && (be[k] * aim - lim).abs() <= 1e-9 * scale,
+                    "dggev {n}x{n}: eigenvector {k} row {r} residual"
+                );
             }
             k += if pair { 2 } else { 1 };
         }
@@ -1139,12 +1912,42 @@ fn dggev_reports_infinite_eigenvalues() {
     let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
     let (mut wa, mut wb) = (a.clone(), b.clone());
     let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
-    let info = om::gev::dggev("N", "N", n, &a, n, &b, n, &mut ar, &mut ai, &mut be,
-                              &mut [], 1, &mut [], 1);
+    let info = om::gev::dggev(
+        "N",
+        "N",
+        n,
+        &a,
+        n,
+        &b,
+        n,
+        &mut ar,
+        &mut ai,
+        &mut be,
+        &mut [],
+        1,
+        &mut [],
+        1,
+    );
     unsafe {
-        dggev_(&c("N"), &c("N"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
-               lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(), core::ptr::null_mut(),
-               &i(1), core::ptr::null_mut(), &i(1), work.as_mut_ptr(), &i(64 * n), &mut winfo)
+        dggev_(
+            &c("N"),
+            &c("N"),
+            &i(n),
+            wa.as_mut_ptr(),
+            &i(n),
+            wb.as_mut_ptr(),
+            &i(n),
+            lar.as_mut_ptr(),
+            lai.as_mut_ptr(),
+            lbe.as_mut_ptr(),
+            core::ptr::null_mut(),
+            &i(1),
+            core::ptr::null_mut(),
+            &i(1),
+            work.as_mut_ptr(),
+            &i(64 * n),
+            &mut winfo,
+        )
     };
     assert_eq!((info, winfo), (0, 0), "dggev singular B: INFO");
     assert!(be.iter().any(|v| v.abs() < 1e-12), "no infinite eigenvalue: {be:?}");
@@ -1172,16 +1975,53 @@ fn dhgeqz_matches() {
         let (mut h, mut t) = (a0.clone(), b0.clone());
         let (mut lh, mut lt) = (a0.clone(), b0.clone());
         let (mut work, mut winfo) = (vec![0.0f64; 64 * n], 0);
-        let info = om::eig::dhgeqz("E", "N", "N", n, &mut h, n, &mut t, n, &mut ar, &mut ai,
-                                   &mut be, &mut [], 1, &mut [], 1);
+        let info = om::eig::dhgeqz(
+            "E",
+            "N",
+            "N",
+            n,
+            &mut h,
+            n,
+            &mut t,
+            n,
+            &mut ar,
+            &mut ai,
+            &mut be,
+            &mut [],
+            1,
+            &mut [],
+            1,
+        );
         unsafe {
-            dhgeqz_(&c("E"), &c("N"), &c("N"), &i(n), &i(1), &i(n), lh.as_mut_ptr(), &i(n),
-                    lt.as_mut_ptr(), &i(n), lar.as_mut_ptr(), lai.as_mut_ptr(),
-                    lbe.as_mut_ptr(), core::ptr::null_mut(), &i(1), core::ptr::null_mut(),
-                    &i(1), work.as_mut_ptr(), &i(64 * n), &mut winfo)
+            dhgeqz_(
+                &c("E"),
+                &c("N"),
+                &c("N"),
+                &i(n),
+                &i(1),
+                &i(n),
+                lh.as_mut_ptr(),
+                &i(n),
+                lt.as_mut_ptr(),
+                &i(n),
+                lar.as_mut_ptr(),
+                lai.as_mut_ptr(),
+                lbe.as_mut_ptr(),
+                core::ptr::null_mut(),
+                &i(1),
+                core::ptr::null_mut(),
+                &i(1),
+                work.as_mut_ptr(),
+                &i(64 * n),
+                &mut winfo,
+            )
         };
         assert_eq!((info, winfo), (0, 0), "dhgeqz {n}x{n}: INFO");
-        same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe), &format!("dhgeqz {n}x{n}"));
+        same(
+            &ratios(&ar, &ai, &be),
+            &ratios(&lar, &lai, &lbe),
+            &format!("dhgeqz {n}x{n}"),
+        );
     }
 }
 
@@ -1205,9 +2045,22 @@ fn dtrevc_matches() {
         let mut select = vec![0i32; n];
         let info = om::trevc::dtrevc_lapack("R", "A", n, &t, n, &mut [], 1, &mut vr, n, n, &mut m);
         unsafe {
-            dtrevc_(&c("R"), &c("A"), select.as_mut_ptr(), &i(n), t.as_ptr(), &i(n),
-                    core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n), &i(n), &mut lm,
-                    work.as_mut_ptr(), &mut winfo)
+            dtrevc_(
+                &c("R"),
+                &c("A"),
+                select.as_mut_ptr(),
+                &i(n),
+                t.as_ptr(),
+                &i(n),
+                core::ptr::null_mut(),
+                &i(1),
+                lvr.as_mut_ptr(),
+                &i(n),
+                &i(n),
+                &mut lm,
+                work.as_mut_ptr(),
+                &mut winfo,
+            )
         };
         assert_eq!((info, winfo, m, lm), (0, 0, n as i32, n as i32), "dtrevc {n}x{n}");
         // T*x = lambda*x for each column, the invariant that fixes the free scale.
@@ -1223,9 +2076,11 @@ fn dtrevc_matches() {
                     tim += t[r + cl * n] * xi;
                 }
                 let (xr, xi) = (vr[r + k * n], if pair { vr[r + (k + 1) * n] } else { 0.0 });
-                assert!((tre - (wr[k] * xr - wi[k] * xi)).abs() <= 1e-9 * scale
+                assert!(
+                    (tre - (wr[k] * xr - wi[k] * xi)).abs() <= 1e-9 * scale
                         && (tim - (wr[k] * xi + wi[k] * xr)).abs() <= 1e-9 * scale,
-                    "dtrevc {n}x{n}: eigenvector {k} row {r} residual");
+                    "dtrevc {n}x{n}: eigenvector {k} row {r} residual"
+                );
             }
             k += if pair { 2 } else { 1 };
         }
@@ -1254,14 +2109,29 @@ fn eigen_sweep_matches() {
             let mut winfo = 0;
             let info = om::dgeev("N", "V", n, &a0, n, &mut wr, &mut wi, &mut [], 1, &mut vr, n);
             unsafe {
-                dgeev_(&c("N"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), lwr.as_mut_ptr(),
-                       lwi.as_mut_ptr(), core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n),
-                       work.as_mut_ptr(), &i(lw), &mut winfo)
+                dgeev_(
+                    &c("N"),
+                    &c("V"),
+                    &i(n),
+                    wa.as_mut_ptr(),
+                    &i(n),
+                    lwr.as_mut_ptr(),
+                    lwi.as_mut_ptr(),
+                    core::ptr::null_mut(),
+                    &i(1),
+                    lvr.as_mut_ptr(),
+                    &i(n),
+                    work.as_mut_ptr(),
+                    &i(lw),
+                    &mut winfo,
+                )
             };
             assert_eq!((info, winfo), (0, 0), "dgeev {n}x{n} seed {seed}: INFO");
-            same(&in_order(&sorted_eig(&wr, &wi).0, &sorted_eig(&wr, &wi).1),
-                 &in_order(&sorted_eig(&lwr, &lwi).0, &sorted_eig(&lwr, &lwi).1),
-                 &format!("dgeev {n}x{n} seed {seed}"));
+            same(
+                &in_order(&sorted_eig(&wr, &wi).0, &sorted_eig(&wr, &wi).1),
+                &in_order(&sorted_eig(&lwr, &lwi).0, &sorted_eig(&lwr, &lwi).1),
+                &format!("dgeev {n}x{n} seed {seed}"),
+            );
             pairs += wi.iter().filter(|v| **v != 0.0).count();
             checked += n;
 
@@ -1269,23 +2139,58 @@ fn eigen_sweep_matches() {
             let (mut ar, mut ai, mut be) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
             let (mut lar, mut lai, mut lbe) = (vec![0.0f64; n], vec![0.0f64; n], vec![0.0f64; n]);
             let (mut wa, mut wb) = (a0.clone(), b0.clone());
-            let info = om::gev::dggev("N", "N", n, &a0, n, &b0, n, &mut ar, &mut ai, &mut be,
-                                      &mut [], 1, &mut [], 1);
+            let info = om::gev::dggev(
+                "N",
+                "N",
+                n,
+                &a0,
+                n,
+                &b0,
+                n,
+                &mut ar,
+                &mut ai,
+                &mut be,
+                &mut [],
+                1,
+                &mut [],
+                1,
+            );
             unsafe {
-                dggev_(&c("N"), &c("N"), &i(n), wa.as_mut_ptr(), &i(n), wb.as_mut_ptr(), &i(n),
-                       lar.as_mut_ptr(), lai.as_mut_ptr(), lbe.as_mut_ptr(),
-                       core::ptr::null_mut(), &i(1), core::ptr::null_mut(), &i(1),
-                       work.as_mut_ptr(), &i(lw), &mut winfo)
+                dggev_(
+                    &c("N"),
+                    &c("N"),
+                    &i(n),
+                    wa.as_mut_ptr(),
+                    &i(n),
+                    wb.as_mut_ptr(),
+                    &i(n),
+                    lar.as_mut_ptr(),
+                    lai.as_mut_ptr(),
+                    lbe.as_mut_ptr(),
+                    core::ptr::null_mut(),
+                    &i(1),
+                    core::ptr::null_mut(),
+                    &i(1),
+                    work.as_mut_ptr(),
+                    &i(lw),
+                    &mut winfo,
+                )
             };
             assert_eq!((info, winfo), (0, 0), "dggev {n}x{n} seed {seed}: INFO");
-            same(&ratios(&ar, &ai, &be), &ratios(&lar, &lai, &lbe),
-                 &format!("dggev {n}x{n} seed {seed}"));
+            same(
+                &ratios(&ar, &ai, &be),
+                &ratios(&lar, &lai, &lbe),
+                &format!("dggev {n}x{n} seed {seed}"),
+            );
             pairs += ai.iter().filter(|v| **v != 0.0).count();
             checked += n;
             let _ = scale;
         }
     }
-    assert!(pairs > 100, "the sweep saw only {pairs} complex eigenvalues, too few to mean much");
+    assert!(
+        pairs > 100,
+        "the sweep saw only {pairs} complex eigenvalues, too few to mean much"
+    );
     println!("{checked} eigenvalues checked, {pairs} of them complex");
 }
 
@@ -1315,9 +2220,22 @@ fn eigen_balancing_matches() {
             let (lw, mut winfo) = (64 * n + 100, 0);
             let mut work = vec![0.0f64; lw];
             unsafe {
-                dgeev_(&c("N"), &c("V"), &i(n), wa.as_mut_ptr(), &i(n), lwr.as_mut_ptr(),
-                       lwi.as_mut_ptr(), core::ptr::null_mut(), &i(1), lvr.as_mut_ptr(), &i(n),
-                       work.as_mut_ptr(), &i(lw), &mut winfo)
+                dgeev_(
+                    &c("N"),
+                    &c("V"),
+                    &i(n),
+                    wa.as_mut_ptr(),
+                    &i(n),
+                    lwr.as_mut_ptr(),
+                    lwi.as_mut_ptr(),
+                    core::ptr::null_mut(),
+                    &i(1),
+                    lvr.as_mut_ptr(),
+                    &i(n),
+                    work.as_mut_ptr(),
+                    &i(lw),
+                    &mut winfo,
+                )
             };
             let what = format!("dgeev spread {spread:e} seed {seed}");
             assert_eq!((info, winfo), (0, 0), "{what}: INFO");
@@ -1340,9 +2258,11 @@ fn eigen_balancing_matches() {
                         }
                     }
                     let (xr, xi) = (vr[r + k * n], if pair { vr[r + (k + 1) * n] } else { 0.0 });
-                    assert!((are - (wr[k] * xr - wi[k] * xi)).abs() <= TOL * scale
+                    assert!(
+                        (are - (wr[k] * xr - wi[k] * xi)).abs() <= TOL * scale
                             && (aim - (wr[k] * xi + wi[k] * xr)).abs() <= TOL * scale,
-                        "{what}: eigenvector {k} row {r} residual");
+                        "{what}: eigenvector {k} row {r} residual"
+                    );
                 }
                 k += if pair { 2 } else { 1 };
             }
@@ -1357,7 +2277,6 @@ fn sorted_eig(wr: &[f64], wi: &[f64]) -> (Vec<f64>, Vec<f64>) {
     v.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
     (v.iter().map(|x| x.0).collect(), v.iter().map(|x| x.1).collect())
 }
-
 
 /// `DTRSM` over every side/uplo/trans/diag combination — 16 of them, and the
 /// mapping onto faer transposes both the matrix and the triangle, so a sign or
@@ -1374,14 +2293,27 @@ fn dtrsm_matches() {
                     for diag in ["N", "U"] {
                         for &alpha in &[1.0f64, -0.75] {
                             let (mut b, mut wb) = (b0.clone(), b0.clone());
-                            om::blas::dtrsm(side, uplo, transa, diag, m, n, alpha, &a0, k,
-                                            &mut b, m);
+                            om::blas::dtrsm(side, uplo, transa, diag, m, n, alpha, &a0, k, &mut b, m);
                             unsafe {
-                                dtrsm_(&c(side), &c(uplo), &c(transa), &c(diag), &i(m), &i(n),
-                                       &alpha, a0.as_ptr(), &i(k), wb.as_mut_ptr(), &i(m))
+                                dtrsm_(
+                                    &c(side),
+                                    &c(uplo),
+                                    &c(transa),
+                                    &c(diag),
+                                    &i(m),
+                                    &i(n),
+                                    &alpha,
+                                    a0.as_ptr(),
+                                    &i(k),
+                                    wb.as_mut_ptr(),
+                                    &i(m),
+                                )
                             };
-                            same(&b, &wb,
-                                 &format!("dtrsm {side}/{uplo}/{transa}/{diag} {m}x{n} a={alpha}"));
+                            same(
+                                &b,
+                                &wb,
+                                &format!("dtrsm {side}/{uplo}/{transa}/{diag} {m}x{n} a={alpha}"),
+                            );
                         }
                     }
                 }
@@ -1408,9 +2340,28 @@ fn dsyevx_matches() {
         let mut ifail = vec![0; n];
         let lwork = i(work.len());
         unsafe {
-            dsyevx_(&c("V"), &c("A"), &c("U"), &i(n), ar.as_mut_ptr(), &i(n), &0.0, &0.0, &0, &0,
-                    &0.0, &mut m, wr.as_mut_ptr(), zr.as_mut_ptr(), &i(n), work.as_mut_ptr(),
-                    &lwork, iwork.as_mut_ptr(), ifail.as_mut_ptr(), &mut info);
+            dsyevx_(
+                &c("V"),
+                &c("A"),
+                &c("U"),
+                &i(n),
+                ar.as_mut_ptr(),
+                &i(n),
+                &0.0,
+                &0.0,
+                &0,
+                &0,
+                &0.0,
+                &mut m,
+                wr.as_mut_ptr(),
+                zr.as_mut_ptr(),
+                &i(n),
+                work.as_mut_ptr(),
+                &lwork,
+                iwork.as_mut_ptr(),
+                ifail.as_mut_ptr(),
+                &mut info,
+            );
         }
         assert_eq!((info, m), (0, i(n)), "dsyevx n={n}");
         same(&wg, &wr, "dsyevx eigenvalues");
@@ -1433,10 +2384,31 @@ fn dsygvx_matches() {
         let mut ifail = vec![0; n];
         let lwork = i(work.len());
         unsafe {
-            dsygvx_(&1, &c("V"), &c("A"), &c("U"), &i(n), ar.as_mut_ptr(), &i(n), br.as_mut_ptr(),
-                    &i(n), &0.0, &0.0, &0, &0, &0.0, &mut m, wr.as_mut_ptr(), zr.as_mut_ptr(),
-                    &i(n), work.as_mut_ptr(), &lwork, iwork.as_mut_ptr(), ifail.as_mut_ptr(),
-                    &mut info);
+            dsygvx_(
+                &1,
+                &c("V"),
+                &c("A"),
+                &c("U"),
+                &i(n),
+                ar.as_mut_ptr(),
+                &i(n),
+                br.as_mut_ptr(),
+                &i(n),
+                &0.0,
+                &0.0,
+                &0,
+                &0,
+                &0.0,
+                &mut m,
+                wr.as_mut_ptr(),
+                zr.as_mut_ptr(),
+                &i(n),
+                work.as_mut_ptr(),
+                &lwork,
+                iwork.as_mut_ptr(),
+                ifail.as_mut_ptr(),
+                &mut info,
+            );
         }
         assert_eq!((info, m), (0, i(n)), "dsygvx n={n}");
         same(&wg, &wr, "dsygvx eigenvalues");
@@ -1462,21 +2434,64 @@ fn dlarnv_matches() {
 
 #[link(name = "blas")]
 unsafe extern "C" {
-    fn dgemv_(trans: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
-              a: *const f64, lda: *const i32, x: *const f64, incx: *const i32, beta: *const f64,
-              y: *mut f64, incy: *const i32);
+    fn dgemv_(
+        trans: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        alpha: *const f64,
+        a: *const f64,
+        lda: *const i32,
+        x: *const f64,
+        incx: *const i32,
+        beta: *const f64,
+        y: *mut f64,
+        incy: *const i32,
+    );
     #[allow(clippy::too_many_arguments)]
-    fn dgemm_(ta: *const c_char, tb: *const c_char, m: *const i32, n: *const i32, k: *const i32,
-              alpha: *const f64, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
-              beta: *const f64, c: *mut f64, ldc: *const i32);
+    fn dgemm_(
+        ta: *const c_char,
+        tb: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        k: *const i32,
+        alpha: *const f64,
+        a: *const f64,
+        lda: *const i32,
+        b: *const f64,
+        ldb: *const i32,
+        beta: *const f64,
+        c: *mut f64,
+        ldc: *const i32,
+    );
     #[allow(clippy::too_many_arguments)]
-    fn dsymm_(side: *const c_char, uplo: *const c_char, m: *const i32, n: *const i32,
-              alpha: *const f64, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
-              beta: *const f64, c: *mut f64, ldc: *const i32);
+    fn dsymm_(
+        side: *const c_char,
+        uplo: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        alpha: *const f64,
+        a: *const f64,
+        lda: *const i32,
+        b: *const f64,
+        ldb: *const i32,
+        beta: *const f64,
+        c: *mut f64,
+        ldc: *const i32,
+    );
     #[allow(clippy::too_many_arguments)]
-    fn dtrmm_(side: *const c_char, uplo: *const c_char, transa: *const c_char,
-              diag: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
-              a: *const f64, lda: *const i32, b: *mut f64, ldb: *const i32);
+    fn dtrmm_(
+        side: *const c_char,
+        uplo: *const c_char,
+        transa: *const c_char,
+        diag: *const c_char,
+        m: *const i32,
+        n: *const i32,
+        alpha: *const f64,
+        a: *const f64,
+        lda: *const i32,
+        b: *mut f64,
+        ldb: *const i32,
+    );
 }
 
 #[test]
@@ -1493,8 +2508,21 @@ fn blas_level_2_3_match() {
             om::blas::dgemm(at, bt, m, n, k, alpha, &av, lda, &bv, ldb, beta, &mut cg, m);
             let mut cr = c0.clone();
             unsafe {
-                dgemm_(&c(ta), &c(tb), &i(m), &i(n), &i(k), &alpha, av.as_ptr(), &i(lda),
-                       bv.as_ptr(), &i(ldb), &beta, cr.as_mut_ptr(), &i(m));
+                dgemm_(
+                    &c(ta),
+                    &c(tb),
+                    &i(m),
+                    &i(n),
+                    &i(k),
+                    &alpha,
+                    av.as_ptr(),
+                    &i(lda),
+                    bv.as_ptr(),
+                    &i(ldb),
+                    &beta,
+                    cr.as_mut_ptr(),
+                    &i(m),
+                );
             }
             same(&cg, &cr, &format!("dgemm {ta}{tb} {m}x{n}x{k}"));
         }
@@ -1509,8 +2537,19 @@ fn blas_level_2_3_match() {
             om::blas::dgemv(t, m, n, alpha, &a, m, &x, beta, &mut yg);
             let mut yr = y0.clone();
             unsafe {
-                dgemv_(&c(trans), &i(m), &i(n), &alpha, a.as_ptr(), &i(m), x.as_ptr(), &1, &beta,
-                       yr.as_mut_ptr(), &1);
+                dgemv_(
+                    &c(trans),
+                    &i(m),
+                    &i(n),
+                    &alpha,
+                    a.as_ptr(),
+                    &i(m),
+                    x.as_ptr(),
+                    &1,
+                    &beta,
+                    yr.as_mut_ptr(),
+                    &1,
+                );
             }
             same(&yg, &yr, &format!("dgemv {trans} {m}x{n}"));
         }
@@ -1523,8 +2562,20 @@ fn blas_level_2_3_match() {
             om::blas::dsymm(true, uplo == "U", m, n, alpha, &s, m, &b, m, beta, &mut cg, m);
             let mut cr = c0.clone();
             unsafe {
-                dsymm_(&c("L"), &c(uplo), &i(m), &i(n), &alpha, s.as_ptr(), &i(m), b.as_ptr(),
-                       &i(m), &beta, cr.as_mut_ptr(), &i(m));
+                dsymm_(
+                    &c("L"),
+                    &c(uplo),
+                    &i(m),
+                    &i(n),
+                    &alpha,
+                    s.as_ptr(),
+                    &i(m),
+                    b.as_ptr(),
+                    &i(m),
+                    &beta,
+                    cr.as_mut_ptr(),
+                    &i(m),
+                );
             }
             same(&cg, &cr, &format!("dsymm L{uplo} {m}x{n}"));
         }
@@ -1535,8 +2586,20 @@ fn blas_level_2_3_match() {
             om::blas::dsymm(false, uplo == "U", m, n, alpha, &s, n, &b, m, beta, &mut cg, m);
             let mut cr = c0.clone();
             unsafe {
-                dsymm_(&c("R"), &c(uplo), &i(m), &i(n), &alpha, s.as_ptr(), &i(n), b.as_ptr(),
-                       &i(m), &beta, cr.as_mut_ptr(), &i(m));
+                dsymm_(
+                    &c("R"),
+                    &c(uplo),
+                    &i(m),
+                    &i(n),
+                    &alpha,
+                    s.as_ptr(),
+                    &i(n),
+                    b.as_ptr(),
+                    &i(m),
+                    &beta,
+                    cr.as_mut_ptr(),
+                    &i(m),
+                );
             }
             same(&cg, &cr, &format!("dsymm R{uplo} {m}x{n}"));
         }
@@ -1550,12 +2613,34 @@ fn blas_level_2_3_match() {
                     for &diag in &["N", "U"] {
                         let b0 = rand_mat(m, n, 42);
                         let mut bg = b0.clone();
-                        om::blas::dtrmm(left, uplo == "U", tr == "T", diag == "U", m, n, alpha,
-                                        &t, sz, &mut bg, m);
+                        om::blas::dtrmm(
+                            left,
+                            uplo == "U",
+                            tr == "T",
+                            diag == "U",
+                            m,
+                            n,
+                            alpha,
+                            &t,
+                            sz,
+                            &mut bg,
+                            m,
+                        );
                         let mut br = b0.clone();
                         unsafe {
-                            dtrmm_(&c(side), &c(uplo), &c(tr), &c(diag), &i(m), &i(n), &alpha,
-                                   t.as_ptr(), &i(sz), br.as_mut_ptr(), &i(m));
+                            dtrmm_(
+                                &c(side),
+                                &c(uplo),
+                                &c(tr),
+                                &c(diag),
+                                &i(m),
+                                &i(n),
+                                &alpha,
+                                t.as_ptr(),
+                                &i(sz),
+                                br.as_mut_ptr(),
+                                &i(m),
+                            );
                         }
                         same(&bg, &br, &format!("dtrmm {side}{uplo}{tr}{diag} {m}x{n}"));
                     }

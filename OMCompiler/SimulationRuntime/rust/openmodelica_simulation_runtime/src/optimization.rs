@@ -15,8 +15,7 @@ fn indices(cb: &OpenModelicaGeneratedFunctionCallbacks) -> [c_int; 3] {
 
 fn jacobian(data: *mut DATA, index: c_int) -> Option<*mut JACOBIAN> {
     let si = unsafe { (*data).simulationInfo.as_ref()? };
-    (index >= 0 && !si.analyticJacobians.is_null())
-        .then(|| unsafe { si.analyticJacobians.add(index as usize) })
+    (index >= 0 && !si.analyticJacobians.is_null()).then(|| unsafe { si.analyticJacobians.add(index as usize) })
 }
 
 /// C's `solver_main`'s choice: `-s` over the init XML's `method`. Nothing below may
@@ -83,9 +82,15 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) {
         return;
     }
     let cb = unsafe { &*(*data).callback };
-    let inits = [cb.initialAnalyticJacobianB, cb.initialAnalyticJacobianC, cb.initialAnalyticJacobianD];
+    let inits = [
+        cb.initialAnalyticJacobianB,
+        cb.initialAnalyticJacobianC,
+        cb.initialAnalyticJacobianD,
+    ];
     for (index, init) in indices(cb).into_iter().zip(inits) {
-        let (Some(j), Some(init)) = (jacobian(data, index), init) else { continue };
+        let (Some(j), Some(init)) = (jacobian(data, index), init) else {
+            continue;
+        };
         unsafe { init(data, thread_data, j) };
     }
     for (slot, w) in WORDS.iter().zip(measure(data)) {
@@ -96,8 +101,7 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) {
 
 /// The names `Model::eval_jac_colored` calls each matrix by.
 const COLUMN_FNS: [&str; 3] = ["optJacB_column", "optJacC_column", "optJacD_column"];
-const CONST_FNS: [&str; 3] =
-    ["optJacB_constantEqns", "optJacC_constantEqns", "optJacD_constantEqns"];
+const CONST_FNS: [&str; 3] = ["optJacB_constantEqns", "optJacC_constantEqns", "optJacD_constantEqns"];
 
 /// Which matrix `name` asks for, and whether it wants the constant equations.
 pub fn index_of(name: &str) -> Option<(usize, bool)> {
@@ -112,7 +116,9 @@ pub fn index_of(name: &str) -> Option<(usize, bool)> {
 pub fn eval(data: *mut DATA, thread_data: *mut threadData_t, k: usize, constant: bool) {
     let cb = unsafe { &*(*data).callback };
     let columns = [cb.functionJacB_column, cb.functionJacC_column, cb.functionJacD_column];
-    let Some(jac) = jacobian(data, indices(cb)[k]) else { return };
+    let Some(jac) = jacobian(data, indices(cb)[k]) else {
+        return;
+    };
     let f = match constant {
         true => unsafe { (*jac).constantEqns },
         false => columns[k],
@@ -138,12 +144,18 @@ fn term(data: *mut DATA, lagrange: bool) -> Option<OptTerm> {
     }
     let index = (unsafe { res.offset_from(base) }).try_into().ok()?;
     let row = |v: i16| (v >= 0).then_some(v as u32);
-    Some(OptTerm { index, row_b: row(b), row_c: row(c) })
+    Some(OptTerm {
+        index,
+        row_b: row(b),
+        row_c: row(c),
+    })
 }
 
 /// C's `getTimeGrid`, which names the `isTimeGrid` parameters by index.
 fn tgrid(data: *mut DATA, layout: &Layout) -> Vec<u32> {
-    let Some(f) = (unsafe { (*(*data).callback).getTimeGrid }) else { return Vec::new() };
+    let Some(f) = (unsafe { (*(*data).callback).getTimeGrid }) else {
+        return Vec::new();
+    };
     let mut n: modelica_integer = -1;
     let mut idx: *mut modelica_integer = core::ptr::null_mut();
     unsafe { f(data, &mut n, &mut idx) };
@@ -177,7 +189,11 @@ pub fn describe(
             "Optimization does not support array variables, but {name} is an array. Use \
              --simCodeScalarize=true."
         );
-        return Some(OptInfo { setup_error: Some(msg), real_names, ..Default::default() });
+        return Some(OptInfo {
+            setup_error: Some(msg),
+            real_names,
+            ..Default::default()
+        });
     }
     // C calls them in the optimizer's step, whose catch reports the throw.
     let mut info = None;
@@ -201,13 +217,37 @@ fn first_array_variable(md: &MODEL_DATA) -> Option<String> {
         })
     }
     find(md.realVarsData, md.nVariablesRealArray, |v| (&v.dimension, &v.info))
-        .or_else(|| find(md.integerVarsData, md.nVariablesIntegerArray, |v| (&v.dimension, &v.info)))
-        .or_else(|| find(md.booleanVarsData, md.nVariablesBooleanArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| {
+            find(md.integerVarsData, md.nVariablesIntegerArray, |v| {
+                (&v.dimension, &v.info)
+            })
+        })
+        .or_else(|| {
+            find(md.booleanVarsData, md.nVariablesBooleanArray, |v| {
+                (&v.dimension, &v.info)
+            })
+        })
         .or_else(|| find(md.stringVarsData, md.nVariablesStringArray, |v| (&v.dimension, &v.info)))
-        .or_else(|| find(md.realParameterData, md.nParametersRealArray, |v| (&v.dimension, &v.info)))
-        .or_else(|| find(md.integerParameterData, md.nParametersIntegerArray, |v| (&v.dimension, &v.info)))
-        .or_else(|| find(md.booleanParameterData, md.nParametersBooleanArray, |v| (&v.dimension, &v.info)))
-        .or_else(|| find(md.stringParameterData, md.nParametersStringArray, |v| (&v.dimension, &v.info)))
+        .or_else(|| {
+            find(md.realParameterData, md.nParametersRealArray, |v| {
+                (&v.dimension, &v.info)
+            })
+        })
+        .or_else(|| {
+            find(md.integerParameterData, md.nParametersIntegerArray, |v| {
+                (&v.dimension, &v.info)
+            })
+        })
+        .or_else(|| {
+            find(md.booleanParameterData, md.nParametersBooleanArray, |v| {
+                (&v.dimension, &v.info)
+            })
+        })
+        .or_else(|| {
+            find(md.stringParameterData, md.nParametersStringArray, |v| {
+                (&v.dimension, &v.info)
+            })
+        })
 }
 
 fn collect(data: *mut DATA, layout: &Layout) -> OptInfo {
@@ -301,7 +341,11 @@ pub fn regions(data: *mut DATA, layout: &Layout) -> Vec<(u32, u32, *mut c_void)>
         }
         let base = x.opt_jac[k];
         out.push((base, j.sizeCols as u32 * 8, j.seedVars as *mut c_void));
-        out.push((base + j.sizeCols as u32 * 8, j.sizeRows as u32 * 8, j.resultVars as *mut c_void));
+        out.push((
+            base + j.sizeCols as u32 * 8,
+            j.sizeRows as u32 * 8,
+            j.resultVars as *mut c_void,
+        ));
     }
     out
 }

@@ -66,7 +66,10 @@ fn compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
     cfg.wasm_component_model(true);
     // Must match the loader's engine (see openmodelica_fmi_ls_wasm_to_native).
     cfg.wasm_exceptions(true);
-    cfg.target(triple).map_err(|e| format!("unknown target `{triple}`: {e}"))?;
+    cfg.target(triple)
+        .map_err(|e| format!("unknown target `{triple}`: {e}"))?;
     let engine = wasmtime::Engine::new(&cfg).map_err(|e| format!("engine: {e}"))?;
-    engine.precompile_component(component).map_err(|e| format!("compiling for {triple}: {e}"))
+    engine
+        .precompile_component(component)
+        .map_err(|e| format!("compiling for {triple}: {e}"))
 }

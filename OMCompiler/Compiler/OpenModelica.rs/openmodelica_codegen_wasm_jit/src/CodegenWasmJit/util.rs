@@ -56,7 +56,10 @@ pub(super) fn with_engine_detail(e: &str) -> String {
 }
 
 pub(super) fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 pub(super) fn const_real(e: &Option<metamodelica::Ref<DAE::Exp>>) -> Option<f64> {
@@ -92,7 +95,9 @@ pub(super) fn dump_exp(e: &metamodelica::Ref<DAE::Exp>) -> String {
 /// A fresh `T_REAL` type for synthesizing the lhs `CREF` expression of a simple
 /// assignment (the type is not consulted on the simulation cref path).
 pub(crate) fn t_real() -> metamodelica::Ref<DAE::Type> {
-    metamodelica::Ref::new(DAE::Type::T_REAL { varLst: metamodelica::nil() })
+    metamodelica::Ref::new(DAE::Type::T_REAL {
+        varLst: metamodelica::nil(),
+    })
 }
 
 pub(crate) fn count<T: Clone>(list: &List<T>) -> usize {

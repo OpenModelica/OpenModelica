@@ -31,7 +31,9 @@ pub(crate) fn cases_pairwise_disjoint(
         match &**case {
             // `else` matches everything, so it overlaps every other case.
             Absyn::Case::ELSE { .. } => return false,
-            Absyn::Case::CASE { pattern, localDecls, .. } => {
+            Absyn::Case::CASE {
+                pattern, localDecls, ..
+            } => {
                 let mut s = scope.clone();
                 collect_local_decl_names(localDecls, &mut s);
                 pats.push((pattern.clone(), s));
@@ -82,24 +84,49 @@ fn pats_disjoint(
         }
     };
     match (p1, p2) {
-        (CONS { head: h1, rest: r1 }, CONS { head: h2, rest: r2 }) =>
+        (CONS { head: h1, rest: r1 }, CONS { head: h2, rest: r2 }) => {
             pats_disjoint(h1, h2, s1, s2, top_level, caller_qname)
-                || pats_disjoint(r1, r2, s1, s2, top_level, caller_qname),
+                || pats_disjoint(r1, r2, s1, s2, top_level, caller_qname)
+        }
         (TUPLE { expressions: e1 }, TUPLE { expressions: e2 }) => {
             let v1: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**e1).into_iter().collect();
             let v2: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**e2).into_iter().collect();
             v1.len() == v2.len()
-                && v1.iter().zip(&v2).any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname))
+                && v1
+                    .iter()
+                    .zip(&v2)
+                    .any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname))
         }
-        (CALL { function_: f1, functionArgs: a1, .. }, CALL { function_: f2, functionArgs: a2, .. }) => {
+        (
+            CALL {
+                function_: f1,
+                functionArgs: a1,
+                ..
+            },
+            CALL {
+                function_: f2,
+                functionArgs: a2,
+                ..
+            },
+        ) => {
             let n1 = cref_to_dotted(f1);
             let n2 = cref_to_dotted(f2);
             if !same_constructor(&n1, &n2, top_level, caller_qname) {
                 return true;
             }
-            let (Absyn::FunctionArgs::FUNCTIONARGS { args: args1, argNames: names1 },
-                 Absyn::FunctionArgs::FUNCTIONARGS { args: args2, argNames: names2 }) = (&**a1, &**a2)
-                else { return false };
+            let (
+                Absyn::FunctionArgs::FUNCTIONARGS {
+                    args: args1,
+                    argNames: names1,
+                },
+                Absyn::FunctionArgs::FUNCTIONARGS {
+                    args: args2,
+                    argNames: names2,
+                },
+            ) = (&**a1, &**a2)
+            else {
+                return false;
+            };
             // Named-field patterns list a subset of the fields, so a positional
             // comparison would pair up unrelated fields; compare field by name.
             let v1: Vec<&metamodelica::Ref<Absyn::Exp>> = (&**args1).into_iter().collect();
@@ -109,9 +136,15 @@ fn pats_disjoint(
             let named2: BTreeMap<&str, &metamodelica::Ref<Absyn::Exp>> =
                 (&**names2).into_iter().map(|n| (&*n.argName, &n.argValue)).collect();
             (v1.len() == v2.len()
-                && v1.iter().zip(&v2).any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname)))
-                || named1.iter().any(|(k, a)| named2.get(k)
-                    .is_some_and(|b| pats_disjoint(a, b, s1, s2, top_level, caller_qname)))
+                && v1
+                    .iter()
+                    .zip(&v2)
+                    .any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname)))
+                || named1.iter().any(|(k, a)| {
+                    named2
+                        .get(k)
+                        .is_some_and(|b| pats_disjoint(a, b, s1, s2, top_level, caller_qname))
+                })
         }
         (INTEGER { value: v1 }, INTEGER { value: v2 }) => v1 != v2,
         (BOOL { value: v1 }, BOOL { value: v2 }) => v1 != v2,
@@ -119,8 +152,13 @@ fn pats_disjoint(
         (REAL { value: v1 }, REAL { value: v2 }) => v1 != v2,
         _ => match (elems(p1), elems(p2)) {
             // Two list literals: disjoint on differing length, else element-wise.
-            (Some(l1), Some(l2)) => l1.len() != l2.len()
-                || l1.iter().zip(&l2).any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname)),
+            (Some(l1), Some(l2)) => {
+                l1.len() != l2.len()
+                    || l1
+                        .iter()
+                        .zip(&l2)
+                        .any(|(a, b)| pats_disjoint(a, b, s1, s2, top_level, caller_qname))
+            }
             // `{}` matches only the empty list, which no `_ :: _` matches.
             (Some(l1), None) => l1.is_empty() && matches!(p2, CONS { .. }),
             (None, Some(l2)) => l2.is_empty() && matches!(p1, CONS { .. }),
@@ -133,8 +171,10 @@ fn pats_disjoint(
 /// structural pattern can never match the same value (mirrors the
 /// `PAT_CONSTANT` arms of `Patternm.patternsDoNotOverlap`).
 fn is_literal(e: &Absyn::Exp) -> bool {
-    matches!(e, Absyn::Exp::INTEGER { .. } | Absyn::Exp::REAL { .. }
-        | Absyn::Exp::STRING { .. } | Absyn::Exp::BOOL { .. })
+    matches!(
+        e,
+        Absyn::Exp::INTEGER { .. } | Absyn::Exp::REAL { .. } | Absyn::Exp::STRING { .. } | Absyn::Exp::BOOL { .. }
+    )
 }
 
 /// Do two constructor names in pattern position denote the same constructor?
@@ -142,12 +182,7 @@ fn is_literal(e: &Absyn::Exp) -> bool {
 /// are recognised as one. An unresolvable name is assumed to be the same
 /// constructor as anything it is compared against, which keeps the enclosing
 /// patterns "overlapping".
-fn same_constructor(
-    n1: &str,
-    n2: &str,
-    top_level: &BTreeMap<String, NameNode<'_>>,
-    caller_qname: &str,
-) -> bool {
+fn same_constructor(n1: &str, n2: &str, top_level: &BTreeMap<String, NameNode<'_>>, caller_qname: &str) -> bool {
     if n1 == n2 {
         return true;
     }
@@ -156,7 +191,10 @@ fn same_constructor(
     if builtin(n1) || builtin(n2) {
         return n1.rsplit('.').next() == n2.rsplit('.').next();
     }
-    match (resolve_call_node(n1, top_level, caller_qname), resolve_call_node(n2, top_level, caller_qname)) {
+    match (
+        resolve_call_node(n1, top_level, caller_qname),
+        resolve_call_node(n2, top_level, caller_qname),
+    ) {
         (Some((q1, _)), Some((q2, _))) => q1 == q2,
         _ => true,
     }

@@ -42,16 +42,21 @@ impl ExternalInput {
         let mut lines = body.lines().filter(|l| !l.trim().is_empty());
         let header: Vec<String> = lines.next()?.split(sep).map(unquote).collect();
         // Which csv column feeds each input; -1 in C, `None` here.
-        let col: Vec<Option<usize>> =
-            input_names.iter().map(|n| header.iter().position(|h| h == n)).collect();
+        let col: Vec<Option<usize>> = input_names.iter().map(|n| header.iter().position(|h| h == n)).collect();
         let mut t = Vec::new();
         let mut u: Vec<Vec<f64>> = Vec::new();
         for line in lines {
-            let row: Vec<f64> =
-                line.split(sep).map(|v| unquote(v).parse::<f64>().unwrap_or(0.0)).collect();
+            let row: Vec<f64> = line
+                .split(sep)
+                .map(|v| unquote(v).parse::<f64>().unwrap_or(0.0))
+                .collect();
             let Some(&time) = row.first() else { continue };
             t.push(time);
-            u.push(col.iter().map(|c| c.and_then(|c| row.get(c).copied()).unwrap_or(0.0)).collect());
+            u.push(
+                col.iter()
+                    .map(|c| c.and_then(|c| row.get(c).copied()).unwrap_or(0.0))
+                    .collect(),
+            );
         }
         if t.is_empty() {
             return None;
@@ -97,7 +102,11 @@ impl ExternalInput {
         let dt = t2 - t1;
         for (k, out) in inputs.iter_mut().enumerate() {
             let (u1, u2) = (self.u[self.i][k], self.u[self.i + 1][k]);
-            *out = if u1 == u2 { u1 } else { (u1 * (dt + t1 - time) + (time - t1) * u2) / dt };
+            *out = if u1 == u2 {
+                u1
+            } else {
+                (u1 * (dt + t1 - time) + (time - t1) * u2) / dt
+            };
         }
     }
 }
@@ -159,7 +168,11 @@ impl ExtInputHook {
             .iter()
             .map(|v| (if slot == Slot::Start { v.start_off } else { v.off }, v.wty))
             .collect();
-        Some(alloc::boxed::Box::new(ExtInputHook { ext, slots, inputs: empty(inputs.len()) }))
+        Some(alloc::boxed::Box::new(ExtInputHook {
+            ext,
+            slots,
+            inputs: empty(inputs.len()),
+        }))
     }
 
     /// The same for the optimizer, whose inputs are real `SimData` indices.
@@ -168,7 +181,10 @@ impl ExtInputHook {
         let ext = ExternalInput::load(&file, names)?;
         Some(alloc::boxed::Box::new(ExtInputHook {
             ext,
-            slots: indices.iter().map(|&i| (crate::REAL_OFF + i * 8, crate::WTy::F64)).collect(),
+            slots: indices
+                .iter()
+                .map(|&i| (crate::REAL_OFF + i * 8, crate::WTy::F64))
+                .collect(),
             inputs: empty(indices.len()),
         }))
     }
@@ -187,8 +203,7 @@ impl ExtInputHook {
 
 /// The armed hook, consulted by every write of the model clock. A single global
 /// for the reason `RES_CTX` is one: runs are serialized per process.
-static ACTIVE: core::sync::atomic::AtomicPtr<ExtInputHook> =
-    core::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
+static ACTIVE: core::sync::atomic::AtomicPtr<ExtInputHook> = core::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
 
 /// C's `externalInputallocate` .. `externalInputFree` bracket. Boxed rather than
 /// borrowed because the caller keeps reading the trajectory while it is armed.

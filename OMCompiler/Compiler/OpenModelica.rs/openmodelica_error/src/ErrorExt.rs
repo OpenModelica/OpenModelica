@@ -39,9 +39,9 @@ use std::sync::Mutex;
 use std::thread::ThreadId;
 
 use arcstr::ArcStr;
-use metamodelica::{List, SourceInfo, nil, cons};
+use metamodelica::{List, SourceInfo, cons, nil};
 
-use crate::ErrorTypes::{Message, Severity, MessageType, TotalMessage};
+use crate::ErrorTypes::{Message, MessageType, Severity, TotalMessage};
 
 /// One slot in the per-thread error queue.
 ///
@@ -63,7 +63,10 @@ impl QueuedMessage {
     fn as_total(&self) -> TotalMessage {
         let mut msg = self.msg.clone();
         msg.message = ArcStr::from(self.substituted_body());
-        TotalMessage { msg, info: self.info.clone() }
+        TotalMessage {
+            msg,
+            info: self.info.clone(),
+        }
     }
 
     /// Mirrors `ErrorMessage::getShortMessage()` (`veryshort_msg`): the
@@ -159,13 +162,8 @@ fn substitute_tokens(template: &str, tokens: &List<ArcStr>) -> String {
                 Some(&d) if d.is_ascii_digit() => {
                     chars.next();
                     // `%0` underflows to an invalid index, matching C++.
-                    let Some(tok) = (d as usize)
-                        .checked_sub('0' as usize + 1)
-                        .and_then(|i| toks.get(i))
-                    else {
-                        eprintln!(
-                            "Internal error: Invalid positional index %{d} in error message."
-                        );
+                    let Some(tok) = (d as usize).checked_sub('0' as usize + 1).and_then(|i| toks.get(i)) else {
+                        eprintln!("Internal error: Invalid positional index %{d} in error message.");
                         eprintln!("Given message was: {template}");
                         return String::new();
                     };
@@ -495,8 +493,7 @@ fn add_runtime_error_message(msg: &str) {
 /// Whether [`initAssertionFunctions`] ran and so the dlopened runtime's
 /// `omc_assert` should be rebound (the rebinding happens in
 /// `dynload::ensure_runtime`, once the runtime is loaded).
-static ASSERT_FUNCTIONS_REGISTERED: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
+static ASSERT_FUNCTIONS_REGISTERED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Read by `dynload::ensure_runtime` to decide whether to rebind `omc_assert`.
 pub fn assertFunctionsRegistered() -> bool {
@@ -548,8 +545,7 @@ pub unsafe extern "C" fn omrs_add_runtime_error_pos(
 /// (i.e. [`registerModelicaFormatError`] ran). The rebinding itself happens in
 /// `dynload::ensure_runtime`, once the C runtime that owns the
 /// `OpenModelica_Modelica*Error` function pointers has been loaded.
-static MODELICA_ERROR_REGISTERED: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
+static MODELICA_ERROR_REGISTERED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Whether [`registerModelicaFormatError`] has been called. Read by
 /// `dynload::ensure_runtime` to decide whether to rebind the runtime pointers.
@@ -574,7 +570,19 @@ pub unsafe extern "C" fn omrs_add_runtime_error(msg: *const std::os::raw::c_char
 
 /// Append a positionless `RUNTIME` message at `severity` to the buffer.
 fn add_runtime_message_at(msg: &str, severity: Severity) {
-    addSourceMessage(0, MessageType::SIMULATION, severity, 0, 0, 0, 0, false, ArcStr::from(""), ArcStr::from(msg), nil());
+    addSourceMessage(
+        0,
+        MessageType::SIMULATION,
+        severity,
+        0,
+        0,
+        0,
+        0,
+        false,
+        ArcStr::from(""),
+        ArcStr::from(msg),
+        nil(),
+    );
 }
 
 /// Route `ModelicaError`/`ModelicaFormatError` to the error buffer as a
@@ -684,8 +692,7 @@ pub fn popCheckPoint(id: ArcStr) -> List<i32> {
                 s.check_points.last().map(|(_, cid)| cid.as_str()),
             );
         }
-        let detached: Vec<QueuedMessage> =
-            s.queue.drain(start.min(s.queue.len())..).collect();
+        let detached: Vec<QueuedMessage> = s.queue.drain(start.min(s.queue.len())..).collect();
         for d in &detached {
             bump_counters(s, &d.msg.severity, -1);
         }

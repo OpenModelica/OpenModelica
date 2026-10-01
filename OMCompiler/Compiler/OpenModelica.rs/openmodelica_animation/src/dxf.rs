@@ -74,8 +74,11 @@ fn pf(s: &str) -> f32 {
 // that splits into two triangles (matching OMEdit's DXFile primitive sets).
 fn emit_face(f: &Face, m: &mut CadMesh) {
     let rgb = aci_rgb(f.color);
-    let tris: &[[usize; 3]] =
-        if f.v[0] == f.v[3] { &[[0, 1, 2]] } else { &[[0, 1, 2], [0, 2, 3]] };
+    let tris: &[[usize; 3]] = if f.v[0] == f.v[3] {
+        &[[0, 1, 2]]
+    } else {
+        &[[0, 1, 2], [0, 2, 3]]
+    };
     for t in tris {
         let n = normal(f.v[t[0]], f.v[t[1]], f.v[t[2]]);
         for &vi in t {
@@ -89,7 +92,11 @@ fn emit_face(f: &Face, m: &mut CadMesh) {
 fn normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
     let u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     let v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-    let n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    let n = [
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
+    ];
     let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
     if len > 0.0 {
         [n[0] / len, n[1] / len, n[2] / len]

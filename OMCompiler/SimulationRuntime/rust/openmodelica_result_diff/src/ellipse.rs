@@ -198,5 +198,11 @@ pub fn ellipse_tube(x: &mut [f64], y: &[f64], size: &TubeSize) -> (Curve, Curve)
     p.y_low.truncate(p.count_low);
     p.x_high.truncate(p.count_high);
     p.y_high.truncate(p.count_high);
-    (Curve { x: p.x_low, y: p.y_low }, Curve { x: p.x_high, y: p.y_high })
+    (
+        Curve { x: p.x_low, y: p.y_low },
+        Curve {
+            x: p.x_high,
+            y: p.y_high,
+        },
+    )
 }

@@ -159,11 +159,7 @@ impl LinePattern {
 impl FillPattern {
     /// Gradients/hatches are approximated as solid, as in the C++ renderer.
     fn from_index(i: i32) -> FillPattern {
-        if i == 1 {
-            FillPattern::None
-        } else {
-            FillPattern::Solid
-        }
+        if i == 1 { FillPattern::None } else { FillPattern::Solid }
     }
 }
 
@@ -301,13 +297,7 @@ fn dash_array(p: LinePattern, w: f64) -> String {
     match p {
         LinePattern::Dash => format!("{},{}", num(4.0 * u), num(4.0 * u)),
         LinePattern::Dot => format!("{},{}", num(u), num(2.0 * u)),
-        LinePattern::DashDot => format!(
-            "{},{},{},{}",
-            num(4.0 * u),
-            num(2.0 * u),
-            num(u),
-            num(2.0 * u)
-        ),
+        LinePattern::DashDot => format!("{},{},{},{}", num(4.0 * u), num(2.0 * u), num(u), num(2.0 * u)),
         LinePattern::DashDotDot => format!(
             "{},{},{},{},{},{}",
             num(4.0 * u),
@@ -396,8 +386,7 @@ fn emit_polygon(svg: &mut String, s: &Shape) {
 }
 
 fn is_full_ellipse(s: &Shape) -> bool {
-    (s.end_angle - s.start_angle).abs() >= 359.999
-        || (s.start_angle == 0.0 && s.end_angle == 0.0)
+    (s.end_angle - s.start_angle).abs() >= 359.999 || (s.start_angle == 0.0 && s.end_angle == 0.0)
 }
 
 fn emit_ellipse(svg: &mut String, s: &Shape) {
@@ -422,15 +411,12 @@ fn emit_ellipse(svg: &mut String, s: &Shape) {
     let a1 = s.end_angle.to_radians();
     let (x0, y0) = (cx + rx * a0.cos(), cy + ry * a0.sin());
     let (x1, y1) = (cx + rx * a1.cos(), cy + ry * a1.sin());
-    let large = if (s.end_angle - s.start_angle).abs() > 180.0 { 1 } else { 0 };
-    let arc = format!(
-        "A {} {} 0 {} 1 {} {}",
-        num(rx),
-        num(ry),
-        large,
-        num(x1),
-        num(y1)
-    );
+    let large = if (s.end_angle - s.start_angle).abs() > 180.0 {
+        1
+    } else {
+        0
+    };
+    let arc = format!("A {} {} 0 {} 1 {} {}", num(rx), num(ry), large, num(x1), num(y1));
     match s.closure {
         EllipseClosure::None => svg.push_str(&format!(
             "    <path d=\"M {} {} {}\" style=\"fill:none;{}\"/>\n",
@@ -461,10 +447,7 @@ fn emit_ellipse(svg: &mut String, s: &Shape) {
 }
 
 fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
-    let (x0, x1) = (
-        s.extent.p1.x.min(s.extent.p2.x),
-        s.extent.p1.x.max(s.extent.p2.x),
-    );
+    let (x0, x1) = (s.extent.p1.x.min(s.extent.p2.x), s.extent.p1.x.max(s.extent.p2.x));
     // The anchor belongs at the edge the text is aligned to, not at the centre
     // of the extent: anchoring "start" in the middle of the box indents the
     // text by half its width.
@@ -499,7 +482,11 @@ fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
         }
     };
 
-    let col = if s.text_color.is_set() { s.text_color } else { s.line_color };
+    let col = if s.text_color.is_set() {
+        s.text_color
+    } else {
+        s.line_color
+    };
     let anchor = match s.horizontal_alignment {
         TextAlignment::Left => "start",
         TextAlignment::Right => "end",
@@ -592,11 +579,7 @@ fn emit_shape(svg: &mut String, s: &Shape, name_text: &str) {
     if transformed {
         svg.push_str("  <g transform=\"");
         if s.origin.x != 0.0 || s.origin.y != 0.0 {
-            svg.push_str(&format!(
-                "translate({},{}) ",
-                num(s.origin.x),
-                num(s.origin.y)
-            ));
+            svg.push_str(&format!("translate({},{}) ", num(s.origin.x), num(s.origin.y)));
         }
         if s.rotation != 0.0 {
             svg.push_str(&format!("rotate({})", num(s.rotation)));
@@ -658,7 +641,11 @@ fn view_box(icon: &Icon) -> ViewBox {
     let h = ymax - ymin;
     let mut max_stroke: f64 = 0.0;
     for s in &icon.graphics {
-        let tw = if s.kind == ShapeKind::Line { s.thickness } else { s.line_thickness };
+        let tw = if s.kind == ShapeKind::Line {
+            s.thickness
+        } else {
+            s.line_thickness
+        };
         max_stroke = max_stroke.max(stroke_width(tw));
     }
     let margin = max_stroke.max(0.005 * w.max(h));
@@ -774,7 +761,11 @@ struct Raster {
 
 impl Raster {
     fn new(w: usize, h: usize) -> Raster {
-        Raster { w, h, px: vec![0; w * h * 4] }
+        Raster {
+            w,
+            h,
+            px: vec![0; w * h * 4],
+        }
     }
 
     fn set(&mut self, x: i64, y: i64, c: Color) {
@@ -890,10 +881,22 @@ fn stroke_polyline(r: &mut Raster, pts: &[Point], closed: bool, c: Color, width_
         }
         let (nx, ny) = (-dy / len * hw, dx / len * hw);
         let quad = [
-            Point { x: a.x + nx, y: a.y + ny },
-            Point { x: b.x + nx, y: b.y + ny },
-            Point { x: b.x - nx, y: b.y - ny },
-            Point { x: a.x - nx, y: a.y - ny },
+            Point {
+                x: a.x + nx,
+                y: a.y + ny,
+            },
+            Point {
+                x: b.x + nx,
+                y: b.y + ny,
+            },
+            Point {
+                x: b.x - nx,
+                y: b.y - ny,
+            },
+            Point {
+                x: a.x - nx,
+                y: a.y - ny,
+            },
         ];
         fill_polygon(r, &quad, c);
     }
@@ -920,7 +923,10 @@ fn ellipse_points(s: &Shape) -> Vec<Point> {
     }
     for i in 0..=N {
         let a = a0 + (a1 - a0) * f64::from(i) / f64::from(N);
-        pts.push(Point { x: cx + rx * a.cos(), y: cy + ry * a.sin() });
+        pts.push(Point {
+            x: cx + rx * a.cos(),
+            y: cy + ry * a.sin(),
+        });
     }
     pts
 }
@@ -957,7 +963,13 @@ fn raster_shape(r: &mut Raster, m: &DeviceMap, s: &Shape) {
                 fill_polygon(r, &dev, s.fill_color);
             }
             if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, true, s.line_color, stroke_width(s.line_thickness) * px_per_unit);
+                stroke_polyline(
+                    r,
+                    &dev,
+                    true,
+                    s.line_color,
+                    stroke_width(s.line_thickness) * px_per_unit,
+                );
             }
         }
         ShapeKind::Polygon => {
@@ -966,7 +978,13 @@ fn raster_shape(r: &mut Raster, m: &DeviceMap, s: &Shape) {
                 fill_polygon(r, &dev, s.fill_color);
             }
             if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, true, s.line_color, stroke_width(s.line_thickness) * px_per_unit);
+                stroke_polyline(
+                    r,
+                    &dev,
+                    true,
+                    s.line_color,
+                    stroke_width(s.line_thickness) * px_per_unit,
+                );
             }
         }
         ShapeKind::Ellipse => {
@@ -977,7 +995,13 @@ fn raster_shape(r: &mut Raster, m: &DeviceMap, s: &Shape) {
                 fill_polygon(r, &dev, s.fill_color);
             }
             if s.line_pattern != LinePattern::None {
-                stroke_polyline(r, &dev, closed, s.line_color, stroke_width(s.line_thickness) * px_per_unit);
+                stroke_polyline(
+                    r,
+                    &dev,
+                    closed,
+                    s.line_color,
+                    stroke_width(s.line_thickness) * px_per_unit,
+                );
             }
         }
         ShapeKind::Line => {
@@ -1078,7 +1102,11 @@ fn render_icon_png(icon: &Icon) -> Vec<u8> {
     let out_h = ((vb.h * scale).round() as usize).max(1);
 
     let mut hi = Raster::new(out_w * SS, out_h * SS);
-    let m = DeviceMap { sw: hi.w as f64, sh: hi.h as f64, vb };
+    let m = DeviceMap {
+        sw: hi.w as f64,
+        sh: hi.h as f64,
+        vb,
+    };
     for s in &icon.graphics {
         raster_shape(&mut hi, &m, s);
     }
@@ -1110,9 +1138,7 @@ impl JsonExt for J {
                 .into_iter()
                 .find(|(k, _)| k.as_str() == key)
                 .map(|(_, v)| v.clone()),
-            JSON::OBJECT { values } => {
-                UnorderedMap::get(ArcStr::from(key), values.clone()).ok().flatten()
-            }
+            JSON::OBJECT { values } => UnorderedMap::get(ArcStr::from(key), values.clone()).ok().flatten(),
             _ => None,
         }
     }
@@ -1120,9 +1146,7 @@ impl JsonExt for J {
     fn at(&self, index: usize) -> J {
         match self.as_deref()? {
             JSON::LIST { values } => (&**values).into_iter().nth(index).cloned(),
-            JSON::ARRAY { values } => {
-                Vector::get(values.clone(), index as i32 + 1).ok()
-            }
+            JSON::ARRAY { values } => Vector::get(values.clone(), index as i32 + 1).ok(),
             _ => None,
         }
     }
@@ -1146,10 +1170,7 @@ impl JsonExt for J {
     }
 
     fn is_object(&self) -> bool {
-        matches!(
-            self.as_deref(),
-            Some(JSON::OBJECT { .. } | JSON::LIST_OBJECT { .. })
-        )
+        matches!(self.as_deref(), Some(JSON::OBJECT { .. } | JSON::LIST_OBJECT { .. }))
     }
 
     fn is_array(&self) -> bool {
@@ -1186,7 +1207,10 @@ impl JsonExt for J {
 
 fn parse_point(j: &J) -> Point {
     if j.len() >= 2 {
-        Point { x: j.at(0).as_num(), y: j.at(1).as_num() }
+        Point {
+            x: j.at(0).as_num(),
+            y: j.at(1).as_num(),
+        }
     } else {
         Point::default()
     }
@@ -1194,7 +1218,10 @@ fn parse_point(j: &J) -> Point {
 
 fn parse_extent(j: &J) -> Extent {
     if j.len() >= 2 {
-        Extent { p1: parse_point(&j.at(0)), p2: parse_point(&j.at(1)) }
+        Extent {
+            p1: parse_point(&j.at(0)),
+            p2: parse_point(&j.at(1)),
+        }
     } else {
         Extent::default()
     }
@@ -1206,7 +1233,11 @@ fn parse_points(j: &J) -> Vec<Point> {
 
 fn parse_color(j: &J) -> Color {
     if j.len() >= 3 {
-        Color { r: j.at(0).as_int(), g: j.at(1).as_int(), b: j.at(2).as_int() }
+        Color {
+            r: j.at(0).as_int(),
+            g: j.at(1).as_int(),
+            b: j.at(2).as_int(),
+        }
     } else {
         Color::BLACK
     }
@@ -1296,8 +1327,7 @@ fn parse_shape(name: &str, elements: &J) -> Option<Shape> {
                 .into_iter()
                 .map(|st| TextStyle::from_index(enum_index(&Some(st), TextStyle::Bold as i32)))
                 .collect();
-            s.horizontal_alignment =
-                TextAlignment::from_index(enum_index(&el[14], TextAlignment::Center as i32));
+            s.horizontal_alignment = TextAlignment::from_index(enum_index(&el[14], TextAlignment::Center as i32));
         }
         "Bitmap" => {
             s.kind = ShapeKind::Bitmap;
@@ -1443,11 +1473,7 @@ fn collect_placed_connectors(root: &J) -> Vec<PlacedConnector> {
         if !t.is_object() || t.get("restriction").as_str() != "connector" {
             continue;
         }
-        let ext = e
-            .get("annotation")
-            .get("Placement")
-            .get("transformation")
-            .get("extent");
+        let ext = e.get("annotation").get("Placement").get("transformation").get("extent");
         let Some(b) = placement_box(&ext) else {
             continue; // no placement -> not drawn
         };
@@ -1511,10 +1537,7 @@ struct Placement {
 }
 
 fn parse_placement(component: &J) -> Option<Placement> {
-    let t = component
-        .get("annotation")
-        .get("Placement")
-        .get("transformation");
+    let t = component.get("annotation").get("Placement").get("transformation");
     let b = placement_box(&t.get("extent"))?;
     let origin_json = t.get("origin");
     let origin = if origin_json.len() >= 2 {
@@ -1662,10 +1685,7 @@ pub fn iconSVGFromHandle(handle: i32, modelName: ArcStr) -> ArcStr {
 
 pub fn graphicalRepresentationXMLFromHandle(handle: i32, scaleToMm: metamodelica::Real) -> ArcStr {
     match model_icon(handle) {
-        Some(icon) => ArcStr::from(render_graphical_representation_xml(
-            &icon,
-            scaleToMm.into_inner(),
-        )),
+        Some(icon) => ArcStr::from(render_graphical_representation_xml(&icon, scaleToMm.into_inner())),
         None => ArcStr::new(),
     }
 }

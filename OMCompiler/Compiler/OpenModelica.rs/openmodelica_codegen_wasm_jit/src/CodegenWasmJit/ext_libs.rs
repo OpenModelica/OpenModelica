@@ -42,8 +42,16 @@ pub(crate) fn resolve_ext_libraries(
     }
     // The rest of the `LDFLAGS=` line CodegenC.tpl writes. `ffi/` comes first: it
     // holds the shared build of libraries the lib dir ships only as archives.
-    dirs.push(format!("{}/lib/{}/omc/ffi/", mp.omhome, openmodelica_util::Autoconf::triple));
-    dirs.push(format!("{}/lib/{}/omc/", mp.omhome, openmodelica_util::Autoconf::triple));
+    dirs.push(format!(
+        "{}/lib/{}/omc/ffi/",
+        mp.omhome,
+        openmodelica_util::Autoconf::triple
+    ));
+    dirs.push(format!(
+        "{}/lib/{}/omc/",
+        mp.omhome,
+        openmodelica_util::Autoconf::triple
+    ));
     dirs.push(format!("{}/lib/", mp.omhome));
     for d in ld_search_dirs(&mp.ldflags) {
         dirs.push(format!("{d}/"));
@@ -67,7 +75,11 @@ pub(crate) fn resolve_ext_libraries(
             if let Some((path, bytes)) = find_wasm_library(&lib, &dirs) {
                 have_wasm = true;
                 if placed.insert(path.clone()) {
-                    out.wasm.push(ExtLibrary { name: path, bytes, fixed: true });
+                    out.wasm.push(ExtLibrary {
+                        name: path,
+                        bytes,
+                        fixed: true,
+                    });
                 }
             }
             if let Some(path) = find_source_library(&lib, &dirs) {
@@ -91,13 +103,19 @@ pub(crate) fn resolve_ext_libraries(
             notes.push(format!(
                 "`{lib}` was not found (looked in {}); a wasm target loads a prebuilt shared \
                  library, built with `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`",
-                dirs.iter().map(|d| if d.is_empty() { "." } else { d.trim_end_matches('/') })
-                    .collect::<Vec<_>>().join(", ")
+                dirs.iter()
+                    .map(|d| if d.is_empty() { "." } else { d.trim_end_matches('/') })
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ));
             continue;
         };
         if placed.insert(path.clone()) {
-            out.wasm.push(ExtLibrary { name: path, bytes, fixed: true });
+            out.wasm.push(ExtLibrary {
+                name: path,
+                bytes,
+                fixed: true,
+            });
         }
     }
     if fortran {
@@ -122,8 +140,7 @@ pub(crate) fn resolve_ext_libraries(
 /// platform libraries, archives and compiled `Include` sources. Never in the browser
 /// omc; `OMC_WASM_NATIVE_EXTERNALS=0` makes a native omc refuse them the same way.
 pub(crate) fn native_externals_allowed() -> bool {
-    cfg!(not(target_arch = "wasm32"))
-        && !matches!(std::env::var("OMC_WASM_NATIVE_EXTERNALS").as_deref(), Ok("0"))
+    cfg!(not(target_arch = "wasm32")) && !matches!(std::env::var("OMC_WASM_NATIVE_EXTERNALS").as_deref(), Ok("0"))
 }
 
 fn no_compiler_note() -> String {
@@ -204,7 +221,9 @@ fn compile_include_tu(
     let output = match cmd.output() {
         Ok(o) => o,
         Err(e) => {
-            notes.push(format!("`{clang}` could not be run to compile the `Include` C sources: {e}"));
+            notes.push(format!(
+                "`{clang}` could not be run to compile the `Include` C sources: {e}"
+            ));
             return Ok(None);
         }
     };
@@ -218,7 +237,11 @@ fn compile_include_tu(
     }
     let bytes = std::fs::read(&out).map_err(|_| "CodegenWasmJit: cannot read the compiled include library")?;
     let _ = std::fs::remove_dir_all(&dir);
-    Ok(Some(ExtLibrary { name: format!("{prefix}_includes.wasm"), bytes, fixed: false }))
+    Ok(Some(ExtLibrary {
+        name: format!("{prefix}_includes.wasm"),
+        bytes,
+        fixed: false,
+    }))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -308,7 +331,9 @@ pub(super) fn dylink_needs(bytes: &[u8]) -> Vec<String> {
         }
     };
     for payload in wasmparser::Parser::new(0).parse_all(bytes).flatten() {
-        let wasmparser::Payload::ImportSection(reader) = payload else { continue };
+        let wasmparser::Payload::ImportSection(reader) = payload else {
+            continue;
+        };
         for group in reader.into_iter().flatten() {
             match group {
                 Imports::Single(_, imp) => add(imp.module, imp.name, matches!(imp.ty, TypeRef::Func(_))),
@@ -347,7 +372,11 @@ pub(super) fn unresolved_dylink_needs(
     {
         defined.extend(wasm_exports(bytes));
     }
-    needs.iter().filter(|n| !defined.contains(n.as_str())).cloned().collect()
+    needs
+        .iter()
+        .filter(|n| !defined.contains(n.as_str()))
+        .cloned()
+        .collect()
 }
 
 /// The `-L` directories of a linker flag string (`-Ldir`, `-L"dir"`, `-L dir`).
@@ -389,7 +418,9 @@ fn find_source_library(spec: &str, dirs: &[String]) -> Option<String> {
     if !spec.ends_with(".c") && !spec.ends_with(".cc") && !spec.ends_with(".cpp") && !spec.ends_with(".cxx") {
         return None;
     }
-    dirs.iter().map(|d| format!("{d}{spec}")).find(|p| openmodelica_wasi::fs::exists(p))
+    dirs.iter()
+        .map(|d| format!("{d}{spec}"))
+        .find(|p| openmodelica_wasi::fs::exists(p))
 }
 
 /// What a host linker spec resolves to.
@@ -406,7 +437,9 @@ enum NativeLib {
 fn is_link_input(name: &str) -> bool {
     // `gcc -c -o x.lib` spells an object file the MSVC way. On Windows the suffix
     // is a real static/import library, which no `cc -shared` makes loadable.
-    name.ends_with(".a") || name.ends_with(".o") || (!cfg!(windows) && (name.ends_with(".lib") || name.ends_with(".obj")))
+    name.ends_with(".a")
+        || name.ends_with(".o")
+        || (!cfg!(windows) && (name.ends_with(".lib") || name.ends_with(".obj")))
 }
 
 /// The platform library a host linker spec names. A `-lfoo` nothing under `dirs`
@@ -431,15 +464,26 @@ fn find_native_library(spec: &str, dirs: &[String]) -> Option<NativeLib> {
     // directory `dirs[0]` matched it in.
     let found = |p: String| {
         let p = if p.contains(['/', '\\']) { p } else { format!("./{p}") };
-        Some(if is_link_input(&p) { NativeLib::Archive(p) } else { NativeLib::Shared(p) })
+        Some(if is_link_input(&p) {
+            NativeLib::Archive(p)
+        } else {
+            NativeLib::Shared(p)
+        })
     };
     if is_link_input(name) || name.contains(suffix) || name.contains(std::path::MAIN_SEPARATOR) {
-        return dirs.iter().map(|d| format!("{d}{name}")).find(|p| std::path::Path::new(p).exists()).and_then(found);
+        return dirs
+            .iter()
+            .map(|d| format!("{d}{name}"))
+            .find(|p| std::path::Path::new(p).exists())
+            .and_then(found);
     }
     // As ld searches: a directory at a time, the shared object before the archive.
     for dir in dirs {
-        let candidates =
-            [format!("{dir}{prefix}{name}{suffix}"), format!("{dir}{name}{suffix}"), format!("{dir}{prefix}{name}.a")];
+        let candidates = [
+            format!("{dir}{prefix}{name}{suffix}"),
+            format!("{dir}{name}{suffix}"),
+            format!("{dir}{prefix}{name}.a"),
+        ];
         if let Some(p) = candidates.into_iter().find(|p| std::path::Path::new(p).exists()) {
             return found(p);
         }

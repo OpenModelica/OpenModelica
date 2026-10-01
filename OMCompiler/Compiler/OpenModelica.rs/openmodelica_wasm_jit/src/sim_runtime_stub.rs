@@ -4,8 +4,7 @@
 
 use crate::model::SimModel;
 
-const NO_ENGINE: &str =
-    "CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)";
+const NO_ENGINE: &str = "CodegenWasmJit: the wasm JIT engine is not built in (enable the `jit` feature)";
 
 /// No compiled-module type without an engine.
 pub type Module = ();
@@ -19,11 +18,11 @@ pub struct RunResult {
 }
 
 pub fn runtime_module() -> std::result::Result<&'static Module, String> {
-    return Err(NO_ENGINE.to_string())
+    return Err(NO_ENGINE.to_string());
 }
 
 pub fn compile_model_module(_wasm: &[u8]) -> std::result::Result<Module, String> {
-    return Err(NO_ENGINE.to_string())
+    return Err(NO_ENGINE.to_string());
 }
 
 pub fn start_runtime_compile() {}
@@ -31,10 +30,13 @@ pub fn start_runtime_compile() {}
 pub fn set_alarm(_seconds: Option<u32>) {}
 
 pub fn take_compiled_model(_model: &SimModel) -> std::result::Result<Module, String> {
-    return Err(NO_ENGINE.to_string())
+    return Err(NO_ENGINE.to_string());
 }
 
-pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallSig]) -> std::result::Result<(), String> {
+pub fn prepare_native_externals(
+    _model: &SimModel,
+    _sigs: &[crate::sig::ExtCallSig],
+) -> std::result::Result<(), String> {
     Ok(())
 }
 
@@ -48,7 +50,7 @@ pub fn run(
     _meta: &openmodelica_sim_meta::SimMeta,
     _result: crate::result_sink::ResultTarget,
 ) -> std::result::Result<(RunResult, crate::result_sink::Written), String> {
-    return Err(NO_ENGINE.to_string())
+    return Err(NO_ENGINE.to_string());
 }
 
 /// No engine here, so nothing to precompile.

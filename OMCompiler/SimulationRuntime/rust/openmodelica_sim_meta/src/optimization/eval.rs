@@ -4,11 +4,11 @@
 //! DASSL residual recovers its context. They report `true` even after a model
 //! error, as the C ones do; the error is surfaced once `IpoptSolve` returns.
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use openmodelica_solvers::fmath;
 
 use super::ipopt::{Index, Number};
 use super::run::OptData;
@@ -156,8 +156,7 @@ pub(crate) unsafe extern "C" fn eval_g(
             } else {
                 point(i - 1, np - 1).to_vec()
             };
-            let (p0, p1, p2) =
-                (point(i, 0).to_vec(), point(i, 1).to_vec(), point(i, 2).to_vec());
+            let (p0, p1, p2) = (point(i, 0).to_vec(), point(i, 1).to_vec(), point(i, 2).to_vec());
             for (j, coeff) in a.iter().enumerate().take(3) {
                 for k in 0..nx {
                     let der = data.v(i, j)[nx + k];
@@ -177,8 +176,7 @@ pub(crate) unsafe extern "C" fn eval_g(
                     };
                     shift += 1;
                 }
-                out[shift..shift + nc]
-                    .copy_from_slice(&data.v(i, j)[index_con..index_con + nc]);
+                out[shift..shift + nc].copy_from_slice(&data.v(i, j)[index_con..index_con + nc]);
                 shift += nc;
             }
         }
@@ -218,13 +216,7 @@ pub(crate) unsafe extern "C" fn eval_g(
 /// C's `printMaxError`: the largest constraint violation and where it is, logged
 /// once per `evalfG` under `-lv=LOG_IPOPT_ERROR`.
 fn print_max_error(data: &OptData, g: &[f64]) {
-    let (nx, n_j, np, nsi, ncf) = (
-        data.dim.nx,
-        data.dim.n_j,
-        data.dim.np,
-        data.dim.nsi,
-        data.dim.ncf,
-    );
+    let (nx, n_j, np, nsi, ncf) = (data.dim.nx, data.dim.n_j, data.dim.np, data.dim.nsi, data.dim.ncf);
     let mut gmax = -1.0;
     let (mut ii, mut jj, mut kk) = (0usize, 0usize, -1i64);
     let mut l = 0;
@@ -266,7 +258,10 @@ fn print_max_error(data: &OptData, g: &[f64]) {
     // C prints these through `ryu_hr_tdzp_buf`, the shortest round-trip form.
     let (g, tt) = (omclog::shortest(gmax), omclog::shortest(t));
     let msg = if kk < nx {
-        format!("max error is {g} for the approximation of the state {}(time = {tt})", name(kk))
+        format!(
+            "max error is {g} for the approximation of the state {}(time = {tt})",
+            name(kk)
+        )
     } else if kk < n_j {
         format!(
             "max violation is {g} for the constraint {}(time = {tt})",
@@ -652,13 +647,7 @@ fn init_hessian_structure(data: &OptData, rows: &mut [Index], cols: &mut [Index]
 }
 
 /// C's `fill_hessian_values`.
-fn fill_hessian_values(
-    data: &mut OptData,
-    v: &mut [f64],
-    lambda: &[f64],
-    obj_factor: f64,
-    out: &mut [f64],
-) {
+fn fill_hessian_values(data: &mut OptData, v: &mut [f64], lambda: &[f64], obj_factor: f64, out: &mut [f64]) {
     let (nsi, np, nv, n_j) = (data.dim.nsi, data.dim.np, data.dim.nv, data.dim.n_j);
     let update_cost = obj_factor != 0.0;
     let update_mayer = update_cost && data.s.mayer;
@@ -776,8 +765,7 @@ fn hessian_numerical(
                         && (last_interval || lambda.get(l).copied().unwrap_or(0.0) != 0.0);
                     if use_row {
                         let d = data.tmp_j[l * nv + jj] - data.jac_row(i, j, l)[jj];
-                        data.h[(l * nv + ii) * nv + jj] =
-                            d * lambda.get(l).copied().unwrap_or(0.0) / h;
+                        data.h[(l * nv + ii) * nv + jj] = d * lambda.get(l).copied().unwrap_or(0.0) / h;
                     }
                 }
             }
@@ -809,8 +797,7 @@ fn hessian_numerical(
                     for l in 0..ncf {
                         if data.s.hcf[(l * nv + ii) * nv + jj] {
                             let d = data.tmp_jf[l * nv + jj] - data.jf[l * nv + jj];
-                            data.hcf[(l * nv + ii) * nv + jj] =
-                                d * lambda.get(n_j + l).copied().unwrap_or(0.0) / h;
+                            data.hcf[(l * nv + ii) * nv + jj] = d * lambda.get(n_j + l).copied().unwrap_or(0.0) / h;
                         }
                     }
                 }
@@ -852,13 +839,7 @@ fn weighted_sum(data: &OptData, i: usize, j: usize, update_lagrange: bool) -> f6
 
 /// Its `..._last_time_intervall` variant, which adds the final constraints and the
 /// Mayer term.
-fn weighted_sum_last(
-    data: &OptData,
-    i: usize,
-    j: usize,
-    update_lagrange: bool,
-    update_mayer: bool,
-) -> f64 {
+fn weighted_sum_last(data: &OptData, i: usize, j: usize, update_lagrange: bool, update_mayer: bool) -> f64 {
     let (nv, n_j, ncf) = (data.dim.nv, data.dim.n_j, data.dim.ncf);
     let mut sum = 0.0;
     if data.s.h0[i * nv + j] {

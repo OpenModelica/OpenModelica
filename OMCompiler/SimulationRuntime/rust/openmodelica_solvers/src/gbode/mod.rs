@@ -31,12 +31,12 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
+pub use crate::Ode;
 pub use conf::GbConf;
 use conf::{Interpolation, NlsMethod};
-pub use crate::Ode;
 pub(crate) use linsol::color_columns;
-pub(crate) use nls::Solved;
 use nls::GbNls;
+pub(crate) use nls::Solved;
 use nls_generic::GbNlsGeneric;
 use tableau::{Estimator, GmType, Tableau};
 
@@ -44,7 +44,6 @@ pub(crate) use crate::MINIMAL_STEP_SIZE;
 use crate::Result;
 use crate::omclog;
 use math::{abs, pow, sqrt};
-
 
 /// C's `GB_MINIMAL_STEP_SIZE` (`epsilon.h`).
 const GB_MINIMAL_STEP_SIZE: f64 = 1e-20;
@@ -295,18 +294,15 @@ impl Gbode {
                 _ => (sym_avail, None),
             }
         };
-        let nls =
-            internal_nls.then(|| GbNls::new(&t, n_states, tol, jac_colors, sym_jac, whole_jac));
-        let gnls = (!is_explicit && !internal_nls)
-            .then(|| GbNlsGeneric::new(&t, n_states, sym_jac, conf.nls_method));
+        let nls = internal_nls.then(|| GbNls::new(&t, n_states, tol, jac_colors, sym_jac, whole_jac));
+        let gnls = (!is_explicit && !internal_nls).then(|| GbNlsGeneric::new(&t, n_states, sym_jac, conf.nls_method));
         let multi_rate = conf.ratio > 0.0 && conf.ratio < 1.0;
         // With the birate mode and no explicit `-gbint`, C defaults to dense output.
-        let base_interpolation =
-            if multi_rate && crate::simflags::with_flags(|f| f.gb_flag("gbint")).is_none() {
-                Interpolation::DenseOutput
-            } else {
-                conf.interpolation
-            };
+        let base_interpolation = if multi_rate && crate::simflags::with_flags(|f| f.gb_flag("gbint")).is_none() {
+            Interpolation::DenseOutput
+        } else {
+            conf.interpolation
+        };
         // C's `gbode_allocateData` demotes dense output to Hermite when the method
         // has no formula for it.
         let interpolation = match (base_interpolation, t.with_dense_output) {
@@ -315,7 +311,11 @@ impl Gbode {
             (other, _) => other,
         };
         let (max_step_size, initial_step_size, no_restart) = crate::simflags::with_flags(|f| {
-            (f.max_step_size.unwrap_or(-1.0), f.initial_step_size.unwrap_or(-1.0), f.no_restart)
+            (
+                f.max_step_size.unwrap_or(-1.0),
+                f.initial_step_size.unwrap_or(-1.0),
+                f.no_restart,
+            )
         });
         omclog::info(
             omclog::SOLVER,
@@ -369,8 +369,7 @@ impl Gbode {
             // C: the outer step's last stage is not reused with a fast integration
             // in between.
             t.k_right = false;
-            let i = (fmath::round(n_states as f64 * conf.ratio).max(1.0) as usize)
-                .min(n_states.saturating_sub(1));
+            let i = (fmath::round(n_states as f64 * conf.ratio).max(1.0) as usize).min(n_states.saturating_sub(1));
             omclog::info!(
                 omclog::SOLVER,
                 false,
@@ -550,7 +549,11 @@ impl Gbode {
             }
             d2 = sqrt(d2 / n as f64) / h0;
             let d = d1.max(d2);
-            let h1 = if d > 1e-15 { sqrt(safety / d) } else { (1e-6f64).max(h0 * 1e-3) };
+            let h1 = if d > 1e-15 {
+                sqrt(safety / d)
+            } else {
+                (1e-6f64).max(h0 * 1e-3)
+            };
             self.step_size = (100.0 * h0).min(h1);
             self.opt_step_size = self.step_size;
             self.last_step_size = 0.0;

@@ -52,10 +52,7 @@ impl Shell {
     /// Start with a caller-supplied backend (e.g. `omshell_omc::backend()`).
     /// `repaint` is called from the worker thread (native) to wake the UI; on
     /// wasm it is unused (the UI polls on a timer).
-    pub fn with_backend(
-        backend: Box<dyn OmcBackend + Send>,
-        repaint: impl Fn() + Send + 'static,
-    ) -> Self {
+    pub fn with_backend(backend: Box<dyn OmcBackend + Send>, repaint: impl Fn() + Send + 'static) -> Self {
         Self {
             driver: Driver::spawn(backend, repaint),
             scrollback: Vec::new(),

@@ -11,8 +11,8 @@
 // what the callee applied. Both are ordinary runtime records, so
 // `rt_record_release` frees the captured values.
 
-use std::cell::RefCell;
 use crate::CodegenWasmJitFunctions::HashMap;
+use std::cell::RefCell;
 use std::sync::Arc;
 
 use arcstr::ArcStr;
@@ -24,15 +24,20 @@ use wasm_encoder as we;
 
 use super::{
     FnCtx, FnSig, SigTy, WTy, WTyVal, coerce, compile_call_args, compile_exp, emit_record_alloc,
-    emit_record_construction, mangle, mem_arg, record_layout, release_record_temps, rt_index, sig_ty,
-    var_sigtys,
+    emit_record_construction, mangle, mem_arg, record_layout, release_record_temps, rt_index, sig_ty, var_sigtys,
 };
 
 /// The closure object's own fields: the thunk's table index and the `env` handle.
 fn closure_fields() -> [(ArcStr, SigTy); 2] {
     [
         (arcstr::literal!("fn"), SigTy::Int),
-        (arcstr::literal!("env"), SigTy::Record { path: ArcStr::new(), fields: Arc::new(Vec::new()) }),
+        (
+            arcstr::literal!("env"),
+            SigTy::Record {
+                path: ArcStr::new(),
+                fields: Arc::new(Vec::new()),
+            },
+        ),
     ]
 }
 
@@ -44,7 +49,10 @@ fn closure_offsets() -> (u32, u32) {
 
 /// Synthetic field list for the environment record holding `tys` in order.
 fn env_fields(tys: &[SigTy]) -> Vec<(ArcStr, SigTy)> {
-    tys.iter().enumerate().map(|(i, t)| (ArcStr::from(format!("${i}")), t.clone())).collect()
+    tys.iter()
+        .enumerate()
+        .map(|(i, t)| (ArcStr::from(format!("${i}")), t.clone()))
+        .collect()
 }
 
 /// Closure thunks and `call_indirect` types collected while lowering one
@@ -91,14 +99,18 @@ pub(crate) fn begin(type_base: u32, base_global: u32) {
 pub(crate) fn take() -> ClosureWiring {
     POOL.with(|p| {
         let mut pool = p.borrow_mut();
-        ClosureWiring { thunks: std::mem::take(&mut pool.thunks), types: std::mem::take(&mut pool.types) }
+        ClosureWiring {
+            thunks: std::mem::take(&mut pool.thunks),
+            types: std::mem::take(&mut pool.types),
+        }
     })
 }
 
 /// The type index of `(i32 env, params…) -> results`, interning it on first use.
 fn intern_type(params: &[SigTy], results: &[SigTy]) -> u32 {
-    let p: Vec<we::ValType> =
-        std::iter::once(we::ValType::I32).chain(params.iter().map(|s| s.wty().val())).collect();
+    let p: Vec<we::ValType> = std::iter::once(we::ValType::I32)
+        .chain(params.iter().map(|s| s.wty().val()))
+        .collect();
     let r: Vec<we::ValType> = results.iter().map(|s| s.wty().val()).collect();
     POOL.with(|pool| {
         let mut pool = pool.borrow_mut();
@@ -118,7 +130,10 @@ pub(crate) fn function_ptr_sigty(
     args: &List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>,
 ) -> Result<SigTy> {
     let results: Result<Vec<SigTy>> = (&**tys).into_iter().map(|t| sig_ty(t)).collect();
-    Ok(SigTy::Func { params: Arc::new(var_sigtys(args)?), results: Arc::new(results?) })
+    Ok(SigTy::Func {
+        params: Arc::new(var_sigtys(args)?),
+        results: Arc::new(results?),
+    })
 }
 
 /// The `T_FUNCTION` inside a `T_FUNCTION_REFERENCE_VAR`/`_FUNC` wrapper.
@@ -141,23 +156,35 @@ fn func_arg_names(ty: &DAE::Type) -> Result<Vec<ArcStr>> {
 
 /// The residual signature a function-reference expression's value is called with.
 pub(crate) fn reference_sigty(ty: &DAE::Type) -> Result<SigTy> {
-    let DAE::Type::T_FUNCTION { funcArg, funcResultType, .. } = function_type(ty)? else {
+    let DAE::Type::T_FUNCTION {
+        funcArg,
+        funcResultType,
+        ..
+    } = function_type(ty)?
+    else {
         return Err("CodegenWasmJit: function reference without a function type");
     };
     let params: Result<Vec<SigTy>> = (&**funcArg).into_iter().map(|a| sig_ty(&a.ty)).collect();
     let results = match &**funcResultType {
         DAE::Type::T_NORETCALL { .. } => Vec::new(),
-        DAE::Type::T_TUPLE { types, .. } => {
-            (&**types).into_iter().map(|t| sig_ty(t)).collect::<Result<Vec<_>>>()?
-        }
+        DAE::Type::T_TUPLE { types, .. } => (&**types).into_iter().map(|t| sig_ty(t)).collect::<Result<Vec<_>>>()?,
         other => vec![sig_ty(other)?],
     };
-    Ok(SigTy::Func { params: Arc::new(params?), results: Arc::new(results) })
+    Ok(SigTy::Func {
+        params: Arc::new(params?),
+        results: Arc::new(results),
+    })
 }
 
 /// Lower a `PARTEVALFUNCTION`, leaving the owned closure handle on the stack.
 pub(crate) fn compile_parteval(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
-    let DAE::Exp::PARTEVALFUNCTION { path, expList, ty, origType } = exp else {
+    let DAE::Exp::PARTEVALFUNCTION {
+        path,
+        expList,
+        ty,
+        origType,
+    } = exp
+    else {
         return Err("CodegenWasmJit: not a PARTEVALFUNCTION");
     };
     let exps: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expList).into_iter().collect();
@@ -166,11 +193,7 @@ pub(crate) fn compile_parteval(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
 
 /// `function f()` with nothing applied, which the frontend leaves as a `CREF`
 /// of function-reference type rather than a `PARTEVALFUNCTION`.
-pub(crate) fn compile_fnref_cref(
-    ctx: &mut FnCtx,
-    cref: &DAE::ComponentRef,
-    ty: &DAE::Type,
-) -> Result<()> {
+pub(crate) fn compile_fnref_cref(ctx: &mut FnCtx, cref: &DAE::ComponentRef, ty: &DAE::Type) -> Result<()> {
     let path = ComponentReference::crefToPath(&metamodelica::Ref::new(cref.clone()))?;
     emit_reference(ctx, &mangle(&path)?, &[], ty, ty)
 }
@@ -193,8 +216,9 @@ fn emit_reference(
     if all_names.len() != target_sig.params.len() {
         return Err("CodegenWasmJit: function reference disagrees with the function's argument count");
     }
-    let applied: Vec<usize> =
-        (0..all_names.len()).filter(|i| !residual_names.contains(&all_names[*i])).collect();
+    let applied: Vec<usize> = (0..all_names.len())
+        .filter(|i| !residual_names.contains(&all_names[*i]))
+        .collect();
     if applied.len() != exps.len() {
         return Err("CodegenWasmJit: function reference applies a different number of arguments than it drops");
     }
@@ -281,9 +305,10 @@ fn intern_thunk(
             }
             // A residual argument: pushed by the caller, already owned.
             None => {
-                let k = residual.iter().position(|r| *r == i).ok_or_else(|| {
-                    "CodegenWasmJit: function-reference argument is neither applied nor residual"
-                })?;
+                let k = residual
+                    .iter()
+                    .position(|r| *r == i)
+                    .ok_or_else(|| "CodegenWasmJit: function-reference argument is neither applied nor residual")?;
                 f.instruction(&I::LocalGet(1 + k as u32));
             }
         }
@@ -320,7 +345,10 @@ pub(crate) fn compile_fnptr_call(
     ctx.emit(we::Instruction::LocalGet(local));
     ctx.emit(we::Instruction::I32Load(mem_arg(fn_off, 2)));
     let type_index = intern_type(&params, &results);
-    ctx.emit(we::Instruction::CallIndirect { type_index, table_index: 0 });
+    ctx.emit(we::Instruction::CallIndirect {
+        type_index,
+        table_index: 0,
+    });
     release_record_temps(ctx, &temps)?;
     Ok((*results).clone())
 }

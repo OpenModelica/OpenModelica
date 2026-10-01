@@ -147,9 +147,7 @@ fn remove_loop(x: &mut Vec<f64>, y: &mut Vec<f64>) {
                 k += 1;
                 while i < j
                     && (x[i] < x[k]
-                        || (x[i] == x[k]
-                            && y[i] < y[k]
-                            && !(k + 1 < x.len() && x[k] == x[k + 1] && y[k + 1] < y[k])))
+                        || (x[i] == x[k] && y[i] < y[k] && !(k + 1 < x.len() && x[k] == x[k + 1] && y[k + 1] < y[k])))
                 {
                     i += 1;
                 }
@@ -160,9 +158,7 @@ fn remove_loop(x: &mut Vec<f64>, y: &mut Vec<f64>) {
             if x[k] != x[k - 1] {
                 yi = interpolate_on(x, y, k, x[i]);
             }
-            while i + 1 < x.len()
-                && ((x[k] != x[k - 1] && y[i] < yi) || (x[k] == x[k - 1] && x[i] < x[k]))
-            {
+            while i + 1 < x.len() && ((x[k] != x[k - 1] && y[i] < yi) || (x[k] == x[k - 1] && x[i] < x[k])) {
                 i += 1;
                 if x[k] != x[k - 1] {
                     yi = interpolate_on(x, y, k, x[i]);

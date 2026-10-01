@@ -34,11 +34,7 @@ impl Resolver {
         }
     }
 
-    fn lookup<'a>(
-        table: &'a HashMap<Key, PathBuf>,
-        tag: &str,
-        name: &str,
-    ) -> Option<&'a PathBuf> {
+    fn lookup<'a>(table: &'a HashMap<Key, PathBuf>, tag: &str, name: &str) -> Option<&'a PathBuf> {
         table
             .get(&(tag.to_string(), name.to_string()))
             .or_else(|| table.get(&(String::new(), name.to_string())))
@@ -52,20 +48,13 @@ impl Resolver {
             (true, Some((library, rest))) => format!("{library}@{tag}.{rest}"),
             (true, None) => format!("{name}@{tag}"),
         };
-        Self::lookup(&self.class_dir, tag, name)
-            .map(|_| format!("{}.html", uri_encode(&file_stem(&tagged))))
+        Self::lookup(&self.class_dir, tag, name).map(|_| format!("{}.html", uri_encode(&file_stem(&tagged))))
     }
 
     /// Every `modelica://` URI in `html`, resolved from the `tag` copy of the
     /// library. `prefix` joins the resolved relative URL to it, for a document
     /// that is not at the output root.
-    pub fn rewrite_in(
-        &self,
-        tag: &str,
-        prefix: &str,
-        html: &str,
-        resources: &mut Vec<Resource>,
-    ) -> String {
+    pub fn rewrite_in(&self, tag: &str, prefix: &str, html: &str, resources: &mut Vec<Resource>) -> String {
         let mut out = String::with_capacity(html.len());
         let mut rest = html;
         while let Some(start) = find_scheme(rest) {
@@ -122,21 +111,12 @@ impl Resolver {
     }
 
     /// `modelica://Lib.Sub/Resources/x.png` -> `resources/Lib/Sub/Resources/x.png`.
-    fn resolve_file(
-        &self,
-        tag: &str,
-        class: &str,
-        file: &str,
-        resources: &mut Vec<Resource>,
-    ) -> Option<String> {
+    fn resolve_file(&self, tag: &str, class: &str, file: &str, resources: &mut Vec<Resource>) -> Option<String> {
         let source = self.source_file(tag, class, file)?;
         let library = class.split('.').next()?;
         let root = Self::lookup(&self.library_root, tag, library)?;
         let relative = source.strip_prefix(root).ok()?;
-        let target = format!(
-            "resources/{library}/{}",
-            relative.to_string_lossy().replace('\\', "/")
-        );
+        let target = format!("resources/{library}/{}", relative.to_string_lossy().replace('\\', "/"));
         let encoded = uri_encode(&target);
         resources.push(Resource { source, target });
         Some(encoded)
@@ -200,15 +180,22 @@ fn media_type(path: &Path) -> &'static str {
 }
 
 fn base64_into(bytes: &[u8], out: &mut String) {
-    const ALPHABET: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     for chunk in bytes.chunks(3) {
         let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
         let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
         out.push(ALPHABET[(n >> 18) as usize & 63] as char);
         out.push(ALPHABET[(n >> 12) as usize & 63] as char);
-        out.push(if chunk.len() > 1 { ALPHABET[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if chunk.len() > 2 { ALPHABET[n as usize & 63] as char } else { '=' });
+        out.push(if chunk.len() > 1 {
+            ALPHABET[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            ALPHABET[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
 }
 
@@ -217,9 +204,7 @@ const SCHEME: &str = "modelica://";
 fn find_scheme(haystack: &str) -> Option<usize> {
     let bytes = haystack.as_bytes();
     let scheme = SCHEME.as_bytes();
-    bytes
-        .windows(scheme.len())
-        .position(|w| w.eq_ignore_ascii_case(scheme))
+    bytes.windows(scheme.len()).position(|w| w.eq_ignore_ascii_case(scheme))
 }
 
 /// The same replacements the old GenerateDoc.mos used, so existing links to
@@ -248,10 +233,7 @@ pub fn file_stem(class: &str) -> String {
 pub fn resolve_aliases(names: impl IntoIterator<Item = String>) {
     let mut groups: HashMap<String, Vec<String>> = HashMap::new();
     for name in names {
-        groups
-            .entry(plain_stem(&name).to_lowercase())
-            .or_default()
-            .push(name);
+        groups.entry(plain_stem(&name).to_lowercase()).or_default().push(name);
     }
     let mut aliases = HashMap::new();
     for group in groups.into_values() {
@@ -278,9 +260,7 @@ pub fn query_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for byte in s.bytes() {
         match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => out.push(byte as char),
             _ => out.push_str(&format!("%{byte:02X}")),
         }
     }

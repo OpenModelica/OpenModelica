@@ -482,7 +482,18 @@ pub fn hybrd(
     epsfcn: f64,
     factor: f64,
 ) -> Status {
-    hybrd_common(eval, None, &mut Hooks::default(), n, x, fvec, xtol, maxfev, epsfcn, factor)
+    hybrd_common(
+        eval,
+        None,
+        &mut Hooks::default(),
+        n,
+        x,
+        fvec,
+        xtol,
+        maxfev,
+        epsfcn,
+        factor,
+    )
 }
 
 /// [`hybrd`] with [`Hooks`].
@@ -531,7 +542,18 @@ pub fn hybrj(
     maxfev: usize,
     factor: f64,
 ) -> Status {
-    hybrd_common(eval, Some(jac), &mut Hooks::default(), n, x, fvec, xtol, maxfev, 0.0, factor)
+    hybrd_common(
+        eval,
+        Some(jac),
+        &mut Hooks::default(),
+        n,
+        x,
+        fvec,
+        xtol,
+        maxfev,
+        0.0,
+        factor,
+    )
 }
 
 /// Shared dogleg/trust-region driver for [`hybrd`] (numeric Jacobian via
@@ -790,7 +812,13 @@ mod tests {
                 r[0] = 2.0 * x[0] + x[1] - 5.0;
                 r[1] = x[0] - x[1] - 1.0;
             },
-            2, &mut x, &mut f, 1e-12, 2000, 1e-12, 100.0,
+            2,
+            &mut x,
+            &mut f,
+            1e-12,
+            2000,
+            1e-12,
+            100.0,
         );
         assert_eq!(s, Status::Converged);
         assert!((x[0] - 2.0).abs() < 1e-9 && (x[1] - 1.0).abs() < 1e-9, "x={x:?}");
@@ -805,7 +833,13 @@ mod tests {
                 r[0] = x[0] * x[0] + x[1] * x[1] - 2.0;
                 r[1] = x[0] - x[1];
             },
-            2, &mut x, &mut f, 1e-12, 2000, 1e-12, 100.0,
+            2,
+            &mut x,
+            &mut f,
+            1e-12,
+            2000,
+            1e-12,
+            100.0,
         );
         assert_eq!(s, Status::Converged);
         assert!((x[0] - 1.0).abs() < 1e-8 && (x[1] - 1.0).abs() < 1e-8, "x={x:?}");
@@ -820,7 +854,13 @@ mod tests {
                 r[0] = 1.0 - x[0];
                 r[1] = 10.0 * (x[1] - x[0] * x[0]);
             },
-            2, &mut x, &mut f, 1e-12, 2000, 1e-12, 100.0,
+            2,
+            &mut x,
+            &mut f,
+            1e-12,
+            2000,
+            1e-12,
+            100.0,
         );
         assert_eq!(s, Status::Converged);
         assert!((x[0] - 1.0).abs() < 1e-8 && (x[1] - 1.0).abs() < 1e-8, "x={x:?}");
@@ -843,7 +883,12 @@ mod tests {
                 j[2] = 2.0 * x[1]; // dr0/dx1
                 j[3] = -1.0; //       dr1/dx1
             },
-            2, &mut x, &mut f, 1e-12, 2000, 100.0,
+            2,
+            &mut x,
+            &mut f,
+            1e-12,
+            2000,
+            100.0,
         );
         assert_eq!(s, Status::Converged);
         assert!((x[0] - 1.0).abs() < 1e-9 && (x[1] - 1.0).abs() < 1e-9, "x={x:?}");
@@ -862,7 +907,13 @@ mod tests {
                     r[i] = x[i] * x[i] * x[i] - 1.0 + 0.1 * (x[(i + 1) % x.len()] - 1.0);
                 }
             },
-            n, &mut x, &mut f, 1e-12, 4000, 1e-12, 100.0,
+            n,
+            &mut x,
+            &mut f,
+            1e-12,
+            4000,
+            1e-12,
+            100.0,
         );
         assert_eq!(s, Status::Converged);
         for xi in &x {

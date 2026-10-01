@@ -54,12 +54,19 @@ fn trap(call: &'static str, e: impl std::fmt::Display) -> Error {
 
 fn check(call: &'static str, s: WitStatus) -> Result<()> {
     let s = status(s);
-    if s.is_ok() { Ok(()) } else { Err(Error::Status { call, status: s }) }
+    if s.is_ok() {
+        Ok(())
+    } else {
+        Err(Error::Status { call, status: s })
+    }
 }
 
 /// Unwrap what a WIT `result<T, status>` returned.
 fn unwrap<T>(call: &'static str, r: std::result::Result<T, WitStatus>) -> Result<T> {
-    r.map_err(|s| Error::Status { call, status: status(s) })
+    r.map_err(|s| Error::Status {
+        call,
+        status: status(s),
+    })
 }
 
 // ── Host state ──────────────────────────────────────────────────────────────
@@ -82,7 +89,10 @@ pub struct Host {
 
 impl wasmtime_wasi::WasiView for Host {
     fn ctx(&mut self) -> wasmtime_wasi::WasiCtxView<'_> {
-        wasmtime_wasi::WasiCtxView { ctx: &mut self.wasi, table: &mut self.table }
+        wasmtime_wasi::WasiCtxView {
+            ctx: &mut self.wasi,
+            table: &mut self.table,
+        }
     }
 }
 
@@ -192,7 +202,11 @@ impl WasmArtifact {
         let engine = engine()?;
         let component = unsafe { Component::deserialize(&engine, bytes) }
             .map_err(|e| trap("deserializing the precompiled artifact", e))?;
-        Ok(WasmArtifact { engine, component, resources: std::sync::Mutex::new(resources.map(Path::to_path_buf)) })
+        Ok(WasmArtifact {
+            engine,
+            component,
+            resources: std::sync::Mutex::new(resources.map(Path::to_path_buf)),
+        })
     }
 
     /// Deserialize a `.cwasm` **from a file**, which wasmtime maps rather than
@@ -205,28 +219,39 @@ impl WasmArtifact {
         let engine = engine()?;
         let component = unsafe { Component::deserialize_file(&engine, path) }
             .map_err(|e| trap("deserializing the precompiled artifact", e))?;
-        Ok(WasmArtifact { engine, component, resources: std::sync::Mutex::new(resources.map(Path::to_path_buf)) })
+        Ok(WasmArtifact {
+            engine,
+            component,
+            resources: std::sync::Mutex::new(resources.map(Path::to_path_buf)),
+        })
     }
 
     /// Compile the component itself, for an artifact with no `.cwasm` for this
     /// platform.
     pub fn compile(bytes: &[u8], resources: Option<&Path>) -> Result<WasmArtifact> {
         let engine = engine()?;
-        let component =
-            Component::new(&engine, bytes).map_err(|e| trap("compiling the artifact", e))?;
-        Ok(WasmArtifact { engine, component, resources: std::sync::Mutex::new(resources.map(Path::to_path_buf)) })
+        let component = Component::new(&engine, bytes).map_err(|e| trap("compiling the artifact", e))?;
+        Ok(WasmArtifact {
+            engine,
+            component,
+            resources: std::sync::Mutex::new(resources.map(Path::to_path_buf)),
+        })
     }
 
     /// Compile `component` for this machine and return the `.cwasm` bytes.
     pub fn precompile(bytes: &[u8]) -> Result<Vec<u8>> {
-        engine()?.precompile_component(bytes).map_err(|e| trap("precompiling the artifact", e))
+        engine()?
+            .precompile_component(bytes)
+            .map_err(|e| trap("precompiling the artifact", e))
     }
 
     /// The `.cwasm` bytes for what is already compiled here: serializing an
     /// artifact is writing out machine code that exists, where `precompile`
     /// would compile it a second time.
     pub fn serialize(&self) -> Result<Vec<u8>> {
-        self.component.serialize().map_err(|e| trap("serializing the artifact", e))
+        self.component
+            .serialize()
+            .map_err(|e| trap("serializing the artifact", e))
     }
 
     /// Point the component at its resources, for a caller that compiled it before
@@ -261,12 +286,11 @@ impl WasmArtifact {
 
     fn linker(&self) -> Result<Linker<Host>> {
         let mut linker: Linker<Host> = Linker::new(&self.engine);
-        wasmtime_wasi::p2::add_to_linker_sync(&mut linker)
-            .map_err(|e| trap("linking WASI", e))?;
-        bindings::ModelExchangeAndCoSimulationFmu::add_to_linker::<
-            Host,
-            wasmtime::component::HasSelf<Host>,
-        >(&mut linker, |s| s)
+        wasmtime_wasi::p2::add_to_linker_sync(&mut linker).map_err(|e| trap("linking WASI", e))?;
+        bindings::ModelExchangeAndCoSimulationFmu::add_to_linker::<Host, wasmtime::component::HasSelf<Host>>(
+            &mut linker,
+            |s| s,
+        )
         .map_err(|e| trap("linking the FMI callbacks", e))?;
         Ok(linker)
     }
@@ -274,9 +298,8 @@ impl WasmArtifact {
     fn instantiate(&self) -> Result<(Store<Host>, bindings::ModelExchangeAndCoSimulationFmu)> {
         let linker = self.linker()?;
         let mut store = self.store()?;
-        let world =
-            bindings::ModelExchangeAndCoSimulationFmu::instantiate(&mut store, &self.component, &linker)
-                .map_err(|e| trap("instantiating the artifact", e))?;
+        let world = bindings::ModelExchangeAndCoSimulationFmu::instantiate(&mut store, &self.component, &linker)
+            .map_err(|e| trap("instantiating the artifact", e))?;
         Ok((store, world))
     }
 
@@ -292,7 +315,12 @@ impl WasmArtifact {
                 call: "fmi3InstantiateModelExchange",
                 log: std::mem::take(&mut store.data_mut().log),
             })?;
-        Ok(WasmInstance { store, world, handle, kind: Kind::Me })
+        Ok(WasmInstance {
+            store,
+            world,
+            handle,
+            kind: Kind::Me,
+        })
     }
 
     /// Instantiate the Co-Simulation interface. `event_mode` lets the FMU stop at
@@ -304,21 +332,37 @@ impl WasmArtifact {
             .fmi_fmi3_co_simulation()
             .co_simulation_instance()
             .call_instantiate_co_simulation(
-                &mut store, name, "", &res, false, logging_on, event_mode, event_mode, &[],
+                &mut store,
+                name,
+                "",
+                &res,
+                false,
+                logging_on,
+                event_mode,
+                event_mode,
+                &[],
             )
             .map_err(|e| trap("fmi3InstantiateCoSimulation", e))?
             .ok_or_else(|| Error::Instantiate {
                 call: "fmi3InstantiateCoSimulation",
                 log: std::mem::take(&mut store.data_mut().log),
             })?;
-        Ok(WasmInstance { store, world, handle, kind: Kind::Cs })
+        Ok(WasmInstance {
+            store,
+            world,
+            handle,
+            kind: Kind::Cs,
+        })
     }
 
     /// Run the model's own simulation runtime inside the artifact (`om:sim/run`).
     /// `args` are the runtime flags a simulation executable would be given.
     pub fn run_simulation(&self, args: &[String]) -> std::result::Result<SimRun, SimFailed> {
-        let (mut store, world) =
-            self.instantiate().map_err(|error| SimFailed { error, log: Vec::new(), output: String::new() })?;
+        let (mut store, world) = self.instantiate().map_err(|error| SimFailed {
+            error,
+            log: Vec::new(),
+            output: String::new(),
+        })?;
         let run = world
             .om_sim_simulation()
             .call_run(&mut store, args)
@@ -396,11 +440,19 @@ pub struct WasmInstance {
 
 impl WasmInstance {
     fn me(&mut self) -> (&mut Store<Host>, GuestModelExchangeInstance<'_>, ResourceAny) {
-        let WasmInstance { store, world, handle, .. } = self;
-        (store, world.fmi_fmi3_model_exchange().model_exchange_instance(), *handle)
+        let WasmInstance {
+            store, world, handle, ..
+        } = self;
+        (
+            store,
+            world.fmi_fmi3_model_exchange().model_exchange_instance(),
+            *handle,
+        )
     }
     fn cs(&mut self) -> (&mut Store<Host>, GuestCoSimulationInstance<'_>, ResourceAny) {
-        let WasmInstance { store, world, handle, .. } = self;
+        let WasmInstance {
+            store, world, handle, ..
+        } = self;
         (store, world.fmi_fmi3_co_simulation().co_simulation_instance(), *handle)
     }
 }
@@ -443,7 +495,10 @@ macro_rules! set_numeric {
 impl Fmi3 for WasmInstance {
     fn get_version(&mut self) -> String {
         let WasmInstance { store, world, .. } = self;
-        world.fmi_fmi3_common().call_get_version(store).unwrap_or_else(|_| "3.0".to_string())
+        world
+            .fmi_fmi3_common()
+            .call_get_version(store)
+            .unwrap_or_else(|_| "3.0".to_string())
     }
 
     fn enter_initialization_mode(
@@ -479,7 +534,8 @@ impl Fmi3 for WasmInstance {
     fn enter_event_mode(&mut self) -> Result<()> {
         common!(self, |store, g, h| check(
             "fmi3EnterEventMode",
-            g.call_enter_event_mode(store, h).map_err(|e| trap("fmi3EnterEventMode", e))?
+            g.call_enter_event_mode(store, h)
+                .map_err(|e| trap("fmi3EnterEventMode", e))?
         ))
     }
 
@@ -508,37 +564,120 @@ impl Fmi3 for WasmInstance {
     fn enter_configuration_mode(&mut self) -> Result<()> {
         common!(self, |store, g, h| check(
             "fmi3EnterConfigurationMode",
-            g.call_enter_configuration_mode(store, h).map_err(|e| trap("fmi3EnterConfigurationMode", e))?
+            g.call_enter_configuration_mode(store, h)
+                .map_err(|e| trap("fmi3EnterConfigurationMode", e))?
         ))
     }
 
     fn exit_configuration_mode(&mut self) -> Result<()> {
         common!(self, |store, g, h| check(
             "fmi3ExitConfigurationMode",
-            g.call_exit_configuration_mode(store, h).map_err(|e| trap("fmi3ExitConfigurationMode", e))?
+            g.call_exit_configuration_mode(store, h)
+                .map_err(|e| trap("fmi3ExitConfigurationMode", e))?
         ))
     }
 
     fn get_numeric(&mut self, ty: VarType, vrs: &[u32], values: &mut [f64]) -> Result<()> {
         match ty.wire() {
             VarType::Float64 => {
-                common!(self, |store, g, h| get_numeric!(store, g, h, call_get_float64, "fmi3GetFloat64", vrs, values))
+                common!(self, |store, g, h| get_numeric!(
+                    store,
+                    g,
+                    h,
+                    call_get_float64,
+                    "fmi3GetFloat64",
+                    vrs,
+                    values
+                ))
             }
             VarType::Float32 => {
-                common!(self, |store, g, h| get_numeric!(store, g, h, call_get_float32, "fmi3GetFloat32", vrs, values))
+                common!(self, |store, g, h| get_numeric!(
+                    store,
+                    g,
+                    h,
+                    call_get_float32,
+                    "fmi3GetFloat32",
+                    vrs,
+                    values
+                ))
             }
-            VarType::Int8 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_int8, "fmi3GetInt8", vrs, values)),
-            VarType::UInt8 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_uint8, "fmi3GetUInt8", vrs, values)),
-            VarType::Int16 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_int16, "fmi3GetInt16", vrs, values)),
-            VarType::UInt16 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_uint16, "fmi3GetUInt16", vrs, values)),
-            VarType::Int32 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_int32, "fmi3GetInt32", vrs, values)),
-            VarType::UInt32 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_uint32, "fmi3GetUInt32", vrs, values)),
-            VarType::Int64 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_int64, "fmi3GetInt64", vrs, values)),
-            VarType::UInt64 => common!(self, |store, g, h| get_numeric!(store, g, h, call_get_uint64, "fmi3GetUInt64", vrs, values)),
+            VarType::Int8 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_int8,
+                "fmi3GetInt8",
+                vrs,
+                values
+            )),
+            VarType::UInt8 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_uint8,
+                "fmi3GetUInt8",
+                vrs,
+                values
+            )),
+            VarType::Int16 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_int16,
+                "fmi3GetInt16",
+                vrs,
+                values
+            )),
+            VarType::UInt16 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_uint16,
+                "fmi3GetUInt16",
+                vrs,
+                values
+            )),
+            VarType::Int32 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_int32,
+                "fmi3GetInt32",
+                vrs,
+                values
+            )),
+            VarType::UInt32 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_uint32,
+                "fmi3GetUInt32",
+                vrs,
+                values
+            )),
+            VarType::Int64 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_int64,
+                "fmi3GetInt64",
+                vrs,
+                values
+            )),
+            VarType::UInt64 => common!(self, |store, g, h| get_numeric!(
+                store,
+                g,
+                h,
+                call_get_uint64,
+                "fmi3GetUInt64",
+                vrs,
+                values
+            )),
             VarType::Boolean => {
                 let got = common!(self, |store, g, h| unwrap(
                     "fmi3GetBoolean",
-                    g.call_get_boolean(store, h, vrs).map_err(|e| trap("fmi3GetBoolean", e))?
+                    g.call_get_boolean(store, h, vrs)
+                        .map_err(|e| trap("fmi3GetBoolean", e))?
                 ))?;
                 for (o, v) in values.iter_mut().zip(&got) {
                     *o = *v as u8 as f64;
@@ -554,23 +693,106 @@ impl Fmi3 for WasmInstance {
             VarType::Float64 => {
                 common!(self, |store, g, h| check(
                     "fmi3SetFloat64",
-                    g.call_set_float64(store, h, vrs, values).map_err(|e| trap("fmi3SetFloat64", e))?
+                    g.call_set_float64(store, h, vrs, values)
+                        .map_err(|e| trap("fmi3SetFloat64", e))?
                 ))
             }
-            VarType::Float32 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_float32, "fmi3SetFloat32", f32, vrs, values)),
-            VarType::Int8 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_int8, "fmi3SetInt8", i8, vrs, values)),
-            VarType::UInt8 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_uint8, "fmi3SetUInt8", u8, vrs, values)),
-            VarType::Int16 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_int16, "fmi3SetInt16", i16, vrs, values)),
-            VarType::UInt16 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_uint16, "fmi3SetUInt16", u16, vrs, values)),
-            VarType::Int32 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_int32, "fmi3SetInt32", i32, vrs, values)),
-            VarType::UInt32 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_uint32, "fmi3SetUInt32", u32, vrs, values)),
-            VarType::Int64 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_int64, "fmi3SetInt64", i64, vrs, values)),
-            VarType::UInt64 => common!(self, |store, g, h| set_numeric!(store, g, h, call_set_uint64, "fmi3SetUInt64", u64, vrs, values)),
+            VarType::Float32 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_float32,
+                "fmi3SetFloat32",
+                f32,
+                vrs,
+                values
+            )),
+            VarType::Int8 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_int8,
+                "fmi3SetInt8",
+                i8,
+                vrs,
+                values
+            )),
+            VarType::UInt8 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_uint8,
+                "fmi3SetUInt8",
+                u8,
+                vrs,
+                values
+            )),
+            VarType::Int16 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_int16,
+                "fmi3SetInt16",
+                i16,
+                vrs,
+                values
+            )),
+            VarType::UInt16 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_uint16,
+                "fmi3SetUInt16",
+                u16,
+                vrs,
+                values
+            )),
+            VarType::Int32 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_int32,
+                "fmi3SetInt32",
+                i32,
+                vrs,
+                values
+            )),
+            VarType::UInt32 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_uint32,
+                "fmi3SetUInt32",
+                u32,
+                vrs,
+                values
+            )),
+            VarType::Int64 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_int64,
+                "fmi3SetInt64",
+                i64,
+                vrs,
+                values
+            )),
+            VarType::UInt64 => common!(self, |store, g, h| set_numeric!(
+                store,
+                g,
+                h,
+                call_set_uint64,
+                "fmi3SetUInt64",
+                u64,
+                vrs,
+                values
+            )),
             VarType::Boolean => {
                 let buf: Vec<bool> = values.iter().map(|v| *v != 0.0).collect();
                 common!(self, |store, g, h| check(
                     "fmi3SetBoolean",
-                    g.call_set_boolean(store, h, vrs, &buf).map_err(|e| trap("fmi3SetBoolean", e))?
+                    g.call_set_boolean(store, h, vrs, &buf)
+                        .map_err(|e| trap("fmi3SetBoolean", e))?
                 ))
             }
             ty => Err(Error::Unsupported(format!("writing a {} as a number", ty.as_str()))),
@@ -588,7 +810,8 @@ impl Fmi3 for WasmInstance {
         let owned: Vec<String> = values.iter().map(|s| (*s).to_string()).collect();
         common!(self, |store, g, h| check(
             "fmi3SetString",
-            g.call_set_string(store, h, vrs, &owned).map_err(|e| trap("fmi3SetString", e))?
+            g.call_set_string(store, h, vrs, &owned)
+                .map_err(|e| trap("fmi3SetString", e))?
         ))
     }
 
@@ -617,7 +840,10 @@ impl Fmi3ModelExchange for WasmInstance {
 
     fn set_time(&mut self, time: f64) -> Result<()> {
         let (store, g, h) = self.me();
-        check("fmi3SetTime", g.call_set_time(store, h, time).map_err(|e| trap("fmi3SetTime", e))?)
+        check(
+            "fmi3SetTime",
+            g.call_set_time(store, h, time).map_err(|e| trap("fmi3SetTime", e))?,
+        )
     }
 
     fn set_continuous_states(&mut self, states: &[f64]) -> Result<()> {
@@ -633,7 +859,8 @@ impl Fmi3ModelExchange for WasmInstance {
         let (store, g, h) = self.me();
         let got = unwrap(
             "fmi3GetContinuousStates",
-            g.call_get_continuous_states(store, h).map_err(|e| trap("fmi3GetContinuousStates", e))?,
+            g.call_get_continuous_states(store, h)
+                .map_err(|e| trap("fmi3GetContinuousStates", e))?,
         )?;
         states.copy_from_slice(&got[..states.len().min(got.len())]);
         Ok(())
@@ -654,7 +881,8 @@ impl Fmi3ModelExchange for WasmInstance {
         let (store, g, h) = self.me();
         let got = unwrap(
             "fmi3GetEventIndicators",
-            g.call_get_event_indicators(store, h).map_err(|e| trap("fmi3GetEventIndicators", e))?,
+            g.call_get_event_indicators(store, h)
+                .map_err(|e| trap("fmi3GetEventIndicators", e))?,
         )?;
         indicators.copy_from_slice(&got[..indicators.len().min(got.len())]);
         Ok(())
@@ -678,7 +906,10 @@ impl Fmi3ModelExchange for WasmInstance {
             g.call_completed_integrator_step(store, h, no_set_state_prior)
                 .map_err(|e| trap("fmi3CompletedIntegratorStep", e))?,
         )?;
-        Ok(CompletedStep { enter_event_mode: r.enter_event_mode, terminate: r.terminate_simulation })
+        Ok(CompletedStep {
+            enter_event_mode: r.enter_event_mode,
+            terminate: r.terminate_simulation,
+        })
     }
 
     fn get_directional_derivative(
@@ -720,14 +951,19 @@ impl Fmi3ModelExchange for WasmInstance {
 impl Fmi3CoSimulation for WasmInstance {
     fn enter_step_mode(&mut self) -> Result<()> {
         let (store, g, h) = self.cs();
-        check("fmi3EnterStepMode", g.call_enter_step_mode(store, h).map_err(|e| trap("fmi3EnterStepMode", e))?)
+        check(
+            "fmi3EnterStepMode",
+            g.call_enter_step_mode(store, h)
+                .map_err(|e| trap("fmi3EnterStepMode", e))?,
+        )
     }
 
     fn do_step(&mut self, point: f64, size: f64, no_set_state_prior: bool) -> Result<DoStep> {
         let (store, g, h) = self.cs();
         let r = unwrap(
             "fmi3DoStep",
-            g.call_do_step(store, h, point, size, no_set_state_prior).map_err(|e| trap("fmi3DoStep", e))?,
+            g.call_do_step(store, h, point, size, no_set_state_prior)
+                .map_err(|e| trap("fmi3DoStep", e))?,
         )?;
         Ok(DoStep {
             event_handling_needed: r.event_handling_needed,

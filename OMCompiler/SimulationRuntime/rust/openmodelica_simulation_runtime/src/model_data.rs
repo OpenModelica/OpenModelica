@@ -58,21 +58,27 @@ pub fn parse(path: &str) -> Result<InitXml, String> {
 pub fn parse_str(text: &str) -> Result<InitXml, String> {
     let doc = roxmltree::Document::parse(text).map_err(|e| format!("cannot parse the init XML: {e}"))?;
     let root = doc.root_element();
-    let md: HashMap<String, String> =
-        root.attributes().map(|a| (a.name().to_string(), a.value().to_string())).collect();
+    let md: HashMap<String, String> = root
+        .attributes()
+        .map(|a| (a.name().to_string(), a.value().to_string()))
+        .collect();
     let mut experiment = HashMap::new();
     let mut groups: HashMap<String, Vec<Option<XmlVar>>> = HashMap::new();
 
     for node in root.children().filter(|n| n.is_element()) {
         match node.tag_name().name() {
             "DefaultExperiment" => {
-                experiment =
-                    node.attributes().map(|a| (a.name().to_string(), a.value().to_string())).collect();
+                experiment = node
+                    .attributes()
+                    .map(|a| (a.name().to_string(), a.value().to_string()))
+                    .collect();
             }
             "ModelVariables" => {
                 for sv in node.children().filter(|n| n.is_element()) {
-                    let mut attrs: HashMap<String, String> =
-                        sv.attributes().map(|a| (a.name().to_string(), a.value().to_string())).collect();
+                    let mut attrs: HashMap<String, String> = sv
+                        .attributes()
+                        .map(|a| (a.name().to_string(), a.value().to_string()))
+                        .collect();
                     let mut dims = 0usize;
                     for child in sv.children().filter(|n| n.is_element()) {
                         // `<Real start=".." fixed=".."/>` and `<Dimension .../>`.
@@ -91,8 +97,7 @@ pub fn parse_str(text: &str) -> Result<InitXml, String> {
                         attrs.insert("num_dimensions".into(), dims.to_string());
                     }
                     let class_type = attrs.get("classType").cloned().unwrap_or_default();
-                    let class_index: usize =
-                        attrs.get("classIndex").and_then(|s| s.parse().ok()).unwrap_or(0);
+                    let class_index: usize = attrs.get("classIndex").and_then(|s| s.parse().ok()).unwrap_or(0);
                     let slot = groups.entry(class_type).or_default();
                     if slot.len() <= class_index {
                         slot.resize_with(class_index + 1, || None);
@@ -142,7 +147,6 @@ pub fn read_long(s: &str, default: modelica_integer) -> modelica_integer {
 pub fn read_bool(s: &str) -> c_int {
     (s == "true" || s == "1") as c_int
 }
-
 
 /// C's `REAL_MIN`/`REAL_MAX` attribute defaults.
 const REAL_MIN: f64 = -f64::MAX;
@@ -227,9 +231,16 @@ fn read_quoted(s: &str) -> Option<Vec<&str>> {
 /// `read_array_var_string`: a scalar's value is `s` itself, an array's a list
 /// of quoted values or one unquoted value for all elements.
 fn read_array_string(out: &mut string_array, s: &str, is_scalar: bool) {
-    let values = if is_scalar { None } else { read_quoted(s).filter(|v| !v.is_empty()) };
-    let values: Vec<modelica_string> =
-        values.unwrap_or_else(|| vec![s]).into_iter().map(mk_scon_persist).collect();
+    let values = if is_scalar {
+        None
+    } else {
+        read_quoted(s).filter(|v| !v.is_empty())
+    };
+    let values: Vec<modelica_string> = values
+        .unwrap_or_else(|| vec![s])
+        .into_iter()
+        .map(mk_scon_persist)
+        .collect();
     fill_array(out, &values, simple_alloc_1d_string_array);
 }
 
@@ -288,7 +299,9 @@ fn should_filter(v: &XmlVar) -> c_int {
 macro_rules! read_group {
     ($ty:ty, $out:expr, $vars:expr, $start:expr, $count:expr, $alias_map:expr, $attr:expr) => {{
         for i in 0..$count {
-            let Some(v) = $vars.get(i).and_then(|o| o.as_ref()) else { continue };
+            let Some(v) = $vars.get(i).and_then(|o| o.as_ref()) else {
+                continue;
+            };
             let slot: &mut $ty = unsafe { &mut *$out.add($start + i) };
             read_var_info(v, &mut slot.info);
             read_dimension(v, &mut slot.dimension);
@@ -377,7 +390,9 @@ pub fn string_value(p: *mut c_void) -> String {
         return String::new();
     }
     let data = unsafe { (p as *mut u8).add(OMC_STRING_DATA) };
-    unsafe { core::ffi::CStr::from_ptr(data as *const c_char) }.to_string_lossy().into_owned()
+    unsafe { core::ffi::CStr::from_ptr(data as *const c_char) }
+        .to_string_lossy()
+        .into_owned()
 }
 
 #[cfg(feature = "fmi")]
@@ -417,7 +432,12 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
         v.unwrap_or("[not given]")
     }
     omclog::info!(omclog::SOLVER, false, "-override={}", given(raw));
-    omclog::info!(omclog::SOLVER, false, "-overrideFile={}", given(file.map(|(_, j)| j.as_str())));
+    omclog::info!(
+        omclog::SOLVER,
+        false,
+        "-overrideFile={}",
+        given(file.map(|(_, j)| j.as_str()))
+    );
 
     // C fills a hash map, so a repeated name keeps the last value and warns; the
     // insertion order is the one the unused-override warnings come out in.
@@ -450,17 +470,49 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
         ("rSta", n_states, false),
         ("rDer", n_states, false),
         ("rAlg", n_real_alg, false),
-        ("iAlg", read_long(xml.md("numberOfIntegerAlgebraicVariables"), 0) as usize, false),
-        ("bAlg", read_long(xml.md("numberOfBooleanAlgebraicVariables"), 0) as usize, false),
-        ("sAlg", read_long(xml.md("numberOfStringAlgebraicVariables"), 0) as usize, false),
+        (
+            "iAlg",
+            read_long(xml.md("numberOfIntegerAlgebraicVariables"), 0) as usize,
+            false,
+        ),
+        (
+            "bAlg",
+            read_long(xml.md("numberOfBooleanAlgebraicVariables"), 0) as usize,
+            false,
+        ),
+        (
+            "sAlg",
+            read_long(xml.md("numberOfStringAlgebraicVariables"), 0) as usize,
+            false,
+        ),
         ("rPar", read_long(xml.md("numberOfRealParameters"), 0) as usize, true),
         ("iPar", read_long(xml.md("numberOfIntegerParameters"), 0) as usize, true),
-        ("bPar", read_long(xml.md("numberOfBooleanParameters"), 0) as usize, false),
+        (
+            "bPar",
+            read_long(xml.md("numberOfBooleanParameters"), 0) as usize,
+            false,
+        ),
         ("sPar", read_long(xml.md("numberOfStringParameters"), 0) as usize, false),
-        ("rAli", read_long(xml.md("numberOfRealAlgebraicAliasVariables"), 0) as usize, false),
-        ("iAli", read_long(xml.md("numberOfIntegerAliasVariables"), 0) as usize, false),
-        ("bAli", read_long(xml.md("numberOfBooleanAliasVariables"), 0) as usize, false),
-        ("sAli", read_long(xml.md("numberOfStringAliasVariables"), 0) as usize, false),
+        (
+            "rAli",
+            read_long(xml.md("numberOfRealAlgebraicAliasVariables"), 0) as usize,
+            false,
+        ),
+        (
+            "iAli",
+            read_long(xml.md("numberOfIntegerAliasVariables"), 0) as usize,
+            false,
+        ),
+        (
+            "bAli",
+            read_long(xml.md("numberOfBooleanAliasVariables"), 0) as usize,
+            false,
+        ),
+        (
+            "sAli",
+            read_long(xml.md("numberOfStringAliasVariables"), 0) as usize,
+            false,
+        ),
     ];
     // C interleaves the two state groups; the rest follow in order.
     let order: Vec<(&str, usize, bool)> = {
@@ -477,7 +529,9 @@ pub fn do_override(xml: &mut InitXml, flags: &openmodelica_sim_meta::simflags::S
         v
     };
     for (group, i, warn_small) in order {
-        let Some(slot) = xml.groups.get_mut(group).and_then(|g| g.get_mut(i)) else { continue };
+        let Some(slot) = xml.groups.get_mut(group).and_then(|g| g.get_mut(i)) else {
+            continue;
+        };
         let Some(v) = slot.as_mut() else { continue };
         let name = v.get("name").to_string();
         let Some(&k) = index.get(&name) else { continue };
@@ -554,7 +608,10 @@ pub fn read_experiment(xml: &InitXml, si: &mut SIMULATION_INFO) {
 /// `allocModelDataVars` + the `read_variables` calls: every variable and
 /// parameter array of `modelData`, in the order the C reader fills them.
 pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
-    let mut maps = AliasMaps { vars: HashMap::new(), params: HashMap::new() };
+    let mut maps = AliasMaps {
+        vars: HashMap::new(),
+        params: HashMap::new(),
+    };
 
     md.realVarsData = calloc(md.nVariablesRealArray as usize);
     md.integerVarsData = calloc(md.nVariablesIntegerArray as usize);
@@ -597,24 +654,122 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
 
     let n_states = md.nStatesArray as usize;
     let n_real = md.nVariablesRealArray as usize;
-    read_group!(STATIC_REAL_DATA, md.realVarsData, xml.group("rSta"), 0, n_states, maps.vars, real_attr);
-    read_group!(STATIC_REAL_DATA, md.realVarsData, xml.group("rDer"), n_states, n_states, maps.vars, real_attr);
-    read_group!(STATIC_REAL_DATA, md.realVarsData, xml.group("rAlg"), 2 * n_states, n_real - 2 * n_states, maps.vars, real_attr);
+    read_group!(
+        STATIC_REAL_DATA,
+        md.realVarsData,
+        xml.group("rSta"),
+        0,
+        n_states,
+        maps.vars,
+        real_attr
+    );
+    read_group!(
+        STATIC_REAL_DATA,
+        md.realVarsData,
+        xml.group("rDer"),
+        n_states,
+        n_states,
+        maps.vars,
+        real_attr
+    );
+    read_group!(
+        STATIC_REAL_DATA,
+        md.realVarsData,
+        xml.group("rAlg"),
+        2 * n_states,
+        n_real - 2 * n_states,
+        maps.vars,
+        real_attr
+    );
     // `-idaSensitivity`'s parameters and `$Sensitivities.<par>.<state>` results.
     let mut sens_names = HashMap::new();
-    read_group!(STATIC_REAL_DATA, md.realSensitivityData, xml.group("rSen"), 0, md.nSensitivityVars.max(0) as usize, sens_names, real_attr);
-    read_group!(STATIC_INTEGER_DATA, md.integerVarsData, xml.group("iAlg"), 0, md.nVariablesIntegerArray as usize, maps.vars, int_attr);
-    read_group!(STATIC_BOOLEAN_DATA, md.booleanVarsData, xml.group("bAlg"), 0, md.nVariablesBooleanArray as usize, maps.vars, bool_attr);
-    read_group!(STATIC_STRING_DATA, md.stringVarsData, xml.group("sAlg"), 0, md.nVariablesStringArray as usize, maps.vars, str_attr);
+    read_group!(
+        STATIC_REAL_DATA,
+        md.realSensitivityData,
+        xml.group("rSen"),
+        0,
+        md.nSensitivityVars.max(0) as usize,
+        sens_names,
+        real_attr
+    );
+    read_group!(
+        STATIC_INTEGER_DATA,
+        md.integerVarsData,
+        xml.group("iAlg"),
+        0,
+        md.nVariablesIntegerArray as usize,
+        maps.vars,
+        int_attr
+    );
+    read_group!(
+        STATIC_BOOLEAN_DATA,
+        md.booleanVarsData,
+        xml.group("bAlg"),
+        0,
+        md.nVariablesBooleanArray as usize,
+        maps.vars,
+        bool_attr
+    );
+    read_group!(
+        STATIC_STRING_DATA,
+        md.stringVarsData,
+        xml.group("sAlg"),
+        0,
+        md.nVariablesStringArray as usize,
+        maps.vars,
+        str_attr
+    );
 
-    read_group!(STATIC_REAL_DATA, md.realParameterData, xml.group("rPar"), 0, md.nParametersRealArray as usize, maps.params, real_attr);
-    read_group!(STATIC_INTEGER_DATA, md.integerParameterData, xml.group("iPar"), 0, md.nParametersIntegerArray as usize, maps.params, int_attr);
-    read_group!(STATIC_BOOLEAN_DATA, md.booleanParameterData, xml.group("bPar"), 0, md.nParametersBooleanArray as usize, maps.params, bool_attr);
-    read_group!(STATIC_STRING_DATA, md.stringParameterData, xml.group("sPar"), 0, md.nParametersStringArray as usize, maps.params, str_attr);
+    read_group!(
+        STATIC_REAL_DATA,
+        md.realParameterData,
+        xml.group("rPar"),
+        0,
+        md.nParametersRealArray as usize,
+        maps.params,
+        real_attr
+    );
+    read_group!(
+        STATIC_INTEGER_DATA,
+        md.integerParameterData,
+        xml.group("iPar"),
+        0,
+        md.nParametersIntegerArray as usize,
+        maps.params,
+        int_attr
+    );
+    read_group!(
+        STATIC_BOOLEAN_DATA,
+        md.booleanParameterData,
+        xml.group("bPar"),
+        0,
+        md.nParametersBooleanArray as usize,
+        maps.params,
+        bool_attr
+    );
+    read_group!(
+        STATIC_STRING_DATA,
+        md.stringParameterData,
+        xml.group("sPar"),
+        0,
+        md.nParametersStringArray as usize,
+        maps.params,
+        str_attr
+    );
 
     read_alias(md.realAlias, xml.group("rAli"), md.nAliasRealArray as usize, &maps);
-    read_alias(md.integerAlias, xml.group("iAli"), md.nAliasIntegerArray as usize, &maps);
-    read_alias(md.booleanAlias, xml.group("bAli"), md.nAliasBooleanArray as usize, &maps);
+    read_alias(
+        md.integerAlias,
+        xml.group("iAli"),
+        md.nAliasIntegerArray as usize,
+        &maps,
+    );
+    read_alias(
+        md.booleanAlias,
+        xml.group("bAli"),
+        md.nAliasBooleanArray as usize,
+        &maps,
+    );
     read_alias(md.stringAlias, xml.group("sAli"), md.nAliasStringArray as usize, &maps);
 
     maps
@@ -624,7 +779,9 @@ pub fn read_variables(xml: &InitXml, md: &mut MODEL_DATA) -> AliasMaps {
 /// keeping C's `negate` / `aliasType` encoding.
 fn read_alias(out: *mut DATA_ALIAS, vars: &[Option<XmlVar>], count: usize, maps: &AliasMaps) {
     for i in 0..count {
-        let Some(v) = vars.get(i).and_then(|o| o.as_ref()) else { continue };
+        let Some(v) = vars.get(i).and_then(|o| o.as_ref()) else {
+            continue;
+        };
         let slot = unsafe { &mut *out.add(i) };
         read_var_info(v, &mut slot.info);
         slot.filterOutput = should_filter(v);
@@ -706,7 +863,13 @@ pub fn initialize_output_filter(md: &mut MODEL_DATA, filter: &str, cheap_aliases
             }
         }};
     }
-    filter_group!(md.nVariablesRealArray, md.realVarsData, md.nAliasRealArray, md.realAlias, md.realParameterData);
+    filter_group!(
+        md.nVariablesRealArray,
+        md.realVarsData,
+        md.nAliasRealArray,
+        md.realAlias,
+        md.realParameterData
+    );
     filter_group!(
         md.nVariablesIntegerArray,
         md.integerVarsData,

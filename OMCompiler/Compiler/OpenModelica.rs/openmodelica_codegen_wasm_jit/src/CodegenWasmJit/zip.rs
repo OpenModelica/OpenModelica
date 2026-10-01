@@ -14,7 +14,9 @@ pub(super) fn deflate(data: &[u8]) -> Option<Vec<u8>> {
 /// keeping the absolute path so `rt_uri_to_filename` names it again at run time.
 pub(super) fn add_resource(entries: &mut Vec<(String, Vec<u8>)>, path: &str) {
     if openmodelica_wasi::fs::is_dir(path) {
-        let Ok(dir) = openmodelica_wasi::fs::read_dir(path) else { return };
+        let Ok(dir) = openmodelica_wasi::fs::read_dir(path) else {
+            return;
+        };
         for e in dir {
             add_resource(entries, &format!("{}/{}", path.trim_end_matches('/'), e.name));
         }
@@ -25,7 +27,11 @@ pub(super) fn add_resource(entries: &mut Vec<(String, Vec<u8>)>, path: &str) {
         && path.as_bytes()[0].is_ascii_alphabetic()
         && path.as_bytes()[1] == b':'
         && matches!(path.as_bytes()[2], b'/' | b'\\');
-    let name = if drive { path.replace(':', "").replace('\\', "/") } else { path.trim_start_matches('/').to_string() };
+    let name = if drive {
+        path.replace(':', "").replace('\\', "/")
+    } else {
+        path.trim_start_matches('/').to_string()
+    };
     if let Ok(bytes) = openmodelica_wasi::fs::read(path) {
         entries.push((format!("resources/{name}"), bytes));
     }
@@ -41,7 +47,9 @@ pub(super) fn add_directory(entries: &mut Vec<(String, Vec<u8>)>, dir: &str, pre
         return;
     }
     let dir = dir.trim_end_matches('/');
-    let Ok(files) = openmodelica_wasi::fs::read_dir(dir) else { return };
+    let Ok(files) = openmodelica_wasi::fs::read_dir(dir) else {
+        return;
+    };
     for e in files {
         let path = format!("{dir}/{}", e.name);
         let name = format!("{prefix}/{}", e.name);
@@ -163,5 +171,15 @@ pub fn emitMeFmu(
     terminals_dir: ArcStr,
     simulation_flags_json: ArcStr,
 ) -> Result<()> {
-    emit_fmu(sim_code, fmu_path, model_description, ls_dae_manifest, documentation_dir, terminals_dir, simulation_flags_json, FMI3_ME_ADAPTER(), "ME")
+    emit_fmu(
+        sim_code,
+        fmu_path,
+        model_description,
+        ls_dae_manifest,
+        documentation_dir,
+        terminals_dir,
+        simulation_flags_json,
+        FMI3_ME_ADAPTER(),
+        "ME",
+    )
 }

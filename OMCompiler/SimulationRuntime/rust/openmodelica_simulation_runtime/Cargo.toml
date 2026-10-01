@@ -53,13 +53,13 @@ fmu-runtime = ["fmi"]
 # mat/plt writer crates leave the archive an FMU links, rather than being dropped
 # by the linker afterwards.
 standalone = [
-    "openmodelica_sim_meta/result-files",
-    # The executable links `-llapack`; an FMU links none and keeps the port.
-    "openmodelica_nls/system-lapack",
-    "dep:openmodelica_mat_writer",
-    "dep:openmodelica_plt_writer",
-    "dep:openmodelica_mat_reader",
-    "dep:openmodelica_regex",
+  "openmodelica_sim_meta/result-files",
+  # The executable links `-llapack`; an FMU links none and keeps the port.
+  "openmodelica_nls/system-lapack",
+  "dep:openmodelica_mat_writer",
+  "dep:openmodelica_plt_writer",
+  "dep:openmodelica_mat_reader",
+  "dep:openmodelica_regex",
 ]
 
 [dependencies]
@@ -93,7 +93,10 @@ openmodelica_regex = { path = "../openmodelica_regex", optional = true }
 openmodelica_lapack = { path = "../../../Compiler/OpenModelica.rs/openmodelica_lapack", default-features = false }
 
 # The FMI state machine, without its wasm half (see its `wasm` feature).
-openmodelica_fmi3_wasm = { path = "../../../Compiler/OpenModelica.rs/openmodelica_fmi3_wasm", default-features = false, features = ["me", "cs"], optional = true }
+openmodelica_fmi3_wasm = { path = "../../../Compiler/OpenModelica.rs/openmodelica_fmi3_wasm", default-features = false, features = [
+  "me",
+  "cs",
+], optional = true }
 
 [build-dependencies]
 # Compiles src/shim.c -- the setjmp/longjmp and printf-varargs half of the ABI.

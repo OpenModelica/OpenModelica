@@ -71,7 +71,11 @@ pub fn run(alarm: Option<u32>, f: impl FnOnce() -> Vec<u8>) -> Option<Outcome> {
     let mut stopped: Option<Outcome> = None;
     let mut buf = Vec::new();
     loop {
-        let mut p = libc::pollfd { fd: rd, events: libc::POLLIN, revents: 0 };
+        let mut p = libc::pollfd {
+            fd: rd,
+            events: libc::POLLIN,
+            revents: 0,
+        };
         let n = unsafe { libc::poll(&mut p, 1, 200) };
         if n < 0 {
             if last_errno() == libc::EINTR {

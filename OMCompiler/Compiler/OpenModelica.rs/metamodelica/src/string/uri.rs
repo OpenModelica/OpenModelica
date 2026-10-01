@@ -1,10 +1,10 @@
 //! `modelica://` / `file://` URI resolution (`uriToFilename`).
 
-use std::cell::RefCell;
-use crate::Result;
-use arcstr::ArcStr;
 use crate::Array;
+use crate::Result;
 use crate::omc_assert;
+use arcstr::ArcStr;
+use std::cell::RefCell;
 
 thread_local! {
     /// Class-name → source-directory mapping for `modelica://` URI
@@ -57,10 +57,7 @@ fn decode_uri(src: &str) -> String {
     while i < bytes.len() {
         match bytes[i] {
             b'+' => out.push(b' '),
-            b'%' if i + 2 < bytes.len()
-                && bytes[i + 1].is_ascii_hexdigit()
-                && bytes[i + 2].is_ascii_hexdigit() =>
-            {
+            b'%' if i + 2 < bytes.len() && bytes[i + 1].is_ascii_hexdigit() && bytes[i + 2].is_ascii_hexdigit() => {
                 let hi = (bytes[i + 1] as char).to_digit(16).unwrap() as u8;
                 let lo = (bytes[i + 2] as char).to_digit(16).unwrap() as u8;
                 out.push(hi * 16 + lo);
@@ -101,10 +98,8 @@ pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
     // Scheme matching is case-insensitive per the C implementation
     // (`strncasecmp`). Only the prefix is lowercased — paths on
     // case-sensitive filesystems must keep their original casing.
-    let scheme_match = |prefix: &str| -> bool {
-        uri.len() >= prefix.len()
-            && uri[..prefix.len()].eq_ignore_ascii_case(prefix)
-    };
+    let scheme_match =
+        |prefix: &str| -> bool { uri.len() >= prefix.len() && uri[..prefix.len()].eq_ignore_ascii_case(prefix) };
 
     // Resolve the path the same way `uriToFilenameRegularPaths` does for
     // non-FMU calls (resourcesDir == NULL). `orig_uri` only feeds the
@@ -125,8 +120,7 @@ pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
                 // as-is; for relative paths, prepend the current working
                 // directory.
                 let is_absolute = p.is_absolute()
-                    || (path.len() >= 2 && path.as_bytes()[1] == b':'
-                        && path.as_bytes()[0].is_ascii_alphabetic());
+                    || (path.len() >= 2 && path.as_bytes()[1] == b':' && path.as_bytes()[0].is_ascii_alphabetic());
                 if is_absolute {
                     ArcStr::from(path)
                 } else if let Ok(cwd) = std::env::current_dir() {
@@ -161,10 +155,7 @@ pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
         let mut pos = 0usize;
         while rest[pos..].starts_with('.') {
             pos += 1;
-            let id_end = rest[pos..]
-                .find(['.', '/'])
-                .map(|i| pos + i)
-                .unwrap_or(rest.len());
+            let id_end = rest[pos..].find(['.', '/']).map(|i| pos + i).unwrap_or(rest.len());
             if id_end == pos {
                 if rest[id_end..].starts_with('.') {
                     omc_assert!("Malformed URI (double dot in class name): {uri}");

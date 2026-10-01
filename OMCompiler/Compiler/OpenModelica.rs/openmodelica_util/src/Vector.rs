@@ -21,10 +21,10 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-use std::sync::Arc;
-use metamodelica::Result;
 use arcstr::ArcStr;
-use metamodelica::{Array, List, stringDelimitList, cons, nil, listHead, listRest};
+use metamodelica::Result;
+use metamodelica::{Array, List, cons, listHead, listRest, nil, stringDelimitList};
+use std::sync::Arc;
 
 /// `Vector<T>` aliases `Array<T>`; the `Vec`'s length is the logical size.
 ///
@@ -35,7 +35,9 @@ use metamodelica::{Array, List, stringDelimitList, cons, nil, listHead, listRest
 pub type Vector<T> = Array<T>;
 
 #[inline]
-fn idx(i: i32) -> usize { (i - 1) as usize }
+fn idx(i: i32) -> usize {
+    (i - 1) as usize
+}
 
 pub fn new<T: Clone + 'static>(size: i32) -> metamodelica::Ref<Vector<T>> {
     // Initial capacity hint only; logical size is 0.
@@ -268,7 +270,10 @@ pub fn map<OT: Clone + 'static, T: Clone + 'static>(
     r#fn: Arc<dyn ::std::ops::Fn(T) -> Result<OT> + 'static>,
     shrink: bool,
 ) -> Result<metamodelica::Ref<Vector<OT>>> {
-    let (len, cap) = { let d = v.borrow(); (d.len(), d.capacity()) };
+    let (len, cap) = {
+        let d = v.borrow();
+        (d.len(), d.capacity())
+    };
     let mut new_vec: Vec<OT> = Vec::with_capacity(if shrink { len } else { cap });
     let mut i = 0;
     while let Some(e) = elem_at(&v, i) {

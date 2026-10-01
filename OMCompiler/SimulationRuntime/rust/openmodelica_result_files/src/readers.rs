@@ -59,7 +59,11 @@ impl CsvReader {
             }
         }
         let numsteps = data.first().map(|c| c.len()).unwrap_or(0);
-        Ok(CsvReader { variables, data, numsteps })
+        Ok(CsvReader {
+            variables,
+            data,
+            numsteps,
+        })
     }
 
     /// `read_csv_dataset`: the trajectory of `var` (exact name match), or
@@ -189,7 +193,9 @@ impl PltReader {
         let bytes = read_result_bytes(filename)?;
         // .plt is ASCII; tolerate stray non-UTF8 bytes instead of failing.
         let text = String::from_utf8_lossy(&bytes);
-        Ok(PltReader { lines: text.lines().map(str::to_owned).collect() })
+        Ok(PltReader {
+            lines: text.lines().map(str::to_owned).collect(),
+        })
     }
 
     /// `read_ptolemy_dataset_size`: the value after `#IntervalSize=`;

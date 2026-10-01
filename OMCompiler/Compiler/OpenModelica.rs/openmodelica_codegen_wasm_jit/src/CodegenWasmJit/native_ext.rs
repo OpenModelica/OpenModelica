@@ -7,13 +7,18 @@ use super::*;
 /// (FMI 3.0 `<Library external="true"/>`). `system` are sonames; `name` carries the
 /// linker name, as the schema's examples spell it.
 pub(super) fn external_build_description(model_id: &str, system: &[String]) -> String {
-    let platform = native_fmu::host_platform().map(|p| format!(" platform=\"{}\"", p.fmi)).unwrap_or_default();
+    let platform = native_fmu::host_platform()
+        .map(|p| format!(" platform=\"{}\"", p.fmi))
+        .unwrap_or_default();
     let mut out = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
          <fmiBuildDescription fmiVersion=\"3.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \
          xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd\">\n",
     );
-    out.push_str(&format!("  <BuildConfiguration modelIdentifier=\"{}\"{platform}>\n", xml_escape(model_id)));
+    out.push_str(&format!(
+        "  <BuildConfiguration modelIdentifier=\"{}\"{platform}>\n",
+        xml_escape(model_id)
+    ));
     for soname in system {
         let name = soname
             .strip_prefix(std::env::consts::DLL_PREFIX)
@@ -41,7 +46,11 @@ fn slot_mem(offset: u32, wty: openmodelica_wasm_jit::sig::WTy) -> we::MemArg {
         openmodelica_wasm_jit::sig::WTy::F64 => 3,
         openmodelica_wasm_jit::sig::WTy::I32 => 2,
     };
-    we::MemArg { offset: offset as u64, align, memory_index: 0 }
+    we::MemArg {
+        offset: offset as u64,
+        align,
+        memory_index: 0,
+    }
 }
 
 fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
@@ -60,13 +69,33 @@ fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
             openmodelica_wasm_jit::sig::ExtLang::Fortran77 => sig.wasm_sig_f77_shared(),
             openmodelica_wasm_jit::sig::ExtLang::C => sig.wasm_sig_c_shared(),
         };
-        types.ty().function(fs.params.iter().map(val), fs.results.iter().map(val));
+        types
+            .ty()
+            .function(fs.params.iter().map(val), fs.results.iter().map(val));
         frame_slots = frame_slots.max(fs.params.len() as u32 + 1);
         fn_sigs.push(fs);
     }
     let mut imports = we::ImportSection::new();
-    imports.import("env", "memory", we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None });
-    imports.import("env", "__memory_base", we::GlobalType { val_type: we::ValType::I32, mutable: false, shared: false });
+    imports.import(
+        "env",
+        "memory",
+        we::MemoryType {
+            minimum: 0,
+            maximum: None,
+            memory64: false,
+            shared: false,
+            page_size_log2: None,
+        },
+    );
+    imports.import(
+        "env",
+        "__memory_base",
+        we::GlobalType {
+            val_type: we::ValType::I32,
+            mutable: false,
+            shared: false,
+        },
+    );
     imports.import("env", "om_ext_native_call", we::EntityType::Function(0));
     let mut functions = we::FunctionSection::new();
     let mut exports = we::ExportSection::new();
@@ -105,7 +134,12 @@ fn native_ext_stub(sigs: &[ExtCallSig], table: &str) -> Result<Vec<u8>> {
     let mut data = we::DataSection::new();
     data.active(0, &we::ConstExpr::global_get(0), table_bytes.iter().copied());
     let mut m = we::Module::new();
-    m.section(&types).section(&imports).section(&functions).section(&exports).section(&code).section(&data);
+    m.section(&types)
+        .section(&imports)
+        .section(&functions)
+        .section(&exports)
+        .section(&code)
+        .section(&data);
     Ok(add_dylink0_sized(&m.finish(), frame_off + 8 * frame_slots, 3))
 }
 
@@ -150,17 +184,28 @@ pub(super) fn native_externals(model: &SimModel, kind: &str) -> Result<Option<Na
             system.push(path.clone());
             continue;
         }
-        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
         let bytes = std::fs::read(path).map_err(|e| {
             record_error(format!("CodegenWasmJit: cannot read `{path}`: {e}"));
             "CodegenWasmJit: cannot read a platform library"
         })?;
         libs.push((name, bytes));
     }
-    let table =
-        native_externals_table(&model.ext_native, &libs.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>(), &system);
+    let table = native_externals_table(
+        &model.ext_native,
+        &libs.iter().map(|(n, _)| n.clone()).collect::<Vec<_>>(),
+        &system,
+    );
     let stub = native_ext_stub(&model.ext_native, &table)?;
-    Ok(Some(NativeExternals { table, stub, libs, system }))
+    Ok(Some(NativeExternals {
+        table,
+        stub,
+        libs,
+        system,
+    }))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -206,9 +251,11 @@ pub(super) fn link_fmu_component(
     let plain_adapter = native_stub.is_none().then(|| drop_native_ext_import(adapter)).flatten();
     let mut l = wit_component::Linker::default();
     l.encoder().validate(true);
-    l.library("adapter", plain_adapter.as_deref().unwrap_or(adapter), false).map_err(link_err)?;
+    l.library("adapter", plain_adapter.as_deref().unwrap_or(adapter), false)
+        .map_err(link_err)?;
     if plain_adapter.is_some() {
-        l.library("native_absent", &native_ext_absent(), false).map_err(link_err)?;
+        l.library("native_absent", &native_ext_absent(), false)
+            .map_err(link_err)?;
     }
     l.library("model", &model, false).map_err(link_err)?;
     // The adapter imports every solver whatever the flags say, so each is resolved
@@ -217,8 +264,11 @@ pub(super) fn link_fmu_component(
     // library here imports the one `env.__indirect_function_table`.
     if let Some(wanted) = solvers {
         for lib in SOLVER_LIBRARIES {
-            let bytes =
-                if wanted.contains(&lib.name) { lib.module() } else { lib.stub() };
+            let bytes = if wanted.contains(&lib.name) {
+                lib.module()
+            } else {
+                lib.stub()
+            };
             l.library(lib.name, bytes, false).map_err(link_err)?;
         }
     }
@@ -230,8 +280,10 @@ pub(super) fn link_fmu_component(
         // needs libc too, so it brings the same libraries along; the stubs do not.
         if has_ext {
             // First, so a symbol they define wins over the ones omc carries.
-            let ext_bytes: Vec<Vec<u8>> =
-                ext_libs.iter().map(|lib| drop_redundant_initialize(&lib.bytes)).collect();
+            let ext_bytes: Vec<Vec<u8>> = ext_libs
+                .iter()
+                .map(|lib| drop_redundant_initialize(&lib.bytes))
+                .collect();
             for (lib, bytes) in ext_libs.iter().zip(&ext_bytes) {
                 l.library(&lib.name, bytes, false).map_err(link_err)?;
             }
@@ -249,7 +301,9 @@ pub(super) fn link_fmu_component(
             }
             // Under the file name, which is what another library's NEEDED says.
             for file in openmodelica_wasm_jit::dylink::libraries_for(&wanted) {
-                let Some(bytes) = openmodelica_wasm_jit::ext_library(file) else { continue };
+                let Some(bytes) = openmodelica_wasm_jit::ext_library(file) else {
+                    continue;
+                };
                 l.library(file, bytes, false).map_err(link_err)?;
             }
         }
@@ -261,6 +315,8 @@ pub(super) fn link_fmu_component(
     }
     // Unconditional: the adapter is also what gives the FMU the stdout its
     // simulation log goes to.
-    l.encoder().adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER()).map_err(link_err)?;
+    l.encoder()
+        .adapter("wasi_snapshot_preview1", WASI_P1_ADAPTER())
+        .map_err(link_err)?;
     l.encode().map_err(link_err)
 }

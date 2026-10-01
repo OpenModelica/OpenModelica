@@ -270,7 +270,9 @@ pub fn is_direct_call(sig: &crate::sig::ExtCallSig) -> bool {
 pub fn libraries_for(symbols: impl IntoIterator<Item = impl AsRef<str>>) -> Vec<&'static str> {
     let mut wanted: Vec<&'static str> = Vec::new();
     for sym in symbols {
-        let Some(file) = crate::ondemand_library_for(sym.as_ref()) else { continue };
+        let Some(file) = crate::ondemand_library_for(sym.as_ref()) else {
+            continue;
+        };
         push_with_needed(file, &mut wanted);
     }
     wanted
@@ -289,11 +291,12 @@ fn push_with_needed(file: &'static str, out: &mut Vec<&'static str>) {
     for dep in dl.needed {
         // The name a dependency was linked under is the file it ships as; only a
         // library omc carries can be resolved here, and `libc.so` is always given.
-        let Some((known, _)) = crate::EXT_FAMILY.iter().find(|(f, _)| *f == dep) else { continue };
+        let Some((known, _)) = crate::EXT_FAMILY.iter().find(|(f, _)| *f == dep) else {
+            continue;
+        };
         push_with_needed(known, out);
     }
     // Everything the recursion added belongs in front of this one.
     let me = out.remove(at);
     out.push(me);
 }
-

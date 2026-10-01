@@ -37,7 +37,10 @@ fn flat_sig(sig: &FnSig) -> Option<FnSig> {
     if !sig.results.iter().all(ok) || !sig.params.iter().chain(&sig.results).any(|t| flat_fields(t).is_some()) {
         return None;
     }
-    Some(FnSig { params: expand(&sig.params), results: expand(&sig.results) })
+    Some(FnSig {
+        params: expand(&sig.params),
+        results: expand(&sig.results),
+    })
 }
 
 pub(super) fn field_temps(ctx: &mut FnCtx, fields: &FlatFields) -> Vec<u32> {
@@ -94,12 +97,19 @@ pub(super) fn flat_var<'c>(ctx: &'c FnCtx, name: &str) -> Option<&'c FlatVar> {
 }
 
 pub(super) fn flat_var_ref<'c>(ctx: &'c FnCtx, e: &DAE::Exp) -> Option<&'c FlatVar> {
-    let DAE::Exp::CREF { componentRef, .. } = e else { return None };
+    let DAE::Exp::CREF { componentRef, .. } = e else {
+        return None;
+    };
     flat_cref(ctx, componentRef)
 }
 
 pub(super) fn flat_cref<'c>(ctx: &'c FnCtx, cref: &DAE::ComponentRef) -> Option<&'c FlatVar> {
-    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = cref else { return None };
+    let DAE::ComponentRef::CREF_IDENT {
+        ident, subscriptLst, ..
+    } = cref
+    else {
+        return None;
+    };
     if !subscriptLst.is_empty() {
         return None;
     }
@@ -107,8 +117,23 @@ pub(super) fn flat_cref<'c>(ctx: &'c FnCtx, cref: &DAE::ComponentRef) -> Option<
 }
 
 pub(super) fn flat_field_ref(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Option<(FlatVar, usize)> {
-    let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef, .. } = cref else { return None };
-    let DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } = &**componentRef else { return None };
+    let DAE::ComponentRef::CREF_QUAL {
+        ident,
+        subscriptLst,
+        componentRef,
+        ..
+    } = cref
+    else {
+        return None;
+    };
+    let DAE::ComponentRef::CREF_IDENT {
+        ident: field,
+        subscriptLst: fsubs,
+        ..
+    } = &**componentRef
+    else {
+        return None;
+    };
     if !subscriptLst.is_empty() || !fsubs.is_empty() {
         return None;
     }
@@ -170,7 +195,11 @@ pub(super) fn compile_flat(ctx: &mut FnCtx, e: &DAE::Exp, fields: &FlatFields) -
                 }
             }
         }
-        E::IFEXP { expCond, expThen, expElse } => {
+        E::IFEXP {
+            expCond,
+            expThen,
+            expElse,
+        } => {
             let c = compile_exp(ctx, expCond)?;
             coerce(ctx, c, WTy::I32);
             let out = field_temps(ctx, fields);
@@ -276,7 +305,11 @@ pub(crate) fn variant_wrapper(
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let n_params = if to_flat { boxed.params.len() } else { expand(&boxed.params).len() } as u32;
+    let n_params = if to_flat {
+        boxed.params.len()
+    } else {
+        expand(&boxed.params).len()
+    } as u32;
     let mut ctx = FnCtx {
         locals: HashMap::default(),
         extra_locals: Vec::new(),
@@ -327,7 +360,11 @@ pub(crate) fn variant_wrapper(
         }
     }
     ctx.emit(we::Instruction::Call(callee));
-    let results = if to_flat { expand(&boxed.results) } else { boxed.results.clone() };
+    let results = if to_flat {
+        expand(&boxed.results)
+    } else {
+        boxed.results.clone()
+    };
     let temps: Vec<u32> = results.iter().map(|r| ctx.alloc_temp(r.wty())).collect();
     for t in temps.iter().rev() {
         ctx.emit(we::Instruction::LocalSet(*t));
@@ -359,7 +396,9 @@ pub(crate) fn variant_wrapper(
         }
     }
     ctx.emit(we::Instruction::End);
-    let FnCtx { extra_locals, instrs, .. } = ctx;
+    let FnCtx {
+        extra_locals, instrs, ..
+    } = ctx;
     let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
         func.instruction(i);

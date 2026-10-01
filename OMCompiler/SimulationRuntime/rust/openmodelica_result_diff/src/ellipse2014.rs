@@ -104,11 +104,11 @@ fn calculate_tubes(x: &mut [f64], y: &[f64], length: usize, r: f64) -> Tubes {
 
         if p.count_high == 0 {
             p.x_high[p.count_high] = p.x2 - p.delta;
-            p.y_high[p.count_high] = p.y2 - p.current_slope * p.delta
-                + p.delta * (p.current_slope * p.current_slope + p.s * p.s).sqrt();
+            p.y_high[p.count_high] =
+                p.y2 - p.current_slope * p.delta + p.delta * (p.current_slope * p.current_slope + p.s * p.s).sqrt();
             p.x_low[p.count_low] = p.x2 - p.delta;
-            p.y_low[p.count_low] = p.y2 - p.current_slope * p.delta
-                - p.delta * (p.current_slope * p.current_slope + p.s * p.s).sqrt();
+            p.y_low[p.count_low] =
+                p.y2 - p.current_slope * p.delta - p.delta * (p.current_slope * p.current_slope + p.s * p.s).sqrt();
             p.count_high += 1;
             p.count_low += 1;
         } else {
@@ -277,11 +277,7 @@ fn validate(
         }
         last_step_error = this_step_error;
     }
-    if isdifferent > 0 {
-        Some(error)
-    } else {
-        None
-    }
+    if isdifferent > 0 { Some(error) } else { None }
 }
 
 /// The outcome of [`cmp_data_tubes`] for one variable: everything on the
@@ -316,16 +312,14 @@ pub fn cmp_data_tubes(
 ) -> TubeCmp {
     let with_tubes = range_delta == 0.0;
     let ref_size = reftime.len();
-    let xabstol = (reftime[ref_size - 1] - reftime[0])
-        * (if with_tubes { range_delta } else { 1e-3 })
+    let xabstol = (reftime[ref_size - 1] - reftime[0]) * (if with_tubes { range_delta } else { 1e-3 })
         / (time.len().max(ref_size) as f64);
 
     // Only the (default) non-zero rangeDelta path is exercised; build the tube.
     let priv_ = calculate_tubes(reftime, refdata, ref_size, range_delta);
 
     let mut n = ref_size;
-    let calibrated_values =
-        calibrate_values(reftime, time, data, &mut n, time.len(), xabstol);
+    let calibrated_values = calibrate_values(reftime, time, data, &mut n, time.len(), xabstol);
     let mut high = calibrate_values(reftime, &priv_.x_high, &priv_.y_high, &mut n, priv_.count_high, xabstol);
     let mut low = calibrate_values(reftime, &priv_.x_low, &priv_.y_low, &mut n, priv_.count_low, xabstol);
 
@@ -337,6 +331,23 @@ pub fn cmp_data_tubes(
     add_relative_tolerance(&mut high, refdata, n, reltol, abstol, 1);
     add_relative_tolerance(&mut low, refdata, n, reltol, abstol, -1);
 
-    let error = validate(n, reftime, refdata, &mut low, &mut high, &calibrated_values, reltol, abstol, xabstol);
-    TubeCmp { calibrated: calibrated_values, high, low, error, n, abstol }
+    let error = validate(
+        n,
+        reftime,
+        refdata,
+        &mut low,
+        &mut high,
+        &calibrated_values,
+        reltol,
+        abstol,
+        xabstol,
+    );
+    TubeCmp {
+        calibrated: calibrated_values,
+        high,
+        low,
+        error,
+        n,
+        abstol,
+    }
 }

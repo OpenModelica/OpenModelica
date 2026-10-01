@@ -10,39 +10,35 @@
 //! the entry point that owns the filesystem is whichever one the run used: real
 //! files natively and under wasip1, the VFS in the browser.
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+use openmodelica_solvers::fmath;
 
 use crate::driver::{Result, SimEngine, format_g, read_f64, write_f64};
-use crate::{ReconInfo, ReconJac, ReconVar, SimMeta};
 use crate::omclog;
+use crate::{ReconInfo, ReconJac, ReconVar, SimMeta};
 
 /// C's `chisquaredvalue`: 199 tabulated values, the 200th left zero as its
 /// `[200]` initializer does.
 const CHI_SQUARED: [f64; 200] = [
-    3.84146, 5.99146, 7.81473, 9.48773, 11.0705, 12.5916, 14.0671, 15.5073, 16.919, 18.307,
-    19.6751, 21.0261, 22.362, 23.6848, 24.9958, 26.2962, 27.5871, 28.8693, 30.1435, 31.4104,
-    32.6706, 33.9244, 35.1725, 36.415, 37.6525, 38.8851, 40.1133, 41.3371, 42.557, 43.773,
-    44.9853, 46.1943, 47.3999, 48.6024, 49.8018, 50.9985, 52.1923, 53.3835, 54.5722, 55.7585,
-    56.9424, 58.124, 59.3035, 60.4809, 61.6562, 62.8296, 64.0011, 65.1708, 66.3386, 67.5048,
-    68.6693, 69.8322, 70.9935, 72.1532, 73.3115, 74.4683, 75.6237, 76.7778, 77.9305, 79.0819,
-    80.2321, 81.381, 82.5287, 83.6753, 84.8206, 85.9649, 87.1081, 88.2502, 89.3912, 90.5312,
-    91.6702, 92.8083, 93.9453, 95.0815, 96.2167, 97.351, 98.4844, 99.6169, 100.749, 101.879,
-    103.01, 104.139, 105.267, 106.395, 107.522, 108.648, 109.773, 110.898, 112.022, 113.145,
-    114.268, 115.39, 116.511, 117.632, 118.752, 119.871, 120.99, 122.108, 123.225, 124.342,
-    125.458, 126.574, 127.689, 128.804, 129.918, 131.031, 132.144, 133.257, 134.369, 135.48,
-    136.591, 137.701, 138.811, 139.921, 141.03, 142.138, 143.246, 144.354, 145.461, 146.567,
-    147.674, 148.779, 149.885, 150.989, 152.094, 153.198, 154.302, 155.405, 156.508, 157.61,
-    158.712, 159.814, 160.915, 162.016, 163.116, 164.216, 165.316, 166.415, 167.514, 168.613,
-    169.711, 170.809, 171.907, 173.004, 174.101, 175.198, 176.294, 177.39, 178.485, 179.581,
-    180.676, 181.77, 182.865, 183.959, 185.052, 186.146, 187.239, 188.332, 189.424, 190.516,
-    191.608, 192.7, 193.791, 194.883, 195.973, 197.064, 198.154, 199.244, 200.334, 201.423,
-    202.513, 203.602, 204.69, 205.779, 206.867, 207.955, 209.042, 210.13, 211.217, 212.304,
-    213.391, 214.477, 215.563, 216.649, 217.735, 218.82, 219.906, 220.991, 222.076, 223.16,
-    224.245, 225.329, 226.413, 227.496, 228.58, 229.663, 230.746, 231.829, 232.912, 0.0,
+    3.84146, 5.99146, 7.81473, 9.48773, 11.0705, 12.5916, 14.0671, 15.5073, 16.919, 18.307, 19.6751, 21.0261, 22.362,
+    23.6848, 24.9958, 26.2962, 27.5871, 28.8693, 30.1435, 31.4104, 32.6706, 33.9244, 35.1725, 36.415, 37.6525, 38.8851,
+    40.1133, 41.3371, 42.557, 43.773, 44.9853, 46.1943, 47.3999, 48.6024, 49.8018, 50.9985, 52.1923, 53.3835, 54.5722,
+    55.7585, 56.9424, 58.124, 59.3035, 60.4809, 61.6562, 62.8296, 64.0011, 65.1708, 66.3386, 67.5048, 68.6693, 69.8322,
+    70.9935, 72.1532, 73.3115, 74.4683, 75.6237, 76.7778, 77.9305, 79.0819, 80.2321, 81.381, 82.5287, 83.6753, 84.8206,
+    85.9649, 87.1081, 88.2502, 89.3912, 90.5312, 91.6702, 92.8083, 93.9453, 95.0815, 96.2167, 97.351, 98.4844, 99.6169,
+    100.749, 101.879, 103.01, 104.139, 105.267, 106.395, 107.522, 108.648, 109.773, 110.898, 112.022, 113.145, 114.268,
+    115.39, 116.511, 117.632, 118.752, 119.871, 120.99, 122.108, 123.225, 124.342, 125.458, 126.574, 127.689, 128.804,
+    129.918, 131.031, 132.144, 133.257, 134.369, 135.48, 136.591, 137.701, 138.811, 139.921, 141.03, 142.138, 143.246,
+    144.354, 145.461, 146.567, 147.674, 148.779, 149.885, 150.989, 152.094, 153.198, 154.302, 155.405, 156.508, 157.61,
+    158.712, 159.814, 160.915, 162.016, 163.116, 164.216, 165.316, 166.415, 167.514, 168.613, 169.711, 170.809,
+    171.907, 173.004, 174.101, 175.198, 176.294, 177.39, 178.485, 179.581, 180.676, 181.77, 182.865, 183.959, 185.052,
+    186.146, 187.239, 188.332, 189.424, 190.516, 191.608, 192.7, 193.791, 194.883, 195.973, 197.064, 198.154, 199.244,
+    200.334, 201.423, 202.513, 203.602, 204.69, 205.779, 206.867, 207.955, 209.042, 210.13, 211.217, 212.304, 213.391,
+    214.477, 215.563, 216.649, 217.735, 218.82, 219.906, 220.991, 222.076, 223.16, 224.245, 225.329, 226.413, 227.496,
+    228.58, 229.663, 230.746, 231.829, 232.912, 0.0,
 ];
 
 /// C's `lambda`, the 95% two-sided normal quantile.
@@ -60,7 +56,11 @@ struct Matrix {
 
 impl Matrix {
     fn zeros(rows: usize, cols: usize) -> Matrix {
-        Matrix { rows, cols, data: vec![0.0; rows * cols] }
+        Matrix {
+            rows,
+            cols,
+            data: vec![0.0; rows * cols],
+        }
     }
 
     fn column(rows: usize, data: Vec<f64>) -> Matrix {
@@ -199,8 +199,7 @@ impl Ctx<'_> {
 
     /// C's `-eps`, defaulting to `1e-10`.
     fn sx_eps(&self) -> f64 {
-        crate::simflags::with_flags(|f| f.recon_eps.clone())
-            .map_or(0.0000000001, |v| atof(&v))
+        crate::simflags::with_flags(|f| f.recon_eps.clone()).map_or(0.0000000001, |v| atof(&v))
     }
 
     fn flush_log(&mut self) {
@@ -215,7 +214,9 @@ fn write_file(path: &str, content: &str) {
 }
 
 fn read_file(path: &str) -> Option<String> {
-    std::fs::read(path).ok().map(|b| String::from_utf8_lossy(&b).into_owned())
+    std::fs::read(path)
+        .ok()
+        .map(|b| String::from_utf8_lossy(&b).into_owned())
 }
 
 /// C's `copyReferenceFile`: the code generator writes its reference HTML next to
@@ -248,7 +249,11 @@ fn header(headers: &[String], i: usize) -> &str {
 }
 
 fn pad(s: &str, width: usize) -> String {
-    if s.len() >= width { s.to_string() } else { format!("{s:>width$}") }
+    if s.len() >= width {
+        s.to_string()
+    } else {
+        format!("{s:>width$}")
+    }
 }
 
 // ───────────────────────────── linear algebra ─────────────────────────────
@@ -283,9 +288,7 @@ fn solve_system(ctx: &mut Ctx, n: usize, nrhs: usize, a: &mut Matrix, b: &mut Ma
     let mut ipiv = vec![0i32; n.max(1)];
     let info = openmodelica_lapack::lu::dgesv(n, nrhs, &mut a.data, n, &mut ipiv, &mut b.data, n);
     if info > 0 {
-        let msg = format!(
-            "solveSystemFstar() Failed !, The solution could not be computed, The info satus is {info} "
-        );
+        let msg = format!("solveSystemFstar() Failed !, The solution could not be computed, The info satus is {info} ");
         ctx.error(&msg);
         return Err(ctx.abort());
     }
@@ -303,7 +306,11 @@ fn sub(ctx: &mut Ctx, a: &Matrix, b: &Matrix) -> Result<Matrix> {
         return Err(ctx.abort());
     }
     let data = a.data.iter().zip(&b.data).map(|(x, y)| x - y).collect();
-    Ok(Matrix { rows: a.rows, cols: a.cols, data })
+    Ok(Matrix {
+        rows: a.rows,
+        cols: a.cols,
+        data,
+    })
 }
 
 /// C's `solveMatrixAddition`.
@@ -317,7 +324,11 @@ fn add(ctx: &mut Ctx, a: &Matrix, b: &Matrix) -> Result<Matrix> {
         return Err(ctx.abort());
     }
     let data = a.data.iter().zip(&b.data).map(|(x, y)| x + y).collect();
-    Ok(Matrix { rows: a.rows, cols: a.cols, data })
+    Ok(Matrix {
+        rows: a.rows,
+        cols: a.cols,
+        data,
+    })
 }
 
 // ───────────────────────────── debug-log printers ─────────────────────────────
@@ -361,7 +372,11 @@ fn print_vector_headers(log: &mut String, v: &[f64], rows: usize, headers: &[Str
 /// C's `printBoundaryConditionsResults`.
 fn print_boundary_results(log: &mut String, a: &Matrix, b: &Matrix, headers: &[String], name: &str) {
     log.push_str(&format!("\n************ {name} **********\n"));
-    log.push_str(&format!("\n Boundary conditions{}{}\n", pad("Values", 20), pad("Half-width Confidence Interval", 45)));
+    log.push_str(&format!(
+        "\n Boundary conditions{}{}\n",
+        pad("Values", 20),
+        pad("Half-width Confidence Interval", 45)
+    ));
     for i in 0..a.rows.min(b.rows) {
         log.push_str(&pad(header(headers, i), 20));
         for j in 0..a.cols.min(b.cols) {
@@ -544,7 +559,10 @@ fn atof(s: &str) -> f64 {
 
 /// C's line preparation: `;` counts as a separator, and all whitespace is dropped.
 fn normalize_line(line: &str) -> String {
-    line.chars().filter(|c| !c.is_ascii_whitespace()).map(|c| if c == ';' { ',' } else { c }).collect()
+    line.chars()
+        .filter(|c| !c.is_ascii_whitespace())
+        .map(|c| if c == ';' { ',' } else { c })
+        .collect()
 }
 
 /// C's `isUnmeasuredVariables`.
@@ -621,9 +639,21 @@ fn read_measurement_input_file(ctx: &mut Ctx) -> Result<CsvData> {
             if !col0 || !col1 || !col2 {
                 let bad = "(no-Value/wrong-Type)".to_string();
                 error_info.push(ErrorData {
-                    name: if col0 { names.last().cloned().unwrap_or_default() } else { bad.clone() },
-                    x: if col1 { to_string_c(*xdata.last().unwrap_or(&0.0)) } else { bad.clone() },
-                    sx: if col2 { to_string_c(*sxdata.last().unwrap_or(&0.0)) } else { bad },
+                    name: if col0 {
+                        names.last().cloned().unwrap_or_default()
+                    } else {
+                        bad.clone()
+                    },
+                    x: if col1 {
+                        to_string_c(*xdata.last().unwrap_or(&0.0))
+                    } else {
+                        bad.clone()
+                    },
+                    sx: if col2 {
+                        to_string_c(*sxdata.last().unwrap_or(&0.0))
+                    } else {
+                        bad
+                    },
                 });
             }
         }
@@ -649,7 +679,12 @@ fn read_measurement_input_file(ctx: &mut Ctx) -> Result<CsvData> {
         }
         return Err(ctx.abort());
     }
-    Ok(CsvData { rowcount: row_count, xdata, sxdata, headers: names })
+    Ok(CsvData {
+        rowcount: row_count,
+        xdata,
+        sxdata,
+        headers: names,
+    })
 }
 
 /// C++'s `std::to_string(double)`: `%f`, six decimals.
@@ -659,12 +694,7 @@ fn to_string_c(v: f64) -> String {
 
 /// C's `validateCorelationInputs`: every header the correlation file names must be
 /// a variable of interest, exactly once.
-fn validate_correlation_inputs(
-    ctx: &mut Ctx,
-    sx: &CsvData,
-    headers: &[String],
-    comments: &str,
-) -> Result<()> {
+fn validate_correlation_inputs(ctx: &mut Ctx, sx: &CsvData, headers: &[String], comments: &str) -> Result<()> {
     let mut no_entry: Vec<String> = Vec::new();
     let mut multiple_entry: Vec<String> = Vec::new();
     let mut entry: Vec<String> = Vec::new();
@@ -685,7 +715,11 @@ fn validate_correlation_inputs(
         }
     }
     let cx = ctx.cx_file.clone().unwrap_or_default();
-    let what = if ctx.mode.boundary { "reconciled covariance matrix input file" } else { "correlation input file" };
+    let what = if ctx.mode.boundary {
+        "reconciled covariance matrix input file"
+    } else {
+        "correlation input file"
+    };
     for name in &multiple_entry {
         ctx.error2(
             &format!("variable of interest {name}, at {comments} has multiple entries in {what} {cx} "),
@@ -726,7 +760,10 @@ fn validate_correlation_square(ctx: &mut Ctx, rows: &[String], cols: &[String]) 
     }
     for name in rows {
         if !cols.contains(name) {
-            ctx.error2(&format!("Column {name} is missing"), &format!("Column {name} is missing "));
+            ctx.error2(
+                &format!("Column {name} is missing"),
+                &format!("Column {name} is missing "),
+            );
         }
     }
     for (i, r) in rows.iter().enumerate() {
@@ -739,11 +776,7 @@ fn validate_correlation_square(ctx: &mut Ctx, rows: &[String], cols: &[String]) 
 }
 
 /// C's `readCorrelationCoefficientFile`.
-fn read_correlation_file(
-    ctx: &mut Ctx,
-    sx: &CsvData,
-    warn: &mut CorrelationWarnings,
-) -> Result<CorrelationData> {
+fn read_correlation_file(ctx: &mut Ctx, sx: &CsvData, warn: &mut CorrelationWarnings) -> Result<CorrelationData> {
     let Some(filename) = ctx.cx_file.clone() else {
         if !ctx.mode.boundary {
             return Ok(CorrelationData::default());
@@ -818,7 +851,11 @@ fn read_correlation_file(
         linecount += 1;
     }
 
-    let what = if ctx.mode.boundary { "reconciled covariance matrix input file" } else { "correlation input file" };
+    let what = if ctx.mode.boundary {
+        "reconciled covariance matrix input file"
+    } else {
+        "correlation input file"
+    };
     if !error_headers.is_empty() {
         for line in &error_headers {
             ctx.error2(
@@ -850,7 +887,11 @@ fn read_correlation_file(
     validate_correlation_inputs(ctx, sx, &row_headers.clone(), "row headers")?;
     validate_correlation_square(ctx, &row_headers, &column_headers)?;
 
-    Ok(CorrelationData { data: cx_data, row_headers, column_headers })
+    Ok(CorrelationData {
+        data: cx_data,
+        row_headers,
+        column_headers,
+    })
 }
 
 /// C's `getVariableIndex`.
@@ -858,7 +899,10 @@ fn variable_index(ctx: &mut Ctx, headers: &[String], name: &str) -> Result<usize
     match headers.iter().position(|h| h == name) {
         Some(pos) => Ok(pos),
         None => {
-            ctx.log_line("error", &format!("CoRelation-Coefficient Variable Name not Matched:  {name} ,getVariableIndex() failed!"));
+            ctx.log_line(
+                "error",
+                &format!("CoRelation-Coefficient Variable Name not Matched:  {name} ,getVariableIndex() failed!"),
+            );
             ctx.flush_log();
             Err(ABORTED)
         }
@@ -1059,7 +1103,8 @@ fn solve_reconciled_sx(ctx: &mut Ctx, sx: &Matrix, ft: &Matrix, fstar: &Matrix) 
     let b = matmul(ctx, &a, fstar)?;
     let recon = sub(ctx, sx, &b)?;
     if log_jac() {
-        ctx.log.push_str("Calculations of Reconciled_Sx ===> (Sx - (Sx*Ft*F*))\n");
+        ctx.log
+            .push_str("Calculations of Reconciled_Sx ===> (Sx - (Sx*Ft*F*))\n");
         ctx.log.push_str("============================================");
         print_matrix(&mut ctx.log, &a, "(Sx*Ft)");
         print_matrix(&mut ctx.log, &b, "(Sx*Ft*F*)");
@@ -1208,14 +1253,26 @@ fn run_reconciliation(
         let value = solve_convergence(ctx, &reconciled_x, x, &mut copy_sx, &jac_f, &vector_c, &fstar)?;
 
         if value > eps {
-            ctx.log.push_str(&format!("J*/r({}) > {}, Value not Converged \n", num(value), num(eps)));
+            ctx.log
+                .push_str(&format!("J*/r({}) > {}, Value not Converged \n", num(value), num(eps)));
             ctx.log.push_str("==========================================\n\n");
             ctx.log.push_str(&format!(
                 "Running Convergence iteration: {iterationcount} with the following reconciled values:\n"
             ));
-            ctx.log.push_str("========================================================================\n");
-            print_matrix_headers(&mut ctx.log, &reconciled_x, &csvinputs.headers, "reconciled_X ===> (x - (Sx*Ft*fstar))");
-            print_matrix_headers(&mut ctx.log, &reconciled_sx, &csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))");
+            ctx.log
+                .push_str("========================================================================\n");
+            print_matrix_headers(
+                &mut ctx.log,
+                &reconciled_x,
+                &csvinputs.headers,
+                "reconciled_X ===> (x - (Sx*Ft*fstar))",
+            );
+            print_matrix_headers(
+                &mut ctx.log,
+                &reconciled_sx,
+                &csvinputs.headers,
+                "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))",
+            );
             x.data.copy_from_slice(&reconciled_x.data);
             iterationcount += 1;
             continue;
@@ -1228,19 +1285,35 @@ fn run_reconciliation(
                 num(eps)
             ));
         } else {
-            ctx.log.push_str("***** Value Converged, Convergence Completed******* \n\n");
+            ctx.log
+                .push_str("***** Value Converged, Convergence Completed******* \n\n");
         }
 
         let j = calculate_quality_value(ctx, &reconciled_x, sx, csvinputs)?;
 
         ctx.log.push_str("Final Results:\n");
         ctx.log.push_str("=============\n");
-        ctx.log.push_str(&format!("Total Iteration to Converge               : {iterationcount}\n"));
-        ctx.log.push_str(&format!("Final Converged Value(J*/r)               : {}\n", num(value)));
-        ctx.log.push_str(&format!("Final value of the objective function (J) : {}\n", num(j)));
-        ctx.log.push_str(&format!("Epsilon                                   : {}\n", num(eps)));
-        print_matrix_headers(&mut ctx.log, &reconciled_x, &csvinputs.headers, "reconciled_X ===> (x - (Sx*Ft*fstar))");
-        print_matrix_headers(&mut ctx.log, &reconciled_sx, &csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))");
+        ctx.log.push_str(&format!(
+            "Total Iteration to Converge               : {iterationcount}\n"
+        ));
+        ctx.log
+            .push_str(&format!("Final Converged Value(J*/r)               : {}\n", num(value)));
+        ctx.log
+            .push_str(&format!("Final value of the objective function (J) : {}\n", num(j)));
+        ctx.log
+            .push_str(&format!("Epsilon                                   : {}\n", num(eps)));
+        print_matrix_headers(
+            &mut ctx.log,
+            &reconciled_x,
+            &csvinputs.headers,
+            "reconciled_X ===> (x - (Sx*Ft*fstar))",
+        );
+        print_matrix_headers(
+            &mut ctx.log,
+            &reconciled_sx,
+            &csvinputs.headers,
+            "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))",
+        );
 
         dump_reconciled_sx_to_csv(ctx, &reconciled_sx, &csvinputs.headers);
 
@@ -1286,7 +1359,11 @@ fn run_reconciliation(
         }
         for i in 0..xdiag.rows {
             let floor = fmath::sqrt(sxdiag.data[i] / 10.0);
-            new_x.data[i] /= if new_sx_diag.data[i] > floor { new_sx_diag.data[i] } else { floor };
+            new_x.data[i] /= if new_sx_diag.data[i] > floor {
+                new_sx_diag.data[i]
+            } else {
+                floor
+            };
         }
         print_matrix_headers(
             &mut ctx.log,
@@ -1345,7 +1422,9 @@ fn update_reconciled_mo(ctx: &mut Ctx, headers: &[String], reconciled_x: &[f64])
             // Optional: the user may not want the file, so this is only a warning.
             let msg = format!("Reconciled modelica file path not found {tmp_mo}.");
             omclog::warning(omclog::STDOUT, false, &msg);
-            ctx.log.push_str(&format!("|  warning   |   Measurement input file path not found {tmp_mo}\n"));
+            ctx.log.push_str(&format!(
+                "|  warning   |   Measurement input file path not found {tmp_mo}\n"
+            ));
             String::new()
         }
     };
@@ -1356,7 +1435,10 @@ fn update_reconciled_mo(ctx: &mut Ctx, headers: &[String], reconciled_x: &[f64])
     for line in text.lines() {
         if count > 3 && var_count <= ctx.recon.input_vars.len() {
             let name = headers[var_count - 1].replace('.', "_");
-            out.push_str(&format!("  parameter Real {name} = {};\n", num(reconciled_x[var_count - 1])));
+            out.push_str(&format!(
+                "  parameter Real {name} = {};\n",
+                num(reconciled_x[var_count - 1])
+            ));
             var_count += 1;
         } else {
             count += 1;
@@ -1366,7 +1448,9 @@ fn update_reconciled_mo(ctx: &mut Ctx, headers: &[String], reconciled_x: &[f64])
     }
     write_file(&out_mo, &out);
     let _ = std::fs::remove_file(&tmp_mo);
-    ctx.log.push_str(&format!("|  info    |   Reconciled modelica file updated successfully {out_mo}\n"));
+    ctx.log.push_str(&format!(
+        "|  info    |   Reconciled modelica file updated successfully {out_mo}\n"
+    ));
 }
 
 // ───────────────────────────── html reports ─────────────────────────────
@@ -1391,8 +1475,9 @@ fn ctime_now() -> String {
     let mday = doy - (153 * mp + 2) / 5 + 1;
     let mon = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = if mon <= 2 { y + 1 } else { y };
-    let mon_name = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        [mon as usize - 1];
+    let mon_name = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ][mon as usize - 1];
     let dow = ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"][days.rem_euclid(7) as usize];
     format!("{dow} {mon_name} {mday:2} {hour:02}:{min:02}:{sec:02} {year:04}\n")
 }
@@ -1489,18 +1574,34 @@ fn create_error_html_report(ctx: &Ctx, status: i32) {
     h.push_str(&generated_row(ctx));
 
     h.push_str("<h2> Analysis: </h2>\n<table> \n");
-    h.push_str(&row("Number of auxiliary conditions", &ctx.recon.setc_vars.len().to_string()));
-    h.push_str(&row("Number of measured variables", &ctx.recon.input_vars.len().to_string()));
-    h.push_str(&row("Number of unmeasured variables", &ctx.recon.setb_vars.len().to_string()));
-    h.push_str(&row("Number of related boundary conditions", &ctx.recon.n_related_boundary.to_string()));
+    h.push_str(&row(
+        "Number of auxiliary conditions",
+        &ctx.recon.setc_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of measured variables",
+        &ctx.recon.input_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of unmeasured variables",
+        &ctx.recon.setb_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of related boundary conditions",
+        &ctx.recon.n_related_boundary.to_string(),
+    ));
     h.push_str("</table> \n");
 
     analysis_links(ctx, &mut h, "Intermediate equations");
     h.push_str(&format!("<h2> <a href={p}.log target=_blank> Errors </a> </h2>\n"));
     copy_reference_file(ctx, ".log");
     if status == 0 {
-        h.push_str(&format!("<h2> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h2>\n"));
-        h.push_str(&format!("<h2> <a href={p}_debug.txt target=_blank> Debug log </a> </h2>\n"));
+        h.push_str(&format!(
+            "<h2> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h2>\n"
+        ));
+        h.push_str(&format!(
+            "<h2> <a href={p}_debug.txt target=_blank> Debug log </a> </h2>\n"
+        ));
     }
     h.push_str("</table>\n</body>\n</html>");
     write_file(&ctx.model_file(".html"), &h);
@@ -1521,8 +1622,14 @@ fn create_error_html_report_boundary(ctx: &Ctx, status: i32) {
     h.push_str(&generated_row(ctx));
 
     h.push_str("<h2> Analysis: </h2>\n<table> \n");
-    h.push_str(&row("Number of boundary conditions", &ctx.recon.setc_vars.len().to_string()));
-    h.push_str(&row("Number of variables to be reconciled", &ctx.recon.input_vars.len().to_string()));
+    h.push_str(&row(
+        "Number of boundary conditions",
+        &ctx.recon.setc_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of variables to be reconciled",
+        &ctx.recon.input_vars.len().to_string(),
+    ));
     h.push_str("</table> \n");
 
     h.push_str(&format!(
@@ -1534,7 +1641,9 @@ fn create_error_html_report_boundary(ctx: &Ctx, status: i32) {
     h.push_str(&format!("<h2> <a href={p}.log target=_blank> Errors </a> </h2>\n"));
     copy_reference_file(ctx, ".log");
     if status == 0 {
-        h.push_str(&format!("<h2> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h2>\n"));
+        h.push_str(&format!(
+            "<h2> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h2>\n"
+        ));
         h.push_str(&format!(
             "<h2> <a href={p}_BoundaryConditions_debug.txt target=_blank> Debug log </a> </h2>\n"
         ));
@@ -1578,9 +1687,18 @@ fn create_html_report(
     let n_setc = ctx.recon.setc_vars.len();
     h.push_str("<h2> Analysis: </h2>\n<table> \n");
     h.push_str(&row("Number of auxiliary conditions", &n_setc.to_string()));
-    h.push_str(&row("Number of measured variables", &ctx.recon.input_vars.len().to_string()));
-    h.push_str(&row("Number of unmeasured variables", &ctx.recon.setb_vars.len().to_string()));
-    h.push_str(&row("Number of related boundary conditions", &ctx.recon.n_related_boundary.to_string()));
+    h.push_str(&row(
+        "Number of measured variables",
+        &ctx.recon.input_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of unmeasured variables",
+        &ctx.recon.setb_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of related boundary conditions",
+        &ctx.recon.n_related_boundary.to_string(),
+    ));
     h.push_str(&row("Number of iterations to convergence", &d.iterations.to_string()));
     h.push_str(&row("Final value of (J*/r) ", &num(d.value)));
     h.push_str(&row("Epsilon ", &num(eps)));
@@ -1591,13 +1709,20 @@ fn create_html_report(
     } else {
         h.push_str(&row("Chi-square value ", &num(chi)));
     }
-    h.push_str(&row("Result of global test ", if d.j <= chi { "TRUE" } else { "FALSE" }));
+    h.push_str(&row(
+        "Result of global test ",
+        if d.j <= chi { "TRUE" } else { "FALSE" },
+    ));
     h.push_str(&row("Quality (J/Chi-square) ", &num(d.j / chi)));
     h.push_str("</table>\n");
 
     analysis_links(ctx, &mut h, "Intermediate equations for measured variables");
-    h.push_str(&format!("<h3> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h3>\n"));
-    h.push_str(&format!("<h3> <a href={p}_debug.txt target=_blank> Debug log </a> </h3>\n"));
+    h.push_str(&format!(
+        "<h3> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h3>\n"
+    ));
+    h.push_str(&format!(
+        "<h3> <a href={p}_debug.txt target=_blank> Debug log </a> </h3>\n"
+    ));
     correlation_warning_report(ctx, &mut h, warn);
 
     h.push_str("<h2> Results: </h2>\n<table border=2>\n");
@@ -1675,7 +1800,10 @@ fn create_html_report(
 fn create_html_report_boundary(ctx: &Ctx, bc: &BoundaryConditionData, warn: &CorrelationWarnings) {
     let p = ctx.prefix().to_string();
     let mut h = overview(ctx, "Boundary Conditions Report ");
-    h.push_str(&row("Reconciled values input file", ctx.sx_file.as_deref().unwrap_or("")));
+    h.push_str(&row(
+        "Reconciled values input file",
+        ctx.sx_file.as_deref().unwrap_or(""),
+    ));
     match &ctx.cx_file {
         Some(f) => h.push_str(&row("Reconciled covariance matrix input file", f)),
         None => h.push_str(&row("Correlation matrix input file", "no file provided")),
@@ -1683,8 +1811,14 @@ fn create_html_report_boundary(ctx: &Ctx, bc: &BoundaryConditionData, warn: &Cor
     h.push_str(&generated_row(ctx));
 
     h.push_str("<h2> Analysis: </h2>\n<table> \n");
-    h.push_str(&row("Number of boundary conditions", &ctx.recon.setc_vars.len().to_string()));
-    h.push_str(&row("Number of variables to be reconciled", &ctx.recon.input_vars.len().to_string()));
+    h.push_str(&row(
+        "Number of boundary conditions",
+        &ctx.recon.setc_vars.len().to_string(),
+    ));
+    h.push_str(&row(
+        "Number of variables to be reconciled",
+        &ctx.recon.input_vars.len().to_string(),
+    ));
     h.push_str("</table>\n");
 
     h.push_str(&format!(
@@ -1693,7 +1827,9 @@ fn create_html_report_boundary(ctx: &Ctx, bc: &BoundaryConditionData, warn: &Cor
     h.push_str(&format!(
         "<h3> <a href={p}_BoundaryConditionIntermediateEquations.html target=_blank> Intermediate equations </a> </h3>\n"
     ));
-    h.push_str(&format!("<h3> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h3>\n"));
+    h.push_str(&format!(
+        "<h3> <a href={p}_iterationVars.txt target=_blank> Iteration vars </a> </h3>\n"
+    ));
     h.push_str(&format!(
         "<h3> <a href={p}_BoundaryConditions_debug.txt target=_blank> Debug log </a> </h3>\n"
     ));
@@ -1758,7 +1894,10 @@ fn reconcile_boundary_conditions(
     copy_reference_file(ctx, "_BoundaryConditionVars.txt");
     let Some(text) = read_file(&vars_file) else {
         let msg = format!("Boundary conditions vars filename not found: {vars_file}.");
-        ctx.error2(&msg, &format!("Boundary conditions vars filename not found: {vars_file}"));
+        ctx.error2(
+            &msg,
+            &format!("Boundary conditions vars filename not found: {vars_file}"),
+        );
         return Err(ctx.abort());
     };
     let vars: Vec<String> = text.lines().filter(|l| !l.is_empty()).map(|l| l.to_string()).collect();
@@ -1771,14 +1910,22 @@ fn reconcile_boundary_conditions(
     );
 
     // C reads the result array back to front, as `RunReconciliation` does.
-    let set = if ctx.mode.boundary { ctx.recon.setc_vars.clone() } else { ctx.recon.setb_vars.clone() };
+    let set = if ctx.mode.boundary {
+        ctx.recon.setc_vars.clone()
+    } else {
+        ctx.recon.setb_vars.clone()
+    };
     let raw = read_set(e, ctx.sim_data, &set)?;
     let results: Vec<f64> = (0..raw.len()).map(|t| raw[raw.len() - 1 - t]).collect();
 
     let results_m = Matrix::column(results.len(), results.clone());
     print_boundary_results(&mut ctx.log, &results_m, &recon_st_diag, &vars, "Final Results");
 
-    let bc = BoundaryConditionData { vars, results, recon_st_diag: recon_st_diag.data };
+    let bc = BoundaryConditionData {
+        vars,
+        results,
+        recon_st_diag: recon_st_diag.data,
+    };
     if ctx.mode.boundary {
         create_html_report_boundary(ctx, &bc, warn);
     }
@@ -1926,7 +2073,13 @@ fn data_reconciliation(ctx: &mut Ctx, e: &mut dyn SimEngine) -> Result<()> {
     ctx.log.push_str("\n\nInitial Data \n=============\n");
     print_matrix_headers(&mut ctx.log, &x, &sx_data.headers, "X");
     let sxdata = sx_data.sxdata.clone();
-    print_vector_headers(&mut ctx.log, &sxdata, sx_data.rowcount, &sx_data.headers, "Half-WidthConfidenceInterval");
+    print_vector_headers(
+        &mut ctx.log,
+        &sxdata,
+        sx_data.rowcount,
+        &sx_data.headers,
+        "Half-WidthConfidenceInterval",
+    );
     print_correlation_matrix(&mut ctx.log, &cx_data, "Co-Relation_Coefficient", &mut warn);
     print_matrix_headers(&mut ctx.log, &sx, &sx_data.headers, "Sx");
 
@@ -1961,7 +2114,8 @@ fn state_estimation(
     let mut bc = BoundaryConditionData::default();
     if !ctx.recon.setb_vars.is_empty() {
         copy_reference_file(ctx, "_BoundaryConditionIntermediateEquations.html");
-        ctx.log.push_str("\n\nCalculation of Boundary condition \n====================================\n");
+        ctx.log
+            .push_str("\n\nCalculation of Boundary condition \n====================================\n");
         bc = reconcile_boundary_conditions(ctx, e, &d.reconciled_x, &d.reconciled_sx, warn)?;
     }
     create_html_report(ctx, csvinputs, &d, eps, warn, &bc);
@@ -1979,7 +2133,8 @@ fn boundary_conditions(ctx: &mut Ctx, e: &mut dyn SimEngine) -> Result<()> {
     }
     ctx.log_path = ctx.model_file("_BoundaryConditions_debug.txt");
     ctx.log.clear();
-    ctx.log.push_str("|  info    |   Reconcile Boundary Conditions Starting!\n");
+    ctx.log
+        .push_str("|  info    |   Reconcile Boundary Conditions Starting!\n");
     ctx.log.push_str(&format!("|  info    |   {}\n", ctx.model.model_name));
 
     let csvdata = read_measurement_input_file(ctx)?;
@@ -1989,11 +2144,7 @@ fn boundary_conditions(ctx: &mut Ctx, e: &mut dyn SimEngine) -> Result<()> {
 
     let mut warn = CorrelationWarnings::default();
     let cx_data = read_correlation_file(ctx, &sx_data, &mut warn)?;
-    let reconciled_sx = init_column_matrix(
-        &cx_data.data,
-        cx_data.row_headers.len(),
-        cx_data.column_headers.len(),
-    );
+    let reconciled_sx = init_column_matrix(&cx_data.data, cx_data.row_headers.len(), cx_data.column_headers.len());
 
     ctx.log.push_str("\n\nInitial Data \n=============\n");
     print_matrix_headers(&mut ctx.log, &reconciled_x, &sx_data.headers, "Reconciled_X");
@@ -2004,7 +2155,8 @@ fn boundary_conditions(ctx: &mut Ctx, e: &mut dyn SimEngine) -> Result<()> {
     update_reconciled_mo(ctx, &headers, &reconciled_x.data);
 
     ctx.log.push_str("*****Completed***********\n");
-    ctx.log.push_str("|  info    |   Reconcile Boundary Conditions Completed! \n");
+    ctx.log
+        .push_str("|  info    |   Reconcile Boundary Conditions Completed! \n");
     ctx.flush_log();
     Ok(())
 }

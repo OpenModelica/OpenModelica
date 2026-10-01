@@ -33,8 +33,8 @@ pub struct Pattern<'a> {
 #[cfg(sundials)]
 pub mod sun {
     use alloc::vec;
-    use openmodelica_solvers::fmath;
     use core::ffi::{c_int, c_long, c_void};
+    use openmodelica_solvers::fmath;
 
     pub use openmodelica_solvers::sundials::SunIndex;
 
@@ -53,7 +53,8 @@ pub mod sun {
     pub type SunContext = *mut c_void;
 
     type SysFn = extern "C" fn(u: NVector, fval: NVector, user: *mut c_void) -> c_int;
-    type JacFn = extern "C" fn(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, t1: NVector, t2: NVector) -> c_int;
+    type JacFn =
+        extern "C" fn(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, t1: NVector, t2: NVector) -> c_int;
 
     unsafe extern "C" {
         fn SUNContext_Create(comm: c_int, ctx: *mut SunContext) -> c_int;
@@ -224,12 +225,27 @@ pub mod sun {
             return;
         }
         crate::jacobian_analysis::derivative_test(
-            ud.eq_index, ud.time, ud.n, x, ud.colptr, ud.rowidx, vals, None,
-            crate::jacobian_analysis::Caller::KinsolJacEval, ud.eval,
+            ud.eq_index,
+            ud.time,
+            ud.n,
+            x,
+            ud.colptr,
+            ud.rowidx,
+            vals,
+            None,
+            crate::jacobian_analysis::Caller::KinsolJacEval,
+            ud.eval,
         );
     }
 
-    extern "C" fn jacobian(u: NVector, fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
+    extern "C" fn jacobian(
+        u: NVector,
+        fu: NVector,
+        j: SunMatrix,
+        user: *mut c_void,
+        _t1: NVector,
+        _t2: NVector,
+    ) -> c_int {
         let ud = unsafe { &mut *(user as *mut Ud) };
         crate::note_jac_eval();
         let x = data(u, ud.n);
@@ -345,7 +361,9 @@ pub mod sun {
             };
             if s.kin.is_null()
                 || s.j.is_null()
-                || [s.u, s.xscale, s.fscale, s.ftmp, s.constraints].iter().any(|v| v.is_null())
+                || [s.u, s.xscale, s.fscale, s.ftmp, s.constraints]
+                    .iter()
+                    .any(|v| v.is_null())
             {
                 return None;
             }
@@ -390,7 +408,10 @@ pub mod sun {
                 return;
             }
             let start = data(self.u, self.n);
-            for (s, (nom, x)) in data(self.xscale, self.n).iter_mut().zip(nominal.iter().zip(start.iter())) {
+            for (s, (nom, x)) in data(self.xscale, self.n)
+                .iter_mut()
+                .zip(nominal.iter().zip(start.iter()))
+            {
                 *s = 1.0 / fmath::fmax(*nom, fmath::fabs(*x));
             }
         }
@@ -448,7 +469,10 @@ pub mod sun {
             let x = data(self.u, self.n);
             let c = data(self.constraints, self.n);
             for i in 0..self.n {
-                let (lo, hi) = (min.get(i).copied().unwrap_or(f64::MIN), max.get(i).copied().unwrap_or(f64::MAX));
+                let (lo, hi) = (
+                    min.get(i).copied().unwrap_or(f64::MIN),
+                    max.get(i).copied().unwrap_or(f64::MAX),
+                );
                 // a variable on the bound would block every step that points outside
                 c[i] = if lo >= 0.0 && x[i] > 0.0 {
                     if lo > 0.0 { 2.0 } else { 1.0 }
@@ -582,12 +606,19 @@ pub mod sun {
                     let mut f = vec![0.0f64; self.n];
                     (ud.eval)(&x, &mut f);
                     let fscale = data(self.fscale, self.n);
-                    let fnorm = fmath::sqrt(f.iter().zip(fscale.iter()).map(|(fi, si)| fi * si * fi * si).sum::<f64>());
+                    let fnorm = fmath::sqrt(
+                        f.iter()
+                            .zip(fscale.iter())
+                            .map(|(fi, si)| fi * si * fi * si)
+                            .sum::<f64>(),
+                    );
                     stalled = !(fnorm < FTOL_LESS_ACCURACY);
                 }
-                success = matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK) || (flag == KIN_STEP_LT_STPTOL && !stalled);
-                let retry =
-                    self.attempt_retry && (flag < 0 || stalled) && self.handle_error(flag, &mut retries, &mut reset_tol);
+                success =
+                    matches!(flag, KIN_SUCCESS | KIN_INITIAL_GUESS_OK) || (flag == KIN_STEP_LT_STPTOL && !stalled);
+                let retry = self.attempt_retry
+                    && (flag < 0 || stalled)
+                    && self.handle_error(flag, &mut retries, &mut reset_tol);
                 ud.numeric = self.numeric_jac;
                 retries += 1;
                 passes += 1;
@@ -783,8 +814,16 @@ pub mod sun {
             }
             let scale = scaling.then(|| (&fscale[..], &xscale[..]));
             crate::jacobian_analysis::derivative_test(
-                self.eq_index, self.time, n, &mut xu, colptr, rowidx, vals, scale,
-                crate::jacobian_analysis::Caller::KinsolBJacEval, self.eval,
+                self.eq_index,
+                self.time,
+                n,
+                &mut xu,
+                colptr,
+                rowidx,
+                vals,
+                scale,
+                crate::jacobian_analysis::Caller::KinsolBJacEval,
+                self.eval,
             );
         }
     }
@@ -827,7 +866,14 @@ pub mod sun {
 
     /// Only registered for the sparse matrix: with C's dense linear solver KINSOL
     /// differences its own Jacobian (`initKinsolMemory` sets no `KINSetJacFn`).
-    extern "C" fn b_jacobian(u: NVector, _fu: NVector, j: SunMatrix, user: *mut c_void, _t1: NVector, _t2: NVector) -> c_int {
+    extern "C" fn b_jacobian(
+        u: NVector,
+        _fu: NVector,
+        j: SunMatrix,
+        user: *mut c_void,
+        _t1: NVector,
+        _t2: NVector,
+    ) -> c_int {
         let ud = unsafe { &mut *(user as *mut BUd) };
         let x = data(u, ud.n);
         let vals = unsafe { core::slice::from_raw_parts_mut(SUNSparseMatrix_Data(j), ud.nnz) };
@@ -919,7 +965,11 @@ pub mod sun {
                 return None;
             }
             s.ls = unsafe {
-                if sparse { SUNLinSol_KLU(s.u, s.j, s.ctx) } else { SUNLinSol_Dense(s.u, s.j, s.ctx) }
+                if sparse {
+                    SUNLinSol_KLU(s.u, s.j, s.ctx)
+                } else {
+                    SUNLinSol_Dense(s.u, s.j, s.ctx)
+                }
             };
             if s.ls.is_null() {
                 return None;
@@ -943,7 +993,11 @@ pub mod sun {
         /// C's one `kinsolData->J`.
         fn jvals(&self) -> &'static mut [f64] {
             let data = unsafe {
-                if self.sparse { SUNSparseMatrix_Data(self.j) } else { SUNDenseMatrix_Data(self.j) }
+                if self.sparse {
+                    SUNSparseMatrix_Data(self.j)
+                } else {
+                    SUNDenseMatrix_Data(self.j)
+                }
             };
             unsafe { core::slice::from_raw_parts_mut(data, self.nnz) }
         }
@@ -967,7 +1021,11 @@ pub mod sun {
 
         /// C's `B_nlsKinsolXScaling`.
         fn x_scaling(&self, ud: &mut BUd, nominal: &[f64], mode: BScaling) {
-            let mode = if openmodelica_solvers::solverflags::no_scaling() { BScaling::Ones } else { mode };
+            let mode = if openmodelica_solvers::solverflags::no_scaling() {
+                BScaling::Ones
+            } else {
+                mode
+            };
             let start = data(self.u, self.n);
             match mode {
                 BScaling::NominalStart => {
@@ -983,7 +1041,11 @@ pub mod sun {
         /// C's `1e-12` floor. The Jacobian is re-evaluated unless the last solve
         /// reached full accuracy.
         fn f_scaling(&mut self, ud: &mut BUd, mode: BScaling) {
-            let mode = if openmodelica_solvers::solverflags::no_scaling() { BScaling::Ones } else { mode };
+            let mode = if openmodelica_solvers::solverflags::no_scaling() {
+                BScaling::Ones
+            } else {
+                mode
+            };
             ud.scaling = false;
             if mode != BScaling::Jacobian {
                 ud.fscale.fill(1.0);
@@ -1172,7 +1234,13 @@ pub mod sun {
                 self.write_pattern(&ud);
                 if let Some((colptr, rowidx)) = pattern {
                     crate::jacobian_analysis::svd_analysis(
-                        eq_index, time, self.n, colptr, rowidx, self.jvals(), true,
+                        eq_index,
+                        time,
+                        self.n,
+                        colptr,
+                        rowidx,
+                        self.jvals(),
+                        true,
                         crate::jacobian_analysis::Caller::KinsolBEntry,
                     );
                 }
@@ -1314,7 +1382,11 @@ impl<T> Cache<T> {
 
     fn locked<R>(&self, f: impl FnOnce(&mut alloc::collections::BTreeMap<u32, T>) -> R) -> R {
         use core::sync::atomic::Ordering;
-        while self.lock.compare_exchange_weak(0, 1, Ordering::Acquire, Ordering::Relaxed).is_err() {
+        while self
+            .lock
+            .compare_exchange_weak(0, 1, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
             core::hint::spin_loop();
         }
         let out = f(unsafe { &mut *self.map.get() });
@@ -1339,12 +1411,10 @@ impl<T> Cache<T> {
 }
 
 #[cfg(sundials)]
-static KIN_CACHE: Cache<sun::Solver> =
-    Cache::new();
+static KIN_CACHE: Cache<sun::Solver> = Cache::new();
 /// [`KIN_CACHE`] for `-nls=kinsol_b`.
 #[cfg(sundials)]
-static KIN_B_CACHE: Cache<sun::BSolver> =
-    Cache::new();
+static KIN_B_CACHE: Cache<sun::BSolver> = Cache::new();
 
 /// gbode's own systems (`-gbnls=kinsol` / `experimental-kinsol`), by gbode handle.
 #[cfg(sundials)]
@@ -1370,7 +1440,14 @@ pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -
             m.remove(&handle);
         }
     });
-    let pat = Pattern { nnz, colptr: req.colptr, rowidx: req.rowidx, colors: req.colors, max: req.max, min: req.min };
+    let pat = Pattern {
+        nnz,
+        colptr: req.colptr,
+        rowidx: req.rowidx,
+        colors: req.colors,
+        max: req.max,
+        min: req.min,
+    };
     let (start, nominal, kinsol, time) = (req.start, req.nominal, req.kinsol, req.time);
     let has_jacobian = req.jacobian.is_some();
     let mut none = |_: &[f64], _: &mut [f64]| {};
@@ -1380,11 +1457,15 @@ pub fn gb_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest) -
     };
     let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut *req.eval;
     let x = &mut *req.x;
-    GB_KIN_CACHE.with(handle, || sun::Solver::new(n, nnz), |solver| {
-        solver.attempt_retry = false;
-        solver.configure(&kinsol);
-        solver.solve(start, nominal, &pat, x, u32::MAX, time, has_jacobian, eval, assemble)
-    })
+    GB_KIN_CACHE.with(
+        handle,
+        || sun::Solver::new(n, nnz),
+        |solver| {
+            solver.attempt_retry = false;
+            solver.configure(&kinsol);
+            solver.solve(start, nominal, &pat, x, u32::MAX, time, has_jacobian, eval, assemble)
+        },
+    )
 }
 
 /// [`gb_solve`] for `experimental-kinsol`: C's `B_nlsKinsolSolve`, whose Jacobian
@@ -1397,10 +1478,20 @@ pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest)
             m.remove(&handle);
         }
     });
-    let (colptr, rowidx, old, start, nominal, kinsol, time) =
-        (req.colptr, req.rowidx, req.old, req.start, req.nominal, req.kinsol, req.time);
+    let (colptr, rowidx, old, start, nominal, kinsol, time) = (
+        req.colptr,
+        req.rowidx,
+        req.old,
+        req.start,
+        req.nominal,
+        req.kinsol,
+        req.time,
+    );
     let eval: &mut dyn FnMut(&[f64], &mut [f64]) = &mut *req.eval;
-    let jacobian = req.jacobian.as_deref_mut().map(|j| j as &mut dyn FnMut(&[f64], &mut [f64]));
+    let jacobian = req
+        .jacobian
+        .as_deref_mut()
+        .map(|j| j as &mut dyn FnMut(&[f64], &mut [f64]));
     let x = &mut *req.x;
     let last = core::cell::RefCell::new(start.to_vec());
     let mut tracked = |xs: &[f64], f: &mut [f64]| {
@@ -1408,11 +1499,26 @@ pub fn gb_b_solve(req: &mut openmodelica_solvers::gbode::nls_hook::GbNlsRequest)
         eval(xs, f)
     };
     let mut load_guess = |xs: &mut [f64]| xs.copy_from_slice(&last.borrow());
-    GB_KIN_B_CACHE.with(handle, || sun::BSolver::new(n, nnz), |solver| {
-        solver.attempt_retry = false;
-        solver.configure(&kinsol);
-        solver.solve(start, old, nominal, Some((colptr, rowidx)), x, u32::MAX, time, &mut load_guess, &mut tracked, jacobian)
-    })
+    GB_KIN_B_CACHE.with(
+        handle,
+        || sun::BSolver::new(n, nnz),
+        |solver| {
+            solver.attempt_retry = false;
+            solver.configure(&kinsol);
+            solver.solve(
+                start,
+                old,
+                nominal,
+                Some((colptr, rowidx)),
+                x,
+                u32::MAX,
+                time,
+                &mut load_guess,
+                &mut tracked,
+                jacobian,
+            )
+        },
+    )
 }
 
 /// [`solve`] for `-nls=kinsol_b` (C's `B_nlsKinsolSolve`). `start` is C's
@@ -1434,9 +1540,15 @@ pub fn b_solve<'a>(
     eval: &'a mut dyn FnMut(&[f64], &mut [f64]),
     assemble: Option<&'a mut dyn FnMut(&[f64], &mut [f64])>,
 ) -> bool {
-    KIN_B_CACHE.with(handle, || sun::BSolver::new(n, nnz), |solver| {
-        solver.solve(start, old, nominal, pattern, x, eq_index, time, load_guess, eval, assemble)
-    })
+    KIN_B_CACHE.with(
+        handle,
+        || sun::BSolver::new(n, nnz),
+        |solver| {
+            solver.solve(
+                start, old, nominal, pattern, x, eq_index, time, load_guess, eval, assemble,
+            )
+        },
+    )
 }
 
 /// Solve system `handle` with KINSOL + KLU from `guess`, writing the solution into
@@ -1456,9 +1568,11 @@ pub fn solve(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
     assemble: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
-    KIN_CACHE.with(handle, || sun::Solver::new(n, pat.nnz), |solver| {
-        solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble)
-    })
+    KIN_CACHE.with(
+        handle,
+        || sun::Solver::new(n, pat.nnz),
+        |solver| solver.solve(guess, nominal, pat, x, eq_index, time, has_jacobian, eval, assemble),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -1545,9 +1659,32 @@ pub fn solve_selected(
         // which is the start point the caller already picked.
         let start = x.to_vec();
         return b_solve(
-            handle, n, pat.nnz, Some((pat.colptr, pat.rowidx)), nominal, &start, old_values, x,
-            eq_index, time, load_guess, eval, has_jacobian.then_some(assemble),
+            handle,
+            n,
+            pat.nnz,
+            Some((pat.colptr, pat.rowidx)),
+            nominal,
+            &start,
+            old_values,
+            x,
+            eq_index,
+            time,
+            load_guess,
+            eval,
+            has_jacobian.then_some(assemble),
         );
     }
-    solve(handle, n, pat, nominal, guess, x, eq_index, time, has_jacobian, eval, assemble)
+    solve(
+        handle,
+        n,
+        pat,
+        nominal,
+        guess,
+        x,
+        eq_index,
+        time,
+        has_jacobian,
+        eval,
+        assemble,
+    )
 }

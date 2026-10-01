@@ -80,7 +80,12 @@ impl NlsPattern {
         for (col, &c) in colors.iter().enumerate() {
             groups[c as usize].push(col);
         }
-        NlsPattern { colptr, rowidx, colors, groups }
+        NlsPattern {
+            colptr,
+            rowidx,
+            colors,
+            groups,
+        }
     }
 
     /// C's `sparsePatternWithDiagonal`: `struct(I + J)`, reusing `source_colors`

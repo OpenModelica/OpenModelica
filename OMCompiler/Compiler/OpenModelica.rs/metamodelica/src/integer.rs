@@ -1,8 +1,8 @@
 //! Integer arithmetic, comparison, bitwise and conversion builtins.
 
+use crate::Real;
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
-use crate::Real;
 
 /// Adds two Integer values.
 #[inline(always)]
@@ -166,9 +166,9 @@ pub fn intString(i: i32) -> ArcStr {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod int_arithmetic_tests {
         use super::*;
 

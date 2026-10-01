@@ -37,7 +37,9 @@ impl<T: MMTrace> TraceableCell for CellInner<T> {
 /// `Default`-synthesized — must go through here: an unregistered cell is never
 /// a collection candidate, so cycles through it would silently leak.
 pub(crate) fn new_cell<T: Clone + MMTrace + 'static>(data: T) -> Arc<CellInner<T>> {
-    let inner = Arc::new(CellInner { content: Mutex::new(Some(data)) });
+    let inner = Arc::new(CellInner {
+        content: Mutex::new(Some(data)),
+    });
     #[cfg(any(test, feature = "cycle-collect"))]
     {
         let weak: std::sync::Weak<dyn TraceableCell> = Arc::downgrade(&inner) as _;
@@ -267,8 +269,7 @@ pub mod sample {
         HITS.with(|h| *h.borrow_mut().entry(key).or_insert(0) += 1);
     }
     pub fn report() -> (u64, Vec<(String, usize)>) {
-        let mut v: Vec<(String, usize)> =
-            HITS.with(|h| h.borrow().iter().map(|(k, n)| (k.clone(), *n)).collect());
+        let mut v: Vec<(String, usize)> = HITS.with(|h| h.borrow().iter().map(|(k, n)| (k.clone(), *n)).collect());
         v.sort_by(|a, b| b.1.cmp(&a.1));
         (SEEN.with(|c| c.get()), v)
     }

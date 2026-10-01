@@ -12,7 +12,12 @@ pub(super) fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()>
         // copies when the source is a variable (value semantics) and moves a
         // fresh constructor/call result.
         S::STMT_ASSIGN_ARR { lhs, exp, .. } => compile_assign(ctx, lhs, exp),
-        S::STMT_IF { exp, statementLst, else_, .. } => {
+        S::STMT_IF {
+            exp,
+            statementLst,
+            else_,
+            ..
+        } => {
             let c = compile_exp(ctx, exp)?;
             coerce(ctx, c, WTy::I32);
             ctx.emit(we::Instruction::If(we::BlockType::Empty));
@@ -45,7 +50,12 @@ pub(super) fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()>
             Ok(())
         }
         S::STMT_NORETCALL { exp, .. } => emit_noretcall(ctx, exp),
-        S::STMT_ASSERT { cond, msg, level, source } => emit_assert(ctx, cond, msg, level, source),
+        S::STMT_ASSERT {
+            cond,
+            msg,
+            level,
+            source,
+        } => emit_assert(ctx, cond, msg, level, source),
         S::STMT_TERMINATE { msg, source } => emit_terminate(ctx, msg, source),
         // `reinit` in an algorithm: the assignment plus the note that the
         // `when`-body REINIT also leaves.
@@ -56,7 +66,13 @@ pub(super) fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()>
             compile_assign(ctx, var, value)?;
             emit_reinit_note(ctx, componentRef)
         }
-        S::STMT_FOR { iter, range, statementLst, type_, .. } => compile_for(ctx, iter, range, statementLst, type_),
+        S::STMT_FOR {
+            iter,
+            range,
+            statementLst,
+            type_,
+            ..
+        } => compile_for(ctx, iter, range, statementLst, type_),
         S::STMT_BREAK { .. } => {
             let (brk, _) = *ctx
                 .loops
@@ -73,12 +89,16 @@ pub(super) fn compile_stmt(ctx: &mut FnCtx, stmt: &DAE::Statement) -> Result<()>
             ctx.branch_to(cont);
             Ok(())
         }
-        S::STMT_WHEN { conditions, statementLst, elseWhen, .. } => {
-            compile_stmt_when(ctx, conditions, statementLst, elseWhen)
-        }
+        S::STMT_WHEN {
+            conditions,
+            statementLst,
+            elseWhen,
+            ..
+        } => compile_stmt_when(ctx, conditions, statementLst, elseWhen),
         other => {
             crate::CodegenWasmJit::record_error(format!(
-                "CodegenWasmJit: statement not yet supported: {}", stmt_kind(other)
+                "CodegenWasmJit: statement not yet supported: {}",
+                stmt_kind(other)
             ));
             Err("CodegenWasmJit: statement not yet supported")
         }
@@ -118,7 +138,13 @@ fn compile_stmt_when(
     compile_stmts(ctx, stmts)?;
     if let Some(ew) = else_when {
         ctx.emit(I::Else);
-        let DAE::Statement::STMT_WHEN { conditions, statementLst, elseWhen, .. } = &**ew else {
+        let DAE::Statement::STMT_WHEN {
+            conditions,
+            statementLst,
+            elseWhen,
+            ..
+        } = &**ew
+        else {
             return Err("CodegenWasmJit: elsewhen is not a when-statement");
         };
         compile_stmt_when(ctx, conditions, statementLst, elseWhen)?;
@@ -158,7 +184,11 @@ fn compile_else(ctx: &mut FnCtx, e: &DAE::Else) -> Result<()> {
             ctx.emit(we::Instruction::Else);
             compile_stmts(ctx, statementLst)
         }
-        DAE::Else::ELSEIF { exp, statementLst, else_ } => {
+        DAE::Else::ELSEIF {
+            exp,
+            statementLst,
+            else_,
+        } => {
             ctx.emit(we::Instruction::Else);
             let c = compile_exp(ctx, exp)?;
             coerce(ctx, c, WTy::I32);
@@ -177,11 +207,7 @@ fn compile_else(ctx: &mut FnCtx, e: &DAE::Else) -> Result<()> {
 /// `break_level` is the `ctrl_depth` recorded just after opening the break block.
 /// On return the `continue` block is closed, so the caller emits the per-iteration
 /// advance (increment / condition re-check) next — `continue` falls through to it.
-fn compile_loop_body(
-    ctx: &mut FnCtx,
-    break_level: u32,
-    body: &List<metamodelica::Ref<DAE::Statement>>,
-) -> Result<()> {
+fn compile_loop_body(ctx: &mut FnCtx, break_level: u32, body: &List<metamodelica::Ref<DAE::Statement>>) -> Result<()> {
     ctx.emit(we::Instruction::Block(we::BlockType::Empty));
     let continue_level = ctx.ctrl_depth;
     ctx.loops.push((break_level, continue_level));

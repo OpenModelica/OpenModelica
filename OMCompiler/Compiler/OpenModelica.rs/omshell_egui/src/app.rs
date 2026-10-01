@@ -37,12 +37,8 @@ impl App {
                 // Native file picker; on web there is no local filesystem dialog.
                 #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Open…").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("Modelica files", &["mo"])
-                        .pick_file()
-                    {
-                        self.shell
-                            .run(&format!("loadFile(\"{}\")", path.display()));
+                    if let Some(path) = rfd::FileDialog::new().add_filter("Modelica files", &["mo"]).pick_file() {
+                        self.shell.run(&format!("loadFile(\"{}\")", path.display()));
                     }
                 }
                 if ui.button("Load Modelica Library").clicked() {
@@ -166,10 +162,8 @@ impl eframe::App for App {
         }
 
         ctx.global_style_mut(|s| {
-            s.text_styles.insert(
-                TextStyle::Monospace,
-                FontId::new(self.font_size, FontFamily::Monospace),
-            );
+            s.text_styles
+                .insert(TextStyle::Monospace, FontId::new(self.font_size, FontFamily::Monospace));
         });
 
         if self.about_open {
@@ -208,18 +202,13 @@ impl App {
             .default_size([460.0, 360.0])
             .show(ctx, |ui| {
                 ui.label(
-                    RichText::new(
-                        "A wgpu scene composited inside egui — the same renderer on native and web.",
-                    )
-                    .weak(),
+                    RichText::new("A wgpu scene composited inside egui — the same renderer on native and web.").weak(),
                 );
                 let time = ui.input(|i| i.time) as f32;
                 let ppp = ctx.pixels_per_point();
                 egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                    let (rect, _) = ui.allocate_exact_size(
-                        egui::vec2(ui.available_width(), 280.0),
-                        egui::Sense::hover(),
-                    );
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(ui.available_width(), 280.0), egui::Sense::hover());
                     let px = rect.size() * ppp;
                     ui.painter().add(egui_wgpu::Callback::new_paint_callback(
                         rect,

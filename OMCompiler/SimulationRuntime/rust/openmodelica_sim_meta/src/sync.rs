@@ -13,8 +13,7 @@
 use alloc::vec::Vec;
 
 use crate::driver::{
-    self, MODEL_FN_EQS_SYNC, MODEL_FN_UPDATE_SYNC, Result, SimEngine, read_f64, read_i32, write_f64,
-    write_i32,
+    self, MODEL_FN_EQS_SYNC, MODEL_FN_UPDATE_SYNC, Result, SimEngine, read_f64, read_i32, write_f64, write_i32,
 };
 use crate::omclog;
 use crate::{BaseClockMeta, Layout, clock_field};
@@ -43,7 +42,11 @@ impl Rat {
     fn new(num: i64, den: i64) -> Rat {
         let g = gcd(num, den);
         let (num, den) = if g != 0 { (num / g, den / g) } else { (num, den) };
-        if den < 0 { Rat { num: -num, den: -den } } else { Rat { num, den } }
+        if den < 0 {
+            Rat { num: -num, den: -den }
+        } else {
+            Rat { num, den }
+        }
     }
     fn int(n: i64) -> Rat {
         Rat { num: n, den: 1 }
@@ -148,7 +151,14 @@ impl Sync {
             e.call2(MODEL_FN_UPDATE_SYNC, sim_data, i)?;
             if !s.clocks[i as usize].is_event_clock {
                 // C's `listPushFront`, so the clocks fire in reverse index order.
-                s.timers.insert(0, Timer { base: i, sub: None, time: model.start_time });
+                s.timers.insert(
+                    0,
+                    Timer {
+                        base: i,
+                        sub: None,
+                        time: model.start_time,
+                    },
+                );
             }
         }
         s.print_clocks(e)?;
@@ -161,13 +171,20 @@ impl Sync {
 
     /// The timer list as `(base, sub or -1, time)` words, for an FMU state.
     pub fn timer_words(&self) -> Vec<f64> {
-        self.timers.iter().flat_map(|t| [t.base as f64, t.sub.map_or(-1.0, |s| s as f64), t.time]).collect()
+        self.timers
+            .iter()
+            .flat_map(|t| [t.base as f64, t.sub.map_or(-1.0, |s| s as f64), t.time])
+            .collect()
     }
 
     pub fn set_timer_words(&mut self, w: &[f64]) {
         self.timers = w
             .chunks_exact(3)
-            .map(|c| Timer { base: c[0] as u32, sub: (c[1] >= 0.0).then_some(c[1] as u32), time: c[2] })
+            .map(|c| Timer {
+                base: c[0] as u32,
+                sub: (c[1] >= 0.0).then_some(c[1] as u32),
+                time: c[2],
+            })
             .collect();
     }
 
@@ -180,7 +197,11 @@ impl Sync {
     /// Insert keeping the list ordered by activation time, after any timer with the
     /// same time (C's `insertTimer`).
     fn insert(&mut self, timer: Timer) {
-        let at = self.timers.iter().position(|t| t.time > timer.time).unwrap_or(self.timers.len());
+        let at = self
+            .timers
+            .iter()
+            .position(|t| t.time > timer.time)
+            .unwrap_or(self.timers.len());
         self.timers.insert(at, timer);
     }
 
@@ -193,7 +214,11 @@ impl Sync {
                 continue;
             }
             write_i32(e, off, 0)?;
-            self.insert(Timer { base: i, sub: None, time });
+            self.insert(Timer {
+                base: i,
+                sub: None,
+                time,
+            });
         }
         Ok(())
     }
@@ -278,7 +303,11 @@ impl Sync {
         if !clock.is_event_clock {
             e.call2(MODEL_FN_UPDATE_SYNC, self.sim_data, base)?;
             let interval = read_f64(e, off + clock_field::INTERVAL)?;
-            self.insert(Timer { base, sub: None, time: time + interval });
+            self.insert(Timer {
+                base,
+                sub: None,
+                time: time + interval,
+            });
             omclog::info!(
                 omclog::SYNCHRONOUS,
                 false,
@@ -357,7 +386,12 @@ impl Sync {
             return Ok(());
         }
         omclog::info(omclog::SYNCHRONOUS, true, "Initialized synchronous timers.");
-        omclog::info!(omclog::SYNCHRONOUS, false, "Number of base clocks: {}", self.clocks.len());
+        omclog::info!(
+            omclog::SYNCHRONOUS,
+            false,
+            "Number of base clocks: {}",
+            self.clocks.len()
+        );
         for (i, c) in self.clocks.iter().enumerate() {
             omclog::info!(omclog::SYNCHRONOUS, true, "Base clock {}", i + 1);
             let off = self.sim_data + self.layout.base_clock_off(i as u32);
@@ -378,13 +412,7 @@ impl Sync {
             }
             omclog::info!(omclog::SYNCHRONOUS, false, "Number of sub-clocks: {}", c.sub.len());
             for (j, s) in c.sub.iter().enumerate() {
-                omclog::info!(
-                    omclog::SYNCHRONOUS,
-                    true,
-                    "Sub-clock {} of base clock {}",
-                    j + 1,
-                    i + 1,
-                );
+                omclog::info!(omclog::SYNCHRONOUS, true, "Sub-clock {} of base clock {}", j + 1, i + 1,);
                 omclog::info!(omclog::SYNCHRONOUS, false, "shift: {}/{}", s.shift_num, s.shift_den);
                 omclog::info!(omclog::SYNCHRONOUS, false, "factor: {}/{}", s.factor_num, s.factor_den);
                 let method = if s.external_solver { "External" } else { "none" };

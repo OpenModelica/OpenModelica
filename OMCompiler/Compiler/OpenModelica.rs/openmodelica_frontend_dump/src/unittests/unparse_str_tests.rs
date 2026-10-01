@@ -10,12 +10,12 @@
 // Known bugs detected while writing these tests are documented inline with
 // "Bug:" prefixes.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use openmodelica_ast::parser::{parse, Grammar};
 use crate::Dump;
-use openmodelica_util::{FlagsUtil, Flags};
+use metamodelica::Result;
+use metamodelica::*;
+use openmodelica_ast::parser::{Grammar, parse};
+use openmodelica_util::{Flags, FlagsUtil};
+use std::sync::Arc;
 
 // ---------------------------------------------------------------------------
 // Flags initialisation — required because unparseStr calls
@@ -95,7 +95,8 @@ fn unparse_str_empty_model_ends_with_semicolon() -> Result<()> {
     // The model declaration should be terminated by a semicolon.
     assert!(
         out.trim_end().ends_with(';'),
-        "expected output to end with ';', got: {:?}", out
+        "expected output to end with ';', got: {:?}",
+        out
     );
     Ok(())
 }
@@ -132,7 +133,11 @@ fn unparse_str_nested_class_names_present() -> Result<()> {
 fn unparse_str_connector_keyword_preserved() -> Result<()> {
     let src = "connector Pin Real v; flow Real i; end Pin;";
     let out = unparse(src)?;
-    assert!(out.contains("connector"), "expected 'connector' keyword, got: {:?}", out);
+    assert!(
+        out.contains("connector"),
+        "expected 'connector' keyword, got: {:?}",
+        out
+    );
     assert!(out.contains("Pin"), "expected 'Pin', got: {:?}", out);
     Ok(())
 }
@@ -172,7 +177,9 @@ fn unparse_str_within_clause_present() -> Result<()> {
         columnNumberEnd: 1,
         lastModification: metamodelica::OrderedFloat(0.0),
     };
-    let within_path = metamodelica::Ref::new(Absyn::Path::IDENT { name: arcstr::literal!("Foo") });
+    let within_path = metamodelica::Ref::new(Absyn::Path::IDENT {
+        name: arcstr::literal!("Foo"),
+    });
     let prog = Absyn::Program {
         classes: metamodelica::list![metamodelica::Ref::new(Absyn::Class {
             name: arcstr::literal!("Bar"),
@@ -197,11 +204,13 @@ fn unparse_str_within_clause_present() -> Result<()> {
     let out = Dump::unparseStr(prog, false, Dump::defaultDumpOptions.clone())?;
     assert!(
         out.contains("within"),
-        "expected 'within' keyword in output, got: {:?}", out
+        "expected 'within' keyword in output, got: {:?}",
+        out
     );
     assert!(
         out.contains("Foo"),
-        "expected within path 'Foo' in output, got: {:?}", out
+        "expected within path 'Foo' in output, got: {:?}",
+        out
     );
     Ok(())
 }
@@ -235,12 +244,12 @@ fn unparse_str_idempotent_for_simple_model() -> Result<()> {
 fn unparse_str_component_type_names_preserved() -> Result<()> {
     let src = "model M Real x; Integer n; Boolean b; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("Real"),    "expected type 'Real', got: {:?}", out);
+    assert!(out.contains("Real"), "expected type 'Real', got: {:?}", out);
     assert!(out.contains("Integer"), "expected type 'Integer', got: {:?}", out);
     assert!(out.contains("Boolean"), "expected type 'Boolean', got: {:?}", out);
-    assert!(out.contains("x"),       "expected variable 'x', got: {:?}", out);
-    assert!(out.contains("n"),       "expected variable 'n', got: {:?}", out);
-    assert!(out.contains("b"),       "expected variable 'b', got: {:?}", out);
+    assert!(out.contains("x"), "expected variable 'x', got: {:?}", out);
+    assert!(out.contains("n"), "expected variable 'n', got: {:?}", out);
+    assert!(out.contains("b"), "expected variable 'b', got: {:?}", out);
     Ok(())
 }
 
@@ -248,9 +257,13 @@ fn unparse_str_component_type_names_preserved() -> Result<()> {
 fn unparse_str_parameter_modifier_preserved() -> Result<()> {
     let src = "model M parameter Real m = 1.0; parameter Integer n = 5; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("parameter"), "expected 'parameter' keyword, got: {:?}", out);
-    assert!(out.contains("m"),         "expected variable 'm', got: {:?}", out);
-    assert!(out.contains("n"),         "expected variable 'n', got: {:?}", out);
+    assert!(
+        out.contains("parameter"),
+        "expected 'parameter' keyword, got: {:?}",
+        out
+    );
+    assert!(out.contains("m"), "expected variable 'm', got: {:?}", out);
+    assert!(out.contains("n"), "expected variable 'n', got: {:?}", out);
     Ok(())
 }
 
@@ -258,7 +271,7 @@ fn unparse_str_parameter_modifier_preserved() -> Result<()> {
 fn unparse_str_component_with_start_attribute() -> Result<()> {
     let src = "model M Real x(start = 0.5, fixed = true); end M;";
     let out = unparse(src)?;
-    assert!(out.contains("x"),    "expected variable 'x', got: {:?}", out);
+    assert!(out.contains("x"), "expected variable 'x', got: {:?}", out);
     assert!(out.contains("Real"), "expected type 'Real', got: {:?}", out);
     Ok(())
 }
@@ -280,8 +293,8 @@ fn unparse_str_differential_equation_preserved() -> Result<()> {
     let src = "model M Real x(start=1.0); equation der(x) = -x; end M;";
     let out = unparse(src)?;
     assert!(out.contains("equation"), "expected 'equation' keyword, got: {:?}", out);
-    assert!(out.contains("der"),      "expected 'der' call, got: {:?}", out);
-    assert!(out.contains("x"),        "expected variable 'x', got: {:?}", out);
+    assert!(out.contains("der"), "expected 'der' call, got: {:?}", out);
+    assert!(out.contains("x"), "expected variable 'x', got: {:?}", out);
     Ok(())
 }
 
@@ -289,7 +302,7 @@ fn unparse_str_differential_equation_preserved() -> Result<()> {
 fn unparse_str_initial_equation_present() -> Result<()> {
     let src = "model M Real x; initial equation x = 0.0; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("initial"),  "expected 'initial' keyword, got: {:?}", out);
+    assert!(out.contains("initial"), "expected 'initial' keyword, got: {:?}", out);
     assert!(out.contains("equation"), "expected 'equation' keyword, got: {:?}", out);
     Ok(())
 }
@@ -298,9 +311,12 @@ fn unparse_str_initial_equation_present() -> Result<()> {
 fn unparse_str_if_equation_preserved() -> Result<()> {
     let src = "model M Real x; equation if x > 0 then x = 1.0; end if; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("if"),  "expected 'if' keyword, got: {:?}", out);
-    assert!(out.contains("end if") || out.contains("end  if"),
-        "expected 'end if', got: {:?}", out);
+    assert!(out.contains("if"), "expected 'if' keyword, got: {:?}", out);
+    assert!(
+        out.contains("end if") || out.contains("end  if"),
+        "expected 'end if', got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -309,8 +325,11 @@ fn unparse_str_for_equation_preserved() -> Result<()> {
     let src = "model M Real x[5]; equation for i in 1:5 loop x[i] = 0.0; end for; end M;";
     let out = unparse(src)?;
     assert!(out.contains("for"), "expected 'for' keyword, got: {:?}", out);
-    assert!(out.contains("end for") || out.contains("end  for"),
-        "expected 'end for', got: {:?}", out);
+    assert!(
+        out.contains("end for") || out.contains("end  for"),
+        "expected 'end for', got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -319,8 +338,11 @@ fn unparse_str_when_equation_preserved() -> Result<()> {
     let src = "model M Real x; equation when time > 1.0 then x = 1.0; end when; end M;";
     let out = unparse(src)?;
     assert!(out.contains("when"), "expected 'when' keyword, got: {:?}", out);
-    assert!(out.contains("end when") || out.contains("end  when"),
-        "expected 'end when', got: {:?}", out);
+    assert!(
+        out.contains("end when") || out.contains("end  when"),
+        "expected 'end when', got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -332,7 +354,11 @@ fn unparse_str_when_equation_preserved() -> Result<()> {
 fn unparse_str_algorithm_section_present() -> Result<()> {
     let src = "model M Real x; algorithm x := 1.0; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("algorithm"), "expected 'algorithm' keyword, got: {:?}", out);
+    assert!(
+        out.contains("algorithm"),
+        "expected 'algorithm' keyword, got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -340,7 +366,11 @@ fn unparse_str_algorithm_section_present() -> Result<()> {
 fn unparse_str_algorithm_assignment_preserved() -> Result<()> {
     let src = "model M Real x; algorithm x := 2.0 * x + 1.0; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("algorithm"), "expected 'algorithm' keyword, got: {:?}", out);
+    assert!(
+        out.contains("algorithm"),
+        "expected 'algorithm' keyword, got: {:?}",
+        out
+    );
     assert!(out.contains(":="), "expected ':=' assignment operator, got: {:?}", out);
     Ok(())
 }
@@ -349,8 +379,12 @@ fn unparse_str_algorithm_assignment_preserved() -> Result<()> {
 fn unparse_str_algorithm_if_preserved() -> Result<()> {
     let src = "model M Real x; algorithm if x > 0 then x := x - 1; end if; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("algorithm"), "expected 'algorithm' keyword, got: {:?}", out);
-    assert!(out.contains("if"),        "expected 'if' keyword, got: {:?}", out);
+    assert!(
+        out.contains("algorithm"),
+        "expected 'algorithm' keyword, got: {:?}",
+        out
+    );
+    assert!(out.contains("if"), "expected 'if' keyword, got: {:?}", out);
     Ok(())
 }
 
@@ -358,8 +392,12 @@ fn unparse_str_algorithm_if_preserved() -> Result<()> {
 fn unparse_str_initial_algorithm_present() -> Result<()> {
     let src = "model M Real x; initial algorithm x := 0.0; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("initial"),   "expected 'initial' keyword, got: {:?}", out);
-    assert!(out.contains("algorithm"), "expected 'algorithm' keyword, got: {:?}", out);
+    assert!(out.contains("initial"), "expected 'initial' keyword, got: {:?}", out);
+    assert!(
+        out.contains("algorithm"),
+        "expected 'algorithm' keyword, got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -372,7 +410,7 @@ fn unparse_str_extends_clause_preserved() -> Result<()> {
     let src = "model Child extends Parent; end Child;";
     let out = unparse(src)?;
     assert!(out.contains("extends"), "expected 'extends' keyword, got: {:?}", out);
-    assert!(out.contains("Parent"),  "expected base class 'Parent', got: {:?}", out);
+    assert!(out.contains("Parent"), "expected base class 'Parent', got: {:?}", out);
     Ok(())
 }
 
@@ -381,7 +419,7 @@ fn unparse_str_extends_with_modification() -> Result<()> {
     let src = "model M extends Base(x = 1.0); end M;";
     let out = unparse(src)?;
     assert!(out.contains("extends"), "expected 'extends' keyword, got: {:?}", out);
-    assert!(out.contains("Base"),    "expected base class 'Base', got: {:?}", out);
+    assert!(out.contains("Base"), "expected base class 'Base', got: {:?}", out);
     Ok(())
 }
 
@@ -393,7 +431,11 @@ fn unparse_str_extends_with_modification() -> Result<()> {
 fn unparse_str_protected_section_preserved() -> Result<()> {
     let src = "model M Real pub; protected Real priv; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("protected"), "expected 'protected' keyword, got: {:?}", out);
+    assert!(
+        out.contains("protected"),
+        "expected 'protected' keyword, got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -401,8 +443,12 @@ fn unparse_str_protected_section_preserved() -> Result<()> {
 fn unparse_str_public_section_preserved() -> Result<()> {
     let src = "model M protected Real priv; public Real pub; end M;";
     let out = unparse(src)?;
-    assert!(out.contains("public"),    "expected 'public' keyword, got: {:?}", out);
-    assert!(out.contains("protected"), "expected 'protected' keyword, got: {:?}", out);
+    assert!(out.contains("public"), "expected 'public' keyword, got: {:?}", out);
+    assert!(
+        out.contains("protected"),
+        "expected 'protected' keyword, got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -422,7 +468,11 @@ fn unparse_str_partial_modifier_preserved() -> Result<()> {
 fn unparse_str_encapsulated_modifier_preserved() -> Result<()> {
     let src = "encapsulated model M end M;";
     let out = unparse(src)?;
-    assert!(out.contains("encapsulated"), "expected 'encapsulated' keyword, got: {:?}", out);
+    assert!(
+        out.contains("encapsulated"),
+        "expected 'encapsulated' keyword, got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -434,8 +484,16 @@ fn unparse_str_encapsulated_modifier_preserved() -> Result<()> {
 fn unparse_str_class_annotation_preserved() -> Result<()> {
     let src = "model M annotation(Documentation(info = \"My model\")); end M;";
     let out = unparse(src)?;
-    assert!(out.contains("annotation"), "expected 'annotation' keyword, got: {:?}", out);
-    assert!(out.contains("Documentation"), "expected 'Documentation', got: {:?}", out);
+    assert!(
+        out.contains("annotation"),
+        "expected 'annotation' keyword, got: {:?}",
+        out
+    );
+    assert!(
+        out.contains("Documentation"),
+        "expected 'Documentation', got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -447,7 +505,8 @@ fn unparse_str_component_annotation_preserved() -> Result<()> {
     let out = unparse(src)?;
     assert!(
         out.contains("annotation"),
-        "Bug: component annotation is dropped by unparseStr, got: {:?}", out
+        "Bug: component annotation is dropped by unparseStr, got: {:?}",
+        out
     );
     Ok(())
 }
@@ -461,10 +520,10 @@ fn unparse_str_record_fields_preserved() -> Result<()> {
     let src = "record Point Real x; Real y; Real z; end Point;";
     let out = unparse(src)?;
     assert!(out.contains("record"), "expected 'record' keyword, got: {:?}", out);
-    assert!(out.contains("Point"),  "expected record name 'Point', got: {:?}", out);
-    assert!(out.contains("x"),      "expected field 'x', got: {:?}", out);
-    assert!(out.contains("y"),      "expected field 'y', got: {:?}", out);
-    assert!(out.contains("z"),      "expected field 'z', got: {:?}", out);
+    assert!(out.contains("Point"), "expected record name 'Point', got: {:?}", out);
+    assert!(out.contains("x"), "expected field 'x', got: {:?}", out);
+    assert!(out.contains("y"), "expected field 'y', got: {:?}", out);
+    assert!(out.contains("z"), "expected field 'z', got: {:?}", out);
     Ok(())
 }
 
@@ -476,11 +535,15 @@ fn unparse_str_record_fields_preserved() -> Result<()> {
 fn unparse_str_enumeration_literals_preserved() -> Result<()> {
     let src = "type Color = enumeration(red, green, blue);";
     let out = unparse(src)?;
-    assert!(out.contains("enumeration"), "expected 'enumeration' keyword, got: {:?}", out);
-    assert!(out.contains("Color"),       "expected type name 'Color', got: {:?}", out);
-    assert!(out.contains("red"),         "expected literal 'red', got: {:?}", out);
-    assert!(out.contains("green"),       "expected literal 'green', got: {:?}", out);
-    assert!(out.contains("blue"),        "expected literal 'blue', got: {:?}", out);
+    assert!(
+        out.contains("enumeration"),
+        "expected 'enumeration' keyword, got: {:?}",
+        out
+    );
+    assert!(out.contains("Color"), "expected type name 'Color', got: {:?}", out);
+    assert!(out.contains("red"), "expected literal 'red', got: {:?}", out);
+    assert!(out.contains("green"), "expected literal 'green', got: {:?}", out);
+    assert!(out.contains("blue"), "expected literal 'blue', got: {:?}", out);
     Ok(())
 }
 
@@ -492,8 +555,12 @@ fn unparse_str_enumeration_literals_preserved() -> Result<()> {
 fn unparse_str_type_alias_preserved() -> Result<()> {
     let src = "type Voltage = Real(unit = \"V\");";
     let out = unparse(src)?;
-    assert!(out.contains("Voltage"), "expected type alias name 'Voltage', got: {:?}", out);
-    assert!(out.contains("Real"),    "expected base type 'Real', got: {:?}", out);
+    assert!(
+        out.contains("Voltage"),
+        "expected type alias name 'Voltage', got: {:?}",
+        out
+    );
+    assert!(out.contains("Real"), "expected base type 'Real', got: {:?}", out);
     Ok(())
 }
 
@@ -505,8 +572,12 @@ fn unparse_str_type_alias_preserved() -> Result<()> {
 fn unparse_str_block_keyword_preserved() -> Result<()> {
     let src = "block Integrator Real u; Real y; equation der(y) = u; end Integrator;";
     let out = unparse(src)?;
-    assert!(out.contains("block"),      "expected 'block' keyword, got: {:?}", out);
-    assert!(out.contains("Integrator"), "expected block name 'Integrator', got: {:?}", out);
+    assert!(out.contains("block"), "expected 'block' keyword, got: {:?}", out);
+    assert!(
+        out.contains("Integrator"),
+        "expected block name 'Integrator', got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -518,11 +589,19 @@ fn unparse_str_block_keyword_preserved() -> Result<()> {
 fn unparse_str_function_with_body() -> Result<()> {
     let src = "function square input Real x; output Real y; algorithm y := x * x; end square;";
     let out = unparse(src)?;
-    assert!(out.contains("function"),  "expected 'function' keyword, got: {:?}", out);
-    assert!(out.contains("square"),    "expected function name 'square', got: {:?}", out);
-    assert!(out.contains("input"),     "expected 'input' keyword, got: {:?}", out);
-    assert!(out.contains("output"),    "expected 'output' keyword, got: {:?}", out);
-    assert!(out.contains("algorithm"), "expected 'algorithm' keyword, got: {:?}", out);
+    assert!(out.contains("function"), "expected 'function' keyword, got: {:?}", out);
+    assert!(
+        out.contains("square"),
+        "expected function name 'square', got: {:?}",
+        out
+    );
+    assert!(out.contains("input"), "expected 'input' keyword, got: {:?}", out);
+    assert!(out.contains("output"), "expected 'output' keyword, got: {:?}", out);
+    assert!(
+        out.contains("algorithm"),
+        "expected 'algorithm' keyword, got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -541,10 +620,10 @@ fn unparse_str_function_with_multiple_statements() -> Result<()> {
     );
     let out = unparse(src)?;
     assert!(out.contains("function"), "expected 'function', got: {:?}", out);
-    assert!(out.contains("clamp"),    "expected 'clamp', got: {:?}", out);
-    assert!(out.contains("input"),    "expected 'input', got: {:?}", out);
-    assert!(out.contains("output"),   "expected 'output', got: {:?}", out);
-    assert!(out.contains("if"),       "expected 'if', got: {:?}", out);
+    assert!(out.contains("clamp"), "expected 'clamp', got: {:?}", out);
+    assert!(out.contains("input"), "expected 'input', got: {:?}", out);
+    assert!(out.contains("output"), "expected 'output', got: {:?}", out);
+    assert!(out.contains("if"), "expected 'if', got: {:?}", out);
     Ok(())
 }
 
@@ -565,7 +644,7 @@ fn unparse_str_function_external_declaration() -> Result<()> {
 fn unparse_str_import_statement_preserved() -> Result<()> {
     let src = "package P import Modelica.Math.sin; model M end M; end P;";
     let out = unparse(src)?;
-    assert!(out.contains("import"),   "expected 'import' keyword, got: {:?}", out);
+    assert!(out.contains("import"), "expected 'import' keyword, got: {:?}", out);
     assert!(out.contains("Modelica"), "expected 'Modelica', got: {:?}", out);
     Ok(())
 }
@@ -597,7 +676,8 @@ fn unparse_str_component_string_comment_preserved() -> Result<()> {
     assert!(out.contains("x"), "expected variable 'x', got: {:?}", out);
     assert!(
         out.contains("The state variable"),
-        "Bug: component string comment is dropped by unparseStr, got: {:?}", out
+        "Bug: component string comment is dropped by unparseStr, got: {:?}",
+        out
     );
     Ok(())
 }
@@ -609,7 +689,8 @@ fn unparse_str_class_string_comment_preserved() -> Result<()> {
     assert!(out.contains("Pendulum"), "expected class name, got: {:?}", out);
     assert!(
         out.contains("A simple pendulum model"),
-        "expected class comment to be preserved, got: {:?}", out
+        "expected class comment to be preserved, got: {:?}",
+        out
     );
     Ok(())
 }
@@ -632,13 +713,13 @@ end Pendulum;"#;
 #[test]
 fn unparse_str_pendulum_model_keywords_present() -> Result<()> {
     let out = unparse(PENDULUM_MODEL)?;
-    assert!(out.contains("Pendulum"),  "expected class name, got: {:?}", out);
+    assert!(out.contains("Pendulum"), "expected class name, got: {:?}", out);
     assert!(out.contains("parameter"), "expected 'parameter', got: {:?}", out);
-    assert!(out.contains("equation"),  "expected 'equation', got: {:?}", out);
-    assert!(out.contains("der"),       "expected 'der', got: {:?}", out);
-    assert!(out.contains("phi"),       "expected 'phi', got: {:?}", out);
-    assert!(out.contains("phiDot"),    "expected 'phiDot', got: {:?}", out);
-    assert!(out.contains("sin"),       "expected 'sin', got: {:?}", out);
+    assert!(out.contains("equation"), "expected 'equation', got: {:?}", out);
+    assert!(out.contains("der"), "expected 'der', got: {:?}", out);
+    assert!(out.contains("phi"), "expected 'phi', got: {:?}", out);
+    assert!(out.contains("phiDot"), "expected 'phiDot', got: {:?}", out);
+    assert!(out.contains("sin"), "expected 'sin', got: {:?}", out);
     Ok(())
 }
 
@@ -687,16 +768,16 @@ end Electrical;"#;
 #[test]
 fn unparse_str_electrical_package_structure_preserved() -> Result<()> {
     let out = unparse(ELECTRICAL_PACKAGE)?;
-    assert!(out.contains("package"),    "expected 'package', got: {:?}", out);
+    assert!(out.contains("package"), "expected 'package', got: {:?}", out);
     assert!(out.contains("Electrical"), "expected 'Electrical', got: {:?}", out);
-    assert!(out.contains("connector"),  "expected 'connector', got: {:?}", out);
-    assert!(out.contains("Pin"),        "expected 'Pin', got: {:?}", out);
-    assert!(out.contains("Resistor"),   "expected 'Resistor', got: {:?}", out);
-    assert!(out.contains("Capacitor"),  "expected 'Capacitor', got: {:?}", out);
-    assert!(out.contains("parameter"),  "expected 'parameter', got: {:?}", out);
-    assert!(out.contains("equation"),   "expected 'equation', got: {:?}", out);
-    assert!(out.contains("flow"),       "expected 'flow', got: {:?}", out);
-    assert!(out.contains("der"),        "expected 'der', got: {:?}", out);
+    assert!(out.contains("connector"), "expected 'connector', got: {:?}", out);
+    assert!(out.contains("Pin"), "expected 'Pin', got: {:?}", out);
+    assert!(out.contains("Resistor"), "expected 'Resistor', got: {:?}", out);
+    assert!(out.contains("Capacitor"), "expected 'Capacitor', got: {:?}", out);
+    assert!(out.contains("parameter"), "expected 'parameter', got: {:?}", out);
+    assert!(out.contains("equation"), "expected 'equation', got: {:?}", out);
+    assert!(out.contains("flow"), "expected 'flow', got: {:?}", out);
+    assert!(out.contains("der"), "expected 'der', got: {:?}", out);
     Ok(())
 }
 
@@ -730,15 +811,22 @@ end ThermostatController;"#;
 #[test]
 fn unparse_str_thermostat_model_when_equations_preserved() -> Result<()> {
     let out = unparse(STATE_MACHINE_MODEL)?;
-    assert!(out.contains("ThermostatController"), "expected class name, got: {:?}", out);
-    assert!(out.contains("parameter"),  "expected 'parameter', got: {:?}", out);
-    assert!(out.contains("input"),      "expected 'input', got: {:?}", out);
-    assert!(out.contains("output"),     "expected 'output', got: {:?}", out);
-    assert!(out.contains("Boolean"),    "expected 'Boolean', got: {:?}", out);
-    assert!(out.contains("equation"),   "expected 'equation', got: {:?}", out);
-    assert!(out.contains("when"),       "expected 'when', got: {:?}", out);
-    assert!(out.contains("end when") || out.contains("end  when"),
-        "expected 'end when', got: {:?}", out);
+    assert!(
+        out.contains("ThermostatController"),
+        "expected class name, got: {:?}",
+        out
+    );
+    assert!(out.contains("parameter"), "expected 'parameter', got: {:?}", out);
+    assert!(out.contains("input"), "expected 'input', got: {:?}", out);
+    assert!(out.contains("output"), "expected 'output', got: {:?}", out);
+    assert!(out.contains("Boolean"), "expected 'Boolean', got: {:?}", out);
+    assert!(out.contains("equation"), "expected 'equation', got: {:?}", out);
+    assert!(out.contains("when"), "expected 'when', got: {:?}", out);
+    assert!(
+        out.contains("end when") || out.contains("end  when"),
+        "expected 'end when', got: {:?}",
+        out
+    );
     Ok(())
 }
 
@@ -779,18 +867,22 @@ end Numeric;"#;
 #[test]
 fn unparse_str_numeric_package_structure_preserved() -> Result<()> {
     let out = unparse(NUMERIC_PACKAGE)?;
-    assert!(out.contains("Numeric"),     "expected 'Numeric', got: {:?}", out);
-    assert!(out.contains("factorial"),   "expected 'factorial', got: {:?}", out);
-    assert!(out.contains("clamp"),       "expected 'clamp', got: {:?}", out);
-    assert!(out.contains("function"),    "expected 'function', got: {:?}", out);
-    assert!(out.contains("algorithm"),   "expected 'algorithm', got: {:?}", out);
-    assert!(out.contains("if"),          "expected 'if', got: {:?}", out);
-    assert!(out.contains("elseif"),      "expected 'elseif', got: {:?}", out);
-    assert!(out.contains("input"),       "expected 'input', got: {:?}", out);
-    assert!(out.contains("output"),      "expected 'output', got: {:?}", out);
+    assert!(out.contains("Numeric"), "expected 'Numeric', got: {:?}", out);
+    assert!(out.contains("factorial"), "expected 'factorial', got: {:?}", out);
+    assert!(out.contains("clamp"), "expected 'clamp', got: {:?}", out);
+    assert!(out.contains("function"), "expected 'function', got: {:?}", out);
+    assert!(out.contains("algorithm"), "expected 'algorithm', got: {:?}", out);
+    assert!(out.contains("if"), "expected 'if', got: {:?}", out);
+    assert!(out.contains("elseif"), "expected 'elseif', got: {:?}", out);
+    assert!(out.contains("input"), "expected 'input', got: {:?}", out);
+    assert!(out.contains("output"), "expected 'output', got: {:?}", out);
     assert!(out.contains("enumeration"), "expected 'enumeration', got: {:?}", out);
-    assert!(out.contains("Status"),      "expected 'Status', got: {:?}", out);
-    assert!(out.contains("NonnegativeReal"), "expected 'NonnegativeReal', got: {:?}", out);
+    assert!(out.contains("Status"), "expected 'Status', got: {:?}", out);
+    assert!(
+        out.contains("NonnegativeReal"),
+        "expected 'NonnegativeReal', got: {:?}",
+        out
+    );
     Ok(())
 }
 

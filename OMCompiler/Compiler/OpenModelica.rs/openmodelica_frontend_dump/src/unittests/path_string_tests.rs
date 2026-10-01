@@ -12,17 +12,22 @@
 
 use std::sync::Arc;
 
-use metamodelica::Result;
-use arcstr::literal;
-use openmodelica_ast::Absyn;
 use crate::AbsynUtil;
+use arcstr::literal;
+use metamodelica::Result;
+use openmodelica_ast::Absyn;
 
 fn ident(name: &str) -> metamodelica::Ref<Absyn::Path> {
-    metamodelica::Ref::new(Absyn::Path::IDENT { name: arcstr::ArcStr::from(name) })
+    metamodelica::Ref::new(Absyn::Path::IDENT {
+        name: arcstr::ArcStr::from(name),
+    })
 }
 
 fn qualified(name: &str, path: metamodelica::Ref<Absyn::Path>) -> metamodelica::Ref<Absyn::Path> {
-    metamodelica::Ref::new(Absyn::Path::QUALIFIED { name: arcstr::ArcStr::from(name), path })
+    metamodelica::Ref::new(Absyn::Path::QUALIFIED {
+        name: arcstr::ArcStr::from(name),
+        path,
+    })
 }
 
 fn fully_qualified(path: metamodelica::Ref<Absyn::Path>) -> metamodelica::Ref<Absyn::Path> {
@@ -36,25 +41,37 @@ fn abc() -> metamodelica::Ref<Absyn::Path> {
 
 #[test]
 fn test_path_string_ident() -> Result<()> {
-    assert_eq!(AbsynUtil::pathString(ident("x"), literal!("."), true, false)?, literal!("x"));
+    assert_eq!(
+        AbsynUtil::pathString(ident("x"), literal!("."), true, false)?,
+        literal!("x")
+    );
     Ok(())
 }
 
 #[test]
 fn test_path_string_forward() -> Result<()> {
-    assert_eq!(AbsynUtil::pathString(abc(), literal!("."), true, false)?, literal!("a.b.c"));
+    assert_eq!(
+        AbsynUtil::pathString(abc(), literal!("."), true, false)?,
+        literal!("a.b.c")
+    );
     Ok(())
 }
 
 #[test]
 fn test_path_string_forward_long_delimiter() -> Result<()> {
-    assert_eq!(AbsynUtil::pathString(abc(), literal!("::"), true, false)?, literal!("a::b::c"));
+    assert_eq!(
+        AbsynUtil::pathString(abc(), literal!("::"), true, false)?,
+        literal!("a::b::c")
+    );
     Ok(())
 }
 
 #[test]
 fn test_path_string_reverse() -> Result<()> {
-    assert_eq!(AbsynUtil::pathString(abc(), literal!("."), true, true)?, literal!("c.b.a"));
+    assert_eq!(
+        AbsynUtil::pathString(abc(), literal!("."), true, true)?,
+        literal!("c.b.a")
+    );
     Ok(())
 }
 

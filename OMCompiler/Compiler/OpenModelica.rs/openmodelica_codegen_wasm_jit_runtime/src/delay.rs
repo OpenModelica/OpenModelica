@@ -40,7 +40,6 @@ pub extern "C" fn rt_delay_zc(idx: u32, time: f64, delay_time: f64, zc_pre: f64)
     state().zc(idx as usize, time, delay_time, zc_pre)
 }
 
-
 /// The state as flat words for an FMU state, led by whether there is one.
 pub fn to_words(out: &mut alloc::vec::Vec<f64>) {
     match unsafe { (*DELAY.0.get()).as_ref() } {

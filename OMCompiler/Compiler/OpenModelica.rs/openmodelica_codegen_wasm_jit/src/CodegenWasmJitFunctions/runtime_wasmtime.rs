@@ -8,17 +8,17 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 
 use openmodelica_ast::Absyn;
 use openmodelica_frontend_types::Values;
 
 use super::SigTy;
-use openmodelica_wasm_jit::sig::ExtCallSig;
 use openmodelica_wasi::wasi::WasiCtx;
 use openmodelica_wasm_jit::host::HostState;
+use openmodelica_wasm_jit::sig::ExtCallSig;
 
 /// wasmtime errors carry their own (re-exported) `anyhow`, which does not unify
 /// with ours under the feature set we build with; flatten via the message.
@@ -68,7 +68,12 @@ fn jit_cache() -> &'static JitCache {
         // programming error in `add_host_builtins`, not a runtime condition.
         openmodelica_wasm_jit::host::add_host_builtins(&mut env_linker).expect("register wasm-jit host builtins");
         let runtime_module = wasmtime::Module::new(&engine, RUNTIME_WASM()).expect("compile wasm-jit runtime");
-        JitCache { engine, env_linker, runtime_module, modules: Mutex::new(HashMap::new()) }
+        JitCache {
+            engine,
+            env_linker,
+            runtime_module,
+            modules: Mutex::new(HashMap::new()),
+        }
     })
 }
 
@@ -94,19 +99,23 @@ fn get_or_compile_module(cache: &JitCache, bytes: &[u8]) -> Result<wasmtime::Mod
 
 /// The runtime does not export this one; it is the host's.
 fn define_print_import(linker: &mut wasmtime::Linker<HostState>, memory: wasmtime::Memory) -> Result<()> {
-    wt(linker.func_wrap("rt", "rt_print", move |caller: wasmtime::Caller<'_, HostState>, handle: i32| {
-        if handle == 0 {
-            return;
-        }
-        // [refcount:u32][len:u32][utf8]
-        let data = memory.data(&caller);
-        let h = handle as usize;
-        let Some(lenb) = data.get(h + 4..h + 8) else { return };
-        let len = u32::from_le_bytes(lenb.try_into().unwrap()) as usize;
-        if let Some(bytes) = data.get(h + 8..h + 8 + len) {
-            openmodelica_wasi::wasi::stdout_write(bytes);
-        }
-    }))?;
+    wt(linker.func_wrap(
+        "rt",
+        "rt_print",
+        move |caller: wasmtime::Caller<'_, HostState>, handle: i32| {
+            if handle == 0 {
+                return;
+            }
+            // [refcount:u32][len:u32][utf8]
+            let data = memory.data(&caller);
+            let h = handle as usize;
+            let Some(lenb) = data.get(h + 4..h + 8) else { return };
+            let len = u32::from_le_bytes(lenb.try_into().unwrap()) as usize;
+            if let Some(bytes) = data.get(h + 8..h + 8 + len) {
+                openmodelica_wasi::wasi::stdout_write(bytes);
+            }
+        },
+    ))?;
     Ok(())
 }
 
@@ -136,13 +145,15 @@ fn define_external_imports(
     let mut libs = Vec::with_capacity(sig.libs.len() + 1);
     let libc = openmodelica_wasm_jit::LIBC_PIC();
     if libc.is_empty() {
-        return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
-                    load an external \"C\" library");
+        return Err(
+            "CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
+                    load an external \"C\" library",
+        );
     }
     libs.push(dl::Library::builtin("libc.so", libc));
     for path in &sig.libs {
-        let bytes = openmodelica_wasi::fs::read(path)
-            .map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
+        let bytes =
+            openmodelica_wasi::fs::read(path).map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
         libs.push(dl::Library::model(path, bytes));
     }
     let table = rt_inst
@@ -174,7 +185,11 @@ fn define_external_imports(
             return Err(record_dylink_error(format!(
                 "external \"C\" function `{}` is in none of the model's libraries{}",
                 s.name,
-                sig.notes.iter().chain(native.errors.iter()).map(|n| format!("\n  {n}")).collect::<String>()
+                sig.notes
+                    .iter()
+                    .chain(native.errors.iter())
+                    .map(|n| format!("\n  {n}"))
+                    .collect::<String>()
             )));
         };
         openmodelica_wasm_jit::sim_runtime::define_native_external(linker, s, functype, addr, memory, &ext_rt)?;
@@ -228,9 +243,7 @@ struct Sig {
 fn read_sig(path: &str) -> Result<Sig> {
     let text = std::fs::read_to_string(path).map_err(|_| "runtime_wasmtime: cannot read sig file")?;
     let mut lines = text.lines();
-    let parse = |line: Option<&str>| -> Result<Vec<SigTy>> {
-        super::parse_sig_types(line.unwrap_or(""))
-    };
+    let parse = |line: Option<&str>| -> Result<Vec<SigTy>> { super::parse_sig_types(line.unwrap_or("")) };
     let inputs = parse(lines.next())?;
     let outputs = parse(lines.next())?;
     let mut libs = Vec::new();
@@ -246,9 +259,15 @@ fn read_sig(path: &str) -> Result<Sig> {
             _ => {}
         }
     }
-    Ok(Sig { inputs, outputs, libs, native_libs, ext_imports, notes })
+    Ok(Sig {
+        inputs,
+        outputs,
+        libs,
+        native_libs,
+        ext_imports,
+        notes,
+    })
 }
-
 
 /// Extract a numeric argument as an `f64`, accepting any scalar `Values.Value`.
 fn value_as_f64(v: &Values::Value) -> Result<f64> {
@@ -378,7 +397,9 @@ pub(super) fn load_and_execute(
     Ok(match out.len() {
         0 => metamodelica::Ref::new(Values::Value::NORETCALL),
         1 => out.pop().unwrap(),
-        _ => metamodelica::Ref::new(Values::Value::TUPLE { valueLst: List::from_iter(out) }),
+        _ => metamodelica::Ref::new(Values::Value::TUPLE {
+            valueLst: List::from_iter(out),
+        }),
     })
 }
 
@@ -411,7 +432,11 @@ fn report_pending_assert(store: &mut Store, rt: &RtFns, pa: &openmodelica_wasm_j
         columnNumberEnd: pa.ecol,
         lastModification: metamodelica::OrderedFloat(0.0),
     };
-    Error::addSourceMessage(&Error::COMPILER_ERROR, metamodelica::cons(ArcStr::from(msg), metamodelica::nil()), &info)?;
+    Error::addSourceMessage(
+        &Error::COMPILER_ERROR,
+        metamodelica::cons(ArcStr::from(msg), metamodelica::nil()),
+        &info,
+    )?;
     Ok(())
 }
 
@@ -447,7 +472,9 @@ fn marshal_in(store: &mut Store, rt: &RtFns, ty: &SigTy, v: &Values::Value) -> R
         SigTy::Array { elem, rank } => wasmtime::Val::I32(array_to_handle(store, rt, elem, *rank, v)?),
         SigTy::Record { fields, .. } => wasmtime::Val::I32(record_to_handle(store, rt, fields, v)?),
         SigTy::Ptr | SigTy::Func { .. } => {
-            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+            return Err(
+                "CodegenWasmJit: external objects and function references are not supported in function evaluation",
+            );
         }
     })
 }
@@ -461,7 +488,9 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
         return Err("CodegenWasmJit: expected a record argument");
     };
     let layout = super::record_layout(fields);
-    let obj = wt(rt.rec_new.call(&mut *store, (layout.heap.len() as i32, layout.size as i32)))?;
+    let obj = wt(rt
+        .rec_new
+        .call(&mut *store, (layout.heap.len() as i32, layout.size as i32)))?;
     // Inline heap-field table.
     for (k, (kind, foff)) in layout.heap.iter().enumerate() {
         let base = obj as usize + 8 + k * 8;
@@ -471,8 +500,11 @@ fn record_to_handle(store: &mut Store, rt: &RtFns, fields: &[(ArcStr, SigTy)], v
     // Match the provided values to fields by name.
     let names: Vec<&ArcStr> = (&**comp).into_iter().collect();
     let vals: Vec<&metamodelica::Ref<Values::Value>> = (&**orderd).into_iter().collect();
-    let by_name: std::collections::HashMap<&str, &Values::Value> =
-        names.iter().zip(vals.iter()).map(|(n, v)| (n.as_str(), &***v)).collect();
+    let by_name: std::collections::HashMap<&str, &Values::Value> = names
+        .iter()
+        .zip(vals.iter())
+        .map(|(n, v)| (n.as_str(), &***v))
+        .collect();
     for (i, (fname, fty)) in fields.iter().enumerate() {
         let fv = by_name
             .get(fname.as_str())
@@ -491,7 +523,9 @@ fn str_to_handle(store: &mut Store, rt: &RtFns, v: &Values::Value) -> Result<i32
     let b = string.as_bytes();
     let h = wt(rt.str_new.call(&mut *store, b.len() as i32))?;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
-    rt.mem.write(&mut *store, d, b).map_err(|e| "CodegenWasmJit: memory write")?;
+    rt.mem
+        .write(&mut *store, d, b)
+        .map_err(|e| "CodegenWasmJit: memory write")?;
     Ok(h)
 }
 
@@ -507,7 +541,9 @@ fn array_to_handle(store: &mut Store, rt: &RtFns, elem: &SigTy, rank: u32, v: &V
         return Err("CodegenWasmJit: array argument has dimensions, expected rank");
     }
     let total: i32 = dims.iter().product();
-    let obj = wt(rt.arr_new.call(&mut *store, (elem.elem_kind() as i32, rank as i32, total)))?;
+    let obj = wt(rt
+        .arr_new
+        .call(&mut *store, (elem.elem_kind() as i32, rank as i32, total)))?;
     for (axis, d) in dims.iter().enumerate() {
         wt(rt.arr_set_dim.call(&mut *store, (obj, axis as i32, *d)))?;
     }
@@ -555,14 +591,18 @@ fn write_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize, v: &Valu
             write_bytes(store, rt, addr, &h.to_le_bytes())?;
         }
         SigTy::Ptr | SigTy::Func { .. } => {
-            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+            return Err(
+                "CodegenWasmJit: external objects and function references are not supported in function evaluation",
+            );
         }
     }
     Ok(())
 }
 
 fn write_bytes(store: &mut Store, rt: &RtFns, addr: usize, bytes: &[u8]) -> Result<()> {
-    rt.mem.write(&mut *store, addr, bytes).map_err(|e| "CodegenWasmJit: memory write")
+    rt.mem
+        .write(&mut *store, addr, bytes)
+        .map_err(|e| "CodegenWasmJit: memory write")
 }
 
 /// Build a `Values.Value` from a wasm result of the given Modelica type.
@@ -578,26 +618,42 @@ fn marshal_out(store: &mut Store, rt: &RtFns, ty: &SigTy, val: &wasmtime::Val) -
             real: metamodelica::Real::from(val.f64().ok_or_else(|| "CodegenWasmJit: expected f64 result")?),
         },
         SigTy::Str => {
-            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 string handle result")?;
-            Values::Value::STRING { string: ArcStr::from(read_string(store, rt, h)?.as_str()) }
+            let h = val
+                .i32()
+                .ok_or_else(|| "CodegenWasmJit: expected i32 string handle result")?;
+            Values::Value::STRING {
+                string: ArcStr::from(read_string(store, rt, h)?.as_str()),
+            }
         }
         SigTy::Array { elem, .. } => {
-            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 array handle result")?;
+            let h = val
+                .i32()
+                .ok_or_else(|| "CodegenWasmJit: expected i32 array handle result")?;
             read_array(store, rt, elem, h)?
         }
         SigTy::Record { path, fields } => {
-            let h = val.i32().ok_or_else(|| "CodegenWasmJit: expected i32 record handle result")?;
+            let h = val
+                .i32()
+                .ok_or_else(|| "CodegenWasmJit: expected i32 record handle result")?;
             record_to_value(store, rt, path, fields, h)?
         }
         SigTy::Ptr | SigTy::Func { .. } => {
-            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+            return Err(
+                "CodegenWasmJit: external objects and function references are not supported in function evaluation",
+            );
         }
     })
 }
 
 /// Read a runtime record handle into a `Values.RECORD`, reading each field at
 /// its layout offset.
-fn record_to_value(store: &mut Store, rt: &RtFns, path: &ArcStr, fields: &[(ArcStr, SigTy)], h: i32) -> Result<Values::Value> {
+fn record_to_value(
+    store: &mut Store,
+    rt: &RtFns,
+    path: &ArcStr,
+    fields: &[(ArcStr, SigTy)],
+    h: i32,
+) -> Result<Values::Value> {
     let layout = super::record_layout(fields);
     let mut comp = Vec::with_capacity(fields.len());
     let mut orderd = Vec::with_capacity(fields.len());
@@ -620,9 +676,14 @@ fn path_from_dotted(s: &str) -> metamodelica::Ref<Absyn::Path> {
     let parts: Vec<&str> = s.trim_start_matches('.').split('.').collect();
     let mut it = parts.iter().rev();
     let last = it.next().copied().unwrap_or("");
-    let mut p = Absyn::Path::IDENT { name: ArcStr::from(last) };
+    let mut p = Absyn::Path::IDENT {
+        name: ArcStr::from(last),
+    };
     for name in it {
-        p = Absyn::Path::QUALIFIED { name: ArcStr::from(*name), path: metamodelica::Ref::new(p) };
+        p = Absyn::Path::QUALIFIED {
+            name: ArcStr::from(*name),
+            path: metamodelica::Ref::new(p),
+        };
     }
     metamodelica::Ref::new(p)
 }
@@ -632,7 +693,9 @@ fn read_string(store: &mut Store, rt: &RtFns, h: i32) -> Result<String> {
     let len = wt(rt.str_len.call(&mut *store, h))? as usize;
     let d = wt(rt.str_data.call(&mut *store, h))? as usize;
     let mut buf = vec![0u8; len];
-    rt.mem.read(&*store, d, &mut buf).map_err(|e| "CodegenWasmJit: memory read")?;
+    rt.mem
+        .read(&*store, d, &mut buf)
+        .map_err(|e| "CodegenWasmJit: memory read")?;
     String::from_utf8(buf).map_err(|e| "CodegenWasmJit: non-utf8 result string")
 }
 
@@ -658,12 +721,20 @@ fn read_array(store: &mut Store, rt: &RtFns, elem: &SigTy, h: i32) -> Result<Val
 /// Read one array element of type `elem` at byte address `addr`.
 fn read_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize) -> Result<Values::Value> {
     Ok(match elem {
-        SigTy::Real => Values::Value::REAL { real: metamodelica::Real::from(f64::from_le_bytes(read_bytes::<8>(store, rt, addr)?)) },
-        SigTy::Int => Values::Value::INTEGER { integer: i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?) },
-        SigTy::Bool => Values::Value::BOOL { boolean: i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?) != 0 },
+        SigTy::Real => Values::Value::REAL {
+            real: metamodelica::Real::from(f64::from_le_bytes(read_bytes::<8>(store, rt, addr)?)),
+        },
+        SigTy::Int => Values::Value::INTEGER {
+            integer: i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?),
+        },
+        SigTy::Bool => Values::Value::BOOL {
+            boolean: i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?) != 0,
+        },
         SigTy::Str => {
             let h = i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?);
-            Values::Value::STRING { string: ArcStr::from(read_string(store, rt, h)?.as_str()) }
+            Values::Value::STRING {
+                string: ArcStr::from(read_string(store, rt, h)?.as_str()),
+            }
         }
         SigTy::Array { elem, .. } => {
             let h = i32::from_le_bytes(read_bytes::<4>(store, rt, addr)?);
@@ -674,14 +745,18 @@ fn read_elem(store: &mut Store, rt: &RtFns, elem: &SigTy, addr: usize) -> Result
             record_to_value(store, rt, path, fields, h)?
         }
         SigTy::Ptr | SigTy::Func { .. } => {
-            return Err("CodegenWasmJit: external objects and function references are not supported in function evaluation");
+            return Err(
+                "CodegenWasmJit: external objects and function references are not supported in function evaluation",
+            );
         }
     })
 }
 
 fn read_bytes<const N: usize>(store: &mut Store, rt: &RtFns, addr: usize) -> Result<[u8; N]> {
     let mut buf = [0u8; N];
-    rt.mem.read(&*store, addr, &mut buf).map_err(|e| "CodegenWasmJit: memory read")?;
+    rt.mem
+        .read(&*store, addr, &mut buf)
+        .map_err(|e| "CodegenWasmJit: memory read")?;
     Ok(buf)
 }
 
@@ -725,14 +800,17 @@ mod tests {
     }
 
     /// Read the bytes of a runtime string handle out of an instance's memory.
-    fn read_rt_string(
-        store: &mut Store,
-        inst: &wasmtime::Instance,
-        mem: wasmtime::Memory,
-        handle: i32,
-    ) -> String {
-        let len = inst.get_typed_func::<i32, i32>(&mut *store, "rt_str_len").unwrap().call(&mut *store, handle).unwrap();
-        let data = inst.get_typed_func::<i32, i32>(&mut *store, "rt_str_data").unwrap().call(&mut *store, handle).unwrap();
+    fn read_rt_string(store: &mut Store, inst: &wasmtime::Instance, mem: wasmtime::Memory, handle: i32) -> String {
+        let len = inst
+            .get_typed_func::<i32, i32>(&mut *store, "rt_str_len")
+            .unwrap()
+            .call(&mut *store, handle)
+            .unwrap();
+        let data = inst
+            .get_typed_func::<i32, i32>(&mut *store, "rt_str_data")
+            .unwrap()
+            .call(&mut *store, handle)
+            .unwrap();
         let mut buf = vec![0u8; len as usize];
         mem.read(&*store, data as usize, &mut buf).unwrap();
         String::from_utf8(buf).unwrap()
@@ -751,7 +829,9 @@ mod tests {
         let bool_string = inst.get_typed_func::<i32, i32>(&mut store, "rt_bool_string").unwrap();
         let concat = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_concat").unwrap();
         let streq = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_streq").unwrap();
-        let substring = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_substring").unwrap();
+        let substring = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_substring")
+            .unwrap();
         let retain = inst.get_typed_func::<i32, ()>(&mut store, "rt_retain").unwrap();
         let release = inst.get_typed_func::<i32, ()>(&mut store, "rt_release").unwrap();
 
@@ -776,7 +856,16 @@ mod tests {
         assert_eq!(streq.call(&mut store, (a, b)).unwrap(), 0);
 
         // realString must match the canonical formatter for a spread of values.
-        for v in [0.0, 1.5, -2.0, 1.0 / 3.0, 1e-7, 1234567.0, 6.022e23, std::f64::consts::PI] {
+        for v in [
+            0.0,
+            1.5,
+            -2.0,
+            1.0 / 3.0,
+            1e-7,
+            1234567.0,
+            6.022e23,
+            std::f64::consts::PI,
+        ] {
             let h = real_string.call(&mut store, v).unwrap();
             let got = read_rt_string(&mut store, &inst, mem, h);
             let want = metamodelica::realString(metamodelica::Real::from(v)).to_string();
@@ -799,12 +888,20 @@ mod tests {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
         let ndims = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_ndims").unwrap();
         let total = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_total").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
         let arr_release = inst.get_typed_func::<i32, ()>(&mut store, "rt_array_release").unwrap();
         let int_string = inst.get_typed_func::<i32, i32>(&mut store, "rt_int_string").unwrap();
 
@@ -871,13 +968,25 @@ mod tests {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let fill_f64 = inst.get_typed_func::<(i32, f64), ()>(&mut store, "rt_array_fill_f64").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let fill_f64 = inst
+            .get_typed_func::<(i32, f64), ()>(&mut store, "rt_array_fill_f64")
+            .unwrap();
         let sum_f64 = inst.get_typed_func::<i32, f64>(&mut store, "rt_array_sum_f64").unwrap();
-        let product_f64 = inst.get_typed_func::<i32, f64>(&mut store, "rt_array_product_f64").unwrap();
-        let extreme_f64 = inst.get_typed_func::<(i32, i32), f64>(&mut store, "rt_array_extreme_f64").unwrap();
+        let product_f64 = inst
+            .get_typed_func::<i32, f64>(&mut store, "rt_array_product_f64")
+            .unwrap();
+        let extreme_f64 = inst
+            .get_typed_func::<(i32, i32), f64>(&mut store, "rt_array_extreme_f64")
+            .unwrap();
 
         // fill a Real[3] with 2.5 -> sum 7.5, product 15.625.
         let a = arr_new.call(&mut store, (1, 1, 3)).unwrap();
@@ -907,30 +1016,42 @@ mod tests {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
 
-        let real_format =
-            inst.get_typed_func::<(f64, i32, i32, i32), i32>(&mut store, "rt_real_format").unwrap();
+        let real_format = inst
+            .get_typed_func::<(f64, i32, i32, i32), i32>(&mut store, "rt_real_format")
+            .unwrap();
         let str_new = inst.get_typed_func::<i32, i32>(&mut store, "rt_str_new").unwrap();
         let str_data = inst.get_typed_func::<i32, i32>(&mut store, "rt_str_data").unwrap();
-        let str_pad = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_str_pad").unwrap();
+        let str_pad = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_str_pad")
+            .unwrap();
 
         // String(Real, sig, minlen, leftjust): mirror Ceval's format string
         // `"%[-]{minlen}.{sig}g"` evaluated with `System.snprintff` (the canonical
         // C-printf port) and compare byte-for-byte.
-        let values = [0.0, 1.5, -2.0, 1.0 / 3.0, 1e-7, 1234567.0, 6.022e23, std::f64::consts::PI, -0.000123456];
+        let values = [
+            0.0,
+            1.5,
+            -2.0,
+            1.0 / 3.0,
+            1e-7,
+            1234567.0,
+            6.022e23,
+            std::f64::consts::PI,
+            -0.000123456,
+        ];
         for &v in &values {
             for &(sig, minlen, leftjust) in &[(6, 0, 1), (3, 0, 1), (6, 12, 1), (6, 12, 0), (2, 0, 1)] {
                 let h = real_format.call(&mut store, (v, sig, minlen, leftjust)).unwrap();
                 let got = read_rt_string(&mut store, &inst, mem, h);
                 let dash = if leftjust != 0 { "-" } else { "" };
                 let fmt = format!("%{dash}{minlen}.{sig}g");
-                let want = System::snprintff(
-                    arcstr::ArcStr::from(fmt),
-                    minlen + 20,
-                    metamodelica::Real::from(v),
-                )
-                .unwrap()
-                .to_string();
-                assert_eq!(got, want, "String({v}, sig={sig}, minlen={minlen}, leftjust={leftjust})");
+                let want = System::snprintff(arcstr::ArcStr::from(fmt), minlen + 20, metamodelica::Real::from(v))
+                    .unwrap()
+                    .to_string();
+                assert_eq!(
+                    got, want,
+                    "String({v}, sig={sig}, minlen={minlen}, leftjust={leftjust})"
+                );
             }
         }
 
@@ -957,7 +1078,13 @@ mod tests {
     /// Encode a one-function module exporting `main` with the given signature
     /// and body, write it plus its sidecar under a temp basename, and return
     /// the basename for `load_and_execute`.
-    fn emit(base: &str, params: &[we::ValType], results: &[we::ValType], sig: &str, body: &[we::Instruction]) -> String {
+    fn emit(
+        base: &str,
+        params: &[we::ValType],
+        results: &[we::ValType],
+        sig: &str,
+        body: &[we::Instruction],
+    ) -> String {
         let mut m = we::Module::new();
         let mut types = we::TypeSection::new();
         types.ty().function(params.iter().copied(), results.iter().copied());
@@ -1002,7 +1129,12 @@ mod tests {
             &[we::ValType::I32, we::ValType::I32],
             &[we::ValType::I32],
             "II\nI\n",
-            &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Add, we::Instruction::End],
+            &[
+                we::Instruction::LocalGet(0),
+                we::Instruction::LocalGet(1),
+                we::Instruction::I32Add,
+                we::Instruction::End,
+            ],
         );
         let args = List::from_iter([
             metamodelica::Ref::new(Values::Value::INTEGER { integer: 3 }),
@@ -1027,7 +1159,9 @@ mod tests {
                 we::Instruction::End,
             ],
         );
-        let args = List::from_iter([metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(21.0) })]);
+        let args = List::from_iter([metamodelica::Ref::new(Values::Value::REAL {
+            real: metamodelica::Real::from(21.0),
+        })]);
         let r = load_and_execute(&base, "main", &args).unwrap();
         assert_eq!(rval(&r), 42.0);
     }
@@ -1070,7 +1204,12 @@ mod tests {
             &[we::ValType::I32, we::ValType::I32],
             &[we::ValType::I32],
             "II\nI\n",
-            &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Add, we::Instruction::End],
+            &[
+                we::Instruction::LocalGet(0),
+                we::Instruction::LocalGet(1),
+                we::Instruction::I32Add,
+                we::Instruction::End,
+            ],
         );
         let args = List::from_iter([
             metamodelica::Ref::new(Values::Value::INTEGER { integer: 5 }),
@@ -1087,7 +1226,12 @@ mod tests {
             &[we::ValType::I32, we::ValType::I32],
             &[we::ValType::I32],
             "II\nI\n",
-            &[we::Instruction::LocalGet(0), we::Instruction::LocalGet(1), we::Instruction::I32Mul, we::Instruction::End],
+            &[
+                we::Instruction::LocalGet(0),
+                we::Instruction::LocalGet(1),
+                we::Instruction::I32Mul,
+                we::Instruction::End,
+            ],
         );
         assert_eq!(ival(&load_and_execute(&base, "main", &args).unwrap()), 35);
     }
@@ -1136,11 +1280,21 @@ mod tests {
     fn precompiled_runtime_array_elementwise() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let ew_f64 = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_ew_f64").unwrap();
-        let scalar_f64 = inst.get_typed_func::<(i32, f64, i32, i32), i32>(&mut store, "rt_array_scalar_f64").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let ew_f64 = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_ew_f64")
+            .unwrap();
+        let scalar_f64 = inst
+            .get_typed_func::<(i32, f64, i32, i32), i32>(&mut store, "rt_array_scalar_f64")
+            .unwrap();
         let neg_i32 = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_neg_i32").unwrap();
 
         // Build a Real[3] from a slice.
@@ -1198,11 +1352,21 @@ mod tests {
     fn precompiled_runtime_array_transpose() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
-        let transpose = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_transpose").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
+        let transpose = inst
+            .get_typed_func::<i32, i32>(&mut store, "rt_array_transpose")
+            .unwrap();
 
         // [[1,2,3],[4,5,6]] row-major: 1,2,3,4,5,6.
         let a = arr_new.call(&mut store, (0, 2, 6)).unwrap();
@@ -1232,12 +1396,22 @@ mod tests {
     fn precompiled_runtime_array_slice() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
         let ndims = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_ndims").unwrap();
-        let slice = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_slice").unwrap();
+        let slice = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_slice")
+            .unwrap();
 
         // m = [[1,2,3],[4,5,6],[7,8,9]] Real, row-major.
         let m = arr_new.call(&mut store, (1, 2, 9)).unwrap();
@@ -1270,13 +1444,19 @@ mod tests {
         let row = slice.call(&mut store, (m, 2, sp)).unwrap();
         assert_eq!(ndims.call(&mut store, row).unwrap(), 1);
         assert_eq!(dim.call(&mut store, (row, 1)).unwrap(), 3);
-        assert_eq!((rf(&mut store, row, 1), rf(&mut store, row, 2), rf(&mut store, row, 3)), (4.0, 5.0, 6.0));
+        assert_eq!(
+            (rf(&mut store, row, 1), rf(&mut store, row, 2), rf(&mut store, row, 3)),
+            (4.0, 5.0, 6.0)
+        );
 
         // Column slice m[:,2] = {2,5,8}: axis0 WHOLE, axis1 INDEX 2.
         let sp = make_spec(&mut store, &[(1, 0), (0, 2)]);
         let col = slice.call(&mut store, (m, 2, sp)).unwrap();
         assert_eq!(dim.call(&mut store, (col, 1)).unwrap(), 3);
-        assert_eq!((rf(&mut store, col, 1), rf(&mut store, col, 2), rf(&mut store, col, 3)), (2.0, 5.0, 8.0));
+        assert_eq!(
+            (rf(&mut store, col, 1), rf(&mut store, col, 2), rf(&mut store, col, 3)),
+            (2.0, 5.0, 8.0)
+        );
 
         // Index-array slice m[1,{3,1}] = {3,1}: axis0 INDEX 1, axis1 SLICE {3,1}.
         let idx = arr_new.call(&mut store, (0, 1, 2)).unwrap();
@@ -1299,9 +1479,15 @@ mod tests {
     fn precompiled_runtime_array_indexed_assign() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
         let assign = inst
             .get_typed_func::<(i32, i32, i32, i32), ()>(&mut store, "rt_array_indexed_assign")
             .unwrap();
@@ -1368,12 +1554,22 @@ mod tests {
     fn precompiled_runtime_array_cat() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
         let total = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_total").unwrap();
-        let cat = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_cat").unwrap();
+        let cat = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_cat")
+            .unwrap();
         let rf = |store: &mut Store, h: i32, k: i32| {
             let addr = elem_ptr.call(&mut *store, (h, k)).unwrap() as usize;
             let mut b = [0u8; 8];
@@ -1428,7 +1624,13 @@ mod tests {
         }
         let hs = handles(&mut store, &[m, p]);
         let r = cat.call(&mut store, (2, 2, hs)).unwrap();
-        assert_eq!((dim.call(&mut store, (r, 1)).unwrap(), dim.call(&mut store, (r, 2)).unwrap()), (2, 3));
+        assert_eq!(
+            (
+                dim.call(&mut store, (r, 1)).unwrap(),
+                dim.call(&mut store, (r, 2)).unwrap()
+            ),
+            (2, 3)
+        );
         // row-major [[1,2,5],[3,4,6]] = 1,2,5,3,4,6.
         for (k, want) in [1.0f64, 2.0, 5.0, 3.0, 4.0, 6.0].iter().enumerate() {
             assert_eq!(rf(&mut store, r, k as i32 + 1), *want);
@@ -1441,13 +1643,25 @@ mod tests {
     fn precompiled_runtime_array_matmul() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
         let ndims = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_ndims").unwrap();
-        let dot = inst.get_typed_func::<(i32, i32), f64>(&mut store, "rt_array_dot_f64").unwrap();
-        let matmul = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_matmul_f64").unwrap();
+        let dot = inst
+            .get_typed_func::<(i32, i32), f64>(&mut store, "rt_array_dot_f64")
+            .unwrap();
+        let matmul = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_matmul_f64")
+            .unwrap();
         let rf = |store: &mut Store, h: i32, k: i32| {
             let addr = elem_ptr.call(&mut *store, (h, k)).unwrap() as usize;
             let mut b = [0u8; 8];
@@ -1456,7 +1670,9 @@ mod tests {
         };
         // An n-D Real array from flat row-major data + dims.
         let arr = |store: &mut Store, dims: &[i32], vals: &[f64]| -> i32 {
-            let h = arr_new.call(&mut *store, (1, dims.len() as i32, vals.len() as i32)).unwrap();
+            let h = arr_new
+                .call(&mut *store, (1, dims.len() as i32, vals.len() as i32))
+                .unwrap();
             for (a, d) in dims.iter().enumerate() {
                 set_dim.call(&mut *store, (h, a as i32, *d)).unwrap();
             }
@@ -1483,7 +1699,13 @@ mod tests {
         let p = arr(&mut store, &[1, 3], &[1.0, 2.0, 3.0]);
         let q = arr(&mut store, &[3, 1], &[1.0, 2.0, 3.0]);
         let r = matmul.call(&mut store, (p, q)).unwrap();
-        assert_eq!((dim.call(&mut store, (r, 1)).unwrap(), dim.call(&mut store, (r, 2)).unwrap()), (1, 1));
+        assert_eq!(
+            (
+                dim.call(&mut store, (r, 1)).unwrap(),
+                dim.call(&mut store, (r, 2)).unwrap()
+            ),
+            (1, 1)
+        );
         assert_eq!(rf(&mut store, r, 1), 14.0);
     }
 
@@ -1492,7 +1714,9 @@ mod tests {
     #[test]
     fn precompiled_runtime_real_int_pow() {
         let (mut store, inst) = runtime_instance();
-        let pow = inst.get_typed_func::<(f64, i32), f64>(&mut store, "rt_real_int_pow").unwrap();
+        let pow = inst
+            .get_typed_func::<(f64, i32), f64>(&mut store, "rt_real_int_pow")
+            .unwrap();
         assert_eq!(pow.call(&mut store, (2.0, 10)).unwrap(), 1024.0);
         assert_eq!(pow.call(&mut store, (10.0, 3)).unwrap(), 1000.0);
         assert_eq!(pow.call(&mut store, (1.5, 4)).unwrap(), 5.0625);
@@ -1508,7 +1732,9 @@ mod tests {
     #[test]
     fn precompiled_runtime_real_pow() {
         let (mut store, inst) = runtime_instance();
-        let pow = inst.get_typed_func::<(f64, f64, i32), f64>(&mut store, "rt_real_pow").unwrap();
+        let pow = inst
+            .get_typed_func::<(f64, f64, i32), f64>(&mut store, "rt_real_pow")
+            .unwrap();
         assert_eq!(pow.call(&mut store, (2.0, 3.0, 0)).unwrap(), 8.0);
         assert_eq!(pow.call(&mut store, (4.0, 0.5, 0)).unwrap(), 2.0);
         // Negative base, (effectively) integer exponent → real.
@@ -1524,7 +1750,9 @@ mod tests {
     #[test]
     fn precompiled_runtime_mod_int() {
         let (mut store, inst) = runtime_instance();
-        let m = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_mod_int").unwrap();
+        let m = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_mod_int")
+            .unwrap();
         assert_eq!(m.call(&mut store, (7, 3)).unwrap(), 1);
         assert_eq!(m.call(&mut store, (-7, 3)).unwrap(), 2);
         assert_eq!(m.call(&mut store, (7, -3)).unwrap(), -2);
@@ -1539,17 +1767,35 @@ mod tests {
     fn precompiled_runtime_shape_builtins() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
         let ndims = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_ndims").unwrap();
-        let cross = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_cross_f64").unwrap();
-        let outer = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_outer_f64").unwrap();
-        let skew = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_skew_f64").unwrap();
+        let cross = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_cross_f64")
+            .unwrap();
+        let outer = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_outer_f64")
+            .unwrap();
+        let skew = inst
+            .get_typed_func::<i32, i32>(&mut store, "rt_array_skew_f64")
+            .unwrap();
         let vector = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_vector").unwrap();
-        let promote = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_promote").unwrap();
-        let sym = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_symmetric").unwrap();
+        let promote = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_promote")
+            .unwrap();
+        let sym = inst
+            .get_typed_func::<i32, i32>(&mut store, "rt_array_symmetric")
+            .unwrap();
         let rf = |store: &mut Store, h: i32, k: i32| {
             let addr = elem_ptr.call(&mut *store, (h, k)).unwrap() as usize;
             let mut b = [0u8; 8];
@@ -1557,7 +1803,9 @@ mod tests {
             f64::from_le_bytes(b)
         };
         let vecf = |store: &mut Store, dims: &[i32], vals: &[f64]| -> i32 {
-            let h = arr_new.call(&mut *store, (1, dims.len() as i32, vals.len() as i32)).unwrap();
+            let h = arr_new
+                .call(&mut *store, (1, dims.len() as i32, vals.len() as i32))
+                .unwrap();
             for (a, d) in dims.iter().enumerate() {
                 set_dim.call(&mut *store, (h, a as i32, *d)).unwrap();
             }
@@ -1572,19 +1820,31 @@ mod tests {
         let x = vecf(&mut store, &[3], &[1.0, 0.0, 0.0]);
         let y = vecf(&mut store, &[3], &[0.0, 1.0, 0.0]);
         let c = cross.call(&mut store, (x, y)).unwrap();
-        assert_eq!((rf(&mut store, c, 1), rf(&mut store, c, 2), rf(&mut store, c, 3)), (0.0, 0.0, 1.0));
+        assert_eq!(
+            (rf(&mut store, c, 1), rf(&mut store, c, 2), rf(&mut store, c, 3)),
+            (0.0, 0.0, 1.0)
+        );
 
         // outerProduct({1,2},{3,4,5}) = {{3,4,5},{6,8,10}} (2x3).
         let a = vecf(&mut store, &[2], &[1.0, 2.0]);
         let b = vecf(&mut store, &[3], &[3.0, 4.0, 5.0]);
         let o = outer.call(&mut store, (a, b)).unwrap();
-        assert_eq!((dim.call(&mut store, (o, 1)).unwrap(), dim.call(&mut store, (o, 2)).unwrap()), (2, 3));
+        assert_eq!(
+            (
+                dim.call(&mut store, (o, 1)).unwrap(),
+                dim.call(&mut store, (o, 2)).unwrap()
+            ),
+            (2, 3)
+        );
         assert_eq!((rf(&mut store, o, 3), rf(&mut store, o, 6)), (5.0, 10.0));
 
         // skew({1,2,3}) row 1 = {0,-3,2}.
         let sk = vecf(&mut store, &[3], &[1.0, 2.0, 3.0]);
         let s = skew.call(&mut store, sk).unwrap();
-        assert_eq!((rf(&mut store, s, 1), rf(&mut store, s, 2), rf(&mut store, s, 3)), (0.0, -3.0, 2.0));
+        assert_eq!(
+            (rf(&mut store, s, 1), rf(&mut store, s, 2), rf(&mut store, s, 3)),
+            (0.0, -3.0, 2.0)
+        );
 
         // vector of a 1x3 → 1-D {1,2,3}.
         let v13 = vecf(&mut store, &[1, 3], &[1.0, 2.0, 3.0]);
@@ -1596,7 +1856,13 @@ mod tests {
         let pv = vecf(&mut store, &[2], &[1.0, 2.0]);
         let p = promote.call(&mut store, (pv, 3)).unwrap();
         assert_eq!(ndims.call(&mut store, p).unwrap(), 3);
-        assert_eq!((dim.call(&mut store, (p, 1)).unwrap(), dim.call(&mut store, (p, 2)).unwrap()), (2, 1));
+        assert_eq!(
+            (
+                dim.call(&mut store, (p, 1)).unwrap(),
+                dim.call(&mut store, (p, 2)).unwrap()
+            ),
+            (2, 1)
+        );
 
         // symmetric mirrors the upper triangle: a[2,1] is replaced by a[1,2].
         let m = arr_new.call(&mut store, (1, 2, 4)).unwrap();
@@ -1618,11 +1884,21 @@ mod tests {
     fn precompiled_runtime_int_to_real_and_logical() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let i2r = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_int_to_real").unwrap();
-        let ew = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_ew_i32").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let i2r = inst
+            .get_typed_func::<i32, i32>(&mut store, "rt_array_int_to_real")
+            .unwrap();
+        let ew = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_ew_i32")
+            .unwrap();
         let notf = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_not_i32").unwrap();
         // i32 vector {dims, vals}.
         let iv = |store: &mut Store, vals: &[i32]| -> i32 {
@@ -1654,12 +1930,21 @@ mod tests {
         let a = iv(&mut store, &[1, 0, 1]);
         let b = iv(&mut store, &[1, 1, 0]);
         let and = ew.call(&mut store, (a, b, 5)).unwrap(); // OP_AND
-        assert_eq!((ri(&mut store, and, 1), ri(&mut store, and, 2), ri(&mut store, and, 3)), (1, 0, 0));
+        assert_eq!(
+            (ri(&mut store, and, 1), ri(&mut store, and, 2), ri(&mut store, and, 3)),
+            (1, 0, 0)
+        );
         let or = ew.call(&mut store, (a, b, 6)).unwrap(); // OP_OR
-        assert_eq!((ri(&mut store, or, 1), ri(&mut store, or, 2), ri(&mut store, or, 3)), (1, 1, 1));
+        assert_eq!(
+            (ri(&mut store, or, 1), ri(&mut store, or, 2), ri(&mut store, or, 3)),
+            (1, 1, 1)
+        );
         // not {1,0,1} = {0,1,0}.
         let n = notf.call(&mut store, a).unwrap();
-        assert_eq!((ri(&mut store, n, 1), ri(&mut store, n, 2), ri(&mut store, n, 3)), (0, 1, 0));
+        assert_eq!(
+            (ri(&mut store, n, 1), ri(&mut store, n, 2), ri(&mut store, n, 3)),
+            (0, 1, 0)
+        );
     }
 
     /// The matrix-constructor builtins: identity, diagonal, linspace.
@@ -1667,13 +1952,27 @@ mod tests {
     fn precompiled_runtime_array_constructors() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let arr_new = inst.get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new").unwrap();
-        let set_dim = inst.get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim").unwrap();
-        let elem_ptr = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr").unwrap();
-        let dim = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim").unwrap();
-        let identity = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_identity").unwrap();
-        let diagonal = inst.get_typed_func::<i32, i32>(&mut store, "rt_array_diagonal").unwrap();
-        let linspace = inst.get_typed_func::<(f64, f64, i32), i32>(&mut store, "rt_array_linspace").unwrap();
+        let arr_new = inst
+            .get_typed_func::<(i32, i32, i32), i32>(&mut store, "rt_array_new")
+            .unwrap();
+        let set_dim = inst
+            .get_typed_func::<(i32, i32, i32), ()>(&mut store, "rt_array_set_dim")
+            .unwrap();
+        let elem_ptr = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_elem_ptr")
+            .unwrap();
+        let dim = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_array_dim")
+            .unwrap();
+        let identity = inst
+            .get_typed_func::<i32, i32>(&mut store, "rt_array_identity")
+            .unwrap();
+        let diagonal = inst
+            .get_typed_func::<i32, i32>(&mut store, "rt_array_diagonal")
+            .unwrap();
+        let linspace = inst
+            .get_typed_func::<(f64, f64, i32), i32>(&mut store, "rt_array_linspace")
+            .unwrap();
         let ri = |store: &mut Store, h: i32, k: i32| {
             let addr = elem_ptr.call(&mut *store, (h, k)).unwrap() as usize;
             let mut b = [0u8; 4];
@@ -1689,8 +1988,17 @@ mod tests {
 
         // identity(3): 3x3, diagonal 1, rest 0 (row-major 1,0,0,0,1,0,0,0,1).
         let id = identity.call(&mut store, 3).unwrap();
-        assert_eq!((dim.call(&mut store, (id, 1)).unwrap(), dim.call(&mut store, (id, 2)).unwrap()), (3, 3));
-        assert_eq!((ri(&mut store, id, 1), ri(&mut store, id, 2), ri(&mut store, id, 5)), (1, 0, 1));
+        assert_eq!(
+            (
+                dim.call(&mut store, (id, 1)).unwrap(),
+                dim.call(&mut store, (id, 2)).unwrap()
+            ),
+            (3, 3)
+        );
+        assert_eq!(
+            (ri(&mut store, id, 1), ri(&mut store, id, 2), ri(&mut store, id, 5)),
+            (1, 0, 1)
+        );
 
         // diagonal({7,8,9}): 3x3 with 7,8,9 on the diagonal.
         let v = arr_new.call(&mut store, (0, 1, 3)).unwrap();
@@ -1700,11 +2008,22 @@ mod tests {
             mem.write(&mut store, addr, &n.to_le_bytes()).unwrap();
         }
         let dg = diagonal.call(&mut store, v).unwrap();
-        assert_eq!((ri(&mut store, dg, 1), ri(&mut store, dg, 5), ri(&mut store, dg, 9), ri(&mut store, dg, 2)), (7, 8, 9, 0));
+        assert_eq!(
+            (
+                ri(&mut store, dg, 1),
+                ri(&mut store, dg, 5),
+                ri(&mut store, dg, 9),
+                ri(&mut store, dg, 2)
+            ),
+            (7, 8, 9, 0)
+        );
 
         // linspace(0, 1, 5) = {0, 0.25, 0.5, 0.75, 1.0}.
         let ls = linspace.call(&mut store, (0.0, 1.0, 5)).unwrap();
-        assert_eq!((rf(&mut store, ls, 1), rf(&mut store, ls, 2), rf(&mut store, ls, 5)), (0.0, 0.25, 1.0));
+        assert_eq!(
+            (rf(&mut store, ls, 1), rf(&mut store, ls, 2), rf(&mut store, ls, 5)),
+            (0.0, 0.25, 1.0)
+        );
     }
 
     /// The record runtime: a self-describing object with a String + Integer
@@ -1715,7 +2034,9 @@ mod tests {
     fn precompiled_runtime_record() {
         let (mut store, inst) = runtime_instance();
         let mem = inst.get_memory(&mut store, "memory").unwrap();
-        let rec_new = inst.get_typed_func::<(i32, i32), i32>(&mut store, "rt_record_new").unwrap();
+        let rec_new = inst
+            .get_typed_func::<(i32, i32), i32>(&mut store, "rt_record_new")
+            .unwrap();
         let rec_copy = inst.get_typed_func::<i32, i32>(&mut store, "rt_record_copy").unwrap();
         let rec_release = inst.get_typed_func::<i32, ()>(&mut store, "rt_record_release").unwrap();
         let int_string = inst.get_typed_func::<i32, i32>(&mut store, "rt_int_string").unwrap();

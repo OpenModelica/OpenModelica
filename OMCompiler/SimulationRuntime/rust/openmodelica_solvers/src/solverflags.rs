@@ -217,24 +217,22 @@ pub fn homotopy_on_first_try() -> bool {
 /// per run, and the runtime is single-threaded (as `nls`'s own roster).
 struct HomCell(core::cell::UnsafeCell<crate::simflags::HomTuning>);
 unsafe impl Sync for HomCell {}
-static HOM: HomCell = HomCell(core::cell::UnsafeCell::new(
-    crate::simflags::HomTuning {
-        adapt_bend: 0.5,
-        h_eps: 1e-5,
-        tau_dec: 10.0,
-        tau_dec_pred: 2.0,
-        tau_inc: 2.0,
-        tau_inc_threshold: 10.0,
-        tau_max: 10.0,
-        tau_min: 1e-4,
-        tau_start: 0.2,
-        max_lambda_steps: 0,
-        max_newton_steps: 20,
-        max_tries: 10,
-        orthogonal_backtrace: false,
-        neg_start_dir: false,
-    },
-));
+static HOM: HomCell = HomCell(core::cell::UnsafeCell::new(crate::simflags::HomTuning {
+    adapt_bend: 0.5,
+    h_eps: 1e-5,
+    tau_dec: 10.0,
+    tau_dec_pred: 2.0,
+    tau_inc: 2.0,
+    tau_inc_threshold: 10.0,
+    tau_max: 10.0,
+    tau_min: 1e-4,
+    tau_start: 0.2,
+    max_lambda_steps: 0,
+    max_newton_steps: 20,
+    max_tries: 10,
+    orthogonal_backtrace: false,
+    neg_start_dir: false,
+}));
 
 pub fn hom_tuning() -> crate::simflags::HomTuning {
     unsafe { *HOM.0.get() }
@@ -322,9 +320,20 @@ pub fn apply_flags(f: &crate::simflags::SimFlags) {
     set_homotopy(steps, first);
     let h = crate::simflags::hom_tuning(f);
     set_homotopy_tuning(
-        h.adapt_bend, h.h_eps, h.tau_dec, h.tau_dec_pred, h.tau_inc, h.tau_inc_threshold,
-        h.tau_max, h.tau_min, h.tau_start, h.max_lambda_steps, h.max_newton_steps, h.max_tries,
-        h.orthogonal_backtrace as u32, h.neg_start_dir as u32,
+        h.adapt_bend,
+        h.h_eps,
+        h.tau_dec,
+        h.tau_dec_pred,
+        h.tau_inc,
+        h.tau_inc_threshold,
+        h.tau_max,
+        h.tau_min,
+        h.tau_start,
+        h.max_lambda_steps,
+        h.max_newton_steps,
+        h.max_tries,
+        h.orthogonal_backtrace as u32,
+        h.neg_start_dir as u32,
     );
 }
 
@@ -394,7 +403,14 @@ mod tests {
         assert!(nls() == Nls::Kinsol);
         assert!(ls() == Ls::TotalPivot);
         assert!(lss() == Lss::Rsparse);
-        assert!(nls_ls() == if cfg!(sundials) { NlsLs::TotalPivot } else { NlsLs::Rsparse });
+        assert!(
+            nls_ls()
+                == if cfg!(sundials) {
+                    NlsLs::TotalPivot
+                } else {
+                    NlsLs::Rsparse
+                }
+        );
         set_solvers(0, 0, 0, 0);
     }
 }

@@ -94,20 +94,8 @@ unsafe extern "C" {
     ) -> i32;
     /// `ty` is [`VarType`]'s discriminant; the values are always `f64` here and
     /// the host converts to the FMU's type.
-    fn fmu_get_numeric(
-        ty: i32,
-        vrs: *const u32,
-        n_vrs: usize,
-        values: *mut f64,
-        n_values: usize,
-    ) -> i32;
-    fn fmu_set_numeric(
-        ty: i32,
-        vrs: *const u32,
-        n_vrs: usize,
-        values: *const f64,
-        n_values: usize,
-    ) -> i32;
+    fn fmu_get_numeric(ty: i32, vrs: *const u32, n_vrs: usize, values: *mut f64, n_values: usize) -> i32;
+    fn fmu_set_numeric(ty: i32, vrs: *const u32, n_vrs: usize, values: *const f64, n_values: usize) -> i32;
     /// `-1` when the FMU does not export the call.
     fn fmu_number_of_continuous_states() -> i32;
     fn fmu_number_of_event_indicators() -> i32;
@@ -121,17 +109,13 @@ pub struct HostFmu {
 
 impl HostFmu {
     /// Ask the host to instantiate the FMU for `kind`.
-    pub fn instantiate(
-        kind: i32,
-        event_mode: bool,
-        early_return: bool,
-        logging_on: bool,
-    ) -> Result<HostFmu> {
-        let ok = unsafe {
-            fmu_instantiate(kind, event_mode as i32, early_return as i32, logging_on as i32)
-        };
+    pub fn instantiate(kind: i32, event_mode: bool, early_return: bool, logging_on: bool) -> Result<HostFmu> {
+        let ok = unsafe { fmu_instantiate(kind, event_mode as i32, early_return as i32, logging_on as i32) };
         if ok == 0 {
-            return Err(Error::Instantiate { call: "instantiate", log: Vec::new() });
+            return Err(Error::Instantiate {
+                call: "instantiate",
+                log: Vec::new(),
+            });
         }
         Ok(HostFmu { kind })
     }
@@ -195,7 +179,9 @@ impl Fmi3 for HostFmu {
 
     fn update_discrete_states(&mut self) -> Result<DiscreteStates> {
         let mut out = DiscreteStatesOut::default();
-        check_host("fmi3UpdateDiscreteStates", unsafe { fmu_update_discrete_states(&mut out) })?;
+        check_host("fmi3UpdateDiscreteStates", unsafe {
+            fmu_update_discrete_states(&mut out)
+        })?;
         Ok(DiscreteStates {
             need_update: out.need_update != 0,
             terminate: out.terminate != 0,
@@ -230,7 +216,9 @@ impl Fmi3 for HostFmu {
 
 impl Fmi3ModelExchange for HostFmu {
     fn enter_continuous_time_mode(&mut self) -> Result<()> {
-        check_host("fmi3EnterContinuousTimeMode", unsafe { fmu_enter_continuous_time_mode() })
+        check_host("fmi3EnterContinuousTimeMode", unsafe {
+            fmu_enter_continuous_time_mode()
+        })
     }
 
     fn set_time(&mut self, time: f64) -> Result<()> {

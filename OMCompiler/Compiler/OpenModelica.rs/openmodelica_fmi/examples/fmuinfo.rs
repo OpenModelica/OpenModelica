@@ -43,7 +43,12 @@ fn dump(path: &str) -> Result<(), Box<dyn std::error::Error>> {
         }
         println!();
         for b in fmu.binaries(kind) {
-            println!("    {} {:?}{}", b.platform_dir, b.kind, if b.is_host { " (host)" } else { "" });
+            println!(
+                "    {} {:?}{}",
+                b.platform_dir,
+                b.kind,
+                if b.is_host { " (host)" } else { "" }
+            );
         }
         if let Some(b) = fmu.select_binary(kind, Preference::Native) {
             println!("    chosen: {}", b.path);
@@ -76,7 +81,8 @@ fn dump(path: &str) -> Result<(), Box<dyn std::error::Error>> {
         );
     }
     #[cfg(feature = "component")]
-    if let Some(b) = fmu.select_binary(InterfaceKind::CoSimulation, Preference::Wasm)
+    if let Some(b) = fmu
+        .select_binary(InterfaceKind::CoSimulation, Preference::Wasm)
         .or_else(|| fmu.select_binary(InterfaceKind::ModelExchange, Preference::Wasm))
     {
         if b.kind == openmodelica_fmi::BinaryKind::Wasm {

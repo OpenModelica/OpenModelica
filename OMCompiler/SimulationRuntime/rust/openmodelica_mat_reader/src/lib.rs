@@ -357,8 +357,7 @@ impl MatReader {
     /// mirroring `omc_new_matlab4_reader`.
     pub fn open(filename: &str) -> Result<MatReader, String> {
         let mut file = fs::open_read(filename).map_err(|e| e.to_string())?;
-        const MATRIX_NAMES: [&str; 6] =
-            ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];
+        const MATRIX_NAMES: [&str; 6] = ["Aclass", "name", "description", "dataInfo", "data_1", "data_2"];
 
         let mut reader = MatReader {
             file: clone_src(&file)?,
@@ -383,19 +382,15 @@ impl MatReader {
             if hdr.imagf > 1 {
                 return Err("Matrix uses imaginary numbers".into());
             }
-            let element_length = mat_element_length(hdr.ty as i32)
-                .ok_or("Could not determine size of matrix elements")?;
+            let element_length =
+                mat_element_length(hdr.ty as i32).ok_or("Could not determine size of matrix elements")?;
             let namelen = hdr.namelen as usize;
-            let name_bytes = read_exact_vec(&mut file, namelen)
-                .map_err(|_| "Corrupt header (2)".to_string())?;
+            let name_bytes = read_exact_vec(&mut file, namelen).map_err(|_| "Corrupt header (2)".to_string())?;
             if namelen == 0 || name_bytes[namelen - 1] != 0 {
                 return Err("Corrupt header (3)".into());
             }
             let name = String::from_utf8_lossy(&name_bytes[..namelen - 1]).into_owned();
-            let matrix_length = hdr.mrows as usize
-                * hdr.ncols as usize
-                * (1 + hdr.imagf as usize)
-                * element_length;
+            let matrix_length = hdr.mrows as usize * hdr.ncols as usize * (1 + hdr.imagf as usize) * element_length;
             if name != MATRIX_NAMES[i] {
                 return Err(format!("Matrix name mismatch: {}", MATRIX_NAMES[i]));
             }
@@ -473,9 +468,7 @@ impl MatReader {
                         reader.allInfo[k].isParam = isparam_cell == 1;
                         reader.allInfo[k].index = index_cell;
                     }
-                    reader
-                        .allInfo
-                        .sort_by(|a, b| iws_cmp(&a.name, &b.name));
+                    reader.allInfo.sort_by(|a, b| iws_cmp(&a.name, &b.name));
                 }
                 4 => {
                     // data_1: parameter values (start/stop columns)

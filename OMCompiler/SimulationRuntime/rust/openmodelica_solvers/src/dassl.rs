@@ -141,13 +141,7 @@ impl Dassl {
     }
 
     /// Integrate from `(t, y)` toward `target`.
-    pub fn step(
-        &mut self,
-        ode: &mut dyn Ode,
-        target: f64,
-        t: &mut f64,
-        y: &mut [f64],
-    ) -> Result<DasslStep> {
+    pub fn step(&mut self, ode: &mut dyn Ode, target: f64, t: &mut f64, y: &mut [f64]) -> Result<DasslStep> {
         use daskr::solver;
 
         if y.is_empty() {
@@ -518,7 +512,12 @@ mod tests {
         for k in 1..=10 {
             let target = k as f64 * 0.5;
             d.step(&mut ode, target, &mut t, &mut y).expect("step");
-            assert!((y[0] - (-t).exp()).abs() < 1e-8, "x({t}) = {}, not {}", y[0], (-t).exp());
+            assert!(
+                (y[0] - (-t).exp()).abs() < 1e-8,
+                "x({t}) = {}, not {}",
+                y[0],
+                (-t).exp()
+            );
         }
     }
 
@@ -566,6 +565,10 @@ mod tests {
             ode.0.expect("no evaluation")
         };
         assert!(first(None) >= 1.0, "{} is not a thousandth of 1000", first(None));
-        assert!(first(Some(1e6)) < 1e-6, "first step of {} does not follow y'", first(Some(1e6)));
+        assert!(
+            first(Some(1e6)) < 1e-6,
+            "first step of {} does not follow y'",
+            first(Some(1e6))
+        );
     }
 }

@@ -15,11 +15,11 @@
 // in place, appending to any other handle copies its prefix first, so clones
 // are O(1) and the persistent semantics of Tpl.mo's cons list hold.
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, LazyLock, Mutex};
-use metamodelica::gc::{MMTrace, MMVisitor};
 use super::*;
 use metamodelica::List;
+use metamodelica::gc::{MMTrace, MMVisitor};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
 
 #[derive(Clone)]
 enum Tok {
@@ -46,7 +46,10 @@ impl Tok {
             Tok::NewLine => interned_ST_NEW_LINE(),
             Tok::Str(s) => metamodelica::Ref::new(StringToken::ST_STRING { value: s.clone() }),
             Tok::Line(s) => metamodelica::Ref::new(StringToken::ST_LINE { line: s.clone() }),
-            Tok::Block(toks, bt) => metamodelica::Ref::new(StringToken::ST_BLOCK { tokens: toks.to_mm_list(), blockType: bt.clone() }),
+            Tok::Block(toks, bt) => metamodelica::Ref::new(StringToken::ST_BLOCK {
+                tokens: toks.to_mm_list(),
+                blockType: bt.clone(),
+            }),
             Tok::Mm(t) => t.clone(),
         }
     }
@@ -113,7 +116,12 @@ impl Buf {
         if data.is_null() {
             std::alloc::handle_alloc_error(layout);
         }
-        Buf { data, cap, len: AtomicUsize::new(0), tail: Mutex::new(()) }
+        Buf {
+            data,
+            cap,
+            len: AtomicUsize::new(0),
+            tail: Mutex::new(()),
+        }
     }
 
     /// Appends iff the caller's view owns the tip and there is room; hands the
@@ -149,7 +157,10 @@ impl Buf {
         }
         unsafe {
             std::ptr::copy_nonoverlapping(self.data, data, len);
-            std::alloc::dealloc(self.data as *mut u8, std::alloc::Layout::array::<Tok>(self.cap).unwrap());
+            std::alloc::dealloc(
+                self.data as *mut u8,
+                std::alloc::Layout::array::<Tok>(self.cap).unwrap(),
+            );
         }
         self.data = data;
         self.cap = cap;
@@ -176,7 +187,10 @@ impl Drop for Buf {
             for i in 0..*self.len.get_mut() {
                 std::ptr::drop_in_place(self.data.add(i));
             }
-            std::alloc::dealloc(self.data as *mut u8, std::alloc::Layout::array::<Tok>(self.cap).unwrap());
+            std::alloc::dealloc(
+                self.data as *mut u8,
+                std::alloc::Layout::array::<Tok>(self.cap).unwrap(),
+            );
         }
     }
 }
@@ -210,7 +224,11 @@ impl Toks {
     }
 
     fn last(&self) -> Option<&Tok> {
-        if self.len == 0 { None } else { Some(self.get(self.len - 1)) }
+        if self.len == 0 {
+            None
+        } else {
+            Some(self.get(self.len - 1))
+        }
     }
 
     fn push(&mut self, tok: Tok) {
@@ -256,7 +274,10 @@ impl Toks {
         for i in 0..self.len {
             fresh.push_unshared(self.get(i).clone());
         }
-        Toks { buf: Some(Arc::new(fresh)), len: self.len }
+        Toks {
+            buf: Some(Arc::new(fresh)),
+            len: self.len,
+        }
     }
 
     /// `Tpl.Tokens` keeps the tokens reversed.
@@ -329,7 +350,12 @@ impl Default for Text {
 impl std::fmt::Debug for Text {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Text::Mem(m) => write!(f, "MEM_TEXT({} tokens, {} open blocks)", m.toks.len, listLength(m.stack.clone())),
+            Text::Mem(m) => write!(
+                f,
+                "MEM_TEXT({} tokens, {} open blocks)",
+                m.toks.len,
+                listLength(m.stack.clone())
+            ),
             Text::File(t) => write!(f, "FILE_TEXT({:?})", t.file),
         }
     }
@@ -455,18 +481,26 @@ pub fn writeTok(mut inText: Text, inToken: metamodelica::Ref<StringToken>) -> Re
 
 pub fn writeText(mut inText: Text, inTextToWrite: Text) -> Result<Text> {
     let Text::Mem(other) = inTextToWrite else {
-        return Err(trace_fail("-!!!Tpl.writeText failed - incomplete text was passed to be written\n"));
+        return Err(trace_fail(
+            "-!!!Tpl.writeText failed - incomplete text was passed to be written\n",
+        ));
     };
     if other.toks.is_empty() {
         return Ok(inText);
     }
     if !other.stack.is_empty() {
-        return Err(trace_fail("-!!!Tpl.writeText failed - incomplete text was passed to be written\n"));
+        return Err(trace_fail(
+            "-!!!Tpl.writeText failed - incomplete text was passed to be written\n",
+        ));
     }
     match &mut inText {
         Text::Mem(m) => {
             // Embedding a text into its own buffer would make the buffer refer to itself.
-            let toks = if m.toks.same_buf(&other.toks) { other.toks.snapshot() } else { other.toks };
+            let toks = if m.toks.same_buf(&other.toks) {
+                other.toks.snapshot()
+            } else {
+                other.toks
+            };
             m.toks.push(Tok::Block(toks, interned_BT_TEXT()));
         }
         Text::File(f) => {
@@ -522,7 +556,14 @@ pub fn pushBlock(mut txt: Text, inBlockType: metamodelica::Ref<BlockType>) -> Re
 
 fn pushBlockFile(st: &mut FileState, bt: metamodelica::Ref<BlockType>) {
     let (nchars, aind, isstart) = (st.nchars, st.aind, st.isstart);
-    st.blocks.push(FileBlock { bt: bt.clone(), nchars, aind, isstart, tell: st.written, septok: None });
+    st.blocks.push(FileBlock {
+        bt: bt.clone(),
+        nchars,
+        aind,
+        isstart,
+        tell: st.written,
+        septok: None,
+    });
     match &*bt {
         BlockType::BT_INDENT { width } => {
             st.nchars = nchars + width;
@@ -545,7 +586,11 @@ pub fn popBlock(mut txt: Text) -> Result<Text> {
         Text::Mem(m) => {
             let (mut outer, bt) = match &*m.stack {
                 ListNode::Cons { head, .. } => head.clone(),
-                ListNode::Nil => return Err(trace_fail("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n")),
+                ListNode::Nil => {
+                    return Err(trace_fail(
+                        "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n",
+                    ));
+                }
             };
             let inner = std::mem::take(&mut m.toks);
             if !inner.is_empty() {
@@ -557,7 +602,9 @@ pub fn popBlock(mut txt: Text) -> Result<Text> {
         Text::File(f) => {
             let st = &mut *f.state.lock().unwrap();
             let Some(blk) = st.blocks.pop() else {
-                return Err(trace_fail("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n"));
+                return Err(trace_fail(
+                    "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n",
+                ));
             };
             match &*blk.bt {
                 BlockType::BT_INDENT { .. } => {
@@ -586,16 +633,25 @@ pub fn pushIter(mut txt: Text, inIterOptions: metamodelica::Ref<IterOptions>) ->
     match &mut txt {
         Text::Mem(m) => {
             let toks = std::mem::take(&mut m.toks);
-            let iter = metamodelica::Ref::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
+            let iter = metamodelica::Ref::new(BlockType::BT_ITER {
+                options: inIterOptions,
+                index0: Mutable::create(i0),
+            });
             let stack = std::mem::take(&mut m.stack);
             m.stack = cons((Toks::default(), iter), cons((toks, interned_BT_TEXT()), stack));
         }
         Text::File(f) => {
             if inIterOptions.alignNum != 0 || inIterOptions.wrapWidth != 0 {
-                Error::addInternalError(literal!("Tpl.mo FILE_TEXT does not support aligning or wrapping elements"), metamodelica::sourceInfo!("Template/Tpl.mo"))?;
+                Error::addInternalError(
+                    literal!("Tpl.mo FILE_TEXT does not support aligning or wrapping elements"),
+                    metamodelica::sourceInfo!("Template/Tpl.mo"),
+                )?;
                 return Err("fail");
             }
-            let iter = metamodelica::Ref::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
+            let iter = metamodelica::Ref::new(BlockType::BT_ITER {
+                options: inIterOptions,
+                index0: Mutable::create(i0),
+            });
             pushBlockFile(&mut f.state.lock().unwrap(), iter);
         }
     }
@@ -610,8 +666,14 @@ pub fn popIter(mut txt: Text) -> Result<Text> {
                 return Err(trace_fail(MSG));
             }
             let (items, bt, mut outer, rest) = match &*m.stack {
-                ListNode::Cons { head: (items, bt), tail } => match &**tail {
-                    ListNode::Cons { head: (outer, _), tail: rest } => (items.clone(), bt.clone(), outer.clone(), rest.clone()),
+                ListNode::Cons {
+                    head: (items, bt),
+                    tail,
+                } => match &**tail {
+                    ListNode::Cons {
+                        head: (outer, _),
+                        tail: rest,
+                    } => (items.clone(), bt.clone(), outer.clone(), rest.clone()),
                     ListNode::Nil => return Err(trace_fail(MSG)),
                 },
                 ListNode::Nil => return Err(trace_fail(MSG)),
@@ -633,16 +695,24 @@ pub fn popIter(mut txt: Text) -> Result<Text> {
 
 pub fn nextIter(mut txt: Text) -> Result<Text> {
     fn non_iteration() -> &'static str {
-        let _ = Error::addInternalError(literal!("-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context?"), metamodelica::sourceInfo!("Template/Tpl.mo"));
+        let _ = Error::addInternalError(
+            literal!("-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context?"),
+            metamodelica::sourceInfo!("Template/Tpl.mo"),
+        );
         "fail"
     }
     match &mut txt {
         Text::Mem(m) => {
             let (mut items, bt, rest) = match &*m.stack {
-                ListNode::Cons { head: (items, bt), tail } if matches!(&**bt, BlockType::BT_ITER { .. }) => (items.clone(), bt.clone(), tail.clone()),
+                ListNode::Cons {
+                    head: (items, bt),
+                    tail,
+                } if matches!(&**bt, BlockType::BT_ITER { .. }) => (items.clone(), bt.clone(), tail.clone()),
                 _ => return Err(non_iteration()),
             };
-            let BlockType::BT_ITER { options, index0 } = &*bt else { unreachable!() };
+            let BlockType::BT_ITER { options, index0 } = &*bt else {
+                unreachable!()
+            };
             let item = if m.toks.is_empty() {
                 options.empty.as_ref().map(Tok::from_mm)
             } else if m.toks.len == 1 {
@@ -659,9 +729,13 @@ pub fn nextIter(mut txt: Text) -> Result<Text> {
         }
         Text::File(f) => {
             let st = &mut *f.state.lock().unwrap();
-            let Some(blk) = st.blocks.last() else { return Err(non_iteration()) };
+            let Some(blk) = st.blocks.last() else {
+                return Err(non_iteration());
+            };
             let (bt, blk_tell) = (blk.bt.clone(), blk.tell);
-            let BlockType::BT_ITER { options, index0 } = &*bt else { return Err(non_iteration()) };
+            let BlockType::BT_ITER { options, index0 } = &*bt else {
+                return Err(non_iteration());
+            };
             let tellpos = st.written;
             let have_token = if blk_tell != tellpos {
                 st.blocks.last_mut().unwrap().tell = tellpos;
@@ -745,7 +819,9 @@ struct FileSink<'a> {
 
 impl FileSink<'_> {
     fn check(&mut self, r: Result<()>) {
-        if let Err(e) = r && self.err.is_none() {
+        if let Err(e) = r
+            && self.err.is_none()
+        {
             self.err = Some(e);
         }
     }
@@ -810,7 +886,11 @@ fn tok<S: Sink>(s: &mut S, t: &Tok, (nchars, isstart, aind): Pos) -> Pos {
                 let p0 = s.pos();
                 s.space(nchars);
                 s.write(str);
-                (s.start_pos(nchars, str.len() as i32, (s.pos() - p0) as i32), false, aind)
+                (
+                    s.start_pos(nchars, str.len() as i32, (s.pos() - p0) as i32),
+                    false,
+                    aind,
+                )
             } else {
                 s.write(str);
                 (nchars + str.len() as i32, false, aind)
@@ -826,7 +906,9 @@ fn tok<S: Sink>(s: &mut S, t: &Tok, (nchars, isstart, aind): Pos) -> Pos {
         Tok::Block(toks, bt) => block(s, bt, &Items::Buf(toks), (nchars, isstart, aind)),
         Tok::Mm(t) => match &**t {
             StringToken::ST_STRING_LIST { strList, .. } => stringList(s, strList, (nchars, isstart, aind)),
-            StringToken::ST_BLOCK { tokens, blockType } => block(s, blockType, &Items::from_mm_list(tokens), (nchars, isstart, aind)),
+            StringToken::ST_BLOCK { tokens, blockType } => {
+                block(s, blockType, &Items::from_mm_list(tokens), (nchars, isstart, aind))
+            }
             _ => tok(s, &Tok::from_mm(t), (nchars, isstart, aind)),
         },
     }
@@ -850,7 +932,11 @@ fn stringList<S: Sink>(s: &mut S, strs: &List<ArcStr>, (mut nchars, mut isstart,
             s.space(nchars);
             s.write(str);
             let written = (s.pos() - p0) as i32;
-            nchars = if has_nl { aind } else { s.start_pos(nchars, str.len() as i32, written) };
+            nchars = if has_nl {
+                aind
+            } else {
+                s.start_pos(nchars, str.len() as i32, written)
+            };
         } else {
             s.write(str);
             nchars = if has_nl { aind } else { nchars + str.len() as i32 };
@@ -865,7 +951,13 @@ fn block<S: Sink>(s: &mut S, bt: &BlockType, items: &Items, (nchars, isstart, ai
     let indented = |s: &mut S, pos: Pos| -> Pos {
         let p0 = s.pos();
         let (tsnchars, st, _) = tokens(s, items, 0, pos);
-        let nc = if isstart && s.pos() == p0 { nchars } else if st { aind } else { tsnchars };
+        let nc = if isstart && s.pos() == p0 {
+            nchars
+        } else if st {
+            aind
+        } else {
+            tsnchars
+        };
         (nc, st, aind)
     };
     match bt {
@@ -881,7 +973,11 @@ fn block<S: Sink>(s: &mut S, bt: &BlockType, items: &Items, (nchars, isstart, ai
             }
         }
         BlockType::BT_ABS_INDENT { width: w } => {
-            if isstart { indented(s, (0, true, *w)) } else { indented(s, (nchars, false, *w)) }
+            if isstart {
+                indented(s, (0, true, *w))
+            } else {
+                indented(s, (nchars, false, *w))
+            }
         }
         BlockType::BT_REL_INDENT { offset: w } => indented(s, (nchars, isstart, aind + w)),
         BlockType::BT_ANCHOR { offset: w } => indented(s, (nchars, isstart, nchars + w)),
@@ -906,7 +1002,11 @@ fn block<S: Sink>(s: &mut S, bt: &BlockType, items: &Items, (nchars, isstart, ai
                     let mut ai = a;
                     let mut idx = 1 + o.alignOfset;
                     for i in 1..items.len() {
-                        let septok = if anum != 0 && idx > 0 && intMod(idx, anum) == 0 { &o.alignSeparator } else { sep };
+                        let septok = if anum != 0 && idx > 0 && intMod(idx, anum) == 0 {
+                            &o.alignSeparator
+                        } else {
+                            sep
+                        };
                         (pos, st, ai) = tok(s, &Tok::from_mm(septok), (pos, st, ai));
                         if wwidth > 0 && pos >= wwidth {
                             (pos, st, ai) = tok(s, &Tok::from_mm(&o.wrapSeparator), (pos, st, ai));
@@ -943,7 +1043,9 @@ pub fn textStringBuf(inText: Text) -> Result<()> {
         return Err(trace_fail("-!!!Tpl.textString failed.\n"));
     };
     if !m.stack.is_empty() {
-        return Err(trace_fail("-!!!Tpl.textString failed - a non-comlete text was given.\n"));
+        return Err(trace_fail(
+            "-!!!Tpl.textString failed - a non-comlete text was given.\n",
+        ));
     }
     Print::with_buf(|buf| {
         tokens(&mut BufSink(buf), &Items::Buf(&m.toks), 0, (0, true, 0));
@@ -960,8 +1062,13 @@ pub fn strTokText(inStringToken: metamodelica::Ref<StringToken>) -> Text {
 pub fn textStrTok(inText: Text) -> Result<metamodelica::Ref<StringToken>> {
     match &inText {
         Text::Mem(m) if m.toks.is_empty() => Ok(metamodelica::Ref::new(StringToken::ST_STRING { value: literal!("") })),
-        Text::Mem(m) if m.stack.is_empty() => Ok(metamodelica::Ref::new(StringToken::ST_BLOCK { tokens: m.toks.to_mm_list(), blockType: interned_BT_TEXT() })),
-        _ => Err(trace_fail("-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n")),
+        Text::Mem(m) if m.stack.is_empty() => Ok(metamodelica::Ref::new(StringToken::ST_BLOCK {
+            tokens: m.toks.to_mm_list(),
+            blockType: interned_BT_TEXT(),
+        })),
+        _ => Err(trace_fail(
+            "-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n",
+        )),
     }
 }
 
@@ -987,14 +1094,23 @@ pub fn redirectToFile(text: Text, fileName: ArcStr) -> Result<Text> {
     File::getReference(file.clone());
     let out = Text::File(Arc::new(FileText {
         file,
-        state: Mutex::new(FileState { nchars: 0, aind: 0, isstart: true, written: 0, blocks: Vec::new() }),
+        state: Mutex::new(FileState {
+            nchars: 0,
+            aind: 0,
+            isstart: true,
+            written: 0,
+            blocks: Vec::new(),
+        }),
     }));
     writeText(out, text)
 }
 
 pub fn closeFile(text: Text) -> Result<Text> {
     let Text::File(f) = &text else {
-        Error::addInternalError(literal!("tokFile got non-file text input"), metamodelica::sourceInfo!("Template/Tpl.mo"))?;
+        Error::addInternalError(
+            literal!("tokFile got non-file text input"),
+            metamodelica::sourceInfo!("Template/Tpl.mo"),
+        )?;
         return Err("fail");
     };
     let _ = File::releaseReference(f.file.clone());
@@ -1007,7 +1123,11 @@ fn tokFileText(file: &File::File, st: &mut FileState, t: &Tok, handle: bool) -> 
     if handle {
         handleTok(file, st)?;
     }
-    let mut sink = FileSink { file, written: &mut st.written, err: None };
+    let mut sink = FileSink {
+        file,
+        written: &mut st.written,
+        err: None,
+    };
     let (nchars, isstart, aind) = tok(&mut sink, t, (st.nchars, st.isstart, st.aind));
     if let Some(e) = sink.err {
         return Err(e);

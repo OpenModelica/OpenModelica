@@ -81,8 +81,16 @@ pub(super) fn emit_array_dim(ctx: &mut FnCtx, axis: u32) -> Result<()> {
 /// type.
 pub(super) fn elem_load(ctx: &mut FnCtx, elem: &SigTy) {
     match elem.wty() {
-        WTy::I32 => ctx.emit(we::Instruction::I32Load(we::MemArg { offset: 0, align: 2, memory_index: 0 })),
-        WTy::F64 => ctx.emit(we::Instruction::F64Load(we::MemArg { offset: 0, align: 3, memory_index: 0 })),
+        WTy::I32 => ctx.emit(we::Instruction::I32Load(we::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        })),
+        WTy::F64 => ctx.emit(we::Instruction::F64Load(we::MemArg {
+            offset: 0,
+            align: 3,
+            memory_index: 0,
+        })),
     }
 }
 
@@ -156,13 +164,7 @@ pub(super) fn const_num(e: &DAE::Exp) -> Option<ConstNum> {
 /// into the array object at `dest_off`. A run long enough to pay for the sequence
 /// is copied from a passive data segment with `memory.init`, so a large constant
 /// table costs a fixed handful of instructions rather than a store per element.
-fn emit_const_run(
-    ctx: &mut FnCtx,
-    obj: u32,
-    dest_off: u32,
-    elem: &SigTy,
-    run: &mut Vec<u8>,
-) -> Result<()> {
+fn emit_const_run(ctx: &mut FnCtx, obj: u32, dest_off: u32, elem: &SigTy, run: &mut Vec<u8>) -> Result<()> {
     use we::Instruction as I;
     let bytes = core::mem::take(run);
     if bytes.is_empty() {
@@ -317,7 +319,10 @@ fn constructor_dims(exp: &DAE::Exp) -> Result<Vec<u32>> {
         }
         E::MATRIX { matrix, .. } => {
             let rows: Vec<_> = (&**matrix).into_iter().collect();
-            let mut out = vec![rows.len() as u32, rows.first().map_or(0, |r| (&***r).into_iter().count()) as u32];
+            let mut out = vec![
+                rows.len() as u32,
+                rows.first().map_or(0, |r| (&***r).into_iter().count()) as u32,
+            ];
             if let Some(first) = rows.first().and_then(|r| (&***r).into_iter().next()) {
                 out.extend(constructor_dims(first)?);
             }
@@ -469,9 +474,7 @@ pub(super) fn compile_array_literal(ctx: &mut FnCtx, ty: &DAE::Type, whole: &DAE
 /// non-constant size (the dynamic case is not handled in a constructor).
 fn leaf_array_count(exp: &DAE::Exp) -> Result<Option<u32>> {
     match exp_dae_type(exp) {
-        Some(ty) if matches!(&*ty, DAE::Type::T_ARRAY { .. }) => {
-            Ok(Some(const_dims(&ty)?.iter().product()))
-        }
+        Some(ty) if matches!(&*ty, DAE::Type::T_ARRAY { .. }) => Ok(Some(const_dims(&ty)?.iter().product())),
         _ => Ok(None),
     }
 }
@@ -501,14 +504,28 @@ fn exp_dae_type(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Type>> {
 fn operator_dae_type(op: &DAE::Operator) -> Option<metamodelica::Ref<DAE::Type>> {
     use DAE::Operator as O;
     match op {
-        O::ADD { ty } | O::SUB { ty } | O::MUL { ty } | O::DIV { ty } | O::POW { ty } | O::UMINUS { ty }
-        | O::MUL_SCALAR_PRODUCT { ty } | O::MUL_MATRIX_PRODUCT { ty }
-        | O::UMINUS_ARR { ty } | O::ADD_ARR { ty } | O::SUB_ARR { ty } | O::MUL_ARR { ty } | O::DIV_ARR { ty }
-        | O::MUL_ARRAY_SCALAR { ty } | O::ADD_ARRAY_SCALAR { ty } | O::SUB_SCALAR_ARRAY { ty }
-        | O::DIV_ARRAY_SCALAR { ty } | O::DIV_SCALAR_ARRAY { ty }
-        | O::POW_ARRAY_SCALAR { ty } | O::POW_SCALAR_ARRAY { ty } | O::POW_ARR { ty } | O::POW_ARR2 { ty } => {
-            Some(ty.clone())
-        }
+        O::ADD { ty }
+        | O::SUB { ty }
+        | O::MUL { ty }
+        | O::DIV { ty }
+        | O::POW { ty }
+        | O::UMINUS { ty }
+        | O::MUL_SCALAR_PRODUCT { ty }
+        | O::MUL_MATRIX_PRODUCT { ty }
+        | O::UMINUS_ARR { ty }
+        | O::ADD_ARR { ty }
+        | O::SUB_ARR { ty }
+        | O::MUL_ARR { ty }
+        | O::DIV_ARR { ty }
+        | O::MUL_ARRAY_SCALAR { ty }
+        | O::ADD_ARRAY_SCALAR { ty }
+        | O::SUB_SCALAR_ARRAY { ty }
+        | O::DIV_ARRAY_SCALAR { ty }
+        | O::DIV_SCALAR_ARRAY { ty }
+        | O::POW_ARRAY_SCALAR { ty }
+        | O::POW_SCALAR_ARRAY { ty }
+        | O::POW_ARR { ty }
+        | O::POW_ARR2 { ty } => Some(ty.clone()),
         _ => None,
     }
 }
@@ -518,7 +535,13 @@ fn operator_dae_type(op: &DAE::Operator) -> Option<metamodelica::Ref<DAE::Type>>
 /// range yields a zero-length array), and a fill loop writes each element. Only
 /// Integer-element ranges are handled; Real ranges need the C runtime's
 /// element-count rounding to stay byte-identical, so they fail loudly.
-pub(super) fn compile_range_array(ctx: &mut FnCtx, ty: &DAE::Type, start: &DAE::Exp, step: Option<&DAE::Exp>, stop: &DAE::Exp) -> Result<()> {
+pub(super) fn compile_range_array(
+    ctx: &mut FnCtx,
+    ty: &DAE::Type,
+    start: &DAE::Exp,
+    step: Option<&DAE::Exp>,
+    stop: &DAE::Exp,
+) -> Result<()> {
     let SigTy::Array { elem, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: range with non-array type");
     };

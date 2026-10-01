@@ -9,7 +9,15 @@ use super::*;
 /// `extName` are left to fail loudly (the array/library ABI is future work).
 pub(crate) fn external_known(f: &SimCodeFunction::Function::Function) -> bool {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { extName, funArgs, outVars, extReturn, extArgs, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION {
+        extName,
+        funArgs,
+        outVars,
+        extReturn,
+        extArgs,
+        ..
+    } = f
+    else {
         return false;
     };
     // One output, produced as the C call's return value (not via an output ptr).
@@ -62,7 +70,10 @@ pub(super) fn variable_sigty(ty: &DAE::Type, inst_dims: &List<metamodelica::Ref<
     if rank == 0 {
         Ok(base)
     } else {
-        Ok(SigTy::Array { elem: Arc::new(base), rank })
+        Ok(SigTy::Array {
+            elem: Arc::new(base),
+            rank,
+        })
     }
 }
 
@@ -84,16 +95,29 @@ pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
         DAE::Type::T_ARRAY { ty, dims } => {
             let ndims = (&**dims).into_iter().count() as u32;
             match sig_ty_quiet(ty)? {
-                SigTy::Array { elem, rank } => SigTy::Array { elem, rank: rank + ndims },
-                elem => SigTy::Array { elem: Arc::new(elem), rank: ndims },
+                SigTy::Array { elem, rank } => SigTy::Array {
+                    elem,
+                    rank: rank + ndims,
+                },
+                elem => SigTy::Array {
+                    elem: Arc::new(elem),
+                    rank: ndims,
+                },
             }
         }
         // A record class: an ordered set of component fields. MetaModelica
         // uniontypes / metarecords (`T_METARECORD`) are a different runtime
         // representation and are not handled here.
         // An external object is an opaque native `void*` held as an `i32` handle.
-        DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::EXTERNAL_OBJ { .. }, .. } => SigTy::Ptr,
-        DAE::Type::T_COMPLEX { complexClassType, varLst, .. } => {
+        DAE::Type::T_COMPLEX {
+            complexClassType: ClassInf::State::EXTERNAL_OBJ { .. },
+            ..
+        } => SigTy::Ptr,
+        DAE::Type::T_COMPLEX {
+            complexClassType,
+            varLst,
+            ..
+        } => {
             let ClassInf::State::RECORD { path } = complexClassType else {
                 return Err("CodegenWasmJit: non-record complex type not supported");
             };
@@ -111,7 +135,10 @@ pub(crate) fn sig_ty_quiet(ty: &DAE::Type) -> Result<SigTy> {
                     }
                 }
             }
-            SigTy::Record { path: path_str, fields: Arc::new(fields) }
+            SigTy::Record {
+                path: path_str,
+                fields: Arc::new(fields),
+            }
         }
         // A function reference's argument/result types arrive MetaModelica-boxed
         // (C calls one boxed `boxptr_` shape); our closures are typed and pass

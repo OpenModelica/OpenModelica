@@ -18,7 +18,10 @@ pub(super) fn parse_sig_type(chars: &mut std::iter::Peekable<std::str::Chars>) -
                 chars.next();
                 rank += 1;
             }
-            Ok(SigTy::Array { elem: Arc::new(parse_sig_type(chars)?), rank })
+            Ok(SigTy::Array {
+                elem: Arc::new(parse_sig_type(chars)?),
+                rank,
+            })
         }
         // `{path;name:code;…}` — a record (see [`SigTy::write_code`]).
         Some('{') => {
@@ -47,7 +50,10 @@ pub(super) fn parse_sig_type(chars: &mut std::iter::Peekable<std::str::Chars>) -
                 Some('}') => {}
                 other => return Err("CodegenWasmJit: expected a closing brace in record signature"),
             }
-            Ok(SigTy::Record { path: ArcStr::from(path.as_str()), fields: Arc::new(fields) })
+            Ok(SigTy::Record {
+                path: ArcStr::from(path.as_str()),
+                fields: Arc::new(fields),
+            })
         }
         // `<params|results>` — a function reference (see [`SigTy::write_code`]).
         Some('<') => {
@@ -65,7 +71,10 @@ pub(super) fn parse_sig_type(chars: &mut std::iter::Peekable<std::str::Chars>) -
             if chars.next() != Some('>') {
                 return Err("CodegenWasmJit: expected a closing `>` in function-reference signature");
             }
-            Ok(SigTy::Func { params: Arc::new(params), results: Arc::new(results) })
+            Ok(SigTy::Func {
+                params: Arc::new(params),
+                results: Arc::new(results),
+            })
         }
         other => return Err("CodegenWasmJit: malformed signature type code"),
     }

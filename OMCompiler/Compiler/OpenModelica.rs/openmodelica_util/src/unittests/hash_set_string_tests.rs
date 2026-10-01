@@ -17,12 +17,12 @@
 //   hashSetList  → all stored keys as a list
 //   addUnique    → inserts only when key is absent; fails if already present
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
-use crate::HashSetString as HS;
 use crate::BaseHashSet;
+use crate::HashSetString as HS;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,7 +44,9 @@ fn with_keys(keys: &[&str]) -> Result<HashSet> {
 fn list_sorted(hs: HashSet) -> Result<Vec<String>> {
     let lst = BaseHashSet::hashSetList(&hs)?;
     let mut v: Vec<String> = vec![];
-    for k in &*lst { v.push(k.to_string()); }
+    for k in &*lst {
+        v.push(k.to_string());
+    }
     v.sort();
     Ok(v)
 }
@@ -83,7 +85,7 @@ fn test_add_single_key() -> Result<()> {
 fn test_add_multiple_keys() -> Result<()> {
     let hs = with_keys(&["alpha", "beta", "gamma"])?;
     assert!(BaseHashSet::has(literal!("alpha"), &hs)?);
-    assert!(BaseHashSet::has(literal!("beta"),  &hs)?);
+    assert!(BaseHashSet::has(literal!("beta"), &hs)?);
     assert!(BaseHashSet::has(literal!("gamma"), &hs)?);
     Ok(())
 }

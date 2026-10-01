@@ -20,12 +20,9 @@ impl Problem {
     }
 }
 
-pub type EvalF =
-    unsafe extern "C" fn(Index, *mut Number, bool, *mut Number, *mut c_void) -> bool;
-pub type EvalGradF =
-    unsafe extern "C" fn(Index, *mut Number, bool, *mut Number, *mut c_void) -> bool;
-pub type EvalG =
-    unsafe extern "C" fn(Index, *mut Number, bool, Index, *mut Number, *mut c_void) -> bool;
+pub type EvalF = unsafe extern "C" fn(Index, *mut Number, bool, *mut Number, *mut c_void) -> bool;
+pub type EvalGradF = unsafe extern "C" fn(Index, *mut Number, bool, *mut Number, *mut c_void) -> bool;
+pub type EvalG = unsafe extern "C" fn(Index, *mut Number, bool, Index, *mut Number, *mut c_void) -> bool;
 #[allow(clippy::type_complexity)]
 pub type EvalJacG = unsafe extern "C" fn(
     Index,
@@ -226,7 +223,14 @@ mod tests {
         g[3] = x[0] * (x[0] + x[1] + x[2]);
         true
     }
-    unsafe extern "C" fn g(_n: Index, x: *mut Number, _new: bool, _m: Index, out: *mut Number, _u: *mut c_void) -> bool {
+    unsafe extern "C" fn g(
+        _n: Index,
+        x: *mut Number,
+        _new: bool,
+        _m: Index,
+        out: *mut Number,
+        _u: *mut c_void,
+    ) -> bool {
         let x = unsafe { core::slice::from_raw_parts(x, 4) };
         let out = unsafe { core::slice::from_raw_parts_mut(out, 2) };
         out[0] = x[0] * x[1] * x[2] * x[3];
@@ -235,12 +239,22 @@ mod tests {
     }
     #[allow(clippy::too_many_arguments)]
     unsafe extern "C" fn jac_g(
-        _n: Index, x: *mut Number, _new: bool, _m: Index, _nele: Index,
-        i_row: *mut Index, j_col: *mut Index, values: *mut Number, _u: *mut c_void,
+        _n: Index,
+        x: *mut Number,
+        _new: bool,
+        _m: Index,
+        _nele: Index,
+        i_row: *mut Index,
+        j_col: *mut Index,
+        values: *mut Number,
+        _u: *mut c_void,
     ) -> bool {
         if values.is_null() {
             let (r, c) = unsafe {
-                (core::slice::from_raw_parts_mut(i_row, 8), core::slice::from_raw_parts_mut(j_col, 8))
+                (
+                    core::slice::from_raw_parts_mut(i_row, 8),
+                    core::slice::from_raw_parts_mut(j_col, 8),
+                )
             };
             for k in 0..8 {
                 r[k] = (k / 4) as Index;
@@ -262,8 +276,18 @@ mod tests {
     // Exact Hessian is optional for this check; BFGS keeps the test to the ABI.
     #[allow(clippy::too_many_arguments)]
     unsafe extern "C" fn h(
-        _n: Index, _x: *mut Number, _new: bool, _of: Number, _m: Index, _l: *mut Number,
-        _nl: bool, _nele: Index, _r: *mut Index, _c: *mut Index, _v: *mut Number, _u: *mut c_void,
+        _n: Index,
+        _x: *mut Number,
+        _new: bool,
+        _of: Number,
+        _m: Index,
+        _l: *mut Number,
+        _nl: bool,
+        _nele: Index,
+        _r: *mut Index,
+        _c: *mut Index,
+        _v: *mut Number,
+        _u: *mut c_void,
     ) -> bool {
         false
     }
@@ -294,8 +318,14 @@ mod tests {
         let mut mult_g = [0.0; 2];
         let mut mult_l = [0.0; 4];
         let mut mult_u = [0.0; 4];
-        let status =
-            nlp.solve(&mut x, &mut obj, &mut mult_g, &mut mult_l, &mut mult_u, core::ptr::null_mut());
+        let status = nlp.solve(
+            &mut x,
+            &mut obj,
+            &mut mult_g,
+            &mut mult_l,
+            &mut mult_u,
+            core::ptr::null_mut(),
+        );
         assert_eq!(status, SOLVE_SUCCEEDED);
         // The documented optimum.
         let expect = [1.0, 4.743, 3.821, 1.379];

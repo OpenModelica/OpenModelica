@@ -342,10 +342,7 @@ pub extern "C" fn omc_compiler_eval(command: *const c_char) -> *mut c_char {
 /// running: `*keep_running` is set to 0 after `quit()` and 1 otherwise (mirroring
 /// `omc_Main_handleCommand`'s boolean result). `keep_running` may be null.
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_compiler_eval_keep(
-    command: *const c_char,
-    keep_running: *mut c_int,
-) -> *mut c_char {
+pub extern "C" fn omc_compiler_eval_keep(command: *const c_char, keep_running: *mut c_int) -> *mut c_char {
     if !keep_running.is_null() {
         unsafe { *keep_running = 1 };
     }

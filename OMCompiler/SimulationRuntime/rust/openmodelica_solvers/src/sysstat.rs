@@ -103,14 +103,13 @@ struct Table {
 
 struct Store(UnsafeCell<Table>);
 unsafe impl Sync for Store {}
-static TABLE: Store =
-    Store(UnsafeCell::new(Table {
-        on: false,
-        sys: Vec::new(),
-        index: BTreeMap::new(),
-        open: Vec::new(),
-        words: Vec::new(),
-    }));
+static TABLE: Store = Store(UnsafeCell::new(Table {
+    on: false,
+    sys: Vec::new(),
+    index: BTreeMap::new(),
+    open: Vec::new(),
+    words: Vec::new(),
+}));
 
 #[inline]
 fn table() -> &'static mut Table {
@@ -142,7 +141,13 @@ fn slot(eq_index: i32, nonlinear: bool, size: u32, nnz: u32) -> usize {
     if let Some(&i) = t.index.get(&(eq_index, nonlinear)) {
         return i;
     }
-    t.sys.push(SysStat { eq_index, nonlinear, size, nnz, ..SysStat::default() });
+    t.sys.push(SysStat {
+        eq_index,
+        nonlinear,
+        size,
+        nnz,
+        ..SysStat::default()
+    });
     let i = t.sys.len() - 1;
     t.index.insert((eq_index, nonlinear), i);
     i
@@ -155,7 +160,12 @@ pub fn begin(eq_index: i32, nonlinear: bool, size: u32, nnz: u32) {
         return;
     }
     let i = slot(eq_index, nonlinear, size, nnz);
-    table().open.push(Open { slot: i, start: now_ms(), jac: 0.0, child: [0; 3] });
+    table().open.push(Open {
+        slot: i,
+        start: now_ms(),
+        jac: 0.0,
+        child: [0; 3],
+    });
 }
 
 /// A linear system's `A` and `b` are assembled by the generated code ahead of the

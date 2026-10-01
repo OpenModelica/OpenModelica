@@ -151,10 +151,6 @@ pub fn resident() -> u64 {
     let Ok(text) = std::fs::read_to_string("/proc/self/statm") else {
         return 0;
     };
-    let resident: u64 = text
-        .split_whitespace()
-        .nth(1)
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(0);
+    let resident: u64 = text.split_whitespace().nth(1).and_then(|v| v.parse().ok()).unwrap_or(0);
     resident * 4096
 }

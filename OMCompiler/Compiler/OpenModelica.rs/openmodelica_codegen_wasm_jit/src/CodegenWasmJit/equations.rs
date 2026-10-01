@@ -71,12 +71,23 @@ pub(super) fn prof_plan(
     let mut vr_of: HashMap<String, u32> = HashMap::default();
     let mut vr = 1000u32;
     for list in [
-        &mi.vars.stateVars, &mi.vars.derivativeVars, &mi.vars.algVars, &mi.vars.discreteAlgVars,
-        &mi.vars.realOptimizeConstraintsVars, &mi.vars.realOptimizeFinalConstraintsVars,
-        &mi.vars.paramVars, &mi.vars.aliasVars,
-        &mi.vars.intAlgVars, &mi.vars.intParamVars, &mi.vars.intAliasVars,
-        &mi.vars.boolAlgVars, &mi.vars.boolParamVars, &mi.vars.boolAliasVars,
-        &mi.vars.stringAlgVars, &mi.vars.stringParamVars, &mi.vars.stringAliasVars,
+        &mi.vars.stateVars,
+        &mi.vars.derivativeVars,
+        &mi.vars.algVars,
+        &mi.vars.discreteAlgVars,
+        &mi.vars.realOptimizeConstraintsVars,
+        &mi.vars.realOptimizeFinalConstraintsVars,
+        &mi.vars.paramVars,
+        &mi.vars.aliasVars,
+        &mi.vars.intAlgVars,
+        &mi.vars.intParamVars,
+        &mi.vars.intAliasVars,
+        &mi.vars.boolAlgVars,
+        &mi.vars.boolParamVars,
+        &mi.vars.boolAliasVars,
+        &mi.vars.stringAlgVars,
+        &mi.vars.stringParamVars,
+        &mi.vars.stringAliasVars,
         &mi.vars.sensitivityVars,
     ] {
         for sv in lst(list) {
@@ -87,9 +98,17 @@ pub(super) fn prof_plan(
     // C's `modelData` variable arrays, in `printModelInfo` order.
     let mut vars = Vec::new();
     for list in [
-        &mi.vars.stateVars, &mi.vars.derivativeVars, &mi.vars.algVars, &mi.vars.discreteAlgVars, &mi.vars.paramVars,
-        &mi.vars.intAlgVars, &mi.vars.intParamVars, &mi.vars.boolAlgVars, &mi.vars.boolParamVars,
-        &mi.vars.stringAlgVars, &mi.vars.stringParamVars,
+        &mi.vars.stateVars,
+        &mi.vars.derivativeVars,
+        &mi.vars.algVars,
+        &mi.vars.discreteAlgVars,
+        &mi.vars.paramVars,
+        &mi.vars.intAlgVars,
+        &mi.vars.intParamVars,
+        &mi.vars.boolAlgVars,
+        &mi.vars.boolParamVars,
+        &mi.vars.stringAlgVars,
+        &mi.vars.stringParamVars,
     ] {
         for sv in lst(list) {
             let name = cref_display(&sv.name)?;
@@ -108,12 +127,14 @@ pub(super) fn prof_plan(
     let mut note = |e: &metamodelica::Ref<SimCode::SimEqSystem>| {
         use SimCode::SimEqSystem as E;
         let entry = match &**e {
-            E::SES_LINEAR { lSystem, .. } => {
-                lst(&lSystem.vars).map(|v| cref_display(&v.name)).collect::<Result<Vec<_>>>().map(|d| (true, d))
-            }
-            E::SES_NONLINEAR { nlSystem, .. } => {
-                lst(&nlSystem.crefs).map(cref_display).collect::<Result<Vec<_>>>().map(|d| (true, d))
-            }
+            E::SES_LINEAR { lSystem, .. } => lst(&lSystem.vars)
+                .map(|v| cref_display(&v.name))
+                .collect::<Result<Vec<_>>>()
+                .map(|d| (true, d)),
+            E::SES_NONLINEAR { nlSystem, .. } => lst(&nlSystem.crefs)
+                .map(cref_display)
+                .collect::<Result<Vec<_>>>()
+                .map(|d| (true, d)),
             E::SES_SIMPLE_ASSIGN { cref, .. } | E::SES_SIMPLE_ASSIGN_CONSTRAINTS { cref, .. } => {
                 cref_display(cref).map(|d| (false, vec![d]))
             }
@@ -131,10 +152,18 @@ pub(super) fn prof_plan(
         }
     };
     for list in [
-        &sim_code.initialEquations, &sim_code.initialEquations_lambda0, &sim_code.removedInitialEquations,
-        &sim_code.allEquations, &sim_code.startValueEquations, &sim_code.nominalValueEquations,
-        &sim_code.minValueEquations, &sim_code.maxValueEquations, &sim_code.parameterEquations,
-        &sim_code.algorithmAndEquationAsserts, &sim_code.inlineEquations, &sim_code.jacobianEquations,
+        &sim_code.initialEquations,
+        &sim_code.initialEquations_lambda0,
+        &sim_code.removedInitialEquations,
+        &sim_code.allEquations,
+        &sim_code.startValueEquations,
+        &sim_code.nominalValueEquations,
+        &sim_code.minValueEquations,
+        &sim_code.maxValueEquations,
+        &sim_code.parameterEquations,
+        &sim_code.algorithmAndEquationAsserts,
+        &sim_code.inlineEquations,
+        &sim_code.jacobianEquations,
     ] {
         for e in lst(list) {
             visit_nested_eqs(e, &mut note);
@@ -160,12 +189,29 @@ pub(super) fn prof_plan(
             block_eqs.push(i as u32);
         }
     }
-    let plan = ProfPlan { level, n_functions: functions.len() as u32, n_blocks: block_eqs.len() as u32, fn_index, blocks };
-    Ok((Some(Arc::new(plan)), Some(ProfInfo { level, functions, vars, equations, blocks: block_eqs })))
+    let plan = ProfPlan {
+        level,
+        n_functions: functions.len() as u32,
+        n_blocks: block_eqs.len() as u32,
+        fn_index,
+        blocks,
+    };
+    Ok((
+        Some(Arc::new(plan)),
+        Some(ProfInfo {
+            level,
+            functions,
+            vars,
+            equations,
+            blocks: block_eqs,
+        }),
+    ))
 }
 
 /// `eqs` with everything [`visit_nested_eqs`] reaches appended.
-pub(super) fn eqs_with_nested(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Vec<metamodelica::Ref<SimCode::SimEqSystem>> {
+pub(super) fn eqs_with_nested(
+    eqs: &[metamodelica::Ref<SimCode::SimEqSystem>],
+) -> Vec<metamodelica::Ref<SimCode::SimEqSystem>> {
     let mut out = Vec::with_capacity(eqs.len());
     for e in eqs {
         visit_nested_eqs(e, &mut |i| out.push(i.clone()));
@@ -193,7 +239,11 @@ pub(super) fn collect_param_bindings(
         // dependencies that are still 0 (or a null handle). A *constant* binding reads
         // nothing, so it is stored regardless — C's `setAllParamsToStart`.
         if let Some(v) = &p.initialValue {
-            if !is_const_exp(v) && sim_cref_key(&p.name).map(|k| is_computed(&k, computed)).unwrap_or(false) {
+            if !is_const_exp(v)
+                && sim_cref_key(&p.name)
+                    .map(|k| is_computed(&k, computed))
+                    .unwrap_or(false)
+            {
                 continue;
             }
             out.push((p.name.clone(), v.clone()));
@@ -224,7 +274,9 @@ fn is_computed(key: &str, computed: &HashSet<String>) -> bool {
         if computed.contains(key) {
             return true;
         }
-        let Some(i) = key.strip_suffix(']').and_then(|k| k.rfind('[')) else { return false };
+        let Some(i) = key.strip_suffix(']').and_then(|k| k.rfind('[')) else {
+            return false;
+        };
         key = &key[..i];
     }
 }
@@ -249,14 +301,22 @@ pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]
                     add(componentRef);
                 }
             }
-            E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+            E::SES_LINEAR {
+                lSystem,
+                alternativeTearing,
+                ..
+            } => {
                 for s in std::iter::once(lSystem).chain(alternativeTearing.iter()) {
                     for v in lst(&s.vars) {
                         add(&v.name);
                     }
                 }
             }
-            E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+            E::SES_NONLINEAR {
+                nlSystem,
+                alternativeTearing,
+                ..
+            } => {
                 for s in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
                     for c in lst(&s.crefs) {
                         add(c);
@@ -269,9 +329,7 @@ pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]
                 }
             }
             E::SES_ALGORITHM { statements, .. } | E::SES_INVERSE_ALGORITHM { statements, .. } => {
-                let defs = openmodelica_frontend_base::Expression::extractUniqueCrefsFromStatmentS(
-                    &statements,
-                );
+                let defs = openmodelica_frontend_base::Expression::extractUniqueCrefsFromStatmentS(&statements);
                 if let Ok((defs, _)) = defs {
                     for c in lst(&defs) {
                         add(c);
@@ -288,7 +346,9 @@ pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]
 /// the `EVAL_*` stage mask it runs in. Mirrors C's `equationNames_` for
 /// `contextDAEmode`: an equation with no evaluation attributes inherits the preceding
 /// one's mask (C leaves `evalStages` unassigned there), starting from every stage.
-pub(super) fn dae_residual_equations(dae: &SimCode::DaeModeData) -> Vec<(metamodelica::Ref<SimCode::SimEqSystem>, u32)> {
+pub(super) fn dae_residual_equations(
+    dae: &SimCode::DaeModeData,
+) -> Vec<(metamodelica::Ref<SimCode::SimEqSystem>, u32)> {
     use openmodelica_sim_meta::driver::eval_stage as stage;
     let all = stage::DYNAMIC | stage::ALGEBRAIC | stage::ZEROCROSS | stage::DISCRETE;
     let mut stages = all;
@@ -302,7 +362,10 @@ pub(super) fn dae_residual_equations(dae: &SimCode::DaeModeData) -> Vec<(metamod
                     | (ev.algebraicEval as u32) * stage::ALGEBRAIC
                     | (ev.zerocrossEval as u32) * stage::ZEROCROSS
                     | (ev.discreteEval as u32) * stage::DISCRETE;
-                discrete = matches!(attr.kind, openmodelica_backend_types::BackendDAE::EquationKind::DISCRETE_EQUATION);
+                discrete = matches!(
+                    attr.kind,
+                    openmodelica_backend_types::BackendDAE::EquationKind::DISCRETE_EQUATION
+                );
             }
             // A discrete-kind equation runs in the discrete stage only.
             let stages = if discrete { stages & stage::DISCRETE } else { stages };
@@ -411,19 +474,24 @@ pub(super) fn has_method1_linear(sim_code: &SimCode::SimCode) -> bool {
     fn walk(e: &metamodelica::Ref<SimCode::SimEqSystem>) -> bool {
         use SimCode::SimEqSystem as E;
         match &**e {
-            E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+            E::SES_LINEAR {
+                lSystem,
+                alternativeTearing,
+                ..
+            } => {
                 lSystem.jacobianMatrix.is_some()
                     || alternativeTearing.as_ref().is_some_and(|a| a.jacobianMatrix.is_some())
                     || lst(&lSystem.residual).any(walk)
             }
-            E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
-                lst(&nlSystem.eqs).any(walk)
-                    || alternativeTearing.as_ref().is_some_and(|a| lst(&a.eqs).any(walk))
-            }
+            E::SES_NONLINEAR {
+                nlSystem,
+                alternativeTearing,
+                ..
+            } => lst(&nlSystem.eqs).any(walk) || alternativeTearing.as_ref().is_some_and(|a| lst(&a.eqs).any(walk)),
             E::SES_MIXED { cont, discEqs, .. } => walk(cont) || lst(discEqs).any(walk),
-            E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
-                lst(ifbranches).any(|(_, eqs)| lst(eqs).any(walk)) || lst(elsebranch).any(walk)
-            }
+            E::SES_IFEQUATION {
+                ifbranches, elsebranch, ..
+            } => lst(ifbranches).any(|(_, eqs)| lst(eqs).any(walk)) || lst(elsebranch).any(walk),
             _ => false,
         }
     }
@@ -439,21 +507,33 @@ pub(super) fn has_method1_linear(sim_code: &SimCode::SimCode) -> bool {
         &sim_code.inlineEquations,
     ];
     lists.iter().any(|l| lst(l).any(walk))
-        || lst(&sim_code.odeEquations).chain(lst(&sim_code.algebraicEquations)).any(|p| lst(p).any(walk))
-        || sim_code.daeModeData.as_ref().is_some_and(|d| lst(&d.daeEquations).any(|p| lst(p).any(walk)))
+        || lst(&sim_code.odeEquations)
+            .chain(lst(&sim_code.algebraicEquations))
+            .any(|p| lst(p).any(walk))
+        || sim_code
+            .daeModeData
+            .as_ref()
+            .is_some_and(|d| lst(&d.daeEquations).any(|p| lst(p).any(walk)))
 }
 
 /// Index `e` by its own index and recurse into nested equations (torn-system
 /// inner constraints, mixed cont/disc parts, if-branches), which an `SES_ALIAS`
 /// may target but which the top-level lists don't reach.
-pub(super) fn index_eq_recursive(e: &metamodelica::Ref<SimCode::SimEqSystem>, idx: &mut HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>) {
+pub(super) fn index_eq_recursive(
+    e: &metamodelica::Ref<SimCode::SimEqSystem>,
+    idx: &mut HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+) {
     use SimCode::SimEqSystem as E;
     let key = eq_index_of(e);
     if key >= 0 {
         idx.entry(key).or_insert_with(|| e.clone());
     }
     match &**e {
-        E::SES_LINEAR { lSystem, alternativeTearing, .. } => {
+        E::SES_LINEAR {
+            lSystem,
+            alternativeTearing,
+            ..
+        } => {
             let mut index_lin = |s: &metamodelica::Ref<SimCode::LinearSystem>, idx: &mut _| {
                 for inner in lst(&s.residual) {
                     index_eq_recursive(inner, idx);
@@ -467,7 +547,11 @@ pub(super) fn index_eq_recursive(e: &metamodelica::Ref<SimCode::SimEqSystem>, id
                 index_lin(alt, idx);
             }
         }
-        E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } => {
+        E::SES_NONLINEAR {
+            nlSystem,
+            alternativeTearing,
+            ..
+        } => {
             for inner in lst(&nlSystem.eqs) {
                 index_eq_recursive(inner, idx);
             }
@@ -483,7 +567,9 @@ pub(super) fn index_eq_recursive(e: &metamodelica::Ref<SimCode::SimEqSystem>, id
                 index_eq_recursive(inner, idx);
             }
         }
-        E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+        E::SES_IFEQUATION {
+            ifbranches, elsebranch, ..
+        } => {
             for (_, eqs) in lst(ifbranches) {
                 for inner in lst(eqs) {
                     index_eq_recursive(inner, idx);
@@ -505,14 +591,18 @@ pub(super) fn index_eq_recursive(e: &metamodelica::Ref<SimCode::SimEqSystem>, id
 /// something a later one uses (`TaskSystem_v2::add_node`). Reads of a dense
 /// linear system's `A`/`b` count as uses too; C's loader only sees a torn system's
 /// inner equations.
-pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -> Result<openmodelica_sim_meta::ParmodInfo> {
+pub(super) fn parmod_info(
+    ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>],
+) -> Result<openmodelica_sim_meta::ParmodInfo> {
     use SimCode::SimEqSystem as E;
     use openmodelica_frontend_base::{ComponentReference, Expression};
     fn name(cref: &metamodelica::Ref<DAE::ComponentRef>) -> Result<String> {
         Ok(ComponentReference::crefStr(cref)?.to_string())
     }
     fn uses(exp: &metamodelica::Ref<DAE::Exp>) -> Result<Vec<String>> {
-        lst(&Expression::extractUniqueCrefsFromExpDerPreStart(exp.clone(), true)?).map(name).collect()
+        lst(&Expression::extractUniqueCrefsFromExpDerPreStart(exp.clone(), true)?)
+            .map(name)
+            .collect()
     }
     fn unsupported(index: i32, what: &str) -> &'static str {
         Box::leak(format!("parmodauto: equation {index}: {what}").into_boxed_str())
@@ -525,7 +615,12 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
             | E::SES_FOR_LOOP { cref, exp, .. } => (Some(name(cref)?), exp),
             E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => (Some(name(&Expression::expCref(&lhs)?)?), exp),
             E::SES_RESIDUAL { exp, .. } => (None, exp),
-            other => return Err(unsupported(eq_index_of(other), "internal equation type not yet handled")),
+            other => {
+                return Err(unsupported(
+                    eq_index_of(other),
+                    "internal equation type not yet handled",
+                ));
+            }
         };
         match define {
             Some(d) => {
@@ -567,7 +662,11 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
                 lhs.extend(lst(&defs).map(name).collect::<Result<Vec<_>>>()?);
                 rhs.extend(lst(&used).map(name).collect::<Result<Vec<_>>>()?);
             }
-            E::SES_LINEAR { lSystem, alternativeTearing: None, .. } => {
+            E::SES_LINEAR {
+                lSystem,
+                alternativeTearing: None,
+                ..
+            } => {
                 for v in lst(&lSystem.vars) {
                     lhs.insert(name(&v.name)?);
                 }
@@ -583,7 +682,11 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
                     }
                 }
             }
-            E::SES_NONLINEAR { nlSystem, alternativeTearing: None, .. } => {
+            E::SES_NONLINEAR {
+                nlSystem,
+                alternativeTearing: None,
+                ..
+            } => {
                 for c in lst(&nlSystem.crefs) {
                     lhs.insert(name(c)?);
                 }
@@ -610,7 +713,10 @@ pub(super) fn parmod_info(ode_eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]) -
             .filter(|(_, (_, lhs, _))| rhs.iter().any(|u| lhs.contains(u)))
             .map(|(i, _)| i as u32)
             .collect();
-        tasks.push(openmodelica_sim_meta::ParmodTask { eq_index: *index, parents });
+        tasks.push(openmodelica_sim_meta::ParmodTask {
+            eq_index: *index,
+            parents,
+        });
     }
     Ok(openmodelica_sim_meta::ParmodInfo { tasks })
 }

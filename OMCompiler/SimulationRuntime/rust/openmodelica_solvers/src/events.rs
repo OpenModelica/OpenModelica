@@ -78,8 +78,9 @@ impl Bracket {
         if !accepted {
             ode.eval_zc(t_right, &self.y_right, &mut self.zc)?;
         }
-        self.event_ids =
-            (0..self.zc.len()).filter(|&i| sign(self.zc[i]) != sign(self.zc_pre[i])).collect();
+        self.event_ids = (0..self.zc.len())
+            .filter(|&i| sign(self.zc[i]) != sign(self.zc_pre[i]))
+            .collect();
         if self.event_ids.is_empty() {
             return Ok((None, accepted));
         }

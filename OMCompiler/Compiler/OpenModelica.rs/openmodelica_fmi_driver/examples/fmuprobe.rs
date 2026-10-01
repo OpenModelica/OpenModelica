@@ -16,12 +16,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut dir = std::path::PathBuf::from(&path);
     dir.set_extension("fmu.d");
     let (lib, resources) = ffi::open_fmu(&fmu, InterfaceKind::ModelExchange, &dir)?;
-    let mut inst = lib.instantiate_model_exchange(
-        &md.model_name,
-        &md.instantiation_token,
-        resources.as_deref(),
-        false,
-    )?;
+    let mut inst =
+        lib.instantiate_model_exchange(&md.model_name, &md.instantiation_token, resources.as_deref(), false)?;
 
     let e = md.default_experiment.unwrap_or_default();
     let start = numbers.first().copied().unwrap_or(e.start_time.unwrap_or(0.0));
@@ -103,7 +99,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut seed = vec![0.0; states.len()];
             seed[0] = 1.0;
             let mut out = vec![0.0; derivatives.len()];
-            if inst.get_directional_derivative(&derivatives, &states, &seed, &mut out).is_ok() {
+            if inst
+                .get_directional_derivative(&derivatives, &states, &seed, &mut out)
+                .is_ok()
+            {
                 let now = std::time::Instant::now();
                 for _ in 0..n {
                     inst.get_directional_derivative(&derivatives, &states, &seed, &mut out)?;

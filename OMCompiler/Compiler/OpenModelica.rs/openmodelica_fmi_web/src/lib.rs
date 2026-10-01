@@ -11,8 +11,7 @@
 //! sample values are read straight out of the recorder's buffer.
 
 use openmodelica_fmi::{
-    Causality, Dimension, FmiVersion, Fmu, Initial, InterfaceKind, ModelDescription, VarType,
-    Variability, Variable,
+    Causality, Dimension, FmiVersion, Fmu, Initial, InterfaceKind, ModelDescription, VarType, Variability, Variable,
 };
 use openmodelica_fmi_driver::api::{Fmi3CoSimulation, Fmi3ModelExchange};
 use openmodelica_fmi_driver::record::Recorder;
@@ -110,8 +109,14 @@ pub unsafe extern "C" fn om_fmi_load(ptr: *const u8, len: usize) -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi_select_component(kind: i32) -> i32 {
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
-        let kind = if kind == 1 { InterfaceKind::CoSimulation } else { InterfaceKind::ModelExchange };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
+        let kind = if kind == 1 {
+            InterfaceKind::CoSimulation
+        } else {
+            InterfaceKind::ModelExchange
+        };
         let Some(binary) = fmu.select_binary(kind, openmodelica_fmi::Preference::Wasm) else {
             return fail(format!("the FMU has no binary for {}", kind.as_str()));
         };
@@ -134,7 +139,9 @@ pub extern "C" fn om_fmi_select_component(kind: i32) -> i32 {
 pub unsafe extern "C" fn om_fmi_select_file(ptr: *const u8, len: usize) -> i32 {
     let name = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         match fmu.read(&name) {
             Some(bytes) => {
                 s.binary = bytes.into_owned();
@@ -150,7 +157,9 @@ pub unsafe extern "C" fn om_fmi_select_file(ptr: *const u8, len: usize) -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi_resource_names() -> i32 {
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         let names: Vec<&str> = fmu.resources().collect();
         set_out(serde_json::to_string(&names).unwrap_or_else(|_| "[]".into()));
         1
@@ -162,7 +171,9 @@ pub extern "C" fn om_fmi_resource_names() -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi_icon() -> i32 {
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         for name in ["terminalsAndIcons/icon.svg", "terminalsAndIcons/icon.png"] {
             if let Some(bytes) = fmu.read(name) {
                 s.binary = bytes.into_owned();
@@ -180,13 +191,21 @@ pub extern "C" fn om_fmi_icon() -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi_documentation() -> i32 {
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         let entry = ["documentation/index.html", "documentation/_main.html"]
             .into_iter()
             .find(|n| fmu.read(n).is_some());
-        let Some(entry) = entry else { return fail("the FMU carries no documentation") };
-        let files: Vec<&str> =
-            fmu.names().iter().map(String::as_str).filter(|n| n.starts_with("documentation/")).collect();
+        let Some(entry) = entry else {
+            return fail("the FMU carries no documentation");
+        };
+        let files: Vec<&str> = fmu
+            .names()
+            .iter()
+            .map(String::as_str)
+            .filter(|n| n.starts_with("documentation/"))
+            .collect();
         set_out(json!({"entry": entry, "files": files}).to_string());
         1
     })
@@ -207,7 +226,9 @@ pub extern "C" fn om_fmi_binary_len() -> usize {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi_info() -> i32 {
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         let info = describe(fmu);
         set_out(info.to_string());
         1
@@ -232,7 +253,9 @@ pub unsafe extern "C" fn om_fmi_run(ptr: *const u8, len: usize) -> i32 {
             Ok(v) => v,
             Err(e) => return fail(format!("the run options are not JSON: {e}")),
         };
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         match run(fmu, &options) {
             Ok(run) => {
                 s.run = Some(run);
@@ -249,21 +272,25 @@ pub unsafe extern "C" fn om_fmi_run(ptr: *const u8, len: usize) -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi_result() -> i32 {
     with(|s| {
-        let Some(run) = s.run.as_ref() else { return fail("nothing has been simulated") };
+        let Some(run) = s.run.as_ref() else {
+            return fail("nothing has been simulated");
+        };
         let columns = columns_json(&run.recorder)["columns"].clone();
         let parameters: Vec<Value> = run
             .recorder
             .parameters()
             .map(|(name, value)| json!({ "name": name, "value": value }))
             .collect();
-        set_out(json!({
-            "rows": run.recorder.len(),
-            "stride": run.recorder.stride(),
-            "columns": columns,
-            "parameters": parameters,
-            "summary": run.summary,
-        })
-        .to_string());
+        set_out(
+            json!({
+                "rows": run.recorder.len(),
+                "stride": run.recorder.stride(),
+                "columns": columns,
+                "parameters": parameters,
+                "summary": run.summary,
+            })
+            .to_string(),
+        );
         1
     })
 }
@@ -285,9 +312,13 @@ pub extern "C" fn om_fmi_rows_len() -> usize {
 pub unsafe extern "C" fn om_fmi_write_result(ptr: *const u8, len: usize) -> i32 {
     let path = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
     with(|s| {
-        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let Some(fmu) = s.fmu.as_ref() else {
+            return fail("no FMU is loaded");
+        };
         let units = fmu.model_description.units.clone();
-        let Some(run) = s.run.as_ref() else { return fail("nothing has been simulated") };
+        let Some(run) = s.run.as_ref() else {
+            return fail("nothing has been simulated");
+        };
         let (start, stop) = (
             run.summary["startTime"].as_f64().unwrap_or(0.0),
             run.summary["stopTime"].as_f64().unwrap_or(0.0),
@@ -403,7 +434,11 @@ fn describe(fmu: &Fmu) -> Value {
     let aliases: Value = md
         .variables
         .iter()
-        .flat_map(|v| v.aliases.iter().map(move |a| (a.name.clone(), Value::from(v.name.clone()))))
+        .flat_map(|v| {
+            v.aliases
+                .iter()
+                .map(move |a| (a.name.clone(), Value::from(v.name.clone())))
+        })
         .collect::<serde_json::Map<String, Value>>()
         .into();
     // What each unit converts into, for the page's display-unit switch.
@@ -414,12 +449,14 @@ fn describe(fmu: &Fmu) -> Value {
             let displays: Vec<Value> = u
                 .display_units
                 .iter()
-                .map(|d| json!({
-                    "name": d.name,
-                    "factor": d.factor,
-                    "offset": d.offset,
-                    "inverse": d.inverse,
-                }))
+                .map(|d| {
+                    json!({
+                        "name": d.name,
+                        "factor": d.factor,
+                        "offset": d.offset,
+                        "inverse": d.inverse,
+                    })
+                })
                 .collect();
             (u.name.clone(), Value::from(displays))
         })
@@ -463,9 +500,11 @@ fn describe(fmu: &Fmu) -> Value {
 
 fn figure_json(f: &openmodelica_fmi::Figure) -> Value {
     let axis = |a: &Option<openmodelica_fmi::Axis>| {
-        a.as_ref().map(|a| json!({
-            "label": a.label, "unit": a.unit, "min": a.min, "max": a.max, "log": a.log,
-        }))
+        a.as_ref().map(|a| {
+            json!({
+                "label": a.label, "unit": a.unit, "min": a.min, "max": a.max, "log": a.log,
+            })
+        })
     };
     json!({
         "title": f.title,
@@ -502,8 +541,7 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
     opts.tolerance = num("tolerance").filter(|t| *t > 0.0).or(opts.tolerance);
     opts.logging_on = o.get("loggingOn").and_then(Value::as_bool).unwrap_or(false);
     opts.event_mode = o.get("eventMode").and_then(Value::as_bool).unwrap_or(true);
-    opts.directional_derivatives =
-        o.get("directionalDerivatives").and_then(Value::as_bool).unwrap_or(true);
+    opts.directional_derivatives = o.get("directionalDerivatives").and_then(Value::as_bool).unwrap_or(true);
     opts.solver = o
         .get("solver")
         .and_then(Value::as_str)
@@ -512,22 +550,26 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
     opts.progress = Some(report_progress);
     opts.cancelled = Some(cancelled);
 
-    let variable_type = |vr: u64| -> VarType {
-        md.variable_by_vr(vr as u32).map(|v| v.ty).unwrap_or(VarType::Float64)
-    };
+    let variable_type = |vr: u64| -> VarType { md.variable_by_vr(vr as u32).map(|v| v.ty).unwrap_or(VarType::Float64) };
     // FMI sets an array whole: what the page sends must be as long as the variable.
     let check = |vr: u64, n: usize| -> Result<(), Error> {
-        let Some(v) = md.variable_by_vr(vr as u32) else { return Ok(()) };
+        let Some(v) = md.variable_by_vr(vr as u32) else {
+            return Ok(());
+        };
         let len = n_values(md, v);
         if n != len {
-            return Err(Error::Unsupported(format!("`{}` takes {len} value(s), not {n}", v.name)));
+            return Err(Error::Unsupported(format!(
+                "`{}` takes {len} value(s), not {n}",
+                v.name
+            )));
         }
         Ok(())
     };
     for p in o.get("parameters").and_then(Value::as_array).into_iter().flatten() {
-        let (Some(vr), Some(values)) =
-            (p.get("vr").and_then(Value::as_u64), p.get("values").and_then(Value::as_array))
-        else {
+        let (Some(vr), Some(values)) = (
+            p.get("vr").and_then(Value::as_u64),
+            p.get("values").and_then(Value::as_array),
+        ) else {
             continue;
         };
         let values: Vec<f64> = values.iter().filter_map(Value::as_f64).collect();
@@ -539,15 +581,20 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
         });
     }
     for i in o.get("inputs").and_then(Value::as_array).into_iter().flatten() {
-        let (Some(vr), Some(text)) =
-            (i.get("vr").and_then(Value::as_u64), i.get("expr").and_then(Value::as_str))
-        else {
+        let (Some(vr), Some(text)) = (
+            i.get("vr").and_then(Value::as_u64),
+            i.get("expr").and_then(Value::as_str),
+        ) else {
             continue;
         };
         let values = expr::Expr::parse_list(text)
             .map_err(|e| Error::Unsupported(format!("the input expression `{text}`: {e}")))?;
         check(vr, values.len())?;
-        opts.inputs.push(Input { value_reference: vr as u32, ty: variable_type(vr), values });
+        opts.inputs.push(Input {
+            value_reference: vr as u32,
+            ty: variable_type(vr),
+            values,
+        });
     }
     Ok(opts)
 }
@@ -597,14 +644,8 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
 
     match kind {
         InterfaceKind::CoSimulation => {
-            let event_mode =
-                opts.event_mode && md.interface(kind).is_some_and(|i| i.has_event_mode);
-            let mut inst = HostFmu::instantiate(
-                KIND_CO_SIMULATION,
-                event_mode,
-                true,
-                opts.logging_on,
-            )?;
+            let event_mode = opts.event_mode && md.interface(kind).is_some_and(|i| i.has_event_mode);
+            let mut inst = HostFmu::instantiate(KIND_CO_SIMULATION, event_mode, true, opts.logging_on)?;
             let r = cs::simulate(&mut inst as &mut dyn Fmi3CoSimulation, md, &opts)?;
             Ok(Run {
                 summary: json!({
@@ -630,13 +671,14 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
                 opts.dae = Some(match fmu.ls_dae_manifest() {
                     Some(Ok(m)) => m,
                     Some(Err(e)) => return Err(Error::Unsupported(format!("fmi-ls-dae manifest: {e}"))),
-                    None => return Err(Error::Unsupported(
-                        "DAE mode asks for fmi-ls-dae, which this FMU does not declare".to_string(),
-                    )),
+                    None => {
+                        return Err(Error::Unsupported(
+                            "DAE mode asks for fmi-ls-dae, which this FMU does not declare".to_string(),
+                        ));
+                    }
                 });
             }
-            let mut inst =
-                HostFmu::instantiate(KIND_MODEL_EXCHANGE, false, false, opts.logging_on)?;
+            let mut inst = HostFmu::instantiate(KIND_MODEL_EXCHANGE, false, false, opts.logging_on)?;
             let r = me::simulate(&mut inst as &mut dyn Fmi3ModelExchange, md, &opts)?;
             Ok(Run {
                 summary: json!({
@@ -657,8 +699,8 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
                 recorder: r.recorder,
             })
         }
-        InterfaceKind::ScheduledExecution => {
-            Err(Error::Unsupported("Scheduled Execution, which nothing drives yet".into()))
-        }
+        InterfaceKind::ScheduledExecution => Err(Error::Unsupported(
+            "Scheduled Execution, which nothing drives yet".into(),
+        )),
     }
 }

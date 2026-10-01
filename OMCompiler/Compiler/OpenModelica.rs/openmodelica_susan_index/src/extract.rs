@@ -21,18 +21,30 @@ pub struct SourceFiles {
 impl SourceFiles {
     pub fn scan(root: &Path) -> SourceFiles {
         let mut packages: HashMap<String, (String, Vec<PathBuf>)> = HashMap::new();
-        let Ok(crates) = std::fs::read_dir(root) else { return SourceFiles { packages } };
-        let mut crates: Vec<PathBuf> = crates.flatten().map(|e| e.path()).filter(|p| p.join("src").is_dir()).collect();
+        let Ok(crates) = std::fs::read_dir(root) else {
+            return SourceFiles { packages };
+        };
+        let mut crates: Vec<PathBuf> = crates
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.join("src").is_dir())
+            .collect();
         crates.sort();
         for c in crates {
             let krate = c.file_name().unwrap().to_string_lossy().into_owned();
-            let Ok(files) = std::fs::read_dir(c.join("src")) else { continue };
+            let Ok(files) = std::fs::read_dir(c.join("src")) else {
+                continue;
+            };
             let mut files: Vec<PathBuf> = files.flatten().map(|e| e.path()).filter(|p| p.is_file()).collect();
             files.sort();
             for f in files {
                 let name = f.file_name().unwrap().to_string_lossy().into_owned();
-                let Some(stem) = name.strip_suffix(".handwritten.rs").or(name.strip_suffix(".rs")) else { continue };
-                let e = packages.entry(stem.to_string()).or_insert_with(|| (krate.clone(), vec![]));
+                let Some(stem) = name.strip_suffix(".handwritten.rs").or(name.strip_suffix(".rs")) else {
+                    continue;
+                };
+                let e = packages
+                    .entry(stem.to_string())
+                    .or_insert_with(|| (krate.clone(), vec![]));
                 if e.0 == krate {
                     e.1.push(f);
                 }
@@ -77,7 +89,17 @@ fn is_path_prefix(s: &str) -> bool {
 
 fn generic_args(seg: &syn::PathSegment) -> Vec<&Type> {
     match &seg.arguments {
-        PathArguments::AngleBracketed(a) => a.args.iter().filter_map(|g| if let GenericArgument::Type(t) = g { Some(t) } else { None }).collect(),
+        PathArguments::AngleBracketed(a) => a
+            .args
+            .iter()
+            .filter_map(|g| {
+                if let GenericArgument::Type(t) = g {
+                    Some(t)
+                } else {
+                    None
+                }
+            })
+            .collect(),
         _ => vec![],
     }
 }
@@ -91,7 +113,9 @@ fn map_ty(t: &Type, sc: &Scope) -> Result<Ty, String> {
         Type::Reference(r) => map_ty(&r.elem, sc),
         Type::Paren(p) => map_ty(&p.elem, sc),
         Type::Tuple(tp) if tp.elems.is_empty() => Ok(Ty::Unit),
-        Type::Tuple(tp) => Ok(Ty::Tuple(tp.elems.iter().map(|e| map_ty(e, sc)).collect::<Result<_, _>>()?)),
+        Type::Tuple(tp) => Ok(Ty::Tuple(
+            tp.elems.iter().map(|e| map_ty(e, sc)).collect::<Result<_, _>>()?,
+        )),
         Type::ImplTrait(i) if quote::quote!(#i).to_string().replace(' ', "").contains("AsRef<str>") => Ok(Ty::String),
         Type::TraitObject(_) | Type::ImplTrait(_) => Ok(Ty::FuncPtr),
         Type::Path(p) if p.qself.is_none() => {
@@ -145,7 +169,11 @@ fn map_ty(t: &Type, sc: &Scope) -> Result<Ty, String> {
                 1 => format!("{}.{}", sc.pkg, parts[0]),
                 _ => parts.join("."),
             };
-            Ok(if args.is_empty() { Ty::Named(name) } else { Ty::Generic(name, args) })
+            Ok(if args.is_empty() {
+                Ty::Named(name)
+            } else {
+                Ty::Generic(name, args)
+            })
         }
         _ => Err(format!("type {}", quote::quote!(#t))),
     }
@@ -207,7 +235,12 @@ fn collect(
             }
         }
     }
-    let sc = Scope { pkg, tyvars: HashSet::new(), mods: &mods, uses: &uses };
+    let sc = Scope {
+        pkg,
+        tyvars: HashSet::new(),
+        mods: &mods,
+        uses: &uses,
+    };
     let mut own_skips = Vec::new();
     let mut skip = |n: &str, why: String| own_skips.push(format!("{pkg}.{prefix}{n}: {why}"));
     let fields = |fs: &syn::Fields| -> Result<Vec<Field>, String> {
@@ -217,7 +250,11 @@ fn collect(
                 .iter()
                 .map(|f| {
                     let id = f.ident.as_ref().unwrap().to_string();
-                    Ok(Field { name: unraw(&id), rust: id, ty: map_ty(&f.ty, &sc)? })
+                    Ok(Field {
+                        name: unraw(&id),
+                        rust: id,
+                        ty: map_ty(&f.ty, &sc)?,
+                    })
                 })
                 .collect(),
             syn::Fields::Unit => Ok(vec![]),
@@ -235,7 +272,14 @@ fn collect(
                 match fields(&s.fields) {
                     Ok(fs) => {
                         let rec = record_name.get(&n).cloned().unwrap_or(n.clone());
-                        out.types.push((n.clone(), TypeDef::Union { rust: format!("{prefix}{n}"), is_struct: true, records: vec![Record { name: rec, fields: fs }] }));
+                        out.types.push((
+                            n.clone(),
+                            TypeDef::Union {
+                                rust: format!("{prefix}{n}"),
+                                is_struct: true,
+                                records: vec![Record { name: rec, fields: fs }],
+                            },
+                        ));
                     }
                     Err(e) => skip(&n, e),
                 }
@@ -246,10 +290,25 @@ fn collect(
                     skip(&n, "generic enum".into());
                     continue;
                 }
-                let recs: Result<Vec<Record>, String> =
-                    e.variants.iter().map(|v| Ok(Record { name: v.ident.to_string(), fields: fields(&v.fields)? })).collect();
+                let recs: Result<Vec<Record>, String> = e
+                    .variants
+                    .iter()
+                    .map(|v| {
+                        Ok(Record {
+                            name: v.ident.to_string(),
+                            fields: fields(&v.fields)?,
+                        })
+                    })
+                    .collect();
                 match recs {
-                    Ok(records) => out.types.push((n.clone(), TypeDef::Union { rust: format!("{prefix}{n}"), is_struct: false, records })),
+                    Ok(records) => out.types.push((
+                        n.clone(),
+                        TypeDef::Union {
+                            rust: format!("{prefix}{n}"),
+                            is_struct: false,
+                            records,
+                        },
+                    )),
                     Err(er) => skip(&n, er),
                 }
             }
@@ -265,17 +324,33 @@ fn collect(
             }
             Item::Const(c) if visible(&c.vis).is_some() => match map_ty(&c.ty, &sc) {
                 Ok(ty) => {
-                    let access = if matches!(&*c.ty, Type::Reference(_)) && ty == Ty::String { ConstAccess::Str } else { ConstAccess::Value };
-                    out.constants.push((c.ident.to_string(), Constant { rust: c.ident.to_string(), ty, access }))
+                    let access = if matches!(&*c.ty, Type::Reference(_)) && ty == Ty::String {
+                        ConstAccess::Str
+                    } else {
+                        ConstAccess::Value
+                    };
+                    out.constants.push((
+                        c.ident.to_string(),
+                        Constant {
+                            rust: c.ident.to_string(),
+                            ty,
+                            access,
+                        },
+                    ))
                 }
                 Err(e) => skip(&c.ident.to_string(), e),
             },
             Item::Static(c) if visible(&c.vis).is_some() => {
-                let lazy = matches!(&*c.ty, Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "LazyLock"));
+                let lazy =
+                    matches!(&*c.ty, Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "LazyLock"));
                 match map_ty(&c.ty, &sc) {
                     Ok(ty) => out.constants.push((
                         c.ident.to_string(),
-                        Constant { rust: c.ident.to_string(), ty, access: if lazy { ConstAccess::Deref } else { ConstAccess::Value } },
+                        Constant {
+                            rust: c.ident.to_string(),
+                            ty,
+                            access: if lazy { ConstAccess::Deref } else { ConstAccess::Value },
+                        },
                     )),
                     Err(e) => skip(&c.ident.to_string(), e),
                 }
@@ -285,7 +360,12 @@ fn collect(
                 let rust = f.sig.ident.to_string();
                 let n = unraw(&rust);
                 let tyvars: Vec<String> = f.sig.generics.type_params().map(|p| p.ident.to_string()).collect();
-                let fsc = Scope { pkg, tyvars: tyvars.iter().cloned().collect(), mods: &mods, uses: &uses };
+                let fsc = Scope {
+                    pkg,
+                    tyvars: tyvars.iter().cloned().collect(),
+                    mods: &mods,
+                    uses: &uses,
+                };
                 let (ret, fallible) = match &f.sig.output {
                     ReturnType::Default => (None, false),
                     ReturnType::Type(_, t) => match &**t {
@@ -314,17 +394,39 @@ fn collect(
                                 _ => "_".into(),
                             };
                             let borrowed = matches!(&*pt.ty, Type::Reference(_) | Type::ImplTrait(_));
-                            Ok(Param { name, ty: map_ty(&pt.ty, &fsc)?, borrowed })
+                            Ok(Param {
+                                name,
+                                ty: map_ty(&pt.ty, &fsc)?,
+                                borrowed,
+                            })
                         }
                         FnArg::Receiver(_) => Err("method".into()),
                     })
                     .collect();
                 match (params, outs) {
                     (Ok(params), Ok(outs)) => {
-                        if params.is_empty() && outs.len() == 1 && (f.sig.constness.is_some() || reads_thread_local(f)) {
-                            out.constants.push((n, Constant { rust, ty: outs[0].clone(), access: ConstAccess::Call }));
+                        if params.is_empty() && outs.len() == 1 && (f.sig.constness.is_some() || reads_thread_local(f))
+                        {
+                            out.constants.push((
+                                n,
+                                Constant {
+                                    rust,
+                                    ty: outs[0].clone(),
+                                    access: ConstAccess::Call,
+                                },
+                            ));
                         } else {
-                            out.functions.push((n, Function { rust, tyvars, params, outs, fallible, public }));
+                            out.functions.push((
+                                n,
+                                Function {
+                                    rust,
+                                    tyvars,
+                                    params,
+                                    outs,
+                                    fallible,
+                                    public,
+                                },
+                            ));
                         }
                     }
                     (Err(e), _) | (_, Err(e)) => skip(&n, e),
@@ -368,16 +470,29 @@ pub fn extract_builtins(root: &Path, report: &mut Vec<String>) -> Package {
     let mut col = Collected::default();
     let mut skipped = vec![];
     for f in files {
-        let Ok(code) = std::fs::read_to_string(&f) else { continue };
+        let Ok(code) = std::fs::read_to_string(&f) else {
+            continue;
+        };
         match syn::parse_file(&code) {
             Ok(file) => {
                 let fns: Vec<Item> = file.items.into_iter().filter(|i| matches!(i, Item::Fn(_))).collect();
-                collect(&fns, "builtin", "", &HashMap::new(), &HashSet::new(), &mut col, &mut skipped);
+                collect(
+                    &fns,
+                    "builtin",
+                    "",
+                    &HashMap::new(),
+                    &HashSet::new(),
+                    &mut col,
+                    &mut skipped,
+                );
             }
             Err(e) => report.push(format!("{}: parse error {e}", f.display())),
         }
     }
-    let mut pkg = Package { krate: "metamodelica".into(), ..Default::default() };
+    let mut pkg = Package {
+        krate: "metamodelica".into(),
+        ..Default::default()
+    };
     for (n, f) in col.functions {
         if f.public {
             pkg.functions.entry(n).or_insert(f);
@@ -408,7 +523,9 @@ pub fn extract(files: &SourceFiles, packages: &[String]) -> (Index, Vec<String>)
     names.sort();
     names.dedup();
     for name in names {
-        let Some((krate, paths)) = files.packages.get(name) else { continue };
+        let Some((krate, paths)) = files.packages.get(name) else {
+            continue;
+        };
         let mut col = Collected::default();
         for f in paths {
             let code = match std::fs::read_to_string(f) {
@@ -419,11 +536,22 @@ pub fn extract(files: &SourceFiles, packages: &[String]) -> (Index, Vec<String>)
                 }
             };
             match syn::parse_file(&code) {
-                Ok(file) => collect(&file.items, name, "", &HashMap::new(), &HashSet::new(), &mut col, &mut report),
+                Ok(file) => collect(
+                    &file.items,
+                    name,
+                    "",
+                    &HashMap::new(),
+                    &HashSet::new(),
+                    &mut col,
+                    &mut report,
+                ),
                 Err(e) => report.push(format!("{}: parse error {e}", f.display())),
             }
         }
-        let mut pkg = Package { krate: krate.clone(), ..Default::default() };
+        let mut pkg = Package {
+            krate: krate.clone(),
+            ..Default::default()
+        };
         for (n, t) in col.types {
             pkg.types.entry(n).or_insert(t);
         }
@@ -439,7 +567,10 @@ pub fn extract(files: &SourceFiles, packages: &[String]) -> (Index, Vec<String>)
     for p in idx.packages.values() {
         for t in p.types.values() {
             match t {
-                TypeDef::Union { records, .. } => records.iter().flat_map(|r| &r.fields).for_each(|f| count_boxing(&f.ty, false, &mut counts)),
+                TypeDef::Union { records, .. } => records
+                    .iter()
+                    .flat_map(|r| &r.fields)
+                    .for_each(|f| count_boxing(&f.ty, false, &mut counts)),
                 TypeDef::Alias(t) => count_boxing(t, false, &mut counts),
             }
         }

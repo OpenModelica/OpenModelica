@@ -144,7 +144,12 @@ impl Transposed {
                 *slot += 1;
             }
         }
-        Some(Transposed { ap, ai, perm, ax: alloc::vec![0.0f64; nnz] })
+        Some(Transposed {
+            ap,
+            ai,
+            perm,
+            ax: alloc::vec![0.0f64; nnz],
+        })
     }
 
     fn gather(&mut self, values: *const f64) {
@@ -209,16 +214,36 @@ pub(crate) mod umfpack {
     unsafe extern "C" {
         fn umfpack_di_defaults(control: *mut f64);
         fn umfpack_di_symbolic(
-            n_row: i32, n_col: i32, ap: *const i32, ai: *const i32, ax: *const f64,
-            symbolic: *mut *mut c_void, control: *const f64, info: *mut f64,
+            n_row: i32,
+            n_col: i32,
+            ap: *const i32,
+            ai: *const i32,
+            ax: *const f64,
+            symbolic: *mut *mut c_void,
+            control: *const f64,
+            info: *mut f64,
         ) -> i32;
         fn umfpack_di_numeric(
-            ap: *const i32, ai: *const i32, ax: *const f64, symbolic: *mut c_void,
-            numeric: *mut *mut c_void, control: *const f64, info: *mut f64,
+            ap: *const i32,
+            ai: *const i32,
+            ax: *const f64,
+            symbolic: *mut c_void,
+            numeric: *mut *mut c_void,
+            control: *const f64,
+            info: *mut f64,
         ) -> i32;
         fn umfpack_di_wsolve(
-            sys: i32, ap: *const i32, ai: *const i32, ax: *const f64, x: *mut f64, b: *const f64,
-            numeric: *mut c_void, control: *const f64, info: *mut f64, wi: *mut i32, w: *mut f64,
+            sys: i32,
+            ap: *const i32,
+            ai: *const i32,
+            ax: *const f64,
+            x: *mut f64,
+            b: *const f64,
+            numeric: *mut c_void,
+            control: *const f64,
+            info: *mut f64,
+            wi: *mut i32,
+            w: *mut f64,
         ) -> i32;
         fn umfpack_di_free_symbolic(symbolic: *mut *mut c_void);
         fn umfpack_di_free_numeric(numeric: *mut *mut c_void);
@@ -270,8 +295,14 @@ pub(crate) mod umfpack {
             if self.symbolic.is_null() {
                 status = unsafe {
                     umfpack_di_symbolic(
-                        n as i32, n as i32, ap, ai, ax,
-                        &mut self.symbolic, self.control.as_ptr(), self.info.as_mut_ptr(),
+                        n as i32,
+                        n as i32,
+                        ap,
+                        ai,
+                        ax,
+                        &mut self.symbolic,
+                        self.control.as_ptr(),
+                        self.info.as_mut_ptr(),
                     )
                 };
             }
@@ -281,17 +312,30 @@ pub(crate) mod umfpack {
             if status == OK {
                 status = unsafe {
                     umfpack_di_numeric(
-                        ap, ai, ax, self.symbolic, &mut self.numeric,
-                        self.control.as_ptr(), self.info.as_mut_ptr(),
+                        ap,
+                        ai,
+                        ax,
+                        self.symbolic,
+                        &mut self.numeric,
+                        self.control.as_ptr(),
+                        self.info.as_mut_ptr(),
                     )
                 };
             }
             if status == OK {
                 status = unsafe {
                     umfpack_di_wsolve(
-                        SYS_AAT, ap, ai, ax, self.x.as_mut_ptr(), b, self.numeric,
-                        self.control.as_ptr(), self.info.as_mut_ptr(),
-                        self.wi.as_mut_ptr(), self.w.as_mut_ptr(),
+                        SYS_AAT,
+                        ap,
+                        ai,
+                        ax,
+                        self.x.as_mut_ptr(),
+                        b,
+                        self.numeric,
+                        self.control.as_ptr(),
+                        self.info.as_mut_ptr(),
+                        self.wi.as_mut_ptr(),
+                        self.w.as_mut_ptr(),
                     )
                 };
             }
@@ -339,7 +383,15 @@ pub(crate) fn reset_caches() {
 /// KLU solve of the CSC system `A x = b` (`b ← x`), reusing `handle`'s symbolic
 /// analysis. 0 solved, 1 singular.
 #[cfg(sundials)]
-pub(crate) fn klu_solve_cached(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: usize, nnz: usize) -> i32 {
+pub(crate) fn klu_solve_cached(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: usize,
+    nnz: usize,
+) -> i32 {
     KLU_CACHE.with(|cell| {
         let mut cache = cell.borrow_mut();
         let entry = match cache.entry(handle) {
@@ -360,7 +412,15 @@ pub(crate) fn klu_solve_cached(handle: u32, colptr: u32, rowidx: u32, values: u3
 /// UMFPACK solve of the CSC system `A x = b` (`b ← x`), reusing `handle`'s
 /// pre-ordering. 0 solved, 1 not.
 #[cfg(sundials)]
-pub(crate) fn umfpack_solve_cached(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: usize, nnz: usize) -> i32 {
+pub(crate) fn umfpack_solve_cached(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: usize,
+    nnz: usize,
+) -> i32 {
     UMFPACK_CACHE.with(|cell| {
         let mut cache = cell.borrow_mut();
         let entry = match cache.entry(handle) {
@@ -418,7 +478,9 @@ pub(crate) fn klu_solve_dense(a_ptr: u32, b_ptr: u32, n: usize) -> i32 {
 pub(crate) fn umfpack_solve_dense(a_ptr: u32, b_ptr: u32, n: usize) -> i32 {
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
     let (colptr, rowidx, values) = csc_from_dense(a, n);
-    let Some(mut s) = umfpack::Solver::new(n, &colptr, &rowidx) else { return 2 };
+    let Some(mut s) = umfpack::Solver::new(n, &colptr, &rowidx) else {
+        return 2;
+    };
     match s.solve(values.as_ptr(), b_ptr as *mut f64, n) {
         0 => 0,
         umfpack::WARNING_SINGULAR_MATRIX => 1,
@@ -430,6 +492,4 @@ pub(crate) fn umfpack_solve_dense(a_ptr: u32, b_ptr: u32, n: usize) -> i32 {
 // `openmodelica_nls::kinsol`, shared with `openmodelica_simulation_runtime`: the
 // binding exchanges plain slices, so both runtimes drive the same one.
 #[cfg(sundials)]
-pub(crate) use openmodelica_nls::kinsol::{
-    b_solve as kinsol_b_solve, solve_selected as kinsol_solve_selected,
-};
+pub(crate) use openmodelica_nls::kinsol::{b_solve as kinsol_b_solve, solve_selected as kinsol_solve_selected};

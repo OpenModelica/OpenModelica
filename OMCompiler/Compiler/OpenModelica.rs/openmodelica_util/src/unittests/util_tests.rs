@@ -9,11 +9,11 @@
 //   - realRangeSize: missing parentheses → `inStart/inStep` subtracted from `inStop`
 //                    instead of `(inStop-inStart)/inStep`
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::Util as U;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── boolInt ───────────────────────────────────────────────────────────────────
 
@@ -442,7 +442,10 @@ fn test_remove_last_n_char() -> Result<()> {
 fn test_remove_last_3_char_too_short_errors() {
     // substring(s, 1, len-3) with len < 3 → stop < start (or stop < 1) → error
     let result = U::removeLast3Char(literal!("ab"));
-    assert!(result.is_err(), "removeLast3Char('ab') should error: substring stop < 1");
+    assert!(
+        result.is_err(),
+        "removeLast3Char('ab') should error: substring stop < 1"
+    );
 }
 
 // ── swap ─────────────────────────────────────────────────────────────────────
@@ -495,29 +498,25 @@ fn test_get_option_or_default() {
 
 #[test]
 fn test_option_equal_both_none() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
     assert!(U::optionEqual(None::<i32>, None::<i32>, &*eq_fn).unwrap());
 }
 
 #[test]
 fn test_option_equal_both_some_equal() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
     assert!(U::optionEqual(Some(5i32), Some(5i32), &*eq_fn).unwrap());
 }
 
 #[test]
 fn test_option_equal_both_some_not_equal() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
     assert!(!U::optionEqual(Some(5i32), Some(6i32), &*eq_fn).unwrap());
 }
 
 #[test]
 fn test_option_equal_one_none() {
-    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
-        Arc::new(|a, b| Ok(a == b));
+    let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> = Arc::new(|a, b| Ok(a == b));
     assert!(!U::optionEqual(Some(5i32), None, &*eq_fn).unwrap());
     assert!(!U::optionEqual(None, Some(5i32), &*eq_fn).unwrap());
 }
@@ -617,10 +616,7 @@ fn test_select_first_non_empty_nil() {
 
 #[test]
 fn test_flag_value_found() -> Result<()> {
-    let args = list![
-        literal!("-d"), literal!("debug"),
-        literal!("-s"), literal!("output.mo")
-    ];
+    let args = list![literal!("-d"), literal!("debug"), literal!("-s"), literal!("output.mo")];
     assert_eq!(U::flagValue(&literal!("-s"), args)?, literal!("output.mo"));
     Ok(())
 }
@@ -687,11 +683,7 @@ fn test_mul_list_integer_opt_empty() -> Result<()> {
 
 #[test]
 fn test_assoc_found() -> Result<()> {
-    let pairs = list![
-        (literal!("a"), 1i32),
-        (literal!("b"), 2i32),
-        (literal!("c"), 3i32)
-    ];
+    let pairs = list![(literal!("a"), 1i32), (literal!("b"), 2i32), (literal!("c"), 3i32)];
     assert_eq!(U::assoc(literal!("b"), pairs)?, 2);
     Ok(())
 }
@@ -706,7 +698,10 @@ fn test_assoc_first() -> Result<()> {
 #[test]
 fn test_assoc_not_found_errors() {
     let pairs = list![(literal!("a"), 1i32)];
-    assert!(U::assoc(literal!("z"), pairs).is_err(), "assoc should error when key not found");
+    assert!(
+        U::assoc(literal!("z"), pairs).is_err(),
+        "assoc should error when key not found"
+    );
 }
 
 // ── replace ───────────────────────────────────────────────────────────────────
@@ -782,8 +777,10 @@ fn test_string_contains_char_at_end_is_buggy() -> Result<()> {
     // delimiter is the last char. So stringSplitAtChar("hello", "o") = ["hell"] (1 element).
     // The pattern match requires >=2 elements (_::_::_), so returns false.
     // Expected: true ("o" IS in "hello"). Actual (buggy): false.
-    assert!(U::stringContainsChar(literal!("hello"), literal!("o"))?,
-        "BUG: 'o' is in 'hello' but stringContainsChar returns false when char is last");
+    assert!(
+        U::stringContainsChar(literal!("hello"), literal!("o"))?,
+        "BUG: 'o' is in 'hello' but stringContainsChar returns false when char is last"
+    );
     Ok(())
 }
 
@@ -805,7 +802,9 @@ fn test_string_contains_char_dot() -> Result<()> {
 
 fn list_to_vec(lst: metamodelica::List<ArcStr>) -> Vec<String> {
     let mut v = vec![];
-    for s in &*lst { v.push(s.to_string()); }
+    for s in &*lst {
+        v.push(s.to_string());
+    }
     v
 }
 

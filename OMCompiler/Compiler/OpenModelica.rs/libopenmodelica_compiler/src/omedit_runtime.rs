@@ -84,10 +84,7 @@ unsafe fn dup_cstr(s: &str) -> *mut c_char {
 /// Open a MATLAB v4 result file. Returns null on success (populating `reader`),
 /// or a borrowed error string on failure, matching the C ABI.
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_new_matlab4_reader(
-    filename: *const c_char,
-    reader: *mut ModelicaMatReader,
-) -> *const c_char {
+pub extern "C" fn omc_new_matlab4_reader(filename: *const c_char, reader: *mut ModelicaMatReader) -> *const c_char {
     let fname = unsafe { CStr::from_ptr(filename) }.to_string_lossy().into_owned();
     match catch_unwind(|| MatReader::open(&fname)) {
         Ok(Ok(mut mr)) => {
@@ -101,10 +98,13 @@ pub extern "C" fn omc_new_matlab4_reader(
                     index: v.index,
                 })
                 .collect();
-            let (nall, nparam, nvar, nrows) =
-                (vars.len() as u32, mr.nparam as u32, mr.nvar as u32, mr.nrows as u32);
+            let (nall, nparam, nvar, nrows) = (vars.len() as u32, mr.nparam as u32, mr.nvar as u32, mr.nrows as u32);
             let (start, stop) = (mr.start_time(), mr.stop_time());
-            let state = Box::new(ReaderState { reader: mr, vars, cached: HashMap::new() });
+            let state = Box::new(ReaderState {
+                reader: mr,
+                vars,
+                cached: HashMap::new(),
+            });
             let p = Box::into_raw(state);
             // Populate exactly the fields consumers read directly; the rest is
             // reached only through the accessor functions (which use `file`).
@@ -199,7 +199,9 @@ pub extern "C" fn omc_matlab4_find_var(
     reader: *mut ModelicaMatReader,
     var_name: *const c_char,
 ) -> *mut ModelicaMatVariable_t {
-    let Some(st) = (unsafe { state(reader) }) else { return ptr::null_mut() };
+    let Some(st) = (unsafe { state(reader) }) else {
+        return ptr::null_mut();
+    };
     let name = unsafe { CStr::from_ptr(var_name) }.to_string_lossy();
     match st.reader.find_var(&name) {
         Some(i) => &mut st.vars[i] as *mut ModelicaMatVariable_t,
@@ -210,11 +212,10 @@ pub extern "C" fn omc_matlab4_find_var(
 /// Read a whole column trajectory by data index. Returns a reader-owned
 /// `double*` (cached; the caller must not free it), or null.
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_matlab4_read_vals(
-    reader: *mut ModelicaMatReader,
-    var_index: c_int,
-) -> *mut c_double {
-    let Some(st) = (unsafe { state(reader) }) else { return ptr::null_mut() };
+pub extern "C" fn omc_matlab4_read_vals(reader: *mut ModelicaMatReader, var_index: c_int) -> *mut c_double {
+    let Some(st) = (unsafe { state(reader) }) else {
+        return ptr::null_mut();
+    };
     if !st.cached.contains_key(&var_index) {
         let vals = st.reader.read_vals(var_index).unwrap_or_default();
         st.cached.insert(var_index, vals);
@@ -237,8 +238,7 @@ pub extern "C" fn omc_matlab4_val(
     }
     // `var` points into `st.vars`; recover its index by offset.
     let base = st.vars.as_ptr();
-    let i = (var as usize).wrapping_sub(base as usize)
-        / std::mem::size_of::<ModelicaMatVariable_t>();
+    let i = (var as usize).wrapping_sub(base as usize) / std::mem::size_of::<ModelicaMatVariable_t>();
     if i >= st.vars.len() {
         return 1;
     }

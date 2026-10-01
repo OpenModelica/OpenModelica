@@ -18,8 +18,8 @@ use std::cell::RefCell;
 use std::fs::OpenOptions;
 use std::io::Write as _;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 #[derive(Default)]
 struct PrintState {
@@ -229,7 +229,11 @@ pub fn writeBufConvertLines(filename: ArcStr) -> Result<()> {
     let mut out = String::with_capacity(contents.len() + contents.len() / 8);
     // On Windows the C opens the file in text mode ("wt"), so backslashes in
     // the name are normalised to keep #line paths compileable.
-    let own_name = if cfg!(windows) { filename.replace('\\', "/") } else { filename.to_string() };
+    let own_name = if cfg!(windows) {
+        filename.replace('\\', "/")
+    } else {
+        filename.to_string()
+    };
     let own_name = if std::env::var_os("OPENMODELICA_BACKEND_STUBS").is_some() {
         std::path::Path::new(&own_name)
             .file_name()
@@ -256,7 +260,11 @@ pub fn writeBufConvertLines(filename: ArcStr) -> Result<()> {
         let (line, tail) = rest.split_at(nl);
         rest = &tail[1..];
         if let Some((file, line_no)) = parse_modelica_line_marker(line) {
-            let file = if cfg!(windows) { file.replace('\\', "/") } else { file.to_string() };
+            let file = if cfg!(windows) {
+                file.replace('\\', "/")
+            } else {
+                file.to_string()
+            };
             region = Some((file, line_no));
         } else if is_end_modelica_line_marker(line) {
             // Sometimes there is an #endModelicaLine without a matching

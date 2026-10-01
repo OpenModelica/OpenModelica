@@ -22,7 +22,10 @@ impl Literals {
         bytes.hash(&mut h);
         let key = (h.finish(), bytes.len());
         let offsets = self.seen.entry(key).or_default();
-        if let Some(&off) = offsets.iter().find(|&&o| self.blob[o as usize..][..bytes.len()] == *bytes) {
+        if let Some(&off) = offsets
+            .iter()
+            .find(|&&o| self.blob[o as usize..][..bytes.len()] == *bytes)
+        {
             return off;
         }
         let off = self.blob.len() as u32;
@@ -422,11 +425,17 @@ impl SlotMap {
     }
 
     pub(crate) fn with_overlay(&self, overlay: Arc<HashMap<String, SimSlot>>) -> Self {
-        SlotMap { model: self.model.clone(), overlay: Some(overlay) }
+        SlotMap {
+            model: self.model.clone(),
+            overlay: Some(overlay),
+        }
     }
 
     pub(crate) fn get(&self, key: &str) -> Option<&SimSlot> {
-        self.overlay.as_ref().and_then(|o| o.get(key)).or_else(|| self.model.get(key))
+        self.overlay
+            .as_ref()
+            .and_then(|o| o.get(key))
+            .or_else(|| self.model.get(key))
     }
 
     pub(crate) fn contains_key(&self, key: &str) -> bool {
@@ -508,11 +517,15 @@ impl<'a> FnCtx<'a> {
     /// dim word, the array handle being below both on the stack.
     fn set_dim_inline(&mut self) -> bool {
         let n = self.instrs.len();
-        let (Some(we::Instruction::I32Const(axis)), Some(size)) = (self.instrs.get(n.wrapping_sub(2)), self.instrs.get(n.wrapping_sub(1)))
+        let (Some(we::Instruction::I32Const(axis)), Some(size)) =
+            (self.instrs.get(n.wrapping_sub(2)), self.instrs.get(n.wrapping_sub(1)))
         else {
             return false;
         };
-        let simple = matches!(size, we::Instruction::LocalGet(_) | we::Instruction::I32Const(_) | we::Instruction::GlobalGet(_));
+        let simple = matches!(
+            size,
+            we::Instruction::LocalGet(_) | we::Instruction::I32Const(_) | we::Instruction::GlobalGet(_)
+        );
         if !simple || *axis < 0 {
             return false;
         }
@@ -561,11 +574,7 @@ impl<'a> FnCtx<'a> {
     /// `sim` rather than wasm locals. `by_name` resolves calls to model
     /// functions (Modelica functions used by the equations); `literals` is the
     /// module-wide String-literal pool.
-    pub(crate) fn new_sim(
-        sim: SimCtx,
-        by_name: &'a HashMap<String, FnInfo>,
-        literals: &'a mut Literals,
-    ) -> Self {
+    pub(crate) fn new_sim(sim: SimCtx, by_name: &'a HashMap<String, FnInfo>, literals: &'a mut Literals) -> Self {
         Self::new_sim_params(sim, by_name, literals, 1)
     }
 
@@ -745,7 +754,10 @@ impl<'a> FnCtx<'a> {
                 }
                 None => self.emit(we::Instruction::F64Const(0.0.into())),
             }
-            self.emit(we::Instruction::F64Store(mem_arg(c.off + clock_field::PREV_INTERVAL, 3)));
+            self.emit(we::Instruction::F64Store(mem_arg(
+                c.off + clock_field::PREV_INTERVAL,
+                3,
+            )));
             for (off, v) in [
                 (c.off + clock_field::INTERVAL, -1.0),
                 (c.off + clock_field::LAST_ACTIVATION, -1.0),
@@ -765,10 +777,16 @@ impl<'a> FnCtx<'a> {
             for &sub in &c.sub_offs {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const(0.0.into()));
-                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_PREV_INTERVAL, 3)));
+                self.emit(we::Instruction::F64Store(mem_arg(
+                    sub + clock_field::SUB_PREV_INTERVAL,
+                    3,
+                )));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const((-1.0).into()));
-                self.emit(we::Instruction::F64Store(mem_arg(sub + clock_field::SUB_LAST_ACTIVATION, 3)));
+                self.emit(we::Instruction::F64Store(mem_arg(
+                    sub + clock_field::SUB_LAST_ACTIVATION,
+                    3,
+                )));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Const(0));
                 self.emit(we::Instruction::I32Store(mem_arg(sub + clock_field::SUB_COUNT, 2)));
@@ -787,10 +805,16 @@ impl<'a> FnCtx<'a> {
                 self.emit(we::Instruction::LocalGet(data));
                 let w = compile_exp(self, counter)?;
                 coerce(self, w, WTy::I32);
-                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::I32Store(mem_arg(
+                    off + clock_field::INTERVAL_COUNTER,
+                    2,
+                )));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::LocalGet(data));
-                self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::I32Load(mem_arg(
+                    off + clock_field::INTERVAL_COUNTER,
+                    2,
+                )));
                 self.emit(we::Instruction::F64ConvertI32S);
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Load(mem_arg(off + clock_field::RESOLUTION, 2)));
@@ -808,7 +832,10 @@ impl<'a> FnCtx<'a> {
             ClockUpdate::Inferred => {
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::I32Const(1));
-                self.emit(we::Instruction::I32Store(mem_arg(off + clock_field::INTERVAL_COUNTER, 2)));
+                self.emit(we::Instruction::I32Store(mem_arg(
+                    off + clock_field::INTERVAL_COUNTER,
+                    2,
+                )));
                 self.emit(we::Instruction::LocalGet(data));
                 self.emit(we::Instruction::F64Const(1.0.into()));
                 self.emit(we::Instruction::F64Store(mem_arg(off + clock_field::INTERVAL, 3)));
@@ -990,7 +1017,10 @@ impl<'a> FnCtx<'a> {
         }
         for (i, rel) in relations.iter().enumerate() {
             let Some(rel) = rel else { continue };
-            let DAE::Exp::RELATION { exp1, operator, exp2, .. } = &**rel else {
+            let DAE::Exp::RELATION {
+                exp1, operator, exp2, ..
+            } = &**rel
+            else {
                 return Err("CodegenWasmJit: non-relation in the relations list");
             };
             self.emit(we::Instruction::LocalGet(data));
@@ -1005,7 +1035,12 @@ impl<'a> FnCtx<'a> {
     /// `delay(...)` expression (C's `function_storeDelayed`).
     pub(crate) fn emit_store_delayed(
         &mut self,
-        delayed: &[(i32, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>, metamodelica::Ref<DAE::Exp>)],
+        delayed: &[(
+            i32,
+            metamodelica::Ref<DAE::Exp>,
+            metamodelica::Ref<DAE::Exp>,
+            metamodelica::Ref<DAE::Exp>,
+        )],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         for (idx, e, d, dmax) in delayed {
@@ -1028,10 +1063,7 @@ impl<'a> FnCtx<'a> {
     /// An operator inside an `if`-branch is guarded by the same condition as the
     /// branch: storing while it is inactive would advance a profile the model is not
     /// reading (#16099).
-    pub(crate) fn emit_store_spatial(
-        &mut self,
-        spatial: &[SimCode::SpatialDistribution],
-    ) -> Result<()> {
+    pub(crate) fn emit_store_spatial(&mut self, spatial: &[SimCode::SpatialDistribution]) -> Result<()> {
         let data = self.sim()?.data_local;
         for sd in spatial {
             if let Some(cond) = &sd.condition {
@@ -1058,11 +1090,7 @@ impl<'a> FnCtx<'a> {
     /// Emit `functionInitSpatialDistribution`: allocate the operators for this run
     /// and fill each from its `initialPoints`/`initialValues` parameter arrays (C's
     /// `allocSpatialDistribution` + `function_initSpatialDistribution`).
-    pub(crate) fn emit_init_spatial(
-        &mut self,
-        n_spatial: u32,
-        spatial: &[SimCode::SpatialDistribution],
-    ) -> Result<()> {
+    pub(crate) fn emit_init_spatial(&mut self, n_spatial: u32, spatial: &[SimCode::SpatialDistribution]) -> Result<()> {
         self.emit(we::Instruction::I32Const(n_spatial as i32));
         self.emit(we::Instruction::Call(rt_index("rt_spatial_init")?));
         for sd in spatial {
@@ -1168,7 +1196,10 @@ impl<'a> FnCtx<'a> {
             self.emit(I::Else);
             match &**ew {
                 openmodelica_simcode_types::SimCode::SimEqSystem::SES_WHEN {
-                    conditions, whenStmtLst, elseWhen, ..
+                    conditions,
+                    whenStmtLst,
+                    elseWhen,
+                    ..
                 } => self.sim_when(conditions, whenStmtLst, elseWhen)?,
                 other => return Err("CodegenWasmJit: elseWhen is not a SES_WHEN"),
             }
@@ -1182,12 +1213,20 @@ impl<'a> FnCtx<'a> {
         match op {
             W::ASSIGN { left, right, .. } => compile_assign(self, left, right),
             W::REINIT { stateVar, value, .. } => {
-                let lhs = DAE::Exp::CREF { componentRef: stateVar.clone(), ty: crate::CodegenWasmJit::t_real() };
+                let lhs = DAE::Exp::CREF {
+                    componentRef: stateVar.clone(),
+                    ty: crate::CodegenWasmJit::t_real(),
+                };
                 compile_assign(self, &lhs, value)?;
                 emit_reinit_note(self, stateVar)
             }
             W::TERMINATE { message, source } => emit_terminate(self, message, source),
-            W::ASSERT { condition, message, level, source } => emit_assert(self, condition, message, level, source),
+            W::ASSERT {
+                condition,
+                message,
+                level,
+                source,
+            } => emit_assert(self, condition, message, level, source),
             W::NORETCALL { exp, .. } => emit_noretcall(self, exp),
         }
     }

@@ -40,11 +40,7 @@ fn string_array(values: impl Iterator<Item = impl AsRef<str>>, out: &mut String)
 /// qualified names are not repeated 84 000 times. `ic` is the icon's URL, or
 /// empty where the class has none.
 pub fn tree(classes: &[ClassDoc], members: &[usize], icons: &[Option<String>]) -> String {
-    let position: HashMap<usize, usize> = members
-        .iter()
-        .enumerate()
-        .map(|(i, &c)| (c, i))
-        .collect();
+    let position: HashMap<usize, usize> = members.iter().enumerate().map(|(i, &c)| (c, i)).collect();
     let mut kinds: Vec<&str> = Vec::new();
     let mut kind_of = Vec::with_capacity(members.len());
     let mut parents = Vec::with_capacity(members.len());
@@ -83,7 +79,9 @@ pub fn tree(classes: &[ClassDoc], members: &[usize], icons: &[Option<String>]) -
     }
     out.push_str("],\"d\":");
     string_array(
-        members.iter().map(|&c| crate::doc::description_text(&classes[c].comment)),
+        members
+            .iter()
+            .map(|&c| crate::doc::description_text(&classes[c].comment)),
         &mut out,
     );
     out.push_str(",\"k\":[");
@@ -191,10 +189,7 @@ pub fn text(classes: &[ClassDoc], members: &[usize]) -> String {
     }
 
     let limit = (members.len() * 2 / 5).max(64);
-    let mut terms: Vec<(&String, &Vec<u32>)> = postings
-        .iter()
-        .filter(|(_, p)| p.len() <= limit)
-        .collect();
+    let mut terms: Vec<(&String, &Vec<u32>)> = postings.iter().filter(|(_, p)| p.len() <= limit).collect();
     terms.sort_unstable_by(|a, b| a.0.cmp(b.0));
 
     let mut out = String::with_capacity(terms.len() * 24);
@@ -220,12 +215,7 @@ pub fn text(classes: &[ClassDoc], members: &[usize]) -> String {
 }
 
 /// `[{"n":name,"d":comment,"v":version,"c":class count,"ic":icon}…]`
-pub fn libraries(
-    classes: &[ClassDoc],
-    roots: &[usize],
-    counts: &[usize],
-    icons: &[Option<String>],
-) -> String {
+pub fn libraries(classes: &[ClassDoc], roots: &[usize], counts: &[usize], icons: &[Option<String>]) -> String {
     let mut out = String::from("[");
     for (i, (&root, &count)) in roots.iter().zip(counts).enumerate() {
         if i > 0 {
@@ -245,10 +235,7 @@ pub fn libraries(
         out.push_str(",\"c\":");
         out.push_str(&count.to_string());
         out.push_str(",\"ic\":");
-        escape(
-            icons.get(root).and_then(Option::as_deref).unwrap_or(""),
-            &mut out,
-        );
+        escape(icons.get(root).and_then(Option::as_deref).unwrap_or(""), &mut out);
         out.push('}');
     }
     out.push(']');

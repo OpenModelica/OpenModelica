@@ -34,13 +34,23 @@
  *
  */
 #![allow(warnings)]
-#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
+#![allow(
+    unreachable_patterns,
+    unreachable_code,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    unused_imports,
+    unused_variables,
+    non_upper_case_globals,
+    unused_mut
+)]
 
-use metamodelica::Result;
-use loop_unwrap::unwrap_break_err;
-use metamodelica::*; // Built-in types and functions
+use arcstr::{ArcStr, format, literal};
 use const_str;
-use arcstr::{ArcStr, literal, format};
+use loop_unwrap::unwrap_break_err;
+use metamodelica::Result;
+use metamodelica::*; // Built-in types and functions
 
 use crate::Absyn;
 
@@ -79,7 +89,7 @@ impl Default for Statement {
         }
     }
 }
-pub use self::Statement::{IALG,IEXP};
+pub use self::Statement::{IALG, IEXP};
 
 /// Several interactive statements are used in Modelica scripts.
 ///  - GlobalScript.Statements
@@ -108,5 +118,3 @@ impl Default for Statements {
 }
 
 pub type ISTMTS = Statements;
-
-

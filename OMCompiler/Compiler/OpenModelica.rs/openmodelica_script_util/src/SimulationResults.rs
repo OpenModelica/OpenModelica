@@ -36,18 +36,18 @@
 use std::sync::{Mutex, MutexGuard};
 use std::time::SystemTime;
 
+use arcstr::{ArcStr, literal};
 use metamodelica::Result;
-use arcstr::{literal, ArcStr};
 
 use metamodelica::{List, OrderedFloat};
+use openmodelica_error::ErrorTypes;
 use openmodelica_frontend_types::Values;
 use openmodelica_util::Error;
-use openmodelica_error::ErrorTypes;
 
-use openmodelica_result_files::cmp::{almost_equal_default, cmp_data_tubes, format_g, format_g_prec15, tube_html};
 use openmodelica_result_files::ResultTable;
+use openmodelica_result_files::cmp::{almost_equal_default, cmp_data_tubes, format_g, format_g_prec15, tube_html};
 use openmodelica_result_files::{
-    drop_leading_dups, leading_dup_count, time_var_name, CsvReader, OpenError, PltVal, ResultReader,
+    CsvReader, OpenError, PltVal, ResultReader, drop_leading_dups, leading_dup_count, time_var_name,
 };
 
 fn write_output_file(path: &str, bytes: &[u8]) -> std::io::Result<()> {
@@ -256,7 +256,11 @@ fn lock_reader(filename: &ArcStr) -> Result<Option<MutexGuard<'static, Option<Ca
     if !reuse {
         match open_reporting(filename)? {
             Some(reader) => {
-                *guard = Some(CachedReader { fileName: filename.clone(), mtime, reader });
+                *guard = Some(CachedReader {
+                    fileName: filename.clone(),
+                    mtime,
+                    reader,
+                });
             }
             None => {
                 *guard = None;
@@ -351,7 +355,11 @@ pub fn val(mut filename: ArcStr, mut varname: ArcStr, mut timeStamp: metamodelic
     }
 }
 
-pub fn readVariables(mut filename: ArcStr, mut readParameters: bool, mut openmodelicaStyle: bool) -> Result<metamodelica::List<ArcStr>> {
+pub fn readVariables(
+    mut filename: ArcStr,
+    mut readParameters: bool,
+    mut openmodelicaStyle: bool,
+) -> Result<metamodelica::List<ArcStr>> {
     // C: SimulationResults_readVariables — list the variable names stored in
     // a result file (sorted), optionally including parameters and converting
     // der()-style names to OpenModelica style.
@@ -362,8 +370,7 @@ pub fn readVariables(mut filename: ArcStr, mut readParameters: bool, mut openmod
     // C `makeOMCStyle`.
     let omc_style = |name: &str| -> ArcStr {
         if openmodelicaStyle {
-            let converted =
-                openmodelica_mat_reader::openmodelica_style_name(name).unwrap_or_else(|| name.to_owned());
+            let converted = openmodelica_mat_reader::openmodelica_style_name(name).unwrap_or_else(|| name.to_owned());
             ArcStr::from(converted.replace(' ', ""))
         } else {
             ArcStr::from(name)
@@ -387,13 +394,22 @@ pub fn readVariables(mut filename: ArcStr, mut readParameters: bool, mut openmod
         // CSV: the header cells, skipping empty names (a trailing
         // delimiter on the header line).
         ResultReader::Csv(reader) => {
-            names = reader.variables.iter().filter(|v| !v.is_empty()).map(|v| omc_style(v)).collect();
+            names = reader
+                .variables
+                .iter()
+                .filter(|v| !v.is_empty())
+                .map(|v| omc_style(v))
+                .collect();
         }
     }
     Ok(List::from_iter(names))
 }
 
-pub fn readDataset(mut filename: ArcStr, mut vars: metamodelica::List<ArcStr>, mut dimsize: i32) -> Result<metamodelica::Ref<Values::Value>> {
+pub fn readDataset(
+    mut filename: ArcStr,
+    mut vars: metamodelica::List<ArcStr>,
+    mut dimsize: i32,
+) -> Result<metamodelica::Ref<Values::Value>> {
     // C: SimulationResults_readDataset — read the full trajectories of the
     // given variables, returning a Values.ARRAY matrix (variable-major rows,
     // time-major columns). This combines the external `readDataset_work`
@@ -553,7 +569,11 @@ struct DiffData {
 /// The filename to show in messages: `basename` under the testsuite, otherwise
 /// the full path. Matches the C `runningTestsuite ? SystemImpl__basename(f) : f`.
 fn display_filename(running_testsuite: bool, f: &ArcStr) -> ArcStr {
-    if running_testsuite { openmodelica_util::System::basename(f.clone()) } else { f.clone() }
+    if running_testsuite {
+        openmodelica_util::System::basename(f.clone())
+    } else {
+        f.clone()
+    }
 }
 
 /// C `getData`: the trajectory, or `None` after emitting the per-format error
@@ -627,10 +647,7 @@ fn cmp_data(
                 break;
             }
         }
-        if increased
-            && (((t - tr) / tr).abs() > reltol
-                || (t - tr).abs() > (t - reftime[(j - 1) as usize]).abs())
-        {
+        if increased && (((t - tr) / tr).abs() > reltol || (t - tr).abs() > (t - reftime[(j - 1) as usize]).abs()) {
             j -= 1;
             tr = reftime[j as usize];
         }
@@ -762,8 +779,7 @@ fn cmp_data(
                 }
                 if reftime[jj as usize] != tr {
                     dr = refdata[jj as usize]
-                        + ((dr - refdata[jj as usize]) / (tr - reftime[jj as usize]))
-                            * (t - reftime[jj as usize]);
+                        + ((dr - refdata[jj as usize]) / (tr - reftime[jj as usize])) * (t - reftime[jj as usize]);
                 }
             } else {
                 let mut jj = j;
@@ -782,8 +798,7 @@ fn cmp_data(
                     }
                 }
                 if reftime[jj as usize] != tr {
-                    dr = dr
-                        + ((refdata[jj as usize] - dr) / (reftime[jj as usize] - tr)) * (t - tr);
+                    dr = dr + ((refdata[jj as usize] - dr) / (reftime[jj as usize] - tr)) * (t - tr);
                 }
             }
         }
@@ -862,7 +877,15 @@ fn write_log_file(
     openmodelica_wasi::fs::write(filename, s.as_bytes())
 }
 
-pub fn cmpSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, mut reffilename: ArcStr, mut logfilename: ArcStr, mut refTol: metamodelica::Real, mut absTol: metamodelica::Real, mut vars: metamodelica::List<ArcStr>) -> Result<metamodelica::List<ArcStr>> {
+pub fn cmpSimulationResults(
+    mut runningTestsuite: bool,
+    mut filename: ArcStr,
+    mut reffilename: ArcStr,
+    mut logfilename: ArcStr,
+    mut refTol: metamodelica::Real,
+    mut absTol: metamodelica::Real,
+    mut vars: metamodelica::List<ArcStr>,
+) -> Result<metamodelica::List<ArcStr>> {
     // C: SimulationResults_cmpSimulationResults ->
     //    SimulationResultsCmp_compareResults(isResultCmp=1, isHtml=0).
     let reltol = refTol.into_inner();
@@ -972,7 +995,14 @@ pub fn cmpSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, mu
         }
     }
 
-    if let Err(e) = write_log_file(logfilename.as_str(), &ddf, filename.as_str(), reffilename.as_str(), reltol, abstol) {
+    if let Err(e) = write_log_file(
+        logfilename.as_str(),
+        &ddf,
+        filename.as_str(),
+        reffilename.as_str(),
+        reltol,
+        abstol,
+    ) {
         let _ = e;
         Error::addMessage(
             ErrorTypes::Message {
@@ -1046,7 +1076,12 @@ fn delta_data(method: &ErrorMethod, time: &[f64], reftime: &[f64], data: &[f64],
     }
 }
 
-pub fn deltaSimulationResults(mut filename: ArcStr, mut reffilename: ArcStr, mut method: ArcStr, mut vars: metamodelica::List<ArcStr>) -> Result<metamodelica::Real> {
+pub fn deltaSimulationResults(
+    mut filename: ArcStr,
+    mut reffilename: ArcStr,
+    mut method: ArcStr,
+    mut vars: metamodelica::List<ArcStr>,
+) -> Result<metamodelica::Real> {
     // C: SimulationResults_deltaSimulationResults -> SimulationResultsCmp_deltaResults.
     let errmethod = match method.as_str() {
         "1norm" => ErrorMethod::Norm1,
@@ -1141,7 +1176,17 @@ pub fn deltaSimulationResults(mut filename: ArcStr, mut reffilename: ArcStr, mut
     Ok(OrderedFloat(res))
 }
 
-pub fn diffSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, mut reffilename: ArcStr, mut prefix: ArcStr, mut refTol: metamodelica::Real, mut relTolDiffMaxMin: metamodelica::Real, mut rangeDelta: metamodelica::Real, mut vars: metamodelica::List<ArcStr>, mut keepEqualResults: bool) -> Result<(bool, metamodelica::List<ArcStr>)> {
+pub fn diffSimulationResults(
+    mut runningTestsuite: bool,
+    mut filename: ArcStr,
+    mut reffilename: ArcStr,
+    mut prefix: ArcStr,
+    mut refTol: metamodelica::Real,
+    mut relTolDiffMaxMin: metamodelica::Real,
+    mut rangeDelta: metamodelica::Real,
+    mut vars: metamodelica::List<ArcStr>,
+    mut keepEqualResults: bool,
+) -> Result<(bool, metamodelica::List<ArcStr>)> {
     // C: SimulationResults_diffSimulationResults ->
     //    SimulationResultsCmp_compareResults(isResultCmp=0, isHtml=0).
     let reltol = refTol.into_inner();
@@ -1244,7 +1289,17 @@ pub fn diffSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, m
         // cmp_data_tubes mutates the reference timeline; give it a private copy
         // so each variable's comparison sees the unmodified timeline.
         let mut timeref_work = timeref.clone();
-        if cmp_data_tubes(&time, &mut timeref_work, &dataref, &data, reltol, range_delta, reltol_diff_max_min).differs() {
+        if cmp_data_tubes(
+            &time,
+            &mut timeref_work,
+            &dataref,
+            &data,
+            reltol,
+            range_delta,
+            reltol_diff_max_min,
+        )
+        .differs()
+        {
             // C prepends to the diff list (reverse processing order).
             diff_vars.insert(0, var.clone());
         }
@@ -1254,7 +1309,15 @@ pub fn diffSimulationResults(mut runningTestsuite: bool, mut filename: ArcStr, m
     Ok((success, List::from_iter(diff_vars)))
 }
 
-pub fn diffSimulationResultsHtml(mut runningTestsuite: bool, mut filename: ArcStr, mut reffilename: ArcStr, mut refTol: metamodelica::Real, mut relTolDiffMaxMin: metamodelica::Real, mut rangeDelta: metamodelica::Real, mut var: ArcStr) -> Result<ArcStr> {
+pub fn diffSimulationResultsHtml(
+    mut runningTestsuite: bool,
+    mut filename: ArcStr,
+    mut reffilename: ArcStr,
+    mut refTol: metamodelica::Real,
+    mut relTolDiffMaxMin: metamodelica::Real,
+    mut rangeDelta: metamodelica::Real,
+    mut var: ArcStr,
+) -> Result<ArcStr> {
     // C: SimulationResults_diffSimulationResultsHtml ->
     //    SimulationResultsCmp_compareResults(isResultCmp=0, isHtml=1) on a single
     //    variable, returning the dygraph HTML page (or "" on failure).
@@ -1321,8 +1384,26 @@ pub fn diffSimulationResultsHtml(mut runningTestsuite: bool, mut filename: ArcSt
     drop_leading_dups(&mut dataref, offset_ref);
 
     let mut timeref_work = timeref.clone();
-    let cmp = cmp_data_tubes(&time, &mut timeref_work, &dataref, &data, reltol, range_delta, reltol_diff_max_min);
-    let html = tube_html(var1.as_str(), &time, &timeref_work, &dataref, &data, &cmp, reltol, reltol_diff_max_min, range_delta);
+    let cmp = cmp_data_tubes(
+        &time,
+        &mut timeref_work,
+        &dataref,
+        &data,
+        reltol,
+        range_delta,
+        reltol_diff_max_min,
+    );
+    let html = tube_html(
+        var1.as_str(),
+        &time,
+        &timeref_work,
+        &dataref,
+        &data,
+        &cmp,
+        reltol,
+        reltol_diff_max_min,
+        range_delta,
+    );
     Ok(ArcStr::from(html))
 }
 
@@ -1394,7 +1475,10 @@ fn filter_csv_input(
             continue;
         }
         let Some(vals) = reader.dataset(name.as_str()) else {
-            err(&ERROR_COULD_NOT_READ_VAR, [name.clone(), openmodelica_util::System::basename(in_file.clone())])?;
+            err(
+                &ERROR_COULD_NOT_READ_VAR,
+                [name.clone(), openmodelica_util::System::basename(in_file.clone())],
+            )?;
             return Ok(false);
         };
         col_of.push(cols.len());
@@ -1402,7 +1486,13 @@ fn filter_csv_input(
     }
     let time = cols[col_of[0]].clone();
     if time.len() < 2 {
-        err(&ERROR_COULD_NOT_READ_VAR, [ArcStr::from("time"), openmodelica_util::System::basename(in_file.clone())])?;
+        err(
+            &ERROR_COULD_NOT_READ_VAR,
+            [
+                ArcStr::from("time"),
+                openmodelica_util::System::basename(in_file.clone()),
+            ],
+        )?;
         return Ok(false);
     }
     let start = time[0];
@@ -1433,7 +1523,11 @@ fn filter_csv_input(
 
     let num_to_filter = var_names.len();
     let longest_name = var_names.iter().map(|n| n.len()).max().unwrap_or(0);
-    let out_rows = if number_of_intervals != 0 { number_of_intervals as usize + 1 } else { time.len() };
+    let out_rows = if number_of_intervals != 0 {
+        number_of_intervals as usize + 1
+    } else {
+        time.len()
+    };
 
     let mut out: Vec<u8> = Vec::new();
     const ACLASS_NORMAL: &[u8] = b"A1 bt. ir1 na  Nj  oe  rc  mt  ao  lr   y   ";
@@ -1487,7 +1581,11 @@ fn filter_csv_input(
                 k += 1;
             }
             let (t0, t1) = (time[k], time[k + 1]);
-            let v = if t1 == t0 { col[k] } else { col[k] + (t - t0) / (t1 - t0) * (col[k + 1] - col[k]) };
+            let v = if t1 == t0 {
+                col[k]
+            } else {
+                col[k] + (t - t0) / (t1 - t0) * (col[k + 1] - col[k])
+            };
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -1499,7 +1597,14 @@ fn filter_csv_input(
     Ok(true)
 }
 
-pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars: metamodelica::List<ArcStr>, mut numberOfIntervals: i32, mut removeDescription: bool, mut hintReadAllVars: bool) -> Result<bool> {
+pub fn filterSimulationResults(
+    mut inFile: ArcStr,
+    mut outFile: ArcStr,
+    mut vars: metamodelica::List<ArcStr>,
+    mut numberOfIntervals: i32,
+    mut removeDescription: bool,
+    mut hintReadAllVars: bool,
+) -> Result<bool> {
     // C: SimulationResults_filterSimulationResults — copy a result file keeping
     // only the requested variables (optionally resampled to `numberOfIntervals`
     // intervals). MATLAB v4 and Arrow input (the C switch has only the former);
@@ -1540,7 +1645,10 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     let mut fvars: Vec<FilterVar> = Vec::with_capacity(num_to_filter);
     for name in &var_names {
         let Some(idx) = reader.find_var(name.as_str()) else {
-            err(&ERROR_COULD_NOT_READ_VAR, [name.clone(), openmodelica_util::System::basename(inFile.clone())])?;
+            err(
+                &ERROR_COULD_NOT_READ_VAR,
+                [name.clone(), openmodelica_util::System::basename(inFile.clone())],
+            )?;
             return Ok(false);
         };
         let info = &reader.all_info()[idx];
@@ -1565,7 +1673,13 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
                 return Ok(false);
             }
             let Some(vals) = reader.read_vals(fv.index) else {
-                err(&ERROR_COULD_NOT_READ_VAR, [ArcStr::from(fv.name.as_str()), openmodelica_util::System::basename(inFile.clone())])?;
+                err(
+                    &ERROR_COULD_NOT_READ_VAR,
+                    [
+                        ArcStr::from(fv.name.as_str()),
+                        openmodelica_util::System::basename(inFile.clone()),
+                    ],
+                )?;
                 return Ok(false);
             };
             cols.push(vals);
@@ -1593,7 +1707,17 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     }
 
     if outFile.ends_with(".arrow") {
-        return filter_to_arrow(reader, &fvars, &unit_defs, numberOfIntervals, removeDescription, &inFile, &outFile, start, stop);
+        return filter_to_arrow(
+            reader,
+            &fvars,
+            &unit_defs,
+            numberOfIntervals,
+            removeDescription,
+            &inFile,
+            &outFile,
+            start,
+            stop,
+        );
     }
 
     // MATLAB v4 output. Tally which input data_1/data_2 columns are referenced
@@ -1676,7 +1800,11 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
     }
     for fv in &fvars {
         let slot = (fv.index.unsigned_abs() as usize) - 1;
-        let new_index = if fv.isParam { parameter_indexes[slot] } else { indexes[slot] };
+        let new_index = if fv.isParam {
+            parameter_indexes[slot]
+        } else {
+            indexes[slot]
+        };
         let x = if fv.index < 0 { -new_index } else { new_index };
         out.extend_from_slice(&x.to_le_bytes());
     }
@@ -1719,18 +1847,25 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
                 k += 1;
             }
         }
-        err(&NOTIFY_RESAMPLING, [
-            inFile.clone(),
-            ArcStr::from(reader.nrows().to_string()),
-            ArcStr::from(numberOfIntervals.to_string()),
-            ArcStr::from(nevents.to_string()),
-            ArcStr::from(neventpoints.to_string()),
-        ])?;
+        err(
+            &NOTIFY_RESAMPLING,
+            [
+                inFile.clone(),
+                ArcStr::from(reader.nrows().to_string()),
+                ArcStr::from(numberOfIntervals.to_string()),
+                ArcStr::from(nevents.to_string()),
+                ArcStr::from(neventpoints.to_string()),
+            ],
+        )?;
     }
 
     // data_2: (numberOfIntervals+1 | nrows) rows x numUnique cols, each column a
     // variable trajectory written contiguously (column-major).
-    let out_rows = if numberOfIntervals != 0 { (numberOfIntervals + 1) as usize } else { reader.nrows() };
+    let out_rows = if numberOfIntervals != 0 {
+        (numberOfIntervals + 1) as usize
+    } else {
+        reader.nrows()
+    };
     push_mat_header(&mut out, "data_2", out_rows as u32, num_unique as u32, 8);
     for &col in &indexes_to_output {
         if numberOfIntervals != 0 {
@@ -1741,18 +1876,27 @@ pub fn filterSimulationResults(mut inFile: ArcStr, mut outFile: ArcStr, mut vars
                     start + (stop - start) * (jj as f64) / (numberOfIntervals as f64)
                 };
                 let Some(v) = reader.interp_val(col, t) else {
-                    err(&ERROR_RESAMPLE_FAILED, [
-                        inFile.clone(),
-                        ArcStr::from(col.to_string()),
-                        ArcStr::from(format_g_prec15(t)),
-                    ])?;
+                    err(
+                        &ERROR_RESAMPLE_FAILED,
+                        [
+                            inFile.clone(),
+                            ArcStr::from(col.to_string()),
+                            ArcStr::from(format_g_prec15(t)),
+                        ],
+                    )?;
                     return Ok(false);
                 };
                 out.extend_from_slice(&v.to_le_bytes());
             }
         } else {
             let Some(vals) = reader.read_vals(col) else {
-                err(&ERROR_COULD_NOT_READ_VAR, [ArcStr::from("data_2"), openmodelica_util::System::basename(inFile.clone())])?;
+                err(
+                    &ERROR_COULD_NOT_READ_VAR,
+                    [
+                        ArcStr::from("data_2"),
+                        openmodelica_util::System::basename(inFile.clone()),
+                    ],
+                )?;
                 return Ok(false);
             };
             for v in vals {
@@ -1797,7 +1941,13 @@ fn filter_to_arrow(
     }
     let grid: Option<Vec<f64>> = (n_intervals != 0).then(|| {
         (0..=n_intervals)
-            .map(|j| if j == n_intervals { stop } else { start + (stop - start) * (j as f64) / (n_intervals as f64) })
+            .map(|j| {
+                if j == n_intervals {
+                    stop
+                } else {
+                    start + (stop - start) * (j as f64) / (n_intervals as f64)
+                }
+            })
             .collect()
     });
     let n_reals = src_cols.len();
@@ -1808,7 +1958,14 @@ fn filter_to_arrow(
                 let mut v = Vec::with_capacity(g.len());
                 for &t in g {
                     let Some(x) = reader.interp_val(src, t) else {
-                        err(&ERROR_RESAMPLE_FAILED, [in_file.clone(), ArcStr::from(src.to_string()), ArcStr::from(format_g_prec15(t))])?;
+                        err(
+                            &ERROR_RESAMPLE_FAILED,
+                            [
+                                in_file.clone(),
+                                ArcStr::from(src.to_string()),
+                                ArcStr::from(format_g_prec15(t)),
+                            ],
+                        )?;
                         return Ok(false);
                     };
                     v.push(x);
@@ -1818,7 +1975,13 @@ fn filter_to_arrow(
             None => match reader.read_vals(src) {
                 Some(v) => v,
                 None => {
-                    err(&ERROR_COULD_NOT_READ_VAR, [ArcStr::from("data_2"), openmodelica_util::System::basename(in_file.clone())])?;
+                    err(
+                        &ERROR_COULD_NOT_READ_VAR,
+                        [
+                            ArcStr::from("data_2"),
+                            openmodelica_util::System::basename(in_file.clone()),
+                        ],
+                    )?;
                     return Ok(false);
                 }
             },
@@ -1872,7 +2035,19 @@ fn filter_to_arrow(
         });
     }
     let units = openmodelica_arrow_writer::units::declared(unit_defs.to_vec());
-    let bytes = write_arrow(&vars, &rows, n_reals as u32, &params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((start, stop)), units: &units, zstd: None });
+    let bytes = write_arrow(
+        &vars,
+        &rows,
+        n_reals as u32,
+        &params,
+        &col_types,
+        openmodelica_arrow_writer::no_strings(),
+        &FileMeta {
+            span: Some((start, stop)),
+            units: &units,
+            zstd: None,
+        },
+    );
     if write_output_file(out_file.as_str(), &bytes).is_err() {
         err(&ERROR_FILTER_WRITE_FAILED, [out_file.clone()])?;
         return Ok(false);

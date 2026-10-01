@@ -10,31 +10,63 @@ use openmodelica_hdf5_result::{Affine, Kind, Meta, MtsfStream, Options, SdfStrea
 /// a format stores one column or two.
 fn vars() -> Vec<Var<'static>> {
     vec![
-        Var { name: "time", unit: "s", kind: Kind::Time, ..Default::default() },
+        Var {
+            name: "time",
+            unit: "s",
+            kind: Kind::Time,
+            ..Default::default()
+        },
         Var {
             name: "a.b.n",
             ty: VarTy::Integer,
-            kind: Kind::Column { col: 2, affine: Affine::IDENTITY },
+            kind: Kind::Column {
+                col: 2,
+                affine: Affine::IDENTITY,
+            },
             ..Default::default()
         },
         Var {
             name: "a.y",
             comment: "an alias",
             unit: "m",
-            kind: Kind::Column { col: 1, affine: Affine::negated() },
+            kind: Kind::Column {
+                col: 1,
+                affine: Affine::negated(),
+            },
             ..Default::default()
         },
         Var {
             name: "a.x",
             comment: "the state",
             unit: "m",
-            kind: Kind::Column { col: 1, affine: Affine::IDENTITY },
+            kind: Kind::Column {
+                col: 1,
+                affine: Affine::IDENTITY,
+            },
             ..Default::default()
         },
-        Var { name: "c", kind: Kind::Const { value: 42.0 }, ..Default::default() },
+        Var {
+            name: "c",
+            kind: Kind::Const { value: 42.0 },
+            ..Default::default()
+        },
         // Dropped by both writers, but it still owns the first `params` slot.
-        Var { name: "s", ty: VarTy::String, kind: Kind::Param { affine: Affine::IDENTITY }, ..Default::default() },
-        Var { name: "p", unit: "kg", kind: Kind::Param { affine: Affine::IDENTITY }, ..Default::default() },
+        Var {
+            name: "s",
+            ty: VarTy::String,
+            kind: Kind::Param {
+                affine: Affine::IDENTITY,
+            },
+            ..Default::default()
+        },
+        Var {
+            name: "p",
+            unit: "kg",
+            kind: Kind::Param {
+                affine: Affine::IDENTITY,
+            },
+            ..Default::default()
+        },
     ]
 }
 
@@ -42,7 +74,9 @@ const N_ROWS: usize = 10;
 const PARAMS: [f64; 2] = [0.0, 7.5];
 
 fn rows() -> Vec<f64> {
-    (0..N_ROWS).flat_map(|i| [i as f64 * 0.5, (i as f64).sin(), (i % 3) as f64]).collect()
+    (0..N_ROWS)
+        .flat_map(|i| [i as f64 * 0.5, (i as f64).sin(), (i % 3) as f64])
+        .collect()
 }
 
 fn expected(name: &str, rows: &[f64]) -> Vec<f64> {
@@ -57,8 +91,8 @@ fn expected(name: &str, rows: &[f64]) -> Vec<f64> {
 }
 
 fn path(name: &str) -> String {
-    let dir = std::env::var("OMC_H5_TEST_DIR")
-        .map_or_else(|_| std::env::temp_dir().join("omc_h5_roundtrip"), Into::into);
+    let dir =
+        std::env::var("OMC_H5_TEST_DIR").map_or_else(|_| std::env::temp_dir().join("omc_h5_roundtrip"), Into::into);
     std::fs::create_dir_all(&dir).expect("test dir");
     dir.join(name).to_string_lossy().into_owned()
 }
@@ -72,14 +106,31 @@ fn assert_close(name: &str, got: &[f64], want: &[f64]) {
 
 #[test]
 fn sdf_roundtrip() {
-    sdf_with(Options { chunk_rows: 4, ..Default::default() }, "t.sdf");
+    sdf_with(
+        Options {
+            chunk_rows: 4,
+            ..Default::default()
+        },
+        "t.sdf",
+    );
     // Reserving more rows than arrive: the datasets must shrink at finish.
-    sdf_with(Options { chunk_rows: 4, expected_rows: Some(N_ROWS + 5), ..Default::default() }, "t-reserved.sdf");
+    sdf_with(
+        Options {
+            chunk_rows: 4,
+            expected_rows: Some(N_ROWS + 5),
+            ..Default::default()
+        },
+        "t-reserved.sdf",
+    );
 }
 
 fn sdf_with(opts: Options, name: &str) {
     let (path, vars, rows) = (path(name), vars(), rows());
-    let meta = Meta { model_name: "T", description: "a test", ..Default::default() };
+    let meta = Meta {
+        model_name: "T",
+        description: "a test",
+        ..Default::default()
+    };
     let mut s = SdfStream::begin(&path, &vars, &PARAMS, &rows[..3], 3, &meta, &opts).unwrap();
     s.push_rows(&rows).unwrap();
     s.finish().unwrap();
@@ -108,16 +159,32 @@ fn sdf_with(opts: Options, name: &str) {
 
 #[test]
 fn mtsf_roundtrip() {
-    mtsf_with(Options { chunk_rows: 4, deflate: Some(1), ..Default::default() }, "t.mtsf");
     mtsf_with(
-        Options { chunk_rows: 4, deflate: Some(1), expected_rows: Some(N_ROWS + 5), ..Default::default() },
+        Options {
+            chunk_rows: 4,
+            deflate: Some(1),
+            ..Default::default()
+        },
+        "t.mtsf",
+    );
+    mtsf_with(
+        Options {
+            chunk_rows: 4,
+            deflate: Some(1),
+            expected_rows: Some(N_ROWS + 5),
+            ..Default::default()
+        },
         "t-reserved.mtsf",
     );
 }
 
 fn mtsf_with(opts: Options, name: &str) {
     let (path, vars, rows) = (path(name), vars(), rows());
-    let meta = Meta { model_name: "T", description: "a test", ..Default::default() };
+    let meta = Meta {
+        model_name: "T",
+        description: "a test",
+        ..Default::default()
+    };
     let mut s = MtsfStream::begin(&path, &vars, &PARAMS, &rows[..3], 3, &meta, &opts).unwrap();
     s.push_rows(&rows).unwrap();
     s.finish().unwrap();
@@ -141,7 +208,10 @@ fn mtsf_with(opts: Options, name: &str) {
             name => assert_close(name, &got, &expected(name, &rows)),
         }
     }
-    assert_eq!(file.vars.iter().find(|v| v.name == "p").map(|v| v.unit.as_str()), Some("kg"));
+    assert_eq!(
+        file.vars.iter().find(|v| v.name == "p").map(|v| v.unit.as_str()),
+        Some("kg")
+    );
     assert!(file.vars.iter().all(|v| v.name != "s"));
     // `a.x` and `a.y` share one column, whichever of the two is listed first.
     let reals = file
@@ -150,5 +220,8 @@ fn mtsf_with(opts: Options, name: &str) {
         .find(|m| m.series == mtsf::Series::Continuous && m.ty == VarTy::Real)
         .expect("continuous reals");
     assert_eq!(reals.n_cols, 2);
-    assert_eq!(file.read_matrix(0).unwrap().len(), file.matrices[0].n_rows * file.matrices[0].n_cols);
+    assert_eq!(
+        file.read_matrix(0).unwrap().len(),
+        file.matrices[0].n_rows * file.matrices[0].n_cols
+    );
 }

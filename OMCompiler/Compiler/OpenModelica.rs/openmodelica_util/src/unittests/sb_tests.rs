@@ -22,12 +22,12 @@
 //
 // Other known bugs documented inline with "Bug:" prefixes.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
+use crate::SBAtomicSet;
 use crate::SBInterval;
 use crate::SBMultiInterval;
-use crate::SBAtomicSet;
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ===========================================================================
 // SBInterval
@@ -63,7 +63,10 @@ fn sbinterval_new_lo_greater_than_hi_is_empty() {
 fn sbinterval_new_step_zero_and_lo_eq_hi_normalises_to_unit() {
     let i = SBInterval::new(3, 0, 3);
     // After normalisation step should be 1 and it should not be empty.
-    assert!(!SBInterval::isEmpty(&i), "new(3,0,3) should not be empty after normalisation");
+    assert!(
+        !SBInterval::isEmpty(&i),
+        "new(3,0,3) should not be empty after normalisation"
+    );
     assert_eq!(SBInterval::stepValue(&i), 1, "step should be normalised to 1");
     assert_eq!(SBInterval::lowerBound(&i), 3);
     assert_eq!(SBInterval::upperBound(&i), 3);
@@ -113,7 +116,11 @@ fn sbinterval_new_hi_is_normalised_to_last_reachable_value() {
 #[test]
 fn sbinterval_new_hi_already_aligned_unchanged() {
     let i = SBInterval::new(1, 2, 5);
-    assert_eq!(SBInterval::upperBound(&i), 5, "hi=5 is on the grid, should be unchanged");
+    assert_eq!(
+        SBInterval::upperBound(&i),
+        5,
+        "hi=5 is on the grid, should be unchanged"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -185,11 +192,13 @@ fn sbinterval_size_step_two() {
 fn sbinterval_cardinality_is_size_minus_one() {
     let i = SBInterval::new(1, 1, 3);
     let card = SBInterval::cardinality(&i).unwrap();
-    let sz   = SBInterval::size(&i);
+    let sz = SBInterval::size(&i);
     assert_eq!(
-        card, sz - 1,
+        card,
+        sz - 1,
         "cardinality should equal size-1 by the MetaModelica formula; card={}, size={}",
-        card, sz
+        card,
+        sz
     );
 }
 
@@ -197,7 +206,11 @@ fn sbinterval_cardinality_is_size_minus_one() {
 #[test]
 fn sbinterval_cardinality_step_two() {
     let i = SBInterval::new(1, 2, 7);
-    assert_eq!(SBInterval::cardinality(&i).unwrap(), 3, "cardinality([1:2:7]) should be 3");
+    assert_eq!(
+        SBInterval::cardinality(&i).unwrap(),
+        3,
+        "cardinality([1:2:7]) should be 3"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -264,7 +277,10 @@ fn sbinterval_intersection_non_overlapping_is_empty() {
     let i1 = SBInterval::new(1, 1, 3);
     let i2 = SBInterval::new(5, 1, 9);
     let res = SBInterval::intersection(&i1, &i2);
-    assert!(SBInterval::isEmpty(&res), "non-overlapping intervals should have empty intersection");
+    assert!(
+        SBInterval::isEmpty(&res),
+        "non-overlapping intervals should have empty intersection"
+    );
 }
 
 #[test]
@@ -274,7 +290,10 @@ fn sbinterval_intersection_with_empty_is_empty() {
     // Empty intervals have step=0, which means hi < lo in the intersection check.
     // Result should be empty.
     let res = SBInterval::intersection(&i1, &i2);
-    assert!(SBInterval::isEmpty(&res), "intersection with empty interval should be empty");
+    assert!(
+        SBInterval::isEmpty(&res),
+        "intersection with empty interval should be empty"
+    );
 }
 
 #[test]
@@ -314,13 +333,18 @@ fn mi1d(lo: i32, step: i32, hi: i32) -> metamodelica::Ref<SBMultiInterval::SBMul
 
 /// Helper: create a 2D SBMultiInterval.
 fn mi2d(
-    lo1: i32, s1: i32, hi1: i32,
-    lo2: i32, s2: i32, hi2: i32,
+    lo1: i32,
+    s1: i32,
+    hi1: i32,
+    lo2: i32,
+    s2: i32,
+    hi2: i32,
 ) -> metamodelica::Ref<SBMultiInterval::SBMultiInterval> {
     SBMultiInterval::fromList(metamodelica::list![
         SBInterval::new(lo1, s1, hi1),
         SBInterval::new(lo2, s2, hi2)
-    ]).unwrap()
+    ])
+    .unwrap()
 }
 
 #[test]
@@ -338,10 +362,7 @@ fn sbmultiinterval_from_list_1d_is_not_empty() {
 /// fromList with an empty interval component should produce an empty MI.
 #[test]
 fn sbmultiinterval_from_list_containing_empty_interval_is_empty() {
-    let mi = SBMultiInterval::fromList(metamodelica::list![
-        SBInterval::new(1, 1, 3),
-        SBInterval::newEmpty()
-    ]).unwrap();
+    let mi = SBMultiInterval::fromList(metamodelica::list![SBInterval::new(1, 1, 3), SBInterval::newEmpty()]).unwrap();
     assert!(
         SBMultiInterval::isEmpty(&mi),
         "MI with an empty interval component should itself be empty"
@@ -400,7 +421,10 @@ fn sbmultiinterval_intersection_different_ndim_is_empty() -> Result<()> {
     let mi1 = mi1d(1, 1, 5);
     let mi2 = mi2d(1, 1, 5, 1, 1, 5);
     let res = SBMultiInterval::intersection(&mi1, &mi2)?;
-    assert!(SBMultiInterval::isEmpty(&res), "intersection of different-dim MIs should be empty");
+    assert!(
+        SBMultiInterval::isEmpty(&res),
+        "intersection of different-dim MIs should be empty"
+    );
     Ok(())
 }
 
@@ -568,7 +592,10 @@ fn sbatomicset_replace_changes_specified_dimension() {
     let mi = SBAtomicSet::aset(&replaced);
     let ints = SBMultiInterval::intervals(&mi);
     let int0 = ints.borrow()[0].clone();
-    assert!(SBInterval::isEqual(&int0, &new_i), "replaced dimension should match the new interval");
+    assert!(
+        SBInterval::isEqual(&int0, &new_i),
+        "replaced dimension should match the new interval"
+    );
 }
 
 #[test]
@@ -671,10 +698,15 @@ fn partb_sbinterval_size_step_two() {
 #[test]
 fn partb_sbinterval_cardinality_is_size_minus_one() {
     let i = raw_interval(1, 1, 3);
-    let sz   = SBInterval::size(&i);
+    let sz = SBInterval::size(&i);
     let card = SBInterval::cardinality(&i).unwrap();
-    assert_eq!(card, sz - 1,
-        "cardinality = floor((hi-lo)/step) = size-1; sz={}, card={}", sz, card);
+    assert_eq!(
+        card,
+        sz - 1,
+        "cardinality = floor((hi-lo)/step) = size-1; sz={}, card={}",
+        sz,
+        card
+    );
 }
 
 /// isEqual: same fields → true.
@@ -771,14 +803,10 @@ fn partb_sbmi_cardinality_1d() {
 /// 2+4=6, not the lattice cardinality 3×5=15.
 #[test]
 fn partb_sbmi_cardinality_2d_sums_not_product() {
-    let mi = SBMultiInterval::fromList(metamodelica::list![
-        raw_interval(1, 1, 3),
-        raw_interval(1, 1, 5)
-    ]).unwrap();
+    let mi = SBMultiInterval::fromList(metamodelica::list![raw_interval(1, 1, 3), raw_interval(1, 1, 5)]).unwrap();
     let card = SBMultiInterval::cardinality(&mi).unwrap();
     // 2 + 4 = 6  (sums)
-    assert_eq!(card, 6,
-        "cardinality sums per-dim values; expected 6, got {}", card);
+    assert_eq!(card, 6, "cardinality sums per-dim values; expected 6, got {}", card);
 }
 
 /// intersection of two 1D MIs: [1:1:5] ∩ [3:1:7] = [3:1:5].
@@ -873,7 +901,7 @@ fn partb_sbas_to_string_format() {
     let s = raw_aset1d(1, 1, 3);
     let r = SBAtomicSet::toString(&s);
     assert!(r.starts_with('{'), "should start with '{{': {:?}", r);
-    assert!(r.ends_with('}'),  "should end with '}}': {:?}", r);
+    assert!(r.ends_with('}'), "should end with '}}': {:?}", r);
     assert!(r.contains("[1:1:3]"), "should contain interval string: {:?}", r);
 }
 
@@ -895,8 +923,7 @@ fn partb_sbas_cardinality_accumulates() {
 /// copy produces an equal but independent value.
 #[test]
 fn partb_sbas_copy_is_equal() {
-    let s  = raw_aset1d(1, 1, 5);
+    let s = raw_aset1d(1, 1, 5);
     let s2 = SBAtomicSet::copy(&s);
     assert!(SBAtomicSet::isEqual(&s, &s2).unwrap());
 }
-

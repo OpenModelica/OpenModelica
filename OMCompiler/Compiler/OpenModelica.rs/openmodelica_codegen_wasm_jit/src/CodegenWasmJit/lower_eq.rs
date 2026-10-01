@@ -14,7 +14,10 @@ pub(super) fn lower_equation_inner(
     }
     match eq {
         E::SES_SIMPLE_ASSIGN { cref, exp, .. } => {
-            let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
+            let lhs = DAE::Exp::CREF {
+                componentRef: cref.clone(),
+                ty: t_real(),
+            };
             ctx.sim_assign(&lhs, exp)
         }
         // Dynamic tearing: C's `createLocalConstraints` checks the `localCon`
@@ -27,7 +30,10 @@ pub(super) fn lower_equation_inner(
                     }
                 }
             }
-            let lhs = DAE::Exp::CREF { componentRef: cref.clone(), ty: t_real() };
+            let lhs = DAE::Exp::CREF {
+                componentRef: cref.clone(),
+                ty: t_real(),
+            };
             ctx.sim_assign(&lhs, exp)
         }
         // A whole-array assignment `lhs := exp` (lhs is already a cref expression,
@@ -35,27 +41,38 @@ pub(super) fn lower_equation_inner(
         // through the whole-array scatter in `compile_sim_cref_assign`.
         E::SES_ARRAY_CALL_ASSIGN { lhs, exp, .. } => ctx.sim_assign(lhs, exp),
         // C's `equationGenericAssign`.
-        E::SES_RESIZABLE_ASSIGN { call_index, iters, .. } => {
-            emit_resizable_assign(ctx, *call_index, iters)
-        }
-        E::SES_GENERIC_ASSIGN { call_index, scal_indices, .. } => {
-            emit_generic_assign(ctx, *call_index, scal_indices)
-        }
-        E::SES_ENTWINED_ASSIGN { call_order, single_calls, .. } => {
-            emit_entwined_assign(ctx, call_order, single_calls, eq_index)
-        }
-        E::SES_LINEAR { lSystem, alternativeTearing: Some(at), .. } => {
-            lower_dynamic_tearing(ctx, eq_index, DtSystem::Linear(lSystem, at))
-        }
-        E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } => {
-            lower_dynamic_tearing(ctx, eq_index, DtSystem::Nonlinear(nlSystem, at))
-        }
+        E::SES_RESIZABLE_ASSIGN { call_index, iters, .. } => emit_resizable_assign(ctx, *call_index, iters),
+        E::SES_GENERIC_ASSIGN {
+            call_index,
+            scal_indices,
+            ..
+        } => emit_generic_assign(ctx, *call_index, scal_indices),
+        E::SES_ENTWINED_ASSIGN {
+            call_order,
+            single_calls,
+            ..
+        } => emit_entwined_assign(ctx, call_order, single_calls, eq_index),
+        E::SES_LINEAR {
+            lSystem,
+            alternativeTearing: Some(at),
+            ..
+        } => lower_dynamic_tearing(ctx, eq_index, DtSystem::Linear(lSystem, at)),
+        E::SES_NONLINEAR {
+            nlSystem,
+            alternativeTearing: Some(at),
+            ..
+        } => lower_dynamic_tearing(ctx, eq_index, DtSystem::Nonlinear(nlSystem, at)),
         E::SES_LINEAR { lSystem, .. } => lower_linear_system(ctx, lSystem, eq_index, -1),
         E::SES_NONLINEAR { nlSystem, .. } => lower_nonlinear_system(ctx, nlSystem, eq_index),
         E::SES_ALGORITHM { statements, .. } => ctx.sim_stmts(statements),
         // Inside a nonlinear system the residual function backs the known outputs
         // up around the body; standalone this is C's `equationAlgorithm`.
-        E::SES_INVERSE_ALGORITHM { statements, knownOutputCrefs, insideNonLinearSystem, .. } => {
+        E::SES_INVERSE_ALGORITHM {
+            statements,
+            knownOutputCrefs,
+            insideNonLinearSystem,
+            ..
+        } => {
             if *insideNonLinearSystem {
                 return ctx.sim_stmts(statements);
             }
@@ -64,11 +81,16 @@ pub(super) fn lower_equation_inner(
             ctx.sim_stmts(statements)?;
             restore_known_outputs(ctx, &known, &saved)
         }
-        E::SES_WHEN { conditions, whenStmtLst, elseWhen, .. } => {
-            ctx.sim_when(conditions, whenStmtLst, elseWhen)
-        }
+        E::SES_WHEN {
+            conditions,
+            whenStmtLst,
+            elseWhen,
+            ..
+        } => ctx.sim_when(conditions, whenStmtLst, elseWhen),
         // C's `equationIfEquationAssign`.
-        E::SES_IFEQUATION { ifbranches, elsebranch, .. } => {
+        E::SES_IFEQUATION {
+            ifbranches, elsebranch, ..
+        } => {
             let mut depth = 0;
             for (cond, eqs) in lst(ifbranches) {
                 ctx.sim_if_cond(cond)?;
@@ -102,17 +124,23 @@ pub(super) fn lower_equation_inner(
 /// component. `Linear`/`Nonlinear` carry `(strict, casual)`, C's `lSystem`/`nlSystem`
 /// and its `alternativeTearing`.
 enum DtSystem<'a> {
-    Linear(&'a metamodelica::Ref<SimCode::LinearSystem>, &'a metamodelica::Ref<SimCode::LinearSystem>),
-    Nonlinear(&'a metamodelica::Ref<SimCode::NonlinearSystem>, &'a metamodelica::Ref<SimCode::NonlinearSystem>),
+    Linear(
+        &'a metamodelica::Ref<SimCode::LinearSystem>,
+        &'a metamodelica::Ref<SimCode::LinearSystem>,
+    ),
+    Nonlinear(
+        &'a metamodelica::Ref<SimCode::NonlinearSystem>,
+        &'a metamodelica::Ref<SimCode::NonlinearSystem>,
+    ),
 }
 
 /// Every `CONSTRAINT_DT` of an equation's constraint list, as `(condition, local)`.
-pub(crate) fn dt_constraints(cons: &List<metamodelica::Ref<DAE::Constraint>>) -> Vec<(metamodelica::Ref<DAE::Exp>, bool)> {
+pub(crate) fn dt_constraints(
+    cons: &List<metamodelica::Ref<DAE::Constraint>>,
+) -> Vec<(metamodelica::Ref<DAE::Exp>, bool)> {
     lst(cons)
         .filter_map(|c| match &**c {
-            DAE::Constraint::CONSTRAINT_DT { constraint, localCon } => {
-                Some((constraint.clone(), *localCon))
-            }
+            DAE::Constraint::CONSTRAINT_DT { constraint, localCon } => Some((constraint.clone(), *localCon)),
             _ => None,
         })
         .collect()
@@ -164,7 +192,13 @@ fn lower_dynamic_tearing(
         }
     };
     crate::CodegenWasmJitFunctions::emit_dynamic_tearing(
-        ctx, casual_index, strict_index, linear, &cons, &mut lower_casual, &mut lower_strict,
+        ctx,
+        casual_index,
+        strict_index,
+        linear,
+        &cons,
+        &mut lower_casual,
+        &mut lower_strict,
     )
 }
 
@@ -274,11 +308,15 @@ fn lower_linear_system_body(
         let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
         let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
         let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
-            for eq in &constant_eqns { lower_equation(c, eq, eq_index)?; }
+            for eq in &constant_eqns {
+                lower_equation(c, eq, eq_index)?;
+            }
             Ok(())
         };
         let mut lower_column = |c: &mut FnCtx| -> Result<()> {
-            for eq in &column_eqns { lower_equation(c, eq, eq_index)?; }
+            for eq in &column_eqns {
+                lower_equation(c, eq, eq_index)?;
+            }
             Ok(())
         };
         // Sparse: assemble straight into CSC (no dense n² buffer) when the pattern
@@ -286,20 +324,45 @@ fn lower_linear_system_body(
         if use_sparse {
             if let Some((colptr, rowidx)) = lin_jac_csc_pattern(lsystem, n) {
                 return compile_linear_system_analytic_csc(
-                    ctx, lsystem.index, &vars, &residuals, &seed_offs, &result_offs, &colptr, &rowidx,
-                    &mut lower_inner, &mut lower_constant, &mut lower_column,
+                    ctx,
+                    lsystem.index,
+                    &vars,
+                    &residuals,
+                    &seed_offs,
+                    &result_offs,
+                    &colptr,
+                    &rowidx,
+                    &mut lower_inner,
+                    &mut lower_constant,
+                    &mut lower_column,
                 );
             }
         }
         return compile_linear_system_analytic(
-            ctx, &vars, &residuals, &seed_offs, &result_offs,
-            &mut lower_inner, &mut lower_constant, &mut lower_column, use_sparse, lsystem.index,
+            ctx,
+            &vars,
+            &residuals,
+            &seed_offs,
+            &result_offs,
+            &mut lower_inner,
+            &mut lower_constant,
+            &mut lower_column,
+            use_sparse,
+            lsystem.index,
         );
     }
 
     // C keys `method` off `ls.jacobianMatrix` alone, not off whether it assembles
     // `A` from one.
-    compile_linear_system(ctx, &vars, &residuals, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some(), lsystem.index)
+    compile_linear_system(
+        ctx,
+        &vars,
+        &residuals,
+        &mut lower_inner,
+        use_sparse,
+        lsystem.jacobianMatrix.is_some(),
+        lsystem.index,
+    )
 }
 
 /// Whether a torn linear system uses the sparse solver (C's density/size

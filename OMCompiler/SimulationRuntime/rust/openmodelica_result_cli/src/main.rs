@@ -32,11 +32,19 @@ struct Opts {
 }
 
 fn parse(argv: &[String]) -> Result<Opts, String> {
-    let mut o = Opts { tol: Tolerances::default(), intervals: 0, single: false, args: Vec::new() };
+    let mut o = Opts {
+        tol: Tolerances::default(),
+        intervals: 0,
+        single: false,
+        args: Vec::new(),
+    };
     let mut it = argv.iter();
     while let Some(a) = it.next() {
         let mut num = |what: &str| -> Result<f64, String> {
-            it.next().ok_or_else(|| format!("{what} needs a value"))?.parse::<f64>().map_err(|e| format!("{what}: {e}"))
+            it.next()
+                .ok_or_else(|| format!("{what} needs a value"))?
+                .parse::<f64>()
+                .map_err(|e| format!("{what}: {e}"))
         };
         match a.as_str() {
             "--relTol" => o.tol.reltol = num(a)?,
@@ -66,7 +74,13 @@ fn csv_row(out: &mut String, first: &str, rest: impl Iterator<Item = f64>) {
 }
 
 fn run(o: Opts) -> Result<String, String> {
-    let need = |n: usize| if o.args.len() < n + 1 { Err(USAGE.to_owned()) } else { Ok(()) };
+    let need = |n: usize| {
+        if o.args.len() < n + 1 {
+            Err(USAGE.to_owned())
+        } else {
+            Ok(())
+        }
+    };
     let cmd = o.args.first().map(String::as_str).unwrap_or("");
     let mut out = String::new();
     match cmd {
@@ -75,7 +89,12 @@ fn run(o: Opts) -> Result<String, String> {
             let f = ResultFile::open(&o.args[1])?;
             for v in f.variables() {
                 let kind = if f.is_parameter(&v) { "parameter" } else { "variable" };
-                out.push_str(&format!("{v}\t{kind}\t{}\t{}\t{}\n", f.var_type(&v), f.unit(&v), f.description(&v)));
+                out.push_str(&format!(
+                    "{v}\t{kind}\t{}\t{}\t{}\n",
+                    f.var_type(&v),
+                    f.unit(&v),
+                    f.description(&v)
+                ));
             }
         }
         "info" => {
@@ -86,7 +105,12 @@ fn run(o: Opts) -> Result<String, String> {
             let (start, stop) = (f.start_time(), f.stop_time());
             out.push_str(&format!("rows: {}\n", f.nrows()));
             out.push_str(&format!("time: {} from {start} to {stop}\n", f.time_name()));
-            out.push_str(&format!("variables: {} ({} parameters, {} compared)\n", vars.len(), params, f.compared_variables().len()));
+            out.push_str(&format!(
+                "variables: {} ({} parameters, {} compared)\n",
+                vars.len(),
+                params,
+                f.compared_variables().len()
+            ));
         }
         "traj" => {
             need(2)?;
@@ -103,14 +127,20 @@ fn run(o: Opts) -> Result<String, String> {
             }
             out.push('\n');
             for (r, t) in time.iter().enumerate() {
-                csv_row(&mut out, &format!("{t}"), cols.iter().map(|c| c.get(r).copied().unwrap_or(f64::NAN)));
+                csv_row(
+                    &mut out,
+                    &format!("{t}"),
+                    cols.iter().map(|c| c.get(r).copied().unwrap_or(f64::NAN)),
+                );
             }
         }
         "val" => {
             need(3)?;
             let mut f = ResultFile::open(&o.args[1])?;
             let t: f64 = o.args[3].parse().map_err(|e| format!("TIME: {e}"))?;
-            let v = f.value_at(&o.args[2], t).ok_or_else(|| format!("Could not read variable {} at {t}", o.args[2]))?;
+            let v = f
+                .value_at(&o.args[2], t)
+                .ok_or_else(|| format!("Could not read variable {} at {t}", o.args[2]))?;
             out.push_str(&format!("{v}\n"));
         }
         "diff" => {
@@ -130,7 +160,11 @@ fn run(o: Opts) -> Result<String, String> {
             out.push_str(&format!("# differs: {}, abstol: {}\n", d.differs, d.abstol));
             out.push_str("time,reference,actual,high,low\n");
             for i in 0..d.time.len() {
-                csv_row(&mut out, &format!("{}", d.time[i]), [d.reference[i], d.actual[i], d.high[i], d.low[i]].into_iter());
+                csv_row(
+                    &mut out,
+                    &format!("{}", d.time[i]),
+                    [d.reference[i], d.actual[i], d.high[i], d.low[i]].into_iter(),
+                );
             }
         }
         "convert" => {

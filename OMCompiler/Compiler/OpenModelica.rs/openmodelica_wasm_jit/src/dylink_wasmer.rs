@@ -10,9 +10,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 
 use wasmer::{
-    AsStoreMut, AsStoreRef, Extern, Function, FunctionEnv, FunctionEnvMut, FunctionType, Global, Imports,
-    Instance, Memory, MemoryType, Module, Pages, RuntimeError, Store, Table, TableType, Type,
-    TypedFunction, Value,
+    AsStoreMut, AsStoreRef, Extern, Function, FunctionEnv, FunctionEnvMut, FunctionType, Global, Imports, Instance,
+    Memory, MemoryType, Module, Pages, RuntimeError, Store, Table, TableType, Type, TypedFunction, Value,
 };
 
 use crate::dylink::{self, Dylink, SIDE_STACK_SIZE};
@@ -95,7 +94,10 @@ enum Reserve<'a> {
     /// The libraries' data segments and their shared shadow stack, and nothing
     /// else. It never runs again once a library has been called, so the pages
     /// dlmalloc grows for itself stay its own.
-    Bump { memory: Memory, next: u32 },
+    Bump {
+        memory: Memory,
+        next: u32,
+    },
     Guest(&'a TypedFunction<u32, u32>),
 }
 
@@ -105,7 +107,9 @@ impl Reserve<'_> {
             Reserve::Bump { memory, next } => {
                 let align = align.max(1);
                 let addr = next.next_multiple_of(align);
-                let end = addr.checked_add(size.max(1)).ok_or("dylink: the libraries do not fit in 4 GB")?;
+                let end = addr
+                    .checked_add(size.max(1))
+                    .ok_or("dylink: the libraries do not fit in 4 GB")?;
                 let have = memory.view(&store.as_store_ref()).data_size();
                 if u64::from(end) > have {
                     let need = u64::from(end) - have;
@@ -138,14 +142,20 @@ pub fn link(store: &mut Store, libs: &[Library]) -> Result<Linked> {
     // values in the C these libraries are compiled from.
     let table = Table::new(store, TableType::new(Type::FuncRef, 1, None), Value::FuncRef(None))
         .map_err(|e| format!("dylink: cannot create the indirect function table: {e}"))?;
-    let mut reserve = Reserve::Bump { memory: memory.clone(), next: 64 };
-    let host = FunctionEnv::new(store, Host {
-        memory: Some(memory.clone()),
-        malloc: None,
-        vsnprintf: None,
-        temps: Vec::new(),
-        error: None,
-    });
+    let mut reserve = Reserve::Bump {
+        memory: memory.clone(),
+        next: 64,
+    };
+    let host = FunctionEnv::new(
+        store,
+        Host {
+            memory: Some(memory.clone()),
+            malloc: None,
+            vsnprintf: None,
+            temps: Vec::new(),
+            error: None,
+        },
+    );
     let imports = modelica_utilities_imports(store, &host);
     link_with(store, memory, table, &mut reserve, libs, &imports, host)
 }
@@ -161,13 +171,16 @@ pub fn link_into(
     host_imports: &HashMap<String, Function>,
 ) -> Result<Linked> {
     let mut reserve = Reserve::Guest(rt_alloc);
-    let host = FunctionEnv::new(store, Host {
-        memory: Some(memory.clone()),
-        malloc: None,
-        vsnprintf: None,
-        temps: Vec::new(),
-        error: None,
-    });
+    let host = FunctionEnv::new(
+        store,
+        Host {
+            memory: Some(memory.clone()),
+            malloc: None,
+            vsnprintf: None,
+            temps: Vec::new(),
+            error: None,
+        },
+    );
     link_with(store, memory, table, &mut reserve, libs, host_imports, host)
 }
 
@@ -205,7 +218,10 @@ fn link_with(
         let module = Module::from_binary(store.engine(), lib.bytes)
             .map_err(|e| format!("external \"C\" library `{}` is not valid wasm: {e}", lib.name))?;
         defined.extend(
-            module.exports().filter(|e| e.ty().func().is_some()).map(|e| e.name().to_owned()),
+            module
+                .exports()
+                .filter(|e| e.ty().func().is_some())
+                .map(|e| e.name().to_owned()),
         );
         modules.push(module);
     }
@@ -230,8 +246,22 @@ fn link_with(
         })?;
         weak.extend(dl.weak_imports.iter().cloned());
         let placed = place(
-            store, module, lib.name, &dl, &memory, &table, reserve, &stack_pointer, &wasi_env,
-            &host, host_imports, &defined, &mut deferred, &mut got_mem, &mut got_func, &mut funcs,
+            store,
+            module,
+            lib.name,
+            &dl,
+            &memory,
+            &table,
+            reserve,
+            &stack_pointer,
+            &wasi_env,
+            &host,
+            host_imports,
+            &defined,
+            &mut deferred,
+            &mut got_mem,
+            &mut got_func,
+            &mut funcs,
             &mut data,
         )?;
         if let Some(f) = placed.relocs {
@@ -253,7 +283,9 @@ fn link_with(
             Some(a) => a,
             None if weak.contains(sym) => 0,
             None => {
-                return Err(format!("external \"C\" library references undefined data symbol `{sym}`"))
+                return Err(format!(
+                    "external \"C\" library references undefined data symbol `{sym}`"
+                ));
             }
         };
         g.set(store, Value::I32(addr as i32))
@@ -291,14 +323,18 @@ fn link_with(
     host.as_mut(store).vsnprintf = funcs.get("vsnprintf").and_then(|f| f.typed(&*store).ok());
     set_guest_cwd(store, &memory, &data)?;
 
-    Ok(Linked { memory, table, funcs, malloc, free, stack_pointer: Some(stack_pointer), host })
+    Ok(Linked {
+        memory,
+        table,
+        funcs,
+        malloc,
+        free,
+        stack_pointer: Some(stack_pointer),
+        host,
+    })
 }
 
-fn typed(
-    store: &mut Store,
-    funcs: &HashMap<String, Function>,
-    name: &str,
-) -> Result<TypedFunction<u32, u32>> {
+fn typed(store: &mut Store, funcs: &HashMap<String, Function>, name: &str) -> Result<TypedFunction<u32, u32>> {
     funcs
         .get(name)
         .ok_or_else(|| format!("dylink: the linked libraries define no `{name}`"))?
@@ -318,9 +354,12 @@ fn set_guest_cwd(store: &mut Store, memory: &Memory, data: &HashMap<String, u32>
     };
     let mut bytes = dir.into_bytes();
     bytes.push(0);
-    let Some(off) = grow_for(store, memory, bytes.len() as u32) else { return Ok(()) };
+    let Some(off) = grow_for(store, memory, bytes.len() as u32) else {
+        return Ok(());
+    };
     let view = memory.view(&*store);
-    view.write(off as u64, &bytes).map_err(|e| format!("dylink: cannot write the cwd: {e}"))?;
+    view.write(off as u64, &bytes)
+        .map_err(|e| format!("dylink: cannot write the cwd: {e}"))?;
     view.write(slot as u64, &off.to_le_bytes())
         .map_err(|e| format!("dylink: cannot set __wasilibc_cwd: {e}"))
 }
@@ -380,9 +419,7 @@ fn place(
             ("env", "__stack_pointer") => stack_pointer.clone().into(),
             ("env", "__memory_base") => Global::new(store, Value::I32(memory_base as i32)).into(),
             // `__table_base32` is the 64-bit variant's spelling of the same value.
-            ("env", "__table_base" | "__table_base32") => {
-                Global::new(store, Value::I32(table_base as i32)).into()
-            }
+            ("env", "__table_base" | "__table_base32") => Global::new(store, Value::I32(table_base as i32)).into(),
             ("GOT.mem", sym) => got_entry(store, got_mem, sym).into(),
             ("GOT.func", sym) => got_entry(store, got_func, sym).into(),
             ("env", sym) => {
@@ -394,9 +431,7 @@ fn place(
                 // A placed library's export, else a host import, else deferred.
                 match funcs.get(sym).or_else(|| host_imports.get(sym)) {
                     Some(f) => f.clone().into(),
-                    None if defined.contains(sym) => {
-                        deferred_import(store, host, &ty, deferred, sym).into()
-                    }
+                    None if defined.contains(sym) => deferred_import(store, host, &ty, deferred, sym).into(),
                     None => missing_symbol_stub(store, host, &ty, lib_name, sym).into(),
                 }
             }
@@ -410,7 +445,7 @@ fn place(
             (m, name) => {
                 return Err(format!(
                     "external \"C\" library `{lib_name}` imports {m}.{name}, which no wasm-jit host provides"
-                ))
+                ));
             }
         };
         imports.define(&m, &name, ext);
@@ -419,7 +454,10 @@ fn place(
     let instance = Instance::new(store, module, &imports)
         .map_err(|e| format!("external \"C\" library `{lib_name}` failed to load: {e}"))?;
 
-    let mut placed = Placed { relocs: None, init: None };
+    let mut placed = Placed {
+        relocs: None,
+        init: None,
+    };
     for (name, ext) in instance.exports.iter() {
         match ext {
             Extern::Function(f) => {
@@ -481,8 +519,7 @@ fn missing_symbol_stub(
     lib_name: &str,
     sym: &str,
 ) -> Function {
-    let msg =
-        format!("external \"C\" library `{lib_name}` called `{sym}`, which is not available in wasm");
+    let msg = format!("external \"C\" library `{lib_name}` called `{sym}`, which is not available in wasm");
     Function::new_with_env(store, host, ty.clone(), move |_: FunctionEnvMut<Host>, _: &[Value]| {
         Err(RuntimeError::new(msg.clone()))
     })
@@ -501,23 +538,22 @@ fn deferred_import(
 ) -> Function {
     let target = deferred.entry(sym.to_owned()).or_default().clone();
     let sym = sym.to_owned();
-    Function::new_with_env(store, host, ty.clone(), move |mut env: FunctionEnvMut<Host>, args: &[Value]| {
-        match target.get() {
+    Function::new_with_env(
+        store,
+        host,
+        ty.clone(),
+        move |mut env: FunctionEnvMut<Host>, args: &[Value]| match target.get() {
             Some(f) => f.call(&mut env, args).map(Vec::from),
             None => Err(RuntimeError::new(format!("external \"C\": `{sym}` was never defined"))),
-        }
-    })
+        },
+    )
 }
 
 // ── the ModelicaUtilities a library links against ────────────────────────────
 
 /// `vsnprintf(buf, 2048, fmt, va)` in the guest, as C's `SIZE_LOG_BUFFER` does.
 /// Without a `vsnprintf` to call, the format string itself is the best available.
-fn format_va(
-    env: &mut FunctionEnvMut<Host>,
-    fmt: i32,
-    va: i32,
-) -> std::result::Result<String, RuntimeError> {
+fn format_va(env: &mut FunctionEnvMut<Host>, fmt: i32, va: i32) -> std::result::Result<String, RuntimeError> {
     const LOG_BUFFER: u32 = 2048;
     let (vsnprintf, malloc) = (env.data().vsnprintf.clone(), env.data().malloc.clone());
     let (Some(vsnprintf), Some(malloc)) = (vsnprintf, malloc) else {
@@ -534,7 +570,9 @@ fn format_va(
 }
 
 fn read_cstr(env: &FunctionEnvMut<Host>, ptr: i32) -> String {
-    let Some(mem) = env.data().memory.clone() else { return String::new() };
+    let Some(mem) = env.data().memory.clone() else {
+        return String::new();
+    };
     crate::sim_runtime::read_cstr(&mem, &env.as_store_ref(), ptr as u32)
 }
 
@@ -542,10 +580,7 @@ fn read_cstr(env: &FunctionEnvMut<Host>, ptr: i32) -> String {
 /// and the `rt_ext_*` one carrying `external_c_callbacks.c` calls instead. A
 /// `ModelicaError` ends the call, its message kept for the caller since the trap
 /// cannot carry it.
-fn modelica_utilities_imports(
-    store: &mut Store,
-    host: &FunctionEnv<Host>,
-) -> HashMap<String, Function> {
+fn modelica_utilities_imports(store: &mut Store, host: &FunctionEnv<Host>) -> HashMap<String, Function> {
     let mut m: HashMap<String, Function> = HashMap::new();
 
     let error = Function::new_typed_with_env(store, host, |mut env: FunctionEnvMut<Host>, ptr: i32| {
@@ -561,33 +596,53 @@ fn modelica_utilities_imports(
     });
     // The varargs forms: `%s` and friends are interpolated by the guest's own
     // `vsnprintf`, where the `va_list` it is given points.
-    let error_fmt = Function::new_typed_with_env(store, host, |mut env: FunctionEnvMut<Host>, fmt: i32, va: i32| -> std::result::Result<(), RuntimeError> {
-        let msg = format_va(&mut env, fmt, va)?;
-        env.data_mut().error = Some(msg.clone());
-        Err(RuntimeError::new(msg))
-    });
-    let warning_fmt = Function::new_typed_with_env(store, host, |mut env: FunctionEnvMut<Host>, fmt: i32, va: i32| -> std::result::Result<(), RuntimeError> {
-        openmodelica_error::ErrorExt::runtime_warning(&format_va(&mut env, fmt, va)?);
-        Ok(())
-    });
-    let message_fmt = Function::new_typed_with_env(store, host, |mut env: FunctionEnvMut<Host>, fmt: i32, va: i32| -> std::result::Result<(), RuntimeError> {
-        openmodelica_error::ErrorExt::runtime_message(&format_va(&mut env, fmt, va)?);
-        Ok(())
-    });
+    let error_fmt = Function::new_typed_with_env(
+        store,
+        host,
+        |mut env: FunctionEnvMut<Host>, fmt: i32, va: i32| -> std::result::Result<(), RuntimeError> {
+            let msg = format_va(&mut env, fmt, va)?;
+            env.data_mut().error = Some(msg.clone());
+            Err(RuntimeError::new(msg))
+        },
+    );
+    let warning_fmt = Function::new_typed_with_env(
+        store,
+        host,
+        |mut env: FunctionEnvMut<Host>, fmt: i32, va: i32| -> std::result::Result<(), RuntimeError> {
+            openmodelica_error::ErrorExt::runtime_warning(&format_va(&mut env, fmt, va)?);
+            Ok(())
+        },
+    );
+    let message_fmt = Function::new_typed_with_env(
+        store,
+        host,
+        |mut env: FunctionEnvMut<Host>, fmt: i32, va: i32| -> std::result::Result<(), RuntimeError> {
+            openmodelica_error::ErrorExt::runtime_message(&format_va(&mut env, fmt, va)?);
+            Ok(())
+        },
+    );
     // `ModelicaAllocateString`'s buffer lives in the shared memory, so the caller
     // can read it; it is freed once the call's results are out.
-    let allocate = Function::new_typed_with_env(store, host, |mut env: FunctionEnvMut<Host>, len: i32| -> std::result::Result<i32, RuntimeError> {
-        let malloc = env.data().malloc.clone()
-            .ok_or_else(|| RuntimeError::new("ModelicaAllocateString before the libraries are up"))?;
-        let n = len.max(0) as u32 + 1;
-        let off = malloc.call(&mut env, n)?;
-        if let Some(mem) = env.data().memory.clone() {
-            mem.view(&env).write(off as u64, &vec![0u8; n as usize])
-                .map_err(|e| RuntimeError::new(format!("{e}")))?;
-        }
-        env.data_mut().temps.push(off);
-        Ok(off as i32)
-    });
+    let allocate = Function::new_typed_with_env(
+        store,
+        host,
+        |mut env: FunctionEnvMut<Host>, len: i32| -> std::result::Result<i32, RuntimeError> {
+            let malloc = env
+                .data()
+                .malloc
+                .clone()
+                .ok_or_else(|| RuntimeError::new("ModelicaAllocateString before the libraries are up"))?;
+            let n = len.max(0) as u32 + 1;
+            let off = malloc.call(&mut env, n)?;
+            if let Some(mem) = env.data().memory.clone() {
+                mem.view(&env)
+                    .write(off as u64, &vec![0u8; n as usize])
+                    .map_err(|e| RuntimeError::new(format!("{e}")))?;
+            }
+            env.data_mut().temps.push(off);
+            Ok(off as i32)
+        },
+    );
     // ModelicaRandom's automatic global seed is the only caller: `getTime` leaves
     // its seven int* outputs alone and `getpid` is a constant.
     let get_time = Function::new_typed(store, |_: i32, _: i32, _: i32, _: i32, _: i32, _: i32, _: i32| {});
@@ -658,10 +713,16 @@ struct Mem(Memory);
 
 impl Mem {
     fn read(&self, store: &impl AsStoreRef, at: u32, buf: &mut [u8]) -> Result<()> {
-        self.0.view(store).read(at as u64, buf).map_err(|e| format!("external \"C\": bad read: {e}"))
+        self.0
+            .view(store)
+            .read(at as u64, buf)
+            .map_err(|e| format!("external \"C\": bad read: {e}"))
     }
     fn write(&self, store: &impl AsStoreRef, at: u32, bytes: &[u8]) -> Result<()> {
-        self.0.view(store).write(at as u64, bytes).map_err(|e| format!("external \"C\": bad write: {e}"))
+        self.0
+            .view(store)
+            .write(at as u64, bytes)
+            .map_err(|e| format!("external \"C\": bad write: {e}"))
     }
     fn u32(&self, store: &impl AsStoreRef, at: u32) -> u32 {
         let mut b = [0u8; 4];
@@ -701,18 +762,21 @@ impl Mem {
         let mut at = ptr as u64;
         let mut b = [0u8; 1];
         while at < end {
-            view.read(at, &mut b).map_err(|e| format!("external \"C\": bad read: {e}"))?;
+            view.read(at, &mut b)
+                .map_err(|e| format!("external \"C\": bad read: {e}"))?;
             if b[0] == 0 {
                 return Ok((at - ptr as u64) as usize);
             }
             at += 1;
         }
-        return Err("external \"C\": unterminated `char*`".to_string())
+        return Err("external \"C\": unterminated `char*`".to_string());
     }
     /// The dimensions of an in-wasm array object and the offset of its elements.
     fn array(&self, store: &impl AsStoreRef, obj: u32) -> Result<(Vec<usize>, u32)> {
         let ndims = self.u32(store, obj + 8) as usize;
-        let dims = (0..ndims).map(|k| self.u32(store, obj + 16 + 4 * k as u32) as usize).collect();
+        let dims = (0..ndims)
+            .map(|k| self.u32(store, obj + 16 + 4 * k as u32) as usize)
+            .collect();
         Ok((dims, ((16 + ndims * 4 + 7) & !7) as u32))
     }
 }
@@ -738,20 +802,31 @@ pub fn bind_in_wasm_external(
     }
     let env = FunctionEnv::new(
         store,
-        CallEnv { memory: memory.clone(), rt: rt.clone(), target, sig: sig.clone(), stack },
+        CallEnv {
+            memory: memory.clone(),
+            rt: rt.clone(),
+            target,
+            sig: sig.clone(),
+            stack,
+        },
     );
     let name = sig.name.to_string();
     Some(
-        Function::new_with_env(store, &env, functype.clone(), move |mut env: FunctionEnvMut<CallEnv>, args: &[Value]| {
-            let saved = saved_stack(&mut env);
-            match call_external_in_wasm(&mut env, args) {
-                Ok(v) => Ok(v),
-                Err(e) => match recover_trial(&mut env, saved)? {
-                    Some(zeroed) => Ok(zeroed),
-                    None => Err(RuntimeError::new(format!("external \"C\" `{name}`: {e}"))),
-                },
-            }
-        })
+        Function::new_with_env(
+            store,
+            &env,
+            functype.clone(),
+            move |mut env: FunctionEnvMut<CallEnv>, args: &[Value]| {
+                let saved = saved_stack(&mut env);
+                match call_external_in_wasm(&mut env, args) {
+                    Ok(v) => Ok(v),
+                    Err(e) => match recover_trial(&mut env, saved)? {
+                        Some(zeroed) => Ok(zeroed),
+                        None => Err(RuntimeError::new(format!("external \"C\" `{name}`: {e}"))),
+                    },
+                }
+            },
+        )
         .into(),
     )
 }
@@ -771,8 +846,12 @@ fn recover_trial(
 ) -> std::result::Result<Option<Vec<Value>>, RuntimeError> {
     use crate::sig::SigTy;
     let (data, mut store) = env.data_and_store_mut();
-    let (nls, str_new, sig, stack) =
-        (data.rt.nls.clone(), data.rt.str_new.clone(), data.sig.clone(), data.stack.clone());
+    let (nls, str_new, sig, stack) = (
+        data.rt.nls.clone(),
+        data.rt.str_new.clone(),
+        data.sig.clone(),
+        data.stack.clone(),
+    );
     if let (Some(g), Some(v)) = (stack, saved) {
         g.set(&mut store, Value::I32(v))?;
     }
@@ -796,7 +875,7 @@ fn recover_trial(
 /// results back as the import's wasm results.
 fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> Result<Vec<Value>> {
     use crate::sig::SigTy;
-    use dylink::{abi_of, c_record_layout, record_leaf, Abi};
+    use dylink::{Abi, abi_of, c_record_layout, record_leaf};
 
     let (data, mut store) = env.data_and_store_mut();
     let mem = Mem(data.memory.clone());
@@ -863,7 +942,10 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                 }
                 Abi::Indirect => {
                     let c = c_record_layout(fields);
-                    let cell = rt.alloc.call(&mut store, c.size.max(1)).map_err(|e| format!("rt_alloc: {e}"))?;
+                    let cell = rt
+                        .alloc
+                        .call(&mut store, c.size.max(1))
+                        .map_err(|e| format!("rt_alloc: {e}"))?;
                     mem.write(&store, cell, &vec![0u8; c.size.max(1) as usize])?;
                     if let Some(v) = v {
                         let handle = v.i32().ok_or("external \"C\": expected a record handle")? as u32;
@@ -888,9 +970,9 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
             call_args.push(Value::I32(cell as i32));
             continue;
         }
-        let v = args.get(in_i).ok_or_else(|| {
-            "external \"C\": the call passes fewer arguments than the signature declares".to_string()
-        })?;
+        let v = args
+            .get(in_i)
+            .ok_or_else(|| "external \"C\": the call passes fewer arguments than the signature declares".to_string())?;
         in_i += 1;
         // FORTRAN 77 takes every argument by reference.
         if fortran && matches!(ty, SigTy::Real | SigTy::Int | SigTy::Bool) {
@@ -914,7 +996,10 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                 // `char*`: the same bytes, NUL-terminated.
                 let off = v.i32().ok_or("external \"C\": expected a String handle")? as u32;
                 let len = mem.u32(&store, off + 4) as usize;
-                let cell = rt.alloc.call(&mut store, (len + 1) as u32).map_err(|e| format!("rt_alloc: {e}"))?;
+                let cell = rt
+                    .alloc
+                    .call(&mut store, (len + 1) as u32)
+                    .map_err(|e| format!("rt_alloc: {e}"))?;
                 mem.copy(&store, off + 8, cell, len, true)?;
                 temps.push(cell);
                 call_args.push(Value::I32(cell as i32));
@@ -927,12 +1012,18 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                 // NUL-terminated copies (C's `data_of_string_c89_array`).
                 if let SigTy::Str = &**elem {
                     let n: usize = dims.iter().product();
-                    let vec_cell = rt.alloc.call(&mut store, (n * 4).max(1) as u32).map_err(|e| format!("rt_alloc: {e}"))?;
+                    let vec_cell = rt
+                        .alloc
+                        .call(&mut store, (n * 4).max(1) as u32)
+                        .map_err(|e| format!("rt_alloc: {e}"))?;
                     temps.push(vec_cell);
                     for k in 0..n {
                         let h = mem.u32(&store, base + (k * 4) as u32);
                         let len = if h == 0 { 0 } else { mem.u32(&store, h + 4) as usize };
-                        let cell = rt.alloc.call(&mut store, (len + 1) as u32).map_err(|e| format!("rt_alloc: {e}"))?;
+                        let cell = rt
+                            .alloc
+                            .call(&mut store, (len + 1) as u32)
+                            .map_err(|e| format!("rt_alloc: {e}"))?;
                         temps.push(cell);
                         mem.copy(&store, h + 8, cell, len, true)?;
                         mem.put_u32(&store, vec_cell + (k * 4) as u32, cell);
@@ -947,7 +1038,10 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
                     // C's `convert_alloc_*_to_f77`.
                     let esz = crate::host::array_abi::elem_size(elem);
                     let n = dims.iter().product::<usize>() * esz;
-                    let cell = rt.alloc.call(&mut store, n as u32).map_err(|e| format!("rt_alloc: {e}"))?;
+                    let cell = rt
+                        .alloc
+                        .call(&mut store, n as u32)
+                        .map_err(|e| format!("rt_alloc: {e}"))?;
                     let src = mem.take(&store, base, n)?;
                     let mut buf = vec![0u8; n];
                     crate::host::array_abi::reorder(&src, &mut buf, &dims, esz, true);
@@ -985,14 +1079,22 @@ fn call_external_in_wasm(env: &mut FunctionEnvMut<CallEnv>, args: &[Value]) -> R
         for k in 0..*n {
             let ptr = mem.u32(&store, vec_cell + (k * 4) as u32);
             let len = mem.strlen(&store, ptr)?;
-            let handle = rt.str_new.call(&mut store, len as u32).map_err(|e| format!("rt_str_new: {e}"))?;
-            let dst = rt.str_data.call(&mut store, handle).map_err(|e| format!("rt_str_data: {e}"))?;
+            let handle = rt
+                .str_new
+                .call(&mut store, len as u32)
+                .map_err(|e| format!("rt_str_new: {e}"))?;
+            let dst = rt
+                .str_data
+                .call(&mut store, handle)
+                .map_err(|e| format!("rt_str_data: {e}"))?;
             mem.copy(&store, ptr, dst, len, false)?;
             let slot = *base + (k * 4) as u32;
             let old = mem.u32(&store, slot);
             mem.put_u32(&store, slot, handle);
             if old != 0 {
-                rt.release.call(&mut store, old).map_err(|e| format!("rt_release: {e}"))?;
+                rt.release
+                    .call(&mut store, old)
+                    .map_err(|e| format!("rt_release: {e}"))?;
             }
         }
     }
@@ -1050,14 +1152,18 @@ fn ext_result(
     use crate::sig::SigTy;
     Ok(match ty {
         SigTy::Real => Value::F64(f64::from_le_bytes(raw)),
-        SigTy::Int | SigTy::Bool | SigTy::Ptr => {
-            Value::I32(i32::from_le_bytes(raw[..4].try_into().expect("4 bytes")))
-        }
+        SigTy::Int | SigTy::Bool | SigTy::Ptr => Value::I32(i32::from_le_bytes(raw[..4].try_into().expect("4 bytes"))),
         SigTy::Str => {
             let ptr = u32::from_le_bytes(raw[..4].try_into().expect("4 bytes"));
             let len = mem.strlen(&*store, ptr)?;
-            let handle = rt.str_new.call(&mut *store, len as u32).map_err(|e| format!("rt_str_new: {e}"))?;
-            let dst = rt.str_data.call(&mut *store, handle).map_err(|e| format!("rt_str_data: {e}"))?;
+            let handle = rt
+                .str_new
+                .call(&mut *store, len as u32)
+                .map_err(|e| format!("rt_str_new: {e}"))?;
+            let dst = rt
+                .str_data
+                .call(&mut *store, handle)
+                .map_err(|e| format!("rt_str_data: {e}"))?;
             mem.copy(&*store, ptr, dst, len, false)?;
             Value::I32(handle as i32)
         }
@@ -1202,18 +1308,15 @@ fn record_from_c(
 }
 
 /// A NUL-terminated copy of the String `handle`, as a `char*`.
-fn c_string(
-    store: &mut impl AsStoreMut,
-    mem: &Mem,
-    rt: &ExtRt,
-    handle: u32,
-    temps: &mut Vec<u32>,
-) -> Result<u32> {
+fn c_string(store: &mut impl AsStoreMut, mem: &Mem, rt: &ExtRt, handle: u32, temps: &mut Vec<u32>) -> Result<u32> {
     if handle == 0 {
         return Ok(0);
     }
     let len = mem.u32(&*store, handle + 4) as usize;
-    let cell = rt.alloc.call(&mut *store, (len + 1) as u32).map_err(|e| format!("rt_alloc: {e}"))?;
+    let cell = rt
+        .alloc
+        .call(&mut *store, (len + 1) as u32)
+        .map_err(|e| format!("rt_alloc: {e}"))?;
     mem.copy(&*store, handle + 8, cell, len, true)?;
     temps.push(cell);
     Ok(cell)
@@ -1222,8 +1325,14 @@ fn c_string(
 /// A fresh String with the bytes of the `char*` at `ptr`.
 fn wasm_string(store: &mut impl AsStoreMut, mem: &Mem, rt: &ExtRt, ptr: u32) -> Result<u32> {
     let len = mem.strlen(&*store, ptr)?;
-    let handle = rt.str_new.call(&mut *store, len as u32).map_err(|e| format!("rt_str_new: {e}"))?;
-    let dst = rt.str_data.call(&mut *store, handle).map_err(|e| format!("rt_str_data: {e}"))?;
+    let handle = rt
+        .str_new
+        .call(&mut *store, len as u32)
+        .map_err(|e| format!("rt_str_new: {e}"))?;
+    let dst = rt
+        .str_data
+        .call(&mut *store, handle)
+        .map_err(|e| format!("rt_str_data: {e}"))?;
     if len > 0 {
         mem.copy(&*store, ptr, dst, len, false)?;
     }

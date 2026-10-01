@@ -63,7 +63,10 @@ pub fn set_from_words(data: *mut DATA, w: &mut dyn Iterator<Item = f64>) -> bool
     };
     free(data);
     if let Some(s) = state {
-        unsafe { (*(*data).simulationInfo).spatialDistributionData = Box::into_raw(Box::new(s)) as *mut SPATIAL_DISTRIBUTION_DATA };
+        unsafe {
+            (*(*data).simulationInfo).spatialDistributionData =
+                Box::into_raw(Box::new(s)) as *mut SPATIAL_DISTRIBUTION_DATA
+        };
     }
     true
 }
@@ -133,8 +136,7 @@ pub extern "C" fn spatialDistribution(
     let si = unsafe { &*(*data).simulationInfo };
     let time = unsafe { (*(*(*data).localData)).timeValue };
     let mode = (si.discreteCall != 0) as u32;
-    let (o0, o1) =
-        state(data, threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
+    let (o0, o1) = state(data, threadData).eval(index, time, in0, in1, posX, isPositiveVelocity != 0, mode);
     if !out1.is_null() {
         unsafe { *out1 = o1 };
     }

@@ -169,14 +169,7 @@ impl SymSolver {
     }
 
     /// `sym_solver_step`: one inline evaluation over the whole output interval.
-    fn plain_step(
-        &mut self,
-        ode: &mut dyn InlineOde,
-        t: f64,
-        y: &[f64],
-        yp: &[f64],
-        target: f64,
-    ) -> Result<()> {
+    fn plain_step(&mut self, ode: &mut dyn InlineOde, t: f64, y: &[f64], yp: &[f64], target: f64) -> Result<()> {
         let h = target - t;
         if h < DASSL_STEP_EPS {
             log(|| "Desired step to small try next one".into());
@@ -197,14 +190,7 @@ impl SymSolver {
 
     /// `sym_solver_ssc_step`: inner steps of a controlled size up to and past the
     /// output point, then linear interpolation back onto it.
-    fn ssc_step(
-        &mut self,
-        ode: &mut dyn InlineOde,
-        t: f64,
-        y: &[f64],
-        yp: &[f64],
-        target: f64,
-    ) -> Result<()> {
+    fn ssc_step(&mut self, ode: &mut dyn InlineOde, t: f64, y: &[f64], yp: &[f64], target: f64) -> Result<()> {
         let h = target - t;
         if self.first_step {
             self.begin(ode, t, y, h)?;
@@ -348,7 +334,11 @@ impl SymSolver {
         }
         d2 = sqrt(d2) / h0;
         let d = fmax(d1, d2);
-        let h1 = if d > 1e-15 { sqrt(0.01 / d) } else { fmax(1e-6, h0 * 1e-3) };
+        let h1 = if d > 1e-15 {
+            sqrt(0.01 / d)
+        } else {
+            fmax(1e-6, h0 * 1e-3)
+        };
         self.radau_h = 0.5 * fmin(100.0 * h0, h1);
         Ok(())
     }

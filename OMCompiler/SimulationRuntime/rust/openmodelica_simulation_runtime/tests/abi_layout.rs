@@ -49,7 +49,11 @@ fn abi_matches_the_c_headers() {
         return;
     };
     let checks = checks();
-    assert!(checks.len() > 300, "the generator found almost nothing to check ({})", checks.len());
+    assert!(
+        checks.len() > 300,
+        "the generator found almost nothing to check ({})",
+        checks.len()
+    );
     let mut c = String::from(
         "#include <stddef.h>\n#include <stdio.h>\n#include \"simulation_data.h\"\n\
          #include \"simulation/options.h\"\n",
@@ -109,7 +113,11 @@ fn abi_matches_the_c_headers() {
         }
     }
     let _ = std::fs::remove_dir_all(&dir);
-    assert!(bad.is_empty(), "src/abi.rs no longer matches the C headers:\n{}", bad.join("\n"));
+    assert!(
+        bad.is_empty(),
+        "src/abi.rs no longer matches the C headers:\n{}",
+        bad.join("\n")
+    );
 }
 
 /// src/shim.c declares its own `FILE_INFO`; check it against the mirror.

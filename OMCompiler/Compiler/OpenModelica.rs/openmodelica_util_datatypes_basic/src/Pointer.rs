@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use metamodelica::gc::{MMTrace, MMVisitor, TraceableCell};
 
-use crate::Mutable::{cell_get, cell_set, new_cell, CellInner};
+use crate::Mutable::{CellInner, cell_get, cell_set, new_cell};
 
 // Mirrors the MetaModelica/C representation: `Mutable` corresponds to
 // `mmc_mk_box1(0, data)` (ctor 0, in-place updatable) and `Immutable`
@@ -163,7 +163,10 @@ pub fn clone<T: Clone + PartialEq>(mutable: Pointer<T>) -> Pointer<T> {
 // the callback result: the MM analysis classified `Pointer.apply` infallible
 // based on its callees, which is only sound when the callback itself never
 // fails. Surface a misuse as a panic, consistent with the C runtime.
-pub fn apply<T: Clone + PartialEq + 'static>(mutable: Pointer<T>, func: std::sync::Arc<dyn ::std::ops::Fn(T) -> metamodelica::Result<T> + 'static>) -> metamodelica::Result<Pointer<T>> {
+pub fn apply<T: Clone + PartialEq + 'static>(
+    mutable: Pointer<T>,
+    func: std::sync::Arc<dyn ::std::ops::Fn(T) -> metamodelica::Result<T> + 'static>,
+) -> metamodelica::Result<Pointer<T>> {
     let new = func(access(mutable.clone()))?;
     // The MM source skips the write when `func` returned its argument
     // unchanged (`if not referenceEq(newData, data)`). With `T` passed by

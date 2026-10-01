@@ -103,8 +103,8 @@ pub fn sim_start(prefix: &str, result_file: &str, simflags: &str) -> Result<()> 
     LAST_SIM_LOG.with(|c| c.borrow_mut().clear());
     INIT_OUTPUT.with(|c| *c.borrow_mut() = None);
     sim_driver::set_init_done_hook(on_init_done);
-SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
-sim_driver::set_teardown_hook(on_teardown);
+    SIM_OUTPUT.with(|c| *c.borrow_mut() = None);
+    sim_driver::set_teardown_hook(on_teardown);
     SPLIT_ARMED.with(|a| a.set(true));
     openmodelica_wasm_jit::host::native_stdout::install();
     sim_driver::init_host_hooks();
@@ -125,7 +125,10 @@ sim_driver::set_teardown_hook(on_teardown);
     let (path, keep) = (target.path.clone(), target.keep.clone());
     let built = (|| -> std::result::Result<SessionBackend, String> {
         if inwasm {
-            Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(&model, Some(&target))?))
+            Ok(SessionBackend::InWasm(sim_runtime::build_inwasm_session(
+                &model,
+                Some(&target),
+            )?))
         } else {
             let (mut engine, sim_data) = sim_runtime::build_engine(&model, &meta)?;
             let made = sim_driver::make_driver(&mut *engine, &meta, sim_data, meta.method.as_str())
@@ -140,7 +143,11 @@ sim_driver::set_teardown_hook(on_teardown);
             // inside `drive`.
             openmodelica_wasm_jit::result_sink::arm(target);
             sim_driver::open_result(&mut *engine, &meta, sim_data).map_err(|e| e.to_string())?;
-            Ok(SessionBackend::Host { engine, driver, sim_data })
+            Ok(SessionBackend::Host {
+                engine,
+                driver,
+                sim_data,
+            })
         }
     })();
     // Disarm in case init failed before the hook fired.
@@ -198,7 +205,11 @@ pub fn sim_advance(budget_ms: f64) -> Result<SimStatus> {
         // Advance one chunk. All `sess` borrows end when this block returns its
         // status value.
         let outcome: Result<SimStatus> = match &mut sess.backend {
-            SessionBackend::Host { engine, driver, sim_data } => {
+            SessionBackend::Host {
+                engine,
+                driver,
+                sim_data,
+            } => {
                 let t = sim_driver::now_ms_host();
                 let advanced = driver
                     .advance(&mut **engine, &sess.meta, budget_ms)
@@ -218,14 +229,9 @@ pub fn sim_advance(budget_ms: f64) -> Result<SimStatus> {
                         let mut stats = SolveStats::default();
                         driver.fill_stats(&sess.meta, &mut stats);
                         // C's order: the `-reconcile*` procedures, then `-l`.
-                        let (recon_log, recon_res) =
-                            sim_driver::reconcile(&mut **engine, &sess.meta, *sim_data);
+                        let (recon_log, recon_res) = sim_driver::reconcile(&mut **engine, &sess.meta, *sim_data);
                         let lin = match recon_res.is_ok() {
-                            true => openmodelica_sim_meta::linearize::linearize(
-                                &mut **engine,
-                                &sess.meta,
-                                *sim_data,
-                            )?,
+                            true => openmodelica_sim_meta::linearize::linearize(&mut **engine, &sess.meta, *sim_data)?,
                             false => None,
                         };
                         let params = sim_driver::finalize_run(&mut **engine, &sess.meta, *sim_data)?;
@@ -241,8 +247,14 @@ pub fn sim_advance(budget_ms: f64) -> Result<SimStatus> {
                         if log_stats {
                             stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
                         }
-                        stats_block
-                            .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &keep, run, written)?);
+                        stats_block.push_str(&finalize_and_capture(
+                            &model,
+                            &sess.meta,
+                            &result_file,
+                            &keep,
+                            run,
+                            written,
+                        )?);
                         Ok(if matches!(done, sim_driver::Advance::Terminated) {
                             SimStatus::Terminated
                         } else {
@@ -266,9 +278,19 @@ pub fn sim_advance(budget_ms: f64) -> Result<SimStatus> {
                         if log_stats {
                             stats_block = openmodelica_sim_meta::stats::log_stats_block(&run.stats);
                         }
-                        stats_block
-                            .push_str(&finalize_and_capture(&model, &sess.meta, &result_file, &keep, run, written)?);
-                        Ok(if rc == 2 { SimStatus::Terminated } else { SimStatus::Done })
+                        stats_block.push_str(&finalize_and_capture(
+                            &model,
+                            &sess.meta,
+                            &result_file,
+                            &keep,
+                            run,
+                            written,
+                        )?);
+                        Ok(if rc == 2 {
+                            SimStatus::Terminated
+                        } else {
+                            SimStatus::Done
+                        })
                     }
                     Err(e) => Err(e),
                 }

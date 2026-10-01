@@ -79,8 +79,7 @@ fn aot_preload() {
 }
 
 fn aot_compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
-    omc_aot_compile_js(component, triple)
-        .map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
+    omc_aot_compile_js(component, triple).map_err(|e| e.as_string().unwrap_or_else(|| format!("{e:?}")))
 }
 
 /// Let a model's externals reach a library this omc does not embed, through
@@ -97,10 +96,7 @@ pub fn omc_enable_wasm_blobs() {
 #[wasm_bindgen]
 pub fn omc_enable_fmu_aot() {
     openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_aot(aot_compile, aot_preload);
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_loaders(
-        omc_fmu_loader_js,
-        omc_fmu_platforms_js(),
-    );
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::set_fmu_loaders(omc_fmu_loader_js, omc_fmu_platforms_js());
 }
 
 // The compiler emits stdout/stderr in fragments (a `print` call need not end on
@@ -230,7 +226,9 @@ pub fn wasi_fd_close(fd: u32) {
 /// absent (a JS number; sizes here are small config/result files).
 #[wasm_bindgen]
 pub fn wasi_path_filestat_get(path: &str) -> f64 {
-    openmodelica_wasi::wasi::stat_size(path).map(|n| n as f64).unwrap_or(-1.0)
+    openmodelica_wasi::wasi::stat_size(path)
+        .map(|n| n as f64)
+        .unwrap_or(-1.0)
 }
 
 /// List directory `path` (absolute; `"/"` is the root) as an array of
@@ -317,11 +315,7 @@ pub fn omc_take_pending_downloads() -> JsValue {
             mirrors.push(&JsValue::from_str(u));
         }
         let _ = js_sys::Reflect::set(&item, &JsValue::from_str("urls"), &mirrors);
-        let _ = js_sys::Reflect::set(
-            &item,
-            &JsValue::from_str("filename"),
-            &JsValue::from_str(&filename),
-        );
+        let _ = js_sys::Reflect::set(&item, &JsValue::from_str("filename"), &JsValue::from_str(&filename));
         arr.push(&item);
     }
     arr.into()
@@ -401,8 +395,16 @@ pub fn omc_sim_series() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&s.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&s.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&s.unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&s.display_unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(s.relative_quantity));
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("displayUnit"),
+                &JsValue::from_str(&s.display_unit),
+            );
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("relativeQuantity"),
+                &JsValue::from_bool(s.relative_quantity),
+            );
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("constant"), &JsValue::from_bool(s.constant));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("alias"), &JsValue::from_bool(s.alias));
             arr.push(&item);
@@ -424,8 +426,16 @@ pub fn omc_sim_parameters() -> JsValue {
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("name"), &JsValue::from_str(&p.name));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("comment"), &JsValue::from_str(&p.comment));
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("unit"), &JsValue::from_str(&p.unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("displayUnit"), &JsValue::from_str(&p.display_unit));
-            let _ = js_sys::Reflect::set(&item, &JsValue::from_str("relativeQuantity"), &JsValue::from_bool(p.relative_quantity));
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("displayUnit"),
+                &JsValue::from_str(&p.display_unit),
+            );
+            let _ = js_sys::Reflect::set(
+                &item,
+                &JsValue::from_str("relativeQuantity"),
+                &JsValue::from_bool(p.relative_quantity),
+            );
             let _ = js_sys::Reflect::set(&item, &JsValue::from_str("value"), &JsValue::from_f64(p.value));
             if !p.enum_names.is_empty() {
                 let names = js_sys::Array::new();
@@ -481,9 +491,13 @@ pub fn omc_sim_info() -> JsValue {
         let _ = js_sys::Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(sim.n_rows() as f64));
         let st = &sim.stats;
         for (k, v) in [
-            ("steps", st.steps), ("resEvals", st.res_evals), ("jacEvals", st.jac_evals),
-            ("errTestFails", st.err_test_fails), ("convTestFails", st.conv_test_fails),
-            ("stateEvents", st.state_events), ("timeEvents", st.time_events),
+            ("steps", st.steps),
+            ("resEvals", st.res_evals),
+            ("jacEvals", st.jac_evals),
+            ("errTestFails", st.err_test_fails),
+            ("convTestFails", st.conv_test_fails),
+            ("stateEvents", st.state_events),
+            ("timeEvents", st.time_events),
         ] {
             let _ = js_sys::Reflect::set(&o, &JsValue::from_str(k), &JsValue::from_f64(v as f64));
         }
@@ -512,10 +526,7 @@ pub fn omc_sim_time() -> Option<Vec<f64>> {
 /// no run.
 #[wasm_bindgen]
 pub fn omc_sim_column(index: usize) -> Option<Vec<f64>> {
-    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| {
-        sim.values(index)
-    })
-    .flatten()
+    openmodelica_codegen_wasm_jit::CodegenWasmJit::with_last_sim(|sim| sim.values(index)).flatten()
 }
 
 /// Evaluate one interactive command and return its reply — the same string the
@@ -648,7 +659,9 @@ pub fn omc_sim_advance(budget_ms: f64) -> i32 {
 /// worker's Cancel path; safe with no active session.
 #[wasm_bindgen]
 pub fn omc_sim_free() {
-    let _ = catch_unwind(AssertUnwindSafe(openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_free));
+    let _ = catch_unwind(AssertUnwindSafe(
+        openmodelica_codegen_wasm_jit::CodegenWasmJit::sim_free,
+    ));
 }
 
 /// Request cancellation of the running simulation (mirrors the native C ABI). The

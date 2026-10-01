@@ -55,7 +55,12 @@ fn jac_fact<T: Clone>(
 /// `columnVars`; the new backend leaves that empty and registers them (together
 /// with the seeds, which are filtered out here) in `crefsHT` only.
 pub(crate) fn jac_column_vars(jm: &Arc<SimCode::JacobianMatrix>) -> Arc<Vec<metamodelica::Ref<SimCodeVar::SimVar>>> {
-    jac_fact(jm, |f| f.column_vars.clone(), |f, v| f.column_vars = Some(v), || Arc::new(compute_jac_column_vars(jm)))
+    jac_fact(
+        jm,
+        |f| f.column_vars.clone(),
+        |f, v| f.column_vars = Some(v),
+        || Arc::new(compute_jac_column_vars(jm)),
+    )
 }
 
 fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
@@ -82,12 +87,20 @@ fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Re
 /// [`jac_column_vars`] filters. One it cannot name (an array slice) gets no slot,
 /// so [`jac_lowerable`] has to see it.
 pub(super) fn jac_listed_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Ref<SimCodeVar::SimVar>> {
-    let columns = lst(&jm.columns).next().into_iter().flat_map(|c| lst(&c.columnVars).cloned());
+    let columns = lst(&jm.columns)
+        .next()
+        .into_iter()
+        .flat_map(|c| lst(&c.columnVars).cloned());
     let ht = jm
         .crefsHT
         .iter()
         .flat_map(|(_, (_, _, entries), _, _)| {
-            entries.borrow().iter().flatten().map(|e| e.1.clone()).collect::<Vec<_>>()
+            entries
+                .borrow()
+                .iter()
+                .flatten()
+                .map(|e| e.1.clone())
+                .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
     columns.chain(ht).collect()
@@ -105,7 +118,12 @@ fn cref_base_name(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<String> {
                 base.push_str(ident);
                 return Some(base);
             }
-            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+            C::CREF_QUAL {
+                ident,
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 base.push_str(ident);
                 if !crate::CodegenWasmJitFunctions::push_qual_subs(subscriptLst, &mut base) {
                     return None;
@@ -123,13 +141,23 @@ fn cref_base_name(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<String> {
 /// handles and names nothing but those slots. An array-valued Jacobian needs the
 /// run-time loops the C template emits, so it keeps the numerical Jacobian instead.
 pub(crate) fn jac_lowerable(jm: &Arc<SimCode::JacobianMatrix>) -> bool {
-    jac_fact(jm, |f| f.lowerable, |f, v| f.lowerable = Some(v), || compute_jac_lowerable(jm))
+    jac_fact(
+        jm,
+        |f| f.lowerable,
+        |f, v| f.lowerable = Some(v),
+        || compute_jac_lowerable(jm),
+    )
 }
 
 fn compute_jac_lowerable(jm: &SimCode::JacobianMatrix) -> bool {
-    let Some(col) = lst(&jm.columns).next() else { return false };
+    let Some(col) = lst(&jm.columns).next() else {
+        return false;
+    };
     let listed = jac_listed_vars(jm);
-    if lst(&jm.seedVars).chain(listed.iter()).any(|sv| sim_cref_key(&sv.name).is_err()) {
+    if lst(&jm.seedVars)
+        .chain(listed.iter())
+        .any(|sv| sim_cref_key(&sv.name).is_err())
+    {
         return false;
     }
     lst(&col.constantEqns).chain(lst(&col.columnEqns)).all(jac_eq_lowerable)
@@ -180,18 +208,23 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<metamodelica::Ref<DAE::
             out.push(cref.clone());
             exp(rhs, &mut out).then_some(out)
         }
-        E::SES_ARRAY_CALL_ASSIGN { lhs, exp: rhs, .. } => {
-            (exp(lhs, &mut out) && exp(rhs, &mut out)).then_some(out)
-        }
+        E::SES_ARRAY_CALL_ASSIGN { lhs, exp: rhs, .. } => (exp(lhs, &mut out) && exp(rhs, &mut out)).then_some(out),
         E::SES_RESIDUAL { exp: e, .. } => exp(e, &mut out).then_some(out),
         E::SES_RESIZABLE_ASSIGN { .. } | E::SES_GENERIC_ASSIGN { .. } => Some(out),
         // `traverseDAEEquationsStmts` visits a statement's left-hand side too.
         E::SES_ALGORITHM { statements, .. } => {
-            let alg = metamodelica::Ref::new(DAE::Algorithm { statementLst: statements.clone() });
+            let alg = metamodelica::Ref::new(DAE::Algorithm {
+                statementLst: statements.clone(),
+            });
             let exps = openmodelica_frontend_base::Algorithm::getAllExps(&alg).ok()?;
             lst(&exps).all(|e| exp(e, &mut out)).then_some(out)
         }
-        E::SES_WHEN { conditions, whenStmtLst, elseWhen, .. } => {
+        E::SES_WHEN {
+            conditions,
+            whenStmtLst,
+            elseWhen,
+            ..
+        } => {
             out.extend(lst(conditions).cloned());
             for op in lst(whenStmtLst) {
                 let ok = match op {
@@ -200,9 +233,7 @@ fn jac_eq_crefs(eq: &SimCode::SimEqSystem) -> Option<Vec<metamodelica::Ref<DAE::
                         out.push(stateVar.clone());
                         exp(value, &mut out)
                     }
-                    W::ASSERT { condition, message, .. } => {
-                        exp(condition, &mut out) && exp(message, &mut out)
-                    }
+                    W::ASSERT { condition, message, .. } => exp(condition, &mut out) && exp(message, &mut out),
                     W::TERMINATE { message, .. } => exp(message, &mut out),
                     W::NORETCALL { exp: e, .. } => exp(e, &mut out),
                 };
@@ -279,8 +310,14 @@ pub(super) fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
     {
         return false;
     }
-    let Some(jm) = &nlsystem.jacobianMatrix else { return false };
-    if lst(&jm.columns).next().is_none_or(|c| lst(&c.columnEqns).next().is_none()) || !jac_lowerable(jm) {
+    let Some(jm) = &nlsystem.jacobianMatrix else {
+        return false;
+    };
+    if lst(&jm.columns)
+        .next()
+        .is_none_or(|c| lst(&c.columnEqns).next().is_none())
+        || !jac_lowerable(jm)
+    {
         return false;
     }
     let n = lst(&nlsystem.crefs).count();
@@ -301,7 +338,10 @@ pub(crate) fn iteration_var_slot(
 ) -> Result<Option<IterSlot>> {
     let key = sim_cref_key(cr)?;
     if let Some(off) = key.strip_prefix("$START.").and_then(|k| start_slots.get(k)) {
-        return Ok(Some(IterSlot { off: *off, wty: WTy::F64 }));
+        return Ok(Some(IterSlot {
+            off: *off,
+            wty: WTy::F64,
+        }));
     }
     match vars.get(&key) {
         None => Ok(None),
@@ -311,7 +351,10 @@ pub(crate) fn iteration_var_slot(
             ));
             Err("CodegenWasmJit: torn-system unknown is not a numeric variable")
         }
-        Some(slot) => Ok(Some(IterSlot { off: slot.off, wty: slot.wty })),
+        Some(slot) => Ok(Some(IterSlot {
+            off: slot.off,
+            wty: slot.wty,
+        })),
     }
 }
 
@@ -358,22 +401,38 @@ pub(super) fn lin_residuals(
     for e in lst(&lsystem.residual) {
         match &**e {
             E::SES_RESIDUAL { exp, res_index, .. } => residuals.push(match exp_array_rows(exp) {
-                Some(rows) => NlsResidual::Array { exp: exp.clone(), res_index: *res_index, rows },
-                None => NlsResidual::Scalar { exp: exp.clone(), res_index: *res_index },
+                Some(rows) => NlsResidual::Array {
+                    exp: exp.clone(),
+                    res_index: *res_index,
+                    rows,
+                },
+                None => NlsResidual::Scalar {
+                    exp: exp.clone(),
+                    res_index: *res_index,
+                },
             }),
-            E::SES_FOR_RESIDUAL { iterators, exp, res_index, .. } => residuals.push(NlsResidual::For {
+            E::SES_FOR_RESIDUAL {
+                iterators,
+                exp,
+                res_index,
+                ..
+            } => residuals.push(NlsResidual::For {
                 iterators: lst(iterators).cloned().collect(),
                 exp: exp.clone(),
                 res_index: *res_index,
             }),
-            E::SES_GENERIC_RESIDUAL { iterators, scal_indices, exp, res_index, .. } => {
-                residuals.push(NlsResidual::Generic {
-                    iterators: lst(iterators).cloned().collect(),
-                    scal_indices: lst(scal_indices).copied().collect(),
-                    exp: exp.clone(),
-                    res_index: *res_index,
-                })
-            }
+            E::SES_GENERIC_RESIDUAL {
+                iterators,
+                scal_indices,
+                exp,
+                res_index,
+                ..
+            } => residuals.push(NlsResidual::Generic {
+                iterators: lst(iterators).cloned().collect(),
+                scal_indices: lst(scal_indices).copied().collect(),
+                exp: exp.clone(),
+                res_index: *res_index,
+            }),
             _ => inner.push(e.clone()),
         }
     }
@@ -386,8 +445,14 @@ pub(super) fn lin_residuals(
 /// linear.
 pub(super) fn lin_jac_usable(lsystem: &SimCode::LinearSystem, n_res: Option<usize>) -> bool {
     let Some(n_res) = n_res else { return false };
-    let Some(jm) = &lsystem.jacobianMatrix else { return false };
-    if lst(&jm.columns).next().is_none_or(|c| lst(&c.columnEqns).next().is_none()) || !jac_lowerable(jm) {
+    let Some(jm) = &lsystem.jacobianMatrix else {
+        return false;
+    };
+    if lst(&jm.columns)
+        .next()
+        .is_none_or(|c| lst(&c.columnEqns).next().is_none())
+        || !jac_lowerable(jm)
+    {
         return false;
     }
     let n = count(&lsystem.vars) as usize;
@@ -403,7 +468,12 @@ pub(super) fn nls_jac_scratch_f64(sim_code: &SimCode::SimCode) -> u32 {
     let mut total = 0u32;
     let mut scan = |eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>>| {
         for e in &eqs_with_nested(&eqs) {
-            if let E::SES_NONLINEAR { nlSystem, alternativeTearing, .. } = &**e {
+            if let E::SES_NONLINEAR {
+                nlSystem,
+                alternativeTearing,
+                ..
+            } = &**e
+            {
                 // A dynamically torn component has two sets, each with its own Jacobian.
                 for sys in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
                     if seen.insert(sys.index) && nls_jac_usable(sys) {
@@ -470,7 +540,14 @@ pub(super) fn build_nls_jac_infos(
             .map(|o| o.ok_or("CodegenWasmJit: nonlinear-system Jacobian is missing a residual row"))
             .collect::<Result<_>>()?;
         let seed_offs = info.seed_offs;
-        infos.insert(sys.index, NlsJacInfo { seed_offs, result_offs, slots: Arc::new(slots.into_iter().collect()) });
+        infos.insert(
+            sys.index,
+            NlsJacInfo {
+                seed_offs,
+                result_offs,
+                slots: Arc::new(slots.into_iter().collect()),
+            },
+        );
     }
     finalize_array_groups(var_map)?;
     Ok(infos)

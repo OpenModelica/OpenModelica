@@ -18,9 +18,9 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use super::conf::{CtrlMethod, GbfConf, Interpolation, NlsMethod};
-use super::tableau::{Estimator, GmType, SvpType, Tableau};
 use super::nls_generic::Starts;
-use super::{ctrl, interp, Gbode, GB_MINIMAL_STEP_SIZE, Solved};
+use super::tableau::{Estimator, GmType, SvpType, Tableau};
+use super::{GB_MINIMAL_STEP_SIZE, Gbode, Solved, ctrl, interp};
 use crate::gbode::math::{abs, pow, sqrt};
 use crate::omclog;
 use crate::{Ode, Result};
@@ -135,15 +135,9 @@ pub(super) struct GbfNls {
 }
 
 impl GbfNls {
-    fn new(
-        t: &Tableau,
-        tol: f64,
-        sym_jac: bool,
-        internal: bool,
-        method: NlsMethod,
-    ) -> Self {
-        let kinsol = matches!(method, NlsMethod::Kinsol | NlsMethod::KinsolB)
-            .then(super::nls_generic::KinsolLadder::from_flags);
+    fn new(t: &Tableau, tol: f64, sym_jac: bool, internal: bool, method: NlsMethod) -> Self {
+        let kinsol =
+            matches!(method, NlsMethod::Kinsol | NlsMethod::KinsolB).then(super::nls_generic::KinsolLadder::from_flags);
         // C's Newton convergence target, as in `gbInternalNlsAllocate`.
         let alpha_default: f64 = 3e-2;
         let alpha_maximal: f64 = 5e-2;
@@ -294,9 +288,7 @@ impl GbfNls {
                     seed[fast_idx[cf]] = 1.0;
                 }
                 if !ode.jacobian_vector(time, y_full, &seed, &mut out) {
-                    return Err(
-                        "##GBODE## the model could not multiply by its Jacobian",
-                    );
+                    return Err("##GBODE## the model could not multiply by its Jacobian");
                 }
                 for &cf in group {
                     for (rf, &r) in fast_idx.iter().enumerate() {
@@ -365,7 +357,6 @@ impl GbfNls {
         }
         sqrt(sum / v.len() as f64)
     }
-
 }
 
 /// One packed stage system: everything a solve over the fast states needs to
@@ -384,13 +375,7 @@ pub(super) struct MrStage<'a> {
 impl MrStage<'_> {
     /// `res = res_const - c_scale*x + fac*f` over the fast entries; `f_full`
     /// receives the full derivative vector of the last evaluation.
-    fn residual(
-        &mut self,
-        ode: &mut dyn Ode,
-        x: &[f64],
-        res: &mut [f64],
-        f_full: &mut [f64],
-    ) -> Result<()> {
+    fn residual(&mut self, ode: &mut dyn Ode, x: &[f64], res: &mut [f64], f_full: &mut [f64]) -> Result<()> {
         for (i, &fi) in self.fast_idx.iter().enumerate() {
             self.base_full[fi] = x[i];
         }
@@ -471,8 +456,7 @@ impl GbfNls {
                 }
                 self.etas[stage] = theta / (1.0 - theta);
             } else {
-                self.etas[stage] =
-                    pow(self.etas[stage].max(f64::EPSILON), self.eta_initial_damping);
+                self.etas[stage] = pow(self.etas[stage].max(f64::EPSILON), self.eta_initial_damping);
             }
             if !self.etas[stage].is_finite() || !nrm_delta.is_finite() {
                 return Ok(Solved::Failed);
@@ -482,8 +466,7 @@ impl GbfNls {
                 return Ok(Solved::Ok);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }
@@ -546,7 +529,11 @@ impl GbfNls {
         use super::nls_hook::{GbNlsRequest, KinsolParams, NlsPattern};
         let nf = self.n_fast;
         let n = st.base_full.len();
-        if self.pattern.as_ref().is_none_or(|(idx, _)| idx.as_slice() != st.fast_idx) {
+        if self
+            .pattern
+            .as_ref()
+            .is_none_or(|(idx, _)| idx.as_slice() != st.fast_idx)
+        {
             let full = super::nls_hook::ode_rows_by_col(ode.jac_rows_by_col(), n);
             let mut packed = vec![usize::MAX; n];
             for (i, &fi) in st.fast_idx.iter().enumerate() {
@@ -555,13 +542,21 @@ impl GbfNls {
             let rows: Vec<Vec<usize>> = st
                 .fast_idx
                 .iter()
-                .map(|&fc| full[fc].iter().filter_map(|&r| (packed[r] != usize::MAX).then_some(packed[r])).collect())
+                .map(|&fc| {
+                    full[fc]
+                        .iter()
+                        .filter_map(|&r| (packed[r] != usize::MAX).then_some(packed[r]))
+                        .collect()
+                })
                 .collect();
             self.pattern = Some((st.fast_idx.to_vec(), NlsPattern::with_diagonal(&rows, &[])));
         }
         let pat = &self.pattern.as_ref().expect("built above").1;
         let fast = |v: &[f64], fallback: f64| -> Vec<f64> {
-            st.fast_idx.iter().map(|&i| v.get(i).copied().unwrap_or(fallback)).collect()
+            st.fast_idx
+                .iter()
+                .map(|&i| v.get(i).copied().unwrap_or(fallback))
+                .collect()
         };
         let nominal = fast(nominals, 1.0);
         let min = fast(ode.mins(), -f64::MAX);
@@ -631,7 +626,11 @@ impl GbfNls {
                     kinsol,
                     time: stage_time,
                     eval: &mut eval,
-                    jacobian: if sym { Some(&mut jac as &mut dyn FnMut(&[f64], &mut [f64])) } else { None },
+                    jacobian: if sym {
+                        Some(&mut jac as &mut dyn FnMut(&[f64], &mut [f64]))
+                    } else {
+                        None
+                    },
                     jac_evals: 0,
                 };
                 let ok = hook(&mut req) && !failed.get();
@@ -642,7 +641,12 @@ impl GbfNls {
             match self.kinsol {
                 None => run(
                     starts.extrapolation,
-                    KinsolParams { max_iters: 0, no_init_setup: false, max_setup_calls: 0, fnorm_tol: 0.0 },
+                    KinsolParams {
+                        max_iters: 0,
+                        no_init_setup: false,
+                        max_setup_calls: 0,
+                        fnorm_tol: 0.0,
+                    },
                     x,
                 ),
                 Some(ladder) => super::nls_generic::kinsol_ladder(&ladder, nf, starts, x, &mut run),
@@ -758,13 +762,7 @@ impl GbfNls {
         Ok(converged)
     }
 
-    fn assemble_generic(
-        &mut self,
-        ode: &mut dyn Ode,
-        st: &mut MrStage<'_>,
-        nominals: &[f64],
-        x: &[f64],
-    ) -> Result<()> {
+    fn assemble_generic(&mut self, ode: &mut dyn Ode, st: &mut MrStage<'_>, nominals: &[f64], x: &[f64]) -> Result<()> {
         let nf = self.n_fast;
         for (i, &fi) in st.fast_idx.iter().enumerate() {
             st.base_full[fi] = x[i];
@@ -891,8 +889,7 @@ impl GbfNls {
                 return Ok(Solved::Ok);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }
@@ -905,14 +902,7 @@ impl GbfNls {
     /// `K = 1/h * (A_part⁻¹ ⊗ I) * Z` over the packed vectors, as the single-rate
     /// solver rebuilds the derivatives from the converged stage values. A tableau
     /// with explicit first/last stages keeps the iterate's `f(Z)` instead.
-    fn reconstruct_k(
-        &mut self,
-        t: &Tableau,
-        step_size: f64,
-        y_old_packed: &[f64],
-        z: &[f64],
-        k: &mut [f64],
-    ) {
+    fn reconstruct_k(&mut self, t: &Tableau, step_size: f64, y_old_packed: &[f64], z: &[f64], k: &mut [f64]) {
         let nf = self.n_fast;
         let Some(tr) = t.t_transform.as_ref() else { return };
         if tr.first_row_zero || tr.last_column_zero {
@@ -1017,8 +1007,7 @@ impl GbodeF {
             ));
         }
         let internal = conf.nls_method == NlsMethod::Internal;
-        let two_step_fallback =
-            super::tableau::finalize_error(&mut t, internal).map_err(String::from)?;
+        let two_step_fallback = super::tableau::finalize_error(&mut t, internal).map_err(String::from)?;
         omclog::info!(
             omclog::SOLVER,
             false,
@@ -1107,8 +1096,7 @@ impl Gbode {
         }
         let length = self.n_states;
         let last = length - 1;
-        let mut target =
-            last as isize - fmath::round(length as f64 * self.percentage) as isize;
+        let mut target = last as isize - fmath::round(length as f64 * self.percentage) as isize;
         if target < 0 {
             target = 0;
         }
@@ -1173,9 +1161,7 @@ impl Gbode {
             let (logical, t) = match node {
                 SlowNode::Left => (gbf.cache.left_stage, gbf.time),
                 SlowNode::Right => (gbf.cache.right_stage, gbf.time + gbf.step_size),
-                SlowNode::Stage(stage) => {
-                    (stage, gbf.time + gbf.tableau.c[stage] * gbf.step_size)
-                }
+                SlowNode::Stage(stage) => (stage, gbf.time + gbf.tableau.c[stage] * gbf.step_size),
             };
             let slot = gbf.cache.slot(logical);
             (t, slot, gbf.cache.valid[slot])
@@ -1199,14 +1185,8 @@ impl Gbode {
         let n = self.n_states;
         let err = [self.err_fast, 0.0];
         let steps = [self.step_size, 0.0];
-        let factor = ctrl::generic_controller_with(
-            &err,
-            &steps,
-            1,
-            CtrlMethod::I,
-            self.conf.ctrl_filter,
-            self.conf.fhr,
-        );
+        let factor =
+            ctrl::generic_controller_with(&err, &steps, 1, CtrlMethod::I, self.conf.ctrl_filter, self.conf.fhr);
         let gbf = self.gbf.as_mut().expect("multirate without gbf");
         gbf.did_event_step = false;
         gbf.extrapolation_base_time = f64::INFINITY;
@@ -1254,11 +1234,7 @@ impl Gbode {
     }
 
     /// One inner (fast-states) integration burst — C's `gbodef_main`.
-    pub(super) fn gbodef_main(
-        &mut self,
-        ode: &mut dyn Ode,
-        target_time: f64,
-    ) -> Result<InnerStep> {
+    pub(super) fn gbodef_main(&mut self, ode: &mut dyn Ode, target_time: f64) -> Result<InnerStep> {
         let n = self.n_states;
         let stop_time = self.stop_time;
         let inner_target = target_time.min(self.time_right);
@@ -1321,12 +1297,10 @@ impl Gbode {
                 let tol = self.scaled_error_tolerance_gbf();
                 let gbf = self.gbf.as_mut().expect("multirate without gbf");
                 err = 0.0;
-                let richardson_like = gbf.tableau.richardson
-                    || gbf.tableau.gm_type == GmType::MultiStep;
+                let richardson_like = gbf.tableau.richardson || gbf.tableau.gm_type == GmType::MultiStep;
                 for fi in 0..self.n_fast {
                     let i = self.fast_states_idx[fi];
-                    gbf.errtol[i] = tol * self.nominals[i]
-                        + abs(gbf.y_old[i]).max(abs(gbf.y[i])) * tol;
+                    gbf.errtol[i] = tol * self.nominals[i] + abs(gbf.y_old[i]).max(abs(gbf.y[i])) * tol;
                     if richardson_like {
                         gbf.errest[i] = abs(gbf.yt[i]);
                     }
@@ -1474,9 +1448,7 @@ impl Gbode {
 
             let done = {
                 let gbf = self.gbf.as_mut().expect("multirate without gbf");
-                if (self.time_right - gbf.time) < GB_MINIMAL_STEP_SIZE
-                    || self.step_size < GB_MINIMAL_STEP_SIZE
-                {
+                if (self.time_right - gbf.time) < GB_MINIMAL_STEP_SIZE || self.step_size < GB_MINIMAL_STEP_SIZE {
                     gbf.time = self.time_right;
                     true
                 } else {
@@ -1510,8 +1482,7 @@ impl Gbode {
     fn scaled_error_tolerance_gbf(&self) -> f64 {
         let gbf = self.gbf.as_ref().expect("multirate without gbf");
         let tol = self.tol;
-        let (method_order, estimator_order) =
-            (gbf.tableau.order_b, gbf.current_error_order);
+        let (method_order, estimator_order) = (gbf.tableau.order_b, gbf.current_error_order);
         if gbf.tableau.richardson || estimator_order >= method_order {
             return tol;
         }
@@ -1549,7 +1520,13 @@ impl Gbode {
         let n = self.n_states;
         let (time_value, step_size, last_step_size, p, is_explicit) = {
             let gbf = self.gbf.as_ref().expect("multirate without gbf");
-            (gbf.time, gbf.step_size, gbf.last_step_size, gbf.tableau.order_b, gbf.is_explicit)
+            (
+                gbf.time,
+                gbf.step_size,
+                gbf.last_step_size,
+                gbf.tableau.order_b,
+                gbf.is_explicit,
+            )
         };
         let (mut tr, mut yr, mut kr) = ([0.0; 2], vec![0.0; 2 * n], vec![0.0; 2 * n]);
         if !is_explicit {
@@ -1763,12 +1740,13 @@ impl Gbode {
             }
             {
                 let gbf = self.gbf.as_mut().expect("multirate without gbf");
-                let svp_lin = gbf.tableau.svp.as_ref().is_some_and(|svp| {
-                    svp.types[stage] == SvpType::LinearCombination
-                });
+                let svp_lin = gbf
+                    .tableau
+                    .svp
+                    .as_ref()
+                    .is_some_and(|svp| svp.types[stage] == SvpType::LinearCombination);
                 let svp_dense = gbf.tableau.svp.as_ref().is_some_and(|svp| {
-                    svp.types[stage] == SvpType::DenseOutput
-                        && svp.dense_output_predictor.is_some()
+                    svp.types[stage] == SvpType::DenseOutput && svp.dense_output_predictor.is_some()
                 });
                 let dense_valid = extrapolation_valid && internal;
                 if svp_lin {
@@ -1785,8 +1763,7 @@ impl Gbode {
                 } else if dense_valid && svp_dense {
                     let svp = gbf.tableau.svp.as_ref().unwrap();
                     let f = svp.dense_output_predictor.unwrap();
-                    let theta =
-                        (stage_time - gbf.extrapolation_base_time) / gbf.extrapolation_step_size;
+                    let theta = (stage_time - gbf.extrapolation_base_time) / gbf.extrapolation_step_size;
                     f(&mut gbf.b_dt, theta);
                     let scale = theta * gbf.extrapolation_step_size;
                     for fi in 0..n_fast {
@@ -1797,8 +1774,7 @@ impl Gbode {
                         guess[fi] = gbf.y_last[fi] + scale * acc;
                     }
                 } else if dense_valid && gbf.tableau.with_dense_output {
-                    let theta =
-                        (stage_time - gbf.extrapolation_base_time) / gbf.extrapolation_step_size;
+                    let theta = (stage_time - gbf.extrapolation_base_time) / gbf.extrapolation_step_size;
                     let (y_last, k_last) = (gbf.y_last.clone(), gbf.k_last.clone());
                     gbf.tableau.dense_out(
                         &mut gbf.b_dt,
@@ -1828,8 +1804,7 @@ impl Gbode {
             let solved = {
                 let gbf = self.gbf.as_mut().expect("multirate without gbf");
                 let is_esdirk = gbf.tableau.a_at(0, 0) == 0.0;
-                let first_implicit =
-                    (stage == 0 && !is_esdirk) || (stage == 1 && is_esdirk);
+                let first_implicit = (stage == 0 && !is_esdirk) || (stage == 1 && is_esdirk);
                 let time = gbf.time;
                 let nls = gbf.nls.as_mut().expect("implicit stage without an NLS");
                 let mut st = MrStage {
@@ -1849,7 +1824,11 @@ impl Gbode {
                     first_implicit,
                     event_happened,
                     &nominals,
-                    &Starts { extrapolation: &extrap, old: &guess, nlsx: &y_old_fast },
+                    &Starts {
+                        extrapolation: &extrap,
+                        old: &guess,
+                        nlsx: &y_old_fast,
+                    },
                     &mut x,
                     &mut f_full,
                 )?
@@ -1925,8 +1904,7 @@ impl Gbode {
             }
             if gbf.tableau.with_dense_output && gbf.extrapolation_valid {
                 for stage in 0..n_stages {
-                    let theta = (time + gbf.tableau.c[stage] * step_size
-                        - gbf.extrapolation_base_time)
+                    let theta = (time + gbf.tableau.c[stage] * step_size - gbf.extrapolation_base_time)
                         / gbf.extrapolation_step_size;
                     let (y_last, k_last) = (gbf.y_last.clone(), gbf.k_last.clone());
                     gbf.tableau.dense_out(
@@ -2020,8 +1998,7 @@ impl Gbode {
                 let mut yt = 0.0;
                 let mut rc = 0.0;
                 for stage in 0..last {
-                    yt += -gbf.yv[stage * n + i] * gbf.tableau.c[stage]
-                        + gbf.kv[stage * n + i] * bt[stage] * step_size;
+                    yt += -gbf.yv[stage * n + i] * gbf.tableau.c[stage] + gbf.kv[stage * n + i] * bt[stage] * step_size;
                     rc += -gbf.yv[stage * n + i] * gbf.tableau.c[stage]
                         + gbf.kv[stage * n + i] * gbf.tableau.b[stage] * step_size;
                 }
@@ -2093,7 +2070,11 @@ impl Gbode {
                 true,
                 event_happened,
                 &nominals,
-                &Starts { extrapolation: &start, old: &start, nlsx: &start },
+                &Starts {
+                    extrapolation: &start,
+                    old: &start,
+                    nlsx: &start,
+                },
                 &mut x,
                 &mut f_full,
             )?
@@ -2115,8 +2096,7 @@ impl Gbode {
                 let b_last = gbf.tableau.b[last];
                 for fi in 0..n_fast {
                     let i = fast_idx[fi];
-                    f_full[i] =
-                        (c_last * x[fi] - res_const[i]) / (step_size * b_last);
+                    f_full[i] = (c_last * x[fi] - res_const[i]) / (step_size * b_last);
                 }
             }
             gbf.kv[last * n..(last + 1) * n].copy_from_slice(&f_full);
@@ -2153,11 +2133,7 @@ impl Gbode {
         }
     }
 
-    fn gbf_evaluate_error(
-        &mut self,
-        ode: &mut dyn Ode,
-        estimator: Option<Estimator>,
-    ) -> Result<Option<i32>> {
+    fn gbf_evaluate_error(&mut self, ode: &mut dyn Ode, estimator: Option<Estimator>) -> Result<Option<i32>> {
         let Some(est) = estimator else { return Ok(None) };
         match est.kind {
             super::tableau::ErrMethod::Embedded => {
@@ -2288,8 +2264,7 @@ impl Gbode {
             let i = self.fast_states_idx[fi];
             let mut acc = 0.0;
             for stage in 0..n_stages {
-                acc += gbf.step_size * (gbf.tableau.b[stage] - bt[stage])
-                    * gbf.k[stage * n + i];
+                acc += gbf.step_size * (gbf.tableau.b[stage] - bt[stage]) * gbf.k[stage * n + i];
             }
             gbf.errest[i] = abs(acc);
         }
@@ -2314,7 +2289,9 @@ impl Gbode {
         }
         let (weights, r) = {
             let gbf = self.gbf.as_ref().expect("multirate without gbf");
-            let Some(w) = gbf.tableau.two_step_weights else { return false };
+            let Some(w) = gbf.tableau.two_step_weights else {
+                return false;
+            };
             (w, gbf.step_size / gbf.last_step_size)
         };
         let mut d_old = vec![0.0; n_stages];

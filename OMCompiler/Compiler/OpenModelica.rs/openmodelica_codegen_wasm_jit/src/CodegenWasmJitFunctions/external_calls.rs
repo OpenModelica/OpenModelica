@@ -40,7 +40,11 @@ pub(super) fn emit_shared_external_call(
         /// A Fortran array: copy back if it is an output, then release any scratch.
         F77Array { handle: u32, ptr: u32, is_out: bool },
         /// C's `<record>_external`: copy its fields into `out`, then free it.
-        CRecord { ptr: u32, fields: Arc<Vec<(ArcStr, SigTy)>>, out: Target },
+        CRecord {
+            ptr: u32,
+            fields: Arc<Vec<(ArcStr, SigTy)>>,
+            out: Target,
+        },
         /// A String argument: the callee got a `rt_str_data` pointer into it, so
         /// this side still owns the handle and releases it once the call is done.
         Owned { handle: u32 },
@@ -65,7 +69,11 @@ pub(super) fn emit_shared_external_call(
             ));
             return Err("CodegenWasmJit: external output index out of range");
         };
-        Ok(Target { out_idx, out_sty, field: cref.and_then(cref_field) })
+        Ok(Target {
+            out_idx,
+            out_sty,
+            field: cref.and_then(cref_field),
+        })
     };
 
     let catch = EXT_ERROR_CATCH.with(|c| c.get());
@@ -94,13 +102,20 @@ pub(super) fn emit_shared_external_call(
         // The expression this argument passes; an `_Out_` scalar has no value to
         // read, only a cell to hand over.
         let value: Option<metamodelica::Ref<DAE::Exp>> = match &**a {
-            A::SIMEXTARG { cref, type_, .. } => {
-                Some(metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
-            }
+            A::SIMEXTARG { cref, type_, .. } => Some(metamodelica::Ref::new(DAE::Exp::CREF {
+                componentRef: cref.clone(),
+                ty: type_.clone(),
+            })),
             A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
             A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
-                let arr = metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
-                Some(metamodelica::Ref::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+                let arr = metamodelica::Ref::new(DAE::Exp::CREF {
+                    componentRef: cref.clone(),
+                    ty: type_.clone(),
+                });
+                Some(metamodelica::Ref::new(DAE::Exp::SIZE {
+                    exp: arr,
+                    sz: Some(exp.clone()),
+                }))
             }
             _ => None,
         };
@@ -164,7 +179,11 @@ pub(super) fn emit_shared_external_call(
             }
             SigTy::Int | SigTy::Bool | SigTy::Real | SigTy::Str => {
                 // An `_Out_` cell starts zeroed; a Fortran input cell at its value.
-                let cell_fn = if matches!(ty, SigTy::Real) { "rt_f77_cell_r" } else { "rt_f77_cell_i" };
+                let cell_fn = if matches!(ty, SigTy::Real) {
+                    "rt_f77_cell_r"
+                } else {
+                    "rt_f77_cell_i"
+                };
                 match (&value, is_out) {
                     (Some(v), false) => {
                         let w = compile_exp(ctx, v)?;
@@ -177,8 +196,16 @@ pub(super) fn emit_shared_external_call(
                 let ptr = ctx.alloc_temp(WTy::I32);
                 ctx.emit(we::Instruction::LocalSet(ptr));
                 ctx.emit(we::Instruction::LocalGet(ptr));
-                let out = if is_out { Some(output_target(ctx, ext_arg_output_index(a), cref)?) } else { None };
-                cleanups.push(Cleanup::Cell { ptr, ty: ty.clone(), out });
+                let out = if is_out {
+                    Some(output_target(ctx, ext_arg_output_index(a), cref)?)
+                } else {
+                    None
+                };
+                cleanups.push(Cleanup::Cell {
+                    ptr,
+                    ty: ty.clone(),
+                    out,
+                });
             }
             SigTy::Ptr => push_value(ctx, "an external-object", WTy::I32)?,
             // A record still crosses as the runtime object, not C's `<record>_external`.
@@ -198,14 +225,22 @@ pub(super) fn emit_shared_external_call(
                 ctx.emit(we::Instruction::MemoryFill(0));
                 ctx.emit(we::Instruction::LocalGet(ptr));
                 let out = output_target(ctx, ext_arg_output_index(a), cref)?;
-                cleanups.push(Cleanup::CRecord { ptr, fields: fields.clone(), out });
+                cleanups.push(Cleanup::CRecord {
+                    ptr,
+                    fields: fields.clone(),
+                    out,
+                });
             }
             other => {
                 openmodelica_wasm_jit::set_engine_error_detail(format!(
                     "  {}, external `{}`: {other:?} cannot be passed to a shared-memory {}",
                     fn_path(),
                     sig.name,
-                    if fortran { "FORTRAN 77 function" } else { "external \"C\" function" },
+                    if fortran {
+                        "FORTRAN 77 function"
+                    } else {
+                        "external \"C\" function"
+                    },
                 ));
                 return Err("CodegenWasmJit: unsupported shared-memory external argument type");
             }
@@ -308,7 +343,11 @@ pub(super) fn emit_shared_external_call(
             Cleanup::Cell { ptr, ty, out } => {
                 if let Some(target) = out {
                     ctx.emit(we::Instruction::LocalGet(*ptr));
-                    let getter = if matches!(ty, SigTy::Real) { "rt_f77_cell_get_r" } else { "rt_f77_cell_get_i" };
+                    let getter = if matches!(ty, SigTy::Real) {
+                        "rt_f77_cell_get_r"
+                    } else {
+                        "rt_f77_cell_get_i"
+                    };
                     ctx.emit(we::Instruction::Call(rt_index(getter)?));
                     store(ctx, ty, target)?;
                 }
@@ -496,7 +535,11 @@ pub(super) fn emit_assert_unwind(ctx: &mut FnCtx) {
     }
 }
 
-pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[metamodelica::Ref<DAE::Exp>]) -> Result<Vec<SigTy>> {
+pub(super) fn emit_general_external_call(
+    ctx: &mut FnCtx,
+    ext_name: &str,
+    args: &[metamodelica::Ref<DAE::Exp>],
+) -> Result<Vec<SigTy>> {
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
         Some(info) => (info.index, info.sig.params.clone(), info.sig.results.clone()),

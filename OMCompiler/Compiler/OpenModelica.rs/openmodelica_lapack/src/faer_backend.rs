@@ -102,12 +102,7 @@ pub fn dgetrf(m: usize, n: usize, a: &mut [f64], lda: usize, ipiv: &mut [i32]) -
     if minmn == 0 {
         return 0;
     }
-    let req = linalg::lu::partial_pivoting::factor::lu_in_place_scratch::<usize, f64>(
-        m,
-        n,
-        Par::Seq,
-        Spec::default(),
-    );
+    let req = linalg::lu::partial_pivoting::factor::lu_in_place_scratch::<usize, f64>(m, n, Par::Seq, Spec::default());
     with_perm(4 * m, |bufs| {
         let (perm, rest) = bufs.split_at_mut(m);
         let (perm_inv, swaps) = rest.split_at_mut(m);
@@ -142,7 +137,11 @@ pub fn dpotrf(uplo: &str, n: usize, a: &mut [f64], lda: usize) -> i32 {
     }
     let upper = opt(uplo) == b'U';
     let mut work = Mat::<f64>::from_fn(n, n, |i, j| {
-        let (r, c) = if upper { (i.min(j), i.max(j)) } else { (i.max(j), i.min(j)) };
+        let (r, c) = if upper {
+            (i.min(j), i.max(j))
+        } else {
+            (i.max(j), i.min(j))
+        };
         a[r + c * lda]
     });
     let mut mem = MemBuffer::new(linalg::cholesky::llt::factor::cholesky_in_place_scratch::<f64>(
@@ -177,14 +176,18 @@ pub fn dpotrf(uplo: &str, n: usize, a: &mut [f64], lda: usize) -> i32 {
         Err(_) => {
             for k in 1..=n {
                 let mut lead = Mat::<f64>::from_fn(k, k, |i, j| {
-                    let (r, c) =
-                        if upper { (i.min(j), i.max(j)) } else { (i.max(j), i.min(j)) };
+                    let (r, c) = if upper {
+                        (i.min(j), i.max(j))
+                    } else {
+                        (i.max(j), i.min(j))
+                    };
                     a[r + c * lda]
                 });
-                let mut mem =
-                    MemBuffer::new(linalg::cholesky::llt::factor::cholesky_in_place_scratch::<
-                        f64,
-                    >(k, Par::Seq, Spec::default()));
+                let mut mem = MemBuffer::new(linalg::cholesky::llt::factor::cholesky_in_place_scratch::<f64>(
+                    k,
+                    Par::Seq,
+                    Spec::default(),
+                ));
                 if linalg::cholesky::llt::factor::cholesky_in_place(
                     lead.as_mut(),
                     Default::default(),
@@ -263,14 +266,7 @@ pub fn dgesvd(
     let mut sd = faer::diag::Diag::<f64>::zeros(minmn);
     let cu = svd_vectors(ju, m, minmn);
     let cv = svd_vectors(jvt, n, minmn);
-    let mut mem = MemBuffer::new(linalg::svd::svd_scratch::<f64>(
-        m,
-        n,
-        cu,
-        cv,
-        Par::Seq,
-        Spec::default(),
-    ));
+    let mut mem = MemBuffer::new(linalg::svd::svd_scratch::<f64>(m, n, cu, cv, Par::Seq, Spec::default()));
     let r = linalg::svd::svd(
         match &scaled {
             Some(c) => view_ref(c, m, n, m),
@@ -356,8 +352,16 @@ pub fn dgeev(
     let mut ur = Mat::<f64>::zeros(n, n);
     let mut mem = MemBuffer::new(linalg::evd::evd_scratch::<f64>(
         n,
-        if want_l { linalg::evd::ComputeEigenvectors::Yes } else { linalg::evd::ComputeEigenvectors::No },
-        if want_r { linalg::evd::ComputeEigenvectors::Yes } else { linalg::evd::ComputeEigenvectors::No },
+        if want_l {
+            linalg::evd::ComputeEigenvectors::Yes
+        } else {
+            linalg::evd::ComputeEigenvectors::No
+        },
+        if want_r {
+            linalg::evd::ComputeEigenvectors::Yes
+        } else {
+            linalg::evd::ComputeEigenvectors::No
+        },
         Par::Seq,
         Spec::default(),
     ));
@@ -378,9 +382,7 @@ pub fn dgeev(
         wr[k] = sre[k];
         wi[k] = sim[k];
     }
-    for (want, src, v, ldv, side) in
-        [(want_r, &ur, &mut *vr, ldvr, "R"), (want_l, &ul, &mut *vl, ldvl, "L")]
-    {
+    for (want, src, v, ldv, side) in [(want_r, &ur, &mut *vr, ldvr, "R"), (want_l, &ul, &mut *vl, ldvl, "L")] {
         if !want {
             continue;
         }
@@ -470,14 +472,7 @@ pub fn multishift_qr_window(
     use faer::linalg::evd::schur::SchurParams;
 
     let params = <SchurParams as Auto<f64>>::auto();
-    let req = linalg::evd::schur::multishift_qr_scratch::<f64>(
-        n,
-        ihi - ilo + 1,
-        want_z,
-        want_t,
-        Par::Seq,
-        params,
-    );
+    let req = linalg::evd::schur::multishift_qr_scratch::<f64>(n, ihi - ilo + 1, want_z, want_t, Par::Seq, params);
     let mut zmat = want_z.then(|| Mat::<f64>::from_fn(n, n, |i, j| z[i + j * ldz]));
     let info = with_stack(req, |stack| {
         let hm = view(h, n, n, ldh);
@@ -633,11 +628,7 @@ pub fn dhgeqz(
     let mut ai = faer::Col::<f64>::zeros(n);
     let mut be = faer::Col::<f64>::zeros(n);
     let params = <GeneralizedSchurParams as Auto<f64>>::auto();
-    let req = linalg::gevd::qz_real::hessenberg_to_qz_scratch::<f64>(
-        n.max(GEVD_MIN_SCRATCH_DIM),
-        Par::Seq,
-        params,
-    );
+    let req = linalg::gevd::qz_real::hessenberg_to_qz_scratch::<f64>(n.max(GEVD_MIN_SCRATCH_DIM), Par::Seq, params);
     with_stack(req, |stack| {
         linalg::gevd::qz_real::hessenberg_to_qz(
             am.as_mut(),
@@ -713,21 +704,9 @@ pub fn dgeqrf(m: usize, n: usize, a: &mut [f64], lda: usize, tau: &mut [f64]) ->
         return 0;
     }
     let mut qc = Mat::<f64>::zeros(1, k);
-    let req = linalg::qr::no_pivoting::factor::qr_in_place_scratch::<f64>(
-        m,
-        n,
-        1,
-        Par::Seq,
-        Spec::default(),
-    );
+    let req = linalg::qr::no_pivoting::factor::qr_in_place_scratch::<f64>(m, n, 1, Par::Seq, Spec::default());
     with_stack(req, |stack| {
-        linalg::qr::no_pivoting::factor::qr_in_place(
-            view(a, m, n, lda),
-            qc.as_mut(),
-            Par::Seq,
-            stack,
-            Spec::default(),
-        );
+        linalg::qr::no_pivoting::factor::qr_in_place(view(a, m, n, lda), qc.as_mut(), Par::Seq, stack, Spec::default());
     });
     for (j, t) in tau.iter_mut().enumerate().take(k) {
         let c = qc[(0, j)];
@@ -776,11 +755,7 @@ pub fn dgetrs(
         return 0;
     }
     let lu = view_ref(a, n, n, lda);
-    let req = linalg::lu::partial_pivoting::solve::solve_in_place_scratch::<usize, f64>(
-        n,
-        nrhs,
-        Par::Seq,
-    );
+    let req = linalg::lu::partial_pivoting::solve::solve_in_place_scratch::<usize, f64>(n, nrhs, Par::Seq);
     with_perm(2 * n, |bufs| {
         let (fwd, inv) = bufs.split_at_mut(n);
         perm_from_ipiv_into(ipiv, n, fwd, inv);
@@ -790,9 +765,7 @@ pub fn dgetrs(
             if opt(trans) == b'N' {
                 linalg::lu::partial_pivoting::solve::solve_in_place(lu, lu, perm, rhs, Par::Seq, stack);
             } else {
-                linalg::lu::partial_pivoting::solve::solve_transpose_in_place(
-                    lu, lu, perm, rhs, Par::Seq, stack,
-                );
+                linalg::lu::partial_pivoting::solve::solve_transpose_in_place(lu, lu, perm, rhs, Par::Seq, stack);
             }
         });
     });
@@ -847,14 +820,7 @@ pub fn dgetri(n: usize, a: &mut [f64], lda: usize, ipiv: &[i32]) -> i32 {
 ///
 /// Same storage as LAPACK — the reflectors live below the subdiagonal — with
 /// the `householder` row reciprocated as in [`dgeqrf`].
-pub fn dgehrd(
-    n: usize,
-    ilo: usize,
-    ihi: usize,
-    a: &mut [f64],
-    lda: usize,
-    tau: &mut [f64],
-) -> Option<i32> {
+pub fn dgehrd(n: usize, ilo: usize, ihi: usize, a: &mut [f64], lda: usize, tau: &mut [f64]) -> Option<i32> {
     if ilo != 1 || ihi != n {
         return None;
     }
@@ -862,20 +828,9 @@ pub fn dgehrd(
         return Some(0);
     }
     let mut hh = Mat::<f64>::zeros(1, n - 1);
-    let req = linalg::evd::hessenberg::hessenberg_in_place_scratch::<f64>(
-        n,
-        1,
-        Par::Seq,
-        Spec::default(),
-    );
+    let req = linalg::evd::hessenberg::hessenberg_in_place_scratch::<f64>(n, 1, Par::Seq, Spec::default());
     with_stack(req, |stack| {
-        linalg::evd::hessenberg::hessenberg_in_place(
-            view(a, n, n, lda),
-            hh.as_mut(),
-            Par::Seq,
-            stack,
-            Spec::default(),
-        );
+        linalg::evd::hessenberg::hessenberg_in_place(view(a, n, n, lda), hh.as_mut(), Par::Seq, stack, Spec::default());
     });
     for (j, t) in tau.iter_mut().enumerate().take(n - 1) {
         let c = hh[(0, j)];
@@ -924,13 +879,37 @@ pub fn dormqr(
         let cm = view(c, m, n, ldc);
         match (left, transpose) {
             (true, false) => hh::apply_block_householder_sequence_on_the_left_in_place_with_conj(
-                basis, hf.as_ref(), faer::Conj::No, cm, Par::Seq, stack),
+                basis,
+                hf.as_ref(),
+                faer::Conj::No,
+                cm,
+                Par::Seq,
+                stack,
+            ),
             (true, true) => hh::apply_block_householder_sequence_transpose_on_the_left_in_place_with_conj(
-                basis, hf.as_ref(), faer::Conj::No, cm, Par::Seq, stack),
+                basis,
+                hf.as_ref(),
+                faer::Conj::No,
+                cm,
+                Par::Seq,
+                stack,
+            ),
             (false, false) => hh::apply_block_householder_sequence_on_the_right_in_place_with_conj(
-                basis, hf.as_ref(), faer::Conj::No, cm, Par::Seq, stack),
+                basis,
+                hf.as_ref(),
+                faer::Conj::No,
+                cm,
+                Par::Seq,
+                stack,
+            ),
             (false, true) => hh::apply_block_householder_sequence_transpose_on_the_right_in_place_with_conj(
-                basis, hf.as_ref(), faer::Conj::No, cm, Par::Seq, stack),
+                basis,
+                hf.as_ref(),
+                faer::Conj::No,
+                cm,
+                Par::Seq,
+                stack,
+            ),
         }
     });
     0
@@ -961,14 +940,7 @@ pub fn dorgqr(m: usize, n: usize, k: usize, a: &mut [f64], lda: usize, tau: &[f6
 /// `DGEQP3`: QR with column pivoting. LAPACK's `JPVT` is 1-based and, on entry,
 /// a nonzero entry pins that column to the front; faer always pivots freely, so
 /// a pinned column falls back to the port.
-pub fn dgeqp3(
-    m: usize,
-    n: usize,
-    a: &mut [f64],
-    lda: usize,
-    jpvt: &mut [i32],
-    tau: &mut [f64],
-) -> Option<i32> {
+pub fn dgeqp3(m: usize, n: usize, a: &mut [f64], lda: usize, jpvt: &mut [i32], tau: &mut [f64]) -> Option<i32> {
     if jpvt.iter().take(n).any(|&p| p != 0) {
         return None;
     }
@@ -979,13 +951,7 @@ pub fn dgeqp3(
     let mut qc = Mat::<f64>::zeros(1, k);
     let mut perm = vec![0usize; n];
     let mut perm_inv = vec![0usize; n];
-    let req = linalg::qr::col_pivoting::factor::qr_in_place_scratch::<usize, f64>(
-        m,
-        n,
-        1,
-        Par::Seq,
-        Spec::default(),
-    );
+    let req = linalg::qr::col_pivoting::factor::qr_in_place_scratch::<usize, f64>(m, n, 1, Par::Seq, Spec::default());
     with_stack(req, |stack| {
         linalg::qr::col_pivoting::factor::qr_in_place(
             view(a, m, n, lda),
@@ -1050,7 +1016,11 @@ pub fn dtrsm(
     // because `X*op(A) = B` is `op(A)'*X' = B'`. Combining the two transposes
     // leaves one iff `trans == left`, and transposing the view also swaps which
     // triangle is the structural one.
-    let (am, lower) = if trans == left { (am.transpose(), !lower) } else { (am, lower) };
+    let (am, lower) = if trans == left {
+        (am.transpose(), !lower)
+    } else {
+        (am, lower)
+    };
     let mut bm = view(b, m, n, ldb);
     let bm = if left { bm.rb_mut() } else { bm.rb_mut().transpose_mut() };
     match (lower, unit) {

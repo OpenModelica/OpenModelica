@@ -174,7 +174,11 @@ fn solve_cached(
     if err == 0 {
         return 0;
     }
-    let code = usize::try_from(err).ok().and_then(|i| RETURNCODE.get(i)).copied().unwrap_or("LIS_ERR");
+    let code = usize::try_from(err)
+        .ok()
+        .and_then(|i| RETURNCODE.get(i))
+        .copied()
+        .unwrap_or("LIS_ERR");
     crate::omclog::warning!(crate::omclog::LS_V, false, "lis_solve : {code}(code={err})");
     crate::omclog::warning!(
         crate::omclog::LS,

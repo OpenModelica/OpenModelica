@@ -39,10 +39,7 @@ fn init_session(install_modelica: bool, mut raw: impl FnMut(&str) -> (String, bo
 /// Evaluate `command`, then `getErrorString()`, via the two raw closures.
 /// Native only; the wasm worker mirrors this in JS (see omc_worker.js).
 #[cfg(not(target_arch = "wasm32"))]
-fn eval_with_errors(
-    command: &str,
-    mut raw: impl FnMut(&str) -> (String, bool),
-) -> Eval {
+fn eval_with_errors(command: &str, mut raw: impl FnMut(&str) -> (String, bool)) -> Eval {
     let (result, keep_running) = raw(command);
     let (error, _) = raw("getErrorString()");
     Eval {

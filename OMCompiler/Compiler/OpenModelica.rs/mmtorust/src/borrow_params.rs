@@ -11,20 +11,18 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
+use crate::MM;
 use crate::hierarchy::{NameNode, NodeKind, Ty};
 use crate::typedexp::{self, BinOpKind, MatchKind, TypedExp, TypedPat, TypedStmt};
-use crate::MM;
-use rayon::prelude::*;
 use openmodelica_ast::Absyn;
+use rayon::prelude::*;
 
 pub(crate) type BorrowMasks = BTreeMap<String, Vec<bool>>;
 
 static MASKS: std::sync::OnceLock<BorrowMasks> = std::sync::OnceLock::new();
 
 /// Hand-written functions whose parameters are borrowed.
-const HANDWRITTEN_MASKS: &[(&str, &[bool])] = &[
-    ("System.dladdr", &[true]),
-];
+const HANDWRITTEN_MASKS: &[(&str, &[bool])] = &[("System.dladdr", &[true])];
 
 pub(crate) fn install(mut masks: BorrowMasks) {
     for (q, m) in HANDWRITTEN_MASKS {
@@ -57,8 +55,13 @@ fn candidate_kind(ty: &Ty, types: &Types<'_>) -> Option<Kind> {
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if types.recursive.contains(n) => Some(Kind::Handle),
         Ty::RustStruct(n) | Ty::RustEnum(n) | Ty::AliasTo(n) if !types.copy.contains(n) => Some(Kind::Value),
         Ty::UnionTypeVariant(parent, _) if types.recursive.contains(parent) => Some(Kind::Handle),
-        Ty::Tuple(ts) if ts.iter().any(|t| candidate_kind(t, types).is_some() || matches!(t, Ty::Option(_))) =>
-            Some(Kind::Handle),
+        Ty::Tuple(ts)
+            if ts
+                .iter()
+                .any(|t| candidate_kind(t, types).is_some() || matches!(t, Ty::Option(_))) =>
+        {
+            Some(Kind::Handle)
+        }
         _ => None,
     }
 }
@@ -67,9 +70,19 @@ fn candidate_kind(ty: &Ty, types: &Types<'_>) -> Option<Kind> {
 fn builtin_borrows(func: &str, idx: usize) -> bool {
     match func {
         "referenceEq" | "stringEq" | "stringEqual" | "stringCompare" => idx < 2,
-        "stringEmpty" | "stringHash" | "stringHashDjb2" | "stringHashDjb2Continue"
-        | "stringHashDjb2Mod" | "stringHashSdbm" | "stringGet" | "listLength"
-        | "stringLength" | "listHead" | "listRest" | "listGet" | "listEmpty"
+        "stringEmpty"
+        | "stringHash"
+        | "stringHashDjb2"
+        | "stringHashDjb2Continue"
+        | "stringHashDjb2Mod"
+        | "stringHashSdbm"
+        | "stringGet"
+        | "listLength"
+        | "stringLength"
+        | "listHead"
+        | "listRest"
+        | "listGet"
+        | "listEmpty"
         | "valueConstructor" => idx == 0,
         _ => false,
     }
@@ -77,8 +90,16 @@ fn builtin_borrows(func: &str, idx: usize) -> bool {
 
 /// A pattern-let target that only reads its subject.
 pub(crate) fn pat_destructures(p: &TypedPat) -> bool {
-    matches!(p, TypedPat::Constructor { .. } | TypedPat::Cons { .. } | TypedPat::Some_(_) | TypedPat::None_
-        | TypedPat::EmptyList | TypedPat::As { .. } | TypedPat::Tuple(_))
+    matches!(
+        p,
+        TypedPat::Constructor { .. }
+            | TypedPat::Cons { .. }
+            | TypedPat::Some_(_)
+            | TypedPat::None_
+            | TypedPat::EmptyList
+            | TypedPat::As { .. }
+            | TypedPat::Tuple(_)
+    )
 }
 
 /// For a plain match on `Ref`/`List` parameters (one, or a tuple of them), the
@@ -92,12 +113,16 @@ pub(crate) fn param_tail_bindings(
     is_param: &dyn Fn(&str, &Ty) -> bool,
 ) -> Vec<(String, String)> {
     let plain = |e: &TypedExp| match e {
-        TypedExp::Var { name, segments, ty, .. } if is_plain(name, segments) && is_param(name, ty) => Some(name.clone()),
+        TypedExp::Var { name, segments, ty, .. } if is_plain(name, segments) && is_param(name, ty) => {
+            Some(name.clone())
+        }
         _ => None,
     };
     let cols: Vec<(String, &TypedPat)> = match (input, &case.pattern) {
         (TypedExp::Tuple(es), TypedPat::Tuple(ps)) if es.len() == ps.len() => {
-            let Some(names) = es.iter().map(plain).collect::<Option<Vec<_>>>() else { return Vec::new() };
+            let Some(names) = es.iter().map(plain).collect::<Option<Vec<_>>>() else {
+                return Vec::new();
+            };
             names.into_iter().zip(ps.iter()).collect()
         }
         (TypedExp::Tuple(_), _) => return Vec::new(),
@@ -114,12 +139,15 @@ pub(crate) fn param_tail_bindings(
     for (p, pat) in cols {
         let parts: Vec<&TypedPat> = match pat {
             TypedPat::Cons { tail, .. } => vec![&**tail],
-            TypedPat::Constructor { fields, named_fields, .. } =>
-                fields.iter().chain(named_fields.iter().map(|(_, f)| f)).collect(),
+            TypedPat::Constructor {
+                fields, named_fields, ..
+            } => fields.iter().chain(named_fields.iter().map(|(_, f)| f)).collect(),
             _ => Vec::new(),
         };
         for part in parts {
-            if let TypedPat::Var(x) = part && local(x) {
+            if let TypedPat::Var(x) = part
+                && local(x)
+            {
                 out.push((x.clone(), p.clone()));
             }
         }
@@ -168,7 +196,8 @@ fn is_plain(name: &str, segments: &[typedexp::CrefSegment]) -> bool {
 
 impl Scan<'_, '_> {
     fn disqualify(&mut self, name: &str, why: &dyn std::fmt::Debug) {
-        if self.candidates.contains(name) && self.disq.insert(name.to_owned())
+        if self.candidates.contains(name)
+            && self.disq.insert(name.to_owned())
             && let Some(q) = self.trace
         {
             eprintln!("[borrow] {q}: `{name}` by value: {why:?}");
@@ -192,7 +221,9 @@ impl Scan<'_, '_> {
                 self.pat(tail);
             }
             TypedPat::Tuple(ps) => ps.iter().for_each(|p| self.pat(p)),
-            TypedPat::Constructor { fields, named_fields, .. } => {
+            TypedPat::Constructor {
+                fields, named_fields, ..
+            } => {
                 fields.iter().for_each(|p| self.pat(p));
                 named_fields.iter().for_each(|(_, p)| self.pat(p));
             }
@@ -217,11 +248,20 @@ impl Scan<'_, '_> {
             TypedStmt::Assign { lhs, rhs, .. } => {
                 self.pat(lhs);
                 let value = matches!(rhs, TypedExp::Var { name, .. } if self.values.contains(name));
-                let p = if pat_destructures(lhs) && !value { Pos::Borrow } else { Pos::Owned };
+                let p = if pat_destructures(lhs) && !value {
+                    Pos::Borrow
+                } else {
+                    Pos::Owned
+                };
                 self.arg(rhs, p);
             }
             TypedStmt::NoRetCall { call, .. } => self.exp(call, Pos::Owned),
-            TypedStmt::If { cond, then_, elseif, else_ } => {
+            TypedStmt::If {
+                cond,
+                then_,
+                elseif,
+                else_,
+            } => {
                 self.exp(cond, Pos::Owned);
                 self.stmts(then_);
                 for (c, b) in elseif {
@@ -232,7 +272,11 @@ impl Scan<'_, '_> {
             }
             TypedStmt::For { var, range, body } => {
                 self.bind(var);
-                let p = if matches!(range.ty(), Ty::List(_)) { Pos::Borrow } else { Pos::Owned };
+                let p = if matches!(range.ty(), Ty::List(_)) {
+                    Pos::Borrow
+                } else {
+                    Pos::Owned
+                };
                 self.arg(range, p);
                 self.stmts(body);
             }
@@ -305,15 +349,22 @@ impl Scan<'_, '_> {
                     }
                 }
             }
-            TypedExp::Call { func, args, named_args, .. } => {
+            TypedExp::Call {
+                func, args, named_args, ..
+            } => {
                 if let Some((short, inputs)) = self.self_call
                     && func == short
                 {
-                    let passed = |i: usize, a: &TypedExp| matches!(a,
-                        TypedExp::Var { name, segments, .. } if is_plain(name, segments) && inputs.get(i) == Some(name));
+                    let passed = |i: usize, a: &TypedExp| {
+                        matches!(a,
+                        TypedExp::Var { name, segments, .. } if is_plain(name, segments) && inputs.get(i) == Some(name))
+                    };
                     let mut given: HashSet<usize> = HashSet::new();
-                    let slots = args.iter().enumerate()
-                        .chain(named_args.iter().filter_map(|(n, a)| Some((inputs.iter().position(|f| f == n)?, a))));
+                    let slots = args.iter().enumerate().chain(
+                        named_args
+                            .iter()
+                            .filter_map(|(n, a)| Some((inputs.iter().position(|f| f == n)?, a))),
+                    );
                     for (i, a) in slots {
                         given.insert(i);
                         if passed(i, a) {
@@ -323,7 +374,11 @@ impl Scan<'_, '_> {
                         let field_of = match a {
                             TypedExp::Var { segments, .. }
                                 if segments.len() == 2 && segments.iter().all(|s| s.subscripts.is_empty()) =>
-                                inputs.iter().position(|n| *n == segments[0].name && self.candidates.contains(n)),
+                            {
+                                inputs
+                                    .iter()
+                                    .position(|n| *n == segments[0].name && self.candidates.contains(n))
+                            }
                             _ => None,
                         };
                         if let (Some(p), Some(j)) = (inputs.get(i), field_of) {
@@ -331,7 +386,9 @@ impl Scan<'_, '_> {
                             continue;
                         }
                         let tail_of: Option<Vec<usize>> = match a {
-                            TypedExp::Var { name, segments, .. } if is_plain(name, segments) => self.tails.get(name)
+                            TypedExp::Var { name, segments, .. } if is_plain(name, segments) => self
+                                .tails
+                                .get(name)
                                 .and_then(|from| from.iter().map(|q| inputs.iter().position(|n| n == q)).collect()),
                             _ => None,
                         };
@@ -371,7 +428,11 @@ impl Scan<'_, '_> {
                     }
                 } else {
                     for (i, a) in args.iter().enumerate() {
-                        let p = if named_args.is_empty() && builtin_borrows(func, i) { Pos::Borrow } else { Pos::Owned };
+                        let p = if named_args.is_empty() && builtin_borrows(func, i) {
+                            Pos::Borrow
+                        } else {
+                            Pos::Owned
+                        };
                         self.arg(a, p);
                     }
                     named_args.iter().for_each(|(_, a)| self.exp(a, Pos::Owned));
@@ -389,9 +450,23 @@ impl Scan<'_, '_> {
                     }
                 }
             }
-            TypedExp::Match { kind, input, cases, as_binding, .. } => {
-                let whole = |p: &TypedPat| matches!(p, TypedPat::Var(_) | TypedPat::As { .. } | TypedPat::Index { .. }
-                    | TypedPat::FieldAccess { .. } | TypedPat::Todo(_));
+            TypedExp::Match {
+                kind,
+                input,
+                cases,
+                as_binding,
+                ..
+            } => {
+                let whole = |p: &TypedPat| {
+                    matches!(
+                        p,
+                        TypedPat::Var(_)
+                            | TypedPat::As { .. }
+                            | TypedPat::Index { .. }
+                            | TypedPat::FieldAccess { .. }
+                            | TypedPat::Todo(_)
+                    )
+                };
                 let borrowing = as_binding.is_none();
                 match &**input {
                     TypedExp::Tuple(elems) if borrowing => {
@@ -406,7 +481,11 @@ impl Scan<'_, '_> {
                     }
                     _ => {
                         let binds_whole = cases.iter().any(|c| whole(&c.pattern));
-                        let p = if borrowing && !binds_whole { Pos::Borrow } else { Pos::Owned };
+                        let p = if borrowing && !binds_whole {
+                            Pos::Borrow
+                        } else {
+                            Pos::Owned
+                        };
                         self.arg(input, p);
                     }
                 }
@@ -415,10 +494,13 @@ impl Scan<'_, '_> {
                 }
                 let track_tails = self.self_call.is_some() && matches!(kind, MatchKind::Match) && as_binding.is_none();
                 let columns: Vec<String> = match &**input {
-                    TypedExp::Tuple(es) => es.iter().filter_map(|e| match e {
-                        TypedExp::Var { name, .. } => Some(name.clone()),
-                        _ => None,
-                    }).collect(),
+                    TypedExp::Tuple(es) => es
+                        .iter()
+                        .filter_map(|e| match e {
+                            TypedExp::Var { name, .. } => Some(name.clone()),
+                            _ => None,
+                        })
+                        .collect(),
                     TypedExp::Var { name, .. } => vec![name.clone()],
                     _ => Vec::new(),
                 };
@@ -427,11 +509,14 @@ impl Scan<'_, '_> {
                     let saved_tails = self.tails.clone();
                     if track_tails {
                         let (cands, recursive) = (self.candidates, self.recursive);
-                        let is_param = |n: &str, t: &Ty| cands.contains(n) && match t {
-                            Ty::List(_) => true,
-                            Ty::RustStruct(q) | Ty::RustEnum(q) | Ty::AliasTo(q) => recursive.contains(q),
-                            Ty::UnionTypeVariant(q, _) => recursive.contains(q),
-                            _ => false,
+                        let is_param = |n: &str, t: &Ty| {
+                            cands.contains(n)
+                                && match t {
+                                    Ty::List(_) => true,
+                                    Ty::RustStruct(q) | Ty::RustEnum(q) | Ty::AliasTo(q) => recursive.contains(q),
+                                    Ty::UnionTypeVariant(q, _) => recursive.contains(q),
+                                    _ => false,
+                                }
                         };
                         for (x, p) in param_tail_bindings(input, c, &is_param) {
                             let mut from = vec![p.clone()];
@@ -460,15 +545,29 @@ impl Scan<'_, '_> {
                 args.iter().for_each(|a| self.exp(a, Pos::Owned));
                 named_args.iter().for_each(|(_, a)| self.exp(a, Pos::Owned));
             }
-            TypedExp::PartEval { func, args, named_args, .. } => {
+            TypedExp::PartEval {
+                func, args, named_args, ..
+            } => {
                 self.disqualify(func, &"partially applied");
                 // The closure captures a clone once; a callback cannot be cloned
                 // out of a `&dyn Fn`.
-                let capture = |a: &TypedExp| if matches!(a.ty(), Ty::Function { .. }) { Pos::Owned } else { Pos::Borrow };
+                let capture = |a: &TypedExp| {
+                    if matches!(a.ty(), Ty::Function { .. }) {
+                        Pos::Owned
+                    } else {
+                        Pos::Borrow
+                    }
+                };
                 args.iter().for_each(|a| self.arg(a, capture(a)));
                 named_args.iter().for_each(|(_, a)| self.arg(a, capture(a)));
             }
-            TypedExp::If { cond, then_, elseif, else_, .. } => {
+            TypedExp::If {
+                cond,
+                then_,
+                elseif,
+                else_,
+                ..
+            } => {
                 self.exp(cond, Pos::Owned);
                 self.exp(then_, Pos::Owned);
                 for (c, b) in elseif {
@@ -481,7 +580,9 @@ impl Scan<'_, '_> {
                 self.exp(head, Pos::Owned);
                 self.exp(tail, Pos::Owned);
             }
-            TypedExp::Tuple(elems) | TypedExp::Array { elems, .. } => elems.iter().for_each(|x| self.exp(x, Pos::Owned)),
+            TypedExp::Tuple(elems) | TypedExp::Array { elems, .. } => {
+                elems.iter().for_each(|x| self.exp(x, Pos::Owned))
+            }
             TypedExp::Range { start, step, stop, .. } => {
                 self.exp(start, Pos::Owned);
                 if let Some(s) = step {
@@ -532,8 +633,17 @@ fn scan_fn<'a>(
     if c.partial_prefix {
         return None;
     }
-    let MM::ClassDef::Parts { members, external: None, .. } = &c.body else { return None };
-    let Ty::Function { inputs, .. } = &node.ty else { return None };
+    let MM::ClassDef::Parts {
+        members,
+        external: None,
+        ..
+    } = &c.body
+    else {
+        return None;
+    };
+    let Ty::Function { inputs, .. } = &node.ty else {
+        return None;
+    };
     let mut outputs: Vec<String> = Vec::new();
     let mut locals: HashSet<String> = HashSet::new();
     for m in members {
@@ -544,12 +654,17 @@ fn scan_fn<'a>(
             }
         }
     }
-    let kinds: HashMap<String, Kind> = inputs.iter()
+    let kinds: HashMap<String, Kind> = inputs
+        .iter()
         .filter(|i| !outputs.contains(&i.name))
         .filter_map(|i| Some((i.name.clone(), candidate_kind(&i.ty, types)?)))
         .collect();
     let candidates: HashSet<String> = kinds.keys().cloned().collect();
-    let values: HashSet<String> = kinds.iter().filter(|(_, k)| **k == Kind::Value).map(|(n, _)| n.clone()).collect();
+    let values: HashSet<String> = kinds
+        .iter()
+        .filter(|(_, k)| **k == Kind::Value)
+        .map(|(n, _)| n.clone())
+        .collect();
     if candidates.is_empty() {
         return None;
     }
@@ -609,11 +724,18 @@ pub(crate) fn analyze<'a>(
     crate::codegen::collect_all_function_nodes(top_level, "", &mut all_fns);
 
     let trace = std::env::var("MMTORUST_TRACE_BORROW").ok();
-    let scans: BTreeMap<String, FnScan> = all_fns.par_iter()
-        .filter_map(|(qname, node)| Some((qname.clone(), scan_fn(qname, node, top_level, types, excluded, trace.as_deref())?)))
+    let scans: BTreeMap<String, FnScan> = all_fns
+        .par_iter()
+        .filter_map(|(qname, node)| {
+            Some((
+                qname.clone(),
+                scan_fn(qname, node, top_level, types, excluded, trace.as_deref())?,
+            ))
+        })
         .collect();
 
-    let mut borrowed: HashMap<String, HashSet<String>> = scans.iter()
+    let mut borrowed: HashMap<String, HashSet<String>> = scans
+        .iter()
         .map(|(q, s)| (q.clone(), s.candidates.difference(&s.disq).cloned().collect()))
         .collect();
     loop {
@@ -625,7 +747,8 @@ pub(crate) fn analyze<'a>(
                 }
                 let ok = match forced.get(callee) {
                     Some(m) => m.get(*idx).copied().unwrap_or(false),
-                    None => scans.get(callee)
+                    None => scans
+                        .get(callee)
                         .and_then(|cs| cs.inputs.get(*idx))
                         .is_some_and(|formal| borrowed[callee].contains(formal)),
                 };
@@ -643,10 +766,16 @@ pub(crate) fn analyze<'a>(
         }
     }
 
-    let mut masks: BorrowMasks = scans.iter()
+    let mut masks: BorrowMasks = scans
+        .iter()
         .filter(|(q, _)| !borrowed[*q].is_empty())
         .map(|(q, s)| (q.clone(), s.inputs.iter().map(|i| borrowed[q].contains(i)).collect()))
         .collect();
-    masks.extend(forced.iter().filter(|(_, m)| m.contains(&true)).map(|(q, m)| (q.clone(), m.clone())));
+    masks.extend(
+        forced
+            .iter()
+            .filter(|(_, m)| m.contains(&true))
+            .map(|(q, m)| (q.clone(), m.clone())),
+    );
     masks
 }

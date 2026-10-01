@@ -13,8 +13,8 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
-use crate::driver::{format_g, SimEngine};
-use crate::{files, omclog, rtclock, ProfInfo, SimMeta};
+use crate::driver::{SimEngine, format_g};
+use crate::{ProfInfo, SimMeta, files, omclog, rtclock};
 
 /// Bytes per clock in the runtime's `rt_prof_dump` record.
 const DUMP_RECORD: usize = 40;
@@ -102,7 +102,9 @@ pub fn start(e: &mut dyn SimEngine, model: &SimMeta) {
         state::with(|c| *c = None);
         return;
     };
-    let out = crate::simflags::with_flags(|f| f.output_path.clone()).map(|d| format!("{d}/")).unwrap_or_default();
+    let out = crate::simflags::with_flags(|f| f.output_path.clone())
+        .map(|d| format!("{d}/"))
+        .unwrap_or_default();
     let n = p.functions.len() + p.blocks.len();
     // C's `rt_init` sizes every clock before the first tick; the model's own ticks
     // land in the runtime module, so the engine arms them there.
@@ -198,7 +200,9 @@ pub fn adopt(model: &SimMeta, bytes: &[u8]) {
     // The driver's own clocks ran wherever the driver did; the report reads them
     // from this side's `rtclock`.
     rtclock::unpack(&take(&mut o));
-    let out = crate::simflags::with_flags(|f| f.output_path.clone()).map(|d| format!("{d}/")).unwrap_or_default();
+    let out = crate::simflags::with_flags(|f| f.output_path.clone())
+        .map(|d| format!("{d}/"))
+        .unwrap_or_default();
     state::with(|c| {
         *c = Some(Profiler {
             level: p.level,
@@ -239,7 +243,11 @@ fn write_traces(p: &Profiler) {
     for (suffix, bytes) in [("_prof.realdata", &p.real), ("_prof.intdata", &p.int)] {
         let name = format!("{}{}{suffix}", p.out, p.prefix);
         if !files::write(&name, bytes) {
-            omclog::warning!(omclog::STDOUT, false, "Time measurements output file {name} could not be opened");
+            omclog::warning!(
+                omclog::STDOUT,
+                false,
+                "Time measurements output file {name} could not be opened"
+            );
         }
     }
 }
@@ -277,7 +285,8 @@ impl Profiler {
             self.int.extend_from_slice(&self.step.to_le_bytes());
             self.step += 1;
             self.real.extend_from_slice(&time.to_le_bytes());
-            self.real.extend_from_slice(&rtclock::accumulated(rtclock::STEP).to_le_bytes());
+            self.real
+                .extend_from_slice(&rtclock::accumulated(rtclock::STEP).to_le_bytes());
             // `rt_prof_row`'s record: the call counts, then the seconds.
             self.int.extend_from_slice(&row[..4 * n]);
             self.real.extend_from_slice(&row[4 * n..]);
@@ -361,7 +370,12 @@ fn date_string() -> String {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
-    format!("{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}", rem / 3600, (rem / 60) % 60, rem % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}",
+        rem / 3600,
+        (rem / 60) % 60,
+        rem % 60
+    )
 }
 
 fn info_tag(out: &mut String, level: usize, info: &crate::SrcInfo) {
@@ -398,8 +412,13 @@ fn plot_command(
             3 + i
         )
     };
-    let count_plot =
-        |lw: u32| format!("plot \"{out}{prefix}_prof.intdata\" binary format=\"%{}uint32\" using {} w l lw {lw}\n", 1 + n_all, 2 + i);
+    let count_plot = |lw: u32| {
+        format!(
+            "plot \"{out}{prefix}_prof.intdata\" binary format=\"%{}uint32\" using {} w l lw {lw}\n",
+            1 + n_all,
+            2 + i
+        )
+    };
     let (mut nmin, mut nmax) = (0u32, 0u32);
     let (mut ymin, mut ymax) = (0.0f64, 0.0f64);
     let mut ygraphmax = 0.0f64;
@@ -429,7 +448,9 @@ fn plot_command(
     plt.push_str("unset xtics\n");
     plt.push_str("unset ytics\n");
     plt.push_str("unset border\n");
-    plt.push_str(&format!("set output \"{out}{prefix}_prof.{id_prefix}{id}.thumb.svg\"\n"));
+    plt.push_str(&format!(
+        "set output \"{out}{prefix}_prof.{id_prefix}{id}.thumb.svg\"\n"
+    ));
     plt.push_str("set title\n");
     plt.push_str("set xlabel\n");
     plt.push_str("set ylabel\n");
@@ -440,7 +461,9 @@ fn plot_command(
     if i >= 0 {
         plt.push_str("unset ytics\n");
         count_range(plt);
-        plt.push_str(&format!("set output \"{out}{prefix}_prof.{id_prefix}{id}_count.thumb.svg\"\n"));
+        plt.push_str(&format!(
+            "set output \"{out}{prefix}_prof.{id_prefix}{id}_count.thumb.svg\"\n"
+        ));
         plt.push_str(&count_plot(4));
         plt.push_str("set ytics\n");
     }
@@ -451,7 +474,9 @@ fn plot_command(
     plt.push_str(&format!("set title \"{title}\"\n"));
     plt.push_str("set xlabel \"Global step at time\"\n");
     plt.push_str("set ylabel \"Execution time [s]\"\n");
-    plt.push_str(&format!("set output \"{out}{prefix}_prof.{id_prefix}{id}.{plot_format}\"\n"));
+    plt.push_str(&format!(
+        "set output \"{out}{prefix}_prof.{id_prefix}{id}.{plot_format}\"\n"
+    ));
     plt.push_str("set log y\n");
     yrange(plt);
     plt.push_str(&time_plot(2));
@@ -460,14 +485,17 @@ fn plot_command(
         count_range(plt);
         plt.push_str("set xlabel \"Global step number\"\n");
         plt.push_str("set ylabel \"Execution count\"\n");
-        plt.push_str(&format!("set output \"{out}{prefix}_prof.{id_prefix}{id}_count.{plot_format}\"\n"));
+        plt.push_str(&format!(
+            "set output \"{out}{prefix}_prof.{id_prefix}{id}_count.{plot_format}\"\n"
+        ));
         plt.push_str(&count_plot(2));
     }
 }
 
 fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file: &str, result_size: i64) {
     let (out, prefix) = (&p.out, &p.prefix);
-    let plot_format = crate::simflags::with_flags(|f| f.measure_time_plot_format.clone()).unwrap_or_else(|| "svg".to_string());
+    let plot_format =
+        crate::simflags::with_flags(|f| f.measure_time_plot_format.clone()).unwrap_or_else(|| "svg".to_string());
     let n_fn = info.functions.len();
     let n_all = n_fn + info.blocks.len();
     let mut x = String::new();
@@ -475,7 +503,16 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     plt.push_str("set terminal svg\n");
     plt.push_str("set nokey\n");
     plt.push_str("set format y \"%g\"\n");
-    plot_command(&mut plt, p, &plot_format, "Execution time of global steps", n_all, -1, 999, "");
+    plot_command(
+        &mut plt,
+        p,
+        &plot_format,
+        "Execution time of global steps",
+        n_all,
+        -1,
+        999,
+        "",
+    );
     x.push_str(
         "<!DOCTYPE doc [  <!ELEMENT simulation (modelinfo, variables, functions, equations)>  \
          <!ATTLIST variable id ID #REQUIRED>  <!ELEMENT equation (refs)>  <!ATTLIST equation id ID #REQUIRED>  \
@@ -489,22 +526,64 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     x.push_str(&format!("  <prefix>{}</prefix>\n", xml_escape(prefix)));
     x.push_str(&format!("  <date>{}</date>\n", xml_escape(&date_string())));
     x.push_str(&format!("  <method>{}</method>\n", xml_escape(&model.method)));
-    x.push_str(&format!("  <outputFormat>{}</outputFormat>\n", xml_escape(&model.output_format)));
-    x.push_str(&format!("  <outputFilename>{}</outputFilename>\n", xml_escape(result_file)));
+    x.push_str(&format!(
+        "  <outputFormat>{}</outputFormat>\n",
+        xml_escape(&model.output_format)
+    ));
+    x.push_str(&format!(
+        "  <outputFilename>{}</outputFilename>\n",
+        xml_escape(result_file)
+    ));
     x.push_str(&format!("  <outputFilesize>{result_size}</outputFilesize>\n"));
-    x.push_str(&format!("  <overheadTime>{}</overheadTime>\n", f6(rtclock::accumulated(rtclock::OVERHEAD))));
-    x.push_str(&format!("  <preinitTime>{}</preinitTime>\n", f6(rtclock::accumulated(rtclock::PREINIT))));
-    x.push_str(&format!("  <initTime>{}</initTime>\n", f6(rtclock::accumulated(rtclock::INIT))));
-    x.push_str(&format!("  <eventTime>{}</eventTime>\n", f6(rtclock::accumulated(rtclock::EVENT))));
-    x.push_str(&format!("  <outputTime>{}</outputTime>\n", f6(rtclock::accumulated(rtclock::OUTPUT))));
-    x.push_str(&format!("  <jacobianTime>{}</jacobianTime>\n", f6(rtclock::accumulated(rtclock::JACOBIAN))));
-    x.push_str(&format!("  <totalTime>{}</totalTime>\n", f6(rtclock::accumulated(rtclock::TOTAL))));
-    x.push_str(&format!("  <totalStepsTime>{}</totalStepsTime>\n", f6(rtclock::total(rtclock::STEP))));
-    x.push_str(&format!("  <numStep>{}</numStep>\n", rtclock::ncall_total(rtclock::STEP)));
-    x.push_str(&format!("  <maxTime>{}</maxTime>\n", f9(rtclock::max_accumulated(rtclock::STEP))));
+    x.push_str(&format!(
+        "  <overheadTime>{}</overheadTime>\n",
+        f6(rtclock::accumulated(rtclock::OVERHEAD))
+    ));
+    x.push_str(&format!(
+        "  <preinitTime>{}</preinitTime>\n",
+        f6(rtclock::accumulated(rtclock::PREINIT))
+    ));
+    x.push_str(&format!(
+        "  <initTime>{}</initTime>\n",
+        f6(rtclock::accumulated(rtclock::INIT))
+    ));
+    x.push_str(&format!(
+        "  <eventTime>{}</eventTime>\n",
+        f6(rtclock::accumulated(rtclock::EVENT))
+    ));
+    x.push_str(&format!(
+        "  <outputTime>{}</outputTime>\n",
+        f6(rtclock::accumulated(rtclock::OUTPUT))
+    ));
+    x.push_str(&format!(
+        "  <jacobianTime>{}</jacobianTime>\n",
+        f6(rtclock::accumulated(rtclock::JACOBIAN))
+    ));
+    x.push_str(&format!(
+        "  <totalTime>{}</totalTime>\n",
+        f6(rtclock::accumulated(rtclock::TOTAL))
+    ));
+    x.push_str(&format!(
+        "  <totalStepsTime>{}</totalStepsTime>\n",
+        f6(rtclock::total(rtclock::STEP))
+    ));
+    x.push_str(&format!(
+        "  <numStep>{}</numStep>\n",
+        rtclock::ncall_total(rtclock::STEP)
+    ));
+    x.push_str(&format!(
+        "  <maxTime>{}</maxTime>\n",
+        f9(rtclock::max_accumulated(rtclock::STEP))
+    ));
     x.push_str("</modelinfo>\n<modelinfo_ext>\n");
-    x.push_str(&format!("  <odeTime>{}</odeTime>\n", f6(rtclock::accumulated(rtclock::FUNCTION_ODE))));
-    x.push_str(&format!("  <odeTimeTicks>{}</odeTimeTicks>\n", rtclock::ncall(rtclock::FUNCTION_ODE)));
+    x.push_str(&format!(
+        "  <odeTime>{}</odeTime>\n",
+        f6(rtclock::accumulated(rtclock::FUNCTION_ODE))
+    ));
+    x.push_str(&format!(
+        "  <odeTimeTicks>{}</odeTimeTicks>\n",
+        rtclock::ncall(rtclock::FUNCTION_ODE)
+    ));
     x.push_str("</modelinfo_ext>\n<profilingdataheader>\n");
     // C reports on a `_prof.data` no runtime has written for a long time, so its
     // `fileSize` is the missing-file `-1`.
@@ -525,7 +604,12 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     }
     x.push_str("  </format>\n</profilingdataheader>\n<variables>\n");
     for v in &info.vars {
-        x.push_str(&format!("  <variable id=\"var{}\" name=\"{}\" comment=\"{}\">\n", v.id, xml_escape(&v.name), xml_escape(&v.comment)));
+        x.push_str(&format!(
+            "  <variable id=\"var{}\" name=\"{}\" comment=\"{}\">\n",
+            v.id,
+            xml_escape(&v.name),
+            xml_escape(&v.comment)
+        ));
         info_tag(&mut x, 4, &v.info);
         x.push_str("  </variable>\n");
     }
@@ -593,7 +677,11 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
             None => (true, "OPENMODELICAHOME missing".to_string()),
         };
         if gen_html_failed {
-            omclog::warning!(omclog::STDOUT, false, "Failed to generate html version of profiling results: {cmd}\n");
+            omclog::warning!(
+                omclog::STDOUT,
+                false,
+                "Failed to generate html version of profiling results: {cmd}\n"
+            );
         }
     }
     if html {
@@ -603,16 +691,25 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
             "Time measurements are stored in {out}{prefix}_prof.html (human-readable) and {out}{prefix}_prof.xml (for XSL transforms or more details)",
         );
     } else {
-        omclog::info!(omclog::STDOUT, false, "Time measurements are stored in {out}{prefix}_prof.json");
+        omclog::info!(
+            omclog::STDOUT,
+            false,
+            "Time measurements are stored in {out}{prefix}_prof.json"
+        );
     }
 }
 
 /// C's `system(cmd)` through `/bin/sh`; `true` on exit status 0. A wasm build
 /// has no processes to run.
 fn run_shell(cmd: &str) -> bool {
-    #[cfg(all(feature = "std", not(target_arch = "wasm32")))]  // no processes in wasm
+    #[cfg(all(feature = "std", not(target_arch = "wasm32")))] // no processes in wasm
     {
-        std::process::Command::new("sh").arg("-c").arg(cmd).status().map(|s| s.success()).unwrap_or(false)
+        std::process::Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
     }
     #[cfg(not(all(feature = "std", not(target_arch = "wasm32"))))]
     {
@@ -671,25 +768,48 @@ fn print_model_info_json(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_
     // `readEquation` skips the `parent` field of `_info.json` and leaves the
     // `calloc`ed zero behind.
     // `fold` from `0.0`, not `sum()`: its identity is `-0.0`, and C prints `0`.
-    let total_eqs = (0..info.blocks.len()).map(|k| p.totals[n_fn + k].total).fold(0.0, |a, b| a + b);
+    let total_eqs = (0..info.blocks.len())
+        .map(|k| p.totals[n_fn + k].total)
+        .fold(0.0, |a, b| a + b);
     j.push_str(&format!("{{\n\"name\":\"{}\"", json_escape(&model.model_name)));
     j.push_str(&format!(",\n\"prefix\":\"{}\"", json_escape(prefix)));
     j.push_str(&format!(",\n\"date\":\"{}\"", json_escape(&date_string())));
     j.push_str(&format!(",\n\"method\":\"{}\"", json_escape(&model.method)));
-    j.push_str(&format!(",\n\"outputFormat\":\"{}\"", json_escape(&model.output_format)));
+    j.push_str(&format!(
+        ",\n\"outputFormat\":\"{}\"",
+        json_escape(&model.output_format)
+    ));
     j.push_str(&format!(",\n\"outputFilename\":\"{}\"", json_escape(result_file)));
     j.push_str(&format!(",\n\"outputFilesize\":{result_size}"));
-    j.push_str(&format!(",\n\"overheadTime\":{}", g(rtclock::accumulated(rtclock::OVERHEAD))));
-    j.push_str(&format!(",\n\"preinitTime\":{}", g(rtclock::accumulated(rtclock::PREINIT))));
+    j.push_str(&format!(
+        ",\n\"overheadTime\":{}",
+        g(rtclock::accumulated(rtclock::OVERHEAD))
+    ));
+    j.push_str(&format!(
+        ",\n\"preinitTime\":{}",
+        g(rtclock::accumulated(rtclock::PREINIT))
+    ));
     j.push_str(&format!(",\n\"initTime\":{}", g(rtclock::accumulated(rtclock::INIT))));
     j.push_str(&format!(",\n\"eventTime\":{}", g(rtclock::accumulated(rtclock::EVENT))));
-    j.push_str(&format!(",\n\"outputTime\":{}", g(rtclock::accumulated(rtclock::OUTPUT))));
-    j.push_str(&format!(",\n\"jacobianTime\":{}", g(rtclock::accumulated(rtclock::JACOBIAN))));
+    j.push_str(&format!(
+        ",\n\"outputTime\":{}",
+        g(rtclock::accumulated(rtclock::OUTPUT))
+    ));
+    j.push_str(&format!(
+        ",\n\"jacobianTime\":{}",
+        g(rtclock::accumulated(rtclock::JACOBIAN))
+    ));
     j.push_str(&format!(",\n\"totalTime\":{}", g(rtclock::accumulated(rtclock::TOTAL))));
-    j.push_str(&format!(",\n\"totalStepsTime\":{}", g(rtclock::accumulated(rtclock::STEP))));
+    j.push_str(&format!(
+        ",\n\"totalStepsTime\":{}",
+        g(rtclock::accumulated(rtclock::STEP))
+    ));
     j.push_str(&format!(",\n\"totalTimeProfileBlocks\":{}", g(total_eqs)));
     j.push_str(&format!(",\n\"numStep\":{}", rtclock::ncall_total(rtclock::STEP)));
-    j.push_str(&format!(",\n\"maxTime\":{}", format_g(rtclock::max_accumulated(rtclock::STEP), 9)));
+    j.push_str(&format!(
+        ",\n\"maxTime\":{}",
+        format_g(rtclock::max_accumulated(rtclock::STEP), 9)
+    ));
     j.push_str(",\n\"functions\":[");
     for (i, f) in info.functions.iter().enumerate() {
         let t = p.totals[i];
@@ -706,7 +826,10 @@ fn print_model_info_json(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_
     for (k, id) in info.blocks.iter().enumerate() {
         let t = p.totals[n_fn + k];
         j.push_str(if k == 0 { "\n" } else { ",\n" });
-        j.push_str(&format!("{{\"id\":{id},\"ncall\":{},\"time\":{:.9},\"maxTime\":{:.9}}}", t.ncall_total, t.total, t.max));
+        j.push_str(&format!(
+            "{{\"id\":{id},\"ncall\":{},\"time\":{:.9},\"maxTime\":{:.9}}}",
+            t.ncall_total, t.total, t.max
+        ));
     }
     j.push_str("\n]\n}");
     let name = format!("{out}{prefix}_prof.json");

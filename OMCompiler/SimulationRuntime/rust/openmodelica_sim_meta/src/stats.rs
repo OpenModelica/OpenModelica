@@ -45,7 +45,10 @@ pub fn log_stats(s: &SolveStats) {
         - t(rtclock::SOLVER);
     omclog::info(STATS, true, "### STATISTICS ###");
     omclog::info(STATS, true, "timer");
-    for (v, what) in [(t(rtclock::INIT_XML), "reading init.xml"), (t(rtclock::INFO_XML), "reading info.xml")] {
+    for (v, what) in [
+        (t(rtclock::INIT_XML), "reading init.xml"),
+        (t(rtclock::INFO_XML), "reading info.xml"),
+    ] {
         omclog::info!(STATS, false, "{}s          {what}", omclog::g(v, 12, 6));
     }
     for (v, what) in [
@@ -75,7 +78,12 @@ pub fn log_stats(s: &SolveStats) {
         omclog::info!(STATS, false, "{:5} evaluations of jacobian", s.jac_evals);
         omclog::info!(STATS, false, "{:5} error test failures", s.err_test_fails);
         omclog::info!(STATS, false, "{:5} convergence test failures", s.conv_test_fails);
-        omclog::info!(STATS, false, "{}s time of jacobian evaluation", format_g(t(rtclock::JACOBIAN), 6));
+        omclog::info!(
+            STATS,
+            false,
+            "{}s time of jacobian evaluation",
+            format_g(t(rtclock::JACOBIAN), 6)
+        );
         omclog::close(STATS);
     }
     if omclog::active(STATS_V) {
@@ -105,9 +113,23 @@ fn log_stats_v(s: &SolveStats, pct: impl Fn(f64) -> f64) {
     ] {
         timed(s.tcalls[ix], what, s.timers[ix]);
     }
-    omclog::info!(STATS_V, false, "{:5} calls of updateDiscreteSystem", s.tcalls[rtclock::DISCRETE]);
-    omclog::info!(STATS_V, false, "{:5} calls of functionZeroCrossingsEquations", s.tcalls[rtclock::ZC_EQUATIONS]);
-    timed(s.tcalls[rtclock::ZC], "calls of functionZeroCrossings", s.timers[rtclock::ZC]);
+    omclog::info!(
+        STATS_V,
+        false,
+        "{:5} calls of updateDiscreteSystem",
+        s.tcalls[rtclock::DISCRETE]
+    );
+    omclog::info!(
+        STATS_V,
+        false,
+        "{:5} calls of functionZeroCrossingsEquations",
+        s.tcalls[rtclock::ZC_EQUATIONS]
+    );
+    timed(
+        s.tcalls[rtclock::ZC],
+        "calls of functionZeroCrossings",
+        s.timers[rtclock::ZC],
+    );
     omclog::close(STATS_V);
     sys_stats_section(s, false);
     sys_stats_section(s, true);
@@ -116,19 +138,38 @@ fn log_stats_v(s: &SolveStats, pct: impl Fn(f64) -> f64) {
 /// `printLinearSystemSolvingStatistics` / `printNonLinearSystemSolvingStatistics`
 /// for every system of one kind, in equation-index order as C stores them.
 fn sys_stats_section(s: &SolveStats, nonlinear: bool) {
-    omclog::info(STATS_V, true, if nonlinear { "non-linear systems" } else { "linear systems" });
+    omclog::info(
+        STATS_V,
+        true,
+        if nonlinear {
+            "non-linear systems"
+        } else {
+            "linear systems"
+        },
+    );
     let mut systems: Vec<_> = s.systems.iter().filter(|x| x.nonlinear == nonlinear).collect();
     systems.sort_by_key(|x| x.eq_index);
     for x in systems {
         let calls = x.calls.max(1) as f64;
         if nonlinear {
-            omclog::info!(STATS_V, true, "Non-linear system {} of size {} solver statistics:", x.eq_index, x.size);
+            omclog::info!(
+                STATS_V,
+                true,
+                "Non-linear system {} of size {} solver statistics:",
+                x.eq_index,
+                x.size
+            );
             omclog::info!(STATS_V, false, " number of calls                : {}", x.calls);
             omclog::info!(STATS_V, false, " number of iterations           : {}", x.iters);
             omclog::info!(STATS_V, false, " number of function evaluations : {}", x.res_evals);
             omclog::info!(STATS_V, false, " number of jacobian evaluations : {}", x.jac_evals);
             omclog::info!(STATS_V, false, " time of jacobian evaluations   : {:.6}", x.jac);
-            omclog::info!(STATS_V, false, " average time per call          : {:.6}", x.total / calls);
+            omclog::info!(
+                STATS_V,
+                false,
+                " average time per call          : {:.6}",
+                x.total / calls
+            );
             omclog::info!(STATS_V, false, " total time                     : {:.6}", x.total);
         } else {
             let density = 100.0 * f64::from(x.nnz) / f64::from(x.size * x.size).max(1.0);
@@ -136,12 +177,30 @@ fn sys_stats_section(s: &SolveStats, nonlinear: bool) {
                 STATS_V,
                 true,
                 "Linear system {} with (size = {}, nonZeroElements = {}, density = {:.2} %) solver statistics:",
-                x.eq_index, x.size, x.nnz, density,
+                x.eq_index,
+                x.size,
+                x.nnz,
+                density,
             );
             omclog::info!(STATS_V, false, " number of calls                : {}", x.calls);
-            omclog::info!(STATS_V, false, " average time per call          : {}", format_g(x.total / calls, 6));
-            omclog::info!(STATS_V, false, " time of jacobian evaluations   : {}", format_g(x.jac, 6));
-            omclog::info!(STATS_V, false, " total time                     : {}", format_g(x.total, 6));
+            omclog::info!(
+                STATS_V,
+                false,
+                " average time per call          : {}",
+                format_g(x.total / calls, 6)
+            );
+            omclog::info!(
+                STATS_V,
+                false,
+                " time of jacobian evaluations   : {}",
+                format_g(x.jac, 6)
+            );
+            omclog::info!(
+                STATS_V,
+                false,
+                " total time                     : {}",
+                format_g(x.total, 6)
+            );
         }
         omclog::close(STATS_V);
     }

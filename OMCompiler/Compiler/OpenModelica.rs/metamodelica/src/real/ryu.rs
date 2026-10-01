@@ -1,8 +1,8 @@
 //! `realString` / `ryu_hr_tdzp` and the `ryu_to_hr` shortest-form
 //! decimal formatter (port of `3rdParty/ryu/ryu/om_format.c`).
 
-use arcstr::ArcStr;
 use crate::Real;
+use arcstr::ArcStr;
 
 /// Converts Real to String.
 ///
@@ -13,7 +13,11 @@ use crate::Real;
 pub fn realString(r: Real) -> ArcStr {
     let v = r.0;
     if v.is_infinite() {
-        return if v < 0.0 { arcstr::literal!("-inf") } else { arcstr::literal!("inf") };
+        return if v < 0.0 {
+            arcstr::literal!("-inf")
+        } else {
+            arcstr::literal!("inf")
+        };
     }
     if v.is_nan() {
         return arcstr::literal!("NaN");
@@ -58,7 +62,11 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
         None => (false, mant_str.to_string()),
     };
     // Number of digits after the decimal point in the mantissa.
-    let mut ndec: i32 = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+    let mut ndec: i32 = if digits.contains('.') {
+        digits.len() as i32 - 2
+    } else {
+        0
+    };
     // The exponential rendering used when the decimal form is unsuitable.
     let mut exp_repr: String = d2s_str.replace('E', "e");
 
@@ -82,7 +90,11 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
         }
         if nz > 3 {
             digits = rounded;
-            ndec = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+            ndec = if digits.contains('.') {
+                digits.len() as i32 - 2
+            } else {
+                0
+            };
             exp_repr = std::format!("{}{digits}e{exp}", if neg { "-" } else { "" });
         }
     }
@@ -132,12 +144,14 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod real_conversion_tests {
-    use super::*;
-    fn r(x: f64) -> Real { OrderedFloat(x) }
+        use super::*;
+        fn r(x: f64) -> Real {
+            OrderedFloat(x)
+        }
 
         #[test]
         fn test_real_string() {

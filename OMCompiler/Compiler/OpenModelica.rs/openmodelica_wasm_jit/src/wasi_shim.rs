@@ -49,135 +49,352 @@ mod wasmtime_impl {
     /// Register the `wasi_snapshot_preview1` imports into `linker`.
     pub fn add_to_linker(linker: &mut Linker) -> Result<()> {
         let m = "wasi_snapshot_preview1";
-        let wt = |r: std::result::Result<&mut Linker, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
+        let wt = |r: std::result::Result<&mut Linker, wasmtime::Error>| {
+            r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error")
+        };
 
-        wt(linker.func_wrap(m, "fd_write", |mut c: Caller<'_, HostState>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_write(&mut mem, fd as u32, iovs as u32, n as u32, nw as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_read", |mut c: Caller<'_, HostState>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_read(&mut mem, fd as u32, iovs as u32, n as u32, nr as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_seek", |mut c: Caller<'_, HostState>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_seek(&mut mem, fd as u32, off, whence, no as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_open", |mut c: Caller<'_, HostState>, dirfd: i32, dirflags: i32, path: i32, plen: i32, oflags: i32, rb: i64, ri: i64, fdflags: i32, ofd: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.path_open(&mut mem, dirfd as u32, dirflags as u32, path as u32, plen as u32, oflags, rb as u64, ri as u64, fdflags, ofd as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_filestat_get", |mut c: Caller<'_, HostState>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.path_filestat_get(&mut mem, dirfd as u32, flags as u32, path as u32, plen as u32, buf as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_filestat_get", |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_create_directory", |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_unlink_file", |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_remove_directory", |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_rename", |mut c: Caller<'_, HostState>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.path_rename(&mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_readdir", |mut c: Caller<'_, HostState>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_readdir(&mut mem, fd as u32, buf as u32, buf_len as u32, cookie as u64, bufused as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_fdstat_get", |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_fdstat_set_flags", |_c: Caller<'_, HostState>, _fd: i32, _flags: i32| -> i32 {
-            ERRNO_SUCCESS
-        }))?;
-        wt(linker.func_wrap(m, "fd_close", |mut c: Caller<'_, HostState>, fd: i32| -> i32 {
-            c.data_mut().wasi.fd_close(fd as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_prestat_get", |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_prestat_get(&mut mem, fd as u32, buf as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_prestat_dir_name", |mut c: Caller<'_, HostState>, fd: i32, path: i32, plen: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.fd_prestat_dir_name(&mut mem, fd as u32, path as u32, plen as u32)
-        }))?;
-        wt(linker.func_wrap(m, "args_sizes_get", |mut c: Caller<'_, HostState>, argc: i32, bs: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.args_sizes_get(&mut mem, argc as u32, bs as u32)
-        }))?;
-        wt(linker.func_wrap(m, "args_get", |mut c: Caller<'_, HostState>, argv: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.args_get(&mut mem, argv as u32, buf as u32)
-        }))?;
-        wt(linker.func_wrap(m, "environ_sizes_get", |mut c: Caller<'_, HostState>, count: i32, bs: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.environ_sizes_get(&mut mem, count as u32, bs as u32)
-        }))?;
-        wt(linker.func_wrap(m, "environ_get", |mut c: Caller<'_, HostState>, env: i32, buf: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.environ_get(&mut mem, env as u32, buf as u32)
-        }))?;
-        wt(linker.func_wrap(m, "clock_time_get", |mut c: Caller<'_, HostState>, id: i32, prec: i64, time: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.clock_time_get(&mut mem, id as u32, prec as u64, time as u32)
-        }))?;
-        wt(linker.func_wrap(m, "random_get", |mut c: Caller<'_, HostState>, buf: i32, len: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c);
-            ctx.random_get(&mut mem, buf as u32, len as u32)
-        }))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_write",
+            |mut c: Caller<'_, HostState>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_write(&mut mem, fd as u32, iovs as u32, n as u32, nw as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_read",
+            |mut c: Caller<'_, HostState>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_read(&mut mem, fd as u32, iovs as u32, n as u32, nr as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_seek",
+            |mut c: Caller<'_, HostState>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_seek(&mut mem, fd as u32, off, whence, no as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_open",
+            |mut c: Caller<'_, HostState>,
+             dirfd: i32,
+             dirflags: i32,
+             path: i32,
+             plen: i32,
+             oflags: i32,
+             rb: i64,
+             ri: i64,
+             fdflags: i32,
+             ofd: i32|
+             -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.path_open(
+                    &mut mem,
+                    dirfd as u32,
+                    dirflags as u32,
+                    path as u32,
+                    plen as u32,
+                    oflags,
+                    rb as u64,
+                    ri as u64,
+                    fdflags,
+                    ofd as u32,
+                )
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_filestat_get",
+            |mut c: Caller<'_, HostState>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.path_filestat_get(
+                    &mut mem,
+                    dirfd as u32,
+                    flags as u32,
+                    path as u32,
+                    plen as u32,
+                    buf as u32,
+                )
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_filestat_get",
+            |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_create_directory",
+            |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_unlink_file",
+            |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_remove_directory",
+            |mut c: Caller<'_, HostState>, dirfd: i32, path: i32, plen: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_rename",
+            |mut c: Caller<'_, HostState>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.path_rename(
+                    &mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32,
+                )
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_readdir",
+            |mut c: Caller<'_, HostState>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_readdir(
+                    &mut mem,
+                    fd as u32,
+                    buf as u32,
+                    buf_len as u32,
+                    cookie as u64,
+                    bufused as u32,
+                )
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_fdstat_get",
+            |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_fdstat_set_flags",
+            |_c: Caller<'_, HostState>, _fd: i32, _flags: i32| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(
+            linker.func_wrap(m, "fd_close", |mut c: Caller<'_, HostState>, fd: i32| -> i32 {
+                c.data_mut().wasi.fd_close(fd as u32)
+            }),
+        )?;
+        wt(linker.func_wrap(
+            m,
+            "fd_prestat_get",
+            |mut c: Caller<'_, HostState>, fd: i32, buf: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_prestat_get(&mut mem, fd as u32, buf as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_prestat_dir_name",
+            |mut c: Caller<'_, HostState>, fd: i32, path: i32, plen: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_prestat_dir_name(&mut mem, fd as u32, path as u32, plen as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "args_sizes_get",
+            |mut c: Caller<'_, HostState>, argc: i32, bs: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.args_sizes_get(&mut mem, argc as u32, bs as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "args_get",
+            |mut c: Caller<'_, HostState>, argv: i32, buf: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.args_get(&mut mem, argv as u32, buf as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "environ_sizes_get",
+            |mut c: Caller<'_, HostState>, count: i32, bs: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.environ_sizes_get(&mut mem, count as u32, bs as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "environ_get",
+            |mut c: Caller<'_, HostState>, env: i32, buf: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.environ_get(&mut mem, env as u32, buf as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "clock_time_get",
+            |mut c: Caller<'_, HostState>, id: i32, prec: i64, time: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.clock_time_get(&mut mem, id as u32, prec as u64, time as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "random_get",
+            |mut c: Caller<'_, HostState>, buf: i32, len: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.random_get(&mut mem, buf as u32, len as u32)
+            },
+        ))?;
         // `proc_exit` is a normal termination: record the code and unwind via a
         // wasmtime error, which `run_command` turns back into the exit code.
-        wt(linker.func_wrap(m, "proc_exit", |mut c: Caller<'_, HostState>, code: i32| -> std::result::Result<(), wasmtime::Error> {
-            c.data_mut().wasi.exit_code = Some(code as u32);
-            Err(wasmtime::Error::msg("wasi proc_exit"))
-        }))?;
+        wt(linker.func_wrap(
+            m,
+            "proc_exit",
+            |mut c: Caller<'_, HostState>, code: i32| -> std::result::Result<(), wasmtime::Error> {
+                c.data_mut().wasi.exit_code = Some(code as u32);
+                Err(wasmtime::Error::msg("wasi proc_exit"))
+            },
+        ))?;
         // Extra preview1 imports the clang/wasi-libc ModelicaExternalC module pulls
         // in. Real: clock_res_get + fd_tell + pread/pwrite, which HDF5's sec2 driver
         // uses for every access. No-op success: advisory / sync / metadata ops.
         // EINVAL: links / poll / sockets — off the file path but must exist for the
         // module to instantiate.
-        wt(linker.func_wrap(m, "clock_res_get", |mut c: Caller<'_, HostState>, id: i32, out: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c); ctx.clock_res_get(&mut mem, id as u32, out as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_tell", |mut c: Caller<'_, HostState>, fd: i32, out: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_tell(&mut mem, fd as u32, out as u32)
-        }))?;
+        wt(linker.func_wrap(
+            m,
+            "clock_res_get",
+            |mut c: Caller<'_, HostState>, id: i32, out: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.clock_res_get(&mut mem, id as u32, out as u32)
+            },
+        ))?;
+        wt(
+            linker.func_wrap(m, "fd_tell", |mut c: Caller<'_, HostState>, fd: i32, out: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_tell(&mut mem, fd as u32, out as u32)
+            }),
+        )?;
         wt(linker.func_wrap(m, "sched_yield", |_c: Caller<'_, HostState>| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_sync", |_c: Caller<'_, HostState>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_datasync", |_c: Caller<'_, HostState>, _fd: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_advise", |_c: Caller<'_, HostState>, _fd: i32, _o: i64, _l: i64, _a: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_allocate", |_c: Caller<'_, HostState>, _fd: i32, _o: i64, _l: i64| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_fdstat_set_rights", |_c: Caller<'_, HostState>, _fd: i32, _b: i64, _i: i64| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_filestat_set_size", |_c: Caller<'_, HostState>, _fd: i32, _s: i64| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_filestat_set_times", |_c: Caller<'_, HostState>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_renumber", |_c: Caller<'_, HostState>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "path_filestat_set_times", |_c: Caller<'_, HostState>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }))?;
-        wt(linker.func_wrap(m, "fd_pread", |mut c: Caller<'_, HostState>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
-        }))?;
-        wt(linker.func_wrap(m, "fd_pwrite", |mut c: Caller<'_, HostState>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
-            let (mut mem, ctx) = mem_ctx!(c); ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
-        }))?;
-        wt(linker.func_wrap(m, "path_link", |_c: Caller<'_, HostState>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "path_readlink", |_c: Caller<'_, HostState>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "path_symlink", |_c: Caller<'_, HostState>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "poll_oneoff", |_c: Caller<'_, HostState>, _in: i32, _out: i32, _n: i32, _ne: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_accept", |_c: Caller<'_, HostState>, _fd: i32, _fl: i32, _r: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_recv", |_c: Caller<'_, HostState>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_send", |_c: Caller<'_, HostState>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32| -> i32 { ERRNO_INVAL }))?;
-        wt(linker.func_wrap(m, "sock_shutdown", |_c: Caller<'_, HostState>, _fd: i32, _how: i32| -> i32 { ERRNO_INVAL }))?;
+        wt(
+            linker.func_wrap(m, "fd_sync", |_c: Caller<'_, HostState>, _fd: i32| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        )?;
+        wt(
+            linker.func_wrap(m, "fd_datasync", |_c: Caller<'_, HostState>, _fd: i32| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        )?;
+        wt(linker.func_wrap(
+            m,
+            "fd_advise",
+            |_c: Caller<'_, HostState>, _fd: i32, _o: i64, _l: i64, _a: i32| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_allocate",
+            |_c: Caller<'_, HostState>, _fd: i32, _o: i64, _l: i64| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_fdstat_set_rights",
+            |_c: Caller<'_, HostState>, _fd: i32, _b: i64, _i: i64| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_filestat_set_size",
+            |_c: Caller<'_, HostState>, _fd: i32, _s: i64| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_filestat_set_times",
+            |_c: Caller<'_, HostState>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_renumber",
+            |_c: Caller<'_, HostState>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_filestat_set_times",
+            |_c: Caller<'_, HostState>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 {
+                ERRNO_SUCCESS
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_pread",
+            |mut c: Caller<'_, HostState>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "fd_pwrite",
+            |mut c: Caller<'_, HostState>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+                let (mut mem, ctx) = mem_ctx!(c);
+                ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_link",
+            |_c: Caller<'_, HostState>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 {
+                ERRNO_INVAL
+            },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_readlink",
+            |_c: Caller<'_, HostState>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "path_symlink",
+            |_c: Caller<'_, HostState>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "poll_oneoff",
+            |_c: Caller<'_, HostState>, _in: i32, _out: i32, _n: i32, _ne: i32| -> i32 { ERRNO_INVAL },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "sock_accept",
+            |_c: Caller<'_, HostState>, _fd: i32, _fl: i32, _r: i32| -> i32 { ERRNO_INVAL },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "sock_recv",
+            |_c: Caller<'_, HostState>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32| -> i32 { ERRNO_INVAL },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "sock_send",
+            |_c: Caller<'_, HostState>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32| -> i32 { ERRNO_INVAL },
+        ))?;
+        wt(linker.func_wrap(
+            m,
+            "sock_shutdown",
+            |_c: Caller<'_, HostState>, _fd: i32, _how: i32| -> i32 { ERRNO_INVAL },
+        ))?;
         Ok(())
     }
 
@@ -192,7 +409,9 @@ mod wasmtime_impl {
         let mut linker = Linker::new(&engine);
         add_to_linker(&mut linker)?;
         let mut store = wasmtime::Store::new(&engine, HostState::new(WasiCtx::new(cwd, args)));
-        let instance = linker.instantiate(&mut store, &module).map_err(|_| "CodegenWasmJit: wasm engine error")?;
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .map_err(|_| "CodegenWasmJit: wasm engine error")?;
         let start = instance
             .get_typed_func::<(), ()>(&mut store, "_start")
             .map_err(|e| "module has no `_start")?;
@@ -233,7 +452,10 @@ mod wasmer_impl {
         /// A WASI env rooted at `cwd`, with no args and its guest memory unset
         /// (fill it after instantiation with [`Env::set_memory`]).
         pub fn new(cwd: &str) -> Self {
-            Env { ctx: WasiCtx::new(cwd, Vec::new()), memory: None }
+            Env {
+                ctx: WasiCtx::new(cwd, Vec::new()),
+                memory: None,
+            }
         }
         /// Bind the guest memory the WASI calls read/write (the module's own
         /// `memory` export). Must be set before any WASI import is invoked.
@@ -278,131 +500,433 @@ mod wasmer_impl {
             imports.define(m, name, f);
         };
 
-        def("fd_write", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_write(&mut mem, fd as u32, iovs as u32, n as u32, nw as u32)
-        }));
-        def("fd_read", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_read(&mut mem, fd as u32, iovs as u32, n as u32, nr as u32)
-        }));
-        def("fd_seek", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_seek(&mut mem, fd as u32, off, whence, no as u32)
-        }));
-        def("path_open", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, dirflags: i32, path: i32, plen: i32, oflags: i32, rb: i64, ri: i64, fdflags: i32, ofd: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.path_open(&mut mem, dirfd as u32, dirflags as u32, path as u32, plen as u32, oflags, rb as u64, ri as u64, fdflags, ofd as u32)
-        }));
-        def("path_filestat_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.path_filestat_get(&mut mem, dirfd as u32, flags as u32, path as u32, plen as u32, buf as u32)
-        }));
-        def("fd_filestat_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
-        }));
-        def("path_create_directory", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
-        }));
-        def("path_unlink_file", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
-        }));
-        def("path_remove_directory", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
-        }));
-        def("path_rename", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.path_rename(&mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32)
-        }));
-        def("fd_readdir", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_readdir(&mut mem, fd as u32, buf as u32, buf_len as u32, cookie as u64, bufused as u32)
-        }));
-        def("fd_fdstat_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
-        }));
-        def("fd_fdstat_set_flags", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _flags: i32| -> i32 {
-            ERRNO_SUCCESS
-        }));
-        def("fd_close", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32| -> i32 {
-            env.data_mut().ctx.fd_close(fd as u32)
-        }));
-        def("fd_prestat_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_prestat_get(&mut mem, fd as u32, buf as u32)
-        }));
-        def("fd_prestat_dir_name", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, path: i32, plen: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.fd_prestat_dir_name(&mut mem, fd as u32, path as u32, plen as u32)
-        }));
-        def("args_sizes_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, argc: i32, bs: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.args_sizes_get(&mut mem, argc as u32, bs as u32)
-        }));
-        def("args_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, argv: i32, buf: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.args_get(&mut mem, argv as u32, buf as u32)
-        }));
-        def("environ_sizes_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, count: i32, bs: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.environ_sizes_get(&mut mem, count as u32, bs as u32)
-        }));
-        def("environ_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, e: i32, buf: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.environ_get(&mut mem, e as u32, buf as u32)
-        }));
-        def("clock_time_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, id: i32, prec: i64, time: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.clock_time_get(&mut mem, id as u32, prec as u64, time as u32)
-        }));
-        def("random_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, buf: i32, len: i32| -> i32 {
-            view_ctx!(env, mem, ctx);
-            ctx.random_get(&mut mem, buf as u32, len as u32)
-        }));
-        def("proc_exit", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, code: i32| -> std::result::Result<(), RuntimeError> {
-            env.data_mut().ctx.exit_code = Some(code as u32);
-            Err(RuntimeError::new("wasi proc_exit"))
-        }));
+        def(
+            "fd_write",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, iovs: i32, n: i32, nw: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_write(&mut mem, fd as u32, iovs as u32, n as u32, nw as u32)
+                },
+            ),
+        );
+        def(
+            "fd_read",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, iovs: i32, n: i32, nr: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_read(&mut mem, fd as u32, iovs as u32, n as u32, nr as u32)
+                },
+            ),
+        );
+        def(
+            "fd_seek",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, off: i64, whence: i32, no: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_seek(&mut mem, fd as u32, off, whence, no as u32)
+                },
+            ),
+        );
+        def(
+            "path_open",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>,
+                 dirfd: i32,
+                 dirflags: i32,
+                 path: i32,
+                 plen: i32,
+                 oflags: i32,
+                 rb: i64,
+                 ri: i64,
+                 fdflags: i32,
+                 ofd: i32|
+                 -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.path_open(
+                        &mut mem,
+                        dirfd as u32,
+                        dirflags as u32,
+                        path as u32,
+                        plen as u32,
+                        oflags,
+                        rb as u64,
+                        ri as u64,
+                        fdflags,
+                        ofd as u32,
+                    )
+                },
+            ),
+        );
+        def(
+            "path_filestat_get",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, dirfd: i32, flags: i32, path: i32, plen: i32, buf: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.path_filestat_get(
+                        &mut mem,
+                        dirfd as u32,
+                        flags as u32,
+                        path as u32,
+                        plen as u32,
+                        buf as u32,
+                    )
+                },
+            ),
+        );
+        def(
+            "fd_filestat_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.fd_filestat_get(&mut mem, fd as u32, buf as u32)
+            }),
+        );
+        def(
+            "path_create_directory",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.path_create_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+                },
+            ),
+        );
+        def(
+            "path_unlink_file",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.path_unlink_file(&mut mem, dirfd as u32, path as u32, plen as u32)
+                },
+            ),
+        );
+        def(
+            "path_remove_directory",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, dirfd: i32, path: i32, plen: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.path_remove_directory(&mut mem, dirfd as u32, path as u32, plen as u32)
+                },
+            ),
+        );
+        def(
+            "path_rename",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, ofd: i32, op: i32, ol: i32, nfd: i32, np: i32, nl: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.path_rename(
+                        &mut mem, ofd as u32, op as u32, ol as u32, nfd as u32, np as u32, nl as u32,
+                    )
+                },
+            ),
+        );
+        def(
+            "fd_readdir",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32, buf_len: i32, cookie: i64, bufused: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_readdir(
+                        &mut mem,
+                        fd as u32,
+                        buf as u32,
+                        buf_len as u32,
+                        cookie as u64,
+                        bufused as u32,
+                    )
+                },
+            ),
+        );
+        def(
+            "fd_fdstat_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.fd_fdstat_get(&mut mem, fd as u32, buf as u32)
+            }),
+        );
+        def(
+            "fd_fdstat_set_flags",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _flags: i32| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        );
+        def(
+            "fd_close",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32| -> i32 {
+                env.data_mut().ctx.fd_close(fd as u32)
+            }),
+        );
+        def(
+            "fd_prestat_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, buf: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.fd_prestat_get(&mut mem, fd as u32, buf as u32)
+            }),
+        );
+        def(
+            "fd_prestat_dir_name",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, path: i32, plen: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_prestat_dir_name(&mut mem, fd as u32, path as u32, plen as u32)
+                },
+            ),
+        );
+        def(
+            "args_sizes_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, argc: i32, bs: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.args_sizes_get(&mut mem, argc as u32, bs as u32)
+            }),
+        );
+        def(
+            "args_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, argv: i32, buf: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.args_get(&mut mem, argv as u32, buf as u32)
+            }),
+        );
+        def(
+            "environ_sizes_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, count: i32, bs: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.environ_sizes_get(&mut mem, count as u32, bs as u32)
+            }),
+        );
+        def(
+            "environ_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, e: i32, buf: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.environ_get(&mut mem, e as u32, buf as u32)
+            }),
+        );
+        def(
+            "clock_time_get",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, id: i32, prec: i64, time: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.clock_time_get(&mut mem, id as u32, prec as u64, time as u32)
+                },
+            ),
+        );
+        def(
+            "random_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, buf: i32, len: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.random_get(&mut mem, buf as u32, len as u32)
+            }),
+        );
+        def(
+            "proc_exit",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, code: i32| -> std::result::Result<(), RuntimeError> {
+                    env.data_mut().ctx.exit_code = Some(code as u32);
+                    Err(RuntimeError::new("wasi proc_exit"))
+                },
+            ),
+        );
         // Extra preview1 imports the clang/wasi-libc ModelicaExternalC module pulls in
         // (see add_to_linker). Real: clock_res_get + fd_tell + pread/pwrite, which HDF5's
         // sec2 driver uses for every access. No-op success: advisory / sync / metadata
         // ops. EINVAL: links / poll / sockets — off the file path but must exist or the
         // module fails to instantiate.
-        def("clock_res_get", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, id: i32, out: i32| -> i32 {
-            view_ctx!(env, mem, ctx); ctx.clock_res_get(&mut mem, id as u32, out as u32)
-        }));
-        def("fd_tell", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, out: i32| -> i32 {
-            view_ctx!(env, mem, ctx); ctx.fd_tell(&mut mem, fd as u32, out as u32)
-        }));
-        def("sched_yield", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>| -> i32 { ERRNO_SUCCESS }));
-        def("fd_sync", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_datasync", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_advise", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _o: i64, _l: i64, _a: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_allocate", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _o: i64, _l: i64| -> i32 { ERRNO_SUCCESS }));
-        def("fd_fdstat_set_rights", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _b: i64, _i: i64| -> i32 { ERRNO_SUCCESS }));
-        def("fd_filestat_set_size", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _s: i64| -> i32 { ERRNO_SUCCESS }));
-        def("fd_filestat_set_times", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_renumber", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _to: i32| -> i32 { ERRNO_SUCCESS }));
-        def("path_filestat_set_times", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 { ERRNO_SUCCESS }));
-        def("fd_pread", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
-            view_ctx!(env, mem, ctx); ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
-        }));
-        def("fd_pwrite", Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
-            view_ctx!(env, mem, ctx); ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
-        }));
-        def("path_link", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 { ERRNO_INVAL }));
-        def("path_readlink", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 { ERRNO_INVAL }));
-        def("path_symlink", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL }));
-        def("poll_oneoff", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _in: i32, _out: i32, _n: i32, _ne: i32| -> i32 { ERRNO_INVAL }));
-        def("sock_accept", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _fl: i32, _r: i32| -> i32 { ERRNO_INVAL }));
-        def("sock_recv", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32| -> i32 { ERRNO_INVAL }));
-        def("sock_send", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32| -> i32 { ERRNO_INVAL }));
-        def("sock_shutdown", Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _how: i32| -> i32 { ERRNO_INVAL }));
+        def(
+            "clock_res_get",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, id: i32, out: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.clock_res_get(&mut mem, id as u32, out as u32)
+            }),
+        );
+        def(
+            "fd_tell",
+            Function::new_typed_with_env(store, env, |mut env: FunctionEnvMut<Env>, fd: i32, out: i32| -> i32 {
+                view_ctx!(env, mem, ctx);
+                ctx.fd_tell(&mut mem, fd as u32, out as u32)
+            }),
+        );
+        def(
+            "sched_yield",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>| -> i32 { ERRNO_SUCCESS }),
+        );
+        def(
+            "fd_sync",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        );
+        def(
+            "fd_datasync",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        );
+        def(
+            "fd_advise",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _o: i64, _l: i64, _a: i32| -> i32 { ERRNO_SUCCESS },
+            ),
+        );
+        def(
+            "fd_allocate",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _o: i64, _l: i64| -> i32 { ERRNO_SUCCESS },
+            ),
+        );
+        def(
+            "fd_fdstat_set_rights",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _b: i64, _i: i64| -> i32 { ERRNO_SUCCESS },
+            ),
+        );
+        def(
+            "fd_filestat_set_size",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _s: i64| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        );
+        def(
+            "fd_filestat_set_times",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _a: i64, _m: i64, _f: i32| -> i32 { ERRNO_SUCCESS },
+            ),
+        );
+        def(
+            "fd_renumber",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _to: i32| -> i32 {
+                ERRNO_SUCCESS
+            }),
+        );
+        def(
+            "path_filestat_set_times",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _d: i32, _f: i32, _p: i32, _pl: i32, _a: i64, _mt: i64, _ff: i32| -> i32 {
+                    ERRNO_SUCCESS
+                },
+            ),
+        );
+        def(
+            "fd_pread",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_pread(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+                },
+            ),
+        );
+        def(
+            "fd_pwrite",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |mut env: FunctionEnvMut<Env>, fd: i32, i: i32, il: i32, o: i64, n: i32| -> i32 {
+                    view_ctx!(env, mem, ctx);
+                    ctx.fd_pwrite(&mut mem, fd as u32, i as u32, il as u32, o, n as u32)
+                },
+            ),
+        );
+        def(
+            "path_link",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32, _f: i32, _g: i32| -> i32 {
+                    ERRNO_INVAL
+                },
+            ),
+        );
+        def(
+            "path_readlink",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _d: i32, _p: i32, _pl: i32, _b: i32, _bl: i32, _u: i32| -> i32 {
+                    ERRNO_INVAL
+                },
+            ),
+        );
+        def(
+            "path_symlink",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _op: i32, _ol: i32, _d: i32, _np: i32, _nl: i32| -> i32 { ERRNO_INVAL },
+            ),
+        );
+        def(
+            "poll_oneoff",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _in: i32, _out: i32, _n: i32, _ne: i32| -> i32 { ERRNO_INVAL },
+            ),
+        );
+        def(
+            "sock_accept",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _fl: i32, _r: i32| -> i32 { ERRNO_INVAL },
+            ),
+        );
+        def(
+            "sock_recv",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32, _e: i32| -> i32 {
+                    ERRNO_INVAL
+                },
+            ),
+        );
+        def(
+            "sock_send",
+            Function::new_typed_with_env(
+                store,
+                env,
+                |_env: FunctionEnvMut<Env>, _fd: i32, _a: i32, _b: i32, _cc: i32, _d: i32| -> i32 { ERRNO_INVAL },
+            ),
+        );
+        def(
+            "sock_shutdown",
+            Function::new_typed_with_env(store, env, |_env: FunctionEnvMut<Env>, _fd: i32, _how: i32| -> i32 {
+                ERRNO_INVAL
+            }),
+        );
     }
 
     /// Instantiate `wasm` as a WASI command module and call `_start`, returning
@@ -415,11 +939,21 @@ mod wasmer_impl {
         let engine = wasmer::Engine::default();
         let module = Module::new(&engine, wasm).map_err(|_| "CodegenWasmJit: wasm engine error")?;
         let mut store = Store::new(engine);
-        let env = FunctionEnv::new(&mut store, Env { ctx: WasiCtx::new(cwd, args), memory: None });
+        let env = FunctionEnv::new(
+            &mut store,
+            Env {
+                ctx: WasiCtx::new(cwd, args),
+                memory: None,
+            },
+        );
         let mut imports = Imports::new();
         add_to_imports(&mut store, &env, &mut imports);
         let instance = Instance::new(&mut store, &module, &imports).map_err(|_| "CodegenWasmJit: wasm engine error")?;
-        let memory = instance.exports.get_memory("memory").map_err(|e| "no `memory` export")?.clone();
+        let memory = instance
+            .exports
+            .get_memory("memory")
+            .map_err(|e| "no `memory` export")?
+            .clone();
         env.as_mut(&mut store).memory = Some(memory);
         let start = instance
             .exports
@@ -475,7 +1009,17 @@ mod tests {
         let mut types = we::TypeSection::new();
         // 0: path_open (i32 x4, i32 oflags, i64, i64, i32 fdflags, i32) -> i32  => 9 params
         types.ty().function(
-            [we::ValType::I32, we::ValType::I32, we::ValType::I32, we::ValType::I32, we::ValType::I32, we::ValType::I64, we::ValType::I64, we::ValType::I32, we::ValType::I32],
+            [
+                we::ValType::I32,
+                we::ValType::I32,
+                we::ValType::I32,
+                we::ValType::I32,
+                we::ValType::I32,
+                we::ValType::I64,
+                we::ValType::I64,
+                we::ValType::I32,
+                we::ValType::I32,
+            ],
             [we::ValType::I32],
         );
         // 1: fd_write (i32,i32,i32,i32) -> i32
@@ -501,7 +1045,13 @@ mod tests {
         m.section(&funcs);
 
         let mut mems = we::MemorySection::new();
-        mems.memory(we::MemoryType { minimum: 1, maximum: None, memory64: false, shared: false, page_size_log2: None });
+        mems.memory(we::MemoryType {
+            minimum: 1,
+            maximum: None,
+            memory64: false,
+            shared: false,
+            page_size_log2: None,
+        });
         m.section(&mems);
 
         let mut exports = we::ExportSection::new();
@@ -526,7 +1076,11 @@ mod tests {
         f.instruction(&I::Drop);
         // fd_write(opened_fd, iovec=IOVEC_OFF, iovs_len=1, &nwritten)
         f.instruction(&I::I32Const(OPENED_FD_OFF));
-        f.instruction(&I::I32Load(we::MemArg { offset: 0, align: 2, memory_index: 0 }));
+        f.instruction(&I::I32Load(we::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        }));
         f.instruction(&I::I32Const(IOVEC_OFF));
         f.instruction(&I::I32Const(1));
         f.instruction(&I::I32Const(NWRITTEN_OFF));
@@ -534,7 +1088,11 @@ mod tests {
         f.instruction(&I::Drop);
         // fd_close(opened_fd)
         f.instruction(&I::I32Const(OPENED_FD_OFF));
-        f.instruction(&I::I32Load(we::MemArg { offset: 0, align: 2, memory_index: 0 }));
+        f.instruction(&I::I32Load(we::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        }));
         f.instruction(&I::Call(2));
         f.instruction(&I::Drop);
         // proc_exit(0)
@@ -560,7 +1118,11 @@ mod tests {
 
     /// A run directory of our own, since the shim serves real files natively.
     fn test_root(tag: &str) -> String {
-        format!("{}/om-wasi-shim-{tag}-{}", std::env::temp_dir().display(), std::process::id())
+        format!(
+            "{}/om-wasi-shim-{tag}-{}",
+            std::env::temp_dir().display(),
+            std::process::id()
+        )
     }
 
     #[test]

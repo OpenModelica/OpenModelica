@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use metamodelica::Result;
+use crate::ComponentReferenceBasics as CRB;
 use arcstr::literal;
+use metamodelica::Result;
 use metamodelica::*;
 use openmodelica_frontend_types::DAE;
-use crate::ComponentReferenceBasics as CRB;
-use openmodelica_util::{FlagsUtil, Flags};
+use openmodelica_util::{Flags, FlagsUtil};
+use std::sync::Arc;
 
 // Initialize flags with default values for the current thread.
 fn init_flags() {

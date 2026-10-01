@@ -31,7 +31,11 @@ pub fn scale(v: Vec3, s: f32) -> Vec3 {
 /// OMEdit's `normalize`: guards against a zero-length direction.
 pub fn normalize(v: Vec3) -> Vec3 {
     let l = len(v);
-    let d = if l as f64 >= 100.0 * 1.0e-15 { l } else { 100.0 * 1.0e-15 } as f32;
+    let d = if l as f64 >= 100.0 * 1.0e-15 {
+        l
+    } else {
+        100.0 * 1.0e-15
+    } as f32;
     scale(v, 1.0 / d)
 }
 

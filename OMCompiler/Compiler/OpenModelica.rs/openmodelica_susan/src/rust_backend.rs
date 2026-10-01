@@ -82,9 +82,10 @@ fn split_path(p: &PathIdent) -> (Option<String>, String) {
 }
 
 const RUST_KEYWORDS: &[&str] = &[
-    "as", "break", "const", "continue", "else", "enum", "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
-    "move", "mut", "pub", "ref", "return", "static", "struct", "trait", "true", "type", "unsafe", "use", "where", "while", "async", "await",
-    "dyn", "abstract", "become", "box", "do", "final", "macro", "override", "priv", "typeof", "unsized", "virtual", "yield", "try", "gen",
+    "as", "break", "const", "continue", "else", "enum", "extern", "false", "fn", "for", "if", "impl", "in", "let",
+    "loop", "match", "mod", "move", "mut", "pub", "ref", "return", "static", "struct", "trait", "true", "type",
+    "unsafe", "use", "where", "while", "async", "await", "dyn", "abstract", "become", "box", "do", "final", "macro",
+    "override", "priv", "typeof", "unsized", "virtual", "yield", "try", "gen",
 ];
 
 fn ident(n: &str) -> String {
@@ -228,7 +229,9 @@ impl<'a> Printer<'a> {
     }
 
     fn type_path(&mut self, name: &str) -> String {
-        let Some((p, n)) = name.rsplit_once('.') else { return name.to_string() };
+        let Some((p, n)) = name.rsplit_once('.') else {
+            return name.to_string();
+        };
         let p = p.to_string();
         let rust = match self.named(name) {
             Some(TypeDef::Union { rust, .. }) => rust.clone(),
@@ -256,7 +259,10 @@ impl<'a> Printer<'a> {
             Ty::List(t) => format!("metamodelica::List<{}>", self.rust_ty(t)),
             Ty::Option(t) => format!("Option<{}>", self.rust_ty(t)),
             Ty::Array(t) => format!("metamodelica::Array<{}>", self.rust_ty(t)),
-            Ty::Tuple(ts) => format!("({})", ts.iter().map(|t| self.rust_ty(t)).collect::<Vec<_>>().join(", ")),
+            Ty::Tuple(ts) => format!(
+                "({})",
+                ts.iter().map(|t| self.rust_ty(t)).collect::<Vec<_>>().join(", ")
+            ),
             Ty::Named(n) => self.type_path(n),
             Ty::Generic(n, ts) => {
                 let args = ts.iter().map(|t| self.rust_ty(t)).collect::<Vec<_>>().join(", ");
@@ -270,7 +276,10 @@ impl<'a> Printer<'a> {
         match outs {
             [] => "()".into(),
             [t] => self.rust_ty(t),
-            ts => format!("({})", ts.iter().map(|t| self.rust_ty(t)).collect::<Vec<_>>().join(", ")),
+            ts => format!(
+                "({})",
+                ts.iter().map(|t| self.rust_ty(t)).collect::<Vec<_>>().join(", ")
+            ),
         }
     }
 
@@ -278,11 +287,25 @@ impl<'a> Printer<'a> {
         self.use_pkg("Tpl");
         let inner = match t {
             Tpl::StringToken::ST_NEW_LINE => "Tpl::StringToken::ST_NEW_LINE".to_string(),
-            Tpl::StringToken::ST_STRING { value } => format!("Tpl::StringToken::ST_STRING {{ value: literal!({}) }}", rust_string(value)),
-            Tpl::StringToken::ST_LINE { line } => format!("Tpl::StringToken::ST_LINE {{ line: literal!({}) }}", rust_string(line)),
-            Tpl::StringToken::ST_STRING_LIST { strList, lastHasNewLine } => {
-                let items: Vec<String> = strList.iter().map(|s| format!("literal!({})", rust_string(s))).collect();
-                format!("Tpl::StringToken::ST_STRING_LIST {{ strList: metamodelica::list![{}], lastHasNewLine: {lastHasNewLine} }}", items.join(", "))
+            Tpl::StringToken::ST_STRING { value } => format!(
+                "Tpl::StringToken::ST_STRING {{ value: literal!({}) }}",
+                rust_string(value)
+            ),
+            Tpl::StringToken::ST_LINE { line } => {
+                format!("Tpl::StringToken::ST_LINE {{ line: literal!({}) }}", rust_string(line))
+            }
+            Tpl::StringToken::ST_STRING_LIST {
+                strList,
+                lastHasNewLine,
+            } => {
+                let items: Vec<String> = strList
+                    .iter()
+                    .map(|s| format!("literal!({})", rust_string(s)))
+                    .collect();
+                format!(
+                    "Tpl::StringToken::ST_STRING_LIST {{ strList: metamodelica::list![{}], lastHasNewLine: {lastHasNewLine} }}",
+                    items.join(", ")
+                )
             }
             Tpl::StringToken::ST_BLOCK { .. } => return self.err("block tokens are not constants".into()),
         };
@@ -294,7 +317,13 @@ impl<'a> Printer<'a> {
             return "None".into();
         }
         let is_real = v.parse::<i64>().is_err() && v.parse::<f64>().is_ok();
-        let real = || if is_real { format!("{v}_f64") } else { format!("{v}.0_f64") };
+        let real = || {
+            if is_real {
+                format!("{v}_f64")
+            } else {
+                format!("{v}.0_f64")
+            }
+        };
         match want.map(Ty::strip_ref) {
             Some(Ty::Real) => format!("metamodelica::OrderedFloat({})", real()),
             Some(Ty::F64) => real(),
@@ -308,11 +337,19 @@ impl<'a> Printer<'a> {
             .iter()
             .map(|(n, t)| {
                 let ty = self.susan_ty(t);
-                Param { mode: modes(n, &ty), ty }
+                Param {
+                    mode: modes(n, &ty),
+                    ty,
+                }
             })
             .collect();
         let outs = outs.iter().map(|(_, t)| self.susan_ty(t)).collect();
-        Sig { rust, params, outs, fallible: true }
+        Sig {
+            rust,
+            params,
+            outs,
+            fallible: true,
+        }
     }
 
     fn index_sig(&self, pkg: &str, name: &str) -> Option<Sig> {
@@ -322,7 +359,16 @@ impl<'a> Printer<'a> {
             params: f
                 .params
                 .iter()
-                .map(|a| Param { mode: if a.borrowed { Mode::Borrowed } else if is_copy(&a.ty) { Mode::Copy } else { Mode::Owned }, ty: a.ty.clone() })
+                .map(|a| Param {
+                    mode: if a.borrowed {
+                        Mode::Borrowed
+                    } else if is_copy(&a.ty) {
+                        Mode::Copy
+                    } else {
+                        Mode::Owned
+                    },
+                    ty: a.ty.clone(),
+                })
                 .collect(),
             outs: f.outs.clone(),
             fallible: f.fallible,
@@ -330,10 +376,22 @@ impl<'a> Printer<'a> {
     }
 
     /// The union of `pkg` holding record `rec`, preferring `hint`.
-    fn record(&self, pkg: &str, rec: &str, hint: Option<&str>) -> Option<(String, &'a str, bool, &'a openmodelica_susan_index::Record)> {
+    fn record(
+        &self,
+        pkg: &str,
+        rec: &str,
+        hint: Option<&str>,
+    ) -> Option<(String, &'a str, bool, &'a openmodelica_susan_index::Record)> {
         let p = self.idx.packages.get(pkg)?;
         let find = |tn: &str| match p.types.get(tn) {
-            Some(TypeDef::Union { rust, is_struct, records }) => records.iter().find(|r| r.name == rec).map(|r| (rust.as_str(), *is_struct, r)),
+            Some(TypeDef::Union {
+                rust,
+                is_struct,
+                records,
+            }) => records
+                .iter()
+                .find(|r| r.name == rec)
+                .map(|r| (rust.as_str(), *is_struct, r)),
             _ => None,
         };
         if let Some(h) = hint.and_then(|h| h.strip_prefix(&format!("{pkg}."))) {
@@ -342,7 +400,12 @@ impl<'a> Printer<'a> {
             }
         }
         for (tn, t) in &p.types {
-            if let TypeDef::Union { rust, is_struct, records } = t {
+            if let TypeDef::Union {
+                rust,
+                is_struct,
+                records,
+            } = t
+            {
                 if let Some(r) = records.iter().find(|r| r.name == rec) {
                     return Some((format!("{pkg}.{tn}"), rust.as_str(), *is_struct, r));
                 }
@@ -391,20 +454,28 @@ impl<'a> Printer<'a> {
                 fields.push("..".into());
                 format!("SourceInfo {{ {} }}", fields.join(", "))
             }
-            MatchingExp::RECORD_MATCH { tagName, fieldMatchings } => {
+            MatchingExp::RECORD_MATCH {
+                tagName,
+                fieldMatchings,
+            } => {
                 let (pkg, rec) = split_path(tagName);
                 let hint = match ty {
                     Ty::Named(n) => Some(n.as_str()),
                     _ => None,
                 };
-                let Some(pkg) = pkg.or_else(|| hint.and_then(|h| h.rsplit_once('.')).map(|(p, _)| p.to_string())) else {
+                let Some(pkg) = pkg.or_else(|| hint.and_then(|h| h.rsplit_once('.')).map(|(p, _)| p.to_string()))
+                else {
                     return self.err(format!("record {rec} without a package"));
                 };
                 let Some((_, rust, is_struct, r)) = self.record(&pkg, &rec, hint) else {
                     return self.err(format!("unknown record {pkg}.{rec}"));
                 };
                 let p = self.use_pkg(&pkg);
-                let path = if is_struct { format!("{p}::{rust}") } else { format!("{p}::{rust}::{rec}") };
+                let path = if is_struct {
+                    format!("{p}::{rust}")
+                } else {
+                    format!("{p}::{rust}::{rec}")
+                };
                 let mut fields = vec![];
                 for (fname, fm) in fieldMatchings {
                     let Some(f) = r.fields.iter().find(|f| f.name == fname.as_str()) else {
@@ -426,7 +497,11 @@ impl<'a> Printer<'a> {
             MatchingExp::NONE_MATCH => "None".into(),
             MatchingExp::TUPLE_MATCH { tupleArgs } => match ty {
                 Ty::Tuple(ts) if ts.len() == tupleArgs.len() as usize => {
-                    let ps: Vec<String> = tupleArgs.iter().zip(ts).map(|(a, t)| self.pattern(a, t, binds)).collect();
+                    let ps: Vec<String> = tupleArgs
+                        .iter()
+                        .zip(ts)
+                        .map(|(a, t)| self.pattern(a, t, binds))
+                        .collect();
                     format!("({})", ps.join(", "))
                 }
                 _ => self.err(format!("tuple pattern against {ty:?}")),
@@ -531,7 +606,10 @@ impl<'a> Printer<'a> {
                 let (pkg, n) = split_path(id);
                 if pkg.is_none() {
                     if let Some(v) = env.get(&n) {
-                        let p = Param { ty: v.ty.clone(), mode: if is_copy(&v.ty) { Mode::Copy } else { Mode::Owned } };
+                        let p = Param {
+                            ty: v.ty.clone(),
+                            mode: if is_copy(&v.ty) { Mode::Copy } else { Mode::Owned },
+                        };
                         return self.arg(e, &p, env, moves);
                     }
                     if self.local_consts.contains_key(&n) {
@@ -566,7 +644,14 @@ impl<'a> Printer<'a> {
         }
     }
 
-    fn call(&mut self, name: &PathIdent, args: &List<Ref<MMExp>>, want: Option<&Ty>, env: &Env, moves: &mut HashMap<String, usize>) -> String {
+    fn call(
+        &mut self,
+        name: &PathIdent,
+        args: &List<Ref<MMExp>>,
+        want: Option<&Ty>,
+        env: &Env,
+        moves: &mut HashMap<String, usize>,
+    ) -> String {
         let args: Vec<Ref<MMExp>> = args.iter().cloned().collect();
         let (pkg, n) = split_path(name);
         if pkg.is_none() {
@@ -576,7 +661,10 @@ impl<'a> Printer<'a> {
                         Some(Ty::Option(t)) => Some((**t).clone()),
                         _ => None,
                     };
-                    let p = Param { mode: Mode::Owned, ty: inner.unwrap_or(Ty::Unit) };
+                    let p = Param {
+                        mode: Mode::Owned,
+                        ty: inner.unwrap_or(Ty::Unit),
+                    };
                     return format!("Some({})", self.arg(&args[0], &p, env, moves));
                 }
                 "NONE" if args.is_empty() => return "None".into(),
@@ -590,17 +678,28 @@ impl<'a> Printer<'a> {
                 }
                 let fields: Vec<(String, Ty)> = r.fields.iter().map(|f| (f.rust.clone(), f.ty.clone())).collect();
                 let pp = self.use_pkg(p);
-                let path = if is_struct { format!("{pp}::{rust}") } else { format!("{pp}::{rust}::{n}") };
+                let path = if is_struct {
+                    format!("{pp}::{rust}")
+                } else {
+                    format!("{pp}::{rust}::{n}")
+                };
                 let vals: Vec<String> = fields
                     .iter()
                     .zip(&args)
                     .map(|((f, t), a)| {
-                        let param = Param { mode: if is_copy(t) { Mode::Copy } else { Mode::Owned }, ty: t.clone() };
+                        let param = Param {
+                            mode: if is_copy(t) { Mode::Copy } else { Mode::Owned },
+                            ty: t.clone(),
+                        };
                         format!("{f}: {}", self.arg(a, &param, env, moves))
                     })
                     .collect();
                 let v = format!("{path} {{ {} }}", vals.join(", "));
-                return if self.idx.is_boxed(&union) { format!("metamodelica::Ref::new({v})") } else { v };
+                return if self.idx.is_boxed(&union) {
+                    format!("metamodelica::Ref::new({v})")
+                } else {
+                    v
+                };
             }
         }
         let (callee, sig) = match self.call_sig(name) {
@@ -608,9 +707,19 @@ impl<'a> Printer<'a> {
             Err(e) => return self.err(e),
         };
         if sig.params.len() != args.len() {
-            return self.err(format!("{} takes {} arguments, got {}", path_string(name), sig.params.len(), args.len()));
+            return self.err(format!(
+                "{} takes {} arguments, got {}",
+                path_string(name),
+                sig.params.len(),
+                args.len()
+            ));
         }
-        let vals: Vec<String> = sig.params.iter().zip(&args).map(|(p, a)| self.arg(a, p, env, moves)).collect();
+        let vals: Vec<String> = sig
+            .params
+            .iter()
+            .zip(&args)
+            .map(|(p, a)| self.arg(a, p, env, moves))
+            .collect();
         format!("{callee}({}){}", vals.join(", "), if sig.fallible { "?" } else { "" })
     }
 
@@ -665,7 +774,8 @@ impl<'a> Printer<'a> {
                 *moves.entry(v.clone()).or_default() += 1;
             }
             moves.retain(|v, _| {
-                env.get(v).is_some_and(|x| x.kind == Kind::Owned) && (lhs.contains(v) || (!later[i + 1].contains(v) && !env[v].outer))
+                env.get(v).is_some_and(|x| x.kind == Kind::Owned)
+                    && (lhs.contains(v) || (!later[i + 1].contains(v) && !env[v].outer))
             });
             let want = match lhs.as_slice() {
                 [l] => env.get(l).map(|v| v.ty.clone()),
@@ -697,7 +807,9 @@ impl<'a> Printer<'a> {
             .iter()
             .map(|n| match env.get(n) {
                 Some(Var { kind: Kind::Owned, .. }) => n.clone(),
-                Some(Var { kind: Kind::Ref, ty, .. }) if is_copy(ty) => format!("*{n}"),
+                Some(Var {
+                    kind: Kind::Ref, ty, ..
+                }) if is_copy(ty) => format!("*{n}"),
                 Some(_) => format!("{n}.clone()"),
                 None => self.err(format!("unknown result {n}")),
             })
@@ -724,7 +836,14 @@ impl<'a> Printer<'a> {
     ) {
         let mut env = env.clone();
         for (n, t, k) in binds {
-            env.insert(n.clone(), Var { ty: t.clone(), kind: *k, outer: false });
+            env.insert(
+                n.clone(),
+                Var {
+                    ty: t.clone(),
+                    kind: *k,
+                    outer: false,
+                },
+            );
         }
         let (stmts, last) = match tail {
             Some(_) => (&stmts[..stmts.len() - 1], stmts.last()),
@@ -732,16 +851,43 @@ impl<'a> Printer<'a> {
         };
         for n in Self::assigned(stmts) {
             match env.get(&n) {
-                Some(Var { kind: Kind::Ref, ty, outer: false }) => {
+                Some(Var {
+                    kind: Kind::Ref,
+                    ty,
+                    outer: false,
+                }) => {
                     let ty = ty.clone();
-                    writeln!(out, "{indent}let mut {n} = {};", if is_copy(&ty) { format!("*{n}") } else { format!("{n}.clone()") }).unwrap();
-                    env.insert(n, Var { ty, kind: Kind::Owned, outer: false });
+                    writeln!(
+                        out,
+                        "{indent}let mut {n} = {};",
+                        if is_copy(&ty) {
+                            format!("*{n}")
+                        } else {
+                            format!("{n}.clone()")
+                        }
+                    )
+                    .unwrap();
+                    env.insert(
+                        n,
+                        Var {
+                            ty,
+                            kind: Kind::Owned,
+                            outer: false,
+                        },
+                    );
                 }
                 Some(_) => {}
                 None => {
                     let ty = locals.get(&n).cloned().unwrap_or(Ty::Unit);
                     writeln!(out, "{indent}let mut {n};").unwrap();
-                    env.insert(n, Var { ty, kind: Kind::Owned, outer: false });
+                    env.insert(
+                        n,
+                        Var {
+                            ty,
+                            kind: Kind::Owned,
+                            outer: false,
+                        },
+                    );
                 }
             }
         }
@@ -751,8 +897,12 @@ impl<'a> Printer<'a> {
         }
         self.block(stmts, &mut env, &after, indent, out);
         if let (Some(params), Some(l)) = (tail, last) {
-            let MMExp::MM_ASSIGN { rhs, .. } = &**l else { unreachable!() };
-            let MMExp::MM_FN_CALL { args, .. } = &**rhs else { unreachable!() };
+            let MMExp::MM_ASSIGN { rhs, .. } = &**l else {
+                unreachable!()
+            };
+            let MMExp::MM_FN_CALL { args, .. } = &**rhs else {
+                unreachable!()
+            };
             let mut moves: HashMap<String, usize> = HashMap::new();
             let mut u = vec![];
             Self::uses_in(rhs, &mut u);
@@ -761,7 +911,11 @@ impl<'a> Printer<'a> {
                     *moves.entry(v).or_default() += 1;
                 }
             }
-            let vals: Vec<String> = params.iter().zip(args).map(|((_, p), a)| self.arg(a, p, &env, &mut moves)).collect();
+            let vals: Vec<String> = params
+                .iter()
+                .zip(args)
+                .map(|((_, p), a)| self.arg(a, p, &env, &mut moves))
+                .collect();
             let names: Vec<&str> = params.iter().map(|(n, _)| n.as_str()).collect();
             writeln!(out, "{indent}({}) = ({});", names.join(", "), vals.join(", ")).unwrap();
             writeln!(out, "{indent}continue '__tco;").unwrap();
@@ -773,12 +927,23 @@ impl<'a> Printer<'a> {
 
     /// Whether the arm ends in `outs := name(args)` whose borrowed arguments
     /// are references into the inputs, so the call can become a jump.
-    fn is_tail_call(name: &str, pkg: &str, stmts: &[Ref<MMExp>], outs: &[String], params: &[(String, Param)], binds: &[(String, Ty, Kind)]) -> bool {
-        let Some(MMExp::MM_ASSIGN { lhsArgs, rhs }) = stmts.last().map(|s| &**s) else { return false };
+    fn is_tail_call(
+        name: &str,
+        pkg: &str,
+        stmts: &[Ref<MMExp>],
+        outs: &[String],
+        params: &[(String, Param)],
+        binds: &[(String, Ty, Kind)],
+    ) -> bool {
+        let Some(MMExp::MM_ASSIGN { lhsArgs, rhs }) = stmts.last().map(|s| &**s) else {
+            return false;
+        };
         if lhsArgs.iter().map(|s| s.to_string()).collect::<Vec<_>>() != outs {
             return false;
         }
-        let MMExp::MM_FN_CALL { fnName, args } = &**rhs else { return false };
+        let MMExp::MM_FN_CALL { fnName, args } = &**rhs else {
+            return false;
+        };
         let (p, n) = split_path(fnName);
         if n != name || p.is_some_and(|p| p != pkg) || args.len() as usize != params.len() {
             return false;
@@ -788,11 +953,16 @@ impl<'a> Printer<'a> {
             if p.mode != Mode::Borrowed {
                 return true;
             }
-            let MMExp::MM_IDENT { ident: id } = &**a else { return false };
-            let PathIdent::IDENT { ident: v } = &**id else { return false };
+            let MMExp::MM_IDENT { ident: id } = &**a else {
+                return false;
+            };
+            let PathIdent::IDENT { ident: v } = &**id else {
+                return false;
+            };
             let v = v.as_str();
             !assigned.iter().any(|x| x == v)
-                && (binds.iter().any(|(b, _, k)| b == v && *k == Kind::Ref) || params.iter().any(|(n, q)| n == v && q.mode == Mode::Borrowed))
+                && (binds.iter().any(|(b, _, k)| b == v && *k == Kind::Ref)
+                    || params.iter().any(|(n, q)| n == v && q.mode == Mode::Borrowed))
         })
     }
 
@@ -800,7 +970,16 @@ impl<'a> Printer<'a> {
         locals.iter().map(|(n, t)| (n.to_string(), self.susan_ty(t))).collect()
     }
 
-    fn function(&mut self, is_public: bool, name: &str, ins: &Typed, outs: &Typed, locals: &Typed, stmts: &List<Ref<MMExp>>, dest: &mut String) {
+    fn function(
+        &mut self,
+        is_public: bool,
+        name: &str,
+        ins: &Typed,
+        outs: &Typed,
+        locals: &Typed,
+        stmts: &List<Ref<MMExp>>,
+        dest: &mut String,
+    ) {
         self.current = name.to_string();
         let mut body = String::new();
         let out = &mut body;
@@ -822,7 +1001,18 @@ impl<'a> Printer<'a> {
             let ty = self.rust_ty(&p.ty);
             let pn = format!("{prefix}{n}");
             params.push((pn.clone(), p.mode, ty));
-            env.insert(pn, Var { ty: p.ty.clone(), kind: if p.mode == Mode::Borrowed { Kind::Ref } else { Kind::Owned }, outer: false });
+            env.insert(
+                pn,
+                Var {
+                    ty: p.ty.clone(),
+                    kind: if p.mode == Mode::Borrowed {
+                        Kind::Ref
+                    } else {
+                        Kind::Owned
+                    },
+                    outer: false,
+                },
+            );
         }
         let ret = self.out_ty(&sig.outs);
         let locals = self.locals_map(locals);
@@ -838,10 +1028,18 @@ impl<'a> Printer<'a> {
                 self.arm(&stmts, &[], &locals, &env, Some(&outs), None, "    ", out);
             }
             Body::Match => {
-                let MMExp::MM_MATCH { matchCases } = &*stmts[0] else { unreachable!() };
-                let cases: Vec<(Vec<Ref<MatchingExp>>, Vec<Ref<MMExp>>)> =
-                    matchCases.iter().map(|(ps, b)| (ps.iter().cloned().collect(), b.iter().cloned().collect())).collect();
-                let cols: Vec<(String, Param)> = in_names.iter().map(|n| format!("in_{n}")).zip(sig.params.iter().cloned()).collect();
+                let MMExp::MM_MATCH { matchCases } = &*stmts[0] else {
+                    unreachable!()
+                };
+                let cases: Vec<(Vec<Ref<MatchingExp>>, Vec<Ref<MMExp>>)> = matchCases
+                    .iter()
+                    .map(|(ps, b)| (ps.iter().cloned().collect(), b.iter().cloned().collect()))
+                    .collect();
+                let cols: Vec<(String, Param)> = in_names
+                    .iter()
+                    .map(|n| format!("in_{n}"))
+                    .zip(sig.params.iter().cloned())
+                    .collect();
                 // Text columns only ever bind, so they are moved into each arm
                 // rather than borrowed by the match.
                 let moved: Vec<bool> = cols
@@ -849,16 +1047,31 @@ impl<'a> Printer<'a> {
                     .enumerate()
                     .map(|(i, (_, p))| {
                         p.ty == Ty::Text
-                            && cases.iter().all(|(ps, _)| matches!(ps.get(i).map(|m| &**m), Some(MatchingExp::BIND_MATCH { .. } | MatchingExp::REST_MATCH)))
+                            && cases.iter().all(|(ps, _)| {
+                                matches!(
+                                    ps.get(i).map(|m| &**m),
+                                    Some(MatchingExp::BIND_MATCH { .. } | MatchingExp::REST_MATCH)
+                                )
+                            })
                     })
                     .collect();
                 let scrut: Vec<String> = cols
                     .iter()
                     .zip(&moved)
                     .filter(|(_, m)| !**m)
-                    .map(|((n, p), _)| if p.mode == Mode::Owned { format!("&{n}") } else { n.clone() })
+                    .map(|((n, p), _)| {
+                        if p.mode == Mode::Owned {
+                            format!("&{n}")
+                        } else {
+                            n.clone()
+                        }
+                    })
                     .collect();
-                let scrut = if scrut.len() == 1 { scrut[0].clone() } else { format!("({})", scrut.join(", ")) };
+                let scrut = if scrut.len() == 1 {
+                    scrut[0].clone()
+                } else {
+                    format!("({})", scrut.join(", "))
+                };
                 let mut arms = vec![];
                 let mut any_tail = false;
                 for (pats, body) in &cases {
@@ -878,7 +1091,11 @@ impl<'a> Printer<'a> {
                         let kind = if p.mode == Mode::Copy { Kind::Owned } else { Kind::Ref };
                         binds.extend(bs.into_iter().map(|(n, t)| (n, t, kind)));
                     }
-                    let pat = if ps.len() == 1 { ps[0].clone() } else { format!("({})", ps.join(", ")) };
+                    let pat = if ps.len() == 1 {
+                        ps[0].clone()
+                    } else {
+                        format!("({})", ps.join(", "))
+                    };
                     let tail = Self::is_tail_call(name, &self.pkg, body, &out_names, &cols, &binds);
                     any_tail |= tail;
                     arms.push((pat, takes, binds, body, tail));
@@ -896,7 +1113,16 @@ impl<'a> Printer<'a> {
                         writeln!(out, "{indent}            {t}").unwrap();
                     }
                     let inner = format!("{indent}            ");
-                    self.arm(body, &binds, &locals, &env, Some(&out_names), if tail { Some(&cols) } else { None }, &inner, out);
+                    self.arm(
+                        body,
+                        &binds,
+                        &locals,
+                        &env,
+                        Some(&out_names),
+                        if tail { Some(&cols) } else { None },
+                        &inner,
+                        out,
+                    );
                     writeln!(out, "{indent}        }}").unwrap();
                 }
                 writeln!(out, "{indent}        _ => Err(\"{}: no case matched\"),", name).unwrap();
@@ -908,7 +1134,15 @@ impl<'a> Printer<'a> {
                 has_tail = any_tail;
             }
             Body::ListLoop => {
-                let MMExp::MM_LIST_FOR_LOOP { eltName, listName, matchLocals, matchCases } = &*stmts[0] else { unreachable!() };
+                let MMExp::MM_LIST_FOR_LOOP {
+                    eltName,
+                    listName,
+                    matchLocals,
+                    matchCases,
+                } = &*stmts[0]
+                else {
+                    unreachable!()
+                };
                 let Some(list) = env.get(listName.as_str()).cloned() else {
                     self.err(format!("unknown list {listName}"));
                     return;
@@ -921,7 +1155,11 @@ impl<'a> Printer<'a> {
                 for v in loop_env.values_mut() {
                     v.outer = true;
                 }
-                let iter = if list.kind == Kind::Ref { listName.to_string() } else { format!("&{listName}") };
+                let iter = if list.kind == Kind::Ref {
+                    listName.to_string()
+                } else {
+                    format!("&{listName}")
+                };
                 let mut locals = locals;
                 locals.extend(self.locals_map(matchLocals));
                 writeln!(out, "    for {eltName} in {iter} {{").unwrap();
@@ -937,7 +1175,16 @@ impl<'a> Printer<'a> {
                     writeln!(out, "            {} => {{", ps.join(", ")).unwrap();
                     let body: Vec<Ref<MMExp>> = body.iter().cloned().collect();
                     let mut sub = String::new();
-                    self.arm(&body, &binds, &locals, &loop_env, None, None, "                ", &mut sub);
+                    self.arm(
+                        &body,
+                        &binds,
+                        &locals,
+                        &loop_env,
+                        None,
+                        None,
+                        "                ",
+                        &mut sub,
+                    );
                     out.push_str(&sub);
                     writeln!(out, "            }}").unwrap();
                 }
@@ -963,7 +1210,14 @@ impl<'a> Printer<'a> {
             })
             .collect();
         let generics = if has_tail { "<'a>" } else { "" };
-        writeln!(dest, "{}fn {}{generics}({}) -> Result<{ret}> {{", if is_public { "pub " } else { "" }, ident(&sig.rust), params.join(", ")).unwrap();
+        writeln!(
+            dest,
+            "{}fn {}{generics}({}) -> Result<{ret}> {{",
+            if is_public { "pub " } else { "" },
+            ident(&sig.rust),
+            params.join(", ")
+        )
+        .unwrap();
         dest.push_str(&body);
     }
 }
@@ -975,7 +1229,12 @@ fn template_crate(dir: &std::path::Path, pkg: &str) -> Option<String> {
 
 /// Prints `mm` as the Rust module of its package; returns its crate and code.
 /// `tpl_dir` holds the `.tpl` files of the imported template packages.
-pub fn print(tpl: &TemplPackage, mm: &MMPackage, idx: &Index, tpl_dir: &std::path::Path) -> Result<(String, String), Vec<String>> {
+pub fn print(
+    tpl: &TemplPackage,
+    mm: &MMPackage,
+    idx: &Index,
+    tpl_dir: &std::path::Path,
+) -> Result<(String, String), Vec<String>> {
     let pkg = path_string(&mm.name);
     let Some(krate) = annotation_interface(&mm.annotationFooter).map(|i| interface_crate(&i)) else {
         return Err(vec![format!("{pkg}: no __OpenModelica_Interface annotation")]);
@@ -993,9 +1252,14 @@ pub fn print(tpl: &TemplPackage, mm: &MMPackage, idx: &Index, tpl_dir: &std::pat
         errors: vec![],
         current: String::new(),
     };
-    for ASTDef { importPackage, types, .. } in &tpl.astDefs {
+    for ASTDef {
+        importPackage, types, ..
+    } in &tpl.astDefs
+    {
         let ip = path_string(importPackage);
-        let Some(c) = template_crate(tpl_dir, &ip) else { continue };
+        let Some(c) = template_crate(tpl_dir, &ip) else {
+            continue;
+        };
         p.tpl_crates.insert(ip.clone(), c);
         for (n, ti) in types {
             match ti {
@@ -1013,16 +1277,30 @@ pub fn print(tpl: &TemplPackage, mm: &MMPackage, idx: &Index, tpl_dir: &std::pat
     }
     for d in &mm.mmDeclarations {
         match d {
-            MMDeclaration::MM_FUN { name, inArgs, outArgs, statements, .. } => {
-                let list_loop = matches!(statements.iter().next().map(|s| &**s), Some(MMExp::MM_LIST_FOR_LOOP { .. }));
+            MMDeclaration::MM_FUN {
+                name,
+                inArgs,
+                outArgs,
+                statements,
+                ..
+            } => {
+                let list_loop = matches!(
+                    statements.iter().next().map(|s| &**s),
+                    Some(MMExp::MM_LIST_FOR_LOOP { .. })
+                );
                 let out_names: HashSet<String> = outArgs.iter().map(|(n, _)| n.to_string()).collect();
                 let s = p.susan_sig(name.to_string(), inArgs, outArgs, |n, t| {
-                    if list_loop && out_names.contains(n) { Mode::Owned } else { convention(t) }
+                    if list_loop && out_names.contains(n) {
+                        Mode::Owned
+                    } else {
+                        convention(t)
+                    }
                 });
                 p.local_funs.insert(name.to_string(), s);
             }
             MMDeclaration::MM_STR_TOKEN_DECL { name, .. } => {
-                p.local_consts.insert(name.to_string(), Ty::Ref(Box::new(Ty::Named("Tpl.StringToken".into()))));
+                p.local_consts
+                    .insert(name.to_string(), Ty::Ref(Box::new(Ty::Named("Tpl.StringToken".into()))));
             }
             MMDeclaration::MM_LITERAL_DECL { name, litType, .. } => {
                 let t = p.susan_ty(litType);
@@ -1035,19 +1313,43 @@ pub fn print(tpl: &TemplPackage, mm: &MMPackage, idx: &Index, tpl_dir: &std::pat
     let mut body = String::new();
     for d in &mm.mmDeclarations {
         match d {
-            MMDeclaration::MM_FUN { isPublic, name, inArgs, outArgs, locals, statements, .. } => {
+            MMDeclaration::MM_FUN {
+                isPublic,
+                name,
+                inArgs,
+                outArgs,
+                locals,
+                statements,
+                ..
+            } => {
                 p.function(*isPublic, name, inArgs, outArgs, locals, statements, &mut body);
             }
             MMDeclaration::MM_STR_TOKEN_DECL { isPublic, name, value } => {
                 let v = p.token(value);
-                writeln!(body, "{}fn {}() -> Result<metamodelica::Ref<Tpl::StringToken>> {{\n    Ok({v})\n}}\n", if *isPublic { "pub " } else { "" }, ident(name))
-                    .unwrap();
+                writeln!(
+                    body,
+                    "{}fn {}() -> Result<metamodelica::Ref<Tpl::StringToken>> {{\n    Ok({v})\n}}\n",
+                    if *isPublic { "pub " } else { "" },
+                    ident(name)
+                )
+                .unwrap();
             }
-            MMDeclaration::MM_LITERAL_DECL { isPublic, name, value, litType } => {
+            MMDeclaration::MM_LITERAL_DECL {
+                isPublic,
+                name,
+                value,
+                litType,
+            } => {
                 let t = p.susan_ty(litType);
                 let ty = p.rust_ty(&t);
                 let v = p.literal(value, Some(&t));
-                writeln!(body, "{}fn {}() -> Result<{ty}> {{\n    Ok({v})\n}}\n", if *isPublic { "pub " } else { "" }, ident(name)).unwrap();
+                writeln!(
+                    body,
+                    "{}fn {}() -> Result<{ty}> {{\n    Ok({v})\n}}\n",
+                    if *isPublic { "pub " } else { "" },
+                    ident(name)
+                )
+                .unwrap();
             }
             MMDeclaration::MM_IMPORT { .. } => {}
         }
@@ -1066,7 +1368,12 @@ pub fn print(tpl: &TemplPackage, mm: &MMPackage, idx: &Index, tpl_dir: &std::pat
     writeln!(out, "use metamodelica::*;").unwrap();
     writeln!(out, "use metamodelica::Result;\n").unwrap();
     for u in &p.uses {
-        let c = p.tpl_crates.get(u).cloned().or_else(|| idx.crates.get(u).cloned()).or_else(|| idx.packages.get(u).map(|pk| pk.krate.clone()));
+        let c = p
+            .tpl_crates
+            .get(u)
+            .cloned()
+            .or_else(|| idx.crates.get(u).cloned())
+            .or_else(|| idx.packages.get(u).map(|pk| pk.krate.clone()));
         match c {
             Some(c) if c == p.krate => writeln!(out, "use crate::{u};").unwrap(),
             Some(c) => writeln!(out, "use {c}::{u};").unwrap(),

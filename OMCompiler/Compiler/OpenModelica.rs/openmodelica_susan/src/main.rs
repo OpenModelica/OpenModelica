@@ -69,9 +69,16 @@ fn run_rust(file: ArcStr, out_dir: &str, interface_dir: ArcStr, index: &str) -> 
     };
     match rust_backend::print(&tpl, &mm, &idx, std::path::Path::new(".")) {
         Ok((krate, code)) => {
-            let name = std::path::Path::new(file.as_str()).file_stem().unwrap().to_string_lossy().into_owned();
+            let name = std::path::Path::new(file.as_str())
+                .file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned();
             let dir = if out_dir.is_empty() { "." } else { out_dir };
-            let dest = std::path::Path::new(dir).join(krate).join("src").join(format!("{name}.rs"));
+            let dest = std::path::Path::new(dir)
+                .join(krate)
+                .join("src")
+                .join(format!("{name}.rs"));
             if let Err(e) = write_if_changed(&dest, &code) {
                 eprintln!("susan: {}: {e}", dest.display());
                 return 1;

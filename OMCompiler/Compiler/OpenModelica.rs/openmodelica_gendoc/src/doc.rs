@@ -165,10 +165,7 @@ fn collect_class(
         restriction: Dump::unparseRestrictionStr(class.restriction.clone())
             .map(|s| s.to_string())
             .unwrap_or_default(),
-        comment: openmodelica_util::System::unescapedString(
-            AbsynUtil::classDefStringComment(&class.body),
-        )
-        .to_string(),
+        comment: openmodelica_util::System::unescapedString(AbsynUtil::classDefStringComment(&class.body)).to_string(),
         info,
         revisions,
         info_header,
@@ -236,9 +233,7 @@ fn has_annotation(class: &Ref<Absyn::Class>, name: &str) -> bool {
 
 /// `annotation(Documentation(info=…, revisions=…, __OpenModelica_infoHeader=…))`.
 fn documentation(class: &Ref<Absyn::Class>) -> (String, String, String) {
-    let Ok(Some(modification)) =
-        AbsynUtil::lookupClassAnnotation(&class, &arcstr::literal!("Documentation"))
-    else {
+    let Ok(Some(modification)) = AbsynUtil::lookupClassAnnotation(&class, &arcstr::literal!("Documentation")) else {
         return (String::new(), String::new(), String::new());
     };
     let mut info = String::new();
@@ -277,10 +272,7 @@ fn string_annotation(class: &Ref<Absyn::Class>, name: &str) -> String {
 }
 
 fn named_binding(arg: &Absyn::ElementArg) -> Option<(ArcStr, Ref<Absyn::Exp>)> {
-    let Absyn::ElementArg::MODIFICATION {
-        path, modification, ..
-    } = arg
-    else {
+    let Absyn::ElementArg::MODIFICATION { path, modification, .. } = arg else {
         return None;
     };
     let Absyn::Path::IDENT { name } = &**path else {
@@ -297,9 +289,7 @@ fn named_binding(arg: &Absyn::ElementArg) -> Option<(ArcStr, Ref<Absyn::Exp>)> {
 /// literal escaped, so this is also where `\"` becomes `"`.
 fn eval_string(exp: &Absyn::Exp) -> Option<String> {
     match exp {
-        Absyn::Exp::STRING { value } => {
-            Some(openmodelica_util::System::unescapedString(value.clone()).to_string())
-        }
+        Absyn::Exp::STRING { value } => Some(openmodelica_util::System::unescapedString(value.clone()).to_string()),
         Absyn::Exp::BINARY {
             exp1,
             op: Absyn::Operator::ADD | Absyn::Operator::ADD_EW,
@@ -344,15 +334,11 @@ fn declarations(class: &Ref<Absyn::Class>) -> (Vec<Component>, Vec<Extends>, Vec
                     before: components.len(),
                 }),
                 Absyn::ElementSpec::IMPORT { import_, .. } => match import_ {
-                    Absyn::Import::QUAL_IMPORT { path } => {
-                        imports.push(Import::Qualified(path_string(path)))
-                    }
+                    Absyn::Import::QUAL_IMPORT { path } => imports.push(Import::Qualified(path_string(path))),
                     Absyn::Import::NAMED_IMPORT { name, path } => {
                         imports.push(Import::Named(name.to_string(), path_string(path)))
                     }
-                    Absyn::Import::UNQUAL_IMPORT { path } => {
-                        imports.push(Import::Unqualified(path_string(path)))
-                    }
+                    Absyn::Import::UNQUAL_IMPORT { path } => imports.push(Import::Unqualified(path_string(path))),
                     Absyn::Import::GROUP_IMPORT { .. } => {}
                 },
                 Absyn::ElementSpec::CLASSDEF { .. } => {}
@@ -419,10 +405,7 @@ fn dialog_group(comment: Option<&Ref<Absyn::Comment>>) -> String {
         return String::new();
     };
     for arg in &annotation.elementArgs {
-        let Absyn::ElementArg::MODIFICATION {
-            path, modification, ..
-        } = &**arg
-        else {
+        let Absyn::ElementArg::MODIFICATION { path, modification, .. } = &**arg else {
             continue;
         };
         let Absyn::Path::IDENT { name } = &**path else {
@@ -524,9 +507,7 @@ fn push<'a>(
 
 fn derived(body: &Ref<Absyn::ClassDef>) -> Option<Derived> {
     let Absyn::ClassDef::DERIVED {
-        typeSpec,
-        arguments,
-        ..
+        typeSpec, arguments, ..
     } = &**body
     else {
         return None;
@@ -540,10 +521,7 @@ fn derived(body: &Ref<Absyn::ClassDef>) -> Option<Derived> {
     };
     let mut modifiers = Vec::new();
     for arg in arguments {
-        let Absyn::ElementArg::MODIFICATION {
-            finalPrefix, path, ..
-        } = &**arg
-        else {
+        let Absyn::ElementArg::MODIFICATION { finalPrefix, path, .. } = &**arg else {
             continue;
         };
         let Some((name, exp)) = named_binding(arg) else {
@@ -557,9 +535,7 @@ fn derived(body: &Ref<Absyn::ClassDef>) -> Option<Derived> {
         };
         modifiers.push(Modifier {
             name: name.to_string(),
-            value: Dump::printExpStr(exp)
-                .map(|s| s.to_string())
-                .unwrap_or_default(),
+            value: Dump::printExpStr(exp).map(|s| s.to_string()).unwrap_or_default(),
             is_final: *finalPrefix,
         });
     }
@@ -599,17 +575,12 @@ pub fn uses_of(class: &Ref<Absyn::Class>) -> Vec<(String, String)> {
 }
 
 fn uses(class: &Ref<Absyn::Class>) -> Vec<(String, String)> {
-    let Ok(Some(modification)) =
-        AbsynUtil::lookupClassAnnotation(&class, &arcstr::literal!("uses"))
-    else {
+    let Ok(Some(modification)) = AbsynUtil::lookupClassAnnotation(&class, &arcstr::literal!("uses")) else {
         return Vec::new();
     };
     let mut out = Vec::new();
     for arg in &modification.elementArgLst {
-        let Absyn::ElementArg::MODIFICATION {
-            path, modification, ..
-        } = &**arg
-        else {
+        let Absyn::ElementArg::MODIFICATION { path, modification, .. } = &**arg else {
             continue;
         };
         let Absyn::Path::IDENT { name } = &**path else {

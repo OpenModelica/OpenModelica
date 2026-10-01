@@ -38,11 +38,11 @@
 
 use std::fmt::Write as _;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
-use metamodelica::ext::{c_atof, c_atol};
 use metamodelica::List;
+use metamodelica::ext::{c_atof, c_atol};
 
 /// One task node. `threadId`/`taskNumber`/`taskId` are parsed like upstream
 /// but (also like upstream) never inspected by the comparison; only `name`
@@ -143,7 +143,9 @@ fn parse_graphml(file_name: &str, error_msg: &mut String) -> Graph {
         .children()
         .filter(|n| n.is_element() && n.tag_name().name() == "key")
     {
-        let Some(attr_name) = key.attribute("attr.name") else { continue };
+        let Some(attr_name) = key.attribute("attr.name") else {
+            continue;
+        };
         let Some(id) = key.attribute("id") else { continue };
         match attr_name {
             "CommCost" => keys.comm_cost = id.to_string(),
@@ -215,7 +217,10 @@ fn parse_graphml(file_name: &str, error_msg: &mut String) -> Graph {
                     }
                 }
                 "edge" => {
-                    let mut edge = Edge { comm_time: -1.0, ..Default::default() };
+                    let mut edge = Edge {
+                        comm_time: -1.0,
+                        ..Default::default()
+                    };
                     if elem.attribute("id").is_none_or(str::is_empty) {
                         *error_msg += "Warning: edge without id defined\n";
                     }
@@ -292,7 +297,11 @@ fn parse_graphcode(file_name: &str, graph: &mut Graph) {
             let node_id = format!("Node{node_idx}");
             if rest.is_empty() {
                 // `// TG_NODE: <idx>`
-                graph.nodes.push(Node { id: node_id.clone(), name: node_id, ..Default::default() });
+                graph.nodes.push(Node {
+                    id: node_id.clone(),
+                    name: node_id,
+                    ..Default::default()
+                });
             } else if let Some(parents) = rest.strip_prefix(" TG_PARENTS: ") {
                 // `// TG_NODE: <idx> TG_PARENTS: <csv>` — csv entries are
                 // `[0-9]*`, so empty entries are allowed and skipped (strtok
@@ -300,7 +309,11 @@ fn parse_graphcode(file_name: &str, graph: &mut Graph) {
                 if !parents.bytes().all(|b| b.is_ascii_digit() || b == b',') {
                     continue;
                 }
-                graph.nodes.push(Node { id: node_id.clone(), name: node_id.clone(), ..Default::default() });
+                graph.nodes.push(Node {
+                    id: node_id.clone(),
+                    name: node_id.clone(),
+                    ..Default::default()
+                });
                 for parent_idx in parents.split(',').filter(|p| !p.is_empty()) {
                     graph.edges.push(Edge {
                         source_id: format!("Node{parent_idx}"),
@@ -314,7 +327,9 @@ fn parse_graphcode(file_name: &str, graph: &mut Graph) {
         } else if let Some(rest) = body.strip_prefix("TG_DEPENDENCY: ") {
             // `// TG_DEPENDENCY: <parent> -> <node>`
             let (parent_idx, rest) = split_digits(rest);
-            let Some(rest) = rest.strip_prefix(" -> ") else { continue };
+            let Some(rest) = rest.strip_prefix(" -> ") else {
+                continue;
+            };
             let (node_idx, rest) = split_digits(rest);
             if !rest.is_empty() {
                 continue;
@@ -394,9 +409,17 @@ fn compare_graphs(
         if cmp.node_key(n1) != cmp.node_key(n2) {
             // Report the direction of the mismatch like the C++ does.
             if !g2.nodes.iter().any(|n| cmp.node_key(n) == cmp.node_key(n1)) {
-                let _ = write!(error_msg, "Node '{}(id: {})' is not part of the second graph.", n1.name, n1.id);
+                let _ = write!(
+                    error_msg,
+                    "Node '{}(id: {})' is not part of the second graph.",
+                    n1.name, n1.id
+                );
             } else {
-                let _ = write!(error_msg, "Node '{}(id: {})' is not part of the first graph.", n2.name, n2.id);
+                let _ = write!(
+                    error_msg,
+                    "Node '{}(id: {})' is not part of the first graph.",
+                    n2.name, n2.id
+                );
             }
             return false;
         }
@@ -459,9 +482,7 @@ fn fill_edges_with_node_names(graph: &mut Graph) -> bool {
     let id_to_name: std::collections::HashMap<String, String> =
         graph.nodes.iter().map(|n| (n.id.clone(), n.name.clone())).collect();
     for edge in &mut graph.edges {
-        let (Some(source), Some(target)) =
-            (id_to_name.get(&edge.source_id), id_to_name.get(&edge.target_id))
-        else {
+        let (Some(source), Some(target)) = (id_to_name.get(&edge.source_id), id_to_name.get(&edge.target_id)) else {
             return false;
         };
         edge.source_name = source.clone();
@@ -497,7 +518,14 @@ pub fn checkTaskGraph(filename: ArcStr, reffilename: ArcStr) -> Result<List<ArcS
     let mut g1 = parse_graphml(filename.as_str(), &mut error_msg);
     let mut g2 = parse_graphml(reffilename.as_str(), &mut error_msg);
     let ok = compare_graphs(&mut g1, &mut g2, CompareBy::Name, true, true, &mut error_msg);
-    Ok(result_list(error_msg, if ok { "Taskgraph correct" } else { "Taskgraph not correct" }))
+    Ok(result_list(
+        error_msg,
+        if ok {
+            "Taskgraph correct"
+        } else {
+            "Taskgraph not correct"
+        },
+    ))
 }
 
 /// `TaskGraphResults_checkCodeGraph(graphfile, codefile)`: compare the dumped
@@ -517,7 +545,14 @@ pub fn checkCodeGraph(graphfile: ArcStr, codefile: ArcStr) -> Result<List<ArcStr
     let mut g2 = Graph::default();
     parse_graphcode(codefile.as_str(), &mut g2);
     let ok = compare_graphs(&mut g1, &mut g2, CompareBy::Id, false, false, &mut error_msg);
-    Ok(result_list(error_msg, if ok { "Codegraph correct" } else { "Codegraph not correct" }))
+    Ok(result_list(
+        error_msg,
+        if ok {
+            "Codegraph correct"
+        } else {
+            "Codegraph not correct"
+        },
+    ))
 }
 
 #[cfg(test)]

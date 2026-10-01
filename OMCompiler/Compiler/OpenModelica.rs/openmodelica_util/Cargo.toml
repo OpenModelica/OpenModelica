@@ -5,21 +5,21 @@ edition = "2024"
 
 [dependencies]
 openmodelica_wasi.workspace = true
-metamodelica.workspace=true
-openmodelica_error.workspace=true
-const-str.workspace=true
-encoding_rs.workspace=true
-loop_unwrap.workspace=true
-openmodelica_util_datatypes_basic.workspace=true
-arcstr.workspace=true
-match_deref.workspace=true
-libc.workspace=true
+metamodelica.workspace = true
+openmodelica_error.workspace = true
+const-str.workspace = true
+encoding_rs.workspace = true
+loop_unwrap.workspace = true
+openmodelica_util_datatypes_basic.workspace = true
+arcstr.workspace = true
+match_deref.workspace = true
+libc.workspace = true
 # Backs System::regex and System::Regex on every target, translating the POSIX
 # syntax first. Shared with the two simulation runtimes' `variableFilter`.
 openmodelica_regex = { path = "../../../SimulationRuntime/rust/openmodelica_regex" }
 # GraphML reader in the hand-written TaskGraphResults.rs; also the
 # modelDescription.xml parser in the hand-written FMIExt.rs.
-roxmltree.workspace=true
+roxmltree.workspace = true
 # FMU extraction in the hand-written FMIExt.rs.
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # The port's FMU reader, which `importFMU` reads an FMI 3.0 model description
@@ -52,4 +52,4 @@ zeromq = ["dep:zmq"]
 
 [build-dependencies]
 # Compiles src/runtime_error_shim.c (va_list error interception shim).
-cc.workspace=true
+cc.workspace = true

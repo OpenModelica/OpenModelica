@@ -41,12 +41,12 @@
 
 #![allow(non_snake_case, non_upper_case_globals)]
 
-use std::cell::RefCell;
-use std::sync::Arc;
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 use metamodelica::SourceInfo;
 use openmodelica_util_datatypes_basic::DoubleEnded;
+use std::cell::RefCell;
+use std::sync::Arc;
 
 // ── Thread-local roots (index 0–8, C: threadData->localRoots) ────────────────
 

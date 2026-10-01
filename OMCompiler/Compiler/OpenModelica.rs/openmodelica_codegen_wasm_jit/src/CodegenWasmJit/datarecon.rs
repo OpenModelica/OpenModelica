@@ -11,8 +11,8 @@ use std::sync::Arc;
 
 use metamodelica::{List, Result};
 use openmodelica_backend_types::BackendDAE;
-use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::{Neg, ReconInfo, ReconJac, ReconVar};
+use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
 use crate::CodegenWasmJit::{SimVarMap, count, jac_column_vars, jac_result_row, lst};
 use crate::CodegenWasmJitFunctions::{FnCtx, FnInfo, Literals, SimSlot, WTy, sim_cref_key};
@@ -61,14 +61,17 @@ pub(crate) fn build_plan(sim_code: &SimCode::SimCode, vars: &SimCodeVar::SimVars
         if !present {
             return None;
         }
-        let jm = lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == names[k])?.clone();
+        let jm = lst(&sim_code.jacobianMatrices)
+            .find(|j| &*j.matrixName == names[k])?
+            .clone();
         let cols = count(&jm.seedVars) as u32;
         let rows = matrix_rows(&jm);
         if rows == 0 || cols == 0 {
             return None;
         }
-        let has_equations =
-            lst(&jm.columns).next().is_some_and(|c| lst(&c.columnEqns).next().is_some());
+        let has_equations = lst(&jm.columns)
+            .next()
+            .is_some_and(|c| lst(&c.columnEqns).next().is_some());
         (has_equations && crate::CodegenWasmJit::jac_lowerable(&jm)).then_some((jm, rows, cols))
     });
     ReconPlan { jacs, present }
@@ -84,7 +87,11 @@ fn matrix_rows(jm: &Arc<SimCode::JacobianMatrix>) -> u32 {
         .map(|r| r as u32 + 1)
         .max()
         .unwrap_or(0);
-    let sparse = lst(&jm.sparsity).flat_map(|(_, nz)| lst(nz)).map(|r| *r as u32 + 1).max().unwrap_or(0);
+    let sparse = lst(&jm.sparsity)
+        .flat_map(|(_, nz)| lst(nz))
+        .map(|r| *r as u32 + 1)
+        .max()
+        .unwrap_or(0);
     results.max(sparse)
 }
 
@@ -116,7 +123,12 @@ pub(crate) fn build_jac_infos(
         for sv in lst(&jm.seedVars) {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
-                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },
+                SimSlot {
+                    off: cursor,
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                },
             );
             listed.push(cursor);
             cursor += 8;
@@ -125,7 +137,12 @@ pub(crate) fn build_jac_infos(
         for sv in jac_column_vars(jm).iter() {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
-                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },
+                SimSlot {
+                    off: cursor,
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                },
             );
             if matches!(sv.varKind, VarKind::JAC_VAR)
                 && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)
@@ -254,7 +271,11 @@ pub(crate) fn build_recon_info(
     };
     let jac = |k: usize| -> Option<ReconJac> {
         let info = infos.get(k)?.as_ref()?;
-        Some(ReconJac { rows: info.rows, cols: info.cols, off: info.out_off })
+        Some(ReconJac {
+            rows: info.rows,
+            cols: info.cols,
+            off: info.out_off,
+        })
     };
     Ok(Some(ReconInfo {
         input_vars: list(&vars.dataReconinputVars)?,

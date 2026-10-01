@@ -10,7 +10,11 @@ fn ramp(n: usize, slope: f64) -> (Vec<f64>, Vec<f64>) {
 }
 
 fn settings(algorithm: Algorithm, tolerance: f64) -> Settings {
-    Settings { algorithm, tolerance, ..Settings::default() }
+    Settings {
+        algorithm,
+        tolerance,
+        ..Settings::default()
+    }
 }
 
 #[test]
@@ -43,7 +47,11 @@ fn rectangle_tube_stays_within_the_reference_time_span() {
         assert_eq!(c.x.len(), c.y.len());
         assert!(c.x[0] >= t[0], "tube starts at {} before {}", c.x[0], t[0]);
         assert!(*c.x.last().unwrap() <= *t.last().unwrap());
-        assert!(c.x.windows(2).all(|w| w[0] <= w[1]), "tube x is not monotonic: {:?}", c.x);
+        assert!(
+            c.x.windows(2).all(|w| w[0] <= w[1]),
+            "tube x is not monotonic: {:?}",
+            c.x
+        );
     }
     assert!(low.y.iter().zip(&high.y).all(|(l, h)| l < h) || low.y.len() != high.y.len());
 }
@@ -53,7 +61,12 @@ fn every_algorithm_passes_a_curve_compared_with_itself() {
     let (t, y) = ramp(101, 2.0);
     for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse, Algorithm::Ellipse2014] {
         let c = compare(&t, &y, &t, &y, &settings(algorithm, 0.002)).unwrap();
-        assert!(!c.differs(), "{} flagged an identical curve ({} points)", algorithm.name(), c.error_count);
+        assert!(
+            !c.differs(),
+            "{} flagged an identical curve ({} points)",
+            algorithm.name(),
+            c.error_count
+        );
         assert_eq!(c.delta_error, 0.0);
     }
 }
@@ -82,7 +95,10 @@ fn the_algorithms_have_different_sensitivity() {
         let c = compare(&t, &off, &t, &y, &settings(algorithm, 0.002)).unwrap();
         differs.push(c.differs());
     }
-    assert_ne!(differs[0], differs[2], "rectangle and ellipse2014 agreed at an offset of 0.003: {differs:?}");
+    assert_ne!(
+        differs[0], differs[2],
+        "rectangle and ellipse2014 agreed at an offset of 0.003: {differs:?}"
+    );
 }
 
 /// `RemoveLoop` used to spin forever on a reference that reverses often
@@ -91,7 +107,11 @@ fn the_algorithms_have_different_sensitivity() {
 fn a_sawtooth_reference_terminates() {
     let n = 400;
     let t: Vec<f64> = (0..n).map(|i| i as f64 / (n - 1) as f64).collect();
-    let y: Vec<f64> = t.iter().enumerate().map(|(i, _)| if i % 2 == 0 { 0.0 } else { 1.0 }).collect();
+    let y: Vec<f64> = t
+        .iter()
+        .enumerate()
+        .map(|(i, _)| if i % 2 == 0 { 0.0 } else { 1.0 })
+        .collect();
     let mut size = TubeSize::legacy(&t, &y, 0.001);
     // wide enough that the rectangles overlap several neighbours
     size.calculate_relative_x(0.05).unwrap();
@@ -180,15 +200,22 @@ fn a_reference_is_always_inside_its_own_tube() {
         let t = grid(n);
         // integrated noise: continuous, with slopes of order 1
         let mut acc = 0.0;
-        let y: Vec<f64> = noise(n, seed).iter().map(|d| {
-            acc += d / n as f64;
-            acc
-        })
-        .collect();
+        let y: Vec<f64> = noise(n, seed)
+            .iter()
+            .map(|d| {
+                acc += d / n as f64;
+                acc
+            })
+            .collect();
         for tol in [1e-4, 0.002, 0.02, 0.2] {
             for algorithm in [Algorithm::Rectangle, Algorithm::Ellipse2014] {
                 let c = compare(&t, &y, &t, &y, &settings(algorithm, tol)).unwrap();
-                assert!(!c.differs(), "{} at tol {tol}, n {n}: {} points outside", algorithm.name(), c.error_count);
+                assert!(
+                    !c.differs(),
+                    "{} at tol {tol}, n {n}: {} points outside",
+                    algorithm.name(),
+                    c.error_count
+                );
             }
         }
     }
@@ -213,9 +240,18 @@ fn a_spiky_reference_still_yields_a_tube() {
                 let c = compare(&t, &y, &t, &y, &settings(algorithm, tol)).unwrap();
                 let what = algorithm.name();
                 assert_eq!(c.low.len(), c.high.len(), "{what}");
-                assert!(c.lower.x.windows(2).all(|w| w[0] <= w[1]), "{what} at tol {tol}: lower x not monotonic");
-                assert!(c.upper.x.windows(2).all(|w| w[0] <= w[1]), "{what} at tol {tol}: upper x not monotonic");
-                assert!(c.low.iter().zip(&c.high).all(|(l, h)| l <= h), "{what} at tol {tol}: tube inverted");
+                assert!(
+                    c.lower.x.windows(2).all(|w| w[0] <= w[1]),
+                    "{what} at tol {tol}: lower x not monotonic"
+                );
+                assert!(
+                    c.upper.x.windows(2).all(|w| w[0] <= w[1]),
+                    "{what} at tol {tol}: upper x not monotonic"
+                );
+                assert!(
+                    c.low.iter().zip(&c.high).all(|(l, h)| l <= h),
+                    "{what} at tol {tol}: tube inverted"
+                );
             }
         }
     }

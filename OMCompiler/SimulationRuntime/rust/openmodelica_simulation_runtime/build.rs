@@ -31,7 +31,9 @@ fn link_runtime_c() {
         }
         return;
     }
-    let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
+    let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else {
+        return;
+    };
     println!("cargo:rustc-link-search=native={dir}");
     println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
     match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
@@ -101,7 +103,10 @@ fn export_shim_entry_points() {
             let path = out.join("shim_exports.txt");
             let names: String = SHIM_ENTRY_POINTS.iter().map(|s| format!("_{s}\n")).collect();
             std::fs::write(&path, names).expect("write the export list");
-            println!("cargo:rustc-cdylib-link-arg=-Wl,-exported_symbols_list,{}", path.display());
+            println!(
+                "cargo:rustc-cdylib-link-arg=-Wl,-exported_symbols_list,{}",
+                path.display()
+            );
         }
         _ => {
             let path = out.join("shim_exports.map");
@@ -180,14 +185,21 @@ fn main() {
             head = lines.next().unwrap_or("");
         }
         let struct_gated = core::mem::take(&mut gated);
-        let Some(name) = head.trim().strip_prefix("pub struct ").and_then(|s| s.split_whitespace().next())
+        let Some(name) = head
+            .trim()
+            .strip_prefix("pub struct ")
+            .and_then(|s| s.split_whitespace().next())
         else {
             continue;
         };
         if !head.trim_end().ends_with('{') || SKIP.contains(&name) || (fmi && struct_gated) {
             continue;
         }
-        let c_name = if C_TAG.contains(&name) { format!("struct {name}") } else { name.to_string() };
+        let c_name = if C_TAG.contains(&name) {
+            format!("struct {name}")
+        } else {
+            name.to_string()
+        };
         let _ = writeln!(
             out,
             "  v.push((\"sizeof({c_name})\".into(), core::mem::size_of::<abi::{name}>() as u64));"
@@ -206,7 +218,9 @@ fn main() {
                 field_gated = true;
                 continue;
             }
-            let Some(field) = t.strip_prefix("pub ").and_then(|s| s.split(':').next()) else { continue };
+            let Some(field) = t.strip_prefix("pub ").and_then(|s| s.split(':').next()) else {
+                continue;
+            };
             if fmi && core::mem::take(&mut field_gated) {
                 continue;
             }
@@ -240,7 +254,9 @@ fn main() {
             ("pub const OMC_SIM_LOG_", ": c_int = "),
         ] {
             let Some(rest) = t.strip_prefix(prefix) else { continue };
-            let Some((name, value)) = rest.split_once(ty) else { continue };
+            let Some((name, value)) = rest.split_once(ty) else {
+                continue;
+            };
             let value = value.trim_end_matches(';');
             let c_name = &prefix["pub const ".len()..];
             let _ = writeln!(out, "  v.push((\"{c_name}{name}\".into(), {value}u64));");

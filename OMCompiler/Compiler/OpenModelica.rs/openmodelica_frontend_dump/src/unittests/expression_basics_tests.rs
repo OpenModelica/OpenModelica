@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use metamodelica::Result;
+use crate::ExpressionBasics;
 use arcstr::literal;
+use metamodelica::Result;
 use metamodelica::*;
 use openmodelica_frontend_types::DAE;
-use crate::ExpressionBasics;
-use openmodelica_util::{FlagsUtil, Flags};
+use openmodelica_util::{Flags, FlagsUtil};
+use std::sync::Arc;
 
 // Initialize flags with default values for the current thread.
 // Required by print functions that call Config::modelicaOutput() etc.
@@ -32,7 +32,9 @@ fn iconst(i: i32) -> metamodelica::Ref<DAE::Exp> {
 }
 
 fn rconst(r: f64) -> metamodelica::Ref<DAE::Exp> {
-    metamodelica::Ref::new(DAE::Exp::RCONST { real: metamodelica::OrderedFloat(r) })
+    metamodelica::Ref::new(DAE::Exp::RCONST {
+        real: metamodelica::OrderedFloat(r),
+    })
 }
 
 fn bconst(b: bool) -> metamodelica::Ref<DAE::Exp> {
@@ -40,7 +42,9 @@ fn bconst(b: bool) -> metamodelica::Ref<DAE::Exp> {
 }
 
 fn sconst(s: &str) -> metamodelica::Ref<DAE::Exp> {
-    metamodelica::Ref::new(DAE::Exp::SCONST { string: arcstr::format!("{}", s) })
+    metamodelica::Ref::new(DAE::Exp::SCONST {
+        string: arcstr::format!("{}", s),
+    })
 }
 
 fn index_sub(exp: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Subscript> {
@@ -52,15 +56,27 @@ fn wholedim() -> metamodelica::Ref<DAE::Subscript> {
 }
 
 fn add_op() -> DAE::Operator {
-    DAE::Operator::ADD { ty: DAE::T_REAL_DEFAULT().clone() }
+    DAE::Operator::ADD {
+        ty: DAE::T_REAL_DEFAULT().clone(),
+    }
 }
 
 fn sub_op() -> DAE::Operator {
-    DAE::Operator::SUB { ty: DAE::T_REAL_DEFAULT().clone() }
+    DAE::Operator::SUB {
+        ty: DAE::T_REAL_DEFAULT().clone(),
+    }
 }
 
-fn make_binary(e1: metamodelica::Ref<DAE::Exp>, op: DAE::Operator, e2: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
-    metamodelica::Ref::new(DAE::Exp::BINARY { exp1: e1, operator: op, exp2: e2 })
+fn make_binary(
+    e1: metamodelica::Ref<DAE::Exp>,
+    op: DAE::Operator,
+    e2: metamodelica::Ref<DAE::Exp>,
+) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::BINARY {
+        exp1: e1,
+        operator: op,
+        exp2: e2,
+    })
 }
 
 fn make_unary(op: DAE::Operator, e: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
@@ -255,7 +271,9 @@ fn priority_binary_add_rhs() -> Result<()> {
 
 #[test]
 fn priority_unary_is_four() -> Result<()> {
-    let uminus = DAE::Operator::UMINUS { ty: DAE::T_REAL_DEFAULT().clone() };
+    let uminus = DAE::Operator::UMINUS {
+        ty: DAE::T_REAL_DEFAULT().clone(),
+    };
     let e = make_unary(uminus, iconst(1));
     assert_eq!(ExpressionBasics::priority(&e, true)?, 4);
     Ok(())
@@ -274,8 +292,7 @@ fn subscript_int_from_index() -> Result<()> {
 
 #[test]
 fn subscripts_int_list() -> Result<()> {
-    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> =
-        list![index_sub(iconst(2)), index_sub(iconst(7))];
+    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> = list![index_sub(iconst(2)), index_sub(iconst(7))];
     let result = ExpressionBasics::subscriptsInt(subs)?;
     let v: Vec<i32> = result.into_iter().cloned().collect();
     assert_eq!(v, vec![2, 7]);
@@ -288,7 +305,10 @@ fn subscripts_int_list() -> Result<()> {
 
 #[test]
 fn subscript_equal_empty_lists() -> Result<()> {
-    assert_eq!(ExpressionBasics::subscriptEqual(&metamodelica::nil(), &metamodelica::nil())?, true);
+    assert_eq!(
+        ExpressionBasics::subscriptEqual(&metamodelica::nil(), &metamodelica::nil())?,
+        true
+    );
     Ok(())
 }
 
@@ -359,13 +379,8 @@ fn print_list_str_empty() -> Result<()> {
 #[test]
 fn print_list_str_multiple() -> Result<()> {
     init_flags();
-    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> =
-        list![index_sub(iconst(3)), index_sub(iconst(5))];
-    let result = ExpressionBasics::printListStr(
-        subs,
-        &|s| ExpressionBasics::printSubscriptStr(&s),
-        literal!(","),
-    )?;
+    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> = list![index_sub(iconst(3)), index_sub(iconst(5))];
+    let result = ExpressionBasics::printListStr(subs, &|s| ExpressionBasics::printSubscriptStr(&s), literal!(","))?;
     assert_eq!(result, "3,5");
     Ok(())
 }

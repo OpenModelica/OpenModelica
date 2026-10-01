@@ -161,11 +161,21 @@ fn scan_keywords(src: &str) -> Vec<KwTok> {
             match word {
                 MATCH => {
                     let kw = if prev_ident_is_end { Kw::MatchEnd } else { Kw::MatchOpen };
-                    toks.push(KwTok { kw, line: start_line, col: start_col, byte: start });
+                    toks.push(KwTok {
+                        kw,
+                        line: start_line,
+                        col: start_col,
+                        byte: start,
+                    });
                 }
                 MATCHCONTINUE => {
                     let kw = if prev_ident_is_end { Kw::McEnd } else { Kw::McOpen };
-                    toks.push(KwTok { kw, line: start_line, col: start_col, byte: start });
+                    toks.push(KwTok {
+                        kw,
+                        line: start_line,
+                        col: start_col,
+                        byte: start,
+                    });
                 }
                 _ => {}
             }
@@ -186,17 +196,27 @@ fn build_regions(toks: &[KwTok]) -> Result<Vec<Region>, String> {
         match t.kw {
             Kw::MatchOpen | Kw::McOpen => stack.push(*t),
             Kw::MatchEnd | Kw::McEnd => {
-                let open = stack.pop().ok_or_else(|| {
-                    format!("unbalanced `end match`/`end matchcontinue` at {}:{}", t.line, t.col)
-                })?;
-                let expected = if t.kw == Kw::MatchEnd { Kw::MatchOpen } else { Kw::McOpen };
+                let open = stack
+                    .pop()
+                    .ok_or_else(|| format!("unbalanced `end match`/`end matchcontinue` at {}:{}", t.line, t.col))?;
+                let expected = if t.kw == Kw::MatchEnd {
+                    Kw::MatchOpen
+                } else {
+                    Kw::McOpen
+                };
                 if open.kw != expected {
                     return Err(format!(
                         "`end {}` at {}:{} closes a `{}` opened at {}:{}",
                         if t.kw == Kw::MatchEnd { "match" } else { "matchcontinue" },
-                        t.line, t.col,
-                        if open.kw == Kw::MatchOpen { "match" } else { "matchcontinue" },
-                        open.line, open.col,
+                        t.line,
+                        t.col,
+                        if open.kw == Kw::MatchOpen {
+                            "match"
+                        } else {
+                            "matchcontinue"
+                        },
+                        open.line,
+                        open.col,
                     ));
                 }
                 regions.push(Region {
@@ -213,7 +233,10 @@ fn build_regions(toks: &[KwTok]) -> Result<Vec<Region>, String> {
     }
     if !stack.is_empty() {
         let o = stack.last().unwrap();
-        return Err(format!("unclosed `match`/`matchcontinue` opened at {}:{}", o.line, o.col));
+        return Err(format!(
+            "unclosed `match`/`matchcontinue` opened at {}:{}",
+            o.line, o.col
+        ));
     }
     Ok(regions)
 }
@@ -225,9 +248,7 @@ fn enclosing_mc<'a>(regions: &'a [Region], line: i32, col: i32) -> Option<&'a Re
     regions
         .iter()
         .filter(|r| r.open_kw == Kw::McOpen)
-        .filter(|r| {
-            (r.open_line, r.open_col) <= (line, col) && (line, col) <= (r.close_line, r.close_col)
-        })
+        .filter(|r| (r.open_line, r.open_col) <= (line, col) && (line, col) <= (r.close_line, r.close_col))
         .max_by_key(|r| (r.open_line, r.open_col))
 }
 
@@ -242,18 +263,15 @@ pub struct FixStats {
 /// Rewrite every flagged `matchcontinue` (given as its first arm's `Info`) to a
 /// plain `match` in its `.mo` source. Files are read, edited and written once;
 /// a file whose nesting does not balance is left untouched.
-pub fn apply_match_fixes(
-    locs: &[Absyn::Info],
-    hoists: &[Vec<GuardHoist>],
-) -> std::io::Result<FixStats> {
+pub fn apply_match_fixes(locs: &[Absyn::Info], hoists: &[Vec<GuardHoist>]) -> std::io::Result<FixStats> {
     // Group anchors by source file.
     let mut by_file: BTreeMap<String, Vec<(i32, i32, &[GuardHoist])>> = BTreeMap::new();
     for (i, info) in locs.iter().enumerate() {
-        by_file
-            .entry(info.fileName.to_string())
-            .or_default()
-            .push((info.lineNumberStart, info.columnNumberStart,
-                   hoists.get(i).map(|v| &v[..]).unwrap_or(&[])));
+        by_file.entry(info.fileName.to_string()).or_default().push((
+            info.lineNumberStart,
+            info.columnNumberStart,
+            hoists.get(i).map(|v| &v[..]).unwrap_or(&[]),
+        ));
     }
 
     let mut stats = FixStats::default();
@@ -286,7 +304,9 @@ pub fn apply_match_fixes(
             // file, so a position/lexer surprise can never corrupt the source.
             let ok = |off: usize| src.get(off..off + MATCHCONTINUE.len()) == Some(MATCHCONTINUE);
             if !ok(r.open_byte) || !ok(r.close_byte) {
-                eprintln!("[mmtorust --fix] {file}:{line}:{col}: expected `matchcontinue` keywords not found at the resolved span; skipped");
+                eprintln!(
+                    "[mmtorust --fix] {file}:{line}:{col}: expected `matchcontinue` keywords not found at the resolved span; skipped"
+                );
                 stats.skipped += 1;
                 continue;
             }
@@ -344,27 +364,28 @@ impl LineIndex {
 /// Turn one flagged `matchcontinue`'s [`GuardHoist`]s into byte-range edits:
 /// the `guard` insertion after each arm's pattern, and the deletion of the
 /// `true := COND;` statements it came from.
-fn guard_edits(
-    src: &str,
-    lines: &LineIndex,
-    hoists: &[GuardHoist],
-) -> Result<Vec<(usize, usize, String)>, String> {
+fn guard_edits(src: &str, lines: &LineIndex, hoists: &[GuardHoist]) -> Result<Vec<(usize, usize, String)>, String> {
     let mut edits = Vec::new();
     for h in hoists {
         let mut conds: Vec<String> = Vec::new();
         for (info, asserted) in &h.stmts {
-            let start = lines.offset(info.lineNumberStart, info.columnNumberStart)
+            let start = lines
+                .offset(info.lineNumberStart, info.columnNumberStart)
                 .ok_or("statement start out of range")?;
             // `columnNumberEnd` addresses the statement's last character.
-            let end = lines.offset(info.lineNumberEnd, info.columnNumberEnd)
+            let end = lines
+                .offset(info.lineNumberEnd, info.columnNumberEnd)
                 .map(|o| o + 1)
                 .filter(|o| *o <= src.len())
                 .ok_or("statement end out of range")?;
             let stmt = src.get(start..end).ok_or("statement span is not a char boundary")?;
             let cond = stmt
-                .strip_suffix(';').unwrap_or(stmt)
-                .split_once(":=").ok_or_else(|| format!("not an assignment: {stmt:?}"))?
-                .1.trim();
+                .strip_suffix(';')
+                .unwrap_or(stmt)
+                .split_once(":=")
+                .ok_or_else(|| format!("not an assignment: {stmt:?}"))?
+                .1
+                .trim();
             if cond.is_empty() {
                 return Err(format!("empty condition in {stmt:?}"));
             }
@@ -375,7 +396,11 @@ fn guard_edits(
             }
             // `not` binds tighter than `and`, and a lone condition needs no
             // bracket at all, so parenthesise only what would otherwise regroup.
-            let bracketed = if is_atom(cond) { cond.to_owned() } else { format!("({cond})") };
+            let bracketed = if is_atom(cond) {
+                cond.to_owned()
+            } else {
+                format!("({cond})")
+            };
             conds.push(if *asserted {
                 if h.stmts.len() == 1 { cond.to_owned() } else { bracketed }
             } else {
@@ -401,7 +426,8 @@ fn guard_edits(
         }
         // A `SourceInfo`'s end column addresses the token *after* the span, so
         // back up over the whitespace to land right behind the pattern text.
-        let after = lines.offset(h.pattern_info.lineNumberEnd, h.pattern_info.columnNumberEnd)
+        let after = lines
+            .offset(h.pattern_info.lineNumberEnd, h.pattern_info.columnNumberEnd)
             .filter(|o| *o <= src.len())
             .ok_or("pattern end out of range")?;
         let mut at = after;
@@ -418,7 +444,10 @@ fn guard_edits(
             // Every statement went into the guard; drop the now-empty
             // `algorithm` keyword (and its line, if it has one to itself).
             let rest = src.get(after..).ok_or("pattern end is not a char boundary")?;
-            let off = after + rest.find("algorithm").ok_or("no `algorithm` keyword after the pattern")?;
+            let off = after
+                + rest
+                    .find("algorithm")
+                    .ok_or("no `algorithm` keyword after the pattern")?;
             let mut end = off + "algorithm".len();
             while matches!(src.as_bytes().get(end), Some(b' ' | b'\t')) {
                 end += 1;

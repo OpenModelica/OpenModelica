@@ -42,9 +42,11 @@ fn main() {
     // spells `lib/{Autoconf::triple}/omc`), and the loader's word for "the
     // directory this binary is in": ELF writes $ORIGIN, Mach-O @loader_path.
     let (libdir, origin, lib) = match target_os.as_str() {
-        "linux" => {
-            (format!("lib/{target_arch}-linux-gnu/omc"), "$ORIGIN", "libOpenModelicaCompiler.so")
-        }
+        "linux" => (
+            format!("lib/{target_arch}-linux-gnu/omc"),
+            "$ORIGIN",
+            "libOpenModelicaCompiler.so",
+        ),
         // Must match Autoconf::triple and OM_LIBRARY_ARCH.
         "macos" => (
             "lib/universal-apple-darwin/omc".to_owned(),
@@ -92,8 +94,6 @@ fn main() {
     // dylib's exports are already visible to a later dlopen().
     if target_os != "macos" {
         println!("cargo:rustc-link-arg-bins=-Wl,-u,omc_Error_getCurrentComponent");
-        println!(
-            "cargo:rustc-link-arg-bins=-Wl,--export-dynamic-symbol=omc_Error_getCurrentComponent"
-        );
+        println!("cargo:rustc-link-arg-bins=-Wl,--export-dynamic-symbol=omc_Error_getCurrentComponent");
     }
 }

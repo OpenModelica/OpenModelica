@@ -39,36 +39,33 @@
 
 #![allow(non_snake_case)]
 
-use std::collections::BTreeMap;
 use crate::CodegenWasmJitFunctions::{HashMap, HashSet};
-use std::sync::{Mutex, OnceLock};
+use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::sync::{Mutex, OnceLock};
 
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 use wasm_encoder as we;
 
 use openmodelica_backend_types::BackendDAE;
+use openmodelica_frontend_dump::ComponentReferenceBasics;
 use openmodelica_frontend_types::DAE;
 use openmodelica_simcode_types::SimCode;
-use openmodelica_simcode_types::SimCodeVar;
 use openmodelica_simcode_types::SimCodeFunction;
-use openmodelica_frontend_dump::ComponentReferenceBasics;
+use openmodelica_simcode_types::SimCodeVar;
 
 use crate::CodegenWasmJitFunctions::{
-    ArrayGroup, Attr, AttrTargets, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
-    ProfPlan, ScatterGroup, SimCtx, SimSlot, SlotMap, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
-    compile_linear_system_analytic_csc, compile_linear_system_symbolic,
-    ClockInit, ClockUpdate,
-    IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
-    emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
-    emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
-    emit_nls_residual_body, emit_nls_residual_prologue, emit_nls_residual_epilogue,
-    emit_nls_residual_store, nls_residuals_all_scalar, emit_solve_nls_call, external_import_sig, external_known,
-    external_general_why, note_declined_external, reset_declined_externals,
-    function_signature, rt_index, sim_cref_key, sim_const_store,
-    emit_sim_const_stores,
+    ArrayGroup, Attr, AttrTargets, BUILTINS, ClockInit, ClockUpdate, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo,
+    IterSlot, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, NlsResidual, NlsResiduals, ProfPlan, RT_BUILTINS,
+    ScatterGroup, SimCtx, SimSlot, SlotMap, WTy, WTyVal, backup_known_outputs, compile_function, compile_linear_system,
+    compile_linear_system_analytic, compile_linear_system_analytic_csc, compile_linear_system_symbolic,
+    emit_entwined_assign, emit_generic_assign, emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_load_body,
+    emit_nls_residual_body, emit_nls_residual_epilogue, emit_nls_residual_prologue, emit_nls_residual_store,
+    emit_resizable_assign, emit_sim_const_stores, emit_solve_nls_call, external_general_why, external_import_sig,
+    external_known, function_signature, nls_residuals_all_scalar, nls_use_sparse, note_declined_external,
+    reset_declined_externals, residual_rows, restore_known_outputs, rt_index, sim_const_store, sim_cref_key,
 };
 
 // The `SimData` layout, result-variable descriptors, and solver metadata are
@@ -78,9 +75,8 @@ use crate::CodegenWasmJitFunctions::{
 use openmodelica_sim_meta::omclog;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
-    var_filter, BaseClockMeta, BaseUnit, DisplayUnit, FmiVr, JacAInfo, Layout as SimLayout,
-    MetaKind as ResultKind, MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta,
-    UnitDef, VarTy,
+    BaseClockMeta, BaseUnit, DisplayUnit, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
+    MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta, UnitDef, VarTy, var_filter,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -88,19 +84,19 @@ use openmodelica_sim_meta::{
 // guards). The `SimModel` below stores compiled modules as `sim_runtime::Module`.
 // Engine, model data and driver flags live in `openmodelica_wasm_jit`; the
 // orchestration below keeps its `sim_runtime::`/`SimModel` paths via these.
-use openmodelica_wasm_jit::result_sink::{ResultTarget, Written};
-use openmodelica_wasm_jit::{sim_driver, sim_runtime};
-#[cfg(feature = "jit")]
-use openmodelica_wasm_jit::wasi_shim;
 pub(crate) use openmodelica_wasm_jit::model::{
     EditableParam, ExtArchives, ExtIncludes, ExtLibrary, ModelCompileJob, SimModel,
 };
 #[cfg(feature = "jit")]
-pub use openmodelica_wasm_jit::model::{set_inwasm_driver_override, set_sim_bench};
-#[cfg(feature = "jit")]
 pub(crate) use openmodelica_wasm_jit::model::{
-    encode_overrides, inwasm_driver_enabled, sim_bench_enabled, INWASM_SLOT_NAMES,
+    INWASM_SLOT_NAMES, encode_overrides, inwasm_driver_enabled, sim_bench_enabled,
 };
+#[cfg(feature = "jit")]
+pub use openmodelica_wasm_jit::model::{set_inwasm_driver_override, set_sim_bench};
+use openmodelica_wasm_jit::result_sink::{ResultTarget, Written};
+#[cfg(feature = "jit")]
+use openmodelica_wasm_jit::wasi_shim;
+use openmodelica_wasm_jit::{sim_driver, sim_runtime};
 
 #[path = "CodegenWasmJit/native_fmu.rs"]
 pub(crate) mod native_fmu;
@@ -125,8 +121,11 @@ pub(crate) mod dylink_fmi;
 /// Solver statistics, filled by the driver (now `openmodelica_sim_meta`, shared
 /// with the in-wasm driver) and rendered here into the `LOG_STATS` block.
 pub(crate) use openmodelica_sim_meta::SolveStats;
-#[cfg(feature = "jit")]
-pub use session::{last_sim_log, sim_advance, sim_free, sim_start};
+/// The model-agnostic FMI3 adapters, built + embedded by build.rs as dylink side
+/// modules: one per FMU type (the same crate, two WIT worlds).
+use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
+/// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
+use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
 /// The `wasm32-wasip1` standalone runtime (`_start` + the in-wasm driver in
 /// `openmodelica_codegen_wasm_jit_runtime::standalone`), embedded for the native
 /// standalone-export path. Empty when omc itself targets wasm32, or when the
@@ -134,20 +133,15 @@ pub use session::{last_sim_log, sim_advance, sim_free, sim_start};
 /// reports the absence rather than producing a broken module.
 #[cfg(not(target_arch = "wasm32"))]
 use openmodelica_wasm_jit::RUNTIME_WASIP1;
-/// The model-agnostic FMI3 adapters, built + embedded by build.rs as dylink side
-/// modules: one per FMU type (the same crate, two WIT worlds).
-use openmodelica_wasm_jit::FMI3_ME_ADAPTER;
-/// The combined me_cs component (both interfaces, one binary, one modelIdentifier).
-use openmodelica_wasm_jit::FMI3_MECS_ADAPTER;
+/// The external-"C" FMU artifacts, linked in only when the model uses `external
+/// "C"`. Any is empty when that omc was built without the toolchain.
+use openmodelica_wasm_jit::{LIBC_PIC, USERTAB_DYLINK, WASI_P1_ADAPTER, external_c_available};
 /// LAPACK for the `external "FORTRAN 77"` calls of `Modelica.Math.Matrices`, which
 /// a host-free FMU has no system library to resolve.
 /// The solvers the me_cs adapter's embedded driver calls, one side module each.
-use openmodelica_wasm_jit::{sundials_dylink_available as sundials_available, SOLVER_LIBRARIES};
-/// The external-"C" FMU artifacts, linked in only when the model uses `external
-/// "C"`. Any is empty when that omc was built without the toolchain.
-use openmodelica_wasm_jit::{
-    external_c_available, LIBC_PIC, USERTAB_DYLINK, WASI_P1_ADAPTER,
-};
+use openmodelica_wasm_jit::{SOLVER_LIBRARIES, sundials_dylink_available as sundials_available};
+#[cfg(feature = "jit")]
+pub use session::{last_sim_log, sim_advance, sim_free, sim_start};
 
 // Small shared helpers: list iteration, constant folding of literal
 // expressions, expression dumping, file output.

@@ -74,7 +74,13 @@ pub(super) fn fmu_solver_flags(flags_json: &str) -> String {
         .into_iter()
         .filter(|(name, _)| name != "s")
         .filter(|(name, value)| fmu_accepts_flag(name, value))
-        .map(|(name, value)| if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") })
+        .map(|(name, value)| {
+            if value.is_empty() {
+                format!("-{name}")
+            } else {
+                format!("-{name}={value}")
+            }
+        })
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -100,7 +106,11 @@ fn fmu_accepts_flag(name: &str, value: &str) -> bool {
     if IMPORTER_FLAGS.contains(&name) {
         return false;
     }
-    let arg = if value.is_empty() { format!("-{name}") } else { format!("-{name}={value}") };
+    let arg = if value.is_empty() {
+        format!("-{name}")
+    } else {
+        format!("-{name}={value}")
+    };
     match simflags::parse(&["model".to_string(), arg]) {
         Ok(f) => simflags::check(&f, fmu_capabilities()).is_ok(),
         Err(_) => false,
@@ -115,7 +125,11 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
         let Some(len) = rest[start + 1..].find('"') else { break };
         let name = &rest[start + 1..start + 1 + len];
         let after = rest[start + 1 + len + 1..].trim_start();
-        let Some(value_part) = after.strip_prefix(':').map(str::trim_start).and_then(|a| a.strip_prefix('"')) else {
+        let Some(value_part) = after
+            .strip_prefix(':')
+            .map(str::trim_start)
+            .and_then(|a| a.strip_prefix('"'))
+        else {
             rest = &rest[start + 1 + len + 1..];
             continue;
         };
@@ -138,12 +152,7 @@ fn fmi_flags(json: &str) -> Vec<(String, String)> {
 /// `sparse_nls` is the one selection no flag records: C's density/size rule sends a
 /// large sparse nonlinear system to kinsol+KLU whatever the flags say, so a model
 /// carrying one needs both however it was exported.
-pub(super) fn fmu_solver_libraries(
-    flags_json: &str,
-    cs_method: &str,
-    cs: bool,
-    sparse_nls: bool,
-) -> Vec<&'static str> {
+pub(super) fn fmu_solver_libraries(flags_json: &str, cs_method: &str, cs: bool, sparse_nls: bool) -> Vec<&'static str> {
     let flag = |name: &str| fmi_flag(flags_json, name).unwrap_or_default();
     let (nls, ls, lss) = (flag("nls"), flag("ls"), flag("lss"));
     let named = |v: &str| ls == v || lss == v;
@@ -160,8 +169,7 @@ pub(super) fn fmu_solver_libraries(
     if named("lis") {
         wanted.push("lis");
     }
-    if !wanted.is_empty() || named("klu") || flag("nlsLS") == "klu" || (cs && flag("idaLS") == "klu")
-    {
+    if !wanted.is_empty() || named("klu") || flag("nlsLS") == "klu" || (cs && flag("idaLS") == "klu") {
         wanted.push("klu");
     }
     wanted
@@ -194,7 +202,9 @@ pub fn fmu_platforms() -> Vec<String> {
 /// see, so the same parser serves this path and a standalone `wasmtime model.wasm …`
 /// run.
 pub(super) fn install_sim_flags(simflags: &str) -> std::result::Result<simflags::SimFlags, String> {
-    let argv: Vec<String> = core::iter::once("model".to_string()).chain(split_simflags(simflags)).collect();
+    let argv: Vec<String> = core::iter::once("model".to_string())
+        .chain(split_simflags(simflags))
+        .collect();
     let f = simflags::parse(&argv)?;
     simflags::check(&f, CAPABILITIES)?;
     simflags::set_flags(f.clone());

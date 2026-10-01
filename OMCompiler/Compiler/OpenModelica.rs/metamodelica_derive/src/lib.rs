@@ -21,16 +21,17 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields, Index};
+use syn::{Data, DeriveInput, Fields, Index, parse_macro_input};
 
 /// True if the field type is syntactically `Arc<…>` (the MMC boxed-value
 /// handle). Used by [`derive_meta_cmp`] to give such fields a pointer-identity
 /// fast path.
 fn is_arc(ty: &syn::Type) -> bool {
     if let syn::Type::Path(tp) = ty
-        && let Some(seg) = tp.path.segments.last() {
-            return seg.ident == "Arc";
-        }
+        && let Some(seg) = tp.path.segments.last()
+    {
+        return seg.ident == "Arc";
+    }
     false
 }
 
@@ -90,10 +91,7 @@ pub fn derive_meta_cmp(input: TokenStream) -> TokenStream {
     let (eq_body, cmp_body) = match &input.data {
         Data::Struct(data) => {
             let (eqs, cmps) = struct_field_cmps(&data.fields, &eq_one, &cmp_one);
-            (
-                quote! { #(#eqs)&&* },
-                chain_cmps(&cmps),
-            )
+            (quote! { #(#eqs)&&* }, chain_cmps(&cmps))
         }
         Data::Enum(data) => {
             let mut eq_arms = Vec::new();
@@ -110,20 +108,54 @@ pub fn derive_meta_cmp(input: TokenStream) -> TokenStream {
                         let arcs: Vec<bool> = named.named.iter().map(|f| is_arc(&f.ty)).collect();
                         let l: Vec<_> = names.iter().map(|n| quote::format_ident!("__l_{}", n)).collect();
                         let r: Vec<_> = names.iter().map(|n| quote::format_ident!("__r_{}", n)).collect();
-                        let eqs: Vec<_> = (0..names.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); eq_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let cmps: Vec<_> = (0..names.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); cmp_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let eq_all = if eqs.is_empty() { quote!(true) } else { quote!(#(#eqs)&&*) };
+                        let eqs: Vec<_> = (0..names.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                eq_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let cmps: Vec<_> = (0..names.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                cmp_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let eq_all = if eqs.is_empty() {
+                            quote!(true)
+                        } else {
+                            quote!(#(#eqs)&&*)
+                        };
                         let cmp_all = chain_cmps(&cmps);
-                        eq_arms.push(quote! { (Self::#vname { #(#names: #l),* }, Self::#vname { #(#names: #r),* }) => #eq_all, });
+                        eq_arms.push(
+                            quote! { (Self::#vname { #(#names: #l),* }, Self::#vname { #(#names: #r),* }) => #eq_all, },
+                        );
                         cmp_arms.push(quote! { (Self::#vname { #(#names: #l),* }, Self::#vname { #(#names: #r),* }) => #cmp_all, });
                     }
                     Fields::Unnamed(unnamed) => {
                         let arcs: Vec<bool> = unnamed.unnamed.iter().map(|f| is_arc(&f.ty)).collect();
-                        let l: Vec<_> = (0..unnamed.unnamed.len()).map(|i| quote::format_ident!("__l{}", i)).collect();
-                        let r: Vec<_> = (0..unnamed.unnamed.len()).map(|i| quote::format_ident!("__r{}", i)).collect();
-                        let eqs: Vec<_> = (0..l.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); eq_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let cmps: Vec<_> = (0..l.len()).map(|i| { let (li,ri)=(&l[i],&r[i]); cmp_one(&quote!(#li), &quote!(#ri), arcs[i]) }).collect();
-                        let eq_all = if eqs.is_empty() { quote!(true) } else { quote!(#(#eqs)&&*) };
+                        let l: Vec<_> = (0..unnamed.unnamed.len())
+                            .map(|i| quote::format_ident!("__l{}", i))
+                            .collect();
+                        let r: Vec<_> = (0..unnamed.unnamed.len())
+                            .map(|i| quote::format_ident!("__r{}", i))
+                            .collect();
+                        let eqs: Vec<_> = (0..l.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                eq_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let cmps: Vec<_> = (0..l.len())
+                            .map(|i| {
+                                let (li, ri) = (&l[i], &r[i]);
+                                cmp_one(&quote!(#li), &quote!(#ri), arcs[i])
+                            })
+                            .collect();
+                        let eq_all = if eqs.is_empty() {
+                            quote!(true)
+                        } else {
+                            quote!(#(#eqs)&&*)
+                        };
                         let cmp_all = chain_cmps(&cmps);
                         eq_arms.push(quote! { (Self::#vname(#(#l),*), Self::#vname(#(#r),*)) => #eq_all, });
                         cmp_arms.push(quote! { (Self::#vname(#(#l),*), Self::#vname(#(#r),*)) => #cmp_all, });
@@ -133,15 +165,20 @@ pub fn derive_meta_cmp(input: TokenStream) -> TokenStream {
             // Different variants: order by declaration index (== the
             // discriminant the builtin derive uses). `__variant_index` is a
             // local closure so the fallback arm stays simple.
-            let idx_arms = data.variants.iter().enumerate().map(|(i, v)| {
-                let vname = &v.ident;
-                let i = i as isize;
-                match &v.fields {
-                    Fields::Unit => quote! { Self::#vname => #i, },
-                    Fields::Named(_) => quote! { Self::#vname { .. } => #i, },
-                    Fields::Unnamed(_) => quote! { Self::#vname(..) => #i, },
-                }
-            }).collect::<Vec<_>>();
+            let idx_arms = data
+                .variants
+                .iter()
+                .enumerate()
+                .map(|(i, v)| {
+                    let vname = &v.ident;
+                    let i = i as isize;
+                    match &v.fields {
+                        Fields::Unit => quote! { Self::#vname => #i, },
+                        Fields::Named(_) => quote! { Self::#vname { .. } => #i, },
+                        Fields::Unnamed(_) => quote! { Self::#vname(..) => #i, },
+                    }
+                })
+                .collect::<Vec<_>>();
             let idx_fn = quote! {
                 let __idx = |__s: &Self| -> isize { match __s { #(#idx_arms)* } };
             };
@@ -220,7 +257,9 @@ fn struct_field_cmps(
                 eqs.push(eq_one(&l, &r, is_arc(&f.ty)));
                 cmps.push(cmp_one(&l, &r, is_arc(&f.ty)));
             }
-            if eqs.is_empty() { eqs.push(quote! { true }); }
+            if eqs.is_empty() {
+                eqs.push(quote! { true });
+            }
             (eqs, cmps)
         }
         Fields::Unnamed(unnamed) => {
@@ -233,7 +272,9 @@ fn struct_field_cmps(
                 eqs.push(eq_one(&l, &r, is_arc(&f.ty)));
                 cmps.push(cmp_one(&l, &r, is_arc(&f.ty)));
             }
-            if eqs.is_empty() { eqs.push(quote! { true }); }
+            if eqs.is_empty() {
+                eqs.push(quote! { true });
+            }
             (eqs, cmps)
         }
     }
@@ -248,9 +289,7 @@ pub fn derive_reference_eq(input: TokenStream) -> TokenStream {
     // builtin derives bound their own trait.
     let mut generics = input.generics.clone();
     for param in generics.type_params_mut() {
-        param
-            .bounds
-            .push(syn::parse_quote!(metamodelica::ReferenceEq));
+        param.bounds.push(syn::parse_quote!(metamodelica::ReferenceEq));
     }
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
@@ -267,19 +306,9 @@ pub fn derive_reference_eq(input: TokenStream) -> TokenStream {
                         (Self::#vname, Self::#vname) => true,
                     },
                     Fields::Named(named) => {
-                        let names: Vec<_> = named
-                            .named
-                            .iter()
-                            .map(|f| f.ident.as_ref().unwrap())
-                            .collect();
-                        let lhs: Vec<_> = names
-                            .iter()
-                            .map(|n| quote::format_ident!("__refeq_l_{}", n))
-                            .collect();
-                        let rhs: Vec<_> = names
-                            .iter()
-                            .map(|n| quote::format_ident!("__refeq_r_{}", n))
-                            .collect();
+                        let names: Vec<_> = named.named.iter().map(|f| f.ident.as_ref().unwrap()).collect();
+                        let lhs: Vec<_> = names.iter().map(|n| quote::format_ident!("__refeq_l_{}", n)).collect();
+                        let rhs: Vec<_> = names.iter().map(|n| quote::format_ident!("__refeq_r_{}", n)).collect();
                         quote! {
                             (Self::#vname { #(#names: #lhs),* }, Self::#vname { #(#names: #rhs),* }) =>
                                 true #(&& metamodelica::ReferenceEq::reference_eq(#lhs, #rhs))*,

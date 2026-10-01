@@ -20,7 +20,7 @@
 //! 75 the diagonal order can differ from reference LAPACK's.
 
 use crate::blas::{dlarfg, dnrm2, dscal, idamax};
-use crate::{abs, hypot, opt, sqrt, SAFMIN};
+use crate::{SAFMIN, abs, hypot, opt, sqrt};
 
 /// `DLAMCH('P')`, the precision LAPACK's stopping criteria are written against —
 /// twice [`crate::EPS`], which is `DLAMCH('E')`.
@@ -70,16 +70,7 @@ pub(crate) fn dlartg(f: f64, gg: f64) -> (f64, f64, f64) {
 }
 
 /// `DROT` over two strided vectors inside one buffer.
-pub(crate) fn drot(
-    n: usize,
-    a: &mut [f64],
-    off_x: usize,
-    incx: usize,
-    off_y: usize,
-    incy: usize,
-    cs: f64,
-    sn: f64,
-) {
+pub(crate) fn drot(n: usize, a: &mut [f64], off_x: usize, incx: usize, off_y: usize, incy: usize, cs: f64, sn: f64) {
     for k in 0..n {
         let (ix, iy) = (off_x + k * incx, off_y + k * incy);
         let (x, y) = (a[ix], a[iy]);
@@ -234,10 +225,7 @@ pub fn dgebal(job: &str, n: usize, a: &mut [f64], lda: usize) -> (usize, usize, 
             let mut gg = r / SCLFAC;
             let mut f = 1.0f64;
             let sum = c + r;
-            while c < gg
-                && f64::max(f, f64::max(c, ca)) < sfmax2
-                && f64::min(r, f64::min(gg, ra)) > sfmin2
-            {
+            while c < gg && f64::max(f, f64::max(c, ca)) < sfmax2 && f64::min(r, f64::min(gg, ra)) > sfmin2 {
                 f *= SCLFAC;
                 c *= SCLFAC;
                 ca *= SCLFAC;
@@ -246,10 +234,7 @@ pub fn dgebal(job: &str, n: usize, a: &mut [f64], lda: usize) -> (usize, usize, 
                 ra /= SCLFAC;
             }
             gg = c / SCLFAC;
-            while gg >= r
-                && f64::max(r, ra) < sfmax2
-                && f64::min(f64::min(f, c), f64::min(gg, ca)) > sfmin2
-            {
+            while gg >= r && f64::max(r, ra) < sfmax2 && f64::min(f64::min(f, c), f64::min(gg, ca)) > sfmin2 {
                 f /= SCLFAC;
                 c /= SCLFAC;
                 gg /= SCLFAC;
@@ -339,12 +324,7 @@ fn swap_rows_1based(v: &mut [f64], ldv: usize, m: usize, i: usize, k: usize) {
 /// Without this standardization a trailing 2×2 whose eigenvalues turn out real is
 /// never split, which is what makes a Schur implementation lacking it report
 /// non-convergence on ordinary matrices.
-pub fn dlanv2(
-    mut a: f64,
-    mut b: f64,
-    mut c: f64,
-    mut d: f64,
-) -> (f64, f64, f64, f64, f64, f64, f64, f64, f64, f64) {
+pub fn dlanv2(mut a: f64, mut b: f64, mut c: f64, mut d: f64) -> (f64, f64, f64, f64, f64, f64, f64, f64, f64, f64) {
     const MULTPL: f64 = 4.0;
     // DLAMCH('B')**INT(LOG(SAFMIN/EPS)/LOG(DLAMCH('B'))/2): the power of two the
     // "make the diagonal equal" branch scales by to stay in range.
@@ -597,8 +577,7 @@ pub fn dlahqr(
                 let mut h21s = g(h, ldh, mm + 1, mm);
                 let ss = abs(g(h, ldh, mm, mm) - rt2r) + abs(rt2i) + abs(h21s);
                 h21s = g(h, ldh, mm + 1, mm) / ss;
-                v[0] = h21s * g(h, ldh, mm, mm + 1)
-                    + (g(h, ldh, mm, mm) - rt1r) * ((g(h, ldh, mm, mm) - rt2r) / ss)
+                v[0] = h21s * g(h, ldh, mm, mm + 1) + (g(h, ldh, mm, mm) - rt1r) * ((g(h, ldh, mm, mm) - rt2r) / ss)
                     - rt1i * (rt2i / ss);
                 v[1] = h21s * (g(h, ldh, mm, mm) + g(h, ldh, mm + 1, mm + 1) - rt1r - rt2r);
                 v[2] = h21s * g(h, ldh, mm + 2, mm + 1);
@@ -613,9 +592,7 @@ pub fn dlahqr(
                 let lhs = abs(g(h, ldh, mm, mm - 1)) * (abs(v[1]) + abs(v[2]));
                 let rhs = ULP
                     * abs(v[0])
-                    * (abs(g(h, ldh, mm - 1, mm - 1))
-                        + abs(g(h, ldh, mm, mm))
-                        + abs(g(h, ldh, mm + 1, mm + 1)));
+                    * (abs(g(h, ldh, mm - 1, mm - 1)) + abs(g(h, ldh, mm, mm)) + abs(g(h, ldh, mm + 1, mm + 1)));
                 if lhs <= rhs {
                     m = mm;
                     break;
@@ -650,24 +627,20 @@ pub fn dlahqr(
                     let v3 = v[2];
                     let t3 = t1 * v3;
                     for j in kk..=i2 {
-                        let sum =
-                            g(h, ldh, kk, j) + v2 * g(h, ldh, kk + 1, j) + v3 * g(h, ldh, kk + 2, j);
+                        let sum = g(h, ldh, kk, j) + v2 * g(h, ldh, kk + 1, j) + v3 * g(h, ldh, kk + 2, j);
                         s(h, ldh, kk, j, g(h, ldh, kk, j) - sum * t1);
                         s(h, ldh, kk + 1, j, g(h, ldh, kk + 1, j) - sum * t2);
                         s(h, ldh, kk + 2, j, g(h, ldh, kk + 2, j) - sum * t3);
                     }
                     for j in i1..=usize::min(kk + 3, i) {
-                        let sum =
-                            g(h, ldh, j, kk) + v2 * g(h, ldh, j, kk + 1) + v3 * g(h, ldh, j, kk + 2);
+                        let sum = g(h, ldh, j, kk) + v2 * g(h, ldh, j, kk + 1) + v3 * g(h, ldh, j, kk + 2);
                         s(h, ldh, j, kk, g(h, ldh, j, kk) - sum * t1);
                         s(h, ldh, j, kk + 1, g(h, ldh, j, kk + 1) - sum * t2);
                         s(h, ldh, j, kk + 2, g(h, ldh, j, kk + 2) - sum * t3);
                     }
                     if wantz {
                         for j in iloz..=ihiz {
-                            let sum = g(z, ldz, j, kk)
-                                + v2 * g(z, ldz, j, kk + 1)
-                                + v3 * g(z, ldz, j, kk + 2);
+                            let sum = g(z, ldz, j, kk) + v2 * g(z, ldz, j, kk + 1) + v3 * g(z, ldz, j, kk + 2);
                             s(z, ldz, j, kk, g(z, ldz, j, kk) - sum * t1);
                             s(z, ldz, j, kk + 1, g(z, ldz, j, kk + 1) - sum * t2);
                             s(z, ldz, j, kk + 2, g(z, ldz, j, kk + 2) - sum * t3);
@@ -721,11 +694,29 @@ pub fn dlahqr(
                     drot(i2 - i, h, (i - 2) + i * ldh, ldh, (i - 1) + i * ldh, ldh, cs, sn);
                 }
                 if i > i1 + 1 {
-                    drot(i - i1 - 1, h, (i1 - 1) + (i - 2) * ldh, 1, (i1 - 1) + (i - 1) * ldh, 1, cs, sn);
+                    drot(
+                        i - i1 - 1,
+                        h,
+                        (i1 - 1) + (i - 2) * ldh,
+                        1,
+                        (i1 - 1) + (i - 1) * ldh,
+                        1,
+                        cs,
+                        sn,
+                    );
                 }
             }
             if wantz {
-                drot(nz, z, (iloz - 1) + (i - 2) * ldz, 1, (iloz - 1) + (i - 1) * ldz, 1, cs, sn);
+                drot(
+                    nz,
+                    z,
+                    (iloz - 1) + (i - 2) * ldz,
+                    1,
+                    (iloz - 1) + (i - 1) * ldz,
+                    1,
+                    cs,
+                    sn,
+                );
             }
         }
         kdefl = 0;
@@ -753,7 +744,11 @@ fn shift_pair(h11: f64, h12: f64, h21: f64, h22: f64) -> (f64, f64, f64, f64) {
     } else {
         let r1 = tr + rtdisc;
         let r2 = tr - rtdisc;
-        let r = if abs(r1 - h22) <= abs(r2 - h22) { r1 * ss } else { r2 * ss };
+        let r = if abs(r1 - h22) <= abs(r2 - h22) {
+            r1 * ss
+        } else {
+            r2 * ss
+        };
         (r, 0.0, r, 0.0)
     }
 }

@@ -11,9 +11,14 @@ use std::path::Path;
 pub const GLUE_NAME: &str = "openmodelica_result_web.js";
 pub const WASM_NAME: &str = "openmodelica_result_web_bg.wasm";
 
-pub const GLUE: &str = include_str!(concat!(env!("OPENMODELICA_RESULT_WEB_PKG"), "/openmodelica_result_web.js"));
-pub const WASM: &[u8] =
-    include_bytes!(concat!(env!("OPENMODELICA_RESULT_WEB_PKG"), "/openmodelica_result_web_bg.wasm"));
+pub const GLUE: &str = include_str!(concat!(
+    env!("OPENMODELICA_RESULT_WEB_PKG"),
+    "/openmodelica_result_web.js"
+));
+pub const WASM: &[u8] = include_bytes!(concat!(
+    env!("OPENMODELICA_RESULT_WEB_PKG"),
+    "/openmodelica_result_web_bg.wasm"
+));
 
 /// Write both files into `dir`, which is created if needed. A file already there
 /// with the right size is left alone, so serving many reports out of one

@@ -25,8 +25,8 @@ use std::io::Read;
 
 use arcstr::ArcStr;
 use metamodelica::List;
-use openmodelica_util::Error;
 use openmodelica_error::ErrorTypes;
+use openmodelica_util::Error;
 
 /// `c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, ...)`
 /// equivalent: an ad-hoc runtime error with no source location. Failures
@@ -189,8 +189,7 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
             {
                 use std::os::unix::fs::PermissionsExt;
                 let mode = (entry.unix_mode().unwrap_or(0) & 0o177) | 0o644;
-                if std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode)).is_err()
-                {
+                if std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode)).is_err() {
                     add_error("fchmod failed for %s: %s", &[&out_path, "set_permissions failed"]);
                     return Err(());
                 }
@@ -276,7 +275,8 @@ mod tests {
             let mut w = zip::ZipWriter::new(f);
             let opts: zip::write::SimpleFileOptions = Default::default();
             w.start_file("SDF/Examples/InterpolationMethods.mo", opts).unwrap();
-            w.write_all(b"model InterpolationMethods end InterpolationMethods;").unwrap();
+            w.write_all(b"model InterpolationMethods end InterpolationMethods;")
+                .unwrap();
             w.start_file("SDF/package.mo", opts).unwrap();
             w.write_all(b"package SDF end SDF;").unwrap();
             w.start_file("LICENSE.txt", opts).unwrap();

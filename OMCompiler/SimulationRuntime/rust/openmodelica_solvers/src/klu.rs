@@ -57,11 +57,45 @@ mod real {
     unsafe extern "C" {
         fn klu_defaults(common: *mut Common) -> i32;
         fn klu_analyze(n: i32, ap: *mut i32, ai: *mut i32, common: *mut Common) -> *mut c_void;
-        fn klu_factor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, common: *mut Common) -> *mut c_void;
-        fn klu_refactor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
-        fn klu_rgrowth(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
-        fn klu_solve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
-        fn klu_tsolve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
+        fn klu_factor(
+            ap: *mut i32,
+            ai: *mut i32,
+            ax: *mut f64,
+            symbolic: *mut c_void,
+            common: *mut Common,
+        ) -> *mut c_void;
+        fn klu_refactor(
+            ap: *mut i32,
+            ai: *mut i32,
+            ax: *mut f64,
+            symbolic: *mut c_void,
+            numeric: *mut c_void,
+            common: *mut Common,
+        ) -> i32;
+        fn klu_rgrowth(
+            ap: *mut i32,
+            ai: *mut i32,
+            ax: *mut f64,
+            symbolic: *mut c_void,
+            numeric: *mut c_void,
+            common: *mut Common,
+        ) -> i32;
+        fn klu_solve(
+            symbolic: *mut c_void,
+            numeric: *mut c_void,
+            ldim: i32,
+            nrhs: i32,
+            b: *mut f64,
+            common: *mut Common,
+        ) -> i32;
+        fn klu_tsolve(
+            symbolic: *mut c_void,
+            numeric: *mut c_void,
+            ldim: i32,
+            nrhs: i32,
+            b: *mut f64,
+            common: *mut Common,
+        ) -> i32;
         fn klu_free_symbolic(symbolic: *mut *mut c_void, common: *mut Common) -> i32;
         fn klu_free_numeric(numeric: *mut *mut c_void, common: *mut Common) -> i32;
     }
@@ -140,13 +174,31 @@ mod real {
         /// `klu_solve`: `A x = b` in place, for the factors of `A`'s own CSC.
         pub fn solve(&mut self, b: &mut [f64]) -> bool {
             !self.numeric.is_null()
-                && unsafe { klu_solve(self.symbolic, self.numeric, self.n as i32, 1, b.as_mut_ptr(), &mut self.common) != 0 }
+                && unsafe {
+                    klu_solve(
+                        self.symbolic,
+                        self.numeric,
+                        self.n as i32,
+                        1,
+                        b.as_mut_ptr(),
+                        &mut self.common,
+                    ) != 0
+                }
         }
 
         /// `klu_tsolve`: `A x = b` in place, for the factors of `Aᵀ` (a CSR of `A`).
         pub fn tsolve(&mut self, b: &mut [f64]) -> bool {
             !self.numeric.is_null()
-                && unsafe { klu_tsolve(self.symbolic, self.numeric, self.n as i32, 1, b.as_mut_ptr(), &mut self.common) != 0 }
+                && unsafe {
+                    klu_tsolve(
+                        self.symbolic,
+                        self.numeric,
+                        self.n as i32,
+                        1,
+                        b.as_mut_ptr(),
+                        &mut self.common,
+                    ) != 0
+                }
         }
 
         /// `klu_common.status` after the last call.

@@ -16,9 +16,7 @@ pub fn parse(root: Node) -> Result<ModelDescription> {
         license: string_attr(root, "license"),
         generation_tool: string_attr(root, "generationTool"),
         generation_date_and_time: string_attr(root, "generationDateAndTime"),
-        variable_naming_convention: attr(root, "variableNamingConvention")
-            .unwrap_or("flat")
-            .to_string(),
+        variable_naming_convention: attr(root, "variableNamingConvention").unwrap_or("flat").to_string(),
         model_exchange: child(root, "ModelExchange").map(interface).transpose()?,
         co_simulation: child(root, "CoSimulation").map(interface).transpose()?,
         default_experiment: default_experiment(root),
@@ -47,25 +45,13 @@ fn interface(n: Node) -> Result<Interface> {
     Ok(Interface {
         model_identifier: required(n, "modelIdentifier")?.to_string(),
         needs_execution_tool: bool_attr(n, "needsExecutionTool", false),
-        can_be_instantiated_only_once_per_process: bool_attr(
-            n,
-            "canBeInstantiatedOnlyOncePerProcess",
-            false,
-        ),
-        can_not_use_memory_management_functions: bool_attr(
-            n,
-            "canNotUseMemoryManagementFunctions",
-            false,
-        ),
+        can_be_instantiated_only_once_per_process: bool_attr(n, "canBeInstantiatedOnlyOncePerProcess", false),
+        can_not_use_memory_management_functions: bool_attr(n, "canNotUseMemoryManagementFunctions", false),
         can_get_and_set_state: bool_attr(n, "canGetAndSetFMUstate", false),
         can_serialize_state: bool_attr(n, "canSerializeFMUstate", false),
         provides_directional_derivatives: bool_attr(n, "providesDirectionalDerivative", false),
         needs_completed_integrator_step: !bool_attr(n, "completedIntegratorStepNotNeeded", false),
-        can_handle_variable_communication_step_size: bool_attr(
-            n,
-            "canHandleVariableCommunicationStepSize",
-            false,
-        ),
+        can_handle_variable_communication_step_size: bool_attr(n, "canHandleVariableCommunicationStepSize", false),
         max_output_derivative_order: u32_attr(n, "maxOutputDerivativeOrder").unwrap_or(0),
         can_interpolate_inputs: bool_attr(n, "canInterpolateInputs", false),
         can_run_asynchronously: bool_attr(n, "canRunAsynchronuously", false),
@@ -75,7 +61,9 @@ fn interface(n: Node) -> Result<Interface> {
 }
 
 fn source_files(n: Node) -> Vec<String> {
-    let Some(sf) = child(n, "SourceFiles") else { return Vec::new() };
+    let Some(sf) = child(n, "SourceFiles") else {
+        return Vec::new();
+    };
     children(sf, "File").filter_map(|f| string_attr(f, "name")).collect()
 }
 
@@ -91,13 +79,14 @@ fn var_type(tag: &str) -> Option<VarType> {
 }
 
 fn variables(root: Node) -> Result<Vec<Variable>> {
-    let mv = child(root, "ModelVariables")
-        .ok_or_else(|| Error::Xml("no <ModelVariables>".into()))?;
+    let mv = child(root, "ModelVariables").ok_or_else(|| Error::Xml("no <ModelVariables>".into()))?;
     let mut vars = Vec::new();
     for n in children(mv, "ScalarVariable") {
-        let Some(t) = n.children().filter(Node::is_element).find_map(|c| {
-            var_type(c.tag_name().name()).map(|ty| (c, ty))
-        }) else {
+        let Some(t) = n
+            .children()
+            .filter(Node::is_element)
+            .find_map(|c| var_type(c.tag_name().name()).map(|ty| (c, ty)))
+        else {
             return Err(Error::Xml(format!(
                 "<ScalarVariable name=\"{}\"> has no type element",
                 attr(n, "name").unwrap_or_default()
@@ -114,8 +103,7 @@ fn variables(root: Node) -> Result<Vec<Variable>> {
         v.causality = causality(attr(n, "causality"), Causality::Local);
         v.variability = variability(attr(n, "variability"), Variability::Continuous);
         v.initial = initial(attr(n, "initial"));
-        v.can_handle_multiple_set_per_time_instant =
-            bool_attr(n, "canHandleMultipleSetPerTimeInstant", true);
+        v.can_handle_multiple_set_per_time_instant = bool_attr(n, "canHandleMultipleSetPerTimeInstant", true);
         v.declared_type = string_attr(tn, "declaredType");
         v.quantity = string_attr(tn, "quantity");
         v.unit = string_attr(tn, "unit");
@@ -151,9 +139,8 @@ fn unknowns(parent: Node, vars: &[Variable]) -> Vec<Unknown> {
             Some(Unknown {
                 value_reference: index_to_vr(vars, index)?,
                 index,
-                dependencies: list_attr::<u32>(u, "dependencies").map(|d| {
-                    d.into_iter().filter_map(|ix| index_to_vr(vars, ix)).collect()
-                }),
+                dependencies: list_attr::<u32>(u, "dependencies")
+                    .map(|d| d.into_iter().filter_map(|ix| index_to_vr(vars, ix)).collect()),
                 dependencies_kind: dependencies_kind(u),
             })
         })
@@ -161,7 +148,9 @@ fn unknowns(parent: Node, vars: &[Variable]) -> Vec<Unknown> {
 }
 
 fn model_structure(root: Node, vars: &[Variable]) -> ModelStructure {
-    let Some(ms) = child(root, "ModelStructure") else { return ModelStructure::default() };
+    let Some(ms) = child(root, "ModelStructure") else {
+        return ModelStructure::default();
+    };
     let group = |name| child(ms, name).map(|g| unknowns(g, vars)).unwrap_or_default();
     ModelStructure {
         outputs: group("Outputs"),
@@ -172,7 +161,9 @@ fn model_structure(root: Node, vars: &[Variable]) -> ModelStructure {
 }
 
 fn units(root: Node) -> Vec<Unit> {
-    let Some(uds) = child(root, "UnitDefinitions") else { return Vec::new() };
+    let Some(uds) = child(root, "UnitDefinitions") else {
+        return Vec::new();
+    };
     children(uds, "Unit")
         .filter_map(|u| {
             Some(Unit {
@@ -210,13 +201,16 @@ fn base_unit(n: Node) -> BaseUnit {
 }
 
 fn type_definitions(root: Node) -> Vec<TypeDefinition> {
-    let Some(tds) = child(root, "TypeDefinitions") else { return Vec::new() };
+    let Some(tds) = child(root, "TypeDefinitions") else {
+        return Vec::new();
+    };
     children(tds, "SimpleType")
         .filter_map(|t| {
             let name = attr(t, "name")?.to_string();
-            let d = t.children().filter(Node::is_element).find_map(|c| {
-                var_type(c.tag_name().name()).map(|ty| (c, ty))
-            })?;
+            let d = t
+                .children()
+                .filter(Node::is_element)
+                .find_map(|c| var_type(c.tag_name().name()).map(|ty| (c, ty)))?;
             let (n, ty) = d;
             Some(TypeDefinition {
                 name,

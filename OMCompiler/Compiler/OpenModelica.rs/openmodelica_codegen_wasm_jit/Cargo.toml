@@ -23,7 +23,7 @@ openmodelica_ast.workspace = true
 openmodelica_simcode_types.workspace = true
 # SimCodeUtil::getFMI3ValueReference: the FMU export's value references must be
 # the ones CodegenFMU3 puts in modelDescription.xml.
-openmodelica_codegen_util.workspace=true
+openmodelica_codegen_util.workspace = true
 openmodelica_backend_types.workspace = true
 openmodelica_error.workspace = true
 openmodelica_frontend_types.workspace = true
@@ -87,7 +87,13 @@ openmodelica_fmi = { path = "../openmodelica_fmi", optional = true }
 openmodelica_fmi_driver = { path = "../openmodelica_fmi_driver", optional = true, features = ["component"] }
 openmodelica_ext_native = { path = "../openmodelica_ext_native", optional = true }
 wasmtime = { workspace = true, optional = true, features = [
-  "cranelift", "all-arch", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+  "cranelift",
+  "all-arch",
+  "component-model",
+  "anyhow",
+  "gc",
+  "gc-null",
+  "gc-drc",
 ] }
 wasmer = { workspace = true, features = ["sys", "cranelift"], optional = true }
 

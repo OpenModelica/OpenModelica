@@ -46,28 +46,30 @@
 pub(crate) type HashMap<K, V> = std::collections::HashMap<K, V, foldhash::fast::RandomState>;
 pub(crate) type HashSet<K> = std::collections::HashSet<K, foldhash::fast::RandomState>;
 // The record layout is shared with the host, which reads records this code built.
-use openmodelica_wasm_jit::sig::{record_layout, RecordLayout};
+use openmodelica_wasm_jit::sig::{RecordLayout, record_layout};
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 
 use openmodelica_ast::Absyn;
 use openmodelica_frontend_base::Expression;
 use openmodelica_frontend_base::Types;
 use openmodelica_frontend_dump::AbsynUtil;
 use openmodelica_frontend_dump::ExpressionDumpTpl;
-use openmodelica_tpl::Tpl;
 use openmodelica_frontend_types::{ClassInf, DAE, Values};
 use openmodelica_simcode_types::SimCode;
 use openmodelica_simcode_types::SimCodeFunction;
+use openmodelica_tpl::Tpl;
 
 use wasm_encoder as we;
 
 // On wasm32 wasmtime has no backend, so `engine-wasmer` is mandatory there.
 #[cfg(all(feature = "jit", target_arch = "wasm32", not(feature = "engine-wasmer")))]
-compile_error!("openmodelica_codegen_wasm_jit: the wasm32 target requires `engine-wasmer` (wasmtime has no wasm backend)");
+compile_error!(
+    "openmodelica_codegen_wasm_jit: the wasm32 target requires `engine-wasmer` (wasmtime has no wasm backend)"
+);
 
 // The execution engine is selected at compile time: wasmtime natively (the
 // default/fast path), wasmer when `engine-wasmer` is set or on wasm32 (its `js`
@@ -83,6 +85,7 @@ pub(crate) mod runtime;
 #[path = "CodegenWasmJitFunctions/runtime_stub.rs"]
 pub(crate) mod runtime;
 
+use openmodelica_sim_meta::clock_field;
 /// A wasm value type. MetaModelica `Integer` is the port's `i32`
 /// ([[funcbuiltin-i32-intmaxlit]]); `Boolean` and `Enumeration` indices also
 /// live in an `i32`; `Real` is an `f64`.
@@ -91,7 +94,6 @@ pub(crate) mod runtime;
 // wasm-encoder `ValType` mapping is host-only, so it lives here as an extension
 // trait rather than an inherent method.
 pub(crate) use openmodelica_sim_meta::{Neg, WTy};
-use openmodelica_sim_meta::clock_field;
 pub(crate) use openmodelica_wasm_jit::sig::{ExtCallSig, ExtLang, FnSig, SigTy, WTyVal};
 
 // Diagnostics context: the part/function being lowered and the
@@ -247,12 +249,11 @@ pub(crate) use generic_calls::{
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, IterSlot, NlsResidual, NlsResiduals,
-    backup_known_outputs, residual_rows, restore_known_outputs,
-    compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
-    compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,
-    emit_ls_bracket, emit_nls_load_body, emit_nls_residual_body, emit_nls_residual_prologue,
-    emit_nls_residual_epilogue, emit_nls_residual_store, nls_residuals_all_scalar, emit_solve_nls_call, lin_jac_coloring,
-    lin_use_sparse, nls_use_sparse,
-    emit_dt_solving, emit_dt_local_constraint, emit_dynamic_tearing, emit_nls_strict_body,
+    IterSlot, LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, NlsResidual, NlsResiduals,
+    backup_known_outputs, compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
+    compile_linear_system_symbolic, emit_dt_local_constraint, emit_dt_solving, emit_dynamic_tearing,
+    emit_linz_jac_body, emit_ls_bracket, emit_nls_jac_body, emit_nls_jac_csc_body, emit_nls_load_body,
+    emit_nls_residual_body, emit_nls_residual_epilogue, emit_nls_residual_prologue, emit_nls_residual_store,
+    emit_nls_strict_body, emit_solve_nls_call, lin_jac_coloring, lin_use_sparse, nls_residuals_all_scalar,
+    nls_use_sparse, residual_rows, restore_known_outputs,
 };

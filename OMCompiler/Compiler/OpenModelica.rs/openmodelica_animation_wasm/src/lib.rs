@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use openmodelica_animation::{Resolver, Scene, STRIDE};
+use openmodelica_animation::{Resolver, STRIDE, Scene};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

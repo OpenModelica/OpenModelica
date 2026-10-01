@@ -28,7 +28,13 @@ jit = ["wasmtime/cranelift", "wasmtime/parallel-compilation"]
 # precompiled. `gc` is not optional — a model with a torn nonlinear system uses
 # a funcref table, which needs the function-references/gc proposals.
 wasmtime = { version = "48", default-features = false, features = [
-  "std", "runtime", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+  "std",
+  "runtime",
+  "component-model",
+  "anyhow",
+  "gc",
+  "gc-null",
+  "gc-drc",
 ] }
 # An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
 wasmtime-wasi = { version = "48", default-features = false, features = ["p2"] }

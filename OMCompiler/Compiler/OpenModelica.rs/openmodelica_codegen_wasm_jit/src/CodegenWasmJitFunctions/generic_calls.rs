@@ -3,7 +3,6 @@
 //! calls it from the loops (`CodegenC.tpl:equationGenericAssign`); here it is
 //! inlined, the way `SES_IFEQUATION` inlines its branches.
 
-
 use metamodelica::Result;
 
 use openmodelica_backend_types::BackendDAE;
@@ -25,11 +24,7 @@ pub(crate) fn emit_resizable_assign(
 }
 
 /// `SES_GENERIC_ASSIGN`: run call `call_index` for each index in `scal_indices`.
-pub(crate) fn emit_generic_assign(
-    ctx: &mut FnCtx,
-    call_index: i32,
-    scal_indices: &List<i32>,
-) -> Result<()> {
+pub(crate) fn emit_generic_assign(ctx: &mut FnCtx, call_index: i32, scal_indices: &List<i32>) -> Result<()> {
     let call = lookup_call(ctx, call_index)?;
     let indices: Vec<i32> = (&**scal_indices).into_iter().copied().collect();
     let iters: Vec<BackendDAE::SimIterator> = (&**call_iters(&call)).into_iter().cloned().collect();
@@ -52,7 +47,11 @@ pub(crate) fn emit_entwined_assign(
             .get(usize::try_from(*slot).map_err(|_| "CodegenWasmJit: negative entwined call index")?)
             .ok_or("CodegenWasmJit: entwined call order names a missing call")?;
         match &**eq {
-            E::SES_GENERIC_ASSIGN { call_index, scal_indices, .. } => {
+            E::SES_GENERIC_ASSIGN {
+                call_index,
+                scal_indices,
+                ..
+            } => {
                 let n = &mut consumed[*slot as usize];
                 let idx = (&**scal_indices)
                     .into_iter()
@@ -101,7 +100,13 @@ pub(crate) fn emit_decoded_iters(
     for iter in iters {
         let it = ctx.alloc_temp(WTy::I32);
         let (name, size) = match iter {
-            BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, size, .. } => {
+            BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+                name,
+                start,
+                step,
+                size,
+                ..
+            } => {
                 // it = step * (tmp % size) + start
                 let w = compile_exp(ctx, step)?;
                 coerce(ctx, w, WTy::I32);
@@ -116,7 +121,12 @@ pub(crate) fn emit_decoded_iters(
                 ctx.emit(I::LocalSet(it));
                 (name, size.clone())
             }
-            BackendDAE::SimIterator::SIM_ITERATOR_LIST { name, lst: values, size, .. } => {
+            BackendDAE::SimIterator::SIM_ITERATOR_LIST {
+                name,
+                lst: values,
+                size,
+                ..
+            } => {
                 let table = emit_const_int_table(ctx, &int_list(values))?;
                 ctx.emit(I::LocalGet(table));
                 ctx.emit(I::LocalGet(tmp));
@@ -189,15 +199,23 @@ pub(crate) fn emit_index_list_loop(
 /// A constant `Integer[:]` table as a module-wide object; leaves its element-data
 /// address in a fresh local.
 fn emit_const_int_table(ctx: &mut FnCtx, values: &[i32]) -> Result<u32> {
-    let array: List<metamodelica::Ref<DAE::Exp>> =
-        values.iter().map(|&v| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v })).collect();
+    let array: List<metamodelica::Ref<DAE::Exp>> = values
+        .iter()
+        .map(|&v| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v }))
+        .collect();
     let ty = metamodelica::Ref::new(DAE::Type::T_ARRAY {
-        ty: metamodelica::Ref::new(DAE::Type::T_INTEGER { varLst: metamodelica::nil() }),
+        ty: metamodelica::Ref::new(DAE::Type::T_INTEGER {
+            varLst: metamodelica::nil(),
+        }),
         dims: metamodelica::list![metamodelica::Ref::new(DAE::Dimension::DIM_INTEGER {
             integer: values.len() as i32
         })],
     });
-    let exp = DAE::Exp::ARRAY { ty, scalar: true, array };
+    let exp = DAE::Exp::ARRAY {
+        ty,
+        scalar: true,
+        array,
+    };
     let g = shared_lits::intern_const(&exp);
     let ptr = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::GlobalGet(g));
@@ -219,7 +237,10 @@ fn call_iters(call: &SimCode::SimGenericCall) -> &List<BackendDAE::SimIterator> 
     }
 }
 
-type SubIters = List<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Array<metamodelica::Ref<DAE::Exp>>)>;
+type SubIters = List<(
+    metamodelica::Ref<DAE::ComponentRef>,
+    metamodelica::Array<metamodelica::Ref<DAE::Exp>>,
+)>;
 
 fn iter_sub_iter(iter: &BackendDAE::SimIterator) -> &SubIters {
     use BackendDAE::SimIterator as S;
@@ -238,7 +259,14 @@ fn emit_loops(
     let Some((iter, rest)) = iters.split_first() else {
         return body(ctx);
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, stop, sub_iter, .. } = iter
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+        name,
+        start,
+        step,
+        stop,
+        sub_iter,
+        ..
+    } = iter
     else {
         return emit_list_loop(ctx, iter, rest, body);
     };
@@ -287,7 +315,12 @@ fn emit_list_loop(
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
-    let BackendDAE::SimIterator::SIM_ITERATOR_LIST { name, lst: values, size, sub_iter } = iter
+    let BackendDAE::SimIterator::SIM_ITERATOR_LIST {
+        name,
+        lst: values,
+        size,
+        sub_iter,
+    } = iter
     else {
         return Err("CodegenWasmJit: for-equation iterator is neither a range nor a list");
     };
@@ -350,7 +383,10 @@ fn emit_in_range(ctx: &mut FnCtx, it: u32, start_l: u32, stop_l: u32) {
 /// C's `subIterator`: `name = name_arr[parent - 1]`.
 fn emit_sub_iters(
     ctx: &mut FnCtx,
-    sub_iter: &List<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Array<metamodelica::Ref<DAE::Exp>>)>,
+    sub_iter: &List<(
+        metamodelica::Ref<DAE::ComponentRef>,
+        metamodelica::Array<metamodelica::Ref<DAE::Exp>>,
+    )>,
     parent: u32,
 ) -> Result<Vec<IterBinding>> {
     use we::Instruction as I;
@@ -414,9 +450,7 @@ fn emit_call_body(ctx: &mut FnCtx, call: &SimCode::SimGenericCall) -> Result<()>
     use SimCode::SimGenericCall as G;
     match call {
         G::SINGLE_GENERIC_CALL { lhs, rhs, .. } => ctx.sim_assign(lhs, rhs),
-        G::IF_GENERIC_CALL { branches, .. } | G::WHEN_GENERIC_CALL { branches, .. } => {
-            emit_branches(ctx, branches)
-        }
+        G::IF_GENERIC_CALL { branches, .. } | G::WHEN_GENERIC_CALL { branches, .. } => emit_branches(ctx, branches),
     }
 }
 

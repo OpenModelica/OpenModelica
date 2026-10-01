@@ -17,7 +17,7 @@ use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{self as meta, MetaKind};
 
 use crate::exports::om::sim::simulation::{Guest as SimGuest, RunResult};
-use crate::{log_sink, read_meta, Engine, Fmu};
+use crate::{Engine, Fmu, log_sink, read_meta};
 
 impl SimGuest for Fmu {
     fn run(args: Vec<String>) -> Result<RunResult, String> {
@@ -137,13 +137,11 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
     });
 
     openmodelica_codegen_wasm_jit_runtime::rt_set_step_size(m.step_size());
-    openmodelica_codegen_wasm_jit_runtime::set_nls_var_names(
-        if meta::omclog::active(meta::omclog::NLS) {
-            m.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
-        } else {
-            Vec::new()
-        },
-    );
+    openmodelica_codegen_wasm_jit_runtime::set_nls_var_names(if meta::omclog::active(meta::omclog::NLS) {
+        m.nls_vars.iter().map(|s| (s.eq_index, s.names.clone())).collect()
+    } else {
+        Vec::new()
+    });
     openmodelica_codegen_wasm_jit_runtime::enable_sys_stats(meta::omclog::active(meta::omclog::STATS_V));
     driver::set_clock(clock::now_ms);
     // `+profiling` writes five files and would run gnuplot/xsltproc over two of
@@ -154,10 +152,14 @@ pub(crate) fn run(args: Vec<String>) -> Result<RunResult, String> {
 
     let sim_data = openmodelica_codegen_wasm_jit_runtime::rt_sim_data_new(m.layout.total);
     let mut engine = Engine;
-    let (result, label) = driver::drive(&mut engine, &m, sim_data, m.method.as_str(), false, false)
-        .map_err(|e| e.to_string())?;
+    let (result, label) =
+        driver::drive(&mut engine, &m, sim_data, m.method.as_str(), false, false).map_err(|e| e.to_string())?;
 
-    let rows = if result.n_reals == 0 { 0 } else { result.rows.len() / result.n_reals as usize };
+    let rows = if result.n_reals == 0 {
+        0
+    } else {
+        result.rows.len() / result.n_reals as usize
+    };
     let bytes = write_result_file(&m, &result);
     // C's `printModelInfo`, over the result file the caller is about to write.
     meta::profiling::finish(&m, &m.result_file(), bytes.len() as i64);
@@ -215,10 +217,19 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             if !keep {
                 continue;
             }
-            matvars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying });
+            matvars.push(MatVar {
+                name: &v.name,
+                comment: &v.comment,
+                kind: v.kind.mat(),
+                unvarying: v.unvarying,
+            });
         }
         let precision = simflags::with_flags(|f| {
-            if f.single_precision { Precision::Single } else { Precision::Double }
+            if f.single_precision {
+                Precision::Single
+            } else {
+                Precision::Double
+            }
         });
         openmodelica_mat_writer::write_mat4(
             &matvars,
@@ -238,7 +249,10 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
         };
         let to_plt = |k: &MetaKind| match k {
             MetaKind::Time => PltKind::Time,
-            MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Column { col, negate } => PltKind::Column {
+                col: *col,
+                negate: neg(negate),
+            },
             MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => PltKind::Const { value: *value },
         };
@@ -248,7 +262,13 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             let keep = keep && v.ty != openmodelica_sim_meta::VarTy::String;
             let is_param = matches!(v.kind, MetaKind::Param { .. });
             // C's plt writer omits integer/boolean parameters (`nParameters*`).
-            let is_int_bool_param = matches!(v.kind, MetaKind::Param { wty: meta::WTy::I32, .. });
+            let is_int_bool_param = matches!(
+                v.kind,
+                MetaKind::Param {
+                    wty: meta::WTy::I32,
+                    ..
+                }
+            );
             let emit = keep && !is_int_bool_param;
             if is_param && emit {
                 kept_params.push(result.params.get(param_idx).copied().unwrap_or(0.0));
@@ -257,7 +277,10 @@ fn write_result_file(m: &meta::SimMeta, result: &driver::RunResult) -> Vec<u8> {
             if !emit {
                 continue;
             }
-            signals.push(PltVar { name: &v.name, kind: to_plt(&v.kind) });
+            signals.push(PltVar {
+                name: &v.name,
+                kind: to_plt(&v.kind),
+            });
         }
         openmodelica_plt_writer::write_plt(&signals, &result.rows, result.n_reals, &kept_params)
     }

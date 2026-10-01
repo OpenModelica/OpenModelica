@@ -97,7 +97,11 @@ impl GbNls {
         sym_jac: bool,
         whole_jac: Option<crate::simflags::JacobianMethod>,
     ) -> Self {
-        let size = if t.gm_type == GmType::Implicit { t.n_stages * n_states } else { n_states };
+        let size = if t.gm_type == GmType::Implicit {
+            t.n_stages * n_states
+        } else {
+            n_states
+        };
         // C's Newton convergence target `fnewt`.
         let alpha_default: f64 = 3e-2;
         let alpha_maximal: f64 = 5e-2;
@@ -108,8 +112,7 @@ impl GbNls {
             target_alpha = pow(safety_newt, 1.0 / order_quot);
         }
         let fnewt = (DBL_ABSORPTION / tol).max(alpha_maximal.min(target_alpha));
-        let eta_initial_damping =
-            gb_number("gbnls_internal_damping", 0.8, |v| (0.0..=1.0).contains(&v));
+        let eta_initial_damping = gb_number("gbnls_internal_damping", 0.8, |v| (0.0..=1.0).contains(&v));
         let theta_keep = gb_number("gbnls_internal_jackeep", -1.0, |v| v > 0.0);
         let theta_keep = if theta_keep > 0.0 {
             theta_keep
@@ -227,9 +230,7 @@ impl GbNls {
                     seed[c as usize] = 1.0;
                 }
                 if !ode.jacobian_vector(time, y, &seed, &mut out) {
-                    return Err(
-                        "##GBODE## the model could not multiply by its Jacobian",
-                    );
+                    return Err("##GBODE## the model could not multiply by its Jacobian");
                 }
                 for &c in group {
                     let c = c as usize;
@@ -424,7 +425,10 @@ impl GbNls {
             for i in 0..n {
                 self.res[i] = res_const[i] - c_scale * x[i] + fac * f[i];
             }
-            self.factored.as_mut().expect("solve before factor").solve(&mut self.res[..n]);
+            self.factored
+                .as_mut()
+                .expect("solve before factor")
+                .solve(&mut self.res[..n]);
             for i in 0..n {
                 x[i] -= self.res[i];
             }
@@ -440,8 +444,7 @@ impl GbNls {
                 }
                 self.etas[stage] = theta / (1.0 - theta);
             } else {
-                self.etas[stage] =
-                    pow(self.etas[stage].max(f64::EPSILON), self.eta_initial_damping);
+                self.etas[stage] = pow(self.etas[stage].max(f64::EPSILON), self.eta_initial_damping);
             }
             if !self.etas[stage].is_finite() || !nrm_delta.is_finite() {
                 return Ok(Solved::Failed);
@@ -451,8 +454,7 @@ impl GbNls {
                 return Ok(Solved::Ok);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }
@@ -529,7 +531,10 @@ impl GbNls {
                     self.res[stage * n + i] = r;
                 }
             }
-            self.factored.as_mut().expect("solve before factor").solve(&mut self.res);
+            self.factored
+                .as_mut()
+                .expect("solve before factor")
+                .solve(&mut self.res);
             for i in 0..size {
                 z[i] -= self.res[i];
             }
@@ -556,8 +561,7 @@ impl GbNls {
                 return Ok(Solved::Ok);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }
@@ -765,8 +769,7 @@ impl GbNls {
                 return Ok(Solved::Ok);
             }
             if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
+                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta > self.fnewt)
             {
                 break;
             }
@@ -858,7 +861,9 @@ impl GbNls {
         let s = self.n_stages;
         // Without the tableau's `A_part^-1` there is nothing to invert with, so the
         // iterate's `f(Z)` has to do. Every FIRK method in `tableau_data` has one.
-        let Some(tr) = t.t_transform.as_ref() else { return Ok(()) };
+        let Some(tr) = t.t_transform.as_ref() else {
+            return Ok(());
+        };
         let sr = tr.size;
         let off = usize::from(tr.first_row_zero);
         // An explicit first stage is `Z_1 = yOld`, `k_1 = f(t, yOld)`.
@@ -919,7 +924,11 @@ impl GbNls {
     ) -> Result<()> {
         let n = self.n_states;
         let dt_a = t.contractive_dt_a.as_ref().expect("contractive defect without dT_A");
-        let gamma = t.t_transform.as_ref().and_then(|tr| tr.gamma.first().copied()).unwrap_or(1.0);
+        let gamma = t
+            .t_transform
+            .as_ref()
+            .and_then(|tr| tr.gamma.first().copied())
+            .unwrap_or(1.0);
         for i in 0..n {
             let mut acc = 0.0;
             for stage in 0..self.n_stages {
@@ -947,19 +956,17 @@ impl GbNls {
             self.t_real[0].solve(&mut err[..n]);
         } else {
             self.factor_defect(gamma, step_size)?;
-            self.defect_factored.as_mut().expect("solve before factor").solve(&mut err[..n]);
+            self.defect_factored
+                .as_mut()
+                .expect("solve before factor")
+                .solve(&mut err[..n]);
         }
         Ok(())
     }
 
     /// C's `gbInternalContractiveFilterError`: apply one contraction to the
     /// embedded estimate already in `err`.
-    pub(super) fn contractive_filter(
-        &mut self,
-        t: &Tableau,
-        step_size: f64,
-        err: &mut [f64],
-    ) -> Result<()> {
+    pub(super) fn contractive_filter(&mut self, t: &Tableau, step_size: f64, err: &mut [f64]) -> Result<()> {
         let n = self.n_states;
         match t.t_transform.as_ref().and_then(|tr| tr.gamma.first().copied()) {
             // C contracts with the first real block of the T-transform,
@@ -981,7 +988,11 @@ impl GbNls {
             }
             // Without one the system is the DIRK `h*gamma*J - I`, which already is
             // the filter up to sign.
-            None => self.factored.as_mut().expect("solve before factor").solve(&mut err[..n]),
+            None => self
+                .factored
+                .as_mut()
+                .expect("solve before factor")
+                .solve(&mut err[..n]),
         }
         Ok(())
     }
@@ -1005,7 +1016,6 @@ impl GbNls {
     }
 }
 
-
 /// `(M otimes I) * v` for `stack` blocks of `n`: `out_j = sum_l M[j,l] * v_l`,
 /// with `M` in the tableau data's flat `j*stack + l` convention.
 fn kron_vec(m: &[f64], stack: usize, n: usize, v: &[f64], out: &mut [f64]) {
@@ -1023,13 +1033,7 @@ fn kron_vec(m: &[f64], stack: usize, n: usize, v: &[f64], out: &mut [f64]) {
 /// C's `scaled_transform_matvec`: `out += factor * ((Lambda + L) otimes I) * v`,
 /// with the 1x1 real rows, the 2x2 conjugate-pair blocks, and the strictly lower
 /// couplings (`L` packed by row, rows without one skipped via `has_l`).
-fn lambda_l_matvec(
-    tr: &super::tableau::TTransform,
-    n: usize,
-    factor: f64,
-    v: &[f64],
-    out: &mut [f64],
-) {
+fn lambda_l_matvec(tr: &super::tableau::TTransform, n: usize, factor: f64, v: &[f64], out: &mut [f64]) {
     for row in 0..tr.n_real_blocks {
         let a = factor * tr.gamma[tr.real_eigenvalue_index[row]];
         for i in 0..n {

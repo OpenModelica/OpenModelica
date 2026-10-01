@@ -57,13 +57,27 @@ mod rtclock_stub {
     use core::ffi::c_int;
     pub unsafe fn rt_init(_: c_int) {}
     pub unsafe fn rt_clear(_: c_int) {}
-    pub unsafe fn rt_ncall(_: c_int) -> u32 { 0 }
-    pub unsafe fn rt_ncall_total(_: c_int) -> u32 { 0 }
-    pub unsafe fn rt_ncall_min(_: c_int) -> u32 { 0 }
-    pub unsafe fn rt_ncall_max(_: c_int) -> u32 { 0 }
-    pub unsafe fn rt_accumulated(_: c_int) -> f64 { 0.0 }
-    pub unsafe fn rt_max_accumulated(_: c_int) -> f64 { 0.0 }
-    pub unsafe fn rt_total(_: c_int) -> f64 { 0.0 }
+    pub unsafe fn rt_ncall(_: c_int) -> u32 {
+        0
+    }
+    pub unsafe fn rt_ncall_total(_: c_int) -> u32 {
+        0
+    }
+    pub unsafe fn rt_ncall_min(_: c_int) -> u32 {
+        0
+    }
+    pub unsafe fn rt_ncall_max(_: c_int) -> u32 {
+        0
+    }
+    pub unsafe fn rt_accumulated(_: c_int) -> f64 {
+        0.0
+    }
+    pub unsafe fn rt_max_accumulated(_: c_int) -> f64 {
+        0.0
+    }
+    pub unsafe fn rt_total(_: c_int) -> f64 {
+        0.0
+    }
 }
 #[cfg(omc_fmi_runtime)]
 use rtclock_stub::*;
@@ -84,7 +98,11 @@ pub struct CEngine {
 
 impl CEngine {
     pub fn new(rt: RtData) -> Self {
-        CEngine { rt, stage: error_stage::SIMULATION, keep_params: false }
+        CEngine {
+            rt,
+            stage: error_stage::SIMULATION,
+            keep_params: false,
+        }
     }
 
     /// The `modelica_string` behind a string slot (`str_off`/`sparam_off` region).
@@ -92,9 +110,13 @@ impl CEngine {
         let l = &self.rt.layout;
         let md = unsafe { &*(*self.rt.data).modelData };
         let (base, count, arr) = if addr >= l.sparam_off {
-            (l.sparam_off, md.nParametersString, unsafe { (*(*self.rt.data).simulationInfo).stringParameter })
+            (l.sparam_off, md.nParametersString, unsafe {
+                (*(*self.rt.data).simulationInfo).stringParameter
+            })
         } else {
-            (l.str_off, md.nVariablesString, unsafe { (*(*(*self.rt.data).localData)).stringVars })
+            (l.str_off, md.nVariablesString, unsafe {
+                (*(*(*self.rt.data).localData)).stringVars
+            })
         };
         let i = ((addr - base) / 4) as c_long;
         if i >= count || arr.is_null() {
@@ -127,7 +149,11 @@ impl CEngine {
     /// nothing left to retry from.
     fn error_absorbed(stage: i32) -> bool {
         use openmodelica_nls as nls;
-        [nls::ERROR_INTEGRATOR, nls::ERROR_NONLINEARSOLVER, nls::ERROR_SIMULATION_STEP]
+        [
+            nls::ERROR_INTEGRATOR,
+            nls::ERROR_NONLINEARSOLVER,
+            nls::ERROR_SIMULATION_STEP,
+        ]
         .contains(&(stage as u32))
     }
 
@@ -166,10 +192,7 @@ impl CEngine {
     /// Call one `data->callback` entry point under the shim's jump buffer. A
     /// callback the model left null is nothing to do — C's own runtime skips the
     /// optional ones the same way.
-    fn call_cb(
-        &mut self,
-        f: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
-    ) -> Result<()> {
+    fn call_cb(&mut self, f: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>) -> Result<()> {
         let Some(f) = f else { return Ok(()) };
         self.publish();
         let rc = unsafe { omr_protected_call(f, self.rt.data, self.rt.thread_data, self.stage) };
@@ -316,17 +339,20 @@ impl SimEngine for CEngine {
             }
             "functionLocalKnownVars" => self.call_cb(cb.functionLocalKnownVars),
             "functionInitialEquations" => self.call_cb(cb.functionInitialEquations),
-            "functionInitialEquations_lambda0" => {
-                self.call_cb(cb.functionInitialEquations_lambda0)
-            }
+            "functionInitialEquations_lambda0" => self.call_cb(cb.functionInitialEquations_lambda0),
             // The generated body prints the inconsistent equation and returns 1.
             "functionRemovedInitialEquations" => {
-                let Some(f) = cb.functionRemovedInitialEquations else { return Ok(()) };
+                let Some(f) = cb.functionRemovedInitialEquations else {
+                    return Ok(());
+                };
                 self.publish();
-                let rc =
-                    unsafe { omr_protected_call(f, self.rt.data, self.rt.thread_data, self.stage) };
+                let rc = unsafe { omr_protected_call(f, self.rt.data, self.rt.thread_data, self.stage) };
                 self.absorb(rc)?;
-                if rc > 0 { Err(driver::REMOVED_INIT_INCONSISTENT) } else { Ok(()) }
+                if rc > 0 {
+                    Err(driver::REMOVED_INIT_INCONSISTENT)
+                } else {
+                    Ok(())
+                }
             }
             "functionUpdateBoundParameters" => self.call_cb(cb.updateBoundParameters),
             "functionUpdateBoundVariableAttributes" => {
@@ -336,9 +362,7 @@ impl SimEngine for CEngine {
             }
             "functionCheckAsserts" => self.call_cb(cb.checkForAsserts),
             "functionStoreDelayed" => self.call_cb(cb.function_storeDelayed),
-            "functionStoreSpatialDistribution" => {
-                self.call_cb(cb.function_storeSpatialDistribution)
-            }
+            "functionStoreSpatialDistribution" => self.call_cb(cb.function_storeSpatialDistribution),
             // C allocates in `initializeDataStruc` and the model's function only
             // fills; the driver calls this on every initialization attempt, so the
             // allocation belongs with it.
@@ -377,7 +401,9 @@ impl SimEngine for CEngine {
                 Ok(())
             }
             "functionUpdateRelations" => {
-                let Some(f) = cb.function_updateRelations else { return Ok(()) };
+                let Some(f) = cb.function_updateRelations else {
+                    return Ok(());
+                };
                 self.publish();
                 // `evalZeroCross = 0`, the plain relations C's `updateDiscreteSystem`
                 // opens with; the wasm codegen's function computes the same.
@@ -412,14 +438,22 @@ impl SimEngine for CEngine {
             }
             // C's `analyticJacobians[INDEX_JAC_A]` column evaluation; the driver
             // seeds and reads it through the flat window `build_regions` maps.
-            "functionJacA_column" | "functionJacA_constantEqns" | "functionJacADJ_column"
+            "functionJacA_column"
+            | "functionJacA_constantEqns"
+            | "functionJacADJ_column"
             | "functionJacADJ_constantEqns" => {
                 let jac = match name.starts_with("functionJacADJ") {
                     true => crate::data::jac_adj_ptr(self.rt.data),
                     false => crate::data::jac_a_ptr(self.rt.data),
                 };
-                let Some(j) = (unsafe { jac.as_ref() }) else { return Ok(()) };
-                let f = if name.ends_with("_column") { j.evalColumn } else { j.constantEqns };
+                let Some(j) = (unsafe { jac.as_ref() }) else {
+                    return Ok(());
+                };
+                let f = if name.ends_with("_column") {
+                    j.evalColumn
+                } else {
+                    j.constantEqns
+                };
                 let Some(f) = f else { return Ok(()) };
                 self.publish();
                 let ok = crate::support::protected(self.rt.thread_data, self.stage, || {
@@ -441,8 +475,7 @@ impl SimEngine for CEngine {
             // C's `functionJac<X>` (`linearize.cpp`) and `getJacobianMatrix<X>`
             // (`dataReconciliation.cpp`), into the flat window the shared
             // implementation reads the matrix back from.
-            "linearJacA" | "linearJacB" | "linearJacC" | "linearJacD" | "reconJacF"
-            | "reconJacH" => {
+            "linearJacA" | "linearJacB" | "linearJacC" | "linearJacD" | "reconJacF" | "reconJacH" => {
                 let (k, recon) = match crate::datarecon::index_of(name) {
                     Some(k) => (k, true),
                     None => (crate::linearize::index_of(name).unwrap_or(0), false),
@@ -491,15 +524,15 @@ impl SimEngine for CEngine {
     fn call2_raw(&mut self, name: &str, _a: u32, b: u32) -> Result<()> {
         match name {
             driver::MODEL_FN_ZC => {
-                let Some(f) = self.rt.callbacks().function_ZeroCrossings else { return Ok(()) };
+                let Some(f) = self.rt.callbacks().function_ZeroCrossings else {
+                    return Ok(());
+                };
                 self.rt.info().callStatistics.functionZeroCrossings += 1;
                 self.publish();
                 // `b` addresses the flat crossing-value region; C writes straight
                 // into `zeroCrossings` / the probe buffer behind it.
                 let gout = self.gout_ptr(b)?;
-                let rc = unsafe {
-                    omr_protected_call_zc(f, self.rt.data, self.rt.thread_data, gout, self.stage)
-                };
+                let rc = unsafe { omr_protected_call_zc(f, self.rt.data, self.rt.thread_data, gout, self.stage) };
                 self.absorb(rc)
             }
             // C's `evaluateDAEResiduals`, the one entry point `--daeMode` adds; `b`
@@ -531,7 +564,9 @@ impl SimEngine for CEngine {
             // The driver names a sub-clock by its flat index, which is what a wasm
             // module's dispatcher takes; C's takes the `(base, sub)` pair.
             driver::MODEL_FN_UPDATE_SYNC => {
-                let Some(f) = self.rt.callbacks().function_updateSynchronous else { return Ok(()) };
+                let Some(f) = self.rt.callbacks().function_updateSynchronous else {
+                    return Ok(());
+                };
                 self.publish();
                 let (data, thread_data, base) = (self.rt.data, self.rt.thread_data, b as c_long);
                 let ok = crate::support::protected(thread_data, self.stage, || {
@@ -839,8 +874,10 @@ impl CEngine {
         let _ = self.rt.write(l.real_nom_off, &bytes);
         // The integrator's copies: C clamps the nominal away from zero and takes
         // the declared `max` as the difference quotient's bound.
-        let clamped: Vec<u8> =
-            nominal[..n_states].iter().flat_map(|v| v.abs().max(1e-32).to_ne_bytes()).collect();
+        let clamped: Vec<u8> = nominal[..n_states]
+            .iter()
+            .flat_map(|v| v.abs().max(1e-32).to_ne_bytes())
+            .collect();
         let _ = self.rt.write(l.state_nom_off, &clamped);
         let mut maxs = vec![f64::MAX; n_states];
         let mut mins = vec![-f64::MAX; n_states];

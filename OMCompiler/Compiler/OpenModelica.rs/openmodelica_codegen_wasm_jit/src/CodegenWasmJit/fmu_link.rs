@@ -15,7 +15,11 @@ pub(super) fn link_err(e: impl core::fmt::Debug) -> &'static str {
 /// Also the fmi-ls-dae `EnableDAEParameter` value reference, 0 for a model without a DAE
 /// formulation. The synthetic variables follow `CodegenFMU3`: time, then the event
 /// indicators, then (`--daeMode`) the DAE-mode switch and the residuals.
-pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<(Vec<FmiVr>, u32)> {
+pub(super) fn build_fmi_vrs(
+    sim_code: &SimCode::SimCode,
+    map: &SimVarMap,
+    layout: &SimLayout,
+) -> Result<(Vec<FmiVr>, u32)> {
     let sim_code_ref = metamodelica::Ref::new(sim_code.clone());
     use openmodelica_codegen_util::SimCodeCodegenUtil;
     let vars = &sim_code.modelInfo.vars;
@@ -48,7 +52,9 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
     let mut out = Vec::new();
     for sv in all {
         let key = sim_cref_key(&sv.name)?;
-        let Some(slot) = map.vars.get(&key).copied() else { continue };
+        let Some(slot) = map.vars.get(&key).copied() else {
+            continue;
+        };
         let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(&sv, &sim_code_ref)?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
@@ -74,7 +80,9 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
         .chain(lst(&vars.stringAliasVars))
     {
         let key = sim_cref_key(&sv.name)?;
-        let Some(slot) = map.vars.get(&key).copied() else { continue };
+        let Some(slot) = map.vars.get(&key).copied() else {
+            continue;
+        };
         let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(&sv, &sim_code_ref)?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;

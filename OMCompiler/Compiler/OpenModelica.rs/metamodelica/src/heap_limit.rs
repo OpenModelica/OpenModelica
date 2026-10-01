@@ -212,7 +212,11 @@ fn sample_with(extra: usize) {
         AS_FLOOR.store(0, Relaxed);
     }
     let limit = limit.max(FLOOR.load(Relaxed));
-    let as_limit = if as_limit == 0 { 0 } else { as_limit.max(AS_FLOOR.load(Relaxed)) };
+    let as_limit = if as_limit == 0 {
+        0
+    } else {
+        as_limit.max(AS_FLOOR.load(Relaxed))
+    };
     let (used, limit, what) = if limit != 0 && resident > limit {
         (resident, limit, WHAT_RESIDENT)
     } else if as_limit != 0 && mapped > as_limit {
@@ -253,7 +257,11 @@ fn physical_memory() -> usize {
     unsafe {
         let pages = libc::sysconf(libc::_SC_PHYS_PAGES);
         let page = libc::sysconf(libc::_SC_PAGESIZE);
-        if pages > 0 && page > 0 { (pages as usize).saturating_mul(page as usize) } else { 0 }
+        if pages > 0 && page > 0 {
+            (pages as usize).saturating_mul(page as usize)
+        } else {
+            0
+        }
     }
 }
 
@@ -261,9 +269,11 @@ fn physical_memory() -> usize {
 /// have room to allocate. 0 when the limit is unlimited.
 #[cfg(unix)]
 fn address_space_headroom() -> usize {
-    let mut rl = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
-    if unsafe { libc::getrlimit(libc::RLIMIT_AS, &mut rl) } != 0 || rl.rlim_cur == libc::RLIM_INFINITY
-    {
+    let mut rl = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    if unsafe { libc::getrlimit(libc::RLIMIT_AS, &mut rl) } != 0 || rl.rlim_cur == libc::RLIM_INFINITY {
         return 0;
     }
     usize::try_from(rl.rlim_cur).unwrap_or(usize::MAX) / 10 * 9
@@ -295,8 +305,8 @@ fn address_space_headroom() -> usize {
 #[cfg(target_os = "macos")]
 fn footprint() -> (usize, usize) {
     let mut info: libc::mach_task_basic_info = unsafe { std::mem::zeroed() };
-    let mut count = (size_of::<libc::mach_task_basic_info>() / size_of::<libc::natural_t>())
-        as libc::mach_msg_type_number_t;
+    let mut count =
+        (size_of::<libc::mach_task_basic_info>() / size_of::<libc::natural_t>()) as libc::mach_msg_type_number_t;
     let rc = unsafe {
         libc::task_info(
             libc::mach_task_self(),
@@ -313,9 +323,7 @@ fn footprint() -> (usize, usize) {
 
 #[cfg(windows)]
 fn footprint() -> (usize, usize) {
-    use windows_sys::Win32::System::ProcessStatus::{
-        GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS,
-    };
+    use windows_sys::Win32::System::ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS};
     use windows_sys::Win32::System::Threading::GetCurrentProcess;
     let mut c: PROCESS_MEMORY_COUNTERS = unsafe { std::mem::zeroed() };
     c.cb = size_of::<PROCESS_MEMORY_COUNTERS>() as u32;

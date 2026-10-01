@@ -19,9 +19,9 @@
 
 #![allow(non_snake_case)]
 
-use openmodelica_regex::{posix_to_rust, regex_builder};
 /// Re-exported so the wasm-jit codegen keeps naming it `System::Regex`.
 pub use openmodelica_regex::Regex;
+use openmodelica_regex::{posix_to_rust, regex_builder};
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -29,8 +29,8 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::{ArcStr, literal};
+use metamodelica::Result;
 
 use metamodelica::List;
 
@@ -190,13 +190,7 @@ pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
 /// is empty and `nmatch` is 1 on match, 0 otherwise. On a compile error
 /// `nmatch` is 0 and (for `maxMatches > 0`) the error message is the first
 /// element.
-pub fn regex(
-    str: ArcStr,
-    re: ArcStr,
-    maxMatches: i32,
-    extended: bool,
-    ignoreCase: bool,
-) -> (i32, List<ArcStr>) {
+pub fn regex(str: ArcStr, re: ArcStr, maxMatches: i32, extended: bool, ignoreCase: bool) -> (i32, List<ArcStr>) {
     fn list_forward(items: Vec<ArcStr>) -> List<ArcStr> {
         let mut res = metamodelica::nil();
         for it in items.into_iter().rev() {
@@ -255,7 +249,9 @@ pub fn regex(
 }
 
 pub fn strncmp(inString1: ArcStr, inString2: ArcStr, len: i32) -> i32 {
-    if len <= 0 { return 0; }
+    if len <= 0 {
+        return 0;
+    }
     let n = len as usize;
     let a = inString1.as_bytes();
     let b = inString2.as_bytes();
@@ -399,9 +395,16 @@ const DEFAULT_LINKER: &str = if cfg!(windows) {
 /// x86-only tuning for the generated simulation code. Passing it anywhere else
 /// fails the build: clang answers `-mfpmath=sse` with "unknown FP unit 'sse'",
 /// which is every C-target simulation on Apple Silicon and on aarch64 Linux.
-const X86_CFLAGS: &str = if cfg!(target_arch = "x86_64") { " -mfpmath=sse" } else { "" };
-const X86_CFLAGS_WINDOWS: &str =
-    if cfg!(target_arch = "x86_64") { " -mstackrealign -msse2 -mfpmath=sse" } else { "" };
+const X86_CFLAGS: &str = if cfg!(target_arch = "x86_64") {
+    " -mfpmath=sse"
+} else {
+    ""
+};
+const X86_CFLAGS_WINDOWS: &str = if cfg!(target_arch = "x86_64") {
+    " -mstackrealign -msse2 -mfpmath=sse"
+} else {
+    ""
+};
 
 const DEFAULT_CFLAGS: &str = if cfg!(windows) {
     const_str::concat!(
@@ -427,21 +430,33 @@ pub fn setCCompiler(inString: ArcStr) {
 }
 pub fn getCCompiler() -> ArcStr {
     let v = with(|s| s.cc.clone());
-    if v.is_empty() { ArcStr::from(DEFAULT_CC) } else { ArcStr::from(v) }
+    if v.is_empty() {
+        ArcStr::from(DEFAULT_CC)
+    } else {
+        ArcStr::from(v)
+    }
 }
 pub fn setCFlags(inString: ArcStr) {
     with(|s| s.cflags = inString.to_string());
 }
 pub fn getCFlags() -> ArcStr {
     let v = with(|s| s.cflags.clone());
-    if v.is_empty() { ArcStr::from(DEFAULT_CFLAGS) } else { ArcStr::from(v) }
+    if v.is_empty() {
+        ArcStr::from(DEFAULT_CFLAGS)
+    } else {
+        ArcStr::from(v)
+    }
 }
 pub fn setCXXCompiler(inString: ArcStr) {
     with(|s| s.cxx = inString.to_string());
 }
 pub fn getCXXCompiler() -> ArcStr {
     let v = with(|s| s.cxx.clone());
-    if v.is_empty() { ArcStr::from(DEFAULT_CXX) } else { ArcStr::from(v) }
+    if v.is_empty() {
+        ArcStr::from(DEFAULT_CXX)
+    } else {
+        ArcStr::from(v)
+    }
 }
 pub fn getOMPCCompiler() -> ArcStr {
     ArcStr::from(DEFAULT_OMPCC)
@@ -451,14 +466,22 @@ pub fn setLinker(inString: ArcStr) {
 }
 pub fn getLinker() -> ArcStr {
     let v = with(|s| s.linker.clone());
-    if v.is_empty() { ArcStr::from(DEFAULT_LINKER) } else { ArcStr::from(v) }
+    if v.is_empty() {
+        ArcStr::from(DEFAULT_LINKER)
+    } else {
+        ArcStr::from(v)
+    }
 }
 pub fn setLDFlags(inString: ArcStr) {
     with(|s| s.ldflags = inString.to_string());
 }
 pub fn getLDFlags() -> ArcStr {
     let v = with(|s| s.ldflags.clone());
-    if v.is_empty() { ArcStr::from(DEFAULT_LDFLAGS) } else { ArcStr::from(v) }
+    if v.is_empty() {
+        ArcStr::from(DEFAULT_LDFLAGS)
+    } else {
+        ArcStr::from(v)
+    }
 }
 
 // ───────────────────────────────── dynamic library loading ────────────────────
@@ -503,10 +526,9 @@ pub fn appendFile(file: ArcStr, data: ArcStr) -> Result<()> {
 }
 
 pub fn readFile(inString: ArcStr) -> Result<ArcStr> {
-    let bytes = openmodelica_wasi::fs::read(inString.as_str())
-        .map_err(|_| "System.readFile: cannot read {inString}")?;
-    let s = String::from_utf8(bytes)
-        .map_err(|_| "System.readFile: {inString} is not valid UTF-8")?;
+    let bytes =
+        openmodelica_wasi::fs::read(inString.as_str()).map_err(|_| "System.readFile: cannot read {inString}")?;
+    let s = String::from_utf8(bytes).map_err(|_| "System.readFile: {inString} is not valid UTF-8")?;
     Ok(ArcStr::from(s))
 }
 
@@ -591,14 +613,14 @@ pub fn popen(command: ArcStr) -> (ArcStr, i32) {
     }
     #[cfg(not(windows))]
     {
-    use std::process::Command;
-    match Command::new("/bin/sh").arg("-c").arg(command.as_str()).output() {
-        Ok(o) => {
-            let out = String::from_utf8_lossy(&o.stdout).into_owned();
-            (ArcStr::from(out), o.status.code().unwrap_or(-1))
+        use std::process::Command;
+        match Command::new("/bin/sh").arg("-c").arg(command.as_str()).output() {
+            Ok(o) => {
+                let out = String::from_utf8_lossy(&o.stdout).into_owned();
+                (ArcStr::from(out), o.status.code().unwrap_or(-1))
+            }
+            Err(_) => (literal!(""), -1),
         }
-        Err(_) => (literal!(""), -1),
-    }
     }
 }
 
@@ -620,12 +642,14 @@ pub fn systemCallParallel(inStrings: List<ArcStr>, numThreads: i32) -> List<i32>
     let results: Vec<AtomicI32> = calls.iter().map(|_| AtomicI32::new(-1)).collect();
     std::thread::scope(|scope| {
         for _ in 0..threads {
-            scope.spawn(|| loop {
-                let i = next.fetch_add(1, Ordering::Relaxed);
-                if i >= calls.len() {
-                    break;
+            scope.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, Ordering::Relaxed);
+                    if i >= calls.len() {
+                        break;
+                    }
+                    results[i].store(systemCall(calls[i].clone(), literal!("")), Ordering::Relaxed);
                 }
-                results[i].store(systemCall(calls[i].clone(), literal!("")), Ordering::Relaxed);
             });
         }
     });
@@ -663,11 +687,24 @@ pub fn spawnCall(_path: ArcStr, _str: ArcStr) -> i32 {
 pub type PlotCallback = unsafe extern "C" fn(
     *mut std::ffi::c_void,
     core::ffi::c_int,
-    *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char,
-    *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char,
-    *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char,
-    *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char, *const core::ffi::c_char,
-    *const core::ffi::c_char, *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
 );
 
 /// Matches the C `LoadModelCallback`: the host class pointer and a model name.
@@ -690,16 +727,19 @@ static LOAD_CB: std::sync::Mutex<Option<LoadReg>> = std::sync::Mutex::new(None);
 /// ABI-identical to the function pointer, so a null pointer arrives as `None`.
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_set_plot_callback(class_ptr: *mut std::ffi::c_void, cb: Option<PlotCallback>) {
-    *PLOT_CB.lock().unwrap() = cb.map(|cb| PlotReg { class_ptr: class_ptr as usize, cb });
+    *PLOT_CB.lock().unwrap() = cb.map(|cb| PlotReg {
+        class_ptr: class_ptr as usize,
+        cb,
+    });
 }
 
 /// Register (or clear) the loadModel callback. See [`omc_set_plot_callback`].
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_set_loadmodel_callback(
-    class_ptr: *mut std::ffi::c_void,
-    cb: Option<LoadModelCallback>,
-) {
-    *LOAD_CB.lock().unwrap() = cb.map(|cb| LoadReg { class_ptr: class_ptr as usize, cb });
+pub extern "C" fn omc_set_loadmodel_callback(class_ptr: *mut std::ffi::c_void, cb: Option<LoadModelCallback>) {
+    *LOAD_CB.lock().unwrap() = cb.map(|cb| LoadReg {
+        class_ptr: class_ptr as usize,
+        cb,
+    });
 }
 
 pub fn plotCallBackDefined() -> bool {
@@ -707,10 +747,25 @@ pub fn plotCallBackDefined() -> bool {
 }
 
 pub fn plotCallBack(
-    externalWindow: bool, filename: ArcStr, title: ArcStr, grid: ArcStr, plotType: ArcStr,
-    logX: ArcStr, logY: ArcStr, xLabel: ArcStr, yLabel: ArcStr, x1: ArcStr, x2: ArcStr,
-    y1: ArcStr, y2: ArcStr, curveWidth: ArcStr, curveStyle: ArcStr, legendPosition: ArcStr,
-    footer: ArcStr, autoScale: ArcStr, variables: ArcStr,
+    externalWindow: bool,
+    filename: ArcStr,
+    title: ArcStr,
+    grid: ArcStr,
+    plotType: ArcStr,
+    logX: ArcStr,
+    logY: ArcStr,
+    xLabel: ArcStr,
+    yLabel: ArcStr,
+    x1: ArcStr,
+    x2: ArcStr,
+    y1: ArcStr,
+    y2: ArcStr,
+    curveWidth: ArcStr,
+    curveStyle: ArcStr,
+    legendPosition: ArcStr,
+    footer: ArcStr,
+    autoScale: ArcStr,
+    variables: ArcStr,
 ) {
     // Copy the (Copy) registration out and release the lock before calling: the
     // host callback may re-enter the compiler, which must not deadlock here.
@@ -720,21 +775,49 @@ pub fn plotCallBack(
     };
     let cs = |s: &str| std::ffi::CString::new(s.replace('\0', " ")).unwrap_or_default();
     let (f, ti, g, pt, lx, ly, xl, yl, a1, a2, b1, b2, cw, cstyle, lp, ft, asc, vars) = (
-        cs(&filename), cs(&title), cs(&grid), cs(&plotType), cs(&logX), cs(&logY),
-        cs(&xLabel), cs(&yLabel), cs(&x1), cs(&x2), cs(&y1), cs(&y2),
-        cs(&curveWidth), cs(&curveStyle), cs(&legendPosition), cs(&footer),
-        cs(&autoScale), cs(&variables),
+        cs(&filename),
+        cs(&title),
+        cs(&grid),
+        cs(&plotType),
+        cs(&logX),
+        cs(&logY),
+        cs(&xLabel),
+        cs(&yLabel),
+        cs(&x1),
+        cs(&x2),
+        cs(&y1),
+        cs(&y2),
+        cs(&curveWidth),
+        cs(&curveStyle),
+        cs(&legendPosition),
+        cs(&footer),
+        cs(&autoScale),
+        cs(&variables),
     );
     // SAFETY: `reg.1` was registered by the host as a valid C callback paired
     // with `reg.0` (its class pointer); the CStrings outlive the call.
     unsafe {
         (reg.1)(
-            reg.0 as *mut std::ffi::c_void, externalWindow as core::ffi::c_int,
-            f.as_ptr(), ti.as_ptr(), g.as_ptr(), pt.as_ptr(),
-            lx.as_ptr(), ly.as_ptr(), xl.as_ptr(), yl.as_ptr(),
-            a1.as_ptr(), a2.as_ptr(), b1.as_ptr(), b2.as_ptr(),
-            cw.as_ptr(), cstyle.as_ptr(), lp.as_ptr(), ft.as_ptr(),
-            asc.as_ptr(), vars.as_ptr(),
+            reg.0 as *mut std::ffi::c_void,
+            externalWindow as core::ffi::c_int,
+            f.as_ptr(),
+            ti.as_ptr(),
+            g.as_ptr(),
+            pt.as_ptr(),
+            lx.as_ptr(),
+            ly.as_ptr(),
+            xl.as_ptr(),
+            yl.as_ptr(),
+            a1.as_ptr(),
+            a2.as_ptr(),
+            b1.as_ptr(),
+            b2.as_ptr(),
+            cw.as_ptr(),
+            cstyle.as_ptr(),
+            lp.as_ptr(),
+            ft.as_ptr(),
+            asc.as_ptr(),
+            vars.as_ptr(),
         );
     }
 }
@@ -783,7 +866,10 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
     for _ in 0..32 {
         let nanos = (openmodelica_wasi::realtime_nanos() % 1_000_000_000) as u32;
         let salt: u32 = with(|s| {
-            s.rng = s.rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s.rng = s
+                .rng
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             (s.rng >> 33) as u32
         });
         let candidate = format!("{inPrefix}{:08x}{:08x}", nanos, salt);
@@ -798,7 +884,7 @@ pub fn createTemporaryDirectory(inPrefix: ArcStr) -> Result<ArcStr> {
             return Ok(ArcStr::from(candidate));
         }
     }
-    return Err("System.createTemporaryDirectory: failed to create unique directory under {inPrefix}")
+    return Err("System.createTemporaryDirectory: failed to create unique directory under {inPrefix}");
 }
 
 pub fn pwd() -> ArcStr {
@@ -855,7 +941,9 @@ pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
         if !overwrite && std::env::var_os(varName.as_str()).is_some() {
             return 0;
         }
-        unsafe { std::env::set_var(varName.as_str(), value.as_str()); }
+        unsafe {
+            std::env::set_var(varName.as_str(), value.as_str());
+        }
         0
     }
 }
@@ -941,7 +1029,11 @@ fn split_version(version: &str) -> ([i64; MODELICAPATH_LEVELS], String, bool) {
         }
     }
     let buf = buf.strip_prefix(' ').unwrap_or(buf);
-    let mut extra = if buf.starts_with('+') { String::new() } else { buf.to_string() };
+    let mut extra = if buf.starts_with('+') {
+        String::new()
+    } else {
+        buf.to_string()
+    };
     if extra.len() >= 2 && extra.ends_with("mo") {
         extra.truncate(extra.len() - 2);
     }
@@ -956,19 +1048,15 @@ fn get_all_modelica_paths(name: &str, mps: &List<ArcStr>) -> Vec<ModelicaPathEnt
     let mut res = Vec::new();
     for mp in &**mps {
         for (file, _) in dir_entries(mp.as_str()) {
-            if !file.starts_with(name)
-                || !matches!(file.as_bytes().get(name.len()), None | Some(b' ') | Some(b'.'))
-            {
+            if !file.starts_with(name) || !matches!(file.as_bytes().get(name.len()), None | Some(b' ') | Some(b'.')) {
                 continue;
             }
-            let is_package_dir = ["package.mo", "package.moc"].iter().any(|pkg| {
-                path_is_file(&format!("{mp}/{file}/{pkg}"))
-            });
+            let is_package_dir = ["package.mo", "package.moc"]
+                .iter()
+                .any(|pkg| path_is_file(&format!("{mp}/{file}/{pkg}")));
             let file_is_dir = if is_package_dir {
                 true
-            } else if (file.ends_with(".mo") || file.ends_with(".moc"))
-                && path_is_file(&format!("{mp}/{file}"))
-            {
+            } else if (file.ends_with(".mo") || file.ends_with(".moc")) && path_is_file(&format!("{mp}/{file}")) {
                 false
             } else {
                 continue;
@@ -980,7 +1068,13 @@ fn get_all_modelica_paths(name: &str, mps: &List<ArcStr>) -> Vec<ModelicaPathEnt
                 }
                 _ => ([0; MODELICAPATH_LEVELS], String::new()),
             };
-            res.push(ModelicaPathEntry { dir: mp.clone(), file, version, version_extra, file_is_dir });
+            res.push(ModelicaPathEntry {
+                dir: mp.clone(),
+                file,
+                version,
+                version_extra,
+                file_is_dir,
+            });
         }
     }
     res
@@ -1055,8 +1149,7 @@ fn load_model_path_single_target<'e>(
         // Note: like the C code, only the first three levels are checked
         // for zero here (a request like "0.0.0.1" takes this branch too).
         if version[..3] == [0, 0, 0] {
-            let entry_extra = if e.version_extra.starts_with('-') && !version_extra.starts_with('-')
-            {
+            let entry_extra = if e.version_extra.starts_with('-') && !version_extra.starts_with('-') {
                 &e.version_extra[1..]
             } else {
                 &e.version_extra
@@ -1065,9 +1158,7 @@ fn load_model_path_single_target<'e>(
                 return Some(e);
             }
         }
-        if version_equal(&e.version, &version, MODELICAPATH_LEVELS)
-            && e.version_extra.starts_with(&version_extra)
-        {
+        if version_equal(&e.version, &version, MODELICAPATH_LEVELS) && e.version_extra.starts_with(&version_extra) {
             return Some(e);
         }
     }
@@ -1123,7 +1214,7 @@ pub fn getLoadModelPath(
             return Ok((e.dir.clone(), ArcStr::from(e.file.clone()), e.file_is_dir));
         }
     }
-    return Err("System.getLoadModelPath: no match for {className} on the MODELICAPATH")
+    return Err("System.getLoadModelPath: no match for {className} on the MODELICAPATH");
 }
 
 pub fn time() -> metamodelica::Real {
@@ -1240,9 +1331,8 @@ fn remove_directory_wild(path: &str) -> bool {
     for entry in entries.flatten() {
         let name = entry.file_name();
         let Some(name) = name.to_str() else { continue };
-        let matches = name.len() >= pat_pre.len() + pat_post.len()
-            && name.starts_with(pat_pre)
-            && name.ends_with(pat_post);
+        let matches =
+            name.len() >= pat_pre.len() + pat_post.len() && name.starts_with(pat_pre) && name.ends_with(pat_post);
         if !matches {
             continue;
         }
@@ -1300,7 +1390,8 @@ pub fn getVariableValue(
 pub fn getFileModificationTime(fileName: ArcStr) -> Option<metamodelica::Real> {
     // The store keeps no timestamps and reports epoch (0) for present files, so
     // callers get Some for present files and None for missing ones.
-    openmodelica_wasi::fs::modified(fileName.as_str()).ok()
+    openmodelica_wasi::fs::modified(fileName.as_str())
+        .ok()
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| metamodelica::OrderedFloat(d.as_secs_f64()))
 }
@@ -1353,22 +1444,38 @@ pub fn getCurrentTimeStr() -> Result<ArcStr> {
 
 macro_rules! flag_pair {
     ($set:ident, $get:ident, $field:ident) => {
-        pub fn $set(v: bool) { with(|s| s.$field = v); }
-        pub fn $get() -> bool { with(|s| s.$field) }
+        pub fn $set(v: bool) {
+            with(|s| s.$field = v);
+        }
+        pub fn $get() -> bool {
+            with(|s| s.$field)
+        }
     };
 }
-flag_pair!(setHasExpandableConnectors,    getHasExpandableConnectors,    has_expandable);
-flag_pair!(setHasOverconstrainedConnectors, getHasOverconstrainedConnectors, has_overconstrained);
-flag_pair!(setPartialInstantiation,       getPartialInstantiation,       partial_instantiation);
-flag_pair!(setHasStreamConnectors,        getHasStreamConnectors,        has_stream);
-flag_pair!(setUsesCardinality,            getUsesCardinality,            uses_cardinality);
-flag_pair!(setHasInnerOuterDefinitions,   getHasInnerOuterDefinitions,   has_inner_outer);
+flag_pair!(setHasExpandableConnectors, getHasExpandableConnectors, has_expandable);
+flag_pair!(
+    setHasOverconstrainedConnectors,
+    getHasOverconstrainedConnectors,
+    has_overconstrained
+);
+flag_pair!(setPartialInstantiation, getPartialInstantiation, partial_instantiation);
+flag_pair!(setHasStreamConnectors, getHasStreamConnectors, has_stream);
+flag_pair!(setUsesCardinality, getUsesCardinality, uses_cardinality);
+flag_pair!(
+    setHasInnerOuterDefinitions,
+    getHasInnerOuterDefinitions,
+    has_inner_outer
+);
 
 // ───────────────────────────────── tmpTick ────────────────────────────────────
 
 fn tick_slot(s: &mut SysState, idx: usize) -> &mut i32 {
-    if s.ticks.len() <= idx { s.ticks.resize(idx + 1, 0); }
-    if s.tick_max.len() <= idx { s.tick_max.resize(idx + 1, 0); }
+    if s.ticks.len() <= idx {
+        s.ticks.resize(idx + 1, 0);
+    }
+    if s.tick_max.len() <= idx {
+        s.tick_max.resize(idx + 1, 0);
+    }
     &mut s.ticks[idx]
 }
 
@@ -1376,7 +1483,9 @@ pub fn tmpTick() -> i32 {
     with(|s| {
         let v = *tick_slot(s, 0);
         s.ticks[0] = v + 1;
-        if s.tick_max[0] < s.ticks[0] { s.tick_max[0] = s.ticks[0]; }
+        if s.tick_max[0] < s.ticks[0] {
+            s.tick_max[0] = s.ticks[0];
+        }
         v
     })
 }
@@ -1394,7 +1503,9 @@ pub fn tmpTickIndex(index: i32) -> i32 {
     with(|s| {
         let v = *tick_slot(s, idx);
         s.ticks[idx] = v + 1;
-        if s.tick_max[idx] < s.ticks[idx] { s.tick_max[idx] = s.ticks[idx]; }
+        if s.tick_max[idx] < s.ticks[idx] {
+            s.tick_max[idx] = s.ticks[idx];
+        }
         v
     })
 }
@@ -1404,7 +1515,9 @@ pub fn tmpTickIndexReserve(index: i32, reserve: i32) -> i32 {
     with(|s| {
         let v = *tick_slot(s, idx);
         s.ticks[idx] = v + reserve;
-        if s.tick_max[idx] < s.ticks[idx] { s.tick_max[idx] = s.ticks[idx]; }
+        if s.tick_max[idx] < s.ticks[idx] {
+            s.tick_max[idx] = s.ticks[idx];
+        }
         v
     })
 }
@@ -1414,7 +1527,9 @@ pub fn tmpTickResetIndex(start: i32, index: i32) {
     with(|s| {
         let _ = tick_slot(s, idx);
         s.ticks[idx] = start;
-        if s.tick_max[idx] < start { s.tick_max[idx] = start; }
+        if s.tick_max[idx] < start {
+            s.tick_max[idx] = start;
+        }
     });
 }
 
@@ -1423,7 +1538,9 @@ pub fn tmpTickSetIndex(start: i32, index: i32) {
     with(|s| {
         let _ = tick_slot(s, idx);
         s.ticks[idx] = start;
-        if s.tick_max[idx] < start { s.tick_max[idx] = start; }
+        if s.tick_max[idx] < start {
+            s.tick_max[idx] = start;
+        }
     });
 }
 
@@ -1449,7 +1566,10 @@ pub fn getuid() -> i32 {
     // matches the runtime well enough for `userIsRoot()` checks because
     // production OMC sessions are never run as root.
     if cfg!(unix) {
-        std::env::var("UID").ok().and_then(|s| s.parse::<i32>().ok()).unwrap_or(1000)
+        std::env::var("UID")
+            .ok()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(1000)
     } else {
         0
     }
@@ -1475,7 +1595,8 @@ pub fn realtimeTock(clockIndex: i32) -> Result<metamodelica::Real> {
     // `System_realtimeTock` answers for a clock whose `rt_ncall` is zero.
     let nanos = with(|s| -> Option<u128> {
         let slot = rt_slot_mut(s, clockIndex);
-        slot.tick.map(|start| openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128)
+        slot.tick
+            .map(|start| openmodelica_wasi::monotonic_nanos().saturating_sub(start) as u128)
     });
     Ok(metamodelica::OrderedFloat(match nanos {
         Some(n) => n as f64 / 1.0e9,
@@ -1552,11 +1673,9 @@ pub fn getTimerCummulatedTime() -> metamodelica::Real {
     metamodelica::OrderedFloat(with(|s| s.timer_accum))
 }
 pub fn getTimerElapsedTime() -> metamodelica::Real {
-    metamodelica::OrderedFloat(with(|s| {
-        match s.timer_running {
-            Some(t0) => s.timer_accum + openmodelica_wasi::monotonic_nanos().saturating_sub(t0) as f64 / 1.0e9,
-            None => s.timer_accum,
-        }
+    metamodelica::OrderedFloat(with(|s| match s.timer_running {
+        Some(t0) => s.timer_accum + openmodelica_wasi::monotonic_nanos().saturating_sub(t0) as f64 / 1.0e9,
+        None => s.timer_accum,
     }))
 }
 pub fn getTimerStackIndex() -> i32 {
@@ -1571,7 +1690,10 @@ pub fn getUUIDStr() -> ArcStr {
     // the use case (temp directory naming, error report IDs).
     let (a, b) = with(|s| {
         let mut step = || {
-            s.rng = s.rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            s.rng = s
+                .rng
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             s.rng
         };
         (step(), step())
@@ -1615,7 +1737,7 @@ pub fn escapedString(unescapedString: ArcStr, unescapeNewline: bool) -> ArcStr {
     let mut out = String::with_capacity(unescapedString.len());
     for c in unescapedString.chars() {
         match c {
-            '"'  => out.push_str("\\\""),
+            '"' => out.push_str("\\\""),
             '\\' => out.push_str("\\\\"),
             '\x07' => out.push_str("\\a"),
             '\x08' => out.push_str("\\b"),
@@ -1633,7 +1755,10 @@ pub fn unescapedString(escapedString: ArcStr) -> ArcStr {
     let mut out = String::with_capacity(escapedString.len());
     let mut chars = escapedString.chars();
     while let Some(c) = chars.next() {
-        if c != '\\' { out.push(c); continue; }
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
         match chars.next() {
             Some('n') => out.push('\n'),
             Some('t') => out.push('\t'),
@@ -1647,7 +1772,10 @@ pub fn unescapedString(escapedString: ArcStr) -> ArcStr {
             Some('\'') => out.push('\''),
             Some('?') => out.push('?'),
             Some('0') => out.push('\0'),
-            Some(other) => { out.push('\\'); out.push(other); }
+            Some(other) => {
+                out.push('\\');
+                out.push(other);
+            }
             None => out.push('\\'),
         }
     }
@@ -1661,8 +1789,15 @@ pub fn unescapedStringLength(unescapedString: ArcStr) -> i32 {
     let mut len: i32 = 0;
     let mut chars = unescapedString.chars();
     while let Some(c) = chars.next() {
-        if c != '\\' { len += 1; continue; }
-        if chars.next().is_some() { len += 1; } else { len += 1; }
+        if c != '\\' {
+            len += 1;
+            continue;
+        }
+        if chars.next().is_some() {
+            len += 1;
+        } else {
+            len += 1;
+        }
     }
     len
 }
@@ -1717,10 +1852,7 @@ fn decode_uri_component(src: &str) -> String {
     while i < bytes.len() {
         match bytes[i] {
             b'+' => out.push(b' '),
-            b'%' if i + 2 < bytes.len()
-                && bytes[i + 1].is_ascii_hexdigit()
-                && bytes[i + 2].is_ascii_hexdigit() =>
-            {
+            b'%' if i + 2 < bytes.len() && bytes[i + 1].is_ascii_hexdigit() && bytes[i + 2].is_ascii_hexdigit() => {
                 let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap();
                 out.push(u8::from_str_radix(hex, 16).unwrap());
                 i += 2;
@@ -1779,7 +1911,7 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
         return Ok((literal!("file://"), literal!(""), ArcStr::from(path)));
     }
     add_scripting_error("Unknown uri: %s", &uri);
-    return Err("Unknown uri: {uri}")
+    return Err("Unknown uri: {uri}");
 }
 
 /// `@MODELICA_SPEC_PLATFORM@`: the Modelica spec's `<os><bitness>`. macOS is
@@ -1852,7 +1984,11 @@ pub fn gccDumpMachine() -> ArcStr {
 
 pub fn gccVersion() -> ArcStr {
     let version = option_env!("OMC_GCC_VERSION").unwrap_or("");
-    ArcStr::from(if cfg!(all(windows, target_env = "gnu")) { version } else { "" })
+    ArcStr::from(if cfg!(all(windows, target_env = "gnu")) {
+        version
+    } else {
+        ""
+    })
 }
 
 // ───────────────────────────────── LAPACK / iconv / printf ───────────────────
@@ -2055,16 +2191,14 @@ pub fn snprintff(format: ArcStr, maxlen: i32, val: metamodelica::Real) -> Result
     // so for now we honour the `%.{prec}{spec}` shape most callers use,
     // and fall back to `{:?}` for anything else. The C runtime truncates
     // to maxlen-1 bytes; we mirror that.
-    let formatted = c_format_double(format.as_str(), val.into_inner())
-        .ok_or("System.snprintff: unsupported format")?;
+    let formatted = c_format_double(format.as_str(), val.into_inner()).ok_or("System.snprintff: unsupported format")?;
     let cap = (maxlen.max(0) as usize).saturating_sub(1);
     let truncated: String = formatted.chars().take(cap).collect();
     Ok(ArcStr::from(truncated))
 }
 
 pub fn sprintff(format: ArcStr, val: metamodelica::Real) -> Result<ArcStr> {
-    let s = c_format_double(format.as_str(), val.into_inner())
-        .ok_or("System.sprintff: unsupported format")?;
+    let s = c_format_double(format.as_str(), val.into_inner()).ok_or("System.sprintff: unsupported format")?;
     Ok(ArcStr::from(s))
 }
 
@@ -2088,9 +2222,7 @@ fn decimal_exponent(val: f64, sig: usize) -> i32 {
         return 0;
     }
     let raw = format!("{:.*e}", sig.saturating_sub(1), val);
-    raw.split_once('e')
-        .and_then(|(_, e)| e.parse().ok())
-        .unwrap_or(0)
+    raw.split_once('e').and_then(|(_, e)| e.parse().ok()).unwrap_or(0)
 }
 
 /// Strips trailing zeros (and a trailing decimal point) from the significand of
@@ -2138,7 +2270,9 @@ fn c_format_double(fmt: &str, val: f64) -> Option<String> {
         }
         precision = Some(p.parse().unwrap_or(0));
     }
-    if i >= bytes.len() { return None; }
+    if i >= bytes.len() {
+        return None;
+    }
     let spec = bytes[i] as char;
     let suffix = &fmt[i + 1..];
 
@@ -2157,7 +2291,9 @@ fn c_format_double(fmt: &str, val: f64) -> Option<String> {
             // dangling decimal point) are stripped from the significand.
             let upper = spec == 'G';
             let mut p = precision.unwrap_or(6);
-            if p == 0 { p = 1; }
+            if p == 0 {
+                p = 1;
+            }
             let x = decimal_exponent(val, p);
             let mut s = if x >= -4 && (x as i64) < p as i64 {
                 let prec = (p as i32 - 1 - x).max(0) as usize;
@@ -2177,8 +2313,16 @@ fn c_format_double(fmt: &str, val: f64) -> Option<String> {
     let padded = match pad_to {
         Some(w) if body.len() < w => {
             let fill = w - body.len();
-            let pad: String = if flags.contains('0') { "0".repeat(fill) } else { " ".repeat(fill) };
-            if flags.contains('-') { format!("{body}{pad}") } else { format!("{pad}{body}") }
+            let pad: String = if flags.contains('0') {
+                "0".repeat(fill)
+            } else {
+                " ".repeat(fill)
+            };
+            if flags.contains('-') {
+                format!("{body}{pad}")
+            } else {
+                format!("{pad}{body}")
+            }
         }
         _ => body,
     };
@@ -2188,7 +2332,10 @@ fn c_format_double(fmt: &str, val: f64) -> Option<String> {
 // ───────────────────────────────── randomness ─────────────────────────────────
 
 fn next_rand(s: &mut SysState) -> u64 {
-    s.rng = s.rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+    s.rng = s
+        .rng
+        .wrapping_mul(6364136223846793005)
+        .wrapping_add(1442695040888963407);
     s.rng
 }
 
@@ -2200,7 +2347,9 @@ pub fn realRand() -> metamodelica::Real {
 }
 
 pub fn intRand(n: i32) -> i32 {
-    if n <= 0 { return 0; }
+    if n <= 0 {
+        return 0;
+    }
     let r = with(next_rand);
     (r % n as u64) as i32
 }
@@ -2229,8 +2378,7 @@ pub fn realpath(path: ArcStr) -> Result<ArcStr> {
     return Ok(ArcStr::from(lexical_normalize(path.as_str())));
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let canon = fs::canonicalize(path.as_str())
-            .map_err(|_| "System.realpath: cannot resolve {path}")?;
+        let canon = fs::canonicalize(path.as_str()).map_err(|_| "System.realpath: cannot resolve {path}")?;
         Ok(ArcStr::from(canon.to_string_lossy().as_ref()))
     }
 }
@@ -2268,7 +2416,10 @@ pub fn getSimulationHelpText(_detailed: bool, _sphinx: bool) -> ArcStr {
 pub fn getTerminalWidth() -> i32 {
     // The C runtime probes `TIOCGWINSZ`; without an `ioctl` binding we
     // fall back to the COLUMNS env var, then 80.
-    std::env::var("COLUMNS").ok().and_then(|s| s.parse::<i32>().ok()).unwrap_or(80)
+    std::env::var("COLUMNS")
+        .ok()
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or(80)
 }
 
 pub fn fileIsNewerThan(file1: ArcStr, file2: ArcStr) -> Result<bool> {
@@ -2285,7 +2436,10 @@ pub fn fileIsNewerThan(file1: ArcStr, file2: ArcStr) -> Result<bool> {
 }
 
 pub fn fileContentsEqual(file1: ArcStr, file2: ArcStr) -> bool {
-    match (openmodelica_wasi::fs::read(file1.as_str()), openmodelica_wasi::fs::read(file2.as_str())) {
+    match (
+        openmodelica_wasi::fs::read(file1.as_str()),
+        openmodelica_wasi::fs::read(file2.as_str()),
+    ) {
         (Ok(a), Ok(b)) => a == b,
         _ => false,
     }
@@ -2296,7 +2450,9 @@ pub fn rename(source: ArcStr, dest: ArcStr) -> bool {
 }
 
 pub fn numProcessors() -> i32 {
-    std::thread::available_parallelism().map(|n| n.get() as i32).unwrap_or(1)
+    std::thread::available_parallelism()
+        .map(|n| n.get() as i32)
+        .unwrap_or(1)
 }
 
 pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static>(
@@ -2319,8 +2475,7 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
     // them. A failing task aborts the whole run, mirroring the C version's
     // `MMC_THROW` on a worker failure (here: the first `Err` short-circuits the
     // `collect`).
-    let results: Result<Vec<AnyOutput>> =
-        (&*inData).into_iter().map(|x| func(x.clone())).collect();
+    let results: Result<Vec<AnyOutput>> = (&*inData).into_iter().map(|x| func(x.clone())).collect();
     Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
@@ -2372,7 +2527,13 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
         // `let f = &func` captures the whole SendSync wrapper, not the bare
         // `func.0` field (disjoint capture drops the Send + Sync markers).
         Some(pool) => pool.install(|| {
-            items.into_par_iter().map(|x| { let f = &func; (f.0)(x) }).collect()
+            items
+                .into_par_iter()
+                .map(|x| {
+                    let f = &func;
+                    (f.0)(x)
+                })
+                .collect()
         }),
         None => items.into_iter().map(|x| (func.0)(x)).collect(),
     };
@@ -2391,8 +2552,7 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
 ) -> Result<List<AnyOutput>> {
     // wasm32-unknown-unknown has no OS threads; run serially.
-    let results: Result<Vec<AnyOutput>> =
-        (&*inData).into_iter().map(|x| func(x.clone())).collect();
+    let results: Result<Vec<AnyOutput>> = (&*inData).into_iter().map(|x| func(x.clone())).collect();
     Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
@@ -2455,14 +2615,22 @@ pub fn ctime(t: metamodelica::Real) -> ArcStr {
     // splice it into messages don't get a stray line break.
     let secs = t.into_inner() as i64;
     let (year, mon, mday, hour, min, sec) = epoch_to_civil(secs);
-    let mon_name = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-        .get(mon as usize - 1).copied().unwrap_or("???");
+    let mon_name = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ]
+    .get(mon as usize - 1)
+    .copied()
+    .unwrap_or("???");
     // Day-of-week via Zeller's congruence (Gregorian, 0=Saturday).
-    let (q, m, y) = if mon < 3 { (mday, mon + 12, year - 1) } else { (mday, mon, year) };
+    let (q, m, y) = if mon < 3 {
+        (mday, mon + 12, year - 1)
+    } else {
+        (mday, mon, year)
+    };
     let k = y % 100;
     let j = y / 100;
     let h = (q + (13 * (m + 1)) / 5 + k + k / 4 + j / 4 + 5 * j).rem_euclid(7);
-    let dow = ["Sat","Sun","Mon","Tue","Wed","Thu","Fri"][h as usize];
+    let dow = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"][h as usize];
     ArcStr::from(format!(
         "{dow} {mon_name} {mday:2} {hour:02}:{min:02}:{sec:02} {year:04}"
     ))
@@ -2479,10 +2647,14 @@ pub enum StatFileType {
     SpecialFile = 4,
 }
 impl PartialOrd for StatFileType {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 impl Ord for StatFileType {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { (*self as i32).cmp(&(*other as i32)) }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (*self as i32).cmp(&(*other as i32))
+    }
 }
 
 pub fn stat(filename: ArcStr) -> (bool, metamodelica::Real, metamodelica::Real, StatFileType) {
@@ -2490,11 +2662,17 @@ pub fn stat(filename: ArcStr) -> (bool, metamodelica::Real, metamodelica::Real, 
     let zero = metamodelica::OrderedFloat(0.0);
     if openmodelica_wasi::fs::is_file(f) {
         let size = openmodelica_wasi::fs::len(f).unwrap_or(0) as f64;
-        let mtime = openmodelica_wasi::fs::modified(f).ok()
+        let mtime = openmodelica_wasi::fs::modified(f)
+            .ok()
             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|d| d.as_secs_f64())
             .unwrap_or(0.0);
-        (true, metamodelica::OrderedFloat(size), metamodelica::OrderedFloat(mtime), StatFileType::RegularFile)
+        (
+            true,
+            metamodelica::OrderedFloat(size),
+            metamodelica::OrderedFloat(mtime),
+            StatFileType::RegularFile,
+        )
     } else if openmodelica_wasi::fs::is_dir(f) {
         (true, zero, zero, StatFileType::Directory)
     } else if openmodelica_wasi::fs::exists(f) {
@@ -2531,11 +2709,7 @@ pub fn alarm(seconds: i32) -> i32 {
         unsafe { (*si).si_pid() }
     }
 
-    extern "C" fn alarm_handler(
-        signo: core::ffi::c_int,
-        si: *mut libc::siginfo_t,
-        _ctx: *mut core::ffi::c_void,
-    ) {
+    extern "C" fn alarm_handler(signo: core::ffi::c_int, si: *mut libc::siginfo_t, _ctx: *mut core::ffi::c_void) {
         use std::sync::atomic::Ordering::{Relaxed, SeqCst};
         unsafe {
             // Our own group broadcast coming back, not a second deadline.
@@ -2588,7 +2762,9 @@ pub fn alarm(seconds: i32) -> i32 {
     use std::sync::atomic::{AtomicBool, Ordering};
     static ARMED: AtomicBool = AtomicBool::new(false);
     if seconds > 0
-        && ARMED.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok()
+        && ARMED
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
     {
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_secs(seconds as u64));
@@ -2801,10 +2977,14 @@ pub enum StreamType {
     STDERR = 2,
 }
 impl PartialOrd for StreamType {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 impl Ord for StreamType {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { (*self as i32).cmp(&(*other as i32)) }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (*self as i32).cmp(&(*other as i32))
+    }
 }
 
 pub fn fputs(r#str: ArcStr, streamType: StreamType) -> i32 {

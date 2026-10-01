@@ -1,11 +1,14 @@
 #![allow(unused)]
 
-use std::collections::HashMap;
-use std::collections::BTreeMap;
-use std::sync::Arc;
-use openmodelica_ast::Absyn;
 use crate::MM;
-use crate::hierarchy::{FunctionInput, NameNode, NodeKind, Ty, extract_default_exp, strip_exp_wrappers, lookup_record_through_unions, collect_type_vars_in_ty, collect_type_vars_in_env};
+use crate::hierarchy::{
+    FunctionInput, NameNode, NodeKind, Ty, collect_type_vars_in_env, collect_type_vars_in_ty, extract_default_exp,
+    lookup_record_through_unions, strip_exp_wrappers,
+};
+use openmodelica_ast::Absyn;
+use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 // ── Literal values ────────────────────────────────────────────────────────────
 
@@ -21,22 +24,41 @@ pub enum Lit {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinOpKind {
-    Add, Sub, Mul, Div, Pow,
-    And, Or,
-    Eq, NEq, Lt, LEq, Gt, GEq,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    And,
+    Or,
+    Eq,
+    NEq,
+    Lt,
+    LEq,
+    Gt,
+    GEq,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum UnOpKind { Neg, Not }
+pub enum UnOpKind {
+    Neg,
+    Not,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum MatchKind { Match, MatchContinue }
+pub enum MatchKind {
+    Match,
+    MatchContinue,
+}
 
 /// How multiple iterators in a reduction interact:
 /// - `Combine`: cartesian product (the default; e.g. `f(e for i in xs, j in ys)`).
 /// - `Thread`:  zip (introduced by the `threaded` keyword).
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ReductionIterKind { Combine, Thread }
+pub enum ReductionIterKind {
+    Combine,
+    Thread,
+}
 
 /// One iterator in a reduction. `range` is the source collection, `guard` is an
 /// optional Boolean filter expression evaluated per element.
@@ -89,13 +111,39 @@ pub enum TypedExp {
     /// generator may *move* an owned value here instead of cloning it. Defaults
     /// to `false` (clone) — a freshly synthesised `Var` is always treated as a
     /// non-final use, which is the safe choice.
-    Var { name: String, segments: Vec<CrefSegment>, ty: Ty, last_use: bool },
-    BinOp { op: BinOpKind, lhs: Box<TypedExp>, rhs: Box<TypedExp>, ty: Ty },
-    UnOp { op: UnOpKind, operand: Box<TypedExp>, ty: Ty },
+    Var {
+        name: String,
+        segments: Vec<CrefSegment>,
+        ty: Ty,
+        last_use: bool,
+    },
+    BinOp {
+        op: BinOpKind,
+        lhs: Box<TypedExp>,
+        rhs: Box<TypedExp>,
+        ty: Ty,
+    },
+    UnOp {
+        op: UnOpKind,
+        operand: Box<TypedExp>,
+        ty: Ty,
+    },
     /// A function call. `func` is the dotted MM name (e.g. "List.map", "SOME").
-    Call { func: String, args: Vec<TypedExp>, named_args: Vec<(String, TypedExp)>, ty: Ty, sig_ty: Ty },
+    Call {
+        func: String,
+        args: Vec<TypedExp>,
+        named_args: Vec<(String, TypedExp)>,
+        ty: Ty,
+        sig_ty: Ty,
+    },
     /// A constructor/record literal. `name` is the dotted MM name.
-    Constructor { name: String, args: Vec<TypedExp>, named_args: Vec<(String, TypedExp)>, ty: Ty, field_names: Vec<String> },
+    Constructor {
+        name: String,
+        args: Vec<TypedExp>,
+        named_args: Vec<(String, TypedExp)>,
+        ty: Ty,
+        field_names: Vec<String>,
+    },
     /// Partial function application: `function f(arg1 = e1, arg2 = e2, ...)` —
     /// produces a callable value with the named/positional formals bound and the
     /// remaining formals still open. Lowers to a Rust closure that captures the
@@ -128,16 +176,34 @@ pub enum TypedExp {
         else_: Box<TypedExp>,
         ty: Ty,
     },
-    Cons { head: Box<TypedExp>, tail: Box<TypedExp>, ty: Ty },
+    Cons {
+        head: Box<TypedExp>,
+        tail: Box<TypedExp>,
+        ty: Ty,
+    },
     Tuple(Vec<TypedExp>),
     /// An array/list literal. Empty array = empty list.
-    Array { elems: Vec<TypedExp>, ty: Ty },
+    Array {
+        elems: Vec<TypedExp>,
+        ty: Ty,
+    },
     /// `as_binding` is `Some(name)` when the source wrote `match name as expr ...`,
     /// in which case the scrutinee value must be bound to `name` and visible in
     /// every arm's guard / locals / body / result.
-    Match { kind: MatchKind, input: Box<TypedExp>, cases: Vec<TypedCase>, ty: Ty, as_binding: Option<String> },
+    Match {
+        kind: MatchKind,
+        input: Box<TypedExp>,
+        cases: Vec<TypedCase>,
+        ty: Ty,
+        as_binding: Option<String>,
+    },
     /// `start:stop` or `start:step:stop` — an arithmetic-progression iterator.
-    Range { start: Box<TypedExp>, step: Option<Box<TypedExp>>, stop: Box<TypedExp>, elem_ty: Ty },
+    Range {
+        start: Box<TypedExp>,
+        step: Option<Box<TypedExp>>,
+        stop: Box<TypedExp>,
+        elem_ty: Ty,
+    },
     /// A reduction expression `f(body for iter1 in r1, iter2 in r2, ...)` (or
     /// `threaded for ...` for zip semantics). The reduction is identified by
     /// `func` — either a builtin (`list`, `listReverse`, `sum`, `product`,
@@ -156,24 +222,24 @@ pub enum TypedExp {
 impl TypedExp {
     pub fn ty(&self) -> Ty {
         match self {
-            TypedExp::Lit(Lit::Int(_))  => Ty::I32,
+            TypedExp::Lit(Lit::Int(_)) => Ty::I32,
             TypedExp::Lit(Lit::Real(_)) => Ty::F64,
-            TypedExp::Lit(Lit::Str(_))  => Ty::Str,
+            TypedExp::Lit(Lit::Str(_)) => Ty::Str,
             TypedExp::Lit(Lit::Bool(_)) => Ty::Bool,
-            TypedExp::Var    { ty, .. }  => ty.clone(),
-            TypedExp::BinOp  { ty, .. }  => ty.clone(),
-            TypedExp::UnOp   { ty, .. }  => ty.clone(),
-            TypedExp::Call   { ty, .. }  => ty.clone(),
+            TypedExp::Var { ty, .. } => ty.clone(),
+            TypedExp::BinOp { ty, .. } => ty.clone(),
+            TypedExp::UnOp { ty, .. } => ty.clone(),
+            TypedExp::Call { ty, .. } => ty.clone(),
             TypedExp::Constructor { ty, .. } => ty.clone(),
-            TypedExp::If     { ty, .. }  => ty.clone(),
-            TypedExp::Cons   { ty, .. }  => ty.clone(),
-            TypedExp::Array  { ty, .. }  => ty.clone(),
-            TypedExp::Match  { ty, .. }  => ty.clone(),
-            TypedExp::Range  { elem_ty, .. } => Ty::Range(Box::new(elem_ty.clone())),
+            TypedExp::If { ty, .. } => ty.clone(),
+            TypedExp::Cons { ty, .. } => ty.clone(),
+            TypedExp::Array { ty, .. } => ty.clone(),
+            TypedExp::Match { ty, .. } => ty.clone(),
+            TypedExp::Range { elem_ty, .. } => Ty::Range(Box::new(elem_ty.clone())),
             TypedExp::Reduction { ty, .. } => ty.clone(),
             TypedExp::PartEval { ty, .. } => ty.clone(),
             TypedExp::Tuple(v) => Ty::Tuple(v.iter().map(|e| e.ty()).collect()),
-            TypedExp::Todo(_)  => Ty::Unknown,
+            TypedExp::Todo(_) => Ty::Unknown,
         }
     }
 }
@@ -189,7 +255,10 @@ pub enum TypedPat {
     EmptyList,
     Some_(Box<TypedPat>),
     None_,
-    Cons { head: Box<TypedPat>, tail: Box<TypedPat> },
+    Cons {
+        head: Box<TypedPat>,
+        tail: Box<TypedPat>,
+    },
     Tuple(Vec<TypedPat>),
     /// A constructor/record pattern.
     /// `name` is the dotted MM name; `fields` are positional args; `named_fields` are named args.
@@ -200,12 +269,21 @@ pub enum TypedPat {
         ty: Ty,
     },
     /// `var as pat` — binds `var` to the whole value while also matching `pat`.
-    As { var: String, pat: Box<TypedPat> },
+    As {
+        var: String,
+        pat: Box<TypedPat>,
+    },
     /// Array element access in pattern position (e.g. `arr[1]` on LHS of `:=`).
-    Index { base: TypedExp, index: TypedExp },
+    Index {
+        base: TypedExp,
+        index: TypedExp,
+    },
     /// Field access on a local variable (e.g. `exarray.lastUsedIndex` where `exarray`
     /// is a variable). This must emit as `base.field` not as a let pattern.
-    FieldAccess { base: Box<TypedPat>, field: String },
+    FieldAccess {
+        base: Box<TypedPat>,
+        field: String,
+    },
     Todo(String),
 }
 
@@ -237,14 +315,20 @@ pub fn cref_to_dotted(cref: &Absyn::ComponentRef) -> String {
         // The 2-segment `MetaModelica.arrayCreateNoInit` form appears when the
         // Absyn strips the intermediate `Dangerous` package (as it does for
         // these builtins in SimpleModelicaParser).
-        "MetaModelica.Dangerous.arrayCreateNoInit" | "Dangerous.arrayCreateNoInit" | "MetaModelica.arrayCreateNoInit" => "arrayCreateNoInit".to_owned(),
-        "MetaModelica.Dangerous.listArrayLiteral" | "Dangerous.listArrayLiteral" | "listArrayLiteral" => "listArray".to_owned(),
+        "MetaModelica.Dangerous.arrayCreateNoInit"
+        | "Dangerous.arrayCreateNoInit"
+        | "MetaModelica.arrayCreateNoInit" => "arrayCreateNoInit".to_owned(),
+        "MetaModelica.Dangerous.listArrayLiteral" | "Dangerous.listArrayLiteral" | "listArrayLiteral" => {
+            "listArray".to_owned()
+        }
         // `listAppendDestroy(first, second)` destructively splices `second` onto
         // the end of `first` with no allocation. Kept distinct from `listAppend`
         // (like `arrayCreateNoInit` vs `arrayCreate`) so codegen routes it to the
         // runtime's in-place implementation; only the qualified spelling is
         // normalised to the bare builtin name here.
-        "MetaModelica.Dangerous.listAppendDestroy" | "Dangerous.listAppendDestroy" | "listAppendDestroy" => "listAppendDestroy".to_owned(),
+        "MetaModelica.Dangerous.listAppendDestroy" | "Dangerous.listAppendDestroy" | "listAppendDestroy" => {
+            "listAppendDestroy".to_owned()
+        }
         // OpenModelica scripting builtins. These live in `package OpenModelica
         // package Scripting ... function uriToFilename ... external "builtin"
         // ... end uriToFilename;` in NFModelicaBuiltin.mo, which the codegen
@@ -255,9 +339,9 @@ pub fn cref_to_dotted(cref: &Absyn::ComponentRef) -> String {
         // Absyn parser collapses the intermediate `Scripting` package (and
         // for the matching reference in CevalScriptBackend / NFCeval the
         // shape is consistently shorter than the source spelling).
-        "OpenModelica.Scripting.uriToFilename"
-        | "OpenModelica.uriToFilename"
-        | "Scripting.uriToFilename" => "uriToFilename".to_owned(),
+        "OpenModelica.Scripting.uriToFilename" | "OpenModelica.uriToFilename" | "Scripting.uriToFilename" => {
+            "uriToFilename".to_owned()
+        }
         _ => raw,
     }
 }
@@ -288,7 +372,8 @@ fn collect_cref_segments_rev<'a>(
 ) {
     match cref {
         Absyn::ComponentRef::CREF_IDENT { name, subscripts } => {
-            let subs: Vec<TypedExp> = (&**subscripts).into_iter()
+            let subs: Vec<TypedExp> = (&**subscripts)
+                .into_iter()
                 .filter_map(|s| {
                     if let Absyn::Subscript::SUBSCRIPT { subscript } = s.as_ref() {
                         Some(infer_exp(subscript, env, top_level, pkg_prefix, &[]))
@@ -297,10 +382,18 @@ fn collect_cref_segments_rev<'a>(
                     }
                 })
                 .collect();
-            acc.push(CrefSegment { name: name.to_string(), subscripts: subs });
+            acc.push(CrefSegment {
+                name: name.to_string(),
+                subscripts: subs,
+            });
         }
-        Absyn::ComponentRef::CREF_QUAL { name, subscripts, componentRef } => {
-            let subs: Vec<TypedExp> = (&**subscripts).into_iter()
+        Absyn::ComponentRef::CREF_QUAL {
+            name,
+            subscripts,
+            componentRef,
+        } => {
+            let subs: Vec<TypedExp> = (&**subscripts)
+                .into_iter()
                 .filter_map(|s| {
                     if let Absyn::Subscript::SUBSCRIPT { subscript } = s.as_ref() {
                         Some(infer_exp(subscript, env, top_level, pkg_prefix, &[]))
@@ -309,14 +402,20 @@ fn collect_cref_segments_rev<'a>(
                     }
                 })
                 .collect();
-            acc.push(CrefSegment { name: name.to_string(), subscripts: subs });
+            acc.push(CrefSegment {
+                name: name.to_string(),
+                subscripts: subs,
+            });
             collect_cref_segments_rev(componentRef, env, top_level, pkg_prefix, acc);
         }
         Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef } => {
             collect_cref_segments_rev(componentRef, env, top_level, pkg_prefix, acc);
         }
         Absyn::ComponentRef::WILD | Absyn::ComponentRef::ALLWILD => {
-            acc.push(CrefSegment { name: "_".to_owned(), subscripts: vec![] });
+            acc.push(CrefSegment {
+                name: "_".to_owned(),
+                subscripts: vec![],
+            });
         }
     }
 }
@@ -379,7 +478,11 @@ pub(crate) fn import_target_for_local(import: &Absyn::Import, local: &str) -> Op
                     Absyn::GroupImport::GROUP_IMPORT_RENAME { rename, name } => (&**rename == local, name.to_string()),
                 };
                 if is_match {
-                    return Some(if prefix_str.is_empty() { orig } else { format!("{prefix_str}.{orig}") });
+                    return Some(if prefix_str.is_empty() {
+                        orig
+                    } else {
+                        format!("{prefix_str}.{orig}")
+                    });
                 }
             }
             None
@@ -424,9 +527,10 @@ pub(crate) fn walk_dotted_with_imports<'a>(
             // what we just looked up (e.g. `TOKEN` from `LexerModelicaDiff.filterModelicaDiff.TOKEN`).
             let local = qname.rsplit('.').next().unwrap_or(&qname);
             if let Some(target) = import_target_for_local(&m.import, local)
-                && let Some(r) = walk_dotted_with_imports(&target, top_level, depth + 1) {
-                    return Some(r);
-                }
+                && let Some(r) = walk_dotted_with_imports(&target, top_level, depth + 1)
+            {
+                return Some(r);
+            }
         }
         return Some((qname, node));
     }
@@ -436,15 +540,18 @@ pub(crate) fn walk_dotted_with_imports<'a>(
     let parts: Vec<&str> = dotted.split('.').collect();
     for split in 1..parts.len() {
         let prefix = parts[..split].join(".");
-        let Some(node) = lookup_node(&prefix, top_level) else { continue };
+        let Some(node) = lookup_node(&prefix, top_level) else {
+            continue;
+        };
 
         // For an Import node used as a prefix, the "local" name is the *last
         // segment of the prefix* (which is what the user wrote to refer to it);
         // for GROUP_IMPORT this picks the matching group entry.
         let prefix_local = parts[split - 1];
         let target: Option<String> = match &node.kind {
-            NodeKind::Import(m) => import_target_for_local(&m.import, prefix_local)
-                .or_else(|| import_target_path(&m.import)),
+            NodeKind::Import(m) => {
+                import_target_for_local(&m.import, prefix_local).or_else(|| import_target_path(&m.import))
+            }
             _ => None,
         }
         // Also follow type aliases recorded in the node's resolved type.
@@ -456,7 +563,11 @@ pub(crate) fn walk_dotted_with_imports<'a>(
 
         if let Some(target) = target {
             let rest = parts[split..].join(".");
-            let resolved = if rest.is_empty() { target.clone() } else { format!("{target}.{rest}") };
+            let resolved = if rest.is_empty() {
+                target.clone()
+            } else {
+                format!("{target}.{rest}")
+            };
             if let Some(r) = walk_dotted_with_imports(&resolved, top_level, depth + 1) {
                 return Some(r);
             }
@@ -470,7 +581,8 @@ pub(crate) fn walk_dotted_with_imports<'a>(
             // fail to resolve and the call emits as if `new` were an associated
             // function of `metamodelica::Ref<FunctionTreeImpl::Tree>`.
             if !rest.is_empty()
-                && let Some((parent_target, _)) = target.rsplit_once('.') {
+                && let Some((parent_target, _)) = target.rsplit_once('.')
+            {
                 let alt = format!("{parent_target}.{rest}");
                 if let Some(r) = walk_dotted_with_imports(&alt, top_level, depth + 1) {
                     return Some(r);
@@ -524,17 +636,26 @@ pub fn function_has_multiple_outputs<'a>(
     let Some((_, node)) = resolve_call_node(func, top_level, pkg_prefix) else {
         return false;
     };
-    let NodeKind::Class(c) = &node.kind else { return false; };
+    let NodeKind::Class(c) = &node.kind else {
+        return false;
+    };
     let members = match &c.body {
         crate::MM::ClassDef::Parts { members, .. } | crate::MM::ClassDef::ClassExtends { members, .. } => members,
         _ => return false,
     };
     let mut count: usize = 0;
     for m in members.iter() {
-        let crate::MM::ClassMember::Component(comp) = m else { continue };
-        if matches!(comp.direction, Absyn::Direction::OUTPUT | Absyn::Direction::INPUT_OUTPUT) {
+        let crate::MM::ClassMember::Component(comp) = m else {
+            continue;
+        };
+        if matches!(
+            comp.direction,
+            Absyn::Direction::OUTPUT | Absyn::Direction::INPUT_OUTPUT
+        ) {
             count += 1;
-            if count > 1 { return true; }
+            if count > 1 {
+                return true;
+            }
         }
     }
     false
@@ -625,12 +746,13 @@ pub fn resolve_call_node<'a>(
             if let Some(scope_node) = lookup_node(&scope_path, top_level) {
                 for child in scope_node.children.values() {
                     if let NodeKind::Import(m) = &child.kind
-                        && let Some(target) = import_any_target_path(&m.import) {
-                            let candidate = format!("{target}.{func}");
-                            if let Some(r) = walk_dotted_with_imports(&candidate, top_level, 0) {
-                                return Some(r);
-                            }
+                        && let Some(target) = import_any_target_path(&m.import)
+                    {
+                        let candidate = format!("{target}.{func}");
+                        if let Some(r) = walk_dotted_with_imports(&candidate, top_level, 0) {
+                            return Some(r);
                         }
+                    }
                 }
             }
             if parts.is_empty() {
@@ -657,17 +779,17 @@ fn promote_variant_to_enum_ty(ty: Ty, top_level: &BTreeMap<String, NameNode<'_>>
         // A narrowed variant: `Ty::UnionTypeVariant(parent, _)` is a Rust path
         // (`Parent::Variant`), not a type. The parent enum is the actual type
         // of any value of that variant.
-        Ty::UnionTypeVariant(parent, variant) => {
-            match lookup_ty_in_hierarchy(&parent, top_level) {
-                Ty::RustEnum(_) => Ty::RustEnum(parent),
-                _ => Ty::UnionTypeVariant(parent, variant),
-            }
-        }
+        Ty::UnionTypeVariant(parent, variant) => match lookup_ty_in_hierarchy(&parent, top_level) {
+            Ty::RustEnum(_) => Ty::RustEnum(parent),
+            _ => Ty::UnionTypeVariant(parent, variant),
+        },
         // A record-struct of a multi-record uniontype: hierarchy stores it as
         // `Ty::RustStruct(<variant-qname>)`, which `fmt_ty` would render as the
         // variant path. Promote to the parent's `Ty::RustEnum`.
         Ty::RustStruct(qname) => {
-            let Some((parent, _)) = qname.rsplit_once('.') else { return Ty::RustStruct(qname) };
+            let Some((parent, _)) = qname.rsplit_once('.') else {
+                return Ty::RustStruct(qname);
+            };
             match lookup_ty_in_hierarchy(parent, top_level) {
                 parent_ty @ Ty::RustEnum(_) => parent_ty,
                 _ => Ty::RustStruct(qname),
@@ -677,7 +799,12 @@ fn promote_variant_to_enum_ty(ty: Ty, top_level: &BTreeMap<String, NameNode<'_>>
         // variant-typed expressions (e.g. a reduction body of the form
         // `(DAE.ADD_ARR(...), {at,at}, at)`) infer with the parent enum in
         // every slot rather than the variant path.
-        Ty::Tuple(elems) => Ty::Tuple(elems.into_iter().map(|t| promote_variant_to_enum_ty(t, top_level)).collect()),
+        Ty::Tuple(elems) => Ty::Tuple(
+            elems
+                .into_iter()
+                .map(|t| promote_variant_to_enum_ty(t, top_level))
+                .collect(),
+        ),
         // Same for the element type of a list/array/option/range produced by
         // a constructor expression.
         Ty::List(inner) => Ty::List(Box::new(promote_variant_to_enum_ty(*inner, top_level))),
@@ -735,9 +862,13 @@ fn rewrite_method_call_head<'a>(
 fn lookup_ty_in_hierarchy<'a>(dotted: &str, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Ty {
     let mut parts = dotted.split('.');
     let first = parts.next().unwrap_or("");
-    let Some(mut node) = top_level.get(first) else { return Ty::Unknown };
+    let Some(mut node) = top_level.get(first) else {
+        return Ty::Unknown;
+    };
     for part in parts {
-        let Some(child) = node.children.get(part) else { return Ty::Unknown };
+        let Some(child) = node.children.get(part) else {
+            return Ty::Unknown;
+        };
         node = child;
     }
     node.ty.clone()
@@ -772,7 +903,9 @@ fn canonical_ctor_qname<'a>(
     resolved: &Option<(String, &NameNode<'a>)>,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> String {
-    resolved.as_ref().map(|(q, _)| q.clone())
+    resolved
+        .as_ref()
+        .map(|(q, _)| q.clone())
         .or_else(|| crate::hierarchy::lookup_record_through_unions(func, top_level).map(|(q, _)| q))
         .unwrap_or_else(|| func.to_owned())
 }
@@ -798,24 +931,31 @@ fn generic_constructor_ty<'a>(
     // itself for a top-level generic record). Collect them in declaration order.
     let mut type_vars: Vec<String> = Vec::new();
     if let Some(node) = lookup_node(canonical, top_level)
-        && let NodeKind::Class(c) = &node.kind {
+        && let NodeKind::Class(c) = &node.kind
+    {
         type_vars.extend(crate::hierarchy::class_type_vars(c));
     }
     if let Some((parent, _)) = canonical.rsplit_once('.')
         && let Some(pnode) = lookup_node(parent, top_level)
-        && let NodeKind::Class(pc) = &pnode.kind {
+        && let NodeKind::Class(pc) = &pnode.kind
+    {
         for v in crate::hierarchy::class_type_vars(pc) {
-            if !type_vars.contains(&v) { type_vars.push(v); }
+            if !type_vars.contains(&v) {
+                type_vars.push(v);
+            }
         }
     }
-    if type_vars.is_empty() { return None; }
+    if type_vars.is_empty() {
+        return None;
+    }
     let rust_name = ty_rust_name(base_ty).unwrap_or_else(|| canonical.replace('.', "::"));
     let decl_fields = record_field_tys(canonical, top_level);
     let mut subst: HashMap<String, Ty> = HashMap::new();
     // Positional args align with `field_names` (declaration order).
     for (i, arg) in args.iter().enumerate() {
         if let Some(fname) = field_names.get(i)
-            && let Some((_, fty)) = decl_fields.iter().find(|(n, _)| n == fname) {
+            && let Some((_, fty)) = decl_fields.iter().find(|(n, _)| n == fname)
+        {
             unify_collect(fty, &arg.ty(), &type_vars, &mut subst);
         }
     }
@@ -825,13 +965,16 @@ fn generic_constructor_ty<'a>(
             unify_collect(fty, &v.ty(), &type_vars, &mut subst);
         }
     }
-    let ty_args: Vec<Ty> = type_vars.iter()
+    let ty_args: Vec<Ty> = type_vars
+        .iter()
         .map(|tv| subst.get(tv).cloned().unwrap_or(Ty::Unknown))
         .collect();
     // Only commit to a parameterised type when every parameter was pinned; an
     // `Unknown` arg would render as an invalid type. Falling back to the base
     // type preserves today's behaviour for the unpinnable case.
-    if ty_args.iter().any(|t| matches!(t, Ty::Unknown)) { return None; }
+    if ty_args.iter().any(|t| matches!(t, Ty::Unknown)) {
+        return None;
+    }
     Some(Ty::Generic(rust_name, ty_args))
 }
 
@@ -859,15 +1002,13 @@ fn ty_rust_name(ty: &Ty) -> Option<String> {
 /// and return the package node — whose `.ty` is `Ty::Unknown` for non-record
 /// packages — so for type resolution we walk scopes first and only fall back
 /// to the top level once nothing matches inside any enclosing scope.
-fn resolve_type_name<'a>(
-    name: &str,
-    top_level: &'a BTreeMap<String, NameNode<'a>>,
-    pkg_prefix: &str,
-) -> Ty {
+fn resolve_type_name<'a>(name: &str, top_level: &'a BTreeMap<String, NameNode<'a>>, pkg_prefix: &str) -> Ty {
     // MetaModelica builtin types not declared in any source file. The hierarchy
     // seeds these into a separate `ScopedKnown` map and not into `top_level`,
     // so we resolve them here directly. Mirrors `seed_builtins` in hierarchy.rs.
-    if name == "SourceInfo" { return Ty::RustStruct("SourceInfo".into()) }
+    if name == "SourceInfo" {
+        return Ty::RustStruct("SourceInfo".into());
+    }
     if !pkg_prefix.is_empty() {
         let mut parts: Vec<&str> = pkg_prefix.split('.').collect();
         loop {
@@ -903,37 +1044,57 @@ fn resolve_type_name<'a>(
 /// they are mirrored here.
 pub fn builtin_function_ty(name: &str) -> Option<Ty> {
     let tv = |n: &str| Ty::TypeVar(n.to_owned());
-    let inp = |name: &str, ty: Ty| FunctionInput { name: name.to_owned(), ty, default: None };
+    let inp = |name: &str, ty: Ty| FunctionInput {
+        name: name.to_owned(),
+        ty,
+        default: None,
+    };
     let f = |inputs: Vec<FunctionInput>, output: Ty, type_vars: Vec<String>| -> Ty {
-        Ty::Function { type_vars, inputs, output: Box::new(output), name: None }
+        Ty::Function {
+            type_vars,
+            inputs,
+            output: Box::new(output),
+            name: None,
+        }
     };
     match name {
         // Equality / comparison predicates: (T, T) -> Bool
         // Formal names mirror MetaModelicaBuiltin.mo exactly — they are used to
         // match named-arg partial applications (`function intLt(i2=...)`), so a
         // mismatch silently drops the binding and emits a `todo!()`.
-        "valueEq" | "referenceEq" =>
-            Some(f(vec![inp("a1", tv("T")), inp("a2", tv("T"))], Ty::Bool, vec!["T".to_owned()])),
-        "intEq" | "intNe" | "intLt" | "intLe" | "intGt" | "intGe" =>
-            Some(f(vec![inp("i1", Ty::I32), inp("i2", Ty::I32)], Ty::Bool, vec![])),
-        "realEq" | "realLt" | "realLe" | "realGt" | "realGe" =>
-            Some(f(vec![inp("x1", Ty::F64), inp("x2", Ty::F64)], Ty::Bool, vec![])),
-        "stringEq" | "stringEqual" =>
-            Some(f(vec![inp("s1", Ty::Str), inp("s2", Ty::Str)], Ty::Bool, vec![])),
-        "boolEq" | "boolAnd" | "boolOr" =>
-            Some(f(vec![inp("b1", Ty::Bool), inp("b2", Ty::Bool)], Ty::Bool, vec![])),
-        "boolNot" =>
-            Some(f(vec![inp("b", Ty::Bool)], Ty::Bool, vec![])),
-        "isSome" | "isNone" =>
-            Some(f(vec![inp("opt", Ty::Option(Box::new(tv("T"))))], Ty::Bool, vec!["T".to_owned()])),
-        "listEmpty" =>
-            Some(f(vec![inp("lst", Ty::List(Box::new(tv("T"))))], Ty::Bool, vec!["T".to_owned()])),
+        "valueEq" | "referenceEq" => Some(f(
+            vec![inp("a1", tv("T")), inp("a2", tv("T"))],
+            Ty::Bool,
+            vec!["T".to_owned()],
+        )),
+        "intEq" | "intNe" | "intLt" | "intLe" | "intGt" | "intGe" => {
+            Some(f(vec![inp("i1", Ty::I32), inp("i2", Ty::I32)], Ty::Bool, vec![]))
+        }
+        "realEq" | "realLt" | "realLe" | "realGt" | "realGe" => {
+            Some(f(vec![inp("x1", Ty::F64), inp("x2", Ty::F64)], Ty::Bool, vec![]))
+        }
+        "stringEq" | "stringEqual" => Some(f(vec![inp("s1", Ty::Str), inp("s2", Ty::Str)], Ty::Bool, vec![])),
+        "boolEq" | "boolAnd" | "boolOr" => Some(f(vec![inp("b1", Ty::Bool), inp("b2", Ty::Bool)], Ty::Bool, vec![])),
+        "boolNot" => Some(f(vec![inp("b", Ty::Bool)], Ty::Bool, vec![])),
+        "isSome" | "isNone" => Some(f(
+            vec![inp("opt", Ty::Option(Box::new(tv("T"))))],
+            Ty::Bool,
+            vec!["T".to_owned()],
+        )),
+        "listEmpty" => Some(f(
+            vec![inp("lst", Ty::List(Box::new(tv("T"))))],
+            Ty::Bool,
+            vec!["T".to_owned()],
+        )),
         // `listGet(list<T>, Integer) -> T`. Without this entry the result type
         // is `Ty::Unknown`, which then propagates into surrounding expressions
         // — most visibly into `+` chains where `binop_ty` can no longer route
         // `listGet(strs, i) + listGet(strs, j)` to the ArcStr concat path.
-        "listGet" =>
-            Some(f(vec![inp("lst", Ty::List(Box::new(tv("T")))), inp("index", Ty::I32)], tv("T"), vec!["T".to_owned()])),
+        "listGet" => Some(f(
+            vec![inp("lst", Ty::List(Box::new(tv("T")))), inp("index", Ty::I32)],
+            tv("T"),
+            vec!["T".to_owned()],
+        )),
         // `listHead`/`listFirst` (`list<T> -> T`) and `listRest`/`listTail`
         // (`list<T> -> list<T>`). Declared in MetaModelicaBuiltin.mo. These
         // names also occur as ordinary local variables (e.g. `List.mo`'s
@@ -946,86 +1107,93 @@ pub fn builtin_function_ty(name: &str) -> Option<Ty> {
         // the element type from the concrete argument; the signature here is
         // what lets a bare reference lower to a function pointer and what
         // `builtin_formal_ty` reports as the call-argument formal (`list<T>`).
-        "listHead" | "listFirst" =>
-            Some(f(vec![inp("lst", Ty::List(Box::new(tv("T"))))], tv("T"), vec!["T".to_owned()])),
-        "listRest" | "listTail" =>
-            Some(f(vec![inp("lst", Ty::List(Box::new(tv("T"))))], Ty::List(Box::new(tv("T"))), vec!["T".to_owned()])),
-        "arrayEmpty" =>
-            Some(f(vec![inp("arr", Ty::Array(Box::new(tv("T"))))], Ty::Bool, vec!["T".to_owned()])),
+        "listHead" | "listFirst" => Some(f(
+            vec![inp("lst", Ty::List(Box::new(tv("T"))))],
+            tv("T"),
+            vec!["T".to_owned()],
+        )),
+        "listRest" | "listTail" => Some(f(
+            vec![inp("lst", Ty::List(Box::new(tv("T"))))],
+            Ty::List(Box::new(tv("T"))),
+            vec!["T".to_owned()],
+        )),
+        "arrayEmpty" => Some(f(
+            vec![inp("arr", Ty::Array(Box::new(tv("T"))))],
+            Ty::Bool,
+            vec!["T".to_owned()],
+        )),
         // `arrayGet(array<A>, Integer) -> A`. Needed so a partial application
         // `function arrayGet(arr = ...)` (common as a `List.map` mapper, e.g.
         // HpcOmMemory) resolves its signature and lowers to a real closure
         // rather than a `todo!()`. Formal names mirror MetaModelicaBuiltin.mo.
-        "arrayGet" =>
-            Some(f(vec![inp("arr", Ty::Array(Box::new(tv("A")))), inp("index", Ty::I32)], tv("A"), vec!["A".to_owned()])),
+        "arrayGet" => Some(f(
+            vec![inp("arr", Ty::Array(Box::new(tv("A")))), inp("index", Ty::I32)],
+            tv("A"),
+            vec!["A".to_owned()],
+        )),
 
         // Length-style: container -> Integer
-        "listLength" =>
-            Some(f(vec![inp("lst", Ty::List(Box::new(tv("T"))))], Ty::I32, vec!["T".to_owned()])),
-        "arrayLength" =>
-            Some(f(vec![inp("arr", Ty::Array(Box::new(tv("T"))))], Ty::I32, vec!["T".to_owned()])),
-        "stringLength" =>
-            Some(f(vec![inp("str", Ty::Str)], Ty::I32, vec![])),
+        "listLength" => Some(f(
+            vec![inp("lst", Ty::List(Box::new(tv("T"))))],
+            Ty::I32,
+            vec!["T".to_owned()],
+        )),
+        "arrayLength" => Some(f(
+            vec![inp("arr", Ty::Array(Box::new(tv("T"))))],
+            Ty::I32,
+            vec!["T".to_owned()],
+        )),
+        "stringLength" => Some(f(vec![inp("str", Ty::Str)], Ty::I32, vec![])),
         // OpenModelica.Scripting.uriToFilename — see the cref_to_dotted
         // rewrite above. Signature mirrors the MM declaration in
         // NFModelicaBuiltin.mo: `(String) -> String`.
-        "uriToFilename" =>
-            Some(f(vec![inp("uri", Ty::Str)], Ty::Str, vec![])),
+        "uriToFilename" => Some(f(vec![inp("uri", Ty::Str)], Ty::Str, vec![])),
         // String hashing builtins: String -> Integer. Listed so that bare-CREF
         // references like `(stringHashDjb2, stringEq, ...)` passed to
         // `BaseHashSet::emptyHashSetWork` / `UnorderedMap::new` get wrapped by
         // `fnptr!(stringHashDjb2, ArcStr)` instead of falling through as a
         // value (which the surrounding `Hash<K> = fn(K) -> Result<i32>` slot
         // then rejects).
-        "stringHash" | "stringHashDjb2" | "stringHashSdbm" =>
-            Some(f(vec![inp("str", Ty::Str)], Ty::I32, vec![])),
+        "stringHash" | "stringHashDjb2" | "stringHashSdbm" => Some(f(vec![inp("str", Ty::Str)], Ty::I32, vec![])),
 
         // Arithmetic: (T, T) -> T
-        "intAdd" | "intSub" | "intMul" | "intDiv" | "intMod" | "intMax" | "intMin" =>
-            Some(f(vec![inp("i1", Ty::I32), inp("i2", Ty::I32)], Ty::I32, vec![])),
-        "realAdd" | "realSub" | "realMul" | "realDiv" | "realMax" | "realMin"
-        | "realMod" | "realPow" =>
-            Some(f(vec![inp("r1", Ty::F64), inp("r2", Ty::F64)], Ty::F64, vec![])),
+        "intAdd" | "intSub" | "intMul" | "intDiv" | "intMod" | "intMax" | "intMin" => {
+            Some(f(vec![inp("i1", Ty::I32), inp("i2", Ty::I32)], Ty::I32, vec![]))
+        }
+        "realAdd" | "realSub" | "realMul" | "realDiv" | "realMax" | "realMin" | "realMod" | "realPow" => {
+            Some(f(vec![inp("r1", Ty::F64), inp("r2", Ty::F64)], Ty::F64, vec![]))
+        }
 
         // Numeric coercions
-        "intReal" =>
-            Some(f(vec![inp("i", Ty::I32)], Ty::F64, vec![])),
-        "realInt" =>
-            Some(f(vec![inp("r", Ty::F64)], Ty::I32, vec![])),
+        "intReal" => Some(f(vec![inp("i", Ty::I32)], Ty::F64, vec![])),
+        "realInt" => Some(f(vec![inp("r", Ty::F64)], Ty::I32, vec![])),
 
         // String conversions/concat
-        "intString" =>
-            Some(f(vec![inp("i", Ty::I32)], Ty::Str, vec![])),
-        "realString" =>
-            Some(f(vec![inp("r", Ty::F64)], Ty::Str, vec![])),
-        "boolString" =>
-            Some(f(vec![inp("b", Ty::Bool)], Ty::Str, vec![])),
-        "anyString" =>
-            Some(f(vec![inp("a", tv("T"))], Ty::Str, vec!["T".to_owned()])),
-        "stringAppend" =>
-            Some(f(vec![inp("s1", Ty::Str), inp("s2", Ty::Str)], Ty::Str, vec![])),
+        "intString" => Some(f(vec![inp("i", Ty::I32)], Ty::Str, vec![])),
+        "realString" => Some(f(vec![inp("r", Ty::F64)], Ty::Str, vec![])),
+        "boolString" => Some(f(vec![inp("b", Ty::Bool)], Ty::Str, vec![])),
+        "anyString" => Some(f(vec![inp("a", tv("T"))], Ty::Str, vec!["T".to_owned()])),
+        "stringAppend" => Some(f(vec![inp("s1", Ty::Str), inp("s2", Ty::Str)], Ty::Str, vec![])),
         // `stringDelimitList(list<String>, String) -> String`. Declared in
         // MetaModelicaBuiltin.mo. Listing it here pins the result type so
         // that adjacent `+` chains in user code are typed as Ty::Str and
         // routed to the ArcStr concat path rather than the numeric `+`.
-        "stringDelimitList" =>
-            Some(f(vec![inp("strs", Ty::List(Box::new(Ty::Str))), inp("delimiter", Ty::Str)], Ty::Str, vec![])),
-        "stringAppendList" =>
-            Some(f(vec![inp("strs", Ty::List(Box::new(Ty::Str)))], Ty::Str, vec![])),
+        "stringDelimitList" => Some(f(
+            vec![inp("strs", Ty::List(Box::new(Ty::Str))), inp("delimiter", Ty::Str)],
+            Ty::Str,
+            vec![],
+        )),
+        "stringAppendList" => Some(f(vec![inp("strs", Ty::List(Box::new(Ty::Str)))], Ty::Str, vec![])),
         // `getInstanceName()` — MetaModelicaBuiltin.mo. Lowered to a literal at
         // each call site by `emit_builtin_call` using the enclosing function's
         // qualified name (`GenCtx::current_fn_qname`). Listed here so the
         // result type is known for surrounding expression typing (e.g. it
         // becomes the lhs of a `+ literal!(...)` string concat).
-        "getInstanceName" =>
-            Some(f(vec![], Ty::Str, vec![])),
+        "getInstanceName" => Some(f(vec![], Ty::Str, vec![])),
         // String → number/boolean parsing
-        "stringInt" =>
-            Some(f(vec![inp("str", Ty::Str)], Ty::I32, vec![])),
-        "stringReal" =>
-            Some(f(vec![inp("str", Ty::Str)], Ty::F64, vec![])),
-        "stringBool" =>
-            Some(f(vec![inp("str", Ty::Str)], Ty::Bool, vec![])),
+        "stringInt" => Some(f(vec![inp("str", Ty::Str)], Ty::I32, vec![])),
+        "stringReal" => Some(f(vec![inp("str", Ty::Str)], Ty::F64, vec![])),
+        "stringBool" => Some(f(vec![inp("str", Ty::Str)], Ty::Bool, vec![])),
 
         _ => None,
     }
@@ -1053,17 +1221,23 @@ fn binop_ty(op: BinOpKind, lhs_ty: &Ty, rhs_ty: &Ty) -> Ty {
                 // would fall through to the numeric `+` codegen instead of
                 // the ArcStr concat path. Only valid for Add — Sub/Mul on
                 // strings don't exist in MetaModelica.
-                _ if matches!(op, BinOpKind::Add) && (matches!(lhs_ty, Ty::Str) || matches!(rhs_ty, Ty::Str)) => Ty::Str,
+                _ if matches!(op, BinOpKind::Add) && (matches!(lhs_ty, Ty::Str) || matches!(rhs_ty, Ty::Str)) => {
+                    Ty::Str
+                }
                 (Ty::F64, _) | (_, Ty::F64) => Ty::F64,
                 (Ty::I32, _) | (_, Ty::I32) => Ty::I32,
                 _ => lhs_ty.clone(),
             }
         }
         BinOpKind::Pow => Ty::F64,
-        BinOpKind::And | BinOpKind::Or
-        | BinOpKind::Eq | BinOpKind::NEq
-        | BinOpKind::Lt | BinOpKind::LEq
-        | BinOpKind::Gt | BinOpKind::GEq => Ty::Bool,
+        BinOpKind::And
+        | BinOpKind::Or
+        | BinOpKind::Eq
+        | BinOpKind::NEq
+        | BinOpKind::Lt
+        | BinOpKind::LEq
+        | BinOpKind::Gt
+        | BinOpKind::GEq => Ty::Bool,
     }
 }
 
@@ -1072,17 +1246,38 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
         "SOME" => Ty::Option(Box::new(args.first().map(|a| a.ty()).unwrap_or(Ty::Unknown))),
         "NONE" => Ty::Option(Box::new(Ty::Unknown)),
         "fail" => Ty::Unknown,
-        "intAdd" | "intSub" | "intMul" | "intDiv" | "intMod" | "intAbs"
-        | "intMax" | "intMin" | "intNeg" | "intBitAnd" | "intBitOr" | "intBitXor"
-        | "intBitNot" | "intBitLShift" | "intBitRShift" | "intFromChar"
-        | "stringLength" | "stringCompare" | "stringHash" | "stringHashDjb2"
-        | "stringHashDjb2Continue" | "intHashDjb2Continue"
-        | "stringGet" | "stringInt" | "realInt"
-        | "stringGetNoBoundsChecking" | "Dangerous.stringGetNoBoundsChecking" | "MetaModelica.Dangerous.stringGetNoBoundsChecking"
-        | "arrayLength" | "listLength" => Ty::I32,
-        "realAdd" | "realSub" | "realMul" | "realDiv" | "realAbs"
-        | "realMax" | "realMin" | "realNeg" | "realFloor" | "realCeil"
-        | "realMod" | "realPow" | "intReal" | "stringReal" => Ty::F64,
+        "intAdd"
+        | "intSub"
+        | "intMul"
+        | "intDiv"
+        | "intMod"
+        | "intAbs"
+        | "intMax"
+        | "intMin"
+        | "intNeg"
+        | "intBitAnd"
+        | "intBitOr"
+        | "intBitXor"
+        | "intBitNot"
+        | "intBitLShift"
+        | "intBitRShift"
+        | "intFromChar"
+        | "stringLength"
+        | "stringCompare"
+        | "stringHash"
+        | "stringHashDjb2"
+        | "stringHashDjb2Continue"
+        | "intHashDjb2Continue"
+        | "stringGet"
+        | "stringInt"
+        | "realInt"
+        | "stringGetNoBoundsChecking"
+        | "Dangerous.stringGetNoBoundsChecking"
+        | "MetaModelica.Dangerous.stringGetNoBoundsChecking"
+        | "arrayLength"
+        | "listLength" => Ty::I32,
+        "realAdd" | "realSub" | "realMul" | "realDiv" | "realAbs" | "realMax" | "realMin" | "realNeg" | "realFloor"
+        | "realCeil" | "realMod" | "realPow" | "intReal" | "stringReal" => Ty::F64,
         // Source-level Modelica/MetaModelica math builtins (the bare names, as
         // opposed to the `realFloor`/`realAbs` runtime spellings above). The
         // emission side (`emit_builtin_call`) dispatches these by name with these
@@ -1093,10 +1288,12 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
         // `(I32, _) => I32` arm — which makes a Real context (e.g. `step * (..)`)
         // wrap the whole subexpression in `OrderedFloat((.. ) as f64)`, producing
         // `1 + OrderedFloat<f64>` that fails to compile.
-        "floor" | "ceil" | "sqrt"
-        | "sin" | "cos" | "tan" | "asin" | "acos" | "atan"
-        | "sinh" | "cosh" | "tanh" | "exp" | "log" | "log10"
-            if args.len() == 1 => Ty::F64,
+        "floor" | "ceil" | "sqrt" | "sin" | "cos" | "tan" | "asin" | "acos" | "atan" | "sinh" | "cosh" | "tanh"
+        | "exp" | "log" | "log10"
+            if args.len() == 1 =>
+        {
+            Ty::F64
+        }
         "atan2" if args.len() == 2 => Ty::F64,
         // `integer(Real)` truncates toward -inf, yielding an Integer.
         "integer" if args.len() == 1 => Ty::I32,
@@ -1120,19 +1317,20 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
             }
         }
         "stringBool" => Ty::Bool,
-        "intString" | "realString" | "boolString" | "anyString"
-        | "stringAppend" | "stringCharAt" | "stringGetStringChar" => Ty::Str,
-        "stringEqual" | "stringEq" | "intEq" | "intLt" | "intLe" | "intGt" | "intGe"
-        | "intNe" | "realEq" | "realLt" | "realLe" | "realGt" | "realGe"
-        | "boolAnd" | "boolOr" | "boolNot" | "boolEq"
-        | "referenceEq" | "valueEq" | "isEmpty" | "isSome" | "isNone"
-        | "arrayEmpty" | "listEmpty" => Ty::Bool,
-        "listHead" | "listFirst" | "listGet" => {
-            match args.first().map(|a| a.ty()) {
-                Some(Ty::List(inner)) => *inner,
-                _ => Ty::Unknown,
-            }
-        }
+        "intString"
+        | "realString"
+        | "boolString"
+        | "anyString"
+        | "stringAppend"
+        | "stringCharAt"
+        | "stringGetStringChar" => Ty::Str,
+        "stringEqual" | "stringEq" | "intEq" | "intLt" | "intLe" | "intGt" | "intGe" | "intNe" | "realEq"
+        | "realLt" | "realLe" | "realGt" | "realGe" | "boolAnd" | "boolOr" | "boolNot" | "boolEq" | "referenceEq"
+        | "valueEq" | "isEmpty" | "isSome" | "isNone" | "arrayEmpty" | "listEmpty" => Ty::Bool,
+        "listHead" | "listFirst" | "listGet" => match args.first().map(|a| a.ty()) {
+            Some(Ty::List(inner)) => *inner,
+            _ => Ty::Unknown,
+        },
         "listRest" | "listTail" | "listReverse" | "listAppend" | "listReverseInPlace" | "listAppendDestroy" => {
             args.first().map(|a| a.ty()).unwrap_or(Ty::Unknown)
         }
@@ -1143,43 +1341,36 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
         // spellings here too — otherwise a result flowing into e.g. a `for`
         // loop's iterable would infer as `Unknown`.
         "arrayGet"
-        | "arrayGetNoBoundsChecking" | "Dangerous.arrayGetNoBoundsChecking" | "MetaModelica.Dangerous.arrayGetNoBoundsChecking" => {
-            match args.first().map(|a| a.ty()) {
-                Some(Ty::Array(inner)) => *inner,
-                _ => Ty::Unknown,
-            }
-        }
-        "arrayUpdate" | "arrayCopy"
-        | "arrayUpdateNoBoundsChecking" | "Dangerous.arrayUpdateNoBoundsChecking" | "MetaModelica.Dangerous.arrayUpdateNoBoundsChecking" => {
-            args.first().map(|a| a.ty()).unwrap_or(Ty::Unknown)
-        }
-        "arrayCreate" => {
-            Ty::Array(Box::new(args.get(1).map(|a| a.ty()).unwrap_or(Ty::Unknown)))
-        }
+        | "arrayGetNoBoundsChecking"
+        | "Dangerous.arrayGetNoBoundsChecking"
+        | "MetaModelica.Dangerous.arrayGetNoBoundsChecking" => match args.first().map(|a| a.ty()) {
+            Some(Ty::Array(inner)) => *inner,
+            _ => Ty::Unknown,
+        },
+        "arrayUpdate"
+        | "arrayCopy"
+        | "arrayUpdateNoBoundsChecking"
+        | "Dangerous.arrayUpdateNoBoundsChecking"
+        | "MetaModelica.Dangerous.arrayUpdateNoBoundsChecking" => args.first().map(|a| a.ty()).unwrap_or(Ty::Unknown),
+        "arrayCreate" => Ty::Array(Box::new(args.get(1).map(|a| a.ty()).unwrap_or(Ty::Unknown))),
         // arrayCreateNoInit(size, dummy): element type comes from the dummy
         // witness argument, same as arrayCreate. The dummy is dropped at
         // codegen time; here we still use it for type inference.
-        "arrayCreateNoInit" => {
-            Ty::Array(Box::new(args.get(1).map(|a| a.ty()).unwrap_or(Ty::Unknown)))
-        }
-        "listArray" => {
-            match args.first().map(|a| a.ty()) {
-                Some(Ty::List(inner)) => Ty::Array(inner),
-                _ => Ty::Unknown,
-            }
-        }
+        "arrayCreateNoInit" => Ty::Array(Box::new(args.get(1).map(|a| a.ty()).unwrap_or(Ty::Unknown))),
+        "listArray" => match args.first().map(|a| a.ty()) {
+            Some(Ty::List(inner)) => Ty::Array(inner),
+            _ => Ty::Unknown,
+        },
         // MetaModelica builtin: `stringListStringChar(s)` → `List<String>` of one-char strings.
         // Declared in MetaModelicaBuiltin.mo (`output List<String> chars`); the metamodelica
         // runtime crate exposes it returning `List<ArcStr>` to match the list convention.
         "stringListStringChar" => Ty::List(Box::new(Ty::Str)),
         // `listStringCharString` / `stringCharListString` invert that — list of one-char strings → String.
         "listStringCharString" | "stringCharListString" => Ty::Str,
-        "arrayList" => {
-            match args.first().map(|a| a.ty()) {
-                Some(Ty::Array(inner)) => Ty::List(inner),
-                _ => Ty::Unknown,
-            }
-        }
+        "arrayList" => match args.first().map(|a| a.ty()) {
+            Some(Ty::Array(inner)) => Ty::List(inner),
+            _ => Ty::Unknown,
+        },
         _ => {
             // Resolve bare names against the current package scope so that calls
             // inside a module (e.g. `deleteMemberOnTrue` from inside `List.mo`)
@@ -1190,7 +1381,12 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
                 .map(|(q, _)| q)
                 .unwrap_or_else(|| func.to_owned());
             match lookup_ty_in_hierarchy(&canonical, top_level) {
-                Ty::Function { type_vars, inputs, output, .. } => {
+                Ty::Function {
+                    type_vars,
+                    inputs,
+                    output,
+                    ..
+                } => {
                     // Unify the declared input types with the actual argument types
                     // so that any free type variables in the function signature get
                     // bound to concrete types from the call site. Without this step,
@@ -1212,7 +1408,9 @@ fn call_ty(func: &str, args: &[TypedExp], top_level: &BTreeMap<String, NameNode<
                     }
                     collect_type_vars_in_ty(&output, &mut all_vars);
                     for v in &type_vars {
-                        if !all_vars.contains(v) { all_vars.push(v.clone()); }
+                        if !all_vars.contains(v) {
+                            all_vars.push(v.clone());
+                        }
                     }
                     let mut subst: HashMap<String, Ty> = HashMap::new();
                     for (inp, arg) in inputs.iter().zip(args.iter()) {
@@ -1239,23 +1437,27 @@ pub fn unify_collect(sig: &Ty, actual: &Ty, type_vars: &[String], subst: &mut Ha
             }
         }
         (Ty::Option(a), Ty::Option(b))
-        | (Ty::List(a),   Ty::List(b))
-        | (Ty::Array(a),  Ty::Array(b))
-        | (Ty::Range(a),  Ty::Range(b)) => unify_collect(a, b, type_vars, subst),
+        | (Ty::List(a), Ty::List(b))
+        | (Ty::Array(a), Ty::Array(b))
+        | (Ty::Range(a), Ty::Range(b)) => unify_collect(a, b, type_vars, subst),
         (Ty::Tuple(a), Ty::Tuple(b)) if a.len() == b.len() => {
             for (x, y) in a.iter().zip(b.iter()) {
                 unify_collect(x, y, type_vars, subst);
             }
         }
-        (Ty::Generic(na, aargs), Ty::Generic(nb, bargs))
-            if na == nb && aargs.len() == bargs.len() =>
-        {
+        (Ty::Generic(na, aargs), Ty::Generic(nb, bargs)) if na == nb && aargs.len() == bargs.len() => {
             for (x, y) in aargs.iter().zip(bargs.iter()) {
                 unify_collect(x, y, type_vars, subst);
             }
         }
-        (Ty::Function { inputs: ai, output: ao, .. },
-         Ty::Function { inputs: bi, output: bo, .. }) if ai.len() == bi.len() => {
+        (
+            Ty::Function {
+                inputs: ai, output: ao, ..
+            },
+            Ty::Function {
+                inputs: bi, output: bo, ..
+            },
+        ) if ai.len() == bi.len() => {
             for (x, y) in ai.iter().zip(bi.iter()) {
                 unify_collect(&x.ty, &y.ty, type_vars, subst);
             }
@@ -1267,20 +1469,31 @@ pub fn unify_collect(sig: &Ty, actual: &Ty, type_vars: &[String], subst: &mut Ha
 
 /// Apply a type-variable substitution to a type, recursively.
 pub fn apply_subst(ty: &Ty, subst: &HashMap<String, Ty>) -> Ty {
-    if subst.is_empty() { return ty.clone(); }
+    if subst.is_empty() {
+        return ty.clone();
+    }
     match ty {
         Ty::TypeVar(name) => subst.get(name).cloned().unwrap_or_else(|| ty.clone()),
         Ty::Option(inner) => Ty::Option(Box::new(apply_subst(inner, subst))),
-        Ty::List(inner)   => Ty::List(Box::new(apply_subst(inner, subst))),
-        Ty::Array(inner)  => Ty::Array(Box::new(apply_subst(inner, subst))),
-        Ty::Range(inner)  => Ty::Range(Box::new(apply_subst(inner, subst))),
-        Ty::Tuple(tys)    => Ty::Tuple(tys.iter().map(|t| apply_subst(t, subst)).collect()),
-        Ty::Generic(name, args) =>
-            Ty::Generic(name.clone(), args.iter().map(|t| apply_subst(t, subst)).collect()),
-        Ty::Function { type_vars, inputs, output, name } => Ty::Function {
+        Ty::List(inner) => Ty::List(Box::new(apply_subst(inner, subst))),
+        Ty::Array(inner) => Ty::Array(Box::new(apply_subst(inner, subst))),
+        Ty::Range(inner) => Ty::Range(Box::new(apply_subst(inner, subst))),
+        Ty::Tuple(tys) => Ty::Tuple(tys.iter().map(|t| apply_subst(t, subst)).collect()),
+        Ty::Generic(name, args) => Ty::Generic(name.clone(), args.iter().map(|t| apply_subst(t, subst)).collect()),
+        Ty::Function {
+            type_vars,
+            inputs,
+            output,
+            name,
+        } => Ty::Function {
             type_vars: type_vars.clone(),
-            inputs: inputs.iter()
-                .map(|inp| FunctionInput { name: inp.name.clone(), ty: apply_subst(&inp.ty, subst), default: inp.default.clone() })
+            inputs: inputs
+                .iter()
+                .map(|inp| FunctionInput {
+                    name: inp.name.clone(),
+                    ty: apply_subst(&inp.ty, subst),
+                    default: inp.default.clone(),
+                })
                 .collect(),
             output: Box::new(apply_subst(output, subst)),
             name: name.clone(),
@@ -1365,7 +1578,10 @@ fn resolve_first_segment_type<'a>(
                     subst.insert(name.clone(), actual.clone());
                 }
                 let field_tys = record_field_tys(&dotted, top_level);
-                field_tys.iter().find(|(n, _)| n == &seg.name).map(|(_, t)| apply_subst(t, &subst))
+                field_tys
+                    .iter()
+                    .find(|(n, _)| n == &seg.name)
+                    .map(|(_, t)| apply_subst(t, &subst))
             }
             _ => None,
         };
@@ -1439,7 +1655,10 @@ fn uniontype_variant_field_ty<'a>(
     }
     for child in node.children.values() {
         let NodeKind::Class(rc) = &child.kind else { continue };
-        if !matches!(rc.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
+        if !matches!(
+            rc.restriction,
+            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }
+        ) {
             continue;
         }
         let rec_members: &[MM::ClassMember] = match &rc.body {
@@ -1449,21 +1668,18 @@ fn uniontype_variant_field_ty<'a>(
         for m in rec_members {
             let MM::ClassMember::Component(cm) = m else { continue };
             if cm.name == field
-                && let Some(comp_node) = child.children.get(&cm.name) {
-                    return Some(comp_node.ty.clone());
-                }
+                && let Some(comp_node) = child.children.get(&cm.name)
+            {
+                return Some(comp_node.ty.clone());
+            }
         }
     }
     None
 }
 
-fn record_field_tys<'a>(
-    qname: &str,
-    top_level: &'a BTreeMap<String, NameNode<'a>>,
-) -> Vec<(String, Ty)> {
+fn record_field_tys<'a>(qname: &str, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Vec<(String, Ty)> {
     // Try the direct path first; fall back to looking through uniontype parents.
-    let node = lookup_node(qname, top_level)
-        .or_else(|| lookup_record_through_unions(qname, top_level).map(|(_, n)| n));
+    let node = lookup_node(qname, top_level).or_else(|| lookup_record_through_unions(qname, top_level).map(|(_, n)| n));
     let Some(node) = node else { return vec![] };
     let NodeKind::Class(c) = &node.kind else { return vec![] };
     let members: &[MM::ClassMember] = match &c.body {
@@ -1477,9 +1693,13 @@ fn record_field_tys<'a>(
     // (e.g. a `constant Matching EMPTY_MATCHING = ...`) are NOT record fields,
     // so handle the uniontype case before collecting them.
     if matches!(c.restriction, Absyn::Restriction::R_UNIONTYPE) {
-        let record_children: Vec<&NameNode> = node.children.values()
-            .filter(|child| matches!(&child.kind, NodeKind::Class(cc)
-                if matches!(cc.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. })))
+        let record_children: Vec<&NameNode> = node
+            .children
+            .values()
+            .filter(|child| {
+                matches!(&child.kind, NodeKind::Class(cc)
+                if matches!(cc.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))
+            })
             .collect();
         if record_children.len() == 1 {
             let rec_node = record_children[0];
@@ -1488,21 +1708,27 @@ fn record_field_tys<'a>(
                     MM::ClassDef::Parts { members, .. } | MM::ClassDef::ClassExtends { members, .. } => members,
                     _ => return vec![],
                 };
-                return rec_members.iter().filter_map(|m| {
-                    let MM::ClassMember::Component(cm) = m else { return None };
-                    let child = rec_node.children.get(&cm.name)?;
-                    Some((cm.name.clone(), child.ty.clone()))
-                }).collect();
+                return rec_members
+                    .iter()
+                    .filter_map(|m| {
+                        let MM::ClassMember::Component(cm) = m else { return None };
+                        let child = rec_node.children.get(&cm.name)?;
+                        Some((cm.name.clone(), child.ty.clone()))
+                    })
+                    .collect();
             }
         }
         // Multi-record uniontype has no flat field list.
         return vec![];
     }
-    members.iter().filter_map(|m| {
-        let MM::ClassMember::Component(cm) = m else { return None };
-        let child = node.children.get(&cm.name)?;
-        Some((cm.name.clone(), child.ty.clone()))
-    }).collect()
+    members
+        .iter()
+        .filter_map(|m| {
+            let MM::ClassMember::Component(cm) = m else { return None };
+            let child = node.children.get(&cm.name)?;
+            Some((cm.name.clone(), child.ty.clone()))
+        })
+        .collect()
 }
 
 /// Return the formal type-parameter names declared on a user-defined class
@@ -1510,12 +1736,8 @@ fn record_field_tys<'a>(
 /// `uniontype Mutable<T> ... end Mutable;` the result is `["T"]`. Used to
 /// substitute a generic instantiation's type arguments into the parameter
 /// form of its field declarations when walking field accesses.
-fn class_type_param_names<'a>(
-    qname: &str,
-    top_level: &'a BTreeMap<String, NameNode<'a>>,
-) -> Vec<String> {
-    let node = lookup_node(qname, top_level)
-        .or_else(|| lookup_record_through_unions(qname, top_level).map(|(_, n)| n));
+fn class_type_param_names<'a>(qname: &str, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Vec<String> {
+    let node = lookup_node(qname, top_level).or_else(|| lookup_record_through_unions(qname, top_level).map(|(_, n)| n));
     let Some(node) = node else { return vec![] };
     let NodeKind::Class(c) = &node.kind else { return vec![] };
     match &c.body {
@@ -1524,10 +1746,7 @@ fn class_type_param_names<'a>(
     }
 }
 
-fn lookup_node<'a>(
-    dotted: &str,
-    top_level: &'a BTreeMap<String, NameNode<'a>>,
-) -> Option<&'a NameNode<'a>> {
+fn lookup_node<'a>(dotted: &str, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Option<&'a NameNode<'a>> {
     let mut parts = dotted.split('.');
     let first = parts.next().unwrap_or("");
     let mut node = top_level.get(first)?;
@@ -1552,9 +1771,9 @@ pub fn infer_exp<'a>(
 ) -> TypedExp {
     match exp {
         Absyn::Exp::INTEGER { value } => TypedExp::Lit(Lit::Int(*value)),
-        Absyn::Exp::REAL    { value } => TypedExp::Lit(Lit::Real(value.to_string())),
-        Absyn::Exp::STRING  { value } => TypedExp::Lit(Lit::Str(value.to_string())),
-        Absyn::Exp::BOOL    { value } => TypedExp::Lit(Lit::Bool(*value)),
+        Absyn::Exp::REAL { value } => TypedExp::Lit(Lit::Real(value.to_string())),
+        Absyn::Exp::STRING { value } => TypedExp::Lit(Lit::Str(value.to_string())),
+        Absyn::Exp::BOOL { value } => TypedExp::Lit(Lit::Bool(*value)),
 
         Absyn::Exp::CREF { componentRef } => {
             let (name, segments) = extract_cref_segments(componentRef, env, top_level, pkg_prefix);
@@ -1606,8 +1825,12 @@ pub fn infer_exp<'a>(
                             format!("{}.{name}", parts.join("."))
                         };
                         let t = lookup_ty_in_hierarchy(&prefixed, top_level);
-                        if !matches!(t, Ty::Unknown) { break t; }
-                        if parts.is_empty() { break Ty::Unknown; }
+                        if !matches!(t, Ty::Unknown) {
+                            break t;
+                        }
+                        if parts.is_empty() {
+                            break Ty::Unknown;
+                        }
                         parts.pop();
                     }
                 } else {
@@ -1632,24 +1855,32 @@ pub fn infer_exp<'a>(
             // overriding an in-scope binding. (A name used genuinely as a
             // builtin function pointer — `List.map(lst, listHead)` — is not a
             // local, so it is absent from `env` and still promotes.)
-            let ty = if ty == Ty::Unknown && segments.len() == 1 && !name.contains('.')
-                && !env.contains_key(&name)
-            {
+            let ty = if ty == Ty::Unknown && segments.len() == 1 && !name.contains('.') && !env.contains_key(&name) {
                 builtin_function_ty(&name).unwrap_or(Ty::Unknown)
             } else {
                 ty
             };
-            TypedExp::Var { name, segments, ty, last_use: false }
+            TypedExp::Var {
+                name,
+                segments,
+                ty,
+                last_use: false,
+            }
         }
 
-        Absyn::Exp::BINARY  { exp1, op, exp2 }
-        | Absyn::Exp::LBINARY  { exp1, op, exp2 }
+        Absyn::Exp::BINARY { exp1, op, exp2 }
+        | Absyn::Exp::LBINARY { exp1, op, exp2 }
         | Absyn::Exp::RELATION { exp1, op, exp2 } => {
             let lhs = infer_exp(exp1, env, top_level, pkg_prefix, type_vars);
             let rhs = infer_exp(exp2, env, top_level, pkg_prefix, type_vars);
             let bin_op = absyn_op_to_binop(op);
             let ty = binop_ty(bin_op, &lhs.ty(), &rhs.ty());
-            TypedExp::BinOp { op: bin_op, lhs: Box::new(lhs), rhs: Box::new(rhs), ty }
+            TypedExp::BinOp {
+                op: bin_op,
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                ty,
+            }
         }
 
         Absyn::Exp::UNARY { op, exp } => {
@@ -1660,7 +1891,11 @@ pub fn infer_exp<'a>(
                     if let TypedExp::Lit(Lit::Bool(v)) = &operand {
                         TypedExp::Lit(Lit::Bool(!v))
                     } else {
-                        TypedExp::UnOp { op: UnOpKind::Not, operand: Box::new(operand), ty: Ty::Bool }
+                        TypedExp::UnOp {
+                            op: UnOpKind::Not,
+                            operand: Box::new(operand),
+                            ty: Ty::Bool,
+                        }
                     }
                 }
                 _ => {
@@ -1670,7 +1905,11 @@ pub fn infer_exp<'a>(
                         TypedExp::Lit(Lit::Real(v)) => TypedExp::Lit(Lit::Real(format!("-{v}"))),
                         _ => {
                             let ty = operand.ty();
-                            TypedExp::UnOp { op: UnOpKind::Neg, operand: Box::new(operand), ty }
+                            TypedExp::UnOp {
+                                op: UnOpKind::Neg,
+                                operand: Box::new(operand),
+                                ty,
+                            }
                         }
                     }
                 }
@@ -1683,16 +1922,31 @@ pub fn infer_exp<'a>(
             if let TypedExp::Lit(Lit::Bool(v)) = &operand {
                 TypedExp::Lit(Lit::Bool(!v))
             } else {
-                TypedExp::UnOp { op: UnOpKind::Not, operand: Box::new(operand), ty: Ty::Bool }
+                TypedExp::UnOp {
+                    op: UnOpKind::Not,
+                    operand: Box::new(operand),
+                    ty: Ty::Bool,
+                }
             }
         }
 
-        Absyn::Exp::IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => {
-            let cond  = infer_exp(ifExp, env, top_level, pkg_prefix, type_vars);
+        Absyn::Exp::IFEXP {
+            ifExp,
+            trueBranch,
+            elseBranch,
+            elseIfBranch,
+        } => {
+            let cond = infer_exp(ifExp, env, top_level, pkg_prefix, type_vars);
             let then_ = infer_exp(trueBranch, env, top_level, pkg_prefix, type_vars);
             let else_ = infer_exp(elseBranch, env, top_level, pkg_prefix, type_vars);
-            let elseif: Vec<(TypedExp, TypedExp)> = (&**elseIfBranch).into_iter()
-                .map(|(c, b)| (infer_exp(c.as_ref(), env, top_level, pkg_prefix, type_vars), infer_exp(b.as_ref(), env, top_level, pkg_prefix, type_vars)))
+            let elseif: Vec<(TypedExp, TypedExp)> = (&**elseIfBranch)
+                .into_iter()
+                .map(|(c, b)| {
+                    (
+                        infer_exp(c.as_ref(), env, top_level, pkg_prefix, type_vars),
+                        infer_exp(b.as_ref(), env, top_level, pkg_prefix, type_vars),
+                    )
+                })
                 .collect();
             // Branch-type unification with MetaModelica's implicit first-output
             // coercion: when one branch is a multi-output call (`Ty::Tuple`) and
@@ -1708,12 +1962,28 @@ pub fn infer_exp<'a>(
             let ty = match (then_.ty(), else_.ty()) {
                 (Ty::Tuple(_), other) if !matches!(other, Ty::Tuple(_) | Ty::Unknown) => other,
                 (other, Ty::Tuple(_)) if !matches!(other, Ty::Tuple(_) | Ty::Unknown) => other,
-                _ => if then_.ty() != Ty::Unknown { then_.ty() } else { else_.ty() },
+                _ => {
+                    if then_.ty() != Ty::Unknown {
+                        then_.ty()
+                    } else {
+                        else_.ty()
+                    }
+                }
             };
-            TypedExp::If { cond: Box::new(cond), then_: Box::new(then_), elseif, else_: Box::new(else_), ty }
+            TypedExp::If {
+                cond: Box::new(cond),
+                then_: Box::new(then_),
+                elseif,
+                else_: Box::new(else_),
+                ty,
+            }
         }
 
-        Absyn::Exp::CALL { function_, functionArgs, .. } => {
+        Absyn::Exp::CALL {
+            function_,
+            functionArgs,
+            ..
+        } => {
             let mut func = cref_to_dotted(function_);
             // Method-style call rewriting: `obj.member(args)` where `obj` is a
             // local variable means "call `member` on the type of `obj`". The
@@ -1730,10 +2000,15 @@ pub fn infer_exp<'a>(
             // Detect reduction syntax `f(expr for it in range, ...)` and lower it
             // into a dedicated TypedExp::Reduction node rather than a Call with
             // missing arguments.
-            if let Absyn::FunctionArgs::FOR_ITER_FARG { exp: body_exp, iterType, iterators } = &**functionArgs {
+            if let Absyn::FunctionArgs::FOR_ITER_FARG {
+                exp: body_exp,
+                iterType,
+                iterators,
+            } = &**functionArgs
+            {
                 let iter_kind = match iterType {
                     Absyn::ReductionIterType::COMBINE => ReductionIterKind::Combine,
-                    Absyn::ReductionIterType::THREAD  => ReductionIterKind::Thread,
+                    Absyn::ReductionIterType::THREAD => ReductionIterKind::Thread,
                 };
                 // Build iterators left-to-right; each iterator binds a name visible
                 // to subsequent iterator ranges and the body. We thread `env` so
@@ -1741,7 +2016,11 @@ pub fn infer_exp<'a>(
                 let mut iter_env = env.clone();
                 let mut iters: Vec<ReductionIter> = Vec::new();
                 for it in (&**iterators).into_iter() {
-                    let Absyn::ForIterator { name: it_name, guardExp, range } = &**it;
+                    let Absyn::ForIterator {
+                        name: it_name,
+                        guardExp,
+                        range,
+                    } = &**it;
                     let range_e = match range {
                         Some(r) => infer_exp(r.as_ref(), &iter_env, top_level, pkg_prefix, type_vars),
                         // A reduction iterator without an explicit range is the implicit-array
@@ -1753,8 +2032,15 @@ pub fn infer_exp<'a>(
                         _ => Ty::Unknown,
                     };
                     iter_env.insert(it_name.to_string(), elem_ty.clone());
-                    let guard = guardExp.as_ref().map(|g| infer_exp(g.as_ref(), &iter_env, top_level, pkg_prefix, type_vars));
-                    iters.push(ReductionIter { name: it_name.to_string(), range: range_e, guard, elem_ty });
+                    let guard = guardExp
+                        .as_ref()
+                        .map(|g| infer_exp(g.as_ref(), &iter_env, top_level, pkg_prefix, type_vars));
+                    iters.push(ReductionIter {
+                        name: it_name.to_string(),
+                        range: range_e,
+                        guard,
+                        elem_ty,
+                    });
                 }
                 let body = infer_exp(body_exp.as_ref(), &iter_env, top_level, pkg_prefix, type_vars);
                 // The reduction's result type depends on `func`:
@@ -1782,8 +2068,10 @@ pub fn infer_exp<'a>(
                 // still build `list<tuple<...>>` when intended.
                 let body_ty = match (&body, &raw_body_ty) {
                     (TypedExp::Call { func, .. }, Ty::Tuple(ts))
-                        if !ts.is_empty() && function_has_multiple_outputs(func, top_level, pkg_prefix)
-                        => ts[0].clone(),
+                        if !ts.is_empty() && function_has_multiple_outputs(func, top_level, pkg_prefix) =>
+                    {
+                        ts[0].clone()
+                    }
                     _ => raw_body_ty,
                 };
                 // Per-level reduction result type. `list`/`listReverse` lift the
@@ -1892,16 +2180,23 @@ pub fn infer_exp<'a>(
                     Ty::RustStruct(qname) | Ty::RustEnum(qname) => {
                         record_field_tys(qname, top_level).into_iter().map(|(n, _)| n).collect()
                     }
-                    _ => {
-                        record_field_tys(&canonical, top_level).into_iter().map(|(n, _)| n).collect()
-                    }
+                    _ => record_field_tys(&canonical, top_level)
+                        .into_iter()
+                        .map(|(n, _)| n)
+                        .collect(),
                 };
                 // Bind the parent uniontype's type parameters from the actual
                 // arguments so a generic record (`Slice<T>`) keeps its type
                 // argument in the value's static type (see `generic_constructor_ty`).
-                let ty = generic_constructor_ty(&canonical, &ty, &args, &named_args, &field_names, top_level)
-                    .unwrap_or(ty);
-                TypedExp::Constructor { name: canonical, args, named_args, ty, field_names }
+                let ty =
+                    generic_constructor_ty(&canonical, &ty, &args, &named_args, &field_names, top_level).unwrap_or(ty);
+                TypedExp::Constructor {
+                    name: canonical,
+                    args,
+                    named_args,
+                    ty,
+                    field_names,
+                }
             } else {
                 // A call whose callee is a function-typed LOCAL variable — e.g.
                 // a `partial function` parameter `fun` invoked as `fun()`, as in
@@ -1932,13 +2227,21 @@ pub fn infer_exp<'a>(
                 } else {
                     None
                 };
-                let ty = local_fn_output
-                    .unwrap_or_else(|| call_ty(&func, &args, top_level, pkg_prefix));
-                TypedExp::Call { func, args, named_args, ty, sig_ty }
+                let ty = local_fn_output.unwrap_or_else(|| call_ty(&func, &args, top_level, pkg_prefix));
+                TypedExp::Call {
+                    func,
+                    args,
+                    named_args,
+                    ty,
+                    sig_ty,
+                }
             }
         }
 
-        Absyn::Exp::PARTEVALFUNCTION { function_, functionArgs } => {
+        Absyn::Exp::PARTEVALFUNCTION {
+            function_,
+            functionArgs,
+        } => {
             // `function f(arg = e, ...)`: partial application of `f` with the
             // specified arguments bound. The remaining formals stay open and
             // must be supplied at every later call site.
@@ -1988,14 +2291,25 @@ pub fn infer_exp<'a>(
                 sig_ty
             };
             let ty = match &sig_ty {
-                Ty::Function { type_vars: tvs, inputs, output, .. } => {
+                Ty::Function {
+                    type_vars: tvs,
+                    inputs,
+                    output,
+                    ..
+                } => {
                     let bound_pos = args.len();
                     let bound_named: std::collections::HashSet<&str> =
                         named_args.iter().map(|(n, _)| n.as_str()).collect();
-                    let remaining: Vec<FunctionInput> = inputs.iter().enumerate()
+                    let remaining: Vec<FunctionInput> = inputs
+                        .iter()
+                        .enumerate()
                         .filter_map(|(i, inp)| {
-                            if i < bound_pos { return None; }
-                            if bound_named.contains(inp.name.as_str()) { return None; }
+                            if i < bound_pos {
+                                return None;
+                            }
+                            if bound_named.contains(inp.name.as_str()) {
+                                return None;
+                            }
                             Some(inp.clone())
                         })
                         .collect();
@@ -2010,11 +2324,19 @@ pub fn infer_exp<'a>(
                 }
                 _ => Ty::Unknown,
             };
-            TypedExp::PartEval { func, args, named_args, sig_ty, ty, callee_is_local }
+            TypedExp::PartEval {
+                func,
+                args,
+                named_args,
+                sig_ty,
+                ty,
+                callee_is_local,
+            }
         }
 
         Absyn::Exp::TUPLE { expressions } => {
-            let mut elems: Vec<TypedExp> = (&**expressions).into_iter()
+            let mut elems: Vec<TypedExp> = (&**expressions)
+                .into_iter()
                 .map(|e| infer_exp(e.as_ref(), env, top_level, pkg_prefix, type_vars))
                 .collect();
             // The parser preserves source parentheses as a single-element
@@ -2030,21 +2352,35 @@ pub fn infer_exp<'a>(
         }
 
         Absyn::Exp::ARRAY { arrayExp } => {
-            let elems: Vec<TypedExp> = (&**arrayExp).into_iter()
+            let elems: Vec<TypedExp> = (&**arrayExp)
+                .into_iter()
                 .map(|e| infer_exp(e.as_ref(), env, top_level, pkg_prefix, type_vars))
                 .collect();
             let inner_ty = elems.first().map(|e| e.ty()).unwrap_or(Ty::Unknown);
-            TypedExp::Array { elems, ty: Ty::List(Box::new(inner_ty)) }
+            TypedExp::Array {
+                elems,
+                ty: Ty::List(Box::new(inner_ty)),
+            }
         }
 
         Absyn::Exp::CONS { head, rest } => {
             let head_e = infer_exp(head, env, top_level, pkg_prefix, type_vars);
             let tail_e = infer_exp(rest, env, top_level, pkg_prefix, type_vars);
             let ty = tail_e.ty();
-            TypedExp::Cons { head: Box::new(head_e), tail: Box::new(tail_e), ty }
+            TypedExp::Cons {
+                head: Box::new(head_e),
+                tail: Box::new(tail_e),
+                ty,
+            }
         }
 
-        Absyn::Exp::MATCHEXP { matchTy, inputExp, localDecls, cases, .. } => {
+        Absyn::Exp::MATCHEXP {
+            matchTy,
+            inputExp,
+            localDecls,
+            cases,
+            ..
+        } => {
             // `match id as expr ...` binds the scrutinee to `id` so the arm
             // bodies can refer to the un-decomposed value. Lift the `AS`
             // wrapper out into an explicit `as_binding`; the real scrutinee
@@ -2075,9 +2411,12 @@ pub fn infer_exp<'a>(
             // an environment where the surrounding scope and all match-level
             // locals are visible.  Pattern bindings are *not* — match-level
             // locals are evaluated once per arm entry, before patterns bind.
-            let match_locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)> = match_locals_raw.into_iter()
+            let match_locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)> = match_locals_raw
+                .into_iter()
                 .map(|(n, t, d, ts)| {
-                    let td = d.as_ref().map(|e| infer_exp(e, &case_env, top_level, pkg_prefix, type_vars));
+                    let td = d
+                        .as_ref()
+                        .map(|e| infer_exp(e, &case_env, top_level, pkg_prefix, type_vars));
                     (n, t, td, ts)
                 })
                 .collect();
@@ -2092,9 +2431,7 @@ pub fn infer_exp<'a>(
             // sub-expression would require synthesising a fresh local.
             let scrut_name_owned: Option<String> = match (&as_binding, &input) {
                 (Some(name), _) => Some(name.clone()),
-                (None, TypedExp::Var { segments, .. })
-                    if segments.len() == 1 && segments[0].subscripts.is_empty() =>
-                {
+                (None, TypedExp::Var { segments, .. }) if segments.len() == 1 && segments[0].subscripts.is_empty() => {
                     Some(segments[0].name.clone())
                 }
                 _ => None,
@@ -2113,16 +2450,33 @@ pub fn infer_exp<'a>(
             // typedexp level looks like `i32 + i32` even though the emitted
             // var_field! calls produce mismatched OrderedFloat/i32 operands.
             let tuple_scrutinees: Vec<(String, Ty)> = match &input {
-                TypedExp::Tuple(elems) => elems.iter().filter_map(|e| match e {
-                    TypedExp::Var { segments, ty, .. } if segments.len() == 1 && segments[0].subscripts.is_empty() => {
-                        Some((segments[0].name.clone(), ty.clone()))
-                    }
-                    _ => None,
-                }).collect(),
+                TypedExp::Tuple(elems) => elems
+                    .iter()
+                    .filter_map(|e| match e {
+                        TypedExp::Var { segments, ty, .. }
+                            if segments.len() == 1 && segments[0].subscripts.is_empty() =>
+                        {
+                            Some((segments[0].name.clone(), ty.clone()))
+                        }
+                        _ => None,
+                    })
+                    .collect(),
                 _ => Vec::new(),
             };
-            let typed_cases: Vec<TypedCase> = (&**cases).into_iter()
-                .map(|c| infer_case(c, &case_env, top_level, pkg_prefix, &match_locals, type_vars, scrutinee_for_arm, &tuple_scrutinees))
+            let typed_cases: Vec<TypedCase> = (&**cases)
+                .into_iter()
+                .map(|c| {
+                    infer_case(
+                        c,
+                        &case_env,
+                        top_level,
+                        pkg_prefix,
+                        &match_locals,
+                        type_vars,
+                        scrutinee_for_arm,
+                        &tuple_scrutinees,
+                    )
+                })
                 // An arm matching a retired variant is dead in the Rust port:
                 // the variant is never constructed, and its fields no longer
                 // exist for the pattern to bind. Dropping it here keeps every
@@ -2135,16 +2489,25 @@ pub fn infer_exp<'a>(
             // variant struct (e.g. `Absyn.ClassPart.PUBLIC`), which renders as
             // a variant *path* — not a valid Rust type when this match's value
             // is later used (e.g. as a `list(...)` element type).
-            let ty = typed_cases.iter()
+            let ty = typed_cases
+                .iter()
                 .map(|c| promote_variant_to_enum_ty(c.result.ty(), top_level))
                 .find(|t| *t != Ty::Unknown)
                 .unwrap_or(Ty::Unknown);
-            TypedExp::Match { kind, input: Box::new(input), cases: typed_cases, ty, as_binding }
+            TypedExp::Match {
+                kind,
+                input: Box::new(input),
+                cases: typed_cases,
+                ty,
+                as_binding,
+            }
         }
 
         Absyn::Exp::RANGE { start, step, stop } => {
             let start_e = infer_exp(start, env, top_level, pkg_prefix, type_vars);
-            let step_e = step.as_ref().map(|s| infer_exp(s, env, top_level, pkg_prefix, type_vars));
+            let step_e = step
+                .as_ref()
+                .map(|s| infer_exp(s, env, top_level, pkg_prefix, type_vars));
             let stop_e = infer_exp(stop, env, top_level, pkg_prefix, type_vars);
             let elem_ty = start_e.ty();
             TypedExp::Range {
@@ -2165,9 +2528,7 @@ pub fn infer_exp<'a>(
         // comments anchored to individual expressions in the generated
         // source, extend TypedExp with a `Commented { before, exp, after }`
         // variant and propagate it through `emit_exp`.
-        Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => {
-            infer_exp(exp, env, top_level, pkg_prefix, type_vars)
-        }
+        Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => infer_exp(exp, env, top_level, pkg_prefix, type_vars),
 
         other => TypedExp::Todo(format!("{other:?}").chars().take(80).collect()),
     }
@@ -2182,13 +2543,18 @@ fn extract_call_args<'a>(
 ) -> (Vec<TypedExp>, Vec<(String, TypedExp)>) {
     match function_args {
         Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } => {
-            let pos: Vec<TypedExp> = (&**args).into_iter()
+            let pos: Vec<TypedExp> = (&**args)
+                .into_iter()
                 .map(|a| infer_exp(a.as_ref(), env, top_level, pkg_prefix, type_vars))
                 .collect();
-            let named: Vec<(String, TypedExp)> = (&**argNames).into_iter()
+            let named: Vec<(String, TypedExp)> = (&**argNames)
+                .into_iter()
                 .map(|na| {
                     let Absyn::NamedArg { argName, argValue } = na.as_ref();
-                    (argName.to_string(), infer_exp(argValue.as_ref(), env, top_level, pkg_prefix, type_vars))
+                    (
+                        argName.to_string(),
+                        infer_exp(argValue.as_ref(), env, top_level, pkg_prefix, type_vars),
+                    )
                 })
                 .collect();
             (pos, named)
@@ -2201,11 +2567,14 @@ fn extract_call_args<'a>(
 /// `__OpenModelica_Retired`. See `MM::strip_retired`.
 fn pat_mentions_retired(pat: &TypedPat) -> bool {
     match pat {
-        TypedPat::Constructor { name, ty, fields, named_fields } => {
+        TypedPat::Constructor {
+            name,
+            ty,
+            fields,
+            named_fields,
+        } => {
             let by_ty = match ty {
-                Ty::UnionTypeVariant(parent, variant) => {
-                    crate::MM::is_retired_qname(&format!("{parent}.{variant}"))
-                }
+                Ty::UnionTypeVariant(parent, variant) => crate::MM::is_retired_qname(&format!("{parent}.{variant}")),
                 Ty::RustStruct(qname) => crate::MM::is_retired_qname(qname),
                 _ => false,
             };
@@ -2216,9 +2585,7 @@ fn pat_mentions_retired(pat: &TypedPat) -> bool {
         }
         TypedPat::Tuple(ps) => ps.iter().any(pat_mentions_retired),
         TypedPat::Some_(p) | TypedPat::As { pat: p, .. } => pat_mentions_retired(p),
-        TypedPat::Cons { head, tail } => {
-            pat_mentions_retired(head) || pat_mentions_retired(tail)
-        }
+        TypedPat::Cons { head, tail } => pat_mentions_retired(head) || pat_mentions_retired(tail),
         _ => false,
     }
 }
@@ -2264,15 +2631,20 @@ fn infer_case<'a>(
     /// - `polymorphic<T>` (the parser's representation of `replaceable type T subtypeof Any`) →
     ///   recurse into the inner spec (stripping the wrapper)
     /// - Everything else → hierarchy lookup
-    fn typespec_to_ty(type_spec: &Absyn::TypeSpec, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Ty {
+    fn typespec_to_ty(
+        type_spec: &Absyn::TypeSpec,
+        type_vars: &[String],
+        top_level: &BTreeMap<String, NameNode<'_>>,
+        pkg_prefix: &str,
+    ) -> Ty {
         match type_spec {
             Absyn::TypeSpec::TPATH { path, .. } => {
                 let name = path_to_dotted(path);
                 match name.as_str() {
                     "Integer" => Ty::I32,
-                    "Real"    => Ty::F64,
+                    "Real" => Ty::F64,
                     "Boolean" => Ty::Bool,
-                    "String"  => Ty::Str,
+                    "String" => Ty::Str,
                     _ if type_vars.iter().any(|v| v == &name) => Ty::TypeVar(name),
                     // Scope-aware lookup: resolve the type name relative to the
                     // enclosing package using the same rules as call resolution.
@@ -2288,17 +2660,29 @@ fn infer_case<'a>(
                 let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
                 let ctor = path_to_dotted(path);
                 match ctor.as_str() {
-                    "Option" if args.len() == 1 => {
-                        Ty::Option(Box::new(typespec_to_ty(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                    }
-                    "list" | "List" if args.len() == 1 => {
-                        Ty::List(Box::new(typespec_to_ty(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                    }
-                    "array" | "Array" if args.len() == 1 => {
-                        Ty::Array(Box::new(typespec_to_ty(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                    }
+                    "Option" if args.len() == 1 => Ty::Option(Box::new(typespec_to_ty(
+                        args[0].as_ref(),
+                        type_vars,
+                        top_level,
+                        pkg_prefix,
+                    ))),
+                    "list" | "List" if args.len() == 1 => Ty::List(Box::new(typespec_to_ty(
+                        args[0].as_ref(),
+                        type_vars,
+                        top_level,
+                        pkg_prefix,
+                    ))),
+                    "array" | "Array" if args.len() == 1 => Ty::Array(Box::new(typespec_to_ty(
+                        args[0].as_ref(),
+                        type_vars,
+                        top_level,
+                        pkg_prefix,
+                    ))),
                     "tuple" => {
-                        let tys: Vec<Ty> = args.iter().map(|a| typespec_to_ty(a.as_ref(), type_vars, top_level, pkg_prefix)).collect();
+                        let tys: Vec<Ty> = args
+                            .iter()
+                            .map(|a| typespec_to_ty(a.as_ref(), type_vars, top_level, pkg_prefix))
+                            .collect();
                         Ty::Tuple(tys)
                     }
                     // `polymorphic<T>` is the parser's representation for `replaceable type T subtypeof Any`.
@@ -2317,7 +2701,8 @@ fn infer_case<'a>(
                     }
                     _ => {
                         let base_ty = resolve_type_name(&ctor, top_level, pkg_prefix);
-                        let resolved: Vec<Ty> = args.iter()
+                        let resolved: Vec<Ty> = args
+                            .iter()
                             .map(|a| typespec_to_ty(a.as_ref(), type_vars, top_level, pkg_prefix))
                             .collect();
                         let base_name = ty_rust_name(&base_ty).unwrap_or_else(|| ctor.clone());
@@ -2328,12 +2713,26 @@ fn infer_case<'a>(
         }
     }
 
-    fn infer_case_locals(local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
+    fn infer_case_locals(
+        local_decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>,
+        type_vars: &[String],
+        top_level: &BTreeMap<String, NameNode<'_>>,
+        pkg_prefix: &str,
+    ) -> Vec<(String, Ty, Option<Absyn::Exp>, Option<Absyn::TypeSpec>)> {
         let mut out = Vec::new();
         for item in (&**local_decls).into_iter() {
-            let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
-            let Absyn::Element::ELEMENT { specification, .. } = &**element else { continue };
-            let Absyn::ElementSpec::COMPONENTS { typeSpec, components, .. } = &**specification else { continue };
+            let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
+                continue;
+            };
+            let Absyn::Element::ELEMENT { specification, .. } = &**element else {
+                continue;
+            };
+            let Absyn::ElementSpec::COMPONENTS {
+                typeSpec, components, ..
+            } = &**specification
+            else {
+                continue;
+            };
             let ty = typespec_to_ty(typeSpec, type_vars, top_level, pkg_prefix);
             for comp_item in (&**components).into_iter() {
                 let Absyn::ComponentItem { component, .. } = comp_item.as_ref();
@@ -2365,7 +2764,10 @@ fn infer_case<'a>(
                 }
                 TypedStmt::Assign { lhs, rhs, info }
             }
-            Absyn::Equation::EQ_NORETCALL { functionName, functionArgs } => {
+            Absyn::Equation::EQ_NORETCALL {
+                functionName,
+                functionArgs,
+            } => {
                 let func = cref_to_dotted(functionName);
                 let (args, named_args) = extract_call_args(functionArgs, env, top_level, pkg_prefix, type_vars);
                 let sig_ty = lookup_ctor_ty(&func, top_level);
@@ -2390,30 +2792,59 @@ fn infer_case<'a>(
                         Ty::RustStruct(qname) | Ty::RustEnum(qname) => {
                             record_field_tys(qname, top_level).into_iter().map(|(n, _)| n).collect()
                         }
-                        _ => {
-                            record_field_tys(&canonical, top_level).into_iter().map(|(n, _)| n).collect()
-                        }
+                        _ => record_field_tys(&canonical, top_level)
+                            .into_iter()
+                            .map(|(n, _)| n)
+                            .collect(),
                     };
-                    TypedExp::Constructor { name: canonical, args, named_args, ty, field_names }
+                    TypedExp::Constructor {
+                        name: canonical,
+                        args,
+                        named_args,
+                        ty,
+                        field_names,
+                    }
                 } else {
                     let ty = call_ty(&func, &args, top_level, pkg_prefix);
-                    TypedExp::Call { func, args, named_args, ty, sig_ty }
+                    TypedExp::Call {
+                        func,
+                        args,
+                        named_args,
+                        ty,
+                        sig_ty,
+                    }
                 };
                 TypedStmt::NoRetCall { call, info }
             }
-            Absyn::Equation::EQ_IF { ifExp, equationTrueItems, elseIfBranches, equationElseItems } => {
+            Absyn::Equation::EQ_IF {
+                ifExp,
+                equationTrueItems,
+                elseIfBranches,
+                equationElseItems,
+            } => {
                 let cond = infer_exp(ifExp, env, top_level, pkg_prefix, type_vars);
                 let then_ = infer_eq_items_list_arc(equationTrueItems, env, top_level, pkg_prefix, type_vars);
-                let elseif: Vec<(TypedExp, Vec<TypedStmt>)> = (&**elseIfBranches).into_iter()
-                    .map(|(c, b)| (
-                        infer_exp(c, env, top_level, pkg_prefix, type_vars),
-                        infer_eq_items_list_arc(b, env, top_level, pkg_prefix, type_vars),
-                    ))
+                let elseif: Vec<(TypedExp, Vec<TypedStmt>)> = (&**elseIfBranches)
+                    .into_iter()
+                    .map(|(c, b)| {
+                        (
+                            infer_exp(c, env, top_level, pkg_prefix, type_vars),
+                            infer_eq_items_list_arc(b, env, top_level, pkg_prefix, type_vars),
+                        )
+                    })
                     .collect();
                 let else_ = infer_eq_items_list_arc(equationElseItems, env, top_level, pkg_prefix, type_vars);
-                TypedStmt::If { cond, then_, elseif, else_ }
+                TypedStmt::If {
+                    cond,
+                    then_,
+                    elseif,
+                    else_,
+                }
             }
-            Absyn::Equation::EQ_FOR { iterators, forEquations } => {
+            Absyn::Equation::EQ_FOR {
+                iterators,
+                forEquations,
+            } => {
                 let iters: Vec<metamodelica::Ref<Absyn::ForIterator>> = (&**iterators).into_iter().cloned().collect();
                 if iters.len() == 1 {
                     let Absyn::ForIterator { name, range, .. } = &*iters[0];
@@ -2428,7 +2859,11 @@ fn infer_case<'a>(
                     let mut inner = env.clone();
                     inner.insert(name.to_string(), elem_ty);
                     let body = infer_eq_items_list_arc(forEquations, &mut inner, top_level, pkg_prefix, type_vars);
-                    TypedStmt::For { var: name.to_string(), range: range_e, body }
+                    TypedStmt::For {
+                        var: name.to_string(),
+                        range: range_e,
+                        body,
+                    }
                 } else {
                     TypedStmt::Todo("multi-iterator-for-eq".to_owned())
                 }
@@ -2484,12 +2919,10 @@ fn infer_case<'a>(
         type_vars: &[String],
     ) -> Vec<TypedStmt> {
         match class_part {
-            Absyn::ClassPart::ALGORITHMS { contents }
-            | Absyn::ClassPart::INITIALALGORITHMS { contents } => {
+            Absyn::ClassPart::ALGORITHMS { contents } | Absyn::ClassPart::INITIALALGORITHMS { contents } => {
                 infer_stmts_list(contents, env, top_level, pkg_prefix, type_vars)
             }
-            Absyn::ClassPart::EQUATIONS { contents }
-            | Absyn::ClassPart::INITIALEQUATIONS { contents } => {
+            Absyn::ClassPart::EQUATIONS { contents } | Absyn::ClassPart::INITIALEQUATIONS { contents } => {
                 infer_eq_items_list_arc(contents, env, top_level, pkg_prefix, type_vars)
             }
             _ => vec![],
@@ -2497,7 +2930,14 @@ fn infer_case<'a>(
     }
 
     match case {
-        Absyn::Case::CASE { pattern, patternGuard, localDecls, classPart, result, .. } => {
+        Absyn::Case::CASE {
+            pattern,
+            patternGuard,
+            localDecls,
+            classPart,
+            result,
+            ..
+        } => {
             // Case-level locals (`local list<X> M;`) must be visible to
             // `infer_pat` so that a pattern reference like `node::M` resolves
             // `M` to the locally-declared variable rather than being
@@ -2543,22 +2983,24 @@ fn infer_case<'a>(
             // `values` is `UnorderedMap` in OBJECT, `list<tuple<...>>` in
             // LIST_OBJECT, `Vector<JSON>` in ARRAY, and `list<JSON>` in LIST).
             if let Some((scrut_name, scrut_ty)) = scrutinee
-                && let Some(narrowed) = narrow_scrutinee_for_pat(&pat, scrut_ty, top_level) {
-                    inner_env.insert(scrut_name.to_string(), narrowed);
-                }
+                && let Some(narrowed) = narrow_scrutinee_for_pat(&pat, scrut_ty, top_level)
+            {
+                inner_env.insert(scrut_name.to_string(), narrowed);
+            }
             // Tuple-element narrowing: for each tuple-position variable, if
             // the arm's pattern is also a tuple of the same arity and the
             // corresponding sub-pattern fixes the variant, narrow that
             // variable in `inner_env`.
             if !tuple_scrutinees.is_empty()
                 && let TypedPat::Tuple(pat_elems) = &pat
-                && pat_elems.len() >= tuple_scrutinees.len() {
-                    for ((name, ty), sub_pat) in tuple_scrutinees.iter().zip(pat_elems.iter()) {
-                        if let Some(narrowed) = narrow_scrutinee_for_pat(sub_pat, ty, top_level) {
-                            inner_env.insert(name.clone(), narrowed);
-                        }
+                && pat_elems.len() >= tuple_scrutinees.len()
+            {
+                for ((name, ty), sub_pat) in tuple_scrutinees.iter().zip(pat_elems.iter()) {
+                    if let Some(narrowed) = narrow_scrutinee_for_pat(sub_pat, ty, top_level) {
+                        inner_env.insert(name.clone(), narrowed);
                     }
                 }
+            }
             // Start with match-level locals (already in env), then add case-level locals.
             // Dedup: case-level locals shadow match-level ones with the same name.
             let mut locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)> = extra_locals.to_vec();
@@ -2571,7 +3013,8 @@ fn infer_case<'a>(
                 local_init_env.insert(n.clone(), t.clone());
             }
             for (n, t, default_exp, ts) in &case_locals_pre {
-                let typed_default = default_exp.as_ref()
+                let typed_default = default_exp
+                    .as_ref()
                     .map(|e| infer_exp(e, &local_init_env, top_level, pkg_prefix, type_vars));
                 if let Some(pos) = locals.iter().position(|(ln, _, _, _)| ln == n) {
                     locals[pos] = (n.clone(), t.clone(), typed_default, ts.clone()); // case-level shadows match-level
@@ -2590,15 +3033,16 @@ fn infer_case<'a>(
                 // fields whose type differs per variant), so don't clobber it
                 // with the less-specific declared type when they share the
                 // parent enum.
-                if let (Some(Ty::UnionTypeVariant(parent, _)), Ty::RustEnum(decl)) =
-                    (inner_env.get(n), t)
+                if let (Some(Ty::UnionTypeVariant(parent, _)), Ty::RustEnum(decl)) = (inner_env.get(n), t)
                     && parent == decl
                 {
                     continue;
                 }
                 inner_env.insert(n.clone(), t.clone());
             }
-            let guard = patternGuard.as_ref().map(|g| infer_exp(g, &inner_env, top_level, pkg_prefix, type_vars));
+            let guard = patternGuard
+                .as_ref()
+                .map(|g| infer_exp(g, &inner_env, top_level, pkg_prefix, type_vars));
             let mut case_env = inner_env.clone();
             let stmts = infer_case_class_part(classPart, &mut case_env, top_level, pkg_prefix, type_vars);
             // Discover any new variables first assigned inside the arm body (not declared
@@ -2608,16 +3052,28 @@ fn infer_case<'a>(
             // per process. Collect the newly-discovered locals and sort by name
             // before appending so the emitted `let mut` declaration order — and
             // hence the generated Rust — is deterministic across codegen runs.
-            let mut discovered: Vec<(&String, &Ty)> = case_env.iter()
+            let mut discovered: Vec<(&String, &Ty)> = case_env
+                .iter()
                 .filter(|(n, _)| !inner_env.contains_key(*n) && !locals.iter().any(|(ln, _, _, _)| &ln == n))
                 .collect();
             discovered.sort_by(|a, b| a.0.cmp(b.0));
             for (n, t) in discovered {
                 locals.push((n.clone(), t.clone(), None, None));
             }
-            TypedCase { pattern: pat, guard, locals, stmts, result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars) }
+            TypedCase {
+                pattern: pat,
+                guard,
+                locals,
+                stmts,
+                result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars),
+            }
         }
-        Absyn::Case::ELSE { localDecls, classPart, result, .. } => {
+        Absyn::Case::ELSE {
+            localDecls,
+            classPart,
+            result,
+            ..
+        } => {
             let mut case_env = env.clone();
             let mut locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)> = extra_locals.to_vec();
             let case_locals = infer_case_locals(localDecls, type_vars, top_level, pkg_prefix);
@@ -2628,7 +3084,8 @@ fn infer_case<'a>(
                 local_init_env.insert(n.clone(), t.clone());
             }
             for (n, t, default_exp, ts) in &case_locals {
-                let typed_default = default_exp.as_ref()
+                let typed_default = default_exp
+                    .as_ref()
                     .map(|e| infer_exp(e, &local_init_env, top_level, pkg_prefix, type_vars));
                 if let Some(pos) = locals.iter().position(|(ln, _, _, _)| ln == n) {
                     locals[pos] = (n.clone(), t.clone(), typed_default, ts.clone());
@@ -2642,14 +3099,21 @@ fn infer_case<'a>(
             let stmts = infer_case_class_part(classPart, &mut case_env, top_level, pkg_prefix, type_vars);
             // See the MATCH-case branch above: sort the HashMap-discovered
             // locals by name so the generated declaration order is stable.
-            let mut discovered: Vec<(&String, &Ty)> = case_env.iter()
+            let mut discovered: Vec<(&String, &Ty)> = case_env
+                .iter()
                 .filter(|(n, _)| !env.contains_key(*n) && !locals.iter().any(|(ln, _, _, _)| &ln == n))
                 .collect();
             discovered.sort_by(|a, b| a.0.cmp(b.0));
             for (n, t) in discovered {
                 locals.push((n.clone(), t.clone(), None, None));
             }
-            TypedCase { pattern: TypedPat::Wildcard, guard: None, locals, stmts, result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars) }
+            TypedCase {
+                pattern: TypedPat::Wildcard,
+                guard: None,
+                locals,
+                stmts,
+                result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars),
+            }
         }
     }
 }
@@ -2673,15 +3137,20 @@ fn infer_case_locals_standalone(
             Absyn::Path::FULLYQUALIFIED { path } => path_to_dotted(path),
         }
     }
-    fn typespec_to_ty(type_spec: &Absyn::TypeSpec, type_vars: &[String], top_level: &BTreeMap<String, NameNode<'_>>, pkg_prefix: &str) -> Ty {
+    fn typespec_to_ty(
+        type_spec: &Absyn::TypeSpec,
+        type_vars: &[String],
+        top_level: &BTreeMap<String, NameNode<'_>>,
+        pkg_prefix: &str,
+    ) -> Ty {
         match type_spec {
             Absyn::TypeSpec::TPATH { path, .. } => {
                 let name = path_to_dotted(path);
                 match name.as_str() {
                     "Integer" => Ty::I32,
-                    "Real"    => Ty::F64,
+                    "Real" => Ty::F64,
                     "Boolean" => Ty::Bool,
-                    "String"  => Ty::Str,
+                    "String" => Ty::Str,
                     _ if type_vars.iter().any(|v| v == &name) => Ty::TypeVar(name),
                     // Scope-aware lookup — see the inner copy in `infer_case`.
                     _ => resolve_type_name(&name, top_level, pkg_prefix),
@@ -2691,17 +3160,29 @@ fn infer_case_locals_standalone(
                 let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
                 let ctor = path_to_dotted(path);
                 match ctor.as_str() {
-                    "Option" if args.len() == 1 => {
-                        Ty::Option(Box::new(typespec_to_ty(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                    }
-                    "list" | "List" if args.len() == 1 => {
-                        Ty::List(Box::new(typespec_to_ty(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                    }
-                    "array" | "Array" if args.len() == 1 => {
-                        Ty::Array(Box::new(typespec_to_ty(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                    }
+                    "Option" if args.len() == 1 => Ty::Option(Box::new(typespec_to_ty(
+                        args[0].as_ref(),
+                        type_vars,
+                        top_level,
+                        pkg_prefix,
+                    ))),
+                    "list" | "List" if args.len() == 1 => Ty::List(Box::new(typespec_to_ty(
+                        args[0].as_ref(),
+                        type_vars,
+                        top_level,
+                        pkg_prefix,
+                    ))),
+                    "array" | "Array" if args.len() == 1 => Ty::Array(Box::new(typespec_to_ty(
+                        args[0].as_ref(),
+                        type_vars,
+                        top_level,
+                        pkg_prefix,
+                    ))),
                     "tuple" => {
-                        let tys: Vec<Ty> = args.iter().map(|a| typespec_to_ty(a.as_ref(), type_vars, top_level, pkg_prefix)).collect();
+                        let tys: Vec<Ty> = args
+                            .iter()
+                            .map(|a| typespec_to_ty(a.as_ref(), type_vars, top_level, pkg_prefix))
+                            .collect();
                         Ty::Tuple(tys)
                     }
                     "polymorphic" if args.len() == 1 => {
@@ -2715,7 +3196,8 @@ fn infer_case_locals_standalone(
                     }
                     _ => {
                         let base_ty = resolve_type_name(&ctor, top_level, pkg_prefix);
-                        let resolved: Vec<Ty> = args.iter()
+                        let resolved: Vec<Ty> = args
+                            .iter()
                             .map(|a| typespec_to_ty(a.as_ref(), type_vars, top_level, pkg_prefix))
                             .collect();
                         let base_name = ty_rust_name(&base_ty).unwrap_or_else(|| ctor.clone());
@@ -2728,9 +3210,18 @@ fn infer_case_locals_standalone(
 
     let mut out = Vec::new();
     for item in (&**local_decls).into_iter() {
-        let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
-        let Absyn::Element::ELEMENT { specification, .. } = &**element else { continue };
-        let Absyn::ElementSpec::COMPONENTS { typeSpec, components, .. } = &**specification else { continue };
+        let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
+            continue;
+        };
+        let Absyn::Element::ELEMENT { specification, .. } = &**element else {
+            continue;
+        };
+        let Absyn::ElementSpec::COMPONENTS {
+            typeSpec, components, ..
+        } = &**specification
+        else {
+            continue;
+        };
         let ty = typespec_to_ty(typeSpec, type_vars, top_level, pkg_prefix);
         for comp_item in (&**components).into_iter() {
             let Absyn::ComponentItem { component, .. } = comp_item.as_ref();
@@ -2767,9 +3258,9 @@ pub fn resolve_typespec<'a>(
             let name = path_to_dotted(path);
             match name.as_str() {
                 "Integer" => Ty::I32,
-                "Real"    => Ty::F64,
+                "Real" => Ty::F64,
                 "Boolean" => Ty::Bool,
-                "String"  => Ty::Str,
+                "String" => Ty::Str,
                 _ if type_vars.iter().any(|v| v == &name) => Ty::TypeVar(name),
                 _ => resolve_type_name(&name, top_level, pkg_prefix),
             }
@@ -2778,17 +3269,29 @@ pub fn resolve_typespec<'a>(
             let args: Vec<metamodelica::Ref<Absyn::TypeSpec>> = (&**typeSpecs).into_iter().cloned().collect();
             let ctor = path_to_dotted(path);
             match ctor.as_str() {
-                "Option" if args.len() == 1 => {
-                    Ty::Option(Box::new(resolve_typespec(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                }
-                "list" | "List" if args.len() == 1 => {
-                    Ty::List(Box::new(resolve_typespec(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                }
-                "array" | "Array" if args.len() == 1 => {
-                    Ty::Array(Box::new(resolve_typespec(args[0].as_ref(), type_vars, top_level, pkg_prefix)))
-                }
+                "Option" if args.len() == 1 => Ty::Option(Box::new(resolve_typespec(
+                    args[0].as_ref(),
+                    type_vars,
+                    top_level,
+                    pkg_prefix,
+                ))),
+                "list" | "List" if args.len() == 1 => Ty::List(Box::new(resolve_typespec(
+                    args[0].as_ref(),
+                    type_vars,
+                    top_level,
+                    pkg_prefix,
+                ))),
+                "array" | "Array" if args.len() == 1 => Ty::Array(Box::new(resolve_typespec(
+                    args[0].as_ref(),
+                    type_vars,
+                    top_level,
+                    pkg_prefix,
+                ))),
                 "tuple" => {
-                    let tys: Vec<Ty> = args.iter().map(|a| resolve_typespec(a.as_ref(), type_vars, top_level, pkg_prefix)).collect();
+                    let tys: Vec<Ty> = args
+                        .iter()
+                        .map(|a| resolve_typespec(a.as_ref(), type_vars, top_level, pkg_prefix))
+                        .collect();
                     Ty::Tuple(tys)
                 }
                 "polymorphic" if args.len() == 1 => {
@@ -2802,7 +3305,8 @@ pub fn resolve_typespec<'a>(
                 }
                 _ => {
                     let base_ty = resolve_type_name(&ctor, top_level, pkg_prefix);
-                    let resolved: Vec<Ty> = args.iter()
+                    let resolved: Vec<Ty> = args
+                        .iter()
                         .map(|a| resolve_typespec(a.as_ref(), type_vars, top_level, pkg_prefix))
                         .collect();
                     let base_name = ty_rust_name(&base_ty).unwrap_or_else(|| ctor.clone());
@@ -2828,7 +3332,10 @@ fn pat_to_exp(pat: &TypedPat, top_level: &BTreeMap<String, NameNode<'_>>) -> Typ
     match pat {
         TypedPat::Var(name) => TypedExp::Var {
             name: name.clone(),
-            segments: vec![CrefSegment { name: name.clone(), subscripts: vec![] }],
+            segments: vec![CrefSegment {
+                name: name.clone(),
+                subscripts: vec![],
+            }],
             ty: lookup_ty_in_hierarchy(name, top_level),
             last_use: false,
         },
@@ -2845,8 +3352,13 @@ fn pat_to_exp(pat: &TypedPat, top_level: &BTreeMap<String, NameNode<'_>>) -> Typ
                 ty: Ty::Unknown,
                 last_use: false,
             }
+        }
+        _ => TypedExp::Var {
+            name: "_".into(),
+            segments: vec![],
+            ty: Ty::Unknown,
+            last_use: false,
         },
-        _ => TypedExp::Var { name: "_".into(), segments: vec![], ty: Ty::Unknown, last_use: false },
     }
 }
 
@@ -2864,27 +3376,28 @@ fn pat_to_exp(pat: &TypedPat, top_level: &BTreeMap<String, NameNode<'_>>) -> Typ
 /// Returns `None` when the name does not resolve to a constant with a literal
 /// value (including nested constant references); the caller then falls back to
 /// treating it as a constructor path.
-fn const_ref_to_lit_pat<'a>(
-    dotted: &str,
-    top_level: &'a BTreeMap<String, NameNode<'a>>,
-) -> Option<TypedPat> {
+fn const_ref_to_lit_pat<'a>(dotted: &str, top_level: &'a BTreeMap<String, NameNode<'a>>) -> Option<TypedPat> {
     let mut seen = 0u32;
     fn fold<'a>(dotted: &str, top_level: &'a BTreeMap<String, NameNode<'a>>, seen: &mut u32) -> Option<TypedPat> {
         *seen += 1;
-        if *seen > 16 { return None; }
+        if *seen > 16 {
+            return None;
+        }
         let (_, node) = walk_dotted_with_imports(dotted, top_level, 0)?;
-        let NodeKind::Component(comp) = &node.kind else { return None };
-        if comp.variability != Absyn::Variability::CONST { return None; }
+        let NodeKind::Component(comp) = &node.kind else {
+            return None;
+        };
+        if comp.variability != Absyn::Variability::CONST {
+            return None;
+        }
         let default = extract_default_exp(&comp.modification)?;
         match default {
-            Absyn::Exp::STRING { value }  => Some(TypedPat::Lit(Lit::Str(value.to_string()))),
+            Absyn::Exp::STRING { value } => Some(TypedPat::Lit(Lit::Str(value.to_string()))),
             Absyn::Exp::INTEGER { value } => Some(TypedPat::Lit(Lit::Int(*value))),
-            Absyn::Exp::BOOL { value }    => Some(TypedPat::Lit(Lit::Bool(*value))),
-            Absyn::Exp::REAL { value }    => Some(TypedPat::Lit(Lit::Real(value.to_string()))),
+            Absyn::Exp::BOOL { value } => Some(TypedPat::Lit(Lit::Bool(*value))),
+            Absyn::Exp::REAL { value } => Some(TypedPat::Lit(Lit::Real(value.to_string()))),
             // A constant defined in terms of another constant — follow it.
-            Absyn::Exp::CREF { componentRef } => {
-                fold(&cref_to_dotted(componentRef), top_level, seen)
-            }
+            Absyn::Exp::CREF { componentRef } => fold(&cref_to_dotted(componentRef), top_level, seen),
             _ => None,
         }
     }
@@ -2900,9 +3413,9 @@ pub fn infer_pat<'a>(
 ) -> TypedPat {
     match exp {
         Absyn::Exp::INTEGER { value } => TypedPat::Lit(Lit::Int(*value)),
-        Absyn::Exp::REAL    { value } => TypedPat::Lit(Lit::Real(value.to_string())),
-        Absyn::Exp::STRING  { value } => TypedPat::Lit(Lit::Str(value.to_string())),
-        Absyn::Exp::BOOL    { value } => TypedPat::Lit(Lit::Bool(*value)),
+        Absyn::Exp::REAL { value } => TypedPat::Lit(Lit::Real(value.to_string())),
+        Absyn::Exp::STRING { value } => TypedPat::Lit(Lit::Str(value.to_string())),
+        Absyn::Exp::BOOL { value } => TypedPat::Lit(Lit::Bool(*value)),
 
         Absyn::Exp::CREF { componentRef } => {
             match componentRef.as_ref() {
@@ -2928,14 +3441,20 @@ pub fn infer_pat<'a>(
                         // Uppercase identifiers in pattern position are constructors in
                         // MetaModelica (variants/records), not variable binders.
                         let ty = lookup_ty_in_hierarchy(name, top_level);
-                        TypedPat::Constructor { name: name.to_string(), fields: vec![], named_fields: vec![], ty }
+                        TypedPat::Constructor {
+                            name: name.to_string(),
+                            fields: vec![],
+                            named_fields: vec![],
+                            ty,
+                        }
                     } else {
                         TypedPat::Var(name.to_string())
                     }
                 }
                 // Subscripted reference in pattern position (e.g. `arr[1]` on LHS of `:=`).
                 Absyn::ComponentRef::CREF_IDENT { name, subscripts } => {
-                    let sub = (&**subscripts).into_iter()
+                    let sub = (&**subscripts)
+                        .into_iter()
                         .filter_map(|s| {
                             if let Absyn::Subscript::SUBSCRIPT { subscript } = s.as_ref() {
                                 Some(subscript.as_ref().clone())
@@ -2945,10 +3464,16 @@ pub fn infer_pat<'a>(
                         })
                         .next();
                     if let Some(sub_exp) = sub {
-                        let base_ty = env.get(&**name).cloned().unwrap_or_else(|| {
-                            lookup_ty_in_hierarchy(name, top_level)
-                        });
-                        let base = TypedExp::Var { name: name.to_string(), segments: vec![], ty: base_ty, last_use: false };
+                        let base_ty = env
+                            .get(&**name)
+                            .cloned()
+                            .unwrap_or_else(|| lookup_ty_in_hierarchy(name, top_level));
+                        let base = TypedExp::Var {
+                            name: name.to_string(),
+                            segments: vec![],
+                            ty: base_ty,
+                            last_use: false,
+                        };
                         TypedPat::Index {
                             base,
                             index: infer_exp(&sub_exp, env, top_level, pkg_prefix, type_vars),
@@ -2981,9 +3506,7 @@ pub fn infer_pat<'a>(
                             ));
                         }
                         if segs[idx].subscripts.len() > 1 {
-                            return TypedPat::Todo(format!(
-                                "LHS multidim subscript not yet supported: {full_dotted}"
-                            ));
+                            return TypedPat::Todo(format!("LHS multidim subscript not yet supported: {full_dotted}"));
                         }
                         let sub_exp = segs[idx].subscripts[0].clone();
                         // Base is the field chain WITHOUT the trailing subscript, so its type
@@ -2991,11 +3514,17 @@ pub fn infer_pat<'a>(
                         // through the `Ty::Array` branch which emits `.borrow_mut()[..] = ..`.
                         let mut base_segs = segs.clone();
                         base_segs[idx].subscripts.clear();
-                        let base_dotted: String = base_segs.iter().map(|s| s.name.clone()).collect::<Vec<_>>().join(".");
+                        let base_dotted: String =
+                            base_segs.iter().map(|s| s.name.clone()).collect::<Vec<_>>().join(".");
                         let base_ty = resolve_first_segment_type(&base_dotted, &base_segs, env, top_level)
                             .unwrap_or_else(|| lookup_ty_in_hierarchy(&base_dotted, top_level));
                         TypedPat::Index {
-                            base: TypedExp::Var { name: base_dotted, segments: base_segs, ty: base_ty, last_use: false },
+                            base: TypedExp::Var {
+                                name: base_dotted,
+                                segments: base_segs,
+                                ty: base_ty,
+                                last_use: false,
+                            },
                             index: sub_exp,
                         }
                     } else {
@@ -3019,24 +3548,40 @@ pub fn infer_pat<'a>(
                             lit
                         } else {
                             let ty = lookup_ty_in_hierarchy(&full_dotted, top_level);
-                            TypedPat::Constructor { name: full_dotted, fields: vec![], named_fields: vec![], ty }
+                            TypedPat::Constructor {
+                                name: full_dotted,
+                                fields: vec![],
+                                named_fields: vec![],
+                                ty,
+                            }
                         }
                     }
                 }
                 _ => {
                     let dotted = cref_to_dotted(componentRef);
                     let ty = lookup_ty_in_hierarchy(&dotted, top_level);
-                    TypedPat::Constructor { name: dotted, fields: vec![], named_fields: vec![], ty }
+                    TypedPat::Constructor {
+                        name: dotted,
+                        fields: vec![],
+                        named_fields: vec![],
+                        ty,
+                    }
                 }
             }
         }
 
-        Absyn::Exp::CALL { function_, functionArgs, .. } => {
+        Absyn::Exp::CALL {
+            function_,
+            functionArgs,
+            ..
+        } => {
             let func = cref_to_dotted(function_);
             match func.as_str() {
                 "SOME" => {
                     let inner = match &**functionArgs {
-                        Absyn::FunctionArgs::FUNCTIONARGS { args, .. } => (&**args).into_iter().next()
+                        Absyn::FunctionArgs::FUNCTIONARGS { args, .. } => (&**args)
+                            .into_iter()
+                            .next()
                             .map(|a| infer_pat(a.as_ref(), env, top_level, pkg_prefix, type_vars))
                             .unwrap_or(TypedPat::Wildcard),
                         _ => TypedPat::Wildcard,
@@ -3047,13 +3592,18 @@ pub fn infer_pat<'a>(
                 _ => {
                     let (fields, named_fields) = match &**functionArgs {
                         Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } => {
-                            let pos: Vec<TypedPat> = (&**args).into_iter()
+                            let pos: Vec<TypedPat> = (&**args)
+                                .into_iter()
                                 .map(|a| infer_pat(a.as_ref(), env, top_level, pkg_prefix, type_vars))
                                 .collect();
-                            let named: Vec<(String, TypedPat)> = (&**argNames).into_iter()
+                            let named: Vec<(String, TypedPat)> = (&**argNames)
+                                .into_iter()
                                 .map(|na| {
                                     let Absyn::NamedArg { argName, argValue } = na.as_ref();
-                                    (argName.to_string(), infer_pat(argValue.as_ref(), env, top_level, pkg_prefix, type_vars))
+                                    (
+                                        argName.to_string(),
+                                        infer_pat(argValue.as_ref(), env, top_level, pkg_prefix, type_vars),
+                                    )
                                 })
                                 .collect();
                             (pos, named)
@@ -3110,13 +3660,19 @@ pub fn infer_pat<'a>(
                     {
                         ty = node.ty.clone();
                     }
-                    TypedPat::Constructor { name: canonical, fields, named_fields, ty }
+                    TypedPat::Constructor {
+                        name: canonical,
+                        fields,
+                        named_fields,
+                        ty,
+                    }
                 }
             }
         }
 
         Absyn::Exp::TUPLE { expressions } => {
-            let mut pats: Vec<TypedPat> = (&**expressions).into_iter()
+            let mut pats: Vec<TypedPat> = (&**expressions)
+                .into_iter()
                 .map(|e| infer_pat(e.as_ref(), env, top_level, pkg_prefix, type_vars))
                 .collect();
             // `(pat)` is a parenthesized pattern, kept as a single-element
@@ -3131,7 +3687,8 @@ pub fn infer_pat<'a>(
 
         Absyn::Exp::ARRAY { arrayExp } => {
             // {} is the empty-list pattern; {a,b,...} builds a list via nested cons.
-            let mut pats: Vec<TypedPat> = (&**arrayExp).into_iter()
+            let mut pats: Vec<TypedPat> = (&**arrayExp)
+                .into_iter()
                 .map(|e| infer_pat(e.as_ref(), env, top_level, pkg_prefix, type_vars))
                 .collect();
             if pats.is_empty() {
@@ -3139,31 +3696,34 @@ pub fn infer_pat<'a>(
             } else {
                 let mut result = TypedPat::EmptyList;
                 for p in pats.into_iter().rev() {
-                    result = TypedPat::Cons { head: Box::new(p), tail: Box::new(result) };
+                    result = TypedPat::Cons {
+                        head: Box::new(p),
+                        tail: Box::new(result),
+                    };
                 }
                 result
             }
         }
 
-        Absyn::Exp::CONS { head, rest } => {
-            TypedPat::Cons {
-                head: Box::new(infer_pat(head, env, top_level, pkg_prefix, type_vars)),
-                tail: Box::new(infer_pat(rest, env, top_level, pkg_prefix, type_vars)),
-            }
-        }
+        Absyn::Exp::CONS { head, rest } => TypedPat::Cons {
+            head: Box::new(infer_pat(head, env, top_level, pkg_prefix, type_vars)),
+            tail: Box::new(infer_pat(rest, env, top_level, pkg_prefix, type_vars)),
+        },
 
-        Absyn::Exp::AS { id, exp } => {
-           TypedPat::As { var: id.to_string(), pat: Box::new(infer_pat(exp, env, top_level, pkg_prefix, type_vars)) }
-        }
+        Absyn::Exp::AS { id, exp } => TypedPat::As {
+            var: id.to_string(),
+            pat: Box::new(infer_pat(exp, env, top_level, pkg_prefix, type_vars)),
+        },
 
         // Negative literal in pattern position.
-        Absyn::Exp::UNARY { op: Absyn::Operator::UMINUS | Absyn::Operator::UMINUS_EW, exp } => {
-            match exp.as_ref() {
-                Absyn::Exp::INTEGER { value } => TypedPat::Lit(Lit::Int(-value)),
-                Absyn::Exp::REAL    { value } => TypedPat::Lit(Lit::Real(format!("-{value}"))),
-                other => TypedPat::Todo(format!("{other:?}").chars().take(40).collect()),
-            }
-        }
+        Absyn::Exp::UNARY {
+            op: Absyn::Operator::UMINUS | Absyn::Operator::UMINUS_EW,
+            exp,
+        } => match exp.as_ref() {
+            Absyn::Exp::INTEGER { value } => TypedPat::Lit(Lit::Int(-value)),
+            Absyn::Exp::REAL { value } => TypedPat::Lit(Lit::Real(format!("-{value}"))),
+            other => TypedPat::Todo(format!("{other:?}").chars().take(40).collect()),
+        },
 
         // Patterns are written using the same Exp grammar as expressions, so
         // a comment immediately before/after a pattern gets wrapped in
@@ -3171,9 +3731,7 @@ pub fn infer_pat<'a>(
         // comment is preserved at the surrounding `case`/algorithm level
         // (or as a `LEXER_COMMENT` element) so we lose nothing at this
         // layer.
-        Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => {
-            infer_pat(exp, env, top_level, pkg_prefix, type_vars)
-        }
+        Absyn::Exp::EXPRESSIONCOMMENT { exp, .. } => infer_pat(exp, env, top_level, pkg_prefix, type_vars),
 
         other => TypedPat::Todo(format!("{other:?}").chars().take(80).collect()),
     }
@@ -3217,11 +3775,17 @@ fn collect_bindings_typed(pat: &TypedPat, scrut: &Ty, out: &mut Vec<(String, Ty)
     match pat {
         TypedPat::Var(name) => out.push((name.clone(), scrut.clone())),
         TypedPat::Some_(inner) => {
-            let inner_ty = match scrut { Ty::Option(t) => (**t).clone(), _ => Ty::Unknown };
+            let inner_ty = match scrut {
+                Ty::Option(t) => (**t).clone(),
+                _ => Ty::Unknown,
+            };
             collect_bindings_typed(inner, &inner_ty, out);
         }
         TypedPat::Cons { head, tail } => {
-            let elem_ty = match scrut { Ty::List(t) => (**t).clone(), _ => Ty::Unknown };
+            let elem_ty = match scrut {
+                Ty::List(t) => (**t).clone(),
+                _ => Ty::Unknown,
+            };
             collect_bindings_typed(head, &elem_ty, out);
             collect_bindings_typed(tail, scrut, out);
         }
@@ -3234,11 +3798,15 @@ fn collect_bindings_typed(pat: &TypedPat, scrut: &Ty, out: &mut Vec<(String, Ty)
                 collect_bindings_typed(p, ty, out);
             }
         }
-        TypedPat::Constructor { fields, named_fields, .. } => {
+        TypedPat::Constructor {
+            fields, named_fields, ..
+        } => {
             // Without the record-field map we can't recover field types here;
             // emit Unknown so the caller can choose to enrich.
             fields.iter().for_each(|p| collect_bindings_typed(p, &Ty::Unknown, out));
-            named_fields.iter().for_each(|(_, p)| collect_bindings_typed(p, &Ty::Unknown, out));
+            named_fields
+                .iter()
+                .for_each(|(_, p)| collect_bindings_typed(p, &Ty::Unknown, out));
         }
         TypedPat::As { var, pat } => {
             out.push((var.clone(), scrut.clone()));
@@ -3257,11 +3825,17 @@ fn collect_bindings_typed_tl<'a>(
     match pat {
         TypedPat::Var(name) => out.push((name.clone(), scrut.clone())),
         TypedPat::Some_(inner) => {
-            let inner_ty = match scrut { Ty::Option(t) => (**t).clone(), _ => Ty::Unknown };
+            let inner_ty = match scrut {
+                Ty::Option(t) => (**t).clone(),
+                _ => Ty::Unknown,
+            };
             collect_bindings_typed_tl(inner, &inner_ty, top_level, out);
         }
         TypedPat::Cons { head, tail } => {
-            let elem_ty = match scrut { Ty::List(t) => (**t).clone(), _ => Ty::Unknown };
+            let elem_ty = match scrut {
+                Ty::List(t) => (**t).clone(),
+                _ => Ty::Unknown,
+            };
             collect_bindings_typed_tl(head, &elem_ty, top_level, out);
             collect_bindings_typed_tl(tail, scrut, top_level, out);
         }
@@ -3274,7 +3848,12 @@ fn collect_bindings_typed_tl<'a>(
                 collect_bindings_typed_tl(p, ty, top_level, out);
             }
         }
-        TypedPat::Constructor { name, fields, named_fields, .. } => {
+        TypedPat::Constructor {
+            name,
+            fields,
+            named_fields,
+            ..
+        } => {
             // Resolve field types via the hierarchy. For a qualified path we
             // can look up the record directly; otherwise, if the scrutinee's
             // type names a uniontype, search for the record by simple name
@@ -3283,7 +3862,9 @@ fn collect_bindings_typed_tl<'a>(
             let field_tys: Vec<(String, Ty)> = {
                 let direct = if name.contains('.') {
                     record_field_tys(name, top_level)
-                } else { vec![] };
+                } else {
+                    vec![]
+                };
                 if !direct.is_empty() {
                     direct
                 } else if let Some((canonical, _)) = lookup_record_through_unions(name, top_level) {
@@ -3304,15 +3885,20 @@ fn collect_bindings_typed_tl<'a>(
                         let candidate = format!("{parent}.{simple}");
                         record_field_tys(&candidate, top_level)
                     }
-                } else { vec![] }
+                } else {
+                    vec![]
+                }
             };
             for (i, p) in fields.iter().enumerate() {
                 let ty = field_tys.get(i).map(|(_, t)| t.clone()).unwrap_or(Ty::Unknown);
                 collect_bindings_typed_tl(p, &ty, top_level, out);
             }
             for (fname, p) in named_fields {
-                let ty = field_tys.iter().find(|(n, _)| n == fname)
-                    .map(|(_, t)| t.clone()).unwrap_or(Ty::Unknown);
+                let ty = field_tys
+                    .iter()
+                    .find(|(n, _)| n == fname)
+                    .map(|(_, t)| t.clone())
+                    .unwrap_or(Ty::Unknown);
                 collect_bindings_typed_tl(p, &ty, top_level, out);
             }
         }
@@ -3326,8 +3912,7 @@ fn collect_bindings_typed_tl<'a>(
             // resolution falls back to the first matching variant's type,
             // mis-inferring `x.elements` and e.g. iterating it as an Array
             // (`.borrow().iter()`) when it is a List (E0599).
-            let var_ty = narrow_scrutinee_for_pat(pat, scrut, top_level)
-                .unwrap_or_else(|| scrut.clone());
+            let var_ty = narrow_scrutinee_for_pat(pat, scrut, top_level).unwrap_or_else(|| scrut.clone());
             out.push((var.clone(), var_ty));
             collect_bindings_typed_tl(pat, scrut, top_level, out);
         }
@@ -3344,7 +3929,9 @@ fn collect_bindings(pat: &TypedPat, out: &mut Vec<(String, Ty)>) {
             collect_bindings(tail, out);
         }
         TypedPat::Tuple(pats) => pats.iter().for_each(|p| collect_bindings(p, out)),
-        TypedPat::Constructor { fields, named_fields, .. } => {
+        TypedPat::Constructor {
+            fields, named_fields, ..
+        } => {
             fields.iter().for_each(|p| collect_bindings(p, out));
             named_fields.iter().for_each(|(_, p)| collect_bindings(p, out));
         }
@@ -3363,9 +3950,16 @@ pub enum TypedStmt {
     /// `lhs := rhs;` — `lhs` may be any pattern (`x`, `(a,b)`, `SOME(x)`, `true`, …).
     /// `info` is the statement's source span; source-rewriting passes need it
     /// because expressions carry no position of their own.
-    Assign { lhs: TypedPat, rhs: TypedExp, info: Absyn::Info },
+    Assign {
+        lhs: TypedPat,
+        rhs: TypedExp,
+        info: Absyn::Info,
+    },
     /// A call statement with no return value (or value discarded).
-    NoRetCall { call: TypedExp, info: Absyn::Info },
+    NoRetCall {
+        call: TypedExp,
+        info: Absyn::Info,
+    },
     If {
         cond: TypedExp,
         then_: Vec<TypedStmt>,
@@ -3373,14 +3967,27 @@ pub enum TypedStmt {
         else_: Vec<TypedStmt>,
     },
     /// `for var in range loop body end for;` — single-iterator form only for now.
-    For { var: String, range: TypedExp, body: Vec<TypedStmt> },
-    While { cond: TypedExp, body: Vec<TypedStmt> },
+    For {
+        var: String,
+        range: TypedExp,
+        body: Vec<TypedStmt>,
+    },
+    While {
+        cond: TypedExp,
+        body: Vec<TypedStmt>,
+    },
     /// `try body else else_body end try;`
     /// `checkpoint` is `annotation(__OpenModelica_stackOverflowCheckpoint=true)`:
     /// the `else` recovers from resource exhaustion, not from an ordinary failure.
-    Try { body: Vec<TypedStmt>, else_body: Vec<TypedStmt>, checkpoint: bool },
+    Try {
+        body: Vec<TypedStmt>,
+        else_body: Vec<TypedStmt>,
+        checkpoint: bool,
+    },
     /// `failure(body)` — succeeds iff `body` fails.
-    Failure { body: Vec<TypedStmt> },
+    Failure {
+        body: Vec<TypedStmt>,
+    },
     Return,
     Break,
     Continue,
@@ -3397,7 +4004,9 @@ pub(crate) fn comment_has_boolean_named_annotation(
     name: &str,
 ) -> bool {
     let Some(comment) = comment else { return false };
-    let Some(annotation) = &comment.annotation_ else { return false };
+    let Some(annotation) = &comment.annotation_ else {
+        return false;
+    };
     (&*annotation.elementArgs).into_iter().any(|arg| {
         let Absyn::ElementArg::MODIFICATION { path, modification, .. } = arg.as_ref() else {
             return false;
@@ -3428,7 +4037,9 @@ fn infer_stmt_into<'a>(
     pkg_prefix: &str,
     type_vars: &[String],
 ) {
-    if let Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, comment, .. } = item
+    if let Absyn::AlgorithmItem::ALGORITHMITEM {
+        algorithm_, comment, ..
+    } = item
         && let Absyn::Algorithm::ALG_TRY { body, elseBody } = algorithm_.as_ref()
         && comment_has_boolean_named_annotation(comment, "__OpenModelica_stackOverflowCheckpoint")
     {
@@ -3436,7 +4047,11 @@ fn infer_stmt_into<'a>(
         let body = infer_stmts_list(body, &mut benv, top_level, pkg_prefix, type_vars);
         let mut eenv = env.clone();
         let else_body = infer_stmts_list(elseBody, &mut eenv, top_level, pkg_prefix, type_vars);
-        out.push(TypedStmt::Try { body, else_body, checkpoint: true });
+        out.push(TypedStmt::Try {
+            body,
+            else_body,
+            checkpoint: true,
+        });
         return;
     }
     if let Some(s) = infer_stmt(item, env, top_level, pkg_prefix, type_vars) {
@@ -3468,9 +4083,7 @@ fn infer_stmt<'a>(
     type_vars: &[String],
 ) -> Option<TypedStmt> {
     let (alg, info) = match item {
-        Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } => {
-            (algorithm_.as_ref(), info.clone())
-        }
+        Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } => (algorithm_.as_ref(), info.clone()),
         Absyn::AlgorithmItem::ALGORITHMITEMCOMMENT { .. } => return None,
     };
     Some(match alg {
@@ -3496,7 +4109,10 @@ fn infer_stmt<'a>(
             }
             TypedStmt::Assign { lhs, rhs, info }
         }
-        Absyn::Algorithm::ALG_NORETCALL { functionCall, functionArgs } => {
+        Absyn::Algorithm::ALG_NORETCALL {
+            functionCall,
+            functionArgs,
+        } => {
             let func = cref_to_dotted(functionCall);
             let (args, named_args) = extract_call_args(functionArgs, env, top_level, pkg_prefix, type_vars);
             let sig_ty = lookup_ctor_ty(&func, top_level);
@@ -3521,31 +4137,60 @@ fn infer_stmt<'a>(
                     Ty::RustStruct(qname) | Ty::RustEnum(qname) => {
                         record_field_tys(qname, top_level).into_iter().map(|(n, _)| n).collect()
                     }
-                    _ => {
-                        record_field_tys(&canonical, top_level).into_iter().map(|(n, _)| n).collect()
-                    }
+                    _ => record_field_tys(&canonical, top_level)
+                        .into_iter()
+                        .map(|(n, _)| n)
+                        .collect(),
                 };
-                TypedExp::Constructor { name: canonical, args, named_args, ty, field_names }
+                TypedExp::Constructor {
+                    name: canonical,
+                    args,
+                    named_args,
+                    ty,
+                    field_names,
+                }
             } else {
                 let ty = call_ty(&func, &args, top_level, pkg_prefix);
-                TypedExp::Call { func, args, named_args, ty, sig_ty }
+                TypedExp::Call {
+                    func,
+                    args,
+                    named_args,
+                    ty,
+                    sig_ty,
+                }
             };
             TypedStmt::NoRetCall { call, info }
         }
-        Absyn::Algorithm::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => {
+        Absyn::Algorithm::ALG_IF {
+            ifExp,
+            trueBranch,
+            elseIfAlgorithmBranch,
+            elseBranch,
+        } => {
             let cond = infer_exp(ifExp, env, top_level, pkg_prefix, type_vars);
             let then_ = infer_stmts_list(trueBranch, env, top_level, pkg_prefix, type_vars);
-            let elseif: Vec<(TypedExp, Vec<TypedStmt>)> = (&**elseIfAlgorithmBranch).into_iter()
-                .map(|(c, b)| (
-                    infer_exp(c, env, top_level, pkg_prefix, type_vars),
-                    infer_stmts_list(b, env, top_level, pkg_prefix, type_vars),
-                ))
+            let elseif: Vec<(TypedExp, Vec<TypedStmt>)> = (&**elseIfAlgorithmBranch)
+                .into_iter()
+                .map(|(c, b)| {
+                    (
+                        infer_exp(c, env, top_level, pkg_prefix, type_vars),
+                        infer_stmts_list(b, env, top_level, pkg_prefix, type_vars),
+                    )
+                })
                 .collect();
             let else_ = infer_stmts_list(elseBranch, env, top_level, pkg_prefix, type_vars);
-            TypedStmt::If { cond, then_, elseif, else_ }
+            TypedStmt::If {
+                cond,
+                then_,
+                elseif,
+                else_,
+            }
         }
         Absyn::Algorithm::ALG_FOR { iterators, forBody }
-        | Absyn::Algorithm::ALG_PARFOR { iterators, parforBody: forBody } => {
+        | Absyn::Algorithm::ALG_PARFOR {
+            iterators,
+            parforBody: forBody,
+        } => {
             // Single-iterator form only.
             let iters: Vec<metamodelica::Ref<Absyn::ForIterator>> = (&**iterators).into_iter().cloned().collect();
             if iters.len() == 1 {
@@ -3562,7 +4207,11 @@ fn infer_stmt<'a>(
                 let mut inner = env.clone();
                 inner.insert(name.to_string(), elem_ty);
                 let body = infer_stmts_list(forBody, &mut inner, top_level, pkg_prefix, type_vars);
-                TypedStmt::For { var: name.to_string(), range: range_e, body }
+                TypedStmt::For {
+                    var: name.to_string(),
+                    range: range_e,
+                    body,
+                }
             } else {
                 // Multi-iterator for: nested loops with the FIRST iterator
                 // outermost (Modelica spec §11.2.2: `for i in A, j in B loop S`
@@ -3589,7 +4238,11 @@ fn infer_stmt<'a>(
                 // iterator ends up as the outermost loop.
                 let mut stmts = body;
                 for (var, range) in specs.into_iter().rev() {
-                    stmts = vec![TypedStmt::For { var, range, body: stmts }];
+                    stmts = vec![TypedStmt::For {
+                        var,
+                        range,
+                        body: stmts,
+                    }];
                 }
                 stmts.into_iter().next().expect("multi-iterator for has >1 iterator")
             }
@@ -3604,15 +4257,19 @@ fn infer_stmt<'a>(
             let body = infer_stmts_list(body, &mut benv, top_level, pkg_prefix, type_vars);
             let mut eenv = env.clone();
             let else_body = infer_stmts_list(elseBody, &mut eenv, top_level, pkg_prefix, type_vars);
-            TypedStmt::Try { body, else_body, checkpoint: false }
+            TypedStmt::Try {
+                body,
+                else_body,
+                checkpoint: false,
+            }
         }
         Absyn::Algorithm::ALG_FAILURE { equ } => {
             let mut fenv = env.clone();
             let body = infer_stmts_list(equ, &mut fenv, top_level, pkg_prefix, type_vars);
             TypedStmt::Failure { body }
         }
-        Absyn::Algorithm::ALG_RETURN   => TypedStmt::Return,
-        Absyn::Algorithm::ALG_BREAK    => TypedStmt::Break,
+        Absyn::Algorithm::ALG_RETURN => TypedStmt::Return,
+        Absyn::Algorithm::ALG_BREAK => TypedStmt::Break,
         Absyn::Algorithm::ALG_CONTINUE => TypedStmt::Continue,
         other => TypedStmt::Todo(format!("{other:?}").chars().take(60).collect()),
     })
@@ -3641,13 +4298,13 @@ fn absyn_op_to_binop(op: &Absyn::Operator) -> BinOpKind {
         Absyn::Operator::MUL | Absyn::Operator::MUL_EW => BinOpKind::Mul,
         Absyn::Operator::DIV | Absyn::Operator::DIV_EW => BinOpKind::Div,
         Absyn::Operator::POW | Absyn::Operator::POW_EW => BinOpKind::Pow,
-        Absyn::Operator::AND   => BinOpKind::And,
-        Absyn::Operator::OR    => BinOpKind::Or,
+        Absyn::Operator::AND => BinOpKind::And,
+        Absyn::Operator::OR => BinOpKind::Or,
         Absyn::Operator::EQUAL => BinOpKind::Eq,
-        Absyn::Operator::NEQUAL   => BinOpKind::NEq,
-        Absyn::Operator::LESS     => BinOpKind::Lt,
-        Absyn::Operator::LESSEQ   => BinOpKind::LEq,
-        Absyn::Operator::GREATER  => BinOpKind::Gt,
+        Absyn::Operator::NEQUAL => BinOpKind::NEq,
+        Absyn::Operator::LESS => BinOpKind::Lt,
+        Absyn::Operator::LESSEQ => BinOpKind::LEq,
+        Absyn::Operator::GREATER => BinOpKind::Gt,
         Absyn::Operator::GREATEREQ => BinOpKind::GEq,
         _ => BinOpKind::Add,
     }

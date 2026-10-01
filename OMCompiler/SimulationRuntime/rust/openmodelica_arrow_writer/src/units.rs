@@ -20,7 +20,11 @@ pub struct BaseUnit {
 
 impl Default for BaseUnit {
     fn default() -> BaseUnit {
-        BaseUnit { exponents: [0; 8], factor: 1.0, offset: 0.0 }
+        BaseUnit {
+            exponents: [0; 8],
+            factor: 1.0,
+            offset: 0.0,
+        }
     }
 }
 
@@ -37,7 +41,12 @@ pub struct DisplayUnit {
 
 impl DisplayUnit {
     pub fn new(name: &str, factor: f64, offset: f64) -> DisplayUnit {
-        DisplayUnit { name: name.to_owned(), factor, offset, inverse: false }
+        DisplayUnit {
+            name: name.to_owned(),
+            factor,
+            offset,
+            inverse: false,
+        }
     }
 }
 
@@ -53,7 +62,11 @@ pub struct UnitDef {
 
 impl UnitDef {
     pub fn new(name: &str) -> UnitDef {
-        UnitDef { name: name.to_owned(), base: None, display_units: Vec::new() }
+        UnitDef {
+            name: name.to_owned(),
+            base: None,
+            display_units: Vec::new(),
+        }
     }
 
     pub fn display_unit(&self, name: &str) -> Option<&DisplayUnit> {
@@ -67,7 +80,11 @@ impl UnitDef {
     pub(crate) fn same_base_as_predefined(&self) -> Option<UnitDef> {
         let p = predefined(&self.name)?;
         match (&self.base, &p.base) {
-            (Some(a), Some(b)) if a.exponents[..7] == b.exponents[..7] && a.factor == b.factor && a.offset == b.offset => Some(p),
+            (Some(a), Some(b))
+                if a.exponents[..7] == b.exponents[..7] && a.factor == b.factor && a.offset == b.offset =>
+            {
+                Some(p)
+            }
             (None, _) => Some(p),
             _ => None,
         }
@@ -76,7 +93,9 @@ impl UnitDef {
     /// Whether the predefined unit of this name says everything this one does,
     /// so the file need not carry it.
     pub fn is_predefined(&self) -> bool {
-        let Some(p) = self.same_base_as_predefined() else { return false };
+        let Some(p) = self.same_base_as_predefined() else {
+            return false;
+        };
         self.display_units.iter().all(|d| p.display_unit(&d.name) == Some(d))
     }
 
@@ -89,7 +108,9 @@ impl UnitDef {
     /// materialise a complete unit, an FMI exporter where a variable may only
     /// name a declared `<Unit>`.
     pub fn add_predefined_display_units(&mut self) {
-        let Some(p) = self.same_base_as_predefined() else { return };
+        let Some(p) = self.same_base_as_predefined() else {
+            return;
+        };
         if self.base.is_none() {
             self.base = p.base;
         }
@@ -295,10 +316,17 @@ pub fn predefined_units() -> impl Iterator<Item = UnitDef> {
 }
 
 fn unit_def(p: &Predef) -> UnitDef {
-    let mut display_units: Vec<DisplayUnit> =
-        p.4.iter().map(|&(n, f, o)| DisplayUnit::new(n, f, o)).collect();
+    let mut display_units: Vec<DisplayUnit> = p.4.iter().map(|&(n, f, o)| DisplayUnit::new(n, f, o)).collect();
     display_units.extend(prefixed(p.0, &display_units));
-    UnitDef { name: p.0.to_owned(), base: Some(BaseUnit { exponents: p.1, factor: p.2, offset: p.3 }), display_units }
+    UnitDef {
+        name: p.0.to_owned(),
+        base: Some(BaseUnit {
+            exponents: p.1,
+            factor: p.2,
+            offset: p.3,
+        }),
+        display_units,
+    }
 }
 
 #[cfg(test)]
@@ -328,7 +356,10 @@ mod tests {
         assert_eq!(kg.display_unit("Mg").map(|d| d.factor), Some(1e-3));
         assert!(kg.display_unit("mkg").is_none());
         // A hand-written display unit is not replaced by a prefixed one.
-        assert_eq!(predefined("K").unwrap().display_unit("degC").map(|d| d.offset), Some(-273.15));
+        assert_eq!(
+            predefined("K").unwrap().display_unit("degC").map(|d| d.offset),
+            Some(-273.15)
+        );
         // A compound unit takes no prefixes at all.
         assert!(predefined("W/(m2.K)").unwrap().display_units.is_empty());
     }
@@ -345,7 +376,10 @@ mod tests {
     #[test]
     fn a_unit_the_predefined_table_covers_is_omitted() {
         let mut k = UnitDef::new("K");
-        k.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], ..BaseUnit::default() });
+        k.base = Some(BaseUnit {
+            exponents: [0, 0, 0, 0, 1, 0, 0, 0],
+            ..BaseUnit::default()
+        });
         assert!(k.is_predefined(), "a bare K says nothing the reader does not know");
         k.display_units.push(DisplayUnit::new("degC", 1.0, -273.15));
         assert!(k.is_predefined());
@@ -366,7 +400,10 @@ mod tests {
     #[test]
     fn a_name_reused_for_other_dimensions_keeps_its_own() {
         let mut k = UnitDef::new("K");
-        k.base = Some(BaseUnit { exponents: [1, 0, 0, 0, 0, 0, 0, 0], ..BaseUnit::default() });
+        k.base = Some(BaseUnit {
+            exponents: [1, 0, 0, 0, 0, 0, 0, 0],
+            ..BaseUnit::default()
+        });
         k.add_predefined_display_units();
         assert!(k.display_units.is_empty(), "degC does not belong to a mass");
         assert_eq!(declared([k.clone()]), vec![k]);
@@ -376,35 +413,62 @@ mod tests {
     #[test]
     fn the_json_omits_every_default() {
         let mut k = UnitDef::new("K");
-        k.base = Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], ..BaseUnit::default() });
+        k.base = Some(BaseUnit {
+            exponents: [0, 0, 0, 0, 1, 0, 0, 0],
+            ..BaseUnit::default()
+        });
         k.display_units.push(DisplayUnit::new("degC", 1.0, -273.15));
-        assert_eq!(units_json(&[k]), r#"[{"name":"K","baseUnit":{"K":1},"displayUnits":[{"name":"degC","offset":-273.15}]}]"#);
+        assert_eq!(
+            units_json(&[k]),
+            r#"[{"name":"K","baseUnit":{"K":1},"displayUnits":[{"name":"degC","offset":-273.15}]}]"#
+        );
     }
 
     /// SPECIFICATION.md's predefined-unit table is this table.
     #[test]
     fn the_specification_lists_the_same_units() {
-        let spec = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/SPECIFICATION.md")).expect("SPECIFICATION.md");
+        let spec = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/SPECIFICATION.md"))
+            .expect("SPECIFICATION.md");
         let rows: Vec<&str> = spec.lines().filter(|l| l.starts_with("| `")).collect();
         let mut listed = 0;
         for row in rows {
             let cells: Vec<&str> = row.trim_matches('|').split('|').map(str::trim).collect();
-            let [name, exponents, display] = cells[..] else { continue };
+            let [name, exponents, display] = cells[..] else {
+                continue;
+            };
             let name = name.trim_matches('`');
-            let Some(p) = PREDEFINED.iter().find(|p| p.0 == name) else { continue };
+            let Some(p) = PREDEFINED.iter().find(|p| p.0 == name) else {
+                continue;
+            };
             listed += 1;
-            let exponents: Vec<i32> = exponents.trim_matches('`').split_whitespace().map(|e| e.parse().unwrap()).collect();
+            let exponents: Vec<i32> = exponents
+                .trim_matches('`')
+                .split_whitespace()
+                .map(|e| e.parse().unwrap())
+                .collect();
             assert_eq!(exponents, p.1, "{name}: exponents");
             let display: Vec<&str> = display.split(',').map(str::trim).filter(|d| !d.is_empty()).collect();
             assert_eq!(display.len(), p.4.len(), "{name}: display units {display:?}");
             for (d, &(dname, factor, offset)) in display.iter().zip(p.4) {
                 let (n, rest) = d.split_once('`').and_then(|(_, r)| r.split_once('`')).expect(d);
                 assert_eq!(n, dname, "{name}");
-                let want = format!("{}{}", spec_number(factor, true), if offset == 0.0 { String::new() } else { format!(" {}", spec_number(offset, false)) });
+                let want = format!(
+                    "{}{}",
+                    spec_number(factor, true),
+                    if offset == 0.0 {
+                        String::new()
+                    } else {
+                        format!(" {}", spec_number(offset, false))
+                    }
+                );
                 assert_eq!(rest.trim(), want, "{name}: {dname}");
             }
         }
-        assert_eq!(listed, PREDEFINED.len(), "every predefined unit is in the specification");
+        assert_eq!(
+            listed,
+            PREDEFINED.len(),
+            "every predefined unit is in the specification"
+        );
         let units: Vec<UnitDef> = predefined_units().collect();
         assert_eq!(units.len(), 42);
         assert_eq!(units.iter().map(|u| u.display_units.len()).sum::<usize>(), 576);
@@ -430,6 +494,12 @@ mod tests {
         } else {
             format!("{v}")
         };
-        if factor { format!("×{text}") } else if v < 0.0 { format!("−{}", &text[1..]) } else { format!("+{text}") }
+        if factor {
+            format!("×{text}")
+        } else if v < 0.0 {
+            format!("−{}", &text[1..])
+        } else {
+            format!("+{text}")
+        }
     }
 }

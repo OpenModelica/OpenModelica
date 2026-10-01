@@ -98,16 +98,19 @@ pub fn stringHashSdbm(str: impl AsRef<str>) -> i32 {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod string_hash_tests {
         use super::*;
 
         #[test]
         fn test_string_hash_djb2() {
             // DJB2 of "a" = 5381 * 33 + 97 = 177700 + 97 = 177797
-            assert_eq!(stringHashDjb2(literal!("a")), 5381_i32.wrapping_mul(33).wrapping_add(97));
+            assert_eq!(
+                stringHashDjb2(literal!("a")),
+                5381_i32.wrapping_mul(33).wrapping_add(97)
+            );
             assert_eq!(stringHashDjb2(literal!("")), 5381);
         }
 
