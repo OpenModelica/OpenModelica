@@ -866,9 +866,9 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   output Real dy \"Value of derivative of polynomial at u\";
 //   protected Integer n = size(p, 1);
 // algorithm
-//   dy := p[1] * /*Real*/(n - 1);
+//   dy := p[1] * (/*Real*/(n) - 1.0);
 //   for j in 2:size(p, 1) - 1 loop
-//     dy := p[j] * /*Real*/(n - j) + u * dy;
+//     dy := p[j] * (/*Real*/(n) - /*Real*/(j)) + u * dy;
 //   end for;
 //   dy := dy * du;
 // end Modelica.Math.Polynomials.evaluate_der;

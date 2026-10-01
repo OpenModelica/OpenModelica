@@ -1253,6 +1253,15 @@ public
         then
           UNARY(Operator.setType(t, exp.operator), typeCast(exp.exp, ety));
 
+      // Integer arithmetic is cast by casting the operands, so that a result
+      // that does not fit in an Integer is still the exact Real one.
+      case BINARY()
+        guard Type.isReal(ety) and isCastableIntegerArithmetic(exp.operator)
+        algorithm
+          t := Type.setArrayElementType(Operator.typeOf(exp.operator), ety);
+        then
+          BINARY(typeCast(exp.exp1, ety), Operator.setType(t, exp.operator), typeCast(exp.exp2, ety));
+
       // If-expressions are handled by casting each of the branches.
       case IF()
         algorithm
@@ -1281,6 +1290,36 @@ public
       else typeCastGeneric(exp, ety);
     end match;
   end typeCast;
+
+  function isCastableIntegerArithmetic
+    "Whether an Integer operation gives the same value on the operands cast to
+     Real: addition, subtraction and multiplication, but not division or ^."
+    input Operator op;
+    output Boolean res;
+  protected
+    import NFOperator.Op;
+  algorithm
+    res := Type.isInteger(Type.arrayElementType(Operator.typeOf(op))) and
+      (match op.op
+        case Op.ADD then true;
+        case Op.SUB then true;
+        case Op.MUL then true;
+        case Op.ADD_EW then true;
+        case Op.SUB_EW then true;
+        case Op.MUL_EW then true;
+        case Op.ADD_SCALAR_ARRAY then true;
+        case Op.ADD_ARRAY_SCALAR then true;
+        case Op.SUB_SCALAR_ARRAY then true;
+        case Op.SUB_ARRAY_SCALAR then true;
+        case Op.MUL_SCALAR_ARRAY then true;
+        case Op.MUL_ARRAY_SCALAR then true;
+        case Op.MUL_VECTOR_MATRIX then true;
+        case Op.MUL_MATRIX_VECTOR then true;
+        case Op.SCALAR_PRODUCT then true;
+        case Op.MATRIX_PRODUCT then true;
+        else false;
+      end match);
+  end isCastableIntegerArithmetic;
 
   function typeCastGeneric
     input output Expression exp;
