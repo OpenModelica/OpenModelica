@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
+jacobianElementSeed.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 array_start_vector.mos\
