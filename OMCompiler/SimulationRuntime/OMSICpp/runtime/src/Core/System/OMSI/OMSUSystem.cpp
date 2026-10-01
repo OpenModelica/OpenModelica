@@ -39,11 +39,9 @@
 // OpenModelica Simulation Interface
 #include <omsi.h>
 
-//3rdparty header
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 //osu helper struct
 struct omsi_me
@@ -1214,7 +1212,7 @@ void OMSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
 
         /*debug output*/
        /* var_names_t::iterator name_iter =  _real_vars.ourputVarNames.begin();
-        boost::container::vector<const double*>::iterator values_iter =  _real_vars.outputVars.begin();
+        std::vector<const double*>::iterator values_iter =  _real_vars.outputVars.begin();
         for(;name_iter!=_real_vars.ourputVarNames.end();++name_iter)
         {
 
@@ -1225,7 +1223,7 @@ void OMSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
 
 
         var_names_t::iterator name_iter2 =  _real_vars.parameterNames.begin();
-        boost::container::vector<const double*>::iterator values_iter2 =  _real_vars.outputParams.begin();
+        std::vector<const double*>::iterator values_iter2 =  _real_vars.outputParams.begin();
         for(;name_iter2!=_real_vars.parameterNames.end();++name_iter2)
         {
 

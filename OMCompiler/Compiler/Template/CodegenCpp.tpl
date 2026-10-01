@@ -2304,19 +2304,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
   #endif
 
-  #ifdef USE_BOOST_THREAD
-    #include <boost/thread.hpp>
-    static long unsigned int getThreadNumber()
-    {
-       boost::hash<std::string> string_hash;
-       return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-    }
-  #else
-    static long unsigned int getThreadNumber()
-    {
-       return 0;
-    }
-  #endif
+  static long unsigned int getThreadNumber()
+  {
+     return 0;
+  }
 
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
@@ -3125,14 +3116,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # SYSTEM_CFLAGS comes from ModelicaConfig_msvc.inc, so the generated code and
   # the runtime libraries agree on the defines shaping their shared structs.
   OMC_CFLAGS_OPTIMIZATION=/O2
-  CFLAGS=/nologo /MD $(OMC_CFLAGS_OPTIMIZATION) /EHsc /fp:except /wd4068 /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY $(SYSTEM_CFLAGS) <%extraCflags%>/I"$(OMHOME)/include/omc/cpp/" /I. /I"$(BOOST_INCLUDE)" /I"$(UMFPACK_INCLUDE)" /I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%>
+  CFLAGS=/nologo /MD $(OMC_CFLAGS_OPTIMIZATION) /EHsc /fp:except /wd4068 /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY $(SYSTEM_CFLAGS) <%extraCflags%>/I"$(OMHOME)/include/omc/cpp/" /I. /I"$(UMFPACK_INCLUDE)" /I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%>
   !IF "$(USE_LOGGER)" == "ON"
   CFLAGS=$(CFLAGS) /DUSE_LOGGER
   !ENDIF
   CPPFLAGS=$(CFLAGS)
 
-  LDSYSTEMFLAGS=/link /DLL /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" <%dirExtra%> <%libsStr%> OMCppSystem.lib OMCppModelicaUtilities.lib OMCppDataExchange.lib OMCppMath.lib OMCppOMCFactory.lib $(BOOST_LIBRARIES) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
-  LDMAINFLAGS=/link /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(BOOST_LIBRARIES) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDSYSTEMFLAGS=/link /DLL /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" <%dirExtra%> <%libsStr%> OMCppSystem.lib OMCppModelicaUtilities.lib OMCppDataExchange.lib OMCppMath.lib OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDMAINFLAGS=/link /LIBPATH:"$(OMCPPLIB)" /LIBPATH:"$(OMLIB)" OMCppOMCFactory.lib OMCppModelicaUtilities.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
 
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=OMCpp<%fileNamePrefix%>Main.cpp
@@ -3188,7 +3179,7 @@ case "gcc" then
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
-            CFLAGS_COMMON=$(OPENMP_FLAGS) <%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_COMMON=$(OPENMP_FLAGS) <%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
 
             ifeq ($(USE_SCOREP),ON)
             $(eval CC=scorep --user --nocompiler $(CC))
@@ -3207,8 +3198,8 @@ case "gcc" then
             MINGW_EXTRA_LIBS=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lz -lhdf5 ' else ''%>
             MODELICA_EXTERNAL_LIBS=-L$(LAPACK_LIBS) $(LAPACK_LIBRARIES) $(MINGW_EXTRA_LIBS)
 
-            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%>  $(SYSTEM_LDFLAGS) -Wl,-rpath,"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" <%timeMeasureLink%> -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL)
-            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" -L"$(OMHOME)/bin" -L"$(BOOST_LIBS)" $(BOOST_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  $(SYSTEM_LDFLAGS) -Wl,-rpath,"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" <%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lwsock32 -lws2_32 ' else ''%>
+            LDSYSTEMFLAGS_COMMON=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" $(BASE_LIB) <%additionalLinkerFlags_GCC%>  $(SYSTEM_LDFLAGS) -Wl,-rpath,"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" <%timeMeasureLink%> $(THREAD_LIBRARIES) $(LINUX_LIB_DL)
+            LDMAINFLAGS_COMMON=-L"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" -L"$(OMHOME)/bin" $(THREAD_LIBRARIES) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%>  $(SYSTEM_LDFLAGS) -Wl,-rpath,"$(OMHOME)/lib/<%Config.targetTriple()%>/omc/cpp" <%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then ' -lwsock32 -lws2_32 ' else ''%>
 
             ifeq ($(USE_PAPI),ON)
             $(eval LDMAINFLAGS_COMMON=$(LDMAINFLAGS_COMMON) <%papiLibs%>)
@@ -6630,17 +6621,6 @@ case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
       __A = shared_ptr<AMATRIX>( new AMATRIX());
    >>
 end alocateLinearSystem;
-
-template alocateLinearSystemConstructor(SimEqSystem eq, Boolean useFlatArrayNotation)
- "Generates a non linear equation system."
-::=
-match eq
-case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
-   let size = listLength(ls.vars)
-  <<
-   ,__b(boost::extents[<%size%>])
-  >>
-end alocateLinearSystemConstructor;
 
 template update(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=

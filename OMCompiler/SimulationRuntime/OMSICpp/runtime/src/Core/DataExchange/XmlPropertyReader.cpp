@@ -30,11 +30,118 @@
 #include <Core/DataExchange/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 #include <Core/DataExchange/XmlPropertyReader.h>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/lexical_cast.hpp>
+#include <expat.h>
+#include <list>
+#include <locale>
+#include <optional>
+#include <sstream>
+#include <type_traits>
 #include <fstream>
 #include <iostream>
+
+namespace {
+
+struct XmlElement
+{
+    std::string name;
+    std::map<std::string, std::string> attributes;
+    std::list<XmlElement> children;
+
+    const std::string* attribute(const std::string& key) const
+    {
+        std::map<std::string, std::string>::const_iterator it = attributes.find(key);
+        return it == attributes.end() ? nullptr : &it->second;
+    }
+
+    const std::string& requiredAttribute(const std::string& key) const
+    {
+        const std::string* value = attribute(key);
+        if (!value)
+            throw std::runtime_error("missing attribute " + key + " of " + name);
+        return *value;
+    }
+
+    const XmlElement& child(const std::string& childName) const
+    {
+        for (const XmlElement& c : children)
+            if (c.name == childName)
+                return c;
+        throw std::runtime_error("missing element " + childName + " in " + name);
+    }
+
+    // The whole attribute has to parse as a T.
+    template <class T>
+    std::optional<T> attributeAs(const std::string& key) const
+    {
+        const std::string* str = attribute(key);
+        if (!str)
+            return std::nullopt;
+        std::istringstream is(*str);
+        is.imbue(std::locale::classic());
+        T value;
+        is >> value;
+        if (is.fail()) {
+            if constexpr (!std::is_same_v<T, bool>)
+                return std::nullopt;
+            is.clear();
+            is.str(*str);
+            is >> std::boolalpha >> value;
+            if (is.fail())
+                return std::nullopt;
+        }
+        is >> std::ws;
+        if (!is.eof())
+            return std::nullopt;
+        return value;
+    }
+};
+
+void XMLCALL startElement(void* userData, const XML_Char* name, const XML_Char** atts)
+{
+    std::vector<XmlElement*>& stack = *static_cast<std::vector<XmlElement*>*>(userData);
+    stack.back()->children.emplace_back();
+    XmlElement& e = stack.back()->children.back();
+    e.name = name;
+    for (int i = 0; atts[i]; i += 2)
+        e.attributes[atts[i]] = atts[i + 1];
+    stack.push_back(&e);
+}
+
+void XMLCALL endElement(void* userData, const XML_Char*)
+{
+    static_cast<std::vector<XmlElement*>*>(userData)->pop_back();
+}
+
+void readXml(std::istream& in, XmlElement& document)
+{
+    std::vector<XmlElement*> stack(1, &document);
+    XML_Parser parser = XML_ParserCreate(NULL);
+    XML_SetUserData(parser, &stack);
+    XML_SetElementHandler(parser, startElement, endElement);
+    std::vector<char> buf(65536);
+    bool done = false;
+    while (!done) {
+        in.read(buf.data(), buf.size());
+        done = in.gcount() < (std::streamsize)buf.size();
+        if (XML_Parse(parser, buf.data(), (int)in.gcount(), done) == XML_STATUS_ERROR) {
+            std::stringstream ss;
+            ss << XML_ErrorString(XML_GetErrorCode(parser)) << " at line " << XML_GetCurrentLineNumber(parser);
+            XML_ParserFree(parser);
+            throw std::runtime_error(ss.str());
+        }
+    }
+    XML_ParserFree(parser);
+}
+
+}
+
+static std::string realToString(double value)
+{
+    std::ostringstream os;
+    os.precision(17);
+    os << value;
+    return os.str();
+}
 
 XmlPropertyReader::XmlPropertyReader(shared_ptr<IGlobalSettings> globalSettings, std::string propertyFile)
     : IPropertyReader()
@@ -59,7 +166,6 @@ XmlPropertyReader::~XmlPropertyReader()
 
 void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars)
 {
-    using boost::property_tree::ptree;
     std::ifstream file;
     file.open(_propertyFile.c_str(), std::ifstream::in);
     if (file.good())
@@ -70,37 +176,34 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
         string* stringVars = sim_vars->getStringVarsVector();
         double* derVars = sim_vars->getDerStateVector();
         int refIdx = -1;
-        boost::optional<int> refIdxOpt;
+        std::optional<int> refIdxOpt;
         try
         {
-            ptree tree;
-            read_xml(file, tree);
+            XmlElement document;
+            readXml(file, document);
 
-            ptree modelDescription = tree.get_child("ModelDescription");
+            const XmlElement& modelDescription = document.child("ModelDescription");
 
 
             LOGGER_WRITE_BEGIN("Initialize start values:", LC_INIT, LL_DEBUG);
-            FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
+            for (const XmlElement& vars : modelDescription.child("ModelVariables").children)
             {
-                if (vars.first == "ScalarVariable")
+                if (vars.name == "ScalarVariable")
                 {
-                    refIdxOpt = vars.second.get_optional<int>("<xmlattr>.valueReference");
+                    refIdxOpt = vars.attributeAs<int>("valueReference");
 
                     if (!refIdxOpt)
-                    {
-                        //boost::property_tree::xml_parser::write_xml(std::cout, vars.second);
                         continue;
-                    }
 
-                    string name = vars.second.get<string>("<xmlattr>.name");
-                    boost::optional<string> descriptonOpt = vars.second.get_optional<string>("<xmlattr>.description");
+                    string name = vars.requiredAttribute("name");
+                    const string* descriptonOpt = vars.attribute("description");
                     string descripton;
                     if (descriptonOpt)
                         descripton = *descriptonOpt;
 
                     refIdx = *refIdxOpt;
-                    std::string aliasInfo = vars.second.get<std::string>("<xmlattr>.alias");
-                    std::string variabilityInfo = vars.second.get<std::string>("<xmlattr>.variability");
+                    std::string aliasInfo = vars.requiredAttribute("alias");
+                    std::string variabilityInfo = vars.requiredAttribute("variability");
                     bool isParameter = (variabilityInfo.compare("parameter") == 0);
                     //If a start value is given for the alias and the referred variable, skip the alias declaration
                     bool isAlias = aliasInfo.compare("alias") == 0;
@@ -113,22 +216,22 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
                     {
                         if (name.substr(0, 3) == "_D_")
                             emitResult = false;
-                        std::string hideResultInfo = vars.second.get<std::string>("<xmlattr>.hideResult");
+                        std::string hideResultInfo = vars.requiredAttribute("hideResult");
                         if (hideResultInfo.compare("true") == 0)
                             emitResult = false;
                     }
 
-                    FOREACH(ptree::value_type const& var, vars.second.get_child(""))
+                    for (const XmlElement& var : vars.children)
                     {
-                        if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
+                        if ((var.name == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
                         {
                             //If a start value is given for the alias and the referred variable, skip the alias declaration
                             if (!(isAlias || isNegatedAlias))
                             {
-                                boost::optional<double> v = var.second.get_optional<double>("<xmlattr>.start");
+                                std::optional<double> v = var.attributeAs<double>("start");
                                 if (v) {
                                     double value = *v;
-                                    LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                                    LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + name + " with reference " + to_string(refIdx) + " to " + realToString(value), LC_INIT, LL_DEBUG);
                                     system.setRealStartValue(realVars[refIdx], value);
                                 }
                             }
@@ -142,15 +245,15 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
                                     _realVars.addOutputVar(name, descripton, realVarPtr, isNegatedAlias);
                             }
                         }
-                        else if (var.first == "Integer")
+                        else if (var.name == "Integer")
                         {
                             //If a start value is given for the alias and the referred variable, skip the alias declaration
                             if (!(isAlias || isNegatedAlias))
                             {
-                                boost::optional<int> v = var.second.get_optional<int>("<xmlattr>.start");
+                                std::optional<int> v = var.attributeAs<int>("start");
                                 if (v) {
                                     int value = *v;
-                                    LOGGER_WRITE("XMLPropertyReader: Setting int variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                                    LOGGER_WRITE("XMLPropertyReader: Setting int variable for " + name + " with reference " + to_string(refIdx) + " to " + to_string(value), LC_INIT, LL_DEBUG);
                                     system.setIntStartValue(intVars[refIdx], value);
                                 }
                             }
@@ -164,15 +267,15 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
                                     _intVars.addOutputVar(name, descripton, intVarPtr, isNegatedAlias);
                             }
                         }
-                        else if (var.first == "Boolean")
+                        else if (var.name == "Boolean")
                         {
                             //If a start value is given for the alias and the referred variable, skip the alias declaration
                             if (!(isAlias || isNegatedAlias))
                             {
-                                boost::optional<bool> v = var.second.get_optional<bool>("<xmlattr>.start");
+                                std::optional<bool> v = var.attributeAs<bool>("start");
                                 if (v) {
                                     bool value = *v;
-                                    LOGGER_WRITE("XMLPropertyReader: Setting bool variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                                    LOGGER_WRITE("XMLPropertyReader: Setting bool variable for " + name + " with reference " + to_string(refIdx) + " to " + to_string(value), LC_INIT, LL_DEBUG);
                                     system.setBoolStartValue(boolVars[refIdx], value);
                                 }
                             }
@@ -186,15 +289,15 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
                                     _boolVars.addOutputVar(name, descripton, boolVarPtr, isNegatedAlias);
                             }
                         }
-                        else if (var.first == "String")
+                        else if (var.name == "String")
                         {
                             //If a start value is given for the alias and the referred variable, skip the alias declaration
                             if (!(isAlias || isNegatedAlias))
                             {
-                                boost::optional<string> v = var.second.get_optional<string>("<xmlattr>.start");
+                                const string* v = var.attribute("start");
                                 if (v) {
                                     string value = *v;
-                                    LOGGER_WRITE("XMLPropertyReader: Setting string variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
+                                    LOGGER_WRITE("XMLPropertyReader: Setting string variable for " + name + " with reference " + to_string(refIdx) + " to " + value, LC_INIT, LL_DEBUG);
                                     system.setStringStartValue(stringVars[refIdx], value);
                                 }
                             }

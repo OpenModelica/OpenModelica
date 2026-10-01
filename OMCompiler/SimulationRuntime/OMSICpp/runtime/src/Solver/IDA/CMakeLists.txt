@@ -12,7 +12,7 @@ else(NOT BUILD_SHARED_LIBS)
   endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${IDAName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
+target_link_libraries(${IDAName} ${SolverName} ${ExtensionUtilitiesName} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${IDAName} runtime/include/Core/Modelica.h )
 
 

@@ -66,17 +66,6 @@ public:
         throw ModelicaSimulationError(MODEL_FACTORY, "Failed loading dgesv solver library!");
       }
     }
-    else if (lin_solver.compare("umfpack") == 0)
-    {
-      fs::path umfpack_path = ObjectFactory<CreationPolicy>::_library_path;
-      fs::path umfpack_name(UMFPACK_LIB);
-      umfpack_path /= umfpack_name;
-      LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(umfpack_path.string(), *_linsolver_type_map);
-      if (result != LOADER_SUCCESS)
-      {
-        throw ModelicaSimulationError(MODEL_FACTORY, "Failed loading umfpack solver library!");
-      }
-    }
     else if (lin_solver.compare("linearSolver") == 0)
     {
       // dgesv/dgetc2 for dense and klu for sparce Jacobians

@@ -703,7 +703,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
 
-  CFLAGS=$(SYSTEM_CFLAGS) /w /I"<%makefileParams.omhome%>/include/omc/omsi/" /I"<%makefileParams.omhome%>/include/omc/omsi/base" /I"<%makefileParams.omhome%>/include/omc/omsi/solver/"  /I"<%makefileParams.omhome%>/include/omc/omsicpp/" /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /I. /TP /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY /DFMU_BUILD /DRUNTIME_STATIC_LINKING
+  CFLAGS=$(SYSTEM_CFLAGS) /w /I"<%makefileParams.omhome%>/include/omc/omsi/" /I"<%makefileParams.omhome%>/include/omc/omsi/base" /I"<%makefileParams.omhome%>/include/omc/omsi/solver/"  /I"<%makefileParams.omhome%>/include/omc/omsicpp/" /I"$(SUITESPARSE_INCLUDE)" /I. /TP /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY /DFMU_BUILD /DRUNTIME_STATIC_LINKING
 
 
   # /MD - link with MSVCRT.LIB
@@ -741,7 +741,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   // Note: FMI 1.0 did not distinguish modelIdentifier from fileNamePrefix
   let platformstr = match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>'
   let omhome = makefileParams.omhome
-  let platformbins = match platformstr case "win32" case "win64" then '"<%omhome%>/bin/libgcc_s_*.dll" "<%omhome%>/bin/libstdc++-6.dll" "<%omhome%>/bin/libwinpthread-1.dll"' else ''
   let lapackbins = match platformstr case "win32" case "win64" then '"<%omhome%>/bin/libopenblas.dll"' else ''
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
@@ -790,7 +789,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   FMU_CFLAGS=$(subst -DUSE_THREAD,,$(subst -O0,$(SIM_OPT_LEVEL),$(SYSTEM_CFLAGS))) $(ABI_CFLAG)
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DFMU_BUILD -DRUNTIME_STATIC_LINKING -UENABLE_OMSI -I"$(OMHOME)/include/omc/omsi/" -I"$(OMHOME)/include/omc/omsi/base" -I"$(OMHOME)/include/omc/omsi/solver" -I"$(OMHOME)/include/omc/omsicpp/"  -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DFMU_BUILD -DRUNTIME_STATIC_LINKING -UENABLE_OMSI -I"$(OMHOME)/include/omc/omsi/" -I"$(OMHOME)/include/omc/omsi/base" -I"$(OMHOME)/include/omc/omsi/solver" -I"$(OMHOME)/include/omc/omsicpp/"  -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
 
   ifeq ($(USE_LOGGER),ON)
     $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
@@ -827,12 +826,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) <%lapackbins%>)
   endif
 
-  # need boost system lib prior to C++11, forcing also dynamic libs
-  ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
-    $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)")
-    $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
-  else ifeq ($(findstring gcc,$(CC)),gcc)
+  ifeq ($(findstring gcc,$(CC)),gcc)
     $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))
   else ifeq ($(findstring clang,$(CC)),clang)
     $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))

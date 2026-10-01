@@ -49,8 +49,6 @@
 
 #include <Core/Math/ILapack.h>
 #include <Core/Utils/extension/logger.hpp>
-#include <Core/Utils/numeric/bindings/ublas.hpp>
-#include <Core/Utils/numeric/utils.h>
 
 /**\Callback function for Kinsol to calculate right hand side, calls internal Kinsol member function
  *  \param [in] y variables vector

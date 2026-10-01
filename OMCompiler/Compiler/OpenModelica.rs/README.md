@@ -185,11 +185,6 @@ built from the same file (its vcpkg port is nmake-only and cannot cross from
 Linux, so it is cloned from its CMake fork, built with the toolchain, and wrapped
 in a generated `pthreadsConfig.cmake`).
 
-Boost, which the C++ simulation runtime needs, comes from `cmake/OMCBoost.cmake`
-instead, which is not Windows-specific: it builds Boost from source under
-whatever toolchain is configured, so the macOS cross builds below get it the same
-way. See `OM_FETCH_BOOST` there.
-
 Everything any of this downloads goes into one directory, `OM_DOWNLOADS_DIR`
 (default `<build>/downloads`, shared with the wasm toolchain pieces
 `rust_omc.cmake` fetches). Point it outside the build tree to survive a wiped
@@ -234,13 +229,12 @@ cmake -S . -B build-mac \
   -DCMAKE_BUILD_TYPE=Release -DOM_OMC_ENABLE_RUST=ON -DRUST_OMC_CI=ON \
   -DRUST_OMC_TARGET=aarch64-apple-darwin -DOM_ENABLE_GUI_CLIENTS=OFF \
   -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_MOO=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
-  -DOM_OMC_ENABLE_CPP_RUNTIME=OFF -DOM_OMC_ENABLE_PARMODELICA=OFF \
   -DOM_ENABLE_OMSIMULATOR=OFF -DOM_OMC_ENABLE_COLPACK=OFF
 ```
 
 ColPack is off because its SMPGC includes `omp.h` unconditionally and zig ships
 no OpenMP; the rest are the same reductions the Windows cross build starts from
-(no Fortran linker, no Boost). A universal distribution is the two architectures
+(no Fortran linker). A universal distribution is the two architectures
 built separately and merged with `lipo` — `.CI/scripts/mac-universal.sh` does
 that over two install trees. Status and open items: see
 `HANDOFF-rust-nightly-cross.md`.

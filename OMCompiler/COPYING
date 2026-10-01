@@ -336,7 +336,6 @@ or online http://opensource.org/licenses/LGPL-2.1.
 [BSD-2-Clause] Copyright (C) 2008-2011 MODELISAR consortium,
                2012-2022 Modelica Association Project "FMI"
                FMI 2 Standard Headers
-[BSL 1.0] Copyright (c) 2009 Rutger ter Borg, Boost.Numeric.Bindings (BLAS/LAPACK bindings)
 [BSL 1.0] Copyright (C) 2008 Jeremy Pack, Boost.Extension
 [BSD] Copyright (c) 2002, The Regents of the University of California,
               DASKR (f2c-translated Fortran DAE solver, UCRL-CODE-2002-058)

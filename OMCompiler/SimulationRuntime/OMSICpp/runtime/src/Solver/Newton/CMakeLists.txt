@@ -11,7 +11,6 @@ if(DGESV_FOUND)
   target_link_libraries(${NewtonName}
     ${SolverName}
     ${ExtensionUtilitiesName}
-    ${Boost_LIBRARIES}
     ${ModelicaName})
 else()
   add_library(${NewtonName}
@@ -21,7 +20,6 @@ else()
   target_link_libraries(${NewtonName}
     ${SolverName}
     ${ExtensionUtilitiesName}
-    ${Boost_LIBRARIES}
     ${LAPACK_LIBRARIES}
     ${ModelicaName})
 endif(DGESV_FOUND)
@@ -37,7 +35,6 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${NewtonName}
   ${SolverName}
   ${ExtensionUtilitiesName}
-  ${Boost_LIBRARIES}
   ${LAPACK_LIBRARIES}
   ${ModelicaName})
 add_precompiled_header(${NewtonName} runtime/include/Core/Modelica.h)

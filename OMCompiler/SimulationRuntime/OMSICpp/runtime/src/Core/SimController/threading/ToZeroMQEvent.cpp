@@ -29,11 +29,22 @@
 #include <Core/Modelica.h>
 #include <Core/SimController/threading/ToZeroMQEvent.h>
 #include "zhelpers.hpp"
-#define BOOST_SPIRIT_THREADSAFE
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-// Short alias for this namespace
-namespace pt = boost::property_tree;
+
+// The string value of key in a flat JSON object.
+static std::string jsonString(const std::string& json, const std::string& key)
+{
+    size_t pos = json.find("\"" + key + "\"");
+    if (pos != std::string::npos)
+        pos = json.find(':', pos + key.size() + 2);
+    if (pos != std::string::npos)
+        pos = json.find('"', pos + 1);
+    if (pos == std::string::npos)
+        throw ModelicaSimulationError(SIMMANAGER, "No " + key + " in " + json);
+    std::string value;
+    for (size_t i = pos + 1; i < json.size() && json[i] != '"'; i++)
+        value += json[i] == '\\' && i + 1 < json.size() ? json[++i] : json[i];
+    return value;
+}
 
 ToZeroMQEvent::ToZeroMQEvent(int pubPort, int subPort, string zeroMQJobiID, string zeroMQServerID, string zeroMQClientID)
     :ctx_(1),
@@ -61,16 +72,11 @@ ToZeroMQEvent::~ToZeroMQEvent()
 
 void ToZeroMQEvent::NotifyResults(double progress)
 {
-    boost::property_tree::ptree progress_tree;
-    std::stringstream progress_stream;
     int p = (int)progress;
     if ((_progress != p)&& (!_zeromq_job_id.empty()))
     {
 
         _progress = p;
-        progress_tree.put("JobId", _zeromq_job_id);
-        progress_tree.put("Progress", (int)progress);
-        pt::write_json(progress_stream, progress_tree);
        
         s_sendmore(publisher_, _zeromq_client_id,false);
         s_sendmore(publisher_, "SimulationProgressChanged",false);
@@ -97,11 +103,7 @@ void ToZeroMQEvent::NotifyWaitForStarting()
     std::string type = s_recv(subscriber_);
     //  Read message contents
     std::string message = s_recv(subscriber_);
-    std::stringstream ss(message);
-    // Create a root
-    pt::ptree root;
-    pt::read_json(ss, root);
-    _zeromq_job_id = root.get < std::string >("jobId");
+    _zeromq_job_id = jsonString(message, "jobId");
     
   
 }

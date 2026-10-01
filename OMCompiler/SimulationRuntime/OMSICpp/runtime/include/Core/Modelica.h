@@ -73,7 +73,6 @@ using std::runtime_error;
 // uBLAS library
 namespace ublas = omcpp::linalg;
 
-#if !defined(USE_CPP_03) && !defined(__vxworks)
 #include <array>
 #include <tuple>
 #include <memory>
@@ -132,82 +131,6 @@ using std::shared_ptr;
 using std::weak_ptr;
 using std::dynamic_pointer_cast;
 using std::to_string;
-#else
-#if defined(_MSC_VER)
-    #include <tuple>
-    using std::get;
-    using std::tuple;
-    using std::make_tuple;
-    using std::minmax_element;
-#else
-    #include <boost/tuple/tuple.hpp>
-    #include <boost/algorithm/minmax_element.hpp>
-    using boost::get;
-    using boost::tuple;
-    using boost::make_tuple;
-    using boost::minmax_element;
-#endif
-  #include <boost/foreach.hpp>
-  #include <boost/lexical_cast.hpp>
-  #include <boost/assign/list_of.hpp>
-  #include <boost/array.hpp>
-  #include <boost/math/special_functions/fpclassify.hpp>
-  #include <boost/math/special_functions/trunc.hpp>
-  #include <boost/unordered_map.hpp>
-  #include <boost/unordered_set.hpp>
-  #include <boost/ref.hpp>
-  #include <boost/shared_ptr.hpp>
-  #include <boost/weak_ptr.hpp>
-
-#if defined(USE_THREAD)
-    #include <boost/thread.hpp>
-    #include <boost/atomic.hpp>
-    #include <boost/thread/mutex.hpp>
-    #include <boost/bind.hpp>
-    using boost::bind;
-    using boost::function;
-    using boost::thread;
-    using boost::atomic;
-    using boost::mutex;
-    using boost::memory_order_release;
-    using boost::memory_order_relaxed;
-    using boost::condition_variable;
-    using boost::unique_lock;
-#endif //USE_THREAD
-
-  // boost range based for loop
-  #define FOREACH BOOST_FOREACH
-
-  // boost list initializers
-  #define LIST_OF boost::assign::list_of(
-  #define LIST_SEP )(
-  #define LIST_END )
-  #define MAP_LIST_OF boost::assign::map_list_of(
-  #define MAP_LIST_SEP )(
-  #define MAP_LIST_END )
-  #define TUPLE_LIST_OF boost::assign::tuple_list_of(
-  #define TUPLE_LIST_SEP )(
-  #define TUPLE_LIST_END )
-
-  /** namespace for generated code to avoid name clashes */
-  namespace omcpp {
-    using boost::ref;
-    using boost::math::trunc;
-    template <typename T>
-    std::string to_string(T val) {
-      return boost::lexical_cast<std::string>(val);
-    }
-  }
-  using boost::array;
-  using boost::math::isfinite;
-  using boost::unordered_map;
-  using boost::unordered_set;
-  using boost::shared_ptr;
-  using boost::weak_ptr;
-  using boost::dynamic_pointer_cast;
-  using omcpp::to_string;
-  using namespace boost::lambda;
-#endif //!USE_CPP_03
 
 #if defined(USE_THREAD)
   #include <Core/Utils/extension/barriers.hpp>
@@ -215,8 +138,6 @@ using std::to_string;
 
 
 
-//typedef boost::function<bool (unsigned int)> getCondition_type;
-//typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
 typedef ublas::compressed_matrix<double, ublas::column_major, 0, ublas::unbounded_array<int>, ublas::unbounded_array<
                                      double>> sparsematrix_t;
 typedef ublas::matrix<double, ublas::column_major> matrix_t;
@@ -259,8 +180,4 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/Math/Utility.h>
 #include <Core/DataExchange/IPropertyReader.h>
 #include <Core/DataExchange/SimDouble.h>
-#ifdef USE_REDUCE_DAE
-#include <Core/ReduceDAE/IReduceDAE.h>
-#include <Core/ReduceDAE/ReduceDAESettings.h>
-#endif
 /** @} */ // end of group1

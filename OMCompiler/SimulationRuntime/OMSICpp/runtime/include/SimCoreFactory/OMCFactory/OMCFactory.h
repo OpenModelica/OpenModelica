@@ -113,7 +113,7 @@ protected:
     SimSettings readSimulationParameter(int argc, const char* argv[]);
 
     /**
-     * This helper-function is invoked by the boost program option library and will handle options in the c-runtime
+     * This helper-function is invoked by the command line parser and will handle options in the c-runtime
      * format and options that should be ignored.
      * It parses a long option that starts with one dash, like '-port=12345' and put it into the 'unrecognized' category.
      * If an option is detected which is part of the arguments to ignore list, it is put into the 'ignored' category.

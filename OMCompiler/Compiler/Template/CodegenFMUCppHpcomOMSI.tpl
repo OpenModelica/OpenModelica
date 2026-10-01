@@ -148,7 +148,7 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
   let &additionalLinkerFlags_GCC = buffer ""
   let &additionalLinkerFlags_MSVC = buffer ""
 
-  let &additionalLinkerFlags_GCC += if boolOr(stringEq(type,"pthreads"), stringEq(type,"pthreads_spin")) then " -lboost_thread" else ""
+  let &additionalLinkerFlags_GCC += if boolOr(stringEq(type,"pthreads"), stringEq(type,"pthreads_spin")) then " -lpthread" else ""
 
   <<
   <%CodegenCppHpcomOMSI.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>

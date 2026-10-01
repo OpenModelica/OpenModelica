@@ -759,7 +759,7 @@ Map nightlyTarget(String name) {
     'win64': [
       triple: 'x86_64-pc-windows-msvc',
       toolchain: "${rs}/xwin-toolchain.cmake",
-      // OpenBLAS, Boost and PThreads4W are fetched/built by windows-deps.cmake,
+      // OpenBLAS and PThreads4W are fetched/built by windows-deps.cmake,
       // which the top-level CMakeLists includes when cross-compiling to Windows.
       configure: noFortran + ['-DENABLE_CPACK=OFF', '-DZMQ_BUILD_TESTS=OFF'],
       qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/msvc2022_64',
@@ -908,8 +908,7 @@ List nightlyCommonFlags(Map t) {
                 '-DOM_USE_CCACHE=OFF',
                 // The downloads default under the build tree, which
                 // standardSetup()'s `git clean -ffdx` deletes first, so they
-                // would be re-fetched once per stage per night (Boost alone is
-                // a 108 MB tarball).
+                // would be re-fetched once per stage per night.
                 '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
                 "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"]
   // linux64 is native, so it has neither.
