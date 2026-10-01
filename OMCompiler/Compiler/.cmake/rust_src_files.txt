@@ -66,6 +66,7 @@ mmtorust/src/main.rs
 mmtorust/src/overrides.rs
 mmtorust/src/mc_disjoint.rs
 mmtorust/src/mutable_cycles.rs
+mmtorust/src/rustfmt.rs
 mmtorust/src/scripting_api_qt.rs
 mmtorust/src/typedexp.rs
 mmtorust/src/unused_functions.rs

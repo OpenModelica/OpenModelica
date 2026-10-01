@@ -2013,6 +2013,9 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
             if !file_missing.is_empty() {
                 missing_imports.lock().unwrap().extend(file_missing);
             }
+            // Inside the timed section: the parallel-speedup guard below sets
+            // the summed per-file times against the wall clock of this phase.
+            let content = crate::rustfmt::format(&content, std::path::Path::new(&file_path));
             let file_elapsed = file_t0.elapsed();
             file_micros_total.fetch_add(file_elapsed.as_micros() as u64, Ordering::Relaxed);
             per_file
@@ -2042,8 +2045,12 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
         if dir == "openmodelica/src" {
             continue;
         }
+        let lib_path = format!("{dir}/lib.rs");
         let lib_content = generate_lib_file(hier, dir, output_dir);
-        write_if_changed(&format!("{dir}/lib.rs"), &lib_content)?;
+        write_if_changed(
+            &lib_path,
+            &crate::rustfmt::format(&lib_content, std::path::Path::new(&lib_path)),
+        )?;
     }
     phase_times.push(("lib.rs serial pass", _pp.elapsed()));
 
@@ -2138,6 +2145,21 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
     Ok(())
 }
 
+/// Lexicographic comparison of `parts` (each an `Ordering` expression), as the
+/// flat chain `a.then_with(|| b).then_with(|| c)`. The nested form
+/// `a.then_with(|| b.then_with(|| c))` means the same, but a record with dozens
+/// of fields nests that deep, and rustfmt takes exponential time on it.
+fn chain_cmps(parts: &[String]) -> String {
+    let mut out = parts[0].clone();
+    for p in &parts[1..] {
+        out.push_str(".then_with(|| ");
+        out.push_str(p);
+        out.push(')');
+    }
+    out
+}
+
+/// Callers pass Rust sources through `crate::rustfmt::format` first.
 fn write_if_changed(path: &str, content: &str) -> std::io::Result<()> {
     if let Ok(existing) = std::fs::read(path)
         && existing == content.as_bytes()
@@ -2239,7 +2261,9 @@ fn emit_scripting_api_qt(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std:
 
     std::fs::create_dir_all(&dir)?;
     std::fs::create_dir_all(&qt_dir)?;
-    write_if_changed(&format!("{dir}/scripting_api_qt.rs"), &generated.rust_abi)?;
+    let rust_abi_path = format!("{dir}/scripting_api_qt.rs");
+    let rust_abi = crate::rustfmt::format(&generated.rust_abi, std::path::Path::new(&rust_abi_path));
+    write_if_changed(&rust_abi_path, &rust_abi)?;
     write_if_changed(
         &format!("{qt_dir}/OpenModelicaScriptingAPIQtABI.h"),
         &generated.abi_header,
@@ -4468,8 +4492,7 @@ fn emit_dyn_field_cmp(ty: &Ty, l: &str, r: &str) -> String {
             } else if parts.len() == 1 {
                 parts.into_iter().next().unwrap()
             } else {
-                let joined = parts.join(".then_with(|| ");
-                format!("{joined}{}", ")".repeat(elems.len() - 1))
+                chain_cmps(&parts)
             };
             format!("(match ({l}, {r}) {{ (({lpat}), ({rpat})) => {body} }})")
         }
@@ -4752,11 +4775,7 @@ fn emit_dyn_fn_container_impls(
                             }
                         })
                         .collect();
-                    let cmps = if parts.len() == 1 {
-                        parts[0].clone()
-                    } else {
-                        format!("{}{}", parts.join(".then_with(|| "), ")".repeat(parts.len() - 1))
-                    };
+                    let cmps = chain_cmps(&parts);
                     writeln!(
                         out,
                         "{indent}            (Self::{vname} {{ {lhs} }}, Self::{vname} {{ {rhs} }}) => {cmps},"
@@ -4785,12 +4804,7 @@ fn emit_dyn_fn_container_impls(
                         }
                     })
                     .collect();
-                if parts.len() == 1 {
-                    writeln!(out, "{indent}        {}", parts[0]).unwrap();
-                } else {
-                    let chained = parts.join(".then_with(|| ");
-                    writeln!(out, "{indent}        {chained}{}", ")".repeat(parts.len() - 1)).unwrap();
-                }
+                writeln!(out, "{indent}        {}", chain_cmps(&parts)).unwrap();
             }
         }
         writeln!(out, "{indent}    }}").unwrap();

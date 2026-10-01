@@ -15,6 +15,7 @@ mod fix;
 mod hierarchy;
 mod mc_disjoint;
 mod mutable_cycles;
+mod rustfmt;
 mod scripting_api_qt;
 mod typedexp;
 mod unused_functions;
