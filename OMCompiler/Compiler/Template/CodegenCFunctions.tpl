@@ -8964,7 +8964,8 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
               else
                 '<%varAttributes(var, &sub)%>.start'
           else if isPre then
-            '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
+            // the pre values have the layout of the values
+            '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%simVarIndex(ty, "Vars", '<%index%>')%>]<%c_comment%>)<%&sub%>'
           else
             '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[<%simVarIndex(ty, "Vars", '<%index%>')%>]<%c_comment%>)<%sub%>'
       end match
