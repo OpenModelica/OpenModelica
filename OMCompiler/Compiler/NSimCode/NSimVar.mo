@@ -274,6 +274,7 @@ public
       input VarType varType;
       output list<SimVar> simVars = {};
       input output SimCode.SimCodeIndices indices;
+      input Boolean elementIndex = false "the index of an array variable is the position of its first element";
     protected
       Integer uniq = indices.uniqueIndex;
       Integer idx = getTypeIndex(indices, varType);
@@ -283,7 +284,7 @@ public
         var := Pointer.access(var_ptr);
         simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
         uniq := uniq + 1;
-        idx := idx + 1;
+        idx := idx + (if elementIndex then Variable.size(var) else 1);
       end for;
       simVars := listReverseInPlace(simVars);
       indices.uniqueIndex := uniq;

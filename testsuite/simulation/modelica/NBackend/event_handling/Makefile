@@ -13,6 +13,7 @@ AssertNoEvent.mos\
 integerIteratorNoEvent.mos\
 algorithmWhenForLoop.mos\
 mathEvents.mos\
+relationSlotsFor.mos\
 compositeRelationEvents.mos\
 
 # test that currently fail. Move up when fixed.
