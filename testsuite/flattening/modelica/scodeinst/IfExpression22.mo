@@ -40,14 +40,14 @@ end IfExpression22;
 // class IfExpression22
 //   final constant Boolean flueGasModel.fixedMixingRatio = false;
 //   final constant Integer flueGasModel.nc = 3;
-//   final parameter Real flueGasModel.defaultMixingRatio[1] = /*Integer*/(1.0);
-//   final parameter Real flueGasModel.defaultMixingRatio[2] = /*Integer*/(1.0);
-//   final parameter Real flueGasModel.defaultMixingRatio[3] = /*Integer*/(1.0);
+//   final parameter Real flueGasModel.defaultMixingRatio[1] = 1.0;
+//   final parameter Real flueGasModel.defaultMixingRatio[2] = 1.0;
+//   final parameter Real flueGasModel.defaultMixingRatio[3] = 1.0;
 //   constant Boolean medium.fixedMixingRatio = false;
 //   final constant Integer medium.nc = 3;
-//   final parameter Real medium.defaultMixingRatio[1] = flueGasModel.defaultMixingRatio[1];
-//   final parameter Real medium.defaultMixingRatio[2] = flueGasModel.defaultMixingRatio[2];
-//   final parameter Real medium.defaultMixingRatio[3] = flueGasModel.defaultMixingRatio[3];
+//   final parameter Real medium.defaultMixingRatio[1] = 1.0;
+//   final parameter Real medium.defaultMixingRatio[2] = 1.0;
+//   final parameter Real medium.defaultMixingRatio[3] = 1.0;
 //   final parameter Real h_start = specificEnthalpy_pTxi(medium);
 // end IfExpression22;
 // endResult
