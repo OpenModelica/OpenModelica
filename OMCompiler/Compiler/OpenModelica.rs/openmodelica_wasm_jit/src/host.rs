@@ -332,6 +332,16 @@ pub mod array_abi {
     /// Copy `src` to `dst` converting between row-major and column-major storage
     /// (C's `convert_alloc_*_{to,from}_f77`, without its 2-D-only restriction).
     pub fn reorder(src: &[u8], dst: &mut [u8], dims: &[usize], esz: usize, to_fortran: bool) {
+        if let [d0, d1] = *dims {
+            for i in 0..d0 {
+                for j in 0..d1 {
+                    let (r, c) = (i * d1 + j, i + j * d0);
+                    let (from, to) = if to_fortran { (r, c) } else { (c, r) };
+                    dst[to * esz..(to + 1) * esz].copy_from_slice(&src[from * esz..(from + 1) * esz]);
+                }
+            }
+            return;
+        }
         let total: usize = dims.iter().product();
         let mut idx = vec![0usize; dims.len()];
         for r in 0..total {
