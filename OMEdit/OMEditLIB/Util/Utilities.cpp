@@ -244,6 +244,15 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpCollapseAllButton->setIcon(QIcon(":/Resources/icons/top.svg"));
   mpCollapseAllButton->setToolTip(Helper::collapseAll);
   mpCollapseAllButton->setAutoRaise(true);
+  // show hide button
+  mpShowHideButton = new QToolButton;
+  QString showHideButtonText = tr("Filter Setup");
+  mpShowHideButton->setText(showHideButtonText);
+  mpShowHideButton->setIcon(QIcon(":/Resources/icons/settings.svg"));
+  mpShowHideButton->setToolTip(showHideButtonText);
+  mpShowHideButton->setAutoRaise(true);
+  mpShowHideButton->setCheckable(true);
+  connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
   // filters widget
   mpFiltersWidget = new QWidget;
   // create the case sensitivity checkbox
@@ -271,6 +280,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
   pFiltersWidgetLayout->addWidget(mpFiltersHelpButton, 0, 2);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
+  mpFiltersWidget->hide();
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -280,8 +290,23 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
   pMainLayout->addWidget(mpExpandAllButton, 0, 2);
   pMainLayout->addWidget(mpCollapseAllButton, 0, 3);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 4);
+  pMainLayout->addWidget(mpShowHideButton, 0, 4);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief TreeSearchFilters::showHideFilters
+ * Shows or hides the filters widget.
+ * \param On
+ */
+void TreeSearchFilters::showHideFilters(bool On)
+{
+  if (On) {
+    mpFiltersWidget->show();
+  } else {
+    mpFiltersWidget->hide();
+  }
 }
 
 /*!
