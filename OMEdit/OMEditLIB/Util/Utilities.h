@@ -179,11 +179,13 @@ private:
   QToolButton *mpScrollToActiveButton;
   QToolButton *mpExpandAllButton;
   QToolButton *mpCollapseAllButton;
+  QToolButton *mpShowHideButton;
   QWidget *mpFiltersWidget;
   QComboBox *mpSyntaxComboBox;
   QToolButton *mpFiltersHelpButton;
   QCheckBox *mpCaseSensitiveCheckBox;
 private slots:
+  void showHideFilters(bool On);
   void showFiltersHelp();
 signals:
   void clearFilter(const QString &);
