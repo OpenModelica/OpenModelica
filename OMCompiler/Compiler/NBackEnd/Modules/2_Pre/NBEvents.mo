@@ -57,6 +57,7 @@ protected
   import NFFunction.Function;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
+  import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -712,7 +713,7 @@ public
                 iter        = iter,
                 eqn         = eqn,
                 funcMap     = funcMap,
-                createEqn   = false)));
+                createEqn   = false, mathEvents = true)));
         then stmt;
       end match;
     end fromStatement;
@@ -878,10 +879,14 @@ public
   uniontype MathEvent
     "A math function with discontinuities, e.g. floor(x) or mod(x, y). Like in the old backend it
     gets the index of its mathEventsValuePre[] slots as last argument, its value only changes at
-    events and it is a zero crossing."
+    events and it is a zero crossing. Inside a for-equation the call gets one block of slots for
+    all iterations and the index depends on the iterators, the equation and the zero crossing
+    stay loops: index = first + slots * (flat zero based iteration index)."
     record MATH_EVENT
       Expression exp                        "the call with the index as last argument";
+      Iterator iter                         "iterator of the call";
       Integer index                         "first mathEventsValuePre[] slot";
+      Integer size                          "number of iterations";
       UnorderedSet<Pointer<Equation>> eqns  "equations where the function occurs";
     end MATH_EVENT;
 
@@ -934,34 +939,86 @@ public
     end isTimeCref;
 
     function create
-      "returns the call with the index of an equal existing math event or a new one"
+      "returns the call with the index of an equal existing math event or a new one. Returns the
+      call unchanged if the iterator is not supported, it does not trigger events then."
       input output Expression exp;
       input output Bucket bucket;
+      input Iterator iter;
       input Pointer<Equation> eqn;
     protected
+      Condition key = Condition.CONDITION(exp, iter, 0);
       MathEvent mev;
       Call call;
+      Expression offset;
+      Integer size, slots;
+      Boolean supported;
     algorithm
-      mev := match UnorderedMap.get(exp, bucket.math_map)
+      _ := match UnorderedMap.get(key, bucket.math_map)
         case SOME(mev) algorithm
           UnorderedSet.add(eqn, mev.eqns);
-        then mev;
+          exp := mev.exp;
+        then ();
         else algorithm
-          Expression.CALL(call = call) := exp;
-          call := Call.setArguments(call, listAppend(Call.arguments(call), {Expression.INTEGER(bucket.math_index)}));
-          mev := MATH_EVENT(Expression.CALL(call), bucket.math_index, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
-          UnorderedMap.add(exp, mev, bucket.math_map);
-          bucket.math_index := bucket.math_index + numSlots(exp);
-        then mev;
+          (offset, size, supported) := iterationOffset(iter);
+          if supported then
+            slots := numSlots(exp);
+            Expression.CALL(call = call) := exp;
+            call := Call.setArguments(call, listAppend(Call.arguments(call), {
+              SimplifyExp.simplify(Expression.MULTARY({Expression.INTEGER(bucket.math_index),
+                Expression.MULTARY({Expression.INTEGER(slots), offset}, {}, Operator.makeMul(Type.INTEGER()))}, {}, Operator.makeAdd(Type.INTEGER())))}));
+            mev := MATH_EVENT(Expression.CALL(call), iter, bucket.math_index, size, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
+            UnorderedMap.add(key, mev, bucket.math_map);
+            bucket.math_index := bucket.math_index + slots * size;
+            exp := mev.exp;
+          end if;
+        then ();
       end match;
-      exp := mev.exp;
     end create;
+
+    function iterationOffset
+      "zero based flat index of the current iteration and the number of iterations, the last
+      iterator is the fastest. Only for literal ranges with step 1 and without iterator maps."
+      input Iterator iter;
+      output Expression offset = Expression.INTEGER(0);
+      output Integer size = 1;
+      output Boolean supported = true;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      Integer start = 0, step = 1, stop = 0, n;
+    algorithm
+      (names, ranges, maps) := Iterator.getFrames(iter);
+      for tpl in List.zip3(names, ranges, maps) loop
+        supported := match tpl
+          case (_, Expression.RANGE(), NONE()) guard(Expression.isLiteral(Util.tuple32(tpl))) algorithm
+            (start, step, stop) := Expression.getIntegerRange(Util.tuple32(tpl), false);
+          then step == 1;
+          else false;
+        end match;
+        if not supported then
+          return;
+        end if;
+        n := max(stop - start + 1, 0);
+        // offset * n + (name - start)
+        offset := Expression.MULTARY({
+          Expression.MULTARY({offset, Expression.INTEGER(n)}, {}, Operator.makeMul(Type.INTEGER())),
+          Expression.fromCref(Util.tuple31(tpl)),
+          Expression.INTEGER(-start)}, {}, Operator.makeAdd(Type.INTEGER()));
+        size := size * n;
+      end for;
+    end iterationOffset;
 
     function indexGt
       input MathEvent mev1;
       input MathEvent mev2;
       output Boolean b = mev1.index > mev2.index;
     end indexGt;
+
+    function numZeroCrossings
+      input MathEvent mev;
+      output Integer n = mev.size;
+    end numZeroCrossings;
 
     function convert
       input MathEvent mev;
@@ -976,7 +1033,7 @@ public
         index       = index,
         relation_   = Expression.toDAE(mev.exp),
         occurEquLst = list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names),
-        iter        = NONE()
+        iter        = convertEventIterator(mev.iter)
       );
     end convert;
   end MathEvent;
@@ -1380,7 +1437,7 @@ protected
         Condition.size(condition) -- the condition's scalar iteration count -- so a for-loop-wrapped
         relation (e.g. v_abc[i] > a for i in 1:3) reserves one storedRelations slot per iteration
         instead of all iterations colliding on a single shared slot (see StateEvent.create/convert)";
-      UnorderedMap<Expression, MathEvent> math_map          "math functions that trigger events by their call without index";
+      UnorderedMap<Condition, MathEvent> math_map           "math functions that trigger events by their call without index and iterator";
       Integer math_index                                    "next free mathEventsValuePre[] slot";
     end BUCKET;
   end Bucket;
@@ -1394,7 +1451,7 @@ protected
       aux_stmts   = NONE(),
       stmt_index  = 1,
       relation_index = 0,
-      math_map    = UnorderedMap.new<MathEvent>(Expression.hash, Expression.isEqual),
+      math_map    = UnorderedMap.new<MathEvent>(Condition.hash, Condition.isEqual),
       math_index  = 0);
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
@@ -1472,7 +1529,7 @@ protected
           iter        = iter,
           eqn         = eqn_ptr,
           funcMap     = funcMap,
-          createEqn   = createEqn);
+          createEqn   = createEqn, mathEvents = true);
 
     eqn := match eqn
       case Equation.ALGORITHM(alg = alg) algorithm
@@ -1526,6 +1583,7 @@ protected
     input Pointer<Equation> eqn;
     input UnorderedMap<Path, Function> funcMap;
     input Boolean createEqn;
+    input Boolean mathEvents = true "false inside reductions";
   algorithm
     exp := match exp
       local
@@ -1566,15 +1624,15 @@ protected
       case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) guard(Expression.contains(exp, isSampleCall)) algorithm
         (expanded, success) := ExpandExp.expand(exp);
         if success then
-          expanded := collectEventsTraverse(expanded, bucket_ptr, iter, eqn, funcMap, createEqn);
+          expanded := collectEventsTraverse(expanded, bucket_ptr, iter, eqn, funcMap, createEqn, mathEvents);
         else
-          expanded := Expression.mapShallow(exp, function collectEventsTraverse(bucket_ptr = bucket_ptr, iter = iter, eqn = eqn, funcMap = funcMap, createEqn = createEqn));
+          expanded := Expression.mapShallow(exp, function collectEventsTraverse(bucket_ptr = bucket_ptr, iter = iter, eqn = eqn, funcMap = funcMap, createEqn = createEqn, mathEvents = mathEvents));
         end if;
       then expanded;
 
       // event clocks
       case Expression.CLKCONST(clk = clk as ClockKind.EVENT_CLOCK(condition = condition)) algorithm
-        clk.condition := collectEventsTraverse(condition, bucket_ptr, iter, eqn, funcMap, createEqn);
+        clk.condition := collectEventsTraverse(condition, bucket_ptr, iter, eqn, funcMap, createEqn, mathEvents);
         exp.clk := clk;
       then exp;
 
@@ -1593,7 +1651,8 @@ protected
       // ToDo: if they are not ranges we need to normalize them
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         new_frames := list((ComponentRef.fromNode(Util.tuple21(tpl), Type.INTEGER()), Util.tuple22(tpl), NONE()) for tpl in call.iters);
-        call.exp := collectEventsTraverse(call.exp, bucket_ptr, Iterator.addFrames(iter, new_frames), eqn, funcMap, createEqn);
+        // the iterators of reductions are no iterators of the equation, no math events inside
+        call.exp := collectEventsTraverse(call.exp, bucket_ptr, Iterator.addFrames(iter, new_frames), eqn, funcMap, createEqn, false);
         exp.call := call;
       then exp;
 
@@ -1604,9 +1663,9 @@ protected
       case Expression.CREF() then exp;
 
       // math functions that trigger events, e.g. floor(x), mod(x, y)
-      case Expression.CALL() guard(Iterator.isEmpty(iter) and MathEvent.isCandidate(exp)) algorithm
-        expanded := Expression.mapShallow(exp, function collectEventsTraverse(bucket_ptr = bucket_ptr, iter = iter, eqn = eqn, funcMap = funcMap, createEqn = createEqn));
-        (expanded, bucket) := MathEvent.create(expanded, Pointer.access(bucket_ptr), eqn);
+      case Expression.CALL() guard(mathEvents and MathEvent.isCandidate(exp)) algorithm
+        expanded := Expression.mapShallow(exp, function collectEventsTraverse(bucket_ptr = bucket_ptr, iter = iter, eqn = eqn, funcMap = funcMap, createEqn = createEqn, mathEvents = mathEvents));
+        (expanded, bucket) := MathEvent.create(expanded, Pointer.access(bucket_ptr), iter, eqn);
         Pointer.update(bucket_ptr, bucket);
       then expanded;
 
@@ -1616,7 +1675,8 @@ protected
         iter        = iter,
         eqn         = eqn,
         funcMap     = funcMap,
-        createEqn   = createEqn));
+        createEqn   = createEqn,
+        mathEvents  = mathEvents));
     end match;
   end collectEventsTraverse;
 
