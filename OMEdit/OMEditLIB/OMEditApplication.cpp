@@ -387,15 +387,19 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 
 #if !defined(__EMSCRIPTEN__)
   if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
+    QString hostAddress = "localhost";
     int port = 3000;
     bool enableAdminTools = false;
+    if (pSettings->contains("modelContextProtocol/hostAddress")) {
+      hostAddress = pSettings->value("modelContextProtocol/hostAddress").toString();
+    }
     if (pSettings->contains("modelContextProtocol/port")) {
       port = pSettings->value("modelContextProtocol/port").toInt();
     }
     if (pSettings->contains("modelContextProtocol/enableAdminTools")) {
       enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
     }
-    new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
+    new MCPServer(pMainwindow->getOMCProxy(), hostAddress, port, enableAdminTools, pMainwindow);
   }
 #endif
 

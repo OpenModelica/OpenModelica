@@ -82,6 +82,7 @@ protected
   // SimCode imports
   import SimCode = NSimCode;
   import NSimCode.{Identifier, SimCodeIndices};
+  import NSimGenericCall;
   import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
@@ -1354,7 +1355,7 @@ public
 
         case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
 
-        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, ConvertDAE.convertStatements(blck.stmts), EquationAttributes.convert(blck.attr));
+        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, NSimGenericCall.setRelationAsubStatements(ConvertDAE.convertStatements(blck.stmts)), EquationAttributes.convert(blck.attr));
 
         case ALIAS() guard(blck.aliasOf > 0) then OldSimCode.SES_ALIAS(blck.index, blck.aliasOf);
 
