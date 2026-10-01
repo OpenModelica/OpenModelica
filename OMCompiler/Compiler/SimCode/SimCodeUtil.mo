@@ -14934,8 +14934,8 @@ algorithm
              + "SET ERRORLEVEL=\n"
              + "CALL \"%CD%/" + code.fileNamePrefix + ".exe\" %*\n"
              + "SET RESULT=%ERRORLEVEL%\n"
-             + "endlocal\n"
-             + "EXIT /b %RESULT%\n";
+             // One line, so %RESULT% is expanded before endlocal discards it.
+             + "endlocal & EXIT /b %RESULT%\n";
         File.write(file, str);
       then fileName;
     else
