@@ -1356,13 +1356,16 @@ protected
       // skip to an array element with more or equal skips to dimensions
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
-        index := locationToIndex(list(Dimension.size(dim, true) for dim in ty.dimensions), rest, index);
+        // locationToIndex expects the innermost dimension first
+        index := locationToIndex(listReverse(list(Dimension.size(dim, true) for dim in ty.dimensions)), listReverse(rest), index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
 
       // skip to an array with less skips then dimensions
       case (Type.ARRAY(), rest) algorithm
         (rest_dim, tail_dim) := List.split(ty.dimensions, listLength(rest));
-        index := locationToIndex(list(Dimension.size(dim, true) for dim in rest_dim), rest, index);
+        // the skipped part starts at the first element of the remaining dimensions
+        index := locationToIndex(listReverse(list(Dimension.size(dim, true) for dim in ty.dimensions)),
+          listAppend(list(1 for dim in tail_dim), listReverse(rest)), index);
         ty.dimensions := tail_dim;
       then (index, ty);
 
