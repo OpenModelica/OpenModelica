@@ -1323,13 +1323,15 @@ protected
         field := match BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()))
           case SOME(parent) algorithm
             subs := ComponentRef.subscriptsAll(cref);
+            // the skip counts all fields, but only the relevant ones (e.g. not removed aliases) have an index
             crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));
-            crefs := list(c for c guard(UnorderedMap.contains(c, fullmap)) in crefs);
             if skip <= listLength(crefs) then
               for i in 1:skip-1 loop
                 field :: crefs := crefs;
-                field := ComponentRef.setSubscriptsList(subs, field);
-                index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
+                if UnorderedMap.contains(field, fullmap) then
+                  field := ComponentRef.setSubscriptsList(subs, field);
+                  index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
+                end if;
               end for;
               field :: crefs := crefs;
               field := ComponentRef.setSubscriptsList(subs, field);

@@ -867,7 +867,7 @@ public
           allLinVarsFound := true;
           for slice in strict.iteration_vars loop
             var := Pointer.access(Slice.getT(slice));
-            if Variable.size(var) > 1 then
+            if Type.isArray(var.ty) then
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
