@@ -1787,6 +1787,8 @@ public
     Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
     Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
+    // math functions that trigger events have the index of their event values as last argument
+    exp := stripMathEventIndex(name, exp);
     exp := match exp
       local
         Integer i;
@@ -2355,6 +2357,27 @@ public
         then fail();
     end match;
   end differentiateBuiltinCall;
+
+  function stripMathEventIndex
+    "integer(x, index), floor(x, index), ceil(x, index), div(x, y, index) and mod(x, y, index)
+    are differentiated like the functions without the index"
+    input String name;
+    input output Expression exp;
+  protected
+    list<Expression> args;
+    Integer n;
+  algorithm
+    exp := match exp
+      case Expression.CALL() algorithm
+        args := Call.arguments(exp.call);
+        n := listLength(args);
+        if ((name == "integer" or name == "floor" or name == "ceil") and n == 2) or ((name == "div" or name == "mod") and n == 3) then
+          exp.call := Call.setArguments(exp.call, List.firstN(args, n - 1));
+        end if;
+      then exp;
+      else exp;
+    end match;
+  end stripMathEventIndex;
 
   function differentiateBuiltinCall1Arg
     "differentiate a builtin call with one argument."

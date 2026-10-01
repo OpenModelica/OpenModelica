@@ -143,6 +143,7 @@ public
       UnorderedMap<Condition, CompositeEvent> time_map  "tracks full time events of the form $TEV_11 = ...";
       UnorderedMap<Condition, StateEvent> state_map     "tracks full state events of the form $SEV_4 = ...";
       Integer numberMathEvents                          "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+      list<MathEvent> math_lst                          "math functions that trigger events, ordered by index";
       list<SpatialDistribution> spatial_lst            "stores all spatial distribution calls";
     end EVENT_INFO;
 
@@ -217,7 +218,8 @@ public
         time_set          = bucket.time_set,
         time_map          = bucket.time_map,
         state_map         = bucket.state_map, // ToDo: StateEvent.updateIndices(stateEvents),
-        numberMathEvents  = 0, // ToDo
+        numberMathEvents  = bucket.math_index,
+        math_lst          = List.sort(UnorderedMap.valueList(bucket.math_map), MathEvent.indexGt),
         spatial_lst      = spatial_lst
       );
 
@@ -284,6 +286,7 @@ public
         time_map          = UnorderedMap.new<CompositeEvent>(Condition.hash, Condition.isEqual),
         state_map         = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
         numberMathEvents  = 0,
+        math_lst          = {},
         spatial_lst      = {}
       );
     end empty;
@@ -306,10 +309,14 @@ public
       list<TimeEvent> tev_lst;
       list<tuple<Condition, CompositeEvent>> cev_lst;
       list<tuple<Condition, StateEvent>> sev_lst;
+      Integer math_base;
     algorithm
       // add composite at some point?
       (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
-      zeroCrossings := list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst);
+      // the zero crossings of math events are numbered after the ones of state events
+      math_base := sum(Condition.numRelations(Util.tuple21(sev_tpl)) for sev_tpl in sev_lst);
+      zeroCrossings := listAppend(list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst),
+                                  list(MathEvent.convert(mev, math_base + i, equation_map) threaded for mev in eventInfo.math_lst, i in List.intRange(listLength(eventInfo.math_lst))));
       relations := List.flatten(list(StateEvent.convertRelations(sev_tpl, equation_map) for sev_tpl in sev_lst));
       timeEvents := list(TimeEvent.convert(tev) for tev in tev_lst);
       if listEmpty(eventInfo.spatial_lst) then
@@ -690,8 +697,9 @@ public
           new_frames := (name, range, NONE()) :: frames;
           for elem in stmt.body loop
             new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcMap, new_frames);
-            new_stmts := new_stmt :: new_stmts;
+            // the auxiliaries of the conditions have to be computed before the statement
             new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
+            new_stmts := new_stmt :: new_stmts;
           end for;
           stmt.body := listReverse(new_stmts);
         then stmt;
@@ -866,6 +874,112 @@ public
       end match;
     end setRelationAsub;
   end StateEvent;
+
+  uniontype MathEvent
+    "A math function with discontinuities, e.g. floor(x) or mod(x, y). Like in the old backend it
+    gets the index of its mathEventsValuePre[] slots as last argument, its value only changes at
+    events and it is a zero crossing."
+    record MATH_EVENT
+      Expression exp                        "the call with the index as last argument";
+      Integer index                         "first mathEventsValuePre[] slot";
+      UnorderedSet<Pointer<Equation>> eqns  "equations where the function occurs";
+    end MATH_EVENT;
+
+    function isCandidate
+      "integer, floor and ceil with one argument, div and mod with two, that depend on a
+      continuous variable or time"
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CALL() then
+          numSlots(exp) > 0 and (BackendUtil.containsContinuousVar(exp) or Expression.contains(exp, isTimeCref));
+        else false;
+      end match;
+    end isCandidate;
+
+    function numSlots
+      "mathEventsValuePre[] slots of the call, 0 if it is no math event. mod uses one more for
+      its internal floor."
+      input Expression exp;
+      output Integer n = 0;
+    protected
+      Integer nargs;
+      Function fn;
+      list<Expression> args;
+    algorithm
+      n := match exp
+        case Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) guard(Function.isBuiltin(fn)) algorithm
+          nargs := listLength(args);
+        then match AbsynUtil.pathLastIdent(Function.nameConsiderBuiltin(fn))
+          case "integer" guard(nargs == 1) then 1;
+          case "floor"   guard(nargs == 1) then 1;
+          case "ceil"    guard(nargs == 1) then 1;
+          case "div"     guard(nargs == 2) then 2;
+          case "mod"     guard(nargs == 2) then 3;
+          else 0;
+        end match;
+        else 0;
+      end match;
+    end numSlots;
+
+    function isTimeCref
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CREF() then ComponentRef.isTime(exp.cref);
+        else false;
+      end match;
+    end isTimeCref;
+
+    function create
+      "returns the call with the index of an equal existing math event or a new one"
+      input output Expression exp;
+      input output Bucket bucket;
+      input Pointer<Equation> eqn;
+    protected
+      MathEvent mev;
+      Call call;
+    algorithm
+      mev := match UnorderedMap.get(exp, bucket.math_map)
+        case SOME(mev) algorithm
+          UnorderedSet.add(eqn, mev.eqns);
+        then mev;
+        else algorithm
+          Expression.CALL(call = call) := exp;
+          call := Call.setArguments(call, listAppend(Call.arguments(call), {Expression.INTEGER(bucket.math_index)}));
+          mev := MATH_EVENT(Expression.CALL(call), bucket.math_index, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
+          UnorderedMap.add(exp, mev, bucket.math_map);
+          bucket.math_index := bucket.math_index + numSlots(exp);
+        then mev;
+      end match;
+      exp := mev.exp;
+    end create;
+
+    function indexGt
+      input MathEvent mev1;
+      input MathEvent mev2;
+      output Boolean b = mev1.index > mev2.index;
+    end indexGt;
+
+    function convert
+      input MathEvent mev;
+      input Integer index "unique zero crossing index";
+      input UnorderedMap<ComponentRef, Block> equation_map;
+      output OldBackendDAE.ZeroCrossing oldZc;
+    protected
+      list<ComponentRef> eqn_names;
+    algorithm
+      eqn_names := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in UnorderedSet.toList(mev.eqns));
+      oldZc := OldBackendDAE.ZERO_CROSSING(
+        index       = index,
+        relation_   = Expression.toDAE(mev.exp),
+        occurEquLst = list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names),
+        iter        = NONE()
+      );
+    end convert;
+  end MathEvent;
 
   uniontype CompositeEvent
     record COMPOSITE_EVENT
@@ -1266,6 +1380,8 @@ protected
         Condition.size(condition) -- the condition's scalar iteration count -- so a for-loop-wrapped
         relation (e.g. v_abc[i] > a for i in 1:3) reserves one storedRelations slot per iteration
         instead of all iterations colliding on a single shared slot (see StateEvent.create/convert)";
+      UnorderedMap<Expression, MathEvent> math_map          "math functions that trigger events by their call without index";
+      Integer math_index                                    "next free mathEventsValuePre[] slot";
     end BUCKET;
   end Bucket;
 
@@ -1277,7 +1393,9 @@ protected
       state_map   = UnorderedMap.new<StateEvent>(Condition.hash, Condition.isEqual),
       aux_stmts   = NONE(),
       stmt_index  = 1,
-      relation_index = 0);
+      relation_index = 0,
+      math_map    = UnorderedMap.new<MathEvent>(Expression.hash, Expression.isEqual),
+      math_index  = 0);
     Pointer<Bucket> bucket_ptr;
     list<Pointer<Variable>> auxiliary_vars;
     list<Pointer<Equation>> auxiliary_eqns;
@@ -1485,7 +1603,13 @@ protected
       // don't traverse cref subscripts
       case Expression.CREF() then exp;
 
-      // ToDo: math events (check the call name in a function and merge with sample case?)
+      // math functions that trigger events, e.g. floor(x), mod(x, y)
+      case Expression.CALL() guard(Iterator.isEmpty(iter) and MathEvent.isCandidate(exp)) algorithm
+        expanded := Expression.mapShallow(exp, function collectEventsTraverse(bucket_ptr = bucket_ptr, iter = iter, eqn = eqn, funcMap = funcMap, createEqn = createEqn));
+        (expanded, bucket) := MathEvent.create(expanded, Pointer.access(bucket_ptr), eqn);
+        Pointer.update(bucket_ptr, bucket);
+      then expanded;
+
 
       else Expression.mapShallow(exp, function collectEventsTraverse(
         bucket_ptr  = bucket_ptr,

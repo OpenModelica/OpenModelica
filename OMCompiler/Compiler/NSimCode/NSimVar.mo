@@ -1460,7 +1460,7 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + listLength(eventInfo.math_lst),
         numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
         numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
