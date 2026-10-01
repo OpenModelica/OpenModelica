@@ -64,6 +64,7 @@ protected
 
   // OB
   import OldBackendDAE = BackendDAE;
+  import OldExpression = Expression;
 
   // New Backend
   import BackendDAE = NBackendDAE;
@@ -297,7 +298,7 @@ public
     function convert
       input EventInfo eventInfo;
       output list<OldBackendDAE.ZeroCrossing> zeroCrossings;
-      output list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
+      output list<OldBackendDAE.ZeroCrossing> relations     "the relations of the zero crossings, e.g. both of (a > b or c > d)";
       output list<OldBackendDAE.TimeEvent> timeEvents;
       output OldSimCode.SpatialDistributionInfo spatialInfo;
       input UnorderedMap<ComponentRef, Block> equation_map;
@@ -309,7 +310,7 @@ public
       // add composite at some point?
       (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
       zeroCrossings := list(StateEvent.convert(sev_tpl, equation_map) for sev_tpl in sev_lst);
-      relations := zeroCrossings;
+      relations := List.flatten(list(StateEvent.convertRelations(sev_tpl, equation_map) for sev_tpl in sev_lst));
       timeEvents := list(TimeEvent.convert(tev) for tev in tev_lst);
       if listEmpty(eventInfo.spatial_lst) then
         spatialInfo := OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0);
@@ -749,14 +750,15 @@ public
         exp := Expression.fromCref(aux_cref);
 
         // add the new event to the map. sev.index is the BASE of a reserved, consecutive
-        // block of storedRelations[] slots sized to the condition's own scalar iteration
-        // count (Condition.size) -- not just +1 per distinct condition -- so a for-loop-
-        // wrapped relation (e.g. v_abc[i] > a for i in 1:3) gets one slot per iteration
-        // instead of every iteration colliding on the same slot (see StateEvent.convert,
-        // which reads this back out to build DAE.RELATION's optionExpisASUB).
+        // block of storedRelations[] slots: one per relation of the condition and scalar
+        // iteration (Condition.numRelations) -- not just +1 per distinct condition -- so a
+        // for-loop-wrapped relation (e.g. v_abc[i] > a for i in 1:3) gets one slot per
+        // iteration instead of every iteration colliding on the same slot (see
+        // StateEvent.convert, which reads this back out to build DAE.RELATION's
+        // optionExpisASUB), and (a > b or c > d) gets one slot per relation.
         sev := STATE_EVENT(bucket.relation_index, aux_var, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
-        bucket.relation_index := bucket.relation_index + Condition.size(condition);
         condition := Condition.setRelationIndex(condition, sev.index);
+        bucket.relation_index := bucket.relation_index + Condition.numRelations(condition);
         UnorderedMap.add(condition, sev, bucket.state_map);
       end if;
 
@@ -805,11 +807,7 @@ public
       iter        := convertEventIterator(cond.iter);
       eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in UnorderedSet.toList(sev.eqns));
       eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names);
-      relExp      := Expression.toDAE(cond.exp);
-      relExp      := match relExp
-        case DAE.RELATION() then DAE.RELATION(relExp.exp1, relExp.operator, relExp.exp2, relExp.index, asubTuple(cond.iter));
-        else relExp;
-      end match;
+      (relExp, _) := OldExpression.traverseExpBottomUp(Expression.toDAE(cond.exp), setRelationAsub, asubTuple(cond.iter));
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
         relation_   = relExp,
@@ -817,6 +815,56 @@ public
         iter        = iter
       );
     end convert;
+
+    function convertRelations
+      "The relations of the state event in the order of their storedRelations[] index.
+      A single relation or a condition without relations is the zero crossing itself."
+      input tuple<Condition, StateEvent> sev_tpl;
+      input UnorderedMap<ComponentRef, Block> equation_map;
+      output list<OldBackendDAE.ZeroCrossing> oldRels;
+    protected
+      Condition cond;
+      list<Expression> rels;
+      OldBackendDAE.ZeroCrossing zc;
+      DAE.Exp relExp;
+    algorithm
+      (cond, _) := sev_tpl;
+      zc := convert(sev_tpl, equation_map);
+      rels := Condition.relations(cond.exp);
+      oldRels := match (cond.exp, rels)
+        case (Expression.RELATION(), _) then {zc};
+        case (_, {}) then {zc};
+        else algorithm
+          oldRels := {};
+          for rel in rels loop
+            (relExp, _) := OldExpression.traverseExpBottomUp(Expression.toDAE(rel), setRelationAsub, asubTuple(cond.iter));
+            oldRels := OldBackendDAE.ZERO_CROSSING(
+              index       = relationIndex(rel),
+              relation_   = relExp,
+              occurEquLst = zc.occurEquLst,
+              iter        = zc.iter) :: oldRels;
+          end for;
+        then listReverse(oldRels);
+      end match;
+    end convertRelations;
+
+    function relationIndex
+      input Expression rel;
+      output Integer index;
+    algorithm
+      Expression.RELATION(index = index) := rel;
+    end relationIndex;
+
+    function setRelationAsub
+      "gives the relations with storedRelations[] slots the iterator offset of the condition"
+      input output DAE.Exp exp;
+      input output Option<tuple<DAE.Exp, Integer, Integer>> asub;
+    algorithm
+      exp := match exp
+        case DAE.RELATION() guard(exp.index >= 0) then DAE.RELATION(exp.exp1, exp.operator, exp.exp2, exp.index, asub);
+        else exp;
+      end match;
+    end setRelationAsub;
   end StateEvent;
 
   uniontype CompositeEvent
@@ -1017,19 +1065,62 @@ public
     end size;
 
     function setRelationIndex
+      "Gives every relation of the condition, e.g. both of (a > b or c > d), a block of
+      storedRelations[] slots starting at index, one slot per iteration. The relations
+      then use hysteresis in the zero crossing and in the auxiliary equation."
       input output Condition cond;
       input Integer index;
     algorithm
-      cond.exp := match cond.exp
-        local
-          Expression exp;
-        case exp as Expression.RELATION()
-          algorithm
-            exp.index := index;
-          then exp;
-        else cond.exp;
-      end match;
+      cond.exp := indexRelations(cond.exp, Condition.size(cond), Pointer.create(index));
     end setRelationIndex;
+
+    function numRelations
+      "number of storedRelations[] slots of the condition. A condition without relations
+      still takes the slots of one relation."
+      input Condition cond;
+      output Integer n = Condition.size(cond) * max(1, listLength(Condition.relations(cond.exp)));
+    end numRelations;
+
+    function relations
+      "the relations of a condition in the order of their index"
+      input Expression exp;
+      output list<Expression> rels;
+    protected
+      Pointer<list<Expression>> acc = Pointer.create({});
+    algorithm
+      collectRelations(exp, acc);
+      rels := listReverse(Pointer.access(acc));
+    end relations;
+
+    function indexRelations
+      input output Expression exp;
+      input Integer size;
+      input Pointer<Integer> next;
+    algorithm
+      exp := match exp
+        case Expression.RELATION() algorithm
+          exp.index := Pointer.access(next);
+          Pointer.update(next, exp.index + size);
+        then exp;
+        // relations inside noEvent() do not cause events
+        case Expression.CALL() guard(Call.isNamed(exp.call, "noEvent")) then exp;
+        else Expression.mapShallow(exp, function indexRelations(size = size, next = next));
+      end match;
+    end indexRelations;
+
+    function collectRelations
+      "has to traverse in the same order as indexRelations"
+      input output Expression exp;
+      input Pointer<list<Expression>> acc;
+    algorithm
+      exp := match exp
+        case Expression.RELATION() algorithm
+          Pointer.update(acc, exp :: Pointer.access(acc));
+        then exp;
+        case Expression.CALL() guard(Call.isNamed(exp.call, "noEvent")) then exp;
+        else Expression.mapShallow(exp, function collectRelations(acc = acc));
+      end match;
+    end collectRelations;
   end Condition;
 
   function convertEventIterator

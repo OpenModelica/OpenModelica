@@ -334,6 +334,12 @@ public
           comp.status := Status.IMPLICIT;
         then ({comp}, Status.IMPLICIT);
 
+        // a whole dimension in the cref to solve (e.g. x[i, :] for x[i, j] inside a reduction over j)
+        // does not determine the solved elements, solve each matched element separately
+        case StrongComponent.SLICED_COMPONENT() guard(StrongComponent.solvesInsideReduction(Slice.getT(comp.eqn), comp.var_cref)) algorithm
+          (tmp, solve_status) := solveSliceElementwise(comp.var, comp.eqn, funcMap);
+        then (tmp, solve_status);
+
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
           (generic_comp, solve_status, implicit_index) := solveGenericEquation(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then ({generic_comp}, solve_status);
@@ -497,6 +503,87 @@ public
       comp := StrongComponent.SLICED_COMPONENT(cref, var_slice, solved_slice, solve_status);
     end if;
   end solveGenericEquationSlice;
+
+  function solveSliceElementwise
+    "Solves each matched element of a sliced for-equation separately for its variable element.
+    Used if the variable occurs inside a reduction over one of its dimensions, e.g. solving
+    y[i] = sum(x[i, j] for j in 1:n) for x[i, 1]: the reductions are expanded for each element."
+    input Slice<VariablePointer> var_slice;
+    input Slice<EquationPointer> eqn_slice;
+    input UnorderedMap<Path, Function> funcMap;
+    output list<StrongComponent> comps = {};
+    output Status solve_status = Status.EXPLICIT;
+  protected
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    Pointer<Variable> var_ptr = Slice.getT(var_slice);
+    list<Integer> eqn_sizes = Equation.sizes(eqn_ptr);
+    list<Dimension> dims = Type.arrayDims(Variable.typeOf(Pointer.access(var_ptr)));
+    list<Integer> var_sizes = list(Dimension.size(dim) for dim in dims);
+    list<Integer> vals;
+    list<Subscript> subs;
+    ComponentRef cref;
+    Equation eqn;
+    Status status;
+  algorithm
+    // equation and variable indices are aligned by the matching
+    for tpl in List.zip(eqn_slice.indices, var_slice.indices) loop
+      // the scalar element of the variable
+      vals := listReverse(Slice.indexToLocation(Util.tuple22(tpl), var_sizes));
+      subs := list(Subscript.nth(dim, val + 1) threaded for dim in dims, val in vals);
+      cref := ComponentRef.mergeSubscripts(subs, BVariable.getVarName(var_ptr), true, true);
+      // the scalar equation with expanded reductions
+      (eqn, _) := Equation.singleSlice(eqn_ptr, Util.tuple21(tpl), eqn_sizes, ComponentRef.EMPTY(),
+        UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), funcMap);
+      eqn := Equation.map(eqn, expandReduction);
+      (eqn, status, _) := solveBody(eqn, cref, funcMap);
+      solve_status := if status > solve_status then status else solve_status;
+      comps := StrongComponent.SLICED_COMPONENT(cref, Slice.SLICE(var_ptr, {Util.tuple22(tpl)}),
+        Slice.SLICE(Pointer.create(eqn), {}), status) :: comps;
+    end for;
+    comps := listReverse(comps);
+  end solveSliceElementwise;
+
+  function expandReduction
+    "expands sum and product reductions over constant ranges, e.g.
+    sum(x[1, j] for j in 1:3) -> x[1, 1] + x[1, 2] + x[1, 3]"
+    input output Expression exp;
+  protected
+    Call call;
+    String name;
+    Type ty;
+    Operator op;
+    Expression default_exp, range;
+    Boolean expanded;
+    list<tuple<NFInstNode.InstNode, Expression>> iters = {};
+  algorithm
+    exp := match exp
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        name := AbsynUtil.pathString(Function.name(call.fn));
+        ty := Expression.typeOf(call.exp);
+        if not (name == "sum" or name == "product") or Type.isRecord(Type.arrayElementType(ty)) then
+          return;
+        end if;
+        for iter in call.iters loop
+          (range, expanded) := ExpandExp.expand(Util.tuple22(iter));
+          if not expanded then
+            return;
+          end if;
+          iters := (Util.tuple21(iter), range) :: iters;
+        end for;
+        (default_exp, op) := if name == "sum" then (Expression.makeZero(ty), Operator.makeAdd(ty))
+                             else (Expression.makeOne(ty), Operator.makeMul(ty));
+      then SimplifyExp.simplify(Expression.foldReduction(call.exp, listReverse(iters), default_exp,
+        function SimplifyExp.simplify(includeScope = false), function makeBinary(op = op)));
+      else exp;
+    end match;
+  end expandReduction;
+
+  function makeBinary
+    input Expression exp1;
+    input Expression exp2;
+    input Operator op;
+    output Expression exp = Expression.BINARY(exp1, op, exp2);
+  end makeBinary;
 
   function solveSingleStrongComponent
     input output Equation eqn;

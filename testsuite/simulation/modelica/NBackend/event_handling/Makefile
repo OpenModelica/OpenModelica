@@ -11,6 +11,7 @@ algorithmWhen.mos\
 algorithmWhenPreCondition.mos\
 AssertNoEvent.mos\
 integerIteratorNoEvent.mos\
+compositeRelationEvents.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

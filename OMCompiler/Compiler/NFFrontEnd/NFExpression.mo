@@ -1904,6 +1904,7 @@ public
     Option<Expression> step_exp;
     Type ty;
     list<Subscript> subs;
+    Integer step, offset;
   algorithm
     Subscript.INDEX(index = index_exp) := index;
     RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
@@ -1913,6 +1914,18 @@ public
       outExp := applyIndexSubscriptRange2(start_exp, step_exp, stop_exp, toInteger(index_exp));
     elseif isScalarLiteral(index_exp) and toInteger(index_exp) == 1 then
       outExp := start_exp;
+    elseif Type.isInteger(Type.arrayElementType(ty)) and isScalarLiteral(start_exp) and
+           Util.applyOptionOrDefault(step_exp, isScalarLiteral, true) then
+      // (start:step:stop)[i] = step*i + (start - step), e.g. (1:n)[i] = i
+      step := Util.applyOptionOrDefault(step_exp, toInteger, 1);
+      offset := toInteger(start_exp) - step;
+      outExp := index_exp;
+      if step <> 1 then
+        outExp := BINARY(INTEGER(step), Operator.makeMul(Type.INTEGER()), outExp);
+      end if;
+      if offset <> 0 then
+        outExp := BINARY(outExp, Operator.makeAdd(Type.INTEGER()), INTEGER(offset));
+      end if;
     else
       subs := {index};
       ty := Type.subscript(ty, subs);

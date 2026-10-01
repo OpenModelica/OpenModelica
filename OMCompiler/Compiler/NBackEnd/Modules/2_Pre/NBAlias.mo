@@ -259,6 +259,8 @@ protected
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
+          // aliases between slices of arrays are kept as equations, use their start values anyway
+          propagateSliceAliasStarts(eqData.simulation);
           eqData.equations  := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
           eqData.discretes  := EquationPointers.compress(eqData.discretes);
@@ -303,6 +305,166 @@ protected
       then fail();
     end match;
   end aliasDefault;
+
+  type ElementStarts = UnorderedMap<Integer, Expression> "start values of array elements by flat index";
+
+  function propagateSliceAliasStarts
+    "Alias for-equations between slices of arrays (e.g. a[i].x = b[i].y[1]) can not be
+    removed, since only full arrays are replaced. Like for removed aliases, a variable without
+    start value gets the literal start values of its alias elements, the other elements keep
+    the default start value zero."
+    input EquationPointers equations;
+  protected
+    UnorderedMap<ComponentRef, UnorderedMap<Integer, Expression>> starts;
+    Pointer<Variable> var_ptr;
+    Variable var;
+    Type ty;
+    list<Integer> sizes;
+    array<Expression> elements;
+  algorithm
+    starts := UnorderedMap.new<ElementStarts>(ComponentRef.hash, ComponentRef.isEqual);
+    EquationPointers.map(equations, function collectSliceAliasStarts(starts = starts));
+    for tpl in UnorderedMap.toList(starts) loop
+      var_ptr := BVariable.getVarPointer(Util.tuple21(tpl), sourceInfo());
+      var := Pointer.access(var_ptr);
+      ty := Variable.typeOf(var);
+      sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+      elements := arrayCreate(List.fold(sizes, intMul, 1), Expression.makeZero(Type.arrayElementType(ty)));
+      for elem in UnorderedMap.toList(Util.tuple22(tpl)) loop
+        arrayUpdate(elements, Util.tuple21(elem) + 1, Util.tuple22(elem));
+      end for;
+      Pointer.update(var_ptr, BVariable.setStartAttribute(var, reshapeStart(elements, sizes, Type.arrayElementType(ty), 0), true));
+      if Flags.isSet(Flags.DUMP_REPL) then
+        print("[propagateSliceAliasStarts] start of " + ComponentRef.toString(Util.tuple21(tpl)) + ": "
+          + Expression.toString(Util.getOption(BVariable.getStartAttribute(var_ptr))) + "\n");
+      end if;
+    end for;
+  end propagateSliceAliasStarts;
+
+  function collectSliceAliasStarts
+    input output Equation eqn;
+    input UnorderedMap<ComponentRef, UnorderedMap<Integer, Expression>> starts;
+  protected
+    constant Integer max_size = 100000;
+    ComponentRef cref1, cref2, target, source;
+    Pointer<Variable> var1, var2;
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Option<Iterator>> maps;
+    list<list<Integer>> values = {{}};
+    Integer start, step, stop;
+    UnorderedMap<ComponentRef, Expression> repl;
+    UnorderedMap<Integer, Expression> elem_starts;
+    Expression start_exp, elem_exp;
+    Option<Integer> index;
+    list<tuple<Integer, Expression>> elems = {};
+  algorithm
+    () := match eqn
+      case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref1), rhs = Expression.CREF(cref = cref2))}) algorithm
+        var1 := BVariable.getVarPointer(cref1, sourceInfo());
+        var2 := BVariable.getVarPointer(cref2, sourceInfo());
+        if BVariable.isParamOrConst(var1) or BVariable.isParamOrConst(var2)
+          or not Type.isReal(Type.arrayElementType(Variable.typeOf(Pointer.access(var1))))
+          or not Type.isReal(Type.arrayElementType(Variable.typeOf(Pointer.access(var2)))) then
+          return;
+        end if;
+        // exactly one of them has a start value
+        (target, source) := match (BVariable.getStartAttribute(var1), BVariable.getStartAttribute(var2))
+          case (NONE(), SOME(_)) then (cref1, cref2);
+          case (SOME(_), NONE()) then (cref2, cref1);
+          else algorithm return; then (cref1, cref2);
+        end match;
+        SOME(start_exp) := BVariable.getStartAttribute(BVariable.getVarPointer(source, sourceInfo()));
+
+        // all combinations of the iterator values (only literal ranges)
+        (names, ranges, maps) := Iterator.getFrames(eqn.iter);
+        for tpl in List.zip3(names, ranges, maps) loop
+          () := match tpl
+            case (_, Expression.RANGE(), NONE()) guard(Expression.isLiteral(Util.tuple32(tpl))) algorithm
+              (start, step, stop) := Expression.getIntegerRange(Util.tuple32(tpl), false);
+              values := List.flatten(list(list(v :: vs for v in List.intRange3(start, step, stop)) for vs in values));
+            then ();
+            else algorithm return; then ();
+          end match;
+        end for;
+        if listLength(values) > max_size then return; end if;
+
+        for vs in values loop
+          repl := UnorderedMap.fromLists(names, list(Expression.INTEGER(v) for v in listReverse(vs)), ComponentRef.hash, ComponentRef.isEqual);
+          // start value of the source element
+          elem_exp := SimplifyExp.simplify(Expression.map(Expression.fromCref(source), function Replacements.applySimpleExp(replacements = repl)));
+          // the start value can have less dimensions than the variable, e.g. {1.0 for i in 1:2}
+          // for each start = 1.0 of x[2, 3]
+          elem_exp := match elem_exp
+            case Expression.CREF() guard(listLength(ComponentRef.subscriptsAllFlat(elem_exp.cref)) <= Type.dimensionCount(Expression.typeOf(start_exp)))
+              then SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(elem_exp.cref), start_exp, true));
+            else Expression.EMPTY(Type.UNKNOWN());
+          end match;
+          if not Expression.isLiteral(elem_exp) then return; end if;
+          // flat index of the target element
+          index := flatIndex(SimplifyExp.simplify(Expression.map(Expression.fromCref(target), function Replacements.applySimpleExp(replacements = repl))));
+          if isNone(index) then return; end if;
+          elems := (Util.getOption(index), elem_exp) :: elems;
+        end for;
+
+        target := ComponentRef.stripSubscriptsAll(target);
+        elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
+        for elem in elems loop
+          UnorderedMap.add(Util.tuple21(elem), Util.tuple22(elem), elem_starts);
+        end for;
+        UnorderedMap.add(target, elem_starts, starts);
+      then ();
+      else ();
+    end match;
+  end collectSliceAliasStarts;
+
+  function flatIndex
+    "zero based flat index of a cref with literal subscripts in its variable"
+    input Expression exp;
+    output Option<Integer> index = NONE();
+  protected
+    list<Subscript> subs;
+    list<Integer> sizes;
+    Integer idx = 0;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm
+        subs := ComponentRef.subscriptsAllFlat(exp.cref);
+        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(Variable.typeOf(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo())))));
+        if listLength(subs) <> listLength(sizes) then return; end if;
+        for tpl in List.zip(subs, sizes) loop
+          () := match tpl
+            case (Subscript.INDEX(index = Expression.INTEGER()), _) algorithm
+              idx := idx * Util.tuple22(tpl) + Expression.integerValue(Subscript.toExp(Util.tuple21(tpl))) - 1;
+            then ();
+            else algorithm return; then ();
+          end match;
+        end for;
+        index := SOME(idx);
+      then ();
+      else ();
+    end match;
+  end flatIndex;
+
+  function reshapeStart
+    "nested array of the flat elements for the dimension sizes"
+    input array<Expression> elements;
+    input list<Integer> sizes;
+    input Type elemTy;
+    input Integer offset;
+    output Expression exp;
+  protected
+    Integer n, stride;
+    list<Integer> rest;
+  algorithm
+    exp := match sizes
+      case {} then elements[offset + 1];
+      case n :: rest algorithm
+        stride := List.fold(rest, intMul, 1);
+      then Expression.makeArray(Type.liftArrayLeftList(elemTy, list(Dimension.fromInteger(s) for s in sizes)),
+        listArray(list(reshapeStart(elements, rest, elemTy, offset + (i - 1) * stride) for i in 1:n)), true);
+    end match;
+  end reshapeStart;
 
   function checkReplacements
     "Checks validity of all replacements, returns all valid replacements and auxiliary equations"
