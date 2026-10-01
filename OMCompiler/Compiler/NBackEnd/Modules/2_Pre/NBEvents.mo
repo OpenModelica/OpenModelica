@@ -85,6 +85,7 @@ protected
 
   // Util
   import BackendUtil = NBBackendUtil;
+  import Config;
   import StringUtil;
 
 // =========================================================================
@@ -960,6 +961,8 @@ public
         then ();
         else algorithm
           (offset, size, supported) := iterationOffset(iter);
+          // the wasm targets need a constant index, math functions in loops trigger no events there
+          supported := supported and (Iterator.isEmpty(iter) or not isWasmTarget());
           if supported then
             slots := numSlots(exp);
             Expression.CALL(call = call) := exp;
@@ -974,6 +977,10 @@ public
         then ();
       end match;
     end create;
+
+    function isWasmTarget
+      output Boolean b = Config.simCodeTarget() == "wasm-jit" or Config.simCodeTarget() == "wasm";
+    end isWasmTarget;
 
     function iterationOffset
       "zero based flat index of the current iteration and the number of iterations, the last

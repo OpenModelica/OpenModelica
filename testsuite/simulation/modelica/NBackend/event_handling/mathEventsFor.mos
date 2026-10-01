@@ -1,9 +1,12 @@
 // name: mathEventsFor
 // keywords: NewBackend
 // status: correct
+// suite: cSources
+//
 // Math events in for-equations and for-statements stay loops: the calls get one block
 // of event slots and an index that depends on the iterators. No events for a math
-// function inside a reduction.
+// function inside a reduction. The wasm targets need a constant index and have no
+// math events in loops.
 
 loadString("
   model mathEventsFor
