@@ -6,6 +6,7 @@ Buildings.Fluid.Boilers.Examples.BoilerPolynomial.mos \
 Buildings.Fluid.Movers.Examples.SpeedControlled_y_pumpCurves.mos \
 Buildings.Controls.OBC.CDL.Logical.Validation.Latch.mos \
 Buildings.Electrical.AC.ThreePhasesUnbalanced.Validation.IEEETests.Test4NodesFeeder.BalancedStepDown.DY.mos \
+Buildings.Templates.Plants.Controls.Enabling.Validation.Enable.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
