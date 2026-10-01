@@ -1167,37 +1167,137 @@ pub fn bind_in_wasm_external(
     }
     let sig = sig.clone();
     let rt = rt.clone();
-    let f = wasmtime::Func::new(&mut *store, functype.clone(), move |mut caller, args, rets| {
+    let params: Vec<wasmtime::ValType> = functype.params().collect();
+    let results: Vec<wasmtime::ValType> = functype.results().collect();
+    let target_results: Vec<wasmtime::ValType> = target.ty(&*store).results().collect();
+    // Set once a checked call has shown that the arguments built from `sig` fit
+    // `target`; they depend on nothing else, so later calls skip the check.
+    let checked = std::sync::atomic::AtomicBool::new(false);
+    // Reused across calls; a call that re-enters this import gets a fresh one.
+    let scratch = std::sync::Mutex::new(ExtScratch::default());
+    let host = move |mut caller: wasmtime::Caller<'_, HostState>, raw: &mut [std::mem::MaybeUninit<wasmtime::ValRaw>]| {
+        let mut fresh = None;
+        let mut guard = scratch.try_lock();
+        let sc = match guard.as_deref_mut() {
+            Ok(sc) => sc,
+            Err(_) => fresh.insert(ExtScratch::default()),
+        };
+        let mut args = std::mem::take(&mut sc.args);
+        let mut rets = std::mem::take(&mut sc.rets);
+        args.clear();
+        // SAFETY: wasmtime initializes the first `params.len()` slots with this
+        // function type's parameters.
+        args.extend(params.iter().zip(raw.iter()).map(|(ty, r)| val_of_raw(ty, unsafe { r.assume_init() })));
+        rets.clear();
+        rets.resize(results.len(), wasmtime::Val::I32(0));
+        let callee = Callee { func: &target, results: &target_results, checked: &checked };
         let mut thrown = None;
-        let r = call_external_in_wasm(&sig, &rt, &target, &mut caller, args, rets, &mut thrown);
-        match thrown {
-            Some(e) => Err(e),
-            None => r.map_err(|e| wasmtime::Error::msg(format!("external \"C\" `{}`: {e}", sig.name))),
+        let r = call_external_in_wasm(&sig, &rt, &callee, &mut caller, &args, &mut rets, &mut thrown, sc);
+        for (slot, v) in raw.iter_mut().zip(&rets) {
+            slot.write(raw_of_val(v));
         }
-    });
+        sc.args = args;
+        sc.rets = rets;
+        if let Some(e) = thrown {
+            return Err(e);
+        }
+        r.map_err(|e| wasmtime::Error::msg(format!("external \"C\" `{}`: {e}", sig.name)))
+    };
+    // SAFETY: `host` reads only the parameters and writes only the results of
+    // `functype`, by their declared types.
+    let f = unsafe { wasmtime::Func::new_unchecked(&mut *store, functype.clone(), host) };
     Ok(Some(wasmtime::Extern::Func(f)))
 }
 
 /// Call `target` with the C argument list its prototype expects, then hand the
 /// results back as the import's wasm results.
+/// The buffers one marshalled call fills.
+#[derive(Default)]
+struct ExtScratch {
+    args: Vec<wasmtime::Val>,
+    rets: Vec<wasmtime::Val>,
+    call_args: Vec<wasmtime::Val>,
+    temps: Vec<u32>,
+    out_cells: Vec<(crate::sig::SigTy, u32)>,
+    result: Vec<wasmtime::Val>,
+    raw: Vec<wasmtime::ValRaw>,
+}
+
+/// The library function an import marshals for.
+struct Callee<'a> {
+    func: &'a wasmtime::Func,
+    results: &'a [wasmtime::ValType],
+    checked: &'a std::sync::atomic::AtomicBool,
+}
+
+impl Callee<'_> {
+    fn call(
+        &self,
+        caller: &mut wasmtime::Caller<'_, HostState>,
+        args: &[wasmtime::Val],
+        rets: &mut [wasmtime::Val],
+        raw: &mut Vec<wasmtime::ValRaw>,
+    ) -> std::result::Result<(), wasmtime::Error> {
+        use std::sync::atomic::Ordering;
+        if !self.checked.load(Ordering::Relaxed) {
+            self.func.call(&mut *caller, args, rets)?;
+            self.checked.store(true, Ordering::Relaxed);
+            return Ok(());
+        }
+        raw.clear();
+        raw.extend(args.iter().map(raw_of_val));
+        raw.resize(args.len().max(self.results.len()), wasmtime::ValRaw::i32(0));
+        // SAFETY: a checked call with arguments of these types succeeded, and the
+        // types depend only on the signature.
+        unsafe { self.func.call_unchecked(&mut *caller, &mut raw[..] as *mut [wasmtime::ValRaw])? };
+        for ((slot, ty), r) in rets.iter_mut().zip(self.results).zip(raw.iter()) {
+            *slot = val_of_raw(ty, *r);
+        }
+        Ok(())
+    }
+}
+
+fn val_of_raw(ty: &wasmtime::ValType, raw: wasmtime::ValRaw) -> wasmtime::Val {
+    match ty {
+        wasmtime::ValType::I64 => wasmtime::Val::I64(raw.get_i64()),
+        wasmtime::ValType::F32 => wasmtime::Val::F32(raw.get_f32()),
+        wasmtime::ValType::F64 => wasmtime::Val::F64(raw.get_f64()),
+        _ => wasmtime::Val::I32(raw.get_i32()),
+    }
+}
+
+fn raw_of_val(v: &wasmtime::Val) -> wasmtime::ValRaw {
+    match *v {
+        wasmtime::Val::I64(x) => wasmtime::ValRaw::i64(x),
+        wasmtime::Val::F32(x) => wasmtime::ValRaw::f32(x),
+        wasmtime::Val::F64(x) => wasmtime::ValRaw::f64(x),
+        wasmtime::Val::I32(x) => wasmtime::ValRaw::i32(x),
+        _ => wasmtime::ValRaw::i32(0),
+    }
+}
+
 fn call_external_in_wasm(
     sig: &crate::sig::ExtCallSig,
     rt: &ExtRt,
-    target: &wasmtime::Func,
+    target: &Callee<'_>,
     caller: &mut wasmtime::Caller<'_, HostState>,
     args: &[wasmtime::Val],
     rets: &mut [wasmtime::Val],
     thrown: &mut Option<wasmtime::Error>,
+    sc: &mut ExtScratch,
 ) -> Result<()> {
     use crate::sig::SigTy;
     use wasmtime::Val;
 
     let memory = caller.data().memory.ok_or_else(|| "external \"C\": the run has no shared memory".to_string())?;
     let fortran = sig.lang == crate::sig::ExtLang::Fortran77;
-    let mut call_args: Vec<Val> = Vec::with_capacity(sig.args.len());
-    let mut temps: Vec<u32> = Vec::new();
+    let call_args = &mut sc.call_args;
+    call_args.clear();
+    let temps = &mut sc.temps;
+    temps.clear();
     // (output type, scratch address), in the order the import returns them.
-    let mut out_cells: Vec<(SigTy, u32)> = Vec::new();
+    let out_cells = &mut sc.out_cells;
+    out_cells.clear();
     // Column-major copies a FORTRAN 77 callee gets instead of the array itself:
     // (scratch, element area, dims, element size, is output).
     let mut f77_arrays: Vec<(u32, u32, Vec<usize>, usize, bool)> = Vec::new();
@@ -1259,7 +1359,7 @@ fn call_external_in_wasm(
                     let cell = alloc(caller, c.size.max(1))?;
                     memory.data_mut(&mut *caller)[cell as usize..cell as usize + c.size as usize].fill(0);
                     if let Some(v) = v {
-                        record_to_c(caller, memory, rt, fields, v.unwrap_i32() as u32, cell, &mut temps)?;
+                        record_to_c(caller, memory, rt, fields, v.unwrap_i32() as u32, cell, temps)?;
                     }
                     temps.push(cell);
                     if *is_out {
@@ -1318,6 +1418,12 @@ fn call_external_in_wasm(
             }
             SigTy::Array { elem, .. } => {
                 let off = v.unwrap_i32() as u32 as usize;
+                if !fortran && !matches!(**elem, SigTy::Str) {
+                    let data_off = crate::host::array_abi::data_offset(memory.data(&*caller), off)
+                        .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
+                    call_args.push(Val::I32((off + data_off) as i32));
+                    continue;
+                }
                 let (dims, data_off) = crate::host::array_abi::dims_and_data(memory.data(&*caller), off)
                     .ok_or_else(|| "external \"C\": malformed array argument".to_string())?;
                 let base = (off + data_off) as u32;
@@ -1371,7 +1477,7 @@ fn call_external_in_wasm(
     };
     let mut raw_ret = [Val::I32(0)];
     let ret_slice = if returns_value { &mut raw_ret[..] } else { &mut raw_ret[..0] };
-    if let Err(e) = target.call(&mut *caller, &call_args, ret_slice) {
+    if let Err(e) = target.call(caller, call_args, ret_slice, &mut sc.raw) {
         // A `model_error` on its way to the model's `try_table` passes straight
         // through: rewritten, the store's pending exception would never land.
         if e.downcast_ref::<wasmtime::ThrownException>().is_some() {
@@ -1416,7 +1522,8 @@ fn call_external_in_wasm(
         }
     }
 
-    let mut result = Vec::with_capacity(rets.len());
+    let result = &mut sc.result;
+    result.clear();
     if let Some(ret_ty) = &sig.ret {
         match (ret_ty, abi_of(ret_ty)) {
 
@@ -1443,7 +1550,7 @@ fn call_external_in_wasm(
             }
         }
     }
-    for (ty, cell) in &out_cells {
+    for (ty, cell) in out_cells.iter() {
         if let SigTy::Record { fields, .. } = ty {
             let handle = record_from_c(caller, memory, rt, fields, *cell)?;
             result.push(Val::I32(handle as i32));
@@ -1453,10 +1560,10 @@ fn call_external_in_wasm(
         raw.copy_from_slice(&memory.data(&*caller)[*cell as usize..*cell as usize + 8]);
         result.push(ext_result(ty, raw, rt, caller, memory)?);
     }
-    for (slot, v) in rets.iter_mut().zip(result) {
+    for (slot, v) in rets.iter_mut().zip(result.drain(..)) {
         *slot = v;
     }
-    for t in temps {
+    for &t in temps.iter() {
         let _ = rt.free.call(&mut *caller, t);
     }
     Ok(())

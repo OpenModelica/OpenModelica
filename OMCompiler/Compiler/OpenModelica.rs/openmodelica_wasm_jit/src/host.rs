@@ -314,6 +314,12 @@ pub mod array_abi {
     }
 
     /// The dimensions and element-area offset of the array object at `obj`.
+    /// Where the elements start, as [`dims_and_data`] has it.
+    pub fn data_offset(mem: &[u8], obj: usize) -> Option<usize> {
+        let ndims = u32::from_le_bytes(mem.get(obj + 8..obj + 12)?.try_into().ok()?) as usize;
+        Some((16 + ndims * 4 + 7) & !7)
+    }
+
     pub fn dims_and_data(mem: &[u8], obj: usize) -> Option<(Vec<usize>, usize)> {
         let word = |off: usize| -> Option<usize> {
             Some(u32::from_le_bytes(mem.get(off..off + 4)?.try_into().ok()?) as usize)
