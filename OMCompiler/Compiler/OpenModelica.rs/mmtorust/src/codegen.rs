@@ -7510,6 +7510,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
             writeln!(out, "{indent}// Function alias `{name} = {base}({mods})`; the default-argument").unwrap();
             writeln!(out, "{indent}// overrides are applied where calls to the alias omit those arguments.").unwrap();
         }
+        emit_doc_comment(out, indent, class_doc(c));
         writeln!(out, "{indent}{pub_kw}use {base_short} as {alias_name};").unwrap();
         writeln!(out).unwrap();
         return;
@@ -7774,6 +7775,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
             .unwrap_or_else(|| fmt_ty(fn_output, ctx));
         let pub_kw = if node.visibility == MM::Visibility::Public { "pub " } else { "" };
         let ename = escape_ident(name);
+        emit_doc_comment(out, indent, class_doc(c));
         writeln!(out, "{indent}{pub_kw}type {ename}{type_params} = std::sync::Arc<dyn ::std::ops::Fn({ins}) -> Result<{out_ty}> + 'static>;").unwrap();
         writeln!(out).unwrap();
         return;
@@ -8300,6 +8302,7 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         (true, Some(rest)) => format!("<'__b, {rest}"),
         (true, None) => "<'__b>".to_owned(),
     };
+    emit_doc_comment(out, indent, class_doc(c));
     writeln!(out, "{indent}{pub_kw}fn {ename}{type_params}({params}) -> {sig_ret} {{").unwrap();
     let body_indent = format!("{indent}    ");
 
