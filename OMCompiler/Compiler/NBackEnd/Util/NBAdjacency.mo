@@ -3112,6 +3112,11 @@ public
         if reduce then
           Dependency.updateList(UnorderedSet.toList(set1), 1, true, dep_map);
           Dependency.updateList(UnorderedSet.toList(set2), 1, false, dep_map);
+          // a scalar result has no elements to skip to, e.g. {1, 2} * {x, y}
+          if not Type.isArray(Expression.typeOf(exp)) then
+            Dependency.removeSkipsList(UnorderedSet.toList(set1), dep_map);
+            Dependency.removeSkipsList(UnorderedSet.toList(set2), dep_map);
+          end if;
         end if;
       then UnorderedSet.union(set1, set2);
 
