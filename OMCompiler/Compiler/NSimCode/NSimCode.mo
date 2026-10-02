@@ -85,6 +85,7 @@ protected
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import Partition = NBPartition;
+  import NBResizable;
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
@@ -286,7 +287,7 @@ public
     end toString;
 
     function create
-      input BackendDAE bdae;
+      input BackendDAE bdae_in;
       input Absyn.Path name;
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
@@ -297,7 +298,20 @@ public
       partial function mapExp
         input output Expression exp;
       end mapExp;
+      BackendDAE bdae = bdae_in;
     algorithm
+      // derived dimensions of resizable arrays (N-1) get a size parameter each
+      if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+        bdae := match bdae
+          local
+            BackendDAE b;
+          case b as BackendDAE.MAIN() algorithm
+            b.varData := NBResizable.addDimensionParameters(b.varData);
+          then b;
+          else bdae;
+        end match;
+      end if;
+
       simCode := match bdae
         local
           // auxillaries

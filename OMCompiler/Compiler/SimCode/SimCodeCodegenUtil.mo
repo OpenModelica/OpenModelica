@@ -1095,6 +1095,62 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function jacobianIndexExp
+  "The position of a variable of a Jacobian in its seed, tmp or result array:
+   its index, unless a variable before it in the same array has a size that is
+   only known at runtime (resizable arrays). Then it is the sum of the sizes of
+   these variables, an expression of the structural parameters."
+  input SimCodeVar.SimVar var;
+  input HashTableCrefSimVar.HashTable ht;
+  output DAE.Exp exp = DAE.ICONST(var.index);
+protected
+  list<SimCodeVar.SimVar> before = {};
+  list<Integer> seen = {};
+algorithm
+  if var.index <= 0 then
+    return;
+  end if;
+  for v in BaseHashTable.hashTableValueList(ht) loop
+    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not List.isMemberOnTrue(v.index, seen, intEq) then
+      seen := v.index :: seen;
+      before := v :: before;
+    end if;
+  end for;
+  if List.any(before, isSymbolicArrayVar) then
+    exp := DAE.ICONST(0);
+    for v in before loop
+      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+    end for;
+  end if;
+end jacobianIndexExp;
+
+protected function simVarSizeExp
+  "The number of scalar elements of a SimVar as an expression."
+  input SimCodeVar.SimVar var;
+  output DAE.Exp exp = DAE.ICONST(1);
+algorithm
+  for d in Expression.arrayDimension(var.type_) loop
+    exp := DAE.BINARY(exp, DAE.MUL(DAE.T_INTEGER_DEFAULT), match d
+      case DAE.DIM_EXP() then d.exp;
+      else DAE.ICONST(Expression.dimensionSize(d));
+    end match);
+  end for;
+end simVarSizeExp;
+
+public function isDimensionParameter
+  "true for a size parameter $DIM_k of a derived dimension of a resizable array,
+   see NBResizable.addDimensionParameters. Its start value is the expression of
+   the dimension."
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM(), initialValue = SOME(_))
+      then StringUtil.startsWith(ComponentReferenceBasics.printComponentRefStr(var.name), "$DIM_");
+    else false;
+  end match;
+end isDimensionParameter;
+
 public function jacobianResultVars
   "The result variables of a Jacobian with the resizable sparsity pattern of the
    new backend: the variables its rows are solved for, each once. Empty if one of

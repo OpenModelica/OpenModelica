@@ -1286,7 +1286,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
-    case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), hpcomData=HPCOMDATA(__)) then
+    case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__), vars=vars as SIMVARS(__)), hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
     let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), Flags.isSet(HPCOM)) then
                      <<
@@ -1386,6 +1386,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%fmiAliasIndexTables(simCode, modelInfo, modelNamePrefixStr)%>
 
+    <%functionUpdateStructuralParameters(vars.intParamVars, modelNamePrefixStr)%>
+
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
@@ -1473,7 +1475,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
-      <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>
+      <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>,
+      <%if hasDimensionParameters(vars.intParamVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>    /* updateStructuralParameters */
     <%\n%>
     };
 
@@ -1780,6 +1783,63 @@ template fmiAliasIndex(SimCode simCode, AliasVariable v)
   /* -1 - vr, so that a negated alias of vr=0 is still negative */
   case NEGATEDALIAS(__) then intSub(-1, SimCodeCodegenUtil.lookupVR(varName,simCode))
 end fmiAliasIndex;
+
+template hasDimensionParameters(list<SimVar> intParamVars)
+::= (intParamVars |> v => if isDimensionParameter(v) then "1")
+end hasDimensionParameters;
+
+template functionUpdateStructuralParameters(list<SimVar> intParamVars, Text modelNamePrefixStr)
+ "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1).
+  The runtime calls it after reading the init.xml, before it computes the sizes
+  of the arrays and allocates them: only the start attributes of the parameters
+  exist, possibly changed with -override, so they are what it reads and writes."
+::=
+  if hasDimensionParameters(intParamVars) then
+  let body = (intParamVars |> v as SIMVAR(initialValue = SOME(e)) =>
+    if isDimensionParameter(v) then
+      '<%structuralParameterStart(v)%> = <%structuralParameterExp(e)%>; /* <%crefStrNoUnderscore(v.name)%> */'
+    ;separator="\n")
+  <<
+  static void <%symbolName(modelNamePrefixStr,"updateStructuralParameters")%>(DATA *data, threadData_t *threadData)
+  {
+    <%body%>
+  }
+  >>
+end functionUpdateStructuralParameters;
+
+template structuralParameterStart(SimVar var)
+ "The start attribute of a scalar Integer parameter."
+::=
+  match var
+  case SIMVAR(varKind = PARAM()) then
+    '((modelica_integer*)(data->modelData->integerParameterData[<%index%>].attribute.start.data))[0]'
+  else error(sourceInfo(), 'structuralParameterStart: no parameter')
+end structuralParameterStart;
+
+template structuralParameterExp(Exp exp)
+ "A dimension expression of Integer parameters in terms of their start attributes."
+::=
+  match exp
+  case ICONST(__) then '((modelica_integer) <%integer%>)'
+  case CREF(componentRef = cr) then
+    match cref2simvar(cr, getSimCode())
+    case v as SIMVAR(varKind = PARAM(), type_ = T_INTEGER(__)) then structuralParameterStart(v)
+    else error(sourceInfo(), 'structuralParameterExp: <%CodegenUtil.crefStr(cr)%> is no Integer parameter')
+  case BINARY(operator = ADD(__)) then '(<%structuralParameterExp(exp1)%> + <%structuralParameterExp(exp2)%>)'
+  case BINARY(operator = SUB(__)) then '(<%structuralParameterExp(exp1)%> - <%structuralParameterExp(exp2)%>)'
+  case BINARY(operator = MUL(__)) then '(<%structuralParameterExp(exp1)%> * <%structuralParameterExp(exp2)%>)'
+  case UNARY(operator = UMINUS(__)) then '(-<%structuralParameterExp(exp)%>)'
+  case CALL(path = IDENT(name = "max"), expLst = {e1, e2}) then
+    let a = structuralParameterExp(e1)
+    let b = structuralParameterExp(e2)
+    '(<%a%> > <%b%> ? <%a%> : <%b%>)'
+  case CALL(path = IDENT(name = "min"), expLst = {e1, e2}) then
+    let a = structuralParameterExp(e1)
+    let b = structuralParameterExp(e2)
+    '(<%a%> < <%b%> ? <%a%> : <%b%>)'
+  case CALL(path = IDENT(name = "div"), expLst = {e1, e2}) then '(<%structuralParameterExp(e1)%> / <%structuralParameterExp(e2)%>)'
+  else error(sourceInfo(), 'structuralParameterExp: dimension expression <%ExpressionDumpTpl.dumpExp(exp,"\"")%> is not supported')
+end structuralParameterExp;
 
 template fmiAliasIndexTableRefs(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
 ::=
@@ -6528,7 +6588,7 @@ template resizableColCountRegular(ComponentRef seed, String nCols, Integer k, Co
       let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
       <<
       <%seedComment%>
-      col_counts[<%v.index%> + _wr<%k%>]++;
+      col_counts[<%jacobianVarIndex(v, context)%> + _wr<%k%>]++;
       >>
     else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
   else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -6562,7 +6622,7 @@ template resizableColCount(ComponentRef seed, String nCols, Context context, Tex
       case SOME(ev as SIMVAR()) then
       <<
       <%seedComment%>
-      if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { col_counts[<%ev.index%>]++; }
+      if (<%jacobianVarIndex(ev, context)%> >= 0 && <%jacobianVarIndex(ev, context)%> < (modelica_integer)(<%nCols%>)) { col_counts[<%jacobianVarIndex(ev, context)%>]++; }
       >>
       else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
   else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -6589,7 +6649,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
           <<
           <%seedComment%>
           <%offsetPreExp%>
-          if ((modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) >= 0) { col_counts[<%v.index%> + (<%offset%>)]++; }
+          if ((modelica_integer)(<%jacobianVarIndex(v, context)%>) + (modelica_integer)(<%offset%>) >= 0) { col_counts[<%jacobianVarIndex(v, context)%> + (<%offset%>)]++; }
           >>
         else ''
       else
@@ -6597,7 +6657,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
         case {} then
           <<
           <%seedComment%>
-          col_counts[<%v.index%>]++;
+          col_counts[<%jacobianVarIndex(v, context)%>]++;
           >>
         case {WHOLEDIM()} then
           let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -6606,7 +6666,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
           {
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
-              col_counts[<%v.index%> + _wc<%v.index%>]++;
+              col_counts[<%jacobianVarIndex(v, context)%> + _wc<%v.index%>]++;
             }
           }
           >>
@@ -6619,7 +6679,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
           {
             unsigned int _sc<%v.index%>;
             for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
-              col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
+              col_counts[<%jacobianVarIndex(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
             }
           }
           >>
@@ -6636,7 +6696,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
             for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%sz%>); _wo<%v.index%>++) {
-                col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++;
+                col_counts[<%jacobianVarIndex(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++;
               }
             }
           }
@@ -6652,7 +6712,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
             for (_wo2<%v.index%> = 0; _wo2<%v.index%> < (unsigned int)(<%szOuter%>); _wo2<%v.index%>++) {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%szInner%>); _wc<%v.index%>++) {
-                col_counts[<%v.index%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++;
+                col_counts[<%jacobianVarIndex(v, context)%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++;
               }
             }
           }
@@ -6668,7 +6728,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
             {
               unsigned int _wa<%v.index%>;
               for (_wa<%v.index%> = 0; _wa<%v.index%> < (unsigned int)(<%total%>); _wa<%v.index%>++) {
-                col_counts[<%v.index%> + _wa<%v.index%>]++;
+                col_counts[<%jacobianVarIndex(v, context)%> + _wa<%v.index%>]++;
               }
             }
             >>
@@ -6687,7 +6747,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
                 <%outerPreExp%>
-                <%col%> = (modelica_integer)(<%v.index%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
+                <%col%> = (modelica_integer)(<%jacobianVarIndex(v, context)%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
                 if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
                   col_counts[<%col%>]++;
                 }
@@ -6710,7 +6770,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
               unsigned int _sc<%v.index%>;
               for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
                 <%outerPreExp%>
-                col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
+                col_counts[<%jacobianVarIndex(v, context)%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
               }
             }
             >>
@@ -6726,7 +6786,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
                 <%innerPreExp%>
-                col_counts[<%v.index%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
+                col_counts[<%jacobianVarIndex(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
               }
             }
             >>
@@ -6744,7 +6804,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
               unsigned int _so<%v.index%>;
               for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
                 <%innerPreExp%>
-                col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
+                col_counts[<%jacobianVarIndex(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
               }
             }
             >>
@@ -6755,7 +6815,7 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            <%col%> = (modelica_integer)(<%v.index%>) + (<%offset%>);
+            <%col%> = (modelica_integer)(<%jacobianVarIndex(v, context)%>) + (<%offset%>);
             if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) { col_counts[<%col%>]++; }
             >>
     else '/* resizableColCount: seed not found in jacHT */'
@@ -6828,7 +6888,7 @@ match row
               <<
               {
                 unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                unsigned int row_<%k%> = <%jacobianVarIndex(v, context)%> + _wr<%k%>;
                 <%depsWholeDep%>
               }
               >>
@@ -6838,7 +6898,7 @@ match row
               {
                 unsigned int _wr<%k%>;
                 for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
-                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  unsigned int row_<%k%> = <%jacobianVarIndex(v, context)%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
               }
@@ -6857,7 +6917,7 @@ match row
             {
               unsigned int _wr<%k%>;
               for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
-                unsigned int row_<%k%> = <%v.index%> + (unsigned int)(((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
+                unsigned int row_<%k%> = <%jacobianVarIndex(v, context)%> + (unsigned int)(((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
                 <%depsWholeReduced%>
               }
             }
@@ -6869,7 +6929,7 @@ match row
         case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
           match simVarFromHT(crefStripSubs(sc), jacHT)
           case v as SIMVAR() then
-            let rowExpr = '<%v.index%>'
+            let rowExpr = '<%jacobianVarIndex(v, context)%>'
             let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
             <<
             <%fillCode%>
@@ -6901,7 +6961,7 @@ match row
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  unsigned int row_<%k%> = <%jacobianVarIndex(v, context)%> + _wr<%k%>;
                   <%depsWholeReduced%>
                 }
                 >>
@@ -6935,7 +6995,7 @@ match row
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  unsigned int row_<%k%> = <%jacobianVarIndex(v, context)%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
                 >>
@@ -7008,7 +7068,7 @@ match row
               // assigned by the same or another equation (see simple_der_for.mos).
               let &offsetPreExp = buffer ""
               let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
-              let rowExpr = '<%v.index%> + (unsigned int)(<%offset%>)'
+              let rowExpr = '<%jacobianVarIndex(v, context)%> + (unsigned int)(<%offset%>)'
               let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
               <<
               <%offsetPreExp%>
@@ -7033,7 +7093,7 @@ template resizableColFillRegular(ComponentRef seed, String nCols, String rowExpr
       let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
       <<
       <%seedComment%>
-      <%spPattern%>->index[col_fill[<%v.index%> + _wr<%k%>]++] = <%rowExpr%>;
+      <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + _wr<%k%>]++] = <%rowExpr%>;
       >>
     else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
   else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
@@ -7052,7 +7112,7 @@ template resizableColFill(ComponentRef seed, String nCols, String rowExpr, Conte
       case SOME(ev as SIMVAR()) then
       <<
       <%seedComment%>
-      if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%ev.index%>]++] = <%rowExpr%>; }
+      if (<%jacobianVarIndex(ev, context)%> >= 0 && <%jacobianVarIndex(ev, context)%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%jacobianVarIndex(ev, context)%>]++] = <%rowExpr%>; }
       >>
       else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
   else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
@@ -7077,7 +7137,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
           <<
           <%seedComment%>
           <%offsetPreExp%>
-          if ((modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) >= 0) { <%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>; }
+          if ((modelica_integer)(<%jacobianVarIndex(v, context)%>) + (modelica_integer)(<%offset%>) >= 0) { <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + (<%offset%>)]++] = <%rowExpr%>; }
           >>
         else ''
       else
@@ -7085,7 +7145,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
         case {} then
           <<
           <%seedComment%>
-          <%spPattern%>->index[col_fill[<%v.index%>]++] = <%rowExpr%>;
+          <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%>]++] = <%rowExpr%>;
           >>
         case {WHOLEDIM()} then
           let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -7094,7 +7154,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
           {
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
-              <%spPattern%>->index[col_fill[<%v.index%> + _wc<%v.index%>]++] = <%rowExpr%>;
+              <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + _wc<%v.index%>]++] = <%rowExpr%>;
             }
           }
           >>
@@ -7107,7 +7167,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
           {
             unsigned int _sc<%v.index%>;
             for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
-              <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
+              <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
             }
           }
           >>
@@ -7124,7 +7184,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
             for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%sz%>); _wo<%v.index%>++) {
-                <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++] = <%rowExpr%>;
               }
             }
           }
@@ -7140,7 +7200,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
             for (_wo2<%v.index%> = 0; _wo2<%v.index%> < (unsigned int)(<%szOuter%>); _wo2<%v.index%>++) {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%szInner%>); _wc<%v.index%>++) {
-                <%spPattern%>->index[col_fill[<%v.index%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++] = <%rowExpr%>;
               }
             }
           }
@@ -7156,7 +7216,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
             {
               unsigned int _wa<%v.index%>;
               for (_wa<%v.index%> = 0; _wa<%v.index%> < (unsigned int)(<%total%>); _wa<%v.index%>++) {
-                <%spPattern%>->index[col_fill[<%v.index%> + _wa<%v.index%>]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + _wa<%v.index%>]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7175,7 +7235,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
                 <%outerPreExp%>
-                <%col%> = (modelica_integer)(<%v.index%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
+                <%col%> = (modelica_integer)(<%jacobianVarIndex(v, context)%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
                 if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
                   <%spPattern%>->index[col_fill[<%col%>]++] = <%rowExpr%>;
                 }
@@ -7198,7 +7258,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
               unsigned int _sc<%v.index%>;
               for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
                 <%outerPreExp%>
-                <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7214,7 +7274,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
                 <%innerPreExp%>
-                <%spPattern%>->index[col_fill[<%v.index%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7232,7 +7292,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
               unsigned int _so<%v.index%>;
               for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
                 <%innerPreExp%>
-                <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarIndex(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7243,7 +7303,7 @@ template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, C
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            <%col%> = (modelica_integer)(<%v.index%>) + (<%offset%>);
+            <%col%> = (modelica_integer)(<%jacobianVarIndex(v, context)%>) + (<%offset%>);
             if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%col%>]++] = <%rowExpr%>; }
             >>
     else '/* resizableColFill: seed not found in jacHT */'

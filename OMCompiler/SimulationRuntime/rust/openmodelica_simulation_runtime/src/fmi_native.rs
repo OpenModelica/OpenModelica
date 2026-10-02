@@ -342,6 +342,9 @@ fn setup(data: *mut DATA, td: *mut threadData_t, kind: Kind, token: Option<&str>
         cb.read_simulation_info.expect("read_simulation_info")((*data).simulationInfo);
         crate::fmi::allocModelDataVars((*data).modelData, 0, td);
         crate::fmi::scalarAllocArrayAttributes((*data).modelData);
+        if let Some(f) = cb.updateStructuralParameters {
+            f(data, td);
+        }
         crate::fmi::calculateAllScalarLength((*data).modelData);
         omc_fmu_setDefaultStartValues(data);
         crate::fmi::initializeDataStruc(data, td);

@@ -3174,25 +3174,56 @@ protected
     dim := match dim
       local
         Expression exp;
+        Dimension new_dim;
 
       case Dimension.EXP()
         algorithm
           ptree := buildParameterTree(fn, args, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
+          // size(x, i) of a resizable dimension is its expression (e.g. N), the
+          // dimension of the output stays resizable instead of being evaluated
+          exp := Expression.map(exp, resizableSizeExp);
 
-          ErrorExt.setCheckpoint(getInstanceName());
-          try
-            Structural.markExp(exp);
-            exp := Ceval.evalExp(exp);
+          if Expression.contains(exp, Expression.isResizableCref) then
+            new_dim := Dimension.fromExp(SimplifyExp.simplify(exp), Variability.NON_STRUCTURAL_PARAMETER);
           else
-          end try;
-          ErrorExt.rollBack(getInstanceName());
+            ErrorExt.setCheckpoint(getInstanceName());
+            try
+              Structural.markExp(exp);
+              exp := Ceval.evalExp(exp);
+            else
+            end try;
+            ErrorExt.rollBack(getInstanceName());
+            new_dim := Dimension.fromExp(exp, Variability.CONSTANT);
+          end if;
         then
-          Dimension.fromExp(exp, Variability.CONSTANT);
+          new_dim;
 
       else dim;
     end match;
   end evaluateCallTypeDim;
+
+  function resizableSizeExp
+    "size(x, i) -> the expression of dimension i of x if it is resizable"
+    input Expression exp;
+    output Expression outExp = exp;
+  protected
+    Integer i;
+    Dimension d;
+  algorithm
+    () := match exp
+      case Expression.SIZE(dimIndex = SOME(Expression.INTEGER(i))) algorithm
+        try
+          d := Type.nthDimension(Expression.typeOf(exp.exp), i);
+          if Dimension.isResizable(d) then
+            outExp := Dimension.sizeExp(d);
+          end if;
+        else
+        end try;
+      then ();
+      else ();
+    end match;
+  end resizableSizeExp;
 
   function buildParameterTree
     input Function fn;

@@ -1533,6 +1533,17 @@ package SimCodeCodegenUtil
     output Integer n;
   end numScalarElems;
 
+  function jacobianIndexExp
+    input SimCodeVar.SimVar var;
+    input HashTableCrefSimVar.HashTable ht;
+    output DAE.Exp exp;
+  end jacobianIndexExp;
+
+  function isDimensionParameter
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isDimensionParameter;
+
   function jacobianResultVars
     input SimCode.Sparsity sparsity;
     input Option<HashTableCrefSimVar.HashTable> crefsHT;

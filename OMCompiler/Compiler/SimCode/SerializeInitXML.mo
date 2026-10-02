@@ -54,6 +54,7 @@ import DAEUtil;
 import Dump;
 import Error;
 import Expression;
+import ExpressionBasics;
 import ExpressionBasics.printExpStr;
 import File.Escape.XML;
 import Settings;
@@ -274,7 +275,7 @@ function modelVariables "Generates code for ModelVariables file for FMU target."
   input SimCodeVar.SimVars vars;
 protected
   Integer vr, ix=0;
-  UnorderedMap<DAE.ComponentRef, Integer> dims;
+  UnorderedMap<DAE.Exp, Integer> dims;
 algorithm
   // set starting index
   vr := match Config.simCodeTarget()
@@ -311,13 +312,15 @@ algorithm
 end modelVariables;
 
 function dimensionValueReferences
-  "The value references the Integer parameters get in modelVariables. A dimension
-   given by one of them (resizable arrays) refers to it by value reference, so it
-   can be changed with -override before the simulation without compiling the
-   model again."
+  "The value references the Integer parameters get in modelVariables, keyed by
+   the dimension they stand for: the parameter itself, and for a size parameter
+   $DIM_k of a derived dimension (N-1) its start expression. A dimension given by
+   one of them (resizable arrays) refers to it by value reference, so it can be
+   changed with -override before the simulation without compiling the model
+   again; a $DIM_k is computed by updateStructuralParameters."
   input SimCodeVar.SimVars vars;
   input Integer firstValueReference;
-  output UnorderedMap<DAE.ComponentRef, Integer> dims = UnorderedMap.new<Integer>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqualNoStringCompare);
+  output UnorderedMap<DAE.Exp, Integer> dims = UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
 protected
   Integer vr;
 algorithm
@@ -327,7 +330,10 @@ algorithm
     + listLength(vars.realOptimizeFinalConstraintsVars) + listLength(vars.paramVars) + listLength(vars.aliasVars)
     + listLength(vars.intAlgVars);
   for var in vars.intParamVars loop
-    UnorderedMap.add(var.name, vr, dims);
+    UnorderedMap.add(DAE.CREF(var.name, var.type_), vr, dims);
+    if SimCodeCodegenUtil.isDimensionParameter(var) then
+      UnorderedMap.add(Util.getOption(var.initialValue), vr, dims);
+    end if;
     vr := vr + 1;
   end for;
 end dimensionValueReferences;
@@ -338,7 +344,7 @@ function scalarVariables
   input String classType;
   input output Integer valueReference;
   input output Integer index=0;
-  input UnorderedMap<DAE.ComponentRef, Integer> dims "value references of the parameters that are dimensions";
+  input UnorderedMap<DAE.Exp, Integer> dims "value references of the parameters that are dimensions";
 algorithm
   for var in vars loop
     scalarVariable(file, var, classType, valueReference, index, dims);
@@ -353,7 +359,7 @@ function scalarVariable
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
-  input UnorderedMap<DAE.ComponentRef, Integer> dims;
+  input UnorderedMap<DAE.Exp, Integer> dims;
 protected
   String type_name = if DAEUtil.expTypeArray(var.type_) then "ArrayVariable" else "ScalarVariable";
 algorithm
@@ -370,7 +376,7 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
-  input UnorderedMap<DAE.ComponentRef, Integer> dims;
+  input UnorderedMap<DAE.Exp, Integer> dims;
 protected
   Integer inputIndex = SimCodeCodegenUtil.getInputIndex(simVar);
   SourceInfo info = simVar.source.info;
@@ -445,19 +451,19 @@ algorithm
   for dim in Expression.arrayDimension(simVar.type_) loop
     _ := match dim
       local
-        DAE.ComponentRef cr;
         Integer vr;
-      // a dimension given by a parameter refers to it, see dimensionValueReferences
-      case DAE.DIM_EXP(exp = DAE.CREF(componentRef = cr))
-        algorithm
-          vr := UnorderedMap.getOrFail(cr, dims);
-          File.write(file, "    <Dimension valueReference=\"" + intString(vr) + "\"/>\n");
-        then ();
+      // a dimension given by a parameter, or a derived one by its size parameter $DIM_k, refers to it
       case DAE.DIM_EXP() guard not Expression.isConst(dim.exp)
         algorithm
-          Error.addCompilerError("The dimension " + printExpStr(dim.exp) + " of " + ComponentReferenceBasics.printComponentRefStr(simVar.name)
-            + " is not an Integer parameter. Resizable arrays (--resizableArrays) do not support dimensions that are expressions of parameters yet.");
-        then fail();
+          try
+            SOME(vr) := UnorderedMap.get(dim.exp, dims);
+          else
+            Error.addCompilerError("The dimension " + printExpStr(dim.exp) + " of " + ComponentReferenceBasics.printComponentRefStr(simVar.name)
+              + " is neither an Integer parameter nor has a size parameter. It is not supported for resizable arrays (--resizableArrays).");
+            fail();
+          end try;
+          File.write(file, "    <Dimension valueReference=\"" + intString(vr) + "\"/>\n");
+        then ();
       else algorithm
         File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
       then ();
