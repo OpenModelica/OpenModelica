@@ -143,6 +143,7 @@ NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
   createCellMenu();
   createFormatMenu();
   createInsertMenu();
+  createViewMenu();
   createWindowMenu();
   createAboutMenu();
 
@@ -1387,6 +1388,198 @@ void NotebookWindow::createInsertMenu()
   *
   * \brief Method for creating window nemu.
   */
+void NotebookWindow::createViewMenu()
+{
+  auto viewMenu = menuBar()->addMenu( tr("&View") );
+
+  // Ctrl++ and Ctrl+- are already used by Format->Size (font size of the selection)
+  zoomInAction = new QAction( tr("Zoom &In"), this );
+  zoomInAction->setShortcut( QKeySequence("Ctrl+Alt++") );
+  zoomInAction->setStatusTip( tr("Enlarge the displayed text of the cells (the notebook is not changed)") );
+  connect( zoomInAction, SIGNAL( triggered() ), this, SLOT( zoomTextIn() ));
+  viewMenu->addAction( zoomInAction );
+
+  zoomOutAction = new QAction( tr("Zoom &Out"), this );
+  zoomOutAction->setShortcut( QKeySequence("Ctrl+Alt+-") );
+  zoomOutAction->setStatusTip( tr("Reduce the displayed text of the cells (the notebook is not changed)") );
+  connect( zoomOutAction, SIGNAL( triggered() ), this, SLOT( zoomTextOut() ));
+  viewMenu->addAction( zoomOutAction );
+
+  zoomResetAction = new QAction( tr("&Reset Zoom"), this );
+  zoomResetAction->setShortcut( QKeySequence("Ctrl+Alt+0") );
+  zoomResetAction->setStatusTip( tr("Display the text of the cells in its original size") );
+  connect( zoomResetAction, SIGNAL( triggered() ), this, SLOT( zoomTextReset() ));
+  viewMenu->addAction( zoomResetAction );
+
+  // the zoom is done by a paint device with scaled resolution
+  zoomDevice_ = QImage( 1, 1, QImage::Format_ARGB32 );
+  zoomResetAction->setEnabled( false );
+}
+
+namespace {
+  const int zoomSteps[] = { 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400 };
+}
+
+void NotebookWindow::zoomTextIn()
+{
+  for( int step : zoomSteps )
+  {
+    if( step > textZoom_ )
+    {
+      setTextZoom( step );
+      return;
+    }
+  }
+}
+
+void NotebookWindow::zoomTextOut()
+{
+  for( int i = static_cast<int>( sizeof( zoomSteps ) / sizeof( zoomSteps[0] ) ) - 1; i >= 0; --i )
+  {
+    if( zoomSteps[i] < textZoom_ )
+    {
+      setTextZoom( zoomSteps[i] );
+      return;
+    }
+  }
+}
+
+void NotebookWindow::zoomTextReset()
+{
+  setTextZoom( 100 );
+}
+
+/*!
+  * \brief Sets the zoom of the cell texts in percent.
+  *
+  * Only the display is scaled, the notebook content (font sizes in the
+  * cells, the saved .onb file) and the size of the GUI are not changed.
+  * All text, also text with a fixed font size from the cell style, is scaled
+  * by giving the text layout a paint device with a scaled resolution.
+  * (QTextEdit::zoomIn() doesn't work here, it ignores fixed font sizes.)
+  */
+void NotebookWindow::setTextZoom( int percent )
+{
+  if( percent == textZoom_ )
+    return;
+
+  textZoom_ = percent;
+
+  const double dpi = logicalDpiY() * percent / 100.0;
+  const int dotsPerMeter = qRound( dpi / 0.0254 );
+  zoomDevice_.setDotsPerMeterX( dotsPerMeter );
+  zoomDevice_.setDotsPerMeterY( dotsPerMeter );
+
+  // cells that are created later (open file, new cell) are zoomed in eventFilter()
+  qApp->removeEventFilter( this );
+  if( percent != 100 )
+    qApp->installEventFilter( this );
+
+  zoomResetAction->setEnabled( percent != 100 );
+  statusBar()->showMessage( tr("Zoom: %1%").arg( percent ), 3000 );
+
+  applyTextZoom();
+}
+
+namespace {
+  // let the cell of an editor adapt its height to the new text size
+  void requestCellHeightUpdate( QWidget *editor )
+  {
+    for( QWidget *w = editor->parentWidget(); w; w = w->parentWidget() )
+    {
+      if( Cell *cell = dynamic_cast<Cell*>( w ) )
+      {
+        QMetaObject::invokeMethod( cell, "contentChanged", Qt::QueuedConnection );
+        return;
+      }
+    }
+  }
+}
+
+void NotebookWindow::applyTextZoom()
+{
+  const QList<QTextEdit*> editors = centralWidget()->findChildren<QTextEdit*>();
+  for( QTextEdit *editor : editors )
+    applyTextZoom( editor );
+
+  // the code editor of a GraphCell is a QPlainTextEdit (not a QTextEdit)
+  const QList<QPlainTextEdit*> codeEditors = centralWidget()->findChildren<QPlainTextEdit*>();
+  for( QPlainTextEdit *editor : codeEditors )
+    applyTextZoom( editor );
+}
+
+void NotebookWindow::applyTextZoom( QTextEdit *editor )
+{
+  QAbstractTextDocumentLayout *layout = editor->document()->documentLayout();
+  if( !layout )
+    return;
+
+  if( textZoom_ == 100 )
+    layout->setPaintDevice( editor->viewport() );
+  else
+    layout->setPaintDevice( &zoomDevice_ );
+
+  editor->document()->markContentsDirty( 0, editor->document()->characterCount() );
+  editor->viewport()->update();
+
+  requestCellHeightUpdate( editor );
+}
+
+/*!
+  * \brief Zoom for a QPlainTextEdit (code editor of the GraphCell).
+  *
+  * All text of such an editor uses the font of the widget, so the zoom scales
+  * the widget font. The original size is remembered in a property of the
+  * editor. Child widgets (the line number area) follow the font of the editor.
+  */
+void NotebookWindow::applyTextZoom( QPlainTextEdit *editor )
+{
+  static const char *baseSizeProperty = "omnotebookZoomBaseSize";
+
+  QFont font = editor->font();
+  const bool usePoints = font.pointSizeF() > 0;
+  if( !editor->property( baseSizeProperty ).isValid() )
+    editor->setProperty( baseSizeProperty,
+                         usePoints ? font.pointSizeF() : static_cast<qreal>( font.pixelSize() ) );
+
+  const qreal size = editor->property( baseSizeProperty ).toReal() * textZoom_ / 100.0;
+  if( usePoints )
+    font.setPointSizeF( size );
+  else
+    font.setPixelSize( qMax( 1, qRound( size ) ) );
+
+  if( font == editor->font() )
+    return;
+
+  editor->setFont( font );
+  editor->viewport()->update();
+
+  requestCellHeightUpdate( editor );
+}
+
+/*!
+  * \brief Applies the zoom to text editors that are shown after the zoom was set
+  * (new cells, opened notebooks, opened cell groups).
+  */
+bool NotebookWindow::eventFilter( QObject *obj, QEvent *event )
+{
+  if( event->type() == QEvent::Show && textZoom_ != 100 )
+  {
+    if( QTextEdit *editor = qobject_cast<QTextEdit*>( obj ) )
+    {
+      if( editor->window() == this &&
+          editor->document()->documentLayout()->paintDevice() != &zoomDevice_ )
+        applyTextZoom( editor );
+    }
+    else if( QPlainTextEdit *codeEditor = qobject_cast<QPlainTextEdit*>( obj ) )
+    {
+      if( codeEditor->window() == this )
+        applyTextZoom( codeEditor );
+    }
+  }
+  return DocumentView::eventFilter( obj, event );
+}
+
 void NotebookWindow::createWindowMenu()
 {
   windowMenu = menuBar()->addMenu( tr("&Window") );
