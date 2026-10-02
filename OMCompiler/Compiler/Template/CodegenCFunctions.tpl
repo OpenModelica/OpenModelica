@@ -9033,11 +9033,22 @@ end startArrayGather;
 
 template startArrayScatter(ComponentRef cr, Text type, Text arr, Text &varDecls, Text &varFrees)
  "The dual of startArrayGather. Each scalar owns its start attribute, so there
-  is no array to copy into: write them one at a time."
+  is no array to copy into: write them one at a time. Without --simCodeScalarize
+  the array's start attribute might only hold a broadcast value, so it is grown
+  to one value per element first."
 ::=
   let idx = tempDecl("modelica_integer", &varDecls, &varFrees)
+  let ensureSize = match getSimCode()
+    case SIMCODE(scalarized=true) then ""
+    else match type
+      case "real"
+      case "integer"
+      case "boolean" then
+        match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+        case var as SIMVAR(__) then
+          '<%type%>_array_ensure_size(&data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute.start, base_array_nr_of_elements(<%arr%>));<%\n%>'
   <<
-  for (<%idx%> = 0; <%idx%> < base_array_nr_of_elements(<%arr%>); <%idx%>++) {
+  <%ensureSize%>for (<%idx%> = 0; <%idx%> < base_array_nr_of_elements(<%arr%>); <%idx%>++) {
     <%if stringEq(type, "string")
        then 'omc_string_store(&(<%startArrayElement(cr, type, idx)%>), ((modelica_string*)<%arr%>.data)[<%idx%>]);'
        else '<%startArrayElement(cr, type, idx)%> = ((modelica_<%type%>*)<%arr%>.data)[<%idx%>];'%>
@@ -9068,13 +9079,20 @@ end startArrayEnsureSize;
 
 template startArrayElement(ComponentRef cr, Text type, Text idx)
  "Element `idx`'s start attribute. With --simCodeScalarize the array's elements
-  are consecutive VarsData entries, each holding its own."
+  are consecutive VarsData entries, each holding its own. Without it the array
+  has a single VarsData entry whose start attribute holds either one value per
+  element or a single broadcast value (see attributeElementIndex)."
 ::=
   match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'startArrayElement got negative index=<%index%> for <%CodegenUtil.crefStr(name)%>') else
-    let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
-    '((modelica_<%type%>*)(<%entry%>.data))[0]'
+    match getSimCode()
+    case SIMCODE(scalarized=true) then
+      let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
+      '((modelica_<%type%>*)(<%entry%>.data))[0]'
+    else
+      let start = 'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute.start'
+      '((modelica_<%type%>*)(<%start%>.data))[base_array_nr_of_elements(<%start%>) == 1 ? 0 : <%idx%>]'
 end startArrayElement;
 
 template varArrayName(SimVar var)

@@ -2214,6 +2214,13 @@ algorithm
       SimCode.SimCode simCode;
       Integer index;
       list<DAE.ComponentRef> crf_lst;
+    // The start attributes of a whole array are never contiguous, but
+    // daeExpCrefRhsSimContext gathers them with a loop. Expanding them here
+    // instead generates one term per element, which C compilers choke on for
+    // large arrays and which cannot follow a resized array (issue #16373).
+    case DAE.CREF(ty=DAE.T_ARRAY())
+      guard ComponentReference.isStartCref(e.componentRef) and not ComponentReference.crefHaveSubs(e.componentRef)
+      then e;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();
