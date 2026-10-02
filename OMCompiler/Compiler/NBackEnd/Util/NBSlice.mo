@@ -1363,9 +1363,9 @@ protected
       // skip to an array with less skips then dimensions
       case (Type.ARRAY(), rest) algorithm
         (rest_dim, tail_dim) := List.split(ty.dimensions, listLength(rest));
-        // the skipped part starts at the first element of the remaining dimensions
-        index := locationToIndex(listReverse(list(Dimension.size(dim, true) for dim in ty.dimensions)),
-          listAppend(list(1 for dim in tail_dim), listReverse(rest)), index);
+        // offset by the skipped position times the size of the remaining dimensions (may be zero)
+        index := index + (locationToIndex(listReverse(list(Dimension.size(dim, true) for dim in rest_dim)), listReverse(rest), 1) - 1)
+          * Dimension.sizesProduct(tail_dim, true);
         ty.dimensions := tail_dim;
       then (index, ty);
 
