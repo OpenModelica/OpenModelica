@@ -264,12 +264,12 @@ pipeline {
 
         // The Rust (mmtorust) omc port, GUI off; the GUI is built in parallel
         // with the tests by the 'build-gui-rust' stage. See common.buildRustOMC().
-        stage('rust-clang') {
+        stage('rust-cmake') {
           agent {
             docker {
               alwaysPull true
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
-              label 'linux'
+              label 'linux && !slow'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
