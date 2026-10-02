@@ -145,10 +145,11 @@ protected type VarSetAttributes =
     StartValues,
     list<tuple<DAE.Exp, DAE.ComponentRef>>,
     tuple<Option<DAE.Exp>,
-          Option<DAE.Exp>>
-  > "fixed, startvalues, nominal, (min, max)";
+          Option<DAE.Exp>>,
+    Boolean
+  > "fixed, startvalues, nominal, (min, max), discrete";
 
-protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (NONE(), {}), {}, (NONE(), NONE()));
+protected constant VarSetAttributes EMPTYVARSETATTRIBUTES = (false, (NONE(), {}), {}, (NONE(), NONE()), false);
 
 // =============================================================================
 // Starting point for preOpt and postOpt removeSimpleEquations module
@@ -2835,12 +2836,12 @@ protected function traverseAliasTree "author: Frenkel TUD 2012-12
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
-  input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
+  input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
   output BackendDAE.Variables oVars;
   output list<BackendDAE.Equation> oEqnslst;
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
-  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
+  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
 algorithm
  (oVars, oEqnslst, oshared, oRepl, oAttributes):=
   match rows
@@ -2884,12 +2885,12 @@ protected function traverseAliasTree1 "author: Frenkel TUD 2012-12
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
-  input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
+  input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
   output BackendDAE.Variables oVars;
   output list<BackendDAE.Equation> oEqnslst;
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
-  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
+  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
 algorithm
  (oVars, oEqnslst, oshared, oRepl, oAttributes):=
   match sc
@@ -2998,17 +2999,17 @@ protected function addVarSetAttributes "author: Frenkel TUD 2012-12"
   input Boolean negate;
   input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
-  input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
-  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
+  input VarSetAttributes iAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
+  output VarSetAttributes oAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
 protected
-  Boolean fixed, fixedset;
+  Boolean fixed, fixedset, discreteset;
   Option<DAE.Exp> start;
   Option<DAE.StartOrigin> origin;
   list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
   tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
   StartValues startvalues;
 algorithm
-  (fixedset, startvalues, nominalset, minmaxset) := iAttributes;
+  (fixedset, startvalues, nominalset, minmaxset, discreteset) := iAttributes;
   // get attributes
   // fixed
   fixed := BackendVariable.varFixed(inVar);
@@ -3020,7 +3021,8 @@ algorithm
   nominalset := addNominalValue(inVar, nominalset);
   // minmax
   minmaxset := addMinMaxAttribute(inVar, negate, mark, simpleeqnsarr, minmaxset);
-  oAttributes := (fixedset, startvalues, nominalset, minmaxset);
+  discreteset := discreteset or BackendVariable.isVarDiscrete(inVar);
+  oAttributes := (fixedset, startvalues, nominalset, minmaxset, discreteset);
 end addVarSetAttributes;
 
 protected function addStartValue "author: Frenkel TUD 2012-12"
@@ -3326,7 +3328,7 @@ algorithm
 end checkMinMax;
 
 protected function handleVarSetAttributes "author: Frenkel TUD 2012-12"
-  input VarSetAttributes inAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max";
+  input VarSetAttributes inAttributes "fixed, list<startvalue, origin, cr>, nominal, min, max, discrete";
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVars;
   input BackendDAE.Shared inShared;
@@ -3335,7 +3337,7 @@ protected function handleVarSetAttributes "author: Frenkel TUD 2012-12"
 algorithm
   outVars := matchcontinue(inAttributes, inShared)
     local
-      Boolean fixedset, isdiscrete, b1=false, b2=false;
+      Boolean fixedset, discreteset, isdiscrete, b1=false, b2=false;
       list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
       StartValues startvalues;
@@ -3343,7 +3345,7 @@ algorithm
       BackendDAE.Variables vars, globalKnownVars;
       Option<DAE.Exp> min, max;
 
-    case((fixedset, startvalues, nominalset, minmaxset), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+    case((fixedset, startvalues, nominalset, minmaxset, discreteset), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
       isdiscrete := BackendVariable.isVarDiscrete(inVar);
 
       // start and fixed
@@ -3361,6 +3363,13 @@ algorithm
         max := SOME(ExpressionSimplify.simplify(Util.getOption(max)));
       end if;
       v := BackendVariable.setVarMinMax(v, min, max);
+
+      // Keep the variability of eliminated discrete variables, so algorithms use pre(v).
+      v := match v.varKind
+        case BackendDAE.VARIABLE() guard discreteset
+          then BackendVariable.setVarKind(v, BackendDAE.DISCRETE());
+        else v;
+      end match;
 
       // update vars
       vars := BackendVariable.addVar(v, inVars);

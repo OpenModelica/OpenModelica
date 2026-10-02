@@ -1,0 +1,65 @@
+// name: 17035
+// keywords: algorithm, when, alias, discrete
+// status: correct
+// teardown_command: rm -f WhenAlgorithmAlias WhenAlgorithmAlias.c WhenAlgorithmAlias.h WhenAlgorithmAlias.o WhenAlgorithmAlias.exe WhenAlgorithmAlias.cpp WhenAlgorithmAlias.makefile WhenAlgorithmAlias.libs WhenAlgorithmAlias.log WhenAlgorithmAlias_* WhenAlgorithmNegatedAlias* WhenAlgorithmConnectedAliases* WhenAlgorithmElsewhenAlias* output.log
+//
+// An implicitly discrete Real must retain its previous value when a conditional
+// assignment in a when-statement is not executed, even if alias elimination
+// replaces it with a Real declared without discrete variability. See #17035.
+
+loadFile("WhenAlgorithmAlias.mo"); getErrorString();
+echo(false);
+simulate(WhenAlgorithmAlias, stopTime=1.5, numberOfIntervals=6);
+echo(true); getErrorString();
+{val(y, 0.0), val(y, 0.5), val(y, 1.0), val(y, 1.5)};
+{val(z, 0.0), val(z, 0.5), val(z, 1.0), val(z, 1.5)};
+
+// Keep a top-level output through a negated alias chain. Transfer the nonzero
+// start value and keep the assigned value when the condition becomes false.
+echo(false);
+simulate(WhenAlgorithmNegatedAlias, stopTime=1.5, numberOfIntervals=6);
+echo(true); getErrorString();
+{val(y, 0.0), val(y, 0.5), val(y, 1.0), val(y, 1.5)};
+{val(z, 0.0), val(z, 0.5), val(z, 1.0), val(z, 1.5)};
+{val(a, 0.0), val(a, 0.5), val(a, 1.0), val(a, 1.5)};
+
+// Connections to array input elements must retain the discreteness of the
+// block outputs assigned inside a for-loop in a conditional when-statement.
+echo(false);
+simulate(WhenAlgorithmConnectedAliases, stopTime=1.5, numberOfIntervals=6);
+echo(true); getErrorString();
+{val(b.y1, 0.0), val(b.y1, 0.5), val(b.y1, 1.0), val(b.y1, 1.5)};
+{val(s.u[2], 0.0), val(s.u[2], 0.5), val(s.u[2], 1.0), val(s.u[2], 1.5)};
+{val(s.v, 0.0), val(s.v, 0.5), val(s.v, 1.0), val(s.v, 1.5)};
+
+// Both when branches update the same aliased variable. Neither branch assigns
+// after t = 1, so the value from the elsewhen must persist through later events.
+echo(false);
+simulate(WhenAlgorithmElsewhenAlias, stopTime=2.0, numberOfIntervals=8);
+echo(true); getErrorString();
+{val(y, 0.0), val(y, 0.5), val(y, 1.0), val(y, 1.5), val(y, 2.0)};
+{val(z, 0.0), val(z, 0.5), val(z, 1.0), val(z, 1.5), val(z, 2.0)};
+
+// Result:
+// true
+// ""
+// true
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {0.0, 0.0, 0.75, 1.25}
+// {0.0, 0.0, 0.75, 1.25}
+// true
+// ""
+// {2.0, 2.0, 0.75, 0.75}
+// {-2.0, -2.0, -0.75, -0.75}
+// {-2.0, -2.0, -0.75, -0.75}
+// true
+// ""
+// {2.0, 2.0, 0.75, 0.75}
+// {3.0, 3.0, 1.5, 1.5}
+// {5.0, 5.0, 2.25, 2.25}
+// true
+// ""
+// {4.0, 2.5, 15.0, 15.0, 15.0}
+// {4.0, 2.5, 15.0, 15.0, 15.0}
+// endResult
