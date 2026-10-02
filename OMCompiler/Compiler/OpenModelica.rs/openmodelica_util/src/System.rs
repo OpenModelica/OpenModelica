@@ -2396,7 +2396,17 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
     Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
+static EXIT_HOOK: std::sync::OnceLock<fn()> = std::sync::OnceLock::new();
+
+/// Runs `hook` before the scripting `exit(n)` ends the process.
+pub fn set_exit_hook(hook: fn()) {
+    let _ = EXIT_HOOK.set(hook);
+}
+
 pub fn exit(status: i32) -> Result<()> {
+    if let Some(hook) = EXIT_HOOK.get() {
+        hook();
+    }
     std::process::exit(status);
 }
 
