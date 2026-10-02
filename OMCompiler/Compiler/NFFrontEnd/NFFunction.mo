@@ -3229,9 +3229,9 @@ protected
 
               else
                 algorithm
-                  Error.addStrictMessage(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
+                  Error.addSourceMessageAsError(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
                 then
-                  ();
+                  fail();
             end match;
           end if;
         then
