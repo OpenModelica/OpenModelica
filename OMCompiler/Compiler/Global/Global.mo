@@ -119,6 +119,9 @@ constant Integer uncertaintyExtraction = 41;
 // C names of the records whose members own nothing, so the generated C code
 // neither retains nor releases them. Set by SimCodeFunctionUtil.setTrivialRecords.
 constant Integer trivialRecords = 42;
+// Whether evalFunc can evaluate a call signature, kept for the Jacobians of a
+// model. Reset by BackendDAEUtil.getSolvedSystem.
+constant Integer evalFuncCallSignatures = 43;
 
 // indexes in System.tick
 // ----------------------
@@ -165,6 +168,7 @@ algorithm
   setGlobalRoot(nfDiagramIconCache, NONE());
   setGlobalRoot(uncertaintyExtraction, NONE());
   setGlobalRoot(trivialRecords, {});
+  setGlobalRoot(evalFuncCallSignatures, NONE());
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

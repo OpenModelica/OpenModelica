@@ -148,6 +148,8 @@ pub(crate) struct SimCtx {
     /// zero). Stored separately from `vars` because `$START` reads the start
     /// attribute, not the live value.
     pub(crate) starts: Arc<HashMap<String, Option<metamodelica::Ref<DAE::Exp>>>>,
+    /// Canonical cref key -> its constant `nominal`, 1 where unset.
+    pub(crate) nominals: Arc<HashMap<String, f64>>,
     /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
     /// present, else the inline expression. Empty while building the fill function.
     pub(crate) start_slots: Arc<HashMap<String, u32>>,

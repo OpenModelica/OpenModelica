@@ -13477,7 +13477,7 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         "backendInterface" => Some("openmodelica_frontend_dump"),
         // openmodelica_backend — symbolTable/rewriteRulesIndex hold SymbolTable
         // and RewriteRules types defined here.
-        "symbolTable" | "rewriteRulesIndex" => Some("openmodelica_backend"),
+        "symbolTable" | "rewriteRulesIndex" | "evalFuncCallSignatures" => Some("openmodelica_backend"),
         // openmodelica_codegen_util — optionSimCode and fmi3VariableAliasCache
         // hold SimCode values read by the codegen queries there. The types crate
         // is datatype-only and must not own mutable global state.

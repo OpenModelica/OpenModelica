@@ -850,3 +850,35 @@ _omc_scalar _omc_gen_maximumVectorNorm(const _omc_scalar* vec_data, const _omc_s
 
   return norm;
 }
+
+/**
+ * @brief Euclidean norm of the nominal values, with 1 for a nonpositive one.
+ */
+_omc_scalar _omc_nominalVectorNorm(const _omc_scalar* nominal, const _omc_size size)
+{
+  _omc_size i;
+  _omc_scalar result = 0;
+  for (i = 0; i < size; ++i) {
+    _omc_scalar nom = fabs(nominal[i]);
+    nom = (nom > 0 && isfinite(nom)) ? nom : 1.0;
+    result += nom * nom;
+  }
+  return sqrt(result);
+}
+
+/**
+ * @brief Accepts the solution x = xOld + dx of the torn linear system
+ * A*dx = b = f(xOld) if the residual f(x) is small relative to the size of
+ * the system (normwise backward error), 2-norms and Frobenius norm of A.
+ * The nominal values of x keep the scale when x, xOld and b vanish. A
+ * solution that is not finite is rejected; a non-finite A or b does not scale.
+ */
+int _omc_linearSolutionAccepted(_omc_scalar residualNorm, _omc_scalar normA, _omc_scalar normX, _omc_scalar normXOld, _omc_scalar normNominal, _omc_scalar normB)
+{
+  if (!isfinite(normX) || !isfinite(normXOld)) {
+    return 0;
+  }
+  if (!isfinite(normA)) normA = 0;
+  if (!isfinite(normB)) normB = 0;
+  return residualNorm <= 1e-8 * (normA * (normX + normXOld + normNominal) + normB);
+}

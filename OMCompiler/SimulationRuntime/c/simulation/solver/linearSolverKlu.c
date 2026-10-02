@@ -167,7 +167,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
   DATA_KLU* solverData = (DATA_KLU*)systemData->solverData[0];
-  _omc_scalar residualNorm = 0;
+  _omc_scalar residualNorm = 0, normB = 0, normXOld = 0;
 
   int i, j, status = 0, success = 0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   double tmpJacEvalTime;
@@ -263,6 +263,8 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     }
   }
 
+  normB = _omc_gen_euclideanVectorNorm(systemData->b, solverData->n_row);
+
   if (0 == solverData->common.status){
     if (1 == systemData->method){
       if (klu_solve(solverData->symbolic, solverData->numeric, solverData->n_col, 1, systemData->b, &solverData->common)){
@@ -281,6 +283,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   if (1 == success){
 
     if (1 == systemData->method){
+      normXOld = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
       /* take the solution */
       for(i = 0; i < solverData->n_row; ++i)
         aux_x[i] += systemData->b[i];
@@ -289,7 +292,9 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       residual_wrapper(aux_x, solverData->work, &resUserData, sysNumber);
       residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
 
-      if ((isnan(residualNorm)) || (residualNorm>1e-4)) {
+      if (!_omc_linearSolutionAccepted(residualNorm, _omc_gen_euclideanVectorNorm(solverData->Ax, solverData->nnz),
+                                       _omc_gen_euclideanVectorNorm(aux_x, solverData->n_row), normXOld,
+                                       _omc_nominalVectorNorm(systemData->nominal, solverData->n_row), normB)) {
         warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);

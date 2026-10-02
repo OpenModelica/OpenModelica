@@ -32,6 +32,7 @@ testMathFuncs.mos \
 testRecordDiff.mos \
 testSortFunction.mos \
 testSteamPipe.mos \
+testFunctionStatementDiff.mos \
 ticket3701.mos \
 
 # test that currently fail. Move up when fixed.

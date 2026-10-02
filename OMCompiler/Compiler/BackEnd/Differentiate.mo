@@ -607,6 +607,10 @@ algorithm
     case DAE.ICONST() then (DAE.ICONST(0), inFunctionTree);
     case DAE.RCONST() then (DAE.RCONST(0.0), inFunctionTree);
 
+    // Integer variables in a function body
+    case _ guard isFunctionDifferentiation(inDiffType) and isScalarInteger(Expression.typeof(inExp))
+      then (DAE.ICONST(0), inFunctionTree);
+
     case DAE.CREF(componentRef=cref, ty=tp) algorithm
       if ComponentReference.isStartCref(cref) then
         // differentiate start value
@@ -815,7 +819,7 @@ algorithm
         if (Expression.isZero(derivedLHS)) then
           derivedStatements1 := {currStatement};
         else
-          derivedStatements1 := {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source), currStatement};
+          derivedStatements1 := {currStatement, DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source)};
         end if;
         derivedStatements2 := listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
@@ -829,7 +833,7 @@ algorithm
         exptl := List.zip(dexpLst, expLstRHS);
         optDerivedStatements1 := List.map2(exptl, makeAssignmentfromTuple, source, inFunctionTree);
         derivedStatements1 := list(Util.getOption(s) for s guard isSome(s) in optDerivedStatements1);
-        derivedStatements2 := listAppend(derivedStatements1, {currStatement});
+        derivedStatements2 := currStatement :: listReverse(derivedStatements1);
         derivedStatements1 := listAppend(derivedStatements2, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);
       then (derivedStatements2, functions);
@@ -837,10 +841,11 @@ algorithm
     case (currStatement as DAE.STMT_TUPLE_ASSIGN(expExpLst=expLst, exp=rhs as DAE.CALL(), type_= type_, source=source))::restStatements
       algorithm
         (dexpLst,functions) := List.map3Fold(expLst, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        dexpLst := list(if Expression.isZero(e) then DAE.CREF(DAE.WILD(), Expression.typeof(e)) else e for e in dexpLst);
         (derivedRHS as DAE.CALL(attr=DAE.CALL_ATTR(ty=type_)), functions) := differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         optDerivedStatements1 := {SOME(DAE.STMT_TUPLE_ASSIGN(type_, dexpLst, derivedRHS, source))};
         derivedStatements1 := list(Util.getOption(s) for s guard isSome(s) in optDerivedStatements1);
-        derivedStatements2 := listAppend(derivedStatements1, {currStatement});
+        derivedStatements2 := currStatement :: listReverse(derivedStatements1);
         derivedStatements1 := listAppend(derivedStatements2, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);
       then (derivedStatements2, functions);
@@ -850,7 +855,7 @@ algorithm
         (derivedLHS, functions) := differentiateExp(lhs, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (derivedRHS, functions) := differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         (derivedRHS,_) := ExpressionSimplify.simplify(derivedRHS);
-        derivedStatements1 := {DAE.STMT_ASSIGN_ARR(type_, derivedLHS, derivedRHS, source), currStatement};
+        derivedStatements1 := {currStatement, DAE.STMT_ASSIGN_ARR(type_, derivedLHS, derivedRHS, source)};
         derivedStatements2 := listAppend(derivedStatements1, inStmtsAccum);
         (derivedStatements2, functions) := differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements2, functions, maxIter);
       then (derivedStatements2, functions);
@@ -983,6 +988,21 @@ algorithm
   end match;
 end isDiscreteAssignStatment;
 
+
+protected function isScalarInteger
+  input DAE.Type inType;
+  output Boolean b = Types.isIntegerOrSubTypeInteger(inType) and not Types.isArray(inType);
+end isScalarInteger;
+
+protected function isFunctionDifferentiation
+  input BackendDAE.DifferentiationType inDiffType;
+  output Boolean b;
+algorithm
+  b := match inDiffType
+    case BackendDAE.DIFFERENTIATION_FUNCTION() then true;
+    else false;
+  end match;
+end isFunctionDifferentiation;
 
 protected function makeAssignmentfromTuple
 "Help function for differentiateStatements"
@@ -2247,6 +2267,29 @@ algorithm
       then
         (e, functions);
 
+    // The same for the seeded Jacobians.
+    case (DAE.CALL(path=path, expLst=expl, attr=attr), BackendDAE.GENERIC_GRADIENT())
+      algorithm
+        (expl1, dexpl) := List.split(expl, derivedFunctionInputCount(path, inFunctionTree));
+        true := List.all(expl1, function isSeedIndependent(inInputData = inInputData));
+        (dexpl, functions) := List.map3Fold(dexpl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        e := if List.all(dexpl, Expression.isZero) then Expression.createZeroExpression(Expression.typeof(inExp))
+             else DAE.CALL(path, listAppend(expl1, dexpl), attr);
+      then
+        (e, functions);
+
+    // A derivative function is linear in its derivative inputs:
+    // d/dv f_der(x, dx) = f_der(x, d(dx)/dv) if x does not depend on v.
+    case (DAE.CALL(path=path, expLst=expl, attr=attr), BackendDAE.DIFF_FULL_JACOBIAN())
+      algorithm
+        (expl1, dexpl) := List.split(expl, derivedFunctionInputCount(path, inFunctionTree));
+        false := List.any(expl1, function Expression.expHasCref(inCr = inDiffwrtCref));
+        (dexpl, functions) := List.map3Fold(dexpl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        e := if List.all(dexpl, Expression.isZero) then Expression.createZeroExpression(Expression.typeof(inExp))
+             else DAE.CALL(path, listAppend(expl1, dexpl), attr);
+      then
+        (e, functions);
+
     // differentiate record call
     case (e as DAE.CALL(path=path, expLst=expl, attr=attr), _) guard( Expression.isRecordCall(e, inFunctionTree))
       algorithm
@@ -2296,6 +2339,71 @@ algorithm
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
+
+protected function isSeedIndependent
+  "True if the expression uses none of the variables of the seeded Jacobian."
+  input DAE.Exp inExp;
+  input BackendDAE.DifferentiateInputData inInputData;
+  output Boolean b;
+protected
+  BackendDAE.Variables independentVars, dependentVars;
+algorithm
+  b := match inInputData
+    case BackendDAE.DIFFINPUTDATA(independenentVars = SOME(independentVars), dependenentVars = SOME(dependentVars))
+      then not Expression.expHasDer(inExp) and
+           not List.any(Expression.extractCrefsFromExp(inExp),
+                        function isJacobianVar(independentVars = independentVars, dependentVars = dependentVars));
+    else false;
+  end match;
+end isSeedIndependent;
+
+protected function isJacobianVar
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables independentVars;
+  input BackendDAE.Variables dependentVars;
+  output Boolean b = BackendVariable.containsCref(cr, independentVars) or BackendVariable.containsCref(cr, dependentVars);
+end isJacobianVar;
+
+public function derivedFunctionInputCount
+  "Returns the number of inputs of the function that inDerivative is the
+   first order derivative of, or -1 if it is not a derivative function."
+  input Absyn.Path inDerivative;
+  input AvlTreePathFunction.Tree inFunctionTree;
+  output Integer outCount;
+algorithm
+  outCount := AvlTreePathFunction.fold(inFunctionTree, function derivedFunctionInputCount1(inDerivative = inDerivative), -1);
+end derivedFunctionInputCount;
+
+protected function derivedFunctionInputCount1
+  input Absyn.Path inPath;
+  input Option<DAE.Function> inFunction;
+  input Integer inCount;
+  input Absyn.Path inDerivative;
+  output Integer outCount = inCount;
+protected
+  list<DAE.FunctionDefinition> defs;
+  list<DAE.FuncArg> args;
+algorithm
+  if inCount < 0 then
+    outCount := match inFunction
+      case SOME(DAE.FUNCTION(functions = defs, type_ = DAE.T_FUNCTION(funcArg = args)))
+        guard List.any(defs, function isFirstOrderDerivativeMapper(inDerivative = inDerivative))
+        then listLength(args);
+      else inCount;
+    end match;
+  end if;
+end derivedFunctionInputCount1;
+
+protected function isFirstOrderDerivativeMapper
+  input DAE.FunctionDefinition inDef;
+  input Absyn.Path inDerivative;
+  output Boolean b;
+algorithm
+  b := match inDef
+    case DAE.FUNCTION_DER_MAPPER(derivativeOrder = 1) then AbsynUtil.pathEqual(inDef.derivativeFunction, inDerivative);
+    else false;
+  end match;
+end isFirstOrderDerivativeMapper;
 
 protected function differentiateFunctionCallPartial"
 Author: Frenkel TUD, wbraun

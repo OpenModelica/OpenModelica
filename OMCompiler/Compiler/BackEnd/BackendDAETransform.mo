@@ -290,7 +290,7 @@ algorithm
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         (jac, shared) := SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
         // Jacobian of a Linear System is always linear
-        (jac_tp, jacConstant) := SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
+        (jac_tp, jacConstant) := SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac, BackendDAEUtil.getFunctions(shared));
 
         // if Jacobian is constant, then check if it is singular
         if jacConstant and isSome(jac) then

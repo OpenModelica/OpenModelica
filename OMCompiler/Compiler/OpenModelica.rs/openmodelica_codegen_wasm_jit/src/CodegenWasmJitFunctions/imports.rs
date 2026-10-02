@@ -263,7 +263,7 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense, casual) -> 1 when
     // the step must be redone with total pivoting (`b` then holding `-res`), 2 when
     // the system is unsolved. See `rt_ls_check_step`.
-    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
     // Sparse linear solve `A x = b` in place, A in CSC: (colptr n+1 i32, rowidx
     // nnz i32, values nnz f64, b_ptr n f64, n, nnz) -> 0 ok / 1 singular. The C
     // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
