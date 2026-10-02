@@ -1614,7 +1614,8 @@ QCompleter *PlainTextEdit::completer()
 void PlainTextEdit::setReadOnlyStyleSheet()
 {
   // read-only PlainTextEdit with gray background
-  setStyleSheet(QString("QPlainTextEdit[readOnly=\"true\"] { background-color: #f0f0f0 }"));
+  const char *backgroundColor = qApp->property("omeditDarkMode").toBool() ? "#1f2937" : "#f0f0f0";
+  setStyleSheet(QString("QPlainTextEdit[readOnly=\"true\"] { background-color: %1 }").arg(backgroundColor));
 }
 
 /*!

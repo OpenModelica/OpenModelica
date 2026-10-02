@@ -4475,25 +4475,19 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   if (mSkipBackground) {
     return;
   }
-  const bool darkMode = qApp->property("omeditDarkMode").toBool();
-  const QColor gridLineColor = darkMode ? QColor(55, 65, 81) : QColor(229, 229, 229);
-  const QColor axisLineColor = darkMode ? QColor(107, 114, 128) : QColor(192, 192, 192);
-  const QColor extentBackgroundColor = darkMode ? QColor(31, 41, 55) : QColor(Qt::white);
-  QPen grayPen(QBrush(axisLineColor), 0);
-  QPen lightGrayPen(QBrush(gridLineColor), 0);
-  QColor backgroundColor;
+  QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
+  QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
-    backgroundColor = darkMode ? QColor(17, 24, 39) : QColor(Qt::white);
+    painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   } else if (isIconView()) {
-    backgroundColor = darkMode ? QColor(19, 32, 56) : QColor(229, 244, 255);
+    painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
   } else {
-    backgroundColor = darkMode ? QColor(17, 24, 39) : QColor(242, 242, 242);
+    painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
   }
-  painter->setBrush(QBrush(backgroundColor, Qt::SolidPattern));
-  // draw scene background
+  // draw scene rectangle white background
   painter->setPen(Qt::NoPen);
   painter->drawRect(rect);
-  painter->setBrush(QBrush(extentBackgroundColor, Qt::SolidPattern));
+  painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   QRectF extentRectangle = mMergedCoordinateSystem.getExtentRectangle();
   painter->drawRect(extentRectangle);
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()
@@ -4535,7 +4529,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
     painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
-  // draw coordinate system extent
+  // draw scene rectangle
   painter->setPen(grayPen);
   painter->drawRect(extentRectangle);
 }
@@ -5298,7 +5292,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // main frame
   QFrame *pMainFrame = new QFrame;
   pMainFrame->setContentsMargins(0, 0, 0, 0);
-  pMainFrame->setStyleSheet(darkMode ? "QFrame{background-color: #202124; color: #e8eaed;}" : "QFrame{color:gray;}");
+  pMainFrame->setStyleSheet(darkMode ? "QFrame{color: palette(light);}" : "QFrame{color:gray;}");
   // top frame
   QFrame *pTopFrame = new QFrame;
   pTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
@@ -5325,7 +5319,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // RecentFiles Frame
   QFrame *pRecentFilesFrame = new QFrame;
   pRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
-  pRecentFilesFrame->setStyleSheet(darkMode ? "QFrame{background-color: #111827; color: #f3f4f6;}" : "QFrame{background-color: white;}");
+  pRecentFilesFrame->setStyleSheet(darkMode ? "QFrame{background-color: palette(base);}" : "QFrame{background-color: white;}");
   // recent items list
   Label *pRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
   mpNoRecentFileLabel = new Label(tr("No recent files found."));
@@ -5353,7 +5347,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // RecentModels Frame
   QFrame *pRecentModelsFrame = new QFrame;
   pRecentModelsFrame->setFrameShape(QFrame::StyledPanel);
-  pRecentModelsFrame->setStyleSheet(darkMode ? "QFrame{background-color: #111827; color: #f3f4f6;}" : "QFrame{background-color: white;}");
+  pRecentModelsFrame->setStyleSheet(darkMode ? "QFrame{background-color: palette(base);}" : "QFrame{background-color: white;}");
   // recent models list. The models opened in the model view are kept in their own list so that
   // the recent files list is not cluttered with them.
   Label *pRecentModelsLabel = Utilities::getHeadingLabel(tr("Recent Models"));
@@ -5382,7 +5376,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
-  mpLatestNewsFrame->setStyleSheet(darkMode ? "QFrame{background-color: #111827; color: #f3f4f6;}" : "QFrame{background-color: white;}");
+  mpLatestNewsFrame->setStyleSheet(darkMode ? "QFrame{background-color: palette(base);}" : "QFrame{background-color: white;}");
   /* Read the show latest news settings */
   if (!OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
     mpLatestNewsFrame->setVisible(false);

@@ -100,6 +100,8 @@ private:
 
   static OptionsDialog *mpInstance;
 public:
+  static QString themeKey(const QString &key);
+  static QColor themeColor(const QColor &lightColor, const QColor &darkColor);
   static bool isCreated() {return mpInstance != 0;}
   static OptionsDialog* instance() {
     create();
