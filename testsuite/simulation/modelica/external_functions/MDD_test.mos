@@ -21,11 +21,7 @@ buildModel(MDD_test); getErrorString();
 // [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // "
 // true
-// "[Modelica_DeviceDrivers 2.2.0/EmbeddedTargets/STM32F4/Functions/HAL.mo:5:3-11:14:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 2.2.0/Incubate/OperatingSystem/DynamicArray.mo:6:3-94:18:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1041:3-1062:27:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 2.2.0/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// "
+// ""
 // {"MDD_test", "MDD_test_init.xml"}
 // "Warning: Alias equations of external objects are not Modelica compliant as in:
 //     getInteger.pkgIn.pkg = resetPointer.pkgOut[1].pkg
