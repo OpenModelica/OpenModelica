@@ -40,7 +40,7 @@
 //! grammar-dependent; see [`Grammar`].
 
 use super::Grammar;
-use arcstr::{ArcStr};
+use arcstr::{ArcStr, literal};
 
 /// A single token with its start position in the source file.
 /// Line and column are both 1-based.
@@ -430,6 +430,130 @@ pub fn source_text(kind: &TokenKind) -> String {
     }
 }
 
+/// The keywords of every grammar, then identifiers that share a static string.
+const WORDS: [&str; 231] = [
+    "_", "__", "algorithm", "and", "annotation", "as", "block", "break", "case", "class",
+    "connect", "connector", "constant", "constrainedby", "constraint", "continue", "der",
+    "discrete", "each", "else", "elseif", "elsewhen", "encapsulated", "end", "enumeration",
+    "equality", "equation", "expandable", "extends", "external", "failure", "false", "field",
+    "final", "flow", "for", "function", "guard", "if", "import", "impure", "in", "indomain",
+    "initial", "inner", "input", "local", "loop", "match", "matchcontinue", "model", "nonfield",
+    "not", "operator", "optimization", "or", "outer", "output", "package", "parallel", "parameter",
+    "parfor", "parglobal", "parkernel", "parlocal", "partial", "protected", "public", "pure",
+    "record", "redeclare", "replaceable", "return", "stream", "subtypeof", "then", "threaded",
+    "true", "try", "type", "uniontype", "when", "while", "within", "extent", "points", "Line",
+    "color", "Placement", "transformation", "origin", "rotation", "thickness", "pattern", "smooth",
+    "Rectangle", "Polygon", "Ellipse", "Text", "Bitmap", "textString", "textColor", "fontSize",
+    "fontName", "horizontalAlignment", "fillColor", "fillPattern", "lineColor", "lineThickness",
+    "LinePattern", "FillPattern", "Smooth", "Solid", "None", "Dash", "Arrow", "arrow", "arrowSize",
+    "Icon", "Diagram", "coordinateSystem", "preserveAspectRatio", "initialScale", "graphics",
+    "iconTransformation", "visible", "radius", "cornerRadius", "startAngle", "endAngle", "closure",
+    "Documentation", "info", "revisions", "Dialog", "tab", "group", "enable", "showStartAttribute",
+    "choices", "choicesAllMatching", "defaultComponentName", "defaultComponentPrefixes",
+    "experiment", "StartTime", "StopTime", "Tolerance", "Interval", "Evaluate", "HideResult",
+    "Inline", "derivative", "inverse", "version", "uses", "missingInnerMessage",
+    "unassignedMessage", "Real", "Integer", "Boolean", "String", "unit", "displayUnit", "quantity",
+    "min", "max", "start", "fixed", "nominal", "stateSelect", "Modelica", "SI", "Units", "NonSI",
+    "Blocks", "Interfaces", "Icons", "Fluid", "Media", "Medium", "Thermal", "Electrical",
+    "Mechanics", "Math", "Constants", "Types", "Utilities", "BaseClasses", "Examples", "Sources",
+    "Sensors", "Components", "Basic", "Analog", "RealInput", "RealOutput", "BooleanInput",
+    "BooleanOutput", "IntegerInput", "IntegerOutput", "HeatTransfer", "Temperature", "Pressure",
+    "MassFlowRate", "Time", "port_a", "port_b", "ports", "m_flow", "m_flow_nominal", "nPorts", "u",
+    "u1", "u2", "y", "k", "x", "v", "p", "n", "T", "m", "h", "R", "f", "a", "i", "e", "Q_flow",
+    "pi", "time",
+];
+const N_KEYWORDS: usize = 84;
+static COMMON_IDENTS: [ArcStr; 147] = [
+    literal!("extent"), literal!("points"), literal!("Line"), literal!("color"),
+    literal!("Placement"), literal!("transformation"), literal!("origin"), literal!("rotation"),
+    literal!("thickness"), literal!("pattern"), literal!("smooth"), literal!("Rectangle"),
+    literal!("Polygon"), literal!("Ellipse"), literal!("Text"), literal!("Bitmap"),
+    literal!("textString"), literal!("textColor"), literal!("fontSize"), literal!("fontName"),
+    literal!("horizontalAlignment"), literal!("fillColor"), literal!("fillPattern"),
+    literal!("lineColor"), literal!("lineThickness"), literal!("LinePattern"),
+    literal!("FillPattern"), literal!("Smooth"), literal!("Solid"), literal!("None"),
+    literal!("Dash"), literal!("Arrow"), literal!("arrow"), literal!("arrowSize"),
+    literal!("Icon"), literal!("Diagram"), literal!("coordinateSystem"),
+    literal!("preserveAspectRatio"), literal!("initialScale"), literal!("graphics"),
+    literal!("iconTransformation"), literal!("visible"), literal!("radius"),
+    literal!("cornerRadius"), literal!("startAngle"), literal!("endAngle"), literal!("closure"),
+    literal!("Documentation"), literal!("info"), literal!("revisions"), literal!("Dialog"),
+    literal!("tab"), literal!("group"), literal!("enable"), literal!("showStartAttribute"),
+    literal!("choices"), literal!("choicesAllMatching"), literal!("defaultComponentName"),
+    literal!("defaultComponentPrefixes"), literal!("experiment"), literal!("StartTime"),
+    literal!("StopTime"), literal!("Tolerance"), literal!("Interval"), literal!("Evaluate"),
+    literal!("HideResult"), literal!("Inline"), literal!("derivative"), literal!("inverse"),
+    literal!("version"), literal!("uses"), literal!("missingInnerMessage"),
+    literal!("unassignedMessage"), literal!("Real"), literal!("Integer"), literal!("Boolean"),
+    literal!("String"), literal!("unit"), literal!("displayUnit"), literal!("quantity"),
+    literal!("min"), literal!("max"), literal!("start"), literal!("fixed"), literal!("nominal"),
+    literal!("stateSelect"), literal!("Modelica"), literal!("SI"), literal!("Units"),
+    literal!("NonSI"), literal!("Blocks"), literal!("Interfaces"), literal!("Icons"),
+    literal!("Fluid"), literal!("Media"), literal!("Medium"), literal!("Thermal"),
+    literal!("Electrical"), literal!("Mechanics"), literal!("Math"), literal!("Constants"),
+    literal!("Types"), literal!("Utilities"), literal!("BaseClasses"), literal!("Examples"),
+    literal!("Sources"), literal!("Sensors"), literal!("Components"), literal!("Basic"),
+    literal!("Analog"), literal!("RealInput"), literal!("RealOutput"), literal!("BooleanInput"),
+    literal!("BooleanOutput"), literal!("IntegerInput"), literal!("IntegerOutput"),
+    literal!("HeatTransfer"), literal!("Temperature"), literal!("Pressure"),
+    literal!("MassFlowRate"), literal!("Time"), literal!("port_a"), literal!("port_b"),
+    literal!("ports"), literal!("m_flow"), literal!("m_flow_nominal"), literal!("nPorts"),
+    literal!("u"), literal!("u1"), literal!("u2"), literal!("y"), literal!("k"), literal!("x"),
+    literal!("v"), literal!("p"), literal!("n"), literal!("T"), literal!("m"), literal!("h"),
+    literal!("R"), literal!("f"), literal!("a"), literal!("i"), literal!("e"), literal!("Q_flow"),
+    literal!("pi"), literal!("time"),
+];
+
+const WORD_SLOT_BITS: u32 = 10;
+
+const fn word_hash(w: &[u8]) -> usize {
+    let mut h: u32 = 0x811c9dc5;
+    let mut i = 0;
+    while i < w.len() {
+        h = (h ^ w[i] as u32).wrapping_mul(0x01000193);
+        i += 1;
+    }
+    (h >> (32 - WORD_SLOT_BITS)) as usize
+}
+
+/// Open-addressing index into [`WORDS`] (`0` = empty, otherwise index + 1).
+static WORD_SLOTS: [u16; 1 << WORD_SLOT_BITS] = {
+    let mut slots = [0u16; 1 << WORD_SLOT_BITS];
+    let mut i = 0;
+    while i < WORDS.len() {
+        let mut j = word_hash(WORDS[i].as_bytes());
+        while slots[j] != 0 {
+            j = (j + 1) & ((1 << WORD_SLOT_BITS) - 1);
+        }
+        slots[j] = i as u16 + 1;
+        i += 1;
+    }
+    slots
+};
+
+enum Word {
+    Keyword,
+    Common(&'static ArcStr),
+    Other,
+}
+
+#[inline]
+fn lookup_word(word: &str) -> Word {
+    let mut j = word_hash(word.as_bytes());
+    loop {
+        match WORD_SLOTS[j] {
+            0 => return Word::Other,
+            k => {
+                let k = k as usize - 1;
+                if WORDS[k] == word {
+                    return if k < N_KEYWORDS { Word::Keyword } else { Word::Common(&COMMON_IDENTS[k - N_KEYWORDS]) };
+                }
+            }
+        }
+        j = (j + 1) & ((1 << WORD_SLOT_BITS) - 1);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Error type
 // ---------------------------------------------------------------------------
@@ -473,8 +597,18 @@ impl<'s> Lexer<'s> {
                 comments: Vec::new(), record_comments: false }
     }
 
+    #[inline]
     fn peek(&self) -> Option<char> {
-        self.src[self.pos..].chars().next()
+        match self.src.as_bytes().get(self.pos) {
+            Some(&b) if b < 0x80 => Some(b as char),
+            Some(_) => self.src[self.pos..].chars().next(),
+            None => None,
+        }
+    }
+
+    #[inline]
+    fn peek_byte(&self) -> Option<u8> {
+        self.src.as_bytes().get(self.pos).copied()
     }
 
     /// Returns the character *after* the next one without consuming either.
@@ -484,8 +618,9 @@ impl<'s> Lexer<'s> {
         it.next()
     }
 
+    #[inline]
     fn advance(&mut self) -> Option<char> {
-        let c = self.src[self.pos..].chars().next()?;
+        let c = self.peek()?;
         self.pos += c.len_utf8();
         if c == '\n' {
             self.line += 1;
@@ -500,22 +635,35 @@ impl<'s> Lexer<'s> {
         LexError { line: self.line, col: self.col, message: msg.into() }
     }
 
+    /// Advance over `src[pos..end]`, which contains no newline.
+    fn skip_to_on_line(&mut self, end: usize) {
+        let chars = self.src.as_bytes()[self.pos..end].iter().filter(|&&b| b & 0xC0 != 0x80).count();
+        self.col += chars as u32;
+        self.pos = end;
+    }
+
     fn skip_whitespace_and_comments(&mut self) -> Result<(), LexError> {
+        let bytes = self.src.as_bytes();
         loop {
-            match self.peek() {
-                Some(' ') | Some('\t') | Some('\r') | Some('\n') => {
-                    self.advance();
+            match self.peek_byte() {
+                Some(b' ' | b'\t' | b'\r') => {
+                    self.pos += 1;
+                    self.col += 1;
                 }
-                Some('/') => match self.peek2() {
-                    Some('/') => {
+                Some(b'\n') => {
+                    self.pos += 1;
+                    self.line += 1;
+                    self.col = 1;
+                }
+                Some(b'/') => match bytes.get(self.pos + 1) {
+                    Some(b'/') => {
                         // Line comment. The position recorded is the position
                         // of the leading `/`.
                         let start_line = self.line;
                         let start_col = self.col;
                         let start_pos = self.pos;
-                        while !matches!(self.peek(), None | Some('\n')) {
-                            self.advance();
-                        }
+                        let end = bytes[self.pos..].iter().position(|&b| b == b'\n').map_or(bytes.len(), |n| self.pos + n);
+                        self.skip_to_on_line(end);
                         if self.record_comments {
                             // ANTLR3's `LINE_COMMENT` rule is
                             // `'//' (~('\r'|'\n')*) (NL|EOF)`, so the token text
@@ -541,7 +689,7 @@ impl<'s> Lexer<'s> {
                             });
                         }
                     }
-                    Some('*') => {
+                    Some(b'*') => {
                         // Block comment.
                         let err_line = self.line;
                         let err_col = self.col;
@@ -549,19 +697,26 @@ impl<'s> Lexer<'s> {
                         self.advance(); // '/'
                         self.advance(); // '*'
                         loop {
-                            match self.advance() {
-                                None => {
-                                    return Err(LexError {
-                                        line: err_line,
-                                        col: err_col,
-                                        message: "unterminated block comment".into(),
-                                    });
-                                }
-                                Some('*') if self.peek() == Some('/') => {
-                                    self.advance(); // consume '/'
+                            let Some(n) = bytes[self.pos..].iter().position(|&b| b == b'*' || b == b'\n') else {
+                                return Err(LexError {
+                                    line: err_line,
+                                    col: err_col,
+                                    message: "unterminated block comment".into(),
+                                });
+                            };
+                            self.skip_to_on_line(self.pos + n);
+                            if bytes[self.pos] == b'\n' {
+                                self.pos += 1;
+                                self.line += 1;
+                                self.col = 1;
+                            } else {
+                                self.pos += 1;
+                                self.col += 1;
+                                if bytes.get(self.pos) == Some(&b'/') {
+                                    self.pos += 1;
+                                    self.col += 1;
                                     break;
                                 }
-                                _ => {}
                             }
                         }
                         if self.record_comments {
@@ -587,6 +742,12 @@ impl<'s> Lexer<'s> {
     /// Classify a bare word (already collected) as keyword or identifier,
     /// taking the active grammar into account.
     fn keyword_or_ident(&self, word: &str) -> TokenKind {
+        match lookup_word(word) {
+            Word::Keyword => {}
+            Word::Common(s) => return TokenKind::Ident(s.clone()),
+            Word::Other => return TokenKind::Ident(word.into()),
+        }
+
         let meta = matches!(self.grammar, Grammar::MetaModelica);
         // PDEModelica is a Modelica 3 superset, so it gets the Modelica 3
         // keywords (stream/pure/impure) too.
@@ -714,27 +875,27 @@ impl<'s> Lexer<'s> {
         // Byte offset of the content right after the opening `"`; lines up with
         // the original (pre-sanitization) bytes for the per-literal UTF-8 check.
         let content_start = self.pos;
-        let mut raw = String::new();
+        let bytes = self.src.as_bytes();
         loop {
+            if let Some(n) = bytes[self.pos..].iter().position(|&b| matches!(b, b'"' | b'\\' | b'\n')) {
+                self.skip_to_on_line(self.pos + n);
+            }
             match self.advance() {
                 None => return Err(self.err("unterminated string literal")),
                 Some('"') => break,
                 Some('\\') => {
-                    raw.push('\\');
                     match self.advance() {
                         None => return Err(self.err("unterminated escape sequence in string")),
-                        Some(c) => {
-                            raw.push(c);
-                            self.warn_invalid_escape(c, start_line, start_col);
-                        }
+                        Some(c) => self.warn_invalid_escape(c, start_line, start_col),
                     }
                 }
-                Some(c) => raw.push(c),
+                Some(_) => {}
             }
         }
         // The closing `"` is one byte, so the content span ends here.
         let content_end = self.pos - 1;
-        match super::convert_string_literal(&raw, content_start, content_end) {
+        let raw = &self.src[content_start..content_end];
+        match super::convert_string_literal(raw, content_start, content_end) {
             super::StringLiteral::Verbatim => Ok(TokenKind::Str(raw.into())),
             super::StringLiteral::Converted(s) => Ok(TokenKind::Str(s.into())),
             super::StringLiteral::AsciiFallback(ascii) => {
@@ -807,26 +968,23 @@ impl<'s> Lexer<'s> {
 
     /// Lex a quoted identifier; the opening `'` has already been consumed.
     fn lex_qident(&mut self) -> Result<TokenKind, LexError> {
-        let mut s = "'".to_string();
+        let start = self.pos - 1;
         loop {
             match self.advance() {
                 None => return Err(self.err("unterminated quoted identifier")),
                 Some('\'') => break,
                 Some('\\') => {
-                    s.push('\\');
-                    match self.advance() {
-                        None => return Err(self.err("unterminated escape sequence in quoted identifier")),
-                        Some(c) => s.push(c),
+                    if self.advance().is_none() {
+                        return Err(self.err("unterminated escape sequence in quoted identifier"));
                     }
                 }
-                Some(c) => s.push(c),
+                Some(_) => {}
             }
         }
-        s.push('\'');
-        Ok(TokenKind::Ident(s.into()))
+        Ok(TokenKind::Ident(self.src[start..self.pos].into()))
     }
 
-    /// Lex a numeric literal; `first` is the first digit already consumed.
+    /// Lex a numeric literal; its first digit has already been consumed.
     ///
     /// Grammar rule (from BaseModelica_Lexer.g):
     ///   `(DIGIT)+ ('.' (DIGIT)*)? EXPONENT?`
@@ -835,39 +993,39 @@ impl<'s> Lexer<'s> {
     /// the real number, even if no further digits follow.  This matches the
     /// greedy ANTLR behaviour: `1.+2` lexes as `Real(1.0) Plus Int(2)`, not
     /// `Int(1) PlusEw Int(2)`.
-    fn lex_number(&mut self, first: char) -> Result<TokenKind, LexError> {
-        let mut s = String::new();
+    fn lex_number(&mut self) -> Result<TokenKind, LexError> {
+        let start = self.pos - 1;
         let mut is_real = false;
-        s.push(first);
 
         while matches!(self.peek(), Some('0'..='9')) {
-            s.push(self.advance().unwrap());
+            self.advance();
         }
 
         // Optional decimal part: consume '.' that directly follows digits.
         // Exception: do NOT consume if a second '.' follows (would be two DOTs).
         if self.peek() == Some('.') && self.peek2() != Some('.') {
             is_real = true;
-            s.push(self.advance().unwrap()); // '.'
+            self.advance(); // '.'
             while matches!(self.peek(), Some('0'..='9')) {
-                s.push(self.advance().unwrap());
+                self.advance();
             }
         }
 
         // Optional exponent.
         if matches!(self.peek(), Some('e') | Some('E')) {
             is_real = true;
-            s.push(self.advance().unwrap());
+            self.advance();
             if matches!(self.peek(), Some('+') | Some('-')) {
-                s.push(self.advance().unwrap());
+                self.advance();
             }
             if !matches!(self.peek(), Some('0'..='9')) {
                 return Err(self.err("expected digits after exponent"));
             }
             while matches!(self.peek(), Some('0'..='9')) {
-                s.push(self.advance().unwrap());
+                self.advance();
             }
         }
+        let s = &self.src[start..self.pos];
 
         if is_real {
             match s.parse::<f64>() {
@@ -878,7 +1036,7 @@ impl<'s> Lexer<'s> {
                     // non-zero value (e.g. 4.94e-324) are kept silently; only a
                     // literal whose significand is non-zero yet parses to 0.0 is
                     // an underflow.
-                    let significand = s.split(['e', 'E']).next().unwrap_or(&s);
+                    let significand = s.split(['e', 'E']).next().unwrap_or(s);
                     if n == 0.0 && significand.bytes().any(|b| (b'1'..=b'9').contains(&b)) {
                         let col1 = self.col - s.chars().count() as u32;
                         super::add_syntax_message(
@@ -950,6 +1108,7 @@ impl<'s> Lexer<'s> {
         }
     }
 
+    #[inline(always)]
     fn next_token(&mut self) -> Result<Option<Token>, LexError> {
         self.skip_whitespace_and_comments()?;
 
@@ -1041,16 +1200,24 @@ impl<'s> Lexer<'s> {
 
             // Identifiers and keywords.
             c if c.is_ascii_alphabetic() || c == '_' => {
-                let mut word = String::new();
-                word.push(c);
-                while matches!(self.peek(), Some(c) if c.is_alphanumeric() || c == '_') {
-                    word.push(self.advance().unwrap());
+                let start = self.pos - 1;
+                loop {
+                    match self.peek_byte() {
+                        Some(b) if b.is_ascii_alphanumeric() || b == b'_' => {
+                            self.pos += 1;
+                            self.col += 1;
+                        }
+                        Some(b) if b >= 0x80 && self.peek().is_some_and(char::is_alphanumeric) => {
+                            self.advance();
+                        }
+                        _ => break,
+                    }
                 }
-                self.keyword_or_ident(&word)
+                self.keyword_or_ident(&self.src[start..self.pos])
             }
 
             // Numeric literals.
-            c if c.is_ascii_digit() => self.lex_number(c)?,
+            c if c.is_ascii_digit() => self.lex_number()?,
 
             // Non-standard but tolerated (with error in original grammar):
             // '&&' → And, '||' → Or, '!' → Not.
@@ -1104,7 +1271,7 @@ pub fn lex_with_comments(src: &str, grammar: Grammar)
 {
     let mut lexer = Lexer::new(src, &grammar);
     lexer.record_comments = true;
-    let mut tokens = Vec::new();
+    let mut tokens = Vec::with_capacity(src.len() / 8);
     while let Some(tok) = lexer.next_token()? {
         tokens.push(tok);
     }
@@ -1121,6 +1288,29 @@ mod tests {
 
     fn kinds(src: &str) -> Vec<TokenKind> {
         lex(src, Grammar::MetaModelica).unwrap().into_iter().map(|t| t.kind).collect()
+    }
+
+    #[test]
+    fn test_words_table() {
+        let src = include_str!("lexer.rs");
+        let start = src.find("fn keyword_or_ident").unwrap();
+        let body = &src[start..start + src[start..].find("\n    }\n").unwrap()];
+        let mut keywords: Vec<&str> = body.lines()
+            .filter_map(|l| l.trim_start().strip_prefix('"')?.split_once('"'))
+            .filter(|(_, rest)| rest.contains("=>"))
+            .map(|(w, _)| w)
+            .collect();
+        keywords.sort();
+        keywords.dedup();
+        let mut table = WORDS[..N_KEYWORDS].to_vec();
+        table.sort();
+        assert_eq!(keywords, table);
+        for (w, s) in WORDS[N_KEYWORDS..].iter().zip(COMMON_IDENTS.iter()) {
+            assert_eq!(*w, s.as_str());
+        }
+        for w in WORDS {
+            assert!(!matches!(lookup_word(w), Word::Other), "{w}");
+        }
     }
 
     #[test]
