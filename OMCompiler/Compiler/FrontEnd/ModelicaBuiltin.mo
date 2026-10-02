@@ -2282,6 +2282,23 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end generateCode;
 
+function getExternalFunctions
+  "Describes the external \"C\" functions of a library."
+  input TypeName className;
+  output String json;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns, as JSON, every external \"C\" function in <code>className</code>,
+external object constructors and destructors included: its path, C name, the C
+types of its call in the specification's mapping, its <code>Include</code>
+annotations and the include directories omc resolves for it. A function the
+wasm-jit target cannot call carries the reason instead of its C types.</p>
+<p>The package manager builds the WebAssembly modules that the wasm-jit target
+loads for these functions from this description.</p>
+</html>"),
+  preferredView="text");
+end getExternalFunctions;
+
 function loadModel
   "Loads a Modelica library."
   input TypeName className;
