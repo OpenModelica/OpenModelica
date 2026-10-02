@@ -29,9 +29,7 @@ unsafe extern "C" {
 fn run() -> i32 {
     // Re-marshal this process's argv into NUL-terminated C strings for the
     // shared library's C entry point (which skips argv[0] itself).
-    let cargs: Vec<CString> = std::env::args()
-        .map(|a| CString::new(a).unwrap_or_default())
-        .collect();
+    let cargs: Vec<CString> = std::env::args().map(|a| CString::new(a).unwrap_or_default()).collect();
     let ptrs: Vec<*const c_char> = cargs.iter().map(|c| c.as_ptr()).collect();
     // SAFETY: `ptrs` holds `ptrs.len()` valid NUL-terminated C strings, kept
     // alive by `cargs` for the duration of the call.

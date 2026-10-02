@@ -65,7 +65,11 @@ struct TubeOwner {
 }
 
 fn cstr(p: *const c_char) -> String {
-    if p.is_null() { String::new() } else { unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+    if p.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
+    }
 }
 
 // malloc + copy rather than `libc::strdup`, for the reason `omc_strdup` exists.
@@ -88,7 +92,11 @@ pub(crate) fn set_error(error: *mut *mut c_char, msg: &str) {
 }
 
 fn names(vars: *const *const c_char, n: usize) -> Vec<String> {
-    if vars.is_null() { Vec::new() } else { (0..n).map(|i| cstr(unsafe { *vars.add(i) })).collect() }
+    if vars.is_null() {
+        Vec::new()
+    } else {
+        (0..n).map(|i| cstr(unsafe { *vars.add(i) })).collect()
+    }
 }
 
 fn guard<T>(fallback: T, f: impl FnOnce() -> T) -> T {
@@ -125,7 +133,14 @@ pub extern "C" fn omc_result_open(path: *const c_char, error: *mut *mut c_char) 
             let names = file.variables().into_iter().map(to_c).collect();
             let compared = file.compared_variables().into_iter().map(to_c).collect();
             let time_name = CString::new(file.time_name()).unwrap_or_default();
-            Box::into_raw(Box::new(omc_result { file, names, compared, time_name, trajectories: HashMap::new(), strings: HashMap::new() }))
+            Box::into_raw(Box::new(omc_result {
+                file,
+                names,
+                compared,
+                time_name,
+                trajectories: HashMap::new(),
+                strings: HashMap::new(),
+            }))
         }
         Err(e) => {
             set_error(error, &e);
@@ -161,11 +176,19 @@ pub extern "C" fn omc_result_free_strings(s: *mut *mut c_char, n: usize) {
 }
 
 fn with<T>(r: *const omc_result, fallback: T, f: impl FnOnce(&omc_result) -> T) -> T {
-    if r.is_null() { fallback } else { guard(fallback, || f(unsafe { &*r })) }
+    if r.is_null() {
+        fallback
+    } else {
+        guard(fallback, || f(unsafe { &*r }))
+    }
 }
 
 fn with_mut<T>(r: *mut omc_result, fallback: T, f: impl FnOnce(&mut omc_result) -> T) -> T {
-    if r.is_null() { fallback } else { guard(fallback, || f(unsafe { &mut *r })) }
+    if r.is_null() {
+        fallback
+    } else {
+        guard(fallback, || f(unsafe { &mut *r }))
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -188,7 +211,9 @@ pub extern "C" fn omc_result_num_compared_variables(r: *const omc_result) -> usi
 
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_result_compared_variable_name(r: *const omc_result, i: usize) -> *const c_char {
-    with(r, ptr::null(), |r| r.compared.get(i).map_or(ptr::null(), |n| n.as_ptr()))
+    with(r, ptr::null(), |r| {
+        r.compared.get(i).map_or(ptr::null(), |n| n.as_ptr())
+    })
 }
 
 #[unsafe(no_mangle)]
@@ -249,7 +274,9 @@ pub extern "C" fn omc_result_trajectory(r: *mut omc_result, var: *const c_char, 
     with_mut(r, ptr::null(), |r| {
         let var = cstr(var);
         if !r.trajectories.contains_key(&var) {
-            let Some(v) = r.file.trajectory(&var) else { return ptr::null() };
+            let Some(v) = r.file.trajectory(&var) else {
+                return ptr::null();
+            };
             r.trajectories.insert(var.clone(), v);
         }
         let v = &r.trajectories[&var];
@@ -267,8 +294,13 @@ pub extern "C" fn omc_result_strings(r: *mut omc_result, var: *const c_char, len
     with_mut(r, ptr::null(), |r| {
         let var = cstr(var);
         if !r.strings.contains_key(&var) {
-            let Some(v) = r.file.strings(&var) else { return ptr::null() };
-            let owned: Vec<CString> = v.iter().map(|s| CString::new(s.replace('\0', " ")).unwrap_or_default()).collect();
+            let Some(v) = r.file.strings(&var) else {
+                return ptr::null();
+            };
+            let owned: Vec<CString> = v
+                .iter()
+                .map(|s| CString::new(s.replace('\0', " ")).unwrap_or_default())
+                .collect();
             let ptrs = owned.iter().map(|c| c.as_ptr()).collect();
             r.strings.insert(var.clone(), (owned, ptrs));
         }
@@ -284,12 +316,21 @@ pub extern "C" fn omc_result_strings(r: *mut omc_result, var: *const c_char, len
 /// null unless `var` is a String with a value there.
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_result_string_at(r: *mut omc_result, var: *const c_char, time: c_double) -> *mut c_char {
-    with_mut(r, ptr::null_mut(), |r| r.file.string_at(&cstr(var), time).map_or(ptr::null_mut(), |s| malloc_str(&s)))
+    with_mut(r, ptr::null_mut(), |r| {
+        r.file
+            .string_at(&cstr(var), time)
+            .map_or(ptr::null_mut(), |s| malloc_str(&s))
+    })
 }
 
 /// `*out = val(var, time)`; 0 if the variable cannot be read there.
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_result_value_at(r: *mut omc_result, var: *const c_char, time: c_double, out: *mut c_double) -> c_int {
+pub extern "C" fn omc_result_value_at(
+    r: *mut omc_result,
+    var: *const c_char,
+    time: c_double,
+    out: *mut c_double,
+) -> c_int {
     with_mut(r, 0, |r| match r.file.value_at(&cstr(var), time) {
         Some(v) => {
             if !out.is_null() {
@@ -317,7 +358,10 @@ pub extern "C" fn omc_result_write(
     with_mut(r, 0, |r| {
         let path = cstr(path);
         let suffix = path.rsplit('.').next().unwrap_or("");
-        let written = r.file.write(suffix, names(vars, n), intervals, single != 0).and_then(|bytes| std::fs::write(&path, bytes).map_err(|e| format!("{path}: {e}")));
+        let written = r
+            .file
+            .write(suffix, names(vars, n), intervals, single != 0)
+            .and_then(|bytes| std::fs::write(&path, bytes).map_err(|e| format!("{path}: {e}")));
         match written {
             Ok(()) => 1,
             Err(e) => {
@@ -360,7 +404,12 @@ pub extern "C" fn omc_result_diff(
     }
     guard(ptr::null_mut(), || {
         let (a, r) = unsafe { (&mut *actual, &mut *reference) };
-        match file::diff_all(&mut a.file, &mut r.file, names(vars, n), omc_result_tolerances::get(tol)) {
+        match file::diff_all(
+            &mut a.file,
+            &mut r.file,
+            names(vars, n),
+            omc_result_tolerances::get(tol),
+        ) {
             Ok(list) => {
                 unsafe { *n_out = list.len() };
                 let arr = unsafe { libc::malloc(list.len().max(1) * size_of::<*mut c_char>()) } as *mut *mut c_char;

@@ -25,7 +25,12 @@ pub(crate) enum ZcInfo {
     /// (test(fresh arg) != test(pre[idx])) ? 1 : -1`, C's `zeroCrossingTpl`. `ops`
     /// are the operands (1 for integer/floor/ceil, 2 for div/mod).
     /// `expr` is the original call, only for the `LOG_EVENTS` description.
-    Math { kind: MathEventKind, ops: Vec<metamodelica::Ref<DAE::Exp>>, idx: u32, expr: metamodelica::Ref<DAE::Exp> },
+    Math {
+        kind: MathEventKind,
+        ops: Vec<metamodelica::Ref<DAE::Exp>>,
+        idx: u32,
+        expr: metamodelica::Ref<DAE::Exp>,
+    },
 }
 
 /// A math-event builtin's discretizing test (what `mathEventsValuePre` compares).
@@ -106,7 +111,12 @@ pub(super) fn collect_zero_crossings(
                     let argv: Vec<metamodelica::Ref<DAE::Exp>> = lst(expLst).cloned().collect();
                     let idx = math_event_index(argv.last().unwrap())?;
                     let ops = argv[..argv.len() - 1].to_vec();
-                    out.push(ZcInfo::Math { kind, ops, idx, expr: relation.clone() });
+                    out.push(ZcInfo::Math {
+                        kind,
+                        ops,
+                        idx,
+                        expr: relation.clone(),
+                    });
                 }
                 other => return Err("CodegenWasmJit: unsupported zero-crossing form"),
             }
@@ -122,7 +132,9 @@ fn expand_iter_crossing(
     relation: &metamodelica::Ref<DAE::Exp>,
     iters: &Option<List<openmodelica_backend_types::BackendDAE::SimIterator>>,
 ) -> Result<Vec<metamodelica::Ref<DAE::Exp>>> {
-    let Some(iters) = iters else { return Ok(vec![relation.clone()]) };
+    let Some(iters) = iters else {
+        return Ok(vec![relation.clone()]);
+    };
     let mut out = vec![relation.clone()];
     for iter in lst(iters) {
         let (name, values, sub_iters) = iterator_bindings(iter)?;
@@ -145,7 +157,11 @@ fn expand_iter_crossing(
 }
 
 /// An iterator's name and per-iteration value, and the same for its dependents.
-type IteratorBindings = (String, Vec<metamodelica::Ref<DAE::Exp>>, Vec<(String, Vec<metamodelica::Ref<DAE::Exp>>)>);
+type IteratorBindings = (
+    String,
+    Vec<metamodelica::Ref<DAE::Exp>>,
+    Vec<(String, Vec<metamodelica::Ref<DAE::Exp>>)>,
+);
 
 pub(super) fn iterator_bindings(
     iter: &openmodelica_backend_types::BackendDAE::SimIterator,
@@ -153,16 +169,26 @@ pub(super) fn iterator_bindings(
     use openmodelica_backend_types::BackendDAE::SimIterator as S;
     let iconst = |v: i32| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v });
     let (name, sub_iter, values) = match iter {
-        S::SIM_ITERATOR_RANGE { name, start, step, non_resizable_size, sub_iter, .. } => {
+        S::SIM_ITERATOR_RANGE {
+            name,
+            start,
+            step,
+            non_resizable_size,
+            sub_iter,
+            ..
+        } => {
             let (Some(start), Some(step)) = (const_int_exp(start), const_int_exp(step)) else {
                 return Err("CodegenWasmJit: for-loop crossing over a non-constant range");
             };
             let values = (0..*non_resizable_size).map(|k| iconst(start + k * step)).collect();
             (name, sub_iter, values)
         }
-        S::SIM_ITERATOR_LIST { name, lst: values, sub_iter, .. } => {
-            (name, sub_iter, (&**values).into_iter().map(|v| iconst(*v)).collect())
-        }
+        S::SIM_ITERATOR_LIST {
+            name,
+            lst: values,
+            sub_iter,
+            ..
+        } => (name, sub_iter, (&**values).into_iter().map(|v| iconst(*v)).collect()),
     };
     let mut subs = Vec::new();
     for (sub_name, table) in &**sub_iter {
@@ -179,12 +205,19 @@ pub(super) fn const_int_exp(e: &DAE::Exp) -> Option<i32> {
 }
 
 /// Replace the bare iterator `name`, including inside cref subscripts.
-pub(super) fn subst_iterator(exp: &metamodelica::Ref<DAE::Exp>, name: &str, value: &metamodelica::Ref<DAE::Exp>) -> Result<metamodelica::Ref<DAE::Exp>> {
+pub(super) fn subst_iterator(
+    exp: &metamodelica::Ref<DAE::Exp>,
+    name: &str,
+    value: &metamodelica::Ref<DAE::Exp>,
+) -> Result<metamodelica::Ref<DAE::Exp>> {
     let name = name.to_string();
     let value = value.clone();
     let replace = move |e: metamodelica::Ref<DAE::Exp>, acc: i32| -> Result<(metamodelica::Ref<DAE::Exp>, i32)> {
         if let DAE::Exp::CREF { componentRef, .. } = &*e {
-            if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef {
+            if let DAE::ComponentRef::CREF_IDENT {
+                ident, subscriptLst, ..
+            } = &**componentRef
+            {
                 if subscriptLst.is_empty() && ident.as_str() == name {
                     return Ok((value.clone(), acc));
                 }
@@ -192,8 +225,7 @@ pub(super) fn subst_iterator(exp: &metamodelica::Ref<DAE::Exp>, name: &str, valu
         }
         Ok((e, acc))
     };
-    openmodelica_frontend_base::Expression::traverseExpBottomUp(exp.clone(), &replace, 0)
-        .map(|(e, _)| e)
+    openmodelica_frontend_base::Expression::traverseExpBottomUp(exp.clone(), &replace, 0).map(|(e, _)| e)
 }
 
 /// Collect `SimCode.relations`, one slot per entry as in C's `functionRelations`:
@@ -223,11 +255,21 @@ pub(super) fn collect_samples(
     use openmodelica_backend_types::BackendDAE::TimeEvent as TE;
     let mut out = Vec::new();
     for te in lst(time_events) {
-        if let TE::SAMPLE_TIME_EVENT { index, startExp, intervalExp, iter } = te {
+        if let TE::SAMPLE_TIME_EVENT {
+            index,
+            startExp,
+            intervalExp,
+            iter,
+        } = te
+        {
             if iter.is_some() {
                 return Err("CodegenWasmJit: for-loop `sample` (iterator) not yet supported");
             }
-            out.push(SampleInfo { index: *index, start: startExp.clone(), interval: intervalExp.clone() });
+            out.push(SampleInfo {
+                index: *index,
+                start: startExp.clone(),
+                interval: intervalExp.clone(),
+            });
         }
     }
     Ok(out)
@@ -269,7 +311,12 @@ pub(super) fn collect_clocks(partitions: &List<SimCode::ClockedPartition>) -> Re
         // C's "fake" sub-partition 0 for an empty clocked partition, which its
         // base-clock handling then activates like any other.
         if sub.is_empty() {
-            sub.push(SubClockMeta { shift_den: 1, factor_num: 1, factor_den: 1, ..SubClockMeta::default() });
+            sub.push(SubClockMeta {
+                shift_den: 1,
+                factor_num: 1,
+                factor_den: 1,
+                ..SubClockMeta::default()
+            });
             sub_eqs.push(Vec::new());
         }
         let n_sub = sub.len() as u32;

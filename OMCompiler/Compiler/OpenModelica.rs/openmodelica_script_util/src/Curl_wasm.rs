@@ -30,8 +30,8 @@ use std::cell::RefCell;
 #[allow(unused_imports)]
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use metamodelica::List;
 
@@ -54,22 +54,21 @@ pub fn take_pending_downloads() -> Vec<(Vec<String>, String)> {
 /// on disk still counts as downloaded, so an already-installed package keeps
 /// working; anything else is an error naming the missing file.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn multiDownload(
-    urlFileList: List<(List<ArcStr>, ArcStr)>,
-    _maxParallel: i32,
-) -> Result<bool> {
+pub fn multiDownload(urlFileList: List<(List<ArcStr>, ArcStr)>, _maxParallel: i32) -> Result<bool> {
     let mut all_present = true;
     let mut cur = urlFileList;
-    while let metamodelica::ListNode::Cons { head: (_urls, filename), tail } = &*cur {
+    while let metamodelica::ListNode::Cons {
+        head: (_urls, filename),
+        tail,
+    } = &*cur
+    {
         if !std::path::Path::new(filename.as_str()).exists() {
             openmodelica_util::Error::addMessage(
                 openmodelica_error::ErrorTypes::Message {
                     id: -1,
                     ty: openmodelica_error::ErrorTypes::MessageType::SIMULATION,
                     severity: openmodelica_error::ErrorTypes::Severity::ERROR,
-                    message: arcstr::literal!(
-                        "Cannot download %s: this build has no download support."
-                    ),
+                    message: arcstr::literal!("Cannot download %s: this build has no download support."),
                 },
                 metamodelica::cons(filename.clone(), metamodelica::nil()),
             )?;
@@ -85,14 +84,15 @@ pub fn multiDownload(
 /// the VFS; otherwise record it as pending and fail. `maxParallel` is unused — the
 /// host fetches the pending list. Returns whether every file was already present.
 #[cfg(target_arch = "wasm32")]
-pub fn multiDownload(
-    urlFileList: List<(List<ArcStr>, ArcStr)>,
-    _maxParallel: i32,
-) -> Result<bool> {
+pub fn multiDownload(urlFileList: List<(List<ArcStr>, ArcStr)>, _maxParallel: i32) -> Result<bool> {
     let mut all_present = true;
 
     let mut cur = urlFileList;
-    while let metamodelica::ListNode::Cons { head: (urls, filename), tail } = &*cur {
+    while let metamodelica::ListNode::Cons {
+        head: (urls, filename),
+        tail,
+    } = &*cur
+    {
         if openmodelica_wasi::read(filename.as_str()).is_none() {
             // Flatten this item's mirror URLs and record it for the host to fetch.
             // A single command can ask for the same file repeatedly before it is

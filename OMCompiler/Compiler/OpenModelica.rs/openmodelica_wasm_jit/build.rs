@@ -118,9 +118,7 @@ fn main() {
     std::thread::scope(|s| {
         s.spawn(|| build_jit_runtime(&crate_dir, &runtime_dir, &out_dir, &dest, &hash));
         s.spawn(|| build_wasip1_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir));
-        s.spawn(|| {
-            build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir)
-        });
+        s.spawn(|| build_wasip1_interactive_runtime(&crate_dir, &runtime_dir, &out_dir, &hash, sundials_dir));
         s.spawn(|| {
             let adapters = build_fmi3_me_adapter(&crate_dir, &out_dir, sundials_dir.is_some());
             build_solver_dylinks(&out_dir, sundials_dir, &adapters);
@@ -143,12 +141,7 @@ fn main() {
 /// It links the solver archives statically, as the standalone runtimes do, so it needs
 /// none of the side modules a component FMU composes. Model-independent, so it is
 /// compiled once into the `.cwasm` cache.
-fn build_wasip1_fused_adapter(
-    crate_dir: &Path,
-    out_dir: &Path,
-    hash: &str,
-    sundials_dir: Option<&Path>,
-) {
+fn build_wasip1_fused_adapter(crate_dir: &Path, out_dir: &Path, hash: &str, sundials_dir: Option<&Path>) {
     let dest = out_dir.join("fmi3_fused_wasip1.wasm");
     let stamp = out_dir.join("fmi3_fused_wasip1.wasm.hash");
     println!("cargo:rerun-if-env-changed=OMC_FMI3_FUSED_WASIP1");
@@ -175,8 +168,7 @@ fn build_wasip1_fused_adapter(
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }
-    let stamp_val =
-        format!("{hash}:{digest}:{features}:build-std,rustflags-opt3,immediate-abort");
+    let stamp_val = format!("{hash}:{digest}:{features}:build-std,rustflags-opt3,immediate-abort");
     if dest.exists()
         && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
         && std::fs::read_to_string(&stamp).ok().as_deref() == Some(stamp_val.as_str())
@@ -196,7 +188,14 @@ fn build_wasip1_fused_adapter(
     let mut cmd = Command::new(cargo);
     cmd.current_dir(&adapter_dir)
         // `-Zbuild-std`: `-Cpanic=immediate-abort` needs a std built with it.
-        .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
+        .args([
+            "build",
+            "-Z",
+            "build-std=std,panic_abort",
+            "--release",
+            "--target",
+            target,
+        ])
         .args(["--no-default-features", "--features", features])
         .arg("--target-dir")
         .arg(&target_dir)
@@ -207,8 +206,12 @@ fn build_wasip1_fused_adapter(
         .env_remove("RUSTC_WRAPPER");
     detach_cargo_env(&mut cmd);
     match sundials_dir {
-        Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
-        None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
+        Some(d) => {
+            cmd.env("OMC_SUNDIALS_WASM_DIR", d);
+        }
+        None => {
+            cmd.env_remove("OMC_SUNDIALS_WASM_DIR");
+        }
     }
     match run(&mut cmd, "cargo build (fused wasip1 adapter)") {
         Ok(()) => {
@@ -257,7 +260,11 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
     }
 
     // The loader binds the adapter's WIT, so a changed interface rebuilds it too.
-    let wit_dir = loader_dir.parent().expect("crate has a parent dir").join("openmodelica_fmi3_wasm").join("wit");
+    let wit_dir = loader_dir
+        .parent()
+        .expect("crate has a parent dir")
+        .join("openmodelica_fmi3_wasm")
+        .join("wit");
     let (digest, files) = hash_inputs(&loader_dir, &[wit_dir]);
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
@@ -330,8 +337,11 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         let cached = dest.exists()
             && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
             && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash);
-        let ext =
-            Path::new(&artifact).extension().and_then(|e| e.to_str()).unwrap_or("so").to_owned();
+        let ext = Path::new(&artifact)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("so")
+            .to_owned();
         let rel = format!("{libdir}/omc/fmu-loader.{ext}");
         let handed_over = prebuilt.as_ref().map(|d| d.join(&rel)).filter(|f| f.is_file());
         // A hand-over missing a loader is a stale one. Cross-building instead is no
@@ -371,11 +381,12 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         .collect();
     for l in &xwin {
         xwin_results.push(
-            build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref())
-                .map(|produced| {
+            build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref()).map(
+                |produced| {
                     copy(&produced, &l.dest);
                     std::fs::write(&l.stamp, &l.hash).ok();
-                }),
+                },
+            ),
         );
     }
     let built = par_map(&loaders, |l| {
@@ -385,17 +396,22 @@ fn build_native_fmu_loaders(crate_dir: &Path, out_dir: &Path) {
         if !l.build {
             return Ok(());
         }
-        build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref())
-            .map(|produced| {
-                copy(&produced, &l.dest);
-                std::fs::write(&l.stamp, &l.hash).ok();
-            })
+        build_native_loader(&loader_dir, out_dir, &l.target, &l.artifact, &xwin_arch, sdk.as_deref()).map(|produced| {
+            copy(&produced, &l.dest);
+            std::fs::write(&l.stamp, &l.hash).ok();
+        })
     });
 
     let mut index = String::new();
     let mut xwin_results_iter = xwin_results.into_iter();
     for (l, outcome) in loaders.iter().zip(built) {
-        let Loader { target, platform, ext, rel, .. } = l;
+        let Loader {
+            target,
+            platform,
+            ext,
+            rel,
+            ..
+        } = l;
         // MSVC targets were built sequentially (not through par_map)
         let outcome = if l.target.ends_with("-msvc") && l.build {
             xwin_results_iter.next().unwrap()
@@ -582,7 +598,11 @@ fn build_native_loader(
     // cargo-zigbuild strips the version before cargo sees the triple, so the
     // artifact still lands under the plain one.
     let pinned = sub.first().is_some_and(|s| s == "zigbuild") && target.ends_with("-linux-gnu");
-    let tgt = if pinned { format!("{target}.{LINUX_LOADER_GLIBC}") } else { target.to_owned() };
+    let tgt = if pinned {
+        format!("{target}.{LINUX_LOADER_GLIBC}")
+    } else {
+        target.to_owned()
+    };
     let mut outcome = run(&mut command(&sub, &tgt)?, &format!("cargo build for {tgt}"));
     if outcome.is_err() && pinned && target == env("HOST") {
         // Without zig a native build still gets its own platform, at this host's
@@ -607,7 +627,10 @@ fn build_native_loader(
 fn build_lapack_dylink(crate_dir: &Path, out_dir: &Path) {
     let dest = out_dir.join("liblapack.wasm");
     let stamp = out_dir.join("liblapack.wasm.hash");
-    let lapack_dir = crate_dir.parent().expect("crate has a parent dir").join("openmodelica_lapack");
+    let lapack_dir = crate_dir
+        .parent()
+        .expect("crate has a parent dir")
+        .join("openmodelica_lapack");
 
     println!("cargo:rerun-if-env-changed=OMC_LAPACK_WASM");
     if let Ok(path) = std::env::var("OMC_LAPACK_WASM") {
@@ -656,7 +679,14 @@ fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, Strin
         -Clink-arg=--allow-undefined -Ctarget-feature=+simd128";
     let mut cmd = Command::new(cargo);
     cmd.current_dir(lapack_dir)
-        .args(["build", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
+        .args([
+            "build",
+            "-Z",
+            "build-std=std,panic_abort",
+            "--release",
+            "--target",
+            target,
+        ])
         .args(["--features", "fortran-abi"])
         .arg("--target-dir")
         .arg(&target_dir)
@@ -708,14 +738,18 @@ fn write_ondemand_index(out_dir: &Path) {
     let wasi_dir = PathBuf::from(env("DEP_OMC_WASI_BLOBS_DIR"));
     for (file, from_wasi_libc) in ONDEMAND_BLOBS {
         let dir = if *from_wasi_libc { &wasi_dir } else { out_dir };
-        let Ok(bytes) = std::fs::read(dir.join(file)) else { continue };
+        let Ok(bytes) = std::fs::read(dir.join(file)) else {
+            continue;
+        };
         if written > 0 {
             out.push(',');
         }
         written += 1;
         out.push_str(&format!("\n  {{\"file\": {}, \"exports\": [", json_str(file)));
-        let names: Vec<String> =
-            exported_functions(&bytes).into_iter().filter(|n| model_callable(n)).collect();
+        let names: Vec<String> = exported_functions(&bytes)
+            .into_iter()
+            .filter(|n| model_callable(n))
+            .collect();
         for (k, n) in names.iter().enumerate() {
             out.push_str(if k == 0 { "\n    " } else { ",\n    " });
             out.push_str(&json_str(n));
@@ -771,8 +805,13 @@ fn exported_functions(module: &[u8]) -> std::collections::BTreeSet<String> {
 /// Returns the two that import the solvers, me_cs first: its imports decide what the
 /// side modules export, and ME's have to be a subset.
 fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path, sundials: bool) -> [PathBuf; 2] {
-    par_map(ADAPTER_VARIANTS, |v| build_fmi3_adapter(crate_dir, out_dir, v, sundials));
-    [out_dir.join("fmi3_mecs_adapter.wasm"), out_dir.join("fmi3_me_adapter.wasm")]
+    par_map(ADAPTER_VARIANTS, |v| {
+        build_fmi3_adapter(crate_dir, out_dir, v, sundials)
+    });
+    [
+        out_dir.join("fmi3_mecs_adapter.wasm"),
+        out_dir.join("fmi3_me_adapter.wasm"),
+    ]
 }
 
 /// `wasm-opt -O3` the module in place, when CMake found binaryen. Every exported FMU
@@ -790,11 +829,16 @@ fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path, sundials: bool) -> [P
 /// `wasi_snapshot_preview1` adapter is a wasmtime release artifact, not a side module
 /// of ours.
 fn wasm_opt(path: &Path) {
-    let Some(exe) = std::env::var_os("OMC_WASM_OPT").filter(|v| !v.is_empty()) else { return };
+    let Some(exe) = std::env::var_os("OMC_WASM_OPT").filter(|v| !v.is_empty()) else {
+        return;
+    };
     let tmp = path.with_extension("opt.tmp");
     let mut cmd = Command::new(&exe);
     cmd.arg("-O3");
-    for f in std::env::var("OMC_WASM_OPT_FEATURES").unwrap_or_default().split_whitespace() {
+    for f in std::env::var("OMC_WASM_OPT_FEATURES")
+        .unwrap_or_default()
+        .split_whitespace()
+    {
         cmd.arg(f);
     }
     let ok = cmd
@@ -822,7 +866,10 @@ fn wasm_opt(path: &Path) {
 /// has to rebuild them, and a cached blob from the other setting is not equivalent.
 fn wasm_opt_key() -> String {
     match std::env::var("OMC_WASM_OPT").ok().filter(|v| !v.is_empty()) {
-        Some(exe) => format!("opt3:{exe}:{}", std::env::var("OMC_WASM_OPT_FEATURES").unwrap_or_default()),
+        Some(exe) => format!(
+            "opt3:{exe}:{}",
+            std::env::var("OMC_WASM_OPT_FEATURES").unwrap_or_default()
+        ),
         None => "noopt".to_string(),
     }
 }
@@ -846,12 +893,22 @@ struct SolverGroup {
 const BASE_GROUP: SolverGroup = SolverGroup {
     name: "klu",
     archives: &[
-        "sundials_sunlinsolklu", "sundials_sunlinsoldense",
-        "sundials_sunlinsolspgmr", "sundials_sunlinsolspbcgs", "sundials_sunlinsolsptfqmr",
-        "sundials_sunnonlinsolnewton", "sundials_sunnonlinsolfixedpoint",
-        "sundials_sunmatrixsparse", "sundials_sunmatrixdense",
-        "sundials_nvecserial", "sundials_core",
-        "klu", "amd", "colamd", "btf", "suitesparseconfig",
+        "sundials_sunlinsolklu",
+        "sundials_sunlinsoldense",
+        "sundials_sunlinsolspgmr",
+        "sundials_sunlinsolspbcgs",
+        "sundials_sunlinsolsptfqmr",
+        "sundials_sunnonlinsolnewton",
+        "sundials_sunnonlinsolfixedpoint",
+        "sundials_sunmatrixsparse",
+        "sundials_sunmatrixdense",
+        "sundials_nvecserial",
+        "sundials_core",
+        "klu",
+        "amd",
+        "colamd",
+        "btf",
+        "suitesparseconfig",
     ],
     owns: &["N_V", "SUN", "klu_"],
 };
@@ -864,13 +921,21 @@ const SOLVER_GROUPS: &[SolverGroup] = &[
         archives: &["sundials_idas", "sundials_cvode"],
         owns: &["CVode", "IDA"],
     },
-    SolverGroup { name: "kinsol", archives: &["sundials_kinsol"], owns: &["KIN"] },
+    SolverGroup {
+        name: "kinsol",
+        archives: &["sundials_kinsol"],
+        owns: &["KIN"],
+    },
     SolverGroup {
         name: "umfpack",
         archives: &["umfpack", "amd", "suitesparseconfig"],
         owns: &["umfpack_"],
     },
-    SolverGroup { name: "lis", archives: &["lis"], owns: &["lis_"] },
+    SolverGroup {
+        name: "lis",
+        archives: &["lis"],
+        owns: &["lis_"],
+    },
 ];
 
 /// Build one PIC side module per solver library, plus a stub for each.
@@ -971,8 +1036,7 @@ fn link_solver_dylinks(
             lib.display()
         ));
     }
-    let bytes = std::fs::read(adapter)
-        .map_err(|e| format!("read the me_cs adapter {}: {e}", adapter.display()))?;
+    let bytes = std::fs::read(adapter).map_err(|e| format!("read the me_cs adapter {}: {e}", adapter.display()))?;
     if bytes.is_empty() {
         return Err(format!("the me_cs adapter {} is empty", adapter.display()));
     }
@@ -992,7 +1056,11 @@ fn link_solver_dylinks(
         ));
     }
     let owned = |g: &SolverGroup| -> Vec<String> {
-        wanted.iter().filter(|n| g.owns.iter().any(|p| n.starts_with(p))).cloned().collect()
+        wanted
+            .iter()
+            .filter(|n| g.owns.iter().any(|p| n.starts_with(p)))
+            .cloned()
+            .collect()
     };
 
     let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
@@ -1010,7 +1078,11 @@ fn link_solver_dylinks(
         feed(archives_key(&lib).as_bytes());
         feed(clang.as_bytes());
         feed(wasm_opt_key().as_bytes());
-        for a in DYLINK_LINK_ARGS.iter().copied().chain(wanted.iter().map(|w| w.as_str())) {
+        for a in DYLINK_LINK_ARGS
+            .iter()
+            .copied()
+            .chain(wanted.iter().map(|w| w.as_str()))
+        {
             feed(a.as_bytes());
         }
         for g in all {
@@ -1033,9 +1105,7 @@ fn link_solver_dylinks(
                 .unwrap_or(false)
         })
     };
-    if all.iter().all(|g| current(g))
-        && std::fs::read_to_string(&stamp).ok().as_deref() == Some(key.as_str())
-    {
+    if all.iter().all(|g| current(g)) && std::fs::read_to_string(&stamp).ok().as_deref() == Some(key.as_str()) {
         return Ok(());
     }
 
@@ -1061,7 +1131,9 @@ fn link_solver_dylinks(
     // or whose `owns` prefix names the wrong group.
     let mut have = exported_names(&base);
     for g in SOLVER_GROUPS {
-        have.extend(exported_names(&std::fs::read(group_path(out_dir, g, "")).unwrap_or_default()));
+        have.extend(exported_names(
+            &std::fs::read(group_path(out_dir, g, "")).unwrap_or_default(),
+        ));
     }
     // Every adapter that imports the solvers, not just the one the roots came from:
     // ME's import set has to stay a subset of me_cs's.
@@ -1091,16 +1163,14 @@ fn link_solver_dylinks(
             .into_iter()
             .filter(|(m, ..)| m == "env" || m.starts_with("GOT."))
             .map(|(_, f, ..)| f)
-            .filter(|f| {
-                !f.starts_with("__")
-                    && f != "memory"
-                    && !libc.contains(f)
-                    && !base_exports.contains(f)
-            })
+            .filter(|f| !f.starts_with("__") && f != "memory" && !libc.contains(f) && !base_exports.contains(f))
             .collect();
         if !open.is_empty() {
-            return Err(format!("the {} side module needs {open:?}, which neither the base \
-                                module nor libc.so exports", g.name));
+            return Err(format!(
+                "the {} side module needs {open:?}, which neither the base \
+                                module nor libc.so exports",
+                g.name
+            ));
         }
     }
 
@@ -1177,7 +1247,9 @@ fn link_group_stub(
         g.name
     );
     for f in owns {
-        let idx = *type_of.get(f.as_str()).ok_or_else(|| format!("no import type for {f}"))?;
+        let idx = *type_of
+            .get(f.as_str())
+            .ok_or_else(|| format!("no import type for {f}"))?;
         let (result, params) = types
             .get(idx as usize)
             .ok_or_else(|| format!("{f}: type index {idx} is outside the adapter's type section"))?;
@@ -1201,7 +1273,11 @@ fn link_group_stub(
     let dest = group_path(out_dir, g, "_stub");
     let mut cmd = Command::new(clang);
     cmd.args(DYLINK_LINK_ARGS);
-    for f in owns.iter().map(|f| f.as_str()).chain([format!("om_have_{}", g.name).as_str()]) {
+    for f in owns
+        .iter()
+        .map(|f| f.as_str())
+        .chain([format!("om_have_{}", g.name).as_str()])
+    {
         cmd.arg(format!("-Wl,--export={f}"));
     }
     let status = cmd
@@ -1220,8 +1296,8 @@ fn link_group_stub(
 
 /// What the PIC `libc.so` the FMU linker adds beside the side modules has.
 fn libc_exports() -> Result<std::collections::BTreeSet<String>, String> {
-    let sysroot = std::env::var("OMC_WASI_PIC_SYSROOT")
-        .map_err(|_| "OMC_WASI_PIC_SYSROOT not set (CMake provides it)")?;
+    let sysroot =
+        std::env::var("OMC_WASI_PIC_SYSROOT").map_err(|_| "OMC_WASI_PIC_SYSROOT not set (CMake provides it)")?;
     let libc = Path::new(&sysroot).join("lib/wasm32-wasip1/libc.so");
     Ok(exported_names(
         &std::fs::read(&libc).map_err(|e| format!("read {}: {e}", libc.display()))?,
@@ -1442,7 +1518,12 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant, sund
     for f in &files {
         println!("cargo:rerun-if-changed={}", f.display());
     }
-    let hash = format!("{digest}-{}-{}-{sundials}-{}", v.name, v.cargo_args.join(","), wasm_opt_key());
+    let hash = format!(
+        "{digest}-{}-{}-{sundials}-{}",
+        v.name,
+        v.cargo_args.join(","),
+        wasm_opt_key()
+    );
     if dest.exists()
         && std::fs::metadata(&dest).map(|m| m.len() > 0).unwrap_or(false)
         && std::fs::read_to_string(&stamp).ok().as_deref() == Some(&hash)
@@ -1486,7 +1567,12 @@ fn build_fmi3_adapter(crate_dir: &Path, out_dir: &Path, v: &AdapterVariant, sund
 /// `-Zcodegen-backend=llvm` because the workspace default cranelift cannot target
 /// wasm and RUSTFLAGS here replaces the crate's `.cargo/config.toml`; `+simd128`
 /// for the faer kernels the dense solve reaches, as in `liblapack.wasm`.
-fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, sundials: bool) -> Result<PathBuf, String> {
+fn build_dylink_adapter(
+    adapter_dir: &Path,
+    out_dir: &Path,
+    v: &AdapterVariant,
+    sundials: bool,
+) -> Result<PathBuf, String> {
     let target = "wasm32-unknown-unknown";
     // Separate target dirs: the worlds differ only by feature, and sharing one
     // would rebuild the crate on every alternation.
@@ -1505,7 +1591,14 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
     // static data against 210 KB, and the larger one moves `__heap_base` into a
     // layout the FMU's allocator faults on.
     cmd.current_dir(adapter_dir)
-        .args(["rustc", "-Z", "build-std=std,panic_abort", "--release", "--target", target])
+        .args([
+            "rustc",
+            "-Z",
+            "build-std=std,panic_abort",
+            "--release",
+            "--target",
+            target,
+        ])
         .args(v.cargo_args)
         .args(["--crate-type", "cdylib"])
         .arg("--target-dir")
@@ -1513,7 +1606,10 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
         .env("RUSTFLAGS", rustflags);
     detach_cargo_env(&mut cmd);
     run(&mut cmd, &format!("cargo build (dylink, {})", v.label))?;
-    let produced = target_dir.join(target).join("release").join("openmodelica_fmi3_wasm.wasm");
+    let produced = target_dir
+        .join(target)
+        .join("release")
+        .join("openmodelica_fmi3_wasm.wasm");
     if !produced.exists() {
         return Err(format!("expected dylink wasm not found at {}", produced.display()));
     }
@@ -1525,7 +1621,9 @@ fn build_dylink_adapter(adapter_dir: &Path, out_dir: &Path, v: &AdapterVariant, 
 fn find_wasm_builtins() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("OMC_WASM_BUILTINS") {
         let p = PathBuf::from(p);
-        if p.exists() { return Some(p); }
+        if p.exists() {
+            return Some(p);
+        }
     }
     let clang = std::env::var("OMC_WASI_CLANG").unwrap_or_else(|_| "clang".to_owned());
     let out = Command::new(&clang).arg("-print-resource-dir").output().ok()?;
@@ -1556,7 +1654,11 @@ fn standalone_features(sundials_dir: Option<&Path>) -> String {
 /// the crate's `default` never reaches them.
 fn heap_stats_feature() -> String {
     println!("cargo:rerun-if-env-changed=OMC_WASM_HEAP_STATS");
-    if std::env::var_os("OMC_WASM_HEAP_STATS").is_some() { ",heap_stats".to_string() } else { String::new() }
+    if std::env::var_os("OMC_WASM_HEAP_STATS").is_some() {
+        ",heap_stats".to_string()
+    } else {
+        String::new()
+    }
 }
 
 /// Returns `Some((dir, key))` when `OMC_SUNDIALS_WASM_DIR` is set (the key is
@@ -1567,7 +1669,11 @@ fn sundials_wasm_dir() -> Option<(PathBuf, String)> {
     let dir: PathBuf = std::env::var("OMC_SUNDIALS_WASM_DIR").ok()?.into();
     // PRIMME arriving or leaving changes the runtime's features, so it belongs in
     // the key too.
-    let base = if has_primme(Some(&dir)) { "cmake+primme" } else { "cmake" };
+    let base = if has_primme(Some(&dir)) {
+        "cmake+primme"
+    } else {
+        "cmake"
+    };
     let key = format!("{base}:{}", archives_key(&dir.join("lib")));
     Some((dir, key))
 }
@@ -1663,13 +1769,7 @@ fn build_jit_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, dest:
 /// the omc target is wasm32 or the wasip1 target/build is unavailable, so the
 /// native `include_bytes!` still compiles (`emit_standalone_module` reports the
 /// absence at call time).
-fn build_wasip1_runtime(
-    crate_dir: &Path,
-    runtime_dir: &Path,
-    out_dir: &Path,
-    hash: &str,
-    sundials_dir: Option<&Path>,
-) {
+fn build_wasip1_runtime(crate_dir: &Path, runtime_dir: &Path, out_dir: &Path, hash: &str, sundials_dir: Option<&Path>) {
     let dest = out_dir.join("runtime_wasip1.wasm");
     let stamp = out_dir.join("runtime_wasip1.wasm.hash");
 
@@ -1704,7 +1804,11 @@ fn build_wasip1_runtime(
         "wasm32-wasip1",
         "openmodelica_codegen_wasm_jit_runtime",
         "runtime-target",
-        &["--no-default-features", "--features", &standalone_features(sundials_dir)],
+        &[
+            "--no-default-features",
+            "--features",
+            &standalone_features(sundials_dir),
+        ],
         sundials_dir,
     ) {
         Ok(produced) => {
@@ -1862,16 +1966,17 @@ fn build_runtime_wasm_named(
         .env_remove("RUSTFLAGS");
     detach_cargo_env(&mut cmd);
     match sundials_dir {
-        Some(d) => { cmd.env("OMC_SUNDIALS_WASM_DIR", d); }
+        Some(d) => {
+            cmd.env("OMC_SUNDIALS_WASM_DIR", d);
+        }
         // Cargo's env is inherited; clear a stale outer setting so the nested build
         // agrees with what this script actually produced.
-        None => { cmd.env_remove("OMC_SUNDIALS_WASM_DIR"); }
+        None => {
+            cmd.env_remove("OMC_SUNDIALS_WASM_DIR");
+        }
     }
     run(&mut cmd, &format!("cargo build for {target} ({target_dir_prefix})"))?;
-    let produced = target_dir
-        .join(target)
-        .join("release")
-        .join(format!("{artifact}.wasm"));
+    let produced = target_dir.join(target).join("release").join(format!("{artifact}.wasm"));
     if !produced.exists() {
         return Err(format!("expected wasm not found at {}", produced.display()));
     }
@@ -1945,7 +2050,9 @@ fn hash_inputs(runtime_dir: &Path, extra_dirs: &[PathBuf]) -> (String, Vec<PathB
 
 /// Relative `path = "..."` values from a Cargo.toml (local path dependencies).
 fn path_deps(manifest: &Path) -> Vec<String> {
-    let Ok(text) = std::fs::read_to_string(manifest) else { return Vec::new() };
+    let Ok(text) = std::fs::read_to_string(manifest) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for line in text.lines() {
         let Some(rest) = line.split_once("path").and_then(|(_, r)| {
@@ -1978,8 +2085,7 @@ fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) {
 }
 
 fn copy(from: &Path, to: &Path) {
-    std::fs::copy(from, to)
-        .unwrap_or_else(|e| panic!("copy {} -> {}: {e}", from.display(), to.display()));
+    std::fs::copy(from, to).unwrap_or_else(|e| panic!("copy {} -> {}: {e}", from.display(), to.display()));
 }
 
 /// The blobs this script produces are wasm whatever platform omc itself is being
@@ -1993,7 +2099,9 @@ fn copy(from: &Path, to: &Path) {
 /// done: the stamp is written so nothing downstream rebuilds it either.
 fn prebuilt_in(dest: &Path, stamp: &Path) -> bool {
     println!("cargo:rerun-if-env-changed=OMC_WASM_PREBUILT_IN");
-    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else { return false };
+    let Some(dir) = std::env::var_os("OMC_WASM_PREBUILT_IN") else {
+        return false;
+    };
     let name = dest.file_name().expect("a blob has a file name");
     let src = PathBuf::from(dir).join(name);
     if !src.is_file() {
@@ -2016,8 +2124,7 @@ fn publish_prebuilt(out_dir: &Path) {
             let p = e.path();
             // The blobs only: not the nested cargo target directories, and not the
             // FMU loaders (OMC_FMU_LOADERS_OUT's job).
-            let take = p.extension().is_some_and(|x| x == "wasm")
-                || p.file_name().is_some_and(|x| x == "index.json");
+            let take = p.extension().is_some_and(|x| x == "wasm") || p.file_name().is_some_and(|x| x == "index.json");
             if take && p.is_file() {
                 copy(&p, &dir.join(p.file_name().expect("a blob has a file name")));
             }

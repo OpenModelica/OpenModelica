@@ -116,7 +116,10 @@ fn in_state<'a>(c: *mut c_void, func: &str, me: u32, cs: u32) -> Option<&'a mut 
     let is_me = c.n.kind == Kind::ModelExchange;
     if c.state & if is_me { me } else { cs } == 0 {
         let kind = if is_me { "model exchange" } else { "co-simulation" };
-        let msg = format!("{func}: Illegal {kind} call sequence. {func} is not allowed in {} state.", state_name(c.state));
+        let msg = format!(
+            "{func}: Illegal {kind} call sequence. {func} is not allowed in {} state.",
+            state_name(c.state)
+        );
         c.n.logger.log(ERROR, "logStatusError", &msg);
         c.state = st::ERROR;
         return None;
@@ -137,7 +140,9 @@ impl Component {
     /// `longjmp` catch reports it.
     fn asserted(&self, call: &str, s: Status) -> c_int {
         if s == Status::Error && self.call_log {
-            self.n.logger.log(ERROR, "logFmi2Call", &format!("{call}: terminated by an assertion."));
+            self.n
+                .logger
+                .log(ERROR, "logFmi2Call", &format!("{call}: terminated by an assertion."));
         }
         code(s)
     }
@@ -181,7 +186,9 @@ pub unsafe extern "C" fn omc_fmi2Instantiate(
     _visible: c_int,
     logging_on: c_int,
 ) -> *mut c_void {
-    let Some(&callbacks) = (unsafe { functions.as_ref() }) else { return core::ptr::null_mut() };
+    let Some(&callbacks) = (unsafe { functions.as_ref() }) else {
+        return core::ptr::null_mut();
+    };
     if callbacks.logger.is_none() {
         return core::ptr::null_mut();
     }
@@ -198,7 +205,10 @@ pub unsafe extern "C" fn omc_fmi2Instantiate(
         }
         MODEL_EXCHANGE => Kind::ModelExchange,
         // No Event Mode and no early return in 2.0: fmi2DoStep handles the events.
-        CO_SIMULATION => Kind::CoSimulation { event_mode_used: false, early_return_allowed: false },
+        CO_SIMULATION => Kind::CoSimulation {
+            event_mode_used: false,
+            early_return_allowed: false,
+        },
         _ => {
             let msg = format!("fmi2Instantiate: fmuType {fmu_type} is neither Model Exchange nor Co-Simulation.");
             logger.log(ERROR, "error", &msg);
@@ -211,9 +221,15 @@ pub unsafe extern "C" fn omc_fmi2Instantiate(
         unsafe { libc::free(res as *mut c_void) };
         r
     });
-    let Some(n) =
-        Native::instantiate(&name, &cstr(fmu_guid), resources, kind, b(logging_on), logger, "fmi2Instantiate")
-    else {
+    let Some(n) = Native::instantiate(
+        &name,
+        &cstr(fmu_guid),
+        resources,
+        kind,
+        b(logging_on),
+        logger,
+        "fmi2Instantiate",
+    ) else {
         return core::ptr::null_mut();
     };
     let offsets = offsets(unsafe { &*n.model_data() });
@@ -248,14 +264,25 @@ pub unsafe extern "C" fn omc_fmi2SetDebugLogging(
     n_categories: usize,
     categories: *const *const c_char,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetDebugLogging", st::ME_ANY, st::CS_ANY | st::STEP_IN_PROGRESS) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2SetDebugLogging", st::ME_ANY, st::CS_ANY | st::STEP_IN_PROGRESS) else {
+        return ERROR;
+    };
     let raw: Vec<String> = if categories.is_null() {
         Vec::new()
     } else {
         (0..n_categories).map(|i| cstr(unsafe { *categories.add(i) })).collect()
     };
     c.call_log = b(logging_on) && raw.iter().any(|c| c == "logFmi2Call" || c == "logAll");
-    let cats = raw.into_iter().map(|s| if s == "logFmi2Call" { "logFmi3Call".to_string() } else { s }).collect();
+    let cats = raw
+        .into_iter()
+        .map(|s| {
+            if s == "logFmi2Call" {
+                "logFmi3Call".to_string()
+            } else {
+                s
+            }
+        })
+        .collect();
     code(c.n.set_debug_logging(b(logging_on), cats))
 }
 
@@ -268,7 +295,9 @@ pub unsafe extern "C" fn omc_fmi2SetupExperiment(
     stop_time_defined: c_int,
     stop_time: f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetupExperiment", st::INSTANTIATED, st::INSTANTIATED) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2SetupExperiment", st::INSTANTIATED, st::INSTANTIATED) else {
+        return ERROR;
+    };
     c.tolerance = b(tolerance_defined).then_some(tolerance);
     c.start_time = start_time;
     c.stop_time = b(stop_time_defined).then_some(stop_time);
@@ -277,15 +306,29 @@ pub unsafe extern "C" fn omc_fmi2SetupExperiment(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2EnterInitializationMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2EnterInitializationMode", st::INSTANTIATED, st::INSTANTIATED) else { return ERROR };
-    c.moved(code(c.n.inst.enter_initialization_mode(c.tolerance, c.start_time, c.stop_time)), st::INIT)
+    let Some(c) = in_state(c, "fmi2EnterInitializationMode", st::INSTANTIATED, st::INSTANTIATED) else {
+        return ERROR;
+    };
+    c.moved(
+        code(
+            c.n.inst
+                .enter_initialization_mode(c.tolerance, c.start_time, c.stop_time),
+        ),
+        st::INIT,
+    )
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2ExitInitializationMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2ExitInitializationMode", st::INIT, st::INIT) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2ExitInitializationMode", st::INIT, st::INIT) else {
+        return ERROR;
+    };
     let s = c.n.inst.exit_initialization_mode();
-    let next = if c.n.kind == Kind::ModelExchange { st::EVENT } else { st::STEP_COMPLETE };
+    let next = if c.n.kind == Kind::ModelExchange {
+        st::EVENT
+    } else {
+        st::STEP_COMPLETE
+    };
     let r = c.moved(c.asserted("fmi2ExitInitializationMode", s), next);
     if r >= ERROR {
         c.state = st::ERROR;
@@ -295,7 +338,14 @@ pub unsafe extern "C" fn omc_fmi2ExitInitializationMode(c: *mut c_void) -> c_int
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2Terminate(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2Terminate", st::EVENT | st::CONTINUOUS, st::STEP_COMPLETE | st::STEP_FAILED) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi2Terminate",
+        st::EVENT | st::CONTINUOUS,
+        st::STEP_COMPLETE | st::STEP_FAILED,
+    ) else {
+        return ERROR;
+    };
     let s = c.n.inst.terminate();
     let r = c.asserted("fmi2Terminate", s);
     c.moved(r, st::TERMINATED)
@@ -303,7 +353,9 @@ pub unsafe extern "C" fn omc_fmi2Terminate(c: *mut c_void) -> c_int {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2Reset(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2Reset", st::ME_ANY, st::CS_ANY) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2Reset", st::ME_ANY, st::CS_ANY) else {
+        return ERROR;
+    };
     (c.tolerance, c.start_time, c.stop_time) = (None, 0.0, None);
     (c.step_status, c.last_successful_time, c.terminated) = (OK, 0.0, false);
     let r = c.n.reset("fmi2Reset");
@@ -316,8 +368,12 @@ macro_rules! getter {
     ($cfn:ident, $fname:literal, $me:expr, $cs:expr, $method:ident, $base:expr, $ty:ty, $conv:expr) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, vr: *const u32, nvr: usize, values: *mut $ty) -> c_int {
-            let Some(c) = in_state(c, $fname, $me, $cs) else { return ERROR };
-            let Some(refs) = (unsafe { shift(c, vr, nvr, $base) }) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $me, $cs) else {
+                return ERROR;
+            };
+            let Some(refs) = (unsafe { shift(c, vr, nvr, $base) }) else {
+                return ERROR;
+            };
             if values.is_null() && nvr != 0 {
                 return ERROR;
             }
@@ -334,16 +390,47 @@ macro_rules! getter {
         }
     };
 }
-getter!(omc_fmi2GetReal, "fmi2GetReal", st::ME_READ, st::CS_READ, get_float64, Base::Real, f64, |v| v);
-getter!(omc_fmi2GetInteger, "fmi2GetInteger", st::ME_READ, st::CS_READ, get_int32, Base::Integer, c_int, |v| v);
-getter!(omc_fmi2GetBoolean, "fmi2GetBoolean", st::ME_READ, st::CS_READ, get_boolean, Base::Boolean, c_int, fmi2_bool);
+getter!(
+    omc_fmi2GetReal,
+    "fmi2GetReal",
+    st::ME_READ,
+    st::CS_READ,
+    get_float64,
+    Base::Real,
+    f64,
+    |v| v
+);
+getter!(
+    omc_fmi2GetInteger,
+    "fmi2GetInteger",
+    st::ME_READ,
+    st::CS_READ,
+    get_int32,
+    Base::Integer,
+    c_int,
+    |v| v
+);
+getter!(
+    omc_fmi2GetBoolean,
+    "fmi2GetBoolean",
+    st::ME_READ,
+    st::CS_READ,
+    get_boolean,
+    Base::Boolean,
+    c_int,
+    fmi2_bool
+);
 
 macro_rules! setter {
     ($cfn:ident, $fname:literal, $me:expr, $cs:expr, $method:ident, $base:expr, $ty:ty, $conv:expr) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, vr: *const u32, nvr: usize, values: *const $ty) -> c_int {
-            let Some(c) = in_state(c, $fname, $me, $cs) else { return ERROR };
-            let Some(refs) = (unsafe { shift(c, vr, nvr, $base) }) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $me, $cs) else {
+                return ERROR;
+            };
+            let Some(refs) = (unsafe { shift(c, vr, nvr, $base) }) else {
+                return ERROR;
+            };
             if values.is_null() && nvr != 0 {
                 return ERROR;
             }
@@ -352,15 +439,51 @@ macro_rules! setter {
         }
     };
 }
-setter!(omc_fmi2SetReal, "fmi2SetReal", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS, st::INSTANTIATED | st::INIT | st::STEP_COMPLETE, set_float64, Base::Real, f64, |v| v);
-setter!(omc_fmi2SetInteger, "fmi2SetInteger", st::INSTANTIATED | st::INIT | st::EVENT, st::INSTANTIATED | st::INIT | st::STEP_COMPLETE, set_int32, Base::Integer, c_int, |v| v);
-setter!(omc_fmi2SetBoolean, "fmi2SetBoolean", st::INSTANTIATED | st::INIT | st::EVENT, st::INSTANTIATED | st::INIT | st::STEP_COMPLETE, set_boolean, Base::Boolean, c_int, b);
+setter!(
+    omc_fmi2SetReal,
+    "fmi2SetReal",
+    st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS,
+    st::INSTANTIATED | st::INIT | st::STEP_COMPLETE,
+    set_float64,
+    Base::Real,
+    f64,
+    |v| v
+);
+setter!(
+    omc_fmi2SetInteger,
+    "fmi2SetInteger",
+    st::INSTANTIATED | st::INIT | st::EVENT,
+    st::INSTANTIATED | st::INIT | st::STEP_COMPLETE,
+    set_int32,
+    Base::Integer,
+    c_int,
+    |v| v
+);
+setter!(
+    omc_fmi2SetBoolean,
+    "fmi2SetBoolean",
+    st::INSTANTIATED | st::INIT | st::EVENT,
+    st::INSTANTIATED | st::INIT | st::STEP_COMPLETE,
+    set_boolean,
+    Base::Boolean,
+    c_int,
+    b
+);
 
 /// The pointers stay valid until the next `fmi2GetString` on this instance.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi2GetString(c: *mut c_void, vr: *const u32, nvr: usize, values: *mut *const c_char) -> c_int {
-    let Some(c) = in_state(c, "fmi2GetString", st::ME_READ, st::CS_READ) else { return ERROR };
-    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Str) }) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi2GetString(
+    c: *mut c_void,
+    vr: *const u32,
+    nvr: usize,
+    values: *mut *const c_char,
+) -> c_int {
+    let Some(c) = in_state(c, "fmi2GetString", st::ME_READ, st::CS_READ) else {
+        return ERROR;
+    };
+    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Str) }) else {
+        return ERROR;
+    };
     if values.is_null() && nvr != 0 {
         return ERROR;
     }
@@ -378,9 +501,23 @@ pub unsafe extern "C" fn omc_fmi2GetString(c: *mut c_void, vr: *const u32, nvr: 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi2SetString(c: *mut c_void, vr: *const u32, nvr: usize, values: *const *const c_char) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetString", st::INSTANTIATED | st::INIT | st::EVENT, st::INSTANTIATED | st::INIT | st::STEP_COMPLETE) else { return ERROR };
-    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Str) }) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi2SetString(
+    c: *mut c_void,
+    vr: *const u32,
+    nvr: usize,
+    values: *const *const c_char,
+) -> c_int {
+    let Some(c) = in_state(
+        c,
+        "fmi2SetString",
+        st::INSTANTIATED | st::INIT | st::EVENT,
+        st::INSTANTIATED | st::INIT | st::STEP_COMPLETE,
+    ) else {
+        return ERROR;
+    };
+    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Str) }) else {
+        return ERROR;
+    };
     if values.is_null() && nvr != 0 {
         return ERROR;
     }
@@ -393,7 +530,9 @@ pub unsafe extern "C" fn omc_fmi2SetString(c: *mut c_void, vr: *const u32, nvr: 
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2GetFMUstate(c: *mut c_void, state: *mut *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2GetFMUstate", st::ME_ANY, st::CS_ANY) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2GetFMUstate", st::ME_ANY, st::CS_ANY) else {
+        return ERROR;
+    };
     if state.is_null() {
         return ERROR;
     }
@@ -413,8 +552,12 @@ pub unsafe extern "C" fn omc_fmi2GetFMUstate(c: *mut c_void, state: *mut *mut c_
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2SetFMUstate(c: *mut c_void, state: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetFMUstate", st::ME_ANY, st::CS_ANY) else { return ERROR };
-    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2SetFMUstate", st::ME_ANY, st::CS_ANY) else {
+        return ERROR;
+    };
+    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else {
+        return ERROR;
+    };
     code(c.n.inst.set_fmu_state(bytes.clone()))
 }
 
@@ -436,15 +579,28 @@ pub unsafe extern "C" fn omc_fmi2FreeFMUstate(c: *mut c_void, state: *mut *mut c
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi2SerializedFMUstateSize(_c: *mut c_void, state: *mut c_void, size: *mut usize) -> c_int {
-    let (Some(bytes), false) = (unsafe { (state as *const Vec<u8>).as_ref() }, size.is_null()) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi2SerializedFMUstateSize(
+    _c: *mut c_void,
+    state: *mut c_void,
+    size: *mut usize,
+) -> c_int {
+    let (Some(bytes), false) = (unsafe { (state as *const Vec<u8>).as_ref() }, size.is_null()) else {
+        return ERROR;
+    };
     unsafe { *size = bytes.len() };
     OK
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi2SerializeFMUstate(_c: *mut c_void, state: *mut c_void, out: *mut u8, size: usize) -> c_int {
-    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi2SerializeFMUstate(
+    _c: *mut c_void,
+    state: *mut c_void,
+    out: *mut u8,
+    size: usize,
+) -> c_int {
+    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else {
+        return ERROR;
+    };
     if out.is_null() || size != bytes.len() {
         return ERROR;
     }
@@ -477,16 +633,22 @@ pub unsafe extern "C" fn omc_fmi2GetDirectionalDerivative(
     dv_known: *const f64,
     dv_unknown: *mut f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2GetDirectionalDerivative", st::ME_READ, st::CS_READ) else { return ERROR };
-    let (Some(u), Some(k)) =
-        (unsafe { shift(c, unknowns, n_unknowns, Base::Real) }, unsafe { shift(c, knowns, n_knowns, Base::Real) })
-    else {
+    let Some(c) = in_state(c, "fmi2GetDirectionalDerivative", st::ME_READ, st::CS_READ) else {
+        return ERROR;
+    };
+    let (Some(u), Some(k)) = (unsafe { shift(c, unknowns, n_unknowns, Base::Real) }, unsafe {
+        shift(c, knowns, n_knowns, Base::Real)
+    }) else {
         return ERROR;
     };
     if (dv_known.is_null() && n_knowns != 0) || (dv_unknown.is_null() && n_unknowns != 0) {
         return ERROR;
     }
-    let seed = if n_knowns == 0 { Vec::new() } else { unsafe { core::slice::from_raw_parts(dv_known, n_knowns) }.to_vec() };
+    let seed = if n_knowns == 0 {
+        Vec::new()
+    } else {
+        unsafe { core::slice::from_raw_parts(dv_known, n_knowns) }.to_vec()
+    };
     match c.n.inst.get_directional_derivative(u, k, seed) {
         Ok(v) if v.len() == n_unknowns => {
             unsafe { core::slice::from_raw_parts_mut(dv_unknown, n_unknowns).copy_from_slice(&v) };
@@ -501,7 +663,9 @@ pub unsafe extern "C" fn omc_fmi2GetDirectionalDerivative(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2EnterEventMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2EnterEventMode", st::EVENT | st::CONTINUOUS, 0) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2EnterEventMode", st::EVENT | st::CONTINUOUS, 0) else {
+        return ERROR;
+    };
     let s = c.n.inst.enter_event_mode();
     let r = c.asserted("fmi2EnterEventMode", s);
     c.moved(r, st::EVENT)
@@ -509,8 +673,12 @@ pub unsafe extern "C" fn omc_fmi2EnterEventMode(c: *mut c_void) -> c_int {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2NewDiscreteStates(c: *mut c_void, event_info: *mut EventInfo) -> c_int {
-    let Some(c) = in_state(c, "fmi2NewDiscreteStates", st::EVENT, 0) else { return ERROR };
-    let Some(info) = (unsafe { event_info.as_mut() }) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2NewDiscreteStates", st::EVENT, 0) else {
+        return ERROR;
+    };
+    let Some(info) = (unsafe { event_info.as_mut() }) else {
+        return ERROR;
+    };
     match c.n.inst.update_discrete_states() {
         Ok(u) => {
             info.new_discrete_states_needed = fmi2_bool(u.new_discrete_states_needed);
@@ -527,7 +695,9 @@ pub unsafe extern "C" fn omc_fmi2NewDiscreteStates(c: *mut c_void, event_info: *
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2EnterContinuousTimeMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi2EnterContinuousTimeMode", st::EVENT, 0) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2EnterContinuousTimeMode", st::EVENT, 0) else {
+        return ERROR;
+    };
     c.moved(code(c.n.inst.enter_continuous_time_mode()), st::CONTINUOUS)
 }
 
@@ -538,7 +708,9 @@ pub unsafe extern "C" fn omc_fmi2CompletedIntegratorStep(
     enter_event_mode: *mut c_int,
     terminate_simulation: *mut c_int,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2CompletedIntegratorStep", st::CONTINUOUS, 0) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2CompletedIntegratorStep", st::CONTINUOUS, 0) else {
+        return ERROR;
+    };
     if enter_event_mode.is_null() || terminate_simulation.is_null() {
         return ERROR;
     }
@@ -556,17 +728,25 @@ pub unsafe extern "C" fn omc_fmi2CompletedIntegratorStep(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2SetTime(c: *mut c_void, time: f64) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetTime", st::EVENT | st::CONTINUOUS, 0) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2SetTime", st::EVENT | st::CONTINUOUS, 0) else {
+        return ERROR;
+    };
     code(c.n.inst.set_time(time))
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2SetContinuousStates(c: *mut c_void, x: *const f64, nx: usize) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetContinuousStates", st::INIT | st::EVENT | st::CONTINUOUS, 0) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2SetContinuousStates", st::INIT | st::EVENT | st::CONTINUOUS, 0) else {
+        return ERROR;
+    };
     if x.is_null() && nx != 0 {
         return ERROR;
     }
-    let states = if nx == 0 { Vec::new() } else { unsafe { core::slice::from_raw_parts(x, nx) }.to_vec() };
+    let states = if nx == 0 {
+        Vec::new()
+    } else {
+        unsafe { core::slice::from_raw_parts(x, nx) }.to_vec()
+    };
     code(c.n.inst.set_continuous_states(states))
 }
 
@@ -574,7 +754,9 @@ macro_rules! vector_getter {
     ($cfn:ident, $fname:literal, $me:expr, $cs:expr, $method:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, out: *mut f64, n: usize) -> c_int {
-            let Some(c) = in_state(c, $fname, $me, $cs) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $me, $cs) else {
+                return ERROR;
+            };
             if out.is_null() && n != 0 {
                 return ERROR;
             }
@@ -591,10 +773,34 @@ macro_rules! vector_getter {
         }
     };
 }
-vector_getter!(omc_fmi2GetDerivatives, "fmi2GetDerivatives", st::ME_READ, 0, get_continuous_state_derivatives);
-vector_getter!(omc_fmi2GetEventIndicators, "fmi2GetEventIndicators", st::ME_READ, 0, get_event_indicators);
-vector_getter!(omc_fmi2GetContinuousStates, "fmi2GetContinuousStates", st::ME_READ, 0, get_continuous_states);
-vector_getter!(omc_fmi2GetNominalsOfContinuousStates, "fmi2GetNominalsOfContinuousStates", st::ME_ANY, 0, get_nominals_of_continuous_states);
+vector_getter!(
+    omc_fmi2GetDerivatives,
+    "fmi2GetDerivatives",
+    st::ME_READ,
+    0,
+    get_continuous_state_derivatives
+);
+vector_getter!(
+    omc_fmi2GetEventIndicators,
+    "fmi2GetEventIndicators",
+    st::ME_READ,
+    0,
+    get_event_indicators
+);
+vector_getter!(
+    omc_fmi2GetContinuousStates,
+    "fmi2GetContinuousStates",
+    st::ME_READ,
+    0,
+    get_continuous_states
+);
+vector_getter!(
+    omc_fmi2GetNominalsOfContinuousStates,
+    "fmi2GetNominalsOfContinuousStates",
+    st::ME_ANY,
+    0,
+    get_nominals_of_continuous_states
+);
 
 // ── Co-Simulation ───────────────────────────────────────────────────────────
 
@@ -607,19 +813,28 @@ pub unsafe extern "C" fn omc_fmi2DoStep(
     communication_step_size: f64,
     no_set_fmu_state_prior: c_int,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2DoStep", 0, st::STEP_COMPLETE) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2DoStep", 0, st::STEP_COMPLETE) else {
+        return ERROR;
+    };
     if !matches!(c.n.kind, Kind::CoSimulation { .. }) {
         return ERROR;
     }
     let target = current_communication_point + communication_step_size;
-    (c.step_status, c.last_successful_time, c.terminated) =
-        match c.n.inst.do_step(current_communication_point, communication_step_size, b(no_set_fmu_state_prior)) {
-            Ok(r) => {
-                let status = if r.terminate_simulation || r.early_return || r.discarded { DISCARD } else { OK };
-                (status, r.last_successful_time, r.terminate_simulation)
-            }
-            Err(s) => (code(s), target, false),
-        };
+    (c.step_status, c.last_successful_time, c.terminated) = match c.n.inst.do_step(
+        current_communication_point,
+        communication_step_size,
+        b(no_set_fmu_state_prior),
+    ) {
+        Ok(r) => {
+            let status = if r.terminate_simulation || r.early_return || r.discarded {
+                DISCARD
+            } else {
+                OK
+            };
+            (status, r.last_successful_time, r.terminate_simulation)
+        }
+        Err(s) => (code(s), target, false),
+    };
     c.step_status
 }
 
@@ -630,7 +845,9 @@ pub unsafe extern "C" fn omc_fmi2CancelStep(_c: *mut c_void) -> c_int {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2GetStatus(c: *mut c_void, kind: c_int, value: *mut c_int) -> c_int {
-    let (Some(c), false) = (comp(c), value.is_null()) else { return ERROR };
+    let (Some(c), false) = (comp(c), value.is_null()) else {
+        return ERROR;
+    };
     if kind != DO_STEP_STATUS {
         return ERROR;
     }
@@ -640,7 +857,9 @@ pub unsafe extern "C" fn omc_fmi2GetStatus(c: *mut c_void, kind: c_int, value: *
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2GetRealStatus(c: *mut c_void, kind: c_int, value: *mut f64) -> c_int {
-    let (Some(c), false) = (comp(c), value.is_null()) else { return ERROR };
+    let (Some(c), false) = (comp(c), value.is_null()) else {
+        return ERROR;
+    };
     if kind != LAST_SUCCESSFUL_TIME {
         return ERROR;
     }
@@ -655,7 +874,9 @@ pub unsafe extern "C" fn omc_fmi2GetIntegerStatus(_c: *mut c_void, _kind: c_int,
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi2GetBooleanStatus(c: *mut c_void, kind: c_int, value: *mut c_int) -> c_int {
-    let (Some(c), false) = (comp(c), value.is_null()) else { return ERROR };
+    let (Some(c), false) = (comp(c), value.is_null()) else {
+        return ERROR;
+    };
     if kind != TERMINATED {
         return ERROR;
     }
@@ -680,12 +901,25 @@ pub unsafe extern "C" fn omc_fmi2SetRealInputDerivatives(
     orders: *const c_int,
     values: *const f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2SetRealInputDerivatives", 0, st::INSTANTIATED | st::INIT | st::STEP_COMPLETE) else { return ERROR };
-    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Real) }) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi2SetRealInputDerivatives",
+        0,
+        st::INSTANTIATED | st::INIT | st::STEP_COMPLETE,
+    ) else {
+        return ERROR;
+    };
+    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Real) }) else {
+        return ERROR;
+    };
     if (orders.is_null() || values.is_null()) && nvr != 0 {
         return ERROR;
     }
-    let requests = refs.iter().enumerate().map(|(i, vr)| (*vr, unsafe { *orders.add(i) }.max(0) as u32)).collect();
+    let requests = refs
+        .iter()
+        .enumerate()
+        .map(|(i, vr)| (*vr, unsafe { *orders.add(i) }.max(0) as u32))
+        .collect();
     let vals = (0..nvr).map(|i| unsafe { *values.add(i) }).collect();
     code(c.n.inst.set_input_derivatives(requests, vals))
 }
@@ -698,12 +932,20 @@ pub unsafe extern "C" fn omc_fmi2GetRealOutputDerivatives(
     orders: *const c_int,
     values: *mut f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi2GetRealOutputDerivatives", 0, st::CS_READ & !st::INIT) else { return ERROR };
-    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Real) }) else { return ERROR };
+    let Some(c) = in_state(c, "fmi2GetRealOutputDerivatives", 0, st::CS_READ & !st::INIT) else {
+        return ERROR;
+    };
+    let Some(refs) = (unsafe { shift(c, vr, nvr, Base::Real) }) else {
+        return ERROR;
+    };
     if (values.is_null() || orders.is_null()) && nvr != 0 {
         return ERROR;
     }
-    let requests = refs.iter().enumerate().map(|(i, vr)| (*vr, unsafe { *orders.add(i) }.max(0) as u32)).collect();
+    let requests = refs
+        .iter()
+        .enumerate()
+        .map(|(i, vr)| (*vr, unsafe { *orders.add(i) }.max(0) as u32))
+        .collect();
     match c.n.inst.get_output_derivatives(requests) {
         Ok(v) if v.len() == nvr => {
             for (i, x) in v.into_iter().enumerate() {

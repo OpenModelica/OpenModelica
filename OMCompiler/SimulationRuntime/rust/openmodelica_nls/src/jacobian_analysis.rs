@@ -2,10 +2,10 @@
 //! `kinsolSolver.c` still keeps next to KINSOL: what `-lv=LOG_NLS_DERIVATIVE_TEST`
 //! and `-lv=LOG_NLS_SVD` report about a nonlinear system's Jacobian.
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec;
+use openmodelica_solvers::fmath;
 
 use openmodelica_solvers::omclog;
 
@@ -43,7 +43,11 @@ impl Caller {
 
 fn sgn_e(v: f64, prec: usize) -> String {
     let s = omclog::e(v, 0, prec);
-    if v.is_sign_negative() || s.starts_with('-') { s } else { format!("+{s}") }
+    if v.is_sign_negative() || s.starts_with('-') {
+        s
+    } else {
+        format!("+{s}")
+    }
 }
 
 /// C's `nlsDenseJac` with `nominalJac` clear. Column-major, so `out[col * n + row]`
@@ -142,9 +146,8 @@ pub fn derivative_test(
         };
         for row in 0..n {
             let num_value = num[col * n + row];
-            let in_pattern = (colptr[col] as usize) <= nz
-                && nz < colptr[col + 1] as usize
-                && rowidx[nz] as usize == row;
+            let in_pattern =
+                (colptr[col] as usize) <= nz && nz < colptr[col + 1] as usize && rowidx[nz] as usize == row;
             if in_pattern {
                 let sym_value = sym[nz];
                 nz += 1;
@@ -195,8 +198,16 @@ pub fn derivative_test(
     omclog::close(stream);
 
     omclog::info(stream, true, "Summary");
-    omclog::info!(stream, false, "Numerical errors:  {numerical} (value mismatch w.r.t. reference)");
-    omclog::info!(stream, false, "Structural errors: {structural} (non-zero not in sparsity pattern)");
+    omclog::info!(
+        stream,
+        false,
+        "Numerical errors:  {numerical} (value mismatch w.r.t. reference)"
+    );
+    omclog::info!(
+        stream,
+        false,
+        "Structural errors: {structural} (non-zero not in sparsity pattern)"
+    );
     omclog::info!(stream, false, "Max relative error: {}", omclog::e(max_error, 0, 3));
     if numerical + structural > 0 {
         omclog::warning!(
@@ -228,7 +239,19 @@ pub fn svd_analysis(
     if count == 0 {
         return dense_svd(eq_index, time, n, colptr, rowidx, vals, scaled, caller);
     }
-    sparse_svd(eq_index, time, n, colptr, rowidx, vals, scaled, caller, count as usize, sigma, tol);
+    sparse_svd(
+        eq_index,
+        time,
+        n,
+        colptr,
+        rowidx,
+        vals,
+        scaled,
+        caller,
+        count as usize,
+        sigma,
+        tol,
+    );
 }
 
 fn dense(n: usize, colptr: &[i32], rowidx: &[i32], vals: &[f64]) -> vec::Vec<f64> {
@@ -290,7 +313,9 @@ fn scaled_by(sign: f64, v: &[f64]) -> vec::Vec<f64> {
 fn by_magnitude(v: &[f64]) -> vec::Vec<(usize, f64)> {
     let mut e: vec::Vec<(usize, f64)> = v.iter().copied().enumerate().collect();
     e.sort_by(|a, b| {
-        fmath::fabs(b.1).partial_cmp(&fmath::fabs(a.1)).unwrap_or(core::cmp::Ordering::Equal)
+        fmath::fabs(b.1)
+            .partial_cmp(&fmath::fabs(a.1))
+            .unwrap_or(core::cmp::Ordering::Equal)
     });
     e
 }
@@ -305,7 +330,11 @@ fn vector_sign(v: &[f64]) -> f64 {
             lead = i;
         }
     }
-    if v.get(lead).copied().unwrap_or(0.0) < 0.0 { -1.0 } else { 1.0 }
+    if v.get(lead).copied().unwrap_or(0.0) < 0.0 {
+        -1.0
+    } else {
+        1.0
+    }
 }
 
 /// C's `svd_sparse_print_vectors`, for one singular triplet.
@@ -354,13 +383,24 @@ fn print_vectors(eq_index: u32, n: usize, idx: usize, sigma: f64, v: &[f64], u: 
 /// C's `svd_sparse_main` + `svd_sparse_dump_statistics`.
 #[allow(clippy::too_many_arguments)]
 fn sparse_svd(
-    eq_index: u32, time: f64, n: usize, colptr: &[i32], rowidx: &[i32], vals: &[f64],
-    scaled: bool, caller: Caller, count: usize, sigma: f64, tol: f64,
+    eq_index: u32,
+    time: f64,
+    n: usize,
+    colptr: &[i32],
+    rowidx: &[i32],
+    vals: &[f64],
+    scaled: bool,
+    caller: Caller,
+    count: usize,
+    sigma: f64,
+    tol: f64,
 ) {
     let s = omclog::NLS_SVD;
     #[cfg(not(primme))]
     {
-        let _ = (eq_index, time, n, colptr, rowidx, vals, scaled, caller, count, sigma, tol);
+        let _ = (
+            eq_index, time, n, colptr, rowidx, vals, scaled, caller, count, sigma, tol,
+        );
         omclog::error(
             omclog::STDOUT,
             false,
@@ -374,9 +414,19 @@ fn sparse_svd(
         unsafe extern "C" {
             #[allow(clippy::too_many_arguments)]
             fn omc_primme_svds(
-                n: i32, colptr: *const i32, rowidx: *const i32, vals: *const f64, count: i32,
-                sigma: f64, tol: f64, print_level: i32, sval_top: *mut f64, rnorm_top: *mut f64,
-                svals: *mut f64, rnorms: *mut f64, svecs: *mut f64,
+                n: i32,
+                colptr: *const i32,
+                rowidx: *const i32,
+                vals: *const f64,
+                count: i32,
+                sigma: f64,
+                tol: f64,
+                print_level: i32,
+                sval_top: *mut f64,
+                rnorm_top: *mut f64,
+                svals: *mut f64,
+                rnorms: *mut f64,
+                svecs: *mut f64,
             ) -> i32;
         }
         let want = count.min(n);
@@ -387,13 +437,27 @@ fn sparse_svd(
         let level = if omclog::active(omclog::NLS_SVD_V) { 2 } else { 0 };
         let found = unsafe {
             omc_primme_svds(
-                n as i32, colptr.as_ptr(), rowidx.as_ptr(), vals.as_ptr(), want as i32, sigma,
-                tol, level, &mut sval_top, &mut rnorm_top, svals.as_mut_ptr(), rnorms.as_mut_ptr(),
+                n as i32,
+                colptr.as_ptr(),
+                rowidx.as_ptr(),
+                vals.as_ptr(),
+                want as i32,
+                sigma,
+                tol,
+                level,
+                &mut sval_top,
+                &mut rnorm_top,
+                svals.as_mut_ptr(),
+                rnorms.as_mut_ptr(),
                 svecs.as_mut_ptr(),
             )
         };
         if found < 0 {
-            omclog::error(omclog::STDOUT, false, "Error: primme_svds returned with nonzero exit status");
+            omclog::error(
+                omclog::STDOUT,
+                false,
+                "Error: primme_svds returned with nonzero exit status",
+            );
             return;
         }
         let found = (found as usize).min(want);
@@ -407,7 +471,11 @@ fn sparse_svd(
         print_matrix_info(eq_index, time, n, vals.len());
         // C's `cond`: infinite where the smallest singular value vanished.
         let sigma_min = svals.first().copied().unwrap_or(0.0);
-        print_cond(if sigma_min != 0.0 { sval_top / sigma_min } else { f64::INFINITY });
+        print_cond(if sigma_min != 0.0 {
+            sval_top / sigma_min
+        } else {
+            f64::INFINITY
+        });
 
         omclog::info(s, true, "Smallest Singular values");
         for i in 0..found {
@@ -446,8 +514,14 @@ fn sparse_svd(
 /// C's `svd_dense_main`, for `-svdCount=0`.
 #[allow(clippy::too_many_arguments)]
 fn dense_svd(
-    eq_index: u32, time: f64, n: usize, colptr: &[i32], rowidx: &[i32], vals: &[f64],
-    scaled: bool, caller: Caller,
+    eq_index: u32,
+    time: f64,
+    n: usize,
+    colptr: &[i32],
+    rowidx: &[i32],
+    vals: &[f64],
+    scaled: bool,
+    caller: Caller,
 ) {
     let s = omclog::NLS_SVD;
     let mut a = dense(n, colptr, rowidx, vals);
@@ -464,7 +538,11 @@ fn dense_svd(
     );
     print_matrix_info(eq_index, time, n, vals.len());
     let sigma_min = sv[n - 1];
-    print_cond(if sigma_min > 0.0 { sv[0] / sigma_min } else { f64::INFINITY });
+    print_cond(if sigma_min > 0.0 {
+        sv[0] / sigma_min
+    } else {
+        f64::INFINITY
+    });
     omclog::info(s, true, "Singular values");
     for (i, v) in sv.iter().enumerate() {
         omclog::info!(s, false, "sigma_{:<3} = {}", i + 1, omclog::e(*v, 0, 8));
@@ -482,14 +560,22 @@ fn dense_svd(
         omclog::e(tol, 0, 8),
     );
     omclog::info(
-        s, false,
-        if rank < n { "Matrix may be rank-deficient." } else { "Matrix should have full rank." },
+        s,
+        false,
+        if rank < n {
+            "Matrix may be rank-deficient."
+        } else {
+            "Matrix should have full rank."
+        },
     );
     omclog::close(s);
     let threshold = 0.01 * sv[0];
     let first_below = sv.iter().position(|v| *v < threshold).unwrap_or(n);
     if first_below == n {
-        for what in ["Smallest right singular vectors (variable space)", "Smallest left singular vectors (function space)"] {
+        for what in [
+            "Smallest right singular vectors (variable space)",
+            "Smallest left singular vectors (function space)",
+        ] {
             omclog::info(s, true, what);
             omclog::info!(
                 s,

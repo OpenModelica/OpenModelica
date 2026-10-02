@@ -27,8 +27,7 @@ pub mod validate;
 mod tubes;
 
 pub use ellipse2014::{
-    DOUBLEEQUAL_REL, DOUBLEEQUAL_TOTAL, TubeCmp, almost_equal_default, almost_equal_rel_abs,
-    cmp_data_tubes,
+    DOUBLEEQUAL_REL, DOUBLEEQUAL_TOTAL, TubeCmp, almost_equal_default, almost_equal_rel_abs, cmp_data_tubes,
 };
 pub use format::{format_g, format_g_prec, format_g_prec15};
 pub use html::tube_html;
@@ -59,7 +58,9 @@ impl Algorithm {
             "rectangle" => Ok(Algorithm::Rectangle),
             "ellipse" => Ok(Algorithm::Ellipse),
             "ellipse2014" | "openmodelica" => Ok(Algorithm::Ellipse2014),
-            _ => Err(format!("unknown algorithm {s}: expected rectangle, ellipse or ellipse2014")),
+            _ => Err(format!(
+                "unknown algorithm {s}: expected rectangle, ellipse or ellipse2014"
+            )),
         }
     }
 
@@ -180,9 +181,18 @@ pub fn compare(
         let delta_error = validate::delta_error(&time, &cmp.calibrated, &error);
         return Ok(Comparison {
             algorithm: settings.algorithm,
-            reference: Curve { x: reftime.clone(), y: refvalues.to_vec() },
-            lower: Curve { x: time.clone(), y: cmp.low.clone() },
-            upper: Curve { x: time.clone(), y: cmp.high.clone() },
+            reference: Curve {
+                x: reftime.clone(),
+                y: refvalues.to_vec(),
+            },
+            lower: Curve {
+                x: time.clone(),
+                y: cmp.low.clone(),
+            },
+            upper: Curve {
+                x: time.clone(),
+                y: cmp.high.clone(),
+            },
             time,
             values: cmp.calibrated,
             low: cmp.low,
@@ -213,7 +223,10 @@ pub fn compare(
     let delta_error = validate::delta_error(&time, &values, &v.error);
     Ok(Comparison {
         algorithm: settings.algorithm,
-        reference: Curve { x: reftime, y: refvalues.to_vec() },
+        reference: Curve {
+            x: reftime,
+            y: refvalues.to_vec(),
+        },
         lower,
         upper,
         time,

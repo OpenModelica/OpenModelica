@@ -128,7 +128,12 @@ impl ExtArchives {
         static LINKED: LazyLock<Mutex<HashMap<String, std::result::Result<String, String>>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         let key = format!("{}\n{}", self.archives.join("\n"), self.symbols.join(" "));
-        LINKED.lock().unwrap().entry(key).or_insert_with(|| self.link_uncached()).clone()
+        LINKED
+            .lock()
+            .unwrap()
+            .entry(key)
+            .or_insert_with(|| self.link_uncached())
+            .clone()
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -158,14 +163,21 @@ impl ExtArchives {
             // `protected` binds the reference at link time — a non-PIC `.text`
             // takes no dynamic relocation — yet keeps the symbol exported, so
             // `dynload::register_rhs_final_flag` can find this copy.
-            let vis = if cfg!(windows) { "" } else { " __attribute__((visibility(\"protected\")))" };
+            let vis = if cfg!(windows) {
+                ""
+            } else {
+                " __attribute__((visibility(\"protected\")))"
+            };
             std::fs::write(&tu, format!("int RHSFinalFlag{vis};\n"))
                 .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
             cmd.arg("-fPIC").arg(&tu);
         }
-        let output = cmd
-            .output()
-            .map_err(|e| format!("`{}` could not be run to link the static libraries: {e}", self.ccompiler))?;
+        let output = cmd.output().map_err(|e| {
+            format!(
+                "`{}` could not be run to link the static libraries: {e}",
+                self.ccompiler
+            )
+        })?;
         if !output.status.success() {
             return Err(format!(
                 "the static libraries ({}) did not link into a loadable one:\n{}\n{}",
@@ -179,10 +191,12 @@ impl ExtArchives {
 
     #[cfg(target_arch = "wasm32")]
     pub fn link(&self) -> std::result::Result<String, String> {
-        Err("the implementation comes from a static library, which has to be linked — the browser \
+        Err(
+            "the implementation comes from a static library, which has to be linked — the browser \
              omc has no linker. Provide it as a `Library` built with \
              `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
-            .to_string())
+                .to_string(),
+        )
     }
 }
 
@@ -252,9 +266,13 @@ impl ExtIncludes {
         let wrappers = ext_wrappers(missing);
         match self.build(&wrappers) {
             // Keep why they did not compile: it explains a symbol still missing.
-            Err(e) if !wrappers.is_empty() => {
-                self.build("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
-            }
+            Err(e) if !wrappers.is_empty() => self
+                .build("")
+                .map(|path| Built {
+                    path,
+                    note: Some(e.clone()),
+                })
+                .map_err(|_| e),
             r => r.map(|path| Built { path, note: None }),
         }
     }
@@ -283,8 +301,11 @@ impl ExtIncludes {
         };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
-        std::fs::write(&tu, [INCLUDE_PREAMBLE, &self.sources.join("\n"), "\n", wrappers].concat())
-            .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
+        std::fs::write(
+            &tu,
+            [INCLUDE_PREAMBLE, &self.sources.join("\n"), "\n", wrappers].concat(),
+        )
+        .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
         cmd.args(["-shared", "-fPIC", "-O1"]);
@@ -320,9 +341,12 @@ impl ExtIncludes {
                 cmd.arg(format!("-l:{lib}"));
             }
         }
-        let output = cmd
-            .output()
-            .map_err(|e| format!("`{}` could not be run to compile the `Include` C sources: {e}", self.ccompiler))?;
+        let output = cmd.output().map_err(|e| {
+            format!(
+                "`{}` could not be run to compile the `Include` C sources: {e}",
+                self.ccompiler
+            )
+        })?;
         if !output.status.success() {
             return Err(format!(
                 "the `Include` C sources did not compile:\n{}\n{}",
@@ -336,10 +360,12 @@ impl ExtIncludes {
 
     #[cfg(target_arch = "wasm32")]
     pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
-        Err("the implementation comes from an `Include` annotation with C source, which has to be \
+        Err(
+            "the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
              `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
-            .to_string())
+                .to_string(),
+        )
     }
 }
 
@@ -393,7 +419,11 @@ fn ext_prototype(sig: &ExtCallSig) -> Option<String> {
         Some(ty) => ext_c_type(ty)?.to_owned(),
         None => "void".to_owned(),
     };
-    Some(format!("extern {ret} {}({});\n", sig.name, if params.is_empty() { "void".to_owned() } else { params }))
+    Some(format!(
+        "extern {ret} {}({});\n",
+        sig.name,
+        if params.is_empty() { "void".to_owned() } else { params }
+    ))
 }
 
 /// Fortran passes everything by reference, and so does an `_Out_` scalar; an array
@@ -403,7 +433,8 @@ fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
     sig.args
         .iter()
         .map(|(ty, is_out)| {
-            let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
+            let ptr =
+                *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
             Some(format!("{}{}", ext_c_arg_type(ty)?, if ptr { "*" } else { "" }))
         })
         .collect()
@@ -473,7 +504,13 @@ pub fn external_symbol_or_wrapper_shippable(handles: &[usize], name: &str) -> Op
 #[cfg(not(target_arch = "wasm32"))]
 fn external_symbol_or_wrapper_impl(handles: &[usize], name: &str, shippable: bool) -> Option<usize> {
     use openmodelica_util::dynload::{external_symbol_in, symbol_in};
-    let find = |n: &str| if shippable { symbol_in(handles, n) } else { external_symbol_in(handles, n) };
+    let find = |n: &str| {
+        if shippable {
+            symbol_in(handles, n)
+        } else {
+            external_symbol_in(handles, n)
+        }
+    };
     if let Some(addr) = find(&format!("{EXT_CALL_PREFIX}{name}")) {
         return Some(addr);
     }
@@ -555,7 +592,11 @@ pub fn command_line(cmd: &std::process::Command) -> String {
         .chain(cmd.get_args())
         .map(|a| {
             let a = a.to_string_lossy();
-            if a.contains(char::is_whitespace) { format!("\"{a}\"") } else { a.into_owned() }
+            if a.contains(char::is_whitespace) {
+                format!("\"{a}\"")
+            } else {
+                a.into_owned()
+            }
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -625,8 +666,7 @@ pub fn set_sim_bench(on: bool) {
 
 #[cfg(feature = "jit")]
 pub fn sim_bench_enabled() -> bool {
-    SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed)
-        || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
+    SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed) || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
 }
 
 /// The largest function body in a wasm module; see `sim_runtime::select_engine_for`.

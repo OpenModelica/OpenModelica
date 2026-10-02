@@ -1,10 +1,10 @@
 //! The persistent singly-linked `List<T>` and its builtins.
 //! Construction/field macros live in [`macros`].
 
-use std::sync::Arc;
-use std::hash::{Hash, Hasher};
-use std::cmp::Ordering;
 use crate::Result;
+use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 #[macro_use]
 mod macros;
@@ -13,7 +13,7 @@ mod macros;
 /// `List(None)`, and `Deref` hands out a static `Nil` for it.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ListNode<T: Clone> {
-    Cons{head: T, tail: List<T>},
+    Cons { head: T, tail: List<T> },
     Nil,
 }
 
@@ -29,7 +29,9 @@ use ListNode::{Cons, Nil};
 impl<T: Clone> List<T> {
     #[inline]
     pub fn iter(&self) -> ListRefIterator<'_, T> {
-        ListRefIterator { curr: self.0.as_deref() }
+        ListRefIterator {
+            curr: self.0.as_deref(),
+        }
     }
     #[inline]
     fn node(&self) -> Option<&ListNode<T>> {
@@ -54,17 +56,23 @@ impl<T: Clone + 'static> std::ops::Deref for List<T> {
 
 impl<T: Clone + 'static> AsRef<ListNode<T>> for List<T> {
     #[inline]
-    fn as_ref(&self) -> &ListNode<T> { self }
+    fn as_ref(&self) -> &ListNode<T> {
+        self
+    }
 }
 
 impl<T: Clone> Clone for List<T> {
     #[inline]
-    fn clone(&self) -> Self { List(self.0.clone()) }
+    fn clone(&self) -> Self {
+        List(self.0.clone())
+    }
 }
 
 impl<T: Clone> Default for List<T> {
     #[inline]
-    fn default() -> Self { List(None) }
+    fn default() -> Self {
+        List(None)
+    }
 }
 
 impl<T: Clone + std::fmt::Debug> std::fmt::Debug for List<T> {
@@ -80,11 +88,16 @@ impl<T: Clone + PartialEq> PartialEq for List<T> {
             match (&a.0, &b.0) {
                 (None, None) => return true,
                 (Some(x), Some(y)) => {
-                    if Arc::ptr_eq(x, y) { return true; }
+                    if Arc::ptr_eq(x, y) {
+                        return true;
+                    }
                     match (&**x, &**y) {
-                        (Cons{head: h1, tail: t1}, Cons{head: h2, tail: t2}) => {
-                            if h1 != h2 { return false; }
-                            a = t1; b = t2;
+                        (Cons { head: h1, tail: t1 }, Cons { head: h2, tail: t2 }) => {
+                            if h1 != h2 {
+                                return false;
+                            }
+                            a = t1;
+                            b = t2;
                         }
                         _ => return false,
                     }
@@ -106,16 +119,19 @@ impl<T: Clone + Ord> Ord for List<T> {
                 (None, Some(_)) => return Ordering::Greater,
                 (Some(_), None) => return Ordering::Less,
                 (Some(x), Some(y)) => {
-                    if Arc::ptr_eq(x, y) { return Ordering::Equal; }
+                    if Arc::ptr_eq(x, y) {
+                        return Ordering::Equal;
+                    }
                     match (&**x, &**y) {
-                        (Cons{head: h1, tail: t1}, Cons{head: h2, tail: t2}) => {
-                            match h1.cmp(h2) {
-                                Ordering::Equal => { a = t1; b = t2; }
-                                o => return o,
+                        (Cons { head: h1, tail: t1 }, Cons { head: h2, tail: t2 }) => match h1.cmp(h2) {
+                            Ordering::Equal => {
+                                a = t1;
+                                b = t2;
                             }
-                        }
-                        (Cons{..}, Nil) => return Ordering::Less,
-                        (Nil, Cons{..}) => return Ordering::Greater,
+                            o => return o,
+                        },
+                        (Cons { .. }, Nil) => return Ordering::Less,
+                        (Nil, Cons { .. }) => return Ordering::Greater,
                         (Nil, Nil) => return Ordering::Equal,
                     }
                 }
@@ -132,16 +148,19 @@ impl<T: Clone + PartialOrd> PartialOrd for List<T> {
                 (None, Some(_)) => return Some(Ordering::Greater),
                 (Some(_), None) => return Some(Ordering::Less),
                 (Some(x), Some(y)) => {
-                    if Arc::ptr_eq(x, y) { return Some(Ordering::Equal); }
+                    if Arc::ptr_eq(x, y) {
+                        return Some(Ordering::Equal);
+                    }
                     match (&**x, &**y) {
-                        (Cons{head: h1, tail: t1}, Cons{head: h2, tail: t2}) => {
-                            match h1.partial_cmp(h2) {
-                                Some(Ordering::Equal) => { a = t1; b = t2; }
-                                o => return o,
+                        (Cons { head: h1, tail: t1 }, Cons { head: h2, tail: t2 }) => match h1.partial_cmp(h2) {
+                            Some(Ordering::Equal) => {
+                                a = t1;
+                                b = t2;
                             }
-                        }
-                        (Cons{..}, Nil) => return Some(Ordering::Less),
-                        (Nil, Cons{..}) => return Some(Ordering::Greater),
+                            o => return o,
+                        },
+                        (Cons { .. }, Nil) => return Some(Ordering::Less),
+                        (Nil, Cons { .. }) => return Some(Ordering::Greater),
                         (Nil, Nil) => return Some(Ordering::Equal),
                     }
                 }
@@ -166,7 +185,9 @@ impl<T: Clone + Hash> Hash for List<T> {
 impl<T: Clone> Drop for List<T> {
     #[inline]
     fn drop(&mut self) {
-        if let Some(node) = &self.0 && Arc::strong_count(node) == 1 {
+        if let Some(node) = &self.0
+            && Arc::strong_count(node) == 1
+        {
             self.unlink();
         }
     }
@@ -192,7 +213,7 @@ pub fn nil<T: Clone>() -> List<T> {
 
 #[inline]
 pub fn cons<T: Clone>(head: T, tail: List<T>) -> List<T> {
-    List(Some(Arc::new(Cons{head, tail})))
+    List(Some(Arc::new(Cons { head, tail })))
 }
 
 pub struct ListRefIterator<'a, T: Clone> {
@@ -215,7 +236,7 @@ impl<'a, T: Clone> IntoIterator for &'a List<T> {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-       self.iter()
+        self.iter()
     }
 }
 
@@ -225,7 +246,7 @@ impl<'a, T: Clone> IntoIterator for &'a ListNode<T> {
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-       ListRefIterator { curr: Some(self) }
+        ListRefIterator { curr: Some(self) }
     }
 }
 
@@ -289,7 +310,8 @@ impl<T: Clone> List<T> {
     }
     /// Gets the element at the given 1-based index. O(index).
     pub fn get(&self, index: i32) -> Result<T> {
-        self.into_iter().nth((index - 1) as usize)
+        self.into_iter()
+            .nth((index - 1) as usize)
             .cloned()
             .ok_or_else(|| "Index {} out of bounds for list of length {}")
     }
@@ -313,8 +335,8 @@ impl<T: Clone> List<T> {
         let mut cur_index = index;
         loop {
             cur_index -= 1;
-            let (head,tail) = match iter.node() {
-                Some(Cons{head, tail}) => (head, tail),
+            let (head, tail) = match iter.node() {
+                Some(Cons { head, tail }) => (head, tail),
                 _ => return Err("Index {} out of bounds for list"),
             };
             iter = tail;
@@ -334,7 +356,7 @@ impl<T: Clone> List<T> {
     /// Fails if the list is empty.
     pub fn head(&self) -> Result<&T> {
         match self.node() {
-            Some(Cons{head, ..}) => Ok(head),
+            Some(Cons { head, .. }) => Ok(head),
             _ => Err("Cannot get head of empty list"),
         }
     }
@@ -342,7 +364,7 @@ impl<T: Clone> List<T> {
     /// Fails if the list is empty.
     pub fn rest(&self) -> Result<List<T>> {
         match self.node() {
-            Some(Cons{tail, ..}) => Ok(tail.clone()),
+            Some(Cons { tail, .. }) => Ok(tail.clone()),
             _ => Err("Cannot get rest of empty list"),
         }
     }
@@ -358,7 +380,9 @@ impl<T: PartialEq + Clone> List<T> {
     /// Uses PartialEq for comparison.
     pub fn contains(&self, element: &T) -> bool {
         for item in self {
-            if element.eq(item) { return true; }
+            if element.eq(item) {
+                return true;
+            }
         }
         false
     }
@@ -377,16 +401,16 @@ pub fn listAppend<T: Clone>(mut lst1: List<T>, lst2: List<T>) -> List<T> {
                 *cur = lst2;
                 return lst1;
             }
-            Some(node) => {
-                Arc::strong_count(node) == 1 && Arc::weak_count(node) == 0 && matches!(&**node, Cons { .. })
-            }
+            Some(node) => Arc::strong_count(node) == 1 && Arc::weak_count(node) == 0 && matches!(&**node, Cons { .. }),
         };
         if !unique_cons {
             let suffix = cur.clone();
             *cur = suffix.append(&lst2);
             return lst1;
         }
-        let Some(Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else { unreachable!() };
+        let Some(Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else {
+            unreachable!()
+        };
         cur = tail;
     }
 }
@@ -400,7 +424,7 @@ pub fn listReverse<T: Clone>(lst: List<T>) -> List<T> {
     lst.reverse()
 }
 
-pub fn listMember<T: Clone+PartialEq>(element: T, lst: List<T>) -> bool {
+pub fn listMember<T: Clone + PartialEq>(element: T, lst: List<T>) -> bool {
     lst.contains(&element)
 }
 
@@ -433,9 +457,9 @@ pub fn listLength<T: Clone>(lst: List<T>) -> i32 {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod list_function_tests {
         use super::*;
 
@@ -578,7 +602,7 @@ mod tests {
 
         #[test]
         fn test_list_reverse2() -> () {
-            let lst1 = list![1,2,3,4];
+            let lst1 = list![1, 2, 3, 4];
             let lst2 = lst1.clone().reverse();
             let lst3 = lst2.clone().reverse();
             assert_eq!(lst1, lst3);

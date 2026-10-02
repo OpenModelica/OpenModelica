@@ -47,7 +47,13 @@ fn const_step(step: &Option<metamodelica::Ref<DAE::Exp>>) -> Option<i32> {
 
 /// Leave `it` has passed `stop` on the stack — which way, per C's
 /// `in_range_integer`, is the step's sign.
-pub(super) fn emit_range_done(ctx: &mut FnCtx, step: &Option<metamodelica::Ref<DAE::Exp>>, it: u32, step_l: u32, stop_l: u32) {
+pub(super) fn emit_range_done(
+    ctx: &mut FnCtx,
+    step: &Option<metamodelica::Ref<DAE::Exp>>,
+    it: u32,
+    step_l: u32,
+    stop_l: u32,
+) {
     ctx.emit(we::Instruction::LocalGet(it));
     ctx.emit(we::Instruction::LocalGet(stop_l));
     match const_step(step) {
@@ -170,8 +176,10 @@ fn emit_red_thread(
     body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
     use we::Instruction as I;
-    let saved: Vec<(String, Option<(u32, SigTy)>)> =
-        iters.iter().map(|i| (i.id.to_string(), ctx.locals.get(i.id.as_str()).cloned())).collect();
+    let saved: Vec<(String, Option<(u32, SigTy)>)> = iters
+        .iter()
+        .map(|i| (i.id.to_string(), ctx.locals.get(i.id.as_str()).cloned()))
+        .collect();
     let mut binds = Vec::with_capacity(iters.len());
     for iter in iters {
         binds.push(bind_thread_iter(ctx, iter)?);
@@ -492,7 +500,8 @@ pub(super) fn compile_reduction(
         let acc = ctx.alloc_temp(elem_wty);
         let foldval = ctx.alloc_temp(elem_wty);
         ctx.locals.insert(info.resultName.to_string(), (acc, elem_sty.clone()));
-        ctx.locals.insert(info.foldName.to_string(), (foldval, elem_sty.clone()));
+        ctx.locals
+            .insert(info.foldName.to_string(), (foldval, elem_sty.clone()));
         emit_value_const(ctx, default, elem_wty)?;
         ctx.emit(we::Instruction::LocalSet(acc));
         emit_red_iteration(ctx, thread, &iters, &mut |ctx| {
@@ -514,7 +523,11 @@ pub(super) fn compile_reduction(
         return Err("CodegenWasmJit: guarded array comprehension not supported");
     }
     let elem_sty = exp_sigty(expr)?;
-    if let SigTy::Array { elem: base, rank: erank } = &elem_sty {
+    if let SigTy::Array {
+        elem: base,
+        rank: erank,
+    } = &elem_sty
+    {
         return compile_array_comprehension_flat(ctx, expr, thread, &iters, base, *erank);
     }
     let elem_wty = elem_sty.wty();

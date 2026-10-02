@@ -11,9 +11,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::{c_int, c_void};
 
-use crate::sundials::{
-    self, Counters, Cvode, Ida, IdaLs, IdaOptions, NVector, Stop, nv_data,
-};
+use crate::sundials::{self, Counters, Cvode, Ida, IdaLs, IdaOptions, NVector, Stop, nv_data};
 use crate::{Dae, Ode, Result};
 
 /// How far one step got.
@@ -76,7 +74,10 @@ impl OdeJac {
                 v
             })
             .collect();
-        let wide: Vec<Vec<usize>> = rows_by_col.iter().map(|r| r.iter().map(|&x| x as usize).collect()).collect();
+        let wide: Vec<Vec<usize>> = rows_by_col
+            .iter()
+            .map(|r| r.iter().map(|&x| x as usize).collect())
+            .collect();
         let colors = crate::gbode::color_columns(&wide, n)
             .into_iter()
             .map(|g| g.into_iter().map(|c| c as u32).collect())
@@ -123,13 +124,26 @@ unsafe extern "C" fn ode_jac(
 ) -> c_int {
     let c = unsafe { &mut *(user as *mut Ctx) };
     let n = c.n;
-    let (ypv, base) =
-        unsafe { (core::slice::from_raw_parts(nv_data(yp), n), core::slice::from_raw_parts(nv_data(rr), n)) };
+    let (ypv, base) = unsafe {
+        (
+            core::slice::from_raw_parts(nv_data(yp), n),
+            core::slice::from_raw_parts(nv_data(rr), n),
+        )
+    };
     let h = sundials::ida_current_step(c.mem);
     unsafe {
-        fill_ode_jac(c, t, nv_data(yy), &|i| ypv[i] - base[i], &|i| ypv[i], h, j, &|row, col, d| {
-            if row == col { cj - d } else { -d }
-        })
+        fill_ode_jac(
+            c,
+            t,
+            nv_data(yy),
+            &|i| ypv[i] - base[i],
+            &|i| ypv[i],
+            h,
+            j,
+            &|row, col, d| {
+                if row == col { cj - d } else { -d }
+            },
+        )
     }
 }
 
@@ -165,7 +179,15 @@ unsafe fn fill_ode_jac(
     j: sundials::SunMatrix,
     entry: &dyn Fn(usize, usize, f64) -> f64,
 ) -> c_int {
-    let Ctx { ode, n, failed, jac, tol, nominals, .. } = c;
+    let Ctx {
+        ode,
+        n,
+        failed,
+        jac,
+        tol,
+        nominals,
+        ..
+    } = c;
     let n = *n;
     let Some(jac) = jac.as_deref_mut() else { return -1 };
     let ys = unsafe { core::slice::from_raw_parts_mut(y, n) };
@@ -242,7 +264,10 @@ unsafe extern "C" fn rhs(t: f64, y: NVector, ydot: NVector, user: *mut c_void) -
     let c = unsafe { &mut *(user as *mut Ctx) };
     let n = c.n;
     let (y, f) = unsafe {
-        (core::slice::from_raw_parts(nv_data(y), n), core::slice::from_raw_parts_mut(nv_data(ydot), n))
+        (
+            core::slice::from_raw_parts(nv_data(y), n),
+            core::slice::from_raw_parts_mut(nv_data(ydot), n),
+        )
     };
     let r = c.ode.eval(t, y, f);
     fail(c, r)
@@ -252,7 +277,10 @@ unsafe extern "C" fn roots(t: f64, y: NVector, gout: *mut f64, user: *mut c_void
     let c = unsafe { &mut *(user as *mut Ctx) };
     let (n, n_zc) = (c.n, c.n_zc);
     let (y, g) = unsafe {
-        (core::slice::from_raw_parts(nv_data(y), n), core::slice::from_raw_parts_mut(gout, n_zc))
+        (
+            core::slice::from_raw_parts(nv_data(y), n),
+            core::slice::from_raw_parts_mut(gout, n_zc),
+        )
     };
     // A root function has no recoverable answer.
     match c.ode.eval_zc(t, y, g) {
@@ -265,13 +293,7 @@ unsafe extern "C" fn roots(t: f64, y: NVector, gout: *mut f64, user: *mut c_void
     }
 }
 
-unsafe extern "C" fn ida_res(
-    t: f64,
-    yy: NVector,
-    yp: NVector,
-    rr: NVector,
-    user: *mut c_void,
-) -> c_int {
+unsafe extern "C" fn ida_res(t: f64, yy: NVector, yp: NVector, rr: NVector, user: *mut c_void) -> c_int {
     let c = unsafe { &mut *(user as *mut Ctx) };
     let n = c.n;
     let (y, yp, r) = unsafe {
@@ -291,13 +313,7 @@ unsafe extern "C" fn ida_res(
     0
 }
 
-unsafe extern "C" fn ida_roots(
-    t: f64,
-    yy: NVector,
-    _yp: NVector,
-    gout: *mut f64,
-    user: *mut c_void,
-) -> c_int {
+unsafe extern "C" fn ida_roots(t: f64, yy: NVector, _yp: NVector, gout: *mut f64, user: *mut c_void) -> c_int {
     unsafe { roots(t, yy, gout, user) }
 }
 
@@ -394,13 +410,7 @@ impl CvodeOde {
     }
 
     /// Integrate from `(t, y)` toward `target`.
-    pub fn step(
-        &mut self,
-        ode: &mut dyn Ode,
-        target: f64,
-        t: &mut f64,
-        y: &mut [f64],
-    ) -> Result<SunStep> {
+    pub fn step(&mut self, ode: &mut dyn Ode, target: f64, t: &mut f64, y: &mut [f64]) -> Result<SunStep> {
         if y.is_empty() {
             *t = target;
             return Ok(SunStep::Reached);
@@ -410,7 +420,17 @@ impl CvodeOde {
         let CvodeOde { cv, jac, nominals, .. } = self;
         let cv = cv.as_mut().expect("prepare built it");
         let mem = cv.mem();
-        let mut ctx = Ctx { ode, n, n_zc, f: &mut [], failed: None, jac: jac.as_mut(), mem, tol, nominals };
+        let mut ctx = Ctx {
+            ode,
+            n,
+            n_zc,
+            f: &mut [],
+            failed: None,
+            jac: jac.as_mut(),
+            mem,
+            tol,
+            nominals,
+        };
         if !cv.set_user_data(&mut ctx as *mut Ctx as *mut c_void) {
             return Err("cvode: the context could not be bound");
         }
@@ -517,23 +537,29 @@ impl IdaOde {
         }
     }
 
-    pub fn step(
-        &mut self,
-        ode: &mut dyn Ode,
-        target: f64,
-        t: &mut f64,
-        y: &mut [f64],
-    ) -> Result<SunStep> {
+    pub fn step(&mut self, ode: &mut dyn Ode, target: f64, t: &mut f64, y: &mut [f64]) -> Result<SunStep> {
         if y.is_empty() {
             *t = target;
             return Ok(SunStep::Reached);
         }
         self.prepare(ode, *t, y)?;
         let (n, n_zc, tol) = (self.n, self.n_zc, self.tolerance);
-        let IdaOde { ida, jac, f, nominals, .. } = self;
+        let IdaOde {
+            ida, jac, f, nominals, ..
+        } = self;
         let ida = ida.as_mut().expect("prepare built it");
         let mem = ida.mem_ptr();
-        let mut ctx = Ctx { ode, n, n_zc, f, failed: None, jac: jac.as_mut(), mem, tol, nominals };
+        let mut ctx = Ctx {
+            ode,
+            n,
+            n_zc,
+            f,
+            failed: None,
+            jac: jac.as_mut(),
+            mem,
+            tol,
+            nominals,
+        };
         if !ida.set_user_data(&mut ctx as *mut Ctx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }
@@ -592,8 +618,21 @@ impl IdaOde {
             None => (IdaLs::Dense, 0, None),
         };
         self.ida = Some(
-            Ida::new(t, y, &yp, self.tolerance, &atol, self.n_zc, ida_res, root, ls, nnz, jac_fn, &opts)
-                .ok_or("ida: the integrator could not be created")?,
+            Ida::new(
+                t,
+                y,
+                &yp,
+                self.tolerance,
+                &atol,
+                self.n_zc,
+                ida_res,
+                root,
+                ls,
+                nnz,
+                jac_fn,
+                &opts,
+            )
+            .ok_or("ida: the integrator could not be created")?,
         );
         Ok(())
     }
@@ -602,7 +641,9 @@ impl IdaOde {
 /// `cvode_solver.c`'s messages for the flags a run can end on.
 fn cvode_failure(flag: c_int) -> &'static str {
     match flag {
-        sundials::CV_TOO_MUCH_WORK => "cvode: the solver took the maximum number of steps before reaching the output point",
+        sundials::CV_TOO_MUCH_WORK => {
+            "cvode: the solver took the maximum number of steps before reaching the output point"
+        }
         -2 => "cvode: the error tolerances are too small",
         -3 => "cvode: the error test failed repeatedly, or with |h| = hmin",
         -4 => "cvode: the corrector could not converge",
@@ -618,7 +659,9 @@ fn cvode_failure(flag: c_int) -> &'static str {
 /// `ida_solver.c`'s messages for the flags a run can end on.
 fn ida_failure(flag: c_int) -> &'static str {
     match flag {
-        sundials::IDA_TOO_MUCH_WORK => "ida: the solver took the maximum number of steps before reaching the output point",
+        sundials::IDA_TOO_MUCH_WORK => {
+            "ida: the solver took the maximum number of steps before reaching the output point"
+        }
         -2 => "ida: the error tolerances are too small",
         sundials::IDA_ERR_FAIL => "ida: the error test failed repeatedly, or with |h| = hmin",
         sundials::IDA_CONV_FAIL => "ida: the corrector could not converge",
@@ -746,7 +789,16 @@ unsafe extern "C" fn dae_jac(
     _t3: NVector,
 ) -> c_int {
     // Split the context so the residual and the pattern are borrowed apart.
-    let DaeCtx { dae, n, failed, jac, mem, tol, nominals, .. } = unsafe { &mut *(user as *mut DaeCtx) };
+    let DaeCtx {
+        dae,
+        n,
+        failed,
+        jac,
+        mem,
+        tol,
+        nominals,
+        ..
+    } = unsafe { &mut *(user as *mut DaeCtx) };
     let n = *n;
     let Some(jac) = jac.as_deref_mut() else { return -1 };
     let (y, ypv, base) = (nv_data(yy), nv_data(yp), nv_data(rr));
@@ -782,8 +834,7 @@ unsafe extern "C" fn dae_jac(
         let mut gp = core::mem::take(&mut jac.gp);
         dae.note_call();
         let r = {
-            let (ys, yps) =
-                unsafe { (core::slice::from_raw_parts(y, n), core::slice::from_raw_parts(ypv, n)) };
+            let (ys, yps) = unsafe { (core::slice::from_raw_parts(y, n), core::slice::from_raw_parts(ypv, n)) };
             dae.residual(t, ys, yps, &mut gp)
         };
         jac.gp = gp;
@@ -931,8 +982,16 @@ impl IdaDae {
         let IdaDae { ida, jac, nominals, .. } = self;
         let ida = ida.as_mut().expect("prepare built it");
         let mem = ida.mem_ptr();
-        let mut ctx =
-            DaeCtx { dae, n, n_zc, failed: None, jac: jac.as_mut(), mem, tol, nominals };
+        let mut ctx = DaeCtx {
+            dae,
+            n,
+            n_zc,
+            failed: None,
+            jac: jac.as_mut(),
+            mem,
+            tol,
+            nominals,
+        };
         if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }
@@ -1000,7 +1059,18 @@ impl IdaDae {
                 None => (IdaLs::Dense, 0, None),
             };
             let mut ida = Ida::new(
-                t, y, yp, self.tolerance, &atol, self.n_zc, dae_res, root, ls, nnz, jac_fn, &opts,
+                t,
+                y,
+                yp,
+                self.tolerance,
+                &atol,
+                self.n_zc,
+                dae_res,
+                root,
+                ls,
+                nnz,
+                jac_fn,
+                &opts,
             )
             .ok_or("ida: the integrator could not be created")?;
             let mut id = vec![1.0; self.n_states];
@@ -1021,8 +1091,16 @@ impl IdaDae {
             }
         }
         let mem = ida.mem_ptr();
-        let mut ctx =
-            DaeCtx { dae, n, n_zc, failed: None, jac: jac.as_mut(), mem, tol, nominals };
+        let mut ctx = DaeCtx {
+            dae,
+            n,
+            n_zc,
+            failed: None,
+            jac: jac.as_mut(),
+            mem,
+            tol,
+            nominals,
+        };
         if !ida.set_user_data(&mut ctx as *mut DaeCtx as *mut c_void) {
             return Err("ida: the context could not be bound");
         }

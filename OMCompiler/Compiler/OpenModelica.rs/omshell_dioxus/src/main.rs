@@ -79,16 +79,9 @@ fn app() -> Element {
 
     let (segments, input, busy, version, download) = {
         let s = shell.borrow();
-        let segs: Vec<(SegKind, String)> = s
-            .scrollback
-            .iter()
-            .map(|seg| (seg.kind, seg.text.clone()))
-            .collect();
+        let segs: Vec<(SegKind, String)> = s.scrollback.iter().map(|seg| (seg.kind, seg.text.clone())).collect();
         // (label, bytes done, bytes total) of an in-flight download, if any.
-        let download = s
-            .download
-            .as_ref()
-            .map(|d| (d.file.clone(), d.done, d.total));
+        let download = s.download.as_ref().map(|d| (d.file.clone(), d.done, d.total));
         (segs, s.input.clone(), s.busy, s.version.clone(), download)
     };
 
@@ -235,7 +228,8 @@ fn app() -> Element {
 }
 
 #[cfg(target_arch = "wasm32")]
-const WGPU_NOTE: &str = "An animated raymarched gyroid rendered with wgpu on a WebGPU canvas — the same renderer the egui client uses.";
+const WGPU_NOTE: &str =
+    "An animated raymarched gyroid rendered with wgpu on a WebGPU canvas — the same renderer the egui client uses.";
 #[cfg(all(not(target_arch = "wasm32"), feature = "native"))]
 const WGPU_NOTE: &str = "An animated raymarched gyroid rendered with wgpu, composited into the page by Blitz — the same renderer the egui and web clients use.";
 #[cfg(all(not(target_arch = "wasm32"), not(feature = "native")))]
@@ -307,10 +301,7 @@ fn start_webgpu(running: Rc<std::cell::Cell<bool>>) {
             running.set(false);
             return;
         };
-        let Ok((device, queue)) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-        else {
+        let Ok((device, queue)) = adapter.request_device(&wgpu::DeviceDescriptor::default()).await else {
             running.set(false);
             return;
         };
@@ -336,11 +327,8 @@ fn start_webgpu(running: Rc<std::cell::Cell<bool>>) {
                     continue;
                 }
             };
-            let view = frame
-                .texture
-                .create_view(&wgpu::TextureViewDescriptor::default());
-            let mut encoder =
-                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {
                 let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: None,

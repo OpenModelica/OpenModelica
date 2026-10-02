@@ -16,8 +16,7 @@ use std::path::Path;
 type Instance = *mut c_void;
 type Vr = u32;
 
-type LogCallback =
-    extern "C" fn(env: *mut c_void, status: i32, category: *const c_char, message: *const c_char);
+type LogCallback = extern "C" fn(env: *mut c_void, status: i32, category: *const c_char, message: *const c_char);
 type IntermediateUpdateCallback = extern "C" fn(
     env: *mut c_void,
     time: f64,
@@ -68,15 +67,8 @@ struct Vtable {
     exit_initialization_mode: unsafe extern "C" fn(Instance) -> i32,
     enter_event_mode: unsafe extern "C" fn(Instance) -> i32,
     set_debug_logging: Option<unsafe extern "C" fn(Instance, bool, usize, *const *const c_char) -> i32>,
-    update_discrete_states: unsafe extern "C" fn(
-        Instance,
-        *mut bool,
-        *mut bool,
-        *mut bool,
-        *mut bool,
-        *mut bool,
-        *mut f64,
-    ) -> i32,
+    update_discrete_states:
+        unsafe extern "C" fn(Instance, *mut bool, *mut bool, *mut bool, *mut bool, *mut bool, *mut f64) -> i32,
     terminate: unsafe extern "C" fn(Instance) -> i32,
 
     get_float32: GetT<f32>,
@@ -116,28 +108,15 @@ struct Vtable {
     get_nominals_of_continuous_states: Option<unsafe extern "C" fn(Instance, *mut f64, usize) -> i32>,
     get_number_of_continuous_states: Option<unsafe extern "C" fn(Instance, *mut usize) -> i32>,
     get_number_of_event_indicators: Option<unsafe extern "C" fn(Instance, *mut usize) -> i32>,
-    completed_integrator_step:
-        Option<unsafe extern "C" fn(Instance, bool, *mut bool, *mut bool) -> i32>,
+    completed_integrator_step: Option<unsafe extern "C" fn(Instance, bool, *mut bool, *mut bool) -> i32>,
 
     get_directional_derivative: Option<
-        unsafe extern "C" fn(
-            Instance,
-            *const Vr,
-            usize,
-            *const Vr,
-            usize,
-            *const f64,
-            usize,
-            *mut f64,
-            usize,
-        ) -> i32,
+        unsafe extern "C" fn(Instance, *const Vr, usize, *const Vr, usize, *const f64, usize, *mut f64, usize) -> i32,
     >,
 
     // Co-Simulation
     enter_step_mode: Option<unsafe extern "C" fn(Instance) -> i32>,
-    do_step: Option<
-        unsafe extern "C" fn(Instance, f64, f64, bool, *mut bool, *mut bool, *mut bool, *mut f64) -> i32,
-    >,
+    do_step: Option<unsafe extern "C" fn(Instance, f64, f64, bool, *mut bool, *mut bool, *mut bool, *mut f64) -> i32>,
 }
 
 /// A loaded FMU binary. Instances borrow it, so it must outlive them.
@@ -149,16 +128,15 @@ pub struct Library {
 
 macro_rules! required {
     ($lib:expr, $name:literal) => {{
-        let sym: libloading::Symbol<_> = unsafe { $lib.get(concat!($name, "\0").as_bytes()) }
-            .map_err(|e| Error::Load(format!("{}: {e}", $name)))?;
+        let sym: libloading::Symbol<_> =
+            unsafe { $lib.get(concat!($name, "\0").as_bytes()) }.map_err(|e| Error::Load(format!("{}: {e}", $name)))?;
         *sym
     }};
 }
 
 macro_rules! optional {
     ($lib:expr, $name:literal) => {{
-        let sym: std::result::Result<libloading::Symbol<_>, _> =
-            unsafe { $lib.get(concat!($name, "\0").as_bytes()) };
+        let sym: std::result::Result<libloading::Symbol<_>, _> = unsafe { $lib.get(concat!($name, "\0").as_bytes()) };
         sym.ok().map(|s| *s)
     }};
 }
@@ -166,8 +144,8 @@ macro_rules! optional {
 impl Library {
     /// `dlopen` the FMU binary and resolve every entry point.
     pub fn open(path: &Path) -> Result<Library> {
-        let lib = unsafe { libloading::Library::new(path) }
-            .map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
+        let lib =
+            unsafe { libloading::Library::new(path) }.map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
         let v = Vtable {
             get_version: required!(lib, "fmi3GetVersion"),
             instantiate_model_exchange: optional!(lib, "fmi3InstantiateModelExchange"),
@@ -284,11 +262,7 @@ impl Library {
     }
 }
 
-fn cstrings(
-    name: &str,
-    token: &str,
-    path: Option<&str>,
-) -> Result<(CString, CString, Option<CString>)> {
+fn cstrings(name: &str, token: &str, path: Option<&str>) -> Result<(CString, CString, Option<CString>)> {
     let mk = |s: &str| CString::new(s).map_err(|_| Error::Unsupported("NUL in a string".into()));
     Ok((mk(name)?, mk(token)?, path.map(mk).transpose()?))
 }
@@ -302,12 +276,7 @@ struct Env {
     early_return_at: RefCell<Option<f64>>,
 }
 
-extern "C" fn log_message(
-    env: *mut c_void,
-    status: i32,
-    category: *const c_char,
-    message: *const c_char,
-) {
+extern "C" fn log_message(env: *mut c_void, status: i32, category: *const c_char, message: *const c_char) {
     if env.is_null() {
         return;
     }
@@ -319,7 +288,9 @@ extern "C" fn log_message(
             unsafe { CStr::from_ptr(p) }.to_string_lossy().into_owned()
         }
     };
-    env.log.borrow_mut().push((Status::from_raw(status), text(category), text(message)));
+    env.log
+        .borrow_mut()
+        .push((Status::from_raw(status), text(category), text(message)));
 }
 
 /// The FMU is inside `fmi3DoStep` and asks whether it may stop. It may, if the
@@ -359,7 +330,11 @@ pub struct FmuInstance<'a> {
 
 impl<'a> FmuInstance<'a> {
     fn new(lib: &'a Library) -> FmuInstance<'a> {
-        FmuInstance { lib, handle: std::ptr::null_mut(), env: Box::default() }
+        FmuInstance {
+            lib,
+            handle: std::ptr::null_mut(),
+            env: Box::default(),
+        }
     }
 
     fn env(&mut self) -> *mut c_void {
@@ -368,7 +343,10 @@ impl<'a> FmuInstance<'a> {
 
     fn attach(mut self, handle: Instance, call: &'static str) -> Result<FmuInstance<'a>> {
         if handle.is_null() {
-            return Err(Error::Instantiate { call, log: self.take_log() });
+            return Err(Error::Instantiate {
+                call,
+                log: self.take_log(),
+            });
         }
         self.handle = handle;
         Ok(self)
@@ -452,10 +430,17 @@ impl Fmi3 for FmuInstance<'_> {
     }
 
     fn set_debug_logging(&mut self, logging_on: bool, categories: &[&str]) -> Result<()> {
-        let Some(f) = self.v().set_debug_logging else { return Ok(()) };
-        let owned: Vec<CString> = categories.iter().map(|c| CString::new(*c).unwrap_or_default()).collect();
+        let Some(f) = self.v().set_debug_logging else {
+            return Ok(());
+        };
+        let owned: Vec<CString> = categories
+            .iter()
+            .map(|c| CString::new(*c).unwrap_or_default())
+            .collect();
         let ptrs: Vec<*const c_char> = owned.iter().map(|c| c.as_ptr()).collect();
-        check("fmi3SetDebugLogging", unsafe { f(self.handle, logging_on, ptrs.len(), ptrs.as_ptr()) })
+        check("fmi3SetDebugLogging", unsafe {
+            f(self.handle, logging_on, ptrs.len(), ptrs.as_ptr())
+        })
     }
 
     fn enter_event_mode(&mut self) -> Result<()> {
@@ -468,7 +453,15 @@ impl Fmi3 for FmuInstance<'_> {
         let mut next = 0.0;
         let f = self.v().update_discrete_states;
         check("fmi3UpdateDiscreteStates", unsafe {
-            f(self.handle, &mut need, &mut term, &mut nom, &mut states, &mut defined, &mut next)
+            f(
+                self.handle,
+                &mut need,
+                &mut term,
+                &mut nom,
+                &mut states,
+                &mut defined,
+                &mut next,
+            )
         })?;
         Ok(DiscreteStates {
             need_update: need,
@@ -623,7 +616,9 @@ impl Fmi3ModelExchange for FmuInstance<'_> {
     }
 
     fn set_time(&mut self, time: f64) -> Result<()> {
-        let Some(f) = self.v().set_time else { return missing("fmi3SetTime") };
+        let Some(f) = self.v().set_time else {
+            return missing("fmi3SetTime");
+        };
         check("fmi3SetTime", unsafe { f(self.handle, time) })
     }
 
@@ -738,13 +733,18 @@ impl Fmi3ModelExchange for FmuInstance<'_> {
         check("fmi3CompletedIntegratorStep", unsafe {
             f(self.handle, no_set_state_prior, &mut enter, &mut term)
         })?;
-        Ok(CompletedStep { enter_event_mode: enter, terminate: term })
+        Ok(CompletedStep {
+            enter_event_mode: enter,
+            terminate: term,
+        })
     }
 }
 
 impl Fmi3CoSimulation for FmuInstance<'_> {
     fn enter_step_mode(&mut self) -> Result<()> {
-        let Some(f) = self.v().enter_step_mode else { return missing("fmi3EnterStepMode") };
+        let Some(f) = self.v().enter_step_mode else {
+            return missing("fmi3EnterStepMode");
+        };
         check("fmi3EnterStepMode", unsafe { f(self.handle) })
     }
 
@@ -754,7 +754,9 @@ impl Fmi3CoSimulation for FmuInstance<'_> {
         communication_step_size: f64,
         no_set_state_prior: bool,
     ) -> Result<DoStep> {
-        let Some(f) = self.v().do_step else { return missing("fmi3DoStep") };
+        let Some(f) = self.v().do_step else {
+            return missing("fmi3DoStep");
+        };
         let (mut event, mut term, mut early) = (false, false, false);
         let mut last = current_communication_point;
         let raw = unsafe {

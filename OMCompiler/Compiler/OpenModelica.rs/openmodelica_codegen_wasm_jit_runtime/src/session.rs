@@ -338,7 +338,11 @@ impl Drop for HostOut {
 #[cfg(not(target_os = "wasi"))]
 fn open_result(path: &str) -> Option<Box<dyn ResultOut>> {
     (unsafe { rt_host_result_open(path.as_ptr() as u32, path.len() as u32) } == 0).then(|| {
-        Box::new(HostOut { buf: Vec::with_capacity(1 << 18), ok: true, closed: false }) as Box<dyn ResultOut>
+        Box::new(HostOut {
+            buf: Vec::with_capacity(1 << 18),
+            ok: true,
+            closed: false,
+        }) as Box<dyn ResultOut>
     })
 }
 
@@ -352,7 +356,11 @@ pub extern "C" fn rt_sim_set_result(path: u32, path_len: u32, keep: u32, keep_le
     *result_cfg() = Some(ResultCfg {
         path: String::from_utf8_lossy(path).into_owned(),
         keep: keep.iter().map(|&k| k != 0).collect(),
-        precision: if single != 0 { Precision::Single } else { Precision::Double },
+        precision: if single != 0 {
+            Precision::Single
+        } else {
+            Precision::Double
+        },
     });
     0
 }
@@ -395,7 +403,10 @@ pub extern "C" fn rt_sim_set_args(ptr: u32, len: u32) -> i32 {
     let argv = simflags::argv_from_bytes(bytes);
     // The host resolves `-variableFilter` (`rt_sim_set_result`'s `keep`).
     match simflags::parse(&argv).and_then(|f| {
-        let cap = simflags::Capabilities { variable_filter: true, ..crate::sundials::capabilities() };
+        let cap = simflags::Capabilities {
+            variable_filter: true,
+            ..crate::sundials::capabilities()
+        };
         simflags::check(&f, cap).map(|()| f)
     }) {
         Ok(f) => {
@@ -581,13 +592,17 @@ pub extern "C" fn rt_sim_advance(budget_ms: f64) -> i32 {
         return 1;
     }
     let mut adv = {
-        let Session { engine, driver, model, .. } = &mut *s;
+        let Session {
+            engine, driver, model, ..
+        } = &mut *s;
         driver.advance(engine, model, budget_ms)
     };
     // C's `performSimulation` catch, here rather than in the host loop: only
     // `advance` knows where the step boundary is.
     while let Err(err) = adv {
-        let Session { engine, driver, model, .. } = &mut *s;
+        let Session {
+            engine, driver, model, ..
+        } = &mut *s;
         if !driver::is_model_throw(err) || !driver.retry_step(engine, model).unwrap_or(false) {
             return -2;
         }
@@ -613,14 +628,7 @@ fn finish(s: &mut Session) {
     s.driver.fill_stats(&s.model, &mut s.stats);
     s.rows = s.driver.take_rows();
     let at = s.driver.terminal_time();
-    let _ = driver::emit_terminal_row(
-        &mut s.engine,
-        &mut s.rows,
-        s.sim_data,
-        &s.model.layout,
-        s.n_reals,
-        at,
-    );
+    let _ = driver::emit_terminal_row(&mut s.engine, &mut s.rows, s.sim_data, &s.model.layout, s.n_reals, at);
     if let Ok(Some(f)) = openmodelica_sim_meta::linearize::linearize(&mut s.engine, &s.model, s.sim_data) {
         s.lin.extend_from_slice(f.name.as_bytes());
         s.lin.push(0);
@@ -671,7 +679,9 @@ pub extern "C" fn rt_sim_n_reals() -> u32 {
 /// Rows the run produced, whether streamed to the result file or kept in the buffer.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_n_rows() -> u32 {
-    session().as_ref().map_or(0, |s| s.rows_written + (s.rows.len() as u32) / s.n_reals.max(1))
+    session()
+        .as_ref()
+        .map_or(0, |s| s.rows_written + (s.rows.len() as u32) / s.n_reals.max(1))
 }
 /// The initial result row (`result::decode_first_row`); empty when the run was
 /// given no result file to write.

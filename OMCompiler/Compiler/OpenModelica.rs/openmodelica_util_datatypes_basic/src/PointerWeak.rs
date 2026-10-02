@@ -62,9 +62,7 @@ pub fn upgrade<T>(weak: PointerWeak<T>) -> metamodelica::Result<Pointer<T>> {
 /// equal: neither designates a cell any more.
 pub fn referenceEq<T>(a: &PointerWeak<T>, b: &PointerWeak<T>) -> bool {
     match (a, b) {
-        (PointerWeak::Mutable(x), PointerWeak::Mutable(y)) => {
-            Weak::ptr_eq(x, y) && x.strong_count() > 0
-        }
+        (PointerWeak::Mutable(x), PointerWeak::Mutable(y)) => Weak::ptr_eq(x, y) && x.strong_count() > 0,
         (PointerWeak::Immutable(x), PointerWeak::Immutable(y)) => Arc::ptr_eq(x, y),
         _ => false,
     }

@@ -25,7 +25,12 @@ pub fn translateFunctions(fnCode: SimCodeFunction::FunctionCode) {
 }
 
 fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<()> {
-    let BuiltModule { bytes, in_sig, out_sig, ext_imports } = build_module(fn_code)?;
+    let BuiltModule {
+        bytes,
+        in_sig,
+        out_sig,
+        ext_imports,
+    } = build_module(fn_code)?;
     let base = fn_code.name.to_string();
     // Sidecar: input type codes, output type codes, then a `lib`/`ext` line per
     // external "C" library and per function called in one.
@@ -47,7 +52,9 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
             .map(|s| s.to_string())
             .chain(resolved.sources)
             .collect();
-        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
+        let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes)
+            .map(|s| s.to_string())
+            .collect();
         // A host build compiles them the way the C target does and calls them
         // through libffi, as `build_sim_model` does: the in-wasm `Modelica*`
         // callbacks are host imports, which cannot take C varargs, so a
@@ -56,7 +63,14 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         #[cfg(target_arch = "wasm32")]
         {
             let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
-            if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &sources, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
+            if let Some(l) = crate::CodegenWasmJit::compile_include_library(
+                &base,
+                &sources,
+                &dirs,
+                &fn_code.makefileParams.cflags,
+                &missing,
+                &mut notes,
+            )? {
                 let path = format!("{base}_includes.wasm");
                 openmodelica_wasi::fs::write(&path, &l.bytes)
                     .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
@@ -66,7 +80,17 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         // The model's own code first: it shadows a same-named symbol in a `Library`
         // shared object, as the C target's own link order does.
         #[cfg(not(target_arch = "wasm32"))]
-        for lib in native_fallbacks(&base, fn_code, &resolved.native, &resolved.archives, &sources, &dirs, &ext_imports, &wasm_libs, &mut notes) {
+        for lib in native_fallbacks(
+            &base,
+            fn_code,
+            &resolved.native,
+            &resolved.archives,
+            &sources,
+            &dirs,
+            &ext_imports,
+            &wasm_libs,
+            &mut notes,
+        ) {
             sig.push_str(&format!("nlib\t{lib}\n"));
         }
         for lib in &resolved.native {
@@ -81,8 +105,10 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
     }
     // Native writes the module + sidecar to disk; wasm has no OS filesystem, so
     // the facade stages them in the VFS where `load_and_execute` reads them back.
-    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
-    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes()).map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm"), &bytes)
+        .map_err(|_| "CodegenWasmJitFunctions: cannot write wasm")?;
+    openmodelica_wasi::fs::write(&format!("{base}.wasm.sig"), sig.as_bytes())
+        .map_err(|_| "CodegenWasmJitFunctions: cannot write wasm.sig")?;
     Ok(())
 }
 
@@ -147,7 +173,11 @@ fn native_fallbacks(
 /// call the exported `main`, marshalling `args` in and the result out. Returns
 /// `Values.META_FAIL` on any failure (missing/invalid module, a wasm trap from
 /// a failed assertion or division by zero, …), mirroring `DynLoad.executeFunction`.
-pub fn loadAndExecute(fileName: ArcStr, name: ArcStr, args: List<metamodelica::Ref<Values::Value>>) -> metamodelica::Ref<Values::Value> {
+pub fn loadAndExecute(
+    fileName: ArcStr,
+    name: ArcStr,
+    args: List<metamodelica::Ref<Values::Value>>,
+) -> metamodelica::Ref<Values::Value> {
     match runtime::load_and_execute(&fileName, &name, &args) {
         Ok(v) => v,
         // Failure is a normal MetaModelica value the caller handles; no stderr.

@@ -40,10 +40,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use openmodelica_ast::Absyn;
 
-use crate::hierarchy::{extract_default_exp, InstanceHierarchy, NameNode, NodeKind, Ty};
+use crate::MM;
+use crate::hierarchy::{InstanceHierarchy, NameNode, NodeKind, Ty, extract_default_exp};
 use crate::typedexp::resolve_call_node;
 use crate::unused_functions::RefScan;
-use crate::MM;
 
 /// Generated items (by fully-qualified MetaModelica name) that hand-written
 /// Rust code references across a crate boundary, and which must therefore stay
@@ -151,13 +151,16 @@ fn import_item_targets(import: &Absyn::Import) -> Vec<String> {
         }
         Absyn::Import::GROUP_IMPORT { prefix, groups } => {
             let pfx = path_to_dotted(prefix);
-            (&**groups).into_iter().map(|g| {
-                let name = match g {
-                    Absyn::GroupImport::GROUP_IMPORT_NAME { name }
-                    | Absyn::GroupImport::GROUP_IMPORT_RENAME { name, .. } => name,
-                };
-                format!("{pfx}.{name}")
-            }).collect()
+            (&**groups)
+                .into_iter()
+                .map(|g| {
+                    let name = match g {
+                        Absyn::GroupImport::GROUP_IMPORT_NAME { name }
+                        | Absyn::GroupImport::GROUP_IMPORT_RENAME { name, .. } => name,
+                    };
+                    format!("{pfx}.{name}")
+                })
+                .collect()
         }
         // `import Pkg.*;` — a glob, not a specific item.
         Absyn::Import::UNQUAL_IMPORT { .. } => Vec::new(),
@@ -197,15 +200,14 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> VisibilityInfo {
     // top-level package name → Rust crate name (mirrors the `crate_map` built
     // in `codegen::generate_all`). The crate owning any FQN is the crate of its
     // first dotted segment.
-    let crate_map: BTreeMap<&str, &str> = top_level.iter()
+    let crate_map: BTreeMap<&str, &str> = top_level
+        .iter()
         .filter_map(|(name, node)| match &node.kind {
             NodeKind::Class(c) => c.crate_name.as_deref().map(|cn| (name.as_str(), cn)),
             _ => None,
         })
         .collect();
-    let crate_of = |qname: &str| -> Option<&str> {
-        crate_map.get(qname.split('.').next().unwrap_or(qname)).copied()
-    };
+    let crate_of = |qname: &str| -> Option<&str> { crate_map.get(qname.split('.').next().unwrap_or(qname)).copied() };
 
     let mut functions: Vec<(String, &NameNode<'_>)> = Vec::new();
     crate::codegen::collect_all_function_nodes(top_level, "", &mut functions);
@@ -245,8 +247,12 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> VisibilityInfo {
         };
         for m in members {
             let MM::ClassMember::Component(cm) = m else { continue };
-            if cm.direction != Absyn::Direction::INPUT { continue; }
-            let Some(default) = extract_default_exp(&cm.modification) else { continue };
+            if cm.direction != Absyn::Direction::INPUT {
+                continue;
+            }
+            let Some(default) = extract_default_exp(&cm.modification) else {
+                continue;
+            };
             let mut scan = RefScan::default();
             scan.scan_exp(default);
             for raw in &scan.refs {
@@ -291,7 +297,9 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> VisibilityInfo {
 
     let mut worklist: Vec<String> = keep_public.iter().cloned().collect();
     while let Some(q) = worklist.pop() {
-        let Some(node) = crate::hierarchy::lookup_node(&q, top_level) else { continue };
+        let Some(node) = crate::hierarchy::lookup_node(&q, top_level) else {
+            continue;
+        };
         let mut refs: Vec<String> = Vec::new();
         interface_qnames(node, &mut refs);
         for u in refs {
@@ -319,13 +327,23 @@ fn ty_referenced_qnames(ty: &Ty, out: &mut Vec<String>) {
         }
         Ty::UnionTypeVariant(union_q, _) => out.push(union_q.clone()),
         Ty::Generic(name, args) => {
-            if name.contains('.') { out.push(name.clone()); }
-            for a in args { ty_referenced_qnames(a, out); }
+            if name.contains('.') {
+                out.push(name.clone());
+            }
+            for a in args {
+                ty_referenced_qnames(a, out);
+            }
         }
         Ty::List(t) | Ty::Array(t) | Ty::Option(t) | Ty::Range(t) => ty_referenced_qnames(t, out),
-        Ty::Tuple(ts) => for t in ts { ty_referenced_qnames(t, out); },
+        Ty::Tuple(ts) => {
+            for t in ts {
+                ty_referenced_qnames(t, out);
+            }
+        }
         Ty::Function { inputs, output, .. } => {
-            for i in inputs { ty_referenced_qnames(&i.ty, out); }
+            for i in inputs {
+                ty_referenced_qnames(&i.ty, out);
+            }
             ty_referenced_qnames(output, out);
         }
         // Scalars, type vars, AliasTo, FunctionAlias, Unit, Unknown — no
@@ -386,11 +404,13 @@ fn seed_cross_crate_types<'a>(
     crate_map: &BTreeMap<&str, &str>,
     keep_public: &mut BTreeSet<String>,
 ) {
-    let crate_of = |qname: &str| -> Option<&str> {
-        crate_map.get(qname.split('.').next().unwrap_or(qname)).copied()
-    };
+    let crate_of = |qname: &str| -> Option<&str> { crate_map.get(qname.split('.').next().unwrap_or(qname)).copied() };
     for (name, node) in nodes {
-        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let qname = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         if let Some(ref_crate) = crate_of(&qname) {
             let mut refs: Vec<String> = Vec::new();
             ty_referenced_qnames(&node.ty, &mut refs);
@@ -422,14 +442,18 @@ fn scan_component_defaults<'a>(
     crate_map: &BTreeMap<&str, &str>,
     keep_public: &mut BTreeSet<String>,
 ) {
-    let crate_of = |qname: &str| -> Option<&str> {
-        crate_map.get(qname.split('.').next().unwrap_or(qname)).copied()
-    };
+    let crate_of = |qname: &str| -> Option<&str> { crate_map.get(qname.split('.').next().unwrap_or(qname)).copied() };
     for (name, node) in nodes {
-        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let qname = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         if let NodeKind::Component(m) = &node.kind
             && let Some(ref_crate) = crate_of(prefix)
-            && let Some(exp) = node.override_default_exp.or_else(|| crate::hierarchy::extract_default_exp(&m.modification))
+            && let Some(exp) = node
+                .override_default_exp
+                .or_else(|| crate::hierarchy::extract_default_exp(&m.modification))
         {
             // Resolve references in the *enclosing* scope (the package/function
             // the constant is declared in), mirroring codegen's const lowering.
@@ -452,11 +476,13 @@ fn scan_imports<'a>(
     crate_map: &BTreeMap<&str, &str>,
     keep_public: &mut BTreeSet<String>,
 ) {
-    let crate_of = |qname: &str| -> Option<&str> {
-        crate_map.get(qname.split('.').next().unwrap_or(qname)).copied()
-    };
+    let crate_of = |qname: &str| -> Option<&str> { crate_map.get(qname.split('.').next().unwrap_or(qname)).copied() };
     for (name, node) in nodes {
-        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let qname = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         if let NodeKind::Import(m) = &node.kind
             && let Some(ref_crate) = crate_of(prefix)
         {

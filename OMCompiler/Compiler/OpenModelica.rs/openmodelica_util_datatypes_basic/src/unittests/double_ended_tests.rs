@@ -1,7 +1,7 @@
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
 use crate::DoubleEnded;
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 #[test]
 fn test_new() {
@@ -231,11 +231,7 @@ fn test_map_fold_no_copy() -> Result<()> {
     let de = DoubleEnded::new(1);
     DoubleEnded::push_back(de.clone(), 2)?;
     DoubleEnded::push_back(de.clone(), 3)?;
-    let result = DoubleEnded::mapFoldNoCopy(
-        de.clone(),
-        &|x, acc: i32| Ok((x * 10, acc + x)),
-        0i32
-    )?;
+    let result = DoubleEnded::mapFoldNoCopy(de.clone(), &|x, acc: i32| Ok((x * 10, acc + x)), 0i32)?;
     assert_eq!(result, 6);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 10);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 20);
@@ -248,11 +244,7 @@ fn test_map_no_copy_1() -> Result<()> {
     let de = DoubleEnded::new(1);
     DoubleEnded::push_back(de.clone(), 2)?;
     DoubleEnded::push_back(de.clone(), 3)?;
-    DoubleEnded::mapNoCopy_1(
-        de.clone(),
-        &|x, _arg: i32| Ok(x * 2),
-        0i32
-    )?;
+    DoubleEnded::mapNoCopy_1(de.clone(), &|x, _arg: i32| Ok(x * 2), 0i32)?;
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 4);
     assert_eq!(DoubleEnded::pop_front(de)?, 6);
@@ -263,9 +255,9 @@ fn test_map_no_copy_1() -> Result<()> {
 // points to the original last node, so a subsequent push_back can link to it.
 #[test]
 fn test_push_front_does_not_change_back() -> Result<()> {
-    let de = DoubleEnded::new(2);     // front = back = [2]
+    let de = DoubleEnded::new(2); // front = back = [2]
     DoubleEnded::push_front(de.clone(), 1); // front = [1,2], back = [2]
-    DoubleEnded::push_back(de.clone(), 3);  // back links 2→3; back = [3]
+    DoubleEnded::push_back(de.clone(), 3); // back links 2→3; back = [3]
     assert_eq!(DoubleEnded::length(de.clone()), 3);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 1);
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);
@@ -326,7 +318,7 @@ fn test_to_list_and_clear_nil_prepend() -> Result<()> {
 fn test_to_list_and_clear_after_push_front_push_back() -> Result<()> {
     let de = DoubleEnded::new(2);
     DoubleEnded::push_front(de.clone(), 1); // front=[1,2], back=cons(2,nil)
-    DoubleEnded::push_back(de.clone(), 3);  // back becomes cons(3,nil)
+    DoubleEnded::push_back(de.clone(), 3); // back becomes cons(3,nil)
     let tail: List<i32> = list![99i32];
     let result = DoubleEnded::toListAndClear(de.clone(), tail.clone())?;
     assert_eq!(result.len(), 4);
@@ -386,7 +378,7 @@ fn test_push_list_front_order() -> Result<()> {
 // the original last node, so push_back still works afterwards.
 #[test]
 fn test_push_list_front_does_not_change_back() -> Result<()> {
-    let de = DoubleEnded::new(3);     // back = cons(3,nil)
+    let de = DoubleEnded::new(3); // back = cons(3,nil)
     let lst = list![1i32, 2];
     DoubleEnded::push_list_front(de.clone(), &lst)?; // back unchanged
     DoubleEnded::push_back(de.clone(), 4); // must link through back=cons(3,nil)
@@ -402,11 +394,7 @@ fn test_push_list_front_does_not_change_back() -> Result<()> {
 #[test]
 fn test_map_fold_no_copy_empty() -> Result<()> {
     let de = DoubleEnded::empty(0i32);
-    let result = DoubleEnded::mapFoldNoCopy(
-        de.clone(),
-        &|x: i32, acc: i32| Ok((x * 2, acc + 1)),
-        42i32,
-    )?;
+    let result = DoubleEnded::mapFoldNoCopy(de.clone(), &|x: i32, acc: i32| Ok((x * 2, acc + 1)), 42i32)?;
     assert_eq!(result, 42);
     assert_eq!(DoubleEnded::length(de), 0);
     Ok(())

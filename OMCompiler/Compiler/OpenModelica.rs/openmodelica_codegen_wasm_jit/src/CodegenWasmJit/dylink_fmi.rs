@@ -10,11 +10,9 @@
 //! Every array crosses through scratch this side allocates in the shared memory
 //! (`rt_alloc`), which is what the FMI 3.0 C API's pointers are here.
 
-use openmodelica_fmi_driver::api::{
-    CompletedStep, DiscreteStates, DoStep, Fmi3, Fmi3CoSimulation, Fmi3ModelExchange,
-};
-use openmodelica_fmi_driver::{Error, Result};
 use openmodelica_fmi::VarType;
+use openmodelica_fmi_driver::api::{CompletedStep, DiscreteStates, DoStep, Fmi3, Fmi3CoSimulation, Fmi3ModelExchange};
+use openmodelica_fmi_driver::{Error, Result};
 use openmodelica_wasm_jit::sim_runtime::{ArtifactLib, DylinkFmu};
 use std::collections::HashMap;
 use wasmtime::{TypedFunc, Val};
@@ -102,7 +100,12 @@ impl DylinkInstance {
             .map_err(Error::Load)?
         };
         let hot = Hot::resolve(&mut fmu)?;
-        Ok(DylinkInstance { fmu, scratch: (0, 0), hot, numeric: HashMap::new() })
+        Ok(DylinkInstance {
+            fmu,
+            scratch: (0, 0),
+            hot,
+            numeric: HashMap::new(),
+        })
     }
 
     /// Scratch of at least `bytes`, reused between calls.
@@ -141,10 +144,16 @@ impl DylinkInstance {
         let (p, n) = self.write_str(name)?;
         let ok = self
             .fmu
-            .call("om_fmi3InstantiateModelExchange", &[Val::I32(p as i32), Val::I32(n as i32), Val::I32(logging_on as i32)])
+            .call(
+                "om_fmi3InstantiateModelExchange",
+                &[Val::I32(p as i32), Val::I32(n as i32), Val::I32(logging_on as i32)],
+            )
             .map_err(|e| err("fmi3InstantiateModelExchange", e))?;
         if ok == 0 {
-            return Err(Error::Instantiate { call: "fmi3InstantiateModelExchange", log: Vec::new() });
+            return Err(Error::Instantiate {
+                call: "fmi3InstantiateModelExchange",
+                log: Vec::new(),
+            });
         }
         Ok(())
     }
@@ -155,11 +164,19 @@ impl DylinkInstance {
             .fmu
             .call(
                 "om_fmi3InstantiateCoSimulation",
-                &[Val::I32(p as i32), Val::I32(n as i32), Val::I32(logging_on as i32), Val::I32(event_mode as i32)],
+                &[
+                    Val::I32(p as i32),
+                    Val::I32(n as i32),
+                    Val::I32(logging_on as i32),
+                    Val::I32(event_mode as i32),
+                ],
             )
             .map_err(|e| err("fmi3InstantiateCoSimulation", e))?;
         if ok == 0 {
-            return Err(Error::Instantiate { call: "fmi3InstantiateCoSimulation", log: Vec::new() });
+            return Err(Error::Instantiate {
+                call: "fmi3InstantiateCoSimulation",
+                log: Vec::new(),
+            });
         }
         Ok(())
     }
@@ -209,7 +226,10 @@ impl DylinkInstance {
             Ok(SimRun {
                 file,
                 linear_file: (!name.is_empty()).then(|| {
-                    (String::from_utf8_lossy(&name).into_owned(), String::from_utf8_lossy(&content).into_owned())
+                    (
+                        String::from_utf8_lossy(&name).into_owned(),
+                        String::from_utf8_lossy(&content).into_owned(),
+                    )
                 }),
                 prof_files: unpack_files(&bytes(head[10], head[11])?),
                 prof_html: head[12] != 0,
@@ -324,7 +344,10 @@ fn get_vector(
     out: &mut [f64],
 ) -> Result<()> {
     let p = inst.scratch(out.len() as u32 * 8 + 16)?;
-    let raw = inst.fmu.call_typed(f(&inst.hot), (p, out.len() as u32)).map_err(|e| err(call, e))?;
+    let raw = inst
+        .fmu
+        .call_typed(f(&inst.hot), (p, out.len() as u32))
+        .map_err(|e| err(call, e))?;
     status(call, raw)?;
     inst.fmu.read_f64s(p, out).map_err(|e| err(call, e))
 }
@@ -357,7 +380,10 @@ impl Fmi3 for DylinkInstance {
     }
 
     fn exit_initialization_mode(&mut self) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3ExitInitializationMode", &[]).map_err(|e| err("fmi3ExitInitializationMode", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3ExitInitializationMode", &[])
+            .map_err(|e| err("fmi3ExitInitializationMode", e))?;
         status("fmi3ExitInitializationMode", raw)
     }
 
@@ -365,13 +391,19 @@ impl Fmi3 for DylinkInstance {
         let (p, n) = self.write_str(&categories.join("\n"))?;
         let raw = self
             .fmu
-            .call("om_fmi3SetDebugLogging", &[Val::I32(logging_on as i32), Val::I32(p as i32), Val::I32(n as i32)])
+            .call(
+                "om_fmi3SetDebugLogging",
+                &[Val::I32(logging_on as i32), Val::I32(p as i32), Val::I32(n as i32)],
+            )
             .map_err(|e| err("fmi3SetDebugLogging", e))?;
         status("fmi3SetDebugLogging", raw)
     }
 
     fn enter_event_mode(&mut self) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3EnterEventMode", &[]).map_err(|e| err("fmi3EnterEventMode", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3EnterEventMode", &[])
+            .map_err(|e| err("fmi3EnterEventMode", e))?;
         status("fmi3EnterEventMode", raw)
     }
 
@@ -382,13 +414,20 @@ impl Fmi3 for DylinkInstance {
             .call("om_fmi3UpdateDiscreteStates", &[Val::I32(p as i32)])
             .map_err(|e| err("fmi3UpdateDiscreteStates", e))?;
         status("fmi3UpdateDiscreteStates", raw)?;
-        let f = |s: &mut Self, i: u32| s.fmu.read_u32(p + i * 4).map_err(|e| err("fmi3UpdateDiscreteStates", e));
+        let f = |s: &mut Self, i: u32| {
+            s.fmu
+                .read_u32(p + i * 4)
+                .map_err(|e| err("fmi3UpdateDiscreteStates", e))
+        };
         let need_update = f(self, 0)? != 0;
         let terminate = f(self, 1)? != 0;
         let nominals_changed = f(self, 2)? != 0;
         let states_changed = f(self, 3)? != 0;
         let defined = f(self, 4)? != 0;
-        let time = self.fmu.read_f64(p + 24).map_err(|e| err("fmi3UpdateDiscreteStates", e))?;
+        let time = self
+            .fmu
+            .read_f64(p + 24)
+            .map_err(|e| err("fmi3UpdateDiscreteStates", e))?;
         Ok(DiscreteStates {
             need_update,
             terminate,
@@ -399,17 +438,26 @@ impl Fmi3 for DylinkInstance {
     }
 
     fn terminate(&mut self) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3Terminate", &[]).map_err(|e| err("fmi3Terminate", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3Terminate", &[])
+            .map_err(|e| err("fmi3Terminate", e))?;
         status("fmi3Terminate", raw)
     }
 
     fn enter_configuration_mode(&mut self) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3EnterConfigurationMode", &[]).map_err(|e| err("fmi3EnterConfigurationMode", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3EnterConfigurationMode", &[])
+            .map_err(|e| err("fmi3EnterConfigurationMode", e))?;
         status("fmi3EnterConfigurationMode", raw)
     }
 
     fn exit_configuration_mode(&mut self) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3ExitConfigurationMode", &[]).map_err(|e| err("fmi3ExitConfigurationMode", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3ExitConfigurationMode", &[])
+            .map_err(|e| err("fmi3ExitConfigurationMode", e))?;
         status("fmi3ExitConfigurationMode", raw)
     }
 
@@ -442,19 +490,26 @@ impl Fmi3 for DylinkInstance {
 
 impl Fmi3ModelExchange for DylinkInstance {
     fn enter_continuous_time_mode(&mut self) -> Result<()> {
-        let raw =
-            self.fmu.call("om_fmi3EnterContinuousTimeMode", &[]).map_err(|e| err("fmi3EnterContinuousTimeMode", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3EnterContinuousTimeMode", &[])
+            .map_err(|e| err("fmi3EnterContinuousTimeMode", e))?;
         status("fmi3EnterContinuousTimeMode", raw)
     }
 
     fn set_time(&mut self, time: f64) -> Result<()> {
-        let raw = self.fmu.call_typed(&self.hot.set_time, time).map_err(|e| err("fmi3SetTime", e))?;
+        let raw = self
+            .fmu
+            .call_typed(&self.hot.set_time, time)
+            .map_err(|e| err("fmi3SetTime", e))?;
         status("fmi3SetTime", raw)
     }
 
     fn set_continuous_states(&mut self, states: &[f64]) -> Result<()> {
         let p = self.scratch(states.len() as u32 * 8 + 16)?;
-        self.fmu.write_f64s(p, states).map_err(|e| err("fmi3SetContinuousStates", e))?;
+        self.fmu
+            .write_f64s(p, states)
+            .map_err(|e| err("fmi3SetContinuousStates", e))?;
         let raw = self
             .fmu
             .call_typed(&self.hot.set_states, (p, states.len() as u32))
@@ -479,7 +534,10 @@ impl Fmi3ModelExchange for DylinkInstance {
         let p = self.scratch(nominals.len() as u32 * 8 + 16)?;
         let raw = self
             .fmu
-            .call("om_fmi3GetNominalsOfContinuousStates", &[Val::I32(p as i32), Val::I32(nominals.len() as i32)])
+            .call(
+                "om_fmi3GetNominalsOfContinuousStates",
+                &[Val::I32(p as i32), Val::I32(nominals.len() as i32)],
+            )
             .map_err(|e| err(call, e))?;
         status(call, raw)?;
         self.fmu.read_f64s(p, nominals).map_err(|e| err(call, e))
@@ -492,9 +550,20 @@ impl Fmi3ModelExchange for DylinkInstance {
             .call_typed(&self.hot.completed_step, (no_set_state_prior as i32, p))
             .map_err(|e| err("fmi3CompletedIntegratorStep", e))?;
         status("fmi3CompletedIntegratorStep", raw)?;
-        let enter = self.fmu.read_u32(p).map_err(|e| err("fmi3CompletedIntegratorStep", e))? != 0;
-        let terminate = self.fmu.read_u32(p + 4).map_err(|e| err("fmi3CompletedIntegratorStep", e))? != 0;
-        Ok(CompletedStep { enter_event_mode: enter, terminate })
+        let enter = self
+            .fmu
+            .read_u32(p)
+            .map_err(|e| err("fmi3CompletedIntegratorStep", e))?
+            != 0;
+        let terminate = self
+            .fmu
+            .read_u32(p + 4)
+            .map_err(|e| err("fmi3CompletedIntegratorStep", e))?
+            != 0;
+        Ok(CompletedStep {
+            enter_event_mode: enter,
+            terminate,
+        })
     }
 
     fn get_directional_derivative(
@@ -548,7 +617,10 @@ impl Fmi3ModelExchange for DylinkInstance {
             .call("om_fmi3GetNumberOfContinuousStates", &[Val::I32(p as i32)])
             .map_err(|e| err("fmi3GetNumberOfContinuousStates", e))?;
         status("fmi3GetNumberOfContinuousStates", raw)?;
-        Ok(self.fmu.read_u32(p).map_err(|e| err("fmi3GetNumberOfContinuousStates", e))? as usize)
+        Ok(self
+            .fmu
+            .read_u32(p)
+            .map_err(|e| err("fmi3GetNumberOfContinuousStates", e))? as usize)
     }
 
     fn get_number_of_event_indicators(&mut self) -> Result<usize> {
@@ -558,13 +630,19 @@ impl Fmi3ModelExchange for DylinkInstance {
             .call("om_fmi3GetNumberOfEventIndicators", &[Val::I32(p as i32)])
             .map_err(|e| err("fmi3GetNumberOfEventIndicators", e))?;
         status("fmi3GetNumberOfEventIndicators", raw)?;
-        Ok(self.fmu.read_u32(p).map_err(|e| err("fmi3GetNumberOfEventIndicators", e))? as usize)
+        Ok(self
+            .fmu
+            .read_u32(p)
+            .map_err(|e| err("fmi3GetNumberOfEventIndicators", e))? as usize)
     }
 }
 
 impl Fmi3CoSimulation for DylinkInstance {
     fn enter_step_mode(&mut self) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3EnterStepMode", &[]).map_err(|e| err("fmi3EnterStepMode", e))?;
+        let raw = self
+            .fmu
+            .call("om_fmi3EnterStepMode", &[])
+            .map_err(|e| err("fmi3EnterStepMode", e))?;
         status("fmi3EnterStepMode", raw)
     }
 
@@ -581,6 +659,12 @@ impl Fmi3CoSimulation for DylinkInstance {
         let early = f(self, 2)? != 0;
         let discarded = f(self, 3)? != 0;
         let last = self.fmu.read_f64(p + 16).map_err(|e| err("fmi3DoStep", e))?;
-        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last, discarded })
+        Ok(DoStep {
+            event_handling_needed: event,
+            terminate,
+            early_return: early,
+            last_successful_time: last,
+            discarded,
+        })
     }
 }

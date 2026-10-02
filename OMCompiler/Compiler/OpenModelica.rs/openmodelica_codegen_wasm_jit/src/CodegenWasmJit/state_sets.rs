@@ -32,7 +32,15 @@ pub(super) fn build_state_set_infos(
         let register = |var_map: &mut SimVarMap, sv: &SimCodeVar::SimVar, cursor: &mut u32| -> Result<u32> {
             let off = *cursor;
             *cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(
+                sim_cref_key(&sv.name)?,
+                SimSlot {
+                    off,
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                },
+            );
             Ok(off)
         };
 
@@ -60,8 +68,9 @@ pub(super) fn build_state_set_infos(
         let candidate_offs: Vec<u32> = lst(&set.statescandidates)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
-        let candidate_names: Vec<String> =
-            lst(&set.statescandidates).map(|cr| cref_display(cr)).collect::<Result<_>>()?;
+        let candidate_names: Vec<String> = lst(&set.statescandidates)
+            .map(|cr| cref_display(cr))
+            .collect::<Result<_>>()?;
         let state_offs: Vec<u32> = lst(&set.states)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
@@ -140,10 +149,7 @@ fn stateset_a_slot<'a>(
 /// `nStates` candidates) is a valid selection whenever those candidates stay
 /// independent (true for the models in scope; a candidate going singular
 /// mid-run would need the runtime `pivot`/`stateSelection` port).
-pub(super) fn stateset_diag_offsets(
-    state_sets: &List<SimCode::StateSet>,
-    var_map: &SimVarMap,
-) -> Result<Vec<u32>> {
+pub(super) fn stateset_diag_offsets(state_sets: &List<SimCode::StateSet>, var_map: &SimVarMap) -> Result<Vec<u32>> {
     let mut offs = Vec::new();
     for set in lst(state_sets) {
         // `crA` names the first `A` element; strip its subscripts to the base `A`.

@@ -47,8 +47,8 @@ mod files;
 #[cfg(sundials)]
 mod model_ctx;
 mod nls;
-pub mod prof;
 mod omclog;
+pub mod prof;
 pub use nls::{
     rt_context_addr, rt_error_stage_addr, rt_nls_clean_history, rt_no_throw_div_zero_addr, rt_set_step_size,
 };
@@ -160,8 +160,19 @@ pub extern "C" fn rt_set_homotopy_tuning(
     neg_start_dir: u32,
 ) {
     openmodelica_solvers::solverflags::set_homotopy_tuning(
-        adapt_bend, h_eps, tau_dec, tau_dec_pred, tau_inc, tau_inc_threshold, tau_max, tau_min,
-        tau_start, max_lambda_steps, max_newton_steps, max_tries, orthogonal_backtrace,
+        adapt_bend,
+        h_eps,
+        tau_dec,
+        tau_dec_pred,
+        tau_inc,
+        tau_inc_threshold,
+        tau_max,
+        tau_min,
+        tau_start,
+        max_lambda_steps,
+        max_newton_steps,
+        max_tries,
+        orthogonal_backtrace,
         neg_start_dir,
     );
 }
@@ -217,7 +228,9 @@ mod rust_heap {
     unsafe impl GlobalAlloc for RustHeap {
         #[inline]
         unsafe fn alloc(&self, l: Layout) -> *mut u8 {
-            let Some(c) = class(l) else { return unsafe { GLOBAL.alloc(l) } };
+            let Some(c) = class(l) else {
+                return unsafe { GLOBAL.alloc(l) };
+            };
             let lists = unsafe { &mut *self.0.get() };
             let head = lists[c];
             if head.is_null() {
@@ -229,7 +242,9 @@ mod rust_heap {
 
         #[inline]
         unsafe fn dealloc(&self, p: *mut u8, l: Layout) {
-            let Some(c) = class(l) else { return unsafe { GLOBAL.dealloc(p, l) } };
+            let Some(c) = class(l) else {
+                return unsafe { GLOBAL.dealloc(p, l) };
+            };
             let lists = unsafe { &mut *self.0.get() };
             unsafe { *(p as *mut *mut u8) = lists[c] };
             lists[c] = p;
@@ -385,7 +400,9 @@ mod ext_report {
     use openmodelica_sim_meta::omclog;
 
     fn cstr<'a>(p: u32) -> &'a str {
-        unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }.to_str().unwrap_or("")
+        unsafe { core::ffi::CStr::from_ptr(p as *const core::ffi::c_char) }
+            .to_str()
+            .unwrap_or("")
     }
 
     // The model module's `throw`, which rustc emits for no wasm target: merged
@@ -497,7 +514,6 @@ pub extern "C" fn _initialize() {
 }
 
 #[cfg(all(target_os = "wasi", any(feature = "standalone", feature = "session")))]
-
 // The in-wasm session driver (`rt_sim_*`): the shared driver + daskr compiled
 // in-wasm so the model is reached wasm->wasm via the shared table. Both JIT
 // runtimes (unknown-unknown for web, wasip1 for native) enable it via the
@@ -574,7 +590,12 @@ fn scan_live() {
         }
         raw = unsafe { load_u32(raw + LIVE_NEXT) };
     }
-    for (slot, v) in [(STAT_LIVE_RC1, rc1), (STAT_LIVE_RC2, rc2), (STAT_LIVE_RCN, rcn), (STAT_LIVE_MAXRC, maxrc)] {
+    for (slot, v) in [
+        (STAT_LIVE_RC1, rc1),
+        (STAT_LIVE_RC2, rc2),
+        (STAT_LIVE_RCN, rcn),
+        (STAT_LIVE_MAXRC, maxrc),
+    ] {
         openmodelica_solvers::counters::stat_set(slot, v);
     }
     // What the survivors *are*: the first few that read as `[rc][len][utf8]`.
@@ -582,17 +603,23 @@ fn scan_live() {
     let mut raw = unsafe { *LIVE.0.get() };
     while raw != 0 && shown < 8 {
         let obj = raw + HEADER as u32;
-        let (total, rc, len) =
-            unsafe { (load_u32(raw) as usize, load_u32(obj), load_u32(obj + STR_LEN_OFF) as usize) };
+        let (total, rc, len) = unsafe {
+            (
+                load_u32(raw) as usize,
+                load_u32(obj),
+                load_u32(obj + STR_LEN_OFF) as usize,
+            )
+        };
         if rc == 1 && len > 0 && len + HEADER + STR_DATA_OFF as usize + 1 <= total + 8 {
-            let bytes = unsafe {
-                core::slice::from_raw_parts((obj + STR_DATA_OFF) as *const u8, len.min(60))
-            };
+            let bytes = unsafe { core::slice::from_raw_parts((obj + STR_DATA_OFF) as *const u8, len.min(60)) };
             if bytes.iter().all(|b| *b >= 0x20 && *b < 0x7f) {
                 omclog::info(
                     omclog::STDOUT,
                     false,
-                    &alloc::format!("live string rc=1 len={len}: {}", core::str::from_utf8(bytes).unwrap_or("?")),
+                    &alloc::format!(
+                        "live string rc=1 len={len}: {}",
+                        core::str::from_utf8(bytes).unwrap_or("?")
+                    ),
                 );
                 shown += 1;
             }
@@ -977,7 +1004,9 @@ pub extern "C" fn rt_array_total(obj: u32) -> u32 {
 pub extern "C" fn rt_array_dim(obj: u32, axis: i32) -> u32 {
     let ndims = rt_array_ndims(obj) as i32;
     if axis < 1 || axis > ndims {
-        nls::throw_stream(&format!("Model error. size(a, {axis}) of an array with {ndims} dimensions"));
+        nls::throw_stream(&format!(
+            "Model error. size(a, {axis}) of an array with {ndims} dimensions"
+        ));
         return 0;
     }
     unsafe { load_u32(obj + ARR_DIMS_OFF + (axis as u32 - 1) * 4) }
@@ -1138,15 +1167,26 @@ struct SliceSpec {
 
 impl SliceSpec {
     fn new(nspec: u32, spec: u32) -> SliceSpec {
-        SliceSpec { nspec, data: arr_data(spec) }
+        SliceSpec {
+            nspec,
+            data: arr_data(spec),
+        }
     }
 
     fn kind(&self, axis: u32) -> u32 {
-        if axis < self.nspec { unsafe { load_u32(self.data + 2 * axis * 4) } } else { SPEC_WHOLE }
+        if axis < self.nspec {
+            unsafe { load_u32(self.data + 2 * axis * 4) }
+        } else {
+            SPEC_WHOLE
+        }
     }
 
     fn val(&self, axis: u32) -> u32 {
-        if axis < self.nspec { unsafe { load_u32(self.data + (2 * axis + 1) * 4) } } else { 0 }
+        if axis < self.nspec {
+            unsafe { load_u32(self.data + (2 * axis + 1) * 4) }
+        } else {
+            0
+        }
     }
 
     /// How many positions of `arr`'s `axis` (0-based) the spec selects.
@@ -1196,7 +1236,10 @@ fn spec_positions(arr: u32, spec: &SliceSpec) -> (u32, u32) {
             lin = lin * rt_array_dim(arr, axis as i32 + 1) + spec.coord(axis, p);
         }
         if lin >= arr_total {
-            nls::throw_stream(&format!("Model error. Index {} out of bounds for array of size {arr_total}", lin + 1));
+            nls::throw_stream(&format!(
+                "Model error. Index {} out of bounds for array of size {arr_total}",
+                lin + 1
+            ));
             lin = arr_total - 1;
         }
         unsafe { store_u32(out + i * 4, lin) };
@@ -1369,7 +1412,14 @@ pub extern "C" fn rt_array_cat(dim: u32, n: u32, handles: u32) -> u32 {
         let src = unsafe { load_u32(hdata + c * 4) };
         unsafe {
             store_u32(blocks + c * 8, arr_data(src));
-            store_u32(blocks + c * 8 + 4, if outer == 0 { 0 } else { rt_array_total(src) / outer * stride });
+            store_u32(
+                blocks + c * 8 + 4,
+                if outer == 0 {
+                    0
+                } else {
+                    rt_array_total(src) / outer * stride
+                },
+            );
         }
     }
     let mut dp = dst_base;
@@ -1682,13 +1732,17 @@ pub extern "C" fn rt_real_int_pow(mut base: f64, mut n: i32) -> f64 {
 macro_rules! rt_math1 {
     ($name:ident) => {
         #[unsafe(no_mangle)]
-        pub extern "C" fn $name(x: f64) -> f64 { libm::$name(x) }
+        pub extern "C" fn $name(x: f64) -> f64 {
+            libm::$name(x)
+        }
     };
 }
 macro_rules! rt_math2 {
     ($name:ident) => {
         #[unsafe(no_mangle)]
-        pub extern "C" fn $name(x: f64, y: f64) -> f64 { libm::$name(x, y) }
+        pub extern "C" fn $name(x: f64, y: f64) -> f64 {
+            libm::$name(x, y)
+        }
     };
 }
 rt_math2!(pow);
@@ -1722,7 +1776,11 @@ rt_math2!(fmod);
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_invalid_root(base: f64, exp: f64, loc: u32) {
     use openmodelica_sim_meta::driver::format_g;
-    let at = if loc == 0 { "" } else { core::str::from_utf8(unsafe { str_bytes(loc) }).unwrap_or("") };
+    let at = if loc == 0 {
+        ""
+    } else {
+        core::str::from_utf8(unsafe { str_bytes(loc) }).unwrap_or("")
+    };
     nls::throw_stream(&format!(
         "{at}Invalid root: ({})^({})",
         format_g(base, 6),
@@ -2144,7 +2202,11 @@ pub extern "C" fn rt_array_div_sim_f64(a: u32, s: f64, msg: u32, time: f64, init
     for i in 0..rt_array_total(a) {
         let x = unsafe { load_f64(da + i * 8) };
         let q = x / s;
-        let v = if s == 0.0 || !q.is_finite() { nls::rt_div_sim(x, s, msg, time, initial) } else { q };
+        let v = if s == 0.0 || !q.is_finite() {
+            nls::rt_div_sim(x, s, msg, time, initial)
+        } else {
+            q
+        };
         unsafe { store_f64(dr + i * 8, v) };
     }
     res
@@ -2263,7 +2325,11 @@ pub extern "C" fn rt_array_linspace(x1: f64, x2: f64, n: u32) -> u32 {
     rt_array_set_dim(res, 0, n);
     let d = arr_data(res);
     for i in 0..n {
-        let v = if n <= 1 { x1 } else { x1 + (x2 - x1) * (i as f64) / ((n - 1) as f64) };
+        let v = if n <= 1 {
+            x1
+        } else {
+            x1 + (x2 - x1) * (i as f64) / ((n - 1) as f64)
+        };
         unsafe { store_f64(d + i * 8, v) };
     }
     res
@@ -2487,7 +2553,10 @@ fn arr_same(a: u32, b: u32) -> bool {
         let kind = load_u32(a + ARR_KIND_OFF);
         let ndims = load_u32(a + ARR_NDIMS_OFF);
         let total = load_u32(a + ARR_TOTAL_OFF);
-        if kind != load_u32(b + ARR_KIND_OFF) || ndims != load_u32(b + ARR_NDIMS_OFF) || total != load_u32(b + ARR_TOTAL_OFF) {
+        if kind != load_u32(b + ARR_KIND_OFF)
+            || ndims != load_u32(b + ARR_NDIMS_OFF)
+            || total != load_u32(b + ARR_TOTAL_OFF)
+        {
             return false;
         }
         if (0..ndims).any(|d| load_u32(a + ARR_DIMS_OFF + 4 * d) != load_u32(b + ARR_DIMS_OFF + 4 * d)) {
@@ -2637,7 +2706,10 @@ fn assert_format_error(bytes: &[u8], err: FmtParseError) -> ! {
         }
         FmtParseError::InvalidSpecifier(c) => {
             // C's `%c` of the terminating NUL contributes nothing.
-            let c = match c { 0 => String::new(), c => String::from(c as char) };
+            let c = match c {
+                0 => String::new(),
+                c => String::from(c as char),
+            };
             format!("Could not parse format string: invalid conversion specifier: {c} in {str}")
         }
         FmtParseError::TrailingData => {
@@ -2653,8 +2725,14 @@ fn assert_format_error(bytes: &[u8], err: FmtParseError) -> ! {
 /// specifier. An unparseable directive is the caller's [`assert_format_error`].
 fn parse_modelica_format(bytes: &[u8]) -> Result<FmtSpec, FmtParseError> {
     let mut spec = FmtSpec {
-        minus: false, zero: false, plus: false, space: false, hash: false,
-        width: 0, prec: None, conv: 0,
+        minus: false,
+        zero: false,
+        plus: false,
+        space: false,
+        hash: false,
+        width: 0,
+        prec: None,
+        conv: 0,
     };
     let mut i = 0;
     // Flags.
@@ -2726,9 +2804,10 @@ fn apply_sign_width(mut body: String, spec: &FmtSpec) -> String {
         s
     } else if spec.zero {
         // Zero-pad after any sign character.
-        let sign_len = body.bytes().next().map_or(0, |c| {
-            if c == b'-' || c == b'+' || c == b' ' { 1 } else { 0 }
-        });
+        let sign_len = body
+            .bytes()
+            .next()
+            .map_or(0, |c| if c == b'-' || c == b'+' || c == b' ' { 1 } else { 0 });
         let (sign, rest) = body.split_at(sign_len);
         format!("{sign}{}{rest}", "0".repeat(fill))
     } else {
@@ -2872,7 +2951,11 @@ fn pad(s: &str, min_len: i32, left_just: bool) -> String {
     }
     let fill = (min_len - len) as usize;
     let spaces = " ".repeat(fill);
-    if left_just { format!("{s}{spaces}") } else { format!("{spaces}{s}") }
+    if left_just {
+        format!("{s}{spaces}")
+    } else {
+        format!("{spaces}{s}")
+    }
 }
 
 /// C `%.{p}g` of `val` (`p` significant digits, `p >= 1`), with trailing zeros
@@ -2942,7 +3025,11 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
         Some(m) => (true, String::from(m)),
         None => (false, String::from(mant_str)),
     };
-    let mut ndec: i32 = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+    let mut ndec: i32 = if digits.contains('.') {
+        digits.len() as i32 - 2
+    } else {
+        0
+    };
     let mut exp_repr: String = d2s_str.replace('E', "e");
 
     if ndec > 12 && !real_output {
@@ -2962,7 +3049,11 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
         }
         if nz > 3 {
             digits = rounded;
-            ndec = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+            ndec = if digits.contains('.') {
+                digits.len() as i32 - 2
+            } else {
+                0
+            };
             exp_repr = format!("{}{digits}e{exp}", if neg { "-" } else { "" });
         }
     }
@@ -3129,7 +3220,16 @@ pub extern "C" fn rt_stats_start(on: u32) {
 /// tearing set rather than total pivoting (C's `strictTearingFunctionCall`).
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64, method1: i32, casual: i32) -> i32 {
+pub extern "C" fn rt_linsolve(
+    a_ptr: u32,
+    b_ptr: u32,
+    x_ptr: u32,
+    n: u32,
+    eq_index: i32,
+    time: f64,
+    method1: i32,
+    casual: i32,
+) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
@@ -3139,10 +3239,15 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
         openmodelica_solvers::solverflags::Ls::Klu => ls_start_log(eq_index, n, time, "Klu"),
         openmodelica_solvers::solverflags::Ls::Umfpack => ls_start_log(eq_index, n, time, "UMFPACK"),
         openmodelica_solvers::solverflags::Ls::Lis => ls_start_log(eq_index, n, time, "Lis"),
-        openmodelica_solvers::solverflags::Ls::Default | openmodelica_solvers::solverflags::Ls::Lapack => ls_start_log(eq_index, n, time, "Lapack"),
+        openmodelica_solvers::solverflags::Ls::Default | openmodelica_solvers::solverflags::Ls::Lapack => {
+            ls_start_log(eq_index, n, time, "Lapack")
+        }
     }
     #[cfg(sundials)]
-    if matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Lis) {
+    if matches!(
+        openmodelica_solvers::solverflags::ls(),
+        openmodelica_solvers::solverflags::Ls::Lis
+    ) {
         let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         let x0 = lis_initial_guess(x_ptr, n);
@@ -3167,7 +3272,9 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     if omclog::active(omclog::LS_V) {
         if x_ptr != 0 {
-            ls_print_vector("Vector old x", unsafe { core::slice::from_raw_parts(x_ptr as *const f64, n) });
+            ls_print_vector("Vector old x", unsafe {
+                core::slice::from_raw_parts(x_ptr as *const f64, n)
+            });
         }
         ls_print_matrix("Matrix A", a, n);
         ls_print_vector("Vector b", b);
@@ -3175,7 +3282,10 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
     // `-ls=totalpivot` skips straight to the total-pivot search; LAPACK (C's
     // `dgesv`, and the default) is partial-pivot LU with that as its singular
     // fallback. `-ls=umfpack` only gets here having found the matrix singular.
-    let lu_first = !matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot | openmodelica_solvers::solverflags::Ls::Umfpack);
+    let lu_first = !matches!(
+        openmodelica_solvers::solverflags::ls(),
+        openmodelica_solvers::solverflags::Ls::TotalPivot | openmodelica_solvers::solverflags::Ls::Umfpack
+    );
     if lu_first {
         match nls::lu_solve_singular_pivot(a, b, n) {
             None => {
@@ -3198,7 +3308,12 @@ pub extern "C" fn rt_linsolve(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_ind
                 // system unsolved, which is what `tearingStrictness` relies on to
                 // report a torn system that divided by a zero parameter. A casual
                 // tearing set has the strict set instead.
-                if casual != 0 || matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Lapack) {
+                if casual != 0
+                    || matches!(
+                        openmodelica_solvers::solverflags::ls(),
+                        openmodelica_solvers::solverflags::Ls::Lapack
+                    )
+                {
                     return 1;
                 }
                 ls_report_fallback(eq_index, time, count);
@@ -3311,9 +3426,22 @@ pub extern "C" fn rt_ls_failed(eq_index: i32, time: f64) {
 /// all leave a rejected step unsolved.
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
-pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i32, time: f64, dense: i32, casual: i32) -> i32 {
+pub extern "C" fn rt_ls_check_step(
+    res_ptr: u32,
+    b_ptr: u32,
+    n: u32,
+    eq_index: i32,
+    time: f64,
+    dense: i32,
+    casual: i32,
+) -> i32 {
     // `-ls=totalpivot` has no check, and a fallback solve's step already is one.
-    if dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::TotalPivot) {
+    if dense != 0
+        && matches!(
+            openmodelica_solvers::solverflags::ls(),
+            openmodelica_solvers::solverflags::Ls::TotalPivot
+        )
+    {
         return 0;
     }
     if ls_took_fallback(eq_index) {
@@ -3334,7 +3462,13 @@ pub extern "C" fn rt_ls_check_step(res_ptr: u32, b_ptr: u32, n: u32, eq_index: i
         "Failed to solve linear system of equations (no. {eq_index}) at time {time:.6}. Residual norm is {}.",
         openmodelica_sim_meta::driver::format_g(norm, 15),
     );
-    if casual == 0 && dense != 0 && matches!(openmodelica_solvers::solverflags::ls(), openmodelica_solvers::solverflags::Ls::Default) {
+    if casual == 0
+        && dense != 0
+        && matches!(
+            openmodelica_solvers::solverflags::ls(),
+            openmodelica_solvers::solverflags::Ls::Default
+        )
+    {
         ls_report_fallback(eq_index, time, count);
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         for (bi, &ri) in b.iter_mut().zip(res) {
@@ -3358,8 +3492,7 @@ struct LsFailure {
 /// systems per `functionODE`.
 struct LsFailures(core::cell::UnsafeCell<alloc::collections::BTreeMap<i32, LsFailure>>);
 unsafe impl Sync for LsFailures {}
-static LS_FAILURES: LsFailures =
-    LsFailures(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
+static LS_FAILURES: LsFailures = LsFailures(core::cell::UnsafeCell::new(alloc::collections::BTreeMap::new()));
 
 fn ls_failure_entry(eq_index: i32) -> &'static mut LsFailure {
     unsafe { &mut *LS_FAILURES.0.get() }.entry(eq_index).or_default()
@@ -3464,12 +3597,22 @@ fn inwasm_rsparse() -> bool {
 /// solvers cache no factorization here (they are handed no pattern to analyse).
 /// 0 ok, 1 singular. `x_ptr` is C's `aux_x`, read only by the iterative `-lss lis`.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, n: u32, eq_index: i32, time: f64) -> i32 {
+pub extern "C" fn rt_solve_lin_dense_sparse(
+    a_ptr: u32,
+    b_ptr: u32,
+    x_ptr: u32,
+    n: u32,
+    eq_index: i32,
+    time: f64,
+) -> i32 {
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
     let n = n as usize;
     #[cfg(sundials)]
-    if matches!(openmodelica_solvers::solverflags::lss(), openmodelica_solvers::solverflags::Lss::Lis) {
+    if matches!(
+        openmodelica_solvers::solverflags::lss(),
+        openmodelica_solvers::solverflags::Lss::Lis
+    ) {
         let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
         let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
         let x0 = lis_initial_guess(x_ptr, n);
@@ -3479,7 +3622,9 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
     #[cfg(sundials)]
     match openmodelica_solvers::solverflags::lss() {
         openmodelica_solvers::solverflags::Lss::Klu => return sundials::klu_solve_dense(a_ptr, b_ptr, n),
-        openmodelica_solvers::solverflags::Lss::Umfpack => return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32,
+        openmodelica_solvers::solverflags::Lss::Umfpack => {
+            return (sundials::umfpack_solve_dense(a_ptr, b_ptr, n) != 0) as i32;
+        }
         _ => {} // rsparse below; Lis returned above
     }
     let a = unsafe { core::slice::from_raw_parts(a_ptr as *const f64, n * n) };
@@ -3500,7 +3645,14 @@ pub extern "C" fn rt_solve_lin_dense_sparse(a_ptr: u32, b_ptr: u32, x_ptr: u32, 
             }
             p[col + 1] = i.len() as isize;
         }
-        let sp = rsparse::data::Sprs { nzmax: i.len(), m: n, n, p, i, x };
+        let sp = rsparse::data::Sprs {
+            nzmax: i.len(),
+            m: n,
+            n,
+            p,
+            i,
+            x,
+        };
         return match rsparse::lusol(&sp, b, 2, 1.0) {
             Ok(()) => 0,
             Err(_) => 1,
@@ -3554,7 +3706,10 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
     LIN_SOLVES.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
     openmodelica_solvers::sysstat::mark_assembly_done();
     #[cfg(sundials)]
-    if matches!(openmodelica_solvers::solverflags::lss(), openmodelica_solvers::solverflags::Lss::Lis) {
+    if matches!(
+        openmodelica_solvers::solverflags::lss(),
+        openmodelica_solvers::solverflags::Lss::Lis
+    ) {
         ls_start_log(handle as i32, n as usize, time, "Lis");
         let n = n as usize;
         let colp = unsafe { core::slice::from_raw_parts(colptr as *const i32, n + 1) };
@@ -3565,7 +3720,9 @@ pub extern "C" fn rt_solve_lin_sparse_cached(
         return lis::solve_csc(handle, colp, rowi, vals, b, &x0, n, handle as i32, time);
     }
     let (backend, name) = match openmodelica_solvers::solverflags::lss() {
-        openmodelica_solvers::solverflags::Lss::Umfpack => (openmodelica_solvers::solverflags::Sparse::Umfpack, "UMFPACK"),
+        openmodelica_solvers::solverflags::Lss::Umfpack => {
+            (openmodelica_solvers::solverflags::Sparse::Umfpack, "UMFPACK")
+        }
         // rsparse stands in for KLU where SuiteSparse is absent; C's name for it.
         openmodelica_solvers::solverflags::Lss::Rsparse => (openmodelica_solvers::solverflags::Sparse::Rsparse, "Klu"),
         _ => (openmodelica_solvers::solverflags::Sparse::Klu, "Klu"), // Lis returned above
@@ -3595,8 +3752,12 @@ pub(crate) fn lin_sparse_cached(
     // flag: `Rsparse` stands in.
     #[cfg(sundials)]
     match backend {
-        openmodelica_solvers::solverflags::Sparse::Klu if sundials::have_klu() => return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
-        openmodelica_solvers::solverflags::Sparse::Umfpack if sundials::have_umfpack() => return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz),
+        openmodelica_solvers::solverflags::Sparse::Klu if sundials::have_klu() => {
+            return sundials::klu_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
+        }
+        openmodelica_solvers::solverflags::Sparse::Umfpack if sundials::have_umfpack() => {
+            return sundials::umfpack_solve_cached(handle, colptr, rowidx, values, b_ptr, n, nnz);
+        }
         _ => {}
     }
     #[cfg(not(sundials))]
@@ -3632,7 +3793,15 @@ pub(crate) fn lin_sparse_cached(
 /// In-wasm cached sparse solve (rsparse) — the web interactive + standalone
 /// wasip1 runtimes (no host solver). Reuses the cached symbolic analysis for `handle`.
 #[cfg(all(target_os = "wasi", feature = "inwasm_solve"))]
-fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values: u32, b_ptr: u32, n: usize, nnz: usize) -> i32 {
+fn solve_lin_sparse_cached_inwasm(
+    handle: u32,
+    colptr: u32,
+    rowidx: u32,
+    values: u32,
+    b_ptr: u32,
+    n: usize,
+    nnz: usize,
+) -> i32 {
     let vals = unsafe { core::slice::from_raw_parts(values as *const f64, nnz) };
     let b = unsafe { core::slice::from_raw_parts_mut(b_ptr as *mut f64, n) };
     LSS_CACHE.with(|cell| {
@@ -3649,7 +3818,11 @@ fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values:
                 x: vals.to_vec(),
             };
             let s = rsparse::sqr(&a, 2, false); // AMD ordering + symbolic, once
-            CachedLss { a, s, x: alloc::vec![0.0f64; n] }
+            CachedLss {
+                a,
+                s,
+                x: alloc::vec![0.0f64; n],
+            }
         });
         entry.a.x.copy_from_slice(vals);
         let CachedLss { a, s, x } = entry;
@@ -3659,13 +3832,21 @@ fn solve_lin_sparse_cached_inwasm(handle: u32, colptr: u32, rowidx: u32, values:
         };
         // x = P*b, solve L/U, b = Q*x; rsparse's `ipvec` permute is private.
         match &nm.pinv {
-            Some(p) => for k in 0..n { x[p[k] as usize] = b[k]; },
+            Some(p) => {
+                for k in 0..n {
+                    x[p[k] as usize] = b[k];
+                }
+            }
             None => x[..n].copy_from_slice(&b[..n]),
         }
         rsparse::lsolve(&nm.l, &mut x[..]);
         rsparse::usolve(&nm.u, &mut x[..]);
         match &s.q {
-            Some(q) => for k in 0..n { b[q[k] as usize] = x[k]; },
+            Some(q) => {
+                for k in 0..n {
+                    b[q[k] as usize] = x[k];
+                }
+            }
             None => b[..n].copy_from_slice(&x[..n]),
         }
         0

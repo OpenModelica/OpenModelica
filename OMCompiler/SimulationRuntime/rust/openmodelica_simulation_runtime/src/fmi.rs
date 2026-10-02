@@ -51,7 +51,13 @@ fn instance_for(data: *mut DATA, thread_data: *mut threadData_t) -> &'static mut
     }
     let (engine, meta) = engine_and_meta(data, thread_data);
     let sel = driver::StateSelection::new(&meta);
-    instances().push(Box::new(Instance { data, engine, meta, sel, sync: None }));
+    instances().push(Box::new(Instance {
+        data,
+        engine,
+        meta,
+        sel,
+        sync: None,
+    }));
     instances().last_mut().expect("just pushed")
 }
 
@@ -60,8 +66,13 @@ fn instance_for(data: *mut DATA, thread_data: *mut threadData_t) -> &'static mut
 pub(crate) fn engine_and_meta(data: *mut DATA, thread_data: *mut threadData_t) -> (CEngine, SimMeta) {
     let rt = crate::data::build_rt(data, thread_data);
     let layout = rt.layout;
-    let mut meta =
-        crate::meta::build(data, thread_data, &crate::model_data::InitXml::default(), &layout, &model_prefix(data));
+    let mut meta = crate::meta::build(
+        data,
+        thread_data,
+        &crate::model_data::InitXml::default(),
+        &layout,
+        &model_prefix(data),
+    );
     (meta.fmi_vrs, meta.fmi_dae_enable_vr) = crate::fmi_vrs::build(data, &layout);
     let mut engine = CEngine::new(rt);
     engine.keep_params = true;
@@ -171,7 +182,10 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
         (md.booleanParameterData, md.nParametersBooleanArray),
     ] {
         for i in 0..count as usize {
-            alloc_scalar_array(unsafe { &mut (*base.add(i)).attribute.start }, crate::model_data::simple_alloc_1d_boolean_array);
+            alloc_scalar_array(
+                unsafe { &mut (*base.add(i)).attribute.start },
+                crate::model_data::simple_alloc_1d_boolean_array,
+            );
         }
     }
     for (base, count) in [
@@ -179,7 +193,10 @@ pub extern "C" fn scalarAllocArrayAttributes(model_data: *mut MODEL_DATA) {
         (md.stringParameterData, md.nParametersStringArray),
     ] {
         for i in 0..count as usize {
-            alloc_scalar_array(unsafe { &mut (*base.add(i)).attribute.start }, crate::model_data::simple_alloc_1d_string_array);
+            alloc_scalar_array(
+                unsafe { &mut (*base.add(i)).attribute.start },
+                crate::model_data::simple_alloc_1d_string_array,
+            );
         }
     }
 }
@@ -217,8 +234,7 @@ pub extern "C" fn setAllVarsToStart(
     simulation_info: *const SIMULATION_INFO,
     model_data: *const MODEL_DATA,
 ) {
-    let (sd, si, md) =
-        unsafe { (&mut *simulation_data, &*simulation_info, &*model_data) };
+    let (sd, si, md) = unsafe { (&mut *simulation_data, &*simulation_info, &*model_data) };
     for a in 0..md.nVariablesRealArray as usize {
         let attr = unsafe { &(*md.realVarsData.add(a)).attribute };
         let base = unsafe { *si.realVarsIndex.add(a) };
@@ -252,10 +268,7 @@ pub extern "C" fn setAllVarsToStart(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn setAllParamsToStart(
-    simulation_info: *mut SIMULATION_INFO,
-    model_data: *const MODEL_DATA,
-) {
+pub extern "C" fn setAllParamsToStart(simulation_info: *mut SIMULATION_INFO, model_data: *const MODEL_DATA) {
     let (si, md) = unsafe { (&mut *simulation_info, &*model_data) };
     for a in 0..md.nParametersRealArray as usize {
         let attr = unsafe { &(*md.realParameterData.add(a)).attribute };
@@ -301,9 +314,7 @@ pub extern "C" fn copyStartValuestoInitValues(data: *mut DATA) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn storePreValues(data: *mut DATA) {
-    let (md, si, sd) = unsafe {
-        (&*(*data).modelData, &mut *(*data).simulationInfo, &**(*data).localData)
-    };
+    let (md, si, sd) = unsafe { (&*(*data).modelData, &mut *(*data).simulationInfo, &**(*data).localData) };
     unsafe {
         copy(sd.realVars, si.realVarsPre, md.nVariablesReal);
         copy(sd.integerVars, si.integerVarsPre, md.nVariablesInteger);
@@ -365,13 +376,8 @@ pub extern "C" fn checkRelations(data: *mut DATA) -> modelica_boolean {
 /// Whether a discrete variable moved away from its `pre` value. `$cse` variables
 /// are the backend's common subexpressions, not discrete state, and C skips them.
 #[unsafe(no_mangle)]
-pub extern "C" fn checkForDiscreteChanges(
-    data: *mut DATA,
-    _thread_data: *mut threadData_t,
-) -> modelica_boolean {
-    let (md, si, sd) = unsafe {
-        (&*(*data).modelData, &*(*data).simulationInfo, &**(*data).localData)
-    };
+pub extern "C" fn checkForDiscreteChanges(data: *mut DATA, _thread_data: *mut threadData_t) -> modelica_boolean {
+    let (md, si, sd) = unsafe { (&*(*data).modelData, &*(*data).simulationInfo, &**(*data).localData) };
     let verbose = omclog::active(omclog::EVENTS_V);
     let mut changed = false;
     if verbose {
@@ -412,8 +418,7 @@ pub extern "C" fn checkForDiscreteChanges(
         };
     }
 
-    let first_discrete_real =
-        (md.nVariablesRealArray - md.nDiscreteRealArray).max(0) as usize;
+    let first_discrete_real = (md.nVariablesRealArray - md.nDiscreteRealArray).max(0) as usize;
     scan!(
         md.nVariablesRealArray,
         md.realVarsData,
@@ -494,8 +499,7 @@ pub extern "C" fn updateDiscreteSystem(data: *mut DATA, thread_data: *mut thread
         }
     }
 
-    let max_iterations =
-        openmodelica_solvers::simflags::with_flags(|f| f.max_event_iter).unwrap_or(20);
+    let max_iterations = openmodelica_solvers::simflags::with_flags(|f| f.max_event_iter).unwrap_or(20);
     let mut iterations = 0;
     while discrete_changed || si(data).needToIterate != 0 || relation_changed {
         si(data).discreteStateChanged = 1;
@@ -617,10 +621,7 @@ pub extern "C" fn handleTimersFMI(
 // ---------------------------------------------------------------------------
 
 #[unsafe(no_mangle)]
-pub extern "C" fn initializeNonlinearSystems(
-    data: *mut DATA,
-    thread_data: *mut threadData_t,
-) -> c_int {
+pub extern "C" fn initializeNonlinearSystems(data: *mut DATA, thread_data: *mut threadData_t) -> c_int {
     crate::nls::initialize_nonlinear_systems(data, thread_data);
     0
 }
@@ -757,7 +758,11 @@ pub extern "C" fn setZCtol(relative_tol: c_double) {
     const MINIMAL_STEP_SIZE: f64 = 1e-12;
     let tol = TOL_HYSTERESIS * relative_tol.max(MINIMAL_STEP_SIZE);
     unsafe { crate::support::tolZC = tol };
-    omclog::info!(omclog::EVENTS_V, false, "Set tolerance for zero-crossing hysteresis to: {tol:e}");
+    omclog::info!(
+        omclog::EVENTS_V,
+        false,
+        "Set tolerance for zero-crossing hysteresis to: {tol:e}"
+    );
 }
 
 /// `<Model>_info.json` is read lazily (`src/info_json.rs`), so there is nothing

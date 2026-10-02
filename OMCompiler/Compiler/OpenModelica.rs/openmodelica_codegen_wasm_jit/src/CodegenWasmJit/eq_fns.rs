@@ -15,7 +15,10 @@ pub(super) fn finish_fn(ctx: FnCtx) -> we::Function {
 /// One lowering step of an equation entry point.
 pub(super) enum EqUnit<'a> {
     /// A parameter's binding expression, assigned ahead of `parameterEquations`.
-    Binding(&'a metamodelica::Ref<DAE::ComponentRef>, &'a metamodelica::Ref<DAE::Exp>),
+    Binding(
+        &'a metamodelica::Ref<DAE::ComponentRef>,
+        &'a metamodelica::Ref<DAE::Exp>,
+    ),
     /// A SimCode equation; `Some(mask)` adds the DAE-mode stage guard.
     Eq(&'a metamodelica::Ref<SimCode::SimEqSystem>, Option<u32>),
 }
@@ -54,7 +57,10 @@ pub(super) fn lower_unit(
     emit_sim_const_stores(ctx, &core::mem::take(pending))?;
     match unit {
         EqUnit::Binding(cref, exp) => {
-            let lhs = DAE::Exp::CREF { componentRef: (*cref).clone(), ty: t_real() };
+            let lhs = DAE::Exp::CREF {
+                componentRef: (*cref).clone(),
+                ty: t_real(),
+            };
             ctx.sim_assign(&lhs, exp)
         }
         EqUnit::Eq(eq, stages) => {
@@ -79,21 +85,28 @@ pub(super) fn lower_unit(
 /// splits.
 fn chunk_instrs() -> usize {
     static N: OnceLock<usize> = OnceLock::new();
-    *N.get_or_init(|| match std::env::var("OMC_WASM_CHUNK_INSTRS").ok().and_then(|v| v.parse().ok()) {
-        Some(0) => usize::MAX,
-        Some(n) => n,
-        None => 4096,
-    })
+    *N.get_or_init(
+        || match std::env::var("OMC_WASM_CHUNK_INSTRS").ok().and_then(|v| v.parse().ok()) {
+            Some(0) => usize::MAX,
+            Some(n) => n,
+            None => 4096,
+        },
+    )
 }
 
 /// [`chunk_instrs`] for a nonlinear system's residual, which `OMC_WASM_NLS_CHUNK_INSTRS`
 /// overrides separately; 0 never splits.
 pub(super) fn nls_chunk_instrs() -> usize {
     static N: OnceLock<usize> = OnceLock::new();
-    *N.get_or_init(|| match std::env::var("OMC_WASM_NLS_CHUNK_INSTRS").ok().and_then(|v| v.parse().ok()) {
-        Some(0) => usize::MAX,
-        Some(n) => n,
-        None => chunk_instrs(),
+    *N.get_or_init(|| {
+        match std::env::var("OMC_WASM_NLS_CHUNK_INSTRS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+        {
+            Some(0) => usize::MAX,
+            Some(n) => n,
+            None => chunk_instrs(),
+        }
     })
 }
 
@@ -178,10 +191,25 @@ pub(super) fn build_split_fn(
     let slot = bodies.len();
     bodies.push(empty_eqfn());
     let chunks = build_chunks(
-        name, units, n_params, ty, stateset_diag, save_pre, var_map, eq_index, by_name, literals,
-        pool, per_unit,
+        name,
+        units,
+        n_params,
+        ty,
+        stateset_diag,
+        save_pre,
+        var_map,
+        eq_index,
+        by_name,
+        literals,
+        pool,
+        per_unit,
     )?;
-    Ok(SplitFn { slot, chunks, n_params, pre_calls: Vec::new() })
+    Ok(SplitFn {
+        slot,
+        chunks,
+        n_params,
+        pre_calls: Vec::new(),
+    })
 }
 
 /// [`build_split_fn`] without an entry point of its own.
@@ -203,8 +231,7 @@ pub(super) fn build_chunks(
     let first = pool.len();
     let mut i = 0usize;
     let _fg = crate::CodegenWasmJitFunctions::FnNameGuard::new(name);
-    while i < units.len() || (pool.len() == first && !(stateset_diag.is_empty() && save_pre.is_empty()))
-    {
+    while i < units.len() || (pool.len() == first && !(stateset_diag.is_empty() && save_pre.is_empty())) {
         let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, n_params);
         if pool.len() == first {
             ctx.emit_stateset_diag_init(stateset_diag)?;
@@ -283,18 +310,24 @@ pub(super) fn eq_segments(
     let mut segs: Vec<EqSegment> = Vec::new();
     for (i, e) in all.iter().enumerate() {
         let (owner, pos) = own.get(&eq_id_of(e)).copied().unwrap_or((EqOwner::Dae, 0));
-        let joins = |s: &EqSegment| {
-            s.owner == owner && (owner == EqOwner::Dae || s.pos + s.span.len() == pos)
-        };
+        let joins = |s: &EqSegment| s.owner == owner && (owner == EqOwner::Dae || s.pos + s.span.len() == pos);
         match segs.last_mut() {
             Some(s) if joins(s) => s.span.end = i + 1,
-            _ => segs.push(EqSegment { owner, pos, span: i..i + 1, chunks: Vec::new() }),
+            _ => segs.push(EqSegment {
+                owner,
+                pos,
+                span: i..i + 1,
+                chunks: Vec::new(),
+            }),
         }
     }
     // An entry point calls its own segments in its list's order, so they must tile it.
     for (owner, len) in [(EqOwner::Ode, ode.len()), (EqOwner::Alg, alg.len())] {
-        let mut runs: Vec<(usize, usize)> =
-            segs.iter().filter(|s| s.owner == owner).map(|s| (s.pos, s.span.len())).collect();
+        let mut runs: Vec<(usize, usize)> = segs
+            .iter()
+            .filter(|s| s.owner == owner)
+            .map(|s| (s.pos, s.span.len()))
+            .collect();
         runs.sort_unstable();
         let mut next = 0;
         for (pos, n) in runs {
@@ -325,25 +358,52 @@ pub(super) fn build_shared_eq_chunks(
     pool: &mut ChunkPool,
 ) -> Result<(Vec<usize>, Vec<usize>, Vec<usize>)> {
     let head = build_chunks(
-        "functionLocalKnownVars", &eq_units(local_known), 1, ty, &[], &[], var_map, eq_index,
-        by_name, literals, pool, false,
+        "functionLocalKnownVars",
+        &eq_units(local_known),
+        1,
+        ty,
+        &[],
+        &[],
+        var_map,
+        eq_index,
+        by_name,
+        literals,
+        pool,
+        false,
     )?;
     for seg in &mut segs {
         let name = format!("eqFunction_{}", eq_id_of(&all[seg.span.start]));
         seg.chunks = build_chunks(
-            &name, &eq_units(&all[seg.span.clone()]), 1, ty, &[], &[], var_map, eq_index, by_name,
-            literals, pool, false,
+            &name,
+            &eq_units(&all[seg.span.clone()]),
+            1,
+            ty,
+            &[],
+            &[],
+            var_map,
+            eq_index,
+            by_name,
+            literals,
+            pool,
+            false,
         )?;
     }
     let call = |segs: &[&EqSegment]| -> Vec<usize> {
-        head.iter().copied().chain(segs.iter().flat_map(|s| s.chunks.iter().copied())).collect()
+        head.iter()
+            .copied()
+            .chain(segs.iter().flat_map(|s| s.chunks.iter().copied()))
+            .collect()
     };
     let own = |owner: EqOwner| -> Vec<&EqSegment> {
         let mut own: Vec<&EqSegment> = segs.iter().filter(|s| s.owner == owner).collect();
         own.sort_by_key(|s| s.pos);
         own
     };
-    Ok((call(&own(EqOwner::Ode)), call(&own(EqOwner::Alg)), call(&segs.iter().collect::<Vec<_>>())))
+    Ok((
+        call(&own(EqOwner::Ode)),
+        call(&own(EqOwner::Alg)),
+        call(&segs.iter().collect::<Vec<_>>()),
+    ))
 }
 
 /// Lower `units` into one function, for entry points whose size is bounded by the

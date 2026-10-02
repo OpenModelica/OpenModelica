@@ -2,24 +2,20 @@
 //! model (`MoveData.c`), the derivative/Hessian structure (`DerStructure.c`), the
 //! initial guess (`InitialGuess.c`) and writing the solution back (`res2file`).
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+use openmodelica_solvers::fmath;
 
 use super::model::Model;
-use super::run::{flags_bool, zeros, BoundsData, Dim, Ipop, OptData, Rk, Structure, Time};
-use crate::driver::{self, format_g, Result, SimEngine};
-use crate::{omclog, OptInfo, OptJac, SimMeta};
+use super::run::{BoundsData, Dim, Ipop, OptData, Rk, Structure, Time, flags_bool, zeros};
+use crate::driver::{self, Result, SimEngine, format_g};
+use crate::{OptInfo, OptJac, SimMeta, omclog};
 
 /// Radau IIA collocation points for `np = 3` (C's `c[]`), and the trivial one for
 /// `np = 1`.
-const C3: [f64; 3] = [
-    0.155_051_025_721_682_19,
-    0.644_948_974_278_317_8,
-    1.000_00,
-];
+const C3: [f64; 3] = [0.155_051_025_721_682_19, 0.644_948_974_278_317_8, 1.000_00];
 
 /// C's `pickUpModelData`.
 pub(crate) fn pick_up_model_data(
@@ -212,8 +208,7 @@ fn grid_file_rows(file: &str, nsi: usize) -> (usize, bool) {
 
 /// The times in a `-optimizerTimeGrid` file, one per line.
 fn read_grid_file(file: &str) -> core::result::Result<Vec<f64>, String> {
-    let text = crate::extinput::read_file(file)
-        .ok_or_else(|| format!("OMC can't find the file {file}."))?;
+    let text = crate::extinput::read_file(file).ok_or_else(|| format!("OMC can't find the file {file}."))?;
     Ok(text.split_whitespace().filter_map(|w| w.parse::<f64>().ok()).collect())
 }
 
@@ -375,7 +370,8 @@ fn pick_up_bounds(data: &mut OptData) {
         // initial guess's DASSL tolerances are scaled by it.
         let nom = data.bounds.vnom[i];
         data.model.write_f64_at(attrs.opt_nom_off + (i as u32) * 8, nom);
-        data.model.write_f64_at(data.model.layout.state_nom_off + (i as u32) * 8, nom);
+        data.model
+            .write_f64_at(data.model.layout.state_nom_off + (i as u32) * 8, nom);
         data.bounds.scal_f[i] = 1.0 / nom;
         data.bounds.vmin[i] = min * data.bounds.scal_f[i];
         data.bounds.vmax[i] = max * data.bounds.scal_f[i];
@@ -451,13 +447,7 @@ fn set_rk_coeff(data: &mut OptData) {
             1.053_197_264_742_180_8,
             0.0,
         ];
-        rk.a[2] = [
-            3.0,
-            5.531_972_647_421_808,
-            7.531_972_647_421_808,
-            5.0,
-            0.0,
-        ];
+        rk.a[2] = [3.0, 5.531_972_647_421_808, 7.531_972_647_421_808, 5.0, 0.0];
         rk.b[0] = 0.376_403_062_700_467_3;
         rk.b[1] = 0.512_485_826_188_421_6;
         rk.b[2] = 1.0 - (rk.b[0] + rk.b[1]);
@@ -534,7 +524,9 @@ fn print_some_model_infos(data: &mut OptData) {
 
 /// C's `pickUpStates`: `-csvInput` overrides start values by name.
 fn pick_up_states(data: &mut OptData) {
-    let Some(file) = crate::simflags::with_flags(|f| f.state_file.clone()) else { return };
+    let Some(file) = crate::simflags::with_flags(|f| f.state_file.clone()) else {
+        return;
+    };
     let Some(text) = crate::extinput::read_file(&file) else {
         omclog::warning!(omclog::STDOUT, false, "OMC can't find the file {file}.");
         return;
@@ -546,7 +538,9 @@ fn pick_up_states(data: &mut OptData) {
     let mut out = String::new();
     for (i, line) in text.lines().enumerate() {
         let mut it = line.split_whitespace();
-        let (Some(name), Some(value)) = (it.next(), it.next()) else { continue };
+        let (Some(name), Some(value)) = (it.next(), it.next()) else {
+            continue;
+        };
         let Ok(start) = value.parse::<f64>() else { continue };
         match data.names.iter().position(|n| n == name) {
             Some(j) => {
@@ -644,13 +638,7 @@ pub(crate) fn allocate_der_struct(data: &mut OptData) -> Result<()> {
 /// C's `local_jac_struct`: turn each Jacobian's sparsity into the constraint
 /// Jacobian's own pattern, and the row remapping that skips the objective rows.
 fn local_jac_struct(data: &mut OptData) {
-    let (nv, nx, n_j, n_j2, ncf) = (
-        data.dim.nv,
-        data.dim.nx,
-        data.dim.n_j,
-        data.dim.n_j2,
-        data.dim.ncf,
-    );
+    let (nv, nx, n_j, n_j2, ncf) = (data.dim.nv, data.dim.nx, data.dim.n_j, data.dim.n_j2, data.dim.ncf);
     data.s.jder_con = flags_bool(n_j * nv);
     data.s.grad_m = flags_bool(nv);
     data.s.grad_l = flags_bool(nv);
@@ -939,10 +927,7 @@ fn print_local_jac_struct(data: &OptData) {
 fn print_local_hessian_struct(data: &OptData) {
     let nv = data.dim.nv;
     let mut out = String::from("\n========================================================");
-    out.push_str(&format!(
-        "\nHessian Structure {nv} x {nv}\tnz = {}",
-        data.dim.nh0
-    ));
+    out.push_str(&format!("\nHessian Structure {nv} x {nv}\tnz = {}", data.dim.nh0));
     out.push_str("\n========================================================");
     for i in 0..nv {
         out.push('\n');
@@ -1031,13 +1016,7 @@ fn initial_guess_cflag(data: &mut OptData, cflag: &str) -> i32 {
 /// C's `initial_guess_ipopt_sim`: simulate the model over the collocation grid with
 /// DASSL and take each point's variables as the guess.
 fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
-    let (nx, nu, np, nsi, n_real) = (
-        data.dim.nx,
-        data.dim.nu,
-        data.dim.np,
-        data.dim.nsi,
-        data.dim.n_real,
-    );
+    let (nx, nu, np, nsi, n_real) = (data.dim.nx, data.dim.nu, data.dim.np, data.dim.nsi, data.dim.n_real);
     // C clamps the tolerance for the guess: `min(max(tol,1e-8),1e-3)`.
     let tol = data.tol;
     let guess_tol = tol.max(1e-8).min(1e-3);
@@ -1086,7 +1065,11 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
             let e = unsafe { &mut *engine };
             stepper.step_to(e, &meta, t)?;
             let now = stepper.time();
-            driver::log_line(omclog::STDOUT, omclog::INFO, &format!("\ndone: time[0] = {}", format_g(now, 6)));
+            driver::log_line(
+                omclog::STDOUT,
+                omclog::INFO,
+                &format!("\ndone: time[0] = {}", format_g(now, 6)),
+            );
             data.emit_row(now)?;
             data.csv_row(now);
         }
@@ -1099,7 +1082,11 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
 
     // `-ipopt_init=file` needs `-iif` to name the result file the guess is read from.
     let iif = crate::simflags::with_flags(|f| f.init_file.clone());
-    let op = if o == 2 && iif.as_deref().is_some_and(|s| !s.is_empty()) { 2 } else { 1 };
+    let op = if o == 2 && iif.as_deref().is_some_and(|s| !s.is_empty()) {
+        2
+    } else {
+        1
+    };
     // C's `importStartValues` writes the start attributes, which carry over from
     // one collocation point to the next; `start` mirrors that array.
     let attrs = data.model.layout;
@@ -1143,7 +1130,11 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                 data.model.write_reals(&start);
             }
             if print_guess {
-                driver::log_line(omclog::STDOUT, omclog::INFO, &format!("\ndone: time[{k}] = {}", format_g(t, 6)));
+                driver::log_line(
+                    omclog::STDOUT,
+                    omclog::INFO,
+                    &format!("\ndone: time[{k}] = {}", format_g(t, 6)),
+                );
             }
             k += 1;
             let mut buf = zeros(n_real);
@@ -1156,7 +1147,11 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                 );
                 let v = data.v(i, j)[l];
                 if v < lo || v > hi {
-                    driver::log_line(omclog::STDOUT, omclog::INFO, "\n********************************************\n");
+                    driver::log_line(
+                        omclog::STDOUT,
+                        omclog::INFO,
+                        "\n********************************************\n",
+                    );
                     omclog::warning!(
                         omclog::STDOUT,
                         false,
@@ -1172,7 +1167,11 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                         format_g(v, 6),
                         format_g(hi, 6),
                     );
-                    driver::log_line(omclog::STDOUT, omclog::INFO, "\n********************************************");
+                    driver::log_line(
+                        omclog::STDOUT,
+                        omclog::INFO,
+                        "\n********************************************",
+                    );
                 }
             }
         }
@@ -1211,8 +1210,7 @@ fn init_ipopt_data(data: &mut OptData, op: i32) {
                 data.ipop.vopt[l + shift] = point[l] * data.bounds.scal_f[l];
             }
             for l in nx..nv {
-                data.ipop.vopt[l + shift] =
-                    data.model.inputs[l - nx] * data.bounds.scal_f[l];
+                data.ipop.vopt[l + shift] = data.model.inputs[l - nx] * data.bounds.scal_f[l];
             }
             shift += nv;
         }
@@ -1380,18 +1378,24 @@ fn update_do_system(data: &mut OptData, i: usize, j: usize, index: i32, m: usize
 /// C's `diffSynColoredOptimizerSystem`: B (`m = 2`) or C (`m = 3`) at one
 /// collocation point, scaled into the constraint Jacobian's rows.
 pub(crate) fn diff_syn_colored(data: &mut OptData, i: usize, j: usize, m: usize) {
-    let Some(jac) = jac_of(&data.opt, m).cloned() else { return };
+    let Some(jac) = jac_of(&data.opt, m).cloned() else {
+        return;
+    };
     let (nv, nx, n_j) = (data.dim.nv, data.dim.nx, data.dim.n_j);
     let n_j1 = n_j + 1;
     let scaldt = data.bounds.scaldt[i].clone();
     let scalb = data.bounds.scalb[i][j];
-    let index_j: Vec<usize> =
-        if m == 3 { data.s.index_j3.clone() } else { data.s.index_j2.clone() };
+    let index_j: Vec<usize> = if m == 3 {
+        data.s.index_j3.clone()
+    } else {
+        data.s.index_j2.clone()
+    };
     let vnom = data.bounds.vnom.clone();
     let (lagrange, mayer) = (data.s.lagrange, data.s.mayer);
 
     let mut out = vec![(0usize, 0usize, 0.0f64); 0];
-    data.model.eval_jac_colored(&jac, &vnom, |row, col, v| out.push((row, col, v)));
+    data.model
+        .eval_jac_colored(&jac, &vnom, |row, col, v| out.push((row, col, v)));
     let target = data.jac_mut(i, j);
     for (row, col, v) in out {
         let l = match index_j.get(row) {
@@ -1424,7 +1428,8 @@ pub(crate) fn diff_syn_colored_f(data: &mut OptData) {
     let nv = data.dim.nv;
     let vnom = data.bounds.vnom.clone();
     let mut out = vec![(0usize, 0usize, 0.0f64); 0];
-    data.model.eval_jac_colored(&jac, &vnom, |row, col, v| out.push((row, col, v)));
+    data.model
+        .eval_jac_colored(&jac, &vnom, |row, col, v| out.push((row, col, v)));
     for (row, col, v) in out {
         if let Some(slot) = data.jf.get_mut(row * nv + col) {
             *slot = v;

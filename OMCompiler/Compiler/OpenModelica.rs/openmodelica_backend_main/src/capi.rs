@@ -22,8 +22,8 @@
 //! dedicated multi-MiB stack, because the port only lowers self-tail-calls and
 //! deep traversals can overflow the default 8 MiB).
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use crate::Main;
 

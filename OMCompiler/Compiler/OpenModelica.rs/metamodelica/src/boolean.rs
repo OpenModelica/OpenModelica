@@ -36,9 +36,9 @@ pub fn boolString(b: bool) -> ArcStr {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod boolean_tests {
         use super::*;
 

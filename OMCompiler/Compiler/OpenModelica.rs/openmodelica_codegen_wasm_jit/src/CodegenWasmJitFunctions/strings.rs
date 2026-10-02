@@ -82,9 +82,7 @@ pub(super) fn emit_string_builtin(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DA
         // codegen (the frontend fills the slots), but is unambiguous.
         (SigTy::Int, 1) | (SigTy::Bool, 1) => format_scalar_string(ctx, argv[0], vty),
         // String(Integer|Boolean, minimumLength, leftJustified).
-        (SigTy::Int, 3) | (SigTy::Bool, 3) => {
-            emit_padded_scalar_string(ctx, argv[0], vty, argv[1], argv[2])
-        }
+        (SigTy::Int, 3) | (SigTy::Bool, 3) => emit_padded_scalar_string(ctx, argv[0], vty, argv[1], argv[2]),
         // String(Real, significantDigits, minimumLength, leftJustified).
         (SigTy::Real, 4) => emit_real_format(ctx, argv[0], argv[1], argv[2], argv[3]),
         other => return Err("CodegenWasmJit: unsupported String() argument shape"),
@@ -145,7 +143,9 @@ pub(super) fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
 /// without the log line.
 pub(super) fn emit_reinit_note(ctx: &mut FnCtx, stateVar: &DAE::ComponentRef) -> Result<()> {
     let Ok(key) = sim_cref_key(stateVar) else { return Ok(()) };
-    let Some(slot) = ctx.sim()?.vars.get(&key).copied() else { return Ok(()) };
+    let Some(slot) = ctx.sim()?.vars.get(&key).copied() else {
+        return Ok(());
+    };
     if slot.wty != WTy::F64 {
         return Ok(());
     }
@@ -316,7 +316,7 @@ pub(super) fn format_scalar_string(ctx: &mut FnCtx, arg: &DAE::Exp, ty: SigTy) -
         // `String(array)` / `String(record)` are not scalar conversions (the
         // frontend would not produce them here); reject rather than mis-format.
         SigTy::Array { .. } | SigTy::Record { .. } | SigTy::Ptr | SigTy::Func { .. } => {
-            return Err("CodegenWasmJit: String() of an array/record/external-object is not supported")
+            return Err("CodegenWasmJit: String() of an array/record/external-object is not supported");
         }
     }
 }

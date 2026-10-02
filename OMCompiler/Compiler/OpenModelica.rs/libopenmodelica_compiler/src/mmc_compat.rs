@@ -23,9 +23,7 @@ use std::panic::catch_unwind;
 use std::ptr;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
-use openmodelica_util::System::{
-    LoadModelCallback, PlotCallback, omc_set_loadmodel_callback, omc_set_plot_callback,
-};
+use openmodelica_util::System::{LoadModelCallback, PlotCallback, omc_set_loadmodel_callback, omc_set_plot_callback};
 
 /// Mirror of `OmcRtBox` in `omc_rust_embedding.h`: a tagged NIL/CONS/SCON box.
 #[repr(C)]
@@ -108,8 +106,7 @@ pub extern "C" fn omc_System_initGarbageCollector(_thread_data: *mut c_void) {}
 pub extern "C" fn System_openModelicaPlatform() -> *const c_char {
     static S: std::sync::OnceLock<std::ffi::CString> = std::sync::OnceLock::new();
     S.get_or_init(|| {
-        std::ffi::CString::new(openmodelica_util::System::openModelicaPlatform().as_bytes())
-            .unwrap_or_default()
+        std::ffi::CString::new(openmodelica_util::System::openModelicaPlatform().as_bytes()).unwrap_or_default()
     })
     .as_ptr()
 }
@@ -142,11 +139,7 @@ pub extern "C" fn omc_Main_init(thread_data: *mut c_void, args: *mut c_void) -> 
 /// boxed reply string; the result is the keep-running flag (0 after `quit()`),
 /// matching the MMC `omc_Main_handleCommand`.
 #[unsafe(no_mangle)]
-pub extern "C" fn omc_Main_handleCommand(
-    thread_data: *mut c_void,
-    imsg: *mut c_void,
-    omsg: *mut *mut c_void,
-) -> c_int {
+pub extern "C" fn omc_Main_handleCommand(thread_data: *mut c_void, imsg: *mut c_void, omsg: *mut *mut c_void) -> c_int {
     unsafe {
         // Forward OMEdit's plot/loadModel callbacks (stored on threadData) to the
         // Rust runtime's registry, which `System.*CallBack` consult. Cheap, and

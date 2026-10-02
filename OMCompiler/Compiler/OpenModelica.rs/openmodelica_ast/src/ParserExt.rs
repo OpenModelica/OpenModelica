@@ -31,8 +31,8 @@
 
 use std::sync::Arc;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use crate::Absyn;
 use crate::GlobalScript;
@@ -105,7 +105,14 @@ fn report_syntax_messages(info_filename: &str) {
 /// `info_filename` (the possibly testsuite-friendly name) is only used to
 /// display syntax errors — same split as the C parser's `filename_C` vs
 /// `filename_C_testsuiteFriendly` (Parser/parse.c).
-fn run_parse(src: &str, filename: &str, info_filename: &str, grammar: Grammar, readonly: bool, timestamp: f64) -> Result<Absyn::Program> {
+fn run_parse(
+    src: &str,
+    filename: &str,
+    info_filename: &str,
+    grammar: Grammar,
+    readonly: bool,
+    timestamp: f64,
+) -> Result<Absyn::Program> {
     let result = parser::parse(src, filename, info_filename, grammar, readonly, timestamp).map_err(|_| "error");
     report_syntax_messages(info_filename);
     result
@@ -162,7 +169,8 @@ fn file_timestamp(filename: &str) -> f64 {
     if std::env::var_os("OPENMODELICA_BACKEND_STUBS").is_some_and(|v| v == "1") {
         return 0.0;
     }
-    openmodelica_wasi::fs::modified(filename).ok()
+    openmodelica_wasi::fs::modified(filename)
+        .ok()
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_secs() as f64)
         .unwrap_or(0.0)
@@ -193,8 +201,8 @@ pub fn parse(
         metamodelica::cancel::PROGRESS_INDETERMINATE,
         metamodelica::cancel::PHASE_PARSE,
     );
-    let (src, orig_bytes) = read_source_file(filename.as_str())
-        .map_err(|_| "ParserExt::parse: cannot read {filename}")?;
+    let (src, orig_bytes) =
+        read_source_file(filename.as_str()).map_err(|_| "ParserExt::parse: cannot read {filename}")?;
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     parser::set_pure_impure_as_ident(languageStandardInt < 33 && strict);
     // Like parseFile in Parser/parse.c: classes parsed from a file the user
@@ -205,7 +213,14 @@ pub fn parse(
     // the literals are transcoded from `encoding`.
     parser::set_non_utf8_source_bytes(orig_bytes);
     parser::set_source_encoding(encoding.as_str());
-    let result = run_parse(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str()));
+    let result = run_parse(
+        &src,
+        filename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        readonly,
+        file_timestamp(filename.as_str()),
+    );
     parser::set_source_encoding("");
     parser::set_non_utf8_source_bytes(None);
     result
@@ -223,7 +238,14 @@ pub fn parsestring(
     parser::set_pure_impure_as_ident(languageStandardInt < 33 && strict);
     // String input has no on-disk path; the interactive name serves as both
     // the SOURCEINFO and the error-display name (like the C `parseString`).
-    run_parse(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp())
+    run_parse(
+        r#str.as_str(),
+        infoFilename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        /*readonly=*/ false,
+        now_timestamp(),
+    )
 }
 
 // ---------------------------------------------------------------------
@@ -240,12 +262,20 @@ pub fn parseexp(
     languageStandardInt: i32,
     _runningTestsuite: bool,
 ) -> Result<GlobalScript::Statements> {
-    let (src, orig_bytes) = read_source_file(filename.as_str())
-        .map_err(|_| "ParserExt::parseexp: cannot read {filename}")?;
+    let (src, orig_bytes) =
+        read_source_file(filename.as_str()).map_err(|_| "ParserExt::parseexp: cannot read {filename}")?;
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     let readonly = !regular_file_writable(filename.as_str());
     parser::set_non_utf8_source_bytes(orig_bytes);
-    let result = parser::parse_statements(&src, filename.as_str(), infoFilename.as_str(), grammar, readonly, file_timestamp(filename.as_str())).map_err(|_| "error");
+    let result = parser::parse_statements(
+        &src,
+        filename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        readonly,
+        file_timestamp(filename.as_str()),
+    )
+    .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     parser::set_non_utf8_source_bytes(None);
     result
@@ -259,7 +289,15 @@ pub fn parsestringexp(
     _runningTestsuite: bool,
 ) -> Result<GlobalScript::Statements> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
-    let result = parser::parse_statements(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp()).map_err(|_| "error");
+    let result = parser::parse_statements(
+        r#str.as_str(),
+        infoFilename.as_str(),
+        infoFilename.as_str(),
+        grammar,
+        /*readonly=*/ false,
+        now_timestamp(),
+    )
+    .map_err(|_| "error");
     report_syntax_messages(infoFilename.as_str());
     result
 }
@@ -344,6 +382,4 @@ pub fn checkLVEToolFeature(_lveInstance: Option<i32>, _feature: ArcStr) -> bool 
     false
 }
 
-pub fn stopLibraryVendorExecutable(_lveInstance: Option<i32>) {
-
-}
+pub fn stopLibraryVendorExecutable(_lveInstance: Option<i32>) {}

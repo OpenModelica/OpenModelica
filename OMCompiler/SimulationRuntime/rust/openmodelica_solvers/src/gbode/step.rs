@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 
 use super::conf::CtrlMethod;
 use super::tableau::{GmType, SvpType};
-use super::{ctrl, interp, Gbode, GbStep, Ode, GB_MINIMAL_STEP_SIZE};
+use super::{GB_MINIMAL_STEP_SIZE, GbStep, Gbode, Ode, ctrl, interp};
 use crate::Result;
 use crate::gbode::math::{abs, pow, sqrt};
 use crate::omclog;
@@ -41,9 +41,11 @@ impl Gbode {
             }
             let mut guess = vec![0.0; n];
             self.stage_guess(stage, stage_time, &mut guess);
-            let svp_linear = self.tableau.svp.as_ref().is_some_and(|svp| {
-                svp.types[stage] == SvpType::LinearCombination
-            });
+            let svp_linear = self
+                .tableau
+                .svp
+                .as_ref()
+                .is_some_and(|svp| svp.types[stage] == SvpType::LinearCombination);
             if self.multi_rate && self.n_fast > 0 && !svp_linear {
                 for fi in 0..self.n_fast {
                     let i = self.fast_states_idx[fi];
@@ -97,7 +99,11 @@ impl Gbode {
                 };
                 let mut x = vec![0.0; n];
                 let gnls = self.gnls.as_mut().expect("implicit stage without an NLS");
-                let starts = super::nls_generic::Starts { extrapolation: &y_old, old: &guess, nlsx: &y_old };
+                let starts = super::nls_generic::Starts {
+                    extrapolation: &y_old,
+                    old: &guess,
+                    nlsx: &y_old,
+                };
                 let solved = gnls.solve(ode, &mut resid, stage_time, &starts, &nominals, &mut x)?;
                 if solved != super::Solved::Ok {
                     omclog::info!(
@@ -142,9 +148,7 @@ impl Gbode {
                 for i in 0..n {
                     let mut v = self.y_old[i];
                     for j in 0..stage {
-                        v += self.step_size
-                            * svp.a_predictor[stage * self.tableau.n_stages + j]
-                            * self.k[j * n + i];
+                        v += self.step_size * svp.a_predictor[stage * self.tableau.n_stages + j] * self.k[j * n + i];
                     }
                     guess[i] = v;
                 }
@@ -153,8 +157,7 @@ impl Gbode {
             Some(SvpType::DenseOutput) if dense_output_valid => {
                 let svp = self.tableau.svp.as_ref().unwrap();
                 if let Some(f) = svp.dense_output_predictor {
-                    let theta =
-                        (stage_time - self.extrapolation_base_time) / self.extrapolation_step_size;
+                    let theta = (stage_time - self.extrapolation_base_time) / self.extrapolation_step_size;
                     f(&mut self.b_dt, theta);
                     let scale = theta * self.extrapolation_step_size;
                     for i in 0..n {
@@ -217,8 +220,7 @@ impl Gbode {
         for stage in 0..n_stages {
             let stage_time = self.time + self.tableau.c[stage] * self.step_size;
             if dense_output_valid {
-                let theta =
-                    (stage_time - self.extrapolation_base_time) / self.extrapolation_step_size;
+                let theta = (stage_time - self.extrapolation_base_time) / self.extrapolation_step_size;
                 let (y_last, k_last) = (self.y_last.clone(), self.k_last.clone());
                 self.tableau.dense_out(
                     &mut self.b_dt,
@@ -285,7 +287,11 @@ impl Gbode {
                 k: &mut k,
             };
             let gnls = self.gnls.as_mut().expect("implicit method without an NLS");
-            let starts = super::nls_generic::Starts { extrapolation: &z0, old: &z1, nlsx: &z1 };
+            let starts = super::nls_generic::Starts {
+                extrapolation: &z0,
+                old: &z1,
+                nlsx: &z1,
+            };
             gnls.solve(ode, &mut resid, time, &starts, &nominals, &mut z)
         };
         self.k = k;
@@ -364,7 +370,11 @@ impl Gbode {
                 last_f: Vec::new(),
             };
             let gnls = self.gnls.as_mut().expect("multi-step method without an NLS");
-            let starts = super::nls_generic::Starts { extrapolation: &start, old: &start, nlsx: &start };
+            let starts = super::nls_generic::Starts {
+                extrapolation: &start,
+                old: &start,
+                nlsx: &start,
+            };
             let solved = gnls.solve(ode, &mut resid, time + step_size, &starts, &nominals, &mut guess)?;
             last_f = Some(resid.last_f);
             solved
@@ -517,14 +527,7 @@ impl Gbode {
     /// solver is toward `target`, not stepping past `limit` (the next time event),
     /// and leave `(t, y)` either interpolated onto `target` or at the event found.
     #[allow(clippy::too_many_arguments)]
-    pub fn step(
-        &mut self,
-        ode: &mut dyn Ode,
-        target: f64,
-        limit: f64,
-        t: &mut f64,
-        y: &mut [f64],
-    ) -> Result<GbStep> {
+    pub fn step(&mut self, ode: &mut dyn Ode, target: f64, limit: f64, t: &mut f64, y: &mut [f64]) -> Result<GbStep> {
         let n = self.n_states;
         let stop_time = self.stop_time;
         let mut target = target;
@@ -652,8 +655,7 @@ impl Gbode {
                 let tol = self.scaled_error_tolerance();
                 err = 0.0;
                 for i in 0..n {
-                    self.errtol[i] = tol * self.nominals[i]
-                        + abs(self.y_old[i]).max(abs(self.y[i])) * tol;
+                    self.errtol[i] = tol * self.nominals[i] + abs(self.y_old[i]).max(abs(self.y[i])) * tol;
                     if self.tableau.richardson || self.tableau.gm_type == GmType::MultiStep {
                         self.errest[i] = abs(self.yt[i]);
                     }
@@ -713,8 +715,8 @@ impl Gbode {
                 }
 
                 if int_with_err_ctrl {
-                    let idx = (self.multi_rate && self.n_fast > 0)
-                        .then(|| self.slow_states_idx[..self.n_slow].to_vec());
+                    let idx =
+                        (self.multi_rate && self.n_fast > 0).then(|| self.slow_states_idx[..self.n_slow].to_vec());
                     self.err_int = self.error_interpolation(tol, idx.as_deref());
                     if self.err_int > 1.0 {
                         retries += 1;
@@ -799,10 +801,8 @@ impl Gbode {
 
             self.stats.steps += 1;
 
-            let check_events = !self.multi_rate
-                || self.gbf.as_ref().expect("multirate without gbf").time < self.time;
-            if check_events
-                && let Some(event_time) = self.check_for_events(ode)? {
+            let check_events = !self.multi_rate || self.gbf.as_ref().expect("multirate without gbf").time < self.time;
+            if check_events && let Some(event_time) = self.check_for_events(ode)? {
                 self.time = event_time;
                 self.event_happened = true;
                 let mut y_ev = vec![0.0; n];
@@ -890,9 +890,7 @@ impl Gbode {
         }
         let out_time = target.min(stop_time);
         let mut out = vec![0.0; n];
-        if self.multi_rate
-            && self.gbf.as_ref().expect("multirate without gbf").time >= out_time
-        {
+        if self.multi_rate && self.gbf.as_ref().expect("multirate without gbf").time >= out_time {
             // Slow states from the outer interval, fast states from the inner one.
             let slow = self.slow_states_idx[..self.n_slow].to_vec();
             self.interpolate_step_idx(out_time, &mut out, Some(&slow));
@@ -970,7 +968,10 @@ mod tests {
         let mut gb = Gbode::new(2, 1e-6, 1, 0, false, false).expect("allocate");
         gb.set_experiment(0.0, 1.0, dt);
         gb.set_nominals(&[1.0, 1.0]);
-        let mut e = Ball { calls: 0, nominals: [1.0, 1.0] };
+        let mut e = Ball {
+            calls: 0,
+            nominals: [1.0, 1.0],
+        };
         let mut y = [1.0, 0.0]; // h = 1, v = 0
         let mut t = 0.0;
         let mut events = alloc::vec::Vec::new();

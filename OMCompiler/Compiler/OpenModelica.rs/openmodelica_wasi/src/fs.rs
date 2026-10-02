@@ -9,8 +9,11 @@ use std::time::SystemTime;
 /// True where there is no OS filesystem: wasm32-unknown-unknown. Emscripten has
 /// MEMFS behind `std::fs`, and its store belongs to the omc worker, not to the
 /// GUI page modules that link this.
-pub const IN_MEMORY: bool =
-    cfg!(all(target_arch = "wasm32", not(target_os = "wasi"), not(target_os = "emscripten")));
+pub const IN_MEMORY: bool = cfg!(all(
+    target_arch = "wasm32",
+    not(target_os = "wasi"),
+    not(target_os = "emscripten")
+));
 
 fn not_found(path: &str) -> io::Error {
     io::Error::new(io::ErrorKind::NotFound, format!("no such file: {path}"))
@@ -25,9 +28,14 @@ pub enum Reader {
 
 pub fn open_read(path: &str) -> io::Result<Reader> {
     if IN_MEMORY {
-        Ok(Reader::Mem(io::Cursor::new(crate::read(path).ok_or_else(|| not_found(path))?)))
+        Ok(Reader::Mem(io::Cursor::new(
+            crate::read(path).ok_or_else(|| not_found(path))?,
+        )))
     } else {
-        Ok(Reader::Disk { file: std::fs::File::open(path)?, path: path.to_owned() })
+        Ok(Reader::Disk {
+            file: std::fs::File::open(path)?,
+            path: path.to_owned(),
+        })
     }
 }
 
@@ -45,7 +53,10 @@ impl Reader {
                         c
                     }
                 };
-                Ok(Reader::Disk { file: clone, path: path.clone() })
+                Ok(Reader::Disk {
+                    file: clone,
+                    path: path.clone(),
+                })
             }
             Reader::Mem(c) => Ok(Reader::Mem(c.clone())),
         }
@@ -219,7 +230,11 @@ pub fn is_writable(path: &str) -> bool {
 
 pub fn remove_file(path: &str) -> io::Result<()> {
     if IN_MEMORY {
-        if crate::remove(path) { Ok(()) } else { Err(not_found(path)) }
+        if crate::remove(path) {
+            Ok(())
+        } else {
+            Err(not_found(path))
+        }
     } else {
         std::fs::remove_file(path)
     }
@@ -259,7 +274,10 @@ pub fn rename(from: &str, to: &str) -> io::Result<()> {
         let prefix = format!("{}/", from.trim_end_matches('/'));
         let moved: Vec<(String, Vec<u8>)> = crate::list()
             .into_iter()
-            .filter_map(|k| k.strip_prefix(&prefix).map(|r| (r.to_string(), crate::read(&k).unwrap_or_default())))
+            .filter_map(|k| {
+                k.strip_prefix(&prefix)
+                    .map(|r| (r.to_string(), crate::read(&k).unwrap_or_default()))
+            })
             .collect();
         if moved.is_empty() {
             return Err(not_found(from));
@@ -296,7 +314,10 @@ pub fn read_dir(dir: &str) -> io::Result<Vec<DirEntry>> {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
-            out.push(DirEntry { name: entry.file_name().to_string_lossy().into_owned(), is_dir });
+            out.push(DirEntry {
+                name: entry.file_name().to_string_lossy().into_owned(),
+                is_dir,
+            });
         }
         Ok(out)
     }

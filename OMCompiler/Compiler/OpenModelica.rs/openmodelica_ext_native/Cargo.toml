@@ -17,4 +17,3 @@ openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal" 
 [target.'cfg(unix)'.dependencies]
 libffi = "5"
 libc = "0.2"
-

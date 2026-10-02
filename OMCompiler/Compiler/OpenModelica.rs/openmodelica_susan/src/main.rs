@@ -37,8 +37,12 @@ const INTERFACE_DIR_FLAG: &str = "--tplInterfaceDir=";
 const RUST_INDEX_FLAG: &str = "--tplRustIndex=";
 
 mod rust_backend;
+// The same rustfmt step mmtorust applies to its generated files.
+#[path = "../../mmtorust/src/rustfmt.rs"]
+mod rustfmt;
 
 fn write_if_changed(path: &std::path::Path, content: &str) -> std::io::Result<()> {
+    let content = rustfmt::format(content, path);
     if std::fs::read_to_string(path).is_ok_and(|old| old == content) {
         return Ok(());
     }
@@ -69,9 +73,16 @@ fn run_rust(file: ArcStr, out_dir: &str, interface_dir: ArcStr, index: &str) -> 
     };
     match rust_backend::print(&tpl, &mm, &idx, std::path::Path::new(".")) {
         Ok((krate, code)) => {
-            let name = std::path::Path::new(file.as_str()).file_stem().unwrap().to_string_lossy().into_owned();
+            let name = std::path::Path::new(file.as_str())
+                .file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned();
             let dir = if out_dir.is_empty() { "." } else { out_dir };
-            let dest = std::path::Path::new(dir).join(krate).join("src").join(format!("{name}.rs"));
+            let dest = std::path::Path::new(dir)
+                .join(krate)
+                .join("src")
+                .join(format!("{name}.rs"));
             if let Err(e) = write_if_changed(&dest, &code) {
                 eprintln!("susan: {}: {e}", dest.display());
                 return 1;

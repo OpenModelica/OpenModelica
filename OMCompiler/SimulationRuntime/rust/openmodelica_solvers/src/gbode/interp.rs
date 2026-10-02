@@ -63,7 +63,9 @@ pub(super) fn hermite(
     let h10 = (tb - ta) * tt * (1.0 - tt) * (1.0 - tt);
     let h01 = (3.0 - 2.0 * tt) * tt * tt;
     let h11 = (tb - ta) * (tt - 1.0) * tt * tt;
-    apply(f, idx, n_states, |i| h00 * fa[i] + h10 * dfa[i] + h01 * fb[i] + h11 * dfb[i]);
+    apply(f, idx, n_states, |i| {
+        h00 * fa[i] + h10 * dfa[i] + h01 * fb[i] + h11 * dfb[i]
+    });
 }
 
 /// C's `hermite_interpolation_b` (only the right derivative is known).
@@ -158,16 +160,14 @@ pub(super) fn interpolate(
     }
     match method {
         Interpolation::Lin => linear(ta, fa, tb, fb, t, f, idx, n_states),
-        Interpolation::DenseOutput | Interpolation::DenseOutputErrCtrl
-            if tableau.with_dense_output =>
-        {
+        Interpolation::DenseOutput | Interpolation::DenseOutputErrCtrl if tableau.with_dense_output => {
             tableau.dense_out(b_dt, fa, k, (t - ta) / (tb - ta), tb - ta, f, idx, n_states);
         }
         // C falls through from the dense-output cases to hermite_a when the method
         // has no dense output formula.
-        Interpolation::DenseOutput
-        | Interpolation::DenseOutputErrCtrl
-        | Interpolation::HermiteA => hermite_a(ta, fa, dfa, tb, fb, t, f, idx, n_states),
+        Interpolation::DenseOutput | Interpolation::DenseOutputErrCtrl | Interpolation::HermiteA => {
+            hermite_a(ta, fa, dfa, tb, fb, t, f, idx, n_states)
+        }
         Interpolation::HermiteB => hermite_b(ta, fa, tb, fb, dfb, t, f, idx, n_states),
         Interpolation::HermiteErrCtrl | Interpolation::Hermite => {
             hermite(ta, fa, dfa, tb, fb, dfb, t, f, idx, n_states)

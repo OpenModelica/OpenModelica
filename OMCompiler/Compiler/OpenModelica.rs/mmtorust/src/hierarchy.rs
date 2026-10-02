@@ -1,10 +1,10 @@
 #![allow(unused)]
 
+use crate::MM;
+use openmodelica_ast::Absyn;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::sync::Arc;
-use openmodelica_ast::Absyn;
-use crate::MM;
 
 // ── Ty ───────────────────────────────────────────────────────────────────────
 
@@ -108,18 +108,27 @@ impl fmt::Display for Ty {
             Ty::Tuple(tys) => {
                 f.write_str("(")?;
                 for (i, ty) in tys.iter().enumerate() {
-                    if i > 0 { f.write_str(", ")?; }
+                    if i > 0 {
+                        f.write_str(", ")?;
+                    }
                     write!(f, "{ty}")?;
                 }
                 f.write_str(")")
             }
-            Ty::Function { type_vars, inputs, output, name: _ } => {
+            Ty::Function {
+                type_vars,
+                inputs,
+                output,
+                name: _,
+            } => {
                 if !type_vars.is_empty() {
                     write!(f, "<{}>", type_vars.join(", "))?;
                 }
                 f.write_str("fn(")?;
                 for (i, inp) in inputs.iter().enumerate() {
-                    if i > 0 { f.write_str(", ")?; }
+                    if i > 0 {
+                        f.write_str(", ")?;
+                    }
                     write!(f, "{}", inp.ty)?;
                 }
                 write!(f, ") -> {output}")
@@ -129,7 +138,9 @@ impl fmt::Display for Ty {
                 if !modifications.is_empty() {
                     write!(f, "(")?;
                     for (i, (k, v)) in modifications.iter().enumerate() {
-                        if i > 0 { write!(f, ", ")?; }
+                        if i > 0 {
+                            write!(f, ", ")?;
+                        }
                         write!(f, "{k}={v}")?;
                     }
                     write!(f, ")")?;
@@ -146,7 +157,9 @@ impl fmt::Display for Ty {
             Ty::Generic(name, args) => {
                 write!(f, "{name}<")?;
                 for (i, ty) in args.iter().enumerate() {
-                    if i > 0 { write!(f, ", ")?; }
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
                     write!(f, "{ty}")?;
                 }
                 write!(f, ">")
@@ -192,7 +205,15 @@ pub struct NameNode<'a> {
 
 impl<'a> NameNode<'a> {
     fn new(kind: NodeKind<'a>) -> Self {
-        Self { kind, ty: Ty::default(), children: BTreeMap::new(), extends: Vec::new(), visibility: MM::Visibility::Public, base_fn: None, override_default_exp: None }
+        Self {
+            kind,
+            ty: Ty::default(),
+            children: BTreeMap::new(),
+            extends: Vec::new(),
+            visibility: MM::Visibility::Public,
+            base_fn: None,
+            override_default_exp: None,
+        }
     }
 }
 
@@ -331,7 +352,11 @@ fn clone_and_reset<'a>(node: &NameNode<'a>) -> NameNode<'a> {
     NameNode {
         kind: node.kind.clone(),
         ty: Ty::Unknown,
-        children: node.children.iter().map(|(k, v)| (k.clone(), clone_and_reset(v))).collect(),
+        children: node
+            .children
+            .iter()
+            .map(|(k, v)| (k.clone(), clone_and_reset(v)))
+            .collect(),
         extends: node.extends.clone(),
         visibility: node.visibility.clone(),
         base_fn: None,
@@ -382,17 +407,17 @@ fn flatten_sibling_package_extends<'a>(top_level: &mut BTreeMap<String, NameNode
         // a sibling; nested or fully-qualified paths fall back to the other
         // flatten passes.
         let work: Vec<(String, String, &'a MM::ExtendsMember)> = {
-            let Some(parent) = top_level.get(parent_name.as_str()) else { continue };
-            let sibling_names: std::collections::HashSet<&str> =
-                parent.children.keys().map(|s| s.as_str()).collect();
+            let Some(parent) = top_level.get(parent_name.as_str()) else {
+                continue;
+            };
+            let sibling_names: std::collections::HashSet<&str> = parent.children.keys().map(|s| s.as_str()).collect();
             let mut out = Vec::new();
             for (child_name, child) in &parent.children {
                 for ext in &child.extends {
                     let base_path = fmt_path(&ext.path);
                     let base_simple = base_path.trim_start_matches('.');
                     // Single-segment path that resolves to a sibling.
-                    if !base_simple.contains('.') && sibling_names.contains(base_simple)
-                        && base_simple != child_name {
+                    if !base_simple.contains('.') && sibling_names.contains(base_simple) && base_simple != child_name {
                         out.push((child_name.clone(), base_simple.to_owned(), *ext));
                     }
                 }
@@ -406,7 +431,8 @@ fn flatten_sibling_package_extends<'a>(top_level: &mut BTreeMap<String, NameNode
                 let parent = top_level.get(parent_name.as_str()).unwrap();
                 let base = parent.children.get(base_name.as_str()).unwrap();
                 let child = parent.children.get(child_name.as_str()).unwrap();
-                base.children.iter()
+                base.children
+                    .iter()
                     .filter(|(cn, _)| !child.children.contains_key(cn.as_str()))
                     .map(|(cn, n)| (cn.clone(), clone_and_reset(n)))
                     .collect()
@@ -435,10 +461,13 @@ fn flatten_sibling_package_extends<'a>(top_level: &mut BTreeMap<String, NameNode
                     Absyn::Path::IDENT { name } => name.to_string(),
                     _ => continue,
                 };
-                let Some(target) = child_mut.children.get_mut(&target_name) else { continue };
+                let Some(target) = child_mut.children.get_mut(&target_name) else {
+                    continue;
+                };
                 let Some(modif) = modification.as_ref() else { continue };
                 if let Absyn::Modification { eqMod, .. } = &**modif
-                    && let Absyn::EqMod::EQMOD { exp, .. } = &**eqMod {
+                    && let Absyn::EqMod::EQMOD { exp, .. } = &**eqMod
+                {
                     target.override_default_exp = Some(&**exp);
                 }
             }
@@ -455,11 +484,17 @@ fn flatten_nested_package_extends<'a>(top_level: &mut BTreeMap<String, NameNode<
     for parent_name in &parent_names {
         // Collect (child_name, base_paths) for children that extend a top-level base.
         let work: Vec<(String, Vec<String>)> = {
-            let Some(parent) = top_level.get(parent_name.as_str()) else { continue };
-            parent.children.iter()
+            let Some(parent) = top_level.get(parent_name.as_str()) else {
+                continue;
+            };
+            parent
+                .children
+                .iter()
                 .filter(|(_, child)| !child.extends.is_empty())
                 .map(|(child_name, child)| {
-                    let bases = child.extends.iter()
+                    let bases = child
+                        .extends
+                        .iter()
                         .map(|e| fmt_path(&e.path).trim_start_matches('.').to_owned())
                         .filter(|base| top_level.contains_key(base.as_str()))
                         .collect();
@@ -475,29 +510,36 @@ fn flatten_nested_package_extends<'a>(top_level: &mut BTreeMap<String, NameNode<
                 let base_fn_updates: Vec<(String, &'a MM::Class)>;
                 {
                     let base = top_level.get(base_path.as_str()).unwrap();
-                    let child = top_level.get(parent_name.as_str())
+                    let child = top_level
+                        .get(parent_name.as_str())
                         .and_then(|p| p.children.get(child_name.as_str()))
                         .unwrap();
-                    to_copy = base.children.iter()
+                    to_copy = base
+                        .children
+                        .iter()
                         .filter(|(cn, _)| !child.children.contains_key(cn.as_str()))
                         .map(|(cn, node)| (cn.clone(), clone_and_reset(node)))
                         .collect();
-                    base_fn_updates = child.children.iter()
+                    base_fn_updates = child
+                        .children
+                        .iter()
                         .filter_map(|(cn, child_node)| {
                             if let NodeKind::Class(c) = &child_node.kind
                                 && let MM::ClassDef::ClassExtends { base_class_name, .. } = &c.body
-                                    && let Some(base_fn_node) = base.children.get(base_class_name.as_str())
-                                        && let NodeKind::Class(base_c) = &base_fn_node.kind
-                                            && is_function_class(&base_c.restriction) {
-                                                return Some((cn.clone(), *base_c));
-                                            }
+                                && let Some(base_fn_node) = base.children.get(base_class_name.as_str())
+                                && let NodeKind::Class(base_c) = &base_fn_node.kind
+                                && is_function_class(&base_c.restriction)
+                            {
+                                return Some((cn.clone(), *base_c));
+                            }
                             None
                         })
                         .collect();
                 }
 
                 // Phase 2: apply.
-                let child = top_level.get_mut(parent_name.as_str())
+                let child = top_level
+                    .get_mut(parent_name.as_str())
                     .and_then(|p| p.children.get_mut(child_name.as_str()))
                     .unwrap();
                 for (cn, base_c) in base_fn_updates {
@@ -522,8 +564,14 @@ fn flatten_package_node<'a>(
         return;
     }
 
-    let extends_paths: Vec<String> = top_level.get(name)
-        .map(|n| n.extends.iter().map(|e| fmt_path(&e.path).trim_start_matches('.').to_owned()).collect())
+    let extends_paths: Vec<String> = top_level
+        .get(name)
+        .map(|n| {
+            n.extends
+                .iter()
+                .map(|e| fmt_path(&e.path).trim_start_matches('.').to_owned())
+                .collect()
+        })
         .unwrap_or_default();
 
     for base_path in &extends_paths {
@@ -539,27 +587,35 @@ fn flatten_package_node<'a>(
             let current = top_level.get(name);
             match (current, base) {
                 (Some(cur), Some(base_node)) => {
-                    to_copy = base_node.children.iter()
+                    to_copy = base_node
+                        .children
+                        .iter()
                         .filter(|(cn, _)| !cur.children.contains_key(cn.as_str()))
                         .map(|(cn, child)| (cn.clone(), clone_and_reset(child)))
                         .collect();
 
                     // For each ClassExtends function already in the current node, find
                     // the corresponding function in the base class and record it.
-                    base_fn_updates = cur.children.iter()
+                    base_fn_updates = cur
+                        .children
+                        .iter()
                         .filter_map(|(cn, child_node)| {
                             if let NodeKind::Class(c) = &child_node.kind
                                 && let MM::ClassDef::ClassExtends { base_class_name, .. } = &c.body
-                                    && let Some(base_fn_node) = base_node.children.get(base_class_name.as_str())
-                                        && let NodeKind::Class(base_c) = &base_fn_node.kind
-                                            && is_function_class(&base_c.restriction) {
-                                                return Some((cn.clone(), *base_c));
-                                            }
+                                && let Some(base_fn_node) = base_node.children.get(base_class_name.as_str())
+                                && let NodeKind::Class(base_c) = &base_fn_node.kind
+                                && is_function_class(&base_c.restriction)
+                            {
+                                return Some((cn.clone(), *base_c));
+                            }
                             None
                         })
                         .collect()
                 }
-                _ => { to_copy = vec![]; base_fn_updates = vec![]; }
+                _ => {
+                    to_copy = vec![];
+                    base_fn_updates = vec![];
+                }
             }
         }
 
@@ -593,7 +649,8 @@ fn populate_from_class_def<'a>(def: &'a MM::ClassDef, node: &mut NameNode<'a>) {
             if let Absyn::EnumDef::ENUMLITERALS { enumLiterals } = &**enum_literals {
                 for lit in &**enumLiterals {
                     let Absyn::EnumLiteral { literal, .. } = &**lit;
-                    node.children.insert(literal.to_string(), NameNode::new(NodeKind::EnumLiteral));
+                    node.children
+                        .insert(literal.to_string(), NameNode::new(NodeKind::EnumLiteral));
                 }
             }
             return;
@@ -609,7 +666,8 @@ fn populate_from_class_def<'a>(def: &'a MM::ClassDef, node: &mut NameNode<'a>) {
                 node.children.insert(m.class_def.name.clone(), child);
             }
             MM::ClassMember::Component(m) => {
-                node.children.insert(m.name.clone(), NameNode::new(NodeKind::Component(m)));
+                node.children
+                    .insert(m.name.clone(), NameNode::new(NodeKind::Component(m)));
             }
             MM::ClassMember::Import(m) => {
                 for (local_name, child_node) in import_nodes(m) {
@@ -675,9 +733,10 @@ pub fn class_type_vars(c: &MM::Class) -> Vec<String> {
             let mut vars: Vec<String> = type_vars.clone();
             for m in members {
                 if let MM::ClassMember::ClassDef(cdm) = m
-                    && is_type_var_decl(&cdm.class_def) {
-                        vars.push(cdm.class_def.name.clone());
-                    }
+                    && is_type_var_decl(&cdm.class_def)
+                {
+                    vars.push(cdm.class_def.name.clone());
+                }
             }
             vars
         }
@@ -697,9 +756,13 @@ fn record_child_names(node: &NameNode<'_>) -> Vec<String> {
         .iter()
         .filter_map(|(name, child)| {
             if let NodeKind::Class(c) = &child.kind
-                && matches!(c.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
-                    return Some(name.clone());
-                }
+                && matches!(
+                    c.restriction,
+                    Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }
+                )
+            {
+                return Some(name.clone());
+            }
             None
         })
         .collect()
@@ -716,7 +779,10 @@ fn has_component_children(node: &NameNode<'_>) -> bool {
 pub fn uniontype_needs_mod(node: &NameNode<'_>) -> bool {
     node.children.values().any(|child| {
         if let NodeKind::Class(c) = &child.kind {
-            !matches!(c.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. })
+            !matches!(
+                c.restriction,
+                Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }
+            )
         } else {
             false
         }
@@ -773,7 +839,11 @@ fn sk_get<'a>(known: &'a ScopedKnown, qname: &str) -> Option<&'a Ty> {
 /// Insert only if the slot is absent.
 fn sk_insert_if_absent(known: &mut ScopedKnown, qname: &str, ty: Ty) {
     let (scope, name) = split_qname(qname);
-    known.entry(scope.to_owned()).or_default().entry(name.to_owned()).or_insert(ty);
+    known
+        .entry(scope.to_owned())
+        .or_default()
+        .entry(name.to_owned())
+        .or_insert(ty);
 }
 
 /// Scope-walk: find `name` starting at `module_prefix`, walking up to the top-level
@@ -801,9 +871,10 @@ fn variant_promotion(scope: &str, name: &str, ty: &Ty, known: &ScopedKnown) -> T
     if matches!(ty, Ty::RustStruct(_) | Ty::RustUnitVariant) && !scope.is_empty() {
         let (parent_scope, scope_name) = split_qname(scope);
         if let Some(parent_ty) = known.get(parent_scope).and_then(|m| m.get(scope_name))
-            && matches!(parent_ty, Ty::RustEnum(_)) {
-                return Ty::UnionTypeVariant(scope.to_owned(), name.to_owned());
-            }
+            && matches!(parent_ty, Ty::RustEnum(_))
+        {
+            return Ty::UnionTypeVariant(scope.to_owned(), name.to_owned());
+        }
     }
     ty.clone()
 }
@@ -823,16 +894,17 @@ fn collect_scope_imports<'a>(
         for (child_name, child_node) in &node.children {
             if child_name == "*" {
                 if let NodeKind::Import(m) = &child_node.kind
-                    && let Absyn::Import::UNQUAL_IMPORT { path } = &m.import {
-                        let pkg = fmt_path(path);
-                        let pkg_path = pkg.trim_start_matches('.');
-                        if let Some(pkg_node) = find_node_by_path(top_level, pkg_path) {
-                            let scope_entry = out.entry(qname.clone()).or_default();
-                            for n in pkg_node.children.keys() {
-                                scope_entry.insert(n.clone());
-                            }
+                    && let Absyn::Import::UNQUAL_IMPORT { path } = &m.import
+                {
+                    let pkg = fmt_path(path);
+                    let pkg_path = pkg.trim_start_matches('.');
+                    if let Some(pkg_node) = find_node_by_path(top_level, pkg_path) {
+                        let scope_entry = out.entry(qname.clone()).or_default();
+                        for n in pkg_node.children.keys() {
+                            scope_entry.insert(n.clone());
                         }
                     }
+                }
             } else {
                 out.entry(qname.clone()).or_default().insert(child_name.clone());
             }
@@ -884,7 +956,10 @@ pub fn resolve_pass(hier: &mut InstanceHierarchy<'_>, warnings: &mut BTreeSet<St
     // Build the per-scope import index from a read-only pass before any mutation.
     let mut scope_imports: ScopeImports = BTreeMap::new();
     collect_scope_imports(&hier.top_level, "", &hier.top_level, &mut scope_imports);
-    let mut wctx = WarnCtx { warnings, scope_imports: &scope_imports };
+    let mut wctx = WarnCtx {
+        warnings,
+        scope_imports: &scope_imports,
+    };
     collect_extends_known(&hier.top_level, "", &hier.top_level, &mut known, &mut wctx);
     // Apply `redeclare type X = Y` overrides directly onto the child nodes
     // they refer to. `seed_primitive_type_aliases` and `seed_metarecords` may
@@ -911,10 +986,11 @@ fn seed_imports(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str, known:
         let qname = qualify(prefix, name);
         if node.ty == Ty::Unknown
             && let NodeKind::Import(m) = &node.kind
-                && let Some(ty) = try_resolve_import(m, &qname, known) {
-                    node.ty = ty;
-                    *changed = true;
-                }
+            && let Some(ty) = try_resolve_import(m, &qname, known)
+        {
+            node.ty = ty;
+            *changed = true;
+        }
         seed_imports(&mut node.children, &qname, known, changed);
     }
 }
@@ -937,8 +1013,10 @@ fn seed_external_objects(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &st
 /// rather than in any source file and therefore never appear in the hierarchy.
 fn seed_builtins(known: &mut ScopedKnown) {
     let top = known.entry(String::new()).or_default();
-    top.entry("SOURCEINFO".into()).or_insert(Ty::RustStruct("SOURCEINFO".into()));
-    top.entry("SourceInfo".into()).or_insert(Ty::AliasTo("SourceInfo".into()));
+    top.entry("SOURCEINFO".into())
+        .or_insert(Ty::RustStruct("SOURCEINFO".into()));
+    top.entry("SourceInfo".into())
+        .or_insert(Ty::AliasTo("SourceInfo".into()));
 }
 
 /// Seed `type T = Integer/Real/Boolean/String` aliases as primitive Ty variants.
@@ -954,15 +1032,22 @@ fn seed_builtins(known: &mut ScopedKnown) {
 /// type. We only overwrite when the override is a concrete type (not
 /// `Unknown` or a stand-in `TypeVar`); that protects against accidentally
 /// regressing a node we've already resolved more precisely.
-fn apply_redeclare_overrides(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str, known: &ScopedKnown, changed: &mut bool) {
+fn apply_redeclare_overrides(
+    nodes: &mut BTreeMap<String, NameNode<'_>>,
+    prefix: &str,
+    known: &ScopedKnown,
+    changed: &mut bool,
+) {
     for (name, node) in nodes.iter_mut() {
         let qname = qualify(prefix, name);
         if let Some((scope, key)) = qname.rsplit_once('.')
             && let Some(ty) = known.get(scope).and_then(|m| m.get(key))
-                && !matches!(ty, Ty::Unknown | Ty::TypeVar(_)) && node.ty != *ty {
-                    node.ty = ty.clone();
-                    *changed = true;
-                }
+            && !matches!(ty, Ty::Unknown | Ty::TypeVar(_))
+            && node.ty != *ty
+        {
+            node.ty = ty.clone();
+            *changed = true;
+        }
         apply_redeclare_overrides(&mut node.children, &qname, known, changed);
     }
 }
@@ -972,20 +1057,21 @@ fn seed_primitive_type_aliases(nodes: &mut BTreeMap<String, NameNode<'_>>, prefi
         let qname = qualify(prefix, name);
         if node.ty == Ty::Unknown
             && let NodeKind::Class(c) = &node.kind
-                && matches!(c.restriction, Absyn::Restriction::R_TYPE)
-                    && let MM::ClassDef::Derived { type_spec, .. } = &c.body {
-                        let ty = match path_last(type_spec_path(type_spec)) {
-                            "Integer" => Some(Ty::I32),
-                            "Real" => Some(Ty::F64),
-                            "Boolean" => Some(Ty::Bool),
-                            "String" => Some(Ty::Str),
-                            _ => None,
-                        };
-                        if let Some(ty) = ty {
-                            node.ty = ty;
-                            *changed = true;
-                        }
-                    }
+            && matches!(c.restriction, Absyn::Restriction::R_TYPE)
+            && let MM::ClassDef::Derived { type_spec, .. } = &c.body
+        {
+            let ty = match path_last(type_spec_path(type_spec)) {
+                "Integer" => Some(Ty::I32),
+                "Real" => Some(Ty::F64),
+                "Boolean" => Some(Ty::Bool),
+                "String" => Some(Ty::Str),
+                _ => None,
+            };
+            if let Some(ty) = ty {
+                node.ty = ty;
+                *changed = true;
+            }
+        }
         seed_primitive_type_aliases(&mut node.children, &qname, changed);
     }
 }
@@ -994,22 +1080,23 @@ fn seed_enumerations(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str, c
     for (name, node) in nodes.iter_mut() {
         let qname = qualify(prefix, name);
         if node.ty == Ty::Unknown
-            && let NodeKind::Class(c) = &node.kind {
-                let is_enum = matches!(c.restriction, Absyn::Restriction::R_ENUMERATION)
-                    || (matches!(c.restriction, Absyn::Restriction::R_TYPE)
-                        && matches!(c.body, MM::ClassDef::Enumeration { .. }));
-                if is_enum {
-                    let ty = Ty::Enumeration(qname.clone());
-                    for child in node.children.values_mut() {
-                        if matches!(child.kind, NodeKind::EnumLiteral) && child.ty == Ty::Unknown {
-                            child.ty = ty.clone();
-                            *changed = true;
-                        }
+            && let NodeKind::Class(c) = &node.kind
+        {
+            let is_enum = matches!(c.restriction, Absyn::Restriction::R_ENUMERATION)
+                || (matches!(c.restriction, Absyn::Restriction::R_TYPE)
+                    && matches!(c.body, MM::ClassDef::Enumeration { .. }));
+            if is_enum {
+                let ty = Ty::Enumeration(qname.clone());
+                for child in node.children.values_mut() {
+                    if matches!(child.kind, NodeKind::EnumLiteral) && child.ty == Ty::Unknown {
+                        child.ty = ty.clone();
+                        *changed = true;
                     }
-                    node.ty = ty;
-                    *changed = true;
                 }
+                node.ty = ty;
+                *changed = true;
             }
+        }
         seed_enumerations(&mut node.children, &qname, changed);
     }
 }
@@ -1022,47 +1109,48 @@ fn seed_metarecords(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str, ch
     for (name, node) in nodes.iter_mut() {
         let qname = qualify(prefix, name);
         if let NodeKind::Class(c) = &node.kind
-            && matches!(c.restriction, Absyn::Restriction::R_UNIONTYPE) {
-                let rec_names: Vec<String> = record_child_names(node);
-                for rec_name in &rec_names {
-                    let rec_qname = qualify(&qname, rec_name);
-                    let child = node.children.get_mut(rec_name).unwrap();
-                    if child.ty == Ty::Unknown {
-                        child.ty = if has_component_children(child) {
-                            Ty::RustStruct(rec_qname)
-                        } else {
-                            Ty::RustUnitVariant
-                        };
-                        *changed = true;
-                    }
-                }
-                // Also seed the uniontype itself once all records are known, so that
-                // collect_known can include it before functions in the same module are resolved.
-                if node.ty == Ty::Unknown {
-                    let all_seeded = rec_names.iter().all(|n| {
-                        node.children.get(n).is_some_and(|c| c.ty != Ty::Unknown)
-                    });
-                    if all_seeded {
-                        let mut sorted = rec_names.clone();
-                        sorted.sort();
-                        node.ty = match sorted.len() {
-                            0 => Ty::RustStruct(qname.clone()),
-                            1 => {
-                                // Single-record uniontype: the struct will be emitted under the
-                                // uniontype's name (no separate record struct + type alias).
-                                // Update the record's type so all references resolve to the
-                                // uniontype's qname, which is the Rust struct's actual name.
-                                if let Some(rec_child) = node.children.get_mut(sorted[0].as_str()) {
-                                    rec_child.ty = Ty::RustStruct(qname.clone());
-                                }
-                                Ty::AliasTo(qname.clone())
-                            }
-                            _ => Ty::RustEnum(qname.clone()),
-                        };
-                        *changed = true;
-                    }
+            && matches!(c.restriction, Absyn::Restriction::R_UNIONTYPE)
+        {
+            let rec_names: Vec<String> = record_child_names(node);
+            for rec_name in &rec_names {
+                let rec_qname = qualify(&qname, rec_name);
+                let child = node.children.get_mut(rec_name).unwrap();
+                if child.ty == Ty::Unknown {
+                    child.ty = if has_component_children(child) {
+                        Ty::RustStruct(rec_qname)
+                    } else {
+                        Ty::RustUnitVariant
+                    };
+                    *changed = true;
                 }
             }
+            // Also seed the uniontype itself once all records are known, so that
+            // collect_known can include it before functions in the same module are resolved.
+            if node.ty == Ty::Unknown {
+                let all_seeded = rec_names
+                    .iter()
+                    .all(|n| node.children.get(n).is_some_and(|c| c.ty != Ty::Unknown));
+                if all_seeded {
+                    let mut sorted = rec_names.clone();
+                    sorted.sort();
+                    node.ty = match sorted.len() {
+                        0 => Ty::RustStruct(qname.clone()),
+                        1 => {
+                            // Single-record uniontype: the struct will be emitted under the
+                            // uniontype's name (no separate record struct + type alias).
+                            // Update the record's type so all references resolve to the
+                            // uniontype's qname, which is the Rust struct's actual name.
+                            if let Some(rec_child) = node.children.get_mut(sorted[0].as_str()) {
+                                rec_child.ty = Ty::RustStruct(qname.clone());
+                            }
+                            Ty::AliasTo(qname.clone())
+                        }
+                        _ => Ty::RustEnum(qname.clone()),
+                    };
+                    *changed = true;
+                }
+            }
+        }
         seed_metarecords(&mut node.children, &qname, changed);
     }
 }
@@ -1074,10 +1162,11 @@ fn seed_type_vars(nodes: &mut BTreeMap<String, NameNode<'_>>, changed: &mut bool
             let vars = class_type_vars(c);
             for var_name in vars {
                 if let Some(child) = node.children.get_mut(&var_name)
-                    && child.ty == Ty::Unknown {
-                        child.ty = Ty::TypeVar(var_name.clone());
-                        *changed = true;
-                    }
+                    && child.ty == Ty::Unknown
+                {
+                    child.ty = Ty::TypeVar(var_name.clone());
+                    *changed = true;
+                }
             }
         }
         seed_type_vars(&mut node.children, changed);
@@ -1090,8 +1179,11 @@ fn collect_known(nodes: &BTreeMap<String, NameNode<'_>>, prefix: &str, known: &m
     for (name, node) in nodes {
         let qname = qualify(prefix, name);
         if node.ty != Ty::Unknown && !matches!(node.ty, Ty::TypeVar(_)) {
-            known.entry(prefix.to_owned()).or_default()
-                .entry(name.clone()).or_insert_with(|| node.ty.clone());
+            known
+                .entry(prefix.to_owned())
+                .or_default()
+                .entry(name.clone())
+                .or_insert_with(|| node.ty.clone());
         }
         collect_known(&node.children, &qname, known);
     }
@@ -1111,22 +1203,26 @@ fn find_node_by_path<'h>(top_level: &'h BTreeMap<String, NameNode<'h>>, path: &s
 /// Recursively copy all children of `pkg_node` (rooted at `pkg_scope`) into `known`
 /// under `import_scope`, so that dotted paths like `ConnectorType.Type` resolve when
 /// `ConnectorType` was brought in via a wildcard import.
-fn copy_wildcard_children(
-    pkg_node: &NameNode<'_>,
-    pkg_scope: &str,
-    import_scope: &str,
-    known: &mut ScopedKnown,
-) {
+fn copy_wildcard_children(pkg_node: &NameNode<'_>, pkg_scope: &str, import_scope: &str, known: &mut ScopedKnown) {
     for (child_name, child_node) in &pkg_node.children {
         let child_import_scope = qualify(import_scope, child_name);
         let child_pkg_scope = qualify(pkg_scope, child_name);
         // Copy resolved typed children into the importing scope.
         if child_node.ty != Ty::Unknown && !matches!(child_node.ty, Ty::TypeVar(_)) {
-            known.entry(import_scope.to_owned()).or_default()
-                .entry(child_name.clone()).or_insert_with(|| child_node.ty.clone());
+            known
+                .entry(import_scope.to_owned())
+                .or_default()
+                .entry(child_name.clone())
+                .or_insert_with(|| child_node.ty.clone());
         }
         // Recurse into sub-packages so `Pkg.SubPkg.Type` is reachable as `SubPkg.Type`.
-        if matches!(child_node.kind, NodeKind::Class(crate::MM::Class { restriction: openmodelica_ast::Absyn::Restriction::R_PACKAGE, .. })) {
+        if matches!(
+            child_node.kind,
+            NodeKind::Class(crate::MM::Class {
+                restriction: openmodelica_ast::Absyn::Restriction::R_PACKAGE,
+                ..
+            })
+        ) {
             copy_wildcard_children(child_node, &child_pkg_scope, &child_import_scope, known);
         }
     }
@@ -1149,13 +1245,14 @@ fn collect_wildcard_import_known(
         let qname = qualify(prefix, name);
         if let Some(star_child) = node.children.get("*")
             && let NodeKind::Import(m) = &star_child.kind
-                && let Absyn::Import::UNQUAL_IMPORT { path } = &m.import {
-                    let pkg = fmt_path(path);
-                    let pkg_path = pkg.trim_start_matches('.');
-                    if let Some(pkg_node) = find_node_by_path(top_level, pkg_path) {
-                        copy_wildcard_children(pkg_node, pkg_path, &qname, known);
-                    }
-                }
+            && let Absyn::Import::UNQUAL_IMPORT { path } = &m.import
+        {
+            let pkg = fmt_path(path);
+            let pkg_path = pkg.trim_start_matches('.');
+            if let Some(pkg_node) = find_node_by_path(top_level, pkg_path) {
+                copy_wildcard_children(pkg_node, pkg_path, &qname, known);
+            }
+        }
         collect_wildcard_import_known(&node.children, &qname, top_level, known);
     }
 }
@@ -1234,12 +1331,21 @@ fn collect_extends_known<'a>(
                 if let Absyn::ElementArg::REDECLARATION { elementSpec, .. } = arg
                     && let Absyn::ElementSpec::CLASSDEF { class_, .. } = &**elementSpec
                 {
-                    let Absyn::Class { name: child_name, body, .. } = class_.as_ref();
+                    let Absyn::Class {
+                        name: child_name, body, ..
+                    } = class_.as_ref();
                     if let Absyn::ClassDef::DERIVED { typeSpec, .. } = body.as_ref()
-                        && let Some(ty) = resolve_type_spec(typeSpec, known, &empty_aliases, &[], &qname, wctx) {
-                            known.entry(qname.clone()).or_default().insert(child_name.to_string(), ty.clone());
-                            known.entry(name.to_owned()).or_default().insert(child_name.to_string(), ty);
-                        }
+                        && let Some(ty) = resolve_type_spec(typeSpec, known, &empty_aliases, &[], &qname, wctx)
+                    {
+                        known
+                            .entry(qname.clone())
+                            .or_default()
+                            .insert(child_name.to_string(), ty.clone());
+                        known
+                            .entry(name.to_owned())
+                            .or_default()
+                            .insert(child_name.to_string(), ty);
+                    }
                 }
             }
         }
@@ -1283,7 +1389,9 @@ fn collect_package_aliases(nodes: &BTreeMap<String, NameNode<'_>>, prefix: &str,
                     for g in &**groups {
                         let (local_name, original) = match g {
                             Absyn::GroupImport::GROUP_IMPORT_NAME { name } => (name.to_string(), name.to_string()),
-                            Absyn::GroupImport::GROUP_IMPORT_RENAME { rename, name } => (rename.to_string(), name.to_string()),
+                            Absyn::GroupImport::GROUP_IMPORT_RENAME { rename, name } => {
+                                (rename.to_string(), name.to_string())
+                            }
                         };
                         let full = format!("{prefix_str}.{original}");
                         scope_map.insert(local_name, full);
@@ -1349,18 +1457,28 @@ fn expand_dotted_through_aliases(
             // unconsumed so subsequent iterations can keep peeling it.
             let target = target.to_owned();
             let (target_scope, target_tail) = match target.rfind('.') {
-                Some(d) => (target[..d].to_owned(), target[d+1..].to_owned()),
+                Some(d) => (target[..d].to_owned(), target[d + 1..].to_owned()),
                 None => (String::new(), target),
             };
             scope = target_scope;
-            tail = if rest.is_empty() { target_tail } else { format!("{target_tail}.{rest}") };
+            tail = if rest.is_empty() {
+                target_tail
+            } else {
+                format!("{target_tail}.{rest}")
+            };
         } else {
             // Not aliased: descend into the segment as a real package. The
             // next iteration looks up aliases at the new scope, which is how
             // chained imports across packages get resolved.
-            scope = if scope.is_empty() { first.to_owned() } else { format!("{scope}.{first}") };
+            scope = if scope.is_empty() {
+                first.to_owned()
+            } else {
+                format!("{scope}.{first}")
+            };
             tail = rest.to_owned();
-            if tail.is_empty() { return None; }
+            if tail.is_empty() {
+                return None;
+            }
         }
     }
     None
@@ -1380,18 +1498,34 @@ fn alias_lookup<'a>(aliases: &'a ScopedAliases, module_prefix: &str, name: &str)
     }
 }
 
-fn resolve_nodes(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str, known: &ScopedKnown, aliases: &ScopedAliases, changed: &mut bool, wctx: &mut WarnCtx<'_>) {
+fn resolve_nodes(
+    nodes: &mut BTreeMap<String, NameNode<'_>>,
+    prefix: &str,
+    known: &ScopedKnown,
+    aliases: &ScopedAliases,
+    changed: &mut bool,
+    wctx: &mut WarnCtx<'_>,
+) {
     resolve_nodes_inner(nodes, prefix, known, aliases, &[], changed, wctx);
 }
 
-fn resolve_nodes_inner(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str, known: &ScopedKnown, aliases: &ScopedAliases, outer_type_vars: &[String], changed: &mut bool, wctx: &mut WarnCtx<'_>) {
+fn resolve_nodes_inner(
+    nodes: &mut BTreeMap<String, NameNode<'_>>,
+    prefix: &str,
+    known: &ScopedKnown,
+    aliases: &ScopedAliases,
+    outer_type_vars: &[String],
+    changed: &mut bool,
+    wctx: &mut WarnCtx<'_>,
+) {
     for (name, node) in nodes.iter_mut() {
         let qname = qualify(prefix, name);
         if node.ty == Ty::Unknown
-            && let Some(ty) = try_resolve(node, &qname, known, aliases, outer_type_vars, wctx) {
-                node.ty = ty;
-                *changed = true;
-            }
+            && let Some(ty) = try_resolve(node, &qname, known, aliases, outer_type_vars, wctx)
+        {
+            node.ty = ty;
+            *changed = true;
+        }
         // Collect this node's own type vars and merge with inherited outer ones.
         let child_outer: Vec<String> = {
             let mut vars: Vec<String> = if let NodeKind::Class(c) = &node.kind {
@@ -1400,7 +1534,9 @@ fn resolve_nodes_inner(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str,
                 vec![]
             };
             for v in outer_type_vars {
-                if !vars.contains(v) { vars.push(v.clone()); }
+                if !vars.contains(v) {
+                    vars.push(v.clone());
+                }
             }
             vars
         };
@@ -1408,7 +1544,14 @@ fn resolve_nodes_inner(nodes: &mut BTreeMap<String, NameNode<'_>>, prefix: &str,
     }
 }
 
-fn try_resolve(node: &NameNode<'_>, qname: &str, known: &ScopedKnown, aliases: &ScopedAliases, outer_type_vars: &[String], wctx: &mut WarnCtx<'_>) -> Option<Ty> {
+fn try_resolve(
+    node: &NameNode<'_>,
+    qname: &str,
+    known: &ScopedKnown,
+    aliases: &ScopedAliases,
+    outer_type_vars: &[String],
+    wctx: &mut WarnCtx<'_>,
+) -> Option<Ty> {
     let module_prefix = qname.rsplit_once('.').map_or("", |(p, _)| p);
     // An explicit `known[qname]` entry overrides whatever the node's own
     // declaration would resolve to. The only producer of such entries is
@@ -1425,18 +1568,30 @@ fn try_resolve(node: &NameNode<'_>, qname: &str, known: &ScopedKnown, aliases: &
     // name.
     if let Some((scope, name)) = qname.rsplit_once('.')
         && let Some(ty) = known.get(scope).and_then(|m| m.get(name))
-            && !matches!(ty, Ty::Unknown | Ty::TypeVar(_)) {
-                return Some(ty.clone());
-            }
+        && !matches!(ty, Ty::Unknown | Ty::TypeVar(_))
+    {
+        return Some(ty.clone());
+    }
     match &node.kind {
         NodeKind::Class(c) if is_function_class(&c.restriction) => {
-            resolve_function_type(c, node, known, aliases, outer_type_vars, qname, wctx, /*nested_in_function=*/false)
+            resolve_function_type(
+                c,
+                node,
+                known,
+                aliases,
+                outer_type_vars,
+                qname,
+                wctx,
+                /*nested_in_function=*/ false,
+            )
         }
         NodeKind::Class(c) if matches!(c.restriction, Absyn::Restriction::R_UNIONTYPE) => {
             try_resolve_uniontype(node, qname)
         }
         NodeKind::Class(c) => match &c.body {
-            MM::ClassDef::Derived { type_spec, .. } => resolve_type_spec(type_spec, known, aliases, outer_type_vars, module_prefix, wctx),
+            MM::ClassDef::Derived { type_spec, .. } => {
+                resolve_type_spec(type_spec, known, aliases, outer_type_vars, module_prefix, wctx)
+            }
             _ => None,
         },
         NodeKind::Component(m) => resolve_type_spec(&m.type_spec, known, aliases, outer_type_vars, module_prefix, wctx),
@@ -1453,7 +1608,8 @@ fn try_resolve_import(m: &MM::ImportMember, qname: &str, known: &ScopedKnown) ->
         Absyn::Import::NAMED_IMPORT { path, .. } | Absyn::Import::QUAL_IMPORT { path } => {
             let dotted = fmt_path(path);
             let dotted = dotted.trim_start_matches('.');
-            sk_get(known, dotted).cloned()
+            sk_get(known, dotted)
+                .cloned()
                 .or_else(|| known.get("").and_then(|m| m.get(path_last(path))).cloned())
         }
         Absyn::Import::GROUP_IMPORT { prefix, groups } => {
@@ -1466,7 +1622,8 @@ fn try_resolve_import(m: &MM::ImportMember, qname: &str, known: &ScopedKnown) ->
                 };
                 if is_match {
                     let full = format!("{prefix_str}.{orig}");
-                    return sk_get(known, &full).cloned()
+                    return sk_get(known, &full)
+                        .cloned()
                         .or_else(|| known.get("").and_then(|m| m.get(&**orig)).cloned());
                 }
             }
@@ -1514,17 +1671,27 @@ fn resolve_function_from_base(
     let mut inputs: Vec<FunctionInput> = Vec::new();
     let mut outputs: Vec<Ty> = Vec::new();
     for member in members {
-        let MM::ClassMember::Component(m) = member else { continue };
+        let MM::ClassMember::Component(m) = member else {
+            continue;
+        };
         let Some(ty) = resolve_type_spec(&m.type_spec, known, aliases, type_vars, module_prefix, wctx) else {
             return None; // Defer if a type can't be resolved yet.
         };
         let default = extract_default(&m.modification);
         match m.direction {
-            Absyn::Direction::INPUT => inputs.push(FunctionInput { name: m.name.clone(), ty, default }),
+            Absyn::Direction::INPUT => inputs.push(FunctionInput {
+                name: m.name.clone(),
+                ty,
+                default,
+            }),
             Absyn::Direction::OUTPUT => outputs.push(ty),
             Absyn::Direction::INPUT_OUTPUT => {
                 outputs.push(ty.clone());
-                inputs.push(FunctionInput { name: m.name.clone(), ty, default });
+                inputs.push(FunctionInput {
+                    name: m.name.clone(),
+                    ty,
+                    default,
+                });
             }
             _ => {}
         }
@@ -1534,7 +1701,12 @@ fn resolve_function_from_base(
         1 => outputs.into_iter().next().unwrap(),
         _ => Ty::Tuple(outputs),
     };
-    Some(Ty::Function { type_vars: vec![], inputs, output: Box::new(output), name: None })
+    Some(Ty::Function {
+        type_vars: vec![],
+        inputs,
+        output: Box::new(output),
+        name: None,
+    })
 }
 
 /// Resolve a function's type, threading `outer_type_vars` into nested partial functions.
@@ -1558,16 +1730,31 @@ fn resolve_function_type(
     let module_prefix = fn_qname.rsplit_once('.').map_or("", |(p, _)| p);
     let mut type_vars = class_type_vars(c);
     for v in outer_type_vars {
-        if !type_vars.contains(v) { type_vars.push(v.clone()); }
+        if !type_vars.contains(v) {
+            type_vars.push(v.clone());
+        }
     }
 
     // Function alias: `function Foo = Bar(param=default)`
-    if let MM::ClassDef::Derived { type_spec, arguments, .. } = &c.body {
+    if let MM::ClassDef::Derived {
+        type_spec, arguments, ..
+    } = &c.body
+    {
         let base = fmt_path(type_spec_path(type_spec)).trim_start_matches('.').to_owned();
-        let modifications = arguments.iter()
+        let modifications = arguments
+            .iter()
             .filter_map(|arg| {
-                let Absyn::ElementArg::MODIFICATION { path, modification: Some(m), .. } = arg else { return None };
-                let Absyn::EqMod::EQMOD { exp, .. } = &*m.eqMod else { return None };
+                let Absyn::ElementArg::MODIFICATION {
+                    path,
+                    modification: Some(m),
+                    ..
+                } = arg
+                else {
+                    return None;
+                };
+                let Absyn::EqMod::EQMOD { exp, .. } = &*m.eqMod else {
+                    return None;
+                };
                 Some((fmt_path(path), fmt_exp(exp)))
             })
             .collect();
@@ -1596,9 +1783,19 @@ fn resolve_function_type(
     for (child_name, child_node) in &node.children {
         if let NodeKind::Class(fn_class) = &child_node.kind
             && is_function_class(&fn_class.restriction)
-                && let Some(fn_ty) = resolve_function_type(fn_class, child_node, known, aliases, &type_vars, &format!("{fn_qname}.{child_name}"), wctx, /*nested_in_function=*/true) {
-                    local_fns.insert(child_name.clone(), fn_ty);
-                }
+            && let Some(fn_ty) = resolve_function_type(
+                fn_class,
+                child_node,
+                known,
+                aliases,
+                &type_vars,
+                &format!("{fn_qname}.{child_name}"),
+                wctx,
+                /*nested_in_function=*/ true,
+            )
+        {
+            local_fns.insert(child_name.clone(), fn_ty);
+        }
     }
 
     let mut inputs: Vec<FunctionInput> = Vec::new();
@@ -1615,7 +1812,8 @@ fn resolve_function_type(
     // ones so the parameter and output order matches Modelica's
     // base-then-derived convention. If F locally redeclares a name from G,
     // the local declaration wins — we skip the inherited entry by name.
-    let local_component_names: std::collections::HashSet<String> = members.iter()
+    let local_component_names: std::collections::HashSet<String> = members
+        .iter()
         .filter_map(|m| match m {
             MM::ClassMember::Component(cm) => Some(cm.name.clone()),
             _ => None,
@@ -1642,10 +1840,18 @@ fn resolve_function_type(
             sk_lookup_bare(known, ext_path, module_prefix).map(|(t, _)| t.clone())
         };
         match base_ty {
-            Some(Ty::Function { inputs: base_inputs, output: base_output, .. }) => {
+            Some(Ty::Function {
+                inputs: base_inputs,
+                output: base_output,
+                ..
+            }) => {
                 for inp in base_inputs {
-                    if local_component_names.contains(&inp.name) { continue; }
-                    if !seen_inherited.insert(inp.name.clone()) { continue; }
+                    if local_component_names.contains(&inp.name) {
+                        continue;
+                    }
+                    if !seen_inherited.insert(inp.name.clone()) {
+                        continue;
+                    }
                     inputs.push(inp);
                 }
                 match *base_output {
@@ -1667,7 +1873,9 @@ fn resolve_function_type(
     }
 
     for member in members {
-        let MM::ClassMember::Component(m) = member else { continue };
+        let MM::ClassMember::Component(m) = member else {
+            continue;
+        };
         let child = node.children.get(&m.name)?;
         let ty = if child.ty != Ty::Unknown {
             child.ty.clone()
@@ -1682,11 +1890,19 @@ fn resolve_function_type(
         };
         let default = extract_default(&m.modification);
         match m.direction {
-            Absyn::Direction::INPUT => inputs.push(FunctionInput { name: m.name.clone(), ty, default }),
+            Absyn::Direction::INPUT => inputs.push(FunctionInput {
+                name: m.name.clone(),
+                ty,
+                default,
+            }),
             Absyn::Direction::OUTPUT => outputs.push(ty),
             Absyn::Direction::INPUT_OUTPUT => {
                 outputs.push(ty.clone());
-                inputs.push(FunctionInput { name: m.name.clone(), ty, default });
+                inputs.push(FunctionInput {
+                    name: m.name.clone(),
+                    ty,
+                    default,
+                });
             }
             _ => {}
         }
@@ -1703,14 +1919,30 @@ fn resolve_function_type(
     // Those are the named function-type aliases consumers may refer to by name
     // (e.g. `KeyEq eqFn;`); concrete functions don't need the name attached
     // because their signature is not what gets referenced as a type.
-    let name = if c.partial_prefix && !nested_in_function { Some(fn_qname.to_owned()) } else { None };
-    Some(Ty::Function { type_vars: own_type_vars, inputs, output: Box::new(output), name })
+    let name = if c.partial_prefix && !nested_in_function {
+        Some(fn_qname.to_owned())
+    } else {
+        None
+    };
+    Some(Ty::Function {
+        type_vars: own_type_vars,
+        inputs,
+        output: Box::new(output),
+        name,
+    })
 }
 
 /// Resolve a TypeSpec to a Ty.
 /// `type_vars` is the list of type-variable names in scope; they resolve to `Ty::TypeVar`.
 /// `module_prefix` is the enclosing module qname used to resolve bare names to module-local types.
-fn resolve_type_spec(ts: &Absyn::TypeSpec, known: &ScopedKnown, aliases: &ScopedAliases, type_vars: &[String], module_prefix: &str, wctx: &mut WarnCtx<'_>) -> Option<Ty> {
+fn resolve_type_spec(
+    ts: &Absyn::TypeSpec,
+    known: &ScopedKnown,
+    aliases: &ScopedAliases,
+    type_vars: &[String],
+    module_prefix: &str,
+    wctx: &mut WarnCtx<'_>,
+) -> Option<Ty> {
     match ts {
         Absyn::TypeSpec::TPATH { path, .. } => resolve_path(path, known, aliases, type_vars, module_prefix, wctx),
         Absyn::TypeSpec::TCOMPLEX { path, typeSpecs, .. } => {
@@ -1718,20 +1950,36 @@ fn resolve_type_spec(ts: &Absyn::TypeSpec, known: &ScopedKnown, aliases: &Scoped
             let ctor = path_last(path);
             match ctor {
                 "tuple" => {
-                    let tys: Option<Vec<Ty>> = args.iter()
+                    let tys: Option<Vec<Ty>> = args
+                        .iter()
                         .map(|a| resolve_type_spec(a, known, aliases, type_vars, module_prefix, wctx))
                         .collect();
                     Some(Ty::Tuple(tys?))
                 }
-                "Option" if args.len() == 1 => {
-                    Some(Ty::Option(Box::new(resolve_type_spec(&args[0], known, aliases, type_vars, module_prefix, wctx)?)))
-                }
-                "list" | "List" if args.len() == 1 => {
-                    Some(Ty::List(Box::new(resolve_type_spec(&args[0], known, aliases, type_vars, module_prefix, wctx)?)))
-                }
-                "array" | "Array" if args.len() == 1 => {
-                    Some(Ty::Array(Box::new(resolve_type_spec(&args[0], known, aliases, type_vars, module_prefix, wctx)?)))
-                }
+                "Option" if args.len() == 1 => Some(Ty::Option(Box::new(resolve_type_spec(
+                    &args[0],
+                    known,
+                    aliases,
+                    type_vars,
+                    module_prefix,
+                    wctx,
+                )?))),
+                "list" | "List" if args.len() == 1 => Some(Ty::List(Box::new(resolve_type_spec(
+                    &args[0],
+                    known,
+                    aliases,
+                    type_vars,
+                    module_prefix,
+                    wctx,
+                )?))),
+                "array" | "Array" if args.len() == 1 => Some(Ty::Array(Box::new(resolve_type_spec(
+                    &args[0],
+                    known,
+                    aliases,
+                    type_vars,
+                    module_prefix,
+                    wctx,
+                )?))),
                 "Mutable" if args.len() == 1 => {
                     let inner = resolve_type_spec(&args[0], known, aliases, type_vars, module_prefix, wctx)?;
                     Some(Ty::Generic(ctor.to_owned(), vec![inner]))
@@ -1746,7 +1994,8 @@ fn resolve_type_spec(ts: &Absyn::TypeSpec, known: &ScopedKnown, aliases: &Scoped
                         sk_lookup_bare(known, lookup, module_prefix).map(|(ty, _)| ty)
                     }?;
                     let base_name = ty_rust_name(base_ty).unwrap_or_else(|| ctor.to_owned());
-                    let resolved: Option<Vec<Ty>> = args.iter()
+                    let resolved: Option<Vec<Ty>> = args
+                        .iter()
                         .map(|a| resolve_type_spec(a, known, aliases, type_vars, module_prefix, wctx))
                         .collect();
                     Some(Ty::Generic(base_name, resolved?))
@@ -1756,7 +2005,14 @@ fn resolve_type_spec(ts: &Absyn::TypeSpec, known: &ScopedKnown, aliases: &Scoped
     }
 }
 
-fn resolve_path(path: &Absyn::Path, known: &ScopedKnown, aliases: &ScopedAliases, type_vars: &[String], module_prefix: &str, wctx: &mut WarnCtx<'_>) -> Option<Ty> {
+fn resolve_path(
+    path: &Absyn::Path,
+    known: &ScopedKnown,
+    aliases: &ScopedAliases,
+    type_vars: &[String],
+    module_prefix: &str,
+    wctx: &mut WarnCtx<'_>,
+) -> Option<Ty> {
     let last = path_last(path);
     match last {
         "Integer" => return Some(Ty::I32),
@@ -1813,14 +2069,18 @@ fn resolve_path(path: &Absyn::Path, known: &ScopedKnown, aliases: &ScopedAliases
         // No warning if first is itself a known type (accessible via scope-walk).
         let first_is_type = sk_lookup_bare(known, first, module_prefix).is_some();
         // No warning if first is the current module or one of its enclosing packages.
-        let is_ancestor = !module_prefix.is_empty()
-            && (module_prefix == first || module_prefix.starts_with(&format!("{first}.")));
-        if !first_is_type && !is_ancestor
+        let is_ancestor =
+            !module_prefix.is_empty() && (module_prefix == first || module_prefix.starts_with(&format!("{first}.")));
+        if !first_is_type
+            && !is_ancestor
             && !is_imported_in_scope(wctx.scope_imports, module_prefix, first)
             && sk_get(known, effective).is_some()
-            && !module_prefix.is_empty() {
-                wctx.warnings.insert(format!("warning: in '{module_prefix}': '{qname}' uses package '{first}' which is not imported"));
-            };
+            && !module_prefix.is_empty()
+        {
+            wctx.warnings.insert(format!(
+                "warning: in '{module_prefix}': '{qname}' uses package '{first}' which is not imported"
+            ));
+        };
     }
 
     let (scope, name) = split_qname(effective);
@@ -1834,8 +2094,14 @@ fn resolve_path(path: &Absyn::Path, known: &ScopedKnown, aliases: &ScopedAliases
 /// Duplicates are suppressed. Suitable for deriving Rust generic parameters from resolved types.
 pub(crate) fn collect_type_vars_in_ty(ty: &Ty, out: &mut Vec<String>) {
     match ty {
-        Ty::TypeVar(name) => { if !out.contains(name) { out.push(name.clone()); } }
-        Ty::Option(inner) | Ty::List(inner) | Ty::Array(inner) | Ty::Range(inner) => collect_type_vars_in_ty(inner, out),
+        Ty::TypeVar(name) => {
+            if !out.contains(name) {
+                out.push(name.clone());
+            }
+        }
+        Ty::Option(inner) | Ty::List(inner) | Ty::Array(inner) | Ty::Range(inner) => {
+            collect_type_vars_in_ty(inner, out)
+        }
         Ty::Tuple(tys) => tys.iter().for_each(|t| collect_type_vars_in_ty(t, out)),
         Ty::Generic(_, args) => args.iter().for_each(|t| collect_type_vars_in_ty(t, out)),
         Ty::Function { inputs, output, .. } => {
@@ -1854,9 +2120,14 @@ pub(crate) fn collect_type_vars_in_env(env: &std::collections::HashMap<String, T
 }
 
 fn record_child_count(node: &NameNode<'_>) -> usize {
-    node.children.values().filter(|ch| matches!(&ch.kind,
+    node.children
+        .values()
+        .filter(|ch| {
+            matches!(&ch.kind,
         NodeKind::Class(cc) if matches!(cc.restriction,
-            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))).count()
+            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))
+        })
+        .count()
 }
 
 /// Is `qname` a record that is the only shape of its type — the sole record
@@ -1864,16 +2135,24 @@ fn record_child_count(node: &NameNode<'_>) -> usize {
 /// constructor pattern can never mismatch. `fallibility::resolve_cover_key`
 /// and codegen's `pat_is_irrefutable` must both go through here.
 pub(crate) fn record_is_sole_shape(qname: &str, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
-    let Some(node) = lookup_node(qname, top_level) else { return false };
+    let Some(node) = lookup_node(qname, top_level) else {
+        return false;
+    };
     let NodeKind::Class(c) = &node.kind else { return false };
-    if !matches!(c.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
+    if !matches!(
+        c.restriction,
+        Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }
+    ) {
         return false;
     }
-    let Some((parent, _)) = qname.rsplit_once('.') else { return true };
-    let Some(p) = lookup_node(parent, top_level) else { return false };
+    let Some((parent, _)) = qname.rsplit_once('.') else {
+        return true;
+    };
+    let Some(p) = lookup_node(parent, top_level) else {
+        return false;
+    };
     match &p.kind {
-        NodeKind::Class(pc) if matches!(pc.restriction, Absyn::Restriction::R_UNIONTYPE) =>
-            record_child_count(p) == 1,
+        NodeKind::Class(pc) if matches!(pc.restriction, Absyn::Restriction::R_UNIONTYPE) => record_child_count(p) == 1,
         _ => true,
     }
 }
@@ -1929,10 +2208,11 @@ pub(crate) fn lookup_record_through_unions<'a>(
     for (child_name, child_node) in &parent.children {
         if let NodeKind::Class(c) = &child_node.kind
             && matches!(c.restriction, Absyn::Restriction::R_UNIONTYPE)
-                && let Some(rec_node) = child_node.children.get(last) {
-                    let full = format!("{parent_dotted}.{child_name}.{last}");
-                    return Some((full, rec_node));
-                }
+            && let Some(rec_node) = child_node.children.get(last)
+        {
+            let full = format!("{parent_dotted}.{child_name}.{last}");
+            return Some((full, rec_node));
+        }
     }
 
     None
@@ -1960,7 +2240,9 @@ pub(crate) fn strip_exp_wrappers(mut e: &Absyn::Exp) -> &Absyn::Exp {
 /// Extract the raw `Absyn::Exp` from a modification, for typed inference in codegen.
 /// Comment and parenthesis wrappers are stripped so callers can match on the
 /// expression's shape (literal constant folding, self-reference checks, …).
-pub(crate) fn extract_default_exp(modification: &Option<metamodelica::Ref<Absyn::Modification>>) -> Option<&Absyn::Exp> {
+pub(crate) fn extract_default_exp(
+    modification: &Option<metamodelica::Ref<Absyn::Modification>>,
+) -> Option<&Absyn::Exp> {
     match modification {
         Some(m) => match &*m.eqMod {
             Absyn::EqMod::EQMOD { exp, .. } => Some(strip_exp_wrappers(exp)),
@@ -1997,9 +2279,9 @@ fn fmt_exp(exp: &Absyn::Exp) -> String {
             };
             format!("{s}{}", fmt_exp(exp))
         }
-        Absyn::Exp::LBINARY { exp1, op, exp2 } |
-        Absyn::Exp::RELATION { exp1, op, exp2 } |
-        Absyn::Exp::BINARY { exp1, op, exp2 } => {
+        Absyn::Exp::LBINARY { exp1, op, exp2 }
+        | Absyn::Exp::RELATION { exp1, op, exp2 }
+        | Absyn::Exp::BINARY { exp1, op, exp2 } => {
             if op == &Absyn::Operator::EQUAL {
                 // Constant-time string equality
                 return format!("const_str::equal!({},{})", fmt_exp(exp1), fmt_exp(exp2));
@@ -2021,8 +2303,14 @@ fn fmt_exp(exp: &Absyn::Exp) -> String {
             };
             format!("{} {s} {}", fmt_exp(exp1), fmt_exp(exp2))
         }
-        Absyn::Exp::CALL { function_, functionArgs, .. } if matches!(&**functionArgs, Absyn::FunctionArgs::FUNCTIONARGS { .. }) => {
-            let Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } = &**functionArgs else { unreachable!() };
+        Absyn::Exp::CALL {
+            function_,
+            functionArgs,
+            ..
+        } if matches!(&**functionArgs, Absyn::FunctionArgs::FUNCTIONARGS { .. }) => {
+            let Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } = &**functionArgs else {
+                unreachable!()
+            };
             let mut parts: Vec<String> = (&**args).into_iter().map(|a| fmt_exp(a.as_ref())).collect();
             for named in &**argNames {
                 let Absyn::NamedArg { argName, argValue } = &**named;
@@ -2046,9 +2334,23 @@ fn fmt_exp(exp: &Absyn::Exp) -> String {
                 format!("({})", items.join(", "))
             }
         }
-        Absyn::Exp::IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => {
-            let else_if: String = (&**elseIfBranch).into_iter().map(|(cond, branch)| format!(" else if {} {{{}}}", fmt_exp(cond.as_ref()), fmt_exp(branch.as_ref()))).collect();
-            format!("if {} {{{}}}{} else {{{}}}", fmt_exp(ifExp), fmt_exp(trueBranch), else_if, fmt_exp(elseBranch))
+        Absyn::Exp::IFEXP {
+            ifExp,
+            trueBranch,
+            elseBranch,
+            elseIfBranch,
+        } => {
+            let else_if: String = (&**elseIfBranch)
+                .into_iter()
+                .map(|(cond, branch)| format!(" else if {} {{{}}}", fmt_exp(cond.as_ref()), fmt_exp(branch.as_ref())))
+                .collect();
+            format!(
+                "if {} {{{}}}{} else {{{}}}",
+                fmt_exp(ifExp),
+                fmt_exp(trueBranch),
+                else_if,
+                fmt_exp(elseBranch)
+            )
         }
         _ => format!("todo!(/*{:?}*/)", exp).to_owned(),
     }
@@ -2073,11 +2375,20 @@ fn fmt_cref(cref: &Absyn::ComponentRef) -> String {
         // Keep arrayCreateNoInit distinct from arrayCreate; codegen lowers it
         // to `metamodelica::Dangerous::arrayCreateNoInit(size)` (dropping the
         // dummy type-witness argument).
-        "MetaModelica.Dangerous.arrayCreateNoInit" | "Dangerous.arrayCreateNoInit" | ".MetaModelica.Dangerous.arrayCreateNoInit" | "MetaModelica.arrayCreateNoInit" => "arrayCreateNoInit".to_owned(),
-        "MetaModelica.Dangerous.listArrayLiteral" | "Dangerous.listArrayLiteral" | ".MetaModelica.Dangerous.listArrayLiteral" | "listArrayLiteral" => "listArray".to_owned(),
+        "MetaModelica.Dangerous.arrayCreateNoInit"
+        | "Dangerous.arrayCreateNoInit"
+        | ".MetaModelica.Dangerous.arrayCreateNoInit"
+        | "MetaModelica.arrayCreateNoInit" => "arrayCreateNoInit".to_owned(),
+        "MetaModelica.Dangerous.listArrayLiteral"
+        | "Dangerous.listArrayLiteral"
+        | ".MetaModelica.Dangerous.listArrayLiteral"
+        | "listArrayLiteral" => "listArray".to_owned(),
         // Destructive append: kept distinct from `listAppend` so codegen routes
         // it to the runtime's in-place implementation (see typedexp::cref_to_dotted).
-        "MetaModelica.Dangerous.listAppendDestroy" | "Dangerous.listAppendDestroy" | ".MetaModelica.Dangerous.listAppendDestroy" | "listAppendDestroy" => "listAppendDestroy".to_owned(),
+        "MetaModelica.Dangerous.listAppendDestroy"
+        | "Dangerous.listAppendDestroy"
+        | ".MetaModelica.Dangerous.listAppendDestroy"
+        | "listAppendDestroy" => "listAppendDestroy".to_owned(),
         _ => raw,
     }
 }
@@ -2094,7 +2405,11 @@ fn ty_rust_name(ty: &Ty) -> Option<String> {
 }
 
 fn qualify(prefix: &str, name: &str) -> String {
-    if prefix.is_empty() { name.to_owned() } else { format!("{prefix}.{name}") }
+    if prefix.is_empty() {
+        name.to_owned()
+    } else {
+        format!("{prefix}.{name}")
+    }
 }
 
 fn path_last(path: &Absyn::Path) -> &str {
@@ -2151,10 +2466,13 @@ fn fmt_import(m: &MM::ImportMember) -> String {
         Absyn::Import::QUAL_IMPORT { path } => format!("import {}", fmt_path(path)),
         Absyn::Import::UNQUAL_IMPORT { path } => format!("import {}.*", fmt_path(path)),
         Absyn::Import::GROUP_IMPORT { prefix, groups } => {
-            let names: Vec<String> = (&**groups).into_iter().map(|g| match g {
-                Absyn::GroupImport::GROUP_IMPORT_NAME { name } => name.to_string(),
-                Absyn::GroupImport::GROUP_IMPORT_RENAME { rename, name } => format!("{name} as {rename}"),
-            }).collect();
+            let names: Vec<String> = (&**groups)
+                .into_iter()
+                .map(|g| match g {
+                    Absyn::GroupImport::GROUP_IMPORT_NAME { name } => name.to_string(),
+                    Absyn::GroupImport::GROUP_IMPORT_RENAME { rename, name } => format!("{name} as {rename}"),
+                })
+                .collect();
             format!("import {}.{{{}}}", fmt_path(prefix), names.join(", "))
         }
     }
@@ -2200,7 +2518,9 @@ fn collect_type_graph(
         let qname = qualify(prefix, name);
         match &node.ty {
             Ty::RustStruct(_) => {
-                let deps: BTreeSet<String> = node.children.values()
+                let deps: BTreeSet<String> = node
+                    .children
+                    .values()
                     .filter(|c| matches!(c.kind, NodeKind::Component(_)))
                     .flat_map(|c| ty_direct_deps(&c.ty))
                     .collect();
@@ -2208,9 +2528,13 @@ fn collect_type_graph(
             }
             Ty::RustEnum(_) | Ty::AliasTo(_) => {
                 // The enum's size is the max of all its variants' sizes; follow all variant fields.
-                let deps: BTreeSet<String> = node.children.values()
+                let deps: BTreeSet<String> = node
+                    .children
+                    .values()
                     .flat_map(|variant| {
-                        variant.children.values()
+                        variant
+                            .children
+                            .values()
                             .filter(|c| matches!(c.kind, NodeKind::Component(_)))
                             .flat_map(|c| ty_direct_deps(&c.ty))
                     })
@@ -2232,7 +2556,8 @@ const SHARED_RECORDS: &[&str] = &["BackendDAE.Var", "SimCodeVar.SimVar", "SimCod
 /// Populates `hier.recursive_types` with the fully-qualified names of all such types.
 /// Must be called after `resolve_pass` has converged.
 pub fn detect_recursive_types(hier: &mut InstanceHierarchy<'_>) {
-    hier.recursive_types.extend(SHARED_RECORDS.iter().map(|s| s.to_string()));
+    hier.recursive_types
+        .extend(SHARED_RECORDS.iter().map(|s| s.to_string()));
     let mut graph: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     collect_type_graph(&hier.top_level, "", &mut graph);
 
@@ -2248,7 +2573,10 @@ pub fn detect_recursive_types(hier: &mut InstanceHierarchy<'_>) {
         }
         color.insert(start.clone(), 1);
         path_stack.push(start.clone());
-        let deps: Vec<String> = graph.get(start).map(|d| d.iter().cloned().collect()).unwrap_or_default();
+        let deps: Vec<String> = graph
+            .get(start)
+            .map(|d| d.iter().cloned().collect())
+            .unwrap_or_default();
         call_stack.push((start.clone(), deps, 0));
 
         while !call_stack.is_empty() {
@@ -2275,9 +2603,8 @@ pub fn detect_recursive_types(hier: &mut InstanceHierarchy<'_>) {
                     0 => {
                         color.insert(dep.clone(), 1);
                         path_stack.push(dep.clone());
-                        let new_deps: Vec<String> = graph.get(&dep)
-                            .map(|d| d.iter().cloned().collect())
-                            .unwrap_or_default();
+                        let new_deps: Vec<String> =
+                            graph.get(&dep).map(|d| d.iter().cloned().collect()).unwrap_or_default();
                         call_stack.push((dep, new_deps, 0));
                     }
                     _ => {} // black — already fully explored
@@ -2304,7 +2631,12 @@ fn weak_fields() -> &'static BTreeSet<String> {
     static WEAK: std::sync::OnceLock<BTreeSet<String>> = std::sync::OnceLock::new();
     WEAK.get_or_init(|| {
         std::env::var("MMTORUST_WEAK_FIELDS")
-            .map(|v| v.split(',').map(|s| s.trim().to_owned()).filter(|s| !s.is_empty()).collect())
+            .map(|v| {
+                v.split(',')
+                    .map(|s| s.trim().to_owned())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            })
             .unwrap_or_default()
     })
 }
@@ -2329,7 +2661,9 @@ pub(crate) fn collect_struct_field_tys(
         let qname = qualify(prefix, name);
         match &node.ty {
             Ty::RustStruct(_) => {
-                let tys: Vec<Ty> = node.children.iter()
+                let tys: Vec<Ty> = node
+                    .children
+                    .iter()
                     .filter(|(_, c)| matches!(c.kind, NodeKind::Component(_)))
                     .filter(|(fname, _)| !is_weak_field(&qname, fname))
                     .map(|(_, c)| c.ty.clone())
@@ -2346,12 +2680,18 @@ pub(crate) fn collect_struct_field_tys(
                 // enclosing type as "containing" whatever those
                 // function args happen to be (e.g. an `Arc<dyn Fn>`
                 // parameter in some sibling function).
-                let tys: Vec<Ty> = node.children.values()
+                let tys: Vec<Ty> = node
+                    .children
+                    .values()
                     .filter(|v| matches!(v.ty, Ty::RustStruct(_) | Ty::RustUnitVariant))
-                    .flat_map(|variant| variant.children.iter()
-                        .filter(|(_, c)| matches!(c.kind, NodeKind::Component(_)))
-                        .filter(|(fname, _)| !is_weak_field(&qname, fname))
-                        .map(|(_, c)| c.ty.clone()))
+                    .flat_map(|variant| {
+                        variant
+                            .children
+                            .iter()
+                            .filter(|(_, c)| matches!(c.kind, NodeKind::Component(_)))
+                            .filter(|(fname, _)| !is_weak_field(&qname, fname))
+                            .map(|(_, c)| c.ty.clone())
+                    })
                     .collect();
                 out.insert(qname.clone(), tys);
             }
@@ -2372,9 +2712,7 @@ fn ty_contains_mutable(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
             // `name` is stored in `::` form (Rust path); normalise back to dotted
             // form to match graph keys.
             let dotted = name.replace("::", ".");
-            dotted == "Mutable"
-                || tainted.contains(&dotted)
-                || args.iter().any(|a| ty_contains_mutable(a, tainted))
+            dotted == "Mutable" || tainted.contains(&dotted) || args.iter().any(|a| ty_contains_mutable(a, tainted))
         }
         Ty::Option(t) | Ty::List(t) | Ty::Array(t) | Ty::Range(t) => ty_contains_mutable(t, tainted),
         Ty::Tuple(ts) => ts.iter().any(|t| ty_contains_mutable(t, tainted)),
@@ -2396,13 +2734,17 @@ pub fn detect_types_containing_mutable(hier: &mut InstanceHierarchy<'_>) {
     loop {
         let mut changed = false;
         for (qname, field_tys) in &graph {
-            if tainted.contains(qname) { continue; }
+            if tainted.contains(qname) {
+                continue;
+            }
             if field_tys.iter().any(|t| ty_contains_mutable(t, &tainted)) {
                 tainted.insert(qname.clone());
                 changed = true;
             }
         }
-        if !changed { break; }
+        if !changed {
+            break;
+        }
     }
     hier.types_containing_mutable = tainted;
 }
@@ -2424,8 +2766,7 @@ fn ty_contains_array(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
             // whose buckets are an `Array<T>`). Normalise the `::`
             // path to dotted form to match the graph keys.
             let dotted = name.replace("::", ".");
-            tainted.contains(&dotted)
-                || args.iter().any(|a| ty_contains_array(a, tainted))
+            tainted.contains(&dotted) || args.iter().any(|a| ty_contains_array(a, tainted))
         }
         Ty::RustStruct(qname) | Ty::RustEnum(qname) | Ty::AliasTo(qname) => tainted.contains(qname),
         Ty::UnionTypeVariant(qname, _) => tainted.contains(qname),
@@ -2451,8 +2792,7 @@ fn ty_contains_dyn_fn(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
         Ty::Tuple(ts) => ts.iter().any(|t| ty_contains_dyn_fn(t, tainted)),
         Ty::Generic(name, args) => {
             let dotted = name.replace("::", ".");
-            tainted.contains(&dotted)
-                || args.iter().any(|a| ty_contains_dyn_fn(a, tainted))
+            tainted.contains(&dotted) || args.iter().any(|a| ty_contains_dyn_fn(a, tainted))
         }
         Ty::RustStruct(qname) | Ty::RustEnum(qname) | Ty::AliasTo(qname) => tainted.contains(qname),
         Ty::UnionTypeVariant(qname, _) => tainted.contains(qname),
@@ -2509,13 +2849,17 @@ pub fn detect_types_containing_dyn_fn(hier: &mut InstanceHierarchy<'_>) {
     loop {
         let mut changed = false;
         for (qname, field_tys) in &graph {
-            if tainted.contains(qname) { continue; }
+            if tainted.contains(qname) {
+                continue;
+            }
             if field_tys.iter().any(|t| ty_contains_dyn_fn(t, &tainted)) {
                 tainted.insert(qname.clone());
                 changed = true;
             }
         }
-        if !changed { break; }
+        if !changed {
+            break;
+        }
     }
     hier.types_containing_dyn_fn = tainted;
     hier.types_directly_containing_dyn_fn = direct;
@@ -2529,13 +2873,17 @@ pub fn detect_types_containing_array(hier: &mut InstanceHierarchy<'_>) {
     loop {
         let mut changed = false;
         for (qname, field_tys) in &graph {
-            if tainted.contains(qname) { continue; }
+            if tainted.contains(qname) {
+                continue;
+            }
             if field_tys.iter().any(|t| ty_contains_array(t, &tainted)) {
                 tainted.insert(qname.clone());
                 changed = true;
             }
         }
-        if !changed { break; }
+        if !changed {
+            break;
+        }
     }
     hier.types_containing_array = tainted;
 }
@@ -2571,7 +2919,9 @@ fn fmt_struct_fields(
     let mut first = true;
     for member in members {
         if let MM::ClassMember::Component(m) = member {
-            if !first { write!(f, ", ")?; }
+            if !first {
+                write!(f, ", ")?;
+            }
             let ty = children.get(&m.name).map(|n| &n.ty).unwrap_or(&Ty::Unknown);
             write!(f, "{}: {ty}", m.name)?;
             first = false;
@@ -2580,13 +2930,7 @@ fn fmt_struct_fields(
     write!(f, " }}")
 }
 
-fn fmt_node(
-    f: &mut fmt::Formatter<'_>,
-    name: &str,
-    node: &NameNode<'_>,
-    prefix: &str,
-    is_last: bool,
-) -> fmt::Result {
+fn fmt_node(f: &mut fmt::Formatter<'_>, name: &str, node: &NameNode<'_>, prefix: &str, is_last: bool) -> fmt::Result {
     let connector = if is_last { "└─ " } else { "├─ " };
     write!(f, "{prefix}{connector}{name}")?;
 

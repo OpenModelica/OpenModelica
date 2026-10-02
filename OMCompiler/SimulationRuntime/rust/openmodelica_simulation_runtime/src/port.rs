@@ -17,7 +17,9 @@ static PENDING: Mutex<String> = Mutex::new(String::new());
 static DATA_PTR: AtomicPtr<DATA> = AtomicPtr::new(core::ptr::null_mut());
 
 pub fn connect(port: u16, xmltcp: bool) -> bool {
-    let Ok(s) = TcpStream::connect(("127.0.0.1", port)) else { return false };
+    let Ok(s) = TcpStream::connect(("127.0.0.1", port)) else {
+        return false;
+    };
     let _ = s.set_nodelay(true);
     *STREAM.lock().unwrap() = Some(s);
     XMLTCP.store(xmltcp, Ordering::Relaxed);

@@ -28,8 +28,8 @@
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
-use metamodelica::Result;
 use core::ffi::c_void;
+use metamodelica::Result;
 
 // `threadData_t` is 304 bytes in the current runtime; over-allocate generously
 // so a minor runtime struct change cannot make the generated `in_*` wrapper
@@ -44,9 +44,9 @@ const THREADDATA_SIZE: usize = 4096;
 // ---------------------------------------------------------------------------
 #[cfg(unix)]
 pub(crate) mod dl {
-    use metamodelica::Result;
     use core::ffi::c_void;
     use libc::c_int;
+    use metamodelica::Result;
     use std::ffi::{CStr, CString};
 
     // dlopen flags mirror `SystemImpl__loadLibrary` in the C runtime.
@@ -65,8 +65,7 @@ pub(crate) mod dl {
 
     // C-runtime shared objects external-function libraries link against
     // (DT_NEEDED), preloaded RTLD_GLOBAL so the loader resolves them.
-    pub const RUNTIME_LIBS: &[&str] =
-        &["libOpenModelicaRuntimeC.so", "libopenblas.so.0", "libomcruntime.so"];
+    pub const RUNTIME_LIBS: &[&str] = &["libOpenModelicaRuntimeC.so", "libopenblas.so.0", "libomcruntime.so"];
 
     pub fn last_error() -> String {
         let e = unsafe { libc::dlerror() };
@@ -155,8 +154,8 @@ pub(crate) mod dl {
 
 #[cfg(windows)]
 pub(crate) mod dl {
-    use metamodelica::Result;
     use core::ffi::{c_char, c_void};
+    use metamodelica::Result;
     use std::ffi::CString;
 
     type HMODULE = *mut c_void;
@@ -175,8 +174,7 @@ pub(crate) mod dl {
     // The Windows DLLs an external-function library depends on are resolved by
     // the loader through the executable's directory and PATH; preloading them by
     // name pins the same copy in the process. Names mirror RUNTIME_LIBS above.
-    pub const RUNTIME_LIBS: &[&str] =
-        &["OpenModelicaRuntimeC.dll", "libopenblas.dll", "omcruntime.dll"];
+    pub const RUNTIME_LIBS: &[&str] = &["OpenModelicaRuntimeC.dll", "libopenblas.dll", "omcruntime.dll"];
 
     pub fn last_error() -> String {
         format!("error {}", unsafe { GetLastError() })
@@ -270,7 +268,14 @@ struct Registry {
 
 impl Registry {
     fn new() -> Self {
-        Registry { libs: HashMap::new(), funcs: HashMap::new(), next_lib: 1, next_func: 1, inited: false, thread_data: 0 }
+        Registry {
+            libs: HashMap::new(),
+            funcs: HashMap::new(),
+            next_lib: 1,
+            next_func: 1,
+            inited: false,
+            thread_data: 0,
+        }
     }
 }
 
@@ -403,7 +408,9 @@ fn ensure_runtime_solibs() {
             // target/debug): load by full path from the installation's omc
             // lib dir. This satisfies direct dlopen uses but not DT_NEEDED
             // references (the link-map name is then the full path).
-            let Ok(install_dir) = crate::Settings::getInstallationDirectoryPath() else { return };
+            let Ok(install_dir) = crate::Settings::getInstallationDirectoryPath() else {
+                return;
+            };
             let path = format!("{install_dir}/lib/{}/omc/{lib}", crate::Autoconf::triple);
             dl::open_global(&path);
         }
@@ -462,7 +469,10 @@ fn load_library_with_binding(path: &str, relative: bool, debug: bool, lazy: bool
 /// point) inside a loaded library and return a handle to it.
 pub fn lookup_function(lib: i32, name: &str) -> Result<i32> {
     let mut reg = REGISTRY.lock().unwrap();
-    let handle = *reg.libs.get(&lib).ok_or_else(|| "lookupFunction: invalid library handle {lib}")?;
+    let handle = *reg
+        .libs
+        .get(&lib)
+        .ok_or_else(|| "lookupFunction: invalid library handle {lib}")?;
     let addr = dlsym_addr(handle, name).ok_or_else(|| "lookupFunction: `{name}` not found: {}")?;
     let idx = reg.next_func;
     reg.next_func += 1;
@@ -490,7 +500,13 @@ pub fn free_library(lib: i32, _debug: bool) -> Result<()> {
 
 /// Address of the `in_*` entry point behind a function handle.
 pub fn function_addr(func: i32) -> Result<usize> {
-    REGISTRY.lock().unwrap().funcs.get(&func).copied().ok_or_else(|| "executeFunction: invalid function handle {func}")
+    REGISTRY
+        .lock()
+        .unwrap()
+        .funcs
+        .get(&func)
+        .copied()
+        .ok_or_else(|| "executeFunction: invalid function handle {func}")
 }
 
 /// Resolve a symbol from the loaded C runtime (e.g. `mmc_mk_*`,
@@ -721,9 +737,16 @@ fn ensure_ffi_solibs() {
     use std::sync::Once;
     static ONCE: Once = Once::new();
     ONCE.call_once(|| {
-        let Ok(install_dir) = crate::Settings::getInstallationDirectoryPath() else { return };
+        let Ok(install_dir) = crate::Settings::getInstallationDirectoryPath() else {
+            return;
+        };
         let ffi = format!("{install_dir}/lib/{}/omc/ffi", crate::Autoconf::triple);
-        for lib in ["libModelicaMatIO.so", "libModelicaIO.so", "libModelicaExternalC.so", "libModelicaStandardTables.so"] {
+        for lib in [
+            "libModelicaMatIO.so",
+            "libModelicaIO.so",
+            "libModelicaExternalC.so",
+            "libModelicaStandardTables.so",
+        ] {
             dl::open_global(&format!("{ffi}/{lib}"));
         }
     });
@@ -736,7 +759,11 @@ fn ensure_runtime(reg: &mut Registry) -> Result<()> {
     if reg.inited {
         return Ok(());
     }
-    let &lib = reg.libs.values().next().ok_or_else(|| "executeFunction: no library loaded")?;
+    let &lib = reg
+        .libs
+        .values()
+        .next()
+        .ok_or_else(|| "executeFunction: no library loaded")?;
     let mmc_init = dlsym_addr(lib, "mmc_init").ok_or_else(|| "runtime symbol `mmc_init` not found")?;
     // Pin the runtime shared object: locate it from `mmc_init`'s address and
     // re-open it so later closes of function libraries leave `threadData` valid.

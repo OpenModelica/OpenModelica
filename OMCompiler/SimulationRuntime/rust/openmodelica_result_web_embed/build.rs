@@ -26,7 +26,10 @@ fn main() {
         .parent()
         .expect("the crate has a parent directory")
         .to_path_buf();
-    for f in ["openmodelica_result_web/src/lib.rs", "openmodelica_result_web/Cargo.toml"] {
+    for f in [
+        "openmodelica_result_web/src/lib.rs",
+        "openmodelica_result_web/Cargo.toml",
+    ] {
         println!("cargo::rerun-if-changed={}", runtime.join(f).display());
     }
     for f in ["openmodelica_result_files/src", "openmodelica_result_diff/src"] {
@@ -127,7 +130,13 @@ fn wasm_opt(wasm: &Path) {
     for f in features.split_whitespace() {
         cmd.arg(f);
     }
-    let ok = cmd.arg(wasm).arg("-o").arg(&tmp).status().map(|s| s.success()).unwrap_or(false)
+    let ok = cmd
+        .arg(wasm)
+        .arg("-o")
+        .arg(&tmp)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
         && std::fs::metadata(&tmp).map(|m| m.len() > 0).unwrap_or(false);
     if ok {
         std::fs::rename(&tmp, wasm).ok();

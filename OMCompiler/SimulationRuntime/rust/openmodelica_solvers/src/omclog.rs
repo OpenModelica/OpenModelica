@@ -395,8 +395,8 @@ pub fn reactivate() {
 // The macros the `_fmt` entry points below exist for; `omclog::info!` and the
 // function `omclog::info` are different namespaces, so both names stay.
 pub use crate::{
-    omclog_debug as debug, omclog_error as error, omclog_info as info,
-    omclog_warning as warning, omclog_warning_with_limit as warning_with_limit,
+    omclog_debug as debug, omclog_error as error, omclog_info as info, omclog_warning as warning,
+    omclog_warning_with_limit as warning_with_limit,
 };
 
 pub fn info(stream: Stream, indent_next: bool, msg: &str) {
@@ -428,12 +428,7 @@ pub fn warning_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments
 }
 
 /// [`warning_with_limit`] over `format_args!`; see [`info_fmt`].
-pub fn warning_with_limit_fmt(
-    stream: Stream,
-    n_displayed: u64,
-    max_displayed: u64,
-    args: core::fmt::Arguments<'_>,
-) {
+pub fn warning_with_limit_fmt(stream: Stream, n_displayed: u64, max_displayed: u64, args: core::fmt::Arguments<'_>) {
     if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
         warning_with_limit(stream, n_displayed, max_displayed, &alloc::fmt::format(args));
     }
@@ -462,7 +457,12 @@ pub fn warning_limit_reached(stream: Stream, max_displayed: u64) {
             "Too many warnings, reached display limit of {max_displayed}. Suppressing further warning messages of the same type."
         ),
     );
-    message_text(INFO, stream, false, "Change limit with simulation flag -lvMaxWarn=<newLimit>");
+    message_text(
+        INFO,
+        stream,
+        false,
+        "Change limit with simulation flag -lvMaxWarn=<newLimit>",
+    );
 }
 
 /// C's `va_throwStreamPrint`: unlike [`error`], gated on `-lv`.
@@ -546,8 +546,7 @@ pub fn message_text_used(ty: LogType, stream: Stream, indent_next: bool, msg: &s
             let subline = n > 0;
             let collapse = subline || (s.last_stream == stream && s.level[i] > 0);
             let name = if collapse { "|" } else { STREAM_NAME[i] };
-            let ty_col = if subline || (s.last_stream == stream && s.last_type[i] == ty && s.level[i] > 0)
-            {
+            let ty_col = if subline || (s.last_stream == stream && s.last_type[i] == ty && s.level[i] > 0) {
                 "|"
             } else {
                 TYPE_DESC[ty as usize]
@@ -646,7 +645,6 @@ fn exp_str(v: f64, prec: usize) -> String {
     alloc::format!("{s}e{}{:02}", if exp < 0 { '-' } else { '+' }, exp.abs())
 }
 
-
 /// C's `ryu_hr_tdzp_buf` (`3rdParty/ryu/ryu/om_format.c`): the shortest round-trip
 /// representation, rendered decimal where that is shorter. The optimizer's
 /// `LOG_IPOPT_ERROR` lines are printed with it, so they must match digit for digit.
@@ -675,7 +673,11 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
         None => (false, mant_str.to_string()),
     };
     // Number of digits after the decimal point in the mantissa.
-    let mut ndec: i32 = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+    let mut ndec: i32 = if digits.contains('.') {
+        digits.len() as i32 - 2
+    } else {
+        0
+    };
     // The exponential rendering used when the decimal form is unsuitable.
     let mut exp_repr: String = d2s_str.replace('E', "e");
 
@@ -699,7 +701,11 @@ fn ryu_to_hr(d2s_str: &str, real_output: bool) -> String {
         }
         if nz > 3 {
             digits = rounded;
-            ndec = if digits.contains('.') { digits.len() as i32 - 2 } else { 0 };
+            ndec = if digits.contains('.') {
+                digits.len() as i32 - 2
+            } else {
+                0
+            };
             exp_repr = format!("{}{digits}e{exp}", if neg { "-" } else { "" });
         }
     }
@@ -846,7 +852,11 @@ mod tests {
     fn header_columns_collapse_inside_a_block() {
         set_mask(ALWAYS_ON | (1 << NLS));
         let out = capture(|| {
-            info(NLS, true, "############ Solve nonlinear system 7 at time 0 ############");
+            info(
+                NLS,
+                true,
+                "############ Solve nonlinear system 7 at time 0 ############",
+            );
             info(NLS, true, "initial variable values:");
             info(NLS, false, "[ 1] y");
             close(NLS);
@@ -954,8 +964,10 @@ mod tests {
         assert_eq!(e(1.0, 18, 10), "  1.0000000000e+00");
         assert_eq!(e(2.2204460493e-16, 18, 10), "  2.2204460493e-16");
         assert_eq!(e(0.0, 18, 10), "  0.0000000000e+00");
-        assert_eq!(alloc::format!("error_f        = {}", e(2.2204460493e-16, 18, 10)),
-                   "error_f        =   2.2204460493e-16");
+        assert_eq!(
+            alloc::format!("error_f        = {}", e(2.2204460493e-16, 18, 10)),
+            "error_f        =   2.2204460493e-16"
+        );
     }
 
     #[test]
@@ -964,6 +976,9 @@ mod tests {
         let out = capture(|| debug_vector_double(NLS_V, "System values", &[5e-06, 50000.0]));
         let lines: Vec<&str> = out.lines().collect();
         assert_eq!(lines[0], "LOG_NLS_V         | info    | System values [2-dim]");
-        assert_eq!(lines[1], "|                 | |       | |            5e-06            50000");
+        assert_eq!(
+            lines[1],
+            "|                 | |       | |            5e-06            50000"
+        );
     }
 }

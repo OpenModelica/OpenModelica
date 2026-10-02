@@ -7,7 +7,6 @@
 //! small matrix with, step for step, and `dgetrf_ref` the unblocked `DGETF2`;
 //! faer factors the larger matrices, to the same convention.
 
-
 use crate::blas::{at, dscal, idamax, set, swap_rows};
 use crate::{abs, opt};
 
@@ -239,15 +238,7 @@ pub fn dgetri_ref(n: usize, a: &mut [f64], lda: usize, ipiv: &[i32]) -> i32 {
 /// `DGESV`: factor `A` and solve `A*X = B` in one step. `A` is overwritten by its
 /// factors, `B` by the solution.
 #[allow(clippy::too_many_arguments)]
-pub fn dgesv(
-    n: usize,
-    nrhs: usize,
-    a: &mut [f64],
-    lda: usize,
-    ipiv: &mut [i32],
-    b: &mut [f64],
-    ldb: usize,
-) -> i32 {
+pub fn dgesv(n: usize, nrhs: usize, a: &mut [f64], lda: usize, ipiv: &mut [i32], b: &mut [f64], ldb: usize) -> i32 {
     let info = dgetrf(n, n, a, lda, ipiv);
     if info == 0 {
         dgetrs("N", n, nrhs, a, lda, ipiv, b, ldb);

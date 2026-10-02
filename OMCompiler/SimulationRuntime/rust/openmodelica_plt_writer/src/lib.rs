@@ -13,9 +13,9 @@
 
 extern crate alloc;
 
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use alloc::format;
 
 /// Negation of a stored value, mirroring the C `Neg` of the result signals.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -71,7 +71,13 @@ fn apply_negate(v: f64, negate: Neg) -> f64 {
     match negate {
         Neg::None => v,
         Neg::Arith => -v,
-        Neg::Not => if v != 0.0 { 1.0 } else { 0.0 },
+        Neg::Not => {
+            if v != 0.0 {
+                1.0
+            } else {
+                0.0
+            }
+        }
     }
 }
 
@@ -138,16 +144,30 @@ mod tests {
     #[test]
     fn params_are_constant_and_distinct() {
         let signals = vec![
-            PltVar { name: "time", kind: PltKind::Time },
-            PltVar { name: "p1", kind: PltKind::Param { negate: Neg::None } },
-            PltVar { name: "p2", kind: PltKind::Param { negate: Neg::None } },
+            PltVar {
+                name: "time",
+                kind: PltKind::Time,
+            },
+            PltVar {
+                name: "p1",
+                kind: PltKind::Param { negate: Neg::None },
+            },
+            PltVar {
+                name: "p2",
+                kind: PltKind::Param { negate: Neg::None },
+            },
         ];
         // 3 points, n_reals = 2 (time + one unused column).
         let rows = vec![0.0, 9.0, 0.5, 9.0, 1.0, 9.0];
         let kept_params = vec![5.0, 7.0];
         let out = String::from_utf8(write_plt(&signals, &rows, 2, &kept_params)).unwrap();
         let block = |name: &str| {
-            out.split(&format!("DataSet: {name}\n")).nth(1).unwrap().lines().take(3).collect::<Vec<_>>()
+            out.split(&format!("DataSet: {name}\n"))
+                .nth(1)
+                .unwrap()
+                .lines()
+                .take(3)
+                .collect::<Vec<_>>()
         };
         assert_eq!(block("p1"), vec!["0, 5", "0.5, 5", "1, 5"]);
         assert_eq!(block("p2"), vec!["0, 7", "0.5, 7", "1, 7"]);

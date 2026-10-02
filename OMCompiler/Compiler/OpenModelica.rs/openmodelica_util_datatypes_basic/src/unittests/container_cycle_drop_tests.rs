@@ -30,7 +30,9 @@ impl PartialEq for DropProbe {
 
 impl Clone for DropProbe {
     fn clone(&self) -> Self {
-        DropProbe { drops: self.drops.clone() }
+        DropProbe {
+            drops: self.drops.clone(),
+        }
     }
 }
 
@@ -49,7 +51,6 @@ struct Node {
 struct Kids {
     nodes: metamodelica::Array<metamodelica::Ref<Node>>,
 }
-
 
 impl metamodelica::gc::MMTrace for Kids {
     fn mm_accept(&self, v: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -74,7 +75,9 @@ fn empty_kids() -> Option<metamodelica::Ref<Kids>> {
 }
 
 fn kids(nodes: Vec<metamodelica::Ref<Node>>) -> Option<metamodelica::Ref<Kids>> {
-    Some(metamodelica::Ref::new(Kids { nodes: metamodelica::arrayFromVec(nodes) }))
+    Some(metamodelica::Ref::new(Kids {
+        nodes: metamodelica::arrayFromVec(nodes),
+    }))
 }
 
 /// The one-node self-cycle: a cell whose content points back at the node that
@@ -173,7 +176,11 @@ fn pointer_cycle_is_reclaimed() {
 fn acyclic_value_drops_without_collect() {
     let (p, drops) = probe();
     {
-        let _n = metamodelica::Ref::new(Node { probe: p, back: None, kids: empty_kids() });
+        let _n = metamodelica::Ref::new(Node {
+            probe: p,
+            back: None,
+            kids: empty_kids(),
+        });
     }
     assert_eq!(drops.get(), 1, "an acyclic value should drop immediately");
 }

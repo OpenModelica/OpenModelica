@@ -57,14 +57,20 @@ fn main() {
         }
         return;
     }
-    let Ok(dir) = std::env::var("OMC_SUNDIALS_WASM_DIR") else { return };
+    let Ok(dir) = std::env::var("OMC_SUNDIALS_WASM_DIR") else {
+        return;
+    };
     let lib = Path::new(&dir).join("lib");
-    let missing: Vec<_> = LIBS.iter()
+    let missing: Vec<_> = LIBS
+        .iter()
         .filter(|l| !lib.join(format!("lib{l}.a")).exists())
         .collect();
     if !missing.is_empty() {
-        panic!("OMC_SUNDIALS_WASM_DIR={} is missing {missing:?}; the sundials wasm \
-                cross-compile failed (check the rust_sundials_wasm CMake target)", lib.display());
+        panic!(
+            "OMC_SUNDIALS_WASM_DIR={} is missing {missing:?}; the sundials wasm \
+                cross-compile failed (check the rust_sundials_wasm CMake target)",
+            lib.display()
+        );
     }
     println!("cargo:rustc-link-search=native={}", lib.display());
     for l in LIBS {
@@ -78,7 +84,10 @@ fn main() {
             panic!("--features primme, but {}/lib{PRIMME}.a is missing", lib.display());
         }
         println!("cargo:rustc-link-lib=static={PRIMME}");
-        println!("cargo:rerun-if-changed={}", lib.join(format!("lib{PRIMME}.a")).display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            lib.join(format!("lib{PRIMME}.a")).display()
+        );
     }
     println!("cargo:rustc-cfg=sundials");
 }

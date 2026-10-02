@@ -1,18 +1,40 @@
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::ArcStr;
 use crate::List as L;
+use arcstr::ArcStr;
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── helper predicates (must be fn pointers) ──
-fn is_positive(x: i32) -> Result<bool> { Ok(x > 0) }
-fn is_even(x: i32) -> Result<bool> { Ok(x % 2 == 0) }
-fn double(x: i32) -> Result<i32> { Ok(x * 2) }
-fn to_string_i32(x: i32) -> Result<ArcStr> { Ok(arcstr::format!("{}", x)) }
-fn add_i(a: i32, b: i32) -> Result<i32> { Ok(a + b) }
-fn less_i(a: i32, b: i32) -> Result<bool> { Ok(a < b) }
-fn eq_i(a: i32, b: i32) -> Result<bool> { Ok(a == b) }
-fn cmp_i(a: i32, b: i32) -> Result<i32> { Ok(if a < b { -1 } else if a > b { 1 } else { 0 }) }
+fn is_positive(x: i32) -> Result<bool> {
+    Ok(x > 0)
+}
+fn is_even(x: i32) -> Result<bool> {
+    Ok(x % 2 == 0)
+}
+fn double(x: i32) -> Result<i32> {
+    Ok(x * 2)
+}
+fn to_string_i32(x: i32) -> Result<ArcStr> {
+    Ok(arcstr::format!("{}", x))
+}
+fn add_i(a: i32, b: i32) -> Result<i32> {
+    Ok(a + b)
+}
+fn less_i(a: i32, b: i32) -> Result<bool> {
+    Ok(a < b)
+}
+fn eq_i(a: i32, b: i32) -> Result<bool> {
+    Ok(a == b)
+}
+fn cmp_i(a: i32, b: i32) -> Result<i32> {
+    Ok(if a < b {
+        -1
+    } else if a > b {
+        1
+    } else {
+        0
+    })
+}
 
 // ── AccumulateMapAccum ──
 #[test]
@@ -157,7 +179,9 @@ fn test_combination() -> Result<()> {
 }
 
 // ── CombinationMap ──
-fn combination_map_fn(pair: metamodelica::List<i32>) -> Result<i32> { Ok(pair.len()) }
+fn combination_map_fn(pair: metamodelica::List<i32>) -> Result<i32> {
+    Ok(pair.len())
+}
 #[test]
 fn test_combination_map() -> Result<()> {
     let lst = list![list![1i32, 2], list![3i32, 4]];
@@ -348,7 +372,9 @@ fn test_fill() {
 #[test]
 fn test_filter() {
     let lst = list![1i32, 2, 3, 4, 5, 6];
-    let result = L::filter(&lst, &|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } });
+    let result = L::filter(&lst, &|x| {
+        if x % 2 == 0 { Ok(()) } else { return Err("skip") }
+    });
     assert_eq!(result, list![2i32, 4, 6]);
 }
 
@@ -356,7 +382,13 @@ fn test_filter() {
 #[test]
 fn test_filter1() {
     let lst = list![1i32];
-    let result = L::filter1(&lst, &|x, _arg: i32| { if x > 0 { Ok(()) } else { return Err("skip") } }, 0i32);
+    let result = L::filter1(
+        &lst,
+        &|x, _arg: i32| {
+            if x > 0 { Ok(()) } else { return Err("skip") }
+        },
+        0i32,
+    );
     assert_eq!(result, list![1i32]);
 }
 
@@ -372,7 +404,8 @@ fn test_filter1_on_true() {
 #[test]
 fn test_filter1_on_true_and_update() {
     let lst = list![1i32, 2, 3];
-    let result = L::filter1OnTrueAndUpdate(lst.clone(), &|x, _arg: i32| Ok(x > 1), &|x, _arg: i32| Ok(x * 10), 0i32).unwrap();
+    let result =
+        L::filter1OnTrueAndUpdate(lst.clone(), &|x, _arg: i32| Ok(x > 1), &|x, _arg: i32| Ok(x * 10), 0i32).unwrap();
     assert_eq!(result, list![20i32, 30i32]);
 }
 
@@ -422,7 +455,11 @@ fn test_filter_map() {
 #[test]
 fn test_filter_map1() {
     let lst = list![2i32];
-    let result = L::filterMap1(&lst, &|x, _arg: i32| if x > 0 { Ok(x * 2) } else { return Err("skip") }, 0i32);
+    let result = L::filterMap1(
+        &lst,
+        &|x, _arg: i32| if x > 0 { Ok(x * 2) } else { return Err("skip") },
+        0i32,
+    );
     assert_eq!(result, list![4i32]);
 }
 
@@ -634,7 +671,15 @@ fn test_fold2r() {
 #[test]
 fn test_fold3() {
     let lst = list![1i32];
-    let result = L::fold3(&lst, &|x, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let result = L::fold3(
+        &lst,
+        &|x, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, 1);
 }
 
@@ -642,14 +687,31 @@ fn test_fold3() {
 #[test]
 fn test_fold31() {
     let lst = list![1i32, 2];
-    let (_r1, _r2, _r3) = L::fold31(&lst, &|x, _a: i32, s1: i32, s2: i32, s3: i32| Ok((s1 + x, s2 + x, s3 + x)), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (_r1, _r2, _r3) = L::fold31(
+        &lst,
+        &|x, _a: i32, s1: i32, s2: i32, s3: i32| Ok((s1 + x, s2 + x, s3 + x)),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
 }
 
 // ── Fold4 ──
 #[test]
 fn test_fold4() {
     let lst = list![1i32];
-    let result = L::fold4(&lst, &|x, _a: i32, _b: i32, _c: i32, _d: i32, acc| Ok(acc + x), 0i32, 0i32, 0i32, 0i32, 0i32).unwrap();
+    let result = L::fold4(
+        &lst,
+        &|x, _a: i32, _b: i32, _c: i32, _d: i32, acc| Ok(acc + x),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, 1);
 }
 
@@ -691,7 +753,14 @@ fn test_fold20() {
 #[test]
 fn test_fold21() {
     let lst = list![1i32, 2];
-    let (s1, s2) = L::fold21(&lst, &|x, _arg: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x)), 0i32, 0i32, 0i32).unwrap();
+    let (s1, s2) = L::fold21(
+        &lst,
+        &|x, _arg: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x)),
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(s1, 3);
     assert_eq!(s2, 3);
 }
@@ -700,7 +769,15 @@ fn test_fold21() {
 #[test]
 fn test_fold22() {
     let lst = list![1i32, 2];
-    let (s1, s2) = L::fold22(&lst, &|x, _a: i32, _b: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x)), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (s1, s2) = L::fold22(
+        &lst,
+        &|x, _a: i32, _b: i32, acc1: i32, acc2: i32| Ok((acc1 + x, acc2 + x)),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(s1, 3);
     assert_eq!(s2, 3);
 }
@@ -1057,7 +1134,15 @@ fn test_map2() {
 #[test]
 fn test_map2_fold() {
     let lst = list![1i32, 2];
-    let (result, acc) = L::map2Fold(&lst, &|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1)), 0i32, 0i32, 0i32, nil()).unwrap();
+    let (result, acc) = L::map2Fold(
+        &lst,
+        &|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1)),
+        0i32,
+        0i32,
+        0i32,
+        nil(),
+    )
+    .unwrap();
     assert_eq!(result, list![2i32, 4]);
     assert_eq!(acc, 2);
 }
@@ -1066,7 +1151,14 @@ fn test_map2_fold() {
 #[test]
 fn test_map2_fold_check_reference_eq() {
     let lst = list![1i32, 2];
-    let (result, _acc) = L::map2FoldCheckReferenceEq(lst.clone(), &|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1)), 0i32, 0i32, 0i32).unwrap();
+    let (result, _acc) = L::map2FoldCheckReferenceEq(
+        lst.clone(),
+        &|x, _a: i32, _b: i32, fold: i32| Ok((x * 2, fold + 1)),
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, list![2i32, 4]);
 }
 
@@ -1117,7 +1209,14 @@ fn test_map2_2() {
 #[test]
 fn test_map3() {
     let lst = list![1i32];
-    let result = L::map3(lst.clone(), &|x, a: i32, b: i32, c: i32| Ok(x + a + b + c), 10i32, 100i32, 1000i32).unwrap();
+    let result = L::map3(
+        lst.clone(),
+        &|x, a: i32, b: i32, c: i32| Ok(x + a + b + c),
+        10i32,
+        100i32,
+        1000i32,
+    )
+    .unwrap();
     assert_eq!(result, list![1111i32]);
 }
 
@@ -1125,7 +1224,15 @@ fn test_map3() {
 #[test]
 fn test_map3_fold() {
     let lst = list![1i32];
-    let (result, acc) = L::map3Fold(&lst, &|x, _a: i32, _b: i32, _c: i32, fold: i32| Ok((x * 2, fold + 1)), 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (result, acc) = L::map3Fold(
+        &lst,
+        &|x, _a: i32, _b: i32, _c: i32, fold: i32| Ok((x * 2, fold + 1)),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, list![2i32]);
     assert_eq!(acc, 1);
 }
@@ -1134,7 +1241,15 @@ fn test_map3_fold() {
 #[test]
 fn test_map4() {
     let lst = list![1i32];
-    let result = L::map4(lst.clone(), &|x, a: i32, b: i32, c: i32, d: i32| Ok(x + a + b + c + d), 1i32, 2i32, 3i32, 4i32).unwrap();
+    let result = L::map4(
+        lst.clone(),
+        &|x, a: i32, b: i32, c: i32, d: i32| Ok(x + a + b + c + d),
+        1i32,
+        2i32,
+        3i32,
+        4i32,
+    )
+    .unwrap();
     assert_eq!(result, list![11i32]);
 }
 
@@ -1142,14 +1257,31 @@ fn test_map4() {
 #[test]
 fn test_map4_0() {
     let lst = list![1i32];
-    L::map4_0(&lst, &|_x, _a: i32, _b: i32, _c: i32, _d: i32| Ok(()), 0i32, 0i32, 0i32, 0i32).unwrap();
+    L::map4_0(
+        &lst,
+        &|_x, _a: i32, _b: i32, _c: i32, _d: i32| Ok(()),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
 }
 
 // ── Map5 ──
 #[test]
 fn test_map5() {
     let lst = list![1i32];
-    let result = L::map5(lst.clone(), &|x, a: i32, b: i32, c: i32, d: i32, e: i32| Ok(x + a + b + c + d + e), 1i32, 2i32, 3i32, 4i32, 5i32).unwrap();
+    let result = L::map5(
+        lst.clone(),
+        &|x, a: i32, b: i32, c: i32, d: i32, e: i32| Ok(x + a + b + c + d + e),
+        1i32,
+        2i32,
+        3i32,
+        4i32,
+        5i32,
+    )
+    .unwrap();
     assert_eq!(result, list![16i32]);
 }
 
@@ -1157,7 +1289,17 @@ fn test_map5() {
 #[test]
 fn test_map6() {
     let lst = list![1i32];
-    let result = L::map6(lst.clone(), &|x, a: i32, b: i32, c: i32, d: i32, e: i32, f: i32| Ok(x + a + b + c + d + e + f), 1i32, 2i32, 3i32, 4i32, 5i32, 6i32).unwrap();
+    let result = L::map6(
+        lst.clone(),
+        &|x, a: i32, b: i32, c: i32, d: i32, e: i32, f: i32| Ok(x + a + b + c + d + e + f),
+        1i32,
+        2i32,
+        3i32,
+        4i32,
+        5i32,
+        6i32,
+    )
+    .unwrap();
     assert_eq!(result, list![22i32]);
 }
 
@@ -1208,7 +1350,13 @@ fn test_map_fold() {
 #[test]
 fn test_map_fold2() {
     let lst = list![1i32, 2];
-    let (result, a, b) = L::mapFold2(&lst, &|x, acc1: i32, acc2: i32| Ok((x * 2, acc1 + x, acc2 + x)), 0i32, 0i32).unwrap();
+    let (result, a, b) = L::mapFold2(
+        &lst,
+        &|x, acc1: i32, acc2: i32| Ok((x * 2, acc1 + x, acc2 + x)),
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, list![2i32, 4]);
     assert_eq!(a, 3);
     assert_eq!(b, 3);
@@ -1218,7 +1366,14 @@ fn test_map_fold2() {
 #[test]
 fn test_map_fold3() {
     let lst = list![1i32];
-    let (result, a, b, c) = L::mapFold3(&lst, &|x, f1: i32, f2: i32, f3: i32| Ok((x * 2, f1 + x, f2 + x, f3 + x)), 0i32, 0i32, 0i32).unwrap();
+    let (result, a, b, c) = L::mapFold3(
+        &lst,
+        &|x, f1: i32, f2: i32, f3: i32| Ok((x * 2, f1 + x, f2 + x, f3 + x)),
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, list![2i32]);
     assert_eq!(a, 1);
     assert_eq!(b, 1);
@@ -1229,7 +1384,16 @@ fn test_map_fold3() {
 #[test]
 fn test_map_fold5() {
     let lst = list![1i32];
-    let (result, a, b, c, d, e) = L::mapFold5(&lst, &|x, f1: i32, f2: i32, f3: i32, f4: i32, f5: i32| Ok((x, f1+1, f2+1, f3+1, f4+1, f5+1)), 0i32, 0i32, 0i32, 0i32, 0i32).unwrap();
+    let (result, a, b, c, d, e) = L::mapFold5(
+        &lst,
+        &|x, f1: i32, f2: i32, f3: i32, f4: i32, f5: i32| Ok((x, f1 + 1, f2 + 1, f3 + 1, f4 + 1, f5 + 1)),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )
+    .unwrap();
     assert_eq!(result, list![1i32]);
     assert_eq!(a, 1);
     assert_eq!(e, 1);
@@ -1785,7 +1949,13 @@ fn test_thread3_map_fold() -> Result<()> {
     let a = list![1i32, 2];
     let b = list![10i32, 20];
     let c = list![100i32, 200];
-    let (result, acc) = L::thread3MapFold(&a, b.clone(), c.clone(), &|x, y, z, fold: i32| Ok((x + y + z, fold + 1)), 0i32)?;
+    let (result, acc) = L::thread3MapFold(
+        &a,
+        b.clone(),
+        c.clone(),
+        &|x, y, z, fold: i32| Ok((x + y + z, fold + 1)),
+        0i32,
+    )?;
     assert_eq!(result, list![111i32, 222]);
     assert_eq!(acc, 2);
     Ok(())
@@ -1816,7 +1986,14 @@ fn test_thread_fold1() -> Result<()> {
 fn test_thread_fold2() -> Result<()> {
     let a = list![1i32];
     let b = list![2i32];
-    let result = L::threadFold2(&a, b.clone(), &|x, y, _a: i32, _b: i32, acc| Ok(acc + x + y), 0i32, 0i32, 0i32)?;
+    let result = L::threadFold2(
+        &a,
+        b.clone(),
+        &|x, y, _a: i32, _b: i32, acc| Ok(acc + x + y),
+        0i32,
+        0i32,
+        0i32,
+    )?;
     assert_eq!(result, 3);
     Ok(())
 }
@@ -1826,7 +2003,15 @@ fn test_thread_fold2() -> Result<()> {
 fn test_thread_fold3() -> Result<()> {
     let a = list![1i32];
     let b = list![2i32];
-    let result = L::threadFold3(&a, b.clone(), &|x, y, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x + y), 0i32, 0i32, 0i32, 0i32)?;
+    let result = L::threadFold3(
+        &a,
+        b.clone(),
+        &|x, y, _a: i32, _b: i32, _c: i32, acc| Ok(acc + x + y),
+        0i32,
+        0i32,
+        0i32,
+        0i32,
+    )?;
     assert_eq!(result, 3);
     Ok(())
 }
@@ -1920,14 +2105,32 @@ fn test_to_list_with_positions() {
 #[test]
 fn test_to_string() -> Result<()> {
     let lst = list![1i32, 2, 3];
-    let result = L::toStringCustom(lst.clone(), &to_string_i32, arcstr::literal!(""), arcstr::literal!("{"), arcstr::literal!(", "), arcstr::literal!("}"), true, -1)?;
+    let result = L::toStringCustom(
+        lst.clone(),
+        &to_string_i32,
+        arcstr::literal!(""),
+        arcstr::literal!("{"),
+        arcstr::literal!(", "),
+        arcstr::literal!("}"),
+        true,
+        -1,
+    )?;
     assert_eq!(&*result, "{1, 2, 3}");
     Ok(())
 }
 #[test]
 fn test_to_string_empty() -> Result<()> {
     let lst: List<i32> = nil();
-    let result = L::toStringCustom(lst.clone(), &to_string_i32, arcstr::literal!(""), arcstr::literal!("{"), arcstr::literal!(", "), arcstr::literal!("}"), true, -1)?;
+    let result = L::toStringCustom(
+        lst.clone(),
+        &to_string_i32,
+        arcstr::literal!(""),
+        arcstr::literal!("{"),
+        arcstr::literal!(", "),
+        arcstr::literal!("}"),
+        true,
+        -1,
+    )?;
     assert_eq!(&*result, "{}");
     Ok(())
 }
@@ -2171,7 +2374,9 @@ fn test_fold_empty() {
 #[test]
 fn test_filter_empty_result() {
     let lst = list![1i32, 3, 5];
-    let result = L::filter(&lst, &|x| { if x % 2 == 0 { Ok(()) } else { return Err("skip") } });
+    let result = L::filter(&lst, &|x| {
+        if x % 2 == 0 { Ok(()) } else { return Err("skip") }
+    });
     assert!(result.is_empty());
 }
 

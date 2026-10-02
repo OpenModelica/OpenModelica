@@ -11,8 +11,8 @@
 use std::time::Instant;
 
 use anyrender::{PaintRef, PaintScene, RenderContext, ResourceId, Scene};
-use blitz_dom::node::ComputedStyles;
 use blitz_dom::Widget;
+use blitz_dom::node::ComputedStyles;
 use peniko::kurbo::{Affine, Rect};
 use peniko::{Fill, ImageBrush, ImageSampler};
 use wgpu_context::DeviceHandle;
@@ -95,13 +95,7 @@ impl Widget for DemoWidget {
 }
 
 impl Active {
-    fn render(
-        &mut self,
-        ctx: &mut dyn RenderContext,
-        time: f32,
-        width: u32,
-        height: u32,
-    ) -> Option<ResourceId> {
+    fn render(&mut self, ctx: &mut dyn RenderContext, time: f32, width: u32, height: u32) -> Option<ResourceId> {
         if width == 0 || height == 0 {
             return None;
         }

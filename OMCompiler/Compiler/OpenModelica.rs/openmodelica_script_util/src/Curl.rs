@@ -32,12 +32,12 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::time::Duration;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
 use curl::easy::Easy;
 use metamodelica::List;
-use openmodelica_util::Error;
+use metamodelica::Result;
 use openmodelica_error::ErrorTypes;
+use openmodelica_util::Error;
 
 /// One pending download: the remaining mirror URLs and the target file.
 struct WorkItem {
@@ -90,10 +90,10 @@ fn download_one(easy: &mut Easy, url: &str, tmp_filename: &str) -> std::result::
         Err(_) => return Err(String::new()),
     };
     easy.url(url).map_err(|e| e.description().to_string())?;
-    easy.follow_location(true).unwrap();          // CURLOPT_FOLLOWLOCATION
+    easy.follow_location(true).unwrap(); // CURLOPT_FOLLOWLOCATION
     easy.connect_timeout(Duration::from_secs(8)).unwrap(); // CURLOPT_CONNECTTIMEOUT
-    easy.fail_on_error(true).unwrap();            // CURLOPT_FAILONERROR
-    easy.useragent("OpenModelica/1.0").unwrap();  // CURLOPT_USERAGENT
+    easy.fail_on_error(true).unwrap(); // CURLOPT_FAILONERROR
+    easy.useragent("OpenModelica/1.0").unwrap(); // CURLOPT_USERAGENT
 
     let mut write_error = false;
     let result = {
@@ -148,10 +148,7 @@ fn worker(shared: &Shared) {
                 Err(err_text) if err_text.is_empty() => {
                     // Could not even create the temp file (e.g. missing
                     // directory); retrying other mirrors cannot help.
-                    shared.add_message(
-                        "Failed to open file for writing: %s",
-                        vec![ArcStr::from(tmp_filename)],
-                    );
+                    shared.add_message("Failed to open file for writing: %s", vec![ArcStr::from(tmp_filename)]);
                     shared.ok.store(false, Ordering::Relaxed);
                     break;
                 }
@@ -159,10 +156,7 @@ fn worker(shared: &Shared) {
                     let _ = std::fs::remove_file(&tmp_filename);
                     let err_text = ArcStr::from(err_text);
                     if item.urls.is_empty() {
-                        shared.add_message(
-                            "Curl error for URL %s: %s",
-                            vec![url.clone(), err_text],
-                        );
+                        shared.add_message("Curl error for URL %s: %s", vec![url.clone(), err_text]);
                         shared.ok.store(false, Ordering::Relaxed);
                     } else {
                         shared.add_message(
@@ -176,13 +170,14 @@ fn worker(shared: &Shared) {
     }
 }
 
-pub fn multiDownload(
-    urlFileList: List<(List<ArcStr>, ArcStr)>,
-    maxParallel: i32,
-) -> Result<bool> {
+pub fn multiDownload(urlFileList: List<(List<ArcStr>, ArcStr)>, maxParallel: i32) -> Result<bool> {
     let mut queue: VecDeque<WorkItem> = VecDeque::new();
     let mut cur = urlFileList;
-    while let metamodelica::ListNode::Cons { head: (urls, filename), tail } = &*cur {
+    while let metamodelica::ListNode::Cons {
+        head: (urls, filename),
+        tail,
+    } = &*cur
+    {
         let mut mirror_urls = VecDeque::new();
         let mut u = urls.clone();
         while let metamodelica::ListNode::Cons { head, tail } = &*u {
@@ -190,7 +185,10 @@ pub fn multiDownload(
             let tail = tail.clone();
             u = tail;
         }
-        queue.push_back(WorkItem { urls: mirror_urls, filename: filename.clone() });
+        queue.push_back(WorkItem {
+            urls: mirror_urls,
+            filename: filename.clone(),
+        });
         let tail = tail.clone();
         cur = tail;
     }
@@ -237,10 +235,7 @@ mod tests {
     fn curl_has_tls_backend() {
         let v = curl::Version::get();
         assert!(v.ssl_version().is_some(), "libcurl built without a TLS backend");
-        assert!(
-            v.protocols().any(|p| p == "https"),
-            "libcurl does not support https"
-        );
+        assert!(v.protocols().any(|p| p == "https"), "libcurl does not support https");
     }
 
     /// Download via file:// URLs so the test runs without network access.

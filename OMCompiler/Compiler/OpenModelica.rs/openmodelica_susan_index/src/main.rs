@@ -28,7 +28,11 @@ struct Tv {
 }
 
 fn parse_tv(src: &str) -> Tv {
-    let mut tv = Tv { header: String::new(), packages: vec![], footer: String::new() };
+    let mut tv = Tv {
+        header: String::new(),
+        packages: vec![],
+        footer: String::new(),
+    };
     let mut cur: Option<TvPackage> = None;
     for line in src.lines() {
         if let Some(p) = &mut cur {
@@ -46,7 +50,12 @@ fn parse_tv(src: &str) -> Tv {
         };
         if let Some(n) = rest.strip_prefix("package ") {
             let indent = line.len() - trimmed.len();
-            cur = Some(TvPackage { name: n.trim().to_string(), public, indent, text: format!("{line}\n") });
+            cur = Some(TvPackage {
+                name: n.trim().to_string(),
+                public,
+                indent,
+                text: format!("{line}\n"),
+            });
         } else if tv.packages.is_empty() {
             writeln!(tv.header, "{line}").unwrap();
         } else {
@@ -121,17 +130,31 @@ fn run() -> Result<(), String> {
         }
     }
     let usage = "usage: susan-index --rust-src <dir> --out-dir <dir> [--report <file>] <TV.mo>...";
-    let (Some(rust_src), Some(out_dir)) = (rust_src, out_dir) else { return Err(usage.into()) };
+    let (Some(rust_src), Some(out_dir)) = (rust_src, out_dir) else {
+        return Err(usage.into());
+    };
 
     let parsed: Vec<(PathBuf, Tv)> = tvs
         .iter()
-        .map(|p| Ok((p.clone(), parse_tv(&std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?))))
+        .map(|p| {
+            Ok((
+                p.clone(),
+                parse_tv(&std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?),
+            ))
+        })
         .collect::<Result<_, String>>()?;
     let files = SourceFiles::scan(&rust_src);
-    let mut wanted: Vec<String> = parsed.iter().flat_map(|(_, tv)| tv.packages.iter().map(|p| p.name.clone())).collect();
+    let mut wanted: Vec<String> = parsed
+        .iter()
+        .flat_map(|(_, tv)| tv.packages.iter().map(|p| p.name.clone()))
+        .collect();
     wanted.push("Tpl".into());
     let (mut idx, mut report) = extract(&files, &wanted);
-    idx.crates = files.packages.iter().map(|(p, (c, _))| (p.clone(), c.clone())).collect();
+    idx.crates = files
+        .packages
+        .iter()
+        .map(|(p, (c, _))| (p.clone(), c.clone()))
+        .collect();
     let builtins = extract_builtins(&rust_src, &mut report);
     idx.packages.insert("builtin".into(), builtins);
 
@@ -140,7 +163,10 @@ fn run() -> Result<(), String> {
         let mut out = tv.header.clone();
         for p in &tv.packages {
             if p.name == "builtin" {
-                out.push_str(&p.text.replace("end builtin;", "  uniontype FuncPtr end FuncPtr;\nend builtin;"));
+                out.push_str(
+                    &p.text
+                        .replace("end builtin;", "  uniontype FuncPtr end FuncPtr;\nend builtin;"),
+                );
                 out.push('\n');
             } else if idx.packages.contains_key(&p.name) {
                 emit_package(&p.name, p.public, &idx, &mut out);
@@ -157,7 +183,10 @@ fn run() -> Result<(), String> {
     let dest = out_dir.join("susan-index.json");
     write_if_changed(&dest, &json).map_err(|e| format!("{}: {e}", dest.display()))?;
 
-    let unresolved: Vec<&String> = wanted.iter().filter(|n| *n != "builtin" && !idx.packages.contains_key(*n)).collect();
+    let unresolved: Vec<&String> = wanted
+        .iter()
+        .filter(|n| *n != "builtin" && !idx.packages.contains_key(*n))
+        .collect();
     let mut rep = String::new();
     for n in unresolved {
         writeln!(rep, "{n}: no Rust sources, copied from the interface file").unwrap();

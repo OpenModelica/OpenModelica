@@ -34,13 +34,23 @@
  *
  */
 #![allow(warnings)]
-#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
+#![allow(
+    unreachable_patterns,
+    unreachable_code,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    unused_imports,
+    unused_variables,
+    non_upper_case_globals,
+    unused_mut
+)]
 
-use metamodelica::Result;
-use loop_unwrap::unwrap_break_err;
-use metamodelica::*; // Built-in types and functions
+use arcstr::{ArcStr, format, literal};
 use const_str;
-use arcstr::{ArcStr, literal, format};
+use loop_unwrap::unwrap_break_err;
+use metamodelica::Result;
+use metamodelica::*; // Built-in types and functions
 
 /// An identifier, for example a variable name
 pub type Ident = ArcStr;
@@ -79,7 +89,6 @@ impl Default for ForIterator {
 }
 
 pub type ITERATOR = ForIterator;
-
 
 /// For Iterators -
 ///   these are used in:
@@ -121,7 +130,6 @@ impl Default for Program {
 
 pub type PROGRAM = Program;
 
-
 /// Within Clauses
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Within {
@@ -144,9 +152,11 @@ impl metamodelica::gc::MMTrace for Within {
     }
 }
 impl Default for Within {
-    fn default() -> Self { Self::TOP }
+    fn default() -> Self {
+        Self::TOP
+    }
 }
-pub use self::Within::{WITHIN,TOP};
+pub use self::Within::{TOP, WITHIN};
 
 pub type Info = SourceInfo;
 
@@ -211,7 +221,6 @@ impl Default for Class {
 
 pub type CLASS = Class;
 
-
 /// The ClassDef type contains thClasse definition part of a class declaration.
 /// The definition is either explicit, with a list of parts
 /// (public, protected, equation, and algorithm), or it is a definition
@@ -269,7 +278,13 @@ pub enum ClassDef {
 impl metamodelica::gc::MMTrace for ClassDef {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            ClassDef::PARTS { typeVars, classAttrs, classParts, ann, comment } => {
+            ClassDef::PARTS {
+                typeVars,
+                classAttrs,
+                classParts,
+                ann,
+                comment,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(typeVars, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(classAttrs, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(classParts, __mmv)?;
@@ -277,7 +292,12 @@ impl metamodelica::gc::MMTrace for ClassDef {
                 metamodelica::gc::MMTrace::mm_accept(comment, __mmv)?;
                 Ok(())
             }
-            ClassDef::DERIVED { typeSpec, attributes, arguments, comment } => {
+            ClassDef::DERIVED {
+                typeSpec,
+                attributes,
+                arguments,
+                comment,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(typeSpec, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(attributes, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(arguments, __mmv)?;
@@ -294,7 +314,13 @@ impl metamodelica::gc::MMTrace for ClassDef {
                 metamodelica::gc::MMTrace::mm_accept(comment, __mmv)?;
                 Ok(())
             }
-            ClassDef::CLASS_EXTENDS { baseClassName, modifications, comment, parts, ann } => {
+            ClassDef::CLASS_EXTENDS {
+                baseClassName,
+                modifications,
+                comment,
+                parts,
+                ann,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(baseClassName, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(modifications, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(comment, __mmv)?;
@@ -302,7 +328,11 @@ impl metamodelica::gc::MMTrace for ClassDef {
                 metamodelica::gc::MMTrace::mm_accept(ann, __mmv)?;
                 Ok(())
             }
-            ClassDef::PDER { functionName, vars, comment } => {
+            ClassDef::PDER {
+                functionName,
+                vars,
+                comment,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(functionName, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(vars, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(comment, __mmv)?;
@@ -319,7 +349,7 @@ impl Default for ClassDef {
         }
     }
 }
-pub use self::ClassDef::{PARTS,DERIVED,ENUMERATION,OVERLOAD,CLASS_EXTENDS,PDER};
+pub use self::ClassDef::{CLASS_EXTENDS, DERIVED, ENUMERATION, OVERLOAD, PARTS, PDER};
 
 /// Component attributes are
 ///  properties of components which are applied by type prefixes.
@@ -352,7 +382,11 @@ impl metamodelica::gc::MMTrace for TypeSpec {
                 metamodelica::gc::MMTrace::mm_accept(arrayDim, __mmv)?;
                 Ok(())
             }
-            TypeSpec::TCOMPLEX { path, typeSpecs, arrayDim } => {
+            TypeSpec::TCOMPLEX {
+                path,
+                typeSpecs,
+                arrayDim,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(path, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(typeSpecs, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(arrayDim, __mmv)?;
@@ -369,7 +403,7 @@ impl Default for TypeSpec {
         }
     }
 }
-pub use self::TypeSpec::{TPATH,TCOMPLEX};
+pub use self::TypeSpec::{TCOMPLEX, TPATH};
 
 /// The definition of an enumeration is either a list of literals
 ///     or a colon, \':\', which defines a supertype of all enumerations
@@ -393,15 +427,20 @@ impl metamodelica::gc::MMTrace for EnumDef {
 }
 impl EnumDef {
     pub fn interned_ENUM_COLON() -> metamodelica::Ref<EnumDef> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<EnumDef>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(EnumDef::ENUM_COLON));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<EnumDef>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(EnumDef::ENUM_COLON));
         (*INTERNED).clone()
     }
 }
-pub fn interned_ENUM_COLON() -> metamodelica::Ref<EnumDef> { EnumDef::interned_ENUM_COLON() }
-impl Default for EnumDef {
-    fn default() -> Self { Self::ENUM_COLON }
+pub fn interned_ENUM_COLON() -> metamodelica::Ref<EnumDef> {
+    EnumDef::interned_ENUM_COLON()
 }
-pub use self::EnumDef::{ENUMLITERALS,ENUM_COLON};
+impl Default for EnumDef {
+    fn default() -> Self {
+        Self::ENUM_COLON
+    }
+}
+pub use self::EnumDef::{ENUM_COLON, ENUMLITERALS};
 
 /// EnumLiteral, which is a name in an enumeration and an optional
 ///   Comment.
@@ -419,7 +458,6 @@ impl metamodelica::gc::MMTrace for EnumLiteral {
     }
 }
 pub type ENUMLITERAL = EnumLiteral;
-
 
 /// A class definition contains several parts.  There are public and
 ///  protected component declarations, type definitions and `extends\'
@@ -487,7 +525,10 @@ impl metamodelica::gc::MMTrace for ClassPart {
                 metamodelica::gc::MMTrace::mm_accept(contents, __mmv)?;
                 Ok(())
             }
-            ClassPart::EXTERNAL { externalDecl, annotation_ } => {
+            ClassPart::EXTERNAL {
+                externalDecl,
+                annotation_,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(externalDecl, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(annotation_, __mmv)?;
                 Ok(())
@@ -502,17 +543,15 @@ impl Default for ClassPart {
         }
     }
 }
-pub use self::ClassPart::{PUBLIC,PROTECTED,CONSTRAINTS,EQUATIONS,INITIALEQUATIONS,ALGORITHMS,INITIALALGORITHMS,EXTERNAL};
+pub use self::ClassPart::{
+    ALGORITHMS, CONSTRAINTS, EQUATIONS, EXTERNAL, INITIALALGORITHMS, INITIALEQUATIONS, PROTECTED, PUBLIC,
+};
 
 /// An element item is either an element or an annotation
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ElementItem {
-    ELEMENTITEM {
-        element: metamodelica::Ref<Element>,
-    },
-    LEXER_COMMENT {
-        comment: ArcStr,
-    },
+    ELEMENTITEM { element: metamodelica::Ref<Element> },
+    LEXER_COMMENT { comment: ArcStr },
 }
 impl metamodelica::gc::MMTrace for ElementItem {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -535,7 +574,7 @@ impl Default for ElementItem {
         }
     }
 }
-pub use self::ElementItem::{ELEMENTITEM,LEXER_COMMENT};
+pub use self::ElementItem::{ELEMENTITEM, LEXER_COMMENT};
 
 /// Elements
 ///  The basic element type in Modelica
@@ -570,7 +609,14 @@ pub enum Element {
 impl metamodelica::gc::MMTrace for Element {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            Element::ELEMENT { finalPrefix, redeclareKeywords, innerOuter, specification, info, constrainClass } => {
+            Element::ELEMENT {
+                finalPrefix,
+                redeclareKeywords,
+                innerOuter,
+                specification,
+                info,
+                constrainClass,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(finalPrefix, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(redeclareKeywords, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(innerOuter, __mmv)?;
@@ -603,7 +649,7 @@ impl Default for Element {
         }
     }
 }
-pub use self::Element::{ELEMENT,DEFINEUNIT,TEXT};
+pub use self::Element::{DEFINEUNIT, ELEMENT, TEXT};
 
 /// Constraining type, must be extends
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -631,7 +677,6 @@ impl Default for ConstrainClass {
 }
 
 pub type CONSTRAINCLASS = ConstrainClass;
-
 
 /// An element is something that occurs in a public or protected
 ///    section in a class definition.  There is one constructor in the
@@ -682,7 +727,11 @@ impl metamodelica::gc::MMTrace for ElementSpec {
                 metamodelica::gc::MMTrace::mm_accept(class_, __mmv)?;
                 Ok(())
             }
-            ElementSpec::EXTENDS { path, elementArg, annotationOpt } => {
+            ElementSpec::EXTENDS {
+                path,
+                elementArg,
+                annotationOpt,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(path, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elementArg, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(annotationOpt, __mmv)?;
@@ -694,7 +743,11 @@ impl metamodelica::gc::MMTrace for ElementSpec {
                 metamodelica::gc::MMTrace::mm_accept(info, __mmv)?;
                 Ok(())
             }
-            ElementSpec::COMPONENTS { attributes, typeSpec, components } => {
+            ElementSpec::COMPONENTS {
+                attributes,
+                typeSpec,
+                components,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(attributes, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(typeSpec, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(components, __mmv)?;
@@ -711,7 +764,7 @@ impl Default for ElementSpec {
         }
     }
 }
-pub use self::ElementSpec::{CLASSDEF,EXTENDS,IMPORT,COMPONENTS};
+pub use self::ElementSpec::{CLASSDEF, COMPONENTS, EXTENDS, IMPORT};
 
 /// One of the keyword inner and outer CAN be given to reference an
 ///   inner or outer element. Thus there are three disjoint possibilities.
@@ -737,9 +790,11 @@ impl metamodelica::gc::MMTrace for InnerOuter {
     }
 }
 impl Default for InnerOuter {
-    fn default() -> Self { Self::INNER }
+    fn default() -> Self {
+        Self::INNER
+    }
 }
-pub use self::InnerOuter::{INNER,OUTER,INNER_OUTER,NOT_INNER_OUTER};
+pub use self::InnerOuter::{INNER, INNER_OUTER, NOT_INNER_OUTER, OUTER};
 
 /// Import statements, different kinds
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -794,17 +849,12 @@ impl Default for Import {
         }
     }
 }
-pub use self::Import::{NAMED_IMPORT,QUAL_IMPORT,UNQUAL_IMPORT,GROUP_IMPORT};
+pub use self::Import::{GROUP_IMPORT, NAMED_IMPORT, QUAL_IMPORT, UNQUAL_IMPORT};
 
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum GroupImport {
-    GROUP_IMPORT_NAME {
-        name: ArcStr,
-    },
-    GROUP_IMPORT_RENAME {
-        rename: ArcStr,
-        name: ArcStr,
-    },
+    GROUP_IMPORT_NAME { name: ArcStr },
+    GROUP_IMPORT_RENAME { rename: ArcStr, name: ArcStr },
 }
 impl metamodelica::gc::MMTrace for GroupImport {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -828,7 +878,7 @@ impl Default for GroupImport {
         }
     }
 }
-pub use self::GroupImport::{GROUP_IMPORT_NAME,GROUP_IMPORT_RENAME};
+pub use self::GroupImport::{GROUP_IMPORT_NAME, GROUP_IMPORT_RENAME};
 
 /// A componentItem can have a condition that must be fulfilled if
 ///  the component should be instantiated.
@@ -865,7 +915,6 @@ impl Default for ComponentItem {
 
 pub type COMPONENTITEM = ComponentItem;
 
-
 /// Some kind of Modelica entity (object or variable)
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct Component {
@@ -897,7 +946,6 @@ impl Default for Component {
 
 pub type COMPONENT = Component;
 
-
 /// Several component declarations can be grouped together in one
 ///  `ElementSpec\' by writing them on the same line in the source.
 ///  This type contains the information specific to one component.
@@ -918,7 +966,11 @@ pub enum EquationItem {
 impl metamodelica::gc::MMTrace for EquationItem {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            EquationItem::EQUATIONITEM { equation_, comment, info } => {
+            EquationItem::EQUATIONITEM {
+                equation_,
+                comment,
+                info,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(equation_, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(comment, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(info, __mmv)?;
@@ -938,7 +990,7 @@ impl Default for EquationItem {
         }
     }
 }
-pub use self::EquationItem::{EQUATIONITEM,EQUATIONITEMCOMMENT};
+pub use self::EquationItem::{EQUATIONITEM, EQUATIONITEMCOMMENT};
 
 /// Info specific for an algorithm item.
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -952,14 +1004,16 @@ pub enum AlgorithmItem {
         info: Info,
     },
     /// A comment from the lexer
-    ALGORITHMITEMCOMMENT {
-        comment: ArcStr,
-    },
+    ALGORITHMITEMCOMMENT { comment: ArcStr },
 }
 impl metamodelica::gc::MMTrace for AlgorithmItem {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            AlgorithmItem::ALGORITHMITEM { algorithm_, comment, info } => {
+            AlgorithmItem::ALGORITHMITEM {
+                algorithm_,
+                comment,
+                info,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(algorithm_, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(comment, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(info, __mmv)?;
@@ -979,7 +1033,7 @@ impl Default for AlgorithmItem {
         }
     }
 }
-pub use self::AlgorithmItem::{ALGORITHMITEM,ALGORITHMITEMCOMMENT};
+pub use self::AlgorithmItem::{ALGORITHMITEM, ALGORITHMITEMCOMMENT};
 
 /// Information on one (kind) of equation, different constructors for different
 ///     kinds of equations
@@ -991,7 +1045,10 @@ pub enum Equation {
         /// true branch
         equationTrueItems: metamodelica::List<metamodelica::Ref<EquationItem>>,
         /// elseIfBranches
-        elseIfBranches: metamodelica::List<(metamodelica::Ref<Exp>, metamodelica::List<metamodelica::Ref<EquationItem>>)>,
+        elseIfBranches: metamodelica::List<(
+            metamodelica::Ref<Exp>,
+            metamodelica::List<metamodelica::Ref<EquationItem>>,
+        )>,
         /// equationElseItems Standard 2-side eqn
         equationElseItems: metamodelica::List<metamodelica::Ref<EquationItem>>,
     },
@@ -1026,7 +1083,10 @@ pub enum Equation {
         /// whenEquations
         whenEquations: metamodelica::List<metamodelica::Ref<EquationItem>>,
         /// elseWhenEquations
-        elseWhenEquations: metamodelica::List<(metamodelica::Ref<Exp>, metamodelica::List<metamodelica::Ref<EquationItem>>)>,
+        elseWhenEquations: metamodelica::List<(
+            metamodelica::Ref<Exp>,
+            metamodelica::List<metamodelica::Ref<EquationItem>>,
+        )>,
     },
     EQ_NORETCALL {
         /// functionName
@@ -1041,7 +1101,12 @@ pub enum Equation {
 impl metamodelica::gc::MMTrace for Equation {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            Equation::EQ_IF { ifExp, equationTrueItems, elseIfBranches, equationElseItems } => {
+            Equation::EQ_IF {
+                ifExp,
+                equationTrueItems,
+                elseIfBranches,
+                equationElseItems,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(ifExp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(equationTrueItems, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elseIfBranches, __mmv)?;
@@ -1053,7 +1118,11 @@ impl metamodelica::gc::MMTrace for Equation {
                 metamodelica::gc::MMTrace::mm_accept(rightSide, __mmv)?;
                 Ok(())
             }
-            Equation::EQ_PDE { leftSide, rightSide, domain } => {
+            Equation::EQ_PDE {
+                leftSide,
+                rightSide,
+                domain,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(leftSide, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(rightSide, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(domain, __mmv)?;
@@ -1064,18 +1133,28 @@ impl metamodelica::gc::MMTrace for Equation {
                 metamodelica::gc::MMTrace::mm_accept(connector2, __mmv)?;
                 Ok(())
             }
-            Equation::EQ_FOR { iterators, forEquations } => {
+            Equation::EQ_FOR {
+                iterators,
+                forEquations,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(iterators, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(forEquations, __mmv)?;
                 Ok(())
             }
-            Equation::EQ_WHEN_E { whenExp, whenEquations, elseWhenEquations } => {
+            Equation::EQ_WHEN_E {
+                whenExp,
+                whenEquations,
+                elseWhenEquations,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(whenExp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(whenEquations, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elseWhenEquations, __mmv)?;
                 Ok(())
             }
-            Equation::EQ_NORETCALL { functionName, functionArgs } => {
+            Equation::EQ_NORETCALL {
+                functionName,
+                functionArgs,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(functionName, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(functionArgs, __mmv)?;
                 Ok(())
@@ -1094,7 +1173,7 @@ impl Default for Equation {
         }
     }
 }
-pub use self::Equation::{EQ_IF,EQ_EQUALS,EQ_PDE,EQ_CONNECT,EQ_FOR,EQ_WHEN_E,EQ_NORETCALL,EQ_FAILURE};
+pub use self::Equation::{EQ_CONNECT, EQ_EQUALS, EQ_FAILURE, EQ_FOR, EQ_IF, EQ_NORETCALL, EQ_PDE, EQ_WHEN_E};
 
 /// The Algorithm type describes one algorithm statement in an
 ///  algorithm section.  It does not describe a whole algorithm.  The
@@ -1114,7 +1193,10 @@ pub enum Algorithm {
         /// trueBranch
         trueBranch: metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
         /// elseIfAlgorithmBranch
-        elseIfAlgorithmBranch: metamodelica::List<(metamodelica::Ref<Exp>, metamodelica::List<metamodelica::Ref<AlgorithmItem>>)>,
+        elseIfAlgorithmBranch: metamodelica::List<(
+            metamodelica::Ref<Exp>,
+            metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
+        )>,
         /// elseBranch
         elseBranch: metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
     },
@@ -1140,7 +1222,10 @@ pub enum Algorithm {
         /// whenBody
         whenBody: metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
         /// elseWhenAlgorithmBranch
-        elseWhenAlgorithmBranch: metamodelica::List<(metamodelica::Ref<Exp>, metamodelica::List<metamodelica::Ref<AlgorithmItem>>)>,
+        elseWhenAlgorithmBranch: metamodelica::List<(
+            metamodelica::Ref<Exp>,
+            metamodelica::List<metamodelica::Ref<AlgorithmItem>>,
+        )>,
     },
     ALG_NORETCALL {
         /// functionCall
@@ -1167,7 +1252,12 @@ impl metamodelica::gc::MMTrace for Algorithm {
                 metamodelica::gc::MMTrace::mm_accept(value, __mmv)?;
                 Ok(())
             }
-            Algorithm::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => {
+            Algorithm::ALG_IF {
+                ifExp,
+                trueBranch,
+                elseIfAlgorithmBranch,
+                elseBranch,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(ifExp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(trueBranch, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elseIfAlgorithmBranch, __mmv)?;
@@ -1189,13 +1279,20 @@ impl metamodelica::gc::MMTrace for Algorithm {
                 metamodelica::gc::MMTrace::mm_accept(whileBody, __mmv)?;
                 Ok(())
             }
-            Algorithm::ALG_WHEN_A { boolExpr, whenBody, elseWhenAlgorithmBranch } => {
+            Algorithm::ALG_WHEN_A {
+                boolExpr,
+                whenBody,
+                elseWhenAlgorithmBranch,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(boolExpr, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(whenBody, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elseWhenAlgorithmBranch, __mmv)?;
                 Ok(())
             }
-            Algorithm::ALG_NORETCALL { functionCall, functionArgs } => {
+            Algorithm::ALG_NORETCALL {
+                functionCall,
+                functionArgs,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(functionCall, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(functionArgs, __mmv)?;
                 Ok(())
@@ -1217,27 +1314,46 @@ impl metamodelica::gc::MMTrace for Algorithm {
 }
 impl Algorithm {
     pub fn interned_ALG_RETURN() -> metamodelica::Ref<Algorithm> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Algorithm>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(Algorithm::ALG_RETURN));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Algorithm>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(Algorithm::ALG_RETURN));
         (*INTERNED).clone()
     }
     pub fn interned_ALG_BREAK() -> metamodelica::Ref<Algorithm> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Algorithm>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(Algorithm::ALG_BREAK));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Algorithm>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(Algorithm::ALG_BREAK));
         (*INTERNED).clone()
     }
     pub fn interned_ALG_CONTINUE() -> metamodelica::Ref<Algorithm> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Algorithm>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(Algorithm::ALG_CONTINUE));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Algorithm>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(Algorithm::ALG_CONTINUE));
         (*INTERNED).clone()
     }
 }
-pub fn interned_ALG_RETURN() -> metamodelica::Ref<Algorithm> { Algorithm::interned_ALG_RETURN() }
-pub fn interned_ALG_BREAK() -> metamodelica::Ref<Algorithm> { Algorithm::interned_ALG_BREAK() }
-pub fn interned_ALG_CONTINUE() -> metamodelica::Ref<Algorithm> { Algorithm::interned_ALG_CONTINUE() }
-impl Default for Algorithm {
-    fn default() -> Self { Self::ALG_RETURN }
+pub fn interned_ALG_RETURN() -> metamodelica::Ref<Algorithm> {
+    Algorithm::interned_ALG_RETURN()
 }
-pub use self::Algorithm::{ALG_ASSIGN,ALG_IF,ALG_FOR,ALG_PARFOR,ALG_WHILE,ALG_WHEN_A,ALG_NORETCALL,ALG_RETURN,ALG_BREAK,ALG_FAILURE,ALG_TRY,ALG_CONTINUE};
+pub fn interned_ALG_BREAK() -> metamodelica::Ref<Algorithm> {
+    Algorithm::interned_ALG_BREAK()
+}
+pub fn interned_ALG_CONTINUE() -> metamodelica::Ref<Algorithm> {
+    Algorithm::interned_ALG_CONTINUE()
+}
+impl Default for Algorithm {
+    fn default() -> Self {
+        Self::ALG_RETURN
+    }
+}
+pub use self::Algorithm::{
+    ALG_ASSIGN, ALG_BREAK, ALG_CONTINUE, ALG_FAILURE, ALG_FOR, ALG_IF, ALG_NORETCALL, ALG_PARFOR, ALG_RETURN, ALG_TRY,
+    ALG_WHEN_A, ALG_WHILE,
+};
 
-pub static emptyMod: std::sync::LazyLock<metamodelica::Ref<Modification>> = std::sync::LazyLock::new(|| { metamodelica::Ref::new(Modification { elementArgLst: metamodelica::nil(), eqMod: crate::Absyn::EqMod::interned_NOMOD() }) });
+pub static emptyMod: std::sync::LazyLock<metamodelica::Ref<Modification>> = std::sync::LazyLock::new(|| {
+    metamodelica::Ref::new(Modification {
+        elementArgLst: metamodelica::nil(),
+        eqMod: crate::Absyn::EqMod::interned_NOMOD(),
+    })
+});
 
 /// Modifications are described by the `Modification\' type.  There
 ///  are two forms of modifications: redeclarations and component
@@ -1267,14 +1383,10 @@ impl Default for Modification {
 
 pub type CLASSMOD = Modification;
 
-
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum EqMod {
     NOMOD,
-    EQMOD {
-        exp: metamodelica::Ref<Exp>,
-        info: Info,
-    },
+    EQMOD { exp: metamodelica::Ref<Exp>, info: Info },
 }
 impl metamodelica::gc::MMTrace for EqMod {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -1290,15 +1402,20 @@ impl metamodelica::gc::MMTrace for EqMod {
 }
 impl EqMod {
     pub fn interned_NOMOD() -> metamodelica::Ref<EqMod> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<EqMod>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(EqMod::NOMOD));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<EqMod>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(EqMod::NOMOD));
         (*INTERNED).clone()
     }
 }
-pub fn interned_NOMOD() -> metamodelica::Ref<EqMod> { EqMod::interned_NOMOD() }
-impl Default for EqMod {
-    fn default() -> Self { Self::NOMOD }
+pub fn interned_NOMOD() -> metamodelica::Ref<EqMod> {
+    EqMod::interned_NOMOD()
 }
-pub use self::EqMod::{NOMOD,EQMOD};
+impl Default for EqMod {
+    fn default() -> Self {
+        Self::NOMOD
+    }
+}
+pub use self::EqMod::{EQMOD, NOMOD};
 
 /// Wrapper for things that modify elements, modifications and redeclarations
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1330,9 +1447,7 @@ pub enum ElementArg {
         info: Info,
     },
     /// A lexer comment
-    ELEMENTARGCOMMENT {
-        comment: ArcStr,
-    },
+    ELEMENTARGCOMMENT { comment: ArcStr },
     /// break is either an ident or an equation
     ///    we save the ident as connect(ident, break) to keep it simple
     INHERITANCEBREAK {
@@ -1343,7 +1458,14 @@ pub enum ElementArg {
 impl metamodelica::gc::MMTrace for ElementArg {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            ElementArg::MODIFICATION { finalPrefix, eachPrefix, path, modification, comment, info } => {
+            ElementArg::MODIFICATION {
+                finalPrefix,
+                eachPrefix,
+                path,
+                modification,
+                comment,
+                info,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(finalPrefix, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(eachPrefix, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(path, __mmv)?;
@@ -1352,7 +1474,14 @@ impl metamodelica::gc::MMTrace for ElementArg {
                 metamodelica::gc::MMTrace::mm_accept(info, __mmv)?;
                 Ok(())
             }
-            ElementArg::REDECLARATION { finalPrefix, redeclareKeywords, eachPrefix, elementSpec, constrainClass, info } => {
+            ElementArg::REDECLARATION {
+                finalPrefix,
+                redeclareKeywords,
+                eachPrefix,
+                elementSpec,
+                constrainClass,
+                info,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(finalPrefix, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(redeclareKeywords, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(eachPrefix, __mmv)?;
@@ -1380,7 +1509,7 @@ impl Default for ElementArg {
         }
     }
 }
-pub use self::ElementArg::{MODIFICATION,REDECLARATION,ELEMENTARGCOMMENT,INHERITANCEBREAK};
+pub use self::ElementArg::{ELEMENTARGCOMMENT, INHERITANCEBREAK, MODIFICATION, REDECLARATION};
 
 /// The keywords redeclare and replacable can be given in three different kombinations, each one by themself or the both combined.
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1399,9 +1528,11 @@ impl metamodelica::gc::MMTrace for RedeclareKeywords {
     }
 }
 impl Default for RedeclareKeywords {
-    fn default() -> Self { Self::REDECLARE }
+    fn default() -> Self {
+        Self::REDECLARE
+    }
 }
-pub use self::RedeclareKeywords::{REDECLARE,REPLACEABLE,REDECLARE_REPLACEABLE};
+pub use self::RedeclareKeywords::{REDECLARE, REDECLARE_REPLACEABLE, REPLACEABLE};
 
 /// The each keyword can be present in both MODIFICATION\'s and REDECLARATION\'s.
 ///  - Each attribute
@@ -1419,9 +1550,11 @@ impl metamodelica::gc::MMTrace for Each {
     }
 }
 impl Default for Each {
-    fn default() -> Self { Self::EACH }
+    fn default() -> Self {
+        Self::EACH
+    }
 }
-pub use self::Each::{EACH,NON_EACH};
+pub use self::Each::{EACH, NON_EACH};
 
 /// Element attributes
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1470,7 +1603,6 @@ impl Default for ElementAttributes {
 
 pub type ATTR = ElementAttributes;
 
-
 /// Is field
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum IsField {
@@ -1488,9 +1620,11 @@ impl metamodelica::gc::MMTrace for IsField {
     }
 }
 impl Default for IsField {
-    fn default() -> Self { Self::NONFIELD }
+    fn default() -> Self {
+        Self::NONFIELD
+    }
 }
-pub use self::IsField::{NONFIELD,FIELD};
+pub use self::IsField::{FIELD, NONFIELD};
 
 /// Parallelism
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1512,9 +1646,11 @@ impl metamodelica::gc::MMTrace for Parallelism {
     }
 }
 impl Default for Parallelism {
-    fn default() -> Self { Self::PARGLOBAL }
+    fn default() -> Self {
+        Self::PARGLOBAL
+    }
 }
-pub use self::Parallelism::{PARGLOBAL,PARLOCAL,NON_PARALLEL};
+pub use self::Parallelism::{NON_PARALLEL, PARGLOBAL, PARLOCAL};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub(crate) enum FlowStream {
@@ -1531,7 +1667,7 @@ impl metamodelica::gc::MMTrace for FlowStream {
         }
     }
 }
-pub(crate) use self::FlowStream::{FLOW,STREAM,NOT_FLOW_STREAM};
+pub(crate) use self::FlowStream::{FLOW, NOT_FLOW_STREAM, STREAM};
 
 /// Variability
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1552,9 +1688,11 @@ impl metamodelica::gc::MMTrace for Variability {
     }
 }
 impl Default for Variability {
-    fn default() -> Self { Self::VAR }
+    fn default() -> Self {
+        Self::VAR
+    }
 }
-pub use self::Variability::{VAR,DISCRETE,PARAM,CONST};
+pub use self::Variability::{CONST, DISCRETE, PARAM, VAR};
 
 /// Direction
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1579,9 +1717,11 @@ impl metamodelica::gc::MMTrace for Direction {
     }
 }
 impl Default for Direction {
-    fn default() -> Self { Self::INPUT }
+    fn default() -> Self {
+        Self::INPUT
+    }
 }
-pub use self::Direction::{INPUT,OUTPUT,BIDIR,INPUT_OUTPUT};
+pub use self::Direction::{BIDIR, INPUT, INPUT_OUTPUT, OUTPUT};
 
 /// The Exp uniontype is the container of a Modelica expression.
 ///  - Expressions
@@ -1786,20 +1926,32 @@ impl metamodelica::gc::MMTrace for Exp {
                 metamodelica::gc::MMTrace::mm_accept(exp2, __mmv)?;
                 Ok(())
             }
-            Exp::IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => {
+            Exp::IFEXP {
+                ifExp,
+                trueBranch,
+                elseBranch,
+                elseIfBranch,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(ifExp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(trueBranch, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elseBranch, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(elseIfBranch, __mmv)?;
                 Ok(())
             }
-            Exp::CALL { function_, functionArgs, typeVars } => {
+            Exp::CALL {
+                function_,
+                functionArgs,
+                typeVars,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(function_, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(functionArgs, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(typeVars, __mmv)?;
                 Ok(())
             }
-            Exp::PARTEVALFUNCTION { function_, functionArgs } => {
+            Exp::PARTEVALFUNCTION {
+                function_,
+                functionArgs,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(function_, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(functionArgs, __mmv)?;
                 Ok(())
@@ -1837,7 +1989,13 @@ impl metamodelica::gc::MMTrace for Exp {
                 metamodelica::gc::MMTrace::mm_accept(rest, __mmv)?;
                 Ok(())
             }
-            Exp::MATCHEXP { matchTy, inputExp, localDecls, cases, comment } => {
+            Exp::MATCHEXP {
+                matchTy,
+                inputExp,
+                localDecls,
+                cases,
+                comment,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(matchTy, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(inputExp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(localDecls, __mmv)?;
@@ -1854,7 +2012,11 @@ impl metamodelica::gc::MMTrace for Exp {
                 metamodelica::gc::MMTrace::mm_accept(index, __mmv)?;
                 Ok(())
             }
-            Exp::EXPRESSIONCOMMENT { commentsBefore, exp, commentsAfter } => {
+            Exp::EXPRESSIONCOMMENT {
+                commentsBefore,
+                exp,
+                commentsAfter,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(commentsBefore, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(exp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(commentsAfter, __mmv)?;
@@ -1871,20 +2033,31 @@ impl metamodelica::gc::MMTrace for Exp {
 }
 impl Exp {
     pub fn interned_END() -> metamodelica::Ref<Exp> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Exp>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(Exp::END));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Exp>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(Exp::END));
         (*INTERNED).clone()
     }
     pub fn interned_BREAK() -> metamodelica::Ref<Exp> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Exp>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(Exp::BREAK));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Exp>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(Exp::BREAK));
         (*INTERNED).clone()
     }
 }
-pub fn interned_END() -> metamodelica::Ref<Exp> { Exp::interned_END() }
-pub fn interned_BREAK() -> metamodelica::Ref<Exp> { Exp::interned_BREAK() }
-impl Default for Exp {
-    fn default() -> Self { Self::END }
+pub fn interned_END() -> metamodelica::Ref<Exp> {
+    Exp::interned_END()
 }
-pub use self::Exp::{INTEGER,REAL,CREF,STRING,BOOL,BINARY,UNARY,LBINARY,LUNARY,RELATION,IFEXP,CALL,PARTEVALFUNCTION,ARRAY,MATRIX,RANGE,TUPLE,END,CODE,AS,CONS,MATCHEXP,LIST,DOT,EXPRESSIONCOMMENT,SUBSCRIPTED_EXP,BREAK};
+pub fn interned_BREAK() -> metamodelica::Ref<Exp> {
+    Exp::interned_BREAK()
+}
+impl Default for Exp {
+    fn default() -> Self {
+        Self::END
+    }
+}
+pub use self::Exp::{
+    ARRAY, AS, BINARY, BOOL, BREAK, CALL, CODE, CONS, CREF, DOT, END, EXPRESSIONCOMMENT, IFEXP, INTEGER, LBINARY, LIST,
+    LUNARY, MATCHEXP, MATRIX, PARTEVALFUNCTION, RANGE, REAL, RELATION, STRING, SUBSCRIPTED_EXP, TUPLE, UNARY,
+};
 
 /// case in match or matchcontinue
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -1927,7 +2100,17 @@ pub enum Case {
 impl metamodelica::gc::MMTrace for Case {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
         match self {
-            Case::CASE { pattern, patternGuard, patternInfo, localDecls, classPart, result, resultInfo, comment, info } => {
+            Case::CASE {
+                pattern,
+                patternGuard,
+                patternInfo,
+                localDecls,
+                classPart,
+                result,
+                resultInfo,
+                comment,
+                info,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(pattern, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(patternGuard, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(patternInfo, __mmv)?;
@@ -1939,7 +2122,14 @@ impl metamodelica::gc::MMTrace for Case {
                 metamodelica::gc::MMTrace::mm_accept(info, __mmv)?;
                 Ok(())
             }
-            Case::ELSE { localDecls, classPart, result, resultInfo, comment, info } => {
+            Case::ELSE {
+                localDecls,
+                classPart,
+                result,
+                resultInfo,
+                comment,
+                info,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(localDecls, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(classPart, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(result, __mmv)?;
@@ -1963,7 +2153,7 @@ impl Default for Case {
         }
     }
 }
-pub use self::Case::{CASE,ELSE};
+pub use self::Case::{CASE, ELSE};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum MatchType {
@@ -1979,9 +2169,11 @@ impl metamodelica::gc::MMTrace for MatchType {
     }
 }
 impl Default for MatchType {
-    fn default() -> Self { Self::MATCH }
+    fn default() -> Self {
+        Self::MATCH
+    }
 }
-pub use self::MatchType::{MATCH,MATCHCONTINUE};
+pub use self::MatchType::{MATCH, MATCHCONTINUE};
 
 /// The Code uniontype is used for Meta-programming. It originates from the $Code quoting mechanism. See paper in Modelica2003 conference
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -2027,17 +2219,26 @@ impl metamodelica::gc::MMTrace for CodeNode {
                 metamodelica::gc::MMTrace::mm_accept(componentRef, __mmv)?;
                 Ok(())
             }
-            CodeNode::C_CONSTRAINTSECTION { boolean, equationItemLst } => {
+            CodeNode::C_CONSTRAINTSECTION {
+                boolean,
+                equationItemLst,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(boolean, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(equationItemLst, __mmv)?;
                 Ok(())
             }
-            CodeNode::C_EQUATIONSECTION { boolean, equationItemLst } => {
+            CodeNode::C_EQUATIONSECTION {
+                boolean,
+                equationItemLst,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(boolean, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(equationItemLst, __mmv)?;
                 Ok(())
             }
-            CodeNode::C_ALGORITHMSECTION { boolean, algorithmItemLst } => {
+            CodeNode::C_ALGORITHMSECTION {
+                boolean,
+                algorithmItemLst,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(boolean, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(algorithmItemLst, __mmv)?;
                 Ok(())
@@ -2064,7 +2265,10 @@ impl Default for CodeNode {
         }
     }
 }
-pub use self::CodeNode::{C_TYPENAME,C_VARIABLENAME,C_CONSTRAINTSECTION,C_EQUATIONSECTION,C_ALGORITHMSECTION,C_ELEMENT,C_EXPRESSION,C_MODIFICATION};
+pub use self::CodeNode::{
+    C_ALGORITHMSECTION, C_CONSTRAINTSECTION, C_ELEMENT, C_EQUATIONSECTION, C_EXPRESSION, C_MODIFICATION, C_TYPENAME,
+    C_VARIABLENAME,
+};
 
 /// The FunctionArgs uniontype consists of a list of positional arguments
 ///  followed by a list of named arguments (Modelica v2.0)
@@ -2091,7 +2295,11 @@ impl metamodelica::gc::MMTrace for FunctionArgs {
                 metamodelica::gc::MMTrace::mm_accept(argNames, __mmv)?;
                 Ok(())
             }
-            FunctionArgs::FOR_ITER_FARG { exp, iterType, iterators } => {
+            FunctionArgs::FOR_ITER_FARG {
+                exp,
+                iterType,
+                iterators,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(exp, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(iterType, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(iterators, __mmv)?;
@@ -2108,9 +2316,14 @@ impl Default for FunctionArgs {
         }
     }
 }
-pub use self::FunctionArgs::{FUNCTIONARGS,FOR_ITER_FARG};
+pub use self::FunctionArgs::{FOR_ITER_FARG, FUNCTIONARGS};
 
-pub static emptyFunctionArgs: std::sync::LazyLock<metamodelica::Ref<FunctionArgs>> = std::sync::LazyLock::new(|| { metamodelica::Ref::new(FunctionArgs::FUNCTIONARGS { args: metamodelica::nil(), argNames: metamodelica::nil() }) });
+pub static emptyFunctionArgs: std::sync::LazyLock<metamodelica::Ref<FunctionArgs>> = std::sync::LazyLock::new(|| {
+    metamodelica::Ref::new(FunctionArgs::FUNCTIONARGS {
+        args: metamodelica::nil(),
+        argNames: metamodelica::nil(),
+    })
+});
 
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum ReductionIterType {
@@ -2127,7 +2340,7 @@ impl metamodelica::gc::MMTrace for ReductionIterType {
         }
     }
 }
-pub use self::ReductionIterType::{COMBINE,THREAD};
+pub use self::ReductionIterType::{COMBINE, THREAD};
 
 /// The NamedArg uniontype consist of an Identifier for the argument and an expression
 ///  giving the value of the argument
@@ -2156,7 +2369,6 @@ impl Default for NamedArg {
 }
 
 pub type NAMEDARG = NamedArg;
-
 
 /// Expression operators
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -2238,9 +2450,14 @@ impl metamodelica::gc::MMTrace for Operator {
     }
 }
 impl Default for Operator {
-    fn default() -> Self { Self::ADD }
+    fn default() -> Self {
+        Self::ADD
+    }
 }
-pub use self::Operator::{ADD,SUB,MUL,DIV,POW,UPLUS,UMINUS,ADD_EW,SUB_EW,MUL_EW,DIV_EW,POW_EW,UPLUS_EW,UMINUS_EW,AND,OR,NOT,LESS,LESSEQ,GREATER,GREATEREQ,EQUAL,NEQUAL};
+pub use self::Operator::{
+    ADD, ADD_EW, AND, DIV, DIV_EW, EQUAL, GREATER, GREATEREQ, LESS, LESSEQ, MUL, MUL_EW, NEQUAL, NOT, OR, POW, POW_EW,
+    SUB, SUB_EW, UMINUS, UMINUS_EW, UPLUS, UPLUS_EW,
+};
 
 /// The Subscript uniontype is used both in array declarations and
 ///  component references.  This might seem strange, but it is
@@ -2272,15 +2489,20 @@ impl metamodelica::gc::MMTrace for Subscript {
 }
 impl Subscript {
     pub fn interned_NOSUB() -> metamodelica::Ref<Subscript> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Subscript>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(Subscript::NOSUB));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<Subscript>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(Subscript::NOSUB));
         (*INTERNED).clone()
     }
 }
-pub fn interned_NOSUB() -> metamodelica::Ref<Subscript> { Subscript::interned_NOSUB() }
-impl Default for Subscript {
-    fn default() -> Self { Self::NOSUB }
+pub fn interned_NOSUB() -> metamodelica::Ref<Subscript> {
+    Subscript::interned_NOSUB()
 }
-pub use self::Subscript::{NOSUB,SUBSCRIPT};
+impl Default for Subscript {
+    fn default() -> Self {
+        Self::NOSUB
+    }
+}
+pub use self::Subscript::{NOSUB, SUBSCRIPT};
 
 /// A component reference is the fully or partially qualified name of
 ///  a component.  It is represented as a list of
@@ -2315,7 +2537,11 @@ impl metamodelica::gc::MMTrace for ComponentRef {
                 metamodelica::gc::MMTrace::mm_accept(componentRef, __mmv)?;
                 Ok(())
             }
-            ComponentRef::CREF_QUAL { name, subscripts, componentRef } => {
+            ComponentRef::CREF_QUAL {
+                name,
+                subscripts,
+                componentRef,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(name, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(subscripts, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(componentRef, __mmv)?;
@@ -2333,20 +2559,28 @@ impl metamodelica::gc::MMTrace for ComponentRef {
 }
 impl ComponentRef {
     pub fn interned_WILD() -> metamodelica::Ref<ComponentRef> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<ComponentRef>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(ComponentRef::WILD));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<ComponentRef>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(ComponentRef::WILD));
         (*INTERNED).clone()
     }
     pub fn interned_ALLWILD() -> metamodelica::Ref<ComponentRef> {
-        static INTERNED: std::sync::LazyLock<metamodelica::Ref<ComponentRef>> = std::sync::LazyLock::new(|| metamodelica::Ref::new(ComponentRef::ALLWILD));
+        static INTERNED: std::sync::LazyLock<metamodelica::Ref<ComponentRef>> =
+            std::sync::LazyLock::new(|| metamodelica::Ref::new(ComponentRef::ALLWILD));
         (*INTERNED).clone()
     }
 }
-pub fn interned_WILD() -> metamodelica::Ref<ComponentRef> { ComponentRef::interned_WILD() }
-pub fn interned_ALLWILD() -> metamodelica::Ref<ComponentRef> { ComponentRef::interned_ALLWILD() }
-impl Default for ComponentRef {
-    fn default() -> Self { Self::WILD }
+pub fn interned_WILD() -> metamodelica::Ref<ComponentRef> {
+    ComponentRef::interned_WILD()
 }
-pub use self::ComponentRef::{CREF_FULLYQUALIFIED,CREF_QUAL,CREF_IDENT,WILD,ALLWILD};
+pub fn interned_ALLWILD() -> metamodelica::Ref<ComponentRef> {
+    ComponentRef::interned_ALLWILD()
+}
+impl Default for ComponentRef {
+    fn default() -> Self {
+        Self::WILD
+    }
+}
+pub use self::ComponentRef::{ALLWILD, CREF_FULLYQUALIFIED, CREF_IDENT, CREF_QUAL, WILD};
 
 /// The type `Path\', on the other hand,
 ///  is used to store references to class names, or names inside
@@ -2367,9 +2601,7 @@ pub enum Path {
     ///    i.e. the names are looked up from top scope directly like for instance Modelica.SIunits.Voltage
     ///    Note: Not created during parsing, only during instantation to speedup/simplify lookup.
     ///
-    FULLYQUALIFIED {
-        path: metamodelica::Ref<Path>,
-    },
+    FULLYQUALIFIED { path: metamodelica::Ref<Path> },
 }
 impl metamodelica::gc::MMTrace for Path {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -2397,7 +2629,7 @@ impl Default for Path {
         }
     }
 }
-pub use self::Path::{QUALIFIED,IDENT,FULLYQUALIFIED};
+pub use self::Path::{FULLYQUALIFIED, IDENT, QUALIFIED};
 
 /// These constructors each correspond to a different kind of class
 ///  declaration in Modelica, except the last four, which are used
@@ -2473,7 +2705,13 @@ impl metamodelica::gc::MMTrace for Restriction {
             Restriction::R_PREDEFINED_ENUMERATION => Ok(()),
             Restriction::R_PREDEFINED_CLOCK => Ok(()),
             Restriction::R_UNIONTYPE => Ok(()),
-            Restriction::R_METARECORD { name, index, singleton, moved, typeVars } => {
+            Restriction::R_METARECORD {
+                name,
+                index,
+                singleton,
+                moved,
+                typeVars,
+            } => {
                 metamodelica::gc::MMTrace::mm_accept(name, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(index, __mmv)?;
                 metamodelica::gc::MMTrace::mm_accept(singleton, __mmv)?;
@@ -2486,9 +2724,15 @@ impl metamodelica::gc::MMTrace for Restriction {
     }
 }
 impl Default for Restriction {
-    fn default() -> Self { Self::R_CLASS }
+    fn default() -> Self {
+        Self::R_CLASS
+    }
 }
-pub use self::Restriction::{R_CLASS,R_OPTIMIZATION,R_MODEL,R_RECORD,R_BLOCK,R_CONNECTOR,R_EXP_CONNECTOR,R_TYPE,R_PACKAGE,R_FUNCTION,R_OPERATOR,R_OPERATOR_RECORD,R_ENUMERATION,R_PREDEFINED_INTEGER,R_PREDEFINED_REAL,R_PREDEFINED_STRING,R_PREDEFINED_BOOLEAN,R_PREDEFINED_ENUMERATION,R_PREDEFINED_CLOCK,R_UNIONTYPE,R_METARECORD,R_UNKNOWN};
+pub use self::Restriction::{
+    R_BLOCK, R_CLASS, R_CONNECTOR, R_ENUMERATION, R_EXP_CONNECTOR, R_FUNCTION, R_METARECORD, R_MODEL, R_OPERATOR,
+    R_OPERATOR_RECORD, R_OPTIMIZATION, R_PACKAGE, R_PREDEFINED_BOOLEAN, R_PREDEFINED_CLOCK, R_PREDEFINED_ENUMERATION,
+    R_PREDEFINED_INTEGER, R_PREDEFINED_REAL, R_PREDEFINED_STRING, R_RECORD, R_TYPE, R_UNIONTYPE, R_UNKNOWN,
+};
 
 /// function purity
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -2507,9 +2751,11 @@ impl metamodelica::gc::MMTrace for FunctionPurity {
     }
 }
 impl Default for FunctionPurity {
-    fn default() -> Self { Self::PURE }
+    fn default() -> Self {
+        Self::PURE
+    }
 }
-pub use self::FunctionPurity::{PURE,IMPURE,NO_PURITY};
+pub use self::FunctionPurity::{IMPURE, NO_PURITY, PURE};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum FunctionRestriction {
@@ -2538,7 +2784,9 @@ impl metamodelica::gc::MMTrace for FunctionRestriction {
         }
     }
 }
-pub use self::FunctionRestriction::{FR_NORMAL_FUNCTION,FR_OPERATOR_FUNCTION,FR_PARALLEL_FUNCTION,FR_KERNEL_FUNCTION};
+pub use self::FunctionRestriction::{
+    FR_KERNEL_FUNCTION, FR_NORMAL_FUNCTION, FR_OPERATOR_FUNCTION, FR_PARALLEL_FUNCTION,
+};
 
 /// An Annotation is a class_modification.
 ///  - Annotation
@@ -2563,7 +2811,6 @@ impl Default for Annotation {
 }
 
 pub type ANNOTATION = Annotation;
-
 
 /// Comment
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -2591,7 +2838,6 @@ impl Default for Comment {
 }
 
 pub type COMMENT = Comment;
-
 
 /// Declaration of an external function call - ExternalDecl
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -2631,18 +2877,11 @@ impl Default for ExternalDecl {
 
 pub type EXTERNALDECL = ExternalDecl;
 
-
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Ref {
-    RCR {
-        cr: metamodelica::Ref<ComponentRef>,
-    },
-    RTS {
-        ts: metamodelica::Ref<TypeSpec>,
-    },
-    RIM {
-        im: Import,
-    },
+    RCR { cr: metamodelica::Ref<ComponentRef> },
+    RTS { ts: metamodelica::Ref<TypeSpec> },
+    RIM { im: Import },
 }
 impl metamodelica::gc::MMTrace for Ref {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -2662,15 +2901,13 @@ impl metamodelica::gc::MMTrace for Ref {
         }
     }
 }
-pub use self::Ref::{RCR,RTS,RIM};
+pub use self::Ref::{RCR, RIM, RTS};
 
 /// Controls output of error-messages
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub enum Msg {
     /// Give error message
-    MSG {
-        info: Info,
-    },
+    MSG { info: Info },
     /// Do not give error message
     NO_MSG,
 }
@@ -2686,13 +2923,33 @@ impl metamodelica::gc::MMTrace for Msg {
     }
 }
 impl Default for Msg {
-    fn default() -> Self { Self::NO_MSG }
+    fn default() -> Self {
+        Self::NO_MSG
+    }
 }
-pub use self::Msg::{MSG,NO_MSG};
+pub use self::Msg::{MSG, NO_MSG};
 
-pub static dummyParts: std::sync::LazyLock<metamodelica::Ref<ClassDef>> = std::sync::LazyLock::new(|| { metamodelica::Ref::new(ClassDef::PARTS { typeVars: metamodelica::nil(), classAttrs: metamodelica::nil(), classParts: metamodelica::nil(), ann: metamodelica::nil(), comment: None }) });
+pub static dummyParts: std::sync::LazyLock<metamodelica::Ref<ClassDef>> = std::sync::LazyLock::new(|| {
+    metamodelica::Ref::new(ClassDef::PARTS {
+        typeVars: metamodelica::nil(),
+        classAttrs: metamodelica::nil(),
+        classParts: metamodelica::nil(),
+        ann: metamodelica::nil(),
+        comment: None,
+    })
+});
 
-pub static dummyInfo: SourceInfo = SourceInfo { fileName: literal!(""), isReadOnly: false, lineNumberStart: 0, columnNumberStart: 0, lineNumberEnd: 0, columnNumberEnd: 0, lastModification: metamodelica::OrderedFloat(0.0_f64) };
+pub static dummyInfo: SourceInfo = SourceInfo {
+    fileName: literal!(""),
+    isReadOnly: false,
+    lineNumberStart: 0,
+    columnNumberStart: 0,
+    lineNumberEnd: 0,
+    columnNumberEnd: 0,
+    lastModification: metamodelica::OrderedFloat(0.0_f64),
+};
 
-pub static dummyProgram: std::sync::LazyLock<Program> = std::sync::LazyLock::new(|| { Program { classes: metamodelica::nil(), within_: crate::Absyn::Within::TOP } });
-
+pub static dummyProgram: std::sync::LazyLock<Program> = std::sync::LazyLock::new(|| Program {
+    classes: metamodelica::nil(),
+    within_: crate::Absyn::Within::TOP,
+});

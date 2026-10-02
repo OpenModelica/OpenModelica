@@ -277,7 +277,11 @@ impl Mat4Stream {
             row_idx += 1;
         }
         for &(c, neg) in &const_cols {
-            let row = if neg == Neg::Not { not_data1_row[c] } else { col_data1_row[c] };
+            let row = if neg == Neg::Not {
+                not_data1_row[c]
+            } else {
+                col_data1_row[c]
+            };
             let idx = (row - 1) as usize;
             let v = first_row.get(c).copied().unwrap_or(0.0);
             let v = if neg == Neg::Not { 1.0 - v } else { v };
@@ -295,7 +299,19 @@ impl Mat4Stream {
         let data2_pos = head.len() as u64;
         out.write(&head);
 
-        Mat4Stream { varying, n_reals, precision, n_rows: 0, ncols_pos, data2_pos, data_info, data_1, buf: Vec::new(), sync: 0, since_sync: 0 }
+        Mat4Stream {
+            varying,
+            n_reals,
+            precision,
+            n_rows: 0,
+            ncols_pos,
+            data2_pos,
+            data_info,
+            data_1,
+            buf: Vec::new(),
+            sync: 0,
+            since_sync: 0,
+        }
     }
 
     /// Patch the `data_2` row count after every `rows` pushed rows (C's
@@ -381,7 +397,9 @@ pub fn write_mat4(
 ) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::new();
     let first_row = rows.get(..n_reals as usize).unwrap_or(&[]);
-    let mut s = Mat4Stream::begin(&mut out, signals, start_time, stop_time, first_row, n_reals, params, precision);
+    let mut s = Mat4Stream::begin(
+        &mut out, signals, start_time, stop_time, first_row, n_reals, params, precision,
+    );
     out.reserve(rows.len() / (n_reals as usize).max(1) * s.n_reals2() * precision.size());
     s.push_rows(&mut out, rows);
     s.finish(&mut out);
@@ -458,7 +476,12 @@ mod tests {
     use super::*;
 
     fn var<'a>(name: &'a str, comment: &'a str, kind: MatKind) -> MatVar<'a> {
-        MatVar { name, comment, kind, unvarying: false }
+        MatVar {
+            name,
+            comment,
+            kind,
+            unvarying: false,
+        }
     }
 
     /// Locate a named matrix in the v4 stream and return (mrows, ncols, payload).
@@ -490,13 +513,22 @@ mod tests {
     }
 
     fn f64s(payload: &[u8]) -> Vec<f64> {
-        payload.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect()
+        payload
+            .chunks_exact(8)
+            .map(|c| f64::from_le_bytes(c.try_into().unwrap()))
+            .collect()
     }
     fn f32s(payload: &[u8]) -> Vec<f32> {
-        payload.chunks_exact(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect()
+        payload
+            .chunks_exact(4)
+            .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
+            .collect()
     }
     fn i32s(payload: &[u8]) -> Vec<i32> {
-        payload.chunks_exact(4).map(|c| i32::from_le_bytes(c.try_into().unwrap())).collect()
+        payload
+            .chunks_exact(4)
+            .map(|c| i32::from_le_bytes(c.try_into().unwrap()))
+            .collect()
     }
 
     /// time + one varying real state + one parameter + one constant, 3 rows.
@@ -505,7 +537,14 @@ mod tests {
     fn writes_expected_matrices() {
         let vars = [
             var("time", "Time in s", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
             var("p", "a param", MatKind::Param { negate: Neg::None }),
             var("k", "", MatKind::Const { value: 9.0 }),
         ];
@@ -550,7 +589,14 @@ mod tests {
     fn streams_in_batches() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
         ];
         let rows = [0.0, 0.0, 0.5, 1.0, 1.0, 2.0, 1.5, 3.0];
         let whole = write_mat4(&vars, 0.0, 1.5, &rows, 2, &[], Precision::Double);
@@ -573,9 +619,31 @@ mod tests {
     fn unvarying_column_in_data_1() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
-            MatVar { name: "c", comment: "", kind: MatKind::Column { col: 2, negate: Neg::None }, unvarying: true },
-            var("mc", "", MatKind::Column { col: 2, negate: Neg::Arith }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
+            MatVar {
+                name: "c",
+                comment: "",
+                kind: MatKind::Column {
+                    col: 2,
+                    negate: Neg::None,
+                },
+                unvarying: true,
+            },
+            var(
+                "mc",
+                "",
+                MatKind::Column {
+                    col: 2,
+                    negate: Neg::Arith,
+                },
+            ),
         ];
         let rows = [0.0, 0.0, 4.0, /*r1*/ 1.0, 1.0, 4.0];
         let buf = write_mat4(&vars, 0.0, 1.0, &rows, 3, &[], Precision::Double);
@@ -595,10 +663,38 @@ mod tests {
     fn negated_aliases() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
-            var("mx", "", MatKind::Column { col: 1, negate: Neg::Arith }),
-            var("b", "", MatKind::Column { col: 2, negate: Neg::None }),
-            var("nb", "", MatKind::Column { col: 2, negate: Neg::Not }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
+            var(
+                "mx",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::Arith,
+                },
+            ),
+            var(
+                "b",
+                "",
+                MatKind::Column {
+                    col: 2,
+                    negate: Neg::None,
+                },
+            ),
+            var(
+                "nb",
+                "",
+                MatKind::Column {
+                    col: 2,
+                    negate: Neg::Not,
+                },
+            ),
             var("np", "", MatKind::Param { negate: Neg::Not }),
         ];
         // n_reals = 3: [time, x, b].
@@ -631,7 +727,15 @@ mod tests {
             let ncols = i32::from_le_bytes(buf[p + 8..p + 12].try_into().unwrap()) as usize;
             let namelen = i32::from_le_bytes(buf[p + 16..p + 20].try_into().unwrap()) as usize;
             let name = core::str::from_utf8(&buf[p + 20..p + 20 + namelen - 1]).unwrap();
-            let p_elt = if ty % 10 == 1 { 1 } else if (ty / 10) % 10 == 2 { 4 } else if (ty / 10) % 10 == 1 { 4 } else { 8 };
+            let p_elt = if ty % 10 == 1 {
+                1
+            } else if (ty / 10) % 10 == 2 {
+                4
+            } else if (ty / 10) % 10 == 1 {
+                4
+            } else {
+                8
+            };
             let data_off = p + 20 + namelen;
             if name == want {
                 return ty;
@@ -647,7 +751,14 @@ mod tests {
     fn single_precision() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
             var("p", "", MatKind::Param { negate: Neg::None }),
         ];
         // 2 rows; x is 0.5 and 1.5 (exact in f32), p = 7 (exact in f32).
@@ -670,7 +781,14 @@ mod tests {
     fn single_precision_rounds() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
         ];
         // 1/3 is not exact in f32; the stored value must equal the f32 rounding.
         let rows = [0.0, 1.0 / 3.0];
@@ -686,7 +804,14 @@ mod tests {
     fn single_precision_is_smaller() {
         let vars = [
             var("time", "", MatKind::Time),
-            var("x", "", MatKind::Column { col: 1, negate: Neg::None }),
+            var(
+                "x",
+                "",
+                MatKind::Column {
+                    col: 1,
+                    negate: Neg::None,
+                },
+            ),
         ];
         let rows = [0.0, 0.0, 1.0, 0.5, 2.0, 1.5];
         let single = write_mat4(&vars, 0.0, 2.0, &rows, 2, &[], Precision::Single);

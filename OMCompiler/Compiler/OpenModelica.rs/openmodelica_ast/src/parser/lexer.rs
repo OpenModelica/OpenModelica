@@ -40,7 +40,7 @@
 //! grammar-dependent; see [`Grammar`].
 
 use super::Grammar;
-use arcstr::{ArcStr};
+use arcstr::ArcStr;
 
 /// A single token with its start position in the source file.
 /// Line and column are both 1-based.
@@ -97,27 +97,89 @@ pub enum TokenKind {
     // -----------------------------------------------------------------------
     // Base Modelica keywords (all grammars)
     // -----------------------------------------------------------------------
-    Algorithm, And, Annotation, Block, Break,
-    Class, Connect, Connector, Constant, Constrainedby,
-    Der, Discrete, Each, Else, Elseif, Elsewhen, Encapsulated,
-    End, Enumeration, Equation, Expandable, Extends, External,
-    False, Final, Flow, For, Function,
-    If, Import, In, Initial, Inner, Input,
-    Loop, Model, Not, Operator, Or, Outer, Output,
-    Overload, Package, Parameter, Partial, Protected, Public,
-    Record, Redeclare, Replaceable, Return,
-    Then, True, Type, When, While, Within,
+    Algorithm,
+    And,
+    Annotation,
+    Block,
+    Break,
+    Class,
+    Connect,
+    Connector,
+    Constant,
+    Constrainedby,
+    Der,
+    Discrete,
+    Each,
+    Else,
+    Elseif,
+    Elsewhen,
+    Encapsulated,
+    End,
+    Enumeration,
+    Equation,
+    Expandable,
+    Extends,
+    External,
+    False,
+    Final,
+    Flow,
+    For,
+    Function,
+    If,
+    Import,
+    In,
+    Initial,
+    Inner,
+    Input,
+    Loop,
+    Model,
+    Not,
+    Operator,
+    Or,
+    Outer,
+    Output,
+    Overload,
+    Package,
+    Parameter,
+    Partial,
+    Protected,
+    Public,
+    Record,
+    Redeclare,
+    Replaceable,
+    Return,
+    Then,
+    True,
+    Type,
+    When,
+    While,
+    Within,
 
     // -----------------------------------------------------------------------
     // MetaModelica keywords (Grammar::MetaModelica only)
     // -----------------------------------------------------------------------
-    As, Case, Continue, Equality, Failure, Guard, Local,
-    Match, Matchcontinue, Subtypeof, Threaded, Try, Uniontype,
+    As,
+    Case,
+    Continue,
+    Equality,
+    Failure,
+    Guard,
+    Local,
+    Match,
+    Matchcontinue,
+    Subtypeof,
+    Threaded,
+    Try,
+    Uniontype,
     Wild,    // `_`  — standalone wildcard
     Allwild, // `__` — double wildcard
 
     // ParModelica extensions (Grammar::MetaModelica only)
-    Parfor, Parallel, Parlocal, Parglobal, Parkernel,
+    Parfor,
+    Parallel,
+    Parlocal,
+    Parglobal,
+    Parkernel,
 
     // -----------------------------------------------------------------------
     // Grammar-version-gated keywords
@@ -142,16 +204,21 @@ pub enum TokenKind {
     // -----------------------------------------------------------------------
     // OpenModelica dollar-prefixed extensions
     // -----------------------------------------------------------------------
-    Code,          // $Code
-    CodeName,      // $TypeName
-    CodeExp,       // $Expression
-    CodeVar,       // $Var
-    CodeAnnotation,// $annotation
+    Code,           // $Code
+    CodeName,       // $TypeName
+    CodeExp,        // $Expression
+    CodeVar,        // $Var
+    CodeAnnotation, // $annotation
 
     // -----------------------------------------------------------------------
     // Operators — arithmetic
     // -----------------------------------------------------------------------
-    Plus, Minus, Star, Slash, Power, Percent,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Power,
+    Percent,
     /// `.+` element-wise plus
     PlusEw,
     /// `.-` element-wise minus
@@ -166,7 +233,10 @@ pub enum TokenKind {
     // -----------------------------------------------------------------------
     // Operators — comparison
     // -----------------------------------------------------------------------
-    Less, Leq, Greater, Geq,
+    Less,
+    Leq,
+    Greater,
+    Geq,
     /// `==`
     EqEq,
     /// `<>`
@@ -175,15 +245,23 @@ pub enum TokenKind {
     // -----------------------------------------------------------------------
     // Operators — punctuation
     // -----------------------------------------------------------------------
-    LParen, RParen, LBracket, RBracket, LBrace, RBrace,
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    LBrace,
+    RBrace,
     /// `=`
     Equal,
     /// `:=`
     Assign,
-    Comma, Colon,
+    Comma,
+    Colon,
     /// `::`
     ColonColon,
-    Semi, Dot, Pipe,
+    Semi,
+    Dot,
+    Pipe,
 
     // -----------------------------------------------------------------------
     // Special
@@ -206,39 +284,61 @@ impl TokenKind {
     ///   (`"and"` = 3, `"not"` = 3) rather than 2 or 1.
     pub fn source_char_len(&self) -> u32 {
         match self {
-            TokenKind::Ident(s)     => s.chars().count() as u32,
-            TokenKind::Int(n)       => n.to_string().len() as u32,
-            TokenKind::Real(_, s)   => s.chars().count() as u32,
+            TokenKind::Ident(s) => s.chars().count() as u32,
+            TokenKind::Int(n) => n.to_string().len() as u32,
+            TokenKind::Real(_, s) => s.chars().count() as u32,
             // Content has escape sequences preserved (e.g. `\n` → `\` + `n`,
             // 2 chars in both raw string and source), so char count + 2 quotes
             // gives the correct source length for single-line strings.
-            TokenKind::Str(s)       => s.chars().count() as u32 + 2,
+            TokenKind::Str(s) => s.chars().count() as u32 + 2,
 
-            TokenKind::Wild         => 1,  // `_`
-            TokenKind::Allwild      => 2,  // `__`
-            TokenKind::Operator     => 8,  // "operator" (absent from keyword_as_str)
+            TokenKind::Wild => 1,     // `_`
+            TokenKind::Allwild => 2,  // `__`
+            TokenKind::Operator => 8, // "operator" (absent from keyword_as_str)
 
             // Single-char punctuation / operators
-            TokenKind::Plus | TokenKind::Minus | TokenKind::Star | TokenKind::Slash |
-            TokenKind::Power | TokenKind::Percent | TokenKind::Less | TokenKind::Greater |
-            TokenKind::LParen | TokenKind::RParen | TokenKind::LBracket |
-            TokenKind::RBracket | TokenKind::LBrace | TokenKind::RBrace |
-            TokenKind::Equal | TokenKind::Comma | TokenKind::Colon |
-            TokenKind::Semi | TokenKind::Dot | TokenKind::Pipe | TokenKind::BOM => 1,
+            TokenKind::Plus
+            | TokenKind::Minus
+            | TokenKind::Star
+            | TokenKind::Slash
+            | TokenKind::Power
+            | TokenKind::Percent
+            | TokenKind::Less
+            | TokenKind::Greater
+            | TokenKind::LParen
+            | TokenKind::RParen
+            | TokenKind::LBracket
+            | TokenKind::RBracket
+            | TokenKind::LBrace
+            | TokenKind::RBrace
+            | TokenKind::Equal
+            | TokenKind::Comma
+            | TokenKind::Colon
+            | TokenKind::Semi
+            | TokenKind::Dot
+            | TokenKind::Pipe
+            | TokenKind::BOM => 1,
 
             // Two-char operators
-            TokenKind::EqEq | TokenKind::NotEq | TokenKind::Leq | TokenKind::Geq |
-            TokenKind::Assign | TokenKind::ColonColon |
-            TokenKind::PlusEw | TokenKind::MinusEw | TokenKind::StarEw |
-            TokenKind::SlashEw | TokenKind::PowerEw => 2,
+            TokenKind::EqEq
+            | TokenKind::NotEq
+            | TokenKind::Leq
+            | TokenKind::Geq
+            | TokenKind::Assign
+            | TokenKind::ColonColon
+            | TokenKind::PlusEw
+            | TokenKind::MinusEw
+            | TokenKind::StarEw
+            | TokenKind::SlashEw
+            | TokenKind::PowerEw => 2,
 
             // $-prefixed OpenModelica extensions
-            TokenKind::Code           => 5,   // "$Code"
-            TokenKind::CodeName       => 9,   // "$TypeName"
-            TokenKind::CodeExp        => 11,  // "$Expression"
-            TokenKind::CodeVar        => 4,   // "$Var"
-            TokenKind::CodeAnnotation => 11,  // "$annotation"
-            TokenKind::Overload       => 9,   // "$overload"
+            TokenKind::Code => 5,            // "$Code"
+            TokenKind::CodeName => 9,        // "$TypeName"
+            TokenKind::CodeExp => 11,        // "$Expression"
+            TokenKind::CodeVar => 4,         // "$Var"
+            TokenKind::CodeAnnotation => 11, // "$annotation"
+            TokenKind::Overload => 9,        // "$overload"
 
             // All remaining variants are keywords covered by keyword_as_str.
             // All keywords are ASCII so .len() == char count.
@@ -373,12 +473,12 @@ pub fn keyword_as_str(kind: &TokenKind) -> Option<&'static str> {
 /// the limitation documented on [`TokenKind::source_char_len`].
 pub fn source_text(kind: &TokenKind) -> String {
     match kind {
-        TokenKind::Ident(s)   => s.to_string(),
-        TokenKind::Int(n)     => n.to_string(),
+        TokenKind::Ident(s) => s.to_string(),
+        TokenKind::Int(n) => n.to_string(),
         TokenKind::Real(_, s) => s.to_string(),
-        TokenKind::Str(s)     => format!("\"{s}\""),
+        TokenKind::Str(s) => format!("\"{s}\""),
 
-        TokenKind::Wild    => "_".to_owned(),
+        TokenKind::Wild => "_".to_owned(),
         TokenKind::Allwild => "__".to_owned(),
 
         TokenKind::Plus => "+".to_owned(),
@@ -469,8 +569,15 @@ struct Lexer<'s> {
 
 impl<'s> Lexer<'s> {
     fn new(src: &'s str, grammar: &'s Grammar) -> Self {
-        Lexer { src, pos: 0, line: 1, col: 1, grammar,
-                comments: Vec::new(), record_comments: false }
+        Lexer {
+            src,
+            pos: 0,
+            line: 1,
+            col: 1,
+            grammar,
+            comments: Vec::new(),
+            record_comments: false,
+        }
     }
 
     fn peek(&self) -> Option<char> {
@@ -497,7 +604,11 @@ impl<'s> Lexer<'s> {
     }
 
     fn err(&self, msg: impl Into<String>) -> LexError {
-        LexError { line: self.line, col: self.col, message: msg.into() }
+        LexError {
+            line: self.line,
+            col: self.col,
+            message: msg.into(),
+        }
     }
 
     fn skip_whitespace_and_comments(&mut self) -> Result<(), LexError> {
@@ -535,8 +646,10 @@ impl<'s> Lexer<'s> {
                             // current col (current col is on the newline / EOF).
                             self.comments.push(CommentToken {
                                 kind: CommentKind::Line,
-                                line: start_line, col: start_col,
-                                end_line: self.line, end_col: self.col.saturating_sub(1).max(start_col),
+                                line: start_line,
+                                col: start_col,
+                                end_line: self.line,
+                                end_col: self.col.saturating_sub(1).max(start_col),
                                 text,
                             });
                         }
@@ -570,8 +683,10 @@ impl<'s> Lexer<'s> {
                             let end_col = self.col.saturating_sub(1).max(1);
                             self.comments.push(CommentToken {
                                 kind: CommentKind::Block,
-                                line: err_line, col: err_col,
-                                end_line: self.line, end_col,
+                                line: err_line,
+                                col: err_col,
+                                end_line: self.line,
+                                end_col,
                                 text,
                             });
                         }
@@ -596,111 +711,123 @@ impl<'s> Lexer<'s> {
 
         match word {
             // ---- base keywords ----
-            "algorithm"     => TokenKind::Algorithm,
-            "and"           => TokenKind::And,
-            "annotation"    => TokenKind::Annotation,
-            "block"         => TokenKind::Block,
-            "break"         => TokenKind::Break,
-            "class"         => TokenKind::Class,
-            "connect"       => TokenKind::Connect,
-            "connector"     => TokenKind::Connector,
-            "constant"      => TokenKind::Constant,
+            "algorithm" => TokenKind::Algorithm,
+            "and" => TokenKind::And,
+            "annotation" => TokenKind::Annotation,
+            "block" => TokenKind::Block,
+            "break" => TokenKind::Break,
+            "class" => TokenKind::Class,
+            "connect" => TokenKind::Connect,
+            "connector" => TokenKind::Connector,
+            "constant" => TokenKind::Constant,
             "constrainedby" => TokenKind::Constrainedby,
             // DER/INNER/OUTER live in BaseModelica_Lexer.g: keywords in every
             // grammar. `der` is readmitted as an identifier where Modelica.g's
             // `identifier` rule applies (see `t_ident`), e.g. `function der`
             // in ModelicaBuiltin.mo; `inner`/`outer` are never identifiers.
-            "der"           => TokenKind::Der,
-            "discrete"      => TokenKind::Discrete,
-            "each"          => TokenKind::Each,
-            "else"          => TokenKind::Else,
-            "elseif"        => TokenKind::Elseif,
-            "elsewhen"      => TokenKind::Elsewhen,
-            "encapsulated"  => TokenKind::Encapsulated,
-            "end"           => TokenKind::End,
-            "enumeration"   => TokenKind::Enumeration,
-            "equation"      => TokenKind::Equation,
-            "expandable"    => TokenKind::Expandable,
-            "extends"       => TokenKind::Extends,
-            "external"      => TokenKind::External,
-            "false"         => TokenKind::False,
-            "final"         => TokenKind::Final,
-            "flow"          => TokenKind::Flow,
-            "for"           => TokenKind::For,
-            "function"      => TokenKind::Function,
-            "if"            => TokenKind::If,
-            "import"        => TokenKind::Import,
-            "in"            => TokenKind::In,
-            "initial"       => TokenKind::Initial,
-            "inner"         => TokenKind::Inner,
-            "input"         => TokenKind::Input,
-            "loop"          => TokenKind::Loop,
-            "model"         => TokenKind::Model,
-            "not"           => TokenKind::Not,
+            "der" => TokenKind::Der,
+            "discrete" => TokenKind::Discrete,
+            "each" => TokenKind::Each,
+            "else" => TokenKind::Else,
+            "elseif" => TokenKind::Elseif,
+            "elsewhen" => TokenKind::Elsewhen,
+            "encapsulated" => TokenKind::Encapsulated,
+            "end" => TokenKind::End,
+            "enumeration" => TokenKind::Enumeration,
+            "equation" => TokenKind::Equation,
+            "expandable" => TokenKind::Expandable,
+            "extends" => TokenKind::Extends,
+            "external" => TokenKind::External,
+            "false" => TokenKind::False,
+            "final" => TokenKind::Final,
+            "flow" => TokenKind::Flow,
+            "for" => TokenKind::For,
+            "function" => TokenKind::Function,
+            "if" => TokenKind::If,
+            "import" => TokenKind::Import,
+            "in" => TokenKind::In,
+            "initial" => TokenKind::Initial,
+            "inner" => TokenKind::Inner,
+            "input" => TokenKind::Input,
+            "loop" => TokenKind::Loop,
+            "model" => TokenKind::Model,
+            "not" => TokenKind::Not,
             // OPERATOR lives in BaseModelica_Lexer.g: a keyword in every
             // grammar (the parser re-admits it as an identifier in component
             // references, declarations and named arguments, like Modelica.g).
-            "operator"      => TokenKind::Operator,
-            "or"            => TokenKind::Or,
-            "outer"         => TokenKind::Outer,
-            "output"        => TokenKind::Output,
-            "package"       => TokenKind::Package,
-            "parameter"     => TokenKind::Parameter,
-            "partial"       => TokenKind::Partial,
-            "protected"     => TokenKind::Protected,
-            "public"        => TokenKind::Public,
-            "record"        => TokenKind::Record,
-            "redeclare"     => TokenKind::Redeclare,
-            "replaceable"   => TokenKind::Replaceable,
-            "return"        => TokenKind::Return,
-            "then"          => TokenKind::Then,
-            "true"          => TokenKind::True,
-            "type"          => TokenKind::Type,
-            "when"          => TokenKind::When,
-            "while"         => TokenKind::While,
-            "within"        => TokenKind::Within,
+            "operator" => TokenKind::Operator,
+            "or" => TokenKind::Or,
+            "outer" => TokenKind::Outer,
+            "output" => TokenKind::Output,
+            "package" => TokenKind::Package,
+            "parameter" => TokenKind::Parameter,
+            "partial" => TokenKind::Partial,
+            "protected" => TokenKind::Protected,
+            "public" => TokenKind::Public,
+            "record" => TokenKind::Record,
+            "redeclare" => TokenKind::Redeclare,
+            "replaceable" => TokenKind::Replaceable,
+            "return" => TokenKind::Return,
+            "then" => TokenKind::Then,
+            "true" => TokenKind::True,
+            "type" => TokenKind::Type,
+            "when" => TokenKind::When,
+            "while" => TokenKind::While,
+            "within" => TokenKind::Within,
 
             // ---- MetaModelica-only keywords ----
-            "as"            if meta => TokenKind::As,
-            "case"          if meta => TokenKind::Case,
-            "continue"      if meta => TokenKind::Continue,
-            "equality"      if meta => TokenKind::Equality,
-            "failure"       if meta => TokenKind::Failure,
-            "guard"         if meta => TokenKind::Guard,
-            "local"         if meta => TokenKind::Local,
-            "match"         if meta => TokenKind::Match,
+            "as" if meta => TokenKind::As,
+            "case" if meta => TokenKind::Case,
+            "continue" if meta => TokenKind::Continue,
+            "equality" if meta => TokenKind::Equality,
+            "failure" if meta => TokenKind::Failure,
+            "guard" if meta => TokenKind::Guard,
+            "local" if meta => TokenKind::Local,
+            "match" if meta => TokenKind::Match,
             "matchcontinue" if meta => TokenKind::Matchcontinue,
-            "subtypeof"     if meta => TokenKind::Subtypeof,
-            "threaded"      if meta => TokenKind::Threaded,
-            "try"           if meta => TokenKind::Try,
-            "uniontype"     if meta => TokenKind::Uniontype,
+            "subtypeof" if meta => TokenKind::Subtypeof,
+            "threaded" if meta => TokenKind::Threaded,
+            "try" if meta => TokenKind::Try,
+            "uniontype" if meta => TokenKind::Uniontype,
             // ParModelica (also MetaModelica grammar)
-            "parfor"        if meta => TokenKind::Parfor,
-            "parallel"      if meta => TokenKind::Parallel,
-            "parlocal"      if meta => TokenKind::Parlocal,
-            "parglobal"     if meta => TokenKind::Parglobal,
-            "parkernel"     if meta => TokenKind::Parkernel,
+            "parfor" if meta => TokenKind::Parfor,
+            "parallel" if meta => TokenKind::Parallel,
+            "parlocal" if meta => TokenKind::Parlocal,
+            "parglobal" if meta => TokenKind::Parglobal,
+            "parkernel" if meta => TokenKind::Parkernel,
             // MetaModelica wildcards (bare _ / __ — with no following ident chars)
-            "_"             if meta => TokenKind::Wild,
-            "__"            if meta => TokenKind::Allwild,
+            "_" if meta => TokenKind::Wild,
+            "__" if meta => TokenKind::Allwild,
 
             // ---- Modelica 3.x keywords ----
             // (MetaModelica_Lexer.g also declares STREAM.)
-            "stream"  if m3 || meta => TokenKind::Stream,
+            "stream" if m3 || meta => TokenKind::Stream,
             // `pure`/`impure` only became keywords in Modelica 3.3; under
             // `--std=<3.3 --strict` the Modelica-3 lexer demotes them to
             // identifiers (Modelica_3_Lexer.g). The MetaModelica grammar always
             // keeps `impure` a keyword (no such predicate there).
-            "pure"    if m3 => if super::pure_impure_as_ident() { TokenKind::Ident(word.into()) } else { TokenKind::Pure },
-            "impure"  if m3 => if super::pure_impure_as_ident() { TokenKind::Ident(word.into()) } else { TokenKind::Impure },
-            "impure"  if meta => TokenKind::Impure,
+            "pure" if m3 => {
+                if super::pure_impure_as_ident() {
+                    TokenKind::Ident(word.into())
+                } else {
+                    TokenKind::Pure
+                }
+            }
+            "impure" if m3 => {
+                if super::pure_impure_as_ident() {
+                    TokenKind::Ident(word.into())
+                } else {
+                    TokenKind::Impure
+                }
+            }
+            "impure" if meta => TokenKind::Impure,
 
             // ---- Optimica extensions (always enabled for now) ----
             "optimization" if optimica => TokenKind::Optimization,
-            "constraint"   if optimica => TokenKind::Constraint,
+            "constraint" if optimica => TokenKind::Constraint,
 
             // ---- PDEModelica extensions (BaseModelica_Lexer.g) ----
-            "field"    if pde => TokenKind::Field,
+            "field" if pde => TokenKind::Field,
             "nonfield" if pde => TokenKind::Nonfield,
             "indomain" if pde => TokenKind::Indomain,
 
@@ -756,7 +883,10 @@ impl<'s> Lexer<'s> {
             (ascii.to_owned(), full_len)
         };
         // Keep the printed message on one line (C replaces CR/LF with spaces).
-        display = display.chars().map(|c| if c == '\n' || c == '\r' { ' ' } else { c }).collect();
+        display = display
+            .chars()
+            .map(|c| if c == '\n' || c == '\r' { ' ' } else { c })
+            .collect();
         if full_len > 75 {
             display.push_str("...");
         }
@@ -801,7 +931,10 @@ impl<'s> Lexer<'s> {
         super::add_syntax_message(
             super::SyntaxSeverity::Warning,
             format!("Lexer treating \\ as \\\\, since {reason}."),
-            start_line, start_col, self.line, self.col,
+            start_line,
+            start_col,
+            self.line,
+            self.col,
         );
     }
 
@@ -883,8 +1016,13 @@ impl<'s> Lexer<'s> {
                         let col1 = self.col - s.chars().count() as u32;
                         super::add_syntax_message(
                             super::SyntaxSeverity::Warning,
-                            format!("Underflow: {s} cannot be represented by a double on this machine. It will be converted to 0.0."),
-                            self.line, col1, self.line, self.col,
+                            format!(
+                                "Underflow: {s} cannot be represented by a double on this machine. It will be converted to 0.0."
+                            ),
+                            self.line,
+                            col1,
+                            self.line,
+                            self.col,
                         );
                         Ok(TokenKind::Real(0.0, "0.0".into()))
                     } else {
@@ -911,7 +1049,10 @@ impl<'s> Lexer<'s> {
                             super::add_syntax_message(
                                 super::SyntaxSeverity::Warning,
                                 format!("Modelica only supports 32-bit signed integers! Transforming: {s} into a real"),
-                                self.line, col1, self.line, self.col,
+                                self.line,
+                                col1,
+                                self.line,
+                                self.col,
                             );
                             Ok(TokenKind::Real(d, s.into()))
                         }
@@ -986,34 +1127,69 @@ impl<'s> Lexer<'s> {
             }
 
             '=' => {
-                if self.peek() == Some('=') { self.advance(); TokenKind::EqEq }
-                else { TokenKind::Equal }
+                if self.peek() == Some('=') {
+                    self.advance();
+                    TokenKind::EqEq
+                } else {
+                    TokenKind::Equal
+                }
             }
 
             '<' => match self.peek() {
-                Some('=') => { self.advance(); TokenKind::Leq }
-                Some('>') => { self.advance(); TokenKind::NotEq }
+                Some('=') => {
+                    self.advance();
+                    TokenKind::Leq
+                }
+                Some('>') => {
+                    self.advance();
+                    TokenKind::NotEq
+                }
                 _ => TokenKind::Less,
             },
 
             '>' => {
-                if self.peek() == Some('=') { self.advance(); TokenKind::Geq }
-                else { TokenKind::Greater }
+                if self.peek() == Some('=') {
+                    self.advance();
+                    TokenKind::Geq
+                } else {
+                    TokenKind::Greater
+                }
             }
 
             ':' => {
-                if self.peek() == Some('=') { self.advance(); TokenKind::Assign }
-                else if self.peek() == Some(':') { self.advance(); TokenKind::ColonColon }
-                else { TokenKind::Colon }
+                if self.peek() == Some('=') {
+                    self.advance();
+                    TokenKind::Assign
+                } else if self.peek() == Some(':') {
+                    self.advance();
+                    TokenKind::ColonColon
+                } else {
+                    TokenKind::Colon
+                }
             }
 
             '.' => match self.peek() {
                 Some('0'..='9') => self.lex_dot_number()?,
-                Some('+') => { self.advance(); TokenKind::PlusEw }
-                Some('-') => { self.advance(); TokenKind::MinusEw }
-                Some('*') => { self.advance(); TokenKind::StarEw }
-                Some('/') => { self.advance(); TokenKind::SlashEw }
-                Some('^') => { self.advance(); TokenKind::PowerEw }
+                Some('+') => {
+                    self.advance();
+                    TokenKind::PlusEw
+                }
+                Some('-') => {
+                    self.advance();
+                    TokenKind::MinusEw
+                }
+                Some('*') => {
+                    self.advance();
+                    TokenKind::StarEw
+                }
+                Some('/') => {
+                    self.advance();
+                    TokenKind::SlashEw
+                }
+                Some('^') => {
+                    self.advance();
+                    TokenKind::PowerEw
+                }
                 _ => TokenKind::Dot,
             },
 
@@ -1028,12 +1204,12 @@ impl<'s> Lexer<'s> {
                     word.push(self.advance().unwrap());
                 }
                 match word.as_str() {
-                    "$Code"       => TokenKind::Code,
-                    "$TypeName"   => TokenKind::CodeName,
+                    "$Code" => TokenKind::Code,
+                    "$TypeName" => TokenKind::CodeName,
                     "$Expression" => TokenKind::CodeExp,
-                    "$Var"        => TokenKind::CodeVar,
+                    "$Var" => TokenKind::CodeVar,
                     "$annotation" => TokenKind::CodeAnnotation,
-                    "$overload"   => TokenKind::Overload,
+                    "$overload" => TokenKind::Overload,
                     // $cpuTime and other $-prefixed identifiers become Ident.
                     _ => TokenKind::Ident(word.into()),
                 }
@@ -1054,8 +1230,14 @@ impl<'s> Lexer<'s> {
 
             // Non-standard but tolerated (with error in original grammar):
             // '&&' → And, '||' → Or, '!' → Not.
-            '&' if self.peek() == Some('&') => { self.advance(); TokenKind::And }
-            '|' if self.peek() == Some('|') => { self.advance(); TokenKind::Or }
+            '&' if self.peek() == Some('&') => {
+                self.advance();
+                TokenKind::And
+            }
+            '|' if self.peek() == Some('|') => {
+                self.advance();
+                TokenKind::Or
+            }
             '|' => TokenKind::Pipe,
             '!' => TokenKind::Not,
 
@@ -1099,9 +1281,7 @@ pub fn lex(src: &str, grammar: Grammar) -> Result<Vec<Token>, LexError> {
 /// token stream so the parser can choose checkpoint boundaries (places where
 /// no further backtracking is possible) and splice the captured comments back
 /// into the AST.
-pub fn lex_with_comments(src: &str, grammar: Grammar)
-    -> Result<(Vec<Token>, Vec<CommentToken>), LexError>
-{
+pub fn lex_with_comments(src: &str, grammar: Grammar) -> Result<(Vec<Token>, Vec<CommentToken>), LexError> {
     let mut lexer = Lexer::new(src, &grammar);
     lexer.record_comments = true;
     let mut tokens = Vec::new();
@@ -1120,21 +1300,27 @@ mod tests {
     use super::*;
 
     fn kinds(src: &str) -> Vec<TokenKind> {
-        lex(src, Grammar::MetaModelica).unwrap().into_iter().map(|t| t.kind).collect()
+        lex(src, Grammar::MetaModelica)
+            .unwrap()
+            .into_iter()
+            .map(|t| t.kind)
+            .collect()
     }
 
     #[test]
     fn test_keywords() {
-        assert_eq!(kinds("algorithm equation model"), vec![
-            TokenKind::Algorithm, TokenKind::Equation, TokenKind::Model,
-        ]);
+        assert_eq!(
+            kinds("algorithm equation model"),
+            vec![TokenKind::Algorithm, TokenKind::Equation, TokenKind::Model,]
+        );
     }
 
     #[test]
     fn test_meta_keywords() {
-        assert_eq!(kinds("match matchcontinue case"), vec![
-            TokenKind::Match, TokenKind::Matchcontinue, TokenKind::Case,
-        ]);
+        assert_eq!(
+            kinds("match matchcontinue case"),
+            vec![TokenKind::Match, TokenKind::Matchcontinue, TokenKind::Case,]
+        );
         // In Modelica3, 'match' is just an identifier.
         let toks = lex("match", Grammar::Modelica3).unwrap();
         assert_eq!(toks[0].kind, TokenKind::Ident("match".into()));
@@ -1154,7 +1340,11 @@ mod tests {
     #[test]
     fn test_stream_pure_impure() {
         assert_eq!(
-            lex("stream pure impure", Grammar::Modelica3).unwrap().iter().map(|t| &t.kind).collect::<Vec<_>>(),
+            lex("stream pure impure", Grammar::Modelica3)
+                .unwrap()
+                .iter()
+                .map(|t| &t.kind)
+                .collect::<Vec<_>>(),
             vec![&TokenKind::Stream, &TokenKind::Pure, &TokenKind::Impure],
         );
         // In Modelica2 these are identifiers.
@@ -1170,7 +1360,14 @@ mod tests {
         assert_eq!(toks[0].kind, TokenKind::Int(42));
         assert_eq!(toks[1].kind, TokenKind::Real(3.14, "3.14".into()));
         assert_eq!(toks[2].kind, TokenKind::Real(1.0e5, "1.0e5".into()));
-        assert_eq!(toks[3], Token{kind:TokenKind::Real(0.5, ".5".into()), line:1, col:15});
+        assert_eq!(
+            toks[3],
+            Token {
+                kind: TokenKind::Real(0.5, ".5".into()),
+                line: 1,
+                col: 15
+            }
+        );
         assert_eq!(toks[4].kind, TokenKind::Str("hello\\nworld".into()));
         assert_eq!(toks[5].kind, TokenKind::Ident("'quoted ident'".into()));
     }
@@ -1179,10 +1376,18 @@ mod tests {
     fn test_operators() {
         let toks = lex(":= :: .+ .* <= <> ==", Grammar::MetaModelica).unwrap();
         let ks: Vec<_> = toks.iter().map(|t| &t.kind).collect();
-        assert_eq!(ks, vec![
-            &TokenKind::Assign, &TokenKind::ColonColon, &TokenKind::PlusEw,
-            &TokenKind::StarEw, &TokenKind::Leq, &TokenKind::NotEq, &TokenKind::EqEq,
-        ]);
+        assert_eq!(
+            ks,
+            vec![
+                &TokenKind::Assign,
+                &TokenKind::ColonColon,
+                &TokenKind::PlusEw,
+                &TokenKind::StarEw,
+                &TokenKind::Leq,
+                &TokenKind::NotEq,
+                &TokenKind::EqEq,
+            ]
+        );
     }
 
     #[test]
@@ -1254,35 +1459,44 @@ mod tests {
     fn test_comments() {
         let toks = lex("a // line comment\nb /* block */ c", Grammar::Modelica3).unwrap();
         let ks: Vec<_> = toks.iter().map(|t| &t.kind).collect();
-        assert_eq!(ks, vec![
-            &TokenKind::Ident("a".into()),
-            &TokenKind::Ident("b".into()),
-            &TokenKind::Ident("c".into()),
-        ]);
+        assert_eq!(
+            ks,
+            vec![
+                &TokenKind::Ident("a".into()),
+                &TokenKind::Ident("b".into()),
+                &TokenKind::Ident("c".into()),
+            ]
+        );
     }
 
     #[test]
     fn test_dollar_tokens() {
         let toks = lex("$Code $TypeName $Expression $Var $overload", Grammar::MetaModelica).unwrap();
         let ks: Vec<_> = toks.iter().map(|t| &t.kind).collect();
-        assert_eq!(ks, vec![
-            &TokenKind::Code, &TokenKind::CodeName, &TokenKind::CodeExp,
-            &TokenKind::CodeVar, &TokenKind::Overload,
-        ]);
+        assert_eq!(
+            ks,
+            vec![
+                &TokenKind::Code,
+                &TokenKind::CodeName,
+                &TokenKind::CodeExp,
+                &TokenKind::CodeVar,
+                &TokenKind::Overload,
+            ]
+        );
     }
 
     #[test]
     fn test_comments_captured() {
-        let (toks, comments) = lex_with_comments(
-            "a // hi\nb /* block\ncomment */ c",
-            Grammar::Modelica3,
-        ).unwrap();
+        let (toks, comments) = lex_with_comments("a // hi\nb /* block\ncomment */ c", Grammar::Modelica3).unwrap();
         let ks: Vec<_> = toks.iter().map(|t| &t.kind).collect();
-        assert_eq!(ks, vec![
-            &TokenKind::Ident("a".into()),
-            &TokenKind::Ident("b".into()),
-            &TokenKind::Ident("c".into()),
-        ]);
+        assert_eq!(
+            ks,
+            vec![
+                &TokenKind::Ident("a".into()),
+                &TokenKind::Ident("b".into()),
+                &TokenKind::Ident("c".into()),
+            ]
+        );
         assert_eq!(comments.len(), 2);
         assert_eq!(comments[0].kind, CommentKind::Line);
         // The line comment's text includes its terminating newline, matching
@@ -1297,8 +1511,7 @@ mod tests {
 
     #[test]
     fn lex_codegen_c() {
-        let code = std::fs::read_to_string("tests/data/CodegenC.mo")
-            .expect("CodegenC.mo not found");
+        let code = std::fs::read_to_string("tests/data/CodegenC.mo").expect("CodegenC.mo not found");
         let result = lex(&code, Grammar::MetaModelica);
         if let Some(err) = &result.err() {
             assert!(false, "expected CodegenC.mo to lex, got: {}", err);

@@ -9,9 +9,9 @@
 // fields is hoisted the same way. The object is shared, so an assignment from one
 // copies it (`value_rhs_is_fresh`).
 
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
-use crate::CodegenWasmJitFunctions::HashMap;
 
 use metamodelica::Result;
 use openmodelica_frontend_types::DAE;
@@ -40,7 +40,11 @@ thread_local! {
 /// Start collecting for a new module: the first global the literals occupy.
 pub(crate) fn begin(base_global: u32) {
     POOL.with(|p| {
-        *p.borrow_mut() = LitPool { slots: Vec::new(), by_exp: BTreeMap::new(), base_global };
+        *p.borrow_mut() = LitPool {
+            slots: Vec::new(),
+            by_exp: BTreeMap::new(),
+            base_global,
+        };
     });
     HOISTING.with(|h| h.set(true));
 }
@@ -96,7 +100,11 @@ pub(crate) fn build_init_fns(
 ) -> Result<Vec<we::Function>> {
     HOISTING.with(|h| h.set(false));
     let mut fns = Vec::new();
-    let mut todo = slots.iter().enumerate().filter_map(|(i, e)| Some((i, e.as_ref()?))).peekable();
+    let mut todo = slots
+        .iter()
+        .enumerate()
+        .filter_map(|(i, e)| Some((i, e.as_ref()?)))
+        .peekable();
     while todo.peek().is_some() {
         let mut ctx = FnCtx {
             locals: HashMap::default(),
@@ -127,7 +135,9 @@ pub(crate) fn build_init_fns(
             ctx.emit(we::Instruction::GlobalSet(base_global + i as u32));
         }
         ctx.emit(we::Instruction::End);
-        let FnCtx { extra_locals, instrs, .. } = ctx;
+        let FnCtx {
+            extra_locals, instrs, ..
+        } = ctx;
         let mut f = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
         for i in &instrs {
             f.instruction(i);
@@ -176,9 +186,9 @@ fn is_const(e: &DAE::Exp) -> bool {
         E::ENUM_LITERAL { .. } | E::SHARED_LITERAL { .. } => true,
         E::CAST { exp, .. } | E::UNARY { exp, .. } => is_const(exp),
         E::ARRAY { array, .. } => (&**array).into_iter().all(|x| is_const(x)),
-        E::MATRIX { matrix, .. } => {
-            (&**matrix).into_iter().all(|row| (&**row).into_iter().all(|x| is_const(x)))
-        }
+        E::MATRIX { matrix, .. } => (&**matrix)
+            .into_iter()
+            .all(|row| (&**row).into_iter().all(|x| is_const(x))),
         E::RECORD { exps, .. } => (&**exps).into_iter().all(|x| is_const(x)),
         _ => false,
     }

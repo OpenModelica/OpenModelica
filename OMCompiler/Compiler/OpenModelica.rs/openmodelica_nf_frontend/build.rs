@@ -3,8 +3,7 @@
 fn main() {
     // libffi (and this C++ exception barrier around it) drive FFI.callFunction,
     // which is native-only; on wasm FFI is a stub, so skip the C++ build.
-    if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32")
-        || std::env::var("CARGO_FEATURE_FFI").is_err()
+    if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") || std::env::var("CARGO_FEATURE_FFI").is_err()
     {
         return;
     }

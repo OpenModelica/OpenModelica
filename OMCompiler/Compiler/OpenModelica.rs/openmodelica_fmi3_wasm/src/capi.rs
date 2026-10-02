@@ -55,11 +55,19 @@ fn with<R>(f: impl FnOnce(&WasmInstance) -> R, absent: R) -> R {
 }
 
 unsafe fn slice_u32<'a>(p: u32, n: u32) -> &'a [u32] {
-    if n == 0 { &[] } else { unsafe { core::slice::from_raw_parts(p as *const u32, n as usize) } }
+    if n == 0 {
+        &[]
+    } else {
+        unsafe { core::slice::from_raw_parts(p as *const u32, n as usize) }
+    }
 }
 
 unsafe fn slice_f64<'a>(p: u32, n: u32) -> &'a [f64] {
-    if n == 0 { &[] } else { unsafe { core::slice::from_raw_parts(p as *const f64, n as usize) } }
+    if n == 0 {
+        &[]
+    } else {
+        unsafe { core::slice::from_raw_parts(p as *const f64, n as usize) }
+    }
 }
 
 /// Copy `values` out to the caller's buffer, refusing a short one as the standard
@@ -95,7 +103,11 @@ pub extern "C" fn om_fmi3InstantiateModelExchange(name: u32, name_len: u32, logg
     openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
     match crate::new_state() {
         Some(st) => {
-            unsafe { INSTANCE = Some(Instance { st: core::cell::RefCell::new(st) }) };
+            unsafe {
+                INSTANCE = Some(Instance {
+                    st: core::cell::RefCell::new(st),
+                })
+            };
             1
         }
         None => 0,
@@ -105,12 +117,7 @@ pub extern "C" fn om_fmi3InstantiateModelExchange(name: u32, name_len: u32, logg
 /// `fmi3InstantiateCoSimulation`, with `eventModeUsed` and `earlyReturnAllowed`
 /// both following `event_mode`: the master that drives one drives the other.
 #[unsafe(no_mangle)]
-pub extern "C" fn om_fmi3InstantiateCoSimulation(
-    name: u32,
-    name_len: u32,
-    logging_on: i32,
-    event_mode: i32,
-) -> u32 {
+pub extern "C" fn om_fmi3InstantiateCoSimulation(name: u32, name_len: u32, logging_on: i32, event_mode: i32) -> u32 {
     let name = read_str(name, name_len);
     crate::init_logging(name, logging_on != 0);
     openmodelica_codegen_wasm_jit_runtime::set_resources_dir("/");
@@ -123,7 +130,11 @@ pub extern "C" fn om_fmi3InstantiateCoSimulation(
             };
             // C's `fmi2Instantiate` sets the internal solver up here, CS only.
             openmodelica_sim_meta::driver::log_cs_solver_setup(&st.meta, st.defer);
-            unsafe { INSTANCE = Some(Instance { st: core::cell::RefCell::new(st) }) };
+            unsafe {
+                INSTANCE = Some(Instance {
+                    st: core::cell::RefCell::new(st),
+                })
+            };
             1
         }
         None => 0,
@@ -155,7 +166,8 @@ pub extern "C" fn om_fmi3EnterInitializationMode(
 ) -> i32 {
     with(
         |i| {
-            status(GuestModelExchangeInstance::enter_initialization_mode(i,
+            status(GuestModelExchangeInstance::enter_initialization_mode(
+                i,
                 (tolerance_defined != 0).then_some(tolerance),
                 start_time,
                 (stop_time_defined != 0).then_some(stop_time),
@@ -167,20 +179,35 @@ pub extern "C" fn om_fmi3EnterInitializationMode(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3ExitInitializationMode() -> i32 {
-    with(|i| status(GuestModelExchangeInstance::exit_initialization_mode(i, )), ERROR)
+    with(
+        |i| status(GuestModelExchangeInstance::exit_initialization_mode(i)),
+        ERROR,
+    )
 }
 
 /// `categories` is one buffer of newline-separated names.
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3SetDebugLogging(logging_on: i32, categories: u32, categories_len: u32) -> i32 {
-    let categories: Vec<String> =
-        read_str(categories, categories_len).lines().filter(|c| !c.is_empty()).map(String::from).collect();
-    with(|i| status(GuestModelExchangeInstance::set_debug_logging(i, logging_on != 0, categories)), ERROR)
+    let categories: Vec<String> = read_str(categories, categories_len)
+        .lines()
+        .filter(|c| !c.is_empty())
+        .map(String::from)
+        .collect();
+    with(
+        |i| {
+            status(GuestModelExchangeInstance::set_debug_logging(
+                i,
+                logging_on != 0,
+                categories,
+            ))
+        },
+        ERROR,
+    )
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3EnterEventMode() -> i32 {
-    with(|i| status(GuestModelExchangeInstance::enter_event_mode(i, )), ERROR)
+    with(|i| status(GuestModelExchangeInstance::enter_event_mode(i)), ERROR)
 }
 
 #[unsafe(no_mangle)]
@@ -190,12 +217,18 @@ pub extern "C" fn om_fmi3EnterContinuousTimeMode() -> i32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3EnterConfigurationMode() -> i32 {
-    with(|i| status(GuestModelExchangeInstance::enter_configuration_mode(i)), ERROR)
+    with(
+        |i| status(GuestModelExchangeInstance::enter_configuration_mode(i)),
+        ERROR,
+    )
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3ExitConfigurationMode() -> i32 {
-    with(|i| status(GuestModelExchangeInstance::exit_configuration_mode(i)), ERROR)
+    with(
+        |i| status(GuestModelExchangeInstance::exit_configuration_mode(i)),
+        ERROR,
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -205,7 +238,7 @@ pub extern "C" fn om_fmi3EnterStepMode() -> i32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3Terminate() -> i32 {
-    with(|i| status(GuestModelExchangeInstance::terminate(i, )), ERROR)
+    with(|i| status(GuestModelExchangeInstance::terminate(i)), ERROR)
 }
 
 /// `fmi3UpdateDiscreteStates`. The five flags and the next event time are written
@@ -214,7 +247,7 @@ pub extern "C" fn om_fmi3Terminate() -> i32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3UpdateDiscreteStates(out: u32) -> i32 {
     with(
-        |i| match GuestModelExchangeInstance::update_discrete_states(i, ) {
+        |i| match GuestModelExchangeInstance::update_discrete_states(i) {
             Ok(d) => {
                 let flags = [
                     d.new_discrete_states_needed as i32,
@@ -244,7 +277,10 @@ pub extern "C" fn om_fmi3SetTime(time: f64) -> i32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn om_fmi3SetContinuousStates(states: u32, n: u32) -> i32 {
-    with(|i| status(i.set_continuous_states(unsafe { slice_f64(states, n) }.to_vec())), ERROR)
+    with(
+        |i| status(i.set_continuous_states(unsafe { slice_f64(states, n) }.to_vec())),
+        ERROR,
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -339,7 +375,11 @@ pub extern "C" fn om_fmi3GetDirectionalDerivative(
     with(
         |i| {
             let (u, k, s) = unsafe {
-                (slice_u32(unknowns, n_unknowns).to_vec(), slice_u32(knowns, n_knowns).to_vec(), slice_f64(seed, n_seed).to_vec())
+                (
+                    slice_u32(unknowns, n_unknowns).to_vec(),
+                    slice_u32(knowns, n_knowns).to_vec(),
+                    slice_f64(seed, n_seed).to_vec(),
+                )
             };
             match GuestModelExchangeInstance::get_directional_derivative(i, u, k, s) {
                 Ok(v) => write_f64(sensitivity, n_sensitivity, &v),
@@ -392,9 +432,7 @@ macro_rules! getter {
                             return ERROR;
                         }
                         let buf: Vec<$out> = v.into_iter().map(|x| x as $out).collect();
-                        unsafe {
-                            core::ptr::copy_nonoverlapping(buf.as_ptr(), values as *mut $out, buf.len())
-                        };
+                        unsafe { core::ptr::copy_nonoverlapping(buf.as_ptr(), values as *mut $out, buf.len()) };
                         OK
                     }
                     Err(s) => status(s),
@@ -474,7 +512,11 @@ pub extern "C" fn om_fmi3SetBoolean(vrs: u32, n_vrs: u32, values: u32, n_values:
             } else {
                 unsafe { core::slice::from_raw_parts(values as *const i32, n_values as usize) }
             };
-            status(GuestModelExchangeInstance::set_boolean(i, vrs, src.iter().map(|b| *b != 0).collect()))
+            status(GuestModelExchangeInstance::set_boolean(
+                i,
+                vrs,
+                src.iter().map(|b| *b != 0).collect(),
+            ))
         },
         ERROR,
     )
@@ -555,7 +597,11 @@ pub extern "C" fn om_sim_run(args: u32, args_len: u32) -> u32 {
         Ok(r) => {
             let (name, content) = r.linear_file.unwrap_or_default();
             let keep = (r.file, name, content, r.solver, pack_files(&r.prof_files));
-            let mut out = RunOut { status: 0, rows: r.rows, ..RunOut::default() };
+            let mut out = RunOut {
+                status: 0,
+                rows: r.rows,
+                ..RunOut::default()
+            };
             out.file = keep.0.as_ptr() as u32;
             out.file_len = keep.0.len() as u32;
             out.lin_name = keep.1.as_ptr() as u32;
@@ -571,7 +617,10 @@ pub extern "C" fn om_sim_run(args: u32, args_len: u32) -> u32 {
         }
         Err(e) => {
             let keep = (e.into_bytes(), String::new(), String::new(), String::new(), Vec::new());
-            let mut out = RunOut { status: 1, ..RunOut::default() };
+            let mut out = RunOut {
+                status: 1,
+                ..RunOut::default()
+            };
             out.file = keep.0.as_ptr() as u32;
             out.file_len = keep.0.len() as u32;
             (out, keep)

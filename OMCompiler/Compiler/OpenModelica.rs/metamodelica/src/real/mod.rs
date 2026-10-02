@@ -1,9 +1,9 @@
 //! Real arithmetic, comparison and conversion builtins.
 //! The shortest-round-trip string formatter lives in [`ryu`].
 
+use crate::Real;
 use crate::Result;
 use ordered_float::OrderedFloat;
-use crate::Real;
 
 pub mod ryu;
 pub use ryu::*;
@@ -51,7 +51,7 @@ pub fn real_div_checked(r1: Real, r2: Real) -> Result<Real> {
 
 /// Calculates remainder of Real division r1/r2.
 pub fn realMod(r1: Real, r2: Real) -> Real {
-    OrderedFloat(r1.0 - (r1.0/r2.0).floor()*r2.0)
+    OrderedFloat(r1.0 - (r1.0 / r2.0).floor() * r2.0)
 }
 
 /// Raises r1 to the power r2 (r1^r2).
@@ -95,7 +95,13 @@ pub fn realNeg(x: Real) -> Real {
 /// site (the builtin's formal is `Real v`), so a single Real overload suffices.
 #[inline(always)]
 pub fn sign(v: Real) -> i32 {
-    if v.0 > 0.0 { 1 } else if v.0 < 0.0 { -1 } else { 0 }
+    if v.0 > 0.0 {
+        1
+    } else if v.0 < 0.0 {
+        -1
+    } else {
+        0
+    }
 }
 
 // ============================================================================
@@ -152,12 +158,14 @@ pub fn realInt(r: Real) -> i32 {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod real_arithmetic_tests {
         use super::*;
-        fn r(x: f64) -> Real { OrderedFloat(x) }
+        fn r(x: f64) -> Real {
+            OrderedFloat(x)
+        }
 
         #[test]
         fn test_real_add() {
@@ -229,7 +237,9 @@ mod tests {
 
     mod real_comparison_tests {
         use super::*;
-        fn r(x: f64) -> Real { OrderedFloat(x) }
+        fn r(x: f64) -> Real {
+            OrderedFloat(x)
+        }
 
         #[test]
         fn test_real_lt() {
@@ -273,8 +283,10 @@ mod tests {
     }
 
     mod real_conversion_tests {
-    use super::*;
-    fn r(x: f64) -> Real { OrderedFloat(x) }
+        use super::*;
+        fn r(x: f64) -> Real {
+            OrderedFloat(x)
+        }
 
         #[test]
         fn test_real_int() {

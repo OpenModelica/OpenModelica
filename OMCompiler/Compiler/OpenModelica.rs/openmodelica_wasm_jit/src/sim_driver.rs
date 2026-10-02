@@ -13,9 +13,9 @@ pub use openmodelica_sim_meta::driver::*;
 // frontend/loader/backend flip the same one); the driver only polls it, via the
 // hook installed in [`init_host_hooks`]. These re-exports keep the existing
 // `CodegenWasmJit::{request_cancel,clear_cancel,set_cancel_poll}` callers working.
-pub use metamodelica::cancel::{clear_cancel, request_cancel};
 #[cfg(target_arch = "wasm32")]
 pub use metamodelica::cancel::set_cancel_poll;
+pub use metamodelica::cancel::{clear_cancel, request_cancel};
 
 /// Route a model `assert()` failure (decoded by the driver) into the compiler
 /// error buffer, matching the C target's `[file:l:c] Error: <msg>` so OMEdit
@@ -43,11 +43,7 @@ fn report_assert(info: &AssertInfo) {
 /// them in the order they happened.
 /// A real stdout takes the line as formatted; the stream and type are already in
 /// its header columns.
-fn log_to_stdout(
-    _stream: openmodelica_sim_meta::omclog::Stream,
-    _ty: openmodelica_sim_meta::omclog::LogType,
-    s: &str,
-) {
+fn log_to_stdout(_stream: openmodelica_sim_meta::omclog::Stream, _ty: openmodelica_sim_meta::omclog::LogType, s: &str) {
     openmodelica_wasi::wasi::stdout_write(s.as_bytes());
 }
 
@@ -79,16 +75,16 @@ fn wall_clock_secs() -> i64 {
 /// C's `simulationInfo->OPENMODELICAHOME`, which the `+profiling` report needs for
 /// `default_profiling.xsl`: omc's own installation root, not the environment's.
 fn openmodelica_home() -> Option<String> {
-    openmodelica_util::Settings::getInstallationDirectoryPath().ok().map(|h| h.to_string())
+    openmodelica_util::Settings::getInstallationDirectoryPath()
+        .ok()
+        .map(|h| h.to_string())
 }
 
 pub fn init_host_hooks() {
     set_cancel_hook(metamodelica::cancel::check_cancel);
     openmodelica_sim_meta::files::set_writer(write_side_file);
     openmodelica_sim_meta::files::set_reader(read_side_file);
-    openmodelica_sim_meta::parmod::set_hw_threads(
-        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0),
-    );
+    openmodelica_sim_meta::parmod::set_hw_threads(std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0));
     openmodelica_sim_meta::profiling::set_wall_clock(wall_clock_secs);
     openmodelica_sim_meta::profiling::set_home(openmodelica_home);
     openmodelica_sim_meta::driver::set_uri_resolver(uri_to_filename);

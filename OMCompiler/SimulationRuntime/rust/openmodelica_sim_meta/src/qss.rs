@@ -7,14 +7,14 @@
 //! Jacobian's sparsity says depend on it. There is no output grid: one result row
 //! is emitted per accepted quantum change, at that change's own time.
 
-use openmodelica_solvers::fmath;
 use alloc::vec;
 use alloc::vec::Vec;
+use openmodelica_solvers::fmath;
 
 use crate::driver::{
-    Advance, Driver, Result, SimEngine, cancel_requested, capture_row, check_alarm, check_nls,
-    deadline_from, emit_initial_row, eval_continuous, format_f, past_deadline, read_f64,
-    store_operators, terminated, write_f64, write_i32,
+    Advance, Driver, Result, SimEngine, cancel_requested, capture_row, check_alarm, check_nls, deadline_from,
+    emit_initial_row, eval_continuous, format_f, past_deadline, read_f64, store_operators, terminated, write_f64,
+    write_i32,
 };
 use crate::omclog;
 use crate::{JacAInfo, Layout as SimLayout, REAL_OFF, SimMeta as SimModel, SolveStats, TIME_OFF};
@@ -141,12 +141,7 @@ impl Qss {
 }
 
 impl Driver for Qss {
-    fn advance(
-        &mut self,
-        e: &mut (dyn SimEngine + 'static),
-        model: &SimModel,
-        budget_ms: f64,
-    ) -> Result<Advance> {
+    fn advance(&mut self, e: &mut (dyn SimEngine + 'static), model: &SimModel, budget_ms: f64) -> Result<Advance> {
         let layout = &model.layout;
         let sim_data = self.sim_data;
         let states = layout.n_states as usize;
@@ -308,13 +303,7 @@ fn der_addr(sim_data: u32, layout: &SimLayout, i: usize) -> u32 {
 /// Returns `dTnextQ` (the state will change after that many seconds), `nextQ` (the
 /// next quantity reached by the state) and `diffQ` (the difference between the
 /// state's current and future value).
-fn delta_q(
-    e: &dyn SimEngine,
-    sim_data: u32,
-    layout: &SimLayout,
-    dq: f64,
-    index: usize,
-) -> Result<(f64, f64, f64)> {
+fn delta_q(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout, dq: f64, index: usize) -> Result<(f64, f64, f64)> {
     let x = read_f64(e, state_addr(sim_data, index))?;
     let state_der = read_f64(e, der_addr(sim_data, layout, index))?;
 

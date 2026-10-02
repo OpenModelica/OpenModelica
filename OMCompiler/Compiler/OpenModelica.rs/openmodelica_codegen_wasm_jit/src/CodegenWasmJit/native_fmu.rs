@@ -35,22 +35,60 @@ pub struct Platform {
 /// No 32-bit entries: the component is compiled by cranelift, whose only
 /// backends are x86-64, aarch64, riscv64 and s390x.
 pub const PLATFORMS: &[Platform] = &[
-    Platform { fmi: "x86_64-linux", fmi2: "linux64", aliases: &["linux64", "x86_64-unknown-linux-gnu"], triple: "x86_64-unknown-linux-gnu", libdir: "x86_64-linux-gnu", ext: ".so" },
-    Platform { fmi: "aarch64-linux", fmi2: "aarch64-linux", aliases: &["linuxarm64", "aarch64-unknown-linux-gnu"], triple: "aarch64-unknown-linux-gnu", libdir: "aarch64-linux-gnu", ext: ".so" },
-    Platform { fmi: "x86_64-windows", fmi2: "win64", aliases: &["win64", "x86_64-pc-windows-msvc"], triple: "x86_64-pc-windows-msvc", libdir: "x86_64-windows-msvc", ext: ".dll" },
-    Platform { fmi: "aarch64-windows", fmi2: "aarch64-windows", aliases: &["winarm64", "aarch64-pc-windows-msvc"], triple: "aarch64-pc-windows-msvc", libdir: "aarch64-windows-msvc", ext: ".dll" },
-    Platform { fmi: "x86_64-darwin", fmi2: "darwin64", aliases: &["darwin64", "x86_64-apple-darwin"], triple: "x86_64-apple-darwin", libdir: "x86_64-apple-darwin", ext: ".dylib" },
-    Platform { fmi: "aarch64-darwin", fmi2: "aarch64-darwin", aliases: &["darwinarm64", "aarch64-apple-darwin"], triple: "aarch64-apple-darwin", libdir: "aarch64-apple-darwin", ext: ".dylib" },
+    Platform {
+        fmi: "x86_64-linux",
+        fmi2: "linux64",
+        aliases: &["linux64", "x86_64-unknown-linux-gnu"],
+        triple: "x86_64-unknown-linux-gnu",
+        libdir: "x86_64-linux-gnu",
+        ext: ".so",
+    },
+    Platform {
+        fmi: "aarch64-linux",
+        fmi2: "aarch64-linux",
+        aliases: &["linuxarm64", "aarch64-unknown-linux-gnu"],
+        triple: "aarch64-unknown-linux-gnu",
+        libdir: "aarch64-linux-gnu",
+        ext: ".so",
+    },
+    Platform {
+        fmi: "x86_64-windows",
+        fmi2: "win64",
+        aliases: &["win64", "x86_64-pc-windows-msvc"],
+        triple: "x86_64-pc-windows-msvc",
+        libdir: "x86_64-windows-msvc",
+        ext: ".dll",
+    },
+    Platform {
+        fmi: "aarch64-windows",
+        fmi2: "aarch64-windows",
+        aliases: &["winarm64", "aarch64-pc-windows-msvc"],
+        triple: "aarch64-pc-windows-msvc",
+        libdir: "aarch64-windows-msvc",
+        ext: ".dll",
+    },
+    Platform {
+        fmi: "x86_64-darwin",
+        fmi2: "darwin64",
+        aliases: &["darwin64", "x86_64-apple-darwin"],
+        triple: "x86_64-apple-darwin",
+        libdir: "x86_64-apple-darwin",
+        ext: ".dylib",
+    },
+    Platform {
+        fmi: "aarch64-darwin",
+        fmi2: "aarch64-darwin",
+        aliases: &["darwinarm64", "aarch64-apple-darwin"],
+        triple: "aarch64-apple-darwin",
+        libdir: "aarch64-apple-darwin",
+        ext: ".dylib",
+    },
 ];
 
 /// The `binaries/` directory this platform's loader goes in, for an FMU of
 /// `version`.
 pub fn fmi_dir(p: &Platform, version: &str) -> &'static str {
-    if version == "2.0" {
-        p.fmi2
-    } else {
-        p.fmi
-    }
+    if version == "2.0" { p.fmi2 } else { p.fmi }
 }
 
 /// `"native"` is the platform omc runs on: the only one every build carries.
@@ -103,9 +141,9 @@ pub fn precompile(component: &[u8], p: &Platform) -> Result<Vec<u8>> {
     cfg.wasm_component_model(true);
     // A model with external "C" carries the `model_error` tag its call sites catch.
     cfg.wasm_exceptions(true);
-    cfg.target(p.triple).map_err(|_| "CodegenWasmJit: unknown target for the FMU platform")?;
-    let engine = wasmtime::Engine::new(&cfg)
-        .map_err(|_| "CodegenWasmJit: cannot configure the FMU cross-compiler")?;
+    cfg.target(p.triple)
+        .map_err(|_| "CodegenWasmJit: unknown target for the FMU platform")?;
+    let engine = wasmtime::Engine::new(&cfg).map_err(|_| "CodegenWasmJit: cannot configure the FMU cross-compiler")?;
     engine.precompile_component(component).map_err(|e| {
         super::record_error(format!("CodegenWasmJit: compiling the FMU for {}: {e:#}", p.fmi));
         "CodegenWasmJit: cannot compile the component for the FMU platform"

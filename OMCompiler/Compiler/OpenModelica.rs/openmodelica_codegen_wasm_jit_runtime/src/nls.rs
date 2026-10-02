@@ -14,8 +14,8 @@ use core::sync::atomic::Ordering;
 
 use openmodelica_nls as nls;
 use openmodelica_nls::newton_diagnostics::DiagInfo;
-use openmodelica_solvers::solverflags;
 pub use openmodelica_nls::*;
+use openmodelica_solvers::solverflags;
 
 use crate::{load_f64, load_u32, rt_alloc, rt_free, store_f64, store_u32};
 
@@ -41,9 +41,7 @@ fn install_hooks() {
     #[cfg(sundials)]
     {
         nls::host::set_initial_guess_request(crate::model_ctx::take_request);
-        nls::host::set_initial_guess_writer(|path| {
-            crate::model_ctx::write(path).map_err(alloc::string::String::from)
-        });
+        nls::host::set_initial_guess_writer(|path| crate::model_ctx::write(path).map_err(alloc::string::String::from));
     }
 }
 
@@ -156,8 +154,11 @@ pub extern "C" fn rt_nls_assert_failed(
         if cond == 0 && driver::ext_errors_go_to_logger() {
             driver::report_ext_error(&driver::ext_assert_message(&info.file, info.line_start, &info.msg));
         } else {
-            let time =
-                if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+            let time = if sim_data != 0 {
+                unsafe { load_f64(sim_data as u32 + TIME_OFF) }
+            } else {
+                0.0
+            };
             log_assert_block(&info, &rt_string(cond), time, initial != 0);
         }
     }
@@ -205,7 +206,11 @@ fn note_no_throw_assert() -> bool {
 pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32 {
     if note_no_throw_assert() {
         use openmodelica_sim_meta::TIME_OFF;
-        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+        let time = if sim_data != 0 {
+            unsafe { load_f64(sim_data as u32 + TIME_OFF) }
+        } else {
+            0.0
+        };
         crate::omclog::info!(
             crate::omclog::ASSERT,
             false,
@@ -221,7 +226,11 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     let caught = nls::error_caught();
     if nls::throw_reports() {
         use openmodelica_sim_meta::TIME_OFF;
-        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+        let time = if sim_data != 0 {
+            unsafe { load_f64(sim_data as u32 + TIME_OFF) }
+        } else {
+            0.0
+        };
         crate::omclog::warning!(
             crate::omclog::ASSERT,
             false,
@@ -389,7 +398,6 @@ fn make_assemble<'a>(
     }
 }
 
-
 /// `-nlsLS`: which backend the linear solve inside the sparse nonlinear solver
 /// runs on. C's `totalpivot`/`lapack` have no sparse implementation here, so they
 /// fall to `rsparse` alongside an unlinked KLU.
@@ -465,8 +473,10 @@ struct Roster {
 struct RosterCell(UnsafeCell<Roster>);
 // Single-threaded wasm: no concurrent access.
 unsafe impl Sync for RosterCell {}
-static ROSTER: RosterCell =
-    RosterCell(UnsafeCell::new(Roster { sys: alloc::vec::Vec::new(), index: alloc::collections::BTreeMap::new() }));
+static ROSTER: RosterCell = RosterCell(UnsafeCell::new(Roster {
+    sys: alloc::vec::Vec::new(),
+    index: alloc::collections::BTreeMap::new(),
+}));
 
 /// `k == 0` starts a fresh roster, so a second model replaces the first.
 #[unsafe(no_mangle)]
@@ -508,7 +518,15 @@ pub extern "C" fn rt_nls_set_names(eq_index: u32, ptr: u32, len: u32) {
 /// `eqns` is `len` little-endian u32 at `ptr` in this module's memory;
 /// `eq_index == u32::MAX` clears the roster.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_nls_set_diag(eq_index: u32, n_eqns: u32, n_vars: u32, n_nonlinear: u32, init_diag: u32, ptr: u32, len: u32) {
+pub extern "C" fn rt_nls_set_diag(
+    eq_index: u32,
+    n_eqns: u32,
+    n_vars: u32,
+    n_nonlinear: u32,
+    init_diag: u32,
+    ptr: u32,
+    len: u32,
+) {
     if eq_index == u32::MAX {
         nls::clear_diag();
         return;
@@ -516,7 +534,11 @@ pub extern "C" fn rt_nls_set_diag(eq_index: u32, n_eqns: u32, n_vars: u32, n_non
     let eqns = (0..len).map(|i| unsafe { load_u32(ptr + 4 * i) }).collect();
     nls::push_diag(
         eq_index,
-        DiagInfo { pattern: [n_eqns, n_vars, n_nonlinear], init_diag: init_diag != 0, eqns },
+        DiagInfo {
+            pattern: [n_eqns, n_vars, n_nonlinear],
+            init_diag: init_diag != 0,
+            eqns,
+        },
     );
 }
 
@@ -543,7 +565,11 @@ pub(crate) fn set_diag(systems: &[openmodelica_sim_meta::NlsVars]) {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_clean_history(time: f64) {
     for &(addr, n) in &unsafe { &*ROSTER.0.get() }.sys {
-        let mut hist = MemHistory { count_addr: addr, base: addr + 16 + 2 * (n * 8) as u32, n };
+        let mut hist = MemHistory {
+            count_addr: addr,
+            base: addr + 16 + 2 * (n * 8) as u32,
+            n,
+        };
         history_clean(&mut hist, time);
     }
 }
@@ -593,30 +619,56 @@ fn kinsol_sparse_solve(
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     #[cfg(sundials)]
-    if nls_ls_backend() == solverflags::Sparse::Klu
-        && crate::sundials::have_kinsol()
-        && crate::sundials::have_klu()
-    {
+    if nls_ls_backend() == solverflags::Sparse::Klu && crate::sundials::have_kinsol() && crate::sundials::have_klu() {
         // C's retry ladder re-picks the start point, but only through settings its
         // loop head overrides; `warm` is the caller's own second attempt.
         let colptr: alloc::vec::Vec<i32> = pattern[..n + 1].iter().map(|v| *v as i32).collect();
-        let rowidx: alloc::vec::Vec<i32> =
-            pattern[n + 1..n + 1 + nnz].iter().map(|v| *v as i32).collect();
+        let rowidx: alloc::vec::Vec<i32> = pattern[n + 1..n + 1 + nnz].iter().map(|v| *v as i32).collect();
         // Without a column function KINSOL differences the pattern itself, so
         // `make_assemble`'s dense gather buffer is never needed.
         let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
-        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max, min };
+        let pat = nls::kinsol::Pattern {
+            nnz,
+            colptr: &colptr,
+            rowidx: &rowidx,
+            colors,
+            max,
+            min,
+        };
         return crate::sundials::kinsol_solve_selected(
-            handle, n, &pat, nominal, guess, old_values, x, eq_index, time, has_jacobian,
-            load_guess, eval, &mut assemble,
+            handle,
+            n,
+            &pat,
+            nominal,
+            guess,
+            old_values,
+            x,
+            eq_index,
+            time,
+            has_jacobian,
+            load_guess,
+            eval,
+            &mut assemble,
         );
     }
     // only the KINSOL path names the system it dumps
     let _ = (eq_index, time, old_values, min);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
     newton_sparse_solve(
-        n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, has_jacobian, colors, max,
+        n,
+        x,
+        guess,
+        warm,
+        nominal,
+        jac,
+        pattern,
+        nnz,
+        jac_csc,
+        handle,
+        has_jacobian,
+        colors,
+        max,
         eval,
     )
 }
@@ -641,13 +693,26 @@ fn kinsol_b_dense_solve(
     {
         let start = x.to_vec();
         return crate::sundials::kinsol_b_solve(
-            handle, n, 0, None, nominal, &start, old_values, x, eq_index, time, load_guess, eval,
+            handle,
+            n,
+            0,
+            None,
+            nominal,
+            &start,
+            old_values,
+            x,
+            eq_index,
+            time,
+            load_guess,
+            eval,
             has_jac.then_some(jaceval),
         );
     }
     #[cfg(not(sundials))]
     {
-        let _ = (n, x, nominal, old_values, has_jac, handle, eq_index, time, load_guess, eval, jaceval);
+        let _ = (
+            n, x, nominal, old_values, has_jac, handle, eq_index, time, load_guess, eval, jaceval,
+        );
         false
     }
 }
@@ -712,7 +777,11 @@ fn newton_sparse_solve(
     for &(from_warm, scaled, linesearch) in ATTEMPTS.iter() {
         x.copy_from_slice(if from_warm { warm } else { guess });
         for i in 0..n {
-            xscale[i] = if scaled { 1.0 / libm::fmax(nominal[i], libm::fabs(x[i])) } else { 1.0 };
+            xscale[i] = if scaled {
+                1.0 / libm::fmax(nominal[i], libm::fabs(x[i]))
+            } else {
+                1.0
+            };
         }
         // f scaling from the column-scaled Jacobian at the entry point.
         for s in fscale.iter_mut() {
@@ -762,7 +831,13 @@ fn newton_sparse_solve(
                 unsafe { store_f64(b_ptr + (i * 8) as u32, -f[i]) };
             }
             if crate::lin_sparse_cached(
-                handle, colptr_addr, rowidx_addr, val_ptr, b_ptr, n as u32, nnz as u32,
+                handle,
+                colptr_addr,
+                rowidx_addr,
+                val_ptr,
+                b_ptr,
+                n as u32,
+                nnz as u32,
                 nls_ls_backend(),
             ) != 0
             {
@@ -848,8 +923,7 @@ impl NlsModel for WasmModel {
     }
 
     fn residual(&mut self, x: &[f64], r: &mut [f64]) {
-        let residual: extern "C" fn(u32, u32, u32) =
-            unsafe { core::mem::transmute(self.res_idx as usize) };
+        let residual: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(self.res_idx as usize) };
         // A system with no unknowns has no buffers; C passes null there too.
         if x.is_empty() && r.is_empty() {
             residual(self.sim_data, 0, 0);
@@ -863,8 +937,7 @@ impl NlsModel for WasmModel {
     }
 
     fn jacobian(&mut self, x: &[f64], out: &mut [f64]) {
-        let jacf: extern "C" fn(u32, u32, u32) =
-            unsafe { core::mem::transmute(self.jac_idx as usize) };
+        let jacf: extern "C" fn(u32, u32, u32) = unsafe { core::mem::transmute(self.jac_idx as usize) };
         self.put(x);
         jacf(self.sim_data, self.x_ptr, self.jac_ptr);
         for (k, v) in out.iter_mut().enumerate() {
@@ -873,8 +946,7 @@ impl NlsModel for WasmModel {
     }
 
     fn strict_fallback(&mut self) -> bool {
-        let strict: extern "C" fn(u32) -> i32 =
-            unsafe { core::mem::transmute(self.strict_idx as usize) };
+        let strict: extern "C" fn(u32) -> i32 = unsafe { core::mem::transmute(self.strict_idx as usize) };
         strict(self.sim_data) != 0
     }
 }
@@ -904,7 +976,11 @@ impl NlsState for WasmState {
         self.n_rel as usize
     }
     fn lambda(&self) -> f64 {
-        if self.lambda_addr == 0 { 1.0 } else { unsafe { load_f64(self.lambda_addr) } }
+        if self.lambda_addr == 0 {
+            1.0
+        } else {
+            unsafe { load_f64(self.lambda_addr) }
+        }
     }
     fn set_lambda(&mut self, v: f64) {
         if self.lambda_addr != 0 {
@@ -954,9 +1030,25 @@ impl NlsBackend for WasmBackend<'_> {
         jac: &mut dyn FnMut(&[f64], &mut [f64]),
     ) -> bool {
         kinsol_sparse_solve(
-            req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
-            self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.colors,
-            req.max, req.min, req.old_values, load_guess, eval,
+            req.n,
+            req.x,
+            req.guess,
+            req.warm,
+            req.nominal,
+            jac,
+            self.pattern,
+            self.nnz,
+            self.jac_csc,
+            self.handle,
+            req.eq_index,
+            req.time,
+            req.has_jacobian,
+            req.colors,
+            req.max,
+            req.min,
+            req.old_values,
+            load_guess,
+            eval,
         )
     }
 
@@ -968,8 +1060,17 @@ impl NlsBackend for WasmBackend<'_> {
         jac: &mut dyn FnMut(&[f64], &mut [f64]),
     ) -> bool {
         kinsol_b_dense_solve(
-            req.n, req.x, req.nominal, req.old_values, req.has_jacobian, self.handle, req.eq_index,
-            req.time, load_guess, eval, jac,
+            req.n,
+            req.x,
+            req.nominal,
+            req.old_values,
+            req.has_jacobian,
+            self.handle,
+            req.eq_index,
+            req.time,
+            load_guess,
+            eval,
+            jac,
         )
     }
 }
@@ -1033,9 +1134,8 @@ pub extern "C" fn rt_solve_nls(
     let has_jacobian = jac_idx != u32::MAX;
     // The residual count -- one less than the unknowns where an adaptive homotopy
     // carries `__HOM_LAMBDA` -- which is what the history block is sized by.
-    let lambda_unknown = hom_support != 0
-        && (hom_method == HOM_GLOBAL_ADAPTIVE || hom_method == HOM_LOCAL_ADAPTIVE)
-        && size > 1;
+    let lambda_unknown =
+        hom_support != 0 && (hom_method == HOM_GLOBAL_ADAPTIVE || hom_method == HOM_LOCAL_ADAPTIVE) && size > 1;
     let hist_n = size - usize::from(lambda_unknown);
     // The shape the model fills, as [`solve_nls`] reads it back.
     let jac_len = if has_jacobian && !lambda_unknown && sparse_default != 0 {
@@ -1048,7 +1148,11 @@ pub extern "C" fn rt_solve_nls(
     let words = (size + 1) + size.max(1) + if has_jacobian { jac_len.max(1) } else { 0 };
     let mut small = core::mem::MaybeUninit::<[f64; 64]>::uninit();
     let heap = words > 64;
-    let base = if heap { rt_alloc((words * 8) as u32) } else { small.as_mut_ptr() as u32 };
+    let base = if heap {
+        rt_alloc((words * 8) as u32)
+    } else {
+        small.as_mut_ptr() as u32
+    };
     let r_ptr = base + ((size + 1) * 8) as u32;
     let mut model = WasmModel {
         sim_data,
@@ -1058,10 +1162,19 @@ pub extern "C" fn rt_solve_nls(
         strict_idx,
         x_ptr: base,
         r_ptr,
-        jac_ptr: if has_jacobian { r_ptr + (size.max(1) * 8) as u32 } else { 0 },
+        jac_ptr: if has_jacobian {
+            r_ptr + (size.max(1) * 8) as u32
+        } else {
+            0
+        },
     };
-    let mut state =
-        WasmState { nls_fail_addr, rel_fresh_addr, rel_addr, n_rel, lambda_addr };
+    let mut state = WasmState {
+        nls_fail_addr,
+        rel_fresh_addr,
+        rel_addr,
+        n_rel,
+        lambda_addr,
+    };
 
     // `rt_alloc`ed blocks of f64, so aligned; a system without unknowns has none.
     let (nominal, bounds): (&[f64], &[f64]) = if size == 0 {
@@ -1088,8 +1201,11 @@ pub extern "C" fn rt_solve_nls(
     let extrapolation = unsafe { core::slice::from_raw_parts_mut(block.extrap() as *mut f64, hist_n) };
     let mut last_solved = unsafe { load_f64(block.last_solved()) };
     let mut use_xscaling = unsafe { load_u32(block.xscaling_off()) } == 0;
-    let mut hist =
-        MemHistory { count_addr: hist_addr, base: block.extrap() + (hist_n * 8) as u32, n: hist_n };
+    let mut hist = MemHistory {
+        count_addr: hist_addr,
+        base: block.extrap() + (hist_n * 8) as u32,
+        n: hist_n,
+    };
 
     let spec = NlsSpec {
         eq_index,
@@ -1107,8 +1223,12 @@ pub extern "C" fn rt_solve_nls(
         pattern,
         has_jacobian,
     };
-    let mut backend =
-        WasmBackend { pattern, nnz: nnz as usize, jac_csc: sparse_default != 0, handle: lss_handle };
+    let mut backend = WasmBackend {
+        pattern,
+        nnz: nnz as usize,
+        jac_csc: sparse_default != 0,
+        handle: lss_handle,
+    };
     let ret = {
         let mut mem = NlsPersistent {
             history: &mut hist,

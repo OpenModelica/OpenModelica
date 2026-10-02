@@ -53,14 +53,7 @@ pub extern "C" fn rt_spatial_init_profile(index: u32, points: u32, values: u32) 
 
 /// C `storeSpatialDistribution`: commit the boundary condition of an accepted step.
 #[unsafe(no_mangle)]
-pub extern "C" fn rt_spatial_store(
-    index: u32,
-    time: f64,
-    in0: f64,
-    in1: f64,
-    pos_x: f64,
-    positive: u32,
-) {
+pub extern "C" fn rt_spatial_store(index: u32, time: f64, in0: f64, in1: f64, pos_x: f64, positive: u32) {
     state().store(index, time, in0, in1, pos_x, positive != 0);
 }
 

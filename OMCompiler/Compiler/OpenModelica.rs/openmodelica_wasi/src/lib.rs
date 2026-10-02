@@ -26,8 +26,8 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
-pub mod wasi;
 pub mod fs;
+pub mod wasi;
 
 // ─────────────────────────── embedded builtins ───────────────────────────────
 
@@ -138,11 +138,15 @@ struct Entry {
 fn now_since_epoch() -> Duration {
     #[cfg(target_arch = "wasm32")]
     {
-        web_time::SystemTime::now().duration_since(web_time::SystemTime::UNIX_EPOCH).unwrap_or_default()
+        web_time::SystemTime::now()
+            .duration_since(web_time::SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap_or_default()
+        std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
     }
 }
 
@@ -156,10 +160,10 @@ pub fn realtime_nanos() -> u64 {
 /// by `Instant` (`performance.now` on web): high-resolution and never runs
 /// backwards, unlike the wall clock — the right source for measuring elapsed time.
 pub fn monotonic_nanos() -> u64 {
-    #[cfg(target_arch = "wasm32")]
-    use web_time::Instant;
     #[cfg(not(target_arch = "wasm32"))]
     use std::time::Instant;
+    #[cfg(target_arch = "wasm32")]
+    use web_time::Instant;
     static START: OnceLock<Instant> = OnceLock::new();
     START.get_or_init(Instant::now).elapsed().as_nanos() as u64
 }
@@ -172,7 +176,10 @@ fn store() -> &'static Mutex<HashMap<String, Entry>> {
 /// Write `bytes` to `path`, replacing any existing entry.
 pub fn write(path: &str, bytes: Vec<u8>) {
     let mtime = now_since_epoch();
-    store().lock().unwrap().insert(normalize(path), Entry { data: bytes, mtime });
+    store()
+        .lock()
+        .unwrap()
+        .insert(normalize(path), Entry { data: bytes, mtime });
 }
 
 /// Overwrite `bytes` at byte offset `pos` of `path`, extending it if short.

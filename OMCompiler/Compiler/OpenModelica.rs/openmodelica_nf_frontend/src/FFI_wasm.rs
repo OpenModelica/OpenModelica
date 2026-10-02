@@ -14,13 +14,19 @@ pub enum ArgSpec {
     LOCAL = 3,
 }
 impl PartialOrd for ArgSpec {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 impl Ord for ArgSpec {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { (*self as i32).cmp(&(*other as i32)) }
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (*self as i32).cmp(&(*other as i32))
+    }
 }
 impl Default for ArgSpec {
-    fn default() -> Self { Self::INPUT }
+    fn default() -> Self {
+        Self::INPUT
+    }
 }
 
 #[cfg(target_arch = "wasm32")]

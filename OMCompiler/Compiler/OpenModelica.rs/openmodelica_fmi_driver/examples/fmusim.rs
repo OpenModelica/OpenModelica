@@ -124,7 +124,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let v = md
             .variable_by_vr(*vr)
             .ok_or_else(|| format!("no variable has value reference {vr}"))?;
-        opts.parameters.push(Parameter { value_reference: *vr, ty: v.ty, values: values.clone() });
+        opts.parameters.push(Parameter {
+            value_reference: *vr,
+            ty: v.ty,
+            values: values.clone(),
+        });
     }
 
     // The FMU is unpacked next to itself; a native binary has to exist on disk
@@ -137,14 +141,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let (rec, summary) = match kind {
         InterfaceKind::CoSimulation => {
             let event_mode = md.interface(kind).is_some_and(|i| i.has_event_mode);
-            let mut inst = lib.instantiate_co_simulation(
-                name,
-                token,
-                resources.as_deref(),
-                args.log,
-                event_mode,
-                true,
-            )?;
+            let mut inst =
+                lib.instantiate_co_simulation(name, token, resources.as_deref(), args.log, event_mode, true)?;
             let r = cs::simulate(&mut inst as &mut dyn Fmi3CoSimulation, md, &opts)?;
             report_log(&mut inst);
             (
@@ -156,8 +154,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             )
         }
         InterfaceKind::ModelExchange => {
-            let mut inst =
-                lib.instantiate_model_exchange(name, token, resources.as_deref(), args.log)?;
+            let mut inst = lib.instantiate_model_exchange(name, token, resources.as_deref(), args.log)?;
             let r = me::simulate(&mut inst as &mut dyn Fmi3ModelExchange, md, &opts)?;
             report_log(&mut inst);
             (
@@ -186,7 +183,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             print!(",{}", c.name);
         }
         println!();
-        let mut columns: Vec<Vec<f64>> = rec.columns.iter().enumerate().map(|(i, _)| rec.values(i).collect()).collect();
+        let mut columns: Vec<Vec<f64>> = rec
+            .columns
+            .iter()
+            .enumerate()
+            .map(|(i, _)| rec.values(i).collect())
+            .collect();
         for (row, t) in rec.times().enumerate() {
             print!("{t}");
             for c in &mut columns {

@@ -9,8 +9,8 @@
 
 #![allow(non_snake_case, non_upper_case_globals, clippy::type_complexity)]
 
-use std::cell::RefCell;
 use arcstr::ArcStr;
+use std::cell::RefCell;
 
 // ── Thread-local roots (process-global by MetaModelica semantics) ─────────────
 

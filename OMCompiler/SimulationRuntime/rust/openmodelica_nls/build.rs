@@ -56,15 +56,20 @@ fn primme() {
         }
         return;
     }
-    let Some(lib) = std::env::var_os("OMC_PRIMME_NATIVE_DIR") else { return };
-    let include = std::env::var("OMC_PRIMME_INCLUDE_DIR")
-        .expect("OMC_PRIMME_NATIVE_DIR without OMC_PRIMME_INCLUDE_DIR");
+    let Some(lib) = std::env::var_os("OMC_PRIMME_NATIVE_DIR") else {
+        return;
+    };
+    let include =
+        std::env::var("OMC_PRIMME_INCLUDE_DIR").expect("OMC_PRIMME_NATIVE_DIR without OMC_PRIMME_INCLUDE_DIR");
     cc::Build::new()
         .file("src/primme_svds.c")
         .include(&include)
         .warnings(false)
         .compile("omc_primme_svds");
-    println!("cargo:rustc-link-search=native={}", std::path::Path::new(&lib).display());
+    println!(
+        "cargo:rustc-link-search=native={}",
+        std::path::Path::new(&lib).display()
+    );
     println!("cargo:rustc-link-lib=static=primme");
     // PRIMME's dense algebra, in all four precisions.
     link_lapack(&["lapack", "blas"]);
@@ -84,7 +89,9 @@ fn link_lapack(system: &[&str]) {
     };
     let gnu = std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu");
     for lib in libs.split('|').map(std::path::Path::new) {
-        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else { continue };
+        let (Some(dir), Some(name)) = (lib.parent(), link_name(lib, gnu)) else {
+            continue;
+        };
         println!("cargo:rustc-link-search=native={}", dir.display());
         println!("cargo:rustc-link-lib=dylib={name}");
     }
@@ -97,7 +104,9 @@ fn link_name(lib: &std::path::Path, gnu: bool) -> Option<String> {
     if !gnu {
         return Some(lib.file_stem()?.to_string_lossy().into_owned());
     }
-    let stem = file.strip_suffix(".dll.a").or_else(|| file.strip_suffix(".a"))
+    let stem = file
+        .strip_suffix(".dll.a")
+        .or_else(|| file.strip_suffix(".a"))
         .or_else(|| file.strip_suffix(".dll"))?;
     Some(stem.strip_prefix("lib").unwrap_or(stem).to_string())
 }

@@ -526,7 +526,14 @@ unsafe extern "C" {
     fn N_VCloneVectorArray(count: c_int, w: NVector) -> *mut NVector;
     fn N_VDestroyVectorArray(vs: *mut NVector, count: c_int);
     fn N_VConst(c: f64, z: NVector);
-    fn IDASensInit(mem: *mut c_void, ns: c_int, ism: c_int, res: *const c_void, ys0: *mut NVector, yps0: *mut NVector) -> c_int;
+    fn IDASensInit(
+        mem: *mut c_void,
+        ns: c_int,
+        ism: c_int,
+        res: *const c_void,
+        ys0: *mut NVector,
+        yps0: *mut NVector,
+    ) -> c_int;
     fn IDASensReInit(mem: *mut c_void, ism: c_int, ys0: *mut NVector, yps0: *mut NVector) -> c_int;
     fn IDASetSensParams(mem: *mut c_void, p: *mut f64, pbar: *mut f64, plist: *mut c_int) -> c_int;
     fn IDASetSensDQMethod(mem: *mut c_void, dqtype: c_int, dqrhomax: f64) -> c_int;
@@ -661,9 +668,7 @@ impl Ida {
                 IdaLs::Klu => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx),
                 _ => core::ptr::null_mut(),
             };
-            if [ida.y, ida.yp, ida.atol].iter().any(|p| p.is_null())
-                || (ida.jac.is_null() && !ls.matrix_free())
-            {
+            if [ida.y, ida.yp, ida.atol].iter().any(|p| p.is_null()) || (ida.jac.is_null() && !ls.matrix_free()) {
                 return None;
             }
             // Krylov `maxl` is the system size, as `ida_solver.c` passes it.
@@ -702,10 +707,13 @@ impl Ida {
         let set = |flag: c_int| flag == IDA_SUCCESS;
         unsafe {
             o.max_order.is_none_or(|v| set(IDASetMaxOrd(self.mem, v)))
-                && o.max_err_test_fails.is_none_or(|v| set(IDASetMaxErrTestFails(self.mem, v)))
-                && o.max_nonlin_iters.is_none_or(|v| set(IDASetMaxNonlinIters(self.mem, v)))
+                && o.max_err_test_fails
+                    .is_none_or(|v| set(IDASetMaxErrTestFails(self.mem, v)))
+                && o.max_nonlin_iters
+                    .is_none_or(|v| set(IDASetMaxNonlinIters(self.mem, v)))
                 && o.max_conv_fails.is_none_or(|v| set(IDASetMaxConvFails(self.mem, v)))
-                && o.nonlin_conv_coef.is_none_or(|v| set(IDASetNonlinConvCoef(self.mem, v)))
+                && o.nonlin_conv_coef
+                    .is_none_or(|v| set(IDASetNonlinConvCoef(self.mem, v)))
                 && o.init_step.is_none_or(|v| set(IDASetInitStep(self.mem, v)))
         }
     }
@@ -854,10 +862,20 @@ impl Ida {
         }
         sens.zero();
         let ok = unsafe {
-            IDASensInit(self.mem, ns as c_int, IDA_SIMULTANEOUS, core::ptr::null(), sens.ys, sens.yps)
-                == IDA_SUCCESS
-                && IDASetSensParams(self.mem, sens.p.as_mut_ptr(), core::ptr::null_mut(), core::ptr::null_mut())
-                    == IDA_SUCCESS
+            IDASensInit(
+                self.mem,
+                ns as c_int,
+                IDA_SIMULTANEOUS,
+                core::ptr::null(),
+                sens.ys,
+                sens.yps,
+            ) == IDA_SUCCESS
+                && IDASetSensParams(
+                    self.mem,
+                    sens.p.as_mut_ptr(),
+                    core::ptr::null_mut(),
+                    core::ptr::null_mut(),
+                ) == IDA_SUCCESS
                 && IDASetSensDQMethod(self.mem, IDA_FORWARD, 0.0) == IDA_SUCCESS
                 && IDASensEEtolerances(self.mem) == IDA_SUCCESS
         };
@@ -1065,6 +1083,10 @@ pub fn dense_data(a: SunMatrix) -> *mut f64 {
 /// The three arrays of a CSC `SUNMatrix`, for a Jacobian callback to fill.
 pub fn sparse_arrays(a: SunMatrix) -> (*mut f64, *mut SunIndex, *mut SunIndex) {
     unsafe {
-        (SUNSparseMatrix_Data(a), SUNSparseMatrix_IndexPointers(a), SUNSparseMatrix_IndexValues(a))
+        (
+            SUNSparseMatrix_Data(a),
+            SUNSparseMatrix_IndexPointers(a),
+            SUNSparseMatrix_IndexValues(a),
+        )
     }
 }

@@ -83,12 +83,33 @@ pub(super) fn builtin_index(name: &str) -> Option<u32> {
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+        ],
         &[WTy::I32],
     ),
     (
         "rt_assert_warning",
-        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+        ],
         &[],
     ),
     ("rt_print", &[WTy::I32], &[]),
@@ -176,9 +197,21 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // array, scalar broadcast (`rev` swaps operand order), and negation.
     ("rt_array_ew_i32", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     ("rt_array_ew_f64", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
-    ("rt_array_scalar_i32", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
-    ("rt_array_scalar_f64", &[WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
-    ("rt_array_div_sim_f64", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::I32]),
+    (
+        "rt_array_scalar_i32",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32],
+    ),
+    (
+        "rt_array_scalar_f64",
+        &[WTy::I32, WTy::F64, WTy::I32, WTy::I32],
+        &[WTy::I32],
+    ),
+    (
+        "rt_array_div_sim_f64",
+        &[WTy::I32, WTy::F64, WTy::I32, WTy::F64, WTy::I32],
+        &[WTy::I32],
+    ),
     ("rt_array_neg_i32", &[WTy::I32], &[WTy::I32]),
     ("rt_array_neg_f64", &[WTy::I32], &[WTy::I32]),
     ("rt_array_transpose", &[WTy::I32], &[WTy::I32]),
@@ -191,7 +224,11 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_array_slice", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
     // Sliced left-hand side `a[i, :, lo:hi, ...] := src`: (dst, nspec, spec, src),
     // same spec encoding. `src` holds the selected positions in selection order.
-    ("rt_array_indexed_assign", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[]),
+    (
+        "rt_array_indexed_assign",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[],
+    ),
     // `cat(dim, a1, ..., an)`: (dim, n, handles) where `handles` is an Integer
     // array of the `n` input array handles. Returns a fresh concatenated array.
     ("rt_array_cat", &[WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
@@ -250,10 +287,27 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // iterative `-ls lis`, then the equation index and time the fallback warning
     // needs, whether a `rt_ls_check_step` follows, and whether this is a casual
     // tearing set (which has no fallback). Returns 0 ok, 1 singular.
-    ("rt_linsolve", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    (
+        "rt_linsolve",
+        &[
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::F64,
+            WTy::I32,
+            WTy::I32,
+        ],
+        &[WTy::I32],
+    ),
     // The same `A` re-solved with total pivoting: (a_ptr, b_ptr, n, index, time) ->
     // 0 ok / 1 inconsistent. C's fallback for a step `rt_ls_check_step` rejected.
-    ("rt_linsolve_totalpivot", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    (
+        "rt_linsolve_totalpivot",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64],
+        &[WTy::I32],
+    ),
     // C's `check_linear_solution` + throw for an unsolved system: (index, time).
     ("rt_ls_failed", &[WTy::I32, WTy::F64], &[]),
     // `LOG_STATS_V`'s per-system bracket, C's `solve_linear_system`: the generated
@@ -263,17 +317,43 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // Method-1 step test: (res_ptr, b_ptr, n, index, time, dense, casual) -> 1 when
     // the step must be redone with total pivoting (`b` then holding `-res`), 2 when
     // the system is unsolved. See `rt_ls_check_step`.
-    ("rt_ls_check_step", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32], &[WTy::I32]),
+    (
+        "rt_ls_check_step",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32],
+        &[WTy::I32],
+    ),
     // Sparse linear solve `A x = b` in place, A in CSC: (colptr n+1 i32, rowidx
     // nnz i32, values nnz f64, b_ptr n f64, n, nnz) -> 0 ok / 1 singular. The C
     // runtime's KLU path (AMD-ordered sparse LU); see `rt_solve_lin_sparse`.
-    ("rt_solve_lin_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    (
+        "rt_solve_lin_sparse",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32],
+    ),
     // Solve `A x = b` from dense column-major A via the sparse solver; see
     // `rt_solve_lin_dense_sparse`. (a_ptr, b_ptr, x_ptr, n, index, time) -> 0 ok /
     // 1 singular.
-    ("rt_solve_lin_dense_sparse", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    (
+        "rt_solve_lin_dense_sparse",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64],
+        &[WTy::I32],
+    ),
     // (handle, colptr, rowidx, values, b, x, n, nnz, time) -> 0 ok / 1 singular; cached analysis.
-    ("rt_solve_lin_sparse_cached", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64], &[WTy::I32]),
+    (
+        "rt_solve_lin_sparse_cached",
+        &[
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::F64,
+        ],
+        &[WTy::I32],
+    ),
     // Raw deallocation (frees a block from `rt_alloc`); used to release the
     // `SES_LINEAR` scratch (A/b/residual buffers) after each solve.
     ("rt_free", &[WTy::I32], &[]),
@@ -282,7 +362,35 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // recoverable failure (2 = dynamic tearing's strict set solved it instead). The
     // Newton driver lives in the runtime; the model supplies `residual`/`load` funcs
     // reached by `call_indirect` (see `nls.rs`).
-    ("rt_solve_nls", &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::F64, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32], &[WTy::I32]),
+    (
+        "rt_solve_nls",
+        &[
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::F64,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+        ],
+        &[WTy::I32],
+    ),
     // Dynamic tearing: the `LOG_DT` / `LOG_DT_CONS` lines C's `checkConstraints`,
     // `equationLinear` and `equation*AlternativeTearing` print. `rt_dt_local_violated`
     // also latches the failure, standing in for `residualFuncConstraints`'s return.
@@ -292,8 +400,16 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_dt_fallback", &[WTy::I32], &[]),
     // `delay(...)` / `delayZeroCrossing(...)` ring buffers (runtime `delay.rs`).
     ("rt_delay_init", &[WTy::I32, WTy::F64], &[]),
-    ("rt_delay_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[]),
-    ("rt_delay_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
+    (
+        "rt_delay_store",
+        &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64],
+        &[],
+    ),
+    (
+        "rt_delay_eval",
+        &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64],
+        &[WTy::F64],
+    ),
     ("rt_delay_zc", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64], &[WTy::F64]),
     // `spatialDistribution(...)` transported profiles (runtime `spatial.rs`).
     // `rt_spatial_eval` returns `out0`; `rt_spatial_out1` hands back the `out1` of
@@ -301,8 +417,16 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     // scratch address.
     ("rt_spatial_init", &[WTy::I32], &[]),
     ("rt_spatial_init_profile", &[WTy::I32, WTy::I32, WTy::I32], &[]),
-    ("rt_spatial_store", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32], &[]),
-    ("rt_spatial_eval", &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32, WTy::I32], &[WTy::F64]),
+    (
+        "rt_spatial_store",
+        &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32],
+        &[],
+    ),
+    (
+        "rt_spatial_eval",
+        &[WTy::I32, WTy::F64, WTy::F64, WTy::F64, WTy::F64, WTy::I32, WTy::I32],
+        &[WTy::F64],
+    ),
     ("rt_spatial_out1", &[WTy::I32], &[WTy::F64]),
     ("rt_spatial_zc", &[WTy::I32, WTy::F64, WTy::I32, WTy::F64], &[WTy::F64]),
     // Recoverable-assert hooks for a nonlinear-solver residual (see `nls.rs`).
@@ -320,7 +444,11 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     ("rt_prof_add_ncall", &[WTy::I32, WTy::I32], &[]),
     // C's `throwStreamPrint` and the reporting half of its `DIVISION_SIM`.
     ("rt_throw_stream", &[WTy::I32], &[]),
-    ("rt_div_sim", &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32], &[WTy::F64]),
+    (
+        "rt_div_sim",
+        &[WTy::F64, WTy::F64, WTy::I32, WTy::F64, WTy::I32],
+        &[WTy::F64],
+    ),
     // System `k`'s solver state (address, size), for `rt_nls_clean_history`.
     ("rt_nls_register", &[WTy::I32, WTy::I32, WTy::I32], &[]),
     // `rt_nls_note_assert` plus C's log line for the absorbed assertion:
@@ -328,7 +456,15 @@ pub(crate) const RT_BUILTINS: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_nls_assert_failed",
         &[
-            WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
+            WTy::I32,
             WTy::I32,
         ],
         &[],
@@ -383,5 +519,8 @@ pub(crate) fn rt_index(name: &str) -> Result<u32> {
 /// `generateFunctionName` (`AbsynUtil.pathStringUnquoteReplaceDot(path, "_")`).
 /// Used as the key that resolves a `CALL` to one of the generated functions.
 pub(crate) fn mangle(path: &Absyn::Path) -> Result<String> {
-    Ok(AbsynUtil::pathStringUnquoteReplaceDot(&metamodelica::Ref::new(path.clone()), arcstr::literal!("_"))?.to_string())
+    Ok(
+        AbsynUtil::pathStringUnquoteReplaceDot(&metamodelica::Ref::new(path.clone()), arcstr::literal!("_"))?
+            .to_string(),
+    )
 }

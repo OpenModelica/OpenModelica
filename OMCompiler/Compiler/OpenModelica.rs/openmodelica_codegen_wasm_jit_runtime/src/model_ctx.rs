@@ -58,7 +58,9 @@ pub(crate) fn set_context(model: *const SimMeta, sim_data: u32) {
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_set_model_context(meta_ptr: u32, meta_len: u32, sim_data: u32) -> i32 {
     let bytes = unsafe { core::slice::from_raw_parts(meta_ptr as *const u8, meta_len as usize) };
-    let Ok(model) = openmodelica_sim_meta::decode(bytes) else { return -1 };
+    let Ok(model) = openmodelica_sim_meta::decode(bytes) else {
+        return -1;
+    };
     store::with(|c| {
         let boxed = alloc::boxed::Box::new(model);
         c.model = &*boxed as *const SimMeta;
@@ -82,7 +84,9 @@ pub extern "C" fn rt_set_save_initial_guess(idx: i32, ptr: u32, len: u32) {
         return store::with(|c| c.request = None);
     }
     let bytes = unsafe { core::slice::from_raw_parts(ptr as *const u8, len as usize) };
-    let mut names = bytes.split(|b| *b == 0).map(|s| String::from_utf8_lossy(s).into_owned());
+    let mut names = bytes
+        .split(|b| *b == 0)
+        .map(|s| String::from_utf8_lossy(s).into_owned());
     let shown = names.next().unwrap_or_default();
     let open = names.next().unwrap_or_else(|| shown.clone());
     store::with(|c| c.request = Some((shown, open, idx)));
@@ -92,9 +96,7 @@ pub extern "C" fn rt_set_save_initial_guess(idx: i32, ptr: u32, len: u32) {
 /// taken so a later solve of the same system does not write it again.
 pub(crate) fn take_request(eq_index: u32) -> Option<(String, String)> {
     store::with(|c| match &c.request {
-        Some((_, _, idx)) if *idx == eq_index as i32 => {
-            c.request.take().map(|(shown, open, _)| (shown, open))
-        }
+        Some((_, _, idx)) if *idx == eq_index as i32 => c.request.take().map(|(shown, open, _)| (shown, open)),
         _ => None,
     })
 }
@@ -129,7 +131,12 @@ pub(crate) fn write(path: &str) -> Result<(), &'static str> {
             });
         }
         if keep {
-            vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying });
+            vars.push(MatVar {
+                name: &v.name,
+                comment: &v.comment,
+                kind: v.kind.mat(),
+                unvarying: v.unvarying,
+            });
         }
     }
     let bytes = openmodelica_mat_writer::write_mat4(

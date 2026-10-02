@@ -7,7 +7,9 @@ use std::path::{Path, PathBuf};
 
 fn main() {
     println!("cargo:rerun-if-env-changed=OMC_HDF5_OUT");
-    let Some(src) = std::env::var_os("DEP_HDF5SRC_ROOT") else { return };
+    let Some(src) = std::env::var_os("DEP_HDF5SRC_ROOT") else {
+        return;
+    };
     let src = PathBuf::from(src);
     let root = match std::env::var_os("OMC_HDF5_OUT") {
         Some(out) => {
@@ -15,8 +17,7 @@ fn main() {
             copy_tree(&src.join("include"), &out.join("include"));
             let lib = out.join("lib");
             std::fs::create_dir_all(&lib).expect("create lib dir");
-            std::fs::copy(src.join("lib/libhdf5.a"), lib.join("libhdf5.a"))
-                .expect("copy libhdf5.a");
+            std::fs::copy(src.join("lib/libhdf5.a"), lib.join("libhdf5.a")).expect("copy libhdf5.a");
             out
         }
         None => src,

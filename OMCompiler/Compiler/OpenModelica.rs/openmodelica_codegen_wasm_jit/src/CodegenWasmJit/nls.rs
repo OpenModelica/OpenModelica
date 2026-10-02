@@ -9,7 +9,11 @@ use super::*;
 /// [`build_nls_fns`] (which emits the callbacks).
 pub(super) fn nls_parts(
     nlsystem: &SimCode::NonlinearSystem,
-) -> Result<(Vec<metamodelica::Ref<SimCode::SimEqSystem>>, NlsResiduals, Vec<metamodelica::Ref<DAE::ComponentRef>>)> {
+) -> Result<(
+    Vec<metamodelica::Ref<SimCode::SimEqSystem>>,
+    NlsResiduals,
+    Vec<metamodelica::Ref<DAE::ComponentRef>>,
+)> {
     use SimCode::SimEqSystem as E;
     let mut inner: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = Vec::new();
     let mut residuals: Vec<NlsResidual> = Vec::new();
@@ -17,18 +21,36 @@ pub(super) fn nls_parts(
         match &**e {
             E::SES_RESIDUAL { exp, res_index, .. } => {
                 residuals.push(match exp_array_rows(exp) {
-                    Some(rows) => NlsResidual::Array { exp: exp.clone(), res_index: *res_index, rows },
-                    None => NlsResidual::Scalar { exp: exp.clone(), res_index: *res_index },
+                    Some(rows) => NlsResidual::Array {
+                        exp: exp.clone(),
+                        res_index: *res_index,
+                        rows,
+                    },
+                    None => NlsResidual::Scalar {
+                        exp: exp.clone(),
+                        res_index: *res_index,
+                    },
                 });
             }
-            E::SES_FOR_RESIDUAL { iterators, exp, res_index, .. } => {
+            E::SES_FOR_RESIDUAL {
+                iterators,
+                exp,
+                res_index,
+                ..
+            } => {
                 residuals.push(NlsResidual::For {
                     iterators: lst(iterators).cloned().collect(),
                     exp: exp.clone(),
                     res_index: *res_index,
                 });
             }
-            E::SES_GENERIC_RESIDUAL { iterators, scal_indices, exp, res_index, .. } => {
+            E::SES_GENERIC_RESIDUAL {
+                iterators,
+                scal_indices,
+                exp,
+                res_index,
+                ..
+            } => {
                 residuals.push(NlsResidual::Generic {
                     iterators: lst(iterators).cloned().collect(),
                     scal_indices: lst(scal_indices).copied().collect(),
@@ -78,7 +100,12 @@ pub(super) fn nls_strict_map(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSyste
     let mut out = HashMap::default();
     for list in eq_lists {
         for e in *list {
-            if let E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } = &**e {
+            if let E::SES_NONLINEAR {
+                nlSystem,
+                alternativeTearing: Some(at),
+                ..
+            } = &**e
+            {
                 out.insert(at.index, nlSystem.index);
             }
         }
@@ -103,7 +130,15 @@ pub(super) fn collect_nls_jobs(
     eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, (f64, f64, f64)>,
     attr_targets: &mut HashMap<String, AttrTargets>,
-) -> (Vec<metamodelica::Ref<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
+) -> (
+    Vec<metamodelica::Ref<SimCode::NonlinearSystem>>,
+    HashMap<i32, NlsJob>,
+    u32,
+    Vec<f64>,
+    Vec<f64>,
+    Vec<i32>,
+    Vec<String>,
+) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<metamodelica::Ref<SimCode::NonlinearSystem>> = Vec::new();
     // Numbered and ordered by `indexNonLinearSystem`, as C's `sysNum` loop is.
@@ -125,7 +160,11 @@ pub(super) fn collect_nls_jobs(
             // A dynamically torn component registers both sets: the strict one (whose
             // function the casual set falls back to) and the casual one.
             let both: Vec<(&metamodelica::Ref<SimCode::NonlinearSystem>, bool)> = match &**e {
-                E::SES_NONLINEAR { nlSystem, alternativeTearing: Some(at), .. } => {
+                E::SES_NONLINEAR {
+                    nlSystem,
+                    alternativeTearing: Some(at),
+                    ..
+                } => {
                     vec![(nlSystem, false), (at, true)]
                 }
                 E::SES_NONLINEAR { nlSystem, .. } => vec![(nlSystem, false)],
@@ -141,12 +180,15 @@ pub(super) fn collect_nls_jobs(
                 if let Some((rows, cols)) = nls_jac_dims(nlSystem) {
                     let size = n as usize;
                     if rows != size - nls_lambda_extra(nlSystem) as usize || cols != size {
-                        warnings.push((nlSystem.indexNonLinearSystem, format!(
-                            "Analytic Jacobian of non-linear system {} is {rows}x{cols}, but the system \
+                        warnings.push((
+                            nlSystem.indexNonLinearSystem,
+                            format!(
+                                "Analytic Jacobian of non-linear system {} is {rows}x{cols}, but the system \
                              has {size} iteration variables. This indicates that something went wrong \
                              during Jacobian generation. Using a numeric Jacobian instead.",
-                            nlSystem.indexNonLinearSystem
-                        )));
+                                nlSystem.indexNonLinearSystem
+                            ),
+                        ));
                         has_jac = false;
                     }
                 }
@@ -162,12 +204,15 @@ pub(super) fn collect_nls_jobs(
                     .and_then(|jm| nls_jac_pattern_raw(jm, n as usize));
                 let pat = raw_pat.filter(|p| {
                     p.passes_sanity_check(n as usize) || {
-                        warnings.push((nlSystem.indexNonLinearSystem, format!(
-                            "Sparsity pattern for non-linear system {} is not regular. This indicates \
+                        warnings.push((
+                            nlSystem.indexNonLinearSystem,
+                            format!(
+                                "Sparsity pattern for non-linear system {} is not regular. This indicates \
                              that something went wrong during sparsity pattern generation. Removing \
                              sparsity pattern and disabling NLS scaling.",
-                            nlSystem.indexNonLinearSystem
-                        )));
+                                nlSystem.indexNonLinearSystem
+                            ),
+                        ));
                         false
                     }
                 });
@@ -188,7 +233,23 @@ pub(super) fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.rowidx);
                     patterns.extend_from_slice(&p.color_of_column(n as usize));
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport, casual });
+                jobs.insert(
+                    nlSystem.index,
+                    NlsJob {
+                        k: systems.len() as u32,
+                        n,
+                        eq_index: nlSystem.index as u32,
+                        hist_off,
+                        nominal_off,
+                        has_jac,
+                        mixed,
+                        nnz,
+                        pat_off,
+                        sparse_default,
+                        homotopy_support: nlSystem.homotopySupport,
+                        casual,
+                    },
+                );
                 if nnz != 0 {
                     pat_off += 4 * (2 * n + 1 + nnz);
                 }
@@ -196,10 +257,10 @@ pub(super) fn collect_nls_jobs(
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
                     let key = sim_cref_key(cr).ok();
-                    let (nom, lo, hi) = key
-                        .as_ref()
-                        .and_then(|k| nominal_of.get(k).copied())
-                        .unwrap_or((1.0, -f64::MAX, f64::MAX));
+                    let (nom, lo, hi) =
+                        key.as_ref()
+                            .and_then(|k| nominal_of.get(k).copied())
+                            .unwrap_or((1.0, -f64::MAX, f64::MAX));
                     if let Some(k) = key {
                         attr_targets.entry(k).or_default().nls.push(nominals.len() as u32);
                     }
@@ -212,14 +273,27 @@ pub(super) fn collect_nls_jobs(
         }
     }
     warnings.sort_by_key(|(k, _)| *k);
-    (systems, jobs, hist_off, nominals, bounds, patterns, warnings.into_iter().map(|(_, w)| w).collect())
+    (
+        systems,
+        jobs,
+        hist_off,
+        nominals,
+        bounds,
+        patterns,
+        warnings.into_iter().map(|(_, w)| w).collect(),
+    )
 }
 
 /// The optimizer's Jacobian entry points, in emission order: for B, C and D the
 /// seed-independent equations and then one column. Matched by
 /// `OptJac::{const_fn, column_fn}`.
 pub(crate) const OPT_JAC_FNS: [&str; 6] = [
-    "optJacB_const", "optJacB", "optJacC_const", "optJacC", "optJacD_const", "optJacD",
+    "optJacB_const",
+    "optJacB",
+    "optJacC_const",
+    "optJacC",
+    "optJacD_const",
+    "optJacD",
 ];
 
 /// The real variables after the states and their derivatives, in C's
@@ -249,7 +323,10 @@ pub(super) fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<Strin
         .chain(lst(&vars.aliasVars));
     for sv in all {
         if let Ok(key) = sim_cref_key(&sv.name) {
-            let nom = const_value(&sv.nominalValue).map(|v| v.abs()).filter(|v| *v > 0.0).unwrap_or(1.0);
+            let nom = const_value(&sv.nominalValue)
+                .map(|v| v.abs())
+                .filter(|v| *v > 0.0)
+                .unwrap_or(1.0);
             let lo = const_value(&sv.minValue).unwrap_or(-f64::MAX);
             let hi = const_value(&sv.maxValue).unwrap_or(f64::MAX);
             map.entry(key).or_insert((nom, lo, hi));
@@ -288,8 +365,8 @@ pub(super) fn emit_nls_start(
     bounds: &[f64],
     patterns: &[i32],
 ) {
-    use we::Instruction as I;
     use crate::CodegenWasmJitFunctions::{NLS_BOUNDS_GLOBAL, NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
+    use we::Instruction as I;
     // history block (zeroed by rt_alloc, so every system's count starts 0).
     if hist_bytes > 0 {
         f.instruction(&I::I32Const(hist_bytes as i32));
@@ -304,7 +381,9 @@ pub(super) fn emit_nls_start(
         f.instruction(&I::I32Const(hist_off as i32));
         f.instruction(&I::I32Add);
         f.instruction(&I::I32Const(*n as i32));
-        f.instruction(&I::Call(rt_index("rt_nls_register").expect("rt_nls_register is a runtime builtin")));
+        f.instruction(&I::Call(
+            rt_index("rt_nls_register").expect("rt_nls_register is a runtime builtin"),
+        ));
         hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(*n);
     }
     // nominal block: rt_alloc, then store each system's iteration-variable nominal

@@ -8,9 +8,9 @@
 // warnAboutVars2Work (forward, prefix/str/suffix) and AbsynUtil.
 // pathStringWork (forward and reverse segment order).
 
-use arcstr::{ArcStr, literal};
 use crate::StringUtil;
 use crate::System;
+use arcstr::{ArcStr, literal};
 
 fn result_string(sa: System::StringAllocator) -> ArcStr {
     System::stringAllocatorResult(sa, literal!(""))

@@ -7,11 +7,11 @@
 //! [`LinInfo::frame`] the code generator baked the dump language into. The file is
 //! handed back for whichever entry point owns the file system.
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
+use openmodelica_solvers::fmath;
 
 use crate::driver::{Result, SimEngine, format_g, read_f64, write_f64, write_i32};
 use crate::{LinInfo, LinLanguage, LinVar, REAL_OFF, SimMeta};
@@ -23,7 +23,6 @@ pub struct LinFile {
     pub name: String,
     pub content: String,
 }
-
 
 /// C's `numericalDifferentiationDeltaXlinearize` default.
 fn default_delta_x() -> f64 {
@@ -104,14 +103,27 @@ fn jac_ac_num(
     cz: Option<&mut [f64]>,
 ) -> Result<()> {
     let layout = &model.layout;
-    let (n_x, n_y, n_z) = (layout.n_states as usize, lin.output_vars.len(), layout.n_real_alg as usize);
+    let (n_x, n_y, n_z) = (
+        layout.n_states as usize,
+        lin.output_vars.len(),
+        layout.n_real_alg as usize,
+    );
     let do_z = cz.is_some();
     let (mut x0, mut x1) = (vec![0.0; n_x], vec![0.0; n_x]);
     let (mut y0, mut y1) = (vec![0.0; n_y], vec![0.0; n_y]);
     let (mut z0, mut z1) = (vec![0.0; n_z], vec![0.0; n_z]);
     let mut cz = cz;
 
-    ode_residual(e, model, lin, sim_data, u, &mut x0, &mut y0, do_z.then_some(&mut z0[..]))?;
+    ode_residual(
+        e,
+        model,
+        lin,
+        sim_data,
+        u,
+        &mut x0,
+        &mut y0,
+        do_z.then_some(&mut z0[..]),
+    )?;
     let mut scaling = Vec::with_capacity(n_x);
     for i in 0..n_x as u32 {
         let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
@@ -128,7 +140,16 @@ fn jac_ac_num(
         write_f64(e, addr, xsave + delta_hh / scaling[i])?;
         delta_hh = 1.0 / delta_hh * scaling[i];
 
-        ode_residual(e, model, lin, sim_data, u, &mut x1, &mut y1, do_z.then_some(&mut z1[..]))?;
+        ode_residual(
+            e,
+            model,
+            lin,
+            sim_data,
+            u,
+            &mut x1,
+            &mut y1,
+            do_z.then_some(&mut z1[..]),
+        )?;
 
         for j in 0..n_x {
             a[i * n_x + j] = (x1[j] - x0[j]) * delta_hh;
@@ -160,8 +181,12 @@ fn jac_bd_num(
     dz: Option<&mut [f64]>,
 ) -> Result<()> {
     let layout = &model.layout;
-    let (n_x, n_u, n_y, n_z) =
-        (layout.n_states as usize, u.len(), lin.output_vars.len(), layout.n_real_alg as usize);
+    let (n_x, n_u, n_y, n_z) = (
+        layout.n_states as usize,
+        u.len(),
+        lin.output_vars.len(),
+        layout.n_real_alg as usize,
+    );
     let do_z = dz.is_some();
     let (mut x0, mut x1) = (vec![0.0; n_x], vec![0.0; n_x]);
     let (mut y0, mut y1) = (vec![0.0; n_y], vec![0.0; n_y]);
@@ -169,14 +194,32 @@ fn jac_bd_num(
     let mut dz = dz;
     let mut u = u.to_vec();
 
-    ode_residual(e, model, lin, sim_data, &u, &mut x0, &mut y0, do_z.then_some(&mut z0[..]))?;
+    ode_residual(
+        e,
+        model,
+        lin,
+        sim_data,
+        &u,
+        &mut x0,
+        &mut y0,
+        do_z.then_some(&mut z0[..]),
+    )?;
     for i in 0..n_u {
         let usave = u[i];
         let mut delta_hh = delta_h * (fmath::fabs(usave) + 1.0);
         u[i] = usave + delta_hh;
         delta_hh = 1.0 / delta_hh;
 
-        ode_residual(e, model, lin, sim_data, &u, &mut x1, &mut y1, do_z.then_some(&mut z1[..]))?;
+        ode_residual(
+            e,
+            model,
+            lin,
+            sim_data,
+            &u,
+            &mut x1,
+            &mut y1,
+            do_z.then_some(&mut z1[..]),
+        )?;
 
         for j in 0..n_x {
             b[i * n_x + j] = (x1[j] - x0[j]) * delta_hh;
@@ -317,10 +360,8 @@ pub fn created_notice(lin: &LinInfo, path: &str) -> Vec<String> {
     }
     vec![
         format!("Linear model is created at {path}"),
-        "The output format can be changed with the command line option --linearizationDumpLanguage."
-            .to_string(),
-        "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python."
-            .to_string(),
+        "The output format can be changed with the command line option --linearizationDumpLanguage.".to_string(),
+        "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python.".to_string(),
         "In OMEdit Simulation Setup->Linearize->Target language for linearized model.".to_string(),
     ]
 }
@@ -329,7 +370,11 @@ pub fn created_notice(lin: &LinInfo, path: &str) -> Vec<String> {
 /// `-l` was not asked for.
 pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Result<Option<LinFile>> {
     let (asked, datarec, delta_h) = crate::simflags::with_flags(|f| {
-        (f.linearize.is_some(), f.linearize_datarec, f.delta_x_linearize.unwrap_or_else(default_delta_x))
+        (
+            f.linearize.is_some(),
+            f.linearize_datarec,
+            f.delta_x_linearize.unwrap_or_else(default_delta_x),
+        )
     });
     if !asked {
         return Ok(None);
@@ -338,8 +383,12 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
         return Err("linearization is not available for this model");
     };
     let layout = &model.layout;
-    let (n_x, n_u, n_y, n_z) =
-        (layout.n_states as usize, lin.input_vars.len(), lin.output_vars.len(), layout.n_real_alg as usize);
+    let (n_x, n_u, n_y, n_z) = (
+        layout.n_states as usize,
+        lin.input_vars.len(),
+        lin.output_vars.len(),
+        layout.n_real_alg as usize,
+    );
 
     // C linearizes with `discreteCall == 0`: relations and `mathEventsValuePre`
     // stay held, so a perturbed state cannot step a discrete value.
@@ -363,8 +412,11 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     }
 
     let x0 = read_states(e, sim_data, layout.n_states)?;
-    let u0: Vec<f64> =
-        lin.input_vars.iter().map(|v| read_lin_var(e, sim_data, v)).collect::<Result<_>>()?;
+    let u0: Vec<f64> = lin
+        .input_vars
+        .iter()
+        .map(|v| read_lin_var(e, sim_data, v))
+        .collect::<Result<_>>()?;
     // C reads z0 before anything perturbs the model.
     let z0: Vec<f64> = if datarec {
         (0..n_z as u32)
@@ -379,8 +431,28 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     // matrix can fail to lower, and one that did is differenced rather than left at
     // C's `calloc` zero.
     if datarec || lin.sym_mask != 0b1111 {
-        jac_ac_num(e, model, lin, sim_data, delta_h, &u0, &mut a, &mut c, datarec.then_some(&mut cz[..]))?;
-        jac_bd_num(e, model, lin, sim_data, delta_h, &u0, &mut b, &mut d, datarec.then_some(&mut dz[..]))?;
+        jac_ac_num(
+            e,
+            model,
+            lin,
+            sim_data,
+            delta_h,
+            &u0,
+            &mut a,
+            &mut c,
+            datarec.then_some(&mut cz[..]),
+        )?;
+        jac_bd_num(
+            e,
+            model,
+            lin,
+            sim_data,
+            delta_h,
+            &u0,
+            &mut b,
+            &mut d,
+            datarec.then_some(&mut dz[..]),
+        )?;
     }
     for (k, m) in [&mut a, &mut b, &mut c, &mut d].into_iter().enumerate() {
         if lin.sym_mask & (1 << k) != 0 {
@@ -392,11 +464,20 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     let from_model = e.lin_frame(datarec);
     let frame = match &from_model {
         Some(f) => f,
-        None => if datarec { &lin.frame_datarec } else { &lin.frame },
+        None => {
+            if datarec {
+                &lin.frame_datarec
+            } else {
+                &lin.frame
+            }
+        }
     };
     let lang = lin.language;
     if frame.is_empty() {
-        return Ok(Some(LinFile { name: format!("linearized_model{}", lang.ext()), content: String::new() }));
+        return Ok(Some(LinFile {
+            name: format!("linearized_model{}", lang.ext()),
+            content: String::new(),
+        }));
     }
 
     let mat = |m: &[f64], row: usize, col: usize| match lang {

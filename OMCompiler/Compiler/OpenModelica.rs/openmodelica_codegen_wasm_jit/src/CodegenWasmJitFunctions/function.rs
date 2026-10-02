@@ -77,7 +77,12 @@ fn compile_boxed(
 }
 
 fn has_flat_locals(f: &SimCodeFunction::Function::Function) -> bool {
-    let SimCodeFunction::Function::Function::FUNCTION { outVars, variableDeclarations, .. } = f else {
+    let SimCodeFunction::Function::Function::FUNCTION {
+        outVars,
+        variableDeclarations,
+        ..
+    } = f
+    else {
         return false;
     };
     (&**outVars)
@@ -109,7 +114,13 @@ fn compile_function_body(
     if matches!(f, SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { .. }) {
         return compile_external_function(f, by_name, literals);
     }
-    let SimCodeFunction::Function::Function::FUNCTION { outVars, functionArguments, variableDeclarations, body, .. } = f
+    let SimCodeFunction::Function::Function::FUNCTION {
+        outVars,
+        functionArguments,
+        variableDeclarations,
+        body,
+        ..
+    } = f
     else {
         return Err("CodegenWasmJit: only plain FUNCTIONs are supported");
     };
@@ -123,7 +134,13 @@ fn compile_function_body(
         match flat_fields(&sty) {
             Some(fields) if mode == FlatMode::Variant => {
                 let n = fields.len() as u32;
-                flat.insert(name, FlatVar { fields: fields.clone(), locals: (idx..idx + n).collect() });
+                flat.insert(
+                    name,
+                    FlatVar {
+                        fields: fields.clone(),
+                        locals: (idx..idx + n).collect(),
+                    },
+                );
                 idx += n;
             }
             _ => {
@@ -147,7 +164,9 @@ fn compile_function_body(
                            locals: &HashMap<String, (u32, SigTy)>|
      -> Result<Option<String>> {
         let (name, sty) = var_name_ty(v)?;
-        let Some(fields) = flat_fields(&sty).filter(|_| mode != FlatMode::Off) else { return Ok(None) };
+        let Some(fields) = flat_fields(&sty).filter(|_| mode != FlatMode::Off) else {
+            return Ok(None);
+        };
         if locals.contains_key(&name) {
             return Ok(None);
         }
@@ -160,7 +179,13 @@ fn compile_function_body(
                     *idx - 1
                 })
                 .collect();
-            flat.insert(name.clone(), FlatVar { fields: fields.clone(), locals: vars });
+            flat.insert(
+                name.clone(),
+                FlatVar {
+                    fields: fields.clone(),
+                    locals: vars,
+                },
+            );
         }
         Ok(Some(name))
     };
@@ -175,7 +200,13 @@ fn compile_function_body(
                 flat_outs.push(Some(name));
             }
             None => {
-                outputs.push(intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?);
+                outputs.push(intern_local(
+                    v,
+                    &mut idx,
+                    &mut extra_locals,
+                    &mut locals,
+                    &mut array_allocs,
+                )?);
                 flat_outs.push(None);
             }
         }
@@ -186,14 +217,36 @@ fn compile_function_body(
         }
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat, flat_outs, flat_results: mode == FlatMode::Variant };
+    let mut ctx = FnCtx {
+        locals,
+        extra_locals,
+        n_params,
+        outputs,
+        by_name,
+        literals,
+        instrs: Vec::new(),
+        ctrl_depth: 0,
+        loops: Vec::new(),
+        borrowed_locals: Vec::new(),
+        null_locals: Vec::new(),
+        elem_ptr_tmp: None,
+        src_loc: None,
+        sim: None,
+        dt_local_cons: false,
+        dt_fallback: None,
+        flat,
+        flat_outs,
+        flat_results: mode == FlatMode::Variant,
+    };
     borrow_record_params(&mut ctx, functionArguments, Some(body))?;
     // In declaration order, like C's `varInit` loop: a declaration's dimensions
     // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
     // allocation and binding must interleave. `variableDeclarations` already
     // contains the outputs; one missing from it is initialized first.
-    let decl_names: HashSet<String> =
-        (&**variableDeclarations).into_iter().filter_map(|v| var_name_ty(v).ok().map(|(n, _)| n)).collect();
+    let decl_names: HashSet<String> = (&**variableDeclarations)
+        .into_iter()
+        .filter_map(|v| var_name_ty(v).ok().map(|(n, _)| n))
+        .collect();
     let loose_outs: Vec<_> = (&**outVars)
         .into_iter()
         .filter(|v| !var_name_ty(v).is_ok_and(|(n, _)| decl_names.contains(&n)))
@@ -208,7 +261,9 @@ fn compile_function_body(
     push_outputs(&mut ctx)?;
     ctx.emit(we::Instruction::End);
 
-    let FnCtx { extra_locals, instrs, .. } = ctx;
+    let FnCtx {
+        extra_locals, instrs, ..
+    } = ctx;
     let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
         func.instruction(i);
@@ -226,13 +281,21 @@ fn compile_external_function(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     use SimCodeFunction::SimExtArg::SimExtArg as A;
-    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION { name, funArgs, outVars, biVars, extName, extArgs, extReturn, .. } = f else {
+    let SimCodeFunction::Function::Function::EXTERNAL_FUNCTION {
+        name,
+        funArgs,
+        outVars,
+        biVars,
+        extName,
+        extArgs,
+        extReturn,
+        ..
+    } = f
+    else {
         return Err("CodegenWasmJit: compile_external_function on a non-external function");
     };
     // Only for the mismatch diagnostics below.
-    let fn_path = || {
-        AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false).unwrap_or_default()
-    };
+    let fn_path = || AbsynUtil::pathString(name.clone(), arcstr::literal!("."), true, false).unwrap_or_default();
 
     let mut locals: HashMap<String, (u32, SigTy)> = HashMap::default();
     let mut idx: u32 = 0;
@@ -255,7 +318,27 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat: HashMap::default(), flat_outs: Vec::new(), flat_results: false };
+    let mut ctx = FnCtx {
+        locals,
+        extra_locals,
+        n_params,
+        outputs,
+        by_name,
+        literals,
+        instrs: Vec::new(),
+        ctrl_depth: 0,
+        loops: Vec::new(),
+        borrowed_locals: Vec::new(),
+        null_locals: Vec::new(),
+        elem_ptr_tmp: None,
+        src_loc: None,
+        sim: None,
+        dt_local_cons: false,
+        dt_fallback: None,
+        flat: HashMap::default(),
+        flat_outs: Vec::new(),
+        flat_results: false,
+    };
     borrow_record_params(&mut ctx, funArgs, None)?;
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,
@@ -266,7 +349,14 @@ fn compile_external_function(
         ExtLang::C => (&**outVars).into_iter().chain(&**biVars).collect(),
     };
     for v in ordered {
-        let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v else {
+        let SimCodeFunction::Variable::Variable::VARIABLE {
+            name,
+            ty,
+            value,
+            bind_from_outside,
+            ..
+        } = &**v
+        else {
             continue;
         };
         let slot = var_name_ty(v).ok().and_then(|(n, _)| ctx.locals.get(&n).cloned());
@@ -280,7 +370,10 @@ fn compile_external_function(
             continue;
         }
         let Some(val) = value else { continue };
-        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        let lhs = DAE::Exp::CREF {
+            componentRef: name.clone(),
+            ty: ty.clone(),
+        };
         compile_assign(&mut ctx, &lhs, val)?;
     }
 
@@ -292,7 +385,10 @@ fn compile_external_function(
         Ok(match a {
             // An output array is pre-allocated and passed by pointer, like an input.
             A::SIMEXTARG { cref, type_, .. } if !is_out || matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })) => {
-                Some(metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() }))
+                Some(metamodelica::Ref::new(DAE::Exp::CREF {
+                    componentRef: cref.clone(),
+                    ty: type_.clone(),
+                }))
             }
             A::SIMEXTARG { .. } => None,
             A::SIMEXTARGEXP { exp, .. } => Some(exp.clone()),
@@ -301,8 +397,14 @@ fn compile_external_function(
             // expression → `rt_array_dim`. (Pushing `exp` alone would pass the
             // dimension index itself as the C `int`, not the size.)
             A::SIMEXTARGSIZE { cref, type_, exp, .. } => {
-                let arr = metamodelica::Ref::new(DAE::Exp::CREF { componentRef: cref.clone(), ty: type_.clone() });
-                Some(metamodelica::Ref::new(DAE::Exp::SIZE { exp: arr, sz: Some(exp.clone()) }))
+                let arr = metamodelica::Ref::new(DAE::Exp::CREF {
+                    componentRef: cref.clone(),
+                    ty: type_.clone(),
+                });
+                Some(metamodelica::Ref::new(DAE::Exp::SIZE {
+                    exp: arr,
+                    sz: Some(exp.clone()),
+                }))
             }
             other => return Err("CodegenWasmJit: unsupported external-call argument"),
         })
@@ -338,7 +440,9 @@ fn compile_external_function(
             release_heap_locals(&mut ctx)?;
             push_outputs(&mut ctx)?;
             ctx.emit(we::Instruction::End);
-            let FnCtx { extra_locals, instrs, .. } = ctx;
+            let FnCtx {
+                extra_locals, instrs, ..
+            } = ctx;
             let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
             for i in &instrs {
                 func.instruction(i);
@@ -355,7 +459,8 @@ fn compile_external_function(
         }
         for a in &**extArgs {
             let oi = ext_arg_output_index(a);
-            let scalar = !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })));
+            let scalar =
+                !matches!(&**a, A::SIMEXTARG { type_, .. } if matches!(sig_ty_quiet(type_), Ok(SigTy::Array { .. })));
             if oi != 0 && scalar {
                 let field = match &**a {
                     A::SIMEXTARG { cref, .. } => cref_field(cref),
@@ -410,7 +515,9 @@ fn compile_external_function(
     push_outputs(&mut ctx)?;
     ctx.emit(we::Instruction::End);
 
-    let FnCtx { extra_locals, instrs, .. } = ctx;
+    let FnCtx {
+        extra_locals, instrs, ..
+    } = ctx;
     let mut func = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
         func.instruction(i);
@@ -450,7 +557,9 @@ fn stmt_assigns_to(s: &DAE::Statement, name: &str) -> bool {
     use DAE::Statement as S;
     let lhs_is = |e: &DAE::Exp| match e {
         DAE::Exp::CREF { componentRef, .. } => match &**componentRef {
-            DAE::ComponentRef::CREF_IDENT { ident, .. } | DAE::ComponentRef::CREF_QUAL { ident, .. } => ident.as_str() == name,
+            DAE::ComponentRef::CREF_IDENT { ident, .. } | DAE::ComponentRef::CREF_QUAL { ident, .. } => {
+                ident.as_str() == name
+            }
             _ => true,
         },
         _ => true,
@@ -459,7 +568,9 @@ fn stmt_assigns_to(s: &DAE::Statement, name: &str) -> bool {
         match e {
             DAE::Else::NOELSE => return false,
             DAE::Else::ELSE { statementLst } => return stmts_assign_to(statementLst, name),
-            DAE::Else::ELSEIF { statementLst, else_, .. } => {
+            DAE::Else::ELSEIF {
+                statementLst, else_, ..
+            } => {
                 if stmts_assign_to(statementLst, name) {
                     return true;
                 }
@@ -471,13 +582,15 @@ fn stmt_assigns_to(s: &DAE::Statement, name: &str) -> bool {
         S::STMT_ASSIGN { exp1, .. } => lhs_is(exp1),
         S::STMT_ASSIGN_ARR { lhs, .. } => lhs_is(lhs),
         S::STMT_TUPLE_ASSIGN { expExpLst, .. } => (&**expExpLst).into_iter().any(|e| lhs_is(e)),
-        S::STMT_IF { statementLst, else_, .. } => stmts_assign_to(statementLst, name) || else_assigns(else_),
-        S::STMT_FOR { statementLst, .. }
-        | S::STMT_PARFOR { statementLst, .. }
-        | S::STMT_WHILE { statementLst, .. } => stmts_assign_to(statementLst, name),
-        S::STMT_WHEN { statementLst, elseWhen, .. } => {
-            stmts_assign_to(statementLst, name) || elseWhen.as_ref().is_some_and(|w| stmt_assigns_to(w, name))
+        S::STMT_IF {
+            statementLst, else_, ..
+        } => stmts_assign_to(statementLst, name) || else_assigns(else_),
+        S::STMT_FOR { statementLst, .. } | S::STMT_PARFOR { statementLst, .. } | S::STMT_WHILE { statementLst, .. } => {
+            stmts_assign_to(statementLst, name)
         }
+        S::STMT_WHEN {
+            statementLst, elseWhen, ..
+        } => stmts_assign_to(statementLst, name) || elseWhen.as_ref().is_some_and(|w| stmt_assigns_to(w, name)),
         S::STMT_FAILURE { body, .. } => stmts_assign_to(body, name),
         S::STMT_ASSERT { .. }
         | S::STMT_TERMINATE { .. }
@@ -495,14 +608,18 @@ fn stmt_assigns_to(s: &DAE::Statement, name: &str) -> bool {
 fn assigned_whole_first(stmts: &List<metamodelica::Ref<DAE::Statement>>, name: &str) -> bool {
     for s in &**stmts {
         let (lhs, rhs) = match &**s {
-            DAE::Statement::STMT_ASSIGN { exp1, exp, .. } | DAE::Statement::STMT_ASSIGN_ARR { lhs: exp1, exp, .. } => (exp1, exp),
+            DAE::Statement::STMT_ASSIGN { exp1, exp, .. } | DAE::Statement::STMT_ASSIGN_ARR { lhs: exp1, exp, .. } => {
+                (exp1, exp)
+            }
             _ => return false,
         };
         if exp_mentions(rhs, name) {
             return false;
         }
         if let DAE::Exp::CREF { componentRef, .. } = &**lhs
-            && let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef
+            && let DAE::ComponentRef::CREF_IDENT {
+                ident, subscriptLst, ..
+            } = &**componentRef
             && ident.as_str() == name
         {
             return subscriptLst.is_empty();
@@ -519,7 +636,9 @@ fn exp_mentions(e: &metamodelica::Ref<DAE::Exp>, name: &str) -> bool {
     let visit = move |e: metamodelica::Ref<DAE::Exp>, found: i32| -> Result<(metamodelica::Ref<DAE::Exp>, i32)> {
         let hit = match &*e {
             DAE::Exp::CREF { componentRef, .. } => match &**componentRef {
-                DAE::ComponentRef::CREF_IDENT { ident, .. } | DAE::ComponentRef::CREF_QUAL { ident, .. } => ident.as_str() == name,
+                DAE::ComponentRef::CREF_IDENT { ident, .. } | DAE::ComponentRef::CREF_QUAL { ident, .. } => {
+                    ident.as_str() == name
+                }
                 _ => false,
             },
             _ => false,
@@ -547,7 +666,15 @@ fn init_var(
     done: &mut Vec<u32>,
     body: &List<metamodelica::Ref<DAE::Statement>>,
 ) -> Result<()> {
-    let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, kind, bind_from_outside, .. } = v else {
+    let SimCodeFunction::Variable::Variable::VARIABLE {
+        name,
+        ty,
+        value,
+        kind,
+        bind_from_outside,
+        ..
+    } = v
+    else {
         return Ok(());
     };
     let (vname, sty) = var_name_ty(v)?;
@@ -556,7 +683,10 @@ fn init_var(
             return Ok(());
         }
         done.push(fv.locals[0]);
-        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        let lhs = DAE::Exp::CREF {
+            componentRef: name.clone(),
+            ty: ty.clone(),
+        };
         return match value {
             _ if *bind_from_outside => Ok(()),
             Some(val) => compile_assign(ctx, &lhs, val),
@@ -611,7 +741,10 @@ fn init_var(
         _ => {}
     }
     if let Some(val) = value {
-        let lhs = DAE::Exp::CREF { componentRef: name.clone(), ty: ty.clone() };
+        let lhs = DAE::Exp::CREF {
+            componentRef: name.clone(),
+            ty: ty.clone(),
+        };
         compile_assign(ctx, &lhs, val)?;
     }
     Ok(())
@@ -620,12 +753,18 @@ fn init_var(
 /// The dimension list of an array `VARIABLE`, consistent with [`variable_sigty`]:
 /// a `T_ARRAY` `ty` carries the dimensions (flattened across nesting); otherwise
 /// they live in `instDims`.
-pub(super) fn var_array_dims(v: &SimCodeFunction::Variable::Variable) -> Result<Vec<metamodelica::Ref<DAE::Dimension>>> {
+pub(super) fn var_array_dims(
+    v: &SimCodeFunction::Variable::Variable,
+) -> Result<Vec<metamodelica::Ref<DAE::Dimension>>> {
     let SimCodeFunction::Variable::Variable::VARIABLE { ty, instDims, .. } = v else {
         return Err("CodegenWasmJit: function-pointer variables not supported");
     };
     let from_ty = type_array_dims(ty);
-    Ok(if from_ty.is_empty() { (&**instDims).into_iter().cloned().collect() } else { from_ty })
+    Ok(if from_ty.is_empty() {
+        (&**instDims).into_iter().cloned().collect()
+    } else {
+        from_ty
+    })
 }
 
 /// The dimensions carried by a `T_ARRAY` type, flattening nested `T_ARRAY`s
@@ -644,7 +783,12 @@ pub(super) fn type_array_dims(ty: &DAE::Type) -> Vec<metamodelica::Ref<DAE::Dime
 /// Allocate an array local at function entry: evaluate each dimension to an
 /// `i32` (unknown `:` dims start at 0), build the runtime array of the right
 /// element kind, set the dimension sizes, and store the handle in `slot`.
-pub(super) fn emit_array_alloc(ctx: &mut FnCtx, slot: u32, elem: &SigTy, dims: &[metamodelica::Ref<DAE::Dimension>]) -> Result<()> {
+pub(super) fn emit_array_alloc(
+    ctx: &mut FnCtx,
+    slot: u32,
+    elem: &SigTy,
+    dims: &[metamodelica::Ref<DAE::Dimension>],
+) -> Result<()> {
     if dims.is_empty() {
         return Err("CodegenWasmJit: array local with no dimensions");
     }
@@ -698,7 +842,12 @@ pub(super) fn emit_dim_value(ctx: &mut FnCtx, dim: &DAE::Dimension) -> Result<()
 
 pub(super) fn push_outputs(ctx: &mut FnCtx) -> Result<()> {
     for (k, (idx, _)) in ctx.outputs.clone().into_iter().enumerate() {
-        let fv = ctx.flat_outs.get(k).cloned().flatten().and_then(|n| ctx.flat.get(&n).cloned());
+        let fv = ctx
+            .flat_outs
+            .get(k)
+            .cloned()
+            .flatten()
+            .and_then(|n| ctx.flat.get(&n).cloned());
         match fv {
             Some(v) if ctx.flat_results => {
                 for l in &v.locals {
@@ -765,13 +914,17 @@ pub(super) fn cref_field(cr: &DAE::ComponentRef) -> Option<String> {
 
 pub(super) fn cref_ident(cr: &DAE::ComponentRef) -> Result<String> {
     match cr {
-        DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } => {
+        DAE::ComponentRef::CREF_IDENT {
+            ident, subscriptLst, ..
+        } => {
             if !subscriptLst.is_empty() {
                 return Err("CodegenWasmJit: subscripted component reference (arrays not supported)");
             }
             Ok(ident.to_string())
         }
-        DAE::ComponentRef::CREF_QUAL { .. } => return Err("CodegenWasmJit: qualified component reference (records not supported)"),
+        DAE::ComponentRef::CREF_QUAL { .. } => {
+            return Err("CodegenWasmJit: qualified component reference (records not supported)");
+        }
         other => return Err("CodegenWasmJit: unsupported component reference"),
     }
 }

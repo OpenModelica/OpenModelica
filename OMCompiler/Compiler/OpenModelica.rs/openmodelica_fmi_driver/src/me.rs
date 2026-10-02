@@ -169,7 +169,11 @@ impl FmuOde<'_> {
         // of the point it stands at.
         let implicit = dae.form == DaeForm::Implicit;
         let ders = if implicit { &yp[..nx.min(yp.len())] } else { &[][..] };
-        if self.committed.as_ref().is_some_and(|(ct, cy, cp)| *ct == t && cy == y && cp == ders) {
+        if self
+            .committed
+            .as_ref()
+            .is_some_and(|(ct, cy, cp)| *ct == t && cy == y && cp == ders)
+        {
             return Ok(());
         }
         self.inst.set_time(t)?;
@@ -216,7 +220,13 @@ impl FmuOde<'_> {
     /// carry; [`Run`] surfaces the real one. `fmi3Discard` answers for the trial
     /// point, not the run, so it is flagged rather than kept.
     fn note(&mut self, e: Error) -> &'static str {
-        self.discarded = matches!(e, Error::Status { status: crate::api::Status::Discard, .. });
+        self.discarded = matches!(
+            e,
+            Error::Status {
+                status: crate::api::Status::Discard,
+                ..
+            }
+        );
         if self.discarded {
             return "the FMU discarded the point it was asked to evaluate";
         }
@@ -300,7 +310,13 @@ impl Ode for FmuOde<'_> {
 }
 
 fn is_discard(e: &Error) -> bool {
-    matches!(e, Error::Status { status: crate::api::Status::Discard, .. })
+    matches!(
+        e,
+        Error::Status {
+            status: crate::api::Status::Discard,
+            ..
+        }
+    )
 }
 
 impl Dae for FmuOde<'_> {
@@ -323,7 +339,9 @@ impl Dae for FmuOde<'_> {
         // The state rows close der(x) = f(x, a, t) over y'; the FMU's residuals
         // are the constraints below them.
         if nx > 0 {
-            self.inst.get_continuous_state_derivatives(&mut res[..nx]).map_err(|e| self.note(e))?;
+            self.inst
+                .get_continuous_state_derivatives(&mut res[..nx])
+                .map_err(|e| self.note(e))?;
             for (r, p) in res[..nx].iter_mut().zip(yp) {
                 *r = *p - *r;
             }
@@ -376,12 +394,20 @@ fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usi
     // The manifest's <ModelStructure> replaces the model description's, so its
     // <ContinuousStateDerivative> list decides the form; naming none states the
     // implicit one, whose derivatives the model description still has to name.
-    let form = if m.continuous_state_derivatives.is_empty() { DaeForm::Implicit } else { DaeForm::SemiExplicit };
+    let form = if m.continuous_state_derivatives.is_empty() {
+        DaeForm::Implicit
+    } else {
+        DaeForm::SemiExplicit
+    };
     // From the model description in either form: `continuous_states` and
     // `fmi3GetContinuousStates` follow this order, which is what pairs `y[i]`
     // with `y'[i]`. The manifest's own order does not get to decide that.
-    let der_vrs: Vec<u32> =
-        md.model_structure.continuous_state_derivatives.iter().map(|u| u.value_reference).collect();
+    let der_vrs: Vec<u32> = md
+        .model_structure
+        .continuous_state_derivatives
+        .iter()
+        .map(|u| u.value_reference)
+        .collect();
     if der_vrs.len() != nx {
         return Err(Error::Unsupported(format!(
             "fmi-ls-dae: the FMU has {nx} continuous states but <ModelStructure> lists {} derivatives",
@@ -394,8 +420,16 @@ fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usi
             m.continuous_state_derivatives.len()
         )));
     }
-    let alg_vrs = m.algebraic_variables.iter().map(|&vr| float64(vr, "algebraic variable")).collect::<Result<Vec<_>>>()?;
-    let res_vrs = m.residual_vrs().into_iter().map(|vr| float64(vr, "residual")).collect::<Result<Vec<_>>>()?;
+    let alg_vrs = m
+        .algebraic_variables
+        .iter()
+        .map(|&vr| float64(vr, "algebraic variable"))
+        .collect::<Result<Vec<_>>>()?;
+    let res_vrs = m
+        .residual_vrs()
+        .into_iter()
+        .map(|vr| float64(vr, "residual"))
+        .collect::<Result<Vec<_>>>()?;
     let wanted = match form {
         DaeForm::Implicit => nx + alg_vrs.len(),
         DaeForm::SemiExplicit => alg_vrs.len(),
@@ -413,7 +447,14 @@ fn dae_vrs(md: &ModelDescription, m: &openmodelica_fmi::lsdae::Manifest, nx: usi
         )));
     }
     let sparsity = dae_sparsity(md, m, nx, form, &alg_vrs, &der_vrs);
-    Ok(DaeVrs { nx, form, alg_vrs, der_vrs, res_vrs, sparsity })
+    Ok(DaeVrs {
+        nx,
+        form,
+        alg_vrs,
+        der_vrs,
+        res_vrs,
+        sparsity,
+    })
 }
 
 /// The residual Jacobian's sparsity out of the manifest's `dependencies`: for
@@ -512,7 +553,9 @@ pub fn jacobian_sparsity(md: &ModelDescription, nx: usize) -> (Vec<Vec<u32>>, Ve
         else {
             return none;
         };
-        let Some(len) = state.fixed_len().filter(|&l| l > 0) else { return none };
+        let Some(len) = state.fixed_len().filter(|&l| l > 0) else {
+            return none;
+        };
         let span = (n, len as usize);
         spans.push(span);
         column_of.insert(state.value_reference, span);
@@ -557,8 +600,10 @@ fn greedy_colors(rows_by_col: &[Vec<u32>]) -> Vec<Vec<u32>> {
     let mut colors: Vec<Vec<u32>> = Vec::new();
     let mut used: Vec<std::collections::HashSet<u32>> = Vec::new();
     for (col, rows) in rows_by_col.iter().enumerate() {
-        let free =
-            colors.iter().enumerate().position(|(c, _)| !rows.iter().any(|row| used[c].contains(row)));
+        let free = colors
+            .iter()
+            .enumerate()
+            .position(|(c, _)| !rows.iter().any(|row| used[c].contains(row)));
         let c = match free {
             Some(c) => c,
             None => {
@@ -609,7 +654,9 @@ impl Integrator {
                 )));
             }
             #[cfg(sundials)]
-            return Ok(Integrator::IdaDae(Box::new(IdaDae::new(nx, n_alg, nz, tolerance, nominals))));
+            return Ok(Integrator::IdaDae(Box::new(IdaDae::new(
+                nx, n_alg, nz, tolerance, nominals,
+            ))));
             #[cfg(not(sundials))]
             return Err(Error::Unsupported("`ida`: this build has no SUNDIALS".to_string()));
         }
@@ -625,13 +672,9 @@ impl Integrator {
                 Integrator::Gbode(Box::new(gb))
             }
             Solver::Euler => Integrator::Fixed(FixedStep::new(FixedKind::Euler, nx, nz)),
-            Solver::RungeKutta => {
-                Integrator::Fixed(FixedStep::new(FixedKind::RungeKutta, nx, nz))
-            }
+            Solver::RungeKutta => Integrator::Fixed(FixedStep::new(FixedKind::RungeKutta, nx, nz)),
             #[cfg(sundials)]
-            Solver::Cvode => {
-                Integrator::Cvode(Box::new(CvodeOde::new(nx, nz, tolerance, nominals)))
-            }
+            Solver::Cvode => Integrator::Cvode(Box::new(CvodeOde::new(nx, nz, tolerance, nominals))),
             #[cfg(sundials)]
             Solver::Ida => Integrator::Ida(Box::new(IdaOde::new(nx, nz, tolerance, nominals))),
             // Unreachable through `Solver::all`, which does not offer them here.
@@ -676,7 +719,8 @@ impl Integrator {
     fn make_consistent(&mut self, ode: &mut FmuOde, t: f64, y: &mut [f64], yp: &mut [f64]) -> Result<()> {
         #[cfg(sundials)]
         if let Integrator::IdaDae(ida) = self {
-            ida.make_consistent(ode, t, y, yp).map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
+            ida.make_consistent(ode, t, y, yp)
+                .map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))?;
         }
         #[cfg(not(sundials))]
         let _ = (ode, t, y, yp);
@@ -779,11 +823,7 @@ impl Integrator {
 }
 
 /// Drive a Model Exchange FMU from `start_time` to `stop_time`.
-pub fn simulate(
-    inst: &mut dyn Fmi3ModelExchange,
-    md: &ModelDescription,
-    opts: &Options<'_>,
-) -> Result<Run> {
+pub fn simulate(inst: &mut dyn Fmi3ModelExchange, md: &ModelDescription, opts: &Options<'_>) -> Result<Run> {
     let mut inputs = Inputs::new(opts);
     let mut rec = Recorder::new(md, opts.keep);
     if let Some(path) = &opts.result_file {
@@ -837,7 +877,11 @@ pub fn simulate(
     }
     if let Some(d) = &dae {
         for &vr in &d.alg_vrs {
-            let nom = md.variable_by_vr(vr).and_then(|v| v.nominal).map(f64::abs).filter(|n| *n > 0.0);
+            let nom = md
+                .variable_by_vr(vr)
+                .and_then(|v| v.nominal)
+                .map(f64::abs)
+                .filter(|n| *n > 0.0);
             nominals.push(nom.unwrap_or(1.0));
         }
     }
@@ -861,8 +905,16 @@ pub fn simulate(
         && !states.is_empty();
 
     let tolerance = opts.tolerance.unwrap_or(1e-6);
-    let mut integrator =
-        Integrator::new(opts.solver, nx, nz, tolerance, &nominals, colors.len(), directional, n_alg)?;
+    let mut integrator = Integrator::new(
+        opts.solver,
+        nx,
+        nz,
+        tolerance,
+        &nominals,
+        colors.len(),
+        directional,
+        n_alg,
+    )?;
     integrator.set_experiment(opts);
     integrator.set_nominals(&nominals);
 
@@ -946,8 +998,10 @@ pub fn simulate(
                 let mut indicator = root.and(integrator.root_index());
                 if event_at.is_none() && nz > 0 {
                     indicators(&mut ode, t, &x, &xp, &mut zc_now)?;
-                    if let Some(k) =
-                        zc_now.iter().zip(&zc_prev).position(|(now, prev)| zsign(*now) != zsign(*prev))
+                    if let Some(k) = zc_now
+                        .iter()
+                        .zip(&zc_prev)
+                        .position(|(now, prev)| zsign(*now) != zsign(*prev))
                     {
                         event_at = Some(t);
                         indicator = Some(k as u32);
@@ -966,9 +1020,8 @@ pub fn simulate(
                     }
                 }
                 // The end of an event-free step is a row (C's `simulationUpdate`).
-                let reached = event_at.is_none()
-                    && next_event > t + grid_epsilon(opts)
-                    && t >= end - grid_epsilon(opts);
+                let reached =
+                    event_at.is_none() && next_event > t + grid_epsilon(opts) && t >= end - grid_epsilon(opts);
                 if reached {
                     ode.commit_point(end, &x, &xp)?;
                     t = end;
@@ -1020,7 +1073,11 @@ pub fn simulate(
             // C clears `retry` with every accepted step, an event step included.
             halved = None;
             t = te;
-            event_times.push(Event { time: te, time_event, indicator });
+            event_times.push(Event {
+                time: te,
+                time_event,
+                indicator,
+            });
             ode.commit_point(t, &x, &xp)?;
             ode.forget_point();
             {
@@ -1116,7 +1173,11 @@ fn zsign(v: f64) -> i32 {
 
 /// The event indicators at `(t, x)` — `(t, x, x')` in DAE mode.
 fn indicators(ode: &mut FmuOde, t: f64, x: &[f64], xp: &[f64], out: &mut [f64]) -> Result<()> {
-    let r = if ode.dae.is_some() { Dae::eval_zc(ode, t, x, xp, out) } else { Ode::eval_zc(ode, t, x, out) };
+    let r = if ode.dae.is_some() {
+        Dae::eval_zc(ode, t, x, xp, out)
+    } else {
+        Ode::eval_zc(ode, t, x, out)
+    };
     r.map_err(|e| ode.failure.take().unwrap_or(Error::Solver(e)))
 }
 

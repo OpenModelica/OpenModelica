@@ -47,8 +47,8 @@ use std::fs::OpenOptions;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
+use arcstr::{ArcStr, literal};
 use metamodelica::Result;
-use arcstr::{literal, ArcStr};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[repr(i32)]
@@ -95,9 +95,7 @@ impl FileInner {
         #[cfg(not(target_arch = "wasm32"))]
         {
             match self.file.as_mut() {
-                Some(f) => f
-                    .write_all(bytes)
-                    .map_err(|e| "File.{what}: write to {}: {}"),
+                Some(f) => f.write_all(bytes).map_err(|e| "File.{what}: write to {}: {}"),
                 None => return Err("File.{what}: Failed to write to file: {} (not open)"),
             }
         }
@@ -190,11 +188,7 @@ impl File {
                     name: literal!("[no open file]"),
                 })),
             }),
-            Some(id) => FILE_REGISTRY.with(|r| {
-                r.borrow().get(&id).cloned().ok_or_else(|| {
-                    "error"
-                })
-            }),
+            Some(id) => FILE_REGISTRY.with(|r| r.borrow().get(&id).cloned().ok_or_else(|| "error")),
         }
     }
 }
@@ -238,9 +232,8 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         guard.flush_to_vfs();
         match mode {
             Mode::Read => {
-                let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
-                    "File.open: Failed to open file {filename} with mode {mode:?}: no such file"
-                })?;
+                let bytes = openmodelica_wasi::read(filename.as_str())
+                    .ok_or_else(|| "File.open: Failed to open file {filename} with mode {mode:?}: no such file")?;
                 guard.buf = bytes;
             }
             Mode::Write => {
@@ -472,8 +465,15 @@ pub fn releaseReference(file: File) -> Result<()> {
     // file that was never registered is an accounting bug upstream).
     let released = FILE_REGISTRY.with(|r| {
         let mut reg = r.borrow_mut();
-        match reg.iter().find(|(_, f)| Arc::ptr_eq(&f.inner, &file.inner)).map(|(id, _)| *id) {
-            Some(id) => { reg.remove(&id); true }
+        match reg
+            .iter()
+            .find(|(_, f)| Arc::ptr_eq(&f.inner, &file.inner))
+            .map(|(id, _)| *id)
+        {
+            Some(id) => {
+                reg.remove(&id);
+                true
+            }
             None => false,
         }
     });

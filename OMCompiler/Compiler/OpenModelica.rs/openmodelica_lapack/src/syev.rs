@@ -11,7 +11,7 @@
 
 use crate::blas::{daxpy, ddot, dlarfg, dscal};
 use crate::hqr::{dlapy2, dlartg, dlascl};
-use crate::{abs, chol, sqrt, SAFMIN};
+use crate::{SAFMIN, abs, chol, sqrt};
 
 /// `DSTEQR`'s iteration budget per eigenvalue.
 const MAXIT: usize = 30;
@@ -645,8 +645,20 @@ fn dsygst(upper: bool, n: usize, a: &mut [f64], lda: usize, b: &[f64], ldb: usiz
         // The k-th row (upper) or column (lower) of the trailing block, gathered so
         // the rank-2 update and the triangular solve see a contiguous vector.
         let m = n - k - 1;
-        let at = |i: usize| if upper { (k + 1 + i) * lda + k } else { k * lda + k + 1 + i };
-        let bt = |i: usize| if upper { (k + 1 + i) * ldb + k } else { k * ldb + k + 1 + i };
+        let at = |i: usize| {
+            if upper {
+                (k + 1 + i) * lda + k
+            } else {
+                k * lda + k + 1 + i
+            }
+        };
+        let bt = |i: usize| {
+            if upper {
+                (k + 1 + i) * ldb + k
+            } else {
+                k * ldb + k + 1 + i
+            }
+        };
         let mut av: Vec<f64> = (0..m).map(|i| a[at(i)]).collect();
         let bv: Vec<f64> = (0..m).map(|i| b[bt(i)]).collect();
         dscal(1.0 / bkk, &mut av);
@@ -673,8 +685,14 @@ fn dsygst(upper: bool, n: usize, a: &mut [f64], lda: usize, b: &[f64], ldb: usiz
 /// `A` and positive-definite `B`, by `DPOTRF` + `DSYGST` + [`dsyevx`], then C's
 /// back-transform `x = inv(U) y` (upper) or `inv(L') y` (lower).
 pub fn dsygvx(
-    upper: bool, n: usize, a: &[f64], lda: usize, b: &[f64], ldb: usize,
-    w: &mut [f64], z: Option<(&mut [f64], usize)>,
+    upper: bool,
+    n: usize,
+    a: &[f64],
+    lda: usize,
+    b: &[f64],
+    ldb: usize,
+    w: &mut [f64],
+    z: Option<(&mut [f64], usize)>,
 ) -> i32 {
     let mut bf = b[..ldb * n].to_vec();
     let info = chol::dpotrf(if upper { "U" } else { "L" }, n, &mut bf, ldb);
@@ -706,4 +724,3 @@ pub fn dsygvx(
         }
     }
 }
-

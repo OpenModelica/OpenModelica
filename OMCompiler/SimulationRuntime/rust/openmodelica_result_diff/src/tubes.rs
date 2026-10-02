@@ -58,19 +58,16 @@ impl Tubes {
             self.mh[(index - 1) as usize] = (y3 - y4) / (x3 - x4);
         } else {
             self.x_high[index as usize] = self.x2
-                - (self.delta * (m1 + m2)
-                    / ((m2 * m2 + self.s * self.s).sqrt() + (m1 * m1 + self.s * self.s).sqrt()));
+                - (self.delta * (m1 + m2) / ((m2 * m2 + self.s * self.s).sqrt() + (m1 * m1 + self.s * self.s).sqrt()));
             if m1 * m2 < 0.0 {
                 self.y_high[index as usize] = self.y2
                     + (self.delta
-                        * (m1 * (m2 * m2 + self.s * self.s).sqrt()
-                            - m2 * (m1 * m1 + self.s * self.s).sqrt()))
+                        * (m1 * (m2 * m2 + self.s * self.s).sqrt() - m2 * (m1 * m1 + self.s * self.s).sqrt()))
                         / (m1 - m2);
             } else {
                 self.y_high[index as usize] = self.y2
                     + (self.s * self.s * self.delta * (m1 + m2)
-                        / (m1 * (m2 * m2 + self.s * self.s).sqrt()
-                            + m2 * (m1 * m1 + self.s * self.s).sqrt()));
+                        / (m1 * (m2 * m2 + self.s * self.s).sqrt() + m2 * (m1 * m1 + self.s * self.s).sqrt()));
             }
 
             if self.x_high[index as usize] == self.x_high[(index - 1) as usize]
@@ -133,27 +130,23 @@ impl Tubes {
             self.ml[(index - 1) as usize] = (y3 - y4) / (x3 - x4);
         } else {
             self.x_low[index as usize] = self.x2
-                + (self.delta * (m1 + m2)
-                    / ((m2 * m2 + self.s * self.s).sqrt() + (m1 * m1 + self.s * self.s).sqrt()));
+                + (self.delta * (m1 + m2) / ((m2 * m2 + self.s * self.s).sqrt() + (m1 * m1 + self.s * self.s).sqrt()));
             if m1 * m2 < 0.0 {
                 self.y_low[index as usize] = self.y2
                     - (self.delta
-                        * (m1 * (m2 * m2 + self.s * self.s).sqrt()
-                            - m2 * (m1 * m1 + self.s * self.s).sqrt()))
+                        * (m1 * (m2 * m2 + self.s * self.s).sqrt() - m2 * (m1 * m1 + self.s * self.s).sqrt()))
                         / (m1 - m2);
             } else {
                 self.y_low[index as usize] = self.y2
                     - (self.s * self.s * self.delta * (m1 + m2)
-                        / (m1 * (m2 * m2 + self.s * self.s).sqrt()
-                            + m2 * (m1 * m1 + self.s * self.s).sqrt()));
+                        / (m1 * (m2 * m2 + self.s * self.s).sqrt() + m2 * (m1 * m1 + self.s * self.s).sqrt()));
             }
 
             if self.x_low[index as usize] == self.x_low[(index - 1) as usize]
                 && self.y_low[index as usize] != self.y_low[(index - 1) as usize]
             {
                 self.x_low[index as usize] = self.x_low[(index - 1) as usize] + self.x_min_step;
-                self.y_low[index as usize] = self.y2
-                    + m1 * (self.x_low[index as usize] - self.x2)
+                self.y_low[index as usize] = self.y2 + m1 * (self.x_low[index as usize] - self.x2)
                     - self.delta * (m1 * m1 + self.s * self.s).sqrt();
                 self.ml[(index - 1) as usize] =
                     (self.y_low[index as usize] - self.y_low[(index - 1) as usize]) / self.x_min_step;
@@ -169,16 +162,15 @@ impl Tubes {
                 if index == 0 {
                     let x3 = x[0];
                     self.x_low[index as usize] = x3 - self.delta;
-                    self.y_low[index as usize] = self.y2
-                        + m1 * (self.x_low[index as usize] - self.x2)
+                    self.y_low[index as usize] = self.y2 + m1 * (self.x_low[index as usize] - self.x2)
                         - self.delta * (m1 * m1 + self.s * self.s).sqrt();
                 } else {
                     let x3 = self.x_low[(index - 1) as usize];
                     let y3 = self.y_low[(index - 1) as usize];
                     m2 = self.ml[(index - 1) as usize];
-                    self.x_low[index as usize] = (m2 * x3 - m1 * self.x2 + self.y2 - y3
-                        - self.delta * (m1 * m1 + self.s * self.s).sqrt())
-                        / (m2 - m1);
+                    self.x_low[index as usize] =
+                        (m2 * x3 - m1 * self.x2 + self.y2 - y3 - self.delta * (m1 * m1 + self.s * self.s).sqrt())
+                            / (m2 - m1);
                     self.y_low[index as usize] = (m2 * m1 * (x3 - self.x2)
                         + m2 * (self.y2 - self.delta * (m1 * m1 + self.s * self.s).sqrt())
                         - m1 * y3)

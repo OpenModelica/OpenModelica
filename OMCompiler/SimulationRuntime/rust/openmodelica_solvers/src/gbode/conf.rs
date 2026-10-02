@@ -106,7 +106,11 @@ const ERR_NAMES: &[(&str, ErrMethod)] = &[
 ];
 
 fn name_of<T: Copy + PartialEq>(table: &[(&'static str, T)], v: T) -> &'static str {
-    table.iter().find(|(_, m)| *m == v).map(|(n, _)| *n).unwrap_or("unknown")
+    table
+        .iter()
+        .find(|(_, m)| *m == v)
+        .map(|(n, _)| *n)
+        .unwrap_or("unknown")
 }
 
 fn lookup<T: Copy>(flag: &str, value: &str, table: &[(&str, T)]) -> Result<T, String> {
@@ -120,7 +124,9 @@ fn lookup<T: Copy>(flag: &str, value: &str, table: &[(&str, T)]) -> Result<T, St
         }
         accepted.push_str(n);
     }
-    Err(format!("unrecognized value `{value}` for -{flag} (accepted: {accepted})"))
+    Err(format!(
+        "unrecognized value `{value}` for -{flag} (accepted: {accepted})"
+    ))
 }
 
 /// What the birate mode's inner (fast-states) integrator reads out of the
@@ -189,8 +195,7 @@ impl GbConf {
         };
         let ctrl_filter = match get("gbctrl_filter") {
             Some(v) => {
-                let f: f64 =
-                    v.parse().map_err(|_| String::from("-gbctrl_filter needs a number"))?;
+                let f: f64 = v.parse().map_err(|_| String::from("-gbctrl_filter needs a number"))?;
                 if !(0.0..=1.0).contains(&f) {
                     return Err(format!(
                         "Flag -gbctrl_filter has to be between 0.0 and 1.0, but {v} was given."
@@ -285,7 +290,13 @@ impl GbConf {
             Some(v) => lookup("gbferr", &v, ERR_NAMES)?,
             None => ErrMethod::Default,
         };
-        Ok(GbfConf { method, nls_method, ctrl_method, interpolation, err_method })
+        Ok(GbfConf {
+            method,
+            nls_method,
+            ctrl_method,
+            interpolation,
+            err_method,
+        })
     }
 
     /// The names C echoes back for the chosen options.

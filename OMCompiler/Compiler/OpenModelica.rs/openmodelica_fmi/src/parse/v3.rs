@@ -14,9 +14,7 @@ pub fn parse(root: Node) -> Result<ModelDescription> {
         license: string_attr(root, "license"),
         generation_tool: string_attr(root, "generationTool"),
         generation_date_and_time: string_attr(root, "generationDateAndTime"),
-        variable_naming_convention: attr(root, "variableNamingConvention")
-            .unwrap_or("flat")
-            .to_string(),
+        variable_naming_convention: attr(root, "variableNamingConvention").unwrap_or("flat").to_string(),
         model_exchange: child(root, "ModelExchange").map(interface).transpose()?,
         co_simulation: child(root, "CoSimulation").map(interface).transpose()?,
         scheduled_execution: child(root, "ScheduledExecution").map(interface).transpose()?,
@@ -35,11 +33,7 @@ fn interface(n: Node) -> Result<Interface> {
     Ok(Interface {
         model_identifier: required(n, "modelIdentifier")?.to_string(),
         needs_execution_tool: bool_attr(n, "needsExecutionTool", false),
-        can_be_instantiated_only_once_per_process: bool_attr(
-            n,
-            "canBeInstantiatedOnlyOncePerProcess",
-            false,
-        ),
+        can_be_instantiated_only_once_per_process: bool_attr(n, "canBeInstantiatedOnlyOncePerProcess", false),
         can_get_and_set_state: bool_attr(n, "canGetAndSetFMUState", false),
         can_serialize_state: bool_attr(n, "canSerializeFMUState", false),
         provides_directional_derivatives: bool_attr(n, "providesDirectionalDerivatives", false),
@@ -47,25 +41,13 @@ fn interface(n: Node) -> Result<Interface> {
         provides_per_element_dependencies: bool_attr(n, "providesPerElementDependencies", false),
         provides_evaluate_discrete_states: bool_attr(n, "providesEvaluateDiscreteStates", false),
         needs_completed_integrator_step: bool_attr(n, "needsCompletedIntegratorStep", false),
-        can_handle_variable_communication_step_size: bool_attr(
-            n,
-            "canHandleVariableCommunicationStepSize",
-            false,
-        ),
+        can_handle_variable_communication_step_size: bool_attr(n, "canHandleVariableCommunicationStepSize", false),
         fixed_internal_step_size: f64_attr(n, "fixedInternalStepSize"),
         max_output_derivative_order: u32_attr(n, "maxOutputDerivativeOrder").unwrap_or(0),
-        recommended_intermediate_input_smoothness: i32_attr(
-            n,
-            "recommendedIntermediateInputSmoothness",
-        )
-        .unwrap_or(0),
+        recommended_intermediate_input_smoothness: i32_attr(n, "recommendedIntermediateInputSmoothness").unwrap_or(0),
         provides_intermediate_update: bool_attr(n, "providesIntermediateUpdate", false),
         might_return_early_from_do_step: bool_attr(n, "mightReturnEarlyFromDoStep", false),
-        can_return_early_after_intermediate_update: bool_attr(
-            n,
-            "canReturnEarlyAfterIntermediateUpdate",
-            false,
-        ),
+        can_return_early_after_intermediate_update: bool_attr(n, "canReturnEarlyAfterIntermediateUpdate", false),
         has_event_mode: bool_attr(n, "hasEventMode", false),
         ..Default::default()
     })
@@ -93,11 +75,12 @@ fn var_type(tag: &str) -> Option<VarType> {
 }
 
 fn variables(root: Node) -> Result<Vec<Variable>> {
-    let mv = child(root, "ModelVariables")
-        .ok_or_else(|| Error::Xml("no <ModelVariables>".into()))?;
+    let mv = child(root, "ModelVariables").ok_or_else(|| Error::Xml("no <ModelVariables>".into()))?;
     let mut vars = Vec::new();
     for n in mv.children().filter(Node::is_element) {
-        let Some(ty) = var_type(n.tag_name().name()) else { continue };
+        let Some(ty) = var_type(n.tag_name().name()) else {
+            continue;
+        };
         let index = vars.len() as u32 + 1;
         let vr = required(n, "valueReference")?
             .trim()
@@ -133,8 +116,7 @@ fn variables(root: Node) -> Result<Vec<Variable>> {
         v.previous = u32_attr(n, "previous");
         v.intermediate_update = bool_attr(n, "intermediateUpdate", false);
         v.clocks = list_attr(n, "clocks").unwrap_or_default();
-        v.can_handle_multiple_set_per_time_instant =
-            bool_attr(n, "canHandleMultipleSetPerTimeInstant", true);
+        v.can_handle_multiple_set_per_time_instant = bool_attr(n, "canHandleMultipleSetPerTimeInstant", true);
         v.dimensions = children(n, "Dimension")
             .map(|d| match u64_attr(d, "start") {
                 Some(k) => Dimension::Fixed(k),
@@ -178,9 +160,9 @@ fn start(n: Node, ty: VarType) -> Option<Start> {
             (!v.is_empty()).then_some(Start::Binaries(v))
         }
         VarType::Float32 | VarType::Float64 => list_attr(n, "start").map(Start::Reals),
-        VarType::Boolean => attr(n, "start").map(|s| {
-            Start::Bools(s.split_whitespace().map(|b| b == "true" || b == "1").collect())
-        }),
+        VarType::Boolean => {
+            attr(n, "start").map(|s| Start::Bools(s.split_whitespace().map(|b| b == "true" || b == "1").collect()))
+        }
         VarType::Clock => None,
         _ => list_attr(n, "start").map(Start::Ints),
     }
@@ -228,7 +210,9 @@ pub(crate) fn unknowns(ms: Node, tag: &'static str) -> Vec<Unknown> {
 }
 
 fn model_structure(root: Node) -> ModelStructure {
-    let Some(ms) = child(root, "ModelStructure") else { return ModelStructure::default() };
+    let Some(ms) = child(root, "ModelStructure") else {
+        return ModelStructure::default();
+    };
     ModelStructure {
         outputs: unknowns(ms, "Output"),
         continuous_state_derivatives: unknowns(ms, "ContinuousStateDerivative"),
@@ -239,7 +223,9 @@ fn model_structure(root: Node) -> ModelStructure {
 }
 
 fn units(root: Node) -> Vec<Unit> {
-    let Some(uds) = child(root, "UnitDefinitions") else { return Vec::new() };
+    let Some(uds) = child(root, "UnitDefinitions") else {
+        return Vec::new();
+    };
     children(uds, "Unit")
         .filter_map(|u| {
             Some(Unit {
@@ -279,7 +265,9 @@ fn base_unit(n: Node) -> BaseUnit {
 /// FMI 3.0 type definitions are `<Float64Type>`, `<EnumerationType>`, … — the
 /// variable element name with `Type` appended.
 fn type_definitions(root: Node) -> Vec<TypeDefinition> {
-    let Some(tds) = child(root, "TypeDefinitions") else { return Vec::new() };
+    let Some(tds) = child(root, "TypeDefinitions") else {
+        return Vec::new();
+    };
     tds.children()
         .filter(Node::is_element)
         .filter_map(|t| {

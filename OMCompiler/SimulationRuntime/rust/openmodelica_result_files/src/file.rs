@@ -26,7 +26,11 @@ impl ResultFile {
             OpenError::Failed(msg) => format!("Failed to open simulation result {base}: {msg}"),
         })?;
         let time_name = time_var_name(&reader.vars_filter_aliases());
-        Ok(ResultFile { reader, time_name, time: None })
+        Ok(ResultFile {
+            reader,
+            time_name,
+            time: None,
+        })
     }
 
     /// Every variable name in the file, parameters and aliases included.
@@ -102,7 +106,8 @@ impl ResultFile {
     /// `Real`, `Integer`, `Boolean`, `String` or `enumeration`; `Real` for a
     /// format without types.
     pub fn var_type(&self, var: &str) -> String {
-        self.info(var, |t, i| t.var_type(i).to_owned()).unwrap_or_else(|| "Real".to_owned())
+        self.info(var, |t, i| t.var_type(i).to_owned())
+            .unwrap_or_else(|| "Real".to_owned())
     }
 
     pub fn is_parameter(&self, var: &str) -> bool {
@@ -133,7 +138,11 @@ impl ResultFile {
 
     pub fn time(&mut self) -> Result<&[f64], String> {
         if self.time.is_none() {
-            let t = self.reader.trajectory(self.time_name).filter(|t| !t.is_empty()).ok_or("Error getting time")?;
+            let t = self
+                .reader
+                .trajectory(self.time_name)
+                .filter(|t| !t.is_empty())
+                .ok_or("Error getting time")?;
             self.time = Some(t);
         }
         Ok(self.time.as_deref().unwrap())
@@ -200,9 +209,26 @@ impl ResultFile {
     /// source stay one column.
     pub fn write_mat(&mut self, vars: Vec<String>, intervals: u32, single: bool) -> Result<Vec<u8>, String> {
         let p = self.plan_columns(vars, intervals)?;
-        let mat_vars: Vec<MatVar> = p.signals.iter().map(|sg| MatVar { name: &sg.name, comment: &sg.descr, kind: sg.kind, unvarying: false }).collect();
+        let mat_vars: Vec<MatVar> = p
+            .signals
+            .iter()
+            .map(|sg| MatVar {
+                name: &sg.name,
+                comment: &sg.descr,
+                kind: sg.kind,
+                unvarying: false,
+            })
+            .collect();
         let precision = if single { Precision::Single } else { Precision::Double };
-        Ok(write_mat4(&mat_vars, p.start, p.stop, &p.rows, p.n_reals as u32, &p.params, precision))
+        Ok(write_mat4(
+            &mat_vars,
+            p.start,
+            p.stop,
+            &p.rows,
+            p.n_reals as u32,
+            &p.params,
+            precision,
+        ))
     }
 
     /// The file as Arrow IPC; units and types carry over from an `.arrow` source.
@@ -230,16 +256,42 @@ impl ResultFile {
                                 _ => real,
                             };
                         }
-                        ArrowKind::Column { col, affine: affine(negate) }
+                        ArrowKind::Column {
+                            col,
+                            affine: affine(negate),
+                        }
                     }
                     MatKind::Param { negate } => ArrowKind::Param { affine: affine(negate) },
                     MatKind::Const { value } => ArrowKind::Const { value },
                 };
-                ArrowVar { name: &sg.name, comment: &sg.descr, unit: &sg.unit, display_unit: &sg.display_unit, relative_quantity: sg.relative_quantity, ty, discrete: sg.discrete, kind, unvarying: false, enumeration: sg.enumeration.as_deref() }
+                ArrowVar {
+                    name: &sg.name,
+                    comment: &sg.descr,
+                    unit: &sg.unit,
+                    display_unit: &sg.display_unit,
+                    relative_quantity: sg.relative_quantity,
+                    ty,
+                    discrete: sg.discrete,
+                    kind,
+                    unvarying: false,
+                    enumeration: sg.enumeration.as_deref(),
+                }
             })
             .collect();
         let units = units::declared(self.unit_defs());
-        Ok(openmodelica_arrow_writer::write_arrow(&arrow_vars, &p.rows, p.n_reals as u32, &p.params, &col_types, openmodelica_arrow_writer::no_strings(), &FileMeta { span: Some((p.start, p.stop)), units: &units, zstd: None }))
+        Ok(openmodelica_arrow_writer::write_arrow(
+            &arrow_vars,
+            &p.rows,
+            p.n_reals as u32,
+            &p.params,
+            &col_types,
+            openmodelica_arrow_writer::no_strings(),
+            &FileMeta {
+                span: Some((p.start, p.stop)),
+                units: &units,
+                zstd: None,
+            },
+        ))
     }
 
     /// The selected signals over the distinct columns they read (time first),
@@ -255,7 +307,11 @@ impl ResultFile {
         let mut signals: Vec<Signal> = vec![Signal {
             name: self.time_name.to_owned(),
             descr: String::new(),
-            unit: if time_unit.is_empty() { "s".to_owned() } else { time_unit },
+            unit: if time_unit.is_empty() {
+                "s".to_owned()
+            } else {
+                time_unit
+            },
             display_unit: String::new(),
             relative_quantity: false,
             discrete: false,
@@ -272,7 +328,13 @@ impl ResultFile {
             let discrete = self.discrete(var);
             let (storage, unit, display_unit, ty, enumeration) = match self.info(var, |t, i| {
                 let (u, du) = t.unit(i);
-                ((t.all_info()[i].isParam, t.all_info()[i].index), u.to_owned(), du.to_owned(), t.var_type(i).to_owned(), t.enumeration(i))
+                (
+                    (t.all_info()[i].isParam, t.all_info()[i].index),
+                    u.to_owned(),
+                    du.to_owned(),
+                    t.var_type(i).to_owned(),
+                    t.enumeration(i),
+                )
             }) {
                 Some((st, u, du, ty, en)) => (Some(st), u, du, ty, en),
                 None => (None, String::new(), String::new(), "Real".to_owned(), None),
@@ -283,7 +345,11 @@ impl ResultFile {
             if ty == "String" {
                 continue;
             }
-            let read = |me: &mut Self| me.reader.trajectory(var).ok_or_else(|| format!("Could not read variable {var}"));
+            let read = |me: &mut Self| {
+                me.reader
+                    .trajectory(var)
+                    .ok_or_else(|| format!("Could not read variable {var}"))
+            };
             let kind = match storage {
                 Some((true, _)) => {
                     params.push(read(self)?[0]);
@@ -314,10 +380,23 @@ impl ResultFile {
                         Some(g) => resample(&time, &vals, g),
                         None => vals,
                     });
-                    MatKind::Column { col: columns.len() as u32, negate: Neg::None }
+                    MatKind::Column {
+                        col: columns.len() as u32,
+                        negate: Neg::None,
+                    }
                 }
             };
-            signals.push(Signal { name: var.clone(), descr, unit, display_unit, relative_quantity, discrete, ty, enumeration, kind });
+            signals.push(Signal {
+                name: var.clone(),
+                descr,
+                unit,
+                display_unit,
+                relative_quantity,
+                discrete,
+                ty,
+                enumeration,
+                kind,
+            });
         }
         let n_reals = 1 + columns.len();
         let mut rows = Vec::with_capacity(n_rows * n_reals);
@@ -327,7 +406,14 @@ impl ResultFile {
                 rows.push(c[r]);
             }
         }
-        Ok(ColumnPlan { signals, rows, n_reals, params, start, stop })
+        Ok(ColumnPlan {
+            signals,
+            rows,
+            n_reals,
+            params,
+            start,
+            stop,
+        })
     }
 
     /// The file as CSV with `vars` (all of them when empty): one `time` column
@@ -338,7 +424,10 @@ impl ResultFile {
         let grid = resample_grid(&time, intervals);
         let mut cols = Vec::with_capacity(vars.len());
         for var in &vars {
-            let vals = self.reader.trajectory(var).ok_or_else(|| format!("Could not read variable {var}"))?;
+            let vals = self
+                .reader
+                .trajectory(var)
+                .ok_or_else(|| format!("Could not read variable {var}"))?;
             cols.push(match &grid {
                 Some(g) => resample(&time, &vals, g),
                 None => vals,
@@ -400,7 +489,17 @@ pub fn resample_grid(time: &[f64], intervals: u32) -> Option<Vec<f64>> {
         return None;
     }
     let (start, stop) = (time[0], time[time.len() - 1]);
-    Some((0..=intervals).map(|j| if j == intervals { stop } else { start + (stop - start) * f64::from(j) / f64::from(intervals) }).collect())
+    Some(
+        (0..=intervals)
+            .map(|j| {
+                if j == intervals {
+                    stop
+                } else {
+                    start + (stop - start) * f64::from(j) / f64::from(intervals)
+                }
+            })
+            .collect(),
+    )
 }
 
 /// Linear interpolation of `vals` (over the monotonic `time`) at each grid point.
@@ -415,7 +514,11 @@ pub fn resample(time: &[f64], vals: &[f64], grid: &[f64]) -> Vec<f64> {
                 k += 1;
             }
             let (t0, t1) = (time[k], time[k + 1]);
-            if t1 == t0 { vals[k] } else { vals[k] + (t - t0) / (t1 - t0) * (vals[k + 1] - vals[k]) }
+            if t1 == t0 {
+                vals[k]
+            } else {
+                vals[k] + (t - t0) / (t1 - t0) * (vals[k + 1] - vals[k])
+            }
         })
         .collect()
 }
@@ -483,7 +586,12 @@ impl Pair<'_> {
     fn new<'a>(actual: &'a mut ResultFile, reference: &'a mut ResultFile) -> Result<Pair<'a>, String> {
         let offset = leading_dup_count(actual.time()?);
         let offset_ref = leading_dup_count(reference.time()?);
-        Ok(Pair { actual, reference, offset, offset_ref })
+        Ok(Pair {
+            actual,
+            reference,
+            offset,
+            offset_ref,
+        })
     }
 
     /// Both trajectories of `var`, leading duplicates dropped; `None` when
@@ -500,13 +608,24 @@ impl Pair<'_> {
 
 /// `diffSimulationResults`: the variables of `vars` (every reference variable
 /// when empty) whose trajectory in `actual` leaves the tube around `reference`.
-pub fn diff_all(actual: &mut ResultFile, reference: &mut ResultFile, vars: Vec<String>, tol: Tolerances) -> Result<Vec<String>, String> {
-    let vars = if vars.is_empty() { reference.reader.vars_filter_aliases() } else { vars };
+pub fn diff_all(
+    actual: &mut ResultFile,
+    reference: &mut ResultFile,
+    vars: Vec<String>,
+    tol: Tolerances,
+) -> Result<Vec<String>, String> {
+    let vars = if vars.is_empty() {
+        reference.reader.vars_filter_aliases()
+    } else {
+        vars
+    };
     let mut pair = Pair::new(actual, reference)?;
     let mut out = Vec::new();
     let settings = tol.settings();
     for var in vars {
-        let Some((data, dataref)) = pair.data(&var) else { continue };
+        let Some((data, dataref)) = pair.data(&var) else {
+            continue;
+        };
         let timeref = pair.reference.time.clone().unwrap();
         let time = pair.actual.time.clone().unwrap();
         match compare(&time, &data, &timeref, &dataref, &settings) {
@@ -521,7 +640,11 @@ pub fn diff_all(actual: &mut ResultFile, reference: &mut ResultFile, vars: Vec<S
 /// the tube (-1 when it could not be compared) and the relative error. One pass
 /// over both files, for a caller that shows the whole table rather than only
 /// which variables differ.
-pub fn verdicts(actual: &mut ResultFile, reference: &mut ResultFile, tol: Tolerances) -> Result<Vec<(String, i64, f64)>, String> {
+pub fn verdicts(
+    actual: &mut ResultFile,
+    reference: &mut ResultFile,
+    tol: Tolerances,
+) -> Result<Vec<(String, i64, f64)>, String> {
     let vars = reference.reader.vars_filter_aliases();
     let time_name = reference.time_name().to_owned();
     let mut pair = Pair::new(actual, reference)?;
@@ -531,7 +654,9 @@ pub fn verdicts(actual: &mut ResultFile, reference: &mut ResultFile, tol: Tolera
         if var == time_name {
             continue;
         }
-        let Some((data, dataref)) = pair.data(&var) else { continue };
+        let Some((data, dataref)) = pair.data(&var) else {
+            continue;
+        };
         let timeref = pair.reference.time.clone().unwrap();
         let time = pair.actual.time.clone().unwrap();
         out.push(match compare(&time, &data, &timeref, &dataref, &settings) {
@@ -543,7 +668,12 @@ pub fn verdicts(actual: &mut ResultFile, reference: &mut ResultFile, tol: Tolera
 }
 
 /// `diffSimulationResultsHtml` as data: one variable's tube comparison.
-pub fn diff_variable(actual: &mut ResultFile, reference: &mut ResultFile, var: &str, tol: Tolerances) -> Result<TubeDiff, String> {
+pub fn diff_variable(
+    actual: &mut ResultFile,
+    reference: &mut ResultFile,
+    var: &str,
+    tol: Tolerances,
+) -> Result<TubeDiff, String> {
     let mut pair = Pair::new(actual, reference)?;
     let (data, dataref) = pair.data(var).ok_or_else(|| format!("{var} is not in both files"))?;
     let time = pair.actual.time.clone().unwrap();
@@ -573,5 +703,9 @@ pub fn diff_variable(actual: &mut ResultFile, reference: &mut ResultFile, var: &
 /// The literal a 1-based enumeration value names ("" outside the range).
 fn literal(literals: &[String], value: f64) -> String {
     let k = value as i64 - 1;
-    (k >= 0).then(|| literals.get(k as usize)).flatten().cloned().unwrap_or_default()
+    (k >= 0)
+        .then(|| literals.get(k as usize))
+        .flatten()
+        .cloned()
+        .unwrap_or_default()
 }

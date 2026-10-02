@@ -26,9 +26,9 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use openmodelica_ast::Absyn;
 
+use crate::MM;
 use crate::hierarchy::{InstanceHierarchy, NameNode, NodeKind, Ty};
 use crate::typedexp::{cref_to_dotted, resolve_call_node};
-use crate::MM;
 
 const ROOT: &str = "Main.main";
 
@@ -42,7 +42,11 @@ fn collect_functions<'a>(
     out: &mut Vec<(String, &'a MM::Class, Option<&'a MM::Class>, Option<String>)>,
 ) {
     for (name, node) in nodes {
-        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let qname = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         if let NodeKind::Class(c) = &node.kind
             && matches!(c.restriction, Absyn::Restriction::R_FUNCTION { .. })
         {
@@ -68,16 +72,24 @@ impl RefScan {
     pub(crate) fn scan_class(c: &MM::Class) -> Self {
         let mut s = RefScan::default();
         let (algorithms, members) = match &c.body {
-            MM::ClassDef::Parts { algorithms, members, .. } => (algorithms, members),
-            MM::ClassDef::ClassExtends { algorithms, members, .. } => (algorithms, members),
+            MM::ClassDef::Parts {
+                algorithms, members, ..
+            } => (algorithms, members),
+            MM::ClassDef::ClassExtends {
+                algorithms, members, ..
+            } => (algorithms, members),
             _ => return s,
         };
         // Walk component default expressions (e.g. `String x = getCachePath();`)
         // — these expressions execute at function entry just like algorithm
         // statements, so calls inside them must contribute to the call graph.
         for member in members {
-            let MM::ClassMember::Component(cm) = member else { continue };
-            let Some(modif) = cm.modification.as_ref() else { continue };
+            let MM::ClassMember::Component(cm) = member else {
+                continue;
+            };
+            let Some(modif) = cm.modification.as_ref() else {
+                continue;
+            };
             let Absyn::Modification { eqMod, .. } = &**modif;
             if let Absyn::EqMod::EQMOD { exp, .. } = &**eqMod {
                 s.scan_exp(exp);
@@ -99,50 +111,87 @@ impl RefScan {
                 self.scan_exp(assignComponent);
                 self.scan_exp(value);
             }
-            Absyn::Algorithm::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => {
+            Absyn::Algorithm::ALG_IF {
+                ifExp,
+                trueBranch,
+                elseIfAlgorithmBranch,
+                elseBranch,
+            } => {
                 self.scan_exp(ifExp);
-                for it in &**trueBranch { self.scan_algorithm_item(it); }
+                for it in &**trueBranch {
+                    self.scan_algorithm_item(it);
+                }
                 for (cond, branch) in &**elseIfAlgorithmBranch {
                     self.scan_exp(cond);
-                    for it in &**branch { self.scan_algorithm_item(it); }
+                    for it in &**branch {
+                        self.scan_algorithm_item(it);
+                    }
                 }
-                for it in &**elseBranch { self.scan_algorithm_item(it); }
+                for it in &**elseBranch {
+                    self.scan_algorithm_item(it);
+                }
             }
             Absyn::Algorithm::ALG_FOR { iterators, forBody }
-            | Absyn::Algorithm::ALG_PARFOR { iterators, parforBody: forBody } => {
+            | Absyn::Algorithm::ALG_PARFOR {
+                iterators,
+                parforBody: forBody,
+            } => {
                 for it in &**iterators {
                     let Absyn::ForIterator { range, guardExp, .. } = &**it;
-                    if let Some(r) = range.as_deref() { self.scan_exp(r); }
-                    if let Some(g) = guardExp.as_deref() { self.scan_exp(g); }
+                    if let Some(r) = range.as_deref() {
+                        self.scan_exp(r);
+                    }
+                    if let Some(g) = guardExp.as_deref() {
+                        self.scan_exp(g);
+                    }
                 }
-                for it in &**forBody { self.scan_algorithm_item(it); }
+                for it in &**forBody {
+                    self.scan_algorithm_item(it);
+                }
             }
             Absyn::Algorithm::ALG_WHILE { boolExpr, whileBody } => {
                 self.scan_exp(boolExpr);
-                for it in &**whileBody { self.scan_algorithm_item(it); }
-            }
-            Absyn::Algorithm::ALG_WHEN_A { boolExpr, whenBody, elseWhenAlgorithmBranch } => {
-                self.scan_exp(boolExpr);
-                for it in &**whenBody { self.scan_algorithm_item(it); }
-                for (e, branch) in &**elseWhenAlgorithmBranch {
-                    self.scan_exp(e);
-                    for it in &**branch { self.scan_algorithm_item(it); }
+                for it in &**whileBody {
+                    self.scan_algorithm_item(it);
                 }
             }
-            Absyn::Algorithm::ALG_NORETCALL { functionCall, functionArgs } => {
+            Absyn::Algorithm::ALG_WHEN_A {
+                boolExpr,
+                whenBody,
+                elseWhenAlgorithmBranch,
+            } => {
+                self.scan_exp(boolExpr);
+                for it in &**whenBody {
+                    self.scan_algorithm_item(it);
+                }
+                for (e, branch) in &**elseWhenAlgorithmBranch {
+                    self.scan_exp(e);
+                    for it in &**branch {
+                        self.scan_algorithm_item(it);
+                    }
+                }
+            }
+            Absyn::Algorithm::ALG_NORETCALL {
+                functionCall,
+                functionArgs,
+            } => {
                 self.refs.insert(cref_to_dotted(functionCall));
                 self.scan_function_args(functionArgs);
             }
             Absyn::Algorithm::ALG_FAILURE { equ } => {
-                for it in &**equ { self.scan_algorithm_item(it); }
+                for it in &**equ {
+                    self.scan_algorithm_item(it);
+                }
             }
             Absyn::Algorithm::ALG_TRY { body, elseBody } => {
-                for it in &**body { self.scan_algorithm_item(it); }
-                for it in &**elseBody { self.scan_algorithm_item(it); }
+                for it in &**body {
+                    self.scan_algorithm_item(it);
+                }
+                for it in &**elseBody {
+                    self.scan_algorithm_item(it);
+                }
             }
-            Absyn::Algorithm::ALG_RETURN
-            | Absyn::Algorithm::ALG_BREAK
-            | Absyn::Algorithm::ALG_CONTINUE => {}
+            Absyn::Algorithm::ALG_RETURN | Absyn::Algorithm::ALG_BREAK | Absyn::Algorithm::ALG_CONTINUE => {}
         }
     }
 
@@ -159,48 +208,83 @@ impl RefScan {
                 self.refs.insert(cref_to_dotted(componentRef));
             }
             BINARY { exp1, exp2, .. } | LBINARY { exp1, exp2, .. } | RELATION { exp1, exp2, .. } => {
-                self.scan_exp(exp1); self.scan_exp(exp2);
+                self.scan_exp(exp1);
+                self.scan_exp(exp2);
             }
             UNARY { exp, .. } | LUNARY { exp, .. } => self.scan_exp(exp),
-            IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => {
+            IFEXP {
+                ifExp,
+                trueBranch,
+                elseBranch,
+                elseIfBranch,
+            } => {
                 self.scan_exp(ifExp);
                 self.scan_exp(trueBranch);
                 self.scan_exp(elseBranch);
-                for (c, t) in &**elseIfBranch { self.scan_exp(c); self.scan_exp(t); }
+                for (c, t) in &**elseIfBranch {
+                    self.scan_exp(c);
+                    self.scan_exp(t);
+                }
             }
-            CALL { function_, functionArgs, .. } => {
+            CALL {
+                function_,
+                functionArgs,
+                ..
+            } => {
                 self.refs.insert(cref_to_dotted(function_));
                 self.scan_function_args(functionArgs);
             }
-            PARTEVALFUNCTION { function_, functionArgs } => {
+            PARTEVALFUNCTION {
+                function_,
+                functionArgs,
+            } => {
                 self.refs.insert(cref_to_dotted(function_));
                 self.scan_function_args(functionArgs);
             }
             ARRAY { arrayExp } | LIST { exps: arrayExp } => {
-                for e in &**arrayExp { self.scan_exp(e); }
+                for e in &**arrayExp {
+                    self.scan_exp(e);
+                }
             }
             MATRIX { matrix } => {
                 for row in &**matrix {
-                    for e in &**row { self.scan_exp(e); }
+                    for e in &**row {
+                        self.scan_exp(e);
+                    }
                 }
             }
             RANGE { start, step, stop } => {
                 self.scan_exp(start);
-                if let Some(s) = step.as_deref() { self.scan_exp(s); }
+                if let Some(s) = step.as_deref() {
+                    self.scan_exp(s);
+                }
                 self.scan_exp(stop);
             }
             TUPLE { expressions } => {
-                for e in &**expressions { self.scan_exp(e); }
+                for e in &**expressions {
+                    self.scan_exp(e);
+                }
             }
             AS { exp, .. } => self.scan_exp(exp),
-            CONS { head, rest } => { self.scan_exp(head); self.scan_exp(rest); }
+            CONS { head, rest } => {
+                self.scan_exp(head);
+                self.scan_exp(rest);
+            }
             MATCHEXP { inputExp, cases, .. } => {
                 self.scan_exp(inputExp);
                 for case in &**cases {
                     match &**case {
-                        Absyn::Case::CASE { pattern, patternGuard, classPart, result, .. } => {
+                        Absyn::Case::CASE {
+                            pattern,
+                            patternGuard,
+                            classPart,
+                            result,
+                            ..
+                        } => {
                             self.scan_exp(pattern);
-                            if let Some(g) = patternGuard.as_deref() { self.scan_exp(g); }
+                            if let Some(g) = patternGuard.as_deref() {
+                                self.scan_exp(g);
+                            }
                             self.scan_class_part(classPart);
                             self.scan_exp(result);
                         }
@@ -211,7 +295,10 @@ impl RefScan {
                     }
                 }
             }
-            DOT { exp, index } => { self.scan_exp(exp); self.scan_exp(index); }
+            DOT { exp, index } => {
+                self.scan_exp(exp);
+                self.scan_exp(index);
+            }
             EXPRESSIONCOMMENT { exp, .. } => self.scan_exp(exp),
             SUBSCRIPTED_EXP { exp, .. } => self.scan_exp(exp),
         }
@@ -219,14 +306,18 @@ impl RefScan {
 
     fn scan_class_part(&mut self, part: &Absyn::ClassPart) {
         if let Absyn::ClassPart::ALGORITHMS { contents } = part {
-            for it in &**contents { self.scan_algorithm_item(it); }
+            for it in &**contents {
+                self.scan_algorithm_item(it);
+            }
         }
     }
 
     fn scan_function_args(&mut self, fa: &Absyn::FunctionArgs) {
         match fa {
             Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } => {
-                for e in &**args { self.scan_exp(e); }
+                for e in &**args {
+                    self.scan_exp(e);
+                }
                 for na in &**argNames {
                     let Absyn::NamedArg { argValue, .. } = &**na;
                     self.scan_exp(argValue);
@@ -236,8 +327,12 @@ impl RefScan {
                 self.scan_exp(exp);
                 for it in &**iterators {
                     let Absyn::ForIterator { range, guardExp, .. } = &**it;
-                    if let Some(r) = range.as_deref() { self.scan_exp(r); }
-                    if let Some(g) = guardExp.as_deref() { self.scan_exp(g); }
+                    if let Some(r) = range.as_deref() {
+                        self.scan_exp(r);
+                    }
+                    if let Some(g) = guardExp.as_deref() {
+                        self.scan_exp(g);
+                    }
                 }
             }
         }
@@ -271,7 +366,9 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
     let mut uf: BTreeMap<usize, usize> = BTreeMap::new();
     fn uf_find(uf: &mut BTreeMap<usize, usize>, x: usize) -> usize {
         let p = *uf.entry(x).or_insert(x);
-        if p == x { return x; }
+        if p == x {
+            return x;
+        }
         let r = uf_find(uf, p);
         uf.insert(x, r);
         r
@@ -279,18 +376,25 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
     fn uf_union(uf: &mut BTreeMap<usize, usize>, a: usize, b: usize) {
         let ra = uf_find(uf, a);
         let rb = uf_find(uf, b);
-        if ra != rb { uf.insert(ra, rb); }
+        if ra != rb {
+            uf.insert(ra, rb);
+        }
     }
     for (_, class, base_fn, _) in &functions {
         uf_find(&mut uf, ptr_of(class));
-        if let Some(bf) = base_fn { uf_union(&mut uf, ptr_of(class), ptr_of(bf)); }
+        if let Some(bf) = base_fn {
+            uf_union(&mut uf, ptr_of(class), ptr_of(bf));
+        }
     }
 
     // Group every (FQN, &MM::Class, alias_base) by its union-find root.
     let mut by_root: BTreeMap<usize, Vec<(String, &MM::Class, Option<String>)>> = BTreeMap::new();
     for (qname, class, _, alias_base) in &functions {
         let r = uf_find(&mut uf, ptr_of(class));
-        by_root.entry(r).or_default().push((qname.clone(), *class, alias_base.clone()));
+        by_root
+            .entry(r)
+            .or_default()
+            .push((qname.clone(), *class, alias_base.clone()));
     }
 
     // Pick a canonical FQN per group.  Preference: the FQN whose top-level
@@ -308,17 +412,21 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
         // and the abstract base usually live in different files; the
         // abstract base's stem matches its declaring package, so look there
         // first.
-        let stems: BTreeSet<String> = group.iter()
-            .filter_map(|(_, c, _)| std::path::Path::new(c.info.fileName.as_str())
-                .file_stem().and_then(|s| s.to_str()).map(|s| s.to_owned()))
+        let stems: BTreeSet<String> = group
+            .iter()
+            .filter_map(|(_, c, _)| {
+                std::path::Path::new(c.info.fileName.as_str())
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .map(|s| s.to_owned())
+            })
             .collect();
-        let canonical = group.iter()
+        let canonical = group
+            .iter()
             .map(|(q, _, _)| q.as_str())
             .find(|q| stems.iter().any(|s| q.split('.').next() == Some(s.as_str())))
             .map(|q| q.to_owned())
-            .unwrap_or_else(|| {
-                group.iter().map(|(q, _, _)| q.clone()).min().expect("non-empty group")
-            });
+            .unwrap_or_else(|| group.iter().map(|(q, _, _)| q.clone()).min().expect("non-empty group"));
         for (q, _, _) in group {
             canonical_of.insert(q.clone(), canonical.clone());
         }
@@ -367,8 +475,12 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
         for scope in scopes {
             if let Some((qname, node)) = resolve_call_node(raw, &hier.top_level, scope) {
                 let NodeKind::Class(c) = &node.kind else { continue };
-                if !matches!(c.restriction, Absyn::Restriction::R_FUNCTION { .. }) { continue; }
-                if let Some(c) = canonical_of.get(&qname) { return Some(c.clone()); }
+                if !matches!(c.restriction, Absyn::Restriction::R_FUNCTION { .. }) {
+                    continue;
+                }
+                if let Some(c) = canonical_of.get(&qname) {
+                    return Some(c.clone());
+                }
             }
         }
         None
@@ -377,9 +489,13 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
         let scopes = group_scopes.get(qname).cloned().unwrap_or_else(|| vec![qname.clone()]);
         let mut set: BTreeSet<String> = BTreeSet::new();
         for raw in raw_refs {
-            if raw == "_" || raw == "__" || raw.is_empty() { continue; }
+            if raw == "_" || raw == "__" || raw.is_empty() {
+                continue;
+            }
             match resolve_to_canonical(raw, &scopes) {
-                Some(target) => { set.insert(target); }
+                Some(target) => {
+                    set.insert(target);
+                }
                 None => {
                     if unresolved.len() < 64 {
                         unresolved.insert(raw.clone());
@@ -388,9 +504,10 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
             }
         }
         if let Some(base) = alias_bases.get(qname)
-            && let Some(target) = resolve_to_canonical(base, &scopes) {
-                set.insert(target);
-            }
+            && let Some(target) = resolve_to_canonical(base, &scopes)
+        {
+            set.insert(target);
+        }
         edges.insert(qname.clone(), set);
     }
     let _ = seen_class_ptrs;
@@ -423,7 +540,9 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
     //   * `OpenModelicaScriptingAPI.*` — the C-callable scripting API used
     //     when OMC is loaded as a library.
     let is_external_api = |q: &str| -> bool {
-        if !q.contains('.') { return true; }
+        if !q.contains('.') {
+            return true;
+        }
         let top = q.split('.').next().unwrap_or(q);
         matches!(top, "OpenModelica" | "OpenModelicaScriptingAPI")
     };
@@ -434,14 +553,14 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> UnusedReport {
     // we exclude it from the report. Groups with at least one concrete
     // member (e.g. a `redeclare function extends X` override) stay.
     let is_type_only_group = |canonical: &str| -> bool {
-        groups.get(canonical)
+        groups
+            .get(canonical)
             .map(|members| members.iter().all(|(_, c, _)| c.partial_prefix))
             .unwrap_or(false)
     };
-    let unreachable: BTreeSet<String> = canonical_set.iter()
-        .filter(|q| !reachable.contains(q.as_str())
-            && !is_external_api(q)
-            && !is_type_only_group(q))
+    let unreachable: BTreeSet<String> = canonical_set
+        .iter()
+        .filter(|q| !reachable.contains(q.as_str()) && !is_external_api(q) && !is_type_only_group(q))
         .cloned()
         .collect();
 
@@ -458,10 +577,7 @@ pub fn print_report(report: &UnusedReport) {
     println!("  Unused-function analysis (reachability from {ROOT})");
     println!("═══════════════════════════════════════════════════════════");
     println!();
-    println!(
-        "  Functions total:      {}",
-        report.total_functions
-    );
+    println!("  Functions total:      {}", report.total_functions);
     println!("  Reachable from root:  {}", report.reachable.len());
     println!("  Unreachable:          {}", report.unreachable.len());
     println!();
@@ -483,9 +599,7 @@ pub fn print_report(report: &UnusedReport) {
     }
 
     if !report.unresolved_sample.is_empty() {
-        println!(
-            "── Unresolved names (sample of up to 64 — not function classes, likely builtins/locals) ─"
-        );
+        println!("── Unresolved names (sample of up to 64 — not function classes, likely builtins/locals) ─");
         for n in &report.unresolved_sample {
             println!("    · {n}");
         }

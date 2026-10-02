@@ -72,7 +72,9 @@ pub fn posix_to_rust(re: &str, extended: bool) -> String {
 pub fn regex_builder(pattern: &str) -> regex::RegexBuilder {
     let budget = pattern.len().saturating_mul(512);
     let mut b = regex::RegexBuilder::new(pattern);
-    b.dot_matches_new_line(true).size_limit(budget.max(10 << 20)).dfa_size_limit(budget.max(2 << 20));
+    b.dot_matches_new_line(true)
+        .size_limit(budget.max(10 << 20))
+        .dfa_size_limit(budget.max(2 << 20));
     b
 }
 

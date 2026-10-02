@@ -368,11 +368,7 @@ pub static SOLVER_METHOD_DESC: CStrTable<11> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static INIT_METHOD_NAME: CStrTable<3> = CStrTable([
-    c"unknown".as_ptr(),
-    c"none".as_ptr(),
-    c"symbolic".as_ptr(),
-]);
+pub static INIT_METHOD_NAME: CStrTable<3> = CStrTable([c"unknown".as_ptr(), c"none".as_ptr(), c"symbolic".as_ptr()]);
 
 #[unsafe(no_mangle)]
 pub static INIT_METHOD_DESC: CStrTable<3> = CStrTable([

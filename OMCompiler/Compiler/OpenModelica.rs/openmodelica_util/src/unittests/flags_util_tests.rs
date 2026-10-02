@@ -14,9 +14,9 @@
 // Each test runs on its own thread, and the global roots are thread-locals, so
 // the flags start uninitialised in every test — exactly the first-call state.
 
-use metamodelica::nil;
-use arcstr::literal;
 use crate::{Flags, FlagsUtil, Global};
+use arcstr::literal;
+use metamodelica::nil;
 
 /// `loadFlags(true)` on a fresh (never-initialised) flags root must create the
 /// flags structure and return a `FLAGS(..)` value, not the `NO_FLAGS` sentinel.
@@ -53,8 +53,7 @@ fn is_set_reads_default_after_new() {
 /// Non-flag arguments (e.g. a model filename) are passed through unconsumed.
 #[test]
 fn new_passes_through_non_flag_args() {
-    let out = FlagsUtil::new(metamodelica::list![literal!("model.mo")])
-        .expect("FlagsUtil::new should not fail");
+    let out = FlagsUtil::new(metamodelica::list![literal!("model.mo")]).expect("FlagsUtil::new should not fail");
     let out: Vec<_> = (&*out).into_iter().cloned().collect();
     assert_eq!(out, vec![literal!("model.mo")]);
 }

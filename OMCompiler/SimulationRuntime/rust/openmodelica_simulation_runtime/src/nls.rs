@@ -73,7 +73,10 @@ struct NlsCsv {
 /// C's `omc_write_csv`, which quotes every field.
 fn csv_line(file: &mut std::fs::File, fields: &[String]) {
     use std::io::Write;
-    let quoted: Vec<String> = fields.iter().map(|f| format!("\"{}\"", f.replace('"', "\"\""))).collect();
+    let quoted: Vec<String> = fields
+        .iter()
+        .map(|f| format!("\"{}\"", f.replace('"', "\"\"")))
+        .collect();
     let _ = file.write_all(format!("{}\n", quoted.join(",")).as_bytes());
 }
 
@@ -81,17 +84,33 @@ fn open_nls_csv(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) -> Option<NlsCsv> 
     let prefix = crate::model_data::cstr(unsafe { (*(*data).modelData).modelFilePrefix });
     let eq = sys.equationIndex;
     let open = |kind: &str| std::fs::File::create(format!("{prefix}_NLS{eq}Stats{kind}.csv")).ok();
-    let mut csv = NlsCsv { call: open("Call")?, iter: open("Iter")? };
+    let mut csv = NlsCsv {
+        call: open("Call")?,
+        iter: open("Iter")?,
+    };
     let head = |names: &[&str]| names.iter().map(|s| s.to_string()).collect::<Vec<_>>();
     csv_line(
         &mut csv.call,
-        &head(&["numberOfCall", "simulationTime", "iterations", "numberOfFunctionCall", "solvingTime", "solvedSystem"]),
+        &head(&[
+            "numberOfCall",
+            "simulationTime",
+            "iterations",
+            "numberOfFunctionCall",
+            "solvingTime",
+            "solvedSystem",
+        ]),
     );
     let vars = crate::info_json::equation_vars(data, eq as u32);
     let mut iter = head(&["numberOfCall", "iteration"]);
     iter.extend(vars.iter().cloned());
     iter.extend((1..=vars.len()).map(|j| format!("r{j}")));
-    iter.extend(head(&["delta_x", "delta_x_scaled", "error_f", "error_f_scaled", "lambda"]));
+    iter.extend(head(&[
+        "delta_x",
+        "delta_x_scaled",
+        "error_f",
+        "error_f_scaled",
+        "lambda",
+    ]));
     csv_line(&mut csv.iter, &iter);
     Some(csv)
 }
@@ -110,7 +129,14 @@ fn write_iter_row(st: &nls::NewtonIterStat) {
     row.extend(st.x.iter().map(|&v| g(v)));
     row.extend(st.f.iter().map(|&v| g(v)));
     row.extend(
-        [st.delta_x_sqrd, st.delta_x_sqrd_scaled, st.error_f_sqrd, st.error_f_sqrd_scaled, st.lambda].map(g),
+        [
+            st.delta_x_sqrd,
+            st.delta_x_sqrd_scaled,
+            st.error_f_sqrd,
+            st.error_f_sqrd_scaled,
+            st.lambda,
+        ]
+        .map(g),
     );
     csv_line(&mut csv.iter, &row);
 }
@@ -244,17 +270,15 @@ impl nls::NlsModel for CModel {
         // return value is C's `f_con`: 1 means this trial violated a local
         // constraint and the solver should fall back to the strict set.
         let stage = stage(self.outer_stage);
-        let con = sys.residualFuncConstraints.filter(|_| sys.strictTearingFunctionCall.is_some());
+        let con = sys
+            .residualFuncConstraints
+            .filter(|_| sys.strictTearingFunctionCall.is_some());
         let rc = match (con, sys.residualFunc) {
             (Some(f), _) => unsafe {
-                omr_protected_residual_con(
-                    f, &mut user, x.as_ptr(), r.as_mut_ptr(), &flag, self.thread_data, stage,
-                )
+                omr_protected_residual_con(f, &mut user, x.as_ptr(), r.as_mut_ptr(), &flag, self.thread_data, stage)
             },
             (None, Some(f)) => unsafe {
-                omr_protected_residual(
-                    f, &mut user, x.as_ptr(), r.as_mut_ptr(), &flag, self.thread_data, stage,
-                )
+                omr_protected_residual(f, &mut user, x.as_ptr(), r.as_mut_ptr(), &flag, self.thread_data, stage)
             },
             (None, None) => return,
         };
@@ -295,7 +319,9 @@ impl nls::NlsModel for CModel {
     }
 
     fn strict_fallback(&mut self) -> bool {
-        let Some(f) = self.sys().strictTearingFunctionCall else { return false };
+        let Some(f) = self.sys().strictTearingFunctionCall else {
+            return false;
+        };
         let (data, td) = (self.data, self.thread_data);
         let mut ok = false;
         if !crate::support::protected(td, stage(self.outer_stage), || ok = unsafe { f(data, td) != 0 }) {
@@ -422,8 +448,19 @@ impl nls::NlsBackend for CBackend<'_> {
             min: req.min,
         };
         nls::kinsol::solve_selected(
-            self.handle, req.n, &pat, req.nominal, req.guess, req.old_values, req.x, req.eq_index,
-            req.time, req.has_jacobian, load_guess, eval, jac,
+            self.handle,
+            req.n,
+            &pat,
+            req.nominal,
+            req.guess,
+            req.old_values,
+            req.x,
+            req.eq_index,
+            req.time,
+            req.has_jacobian,
+            load_guess,
+            eval,
+            jac,
         )
     }
 
@@ -436,8 +473,19 @@ impl nls::NlsBackend for CBackend<'_> {
     ) -> bool {
         let start = req.x.to_vec();
         nls::kinsol::b_solve(
-            self.handle, req.n, 0, None, req.nominal, &start, req.old_values, req.x, req.eq_index,
-            req.time, load_guess, eval, req.has_jacobian.then_some(jac),
+            self.handle,
+            req.n,
+            0,
+            None,
+            req.nominal,
+            &start,
+            req.old_values,
+            req.x,
+            req.eq_index,
+            req.time,
+            load_guess,
+            eval,
+            req.has_jacobian.then_some(jac),
         )
     }
 }
@@ -511,8 +559,7 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         // C's `sparsitySanityCheck`, run for every pattern the model built,
         // whatever the matrix format says: an irregular one is dropped and NLS
         // scaling with it.
-        if !sys.sparsePattern.is_null() && !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size)
-        {
+        if !sys.sparsePattern.is_null() && !sparsity_is_regular(unsafe { &*sys.sparsePattern }, size) {
             omclog::warning!(
                 omclog::STDOUT,
                 false,
@@ -676,8 +723,7 @@ fn sparsity_is_regular(sp: &SPARSE_PATTERN, size: usize) -> bool {
 /// unknowns, which is why such a system's `size` is one more than its residuals.
 fn adaptive_homotopy(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) -> bool {
     let method = unsafe { (*(*data).callback).homotopyMethod };
-    sys.homotopySupport != 0
-        && (method as u32 == nls::HOM_GLOBAL_ADAPTIVE || method as u32 == nls::HOM_LOCAL_ADAPTIVE)
+    sys.homotopySupport != 0 && (method as u32 == nls::HOM_GLOBAL_ADAPTIVE || method as u32 == nls::HOM_LOCAL_ADAPTIVE)
 }
 
 // ---------------------------------------------------------------------------
@@ -687,11 +733,7 @@ fn adaptive_homotopy(data: *mut DATA, sys: &NONLINEAR_SYSTEM_DATA) -> bool {
 /// C's `solve_nonlinear_system`. Returns 0 when the system solved, 1 when it did
 /// not — which fails the step the integrator is in, exactly as C's does.
 #[unsafe(no_mangle)]
-pub extern "C" fn solve_nonlinear_system(
-    data: *mut DATA,
-    thread_data: *mut threadData_t,
-    sys_number: c_int,
-) -> c_int {
+pub extern "C" fn solve_nonlinear_system(data: *mut DATA, thread_data: *mut threadData_t, sys_number: c_int) -> c_int {
     let _solver = crate::parmod::stats_guard();
     let si = unsafe { &mut *(*data).simulationInfo };
     let sys = unsafe { &mut *si.nonlinearSystemData.add(sys_number as usize) };
@@ -736,7 +778,14 @@ pub extern "C" fn solve_nonlinear_system(
     }
     let full_pattern = !csc && !sd.colptr.is_empty();
     let outer_stage = unsafe { (*thread_data).currentErrorStage };
-    let mut model = CModel { data, thread_data, sys, jac_rows, csc, outer_stage };
+    let mut model = CModel {
+        data,
+        thread_data,
+        sys,
+        jac_rows,
+        csc,
+        outer_stage,
+    };
     let mut state = CState { data, sys };
     let mut backend = CBackend {
         handle: sys_number as u32,
@@ -777,8 +826,7 @@ pub extern "C" fn solve_nonlinear_system(
     let sd: &mut Scratch = unsafe { &mut *scratch(sys) };
     sd.res_scaling.resize(hist_n, 0.0);
     let ret = {
-        let extrapolation =
-            unsafe { core::slice::from_raw_parts_mut(sys.nlsxExtrapolation, hist_n) };
+        let extrapolation = unsafe { core::slice::from_raw_parts_mut(sys.nlsxExtrapolation, hist_n) };
         let mut mem = nls::NlsPersistent {
             history: &mut sd.history,
             res_scaling: &mut sd.res_scaling,
@@ -910,7 +958,11 @@ pub fn install_hooks(data: *mut DATA, thread_data: *mut threadData_t, prefix: &s
     nls::host::set_note_runtime_error_flag(|| {});
     nls::host::set_var_names_lookup(|eq| {
         let data = MODEL_DATA_PTR.load(core::sync::atomic::Ordering::Relaxed) as *mut DATA;
-        if data.is_null() { Vec::new() } else { crate::info_json::equation_vars(data, eq) }
+        if data.is_null() {
+            Vec::new()
+        } else {
+            crate::info_json::equation_vars(data, eq)
+        }
     });
     nls::host::set_trap(|| {
         // A `--parmodauto` worker has its own jump buffers; the run's threadData is
@@ -982,8 +1034,7 @@ impl driver::SimEngine for ReadOnly {
 /// stands.
 #[cfg(feature = "standalone")]
 fn write_state(path: &str) -> Result<(), String> {
-    let meta = STATE_META.load(core::sync::atomic::Ordering::Relaxed)
-        as *const openmodelica_sim_meta::SimMeta;
+    let meta = STATE_META.load(core::sync::atomic::Ordering::Relaxed) as *const openmodelica_sim_meta::SimMeta;
     let rt = STATE_RT.load(core::sync::atomic::Ordering::Relaxed) as *const crate::data::RtData;
     if meta.is_null() || rt.is_null() {
         return Err(String::from("no model to write the initial guess from"));
@@ -997,12 +1048,8 @@ fn write_state(path: &str) -> Result<(), String> {
     for v in &meta.vars {
         if let openmodelica_sim_meta::MetaKind::Param { off, wty, .. } = &v.kind {
             params.push(match wty {
-                openmodelica_sim_meta::WTy::F64 => {
-                    driver::read_f64(&engine, *off).map_err(String::from)?
-                }
-                openmodelica_sim_meta::WTy::I32 => {
-                    driver::read_i32(&engine, *off).map_err(String::from)? as f64
-                }
+                openmodelica_sim_meta::WTy::F64 => driver::read_f64(&engine, *off).map_err(String::from)?,
+                openmodelica_sim_meta::WTy::I32 => driver::read_i32(&engine, *off).map_err(String::from)? as f64,
             });
         }
     }

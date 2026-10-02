@@ -1,7 +1,7 @@
 //! The BLAS kernels the factorizations here are written on, plus the two
 //! (`dtrsm`, `dnrm2`) that `Modelica.Math.Matrices` reaches directly.
 
-use crate::{abs, opt, sqrt, SAFMIN};
+use crate::{SAFMIN, abs, opt, sqrt};
 
 /// Index of the first element of largest magnitude (0-based; `x` is contiguous).
 /// `IDAMAX` returns the *first* maximum, which is what makes LU pivoting
@@ -313,8 +313,19 @@ pub fn dgemv(trans: bool, m: usize, n: usize, alpha: f64, a: &[f64], lda: usize,
 /// `C := alpha * op(A) * op(B) + beta * C`, `C` being `m × n` and `op(A)` `m × k`.
 #[allow(clippy::too_many_arguments)]
 pub fn dgemm(
-    ta: bool, tb: bool, m: usize, n: usize, k: usize, alpha: f64,
-    a: &[f64], lda: usize, b: &[f64], ldb: usize, beta: f64, c: &mut [f64], ldc: usize,
+    ta: bool,
+    tb: bool,
+    m: usize,
+    n: usize,
+    k: usize,
+    alpha: f64,
+    a: &[f64],
+    lda: usize,
+    b: &[f64],
+    ldb: usize,
+    beta: f64,
+    c: &mut [f64],
+    ldc: usize,
 ) {
     let aij = |i: usize, j: usize| if ta { a[i * lda + j] } else { a[j * lda + i] };
     let bij = |i: usize, j: usize| if tb { b[i * ldb + j] } else { b[j * ldb + i] };
@@ -337,8 +348,18 @@ pub fn dgemm(
 /// with `A` symmetric and only its `upper` (or lower) triangle stored.
 #[allow(clippy::too_many_arguments)]
 pub fn dsymm(
-    left: bool, upper: bool, m: usize, n: usize, alpha: f64,
-    a: &[f64], lda: usize, b: &[f64], ldb: usize, beta: f64, c: &mut [f64], ldc: usize,
+    left: bool,
+    upper: bool,
+    m: usize,
+    n: usize,
+    alpha: f64,
+    a: &[f64],
+    lda: usize,
+    b: &[f64],
+    ldb: usize,
+    beta: f64,
+    c: &mut [f64],
+    ldc: usize,
 ) {
     // The stored triangle mirrored, so the products below read `A` as a full matrix.
     let sym = |i: usize, j: usize| {
@@ -366,8 +387,17 @@ pub fn dsymm(
 /// triangular (`upper`, transposed by `trans`, unit-diagonal by `unit`).
 #[allow(clippy::too_many_arguments)]
 pub fn dtrmm(
-    left: bool, upper: bool, trans: bool, unit: bool, m: usize, n: usize, alpha: f64,
-    a: &[f64], lda: usize, b: &mut [f64], ldb: usize,
+    left: bool,
+    upper: bool,
+    trans: bool,
+    unit: bool,
+    m: usize,
+    n: usize,
+    alpha: f64,
+    a: &[f64],
+    lda: usize,
+    b: &mut [f64],
+    ldb: usize,
 ) {
     let k = if left { m } else { n };
     let at = |i: usize, j: usize| {

@@ -9,9 +9,7 @@
 use core::ffi::{c_char, c_long};
 
 use openmodelica_sim_meta::VarTy;
-use openmodelica_sim_meta::{
-    InputVar, Layout, MetaKind, MetaVar, Neg, ParamVars, SimMeta, SotiVars, WTy, var_filter,
-};
+use openmodelica_sim_meta::{InputVar, Layout, MetaKind, MetaVar, Neg, ParamVars, SimMeta, SotiVars, WTy, var_filter};
 
 use crate::abi::*;
 use crate::model_data::InitXml;
@@ -33,7 +31,11 @@ fn scalar_names(name: &str, dim: &DIMENSION_INFO, is_state_derivative: bool) -> 
     let sizes: Vec<usize> = (0..dim.numberOfDimensions)
         .map(|k| unsafe { (*dim.dimensions.add(k)).start.max(0) as usize })
         .collect();
-    let base = if is_state_derivative { name.strip_suffix(')').unwrap_or(name) } else { name };
+    let base = if is_state_derivative {
+        name.strip_suffix(')').unwrap_or(name)
+    } else {
+        name
+    };
     (0..dim.scalar_length)
         .map(|linear| {
             let mut rem = linear;
@@ -56,7 +58,11 @@ fn scalar_names(name: &str, dim: &DIMENSION_INFO, is_state_derivative: bool) -> 
 
 /// C's `printArrayDescription`: the comment, with the unit appended in brackets.
 fn description(comment: &str, unit: &str) -> String {
-    if unit.is_empty() { comment.to_string() } else { format!("{comment} [{unit}]") }
+    if unit.is_empty() {
+        comment.to_string()
+    } else {
+        format!("{comment} [{unit}]")
+    }
 }
 
 fn filter_bits(filter_output: c_int_t, is_alias: bool) -> u8 {
@@ -92,7 +98,11 @@ impl Units<'_> {
     }
     /// `(unit, displayUnit, isDiscrete)` of a variable.
     fn meta(&self, class_type: &str, index: usize) -> (String, String, bool) {
-        (self.get(class_type, index), self.attr(class_type, index, "displayUnit"), self.attr(class_type, index, "isDiscrete") == "true")
+        (
+            self.get(class_type, index),
+            self.attr(class_type, index, "displayUnit"),
+            self.attr(class_type, index, "isDiscrete") == "true",
+        )
     }
     /// FMI's `relativeQuantity`; only a Real declares one.
     fn relative(&self, class_type: &str, index: usize) -> bool {
@@ -106,7 +116,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
     let units = Units { xml };
     // C's `CONFIG_VERSION`, which only the `-reconcile*` reports sign themselves
     // with; the compiler that wrote the XML put its own version there.
-    let version = xml.md("generationTool").trim_start_matches("OpenModelica Compiler ").to_string();
+    let version = xml
+        .md("generationTool")
+        .trim_start_matches("OpenModelica Compiler ")
+        .to_string();
 
     let mut vars: Vec<MetaVar> = Vec::new();
     vars.push(MetaVar {
@@ -138,10 +151,17 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         } else {
             "rAlg"
         };
-        let index = if group == "rAlg" { a - 2 * md.nStatesArray as usize } else { a % md.nStatesArray.max(1) as usize };
+        let index = if group == "rAlg" {
+            a - 2 * md.nStatesArray as usize
+        } else {
+            a % md.nStatesArray.max(1) as usize
+        };
         let (unit, display_unit, discrete) = units.meta(group, index);
         let relative_quantity = units.relative(group, index);
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, is_der).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, is_der)
+            .into_iter()
+            .enumerate()
+        {
             if let Some(slot) = real_names.get_mut(base + k) {
                 *slot = name.clone();
             }
@@ -153,7 +173,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 relative_quantity,
                 ty: VarTy::Real,
                 discrete,
-                kind: MetaKind::Column { col: (base + k) as u32 + 1, negate: Neg::None },
+                kind: MetaKind::Column {
+                    col: (base + k) as u32 + 1,
+                    negate: Neg::None,
+                },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
                 enumeration: None,
@@ -185,7 +208,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 relative_quantity: false,
                 ty: VarTy::Real,
                 discrete: false,
-                kind: MetaKind::Column { col: layout.sens_col0() + (i - n_sens_par) as u32, negate: Neg::None },
+                kind: MetaKind::Column {
+                    col: layout.sens_col0() + (i - n_sens_par) as u32,
+                    negate: Neg::None,
+                },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
                 enumeration: None,
@@ -198,7 +224,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         let v = unsafe { &*md.integerVarsData.add(a) };
         let base = unsafe { *si.integerVarsIndex.add(a) };
         let (unit, display_unit, _) = units.meta("iAlg", a);
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
@@ -207,7 +236,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 relative_quantity: false,
                 ty: VarTy::Integer,
                 discrete: true,
-                kind: MetaKind::Column { col: int_col0 + (base + k) as u32, negate: Neg::None },
+                kind: MetaKind::Column {
+                    col: int_col0 + (base + k) as u32,
+                    negate: Neg::None,
+                },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
                 enumeration: None,
@@ -218,7 +250,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
     for a in 0..md.nVariablesBooleanArray as usize {
         let v = unsafe { &*md.booleanVarsData.add(a) };
         let base = unsafe { *si.booleanVarsIndex.add(a) };
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
@@ -227,7 +262,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 relative_quantity: false,
                 ty: VarTy::Boolean,
                 discrete: true,
-                kind: MetaKind::Column { col: bool_col0 + (base + k) as u32, negate: Neg::None },
+                kind: MetaKind::Column {
+                    col: bool_col0 + (base + k) as u32,
+                    negate: Neg::None,
+                },
                 filter: filter_bits(v.filterOutput, false),
                 unvarying: v.time_unvarying != 0,
                 enumeration: None,
@@ -239,12 +277,18 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
     for a in 0..md.nVariablesStringArray as usize {
         let v = unsafe { &*md.stringVarsData.add(a) };
         let base = unsafe { *si.stringVarsIndex.add(a) };
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(string_var(
                 name,
                 cstr(v.info.comment),
                 true,
-                MetaKind::Column { col: str_col0 + (base + k) as u32, negate: Neg::None },
+                MetaKind::Column {
+                    col: str_col0 + (base + k) as u32,
+                    negate: Neg::None,
+                },
                 filter_bits(v.filterOutput, false),
                 v.time_unvarying != 0,
             ));
@@ -257,7 +301,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         let base = unsafe { *si.realParamsIndex.add(a) };
         let (unit, display_unit, _) = units.meta("rPar", a);
         let relative_quantity = units.relative("rPar", a);
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(MetaVar {
                 name,
                 comment: description(&cstr(v.info.comment), &unit),
@@ -281,7 +328,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         let v = unsafe { &*md.integerParameterData.add(a) };
         let base = unsafe { *si.integerParamsIndex.add(a) };
         let (unit, display_unit, _) = units.meta("iPar", a);
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
@@ -304,7 +354,10 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
     for a in 0..md.nParametersBooleanArray as usize {
         let v = unsafe { &*md.booleanParameterData.add(a) };
         let base = unsafe { *si.booleanParamsIndex.add(a) };
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(MetaVar {
                 name,
                 comment: cstr(v.info.comment),
@@ -326,11 +379,18 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
     }
     let string_param = |nameID: usize, k: usize, negate: Neg| {
         let base = unsafe { *si.stringParamsIndex.add(nameID) } + k;
-        MetaKind::Param { off: layout.sparam_off + base as u32 * 4, wty: WTy::I32, negate }
+        MetaKind::Param {
+            off: layout.sparam_off + base as u32 * 4,
+            wty: WTy::I32,
+            negate,
+        }
     };
     for a in 0..md.nParametersStringArray as usize {
         let v = unsafe { &*md.stringParameterData.add(a) };
-        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false).into_iter().enumerate() {
+        for (k, name) in scalar_names(&cstr(v.info.name), &v.dimension, false)
+            .into_iter()
+            .enumerate()
+        {
             vars.push(string_var(
                 name,
                 cstr(v.info.comment),
@@ -350,21 +410,31 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
             2 => MetaKind::Column { col: 0, negate: neg },
             1 => {
                 let base = unsafe { *si.realParamsIndex.add(al.nameID as usize) } + k;
-                MetaKind::Param { off: layout.rparam_off + base as u32 * 8, wty: WTy::F64, negate: neg }
+                MetaKind::Param {
+                    off: layout.rparam_off + base as u32 * 8,
+                    wty: WTy::F64,
+                    negate: neg,
+                }
             }
             _ => {
                 let base = unsafe { *si.realVarsIndex.add(al.nameID as usize) } + k;
-                MetaKind::Column { col: base as u32 + 1, negate: neg }
+                MetaKind::Column {
+                    col: base as u32 + 1,
+                    negate: neg,
+                }
             }
         }
     };
     // An FMU allocates no alias data (`allocModelDataVars(.., allocAlias=false)`):
     // it resolves aliases through the model description, and writes no result file
     // for them to be a signal in.
-    for a in 0..if md.realAlias.is_null() { 0 } else { md.nAliasRealArray as usize } {
+    for a in 0..if md.realAlias.is_null() {
+        0
+    } else {
+        md.nAliasRealArray as usize
+    } {
         let al = unsafe { &*md.realAlias.add(a) };
-        let is_der = al.aliasType == 0
-            && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as c_long));
+        let is_der = al.aliasType == 0 && (md.nStatesArray..2 * md.nStatesArray).contains(&(al.nameID as c_long));
         let dim = alias_dimension(md, al, 0);
         let (unit, display_unit, discrete) = units.meta("rAli", a);
         let relative_quantity = units.relative("rAli", a);
@@ -401,18 +471,33 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
             let kind = |k: usize| {
                 if al.aliasType == 1 {
                     let (base, off, wty) = if kind_ix == 0 {
-                        (unsafe { *si.integerParamsIndex.add(al.nameID as usize) }, layout.iparam_off, WTy::I32)
+                        (
+                            unsafe { *si.integerParamsIndex.add(al.nameID as usize) },
+                            layout.iparam_off,
+                            WTy::I32,
+                        )
                     } else {
-                        (unsafe { *si.booleanParamsIndex.add(al.nameID as usize) }, layout.bparam_off, WTy::I32)
+                        (
+                            unsafe { *si.booleanParamsIndex.add(al.nameID as usize) },
+                            layout.bparam_off,
+                            WTy::I32,
+                        )
                     };
-                    MetaKind::Param { off: off + (base + k) as u32 * 4, wty, negate: neg }
+                    MetaKind::Param {
+                        off: off + (base + k) as u32 * 4,
+                        wty,
+                        negate: neg,
+                    }
                 } else {
                     let (base, col0) = if kind_ix == 0 {
                         (unsafe { *si.integerVarsIndex.add(al.nameID as usize) }, int_col0)
                     } else {
                         (unsafe { *si.booleanVarsIndex.add(al.nameID as usize) }, bool_col0)
                     };
-                    MetaKind::Column { col: col0 + (base + k) as u32, negate: neg }
+                    MetaKind::Column {
+                        col: col0 + (base + k) as u32,
+                        negate: neg,
+                    }
                 }
             };
             let dim = alias_dimension(md, al, kind_ix + 1);
@@ -434,7 +519,11 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
             }
         }
     }
-    for a in 0..if md.stringAlias.is_null() { 0 } else { md.nAliasStringArray as usize } {
+    for a in 0..if md.stringAlias.is_null() {
+        0
+    } else {
+        md.nAliasStringArray as usize
+    } {
         let al = unsafe { &*md.stringAlias.add(a) };
         let dim = alias_dimension(md, al, 3);
         for (k, name) in scalar_names(&cstr(al.info.name), dim, false).into_iter().enumerate() {
@@ -442,10 +531,20 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
                 1 => string_param(al.nameID as usize, k, Neg::None),
                 _ => {
                     let base = unsafe { *si.stringVarsIndex.add(al.nameID as usize) } + k;
-                    MetaKind::Column { col: str_col0 + base as u32, negate: Neg::None }
+                    MetaKind::Column {
+                        col: str_col0 + base as u32,
+                        negate: Neg::None,
+                    }
                 }
             };
-            vars.push(string_var(name, cstr(al.info.comment), true, kind, filter_bits(al.filterOutput, true), false));
+            vars.push(string_var(
+                name,
+                cstr(al.info.comment),
+                true,
+                kind,
+                filter_bits(al.filterOutput, true),
+                false,
+            ));
         }
     }
 
@@ -482,7 +581,9 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         fmi_dae_enable_vr: 0,
         zc_desc,
         rel_desc,
-        sample_index: (0..md.nSamples).map(|i| unsafe { (*md.samplesInfo.add(i as usize)).index as i32 }).collect(),
+        sample_index: (0..md.nSamples)
+            .map(|i| unsafe { (*md.samplesInfo.add(i as usize)).index as i32 })
+            .collect(),
         soti,
         params,
         attr_log: Vec::new(),
@@ -549,7 +650,12 @@ fn sparsity_info(sp: *const SPARSE_PATTERN, n: u32) -> Option<openmodelica_sim_m
     if rows_by_col.iter().flatten().any(|&r| r as usize >= n) {
         return None;
     }
-    Some(openmodelica_sim_meta::JacAInfo { n: n as u32, colors, rows_by_col, sym: None })
+    Some(openmodelica_sim_meta::JacAInfo {
+        n: n as u32,
+        colors,
+        rows_by_col,
+        sym: None,
+    })
 }
 
 /// `SimMeta::jac_a` from `analyticJacobians[INDEX_JAC_A]`, which `data::initialize`
@@ -658,20 +764,33 @@ pub(crate) fn soti_vars(md: &MODEL_DATA, si: &SIMULATION_INFO) -> SotiVars {
         }
         for a in 0..md.nVariablesIntegerArray as usize {
             let d = &*md.integerVarsData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
-                v.ints.push((name, d.attribute.start.elem_at::<modelica_integer>(k, 0) as i32));
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
+                v.ints
+                    .push((name, d.attribute.start.elem_at::<modelica_integer>(k, 0) as i32));
             }
         }
         for a in 0..md.nVariablesBooleanArray as usize {
             let d = &*md.booleanVarsData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
                 v.bools.push((name, d.attribute.start.elem_at(k, 0)));
             }
         }
         for a in 0..md.nVariablesStringArray as usize {
             let d = &*md.stringVarsData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
-                v.strings.push((name, crate::model_data::string_value(d.attribute.start.elem_at(k, core::ptr::null_mut()))));
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
+                v.strings.push((
+                    name,
+                    crate::model_data::string_value(d.attribute.start.elem_at(k, core::ptr::null_mut())),
+                ));
             }
         }
     }
@@ -685,26 +804,47 @@ fn param_vars(md: &MODEL_DATA, _si: &SIMULATION_INFO) -> ParamVars {
     unsafe {
         for a in 0..md.nParametersRealArray as usize {
             let d = &*md.realParameterData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
-                p.reals.push((name, d.attribute.start.elem_at(k, 0.0), d.attribute.fixed != 0));
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
+                p.reals
+                    .push((name, d.attribute.start.elem_at(k, 0.0), d.attribute.fixed != 0));
             }
         }
         for a in 0..md.nParametersIntegerArray as usize {
             let d = &*md.integerParameterData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
-                p.ints.push((name, d.attribute.start.elem_at::<modelica_integer>(k, 0) as i32, d.attribute.fixed != 0));
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
+                p.ints.push((
+                    name,
+                    d.attribute.start.elem_at::<modelica_integer>(k, 0) as i32,
+                    d.attribute.fixed != 0,
+                ));
             }
         }
         for a in 0..md.nParametersBooleanArray as usize {
             let d = &*md.booleanParameterData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
-                p.bools.push((name, d.attribute.start.elem_at(k, 0), d.attribute.fixed != 0));
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
+                p.bools
+                    .push((name, d.attribute.start.elem_at(k, 0), d.attribute.fixed != 0));
             }
         }
         for a in 0..md.nParametersStringArray as usize {
             let d = &*md.stringParameterData.add(a);
-            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false).into_iter().enumerate() {
-                p.strings.push((name, crate::model_data::string_value(d.attribute.start.elem_at(k, core::ptr::null_mut()))));
+            for (k, name) in scalar_names(&cstr(d.info.name), &d.dimension, false)
+                .into_iter()
+                .enumerate()
+            {
+                p.strings.push((
+                    name,
+                    crate::model_data::string_value(d.attribute.start.elem_at(k, core::ptr::null_mut())),
+                ));
             }
         }
     }
@@ -713,9 +853,17 @@ fn param_vars(md: &MODEL_DATA, _si: &SIMULATION_INFO) -> ParamVars {
 
 /// C's `inputNames` / `nInputVars`: each `input` variable and the real slot it
 /// occupies, which `-csvInput` drives directly (C copies through `inputVars`).
-fn input_vars(data: *mut DATA, md: &MODEL_DATA, si: &SIMULATION_INFO, layout: &Layout, real_names: &[String]) -> Vec<InputVar> {
+fn input_vars(
+    data: *mut DATA,
+    md: &MODEL_DATA,
+    si: &SIMULATION_INFO,
+    layout: &Layout,
+    real_names: &[String],
+) -> Vec<InputVar> {
     let n = md.nInputVars.max(0) as usize;
-    let Some(f) = (unsafe { (*(*data).callback).inputNames }) else { return Vec::new() };
+    let Some(f) = (unsafe { (*(*data).callback).inputNames }) else {
+        return Vec::new();
+    };
     if n == 0 {
         return Vec::new();
     }

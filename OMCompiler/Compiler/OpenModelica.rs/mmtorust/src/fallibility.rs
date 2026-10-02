@@ -78,10 +78,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use openmodelica_ast::Absyn;
 
+use crate::MM;
 use crate::external_c_calls::{self, Fallibility};
 use crate::hierarchy::{InstanceHierarchy, NameNode, NodeKind, Ty};
 use crate::typedexp::resolve_call_node;
-use crate::MM;
 
 // ── Builtin classification ───────────────────────────────────────────────────
 
@@ -108,25 +108,22 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         // host CPU's trap (we do not produce a `Result`). They are marked
         // Infallible to match the Rust signature; we may revisit if we
         // introduce explicit divide-by-zero checks.
-        "intAdd" | "intSub" | "intMul" | "intDiv" | "intMod"
-        | "intMax" | "intMin" | "intAbs" | "intNeg" => Infallible,
+        "intAdd" | "intSub" | "intMul" | "intDiv" | "intMod" | "intMax" | "intMin" | "intAbs" | "intNeg" => Infallible,
         "intLt" | "intLe" | "intEq" | "intNe" | "intGe" | "intGt" => Infallible,
-        "intBitNot" | "intBitAnd" | "intBitOr" | "intBitXor"
-        | "intBitLShift" | "intBitRShift" => Infallible,
+        "intBitNot" | "intBitAnd" | "intBitOr" | "intBitXor" | "intBitLShift" | "intBitRShift" => Infallible,
         "intReal" | "intString" => Infallible,
 
         // ── Real arithmetic ──────────────────────────────────────────────────
-        "realAdd" | "realSub" | "realMul" | "realDiv" | "realMod" | "realPow"
-        | "realMax" | "realMin" | "realAbs" | "realNeg"
-        | "realAlmostEq" => Infallible,
+        "realAdd" | "realSub" | "realMul" | "realDiv" | "realMod" | "realPow" | "realMax" | "realMin" | "realAbs"
+        | "realNeg" | "realAlmostEq" => Infallible,
         "realLt" | "realLe" | "realEq" | "realNe" | "realGe" | "realGt" => Infallible,
         "realInt" | "realString" => Infallible,
 
         // ── String ───────────────────────────────────────────────────────────
-        "stringCharInt" => Fallible,       // bails on non-singleton input
+        "stringCharInt" => Fallible, // bails on non-singleton input
         "intStringChar" => Infallible,
-        "stringInt" => Fallible,           // parse error
-        "stringReal" => Fallible,          // parse error
+        "stringInt" => Fallible,  // parse error
+        "stringReal" => Fallible, // parse error
         "stringListStringChar" => Infallible,
         "stringAppendList" | "stringDelimitList" => Infallible,
         "stringLength" | "stringEmpty" => Infallible,
@@ -134,14 +131,18 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         // unknown URIs and on `modelica://` packages that are not loaded,
         // matching the C `MMC_THROW` — callers catch it like any failure.
         "uriToFilename" => Fallible,
-        "stringGet" => Fallible,           // index OOB
-        "stringGetStringChar" => Fallible, // index OOB
+        "stringGet" => Fallible,              // index OOB
+        "stringGetStringChar" => Fallible,    // index OOB
         "stringUpdateStringChar" => Fallible, // bails on empty / OOB
         "stringAppend" => Infallible,
         "stringEq" | "stringEqual" | "stringCompare" => Infallible,
-        "stringHash" | "stringHashDjb2" | "stringHashDjb2Continue"
-        | "stringHashDjb2Mod" | "stringHashSdbm" | "intHashDjb2Continue" => Infallible,
-        "substring" => Fallible,           // bails on bogus range
+        "stringHash"
+        | "stringHashDjb2"
+        | "stringHashDjb2Continue"
+        | "stringHashDjb2Mod"
+        | "stringHashSdbm"
+        | "intHashDjb2Continue" => Infallible,
+        "substring" => Fallible, // bails on bogus range
         "listStringCharString" | "stringCharListString" => Infallible,
 
         // ── List ─────────────────────────────────────────────────────────────
@@ -160,17 +161,25 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         // ── Array ────────────────────────────────────────────────────────────
         // arrayLength / arrayEmpty / arrayList / listArray / arrayCopy /
         // arrayAppend are total. arrayGet / arrayUpdate bounds-check.
-        "arrayLength" | "arrayEmpty" | "arrayList" | "listArray"
-        | "arrayCopy" | "arrayAppend" | "arrayCreate" => Infallible,
+        "arrayLength" | "arrayEmpty" | "arrayList" | "listArray" | "arrayCopy" | "arrayAppend" | "arrayCreate" => {
+            Infallible
+        }
         "arrayGet" | "arrayUpdate" => Fallible,
 
         // ── Generic value / Option / misc ────────────────────────────────────
-        "anyString" | "tick" | "clock"
-        | "valueEq" | "valueCompare" | "referenceEq"
-        | "referencePointerString" | "referenceDebugString"
+        "anyString"
+        | "tick"
+        | "clock"
+        | "valueEq"
+        | "valueCompare"
+        | "referenceEq"
+        | "referencePointerString"
+        | "referenceDebugString"
         | "valueConstructor"
-        | "isNone" | "isSome"
-        | "setStackOverflowSignal" | "isPresent" => Infallible,
+        | "isNone"
+        | "isSome"
+        | "setStackOverflowSignal"
+        | "isPresent" => Infallible,
 
         // ── Explicit failure ─────────────────────────────────────────────────
         "fail" => Fallible,
@@ -201,35 +210,26 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
         // Pure mathematical functions — total over the input domain. Some
         // (sqrt for negative input, log for non-positive) yield NaN/-inf at
         // runtime rather than raising, so they remain infallible.
-        "sin" | "cos" | "tan"
-        | "sinh" | "cosh" | "tanh"
-        | "asin" | "acos" | "atan" | "atan2"
-        | "exp" | "log" | "log10"
-        | "sqrt" | "ceil" | "floor"
-        | "sign" | "integer"
-        | "abs" | "mod" | "div" | "rem" => Infallible,
+        "sin" | "cos" | "tan" | "sinh" | "cosh" | "tanh" | "asin" | "acos" | "atan" | "atan2" | "exp" | "log"
+        | "log10" | "sqrt" | "ceil" | "floor" | "sign" | "integer" | "abs" | "mod" | "div" | "rem" => Infallible,
 
         // Array constructors / reshape / projections.
-        "ones" | "zeros" | "fill" | "identity" | "diagonal"
-        | "vector" | "matrix" | "scalar" | "array"
-        | "transpose" | "symmetric" | "skew"
-        | "cross" | "outerProduct" | "linspace" => Infallible,
+        "ones" | "zeros" | "fill" | "identity" | "diagonal" | "vector" | "matrix" | "scalar" | "array"
+        | "transpose" | "symmetric" | "skew" | "cross" | "outerProduct" | "linspace" => Infallible,
 
         // Reductions over arrays.
         "sum" | "product" | "min" | "max" => Infallible,
 
         // Continuous- / discrete-signal operators. Semantically these read
         // from solver state; they cannot fail at the language level.
-        "pre" | "previous" | "der" | "edge" | "change"
-        | "sample" | "hold" | "noEvent" | "smooth"
-        | "semiLinear" | "reinit" | "delay"
-        | "initial" | "terminal" => Infallible,
+        "pre" | "previous" | "der" | "edge" | "change" | "sample" | "hold" | "noEvent" | "smooth" | "semiLinear"
+        | "reinit" | "delay" | "initial" | "terminal" => Infallible,
 
         // Synchronous (clocked) operators.
-        "subSample" | "superSample" | "shiftSample" | "backSample"
-        | "noClock" | "transition" | "ticksInState" | "timeInState"
-        | "inStream" | "actualStream" | "getInstanceName"
-        | "activeState" | "initialState" => Infallible,
+        "subSample" | "superSample" | "shiftSample" | "backSample" | "noClock" | "transition" | "ticksInState"
+        | "timeInState" | "inStream" | "actualStream" | "getInstanceName" | "activeState" | "initialState" => {
+            Infallible
+        }
 
         // Array shape / introspection.
         "size" | "ndims" => Infallible,
@@ -241,8 +241,7 @@ pub fn builtin_fallibility(name: &str) -> Option<Fallibility> {
 
         // Miscellaneous: connector cardinality, homotopy continuation,
         // distributed-parameter PDE primitive, pure-function marker.
-        "cardinality" | "homotopy" | "spatialDistribution"
-        | "promote" | "pure" => Infallible,
+        "cardinality" | "homotopy" | "spatialDistribution" | "promote" | "pure" => Infallible,
 
         // ── Failure-raising Modelica builtins ────────────────────────────────
         // `assert` throws when its condition is false; `terminate` ends the
@@ -441,13 +440,20 @@ impl Walk {
         let mut w = Walk::default();
         w.outer_scope.extend(inherited_scope.iter().cloned());
         let (algorithms, members) = match &c.body {
-            MM::ClassDef::Parts { algorithms, external, members, .. } => {
+            MM::ClassDef::Parts {
+                algorithms,
+                external,
+                members,
+                ..
+            } => {
                 if let Some(ext) = external {
                     w.external = Some(external_symbol_name(&ext.decl, &c.name));
                 }
                 (algorithms, members)
             }
-            MM::ClassDef::ClassExtends { algorithms, members, .. } => (algorithms, members),
+            MM::ClassDef::ClassExtends {
+                algorithms, members, ..
+            } => (algorithms, members),
             _ => return w,
         };
         // Function-level variable declarations contribute to the binding
@@ -495,19 +501,22 @@ impl Walk {
 
     fn scan_algorithm_item(&mut self, it: &Absyn::AlgorithmItem) {
         let (alg, comment) = match it {
-            Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, comment, .. } => (&**algorithm_, comment),
+            Absyn::AlgorithmItem::ALGORITHMITEM {
+                algorithm_, comment, ..
+            } => (&**algorithm_, comment),
             Absyn::AlgorithmItem::ALGORITHMITEMCOMMENT { .. } => return,
         };
         // A checkpoint `try` only catches resource exhaustion, so a failure in
         // either branch still propagates to the enclosing function.
         if let Absyn::Algorithm::ALG_TRY { body, elseBody } = alg
-            && crate::typedexp::comment_has_boolean_named_annotation(
-                comment,
-                "__OpenModelica_stackOverflowCheckpoint",
-            )
+            && crate::typedexp::comment_has_boolean_named_annotation(comment, "__OpenModelica_stackOverflowCheckpoint")
         {
-            for it in &**body { self.scan_algorithm_item(it); }
-            for it in &**elseBody { self.scan_algorithm_item(it); }
+            for it in &**body {
+                self.scan_algorithm_item(it);
+            }
+            for it in &**elseBody {
+                self.scan_algorithm_item(it);
+            }
             return;
         }
         match alg {
@@ -526,41 +535,74 @@ impl Walk {
                 self.scan_exp(assignComponent);
                 self.scan_exp(value);
             }
-            Absyn::Algorithm::ALG_IF { ifExp, trueBranch, elseIfAlgorithmBranch, elseBranch } => {
+            Absyn::Algorithm::ALG_IF {
+                ifExp,
+                trueBranch,
+                elseIfAlgorithmBranch,
+                elseBranch,
+            } => {
                 self.scan_exp(ifExp);
-                for it in &**trueBranch { self.scan_algorithm_item(it); }
+                for it in &**trueBranch {
+                    self.scan_algorithm_item(it);
+                }
                 for (cond, branch) in &**elseIfAlgorithmBranch {
                     self.scan_exp(cond);
-                    for it in &**branch { self.scan_algorithm_item(it); }
+                    for it in &**branch {
+                        self.scan_algorithm_item(it);
+                    }
                 }
-                for it in &**elseBranch { self.scan_algorithm_item(it); }
+                for it in &**elseBranch {
+                    self.scan_algorithm_item(it);
+                }
             }
             Absyn::Algorithm::ALG_FOR { iterators, forBody }
-            | Absyn::Algorithm::ALG_PARFOR { iterators, parforBody: forBody } => {
+            | Absyn::Algorithm::ALG_PARFOR {
+                iterators,
+                parforBody: forBody,
+            } => {
                 // The iterator range (`for x in <range> loop`) and any guard are
                 // evaluated before/around the loop body, so a fallible call in
                 // them (`for v in getVariables(c) loop …`) escapes the function
                 // just like a body call. Scanning only `forBody` missed these.
                 for it in &**iterators {
                     let Absyn::ForIterator { range, guardExp, .. } = &**it;
-                    if let Some(r) = range.as_deref() { self.scan_exp(r); }
-                    if let Some(g) = guardExp.as_deref() { self.scan_exp(g); }
+                    if let Some(r) = range.as_deref() {
+                        self.scan_exp(r);
+                    }
+                    if let Some(g) = guardExp.as_deref() {
+                        self.scan_exp(g);
+                    }
                 }
-                for it in &**forBody { self.scan_algorithm_item(it); }
+                for it in &**forBody {
+                    self.scan_algorithm_item(it);
+                }
             }
             Absyn::Algorithm::ALG_WHILE { boolExpr, whileBody } => {
                 self.scan_exp(boolExpr);
-                for it in &**whileBody { self.scan_algorithm_item(it); }
-            }
-            Absyn::Algorithm::ALG_WHEN_A { boolExpr, whenBody, elseWhenAlgorithmBranch } => {
-                self.scan_exp(boolExpr);
-                for it in &**whenBody { self.scan_algorithm_item(it); }
-                for (e, branch) in &**elseWhenAlgorithmBranch {
-                    self.scan_exp(e);
-                    for it in &**branch { self.scan_algorithm_item(it); }
+                for it in &**whileBody {
+                    self.scan_algorithm_item(it);
                 }
             }
-            Absyn::Algorithm::ALG_NORETCALL { functionCall, functionArgs } => {
+            Absyn::Algorithm::ALG_WHEN_A {
+                boolExpr,
+                whenBody,
+                elseWhenAlgorithmBranch,
+            } => {
+                self.scan_exp(boolExpr);
+                for it in &**whenBody {
+                    self.scan_algorithm_item(it);
+                }
+                for (e, branch) in &**elseWhenAlgorithmBranch {
+                    self.scan_exp(e);
+                    for it in &**branch {
+                        self.scan_algorithm_item(it);
+                    }
+                }
+            }
+            Absyn::Algorithm::ALG_NORETCALL {
+                functionCall,
+                functionArgs,
+            } => {
                 self.record_call(&cref_to_dotted(functionCall));
                 self.scan_function_args(functionArgs);
             }
@@ -580,11 +622,11 @@ impl Walk {
                 // propagate a failure *out* of the try clause are failures
                 // inside ELSE (BODY's failures are caught and so do not
                 // contribute to the enclosing function's fallibility).
-                for it in &**elseBody { self.scan_algorithm_item(it); }
+                for it in &**elseBody {
+                    self.scan_algorithm_item(it);
+                }
             }
-            Absyn::Algorithm::ALG_RETURN
-            | Absyn::Algorithm::ALG_BREAK
-            | Absyn::Algorithm::ALG_CONTINUE => {}
+            Absyn::Algorithm::ALG_RETURN | Absyn::Algorithm::ALG_BREAK | Absyn::Algorithm::ALG_CONTINUE => {}
         }
     }
 
@@ -597,7 +639,11 @@ impl Walk {
         loop {
             let (subs, next) = match cur {
                 CREF_FULLYQUALIFIED { componentRef } => (None, Some(componentRef)),
-                CREF_QUAL { subscripts, componentRef, .. } => (Some(subscripts), Some(componentRef)),
+                CREF_QUAL {
+                    subscripts,
+                    componentRef,
+                    ..
+                } => (Some(subscripts), Some(componentRef)),
                 CREF_IDENT { subscripts, .. } => (Some(subscripts), None),
                 WILD | ALLWILD => (None, None),
             };
@@ -635,23 +681,40 @@ impl Walk {
                     self.has_fail = true;
                     self.reasons.insert("real division");
                 }
-                self.scan_exp(exp1); self.scan_exp(exp2);
+                self.scan_exp(exp1);
+                self.scan_exp(exp2);
             }
             LBINARY { exp1, exp2, .. } | RELATION { exp1, exp2, .. } => {
-                self.scan_exp(exp1); self.scan_exp(exp2);
+                self.scan_exp(exp1);
+                self.scan_exp(exp2);
             }
             UNARY { exp, .. } | LUNARY { exp, .. } => self.scan_exp(exp),
-            IFEXP { ifExp, trueBranch, elseBranch, elseIfBranch } => {
+            IFEXP {
+                ifExp,
+                trueBranch,
+                elseBranch,
+                elseIfBranch,
+            } => {
                 self.scan_exp(ifExp);
                 self.scan_exp(trueBranch);
                 self.scan_exp(elseBranch);
-                for (c, t) in &**elseIfBranch { self.scan_exp(c); self.scan_exp(t); }
+                for (c, t) in &**elseIfBranch {
+                    self.scan_exp(c);
+                    self.scan_exp(t);
+                }
             }
-            CALL { function_, functionArgs, .. } => {
+            CALL {
+                function_,
+                functionArgs,
+                ..
+            } => {
                 self.record_call(&cref_to_dotted(function_));
                 self.scan_function_args(functionArgs);
             }
-            PARTEVALFUNCTION { function_, functionArgs } => {
+            PARTEVALFUNCTION {
+                function_,
+                functionArgs,
+            } => {
                 // Partial application produces a function value rather than
                 // calling the function. It does NOT make the surrounding
                 // function fallible on its own — but the bound argument
@@ -661,24 +724,41 @@ impl Walk {
                 self.scan_function_args(functionArgs);
             }
             ARRAY { arrayExp } | LIST { exps: arrayExp } => {
-                for e in &**arrayExp { self.scan_exp(e); }
+                for e in &**arrayExp {
+                    self.scan_exp(e);
+                }
             }
             MATRIX { matrix } => {
                 for row in &**matrix {
-                    for e in &**row { self.scan_exp(e); }
+                    for e in &**row {
+                        self.scan_exp(e);
+                    }
                 }
             }
             RANGE { start, step, stop } => {
                 self.scan_exp(start);
-                if let Some(s) = step.as_deref() { self.scan_exp(s); }
+                if let Some(s) = step.as_deref() {
+                    self.scan_exp(s);
+                }
                 self.scan_exp(stop);
             }
             TUPLE { expressions } => {
-                for e in &**expressions { self.scan_exp(e); }
+                for e in &**expressions {
+                    self.scan_exp(e);
+                }
             }
             AS { exp, .. } => self.scan_exp(exp),
-            CONS { head, rest } => { self.scan_exp(head); self.scan_exp(rest); }
-            MATCHEXP { matchTy, inputExp, localDecls, cases, .. } => {
+            CONS { head, rest } => {
+                self.scan_exp(head);
+                self.scan_exp(rest);
+            }
+            MATCHEXP {
+                matchTy,
+                inputExp,
+                localDecls,
+                cases,
+                ..
+            } => {
                 // The scrutinee is evaluated once, before any arm's failure-
                 // catch scope is entered, so its failures escape the match —
                 // for `matchcontinue` too (codegen binds `__mc_input` outside
@@ -723,16 +803,30 @@ impl Walk {
                     collect_local_decl_names(localDecls, &mut match_scope);
                     for case in &**cases {
                         let (case_decls, guard, pattern, class_part, result) = match &**case {
-                            Absyn::Case::CASE { pattern, patternGuard, localDecls: case_decls, classPart, result, .. } =>
-                                (case_decls, patternGuard.as_deref(), Some(&**pattern), classPart, result),
-                            Absyn::Case::ELSE { localDecls: case_decls, classPart, result, .. } =>
-                                (case_decls, None, None, classPart, result),
+                            Absyn::Case::CASE {
+                                pattern,
+                                patternGuard,
+                                localDecls: case_decls,
+                                classPart,
+                                result,
+                                ..
+                            } => (case_decls, patternGuard.as_deref(), Some(&**pattern), classPart, result),
+                            Absyn::Case::ELSE {
+                                localDecls: case_decls,
+                                classPart,
+                                result,
+                                ..
+                            } => (case_decls, None, None, classPart, result),
                         };
                         let mut scope = match_scope.clone();
                         collect_local_decl_names(case_decls, &mut scope);
                         self.outer_scope = scope;
-                        if let Some(p) = pattern { self.scan_exp(p); }
-                        if let Some(g) = guard { self.scan_exp(g); }
+                        if let Some(p) = pattern {
+                            self.scan_exp(p);
+                        }
+                        if let Some(g) = guard {
+                            self.scan_exp(g);
+                        }
                         self.scan_local_decl_defaults(case_decls);
                         self.scan_class_part(class_part);
                         self.scan_exp(result);
@@ -751,23 +845,45 @@ impl Walk {
                     let mut candidates: Vec<(CoverKey, Walk)> = Vec::new();
                     for case in &**cases {
                         match &**case {
-                            Absyn::Case::CASE { pattern, patternGuard, localDecls: case_decls, classPart, result, .. } => {
-                                if patternGuard.is_some() { continue; }
+                            Absyn::Case::CASE {
+                                pattern,
+                                patternGuard,
+                                localDecls: case_decls,
+                                classPart,
+                                result,
+                                ..
+                            } => {
+                                if patternGuard.is_some() {
+                                    continue;
+                                }
                                 let mut scope = match_scope.clone();
                                 collect_local_decl_names(case_decls, &mut scope);
                                 let key = pat_cover_key(pattern, &scope);
-                                if matches!(key, CoverKey::Other) { continue; }
-                                let mut sub = Walk { outer_scope: scope, ..Walk::default() };
+                                if matches!(key, CoverKey::Other) {
+                                    continue;
+                                }
+                                let mut sub = Walk {
+                                    outer_scope: scope,
+                                    ..Walk::default()
+                                };
                                 sub.scan_exp(pattern);
                                 sub.scan_local_decl_defaults(case_decls);
                                 sub.scan_class_part(classPart);
                                 sub.scan_exp(result);
                                 candidates.push((key, sub));
                             }
-                            Absyn::Case::ELSE { localDecls: case_decls, classPart, result, .. } => {
+                            Absyn::Case::ELSE {
+                                localDecls: case_decls,
+                                classPart,
+                                result,
+                                ..
+                            } => {
                                 let mut scope = match_scope.clone();
                                 collect_local_decl_names(case_decls, &mut scope);
-                                let mut sub = Walk { outer_scope: scope, ..Walk::default() };
+                                let mut sub = Walk {
+                                    outer_scope: scope,
+                                    ..Walk::default()
+                                };
                                 sub.scan_local_decl_defaults(case_decls);
                                 sub.scan_class_part(classPart);
                                 sub.scan_exp(result);
@@ -789,17 +905,47 @@ impl Walk {
                     let last_case = (&**cases).into_iter().count().saturating_sub(1);
                     for (case_ix, case) in (&**cases).into_iter().enumerate() {
                         let (case_decls, guard, pattern, class_part, result, info, pattern_info) = match &**case {
-                            Absyn::Case::CASE { pattern, patternGuard, localDecls: case_decls, classPart, result, info, patternInfo, .. } =>
-                                (case_decls, patternGuard.as_deref(), Some(&**pattern), classPart, result, info, Some(patternInfo)),
-                            Absyn::Case::ELSE { localDecls: case_decls, classPart, result, info, .. } =>
-                                (case_decls, None, None, classPart, result, info, None),
+                            Absyn::Case::CASE {
+                                pattern,
+                                patternGuard,
+                                localDecls: case_decls,
+                                classPart,
+                                result,
+                                info,
+                                patternInfo,
+                                ..
+                            } => (
+                                case_decls,
+                                patternGuard.as_deref(),
+                                Some(&**pattern),
+                                classPart,
+                                result,
+                                info,
+                                Some(patternInfo),
+                            ),
+                            Absyn::Case::ELSE {
+                                localDecls: case_decls,
+                                classPart,
+                                result,
+                                info,
+                                ..
+                            } => (case_decls, None, None, classPart, result, info, None),
                         };
-                        if lint_info.is_none() { lint_info = Some(info.clone()); }
+                        if lint_info.is_none() {
+                            lint_info = Some(info.clone());
+                        }
                         let mut scope = match_scope.clone();
                         collect_local_decl_names(case_decls, &mut scope);
-                        let mut sub = Walk { outer_scope: scope.clone(), ..Walk::default() };
-                        if let Some(g) = guard { sub.scan_exp(g); }
-                        if let Some(p) = pattern { sub.scan_exp(p); }
+                        let mut sub = Walk {
+                            outer_scope: scope.clone(),
+                            ..Walk::default()
+                        };
+                        if let Some(g) = guard {
+                            sub.scan_exp(g);
+                        }
+                        if let Some(p) = pattern {
+                            sub.scan_exp(p);
+                        }
                         sub.scan_local_decl_defaults(case_decls);
                         sub.scan_class_part(class_part);
                         sub.scan_exp(result);
@@ -808,7 +954,8 @@ impl Walk {
                             && let (Some(pat_info), Absyn::ClassPart::ALGORITHMS { contents }) =
                                 (pattern_info, &**class_part)
                         {
-                            let stmts: Vec<(Absyn::Info, bool)> = (&**contents).into_iter()
+                            let stmts: Vec<(Absyn::Info, bool)> = (&**contents)
+                                .into_iter()
                                 .map_while(|it| boolean_assert(it))
                                 .map(|(_, asserted, info)| (info.clone(), asserted))
                                 .collect();
@@ -819,16 +966,25 @@ impl Walk {
                                     // the guard's own span, which Absyn does not
                                     // carry; leave the whole matchcontinue alone.
                                     (slot, true) => *slot = None,
-                                    (Some(v), false) =>
-                                        v.push(GuardHoist {
-                                            pattern_info: pat_info.clone(), stmts, drops_section }),
+                                    (Some(v), false) => v.push(GuardHoist {
+                                        pattern_info: pat_info.clone(),
+                                        stmts,
+                                        drops_section,
+                                    }),
                                     (None, false) => {}
                                 }
                             }
                         }
-                        let mut hoisted = Walk { outer_scope: scope, ..Walk::default() };
-                        if let Some(g) = guard { hoisted.scan_exp(g); }
-                        if let Some(p) = pattern { hoisted.scan_exp(p); }
+                        let mut hoisted = Walk {
+                            outer_scope: scope,
+                            ..Walk::default()
+                        };
+                        if let Some(g) = guard {
+                            hoisted.scan_exp(g);
+                        }
+                        if let Some(p) = pattern {
+                            hoisted.scan_exp(p);
+                        }
                         hoisted.scan_local_decl_defaults(case_decls);
                         hoisted.scan_class_part_hoisting_guards(class_part, true);
                         hoisted.scan_exp(result);
@@ -842,13 +998,18 @@ impl Walk {
                             guard_hoists,
                             cases: (*cases).clone(),
                             scope: match_scope,
-                            has_else: (&**cases).into_iter().last()
+                            has_else: (&**cases)
+                                .into_iter()
+                                .last()
                                 .is_some_and(|c| matches!(&**c, Absyn::Case::ELSE { .. })),
                         });
                     }
                 }
             }
-            DOT { exp, index } => { self.scan_exp(exp); self.scan_exp(index); }
+            DOT { exp, index } => {
+                self.scan_exp(exp);
+                self.scan_exp(index);
+            }
             EXPRESSIONCOMMENT { exp, .. } => self.scan_exp(exp),
             SUBSCRIPTED_EXP { exp, .. } => self.scan_exp(exp),
         }
@@ -863,9 +1024,15 @@ impl Walk {
     /// [`Walk::scan_class`].
     fn scan_local_decl_defaults(&mut self, decls: &metamodelica::List<metamodelica::Ref<Absyn::ElementItem>>) {
         for item in decls {
-            let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
-            let Absyn::Element::ELEMENT { specification, .. } = &**element else { continue };
-            let Absyn::ElementSpec::COMPONENTS { components, .. } = &**specification else { continue };
+            let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
+                continue;
+            };
+            let Absyn::Element::ELEMENT { specification, .. } = &**element else {
+                continue;
+            };
+            let Absyn::ElementSpec::COMPONENTS { components, .. } = &**specification else {
+                continue;
+            };
             for ci in &**components {
                 if let Some(exp) = crate::hierarchy::extract_default_exp(&ci.component.modification) {
                     self.scan_exp(exp);
@@ -906,7 +1073,9 @@ impl Walk {
     fn scan_function_args(&mut self, fa: &Absyn::FunctionArgs) {
         match fa {
             Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } => {
-                for e in &**args { self.scan_exp(e); }
+                for e in &**args {
+                    self.scan_exp(e);
+                }
                 for na in &**argNames {
                     let Absyn::NamedArg { argValue, .. } = &**na;
                     self.scan_exp(argValue);
@@ -916,8 +1085,12 @@ impl Walk {
                 self.scan_exp(exp);
                 for it in &**iterators {
                     let Absyn::ForIterator { range, guardExp, .. } = &**it;
-                    if let Some(r) = range.as_deref() { self.scan_exp(r); }
-                    if let Some(g) = guardExp.as_deref() { self.scan_exp(g); }
+                    if let Some(r) = range.as_deref() {
+                        self.scan_exp(r);
+                    }
+                    if let Some(g) = guardExp.as_deref() {
+                        self.scan_exp(g);
+                    }
                 }
             }
         }
@@ -956,9 +1129,15 @@ fn boolean_assert_cond(item: &Absyn::AlgorithmItem) -> Option<&Absyn::Exp> {
 /// As [`boolean_assert_cond`], plus the asserted polarity (`false :=` needs the
 /// condition negated when it becomes a guard) and the statement's source span.
 fn boolean_assert(item: &Absyn::AlgorithmItem) -> Option<(&Absyn::Exp, bool, &Absyn::Info)> {
-    let Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } = item else { return None };
-    let Absyn::Algorithm::ALG_ASSIGN { assignComponent, value } = &**algorithm_ else { return None };
-    let Absyn::Exp::BOOL { value: asserted } = **assignComponent else { return None };
+    let Absyn::AlgorithmItem::ALGORITHMITEM { algorithm_, info, .. } = item else {
+        return None;
+    };
+    let Absyn::Algorithm::ALG_ASSIGN { assignComponent, value } = &**algorithm_ else {
+        return None;
+    };
+    let Absyn::Exp::BOOL { value: asserted } = **assignComponent else {
+        return None;
+    };
     Some((value, asserted, info))
 }
 
@@ -971,7 +1150,10 @@ fn assign_lhs_cover_key(e: &Absyn::Exp, scope: &BTreeSet<String>) -> CoverKey {
     match e {
         CREF { .. } => CoverKey::Irrefutable,
         TUPLE { expressions } => {
-            if (&**expressions).into_iter().all(|e| assign_lhs_cover_key(e, scope) == CoverKey::Irrefutable) {
+            if (&**expressions)
+                .into_iter()
+                .all(|e| assign_lhs_cover_key(e, scope) == CoverKey::Irrefutable)
+            {
                 CoverKey::Irrefutable
             } else {
                 CoverKey::Other
@@ -996,9 +1178,15 @@ pub(crate) fn collect_local_decl_names(
     out: &mut BTreeSet<String>,
 ) {
     for item in decls {
-        let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else { continue };
-        let Absyn::Element::ELEMENT { specification, .. } = &**element else { continue };
-        let Absyn::ElementSpec::COMPONENTS { components, .. } = &**specification else { continue };
+        let Absyn::ElementItem::ELEMENTITEM { element } = item.as_ref() else {
+            continue;
+        };
+        let Absyn::Element::ELEMENT { specification, .. } = &**element else {
+            continue;
+        };
+        let Absyn::ElementSpec::COMPONENTS { components, .. } = &**specification else {
+            continue;
+        };
         for ci in &**components {
             let Absyn::ComponentItem { component, .. } = ci.as_ref();
             let Absyn::Component { name, .. } = component;
@@ -1048,9 +1236,11 @@ pub(crate) fn absyn_pat_is_irrefutable(e: &Absyn::Exp, binding_names: &BTreeSet<
                 &**name == "_" || binding_names.contains(&**name as &str)
             }
             _ => false,
-        }
+        },
         AS { exp, .. } => absyn_pat_is_irrefutable(exp, binding_names),
-        TUPLE { expressions } => (&**expressions).into_iter().all(|e| absyn_pat_is_irrefutable(e, binding_names)),
+        TUPLE { expressions } => (&**expressions)
+            .into_iter()
+            .all(|e| absyn_pat_is_irrefutable(e, binding_names)),
         _ => false,
     }
 }
@@ -1061,14 +1251,19 @@ pub(crate) fn absyn_pat_is_irrefutable(e: &Absyn::Exp, binding_names: &BTreeSet<
 /// argument that is irrefutable. (Named-argument forms or multi-arg
 /// shapes are rejected as not-a-canonical-SOME-pattern.)
 fn absyn_pat_is_full_some(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> bool {
-    if let Absyn::Exp::CALL { function_, functionArgs, .. } = e {
-        if cref_to_dotted(function_) != "SOME" { return false; }
+    if let Absyn::Exp::CALL {
+        function_,
+        functionArgs,
+        ..
+    } = e
+    {
+        if cref_to_dotted(function_) != "SOME" {
+            return false;
+        }
         if let Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } = &**functionArgs {
             let args_vec: Vec<&Absyn::Exp> = (&**args).into_iter().map(|a| a.as_ref()).collect();
             let names_empty = (&**argNames).into_iter().next().is_none();
-            return names_empty
-                && args_vec.len() == 1
-                && absyn_pat_is_irrefutable(args_vec[0], binding_names);
+            return names_empty && args_vec.len() == 1 && absyn_pat_is_irrefutable(args_vec[0], binding_names);
         }
     }
     false
@@ -1104,7 +1299,11 @@ enum CoverKey {
     /// A resolved [`CoverKey::Ctor`]: record `variant` of uniontype `union_`,
     /// which has `total` records in all. Carrying `total` lets
     /// [`cover_keys_exhaustive`] decide coverage without the hierarchy.
-    Variant { union_: String, variant: String, total: usize },
+    Variant {
+        union_: String,
+        variant: String,
+        total: usize,
+    },
     /// Every other shape — literals, partial cons/SOME, constructor patterns
     /// with a refutable sub-pattern, … — contributes no coverage.
     Other,
@@ -1133,25 +1332,36 @@ fn pat_cover_key(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> CoverKey {
         Absyn::Exp::ARRAY { arrayExp } if arrayExp.is_empty() => CoverKey::NilList,
         Absyn::Exp::LIST { exps } if exps.is_empty() => CoverKey::NilList,
         Absyn::Exp::CONS { head, rest }
-            if absyn_pat_is_irrefutable(head, binding_names)
-                && absyn_pat_is_irrefutable(rest, binding_names) =>
-            CoverKey::FullCons,
-        Absyn::Exp::CALL { function_, .. }
-            if cref_to_dotted(function_.as_ref()) == "NONE" =>
-            CoverKey::NoneOpt,
+            if absyn_pat_is_irrefutable(head, binding_names) && absyn_pat_is_irrefutable(rest, binding_names) =>
+        {
+            CoverKey::FullCons
+        }
+        Absyn::Exp::CALL { function_, .. } if cref_to_dotted(function_.as_ref()) == "NONE" => CoverKey::NoneOpt,
         _ if absyn_pat_is_full_some(e, binding_names) => CoverKey::FullSome,
         Absyn::Exp::BOOL { value: true } => CoverKey::BoolTrue,
         Absyn::Exp::BOOL { value: false } => CoverKey::BoolFalse,
-        Absyn::Exp::CALL { function_, functionArgs, .. } => {
-            let Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } = &**functionArgs
-                else { return CoverKey::Other };
+        Absyn::Exp::CALL {
+            function_,
+            functionArgs,
+            ..
+        } => {
+            let Absyn::FunctionArgs::FUNCTIONARGS { args, argNames } = &**functionArgs else {
+                return CoverKey::Other;
+            };
             // A constructor pattern matches every value of its variant only if
             // each listed sub-pattern does. Omitted named fields bind nothing
             // and so never restrict the match.
-            let all_irrefutable = (&**args).into_iter().all(|a| absyn_pat_is_irrefutable(a, binding_names))
-                && (&**argNames).into_iter().all(|n| absyn_pat_is_irrefutable(&n.argValue, binding_names));
-            if all_irrefutable { CoverKey::Ctor(cref_to_dotted(function_.as_ref())) }
-            else { CoverKey::Other }
+            let all_irrefutable = (&**args)
+                .into_iter()
+                .all(|a| absyn_pat_is_irrefutable(a, binding_names))
+                && (&**argNames)
+                    .into_iter()
+                    .all(|n| absyn_pat_is_irrefutable(&n.argValue, binding_names));
+            if all_irrefutable {
+                CoverKey::Ctor(cref_to_dotted(function_.as_ref()))
+            } else {
+                CoverKey::Other
+            }
         }
         _ => CoverKey::Other,
     }
@@ -1161,31 +1371,56 @@ fn pat_cover_key(e: &Absyn::Exp, binding_names: &BTreeSet<String>) -> CoverKey {
 /// becomes [`CoverKey::Variant`], anything else [`CoverKey::Other`]. A record
 /// that is the only shape of its type (`hierarchy::record_is_sole_shape`) is a
 /// `Variant` of itself with `total == 1`.
-fn resolve_cover_key(
-    key: &CoverKey,
-    top_level: &BTreeMap<String, NameNode<'_>>,
-    caller_qname: &str,
-) -> CoverKey {
+fn resolve_cover_key(key: &CoverKey, top_level: &BTreeMap<String, NameNode<'_>>, caller_qname: &str) -> CoverKey {
     let CoverKey::Ctor(raw) = key else { return key.clone() };
     let Some((qname, node)) = resolve_call_node(raw, top_level, caller_qname) else {
         return CoverKey::Other;
     };
-    let NodeKind::Class(rc) = &node.kind else { return CoverKey::Other };
-    if !matches!(rc.restriction, Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }) {
+    let NodeKind::Class(rc) = &node.kind else {
+        return CoverKey::Other;
+    };
+    if !matches!(
+        rc.restriction,
+        Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }
+    ) {
         return CoverKey::Other;
     }
     if crate::hierarchy::record_is_sole_shape(&qname, top_level) {
-        return CoverKey::Variant { union_: qname.clone(), variant: rc.name.clone(), total: 1 };
+        return CoverKey::Variant {
+            union_: qname.clone(),
+            variant: rc.name.clone(),
+            total: 1,
+        };
     }
-    let Some((union_, _)) = qname.rsplit_once('.') else { return CoverKey::Other };
-    let Some(unode) = crate::hierarchy::lookup_node(union_, top_level) else { return CoverKey::Other };
-    let NodeKind::Class(uc) = &unode.kind else { return CoverKey::Other };
-    if !matches!(uc.restriction, Absyn::Restriction::R_UNIONTYPE) { return CoverKey::Other; }
-    let total = unode.children.values().filter(|c| matches!(&c.kind,
+    let Some((union_, _)) = qname.rsplit_once('.') else {
+        return CoverKey::Other;
+    };
+    let Some(unode) = crate::hierarchy::lookup_node(union_, top_level) else {
+        return CoverKey::Other;
+    };
+    let NodeKind::Class(uc) = &unode.kind else {
+        return CoverKey::Other;
+    };
+    if !matches!(uc.restriction, Absyn::Restriction::R_UNIONTYPE) {
+        return CoverKey::Other;
+    }
+    let total = unode
+        .children
+        .values()
+        .filter(|c| {
+            matches!(&c.kind,
         NodeKind::Class(c) if matches!(c.restriction,
-            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))).count();
-    if total == 0 { return CoverKey::Other; }
-    CoverKey::Variant { union_: union_.to_owned(), variant: rc.name.clone(), total }
+            Absyn::Restriction::R_RECORD | Absyn::Restriction::R_METARECORD { .. }))
+        })
+        .count();
+    if total == 0 {
+        return CoverKey::Other;
+    }
+    CoverKey::Variant {
+        union_: union_.to_owned(),
+        variant: rc.name.clone(),
+        total,
+    }
 }
 
 /// Does a set of unguarded patterns (classified by [`pat_cover_key`])
@@ -1232,15 +1467,23 @@ fn match_cover_keys(
     let mut match_scope: BTreeSet<String> = outer_scope.clone();
     collect_local_decl_names(match_local_decls, &mut match_scope);
 
-    cases.into_iter().filter_map(|c| match &**c {
-        Absyn::Case::ELSE { .. } => Some(CoverKey::Irrefutable),
-        Absyn::Case::CASE { pattern, patternGuard, localDecls, .. } if patternGuard.is_none() => {
-            let mut scope = match_scope.clone();
-            collect_local_decl_names(localDecls, &mut scope);
-            Some(pat_cover_key(pattern.as_ref(), &scope))
-        }
-        _ => None,
-    }).collect()
+    cases
+        .into_iter()
+        .filter_map(|c| match &**c {
+            Absyn::Case::ELSE { .. } => Some(CoverKey::Irrefutable),
+            Absyn::Case::CASE {
+                pattern,
+                patternGuard,
+                localDecls,
+                ..
+            } if patternGuard.is_none() => {
+                let mut scope = match_scope.clone();
+                collect_local_decl_names(localDecls, &mut scope);
+                Some(pat_cover_key(pattern.as_ref(), &scope))
+            }
+            _ => None,
+        })
+        .collect()
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1254,9 +1497,7 @@ pub(crate) fn cref_to_dotted(cref: &Absyn::ComponentRef) -> String {
         Absyn::ComponentRef::CREF_QUAL { name, componentRef, .. } => {
             format!("{name}.{}", cref_to_dotted(componentRef))
         }
-        Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef } => {
-            cref_to_dotted(componentRef)
-        }
+        Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef } => cref_to_dotted(componentRef),
         Absyn::ComponentRef::WILD => "_".to_owned(),
         Absyn::ComponentRef::ALLWILD => "__".to_owned(),
     }
@@ -1298,11 +1539,16 @@ fn collect_functions<'a>(
     out: &mut Vec<(String, &'a NameNode<'a>)>,
 ) {
     for (name, node) in nodes {
-        let qname = if prefix.is_empty() { name.clone() } else { format!("{prefix}.{name}") };
+        let qname = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}.{name}")
+        };
         if let NodeKind::Class(c) = &node.kind
-            && matches!(c.restriction, Absyn::Restriction::R_FUNCTION { .. }) {
-                out.push((qname.clone(), node));
-            }
+            && matches!(c.restriction, Absyn::Restriction::R_FUNCTION { .. })
+        {
+            out.push((qname.clone(), node));
+        }
         collect_functions(&node.children, &qname, out);
     }
 }
@@ -1313,8 +1559,9 @@ fn collect_functions<'a>(
 /// fallibility must include the base's — see the `base_fn` edges in [`analyze`].
 fn class_has_own_algorithm(c: &MM::Class) -> bool {
     match &c.body {
-        MM::ClassDef::Parts { algorithms, .. } | MM::ClassDef::ClassExtends { algorithms, .. } =>
-            !algorithms.is_empty(),
+        MM::ClassDef::Parts { algorithms, .. } | MM::ClassDef::ClassExtends { algorithms, .. } => {
+            !algorithms.is_empty()
+        }
         _ => false,
     }
 }
@@ -1393,7 +1640,10 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
                 bases.push(b);
             }
         }
-        if let Some(b) = node.base_fn.and_then(|bf| ptr_to_qname.get(&(bf as *const MM::Class)).cloned()) {
+        if let Some(b) = node
+            .base_fn
+            .and_then(|bf| ptr_to_qname.get(&(bf as *const MM::Class)).cloned())
+        {
             bases.push(b);
         }
         bases
@@ -1494,10 +1744,11 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
                     rs.edges.insert(target);
                 }
             } else if let Some(b) = builtin_fallibility(base)
-                && matches!(b, Fallibility::Fallible) {
-                    rs.always = true;
-                    rs.reasons.insert(format!("alias of fallible builtin {base}"));
-                }
+                && matches!(b, Fallibility::Fallible)
+            {
+                rs.always = true;
+                rs.reasons.insert(format!("alias of fallible builtin {base}"));
+            }
         }
         // A body-less function that `extends` a partial base inlines that
         // base's algorithm, so it inherits the base's fallibility. Only edges
@@ -1523,13 +1774,17 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
     loop {
         let mut changed = false;
         for (qname, rs) in &resolved {
-            if fallible.contains(qname) { continue; }
+            if fallible.contains(qname) {
+                continue;
+            }
             if sources_fallible(rs, &fallible) {
                 fallible.insert(qname.clone());
                 changed = true;
             }
         }
-        if !changed { break; }
+        if !changed {
+            break;
+        }
     }
 
     // With the fixed point reached, flag every `matchcontinue` whose arms —
@@ -1549,13 +1804,18 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
             // Skip the final arm: a failure there can't fall through to anything.
             let non_last = lint.arms.len().saturating_sub(1);
             let hoists = lint.guard_hoists.clone().unwrap_or_default();
-            let why = if lint.arms[..non_last].iter().all(|arm| !sources_fallible(arm, &fallible)) {
+            let why = if lint.arms[..non_last]
+                .iter()
+                .all(|arm| !sources_fallible(arm, &fallible))
+            {
                 "has no fallible arm before its last"
             } else if lint.disjoint {
                 "has pairwise disjoint case patterns"
             } else if lint.guard_hoists.is_some()
                 && !hoists.is_empty()
-                && lint.hoisted[..non_last].iter().all(|arm| !sources_fallible(arm, &fallible))
+                && lint.hoisted[..non_last]
+                    .iter()
+                    .all(|arm| !sources_fallible(arm, &fallible))
             {
                 "only falls through on `true := …` asserts — make them `guard`s"
             } else {
@@ -1572,8 +1832,11 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
                 }
                 mc_report.push(format!(
                     "{}:{}:{}\t{qname}\tarms={}\telse={}\tblocking={n_blocking}\thoistable={}\t{}",
-                    lint.info.fileName, lint.info.lineNumberStart, lint.info.columnNumberStart,
-                    lint.arms.len(), if lint.has_else { 1 } else { 0 },
+                    lint.info.fileName,
+                    lint.info.lineNumberStart,
+                    lint.info.columnNumberStart,
+                    lint.arms.len(),
+                    if lint.has_else { 1 } else { 0 },
                     if hoistable { 1 } else { 0 },
                     blockers.into_iter().collect::<Vec<_>>().join(", "),
                 ));
@@ -1584,8 +1847,11 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
                 lint.info.fileName, lint.info.lineNumberStart, lint.info.columnNumberStart,
             ));
             matchcontinue_as_match_locs.push(lint.info.clone());
-            matchcontinue_guard_hoists.push(
-                if why.starts_with("only falls through") { hoists } else { Vec::new() });
+            matchcontinue_guard_hoists.push(if why.starts_with("only falls through") {
+                hoists
+            } else {
+                Vec::new()
+            });
         }
     }
 
@@ -1603,7 +1869,12 @@ pub fn analyze(hier: &InstanceHierarchy<'_>) -> FallibilityInfo {
 /// Why is this arm fallible under the current `fallible` set? Diagnostic only.
 fn why_fallible(rs: &ResolvedSources, fallible: &BTreeSet<String>) -> Vec<String> {
     let mut v: Vec<String> = rs.reasons.iter().cloned().collect();
-    v.extend(rs.edges.iter().filter(|t| fallible.contains(*t)).map(|t| format!("calls {t}")));
+    v.extend(
+        rs.edges
+            .iter()
+            .filter(|t| fallible.contains(*t))
+            .map(|t| format!("calls {t}")),
+    );
     if rs.mc.iter().any(|mc| !mc_check_is_safe(mc, fallible)) {
         v.push("nested matchcontinue may fail".to_owned());
     }
@@ -1668,8 +1939,10 @@ fn resolve_walk(
         ..ResolvedSources::default()
     };
     for keys in &w.match_keys {
-        let resolved: Vec<CoverKey> = keys.iter()
-            .map(|k| resolve_cover_key(k, top_level, caller_qname)).collect();
+        let resolved: Vec<CoverKey> = keys
+            .iter()
+            .map(|k| resolve_cover_key(k, top_level, caller_qname))
+            .collect();
         if !cover_keys_exhaustive(&resolved) {
             rs.always = true;
             rs.reasons.insert("non-exhaustive `match`".to_owned());
@@ -1743,27 +2016,34 @@ fn resolve_walk(
     }
     for mc in &w.mc_checks {
         rs.mc.push(ResolvedMcCheck {
-            candidates: mc.candidates.iter()
-                .map(|(key, sub)| (
-                    resolve_cover_key(key, top_level, caller_qname),
-                    resolve_walk(sub, caller_qname, top_level, walks),
-                ))
+            candidates: mc
+                .candidates
+                .iter()
+                .map(|(key, sub)| {
+                    (
+                        resolve_cover_key(key, top_level, caller_qname),
+                        resolve_walk(sub, caller_qname, top_level, walks),
+                    )
+                })
                 .collect(),
         });
     }
     for lint in &w.mc_lints {
         rs.mc_lints.push(ResolvedMcLint {
             info: lint.info.clone(),
-            arms: lint.arms.iter()
+            arms: lint
+                .arms
+                .iter()
                 .map(|sub| resolve_walk(sub, caller_qname, top_level, walks))
                 .collect(),
-            hoisted: lint.hoisted.iter()
+            hoisted: lint
+                .hoisted
+                .iter()
                 .map(|sub| resolve_walk(sub, caller_qname, top_level, walks))
                 .collect(),
             guard_hoists: lint.guard_hoists.clone(),
             has_else: lint.has_else,
-            disjoint: crate::mc_disjoint::cases_pairwise_disjoint(
-                &lint.cases, &lint.scope, top_level, caller_qname),
+            disjoint: crate::mc_disjoint::cases_pairwise_disjoint(&lint.cases, &lint.scope, top_level, caller_qname),
         });
     }
     rs
@@ -1774,9 +2054,7 @@ fn resolve_walk(
 /// infallible to fallible (directly through `edges`, or by shrinking the set
 /// of infallible matchcontinue candidates below coverage).
 fn sources_fallible(rs: &ResolvedSources, fallible: &BTreeSet<String>) -> bool {
-    rs.always
-        || rs.edges.iter().any(|t| fallible.contains(t))
-        || rs.mc.iter().any(|mc| !mc_check_is_safe(mc, fallible))
+    rs.always || rs.edges.iter().any(|t| fallible.contains(t)) || rs.mc.iter().any(|mc| !mc_check_is_safe(mc, fallible))
 }
 
 /// A `matchcontinue` cannot fail iff the patterns of its infallible
@@ -1788,7 +2066,9 @@ fn sources_fallible(rs: &ResolvedSources, fallible: &BTreeSet<String>) -> bool {
 /// [`crate::codegen`]'s `emit_diverging_fail`, both of which are valid in
 /// fallible and infallible functions alike.
 fn mc_check_is_safe(mc: &ResolvedMcCheck, fallible: &BTreeSet<String>) -> bool {
-    let keys: Vec<CoverKey> = mc.candidates.iter()
+    let keys: Vec<CoverKey> = mc
+        .candidates
+        .iter()
         .filter(|(_, sub)| !sources_fallible(sub, fallible))
         .map(|(key, _)| key.clone())
         .collect();

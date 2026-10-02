@@ -77,8 +77,12 @@ pub mod ondemand {
         if let Some(b) = CACHE.with(|c| c.borrow().get(file).copied()) {
             return b;
         }
-        let Some(src) = SOURCE.with(|s| *s.borrow()) else { return &[] };
-        let Some(bytes) = src(file).filter(|v| !v.is_empty()) else { return &[] };
+        let Some(src) = SOURCE.with(|s| *s.borrow()) else {
+            return &[];
+        };
+        let Some(bytes) = src(file).filter(|v| !v.is_empty()) else {
+            return &[];
+        };
         let bytes: &'static [u8] = Vec::leak(bytes);
         CACHE.with(|c| c.borrow_mut().insert(file, bytes));
         bytes
@@ -114,8 +118,7 @@ blobs_ondemand! {env!("OUT_DIR"),
 /// Symbol -> blob file. Cached even when it fails, so a bundle with no index is not
 /// fetched again for every name.
 fn ondemand_index() -> Option<&'static std::collections::HashMap<String, String>> {
-    static MAP: std::sync::OnceLock<Option<std::collections::HashMap<String, String>>> =
-        std::sync::OnceLock::new();
+    static MAP: std::sync::OnceLock<Option<std::collections::HashMap<String, String>>> = std::sync::OnceLock::new();
     MAP.get_or_init(|| {
         let json = serde_json::from_slice::<serde_json::Value>(ONDEMAND_INDEX()).ok()?;
         let mut map = std::collections::HashMap::new();
@@ -231,7 +234,11 @@ pub const EXT_FAMILY: &[(&str, fn() -> &'static [u8])] = &[
 
 /// The bytes of a library named by [`EXT_FAMILY`] or a NEEDED entry.
 pub fn ext_library(file: &str) -> Option<&'static [u8]> {
-    EXT_FAMILY.iter().find(|(f, _)| *f == file).map(|(_, b)| b()).filter(|b| !b.is_empty())
+    EXT_FAMILY
+        .iter()
+        .find(|(f, _)| *f == file)
+        .map(|(_, b)| b())
+        .filter(|b| !b.is_empty())
 }
 
 /// Whether external "C" in a host-free wasm FMU is supported: the libraries are
@@ -269,15 +276,31 @@ impl SolverLibrary {
 /// whenever any of them is. Every blob is empty when this omc was built without the
 /// wasm solver archives.
 pub static SOLVER_LIBRARIES: &[SolverLibrary] = &[
-    SolverLibrary { name: "klu", module: SOLVER_KLU, stub: SOLVER_KLU_STUB },
+    SolverLibrary {
+        name: "klu",
+        module: SOLVER_KLU,
+        stub: SOLVER_KLU_STUB,
+    },
     SolverLibrary {
         name: "sundials_driver",
         module: SOLVER_SUNDIALS_DRIVER,
         stub: SOLVER_SUNDIALS_DRIVER_STUB,
     },
-    SolverLibrary { name: "kinsol", module: SOLVER_KINSOL, stub: SOLVER_KINSOL_STUB },
-    SolverLibrary { name: "umfpack", module: SOLVER_UMFPACK, stub: SOLVER_UMFPACK_STUB },
-    SolverLibrary { name: "lis", module: SOLVER_LIS, stub: SOLVER_LIS_STUB },
+    SolverLibrary {
+        name: "kinsol",
+        module: SOLVER_KINSOL,
+        stub: SOLVER_KINSOL_STUB,
+    },
+    SolverLibrary {
+        name: "umfpack",
+        module: SOLVER_UMFPACK,
+        stub: SOLVER_UMFPACK_STUB,
+    },
+    SolverLibrary {
+        name: "lis",
+        module: SOLVER_LIS,
+        stub: SOLVER_LIS_STUB,
+    },
 ];
 
 /// Whether an exported wasm FMU can be given the SUNDIALS-backed solvers.

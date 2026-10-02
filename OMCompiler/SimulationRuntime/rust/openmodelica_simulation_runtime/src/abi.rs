@@ -96,7 +96,9 @@ impl base_array_t {
         if self.data.is_null() || self.dim_size.is_null() || self.ndims < 1 {
             return 0;
         }
-        (0..self.ndims as usize).map(|d| unsafe { *self.dim_size.add(d) }.max(0) as usize).product()
+        (0..self.ndims as usize)
+            .map(|d| unsafe { *self.dim_size.add(d) }.max(0) as usize)
+            .product()
     }
     /// Index of the attribute element that holds scalar element `i` of the
     /// variable: an attribute with a single element (`each`) holds the value of
@@ -109,7 +111,8 @@ impl base_array_t {
     /// Element `i` of an attribute array, see [`Self::elem_index`]. `fallback` if
     /// there is no such element.
     pub fn elem_at<T: Copy>(&self, i: usize, fallback: T) -> T {
-        self.elem_index(i).map_or(fallback, |j| unsafe { *(self.data as *const T).add(j) })
+        self.elem_index(i)
+            .map_or(fallback, |j| unsafe { *(self.data as *const T).add(j) })
     }
     /// Element `i` of a real attribute array; C's attributes are `real_array` so
     /// an array variable can carry one value per element.
@@ -175,9 +178,8 @@ pub struct NONLINEAR_PATTERN {
     pub rows: *mut c_uint,
 }
 
-pub type jacobianColumn_func_ptr = Option<
-    unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut JACOBIAN, *mut JACOBIAN) -> c_int,
->;
+pub type jacobianColumn_func_ptr =
+    Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut JACOBIAN, *mut JACOBIAN) -> c_int>;
 pub type initialAnalyticalJacobian_func_ptr =
     Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut JACOBIAN) -> c_int>;
 
@@ -327,9 +329,7 @@ pub struct RESIDUAL_USERDATA {
     pub solverData: *mut c_void,
 }
 
-pub type residual_func_ptr = Option<
-    unsafe extern "C" fn(*mut RESIDUAL_USERDATA, *const f64, *mut f64, *const c_int),
->;
+pub type residual_func_ptr = Option<unsafe extern "C" fn(*mut RESIDUAL_USERDATA, *const f64, *mut f64, *const c_int)>;
 
 #[repr(C)]
 pub struct NONLINEAR_SYSTEM_DATA {
@@ -360,10 +360,8 @@ pub struct NONLINEAR_SYSTEM_DATA {
             modelica_boolean,
         ),
     >,
-    pub freeStaticNLSData:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut NONLINEAR_SYSTEM_DATA)>,
-    pub strictTearingFunctionCall:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
+    pub freeStaticNLSData: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut NONLINEAR_SYSTEM_DATA)>,
+    pub strictTearingFunctionCall: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub getIterationVars: Option<unsafe extern "C" fn(*mut DATA, *mut f64)>,
     pub checkConstraints: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub matrixFormat: c_int,
@@ -394,19 +392,14 @@ pub struct NONLINEAR_SYSTEM_DATA {
 pub struct LINEAR_SYSTEM_DATA {
     pub setA: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut LINEAR_SYSTEM_DATA)>,
     pub setb: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut LINEAR_SYSTEM_DATA)>,
-    pub setAElement: Option<
-        unsafe extern "C" fn(c_int, c_int, f64, c_int, *mut LINEAR_SYSTEM_DATA, *mut threadData_t),
-    >,
-    pub setBElement:
-        Option<unsafe extern "C" fn(c_int, f64, *mut LINEAR_SYSTEM_DATA, *mut threadData_t)>,
+    pub setAElement: Option<unsafe extern "C" fn(c_int, c_int, f64, c_int, *mut LINEAR_SYSTEM_DATA, *mut threadData_t)>,
+    pub setBElement: Option<unsafe extern "C" fn(c_int, f64, *mut LINEAR_SYSTEM_DATA, *mut threadData_t)>,
     pub analyticalJacobianColumn: jacobianColumn_func_ptr,
     pub initialAnalyticalJacobian: initialAnalyticalJacobian_func_ptr,
     pub residualFunc: residual_func_ptr,
-    pub initializeStaticLSData: Option<
-        unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut LINEAR_SYSTEM_DATA, modelica_boolean),
-    >,
-    pub strictTearingFunctionCall:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
+    pub initializeStaticLSData:
+        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut LINEAR_SYSTEM_DATA, modelica_boolean)>,
+    pub strictTearingFunctionCall: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub checkConstraints: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
     pub min: *mut modelica_real,
     pub max: *mut modelica_real,
@@ -473,8 +466,7 @@ pub struct DAEMODE_DATA {
     pub residualVars: *mut modelica_real,
     pub auxiliaryVars: *mut modelica_real,
     pub sparsePattern: *mut SPARSE_PATTERN,
-    pub evaluateDAEResiduals:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int>,
+    pub evaluateDAEResiduals: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int>,
     pub algIndexes: *mut c_int,
 }
 
@@ -879,18 +871,15 @@ pub type sim_fn = Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c
 
 #[repr(C)]
 pub struct OpenModelicaGeneratedFunctionCallbacks {
-    pub performSimulation:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
-    pub performQSSSimulation:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
+    pub performSimulation: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
+    pub performQSSSimulation: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut c_void) -> c_int>,
     pub updateContinuousSystem: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
     pub callExternalObjectDestructors: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
 
     pub initialNonLinearSystem: Option<unsafe extern "C" fn(c_int, *mut NONLINEAR_SYSTEM_DATA)>,
     pub initialLinearSystem: Option<unsafe extern "C" fn(c_int, *mut LINEAR_SYSTEM_DATA)>,
     pub initialMixedSystem: Option<unsafe extern "C" fn(c_int, *mut MIXED_SYSTEM_DATA)>,
-    pub initializeStateSets:
-        Option<unsafe extern "C" fn(c_int, *mut STATE_SET_DATA, *mut DATA)>,
+    pub initializeStateSets: Option<unsafe extern "C" fn(c_int, *mut STATE_SET_DATA, *mut DATA)>,
     pub initializeDAEmodeData: Option<unsafe extern "C" fn(*mut DATA, *mut DAEMODE_DATA) -> c_int>,
     pub getDAG_ODE: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
 
@@ -919,12 +908,9 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub updateBoundParameters: sim_fn,
     pub checkForAsserts: sim_fn,
     pub function_ZeroCrossingsEquations: sim_fn,
-    pub function_ZeroCrossings:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut f64) -> c_int>,
-    pub function_updateRelations:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int>,
-    pub zeroCrossingDescription:
-        Option<unsafe extern "C" fn(c_int, *mut *mut c_int) -> *const c_char>,
+    pub function_ZeroCrossings: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, *mut f64) -> c_int>,
+    pub function_updateRelations: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_int) -> c_int>,
+    pub zeroCrossingDescription: Option<unsafe extern "C" fn(c_int, *mut *mut c_int) -> *const c_char>,
     pub relationDescription: Option<unsafe extern "C" fn(c_int) -> *const c_char>,
     pub function_initSample: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
 
@@ -958,11 +944,8 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub linear_model_datarecovery_frame: Option<unsafe extern "C" fn() -> *const c_char>,
 
     pub mayer: Option<unsafe extern "C" fn(*mut DATA, *mut *mut modelica_real, *mut i16) -> c_int>,
-    pub lagrange: Option<
-        unsafe extern "C" fn(*mut DATA, *mut *mut modelica_real, *mut i16, *mut i16) -> c_int,
-    >,
-    pub getInputVarIndicesInOptimization:
-        Option<unsafe extern "C" fn(*mut DATA, *mut c_int, *mut c_int) -> c_int>,
+    pub lagrange: Option<unsafe extern "C" fn(*mut DATA, *mut *mut modelica_real, *mut i16, *mut i16) -> c_int>,
+    pub getInputVarIndicesInOptimization: Option<unsafe extern "C" fn(*mut DATA, *mut c_int, *mut c_int) -> c_int>,
     pub pickUpBoundsForInputsInOptimization: Option<
         unsafe extern "C" fn(
             *mut DATA,
@@ -976,23 +959,19 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
         ) -> c_int,
     >,
     pub setInputData: Option<unsafe extern "C" fn(*mut DATA) -> c_int>,
-    pub getTimeGrid: Option<
-        unsafe extern "C" fn(*mut DATA, *mut modelica_integer, *mut *mut modelica_integer) -> c_int,
-    >,
+    pub getTimeGrid:
+        Option<unsafe extern "C" fn(*mut DATA, *mut modelica_integer, *mut *mut modelica_integer) -> c_int>,
 
     pub symbolicInlineSystems: sim_fn,
 
     pub function_initSynchronous: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
-    pub function_updateSynchronous:
-        Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_long)>,
+    pub function_updateSynchronous: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_long)>,
     pub function_equationsSynchronous:
         Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t, c_long, c_long) -> c_int>,
 
     pub inputNames: Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
-    pub dataReconciliationInputNames:
-        Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
-    pub dataReconciliationUnmeasuredVariables:
-        Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
+    pub dataReconciliationInputNames: Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
+    pub dataReconciliationUnmeasuredVariables: Option<unsafe extern "C" fn(*mut DATA, *mut *mut c_char) -> c_int>,
 
     pub read_simulation_info: Option<unsafe extern "C" fn(*mut SIMULATION_INFO)>,
     pub read_input_fmu: Option<unsafe extern "C" fn(*mut MODEL_DATA)>,
@@ -1094,4 +1073,3 @@ pub const FLAG_OVERRIDE_FILE: usize = 108;
 pub const FLAG_R: usize = 110;
 pub const FLAG_S: usize = 131;
 pub const FLAG_VARIABLE_FILTER: usize = 147;
-

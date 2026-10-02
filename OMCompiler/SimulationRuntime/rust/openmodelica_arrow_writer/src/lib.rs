@@ -13,15 +13,15 @@
 //! table's `scale` and `offset`; time-invariant values go to the parameter
 //! table, each in its own type.
 
-pub mod units;
 #[cfg(feature = "json-layout")]
 pub mod json;
+pub mod units;
 #[cfg(feature = "ipc")]
 mod writer;
-#[cfg(feature = "ipc")]
-pub use writer::{ArrowStream, ArrowVar, FileMeta, Out, no_strings, write_arrow};
 #[cfg(feature = "json-layout")]
 pub(crate) use writer::ree_type;
+#[cfg(feature = "ipc")]
+pub use writer::{ArrowStream, ArrowVar, FileMeta, Out, no_strings, write_arrow};
 
 pub use units::{BaseUnit, DisplayUnit, UnitDef};
 
@@ -49,7 +49,11 @@ pub const DEFAULT_BLOCK_ROWS: usize = 1024;
 /// Rows per record batch: the default, or the `-mat_sync` interval when it is
 /// smaller (each complete batch is readable in a file still being written).
 pub fn block_rows(sync: usize) -> usize {
-    if sync > 0 { sync.min(DEFAULT_BLOCK_ROWS) } else { DEFAULT_BLOCK_ROWS }
+    if sync > 0 {
+        sync.min(DEFAULT_BLOCK_ROWS)
+    } else {
+        DEFAULT_BLOCK_ROWS
+    }
 }
 
 /// How an alias derives its value from the column it shares: `scale * v + offset`.
@@ -60,11 +64,20 @@ pub struct Affine {
 }
 
 impl Affine {
-    pub const IDENTITY: Affine = Affine { scale: 1.0, offset: 0.0 };
+    pub const IDENTITY: Affine = Affine {
+        scale: 1.0,
+        offset: 0.0,
+    };
     /// `-v`
-    pub const NEGATE: Affine = Affine { scale: -1.0, offset: 0.0 };
+    pub const NEGATE: Affine = Affine {
+        scale: -1.0,
+        offset: 0.0,
+    };
     /// `!v` over the 0/1 encoding.
-    pub const NOT: Affine = Affine { scale: -1.0, offset: 1.0 };
+    pub const NOT: Affine = Affine {
+        scale: -1.0,
+        offset: 1.0,
+    };
 
     pub fn apply(self, v: f64) -> f64 {
         self.scale * v + self.offset
@@ -79,7 +92,10 @@ impl Affine {
     #[cfg(feature = "ipc")]
     fn relative_to(self, base: Affine) -> Affine {
         let scale = self.scale / base.scale;
-        Affine { scale, offset: self.offset - scale * base.offset }
+        Affine {
+            scale,
+            offset: self.offset - scale * base.offset,
+        }
     }
 }
 
@@ -140,10 +156,17 @@ impl VarTy {
 pub enum ArrowKind {
     Time,
     /// Result-row column `col` (0 = time), transformed by `affine` for an alias.
-    Column { col: u32, affine: Affine },
+    Column {
+        col: u32,
+        affine: Affine,
+    },
     /// A time-invariant value taken from the `params` slice, in `Param` order.
-    Param { affine: Affine },
-    Const { value: f64 },
+    Param {
+        affine: Affine,
+    },
+    Const {
+        value: f64,
+    },
 }
 
 /// The storage type of a result-row column.

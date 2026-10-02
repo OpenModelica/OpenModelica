@@ -8,7 +8,10 @@ name = "SimulationRuntimeRust"
 crate-type = ["staticlib"]
 
 [dependencies]
-runtime = { package = "openmodelica_simulation_runtime", path = "../openmodelica_simulation_runtime", default-features = false, features = ["fmu-lapack", "fmi"] }
+runtime = { package = "openmodelica_simulation_runtime", path = "../openmodelica_simulation_runtime", default-features = false, features = [
+  "fmu-lapack",
+  "fmi",
+] }
 
 [workspace]
 

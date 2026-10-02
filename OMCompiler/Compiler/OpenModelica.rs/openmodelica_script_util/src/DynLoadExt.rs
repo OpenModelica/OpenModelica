@@ -22,9 +22,9 @@
 
 use std::ffi::{CStr, CString, c_char, c_void};
 
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 
 use openmodelica_ast::Absyn;
 use openmodelica_frontend_dump::AbsynUtil;
@@ -68,10 +68,24 @@ struct TypeDesc {
 
 impl TypeDesc {
     const fn none() -> Self {
-        TypeDesc { tag: TD_NONE, retval: 0, d0: 0, d1: 0, d2: 0, d3: 0 }
+        TypeDesc {
+            tag: TD_NONE,
+            retval: 0,
+            d0: 0,
+            d1: 0,
+            d2: 0,
+            d3: 0,
+        }
     }
     const fn scalar(tag: i32, d0: u64) -> Self {
-        TypeDesc { tag, retval: 0, d0, d1: 0, d2: 0, d3: 0 }
+        TypeDesc {
+            tag,
+            retval: 0,
+            d0,
+            d1: 0,
+            d2: 0,
+            d3: 0,
+        }
     }
 }
 
@@ -107,7 +121,12 @@ fn value_to_desc(v: &Values::Value, store: &mut ArgStorage) -> Result<TypeDesc> 
         Values::Value::BOOL { boolean } => Ok(TypeDesc::scalar(TD_BOOL, *boolean as u64)),
         Values::Value::STRING { string } => Ok(TypeDesc::scalar(TD_STRING, make_c_string(string, store)? as u64)),
         Values::Value::ENUM_LITERAL { index, .. } => Ok(TypeDesc::scalar(TD_INT, *index as i64 as u64)),
-        Values::Value::RECORD { record_, orderd, comp, index } if *index == -1 => record_to_desc(record_, orderd, comp, store),
+        Values::Value::RECORD {
+            record_,
+            orderd,
+            comp,
+            index,
+        } if *index == -1 => record_to_desc(record_, orderd, comp, store),
         Values::Value::ARRAY { valueLst, dimLst } => array_to_desc(valueLst, dimLst, store),
         other => return Err("DynLoad.executeFunction: marshalling argument {other:?} not yet supported"),
     }
@@ -122,7 +141,10 @@ fn record_to_desc(
     field_names: &List<ArcStr>,
     store: &mut ArgStorage,
 ) -> Result<TypeDesc> {
-    let elems: Vec<TypeDesc> = fields.into_iter().map(|f| value_to_desc(f, store)).collect::<Result<_>>()?;
+    let elems: Vec<TypeDesc> = fields
+        .into_iter()
+        .map(|f| value_to_desc(f, store))
+        .collect::<Result<_>>()?;
     let names: Vec<*const c_char> = field_names
         .into_iter()
         .map(|n| {
@@ -135,12 +157,20 @@ fn record_to_desc(
     if elems.len() != names.len() {
         return Err("DynLoad.executeFunction: record argument has {} fields but {} field names");
     }
-    let record_name = CString::new(AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)?.as_str()).map_err(|_| "DynLoad: NUL byte in record name")?;
+    let record_name = CString::new(AbsynUtil::pathString(path.clone(), arcstr::literal!("."), false, false)?.as_str())
+        .map_err(|_| "DynLoad: NUL byte in record name")?;
     let d0 = record_name.as_ptr() as u64;
     store.cstrings.push(record_name);
     let elems = elems.into_boxed_slice();
     let names = names.into_boxed_slice();
-    let desc = TypeDesc { tag: TD_RECORD, retval: 0, d0, d1: elems.len() as u64, d2: names.as_ptr() as u64, d3: elems.as_ptr() as u64 };
+    let desc = TypeDesc {
+        tag: TD_RECORD,
+        retval: 0,
+        d0,
+        d1: elems.len() as u64,
+        d2: names.as_ptr() as u64,
+        d3: elems.as_ptr() as u64,
+    };
     store.descs.push(elems);
     store.name_arrays.push(names);
     Ok(desc)
@@ -163,7 +193,11 @@ fn array_element_tag(values: &List<metamodelica::Ref<Values::Value>>) -> Result<
 /// Flatten a (possibly nested) `Values.ARRAY` into `out` in row-major order.
 /// `depth` counts the remaining dimensions; leaves must be scalars of the
 /// array's element type.
-fn flatten_array(values: &List<metamodelica::Ref<Values::Value>>, depth: usize, out: &mut dyn FnMut(&Values::Value) -> Result<()>) -> Result<()> {
+fn flatten_array(
+    values: &List<metamodelica::Ref<Values::Value>>,
+    depth: usize,
+    out: &mut dyn FnMut(&Values::Value) -> Result<()>,
+) -> Result<()> {
     for v in values {
         match (&**v, depth) {
             (Values::Value::ARRAY { valueLst, .. }, 2..) => flatten_array(valueLst, depth - 1, out)?,
@@ -176,7 +210,11 @@ fn flatten_array(values: &List<metamodelica::Ref<Values::Value>>, depth: usize, 
 
 /// A Modelica array argument becomes a typed `TYPE_DESC_*_ARRAY` with a
 /// `base_array_t` payload (row-major data, like `parse_array` in Dynload.cpp).
-fn array_to_desc(values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List<i32>, store: &mut ArgStorage) -> Result<TypeDesc> {
+fn array_to_desc(
+    values: &List<metamodelica::Ref<Values::Value>>,
+    dim_lst: &List<i32>,
+    store: &mut ArgStorage,
+) -> Result<TypeDesc> {
     let tag = array_element_tag(values)?;
     let dims: Box<[i64]> = dim_lst.into_iter().map(|d| *d as i64).collect();
     let ndims = dims.len();
@@ -193,11 +231,11 @@ fn array_to_desc(values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List
                 Values::Value::INTEGER { integer } => {
                     buf.push(*integer as i64);
                     Ok(())
-                },
+                }
                 Values::Value::ENUM_LITERAL { index, .. } => {
                     buf.push(*index as i64);
                     Ok(())
-                },
+                }
                 other => return Err("DynLoad.executeFunction: expected Integer array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
@@ -211,7 +249,7 @@ fn array_to_desc(values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List
                 Values::Value::REAL { real } => {
                     buf.push(real.into_inner());
                     Ok(())
-                },
+                }
                 other => return Err("DynLoad.executeFunction: expected Real array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
@@ -225,7 +263,7 @@ fn array_to_desc(values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List
                 Values::Value::BOOL { boolean } => {
                     buf.push(*boolean as i32);
                     Ok(())
-                },
+                }
                 other => return Err("DynLoad.executeFunction: expected Boolean array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
@@ -239,7 +277,7 @@ fn array_to_desc(values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List
                 Values::Value::STRING { string } => {
                     buf.push(make_c_string(string, store)? as *const c_char);
                     Ok(())
-                },
+                }
                 other => return Err("DynLoad.executeFunction: expected String array element, got {other:?}"),
             })?;
             let buf = buf.into_boxed_slice();
@@ -254,7 +292,14 @@ fn array_to_desc(values: &List<metamodelica::Ref<Values::Value>>, dim_lst: &List
     }
     let d1 = dims.as_ptr() as u64;
     store.dims.push(dims);
-    Ok(TypeDesc { tag, retval: 0, d0: ndims as u64, d1, d2: data, d3: 0 })
+    Ok(TypeDesc {
+        tag,
+        retval: 0,
+        d0: ndims as u64,
+        d1,
+        d2: data,
+        d3: 0,
+    })
 }
 
 /// Parse a `_`-delimited `record_description` path (`__` is a literal
@@ -275,9 +320,14 @@ fn underscore_name_to_path(name: &str) -> metamodelica::Ref<Absyn::Path> {
             parts.last_mut().unwrap().push(c);
         }
     }
-    let mut path = metamodelica::Ref::new(Absyn::Path::IDENT { name: ArcStr::from(parts.pop().unwrap()) });
+    let mut path = metamodelica::Ref::new(Absyn::Path::IDENT {
+        name: ArcStr::from(parts.pop().unwrap()),
+    });
     for part in parts.into_iter().rev() {
-        path = metamodelica::Ref::new(Absyn::Path::QUALIFIED { name: ArcStr::from(part), path });
+        path = metamodelica::Ref::new(Absyn::Path::QUALIFIED {
+            name: ArcStr::from(part),
+            path,
+        });
     }
     path
 }
@@ -303,9 +353,15 @@ fn read_c_str(p: *const c_char) -> Result<String> {
 /// Mirrors `type_desc_to_value`.
 fn desc_to_value(d: &TypeDesc) -> Result<metamodelica::Ref<Values::Value>> {
     match d.tag {
-        TD_INT => Ok(metamodelica::Ref::new(Values::Value::INTEGER { integer: d.d0 as i64 as i32 })),
-        TD_REAL => Ok(metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(f64::from_bits(d.d0)) })),
-        TD_BOOL => Ok(metamodelica::Ref::new(Values::Value::BOOL { boolean: (d.d0 as i32) != 0 })),
+        TD_INT => Ok(metamodelica::Ref::new(Values::Value::INTEGER {
+            integer: d.d0 as i64 as i32,
+        })),
+        TD_REAL => Ok(metamodelica::Ref::new(Values::Value::REAL {
+            real: metamodelica::Real::from(f64::from_bits(d.d0)),
+        })),
+        TD_BOOL => Ok(metamodelica::Ref::new(Values::Value::BOOL {
+            boolean: (d.d0 as i32) != 0,
+        })),
         TD_NORETCALL => Ok(metamodelica::Ref::new(Values::Value::NORETCALL)),
         TD_TUPLE => {
             let n = d.d0 as usize;
@@ -318,7 +374,9 @@ fn desc_to_value(d: &TypeDesc) -> Result<metamodelica::Ref<Values::Value>> {
                 let e = unsafe { &*elems.add(i) };
                 vals.push(desc_to_value(e)?);
             }
-            Ok(metamodelica::Ref::new(Values::Value::TUPLE { valueLst: List::from_iter(vals) }))
+            Ok(metamodelica::Ref::new(Values::Value::TUPLE {
+                valueLst: List::from_iter(vals),
+            }))
         }
         TD_RECORD => {
             // union: d0 = record name, d1 = count, d2 = names, d3 = elements.
@@ -344,7 +402,9 @@ fn desc_to_value(d: &TypeDesc) -> Result<metamodelica::Ref<Values::Value>> {
             }))
         }
         TD_REAL_ARRAY | TD_INT_ARRAY | TD_BOOL_ARRAY | TD_STRING_ARRAY => desc_array_to_value(d),
-        TD_STRING => Ok(metamodelica::Ref::new(Values::Value::STRING { string: ArcStr::from(read_c_str(d.d0 as *const c_char)?) })),
+        TD_STRING => Ok(metamodelica::Ref::new(Values::Value::STRING {
+            string: ArcStr::from(read_c_str(d.d0 as *const c_char)?),
+        })),
         TD_MMC => return Err("DynLoad.executeFunction: MetaModelica result from a generated function"),
         other => return Err("DynLoad.executeFunction: unsupported result type_description tag {other}"),
     }
@@ -380,10 +440,18 @@ fn decode_array_level(tag: i32, dims: &[i64], cursor: &mut *const u8) -> Result<
     if dims.len() == 1 {
         for _ in 0..n {
             items.push(match tag {
-                TD_REAL_ARRAY => metamodelica::Ref::new(Values::Value::REAL { real: metamodelica::Real::from(unsafe { take::<f64>(cursor) }) }),
-                TD_INT_ARRAY => metamodelica::Ref::new(Values::Value::INTEGER { integer: unsafe { take::<i64>(cursor) } as i32 }),
-                TD_BOOL_ARRAY => metamodelica::Ref::new(Values::Value::BOOL { boolean: unsafe { take::<i32>(cursor) } != 0 }),
-                TD_STRING_ARRAY => metamodelica::Ref::new(Values::Value::STRING { string: ArcStr::from(read_c_str(unsafe { take::<*const c_char>(cursor) })?) }),
+                TD_REAL_ARRAY => metamodelica::Ref::new(Values::Value::REAL {
+                    real: metamodelica::Real::from(unsafe { take::<f64>(cursor) }),
+                }),
+                TD_INT_ARRAY => metamodelica::Ref::new(Values::Value::INTEGER {
+                    integer: unsafe { take::<i64>(cursor) } as i32,
+                }),
+                TD_BOOL_ARRAY => metamodelica::Ref::new(Values::Value::BOOL {
+                    boolean: unsafe { take::<i32>(cursor) } != 0,
+                }),
+                TD_STRING_ARRAY => metamodelica::Ref::new(Values::Value::STRING {
+                    string: ArcStr::from(read_c_str(unsafe { take::<*const c_char>(cursor) })?),
+                }),
                 _ => unreachable!("desc_array_to_value passes array tags only"),
             });
         }
@@ -457,7 +525,11 @@ pub extern "C" fn omc_Error_getCurrentComponent(
 /// marshalling `values` in and the result out. A non-zero return from `in_*`
 /// means the generated function failed; the C runtime returns
 /// `Values.META_FAIL` for that, so we do too.
-pub fn executeFunction(handle: i32, values: List<metamodelica::Ref<Values::Value>>, _debug: bool) -> Result<metamodelica::Ref<Values::Value>> {
+pub fn executeFunction(
+    handle: i32,
+    values: List<metamodelica::Ref<Values::Value>>,
+    _debug: bool,
+) -> Result<metamodelica::Ref<Values::Value>> {
     let addr = dynload::function_addr(handle)?;
     let thread_data = dynload::thread_data()? as *mut c_void;
     // Keeps the buffers behind structured arguments alive until after the call

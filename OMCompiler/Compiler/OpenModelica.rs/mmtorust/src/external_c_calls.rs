@@ -307,7 +307,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         // Declared as `external "C"` from ModelicaBuiltin.mo but backed by
         // genuine C entry points under runtime/.
         m.insert("OpenModelicaInternal_stat", Fallible); // syscall, throws on EACCES etc.
-        m.insert("OpenModelica_regex", Fallible);        // throws on bad pattern
+        m.insert("OpenModelica_regex", Fallible); // throws on bad pattern
         m.insert("OpenModelica_updateUriMapping", Infallible);
 
         // ── Parser_omc.c ───────────────────────────────────────────────────
@@ -388,14 +388,14 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
 
         // ── systemimpl.c (SystemImpl_*) ────────────────────────────────────
         m.insert("SystemImpl__alarm", Infallible);
-        m.insert("SystemImpl__chdir", Infallible);             // returns int status
-        m.insert("SystemImpl__copyFile", Infallible);          // returns int status
-        m.insert("SystemImpl__copyPath", Infallible);          // returns int status
+        m.insert("SystemImpl__chdir", Infallible); // returns int status
+        m.insert("SystemImpl__copyFile", Infallible); // returns int status
+        m.insert("SystemImpl__copyPath", Infallible); // returns int status
         m.insert("SystemImpl__covertTextFileToCLiteral", Infallible);
         m.insert("SystemImpl__createDirectory", Infallible);
         m.insert("SystemImpl__createTemporaryDirectory", Fallible); // mkdtemp failure throws
         m.insert("SystemImpl__ctime", Infallible);
-        m.insert("SystemImpl__dgesv", Fallible);               // throws if LAPACK missing
+        m.insert("SystemImpl__dgesv", Fallible); // throws if LAPACK missing
         m.insert("SystemImpl__directoryExists", Infallible);
         m.insert("SystemImpl__dladdr", Infallible);
         m.insert("SystemImpl__fflush", Infallible);
@@ -405,12 +405,12 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("SystemImpl__getSizeOfData", Infallible);
         m.insert("SystemImpl__gettext", Infallible);
         m.insert("SystemImpl__gettextInit", Infallible);
-        m.insert("SystemImpl__iconv", Infallible);             // returns "" on failure, not MMC_THROW
+        m.insert("SystemImpl__iconv", Infallible); // returns "" on failure, not MMC_THROW
         m.insert("SystemImpl__loadModelCallBack", Infallible);
         m.insert("SystemImpl__loadModelCallBackDefined", Infallible);
         m.insert("SystemImpl__plotCallBack", Infallible);
         m.insert("SystemImpl__plotCallBackDefined", Infallible);
-        m.insert("SystemImpl__pwd", Infallible);               // returns NULL/empty on failure
+        m.insert("SystemImpl__pwd", Infallible); // returns NULL/empty on failure
         m.insert("SystemImpl__realRand", Infallible);
         m.insert("SystemImpl__regularFileExists", Infallible);
         m.insert("SystemImpl__regularFileReadable", Infallible);
@@ -448,7 +448,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_basename", Infallible);
         m.insert("System_dirname", Infallible);
         m.insert("System_escapedString", Infallible);
-        m.insert("System_fileIsNewerThan", Fallible);          // returns -1 → MMC_THROW
+        m.insert("System_fileIsNewerThan", Fallible); // returns -1 → MMC_THROW
         m.insert("System_freeFunction", Fallible);
         m.insert("System_freeLibrary", Fallible);
         m.insert("System_gccDumpMachine", Infallible);
@@ -458,7 +458,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getCXXCompiler", Infallible);
         m.insert("System_getClassnamesForSimulation", Infallible);
         m.insert("System_getCurrentDateTime", Infallible);
-        m.insert("System_getCurrentTimeStr", Fallible);        // localtime failure throws
+        m.insert("System_getCurrentTimeStr", Fallible); // localtime failure throws
         m.insert("System_getFileModificationTime", Infallible);
         m.insert("System_getHasExpandableConnectors", Infallible);
         m.insert("System_getHasInnerOuterDefinitions", Infallible);
@@ -466,7 +466,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getHasStreamConnectors", Infallible);
         m.insert("System_getLDFlags", Infallible);
         m.insert("System_getLinker", Infallible);
-        m.insert("System_getLoadModelPath", Fallible);         // throws when no path matches
+        m.insert("System_getLoadModelPath", Fallible); // throws when no path matches
         m.insert("System_getMemorySize", Infallible);
         m.insert("System_getOMPCCompiler", Infallible);
         m.insert("System_getPartialInstantiation", Infallible);
@@ -478,18 +478,18 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_getTimerStackIndex", Infallible);
         m.insert("System_getUUIDStr", Infallible);
         m.insert("System_getUsesCardinality", Infallible);
-        m.insert("System_getVariableValue", Fallible);         // throws on lookup failure
+        m.insert("System_getVariableValue", Fallible); // throws on lookup failure
         m.insert("System_getuid", Infallible);
-        m.insert("System_isCancelled", Infallible);           // pure read of the cancel flag
-        m.insert("System_alarmExpired", Infallible);          // pure read of the alarm flag
-        m.insert("System_reportProgress", Infallible);        // one-way progress store
+        m.insert("System_isCancelled", Infallible); // pure read of the cancel flag
+        m.insert("System_alarmExpired", Infallible); // pure read of the alarm flag
+        m.insert("System_reportProgress", Infallible); // one-way progress store
         m.insert("System_reportProgressMessage", Infallible); // one-way progress store
         m.insert("System_initGarbageCollector", Infallible);
-        m.insert("System_launchParallelTasks", Fallible);      // MMC_THROW_INTERNAL on pthread error
-        m.insert("System_loadLibrary", Fallible);              // throws on dlopen failure
-        m.insert("System_loadLibraryLazy", Fallible);          // throws on dlopen failure
-        m.insert("System_getLoadLibraryError", Infallible);    // pure read of the last message
-        m.insert("System_lookupFunction", Fallible);           // -1 → throw
+        m.insert("System_launchParallelTasks", Fallible); // MMC_THROW_INTERNAL on pthread error
+        m.insert("System_loadLibrary", Fallible); // throws on dlopen failure
+        m.insert("System_loadLibraryLazy", Fallible); // throws on dlopen failure
+        m.insert("System_getLoadLibraryError", Infallible); // pure read of the last message
+        m.insert("System_lookupFunction", Fallible); // -1 → throw
         m.insert("System_makeC89Identifier", Infallible);
         m.insert("System_moFiles", Infallible);
         m.insert("System_mocFiles", Infallible);
@@ -497,17 +497,17 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_numProcessors", Infallible);
         m.insert("System_openModelicaPlatform", Infallible);
         m.insert("System_openModelicaPlatformAlternative", Infallible);
-        m.insert("System_popen", Infallible);                  // returns status via output arg
-        m.insert("System_readEnv", Fallible);                  // throws on missing var
+        m.insert("System_popen", Infallible); // returns status via output arg
+        m.insert("System_readEnv", Fallible); // throws on missing var
         m.insert("System_readFile", Fallible);
-        m.insert("System_realpath", Fallible);                 // canonicalisation throws
-        m.insert("System_realtimeAccumulate", Fallible);       // index OOB throws
+        m.insert("System_realpath", Fallible); // canonicalisation throws
+        m.insert("System_realtimeAccumulate", Fallible); // index OOB throws
         m.insert("System_realtimeAccumulated", Fallible);
         m.insert("System_realtimeClear", Fallible);
         m.insert("System_realtimeNtick", Fallible);
         m.insert("System_realtimeTick", Fallible);
         m.insert("System_realtimeTock", Fallible);
-        m.insert("System_regex", Infallible);                  // numMatches returned as 0 on bad regex
+        m.insert("System_regex", Infallible); // numMatches returned as 0 on bad regex
         m.insert("System_resetTimer", Infallible);
         m.insert("System_setClassnamesForSimulation", Infallible);
         m.insert("System_setHasExpandableConnectors", Infallible);
@@ -516,28 +516,28 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("System_setHasStreamConnectors", Infallible);
         m.insert("System_setPartialInstantiation", Infallible);
         m.insert("System_setUsesCardinality", Infallible);
-        m.insert("System_snprintff", Fallible);                // format-arg validation throws
-        m.insert("System_splitOnNewline", Fallible);           // allocation failure throws
+        m.insert("System_snprintff", Fallible); // format-arg validation throws
+        m.insert("System_splitOnNewline", Fallible); // allocation failure throws
         m.insert("System_sprintff", Fallible);
         m.insert("System_startTimer", Infallible);
         m.insert("System_stopTimer", Infallible);
         m.insert("System_strcmp", Infallible);
         m.insert("System_strcmp_offset", Infallible);
-        m.insert("System_stringFind", Fallible);               // returns -1 → MMC_THROW
+        m.insert("System_stringFind", Fallible); // returns -1 → MMC_THROW
         m.insert("System_stringFindString", Infallible);
-        m.insert("System_stringReplace", Fallible);            // NULL on alloc fail throws
+        m.insert("System_stringReplace", Fallible); // NULL on alloc fail throws
         m.insert("System_strncmp", Infallible);
         m.insert("System_strtok", Infallible);
         m.insert("System_strtokIncludingDelimiters", Infallible);
         m.insert("System_subDirectories", Infallible);
-        m.insert("System_threadFail", Infallible);             // direct MMC_THROW is the entire body — but it is the *callee*'s purpose to throw; treat as Fallible? See below.
+        m.insert("System_threadFail", Infallible); // direct MMC_THROW is the entire body — but it is the *callee*'s purpose to throw; treat as Fallible? See below.
         m.insert("System_tolower", Infallible);
         m.insert("System_toupper", Infallible);
         m.insert("System_trim", Infallible);
-        m.insert("System_trimChar", Fallible);                 // multi-char input throws
+        m.insert("System_trimChar", Fallible); // multi-char input throws
         m.insert("System_unescapedString", Infallible);
         m.insert("System_unquoteIdentifier", Infallible);
-        m.insert("System_uriToClassAndPath", Fallible);        // malformed URI throws
+        m.insert("System_uriToClassAndPath", Fallible); // malformed URI throws
         m.insert("System_userIsRoot", Infallible);
         m.insert("System_writeFile", Fallible);
 
@@ -572,12 +572,12 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("referenceCompareExt", Infallible);
 
         // ── libc / runtime symbols used directly ───────────────────────────
-        m.insert("exit", Fallible);                            // by definition, terminates control
+        m.insert("exit", Fallible); // by definition, terminates control
         m.insert("rand", Infallible);
-        m.insert("setenv", Infallible);                        // success/failure via return value
+        m.insert("setenv", Infallible); // success/failure via return value
 
         // ── StackOverflow.mo runtime hooks ─────────────────────────────────
-        m.insert("mmc_do_stackoverflow", Fallible);            // longjmps
+        m.insert("mmc_do_stackoverflow", Fallible); // longjmps
         m.insert("mmc_getStacktraceMessages_threadData", Infallible);
         m.insert("mmc_setStacktraceMessages_threadData", Infallible);
         m.insert("mmc_hasStacktraceMessages", Infallible);
@@ -707,11 +707,12 @@ pub fn lookup_or_panic(c_name: &str, mm_qname: &str) -> Fallibility {
     if !mm_qname.contains('.') {
         return Fallibility::Irrelevant;
     }
-    if mm_qname.starts_with("Connections") ||
-       mm_qname.starts_with("Subtask") ||
-       mm_qname.starts_with("OMC_") ||
-       mm_qname.starts_with("Pointer") ||
-       mm_qname.starts_with("OpenModelica.") {
+    if mm_qname.starts_with("Connections")
+        || mm_qname.starts_with("Subtask")
+        || mm_qname.starts_with("OMC_")
+        || mm_qname.starts_with("Pointer")
+        || mm_qname.starts_with("OpenModelica.")
+    {
         return Fallibility::Irrelevant;
     }
     if let Some(f) = registry().get(c_name) {
@@ -734,10 +735,12 @@ pub fn lookup_or_panic(c_name: &str, mm_qname: &str) -> Fallibility {
 
 fn lenient_mode() -> bool {
     static LENIENT: OnceLock<bool> = OnceLock::new();
-    *LENIENT.get_or_init(|| matches!(
-        std::env::var("MMTORUST_LENIENT_EXTERNALS").as_deref(),
-        Ok("1") | Ok("true") | Ok("TRUE") | Ok("yes")
-    ))
+    *LENIENT.get_or_init(|| {
+        matches!(
+            std::env::var("MMTORUST_LENIENT_EXTERNALS").as_deref(),
+            Ok("1") | Ok("true") | Ok("TRUE") | Ok("yes")
+        )
+    })
 }
 
 /// Track misses in lenient mode so we can emit one consolidated warning per
@@ -749,7 +752,9 @@ fn record_lenient_miss(c_name: &str, mm_qname: &str) {
     let set = MISSES.get_or_init(|| Mutex::new(std::collections::BTreeSet::new()));
     let mut guard = set.lock().expect("MISSES mutex");
     if guard.insert(c_name.to_owned()) {
-        eprintln!("warning: external_c_calls: unlisted external `{c_name}` for `{mm_qname}` (assuming Fallible — lenient mode)");
+        eprintln!(
+            "warning: external_c_calls: unlisted external `{c_name}` for `{mm_qname}` (assuming Fallible — lenient mode)"
+        );
     }
 }
 

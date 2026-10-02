@@ -8,9 +8,14 @@
 # path and they are dead weight. `liblapack.wasm` is built the same way, and every
 # engine that runs a generated module has SIMD.
 [target.wasm32-unknown-unknown]
-rustflags = ["-C", "link-arg=--export-table", "-C", "link-arg=--growable-table",
-             "-C", "target-feature=+simd128"]
+rustflags = ["-C", "link-arg=--export-table", "-C", "link-arg=--growable-table", "-C", "target-feature=+simd128"]
 
 [target.wasm32-wasip1]
-rustflags = ["-C", "link-arg=--export-table", "-C", "link-arg=--growable-table",
-             "-C", "target-feature=+simd128,-bulk-memory,-bulk-memory-opt"]
+rustflags = [
+  "-C",
+  "link-arg=--export-table",
+  "-C",
+  "link-arg=--growable-table",
+  "-C",
+  "target-feature=+simd128,-bulk-memory,-bulk-memory-opt",
+]

@@ -101,7 +101,10 @@ impl Func {
 impl Expr {
     /// Parse an expression in `t`. Constants: `PI`, `e`, `inf`.
     pub fn parse(text: &str) -> Result<Expr, ParseError> {
-        let mut p = Parser { s: text.as_bytes(), i: 0 };
+        let mut p = Parser {
+            s: text.as_bytes(),
+            i: 0,
+        };
         p.space();
         let e = p.ternary()?;
         p.space();
@@ -114,7 +117,10 @@ impl Expr {
     /// A comma-separated list, for an array variable's elements. Commas inside a
     /// function call belong to the call, not to the list.
     pub fn parse_list(text: &str) -> Result<Vec<Expr>, ParseError> {
-        let mut p = Parser { s: text.as_bytes(), i: 0 };
+        let mut p = Parser {
+            s: text.as_bytes(),
+            i: 0,
+        };
         let mut out = Vec::new();
         loop {
             p.space();
@@ -239,7 +245,10 @@ struct Parser<'a> {
 
 impl Parser<'_> {
     fn error(&self, message: &str) -> ParseError {
-        ParseError { message: message.to_string(), position: self.i }
+        ParseError {
+            message: message.to_string(),
+            position: self.i,
+        }
     }
 
     fn space(&mut self) {
@@ -387,9 +396,7 @@ impl Parser<'_> {
 
     fn number(&mut self) -> Result<Expr, ParseError> {
         let start = self.i;
-        while self.i < self.s.len()
-            && (self.s[self.i].is_ascii_digit() || self.s[self.i] == b'.')
-        {
+        while self.i < self.s.len() && (self.s[self.i].is_ascii_digit() || self.s[self.i] == b'.') {
             self.i += 1;
         }
         // An exponent, and the sign that may follow it.
@@ -416,12 +423,12 @@ impl Parser<'_> {
 
     fn name(&mut self) -> Result<Expr, ParseError> {
         let start = self.i;
-        while self.i < self.s.len()
-            && (self.s[self.i].is_ascii_alphanumeric() || self.s[self.i] == b'_')
-        {
+        while self.i < self.s.len() && (self.s[self.i].is_ascii_alphanumeric() || self.s[self.i] == b'_') {
             self.i += 1;
         }
-        let name = std::str::from_utf8(&self.s[start..self.i]).unwrap_or_default().to_string();
+        let name = std::str::from_utf8(&self.s[start..self.i])
+            .unwrap_or_default()
+            .to_string();
         match name.as_str() {
             "t" | "time" => return Ok(Expr::Time),
             "PI" | "pi" => return Ok(Expr::Const(std::f64::consts::PI)),

@@ -227,10 +227,7 @@ const fn stat_slot_calls(ix: usize) -> u32 {
 
 /// Read a snapshot back out of an in-wasm session's `rt_sim_stat` — the host side
 /// of [`stat_slot_secs`].
-pub fn read_stat_slots<E>(
-    stats: &mut crate::SolveStats,
-    mut stat: impl FnMut(u32) -> Result<u64, E>,
-) -> Result<(), E> {
+pub fn read_stat_slots<E>(stats: &mut crate::SolveStats, mut stat: impl FnMut(u32) -> Result<u64, E>) -> Result<(), E> {
     for ix in 0..N {
         stats.timers[ix] = f64::from_bits(stat(stat_slot_secs(ix))?);
         stats.tcalls[ix] = stat(stat_slot_calls(ix))?;

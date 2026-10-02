@@ -101,8 +101,7 @@ pub struct Fmu {
 
 impl Fmu {
     pub fn from_bytes(bytes: &[u8]) -> Result<Fmu> {
-        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
-            .map_err(|e| Error::Zip(e.to_string()))?;
+        let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| Error::Zip(e.to_string()))?;
         let mut files = BTreeMap::new();
         for i in 0..zip.len() {
             let mut f = zip.by_index(i).map_err(|e| Error::Zip(e.to_string()))?;
@@ -138,7 +137,12 @@ impl Fmu {
     }
 
     fn finish(storage: Storage, names: Vec<String>, origin: Option<PathBuf>) -> Result<Fmu> {
-        let mut fmu = Fmu { model_description: ModelDescription::default(), origin, storage, names };
+        let mut fmu = Fmu {
+            model_description: ModelDescription::default(),
+            origin,
+            storage,
+            names,
+        };
         let xml = fmu.read("modelDescription.xml").ok_or(Error::NoModelDescription)?;
         let text = String::from_utf8_lossy(&xml).into_owned();
         fmu.model_description = parse::model_description(&text)?;
@@ -164,7 +168,9 @@ impl Fmu {
 
     /// The binaries the FMU ships for `kind`, host-native ones first.
     pub fn binaries(&self, kind: InterfaceKind) -> Vec<Binary> {
-        let Some(id) = self.model_identifier(kind) else { return Vec::new() };
+        let Some(id) = self.model_identifier(kind) else {
+            return Vec::new();
+        };
         let host = host_platform();
         let mut out: Vec<Binary> = self
             .names
@@ -178,7 +184,11 @@ impl Fmu {
                 if stem != id {
                     return None;
                 }
-                let kind = if dir == platform::WASM_DIR { BinaryKind::Wasm } else { BinaryKind::Native };
+                let kind = if dir == platform::WASM_DIR {
+                    BinaryKind::Wasm
+                } else {
+                    BinaryKind::Native
+                };
                 if kind == BinaryKind::Native && !file.ends_with(platform::dir_suffix(dir)) {
                     return None;
                 }
@@ -220,7 +230,10 @@ impl Fmu {
 
     /// The `resources/` entries, which is what an FMU sees of its own archive.
     pub fn resources(&self) -> impl Iterator<Item = &str> {
-        self.names.iter().map(String::as_str).filter(|n| n.starts_with("resources/"))
+        self.names
+            .iter()
+            .map(String::as_str)
+            .filter(|n| n.starts_with("resources/"))
     }
 
     /// Write `resources/` out to `dir`, for a native FMU that is handed a

@@ -6,11 +6,11 @@
 // Key invariant: key comparison uses stringCompare; smaller keys go LEFT, larger
 // keys go RIGHT.  listKeys/listKeysReverse traverse in ascending/descending order.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::AvlSetString as S;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,9 @@ fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<S::Tree>> {
 fn keys_vec(t: metamodelica::Ref<S::Tree>) -> Vec<String> {
     let list = S::listKeys(&t, metamodelica::nil());
     let mut v = vec![];
-    for k in &*list { v.push(k.to_string()); }
+    for k in &*list {
+        v.push(k.to_string());
+    }
     v
 }
 
@@ -84,10 +86,7 @@ fn test_add_duplicate_no_growth() -> Result<()> {
 fn test_listkeys_ascending_order() -> Result<()> {
     // Insert in deliberately non-sorted order.
     let t = set_of(&["banana", "apple", "cherry", "date"])?;
-    assert_eq!(
-        keys_vec(t),
-        vec!["apple", "banana", "cherry", "date"]
-    );
+    assert_eq!(keys_vec(t), vec!["apple", "banana", "cherry", "date"]);
     Ok(())
 }
 
@@ -109,7 +108,9 @@ fn test_listkeysreverse_descending_order() -> Result<()> {
     let t = set_of(&["banana", "apple", "cherry"])?;
     let list = S::listKeysReverse(&t, metamodelica::nil());
     let mut rev = vec![];
-    for k in &*list { rev.push(k.to_string()); }
+    for k in &*list {
+        rev.push(k.to_string());
+    }
     assert_eq!(rev, vec!["cherry", "banana", "apple"]);
     Ok(())
 }
@@ -219,8 +220,11 @@ fn test_smallest_key_returns_rightmost() -> Result<()> {
     let t = set_of(&["b", "a", "c"])?;
     // MetaModelica's smallestKey recurses right, so it finds the maximum.
     let k = S::smallestKey(&t)?;
-    assert_eq!(k, literal!("c"),
-        "smallestKey recurses right (matching MetaModelica source) and returns the maximum key");
+    assert_eq!(
+        k,
+        literal!("c"),
+        "smallestKey recurses right (matching MetaModelica source) and returns the maximum key"
+    );
     Ok(())
 }
 
@@ -258,8 +262,8 @@ fn test_intersection_basic() -> Result<()> {
     let t2 = set_of(&["b", "c", "d"])?;
     let (intersect, rest1, rest2) = S::intersection(t1, t2)?;
     assert_eq!(keys_vec(intersect), vec!["b", "c"]);
-    assert_eq!(keys_vec(rest1),     vec!["a"]);
-    assert_eq!(keys_vec(rest2),     vec!["d"]);
+    assert_eq!(keys_vec(rest1), vec!["a"]);
+    assert_eq!(keys_vec(rest2), vec!["d"]);
     Ok(())
 }
 

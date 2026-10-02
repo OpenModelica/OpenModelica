@@ -10,8 +10,8 @@ use crate::CodegenWasmJitFunctions::HashMap;
 use std::string::String;
 
 use openmodelica_backend_types::BackendDAE;
-use openmodelica_simcode_types::{SimCode, SimCodeVar};
 use openmodelica_sim_meta::{OptInfo, OptJac, OptTerm};
+use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
 use crate::CodegenWasmJit::{count, lst, svs};
 
@@ -28,9 +28,7 @@ pub(crate) fn is_optimization(sim_code: &SimCode::SimCode) -> bool {
 
 /// The real variables C appends after the algebraics: the path and then the final
 /// constraints.
-pub(crate) fn constraint_vars(
-    vars: &SimCodeVar::SimVars,
-) -> Vec<&SimCodeVar::SimVar> {
+pub(crate) fn constraint_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimVar> {
     svs(&vars.realOptimizeConstraintsVars)
         .chain(svs(&vars.realOptimizeFinalConstraintsVars))
         .collect()
@@ -55,7 +53,10 @@ pub(crate) fn attr_defaults(
     layout: &openmodelica_sim_meta::Layout,
     attr_targets: &mut HashMap<String, crate::CodegenWasmJitFunctions::AttrTargets>,
 ) -> AttrDefaults {
-    let mut out = AttrDefaults { reals: Vec::new(), ints: Vec::new() };
+    let mut out = AttrDefaults {
+        reals: Vec::new(),
+        ints: Vec::new(),
+    };
     for (i, sv) in reals.iter().enumerate() {
         let i = i as u32;
         // C's `dummyREAL_ATTRIBUTE` / the xml reader's defaults.
@@ -65,7 +66,8 @@ pub(crate) fn attr_defaults(
             (layout.opt_nom_off, &sv.nominalValue, 1.0),
         ] {
             let off = base + i * 8;
-            out.reals.push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
+            out.reals
+                .push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
             if let Ok(k) = crate::CodegenWasmJit::sim_cref_key(&sv.name) {
                 let t = attr_targets.entry(k).or_default();
                 if base == layout.opt_min_off {
@@ -103,7 +105,10 @@ pub(crate) fn build_opt_info(
             "Optimization does not support array variables, but {name} is an array. Use \
              --simCodeScalarize=true."
         );
-        return Ok(Some(OptInfo { setup_error: Some(msg), ..Default::default() }));
+        return Ok(Some(OptInfo {
+            setup_error: Some(msg),
+            ..Default::default()
+        }));
     }
     if !is_optimization(sim_code) {
         return Ok(None);
@@ -136,9 +141,10 @@ pub(crate) fn build_opt_info(
     // The objective terms: their own real index, and the Jacobian row their
     // derivative lands in — C reads the row off the `$pDER` cref's `SimVar.index`.
     let term = |name: &str| -> Option<OptTerm> {
-        let index = reals.iter().position(|r| {
-            crate::CodegenWasmJit::sim_cref_key(&r.name).is_ok_and(|k| k == name)
-        })? as u32;
+        let index = reals
+            .iter()
+            .position(|r| crate::CodegenWasmJit::sim_cref_key(&r.name).is_ok_and(|k| k == name))?
+            as u32;
         Some(OptTerm {
             index,
             row_b: term_row(sim_code, "B", name),
@@ -214,9 +220,7 @@ fn term_row(sim_code: &SimCode::SimCode, matrix: &str, term: &str) -> Option<u32
     crate::CodegenWasmJit::jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
-        .find(|v| {
-            crate::CodegenWasmJit::sim_cref_key(&v.name).is_ok_and(|k| k.starts_with(&prefix))
-        })
+        .find(|v| crate::CodegenWasmJit::sim_cref_key(&v.name).is_ok_and(|k| k.starts_with(&prefix)))
         .and_then(|v| crate::CodegenWasmJit::jac_result_row(v))
         .map(|r| r as u32)
 }
@@ -268,8 +272,13 @@ pub(crate) fn opt_jac(
 /// `constantEqns` once per evaluation point, `columnEqns` once per colour.
 pub(crate) fn jac_eqns(
     jm: &SimCode::JacobianMatrix,
-) -> (Vec<metamodelica::Ref<SimCode::SimEqSystem>>, Vec<metamodelica::Ref<SimCode::SimEqSystem>>) {
-    let Some(col) = lst(&jm.columns).next() else { return (Vec::new(), Vec::new()) };
+) -> (
+    Vec<metamodelica::Ref<SimCode::SimEqSystem>>,
+    Vec<metamodelica::Ref<SimCode::SimEqSystem>>,
+) {
+    let Some(col) = lst(&jm.columns).next() else {
+        return (Vec::new(), Vec::new());
+    };
     (
         lst(&col.constantEqns).cloned().collect(),
         lst(&col.columnEqns).cloned().collect(),

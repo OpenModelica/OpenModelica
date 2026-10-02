@@ -59,7 +59,10 @@ fn state_name(state: u32) -> &'static str {
 fn in_state<'a>(c: *mut c_void, func: &str, allowed: u32) -> Option<&'a mut Component> {
     let c = comp(c)?;
     if c.state & allowed == 0 {
-        let msg = format!("{func}: Illegal call sequence. {func} is not allowed in {}.", state_name(c.state));
+        let msg = format!(
+            "{func}: Illegal call sequence. {func} is not allowed in {}.",
+            state_name(c.state)
+        );
         c.n.logger.log(ERROR, "logStatusError", &msg);
         c.state = st::ERROR;
         return None;
@@ -81,9 +84,12 @@ fn comp<'a>(c: *mut c_void) -> Option<&'a mut Component> {
     Some(c)
 }
 
-
 unsafe fn vrs(p: *const u32, n: usize) -> Vec<u32> {
-    if p.is_null() || n == 0 { Vec::new() } else { unsafe { core::slice::from_raw_parts(p, n) }.to_vec() }
+    if p.is_null() || n == 0 {
+        Vec::new()
+    } else {
+        unsafe { core::slice::from_raw_parts(p, n) }.to_vec()
+    }
 }
 
 unsafe fn slice<'a, T>(p: *const T, n: usize) -> Option<&'a [T]> {
@@ -134,11 +140,22 @@ fn instantiate(
     let name = cstr(instance_name);
     let logger = Logger::Fmi3 { cb: log_message, env };
     let resources = (!resource_path.is_null()).then(|| CString::new(cstr(resource_path)).unwrap_or_default());
-    let Some(n) = Native::instantiate(&name, &cstr(instantiation_token), resources, kind, logging_on, logger, call)
-    else {
+    let Some(n) = Native::instantiate(
+        &name,
+        &cstr(instantiation_token),
+        resources,
+        kind,
+        logging_on,
+        logger,
+        call,
+    ) else {
         return core::ptr::null_mut();
     };
-    Box::into_raw(Box::new(Component { n, strings: Vec::new(), state: st::INSTANTIATED })) as *mut c_void
+    Box::into_raw(Box::new(Component {
+        n,
+        strings: Vec::new(),
+        state: st::INSTANTIATED,
+    })) as *mut c_void
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────────
@@ -187,7 +204,10 @@ pub unsafe extern "C" fn omc_fmi3InstantiateCoSimulation(
         logging_on,
         instance_environment,
         log_message,
-        Kind::CoSimulation { event_mode_used, early_return_allowed },
+        Kind::CoSimulation {
+            event_mode_used,
+            early_return_allowed,
+        },
         "fmi3InstantiateCoSimulation",
     )
 }
@@ -228,7 +248,9 @@ pub unsafe extern "C" fn omc_fmi3FreeInstance(c: *mut c_void) {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3Reset(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3Reset", st::ANY) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3Reset", st::ANY) else {
+        return ERROR;
+    };
     let r = c.n.reset("fmi3Reset");
     c.moved(r, st::INSTANTIATED)
 }
@@ -237,7 +259,9 @@ macro_rules! nullary {
     ($cfn:ident, $fname:literal, $mask:expr, $next:expr, $method:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
             let r = code(c.n.inst.$method());
             c.moved(r, $next)
         }
@@ -246,9 +270,14 @@ macro_rules! nullary {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3ExitInitializationMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3ExitInitializationMode", st::INIT) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3ExitInitializationMode", st::INIT) else {
+        return ERROR;
+    };
     let next = match c.n.kind {
-        Kind::ModelExchange | Kind::CoSimulation { event_mode_used: true, .. } => st::EVENT,
+        Kind::ModelExchange
+        | Kind::CoSimulation {
+            event_mode_used: true, ..
+        } => st::EVENT,
         Kind::CoSimulation { .. } => st::STEP,
         Kind::ScheduledExecution => st::CLOCK,
     };
@@ -258,12 +287,48 @@ pub unsafe extern "C" fn omc_fmi3ExitInitializationMode(c: *mut c_void) -> c_int
     }
     r
 }
-nullary!(omc_fmi3EnterEventMode, "fmi3EnterEventMode", st::EVENT | st::CONTINUOUS | st::STEP, st::EVENT, enter_event_mode);
-nullary!(omc_fmi3Terminate, "fmi3Terminate", st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, st::TERMINATED, terminate);
-nullary!(omc_fmi3EnterConfigurationMode, "fmi3EnterConfigurationMode", st::INSTANTIATED, st::CONFIGURATION, enter_configuration_mode);
-nullary!(omc_fmi3ExitConfigurationMode, "fmi3ExitConfigurationMode", st::CONFIGURATION, st::INSTANTIATED, exit_configuration_mode);
-nullary!(omc_fmi3EvaluateDiscreteStates, "fmi3EvaluateDiscreteStates", st::EVENT | st::CLOCK, st::KEEP, evaluate_discrete_states);
-nullary!(omc_fmi3EnterStepMode, "fmi3EnterStepMode", st::EVENT, st::STEP, enter_step_mode);
+nullary!(
+    omc_fmi3EnterEventMode,
+    "fmi3EnterEventMode",
+    st::EVENT | st::CONTINUOUS | st::STEP,
+    st::EVENT,
+    enter_event_mode
+);
+nullary!(
+    omc_fmi3Terminate,
+    "fmi3Terminate",
+    st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    st::TERMINATED,
+    terminate
+);
+nullary!(
+    omc_fmi3EnterConfigurationMode,
+    "fmi3EnterConfigurationMode",
+    st::INSTANTIATED,
+    st::CONFIGURATION,
+    enter_configuration_mode
+);
+nullary!(
+    omc_fmi3ExitConfigurationMode,
+    "fmi3ExitConfigurationMode",
+    st::CONFIGURATION,
+    st::INSTANTIATED,
+    exit_configuration_mode
+);
+nullary!(
+    omc_fmi3EvaluateDiscreteStates,
+    "fmi3EvaluateDiscreteStates",
+    st::EVENT | st::CLOCK,
+    st::KEEP,
+    evaluate_discrete_states
+);
+nullary!(
+    omc_fmi3EnterStepMode,
+    "fmi3EnterStepMode",
+    st::EVENT,
+    st::STEP,
+    enter_step_mode
+);
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3EnterInitializationMode(
@@ -274,8 +339,13 @@ pub unsafe extern "C" fn omc_fmi3EnterInitializationMode(
     stop_time_defined: bool,
     stop_time: f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3EnterInitializationMode", st::INSTANTIATED) else { return ERROR };
-    let (tol, stop) = (tolerance_defined.then_some(tolerance), stop_time_defined.then_some(stop_time));
+    let Some(c) = in_state(c, "fmi3EnterInitializationMode", st::INSTANTIATED) else {
+        return ERROR;
+    };
+    let (tol, stop) = (
+        tolerance_defined.then_some(tolerance),
+        stop_time_defined.then_some(stop_time),
+    );
     let r = code(c.n.inst.enter_initialization_mode(tol, start_time, stop));
     c.moved(r, st::INIT)
 }
@@ -287,7 +357,9 @@ pub unsafe extern "C" fn omc_fmi3SetDebugLogging(
     n_categories: usize,
     categories: *const *const c_char,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3SetDebugLogging", st::ANY) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3SetDebugLogging", st::ANY) else {
+        return ERROR;
+    };
     let cats = if categories.is_null() {
         Vec::new()
     } else {
@@ -306,7 +378,9 @@ pub unsafe extern "C" fn omc_fmi3UpdateDiscreteStates(
     next_event_time_defined: *mut bool,
     next_event_time: *mut f64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3UpdateDiscreteStates", st::EVENT | st::CLOCK) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3UpdateDiscreteStates", st::EVENT | st::CLOCK) else {
+        return ERROR;
+    };
     match c.n.inst.update_discrete_states() {
         Ok(i) => {
             unsafe {
@@ -341,7 +415,9 @@ macro_rules! getter {
     ($cfn:ident, $fname:literal, $mask:expr, $method:ident, $ty:ty) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, vr: *const u32, nvr: usize, values: *mut $ty, n: usize) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
             match c.n.inst.$method(unsafe { vrs(vr, nvr) }) {
                 Ok(v) => out(&v, values, n),
                 Err(s) => code(s),
@@ -349,44 +425,188 @@ macro_rules! getter {
         }
     };
 }
-getter!(omc_fmi3GetFloat32, "fmi3GetFloat32", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_float32, f32);
-getter!(omc_fmi3GetFloat64, "fmi3GetFloat64", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_float64, f64);
-getter!(omc_fmi3GetInt8, "fmi3GetInt8", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_int8, i8);
-getter!(omc_fmi3GetUInt8, "fmi3GetUInt8", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_uint8, u8);
-getter!(omc_fmi3GetInt16, "fmi3GetInt16", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_int16, i16);
-getter!(omc_fmi3GetUInt16, "fmi3GetUInt16", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_uint16, u16);
-getter!(omc_fmi3GetInt32, "fmi3GetInt32", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_int32, i32);
-getter!(omc_fmi3GetUInt32, "fmi3GetUInt32", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_uint32, u32);
-getter!(omc_fmi3GetInt64, "fmi3GetInt64", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_int64, i64);
-getter!(omc_fmi3GetUInt64, "fmi3GetUInt64", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_uint64, u64);
-getter!(omc_fmi3GetBoolean, "fmi3GetBoolean", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_boolean, bool);
+getter!(
+    omc_fmi3GetFloat32,
+    "fmi3GetFloat32",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_float32,
+    f32
+);
+getter!(
+    omc_fmi3GetFloat64,
+    "fmi3GetFloat64",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_float64,
+    f64
+);
+getter!(
+    omc_fmi3GetInt8,
+    "fmi3GetInt8",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_int8,
+    i8
+);
+getter!(
+    omc_fmi3GetUInt8,
+    "fmi3GetUInt8",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_uint8,
+    u8
+);
+getter!(
+    omc_fmi3GetInt16,
+    "fmi3GetInt16",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_int16,
+    i16
+);
+getter!(
+    omc_fmi3GetUInt16,
+    "fmi3GetUInt16",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_uint16,
+    u16
+);
+getter!(
+    omc_fmi3GetInt32,
+    "fmi3GetInt32",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_int32,
+    i32
+);
+getter!(
+    omc_fmi3GetUInt32,
+    "fmi3GetUInt32",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_uint32,
+    u32
+);
+getter!(
+    omc_fmi3GetInt64,
+    "fmi3GetInt64",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_int64,
+    i64
+);
+getter!(
+    omc_fmi3GetUInt64,
+    "fmi3GetUInt64",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_uint64,
+    u64
+);
+getter!(
+    omc_fmi3GetBoolean,
+    "fmi3GetBoolean",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_boolean,
+    bool
+);
 
 macro_rules! setter {
     ($cfn:ident, $fname:literal, $mask:expr, $method:ident, $ty:ty) => {
         #[unsafe(no_mangle)]
-        pub unsafe extern "C" fn $cfn(c: *mut c_void, vr: *const u32, nvr: usize, values: *const $ty, n: usize) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
-            let Some(v) = (unsafe { slice(values, n) }) else { return ERROR };
+        pub unsafe extern "C" fn $cfn(
+            c: *mut c_void,
+            vr: *const u32,
+            nvr: usize,
+            values: *const $ty,
+            n: usize,
+        ) -> c_int {
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
+            let Some(v) = (unsafe { slice(values, n) }) else {
+                return ERROR;
+            };
             code(c.n.inst.$method(unsafe { vrs(vr, nvr) }, v.to_vec()))
         }
     };
 }
-setter!(omc_fmi3SetFloat32, "fmi3SetFloat32", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_float32, f32);
-setter!(omc_fmi3SetFloat64, "fmi3SetFloat64", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_float64, f64);
-setter!(omc_fmi3SetInt8, "fmi3SetInt8", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_int8, i8);
-setter!(omc_fmi3SetUInt8, "fmi3SetUInt8", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_uint8, u8);
-setter!(omc_fmi3SetInt16, "fmi3SetInt16", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_int16, i16);
-setter!(omc_fmi3SetUInt16, "fmi3SetUInt16", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_uint16, u16);
-setter!(omc_fmi3SetInt32, "fmi3SetInt32", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_int32, i32);
-setter!(omc_fmi3SetUInt32, "fmi3SetUInt32", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_uint32, u32);
-setter!(omc_fmi3SetInt64, "fmi3SetInt64", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_int64, i64);
-setter!(omc_fmi3SetUInt64, "fmi3SetUInt64", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_uint64, u64);
-setter!(omc_fmi3SetBoolean, "fmi3SetBoolean", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK, set_boolean, bool);
+setter!(
+    omc_fmi3SetFloat32,
+    "fmi3SetFloat32",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_float32,
+    f32
+);
+setter!(
+    omc_fmi3SetFloat64,
+    "fmi3SetFloat64",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_float64,
+    f64
+);
+setter!(
+    omc_fmi3SetInt8,
+    "fmi3SetInt8",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_int8,
+    i8
+);
+setter!(
+    omc_fmi3SetUInt8,
+    "fmi3SetUInt8",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_uint8,
+    u8
+);
+setter!(
+    omc_fmi3SetInt16,
+    "fmi3SetInt16",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_int16,
+    i16
+);
+setter!(
+    omc_fmi3SetUInt16,
+    "fmi3SetUInt16",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_uint16,
+    u16
+);
+setter!(
+    omc_fmi3SetInt32,
+    "fmi3SetInt32",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_int32,
+    i32
+);
+setter!(
+    omc_fmi3SetUInt32,
+    "fmi3SetUInt32",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_uint32,
+    u32
+);
+setter!(
+    omc_fmi3SetInt64,
+    "fmi3SetInt64",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_int64,
+    i64
+);
+setter!(
+    omc_fmi3SetUInt64,
+    "fmi3SetUInt64",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_uint64,
+    u64
+);
+setter!(
+    omc_fmi3SetBoolean,
+    "fmi3SetBoolean",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    set_boolean,
+    bool
+);
 
 /// A Clock has no `nValues`: one value per reference.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3GetClock(c: *mut c_void, vr: *const u32, nvr: usize, values: *mut bool) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetClock", st::EVENT | st::CLOCK) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3GetClock", st::EVENT | st::CLOCK) else {
+        return ERROR;
+    };
     match c.n.inst.get_clock(unsafe { vrs(vr, nvr) }) {
         Ok(v) => out(&v, values, nvr),
         Err(s) => code(s),
@@ -395,8 +615,12 @@ pub unsafe extern "C" fn omc_fmi3GetClock(c: *mut c_void, vr: *const u32, nvr: u
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3SetClock(c: *mut c_void, vr: *const u32, nvr: usize, values: *const bool) -> c_int {
-    let Some(c) = in_state(c, "fmi3SetClock", st::EVENT | st::CLOCK) else { return ERROR };
-    let Some(v) = (unsafe { slice(values, nvr) }) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3SetClock", st::EVENT | st::CLOCK) else {
+        return ERROR;
+    };
+    let Some(v) = (unsafe { slice(values, nvr) }) else {
+        return ERROR;
+    };
     code(c.n.inst.set_clock(unsafe { vrs(vr, nvr) }, v.to_vec()))
 }
 
@@ -408,7 +632,13 @@ pub unsafe extern "C" fn omc_fmi3GetString(
     values: *mut *const c_char,
     n: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetString", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetString",
+        st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     match c.n.inst.get_string(unsafe { vrs(vr, nvr) }) {
         Ok(v) => {
             c.strings = v.into_iter().map(|s| CString::new(s).unwrap_or_default()).collect();
@@ -427,9 +657,20 @@ pub unsafe extern "C" fn omc_fmi3SetString(
     values: *const *const c_char,
     n: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3SetString", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK) else { return ERROR };
-    let Some(v) = (unsafe { slice(values, n) }) else { return ERROR };
-    code(c.n.inst.set_string(unsafe { vrs(vr, nvr) }, v.iter().map(|p| cstr(*p)).collect()))
+    let Some(c) = in_state(
+        c,
+        "fmi3SetString",
+        st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    ) else {
+        return ERROR;
+    };
+    let Some(v) = (unsafe { slice(values, n) }) else {
+        return ERROR;
+    };
+    code(
+        c.n.inst
+            .set_string(unsafe { vrs(vr, nvr) }, v.iter().map(|p| cstr(*p)).collect()),
+    )
 }
 
 /// An external object is its handle, one pointer wide, as in C.
@@ -442,12 +683,20 @@ pub unsafe extern "C" fn omc_fmi3GetBinary(
     values: *mut *const u8,
     n: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetBinary", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetBinary",
+        st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     if n != nvr || (nvr != 0 && (value_sizes.is_null() || values.is_null())) {
         return ERROR;
     }
     for (i, vr) in unsafe { vrs(vr, nvr) }.into_iter().enumerate() {
-        let Some(slot) = c.n.ext_obj_slot(vr) else { return bad_binary(c, "fmi3GetBinary", vr) };
+        let Some(slot) = c.n.ext_obj_slot(vr) else {
+            return bad_binary(c, "fmi3GetBinary", vr);
+        };
         unsafe {
             *value_sizes.add(i) = core::mem::size_of::<*mut c_void>();
             *values.add(i) = slot as *const u8;
@@ -465,7 +714,13 @@ pub unsafe extern "C" fn omc_fmi3SetBinary(
     values: *const *const u8,
     n: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3SetBinary", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3SetBinary",
+        st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK,
+    ) else {
+        return ERROR;
+    };
     let (Some(sizes), Some(ptrs)) = (unsafe { slice(value_sizes, n) }, unsafe { slice(values, n) }) else {
         return ERROR;
     };
@@ -473,7 +728,9 @@ pub unsafe extern "C" fn omc_fmi3SetBinary(
         return ERROR;
     }
     for (i, vr) in unsafe { vrs(vr, nvr) }.into_iter().enumerate() {
-        let Some(slot) = c.n.ext_obj_slot(vr) else { return bad_binary(c, "fmi3SetBinary", vr) };
+        let Some(slot) = c.n.ext_obj_slot(vr) else {
+            return bad_binary(c, "fmi3SetBinary", vr);
+        };
         if sizes[i] != core::mem::size_of::<*mut c_void>() || ptrs[i].is_null() {
             return bad_binary(c, "fmi3SetBinary", vr);
         }
@@ -483,7 +740,11 @@ pub unsafe extern "C" fn omc_fmi3SetBinary(
 }
 
 fn bad_binary(c: &Component, call: &str, vr: u32) -> c_int {
-    c.n.logger.log(ERROR, "logStatusError", &format!("{call}: illegal value reference {vr}."));
+    c.n.logger.log(
+        ERROR,
+        "logStatusError",
+        &format!("{call}: illegal value reference {vr}."),
+    );
     ERROR
 }
 
@@ -492,7 +753,13 @@ fn bad_binary(c: &Component, call: &str, vr: u32) -> c_int {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3GetFMUState(c: *mut c_void, state: *mut *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetFMUState", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetFMUState",
+        st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED,
+    ) else {
+        return ERROR;
+    };
     if state.is_null() {
         return ERROR;
     }
@@ -512,14 +779,28 @@ pub unsafe extern "C" fn omc_fmi3GetFMUState(c: *mut c_void, state: *mut *mut c_
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3SetFMUState(c: *mut c_void, state: *mut c_void) -> c_int {
-    let Some(c) = in_state(c, "fmi3SetFMUState", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED) else { return ERROR };
-    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3SetFMUState",
+        st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED,
+    ) else {
+        return ERROR;
+    };
+    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else {
+        return ERROR;
+    };
     code(c.n.inst.set_fmu_state(bytes.clone()))
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3FreeFMUState(_c: *mut c_void, state: *mut *mut c_void) -> c_int {
-    if in_state(_c, "fmi3FreeFMUState", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED).is_none() {
+    if in_state(
+        _c,
+        "fmi3FreeFMUState",
+        st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED,
+    )
+    .is_none()
+    {
         return ERROR;
     }
     if state.is_null() {
@@ -535,15 +816,28 @@ pub unsafe extern "C" fn omc_fmi3FreeFMUState(_c: *mut c_void, state: *mut *mut 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi3SerializedFMUStateSize(_c: *mut c_void, state: *mut c_void, size: *mut usize) -> c_int {
-    let (Some(bytes), false) = (unsafe { (state as *const Vec<u8>).as_ref() }, size.is_null()) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi3SerializedFMUStateSize(
+    _c: *mut c_void,
+    state: *mut c_void,
+    size: *mut usize,
+) -> c_int {
+    let (Some(bytes), false) = (unsafe { (state as *const Vec<u8>).as_ref() }, size.is_null()) else {
+        return ERROR;
+    };
     unsafe { *size = bytes.len() };
     OK
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi3SerializeFMUState(_c: *mut c_void, state: *mut c_void, serialized: *mut u8, size: usize) -> c_int {
-    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi3SerializeFMUState(
+    _c: *mut c_void,
+    state: *mut c_void,
+    serialized: *mut u8,
+    size: usize,
+) -> c_int {
+    let Some(bytes) = (unsafe { (state as *const Vec<u8>).as_ref() }) else {
+        return ERROR;
+    };
     if size != bytes.len() {
         return ERROR;
     }
@@ -557,7 +851,9 @@ pub unsafe extern "C" fn omc_fmi3DeserializeFMUState(
     size: usize,
     state: *mut *mut c_void,
 ) -> c_int {
-    let (Some(bytes), false) = (unsafe { slice(serialized, size) }, state.is_null()) else { return ERROR };
+    let (Some(bytes), false) = (unsafe { slice(serialized, size) }, state.is_null()) else {
+        return ERROR;
+    };
     unsafe { *state = Box::into_raw(Box::new(bytes.to_vec())) as *mut c_void };
     OK
 }
@@ -578,8 +874,12 @@ macro_rules! derivative {
             sensitivity: *mut f64,
             n_sensitivity: usize,
         ) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
-            let Some(s) = (unsafe { slice(seed, n_seed) }) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
+            let Some(s) = (unsafe { slice(seed, n_seed) }) else {
+                return ERROR;
+            };
             let (u, k) = unsafe { (vrs(unknowns, n_unknowns), vrs(knowns, n_knowns)) };
             match c.n.inst.$method(u, k, s.to_vec()) {
                 Ok(v) => out(&v, sensitivity, n_sensitivity),
@@ -588,8 +888,18 @@ macro_rules! derivative {
         }
     };
 }
-derivative!(omc_fmi3GetDirectionalDerivative, "fmi3GetDirectionalDerivative", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_directional_derivative);
-derivative!(omc_fmi3GetAdjointDerivative, "fmi3GetAdjointDerivative", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR, get_adjoint_derivative);
+derivative!(
+    omc_fmi3GetDirectionalDerivative,
+    "fmi3GetDirectionalDerivative",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_directional_derivative
+);
+derivative!(
+    omc_fmi3GetAdjointDerivative,
+    "fmi3GetAdjointDerivative",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    get_adjoint_derivative
+);
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3GetNumberOfVariableDependencies(
@@ -597,7 +907,13 @@ pub unsafe extern "C" fn omc_fmi3GetNumberOfVariableDependencies(
     value_reference: u32,
     n_dependencies: *mut usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetNumberOfVariableDependencies", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetNumberOfVariableDependencies",
+        st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     match c.n.inst.get_number_of_variable_dependencies(value_reference) {
         Ok(n) => out(&[n as usize], n_dependencies, 1),
         Err(s) => code(s),
@@ -614,7 +930,13 @@ pub unsafe extern "C" fn omc_fmi3GetVariableDependencies(
     dependency_kinds: *mut c_int,
     n_dependencies: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetVariableDependencies", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetVariableDependencies",
+        st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     let deps = match c.n.inst.get_variable_dependencies(dependent) {
         Ok(d) if d.len() == n_dependencies => d,
         Ok(_) => return ERROR,
@@ -649,7 +971,13 @@ pub unsafe extern "C" fn omc_fmi3GetIntervalDecimal(
     intervals: *mut f64,
     qualifiers: *mut c_int,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetIntervalDecimal", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetIntervalDecimal",
+        st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     match c.n.inst.get_interval_decimal(unsafe { vrs(vr, nvr) }) {
         Ok(v) => {
             for (i, (interval, q)) in v.iter().enumerate() {
@@ -677,7 +1005,13 @@ pub unsafe extern "C" fn omc_fmi3GetIntervalFraction(
     resolutions: *mut u64,
     qualifiers: *mut c_int,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetIntervalFraction", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetIntervalFraction",
+        st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     match c.n.inst.get_interval_fraction(unsafe { vrs(vr, nvr) }) {
         Ok(v) => {
             for (i, (f, q)) in v.iter().enumerate() {
@@ -700,8 +1034,19 @@ pub unsafe extern "C" fn omc_fmi3GetIntervalFraction(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi3GetShiftDecimal(c: *mut c_void, vr: *const u32, nvr: usize, shifts: *mut f64) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetShiftDecimal", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi3GetShiftDecimal(
+    c: *mut c_void,
+    vr: *const u32,
+    nvr: usize,
+    shifts: *mut f64,
+) -> c_int {
+    let Some(c) = in_state(
+        c,
+        "fmi3GetShiftDecimal",
+        st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     match c.n.inst.get_shift_decimal(unsafe { vrs(vr, nvr) }) {
         Ok(v) => out(&v, shifts, nvr),
         Err(s) => code(s),
@@ -716,7 +1061,13 @@ pub unsafe extern "C" fn omc_fmi3GetShiftFraction(
     counters: *mut u64,
     resolutions: *mut u64,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetShiftFraction", st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR) else { return ERROR };
+    let Some(c) = in_state(
+        c,
+        "fmi3GetShiftFraction",
+        st::INIT | st::EVENT | st::CONTINUOUS | st::STEP | st::CLOCK | st::TERMINATED | st::ERROR,
+    ) else {
+        return ERROR;
+    };
     match c.n.inst.get_shift_fraction(unsafe { vrs(vr, nvr) }) {
         Ok(v) => {
             let (cs, rs): (Vec<u64>, Vec<u64>) = v.iter().map(|f| (f.counter, f.resolution)).unzip();
@@ -733,14 +1084,28 @@ macro_rules! set_decimal {
     ($cfn:ident, $fname:literal, $mask:expr, $method:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, vr: *const u32, nvr: usize, values: *const f64) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
-            let Some(v) = (unsafe { slice(values, nvr) }) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
+            let Some(v) = (unsafe { slice(values, nvr) }) else {
+                return ERROR;
+            };
             code(c.n.inst.$method(unsafe { vrs(vr, nvr) }, v.to_vec()))
         }
     };
 }
-set_decimal!(omc_fmi3SetIntervalDecimal, "fmi3SetIntervalDecimal", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK, set_interval_decimal);
-set_decimal!(omc_fmi3SetShiftDecimal, "fmi3SetShiftDecimal", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK, set_shift_decimal);
+set_decimal!(
+    omc_fmi3SetIntervalDecimal,
+    "fmi3SetIntervalDecimal",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK,
+    set_interval_decimal
+);
+set_decimal!(
+    omc_fmi3SetShiftDecimal,
+    "fmi3SetShiftDecimal",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK,
+    set_shift_decimal
+);
 
 macro_rules! set_fraction {
     ($cfn:ident, $fname:literal, $mask:expr, $method:ident) => {
@@ -752,41 +1117,68 @@ macro_rules! set_fraction {
             counters: *const u64,
             resolutions: *const u64,
         ) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
-            let (Some(cs), Some(rs)) = (unsafe { slice(counters, nvr) }, unsafe { slice(resolutions, nvr) }) else {
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
+            let (Some(cs), Some(rs)) = (unsafe { slice(counters, nvr) }, unsafe {
+                slice(resolutions, nvr)
+            }) else {
                 return ERROR;
             };
             let v = cs
                 .iter()
                 .zip(rs)
-                .map(|(&counter, &resolution)| openmodelica_fmi3_wasm::fmi_types::IntervalFraction { counter, resolution })
+                .map(
+                    |(&counter, &resolution)| openmodelica_fmi3_wasm::fmi_types::IntervalFraction {
+                        counter,
+                        resolution,
+                    },
+                )
                 .collect();
             code(c.n.inst.$method(unsafe { vrs(vr, nvr) }, v))
         }
     };
 }
-set_fraction!(omc_fmi3SetIntervalFraction, "fmi3SetIntervalFraction", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK, set_interval_fraction);
-set_fraction!(omc_fmi3SetShiftFraction, "fmi3SetShiftFraction", st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK, set_shift_fraction);
+set_fraction!(
+    omc_fmi3SetIntervalFraction,
+    "fmi3SetIntervalFraction",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK,
+    set_interval_fraction
+);
+set_fraction!(
+    omc_fmi3SetShiftFraction,
+    "fmi3SetShiftFraction",
+    st::INSTANTIATED | st::CONFIGURATION | st::INIT | st::EVENT | st::CLOCK,
+    set_shift_fraction
+);
 
 // ── Model Exchange ──────────────────────────────────────────────────────────
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3EnterContinuousTimeMode(c: *mut c_void) -> c_int {
-    let Some(c) = in_state_me(c, "fmi3EnterContinuousTimeMode", st::EVENT) else { return ERROR };
+    let Some(c) = in_state_me(c, "fmi3EnterContinuousTimeMode", st::EVENT) else {
+        return ERROR;
+    };
     let r = code(c.n.inst.enter_continuous_time_mode());
     c.moved(r, st::CONTINUOUS)
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3SetTime(c: *mut c_void, time: f64) -> c_int {
-    let Some(c) = in_state_me(c, "fmi3SetTime", st::EVENT | st::CONTINUOUS) else { return ERROR };
+    let Some(c) = in_state_me(c, "fmi3SetTime", st::EVENT | st::CONTINUOUS) else {
+        return ERROR;
+    };
     code(c.n.inst.set_time(time))
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3SetContinuousStates(c: *mut c_void, states: *const f64, n: usize) -> c_int {
-    let Some(c) = in_state_me(c, "fmi3SetContinuousStates", st::INIT | st::EVENT | st::CONTINUOUS) else { return ERROR };
-    let Some(v) = (unsafe { slice(states, n) }) else { return ERROR };
+    let Some(c) = in_state_me(c, "fmi3SetContinuousStates", st::INIT | st::EVENT | st::CONTINUOUS) else {
+        return ERROR;
+    };
+    let Some(v) = (unsafe { slice(states, n) }) else {
+        return ERROR;
+    };
     code(c.n.inst.set_continuous_states(v.to_vec()))
 }
 
@@ -794,7 +1186,9 @@ macro_rules! me_vector {
     ($cfn:ident, $fname:literal, $mask:expr, $method:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, values: *mut f64, n: usize) -> c_int {
-            let Some(c) = in_state_me(c, $fname, $mask) else { return ERROR };
+            let Some(c) = in_state_me(c, $fname, $mask) else {
+                return ERROR;
+            };
             match c.n.inst.$method() {
                 Ok(v) => out(&v, values, n),
                 Err(s) => code(s),
@@ -802,16 +1196,38 @@ macro_rules! me_vector {
         }
     };
 }
-me_vector!(omc_fmi3GetContinuousStateDerivatives, "fmi3GetContinuousStateDerivatives", st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR, get_continuous_state_derivatives);
-me_vector!(omc_fmi3GetEventIndicators, "fmi3GetEventIndicators", st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR, get_event_indicators);
-me_vector!(omc_fmi3GetContinuousStates, "fmi3GetContinuousStates", st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR, get_continuous_states);
-me_vector!(omc_fmi3GetNominalsOfContinuousStates, "fmi3GetNominalsOfContinuousStates", st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR, get_nominals_of_continuous_states);
+me_vector!(
+    omc_fmi3GetContinuousStateDerivatives,
+    "fmi3GetContinuousStateDerivatives",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR,
+    get_continuous_state_derivatives
+);
+me_vector!(
+    omc_fmi3GetEventIndicators,
+    "fmi3GetEventIndicators",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR,
+    get_event_indicators
+);
+me_vector!(
+    omc_fmi3GetContinuousStates,
+    "fmi3GetContinuousStates",
+    st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR,
+    get_continuous_states
+);
+me_vector!(
+    omc_fmi3GetNominalsOfContinuousStates,
+    "fmi3GetNominalsOfContinuousStates",
+    st::INSTANTIATED | st::INIT | st::EVENT | st::CONTINUOUS | st::TERMINATED | st::ERROR,
+    get_nominals_of_continuous_states
+);
 
 macro_rules! me_count {
     ($cfn:ident, $fname:literal, $mask:expr, $method:ident) => {
         #[unsafe(no_mangle)]
         pub unsafe extern "C" fn $cfn(c: *mut c_void, n: *mut usize) -> c_int {
-            let Some(c) = in_state(c, $fname, $mask) else { return ERROR };
+            let Some(c) = in_state(c, $fname, $mask) else {
+                return ERROR;
+            };
             match c.n.inst.$method() {
                 Ok(v) => out(&[v as usize], n, 1),
                 Err(s) => code(s),
@@ -819,8 +1235,18 @@ macro_rules! me_count {
         }
     };
 }
-me_count!(omc_fmi3GetNumberOfEventIndicators, "fmi3GetNumberOfEventIndicators", st::ANY, get_number_of_event_indicators);
-me_count!(omc_fmi3GetNumberOfContinuousStates, "fmi3GetNumberOfContinuousStates", st::ANY, get_number_of_continuous_states);
+me_count!(
+    omc_fmi3GetNumberOfEventIndicators,
+    "fmi3GetNumberOfEventIndicators",
+    st::ANY,
+    get_number_of_event_indicators
+);
+me_count!(
+    omc_fmi3GetNumberOfContinuousStates,
+    "fmi3GetNumberOfContinuousStates",
+    st::ANY,
+    get_number_of_continuous_states
+);
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn omc_fmi3CompletedIntegratorStep(
@@ -829,7 +1255,9 @@ pub unsafe extern "C" fn omc_fmi3CompletedIntegratorStep(
     enter_event_mode: *mut bool,
     terminate_simulation: *mut bool,
 ) -> c_int {
-    let Some(c) = in_state_me(c, "fmi3CompletedIntegratorStep", st::CONTINUOUS) else { return ERROR };
+    let Some(c) = in_state_me(c, "fmi3CompletedIntegratorStep", st::CONTINUOUS) else {
+        return ERROR;
+    };
     match c.n.inst.completed_integrator_step(no_set_fmu_state_prior) {
         Ok(r) => {
             unsafe {
@@ -859,8 +1287,14 @@ pub unsafe extern "C" fn omc_fmi3DoStep(
     early_return: *mut bool,
     last_successful_time: *mut f64,
 ) -> c_int {
-    let Some(c) = in_state_cs(c, "fmi3DoStep", st::STEP) else { return ERROR };
-    match c.n.inst.do_step(current_communication_point, communication_step_size, no_set_fmu_state_prior) {
+    let Some(c) = in_state_cs(c, "fmi3DoStep", st::STEP) else {
+        return ERROR;
+    };
+    match c.n.inst.do_step(
+        current_communication_point,
+        communication_step_size,
+        no_set_fmu_state_prior,
+    ) {
         Ok(r) => {
             unsafe {
                 if !event_handling_needed.is_null() {
@@ -891,8 +1325,12 @@ pub unsafe extern "C" fn omc_fmi3GetOutputDerivatives(
     values: *mut f64,
     n: usize,
 ) -> c_int {
-    let Some(c) = in_state(c, "fmi3GetOutputDerivatives", st::STEP | st::TERMINATED | st::ERROR) else { return ERROR };
-    let Some(requests) = (unsafe { requests(vr, nvr, orders) }) else { return ERROR };
+    let Some(c) = in_state(c, "fmi3GetOutputDerivatives", st::STEP | st::TERMINATED | st::ERROR) else {
+        return ERROR;
+    };
+    let Some(requests) = (unsafe { requests(vr, nvr, orders) }) else {
+        return ERROR;
+    };
     match c.n.inst.get_output_derivatives(requests) {
         Ok(v) => out(&v, values, n),
         Err(s) => code(s),
@@ -902,7 +1340,14 @@ pub unsafe extern "C" fn omc_fmi3GetOutputDerivatives(
 // ── Scheduled Execution ─────────────────────────────────────────────────────
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn omc_fmi3ActivateModelPartition(c: *mut c_void, clock_reference: u32, activation_time: f64) -> c_int {
-    let Some(c) = in_state(c, "fmi3ActivateModelPartition", st::CLOCK).filter(|c| c.n.kind == Kind::ScheduledExecution) else { return ERROR };
+pub unsafe extern "C" fn omc_fmi3ActivateModelPartition(
+    c: *mut c_void,
+    clock_reference: u32,
+    activation_time: f64,
+) -> c_int {
+    let Some(c) = in_state(c, "fmi3ActivateModelPartition", st::CLOCK).filter(|c| c.n.kind == Kind::ScheduledExecution)
+    else {
+        return ERROR;
+    };
     code(c.n.inst.activate_model_partition(clock_reference, activation_time))
 }

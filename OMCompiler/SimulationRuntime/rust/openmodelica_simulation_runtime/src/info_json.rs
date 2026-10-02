@@ -81,11 +81,19 @@ fn load(xml: &MODEL_DATA_XML) -> &'static Table {
 }
 
 fn read(xml: &MODEL_DATA_XML) -> Table {
-    let empty = Table { entries: Vec::new(), functions: Vec::new(), n_profile_blocks: 0 };
+    let empty = Table {
+        entries: Vec::new(),
+        functions: Vec::new(),
+        n_profile_blocks: 0,
+    };
     let text = if !xml.infoXMLData.is_null() {
-        unsafe { core::ffi::CStr::from_ptr(xml.infoXMLData) }.to_string_lossy().into_owned()
+        unsafe { core::ffi::CStr::from_ptr(xml.infoXMLData) }
+            .to_string_lossy()
+            .into_owned()
     } else if !xml.fileName.is_null() {
-        let mut name = unsafe { core::ffi::CStr::from_ptr(xml.fileName) }.to_string_lossy().into_owned();
+        let mut name = unsafe { core::ffi::CStr::from_ptr(xml.fileName) }
+            .to_string_lossy()
+            .into_owned();
         unsafe {
             if crate::support::omc_flag[crate::abi::FLAG_INPUT_PATH] != 0 {
                 let dir = core::ffi::CStr::from_ptr(crate::support::omc_flagValue[crate::abi::FLAG_INPUT_PATH]);
@@ -152,7 +160,11 @@ fn read(xml: &MODEL_DATA_XML) -> Table {
         .and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|f| f.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    Table { entries, functions, n_profile_blocks }
+    Table {
+        entries,
+        functions,
+        n_profile_blocks,
+    }
 }
 
 /// C's `modelInfoInit` under `+profiling`: the profile-block count the generated
@@ -176,7 +188,11 @@ pub fn prof_info(data: *mut DATA) -> Option<openmodelica_sim_meta::ProfInfo> {
     let md = unsafe { &*(*data).modelData };
     let table = load(&md.modelDataXml);
     let cstr = |p: *const c_char| -> String {
-        if p.is_null() { String::new() } else { unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned() }
+        if p.is_null() {
+            String::new()
+        } else {
+            unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned()
+        }
     };
     let src = |i: &FILE_INFO| SrcInfo {
         file: cstr(i.filename),
@@ -188,7 +204,12 @@ pub fn prof_info(data: *mut DATA) -> Option<openmodelica_sim_meta::ProfInfo> {
     };
     let mut vars = Vec::new();
     let mut push = |info: &VAR_INFO| {
-        vars.push(ProfVar { id: info.id as u32, name: cstr(info.name), comment: cstr(info.comment), info: src(&info.info) });
+        vars.push(ProfVar {
+            id: info.id as u32,
+            name: cstr(info.name),
+            comment: cstr(info.comment),
+            info: src(&info.info),
+        });
     };
     unsafe {
         for i in 0..md.nVariablesRealArray.max(0) as usize {
@@ -216,19 +237,35 @@ pub fn prof_info(data: *mut DATA) -> Option<openmodelica_sim_meta::ProfInfo> {
             push(&(*md.stringParameterData.add(i)).info);
         }
     }
-    let functions = table.functions.iter().map(|n| ProfFn { name: n.clone(), info: SrcInfo::default() }).collect();
+    let functions = table
+        .functions
+        .iter()
+        .map(|n| ProfFn {
+            name: n.clone(),
+            info: SrcInfo::default(),
+        })
+        .collect();
     let equations = table
         .entries
         .iter()
         .enumerate()
-        .map(|(i, e)| ProfEq { id: i as u32, defines: e.vars.iter().map(|p| cstr(*p)).collect() })
+        .map(|(i, e)| ProfEq {
+            id: i as u32,
+            defines: e.vars.iter().map(|p| cstr(*p)).collect(),
+        })
         .collect();
     // C's `modelInfoGetEquationIndexByProfileBlock`: the dummy (index 0) where no
     // equation owns the block.
     let blocks = (0..table.n_profile_blocks)
         .map(|k| table.entries.iter().position(|e| e.profile_block == k).unwrap_or(0) as u32)
         .collect();
-    Some(ProfInfo { level: level as u8, functions, vars, equations, blocks })
+    Some(ProfInfo {
+        level: level as u8,
+        functions,
+        vars,
+        equations,
+        blocks,
+    })
 }
 
 /// C's `modelInfoGetEquation`, by value as the generated code calls it.
@@ -274,8 +311,7 @@ pub fn is_init_diag_section(data: *mut DATA, eq_index: u32) -> bool {
     let xml = unsafe { &mut (*(*data).modelData).modelDataXml };
     match load(xml).entries.get(eq_index as usize) {
         Some(e) => {
-            e.section == EQUATION_SECTION_INIT_LAMBDA0
-                || (e.section == EQUATION_SECTION_INITIAL && !has_lambda0)
+            e.section == EQUATION_SECTION_INIT_LAMBDA0 || (e.section == EQUATION_SECTION_INITIAL && !has_lambda0)
         }
         None => false,
     }

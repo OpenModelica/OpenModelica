@@ -64,7 +64,11 @@ fn val_eps(a: f64, b: f64) -> f64 {
 /// Never below the resolution of the position coordinate.
 fn zero_delta_x(a: f64, b: f64) -> f64 {
     let e = pos_eps(a, b);
-    if SPATIAL_ZERO_DELTA_X > e { SPATIAL_ZERO_DELTA_X } else { e }
+    if SPATIAL_ZERO_DELTA_X > e {
+        SPATIAL_ZERO_DELTA_X
+    } else {
+        e
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -227,7 +231,9 @@ impl Spatial {
         );
         let n = points.len();
         if n < 2 || values.len() != n {
-            fatal("Initialization of spatial distribution failed: initialPoints and initialValues must have the same size >= 2.");
+            fatal(
+                "Initialization of spatial distribution failed: initialPoints and initialValues must have the same size >= 2.",
+            );
         }
         if points[0].abs() > SPATIAL_EPS {
             omclog::error!(
@@ -257,15 +263,13 @@ impl Spatial {
                     true,
                     "Initialization of spatial distribution with index {index} failed.",
                 );
-                omclog::error!(
-                    omclog::STDOUT,
-                    false,
-                    "initialPoints[{i}] > initialPoints[{}]",
-                    i + 1,
-                );
+                omclog::error!(omclog::STDOUT, false, "initialPoints[{i}] > initialPoints[{}]", i + 1,);
                 fatal(&format!("{} > {}", f(points[i]), f(points[i + 1])));
             }
-            self.profile.push_back(Node { pos: points[i], val: values[i] });
+            self.profile.push_back(Node {
+                pos: points[i],
+                val: values[i],
+            });
             if points[i] == points[i + 1] {
                 num_same += 1;
                 if num_same > 1 {
@@ -289,7 +293,10 @@ impl Spatial {
                 num_same = 0;
             }
         }
-        self.profile.push_back(Node { pos: points[n - 1], val: values[n - 1] });
+        self.profile.push_back(Node {
+            pos: points[n - 1],
+            val: values[n - 1],
+        });
         self.initialized = true;
         self.log_lists();
         omclog::close(omclog::SPATIALDISTR);
@@ -489,7 +496,10 @@ impl Spatial {
             } else {
                 (self.profile[prev], self.profile[i])
             };
-            self.profile[prev] = Node { pos: target, val: interpolate(left, right, target) };
+            self.profile[prev] = Node {
+                pos: target,
+                val: interpolate(left, right, target),
+            };
             omclog::info!(
                 omclog::SPATIALDISTR,
                 false,
@@ -538,16 +548,31 @@ impl Spatial {
         if positive && read < first.pos {
             let inject = Node { pos: -pos_x, val: in0 };
             let out = interpolate(inject, first, read);
-            return Read { out, event_pre: Some(out), events: self.events.len() as i32 };
+            return Read {
+                out,
+                event_pre: Some(out),
+                events: self.events.len() as i32,
+            };
         }
         if !positive && read > last.pos {
-            let inject = Node { pos: 1.0 - pos_x, val: in1 };
+            let inject = Node {
+                pos: 1.0 - pos_x,
+                val: in1,
+            };
             let out = interpolate(last, inject, read);
-            return Read { out, event_pre: Some(out), events: self.events.len() as i32 };
+            return Read {
+                out,
+                event_pre: Some(out),
+                events: self.events.len() as i32,
+            };
         }
 
         // Clamped: `x` may have moved backwards since the last accepted step.
-        let read = if positive { read.min(last.pos) } else { read.max(first.pos) };
+        let read = if positive {
+            read.min(last.pos)
+        } else {
+            read.max(first.pos)
+        };
         let edge_pos = if positive { first.pos } else { last.pos };
         let mut i = if positive { n - 1 } else { 0 };
         if (self.profile[i].pos - edge_pos).abs() + pos_eps(self.profile[i].pos, edge_pos) < 1.0 {
@@ -597,7 +622,11 @@ impl Spatial {
         } else {
             interpolate(self.profile[prev], self.profile[i], read)
         };
-        Read { out, event_pre, events: walked }
+        Read {
+            out,
+            event_pre,
+            events: walked,
+        }
     }
 
     /// C `spatialDistribution`: `(out0, out1)` for the `x` of this call, without
@@ -735,7 +764,11 @@ impl Spatial {
         // absolute `SPATIAL_EPS`: a wider one flips the value before the discontinuity
         // is reached, leaving no sign change to find.
         let below = self.events.partition_point(|ev| ev.pos <= read + SPATIAL_EPS);
-        let value = if below == 0 { self.events[0].sign } else { -self.events[below - 1].sign };
+        let value = if below == 0 {
+            self.events[0].sign
+        } else {
+            -self.events[below - 1].sign
+        };
         omclog::info!(
             omclog::SPATIALDISTR,
             false,
@@ -786,10 +819,16 @@ impl SpatialState {
         for _ in 0..n {
             let mut s = Spatial::new();
             for _ in 0..w.next()? as usize {
-                s.profile.push_back(Node { pos: w.next()?, val: w.next()? });
+                s.profile.push_back(Node {
+                    pos: w.next()?,
+                    val: w.next()?,
+                });
             }
             for _ in 0..w.next()? as usize {
-                s.events.push_back(Event { pos: w.next()?, sign: w.next()? });
+                s.events.push_back(Event {
+                    pos: w.next()?,
+                    sign: w.next()?,
+                });
             }
             s.initialized = w.next()? != 0.0;
             let has_start = w.next()? != 0.0;
@@ -812,7 +851,9 @@ impl SpatialState {
             false,
             "Allocating memory for {n} spatial distribution(s).",
         );
-        SpatialState { ops: (0..n).map(|_| Spatial::new()).collect() }
+        SpatialState {
+            ops: (0..n).map(|_| Spatial::new()).collect(),
+        }
     }
 
     fn at(&mut self, index: u32) -> &mut Spatial {

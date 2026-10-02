@@ -46,7 +46,10 @@ impl Dataset {
     }
 
     pub fn n_params(&self) -> usize {
-        self.vars.iter().filter(|v| matches!(v.kind, Kind::Param { .. })).count()
+        self.vars
+            .iter()
+            .filter(|v| matches!(v.kind, Kind::Param { .. }))
+            .count()
     }
 
     pub fn n_aliases(&self) -> usize {
@@ -84,7 +87,12 @@ impl Dataset {
     /// The tail of the dotted name, for a table column.
     pub fn short_name(&self) -> String {
         let parts: Vec<&str> = self.name.rsplitn(3, '.').collect();
-        parts.into_iter().rev().skip(usize::from(self.name.matches('.').count() >= 2)).collect::<Vec<_>>().join(".")
+        parts
+            .into_iter()
+            .rev()
+            .skip(usize::from(self.name.matches('.').count() >= 2))
+            .collect::<Vec<_>>()
+            .join(".")
     }
 
     /// The first row, which gives the writers their `unvarying` values.
@@ -102,7 +110,9 @@ impl Dataset {
         // the writers all want it row-major.
         let mut rows = vec![0.0f64; n_rows * n_cols];
         for c in 0..n_cols {
-            let vals = mat.read_vals(c as i32 + 1).ok_or_else(|| format!("column {c} unreadable"))?;
+            let vals = mat
+                .read_vals(c as i32 + 1)
+                .ok_or_else(|| format!("column {c} unreadable"))?;
             for (r, v) in vals.iter().enumerate().take(n_rows) {
                 rows[r * n_cols + c] = *v;
             }
@@ -115,7 +125,11 @@ impl Dataset {
         let mut params = Vec::new();
         for info in &mat.allInfo {
             let a = attrs.get(&info.name);
-            let affine = if info.index < 0 { Affine::negated() } else { Affine::IDENTITY };
+            let affine = if info.index < 0 {
+                Affine::negated()
+            } else {
+                Affine::IDENTITY
+            };
             let kind = if info.isParam {
                 let slot = info.index.unsigned_abs() as usize;
                 let value = mat.params.get(slot.saturating_sub(1)).copied().unwrap_or(0.0);
@@ -124,7 +138,10 @@ impl Dataset {
             } else if info.index.unsigned_abs() == 1 && info.name == "time" {
                 Kind::Time
             } else {
-                Kind::Column { col: info.index.unsigned_abs() - 1, affine }
+                Kind::Column {
+                    col: info.index.unsigned_abs() - 1,
+                    affine,
+                }
             };
             let (comment, unit) = split_unit(&info.descr);
             vars.push(VarDesc {
@@ -143,7 +160,16 @@ impl Dataset {
         let name = std::path::Path::new(path)
             .file_stem()
             .map_or_else(String::new, |s| s.to_string_lossy().trim_end_matches("_res").to_owned());
-        Ok(Dataset { name, vars, rows, n_cols, n_rows, params, start_time, stop_time })
+        Ok(Dataset {
+            name,
+            vars,
+            rows,
+            n_cols,
+            n_rows,
+            params,
+            start_time,
+            stop_time,
+        })
     }
 
     /// `factor` times the rows, by repeating the trajectory: the same variable
@@ -226,7 +252,12 @@ impl ModelAttrs {
             let display_unit = attr(chunk, "displayUnit").unwrap_or_else(|| unit.clone());
             map.insert(
                 name,
-                Attr { unit, display_unit, ty, discrete: variability == "discrete" },
+                Attr {
+                    unit,
+                    display_unit,
+                    ty,
+                    discrete: variability == "discrete",
+                },
             );
         }
         ModelAttrs(map)
@@ -238,9 +269,17 @@ fn attr(chunk: &str, key: &str) -> Option<String> {
     let at = chunk.find(&pat)? + pat.len();
     let end = chunk[at..].find('"')? + at;
     let raw = &chunk[at..end];
-    Some(if raw.contains('&') { unescape(raw) } else { raw.to_owned() })
+    Some(if raw.contains('&') {
+        unescape(raw)
+    } else {
+        raw.to_owned()
+    })
 }
 
 fn unescape(s: &str) -> String {
-    s.replace("&quot;", "\"").replace("&apos;", "'").replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    s.replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&")
 }

@@ -1,8 +1,8 @@
 //! `MetaModelica.Dangerous` — bounds-check-skipping / destructive variants.
 
-use std::sync::Arc;
-use arcstr::ArcStr;
 pub use crate::*;
+use arcstr::ArcStr;
+use std::sync::Arc;
 
 /// Unsafe array get without bounds checking.
 /// Panics in debug mode if index is out of bounds due to Rust's bounds checking on indexing.
@@ -20,7 +20,9 @@ pub fn arrayUpdateNoBoundsChecking<A: Clone>(arr: Array<A>, index: i32, new_valu
     {
         let mut v = arr.borrow_mut();
         // SAFETY: Caller must ensure index is in bounds.
-        unsafe { *v.get_unchecked_mut(idx) = new_value; }
+        unsafe {
+            *v.get_unchecked_mut(idx) = new_value;
+        }
     }
     arr
 }
@@ -60,7 +62,9 @@ pub unsafe fn arrayInitSlot<A>(arr: Array<A>, index: i32, val: A) -> Array<A> {
         #[allow(unsafe_op_in_unsafe_fn)]
         let p = unsafe { borrow.get_unchecked_mut((index - 1) as usize) as *mut A };
         #[allow(unsafe_op_in_unsafe_fn)]
-        unsafe { std::ptr::write(p, val) };
+        unsafe {
+            std::ptr::write(p, val)
+        };
     }
     arr
 }
@@ -120,8 +124,14 @@ pub fn listAppendDestroy<T: Clone>(mut first: List<T>, second: List<T>) -> List<
         p = tail;
     }
     let mut cur = &mut first;
-    while cur.0.as_ref().is_some_and(|c| matches!(&**c, ListNode::Cons { tail, .. } if tail.0.is_some())) {
-        let Some(ListNode::Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else { unreachable!() };
+    while cur
+        .0
+        .as_ref()
+        .is_some_and(|c| matches!(&**c, ListNode::Cons { tail, .. } if tail.0.is_some()))
+    {
+        let Some(ListNode::Cons { tail, .. }) = cur.0.as_mut().and_then(Arc::get_mut) else {
+            unreachable!()
+        };
         cur = tail;
     }
     match cur.0.as_mut().and_then(Arc::get_mut) {
@@ -137,11 +147,16 @@ pub fn listAppendDestroy<T: Clone>(mut first: List<T>, second: List<T>) -> List<
 /// ensure no other thread is reading the cell concurrently. Mirrors the
 /// MetaModelica runtime's RML cons-cell mutation.
 pub fn listSetRest<T: Clone>(list: List<T>, new_tail: List<T>) -> Result<()> {
-    let Some(cell) = &list.0 else { return Err("listSetRest: called on Nil") };
+    let Some(cell) = &list.0 else {
+        return Err("listSetRest: called on Nil");
+    };
     let ptr = Arc::as_ptr(cell) as *mut ListNode<T>;
     unsafe {
         match &mut *ptr {
-            ListNode::Cons { tail, .. } => { *tail = new_tail; Ok(()) }
+            ListNode::Cons { tail, .. } => {
+                *tail = new_tail;
+                Ok(())
+            }
             ListNode::Nil => Err("listSetRest: called on Nil"),
         }
     }
@@ -149,11 +164,16 @@ pub fn listSetRest<T: Clone>(list: List<T>, new_tail: List<T>) -> Result<()> {
 /// Overwrites the `head` field of the given Cons cell. See `listSetRest`
 /// for the safety contract.
 pub fn listSetFirst<T: Clone>(list: List<T>, new_head: T) -> Result<()> {
-    let Some(cell) = &list.0 else { return Err("listSetFirst: called on Nil") };
+    let Some(cell) = &list.0 else {
+        return Err("listSetFirst: called on Nil");
+    };
     let ptr = Arc::as_ptr(cell) as *mut ListNode<T>;
     unsafe {
         match &mut *ptr {
-            ListNode::Cons { head, .. } => { *head = new_head; Ok(()) }
+            ListNode::Cons { head, .. } => {
+                *head = new_head;
+                Ok(())
+            }
             ListNode::Nil => Err("listSetFirst: called on Nil"),
         }
     }

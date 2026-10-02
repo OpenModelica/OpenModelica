@@ -26,7 +26,10 @@ struct Clocks {
 static CLOCKS: Mutex<BTreeMap<usize, Clocks>> = Mutex::new(BTreeMap::new());
 
 fn with<R>(data: *mut DATA, f: impl FnOnce(Option<&mut Clocks>) -> R) -> R {
-    f(CLOCKS.lock().unwrap_or_else(|e| e.into_inner()).get_mut(&(data as usize)))
+    f(CLOCKS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get_mut(&(data as usize)))
 }
 
 /// The fired flags, for the region map.
@@ -47,7 +50,10 @@ pub fn fire_flags(data: *mut DATA) -> *mut c_int {
 /// Drop what [`fire_flags`] and [`mark_fresh`] keep for `data`, and each clock's
 /// `subClocks`.
 pub fn free(data: *mut DATA) {
-    CLOCKS.lock().unwrap_or_else(|e| e.into_inner()).remove(&(data as usize));
+    CLOCKS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(&(data as usize));
     for c in clocks(data) {
         if !c.subClocks.is_null() {
             unsafe { libc::free(c.subClocks as *mut libc::c_void) };
@@ -181,7 +187,10 @@ pub fn split(data: *mut DATA, flat: u32) -> (c_long, c_long) {
 
 /// One region for the base clocks, then one per base clock for its own
 /// `subClocks` allocation.
-pub fn regions(data: *mut DATA, l: &openmodelica_sim_meta::Layout) -> Vec<(u32, u32, *mut BASECLOCK_DATA, *mut SUBCLOCK_DATA)> {
+pub fn regions(
+    data: *mut DATA,
+    l: &openmodelica_sim_meta::Layout,
+) -> Vec<(u32, u32, *mut BASECLOCK_DATA, *mut SUBCLOCK_DATA)> {
     let cs = clocks(data);
     if cs.is_empty() {
         return Vec::new();

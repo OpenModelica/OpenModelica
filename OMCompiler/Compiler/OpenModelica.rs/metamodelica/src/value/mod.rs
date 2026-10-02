@@ -2,15 +2,15 @@
 //! `valueCompare`, `valueConstructor`, `clock`. Reference identity lives
 //! in [`reference_eq`]; global roots in [`global_root`].
 
+use crate::Real;
+use crate::Result;
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
-use crate::Result;
-use crate::Real;
 
-pub mod reference_eq;
 pub mod global_root;
-pub use reference_eq::*;
+pub mod reference_eq;
 pub use global_root::*;
+pub use reference_eq::*;
 
 /// Returns the string representation of any Debug-printable value.
 /// Rather slow; only use this for debugging!
@@ -82,9 +82,9 @@ pub fn clock() -> Real {
 mod tests {
     use super::*;
     use crate::*;
-    use std::sync::Arc;
+    use arcstr::{ArcStr, literal};
     use std::rc::Rc;
-    use arcstr::{literal, ArcStr};
+    use std::sync::Arc;
     mod generic_value_tests {
         use super::*;
 
@@ -102,7 +102,7 @@ mod tests {
         fn test_tick() {
             let t1 = tick();
             let t2 = tick();
-            assert_eq!(t2, t1+1);
+            assert_eq!(t2, t1 + 1);
         }
 
         #[test]
@@ -183,7 +183,11 @@ mod tests {
         fn test_value_constructor() {
             #[allow(dead_code)]
             #[derive(MMCtor)]
-            enum E { A(i32), B { x: i32 }, C }
+            enum E {
+                A(i32),
+                B { x: i32 },
+                C,
+            }
             assert_eq!(valueConstructor(&E::A(1)).unwrap(), 3);
             assert_eq!(valueConstructor(&E::A(99)).unwrap(), 3);
             assert_eq!(valueConstructor(&E::B { x: 1 }).unwrap(), 4);
@@ -191,7 +195,9 @@ mod tests {
             assert_eq!(valueConstructor(&Arc::new(E::C)).unwrap(), 5);
 
             #[derive(MMCtor)]
-            struct R { x: i32 }
+            struct R {
+                x: i32,
+            }
             assert_eq!(valueConstructor(&R { x: 1 }).unwrap(), 3);
         }
 

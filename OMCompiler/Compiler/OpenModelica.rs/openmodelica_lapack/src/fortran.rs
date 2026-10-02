@@ -28,8 +28,8 @@ unsafe fn ch(p: *const c_char) -> &'static str {
     // The routines below compare only the first byte, so a 1-byte view is enough
     // and the caller need not NUL-terminate.
     const TABLE: [&str; 26] = [
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
-        "S", "T", "U", "V", "W", "X", "Y", "Z",
+        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
+        "W", "X", "Y", "Z",
     ];
     if p.is_null() {
         return " ";
@@ -167,8 +167,7 @@ pub unsafe extern "C" fn dgecon_(
     info: *mut i32,
 ) {
     let (n, lda) = unsafe { (u(n), u(lda)) };
-    let (r, i) =
-        lu::dgecon(unsafe { ch(norm) }, n, slc!(a, lda * n.max(1)), lda, unsafe { *anorm });
+    let (r, i) = lu::dgecon(unsafe { ch(norm) }, n, slc!(a, lda * n.max(1)), lda, unsafe { *anorm });
     unsafe {
         *rcond = r;
         *info = i;
@@ -242,13 +241,7 @@ pub unsafe extern "C" fn dgesvx_(
 // ─────────────────────────── Cholesky ───────────────────────────
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn dpotrf_(
-    uplo: *const c_char,
-    n: *const i32,
-    a: *mut f64,
-    lda: *const i32,
-    info: *mut i32,
-) {
+pub unsafe extern "C" fn dpotrf_(uplo: *const c_char, n: *const i32, a: *mut f64, lda: *const i32, info: *mut i32) {
     let (n, lda) = unsafe { (u(n), u(lda)) };
     let r = chol::dpotrf(unsafe { ch(uplo) }, n, sl!(a, lda * n.max(1)), lda);
     unsafe { *info = r };
@@ -1061,8 +1054,7 @@ pub unsafe extern "C" fn dggevx_(
     }
     unsafe {
         dggev_(
-            jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work,
-            lwork, info,
+            jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info,
         )
     };
 }
@@ -1162,7 +1154,9 @@ pub unsafe extern "C" fn dtrevc_(
 /// increment runs the vector backwards, as BLAS defines it.
 unsafe fn gather(x: *const f64, n: usize, inc: i32) -> Vec<f64> {
     let start = if inc < 0 { (n - 1) as isize * (-inc as isize) } else { 0 };
-    (0..n).map(|k| unsafe { *x.offset(start + k as isize * inc as isize) }).collect()
+    (0..n)
+        .map(|k| unsafe { *x.offset(start + k as isize * inc as isize) })
+        .collect()
 }
 
 unsafe fn scatter(x: *mut f64, n: usize, inc: i32, v: &[f64]) {
@@ -1181,7 +1175,12 @@ pub unsafe extern "C" fn dcopy_(n: *const i32, x: *const f64, incx: *const i32, 
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn daxpy_(
-    n: *const i32, alpha: *const f64, x: *const f64, incx: *const i32, y: *mut f64, incy: *const i32,
+    n: *const i32,
+    alpha: *const f64,
+    x: *const f64,
+    incx: *const i32,
+    y: *mut f64,
+    incy: *const i32,
 ) {
     let n = unsafe { u(n) };
     let xv = unsafe { gather(x, n, *incx) };
@@ -1191,9 +1190,7 @@ pub unsafe extern "C" fn daxpy_(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ddot_(
-    n: *const i32, x: *const f64, incx: *const i32, y: *const f64, incy: *const i32,
-) -> f64 {
+pub unsafe extern "C" fn ddot_(n: *const i32, x: *const f64, incx: *const i32, y: *const f64, incy: *const i32) -> f64 {
     let n = unsafe { u(n) };
     let (xv, yv) = unsafe { (gather(x, n, *incx), gather(y, n, *incy)) };
     crate::blas::ddot(&xv, &yv)
@@ -1209,8 +1206,17 @@ pub unsafe extern "C" fn dscal_(n: *const i32, alpha: *const f64, x: *mut f64, i
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn dgemv_(
-    trans: *const c_char, m: *const i32, n: *const i32, alpha: *const f64, a: *const f64,
-    lda: *const i32, x: *const f64, incx: *const i32, beta: *const f64, y: *mut f64, incy: *const i32,
+    trans: *const c_char,
+    m: *const i32,
+    n: *const i32,
+    alpha: *const f64,
+    a: *const f64,
+    lda: *const i32,
+    x: *const f64,
+    incx: *const i32,
+    beta: *const f64,
+    y: *mut f64,
+    incy: *const i32,
 ) {
     let (m, n, lda) = unsafe { (u(m), u(n), u(lda)) };
     let t = unsafe { ch(trans) } != "N";
@@ -1224,9 +1230,19 @@ pub unsafe extern "C" fn dgemv_(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn dgemm_(
-    transa: *const c_char, transb: *const c_char, m: *const i32, n: *const i32, k: *const i32,
-    alpha: *const f64, a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32,
-    beta: *const f64, c: *mut f64, ldc: *const i32,
+    transa: *const c_char,
+    transb: *const c_char,
+    m: *const i32,
+    n: *const i32,
+    k: *const i32,
+    alpha: *const f64,
+    a: *const f64,
+    lda: *const i32,
+    b: *const f64,
+    ldb: *const i32,
+    beta: *const f64,
+    c: *mut f64,
+    ldc: *const i32,
 ) {
     let (m, n, k) = unsafe { (u(m), u(n), u(k)) };
     let (lda, ldb, ldc) = unsafe { (u(lda), u(ldb), u(ldc)) };
@@ -1234,14 +1250,37 @@ pub unsafe extern "C" fn dgemm_(
     let av = slc!(a, lda * if ta { m } else { k }.max(1));
     let bv = slc!(b, ldb * if tb { k } else { n }.max(1));
     let cv = sl!(c, ldc * n.max(1));
-    crate::blas::dgemm(ta, tb, m, n, k, unsafe { *alpha }, av, lda, bv, ldb, unsafe { *beta }, cv, ldc);
+    crate::blas::dgemm(
+        ta,
+        tb,
+        m,
+        n,
+        k,
+        unsafe { *alpha },
+        av,
+        lda,
+        bv,
+        ldb,
+        unsafe { *beta },
+        cv,
+        ldc,
+    );
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn dsymm_(
-    side: *const c_char, uplo: *const c_char, m: *const i32, n: *const i32, alpha: *const f64,
-    a: *const f64, lda: *const i32, b: *const f64, ldb: *const i32, beta: *const f64,
-    c: *mut f64, ldc: *const i32,
+    side: *const c_char,
+    uplo: *const c_char,
+    m: *const i32,
+    n: *const i32,
+    alpha: *const f64,
+    a: *const f64,
+    lda: *const i32,
+    b: *const f64,
+    ldb: *const i32,
+    beta: *const f64,
+    c: *mut f64,
+    ldc: *const i32,
 ) {
     let (m, n) = unsafe { (u(m), u(n)) };
     let (lda, ldb, ldc) = unsafe { (u(lda), u(ldb), u(ldc)) };
@@ -1250,14 +1289,35 @@ pub unsafe extern "C" fn dsymm_(
     let av = slc!(a, lda * if left { m } else { n }.max(1));
     let bv = slc!(b, ldb * n.max(1));
     let cv = sl!(c, ldc * n.max(1));
-    crate::blas::dsymm(left, upper, m, n, unsafe { *alpha }, av, lda, bv, ldb, unsafe { *beta }, cv, ldc);
+    crate::blas::dsymm(
+        left,
+        upper,
+        m,
+        n,
+        unsafe { *alpha },
+        av,
+        lda,
+        bv,
+        ldb,
+        unsafe { *beta },
+        cv,
+        ldc,
+    );
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn dtrmm_(
-    side: *const c_char, uplo: *const c_char, transa: *const c_char, diag: *const c_char,
-    m: *const i32, n: *const i32, alpha: *const f64, a: *const f64, lda: *const i32,
-    b: *mut f64, ldb: *const i32,
+    side: *const c_char,
+    uplo: *const c_char,
+    transa: *const c_char,
+    diag: *const c_char,
+    m: *const i32,
+    n: *const i32,
+    alpha: *const f64,
+    a: *const f64,
+    lda: *const i32,
+    b: *mut f64,
+    ldb: *const i32,
 ) {
     let (m, n, lda, ldb) = unsafe { (u(m), u(n), u(lda), u(ldb)) };
     let left = unsafe { ch(side) } == "L";
@@ -1285,10 +1345,26 @@ pub unsafe extern "C" fn dlarnv_(idist: *const i32, iseed: *mut i32, n: *const i
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
 pub unsafe extern "C" fn dsyevx_(
-    jobz: *const c_char, range: *const c_char, uplo: *const c_char, n: *const i32, a: *mut f64,
-    lda: *const i32, _vl: *const f64, _vu: *const f64, _il: *const i32, _iu: *const i32,
-    _abstol: *const f64, m: *mut i32, w: *mut f64, z: *mut f64, ldz: *const i32, work: *mut f64,
-    lwork: *const i32, _iwork: *mut i32, _ifail: *mut i32, info: *mut i32,
+    jobz: *const c_char,
+    range: *const c_char,
+    uplo: *const c_char,
+    n: *const i32,
+    a: *mut f64,
+    lda: *const i32,
+    _vl: *const f64,
+    _vu: *const f64,
+    _il: *const i32,
+    _iu: *const i32,
+    _abstol: *const f64,
+    m: *mut i32,
+    w: *mut f64,
+    z: *mut f64,
+    ldz: *const i32,
+    work: *mut f64,
+    lwork: *const i32,
+    _iwork: *mut i32,
+    _ifail: *mut i32,
+    info: *mut i32,
 ) {
     let (n, lda, ldz) = unsafe { (u(n), u(lda), u(ldz)) };
     if unsafe { query(lwork, work, 8 * n) } {
@@ -1314,11 +1390,29 @@ pub unsafe extern "C" fn dsyevx_(
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
 pub unsafe extern "C" fn dsygvx_(
-    itype: *const i32, jobz: *const c_char, range: *const c_char, uplo: *const c_char,
-    n: *const i32, a: *mut f64, lda: *const i32, b: *mut f64, ldb: *const i32, _vl: *const f64,
-    _vu: *const f64, _il: *const i32, _iu: *const i32, _abstol: *const f64, m: *mut i32,
-    w: *mut f64, z: *mut f64, ldz: *const i32, work: *mut f64, lwork: *const i32,
-    _iwork: *mut i32, _ifail: *mut i32, info: *mut i32,
+    itype: *const i32,
+    jobz: *const c_char,
+    range: *const c_char,
+    uplo: *const c_char,
+    n: *const i32,
+    a: *mut f64,
+    lda: *const i32,
+    b: *mut f64,
+    ldb: *const i32,
+    _vl: *const f64,
+    _vu: *const f64,
+    _il: *const i32,
+    _iu: *const i32,
+    _abstol: *const f64,
+    m: *mut i32,
+    w: *mut f64,
+    z: *mut f64,
+    ldz: *const i32,
+    work: *mut f64,
+    lwork: *const i32,
+    _iwork: *mut i32,
+    _ifail: *mut i32,
+    info: *mut i32,
 ) {
     let (n, lda, ldb, ldz) = unsafe { (u(n), u(lda), u(ldb), u(ldz)) };
     if unsafe { query(lwork, work, 8 * n) } {
@@ -1351,8 +1445,14 @@ pub unsafe extern "C" fn dsygvx_(
 #[unsafe(no_mangle)]
 #[allow(clippy::too_many_arguments)]
 pub unsafe extern "C" fn dsytrf_(
-    uplo: *const c_char, n: *const i32, a: *mut f64, lda: *const i32, ipiv: *mut i32,
-    work: *mut f64, lwork: *const i32, info: *mut i32,
+    uplo: *const c_char,
+    n: *const i32,
+    a: *mut f64,
+    lda: *const i32,
+    ipiv: *mut i32,
+    work: *mut f64,
+    lwork: *const i32,
+    info: *mut i32,
 ) {
     let (n, lda) = unsafe { (u(n), u(lda)) };
     if unsafe { query(lwork, work, n.max(1)) } {
@@ -1374,11 +1474,27 @@ pub unsafe extern "C" fn dsytrf_(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn dsytrs_(
-    _uplo: *const c_char, n: *const i32, nrhs: *const i32, a: *const f64, lda: *const i32,
-    ipiv: *const i32, b: *mut f64, ldb: *const i32, info: *mut i32,
+    _uplo: *const c_char,
+    n: *const i32,
+    nrhs: *const i32,
+    a: *const f64,
+    lda: *const i32,
+    ipiv: *const i32,
+    b: *mut f64,
+    ldb: *const i32,
+    info: *mut i32,
 ) {
     let (n, nrhs, lda, ldb) = unsafe { (u(n), u(nrhs), u(lda), u(ldb)) };
     let av = slc!(a, lda * n.max(1));
-    let rc = lu::dgetrs("N", n, nrhs, av, lda, slc!(ipiv, n.max(1)), sl!(b, ldb * nrhs.max(1)), ldb);
+    let rc = lu::dgetrs(
+        "N",
+        n,
+        nrhs,
+        av,
+        lda,
+        slc!(ipiv, n.max(1)),
+        sl!(b, ldb * nrhs.max(1)),
+        ldb,
+    );
     unsafe { *info = rc };
 }

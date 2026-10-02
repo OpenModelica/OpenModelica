@@ -32,7 +32,11 @@ pub(crate) fn parse_ext_sig(line: &str) -> Result<ExtCallSig> {
         name: name.to_string(),
         lang: if lang == "F" { ExtLang::Fortran77 } else { ExtLang::C },
         args: tys.into_iter().zip(outs.chars()).map(|(t, o)| (t, o == '1')).collect(),
-        ret: if ret == "-" { None } else { parse_sig_types(ret)?.into_iter().next() },
+        ret: if ret == "-" {
+            None
+        } else {
+            parse_sig_types(ret)?.into_iter().next()
+        },
         declare: f.next() == Some("1"),
     })
 }
@@ -109,18 +113,36 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     // Map mangled function name -> (local id, signature) so CALLs can resolve.
     let mut by_name: HashMap<String, FnInfo> = HashMap::default();
     for (i, sig) in ext_imports.iter().enumerate() {
-        by_name.insert(format!("ext.{}", sig.name), FnInfo { index: ext_base + i as u32, sig: sig.wasm_sig() });
+        by_name.insert(
+            format!("ext.{}", sig.name),
+            FnInfo {
+                index: ext_base + i as u32,
+                sig: sig.wasm_sig(),
+            },
+        );
     }
     let mut sigs: Vec<FnSig> = Vec::with_capacity(funcs.len());
     for (id, f) in funcs.iter().enumerate() {
         let (name, sig) = function_signature(f)?;
-        by_name.insert(name, FnInfo { index: base + id as u32, sig: sig.clone() });
+        by_name.insert(
+            name,
+            FnInfo {
+                index: base + id as u32,
+                sig: sig.clone(),
+            },
+        );
         sigs.push(sig);
     }
     let flat_base = base + funcs.len() as u32;
     let flats = flat_variants(&funcs)?;
     for (k, (_, key, sig)) in flats.iter().enumerate() {
-        by_name.insert(key.clone(), FnInfo { index: flat_base + k as u32, sig: sig.clone() });
+        by_name.insert(
+            key.clone(),
+            FnInfo {
+                index: flat_base + k as u32,
+                sig: sig.clone(),
+            },
+        );
     }
 
     // Type section: one type per env builtin, per rt builtin, then per
@@ -130,10 +152,14 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
         types.ty().function(params.iter().map(|w| w.val()), [result.val()]);
     }
     for (_, params, results) in RT_BUILTINS {
-        types.ty().function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
+        types
+            .ty()
+            .function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
     }
     for (_, params, results) in ENV_EXTRA {
-        types.ty().function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
+        types
+            .ty()
+            .function(params.iter().map(|w| w.val()), results.iter().map(|w| w.val()));
     }
     for sig in &ext_imports {
         types.ty().function(
@@ -142,7 +168,10 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
         );
     }
     for sig in sigs.iter().chain(flats.iter().map(|(_, _, s)| s)) {
-        types.ty().function(sig.params.iter().map(|s| s.wty().val()), sig.results.iter().map(|s| s.wty().val()));
+        types.ty().function(
+            sig.params.iter().map(|s| s.wty().val()),
+            sig.results.iter().map(|s| s.wty().val()),
+        );
     }
 
     // Import section: the runtime's shared linear memory, the `env` math
@@ -152,7 +181,13 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     imports.import(
         "rt",
         "memory",
-        we::MemoryType { minimum: 0, maximum: None, memory64: false, shared: false, page_size_log2: None },
+        we::MemoryType {
+            minimum: 0,
+            maximum: None,
+            memory64: false,
+            shared: false,
+            page_size_log2: None,
+        },
     );
     // All three come from the runtime instance the host registers as `rt`: the math
     // builtins are in-wasm (libm), not host functions.
@@ -163,7 +198,11 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
         imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + j) as u32));
     }
     for (k, (name, _, _)) in ENV_EXTRA.iter().enumerate() {
-        imports.import("rt", *name, we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32));
+        imports.import(
+            "rt",
+            *name,
+            we::EntityType::Function((BUILTINS.len() + RT_BUILTINS.len() + k) as u32),
+        );
     }
     for (i, sig) in ext_imports.iter().enumerate() {
         imports.import("ext", &sig.name, we::EntityType::Function(ext_base + i as u32));
@@ -235,13 +274,17 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     };
     if !thunk_indices.is_empty() {
         // The thunks are reached by `call_indirect` through the runtime's table.
-        imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
-            element_type: we::RefType::FUNCREF,
-            table64: false,
-            minimum: 1,
-            maximum: None,
-            shared: false,
-        }));
+        imports.import(
+            "rt",
+            "__indirect_function_table",
+            we::EntityType::Table(we::TableType {
+                element_type: we::RefType::FUNCREF,
+                table64: false,
+                minimum: 1,
+                maximum: None,
+                shared: false,
+            }),
+        );
     }
     let mut code = we::CodeSection::new();
     for body in &bodies {
@@ -262,7 +305,11 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
         let mut globals = we::GlobalSection::new();
         for _ in 0..lit_base_global(false) as usize + lits.len() {
             globals.global(
-                we::GlobalType { val_type: we::ValType::I32, mutable: true, shared: false },
+                we::GlobalType {
+                    val_type: we::ValType::I32,
+                    mutable: true,
+                    shared: false,
+                },
                 &we::ConstExpr::i32_const(0),
             );
         }
@@ -270,7 +317,9 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
     }
     module.section(&exports);
     if let Some(start_idx) = start_idx {
-        module.section(&we::StartSection { function_index: start_idx });
+        module.section(&we::StartSection {
+            function_index: start_idx,
+        });
         if !thunk_indices.is_empty() {
             let mut elements = we::ElementSection::new();
             elements.declared(we::Elements::Functions(thunk_indices.as_slice().into()));
@@ -293,14 +342,24 @@ pub(super) fn build_module(fn_code: &SimCodeFunction::FunctionCode) -> Result<Bu
 
     // Signature types of the main function for the sidecar.
     let (in_sig, out_sig) = main_sig_types(main)?;
-    Ok(BuiltModule { bytes, in_sig, out_sig, ext_imports })
+    Ok(BuiltModule {
+        bytes,
+        in_sig,
+        out_sig,
+        ext_imports,
+    })
 }
 
 /// The mangled name and wasm signature of a generated function.
 pub(crate) fn function_signature(f: &SimCodeFunction::Function::Function) -> Result<(String, FnSig)> {
     use SimCodeFunction::Function::Function as F;
     match f {
-        F::FUNCTION { name, outVars, functionArguments, .. } => {
+        F::FUNCTION {
+            name,
+            outVars,
+            functionArguments,
+            ..
+        } => {
             let params = var_sigtys(functionArguments)?;
             let results = var_sigtys(outVars)?;
             Ok((mangle(name)?, FnSig { params, results }))
@@ -310,11 +369,17 @@ pub(crate) fn function_signature(f: &SimCodeFunction::Function::Function) -> Res
         // A known scalar-math external, or a general external scalar function
         // (routed to an `ext.<extName>` host import). Both expose the Modelica
         // wrapper's own signature (funArgs -> outVars).
-        F::EXTERNAL_FUNCTION { name, outVars, funArgs, .. } if external_known(f) || external_general(f) => {
+        F::EXTERNAL_FUNCTION {
+            name, outVars, funArgs, ..
+        } if external_known(f) || external_general(f) => {
             let params = var_sigtys(funArgs)?;
             let results = var_sigtys(outVars)?;
             Ok((mangle(name)?, FnSig { params, results }))
         }
-        _ => return Err("CodegenWasmJit: only plain Modelica/MetaModelica FUNCTIONs and known scalar-math external functions are supported"),
+        _ => {
+            return Err(
+                "CodegenWasmJit: only plain Modelica/MetaModelica FUNCTIONs and known scalar-math external functions are supported",
+            );
+        }
     }
 }

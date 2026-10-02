@@ -21,7 +21,14 @@ crate-type = ["cdylib"]
 # `all-arch` is what lets one module emit every platform's machine code, and the
 # `gc` features must match the loader's engine or the artifact is rejected there.
 wasmtime = { version = "48", default-features = false, features = [
-  "std", "cranelift", "all-arch", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
+  "std",
+  "cranelift",
+  "all-arch",
+  "component-model",
+  "anyhow",
+  "gc",
+  "gc-null",
+  "gc-drc",
 ] }
 
 [profile.release]

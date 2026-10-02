@@ -176,4 +176,3 @@ pub fn deprecation_warning(method: &str) {
     );
     omclog::close(omclog::STDOUT);
 }
-

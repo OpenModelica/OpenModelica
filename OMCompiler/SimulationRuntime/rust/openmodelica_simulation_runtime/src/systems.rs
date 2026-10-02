@@ -89,8 +89,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
     // C prints the header whatever the count is; only the loop is conditional.
     omclog::info(omclog::LS, true, "initialize linear system solvers");
     omclog::info!(omclog::LS, false, "{} linear systems", md.nLinearSystems);
-    let (ls_flag, lss_flag) =
-        openmodelica_sim_meta::simflags::with_flags(|f| (f.ls.is_some(), f.lss.is_some()));
+    let (ls_flag, lss_flag) = openmodelica_sim_meta::simflags::with_flags(|f| (f.ls.is_some(), f.lss.is_some()));
     if si.lssMethod == LSS_DEFAULT && klu::AVAILABLE {
         si.lssMethod = LSS_KLU;
     }
@@ -210,12 +209,7 @@ unsafe extern "C" fn set_a_element(
     }
 }
 
-unsafe extern "C" fn set_b_element(
-    row: c_int,
-    value: f64,
-    ls: *mut LINEAR_SYSTEM_DATA,
-    _td: *mut threadData_t,
-) {
+unsafe extern "C" fn set_b_element(row: c_int, value: f64, ls: *mut LINEAR_SYSTEM_DATA, _td: *mut threadData_t) {
     unsafe { *(*ls).b.add(row as usize) = value };
 }
 
@@ -296,7 +290,10 @@ pub fn eval_jacobian(
                 continue;
             }
             let (from, to) = unsafe {
-                (*sp.leadindex.add(column) as usize, *sp.leadindex.add(column + 1) as usize)
+                (
+                    *sp.leadindex.add(column) as usize,
+                    *sp.leadindex.add(column + 1) as usize,
+                )
             };
             for nz in from..to {
                 let row = unsafe { *sp.index.add(nz) } as usize;
@@ -373,7 +370,12 @@ pub extern "C" fn solve_linear_system(
     let _quiet = crate::support::QuietSystem::new(ls.logActive);
     // C's `rt_ext_tp_tick(&linsys->totalTimeClock)`; `A` and `b` are assembled
     // inside, so the assembly mark is taken there.
-    sysstat::begin(ls.equationIndex as i32, false, ls.size.max(0) as u32, ls.nnz.max(0) as u32);
+    sysstat::begin(
+        ls.equationIndex as i32,
+        false,
+        ls.size.max(0) as u32,
+        ls.nnz.max(0) as u32,
+    );
     si.noThrowDivZero = 1;
     let method = si.lsMethod;
     let success = if ls.useSparseSolver != 0 {
@@ -480,12 +482,7 @@ fn warn_once_unsupported_lss(method: c_int) {
 /// C's `solveKlu` (`linearSolverKlu.c`). A `method == 0` system arrives as the
 /// CSR the generated `setA` builds and is solved transposed; a torn one as the
 /// CSC of its negated Jacobian.
-fn solve_klu(
-    data: *mut DATA,
-    thread_data: *mut threadData_t,
-    ls: &mut LINEAR_SYSTEM_DATA,
-    aux_x: *mut f64,
-) -> bool {
+fn solve_klu(data: *mut DATA, thread_data: *mut threadData_t, ls: &mut LINEAR_SYSTEM_DATA, aux_x: *mut f64) -> bool {
     let si = unsafe { &mut *(*data).simulationInfo };
     let size = ls.size.max(0) as usize;
     let nnz = ls.nnz.max(0) as usize;
@@ -520,9 +517,7 @@ fn solve_klu(
             }
             // C's `getAnalyticalJacobian` writes `-J` column by column through
             // `setAElement(col, row, ..)`: the pattern's own CSC, negated.
-            if let Err(e) =
-                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut d.ax, false)
-            {
+            if let Err(e) = eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut d.ax, false) {
                 omclog::warning(omclog::STDOUT, false, e);
                 return false;
             }
@@ -535,7 +530,8 @@ fn solve_klu(
                 d.ax[k] = -d.ax[k];
             }
         }
-        d.work.copy_from_slice(unsafe { core::slice::from_raw_parts(aux_x, size) });
+        d.work
+            .copy_from_slice(unsafe { core::slice::from_raw_parts(aux_x, size) });
         residual(data, thread_data, ls, d.work.as_ptr(), b);
     }
     sysstat::mark_assembly_done();
@@ -547,7 +543,10 @@ fn solve_klu(
         None => (false, klu::INVALID),
         Some(f) => {
             let factored = reuse || f.factor(&mut d.ap, &mut d.ai, &mut d.ax);
-            (factored && if ls.method == 1 { f.solve(b) } else { f.tsolve(b) }, f.status())
+            (
+                factored && if ls.method == 1 { f.solve(b) } else { f.tsolve(b) },
+                f.status(),
+            )
         }
     };
     if !solved {
@@ -623,9 +622,7 @@ fn solve_total_pivot(
         if ls.jacobianIndex == -1 {
             crate::throw(thread_data, "jacobian function pointer is invalid");
         }
-        if let Err(e) =
-            eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut a, true)
-        {
+        if let Err(e) = eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut a, true) {
             omclog::warning(omclog::STDOUT, false, e);
             return false;
         }
@@ -663,19 +660,16 @@ fn solve_total_pivot(
 }
 
 /// One call of the torn system's residual function at `x`.
-fn residual(
-    data: *mut DATA,
-    thread_data: *mut threadData_t,
-    ls: &LINEAR_SYSTEM_DATA,
-    x: *const f64,
-    out: &mut [f64],
-) {
+fn residual(data: *mut DATA, thread_data: *mut threadData_t, ls: &LINEAR_SYSTEM_DATA, x: *const f64, out: &mut [f64]) {
     let Some(f) = ls.residualFunc else {
         crate::throw(thread_data, "the torn linear system has no residual function");
     };
     let flag: c_int = 0;
-    let mut user =
-        RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
+    let mut user = RESIDUAL_USERDATA {
+        data,
+        threadData: thread_data,
+        solverData: core::ptr::null_mut(),
+    };
     unsafe { f(&mut user, x, out.as_mut_ptr(), &flag) };
 }
 
@@ -719,16 +713,15 @@ fn solve_lapack(
         }
         sd.b.copy_from_slice(unsafe { core::slice::from_raw_parts(ls.b, size) });
         if !reuse {
-            sd.lu.copy_from_slice(unsafe { core::slice::from_raw_parts(ls.A, size * size) });
+            sd.lu
+                .copy_from_slice(unsafe { core::slice::from_raw_parts(ls.A, size * size) });
         }
     } else {
         if !reuse {
             if ls.jacobianIndex == -1 {
                 crate::throw(thread_data, "jacobian function pointer is invalid");
             }
-            if let Err(e) =
-                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut sd.jac, true)
-            {
+            if let Err(e) = eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut sd.jac, true) {
                 lapack_err = Some(e);
             }
             // C negates the Jacobian into A (`getAnalyticalJacobianLapack`).
@@ -737,11 +730,15 @@ fn solve_lapack(
             }
         }
         // The residual at the current iterate is the right-hand side.
-        sd.work.copy_from_slice(unsafe { core::slice::from_raw_parts(aux_x, size) });
+        sd.work
+            .copy_from_slice(unsafe { core::slice::from_raw_parts(aux_x, size) });
         sd.b.fill(0.0);
         let flag: c_int = 1;
-        let mut user =
-            RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
+        let mut user = RESIDUAL_USERDATA {
+            data,
+            threadData: thread_data,
+            solverData: core::ptr::null_mut(),
+        };
         let residual = ls.residualFunc;
         match residual {
             Some(f) => unsafe { f(&mut user, sd.work.as_ptr(), sd.b.as_mut_ptr(), &flag) },
@@ -780,8 +777,11 @@ fn solve_lapack(
         }
         sd.work.fill(0.0);
         let flag: c_int = 1;
-        let mut user =
-            RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
+        let mut user = RESIDUAL_USERDATA {
+            data,
+            threadData: thread_data,
+            solverData: core::ptr::null_mut(),
+        };
         let residual = ls.residualFunc;
         if let Some(f) = residual {
             unsafe { f(&mut user, aux_x as *const f64, sd.work.as_mut_ptr(), &flag) };

@@ -198,12 +198,7 @@ impl Model {
     ///
     /// `out` is `n_rows × n_cols` row-major (C's `J[row][col]`), written only where
     /// the pattern has a nonzero — the caller keeps the rest.
-    pub fn eval_jac_colored(
-        &mut self,
-        jac: &OptJac,
-        vnom: &[f64],
-        mut store: impl FnMut(usize, usize, f64),
-    ) {
+    pub fn eval_jac_colored(&mut self, jac: &OptJac, vnom: &[f64], mut store: impl FnMut(usize, usize, f64)) {
         let (sim_data, ctx) = (self.sim_data, self.ctx_addr);
         // C's `setContext(CONTEXT_SYM_JACOBIAN)`: a column is evaluated at perturbed
         // states, so the nonlinear solver must not record it as an initial guess.
@@ -232,5 +227,4 @@ impl Model {
         // C's `unsetContext` restores what the driver leaves standing between calls.
         driver::set_context_algebraic(self.e(), ctx);
     }
-
 }

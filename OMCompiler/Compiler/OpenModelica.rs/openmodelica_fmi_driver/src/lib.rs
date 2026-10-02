@@ -34,9 +34,15 @@ use openmodelica_fmi::{InterfaceKind, ModelDescription, VarType};
 #[derive(Debug)]
 pub enum Error {
     /// The FMU returned a status the master cannot continue from.
-    Status { call: &'static str, status: api::Status },
+    Status {
+        call: &'static str,
+        status: api::Status,
+    },
     /// Instantiation returned no instance; the FMU's own log usually says why.
-    Instantiate { call: &'static str, log: Vec<(api::Status, String, String)> },
+    Instantiate {
+        call: &'static str,
+        log: Vec<(api::Status, String, String)>,
+    },
     /// The FMU does not offer something the run needs.
     Unsupported(String),
     /// The binary could not be loaded, or an entry point is missing.
@@ -110,11 +116,14 @@ impl Solver {
     /// IDA only where SUNDIALS was linked in.
     pub fn all() -> &'static [Solver] {
         const SUNDIALS: &[Solver] = &[
-            Solver::Dassl, Solver::Cvode, Solver::Ida, Solver::Gbode, Solver::Euler,
+            Solver::Dassl,
+            Solver::Cvode,
+            Solver::Ida,
+            Solver::Gbode,
+            Solver::Euler,
             Solver::RungeKutta,
         ];
-        const PLAIN: &[Solver] =
-            &[Solver::Dassl, Solver::Gbode, Solver::Euler, Solver::RungeKutta];
+        const PLAIN: &[Solver] = &[Solver::Dassl, Solver::Gbode, Solver::Euler, Solver::RungeKutta];
         if cfg!(sundials) { SUNDIALS } else { PLAIN }
     }
 
@@ -248,11 +257,19 @@ impl Options<'_> {
     /// FMU only advances in multiples of its own internal step.
     pub fn grid(&self, step: f64) -> impl Iterator<Item = f64> + '_ {
         let span = self.stop_time - self.start_time;
-        let n = if !(step > 0.0) || span <= 0.0 { 0 } else { (span / step).ceil() as u64 };
+        let n = if !(step > 0.0) || span <= 0.0 {
+            0
+        } else {
+            (span / step).ceil() as u64
+        };
         (0..=n).map(move |k| {
             // The last interval is whatever is left, so a step size that does
             // not divide the span still ends exactly at the stop time.
-            if k == n { self.stop_time } else { self.start_time + k as f64 * step }
+            if k == n {
+                self.stop_time
+            } else {
+                self.start_time + k as f64 * step
+            }
         })
     }
 }
@@ -290,10 +307,7 @@ impl Deadline {
 
 /// Which interface to drive: what the caller asked for, else Co-Simulation when
 /// the FMU has it (its own solver knows the model best), else Model Exchange.
-pub fn choose_interface(
-    md: &ModelDescription,
-    wanted: Option<InterfaceKind>,
-) -> Result<InterfaceKind> {
+pub fn choose_interface(md: &ModelDescription, wanted: Option<InterfaceKind>) -> Result<InterfaceKind> {
     if let Some(kind) = wanted {
         if md.interface(kind).is_none() {
             return Err(Error::Unsupported(format!("the {} interface", kind.as_str())));
@@ -303,7 +317,5 @@ pub fn choose_interface(
     [InterfaceKind::CoSimulation, InterfaceKind::ModelExchange]
         .into_iter()
         .find(|&k| md.interface(k).is_some())
-        .ok_or_else(|| {
-            Error::Unsupported("Model Exchange or Co-Simulation (only Scheduled Execution)".into())
-        })
+        .ok_or_else(|| Error::Unsupported("Model Exchange or Co-Simulation (only Scheduled Execution)".into()))
 }

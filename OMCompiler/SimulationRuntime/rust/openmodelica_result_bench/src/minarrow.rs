@@ -16,8 +16,8 @@ use lightstream::enums::IPCMessageProtocol;
 use lightstream::models::readers::ipc::file_table::FileTableReader;
 use lightstream::models::writers::ipc::sync_table::SyncTableWriter;
 use minarrow::{
-    Array, ArrowType, BooleanArray, Field, FieldArray, FloatArray, IntegerArray, MaskedArray,
-    NumericArray, Table, Vec64,
+    Array, ArrowType, BooleanArray, Field, FieldArray, FloatArray, IntegerArray, MaskedArray, NumericArray, Table,
+    Vec64,
 };
 
 use crate::dataset::{Dataset, Kind, VarTy};
@@ -84,7 +84,13 @@ impl Stream {
         let cols = fields.iter().map(|f| Col::of(f.dtype.clone(), block_rows)).collect();
         let file = BufWriter::with_capacity(1 << 20, File::create(path).expect("create"));
         let writer = SyncTableWriter::new(file, fields.clone(), IPCMessageProtocol::File, None);
-        Stream { writer, fields, cols, rows: 0, block_rows }
+        Stream {
+            writer,
+            fields,
+            cols,
+            rows: 0,
+            block_rows,
+        }
     }
 
     pub fn push_rows(&mut self, rows: &[f64]) {
@@ -110,7 +116,9 @@ impl Stream {
             .zip(&mut self.cols)
             .map(|(f, c)| FieldArray::new(f.clone(), c.take(self.block_rows)))
             .collect();
-        self.writer.write_table(Table::new("result".to_owned(), Some(cols))).expect("minarrow write");
+        self.writer
+            .write_table(Table::new("result".to_owned(), Some(cols)))
+            .expect("minarrow write");
         self.rows = 0;
     }
 

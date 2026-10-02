@@ -1,5 +1,10 @@
 # OpenModelica Rust Target
 
+New to this code base, or to Rust? Start with [ONBOARDING.md](ONBOARDING.md):
+VS Code and rust-analyzer setup, where the MetaModelica modules ended up, how
+mmtorust translates them, and the style guide. Rust and TOML files are
+formatted with `./format.sh` (checked in CI).
+
 Builds are done using cmake. It will compile its own version of Susan,
 run that to create templates, then compile an executable that creates
 the Qt API bindings using those templates.
@@ -61,8 +66,12 @@ CMake mirrors both trees into one per-build working copy reproducing the
 ```bash
 apt install rustup binaryen
 # We use this toolchain in Jenkins
-rustup toolchain install nightly-2026-05-31 --profile minimal \
-  --component rustc-codegen-cranelift-preview clippy rustfmt rust-analyzer \
+rustup toolchain install nightly-2026-05-31 \
+  --profile minimal \
+  --component rustc-codegen-cranelift-preview \
+  --component clippy \
+  --component rustfmt \
+  --component rust-analyzer \
   --target wasm32-unknown-unknown
 # For the web targets. wasm-bindgen is not installed: the build compiles
 # `openmodelica_wasm_bindgen` from the pinned wasm-bindgen-cli-support, so cargo

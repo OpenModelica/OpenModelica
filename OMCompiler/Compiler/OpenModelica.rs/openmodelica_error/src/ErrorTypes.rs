@@ -34,14 +34,24 @@
  *
  */
 #![allow(warnings)]
-#![allow(unreachable_patterns, unreachable_code, non_camel_case_types, non_snake_case, dead_code, unused_imports, unused_variables, non_upper_case_globals, unused_mut)]
+#![allow(
+    unreachable_patterns,
+    unreachable_code,
+    non_camel_case_types,
+    non_snake_case,
+    dead_code,
+    unused_imports,
+    unused_variables,
+    non_upper_case_globals,
+    unused_mut
+)]
 
-use std::sync::Arc;
-use metamodelica::Result;
-use loop_unwrap::unwrap_break_err;
-use metamodelica::*; // Built-in types and functions
+use arcstr::{ArcStr, format, literal};
 use const_str;
-use arcstr::{ArcStr, literal, format};
+use loop_unwrap::unwrap_break_err;
+use metamodelica::Result;
+use metamodelica::*; // Built-in types and functions
+use std::sync::Arc;
 
 /// severity of message
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -67,9 +77,11 @@ impl metamodelica::gc::MMTrace for Severity {
     }
 }
 impl Default for Severity {
-    fn default() -> Self { Self::INTERNAL }
+    fn default() -> Self {
+        Self::INTERNAL
+    }
 }
-pub use self::Severity::{INTERNAL,ERROR,WARNING,NOTIFICATION};
+pub use self::Severity::{ERROR, INTERNAL, NOTIFICATION, WARNING};
 
 /// runtime scripting /interpretation error
 #[derive(Clone, Copy, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
@@ -102,9 +114,11 @@ impl metamodelica::gc::MMTrace for MessageType {
     }
 }
 impl Default for MessageType {
-    fn default() -> Self { Self::SYNTAX }
+    fn default() -> Self {
+        Self::SYNTAX
+    }
 }
-pub use self::MessageType::{SYNTAX,GRAMMAR,TRANSLATION,SYMBOLIC,SIMULATION,SCRIPTING};
+pub use self::MessageType::{GRAMMAR, SCRIPTING, SIMULATION, SYMBOLIC, SYNTAX, TRANSLATION};
 
 /// Unique error id. Used to
 ///        look up message string and type and severity
@@ -140,7 +154,6 @@ impl Default for Message {
 
 pub type MESSAGE = Message;
 
-
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq)]
 pub struct TotalMessage {
     pub msg: Message,
@@ -156,10 +169,8 @@ impl metamodelica::gc::MMTrace for TotalMessage {
 }
 pub type TOTALMESSAGE = TotalMessage;
 
-
 /// \"Tokens\" to insert into message at
 ///            positions identified by
 ///            - %s for string
 ///            - %n for string number n
 pub type MessageTokens = metamodelica::List<ArcStr>;
-

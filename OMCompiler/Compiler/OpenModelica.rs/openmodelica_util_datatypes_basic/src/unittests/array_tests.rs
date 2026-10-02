@@ -1,31 +1,75 @@
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::Array;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── helper predicates ──
 
-fn is_positive(x: i32) -> Result<bool> { Ok(x > 0) }
-fn is_even(x: i32) -> Result<bool> { Ok(x % 2 == 0) }
-fn always_true(_: i32) -> Result<bool> { Ok(true) }
-fn always_false(_: i32) -> Result<bool> { Ok(false) }
-fn double(x: i32) -> Result<i32> { Ok(x * 2) }
-fn square(x: i32) -> Result<i32> { Ok(x * x) }
-fn add(x: i32, y: i32) -> Result<i32> { Ok(x + y) }
-fn int_less(a: i32, b: i32) -> Result<bool> { Ok(a < b) }
-fn int_cmp(a: i32, b: i32) -> Result<i32> { Ok(if a < b { -1 } else if a > b { 1 } else { 0 }) }
-fn fold_add(a: i32, acc: i32) -> Result<i32> { Ok(acc + a) }
-fn fold_mul(a: i32, acc: i32) -> Result<i32> { Ok(acc * a) }
-fn fold_index_add(a: i32, idx: i32, acc: i32) -> Result<i32> { Ok(acc + a + idx) }
-fn print_i32(x: i32) -> Result<ArcStr> { Ok(arcstr::format!("{}", x)) }
-fn is_greater_than_5(x: i32) -> Result<bool> { Ok(x > 5) }
-fn int_to_string(x: i32) -> Result<ArcStr> { Ok(arcstr::format!("{}", x)) }
-fn thread_add(a: i32, b: i32) -> Result<i32> { Ok(a + b) }
-fn fold_tuple(a: i32, acc: i32) -> Result<(i32, i32)> { Ok((a * 2, acc + a)) }
-fn mapnocopy_fn(x: i32) -> Result<i32> { Ok(x + 1) }
+fn is_positive(x: i32) -> Result<bool> {
+    Ok(x > 0)
+}
+fn is_even(x: i32) -> Result<bool> {
+    Ok(x % 2 == 0)
+}
+fn always_true(_: i32) -> Result<bool> {
+    Ok(true)
+}
+fn always_false(_: i32) -> Result<bool> {
+    Ok(false)
+}
+fn double(x: i32) -> Result<i32> {
+    Ok(x * 2)
+}
+fn square(x: i32) -> Result<i32> {
+    Ok(x * x)
+}
+fn add(x: i32, y: i32) -> Result<i32> {
+    Ok(x + y)
+}
+fn int_less(a: i32, b: i32) -> Result<bool> {
+    Ok(a < b)
+}
+fn int_cmp(a: i32, b: i32) -> Result<i32> {
+    Ok(if a < b {
+        -1
+    } else if a > b {
+        1
+    } else {
+        0
+    })
+}
+fn fold_add(a: i32, acc: i32) -> Result<i32> {
+    Ok(acc + a)
+}
+fn fold_mul(a: i32, acc: i32) -> Result<i32> {
+    Ok(acc * a)
+}
+fn fold_index_add(a: i32, idx: i32, acc: i32) -> Result<i32> {
+    Ok(acc + a + idx)
+}
+fn print_i32(x: i32) -> Result<ArcStr> {
+    Ok(arcstr::format!("{}", x))
+}
+fn is_greater_than_5(x: i32) -> Result<bool> {
+    Ok(x > 5)
+}
+fn int_to_string(x: i32) -> Result<ArcStr> {
+    Ok(arcstr::format!("{}", x))
+}
+fn thread_add(a: i32, b: i32) -> Result<i32> {
+    Ok(a + b)
+}
+fn fold_tuple(a: i32, acc: i32) -> Result<(i32, i32)> {
+    Ok((a * 2, acc + a))
+}
+fn mapnocopy_fn(x: i32) -> Result<i32> {
+    Ok(x + 1)
+}
 
-fn arr(v: Vec<i32>) -> metamodelica::Array<i32> { arrayFromVec(v) }
+fn arr(v: Vec<i32>) -> metamodelica::Array<i32> {
+    arrayFromVec(v)
+}
 
 // ── Tests ──
 
@@ -608,12 +652,14 @@ fn test_thread_map_length_mismatch() -> Result<()> {
 fn test_to_string() -> Result<()> {
     let a = arr(vec![1, 2, 3]);
     let result = Array::toString(
-        a, &int_to_string,
+        a,
+        &int_to_string,
         literal!("array"),
         literal!("["),
         literal!(", "),
         literal!("]"),
-        true, 0
+        true,
+        0,
     )?;
     assert_eq!(&*result, "array[1, 2, 3]");
     Ok(())
@@ -623,12 +669,14 @@ fn test_to_string() -> Result<()> {
 fn test_to_string_empty() -> Result<()> {
     let a: metamodelica::Array<i32> = arrayFromVec(vec![]);
     let result = Array::toString(
-        a, &int_to_string,
+        a,
+        &int_to_string,
         literal!("array"),
         literal!("["),
         literal!(", "),
         literal!("]"),
-        true, 0
+        true,
+        0,
     )?;
     assert_eq!(&*result, "array[]");
     Ok(())
@@ -638,12 +686,14 @@ fn test_to_string_empty() -> Result<()> {
 fn test_to_string_max_length() -> Result<()> {
     let a = arr(vec![1, 2, 3, 4, 5]);
     let result = Array::toString(
-        a, &int_to_string,
+        a,
+        &int_to_string,
         literal!("array"),
         literal!("["),
         literal!(", "),
         literal!("]"),
-        true, 3
+        true,
+        3,
     )?;
     assert_eq!(&*result, "array[1, 2, 3, ...]");
     Ok(())
@@ -653,12 +703,14 @@ fn test_to_string_max_length() -> Result<()> {
 fn test_to_string_print_empty_false() -> Result<()> {
     let a: metamodelica::Array<i32> = arrayFromVec(vec![]);
     let result = Array::toString(
-        a, &int_to_string,
+        a,
+        &int_to_string,
         literal!("array"),
         literal!("["),
         literal!(", "),
         literal!("]"),
-        false, 0
+        false,
+        0,
     )?;
     assert_eq!(&*result, "array");
     Ok(())
@@ -717,12 +769,7 @@ fn test_cons_to_element() -> Result<()> {
 #[test]
 fn test_map_no_copy_1() {
     let a = arr(vec![1, 2, 3]);
-    let (result_arr, result_arg) = Array::mapNoCopy_1(
-        a,
-        &|(x, acc): (i32, i32)| Ok((x + 1, acc + 1)),
-        0i32
-    ).unwrap();
+    let (result_arr, result_arg) = Array::mapNoCopy_1(a, &|(x, acc): (i32, i32)| Ok((x + 1, acc + 1)), 0i32).unwrap();
     assert_eq!(*result_arr.borrow(), vec![2, 3, 4]);
     assert_eq!(result_arg, 3);
 }
-

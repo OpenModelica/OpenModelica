@@ -66,12 +66,13 @@ pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) {
 
 fn jacobian(data: *mut DATA, index: c_int) -> Option<*mut JACOBIAN> {
     let si = unsafe { (*data).simulationInfo.as_ref()? };
-    (index >= 0 && !si.analyticJacobians.is_null())
-        .then(|| unsafe { si.analyticJacobians.add(index as usize) })
+    (index >= 0 && !si.analyticJacobians.is_null()).then(|| unsafe { si.analyticJacobians.add(index as usize) })
 }
 
 pub fn index_of(name: &str) -> Option<usize> {
-    ["linearJacA", "linearJacB", "linearJacC", "linearJacD"].iter().position(|&n| n == name)
+    ["linearJacA", "linearJacB", "linearJacC", "linearJacD"]
+        .iter()
+        .position(|&n| n == name)
 }
 
 /// C's `functionJacA` .. `functionJacD`.
@@ -83,7 +84,9 @@ pub fn eval(data: *mut DATA, thread_data: *mut threadData_t, k: usize, out: &mut
         2 => (cb.INDEX_JAC_C, cb.functionJacC_column),
         _ => (cb.INDEX_JAC_D, cb.functionJacD_column),
     };
-    let (Some(jac), Some(column)) = (jacobian(data, index), column) else { return };
+    let (Some(jac), Some(column)) = (jacobian(data, index), column) else {
+        return;
+    };
     if let Some(f) = unsafe { (*jac).constantEqns } {
         unsafe { f(data, thread_data, jac, core::ptr::null_mut()) };
     }
@@ -119,7 +122,11 @@ pub fn window(layout: &Layout, data: *mut DATA, k: usize) -> u32 {
 /// asks it, not baked into the metadata.
 pub fn frame(data: *mut DATA, datarec: bool) -> String {
     let cb = unsafe { &*(*data).callback };
-    let f = if datarec { cb.linear_model_datarecovery_frame } else { cb.linear_model_frame };
+    let f = if datarec {
+        cb.linear_model_datarecovery_frame
+    } else {
+        cb.linear_model_frame
+    };
     match f {
         Some(f) => {
             let p = unsafe { f() };
@@ -142,7 +149,12 @@ pub fn describe(data: *mut DATA, layout: &Layout) -> Option<LinInfo> {
     let (jac_rows, jac_cols) = shapes(md);
     // The flat mirrors of `simulationInfo->inputVars` / `outputVars`.
     let slots = |base: u32, n: u32| {
-        (0..n).map(|i| LinVar { off: base + i * 8, negate: Neg::None }).collect()
+        (0..n)
+            .map(|i| LinVar {
+                off: base + i * 8,
+                negate: Neg::None,
+            })
+            .collect()
     };
     let x = crate::data::extra(layout, md);
     Some(LinInfo {

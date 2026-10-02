@@ -124,10 +124,23 @@ macro_rules! mm_trace_leaf {
 }
 
 mm_trace_leaf!(
-    (), bool, char,
-    i8, i16, i32, i64, i128, isize,
-    u8, u16, u32, u64, u128, usize,
-    f32, f64,
+    (),
+    bool,
+    char,
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    isize,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
+    usize,
+    f32,
+    f64,
     String,
     // `ArcStr` is shared, but a string can never contain a handle; reporting
     // it would only bloat the collector's maps.
@@ -251,7 +264,9 @@ impl<T: MMTrace + Clone> MMTrace for List<T> {
                 break Ok(());
             }
             depth += 1;
-            let crate::ListNode::Cons { head, tail } = &**cell else { break Ok(()) };
+            let crate::ListNode::Cons { head, tail } = &**cell else {
+                break Ok(());
+            };
             if let e @ Err(()) = head.mm_accept(visitor) {
                 break e;
             }
@@ -450,7 +465,12 @@ impl MMVisitor for CountVisitor {
                 false
             }
             std::collections::hash_map::Entry::Vacant(v) => {
-                v.insert(AllocNode { strong, slots: 1, type_name, edges: Vec::new() });
+                v.insert(AllocNode {
+                    strong,
+                    slots: 1,
+                    type_name,
+                    edges: Vec::new(),
+                });
                 self.stack.push(ptr);
                 true
             }
@@ -519,8 +539,7 @@ fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
     // exactly 1 to its cell's strong count, accounted for below.
     let snapshot: Vec<Arc<dyn TraceableCell>> = CELL_REGISTRY.with(|r| {
         let mut reg = r.borrow_mut();
-        let alive: Vec<Arc<dyn TraceableCell>> =
-            reg.iter().filter_map(Weak::upgrade).collect();
+        let alive: Vec<Arc<dyn TraceableCell>> = reg.iter().filter_map(Weak::upgrade).collect();
         reg.retain(|w| w.strong_count() > 0);
         alive
     });
@@ -538,7 +557,10 @@ fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
     // node is created with `slots: 1` by `visit_shared`, so entering via
     // the loop pre-creates it with `slots: 0` instead (no handle slot — we
     // got here through the registry).
-    let mut count = CountVisitor { nodes: HashMap::new(), stack: Vec::new() };
+    let mut count = CountVisitor {
+        nodes: HashMap::new(),
+        stack: Vec::new(),
+    };
     for cell in &snapshot {
         let a = addr(cell);
         if count.nodes.contains_key(&a) {

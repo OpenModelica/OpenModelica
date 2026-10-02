@@ -56,10 +56,15 @@ impl FmiHost for CEngine {
         let mut strings = Vec::new();
         let mut at = 0;
         for _ in string_slots(self.rt.data) {
-            let Some(len) = state.get(at..at + 8).map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize) else {
+            let Some(len) = state
+                .get(at..at + 8)
+                .map(|b| u64::from_le_bytes(b.try_into().unwrap()) as usize)
+            else {
                 return false;
             };
-            let Some(s) = state.get(at + 8..at + 8 + len) else { return false };
+            let Some(s) = state.get(at + 8..at + 8 + len) else {
+                return false;
+            };
             strings.push(s);
             at += 8 + len;
         }

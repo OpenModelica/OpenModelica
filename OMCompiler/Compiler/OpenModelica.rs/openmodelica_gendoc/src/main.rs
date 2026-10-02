@@ -123,14 +123,8 @@ fn parse_args() -> Result<Options, String> {
             "--no-diagrams" => options.diagrams = false,
             "--skip" => options.skip.push(value()?.to_string()),
             "--skip-diagrams" => options.skip_diagrams.push(value()?.to_string()),
-            "--chunk" => {
-                options.chunk = value()?.parse().map_err(|_| "--chunk needs a number")?
-            }
-            "--max-memory" => {
-                options.max_memory = value()?
-                    .parse()
-                    .map_err(|_| "--max-memory needs a number")?
-            }
+            "--chunk" => options.chunk = value()?.parse().map_err(|_| "--chunk needs a number")?,
+            "--max-memory" => options.max_memory = value()?.parse().map_err(|_| "--max-memory needs a number")?,
             "--stats" => options.stats = true,
             "--modelica-path" => options.modelica_path = Some(value()?),
             "--package-index" => options.package_index = Some(PathBuf::from(value()?)),
@@ -145,9 +139,7 @@ fn parse_args() -> Result<Options, String> {
                     .collect()
             }
             "--no-playground" => options.playground = None,
-            "-j" | "--jobs" => {
-                options.jobs = Some(value()?.parse().map_err(|_| "-j needs a number")?)
-            }
+            "-j" | "--jobs" => options.jobs = Some(value()?.parse().map_err(|_| "-j needs a number")?),
             _ if arg.starts_with('-') => return Err(format!("unknown option {arg}")),
             _ => {
                 let (name, version) = match arg.split_once('/') {
@@ -216,8 +208,7 @@ fn dependencies(documented: &[ClassDoc], path: &str, stats: bool) -> Vec<icons::
     }
 
     let roots = || documented.iter().filter(|c| c.path.len() == 1);
-    let mut seen: std::collections::HashSet<String> =
-        roots().map(|c| c.name().to_string()).collect();
+    let mut seen: std::collections::HashSet<String> = roots().map(|c| c.name().to_string()).collect();
     let mut frontier: Vec<(String, String)> = Vec::new();
     for class in roots() {
         enqueue(&class.uses, &mut seen, &mut frontier);
@@ -259,10 +250,7 @@ const PER_JOB_MEMORY: u64 = 2_000_000_000;
 /// adding another class' worth of live instantiation. Jenkins passes the
 /// figure it uses for `-n`.
 fn graphics_jobs(options: &Options) -> usize {
-    options
-        .jobs
-        .map(|jobs| jobs.max(1))
-        .unwrap_or_else(physical_cores)
+    options.jobs.map(|jobs| jobs.max(1)).unwrap_or_else(physical_cores)
 }
 
 /// omc's stack: rayon's 2 MiB default overflows in instantiation.
@@ -343,11 +331,7 @@ fn render_graphics(
             .filter(|&i| !skipped(&classes[i].qualified_name(), &options.skip))
             .collect();
         if members.is_empty() {
-            eprintln!(
-                "omgendoc: [{}/{}] {name}: skipped",
-                done + 1,
-                libraries.len()
-            );
+            eprintln!("omgendoc: [{}/{}] {name}: skipped", done + 1, libraries.len());
             continue;
         }
         let marker = markers.join(links::plain_stem(name));
@@ -362,11 +346,7 @@ fn render_graphics(
             members.len()
         );
         let started = std::time::Instant::now();
-        let render = || {
-            render_library(
-                options, classes, &members, scode, resolver, &store, &icon_dir, &marker,
-            )
-        };
+        let render = || render_library(options, classes, &members, scode, resolver, &store, &icon_dir, &marker);
         let rendered = match &pool {
             Ok(pool) => pool.install(render),
             Err(_) => render(),
@@ -374,9 +354,7 @@ fn render_graphics(
         // `nfTopScope` and the caches beside it are thread-local global roots
         // holding what this library expanded until the *next* instantiation on
         // that thread replaces them, so dropping the scope is not enough.
-        let clear = |_: rayon::BroadcastContext<'_>| {
-            openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache()
-        };
+        let clear = |_: rayon::BroadcastContext<'_>| openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
         match &pool {
             Ok(pool) => {
                 pool.broadcast(clear);
@@ -391,10 +369,7 @@ fn render_graphics(
             resolved[index] = names;
         }
         for thread in 0..graphics_jobs(options) {
-            let _ = std::fs::remove_file(markers.join(format!(
-                "{}.{thread}.current",
-                links::plain_stem(name)
-            )));
+            let _ = std::fs::remove_file(markers.join(format!("{}.{thread}.current", links::plain_stem(name))));
         }
         eprintln!(
             "omgendoc: [{}/{}] {name}: {graphics} graphics in {:.1} s",
@@ -433,9 +408,7 @@ fn render_library(
     // no one count of classes per scope suits both. The figure is process
     // wide, so every thread gives way at once.
     let allowed = options.max_memory * 1_000_000_000;
-    let budget = allowed
-        .saturating_sub(jobs as u64 * PER_JOB_MEMORY)
-        .max(allowed / 2);
+    let budget = allowed.saturating_sub(jobs as u64 * PER_JOB_MEMORY).max(allowed / 2);
     // The chunk is a ceiling on a scope, not the unit of work: at the default
     // of 1000 a library of 1898 classes would make two tasks and keep two
     // threads busy. Cut it so there are several pieces per thread, which also
@@ -450,115 +423,108 @@ fn render_library(
         .map_init(
             || None::<icons::Scope>,
             |held: &mut Option<icons::Scope>, chunk: &[usize]| {
-            let mut done = Vec::new();
-            let mut next = 0;
-            while next < chunk.len() {
-                if held.is_none() {
-                    // A scope rayon discarded with its init state took no
-                    // `clearTopScopeCache` with it, and the cells of a scope
-                    // outlive the tree until something empties the set.
-                    openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
-                    *held = icons::Scope::build(scode);
-                }
-                let Some(scope) = held.as_ref() else {
-                    eprintln!("omgendoc: could not build a top scope; no graphics");
-                    return done;
-                };
+                let mut done = Vec::new();
+                let mut next = 0;
                 while next < chunk.len() {
-                    let index = chunk[next];
-                    let class = &classes[index];
-                    let name = class.qualified_name();
-                    next += 1;
-                    // Not even a lookup: reaching `HeaterCooler_u.Medium`
-                    // means expanding the model enclosing it, which expands
-                    // the medium. `link_names` resolves the base by name.
-                    if class
-                        .derived
-                        .as_ref()
-                        .is_some_and(|derived| !derived.own_graphics)
-                    {
-                        done.push((index, (None, None), icons::Resolved::default()));
-                        continue;
+                    if held.is_none() {
+                        // A scope rayon discarded with its init state took no
+                        // `clearTopScopeCache` with it, and the cells of a scope
+                        // outlive the tree until something empties the set.
+                        openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
+                        *held = icons::Scope::build(scode);
                     }
-                    if let Some(path) = icons::path_of(&name) {
-                        // Named before it is rendered, not after: instantiating
-                        // some classes exhausts memory and takes the process
-                        // with it, and these files are then the only record of
-                        // what was in flight. One per thread, since each has a
-                        // class in hand and any of them could be the one.
-                        let _ = std::fs::write(
-                            marker.with_extension(format!(
-                                "{}.current",
-                                rayon::current_thread_index().unwrap_or(0)
-                            )),
-                            &name,
-                        );
-                        // The frontend's own lookup for what this class'
-                        // type references denote, taken while a scope exists
-                        // rather than approximated from the AST afterwards.
-                        let names = scope.resolved_names(&path);
-                        let icon = scope.icon_svg(&path, class.name());
-                        let diagram = (options.diagrams
-                            && !skipped(&name, &options.skip_diagrams))
-                            .then(|| scope.diagram_svg(&path, class.name()))
-                            .flatten();
-                        if icon.is_some() || diagram.is_some() {
-                            // A Bitmap names its image with a `modelica://`
-                            // URI, which a browser cannot follow; and a linked
-                            // file would not help, since an SVG in an `<img>`
-                            // never fetches one. Embed it -- before taking the
-                            // lock, since it scans the whole document and every
-                            // thread would otherwise queue behind it.
-                            let prepare = |svg: Option<String>| {
-                                svg.map(|svg| {
-                                    let svg = resolver.inline_uris(&svg);
-                                    (icons::digest(&svg), svg)
-                                })
-                            };
-                            let (icon, diagram) = (prepare(icon), prepare(diagram));
-                            // Only the "is this new" check is serialised; the
-                            // file is written outside the lock by whoever
-                            // claimed it.
-                            let mut fresh = Vec::new();
-                            {
-                                let mut store = store.lock().unwrap_or_else(|e| e.into_inner());
-                                for (digest, _) in [icon.as_ref(), diagram.as_ref()].into_iter().flatten() {
-                                    fresh.push(store.claim(*digest));
-                                }
-                            }
-                            let mut fresh = fresh.into_iter();
-                            let mut keep = |entry: Option<(u128, String)>| {
-                                entry.map(|(digest, svg)| {
-                                    if fresh.next().unwrap_or(false) {
-                                        icons::write_svg(icon_dir, digest, &svg);
+                    let Some(scope) = held.as_ref() else {
+                        eprintln!("omgendoc: could not build a top scope; no graphics");
+                        return done;
+                    };
+                    while next < chunk.len() {
+                        let index = chunk[next];
+                        let class = &classes[index];
+                        let name = class.qualified_name();
+                        next += 1;
+                        // Not even a lookup: reaching `HeaterCooler_u.Medium`
+                        // means expanding the model enclosing it, which expands
+                        // the medium. `link_names` resolves the base by name.
+                        if class.derived.as_ref().is_some_and(|derived| !derived.own_graphics) {
+                            done.push((index, (None, None), icons::Resolved::default()));
+                            continue;
+                        }
+                        if let Some(path) = icons::path_of(&name) {
+                            // Named before it is rendered, not after: instantiating
+                            // some classes exhausts memory and takes the process
+                            // with it, and these files are then the only record of
+                            // what was in flight. One per thread, since each has a
+                            // class in hand and any of them could be the one.
+                            let _ = std::fs::write(
+                                marker
+                                    .with_extension(format!("{}.current", rayon::current_thread_index().unwrap_or(0))),
+                                &name,
+                            );
+                            // The frontend's own lookup for what this class'
+                            // type references denote, taken while a scope exists
+                            // rather than approximated from the AST afterwards.
+                            let names = scope.resolved_names(&path);
+                            let icon = scope.icon_svg(&path, class.name());
+                            let diagram = (options.diagrams && !skipped(&name, &options.skip_diagrams))
+                                .then(|| scope.diagram_svg(&path, class.name()))
+                                .flatten();
+                            if icon.is_some() || diagram.is_some() {
+                                // A Bitmap names its image with a `modelica://`
+                                // URI, which a browser cannot follow; and a linked
+                                // file would not help, since an SVG in an `<img>`
+                                // never fetches one. Embed it -- before taking the
+                                // lock, since it scans the whole document and every
+                                // thread would otherwise queue behind it.
+                                let prepare = |svg: Option<String>| {
+                                    svg.map(|svg| {
+                                        let svg = resolver.inline_uris(&svg);
+                                        (icons::digest(&svg), svg)
+                                    })
+                                };
+                                let (icon, diagram) = (prepare(icon), prepare(diagram));
+                                // Only the "is this new" check is serialised; the
+                                // file is written outside the lock by whoever
+                                // claimed it.
+                                let mut fresh = Vec::new();
+                                {
+                                    let mut store = store.lock().unwrap_or_else(|e| e.into_inner());
+                                    for (digest, _) in [icon.as_ref(), diagram.as_ref()].into_iter().flatten() {
+                                        fresh.push(store.claim(*digest));
                                     }
-                                    digest
-                                })
-                            };
-                            done.push((index, (keep(icon), keep(diagram)), names));
-                        } else {
-                            done.push((index, (None, None), names));
+                                }
+                                let mut fresh = fresh.into_iter();
+                                let mut keep = |entry: Option<(u128, String)>| {
+                                    entry.map(|(digest, svg)| {
+                                        if fresh.next().unwrap_or(false) {
+                                            icons::write_svg(icon_dir, digest, &svg);
+                                        }
+                                        digest
+                                    })
+                                };
+                                done.push((index, (keep(icon), keep(diagram)), names));
+                            } else {
+                                done.push((index, (None, None), names));
+                            }
+                        }
+                        // After every class, not every tenth: one AixLib class
+                        // can cost a couple of hundred megabytes, and between
+                        // classes is the only place the budget can be consulted.
+                        if heap::over(budget) {
+                            break;
                         }
                     }
-                    // After every class, not every tenth: one AixLib class
-                    // can cost a couple of hundred megabytes, and between
-                    // classes is the only place the budget can be consulted.
-                    if heap::over(budget) {
-                        break;
+                    if next < chunk.len() {
+                        // Left the loop early, so the budget is spent: drop the
+                        // scope and take a fresh one for the rest of this chunk.
+                        // `clearTopScopeCache` drops mkTop's cache and the roots
+                        // that own what the scope expanded, without which the next
+                        // one starts where this ended.
+                        *held = None;
+                        openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
                     }
                 }
-                if next < chunk.len() {
-                    // Left the loop early, so the budget is spent: drop the
-                    // scope and take a fresh one for the rest of this chunk.
-                    // `clearTopScopeCache` drops mkTop's cache and the roots
-                    // that own what the scope expanded, without which the next
-                    // one starts where this ended.
-                    *held = None;
-                    openmodelica_nf_api::NFInstanceAPI::clearTopScopeCache();
-                }
-            }
-            done
-        },
+                done
+            },
         )
         .reduce(Vec::new, |mut a, mut b| {
             a.append(&mut b);
@@ -624,10 +590,7 @@ fn inherit_graphics(classes: &[ClassDoc], digests: &mut [(Option<u128>, Option<u
 /// A class is skipped if it is named, or if a named package encloses it.
 fn skipped(name: &str, skip: &[String]) -> bool {
     skip.iter().any(|s| {
-        name == s
-            || (name.len() > s.len()
-                && name.starts_with(s.as_str())
-                && name[s.len()..].starts_with('.'))
+        name == s || (name.len() > s.len() && name.starts_with(s.as_str()) && name[s.len()..].starts_with('.'))
     })
 }
 
@@ -685,8 +648,7 @@ fn is_builtin(name: &str) -> bool {
 /// builtin files it parses at startup. Keep that class and drop the rest of
 /// the initial environment, which is the predefined types.
 fn load_builtin(name: &str) -> Result<Absyn::Program, &'static str> {
-    let program =
-        openmodelica_nf_api::NFInstanceAPI::builtinAbsyn().map_err(|_| "no builtin classes")?;
+    let program = openmodelica_nf_api::NFInstanceAPI::builtinAbsyn().map_err(|_| "no builtin classes")?;
     let classes: metamodelica::List<metamodelica::Ref<Absyn::Class>> = program
         .classes
         .iter()
@@ -702,11 +664,7 @@ fn load_builtin(name: &str) -> Result<Absyn::Program, &'static str> {
     })
 }
 
-fn load_library(
-    name: &str,
-    version: Option<&str>,
-    path: &str,
-) -> Result<Absyn::Program, &'static str> {
+fn load_library(name: &str, version: Option<&str>, path: &str) -> Result<Absyn::Program, &'static str> {
     if is_builtin(name) {
         return load_builtin(name);
     }
@@ -773,9 +731,7 @@ fn link_names(classes: &mut [ClassDoc], resolved: Vec<icons::Resolved>) {
                 .or_else(|| index.get(&(ArcStr::new(), name.to_string())))
                 .copied()
         };
-        let find = |table: &HashMap<&str, &str>, key: &str| {
-            table.get(key).and_then(|full| lookup(full))
-        };
+        let find = |table: &HashMap<&str, &str>, key: &str| table.get(key).and_then(|full| lookup(full));
         if let Some(derived) = class.derived.as_mut() {
             derived.base_class = find(&bases, &derived.base).or_else(|| {
                 // An alias was not instantiated, so the frontend resolved
@@ -982,18 +938,14 @@ fn run() -> Result<(), String> {
     drop(parts);
     drop(dependency_parts);
     if options.stats {
-        report(&format!(
-            "universe joined in {:.1} s",
-            joining.elapsed().as_secs_f64()
-        ));
+        report(&format!("universe joined in {:.1} s", joining.elapsed().as_secs_f64()));
     }
 
     let mut resolver = links::Resolver::default();
     for class in &classes {
         resolver.add_class(&class.tag, &class.qualified_name(), &class.source_file);
     }
-    let mut resolved: Vec<icons::Resolved> =
-        (0..classes.len()).map(|_| icons::Resolved::default()).collect();
+    let mut resolved: Vec<icons::Resolved> = (0..classes.len()).map(|_| icons::Resolved::default()).collect();
     icon_digests = render_graphics(
         &options,
         &classes,
@@ -1044,11 +996,8 @@ fn run() -> Result<(), String> {
         .enumerate()
         .map(|(i, class)| {
             let children: Vec<&ClassDoc> = class.children.iter().map(|&c| &classes[c]).collect();
-            let child_icons: Vec<Option<String>> = class
-                .children
-                .iter()
-                .map(|&c| class_graphics[c].icon.clone())
-                .collect();
+            let child_icons: Vec<Option<String>> =
+                class.children.iter().map(|&c| class_graphics[c].icon.clone()).collect();
             html::render_class(
                 &classes,
                 i,
@@ -1102,11 +1051,7 @@ fn run() -> Result<(), String> {
         html::render_index(&entries, &playground, &footer),
     )
     .map_err(|e| e.to_string())?;
-    std::fs::write(
-        options.output_dir.join("style.css"),
-        include_str!("style.css"),
-    )
-    .map_err(|e| e.to_string())?;
+    std::fs::write(options.output_dir.join("style.css"), include_str!("style.css")).map_err(|e| e.to_string())?;
     write_assets(&options.output_dir, &classes, &libraries, &icon_urls)?;
     write_resources(&options.output_dir, &resources);
 
@@ -1139,8 +1084,7 @@ fn write_assets(
     for dir in [&assets, &tree_dir, &text_dir] {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     }
-    std::fs::write(assets.join("gendoc.js"), include_str!("assets/gendoc.js"))
-        .map_err(|e| e.to_string())?;
+    std::fs::write(assets.join("gendoc.js"), include_str!("assets/gendoc.js")).map_err(|e| e.to_string())?;
 
     let members: Vec<Vec<usize>> = libraries.iter().map(|&r| subtree(classes, r)).collect();
     let counts: Vec<usize> = members.iter().map(Vec::len).collect();
@@ -1168,24 +1112,21 @@ fn write_assets(
     aliases.push_str("};\n");
     std::fs::write(output_dir.join("index/aliases.js"), aliases).map_err(|e| e.to_string())?;
 
-    libraries
-        .par_iter()
-        .zip(&members)
-        .for_each(|(&root, members)| {
-            let name = classes[root].index_name();
-            let mut quoted = String::new();
-            index::escape(&name, &mut quoted);
-            let file = links::plain_stem(&name);
-            let write = |dir: &Path, kind: &str, body: String| {
-                let path = dir.join(format!("{file}.js"));
-                let content = format!("omdoc.{kind}({quoted},{body});\n");
-                if let Err(e) = std::fs::write(&path, content) {
-                    eprintln!("omgendoc: {}: {e}", path.display());
-                }
-            };
-            write(&tree_dir, "tree", index::tree(classes, members, icons));
-            write(&text_dir, "text", index::text(classes, members));
-        });
+    libraries.par_iter().zip(&members).for_each(|(&root, members)| {
+        let name = classes[root].index_name();
+        let mut quoted = String::new();
+        index::escape(&name, &mut quoted);
+        let file = links::plain_stem(&name);
+        let write = |dir: &Path, kind: &str, body: String| {
+            let path = dir.join(format!("{file}.js"));
+            let content = format!("omdoc.{kind}({quoted},{body});\n");
+            if let Err(e) = std::fs::write(&path, content) {
+                eprintln!("omgendoc: {}: {e}", path.display());
+            }
+        };
+        write(&tree_dir, "tree", index::tree(classes, members, icons));
+        write(&text_dir, "text", index::text(classes, members));
+    });
     Ok(())
 }
 

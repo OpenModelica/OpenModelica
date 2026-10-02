@@ -47,7 +47,9 @@ impl Guest for Memory {
         rt::rt_array_data(handle)
     }
     fn array_dims(&self, handle: u32) -> Vec<u32> {
-        (0..rt::rt_array_ndims(handle)).map(|k| rt::rt_array_dim(handle, k as i32 + 1)).collect()
+        (0..rt::rt_array_ndims(handle))
+            .map(|k| rt::rt_array_dim(handle, k as i32 + 1))
+            .collect()
     }
     fn alloc(&mut self, len: u32) -> u32 {
         rt::rt_alloc(len)
@@ -64,7 +66,10 @@ struct State {
     scratch: Vec<u32>,
 }
 
-static mut STATE: State = State { table: None, scratch: Vec::new() };
+static mut STATE: State = State {
+    table: None,
+    scratch: Vec::new(),
+};
 
 fn fail(msg: &str) -> ! {
     let mut c = Vec::with_capacity(msg.len() + 1);

@@ -34,10 +34,20 @@ pub(super) fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &
 
 /// The result file of a run: its resolved path, the writer that name asks for,
 /// the `-variableFilter` decision per signal, and `-single`.
-pub(super) fn result_target(model: &SimModel, meta: &SimMeta, flags: &simflags::SimFlags, derived: &str) -> ResultTarget {
+pub(super) fn result_target(
+    model: &SimModel,
+    meta: &SimMeta,
+    flags: &simflags::SimFlags,
+    derived: &str,
+) -> ResultTarget {
     let path = result_path(flags, meta, derived);
     let format = openmodelica_sim_meta::result::format_of(&path, &meta.output_format).to_string();
-    ResultTarget { path, format, keep: output_selection(model), single: flags.single_precision }
+    ResultTarget {
+        path,
+        format,
+        keep: output_selection(model),
+        single: flags.single_precision,
+    }
 }
 
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
@@ -66,7 +76,12 @@ pub(super) fn resolve_overrides(
     }
     let given = |v: Option<&str>| v.unwrap_or("[not given]").to_string();
     omclog::info!(omclog::SOLVER, false, "-override={}", given(raw));
-    omclog::info!(omclog::SOLVER, false, "-overrideFile={}", given(file.map(|(_, j)| j.as_str())));
+    omclog::info!(
+        omclog::SOLVER,
+        false,
+        "-overrideFile={}",
+        given(file.map(|(_, j)| j.as_str()))
+    );
 
     // C fills a hash map, so a repeated name keeps the last value and warns.
     let mut map: Vec<(&str, &str)> = Vec::new();
@@ -90,9 +105,15 @@ pub(super) fn resolve_overrides(
     let mut used: Vec<&str> = Vec::new();
     // C's `singleOverride` walks the `_init.xml` quantities in class order. The String
     // parameters are not result signals, so they follow, as `_init.xml` has them.
-    let string_names = model.editable_params.iter().filter(|p| p.is_string).map(|p| p.name.as_str());
+    let string_names = model
+        .editable_params
+        .iter()
+        .filter(|p| p.is_string)
+        .map(|p| p.name.as_str());
     for name in model.result_vars.iter().map(|v| v.name.as_str()).chain(string_names) {
-        let Some(&(name, val)) = map.iter().find(|(n, _)| *n == name) else { continue };
+        let Some(&(name, val)) = map.iter().find(|(n, _)| *n == name) else {
+            continue;
+        };
         used.push(name);
         let Some(p) = model.editable_params.iter().find(|p| p.name == name) else {
             omclog::warning!(
@@ -161,7 +182,11 @@ pub(super) fn resolve_start_imports(meta: &SimMeta, flags: &simflags::SimFlags) 
             Some((i as u32, v))
         })
         .collect();
-    Some(sim_driver::StartImports { file: file.clone(), time, values })
+    Some(sim_driver::StartImports {
+        file: file.clone(),
+        time,
+        values,
+    })
 }
 
 /// The driver's [`sim_driver::ResultFileReader`]: C's `importStartValues` for the
@@ -229,7 +254,9 @@ pub(super) fn on_teardown() {
 /// Write `-l`'s linearized model where C's `linearize` puts it and render its
 /// notice, which the caller appends after the run's success line.
 pub(super) fn write_lin_file(meta: &SimMeta, run: &sim_driver::RunResult, flags: &simflags::SimFlags) -> String {
-    let (Some(f), Some(lin)) = (&run.lin, &meta.lin) else { return String::new() };
+    let (Some(f), Some(lin)) = (&run.lin, &meta.lin) else {
+        return String::new();
+    };
     let path = match &flags.output_path {
         Some(dir) => format!("{dir}/{}", f.name),
         None => f.name.clone(),
@@ -240,17 +267,25 @@ pub(super) fn write_lin_file(meta: &SimMeta, run: &sim_driver::RunResult, flags:
             openmodelica_modelica_utilities::LOG_STDOUT_ERROR,
         );
     }
-    let full = std::fs::canonicalize(&path).map(|p| p.display().to_string()).unwrap_or(path);
+    let full = std::fs::canonicalize(&path)
+        .map(|p| p.display().to_string())
+        .unwrap_or(path);
     let (msgs, is_error) = openmodelica_sim_meta::linearize::write_notice(lin, f, &full);
     let prefix = if is_error {
         openmodelica_modelica_utilities::LOG_STDOUT_ERROR
     } else {
         openmodelica_modelica_utilities::LOG_STDOUT_INFO
     };
-    msgs.iter().map(|m| openmodelica_modelica_utilities::format_log_stdout(m, prefix)).collect()
+    msgs.iter()
+        .map(|m| openmodelica_modelica_utilities::format_log_stdout(m, prefix))
+        .collect()
 }
 
-pub(super) fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &str) -> (std::result::Result<(), String>, Option<String>, String, String) {
+pub(super) fn run_simulation_inner(
+    prefix: &str,
+    result_file: &str,
+    simflags: &str,
+) -> (std::result::Result<(), String>, Option<String>, String, String) {
     let model = sim_models()
         .lock()
         .unwrap_or_else(|e| e.into_inner())
@@ -280,8 +315,7 @@ pub(super) fn run_simulation_inner(prefix: &str, result_file: &str, simflags: &s
                 "Cannot import a result file for initialization that is also the current output \
                  file <{init}>.\nConsider redirecting the output result file (-r=<new_res.mat>) or \
                  renaming the result file that is used for initialization import."
-            )
-            ),
+            )),
             None,
             String::new(),
             String::new(),
@@ -368,7 +402,13 @@ fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, 
         // C's `printModelInfo`, after the result file is closed.
         openmodelica_sim_meta::profiling::finish(&meta, &path, output_size(&path));
         post = write_lin_file(&meta, &run, flags);
-        captured = Some(Captured { written, params: run.params, stats: run.stats, keep, path });
+        captured = Some(Captured {
+            written,
+            params: run.params,
+            stats: run.stats,
+            keep,
+            path,
+        });
         Ok(())
     })();
     // Disarm in case init failed before the hook fired.
@@ -393,7 +433,13 @@ fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, 
     } else {
         Some(format!("{head}{}", init_output.unwrap_or_default()))
     };
-    RunOutcome { res, init_output, sim_output, post, captured }
+    RunOutcome {
+        res,
+        init_output,
+        sim_output,
+        post,
+        captured,
+    }
 }
 
 /// [`perform_run`] in a child process, so that a crashing, exiting or wedged
@@ -417,9 +463,7 @@ fn isolated_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str,
         Some(openmodelica_wasm_jit::isolate::Outcome::Answered(bytes)) => decode_outcome(&bytes)
             .unwrap_or_else(|| failed("the simulation process reported an unreadable result".to_string())),
         Some(openmodelica_wasm_jit::isolate::Outcome::Died(why)) => failed(why),
-        Some(openmodelica_wasm_jit::isolate::Outcome::TimedOut) => {
-            failed(sim_driver::ALARM_ABORT_ERR.to_string())
-        }
+        Some(openmodelica_wasm_jit::isolate::Outcome::TimedOut) => failed(sim_driver::ALARM_ABORT_ERR.to_string()),
         Some(openmodelica_wasm_jit::isolate::Outcome::Cancelled) => {
             failed("CodegenWasmJit: simulation cancelled".to_string())
         }
@@ -475,8 +519,14 @@ fn encode_outcome(o: &RunOutcome) -> Vec<u8> {
         put_u64s(
             &mut b,
             &[
-                s.steps, s.res_evals, s.jac_evals, s.err_test_fails, s.conv_test_fails,
-                s.state_events, s.time_events, s.lin_solves,
+                s.steps,
+                s.res_evals,
+                s.jac_evals,
+                s.err_test_fails,
+                s.conv_test_fails,
+                s.state_events,
+                s.time_events,
+                s.lin_solves,
             ],
         );
         put_f64s(&mut b, &s.timers);
@@ -504,7 +554,9 @@ fn decode_outcome(bytes: &[u8]) -> Option<RunOutcome> {
             let n_rows = r.u64()? as usize;
             let first_row = r.f64s()?;
             let params = r.f64s()?;
-            let keep = (0..r.u32()?).map(|_| r.u8().map(|k| k != 0)).collect::<Option<Vec<bool>>>()?;
+            let keep = (0..r.u32()?)
+                .map(|_| r.u8().map(|k| k != 0))
+                .collect::<Option<Vec<bool>>>()?;
             let path = r.str()?;
             let method = r.str()?;
             let c = r.u64s()?;
@@ -515,9 +567,14 @@ fn decode_outcome(bytes: &[u8]) -> Option<RunOutcome> {
                 ..Default::default()
             };
             [
-                &mut stats.steps, &mut stats.res_evals, &mut stats.jac_evals,
-                &mut stats.err_test_fails, &mut stats.conv_test_fails, &mut stats.state_events,
-                &mut stats.time_events, &mut stats.lin_solves,
+                &mut stats.steps,
+                &mut stats.res_evals,
+                &mut stats.jac_evals,
+                &mut stats.err_test_fails,
+                &mut stats.conv_test_fails,
+                &mut stats.state_events,
+                &mut stats.time_events,
+                &mut stats.lin_solves,
             ]
             .into_iter()
             .zip(c)
@@ -526,10 +583,22 @@ fn decode_outcome(bytes: &[u8]) -> Option<RunOutcome> {
             let tcalls = r.u64s()?;
             stats.timers.iter_mut().zip(timers).for_each(|(s, v)| *s = v);
             stats.tcalls.iter_mut().zip(tcalls).for_each(|(s, v)| *s = v);
-            Some(Captured { written: Written { n_rows, first_row }, params, stats, keep, path })
+            Some(Captured {
+                written: Written { n_rows, first_row },
+                params,
+                stats,
+                keep,
+                path,
+            })
         }
     };
-    Some(RunOutcome { res, init_output, sim_output, post, captured })
+    Some(RunOutcome {
+        res,
+        init_output,
+        sim_output,
+        post,
+        captured,
+    })
 }
 
 struct Reader<'a>(&'a [u8]);
@@ -555,10 +624,20 @@ impl Reader<'_> {
     }
     fn f64s(&mut self) -> Option<Vec<f64>> {
         let n = self.u32()? as usize;
-        Some(self.take(8 * n)?.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect())
+        Some(
+            self.take(8 * n)?
+                .chunks_exact(8)
+                .map(|c| f64::from_le_bytes(c.try_into().unwrap()))
+                .collect(),
+        )
     }
     fn u64s(&mut self) -> Option<Vec<u64>> {
         let n = self.u32()? as usize;
-        Some(self.take(8 * n)?.chunks_exact(8).map(|c| u64::from_le_bytes(c.try_into().unwrap())).collect())
+        Some(
+            self.take(8 * n)?
+                .chunks_exact(8)
+                .map(|c| u64::from_le_bytes(c.try_into().unwrap()))
+                .collect(),
+        )
     }
 }

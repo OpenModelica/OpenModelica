@@ -70,11 +70,17 @@ pub fn stdout_write(bytes: &[u8]) {
 /// Route a stdout/stderr write to the redirected process fds, else to the capture
 /// buffer if active, else to the host.
 fn write_std(bytes: &[u8], is_err: bool) {
-    if NATIVE_CAPTURE.with(|h| h.get()).is_some_and(|n| (n.write)(bytes, is_err)) {
+    if NATIVE_CAPTURE
+        .with(|h| h.get())
+        .is_some_and(|n| (n.write)(bytes, is_err))
+    {
         return;
     }
     let captured = STDOUT_CAPTURE.with(|c| match c.borrow_mut().as_mut() {
-        Some(buf) => { buf.extend_from_slice(bytes); true }
+        Some(buf) => {
+            buf.extend_from_slice(bytes);
+            true
+        }
         None => false,
     });
     if !captured {
@@ -130,11 +136,18 @@ enum Fd {
     Stdout,
     Stderr,
     /// The single preopened directory (fd 3), exposed under `name` (`"."`).
-    PreopenDir { name: String },
+    PreopenDir {
+        name: String,
+    },
     /// A directory opened by name, enumerated by `fd_readdir` against `vfs_path`.
-    Dir { vfs_path: String },
+    Dir {
+        vfs_path: String,
+    },
     /// A host file (native: the store is the filesystem itself).
-    Native { file: std::fs::File, path: String },
+    Native {
+        file: std::fs::File,
+        path: String,
+    },
     /// A regular file of the in-memory store, held whole in `buf` and written
     /// back as it grows.
     File {
@@ -184,14 +197,20 @@ impl GuestMem for SliceMem<'_> {
     fn read(&self, addr: u32, buf: &mut [u8]) -> bool {
         let a = addr as usize;
         match self.0.get(a..a + buf.len()) {
-            Some(s) => { buf.copy_from_slice(s); true }
+            Some(s) => {
+                buf.copy_from_slice(s);
+                true
+            }
             None => false,
         }
     }
     fn write(&mut self, addr: u32, bytes: &[u8]) -> bool {
         let a = addr as usize;
         match self.0.get_mut(a..a + bytes.len()) {
-            Some(s) => { s.copy_from_slice(bytes); true }
+            Some(s) => {
+                s.copy_from_slice(bytes);
+                true
+            }
             None => false,
         }
     }
@@ -210,7 +229,13 @@ impl WasiCtx {
         if !crate::fs::IN_MEMORY {
             fds.insert(PREOPEN_FD + 1, Fd::PreopenDir { name: "/".to_string() });
         }
-        WasiCtx { cwd: cwd.into(), next_fd: PREOPEN_FD + 2, fds, args, exit_code: None }
+        WasiCtx {
+            cwd: cwd.into(),
+            next_fd: PREOPEN_FD + 2,
+            fds,
+            args,
+            exit_code: None,
+        }
     }
 
     /// The file a `path_*` call names, whose path is relative to `dirfd`. libc's
@@ -276,20 +301,42 @@ impl WasiCtx {
 
     /// `fd_pwrite`: `fd_write` at an explicit offset, leaving the fd's position
     /// alone. `O_APPEND` does not apply, and a stream has no offset to write at.
-    pub fn fd_pwrite<M: GuestMem>(&mut self, mem: &mut M, fd: u32, iovs: u32, iovs_len: u32, offset: i64, nwritten: u32) -> i32 {
+    pub fn fd_pwrite<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        fd: u32,
+        iovs: u32,
+        iovs_len: u32,
+        offset: i64,
+        nwritten: u32,
+    ) -> i32 {
         if offset < 0 {
             return ERRNO_INVAL;
         }
         self.write_iovs(mem, fd, iovs, iovs_len, Some(offset as usize), nwritten)
     }
 
-    fn write_iovs<M: GuestMem>(&mut self, mem: &mut M, fd: u32, iovs: u32, iovs_len: u32, at: Option<usize>, nwritten: u32) -> i32 {
+    fn write_iovs<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        fd: u32,
+        iovs: u32,
+        iovs_len: u32,
+        at: Option<usize>,
+        nwritten: u32,
+    ) -> i32 {
         let mut gathered: Vec<u8> = Vec::new();
         for i in 0..iovs_len {
             let base = iovs + i * 8;
-            let Some(buf) = Self::rd_u32(mem, base) else { return ERRNO_FAULT };
-            let Some(len) = Self::rd_u32(mem, base + 4) else { return ERRNO_FAULT };
-            let Some(slice) = Self::rd_bytes(mem, buf, len) else { return ERRNO_FAULT };
+            let Some(buf) = Self::rd_u32(mem, base) else {
+                return ERRNO_FAULT;
+            };
+            let Some(len) = Self::rd_u32(mem, base + 4) else {
+                return ERRNO_FAULT;
+            };
+            let Some(slice) = Self::rd_bytes(mem, buf, len) else {
+                return ERRNO_FAULT;
+            };
             gathered.extend_from_slice(&slice);
         }
         let total = gathered.len() as u32;
@@ -302,7 +349,9 @@ impl WasiCtx {
                 // A positioned write leaves the fd's own position where it was.
                 let mut resume = None;
                 if let Some(off) = at {
-                    let Ok(pos) = file.stream_position() else { return ERRNO_IO };
+                    let Ok(pos) = file.stream_position() else {
+                        return ERRNO_IO;
+                    };
                     if file.seek(SeekFrom::Start(off as u64)).is_err() {
                         return ERRNO_IO;
                     }
@@ -317,7 +366,15 @@ impl WasiCtx {
                     }
                 }
             }
-            Some(Fd::File { vfs_path, buf, pos, writable: true, dirty, append, flushed }) => {
+            Some(Fd::File {
+                vfs_path,
+                buf,
+                pos,
+                writable: true,
+                dirty,
+                append,
+                flushed,
+            }) => {
                 let start = match at {
                     Some(off) => off,
                     None => {
@@ -357,20 +414,38 @@ impl WasiCtx {
     }
 
     /// `fd_pread`: `fd_read` at an explicit offset, leaving the fd's position alone.
-    pub fn fd_pread<M: GuestMem>(&mut self, mem: &mut M, fd: u32, iovs: u32, iovs_len: u32, offset: i64, nread: u32) -> i32 {
+    pub fn fd_pread<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        fd: u32,
+        iovs: u32,
+        iovs_len: u32,
+        offset: i64,
+        nread: u32,
+    ) -> i32 {
         if offset < 0 {
             return ERRNO_INVAL;
         }
         self.read_iovs(mem, fd, iovs, iovs_len, Some(offset as usize), nread)
     }
 
-    fn read_iovs<M: GuestMem>(&mut self, mem: &mut M, fd: u32, iovs: u32, iovs_len: u32, at: Option<usize>, nread: u32) -> i32 {
+    fn read_iovs<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        fd: u32,
+        iovs: u32,
+        iovs_len: u32,
+        at: Option<usize>,
+        nread: u32,
+    ) -> i32 {
         if let Some(Fd::Native { file, .. }) = self.fds.get_mut(&fd) {
             use std::io::{Read, Seek, SeekFrom};
             // A positioned read leaves the fd's own position where it was.
             let mut resume = None;
             if let Some(off) = at {
-                let Ok(pos) = file.stream_position() else { return ERRNO_IO };
+                let Ok(pos) = file.stream_position() else {
+                    return ERRNO_IO;
+                };
                 if file.seek(SeekFrom::Start(off as u64)).is_err() {
                     return ERRNO_IO;
                 }
@@ -379,8 +454,12 @@ impl WasiCtx {
             let mut total = 0u32;
             for i in 0..iovs_len {
                 let base = iovs + i * 8;
-                let Some(dst) = Self::rd_u32(mem, base) else { return ERRNO_FAULT };
-                let Some(len) = Self::rd_u32(mem, base + 4) else { return ERRNO_FAULT };
+                let Some(dst) = Self::rd_u32(mem, base) else {
+                    return ERRNO_FAULT;
+                };
+                let Some(len) = Self::rd_u32(mem, base + 4) else {
+                    return ERRNO_FAULT;
+                };
                 let mut tmp = vec![0u8; len as usize];
                 let Ok(n) = file.read(&mut tmp) else { return ERRNO_IO };
                 if n == 0 {
@@ -399,15 +478,25 @@ impl WasiCtx {
                     return ERRNO_IO;
                 }
             }
-            return if Self::wr_u32(mem, nread, total) { ERRNO_SUCCESS } else { ERRNO_FAULT };
+            return if Self::wr_u32(mem, nread, total) {
+                ERRNO_SUCCESS
+            } else {
+                ERRNO_FAULT
+            };
         }
-        let Some(Fd::File { buf, pos, .. }) = self.fds.get_mut(&fd) else { return ERRNO_BADF };
+        let Some(Fd::File { buf, pos, .. }) = self.fds.get_mut(&fd) else {
+            return ERRNO_BADF;
+        };
         let mut cur = at.unwrap_or(*pos);
         let mut total = 0u32;
         for i in 0..iovs_len {
             let base = iovs + i * 8;
-            let Some(dst) = Self::rd_u32(mem, base) else { return ERRNO_FAULT };
-            let Some(len) = Self::rd_u32(mem, base + 4) else { return ERRNO_FAULT };
+            let Some(dst) = Self::rd_u32(mem, base) else {
+                return ERRNO_FAULT;
+            };
+            let Some(len) = Self::rd_u32(mem, base + 4) else {
+                return ERRNO_FAULT;
+            };
             let avail = buf.len().saturating_sub(cur);
             let n = (len as usize).min(avail);
             if n == 0 {
@@ -439,9 +528,15 @@ impl WasiCtx {
                 _ => return ERRNO_INVAL,
             };
             let Ok(np) = file.seek(from) else { return ERRNO_INVAL };
-            return if Self::wr_u64(mem, newoffset, np) { ERRNO_SUCCESS } else { ERRNO_FAULT };
+            return if Self::wr_u64(mem, newoffset, np) {
+                ERRNO_SUCCESS
+            } else {
+                ERRNO_FAULT
+            };
         }
-        let Some(Fd::File { buf, pos, .. }) = self.fds.get_mut(&fd) else { return ERRNO_BADF };
+        let Some(Fd::File { buf, pos, .. }) = self.fds.get_mut(&fd) else {
+            return ERRNO_BADF;
+        };
         let base = match whence {
             WHENCE_SET => 0i64,
             WHENCE_CUR => *pos as i64,
@@ -491,7 +586,9 @@ impl WasiCtx {
         fdflags: i32,
         opened_fd: u32,
     ) -> i32 {
-        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else {
+            return ERRNO_FAULT;
+        };
         let name = String::from_utf8_lossy(&bytes).into_owned();
         let vfs_path = self.resolve_at(dirfd, &name);
 
@@ -500,16 +597,21 @@ impl WasiCtx {
             let fd = self.next_fd;
             self.next_fd += 1;
             self.fds.insert(fd, Fd::Dir { vfs_path });
-            return if Self::wr_u32(mem, opened_fd, fd) { ERRNO_SUCCESS } else { ERRNO_FAULT };
+            return if Self::wr_u32(mem, opened_fd, fd) {
+                ERRNO_SUCCESS
+            } else {
+                ERRNO_FAULT
+            };
         }
 
-        let writable = (fs_rights_base & RIGHTS_FD_WRITE) != 0
-            || (oflags & (OFLAGS_CREAT | OFLAGS_TRUNC)) != 0;
+        let writable = (fs_rights_base & RIGHTS_FD_WRITE) != 0 || (oflags & (OFLAGS_CREAT | OFLAGS_TRUNC)) != 0;
         let file = if !crate::fs::IN_MEMORY {
             let mut o = std::fs::OpenOptions::new();
             o.read(true);
             if writable {
-                o.write(true).create(oflags & OFLAGS_CREAT != 0).truncate(oflags & OFLAGS_TRUNC != 0);
+                o.write(true)
+                    .create(oflags & OFLAGS_CREAT != 0)
+                    .truncate(oflags & OFLAGS_TRUNC != 0);
                 if fdflags & FDFLAGS_APPEND != 0 {
                     o.append(true);
                 }
@@ -535,13 +637,24 @@ impl WasiCtx {
                 Self::flush_file(&vfs_path, &buf, &mut flushed);
             }
             Fd::File {
-                vfs_path, buf, pos: 0, writable: true, dirty: true,
-                append: fdflags & FDFLAGS_APPEND != 0, flushed,
+                vfs_path,
+                buf,
+                pos: 0,
+                writable: true,
+                dirty: true,
+                append: fdflags & FDFLAGS_APPEND != 0,
+                flushed,
             }
         } else {
             match crate::fs::read(&vfs_path) {
                 Ok(buf) => Fd::File {
-                    vfs_path, buf, pos: 0, writable: false, dirty: false, append: false, flushed: 0,
+                    vfs_path,
+                    buf,
+                    pos: 0,
+                    writable: false,
+                    dirty: false,
+                    append: false,
+                    flushed: 0,
                 },
                 Err(_) => return ERRNO_NOENT,
             }
@@ -558,7 +671,14 @@ impl WasiCtx {
     /// `fd_close`: write out what the fd still holds and drop it.
     pub fn fd_close(&mut self, fd: u32) -> i32 {
         match self.fds.remove(&fd) {
-            Some(Fd::File { vfs_path, buf, writable: true, dirty: true, mut flushed, .. }) => {
+            Some(Fd::File {
+                vfs_path,
+                buf,
+                writable: true,
+                dirty: true,
+                mut flushed,
+                ..
+            }) => {
                 Self::flush_file(&vfs_path, &buf, &mut flushed);
                 ERRNO_SUCCESS
             }
@@ -591,9 +711,12 @@ impl WasiCtx {
     /// `fd_filestat_get`: fill a 64-byte `filestat` for an open fd.
     pub fn fd_filestat_get<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32) -> i32 {
         let (filetype, size, mtime, ino) = match self.fds.get(&fd) {
-            Some(Fd::File { buf, vfs_path, .. }) => {
-                (FILETYPE_REGULAR_FILE, buf.len() as u64, file_mtime(vfs_path), path_ino(vfs_path))
-            }
+            Some(Fd::File { buf, vfs_path, .. }) => (
+                FILETYPE_REGULAR_FILE,
+                buf.len() as u64,
+                file_mtime(vfs_path),
+                path_ino(vfs_path),
+            ),
             Some(Fd::Native { file, path }) => (
                 FILETYPE_REGULAR_FILE,
                 file.metadata().map(|m| m.len()).unwrap_or(0),
@@ -608,8 +731,18 @@ impl WasiCtx {
     }
 
     /// `path_filestat_get`: stat a file by name relative to a preopen dir.
-    pub fn path_filestat_get<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, _flags: u32, path: u32, path_len: u32, buf: u32) -> i32 {
-        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+    pub fn path_filestat_get<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        dirfd: u32,
+        _flags: u32,
+        path: u32,
+        path_len: u32,
+        buf: u32,
+    ) -> i32 {
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else {
+            return ERRNO_FAULT;
+        };
         let vfs_path = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
         let mtime = file_mtime(&vfs_path);
         if crate::fs::is_dir(&vfs_path) {
@@ -640,37 +773,72 @@ impl WasiCtx {
     // ── path mutations ───────────────────────────────────────────────────────
 
     pub fn path_create_directory<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, path: u32, path_len: u32) -> i32 {
-        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else {
+            return ERRNO_FAULT;
+        };
         let dir = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
         // `mkdtemp` picks its name by the difference between EEXIST and a real error.
         if crate::fs::is_dir(&dir) || crate::fs::is_file(&dir) {
             return ERRNO_EXIST;
         }
-        if crate::fs::create_dir_all(&dir).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
+        if crate::fs::create_dir_all(&dir).is_ok() {
+            ERRNO_SUCCESS
+        } else {
+            ERRNO_NOENT
+        }
     }
 
     /// `path_unlink_file`.
     pub fn path_unlink_file<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, path: u32, path_len: u32) -> i32 {
-        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else {
+            return ERRNO_FAULT;
+        };
         let vfs_path = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
-        if crate::fs::remove_file(&vfs_path).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
+        if crate::fs::remove_file(&vfs_path).is_ok() {
+            ERRNO_SUCCESS
+        } else {
+            ERRNO_NOENT
+        }
     }
 
     /// `path_remove_directory`: the directory and everything under it.
     pub fn path_remove_directory<M: GuestMem>(&mut self, mem: &mut M, dirfd: u32, path: u32, path_len: u32) -> i32 {
-        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else { return ERRNO_FAULT };
+        let Some(bytes) = Self::rd_bytes(mem, path, path_len) else {
+            return ERRNO_FAULT;
+        };
         let dir = self.resolve_at(dirfd, &String::from_utf8_lossy(&bytes));
-        if crate::fs::remove_dir_all(&dir).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
+        if crate::fs::remove_dir_all(&dir).is_ok() {
+            ERRNO_SUCCESS
+        } else {
+            ERRNO_NOENT
+        }
     }
 
     /// `path_rename`: move a file or a whole subtree.
     #[allow(clippy::too_many_arguments)]
-    pub fn path_rename<M: GuestMem>(&mut self, mem: &mut M, old_fd: u32, old_path: u32, old_len: u32, new_fd: u32, new_path: u32, new_len: u32) -> i32 {
-        let Some(ob) = Self::rd_bytes(mem, old_path, old_len) else { return ERRNO_FAULT };
-        let Some(nb) = Self::rd_bytes(mem, new_path, new_len) else { return ERRNO_FAULT };
+    pub fn path_rename<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        old_fd: u32,
+        old_path: u32,
+        old_len: u32,
+        new_fd: u32,
+        new_path: u32,
+        new_len: u32,
+    ) -> i32 {
+        let Some(ob) = Self::rd_bytes(mem, old_path, old_len) else {
+            return ERRNO_FAULT;
+        };
+        let Some(nb) = Self::rd_bytes(mem, new_path, new_len) else {
+            return ERRNO_FAULT;
+        };
         let from = self.resolve_at(old_fd, &String::from_utf8_lossy(&ob));
         let to = self.resolve_at(new_fd, &String::from_utf8_lossy(&nb));
-        if crate::fs::rename(&from, &to).is_ok() { ERRNO_SUCCESS } else { ERRNO_NOENT }
+        if crate::fs::rename(&from, &to).is_ok() {
+            ERRNO_SUCCESS
+        } else {
+            ERRNO_NOENT
+        }
     }
 
     /// `fd_prestat_get`: report the single preopen dir; EBADF for everything else
@@ -690,7 +858,9 @@ impl WasiCtx {
 
     /// `fd_prestat_dir_name`: copy the preopen's name (`"."`) into the guest.
     pub fn fd_prestat_dir_name<M: GuestMem>(&mut self, mem: &mut M, fd: u32, path: u32, path_len: u32) -> i32 {
-        let Some(Fd::PreopenDir { name }) = self.fds.get(&fd) else { return ERRNO_BADF };
+        let Some(Fd::PreopenDir { name }) = self.fds.get(&fd) else {
+            return ERRNO_BADF;
+        };
         let bytes = name.as_bytes();
         let n = (path_len as usize).min(bytes.len());
         if !mem.write(path, &bytes[..n]) {
@@ -783,7 +953,15 @@ impl WasiCtx {
     /// 24-byte aligned) each followed by the entry name. `cookie` is the index to
     /// resume from (a header's `d_next`); `bufused < buf_len` means the directory
     /// was fully read. Only the preopen dir is enumerable (it maps to `cwd`).
-    pub fn fd_readdir<M: GuestMem>(&mut self, mem: &mut M, fd: u32, buf: u32, buf_len: u32, cookie: u64, bufused: u32) -> i32 {
+    pub fn fd_readdir<M: GuestMem>(
+        &mut self,
+        mem: &mut M,
+        fd: u32,
+        buf: u32,
+        buf_len: u32,
+        cookie: u64,
+        bufused: u32,
+    ) -> i32 {
         let dir_key = match self.fds.get(&fd) {
             Some(Fd::PreopenDir { .. }) => self.cwd.clone(),
             Some(Fd::Dir { vfs_path }) => vfs_path.clone(),
@@ -804,7 +982,11 @@ impl WasiCtx {
             let _ = Self::wr_u64(mem, buf + written, next);
             let _ = Self::wr_u64(mem, buf + written + 8, 0); // d_ino (unused)
             let _ = Self::wr_u32(mem, buf + written + 16, name.len() as u32);
-            let ty = if e.is_dir { FILETYPE_DIRECTORY } else { FILETYPE_REGULAR_FILE };
+            let ty = if e.is_dir {
+                FILETYPE_DIRECTORY
+            } else {
+                FILETYPE_REGULAR_FILE
+            };
             let _ = Self::wr_u8(mem, buf + written + 20, ty);
             written += HDR;
             let avail = buf_len - written;
@@ -836,9 +1018,18 @@ impl WasiCtx {
         let buf = crate::fs::read(path).ok()?;
         let fd = self.next_fd;
         self.next_fd += 1;
-        self.fds.insert(fd, Fd::File {
-            vfs_path: path.to_string(), buf, pos: 0, writable: false, dirty: false, append: false, flushed: 0,
-        });
+        self.fds.insert(
+            fd,
+            Fd::File {
+                vfs_path: path.to_string(),
+                buf,
+                pos: 0,
+                writable: false,
+                dirty: false,
+                append: false,
+                flushed: 0,
+            },
+        );
         Some(fd)
     }
 
@@ -888,10 +1079,16 @@ pub struct DirEntry {
 /// [`crate::list_dir`] mishandles.
 pub fn readdir(dir: &str) -> Vec<DirEntry> {
     let norm = crate::normalize(dir);
-    let prefix = if norm == "/" { String::from("/") } else { format!("{norm}/") };
+    let prefix = if norm == "/" {
+        String::from("/")
+    } else {
+        format!("{norm}/")
+    };
     let mut seen: std::collections::BTreeMap<String, bool> = std::collections::BTreeMap::new();
     for key in crate::list() {
-        let Some(rest) = key.strip_prefix(&prefix) else { continue };
+        let Some(rest) = key.strip_prefix(&prefix) else {
+            continue;
+        };
         if rest.is_empty() {
             continue;
         }
@@ -904,7 +1101,9 @@ pub fn readdir(dir: &str) -> Vec<DirEntry> {
             }
         }
     }
-    seen.into_iter().map(|(name, is_dir)| DirEntry { name, is_dir }).collect()
+    seen.into_iter()
+        .map(|(name, is_dir)| DirEntry { name, is_dir })
+        .collect()
 }
 
 /// Size in bytes of the file at absolute key `path`, or `None` if absent —
@@ -927,7 +1126,11 @@ mod path_ops_tests {
         let root = if crate::fs::IN_MEMORY {
             "/wasi_pathops".to_string()
         } else {
-            format!("{}/om-wasi-pathops-{}", std::env::temp_dir().display(), std::process::id())
+            format!(
+                "{}/om-wasi-pathops-{}",
+                std::env::temp_dir().display(),
+                std::process::id()
+            )
         };
         crate::fs::create_dir_all(&root).unwrap();
         crate::fs::write(&format!("{root}/a.txt"), b"AAA").unwrap();
@@ -948,7 +1151,10 @@ mod path_ops_tests {
         assert_eq!(ctx.path_unlink_file(&mut mem, 3, p, l), ERRNO_NOENT);
 
         let (dp, dl) = put(mem.0, 3072, &root);
-        assert_eq!(ctx.path_open(&mut mem, 3, 0, dp, dl, OFLAGS_DIRECTORY, 0, 0, 0, 4000), ERRNO_SUCCESS);
+        assert_eq!(
+            ctx.path_open(&mut mem, 3, 0, dp, dl, OFLAGS_DIRECTORY, 0, 0, 0, 4000),
+            ERRNO_SUCCESS
+        );
         let dfd = WasiCtx::rd_u32(&mem, 4000).unwrap();
         assert_eq!(ctx.fd_readdir(&mut mem, dfd, 4096, 512, 0, 4004), ERRNO_SUCCESS);
         let used = WasiCtx::rd_u32(&mem, 4004).unwrap() as usize;
@@ -959,7 +1165,18 @@ mod path_ops_tests {
         assert_eq!(mem.0[5000 + 16], FILETYPE_DIRECTORY);
         let (ap, al) = put(mem.0, 6000, &format!("{root}/c.txt"));
         assert_eq!(
-            ctx.path_open(&mut mem, 3, 0, ap, al, OFLAGS_CREAT, RIGHTS_FD_WRITE, 0, FDFLAGS_APPEND, 6100),
+            ctx.path_open(
+                &mut mem,
+                3,
+                0,
+                ap,
+                al,
+                OFLAGS_CREAT,
+                RIGHTS_FD_WRITE,
+                0,
+                FDFLAGS_APPEND,
+                6100
+            ),
             ERRNO_SUCCESS
         );
         let afd = WasiCtx::rd_u32(&mem, 6100).unwrap();
@@ -995,7 +1212,10 @@ mod path_ops_tests {
         let mut mem = SliceMem(&mut buf);
 
         let (p, l) = put(mem.0, 0, &format!("{root}/h5.bin"));
-        assert_eq!(ctx.path_open(&mut mem, 3, 0, p, l, OFLAGS_CREAT, RIGHTS_FD_WRITE, 0, 0, 512), ERRNO_SUCCESS);
+        assert_eq!(
+            ctx.path_open(&mut mem, 3, 0, p, l, OFLAGS_CREAT, RIGHTS_FD_WRITE, 0, 0, 512),
+            ERRNO_SUCCESS
+        );
         let fd = WasiCtx::rd_u32(&mem, 512).unwrap();
 
         // One iovec at 600 pointing at the payload at 700.

@@ -27,10 +27,7 @@ fn main() {
 
     let web_options = eframe::WebOptions::default();
     wasm_bindgen_futures::spawn_local(async {
-        let document = web_sys::window()
-            .expect("no window")
-            .document()
-            .expect("no document");
+        let document = web_sys::window().expect("no window").document().expect("no document");
         let canvas = document
             .get_element_by_id("the_canvas_id")
             .expect("missing #the_canvas_id")

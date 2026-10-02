@@ -10,7 +10,11 @@ struct RtToEnv;
 
 impl RtToEnv {
     fn rename(module: &str) -> &str {
-        if module == "rt" || module == "ext" { "env" } else { module }
+        if module == "rt" || module == "ext" {
+            "env"
+        } else {
+            module
+        }
     }
 }
 
@@ -26,14 +30,20 @@ impl wasm_encoder::reencode::Reencode for RtToEnv {
         let group = match group {
             wasmparser::Imports::Single(n, import) => wasmparser::Imports::Single(
                 n,
-                wasmparser::Import { module: Self::rename(import.module), ..import },
+                wasmparser::Import {
+                    module: Self::rename(import.module),
+                    ..import
+                },
             ),
-            wasmparser::Imports::Compact1 { module, items } => {
-                wasmparser::Imports::Compact1 { module: Self::rename(module), items }
-            }
-            wasmparser::Imports::Compact2 { module, ty, names } => {
-                wasmparser::Imports::Compact2 { module: Self::rename(module), ty, names }
-            }
+            wasmparser::Imports::Compact1 { module, items } => wasmparser::Imports::Compact1 {
+                module: Self::rename(module),
+                items,
+            },
+            wasmparser::Imports::Compact2 { module, ty, names } => wasmparser::Imports::Compact2 {
+                module: Self::rename(module),
+                ty,
+                names,
+            },
         };
         wasm_encoder::reencode::utils::parse_imports(self, imports, group)
     }
@@ -102,7 +112,11 @@ pub(super) fn drop_native_ext_import(adapter: &[u8]) -> Option<Vec<u8>> {
             group: wasmparser::Imports<'_>,
         ) -> core::result::Result<(), wasm_encoder::reencode::Error<Self::Error>> {
             use wasmparser::Imports;
-            let single = |ty| wasmparser::Import { module: "env", name: NATIVE_EXT_ABSENT, ty };
+            let single = |ty| wasmparser::Import {
+                module: "env",
+                name: NATIVE_EXT_ABSENT,
+                ty,
+            };
             match group {
                 Imports::Single(n, import) if import.module == MODULE => {
                     let group = Imports::Single(n, single(import.ty));
@@ -115,7 +129,11 @@ pub(super) fn drop_native_ext_import(adapter: &[u8]) -> Option<Vec<u8>> {
                     }
                     Ok(())
                 }
-                Imports::Compact2 { module: MODULE, ty, names } => {
+                Imports::Compact2 {
+                    module: MODULE,
+                    ty,
+                    names,
+                } => {
                     for _ in names {
                         let group = Imports::Single(0, single(ty));
                         wasm_encoder::reencode::utils::parse_imports(self, imports, group)?;
@@ -131,7 +149,9 @@ pub(super) fn drop_native_ext_import(adapter: &[u8]) -> Option<Vec<u8>> {
     }
     use wasm_encoder::reencode::Reencode;
     let mut m = we::Module::new();
-    Redirect.parse_core_module(&mut m, wasmparser::Parser::new(0), adapter).ok()?;
+    Redirect
+        .parse_core_module(&mut m, wasmparser::Parser::new(0), adapter)
+        .ok()?;
     Some(m.finish())
 }
 
@@ -157,7 +177,9 @@ pub(super) fn native_ext_absent() -> Vec<u8> {
 fn wasm_imports_module(wasm: &[u8], module: &str) -> bool {
     use wasmparser::Imports;
     wasmparser::Parser::new(0).parse_all(wasm).flatten().any(|payload| {
-        let wasmparser::Payload::ImportSection(reader) = payload else { return false };
+        let wasmparser::Payload::ImportSection(reader) = payload else {
+            return false;
+        };
         reader.into_iter().flatten().any(|group| match group {
             Imports::Single(_, imp) => imp.module == module,
             Imports::Compact1 { module: m, .. } | Imports::Compact2 { module: m, .. } => m == module,
@@ -231,7 +253,9 @@ pub(super) fn external_imports(model_wasm: &[u8]) -> Vec<String> {
                     Imports::Compact1 { module: "ext", items } => {
                         out.extend(items.into_iter().flatten().map(|it| it.name.to_string()));
                     }
-                    Imports::Compact2 { module: "ext", names, .. } => {
+                    Imports::Compact2 {
+                        module: "ext", names, ..
+                    } => {
                         out.extend(names.into_iter().flatten().map(|n| n.to_string()));
                     }
                     _ => {}
@@ -267,11 +291,14 @@ pub(super) fn needs_lapack(model_wasm: &[u8], ext_libs: &[ExtLibrary]) -> bool {
 
 /// The names a wasm module exports.
 pub(super) fn wasm_exports(bytes: &[u8]) -> impl Iterator<Item = &str> {
-    wasmparser::Parser::new(0).parse_all(bytes).flatten().filter_map(|p| match p {
-        wasmparser::Payload::ExportSection(exports) => Some(exports),
-        _ => None,
-    })
-    .flat_map(|exports| exports.into_iter().flatten().map(|e| e.name))
+    wasmparser::Parser::new(0)
+        .parse_all(bytes)
+        .flatten()
+        .filter_map(|p| match p {
+            wasmparser::Payload::ExportSection(exports) => Some(exports),
+            _ => None,
+        })
+        .flat_map(|exports| exports.into_iter().flatten().map(|e| e.name))
 }
 
 /// `resources/native_externals.txt`: the platform libraries to load and the
@@ -289,7 +316,11 @@ pub(super) fn native_externals_table(sigs: &[ExtCallSig], libs: &[String], syste
     }
     for sig in sigs {
         let mut code = String::new();
-        let mut line = format!("fn {} {}", sig.name, if sig.lang == ExtLang::Fortran77 { "F" } else { "C" });
+        let mut line = format!(
+            "fn {} {}",
+            sig.name,
+            if sig.lang == ExtLang::Fortran77 { "F" } else { "C" }
+        );
         match &sig.ret {
             Some(t) => {
                 code.clear();
@@ -317,7 +348,9 @@ pub(super) fn add_branch_hints(module: &[u8], n_imported: u32) -> Vec<u8> {
     let mut n_funcs = 0u32;
     let mut index = n_imported;
     for payload in wasmparser::Parser::new(0).parse_all(module).flatten() {
-        let wasmparser::Payload::CodeSectionEntry(body) = payload else { continue };
+        let wasmparser::Payload::CodeSectionEntry(body) = payload else {
+            continue;
+        };
         let start = body.range().start;
         let mut hints = Vec::new();
         if let Ok(ops) = body.get_operators_reader() {

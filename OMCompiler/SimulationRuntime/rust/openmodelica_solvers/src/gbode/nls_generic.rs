@@ -39,7 +39,11 @@ impl KinsolLadder {
         crate::simflags::with_flags(|f| {
             let (max_steps, jac_updates) = crate::simflags::gb_kinsol_tuning(f);
             let (ftol, xtol, _) = crate::simflags::newton_tuning(f);
-            KinsolLadder { max_steps, jac_updates, tol: ftol.max(xtol) }
+            KinsolLadder {
+                max_steps,
+                jac_updates,
+                tol: ftol.max(xtol),
+            }
         })
     }
 }
@@ -54,8 +58,7 @@ pub(super) trait GbResidual {
     /// C's `sparsePattern_NLS` for this system.
     fn pattern(&self, rows_by_col: &[Vec<usize>], colors: &[Vec<u32>]) -> NlsPattern;
     /// C's symbolic `jacobian_*_column` into `pat`'s CSC values; `false` without one.
-    fn csc_jacobian(&mut self, ode: &mut dyn Ode, x: &[f64], nlsx: &[f64], pat: &NlsPattern, vals: &mut [f64])
-    -> bool;
+    fn csc_jacobian(&mut self, ode: &mut dyn Ode, x: &[f64], nlsx: &[f64], pat: &NlsPattern, vals: &mut [f64]) -> bool;
 }
 
 /// C's `nlsxExtrapolation`, `nlsxOld` and `nlsx` for one solve.
@@ -102,8 +105,14 @@ impl GbResidual for StageResidual<'_> {
     }
 
     /// C's `jacobian_SR_column`: `-I` also for the multi-step corrector.
-    fn csc_jacobian(&mut self, ode: &mut dyn Ode, x: &[f64], _nlsx: &[f64], pat: &NlsPattern, vals: &mut [f64])
-    -> bool {
+    fn csc_jacobian(
+        &mut self,
+        ode: &mut dyn Ode,
+        x: &[f64],
+        _nlsx: &[f64],
+        pat: &NlsPattern,
+        vals: &mut [f64],
+    ) -> bool {
         let n = x.len();
         let mut seed = vec![0.0; n];
         let mut out = vec![0.0; n];
@@ -191,8 +200,14 @@ impl GbResidual for IrkResidual<'_> {
 
     /// C's `jacobian_IRK_column`, which takes the ODE Jacobian of a colour's stage
     /// at that stage's `nlsx`, not at the iterate.
-    fn csc_jacobian(&mut self, ode: &mut dyn Ode, _x: &[f64], nlsx: &[f64], pat: &NlsPattern, vals: &mut [f64])
-    -> bool {
+    fn csc_jacobian(
+        &mut self,
+        ode: &mut dyn Ode,
+        _x: &[f64],
+        nlsx: &[f64],
+        pat: &NlsPattern,
+        vals: &mut [f64],
+    ) -> bool {
         let n = self.y_old.len();
         let s = self.t.n_stages;
         let mut seed = vec![0.0; n * s];
@@ -241,14 +256,12 @@ pub(super) struct GbNlsGeneric {
 
 impl GbNlsGeneric {
     pub(super) fn new(t: &Tableau, n_states: usize, sym_jac: bool, method: NlsMethod) -> Self {
-        let kinsol =
-            matches!(method, NlsMethod::Kinsol | NlsMethod::KinsolB).then(KinsolLadder::from_flags);
+        let kinsol = matches!(method, NlsMethod::Kinsol | NlsMethod::KinsolB).then(KinsolLadder::from_flags);
         let size = match t.gm_type {
             super::tableau::GmType::Implicit => t.n_stages * n_states,
             _ => n_states,
         };
-        let ftol =
-            crate::simflags::with_flags(|f| f.newton_ftol).unwrap_or(NEWTON_FTOL_DEFAULT);
+        let ftol = crate::simflags::with_flags(|f| f.newton_ftol).unwrap_or(NEWTON_FTOL_DEFAULT);
         GbNlsGeneric {
             n_states,
             size,
@@ -288,9 +301,7 @@ impl GbNlsGeneric {
                     seed[c as usize] = 1.0;
                 }
                 if !ode.jacobian_vector(time, y, &seed, &mut out) {
-                    return Err(
-                        "##GBODE## the model could not multiply by its Jacobian",
-                    );
+                    return Err("##GBODE## the model could not multiply by its Jacobian");
                 }
                 for &c in group {
                     let c = c as usize;
@@ -310,8 +321,7 @@ impl GbNlsGeneric {
                 let mut inv_del = vec![0.0; n];
                 for &col in group {
                     let c = col as usize;
-                    let mut del =
-                        DELTA_H * DELTA_H.max(abs(y[c])).max(abs(self.fbase[c]));
+                    let mut del = DELTA_H * DELTA_H.max(abs(y[c])).max(abs(self.fbase[c]));
                     del = y[c] + del - y[c];
                     if del == 0.0 {
                         del = DELTA_H;
@@ -339,13 +349,7 @@ impl GbNlsGeneric {
     /// Where the residual sees the ODE Jacobian: the base point for a coupled
     /// system, the stage point for a scalar one — both are the iterate here, which
     /// full Newton evaluates at.
-    fn factor_at(
-        &mut self,
-        ode: &mut dyn Ode,
-        res: &mut dyn GbResidual,
-        jac_time: f64,
-        jac_y: &[f64],
-    ) -> Result<()> {
+    fn factor_at(&mut self, ode: &mut dyn Ode, res: &mut dyn GbResidual, jac_time: f64, jac_y: &[f64]) -> Result<()> {
         self.eval_ode_jacobian(ode, jac_time, jac_y)?;
         let mut jac = core::mem::take(&mut self.jac);
         res.assemble(&self.j, self.n_states, &mut jac);
@@ -460,7 +464,11 @@ impl GbNlsGeneric {
                     kinsol,
                     time: 0.0,
                     eval: &mut eval,
-                    jacobian: if sym { Some(&mut jac as &mut dyn FnMut(&[f64], &mut [f64])) } else { None },
+                    jacobian: if sym {
+                        Some(&mut jac as &mut dyn FnMut(&[f64], &mut [f64]))
+                    } else {
+                        None
+                    },
                     jac_evals: 0,
                 };
                 let ok = hook(&mut req) && !failed.get();
@@ -532,9 +540,7 @@ impl GbNlsGeneric {
         if !nrm.is_finite() {
             return false;
         }
-        if (fresh || self.factored.is_none())
-            && self.factor_at(ode, res, jac_time, &x[..n.min(size)]).is_err()
-        {
+        if (fresh || self.factored.is_none()) && self.factor_at(ode, res, jac_time, &x[..n.min(size)]).is_err() {
             return false;
         }
         let mut converged = nrm <= tol || self.scaled_norm(&r) <= tol;
@@ -599,7 +605,12 @@ impl GbNlsGeneric {
 }
 
 fn kinsol_ladder_params(max_iters: u32, max_setup_calls: u32, fnorm_tol: f64, no_init_setup: bool) -> KinsolParams {
-    KinsolParams { max_iters, no_init_setup, max_setup_calls, fnorm_tol }
+    KinsolParams {
+        max_iters,
+        no_init_setup,
+        max_setup_calls,
+        fnorm_tol,
+    }
 }
 
 /// C's `solveNLS_gb` phases for KINSOL: from the extrapolation reusing the last
@@ -615,25 +626,47 @@ pub(super) fn kinsol_ladder(
     use crate::omclog::{self, GBODE_NLS};
     let later = ladder.max_steps.max(10 * size as u32);
     let [u0, u1, u2, u3] = ladder.jac_updates;
-    if u0 > 0 && run(starts.extrapolation, kinsol_ladder_params(ladder.max_steps, u0, ladder.tol, true), x) {
+    if u0 > 0
+        && run(
+            starts.extrapolation,
+            kinsol_ladder_params(ladder.max_steps, u0, ladder.tol, true),
+            x,
+        )
+    {
         return true;
     }
     if u1 > 0 {
         if u0 > 0 {
-            omclog::info(GBODE_NLS, false, "GBODE: Solution of NLS failed. Try with updated Jacobian.");
+            omclog::info(
+                GBODE_NLS,
+                false,
+                "GBODE: Solution of NLS failed. Try with updated Jacobian.",
+            );
         }
-        if run(starts.extrapolation, kinsol_ladder_params(later, u1, ladder.tol, false), x) {
+        if run(
+            starts.extrapolation,
+            kinsol_ladder_params(later, u1, ladder.tol, false),
+            x,
+        ) {
             return true;
         }
     }
     if u2 > 0 {
-        omclog::info(GBODE_NLS, false, "GBODE: Solution of NLS failed, Try with extrapolated start value.");
+        omclog::info(
+            GBODE_NLS,
+            false,
+            "GBODE: Solution of NLS failed, Try with extrapolated start value.",
+        );
         if run(starts.old, kinsol_ladder_params(later, u2, ladder.tol, false), x) {
             return true;
         }
     }
     if u3 > 0 {
-        omclog::info(omclog::STDOUT, false, "GBODE: Solution of NLS failed, Try with less accuracy.");
+        omclog::info(
+            omclog::STDOUT,
+            false,
+            "GBODE: Solution of NLS failed, Try with less accuracy.",
+        );
         let nlsx = x.to_vec();
         if run(&nlsx, kinsol_ladder_params(later, u3, 10.0 * ladder.tol, false), x) {
             return true;

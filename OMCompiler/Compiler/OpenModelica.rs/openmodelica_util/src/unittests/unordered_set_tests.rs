@@ -8,11 +8,11 @@
 //
 // We use ArcStr elements with stringHashDjb2 / stringEq throughout.
 
-use metamodelica::Result;
-use std::sync::Arc;
-use metamodelica::*;
-use arcstr::{ArcStr, literal};
 use crate::UnorderedSet as US;
+use arcstr::{ArcStr, literal};
+use metamodelica::Result;
+use metamodelica::*;
+use std::sync::Arc;
 
 // ── hash / eq helpers ────────────────────────────────────────────────────────
 
@@ -46,7 +46,9 @@ fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<US::UnorderedSet<ArcStr>>> 
 fn to_sorted_vec(s: metamodelica::Ref<US::UnorderedSet<ArcStr>>) -> Vec<String> {
     let lst = US::toList(s);
     let mut v: Vec<String> = vec![];
-    for k in &*lst { v.push(k.to_string()); }
+    for k in &*lst {
+        v.push(k.to_string());
+    }
     v.sort();
     v
 }
@@ -74,7 +76,7 @@ fn test_non_empty_is_not_empty() -> Result<()> {
 fn test_add_and_contains() -> Result<()> {
     let s = set_of(&["alpha", "beta", "gamma"])?;
     assert!(US::contains(literal!("alpha"), s.clone())?);
-    assert!(US::contains(literal!("beta"),  s.clone())?);
+    assert!(US::contains(literal!("beta"), s.clone())?);
     assert!(US::contains(literal!("gamma"), s.clone())?);
     Ok(())
 }

@@ -13,19 +13,37 @@ use super::*;
 /// declaring the same name as its own unit.
 pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVar]) -> Vec<UnitDef> {
     let base_of = |name: &str| {
-        lst(&mi.unitDefinitions).find(|u| u.name.as_str() == name).and_then(|u| match u.baseUnit {
-            SimCode::BASEUNIT { s, m, kg, A, K, mol, cd, factor, offset } => {
-                Some(BaseUnit { exponents: [kg, m, s, A, K, mol, cd, 0], factor: factor.into_inner(), offset: offset.into_inner() })
-            }
-            SimCode::NOBASEUNIT => None,
-        })
+        lst(&mi.unitDefinitions)
+            .find(|u| u.name.as_str() == name)
+            .and_then(|u| match u.baseUnit {
+                SimCode::BASEUNIT {
+                    s,
+                    m,
+                    kg,
+                    A,
+                    K,
+                    mol,
+                    cd,
+                    factor,
+                    offset,
+                } => Some(BaseUnit {
+                    exponents: [kg, m, s, A, K, mol, cd, 0],
+                    factor: factor.into_inner(),
+                    offset: offset.into_inner(),
+                }),
+                SimCode::NOBASEUNIT => None,
+            })
     };
     let mut units: Vec<UnitDef> = Vec::new();
     for v in result_vars.iter().filter(|v| !v.unit.is_empty()) {
         let at = match units.iter().position(|u| u.name == v.unit) {
             Some(i) => i,
             None => {
-                units.push(UnitDef { name: v.unit.clone(), base: base_of(&v.unit), display_units: Vec::new() });
+                units.push(UnitDef {
+                    name: v.unit.clone(),
+                    base: base_of(&v.unit),
+                    display_units: Vec::new(),
+                });
                 units.len() - 1
             }
         };
@@ -33,10 +51,16 @@ pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVa
             continue;
         }
         // v_display = factor * v_unit + offset, FMI's own <DisplayUnit>.
-        let (converts, factor, offset) =
-            openmodelica_codegen_util::SimCodeCodegenUtil::unitConversion(ArcStr::from(v.display_unit.as_str()), ArcStr::from(v.unit.as_str()));
+        let (converts, factor, offset) = openmodelica_codegen_util::SimCodeCodegenUtil::unitConversion(
+            ArcStr::from(v.display_unit.as_str()),
+            ArcStr::from(v.unit.as_str()),
+        );
         if converts {
-            units[at].display_units.push(DisplayUnit::new(&v.display_unit, factor.into_inner(), offset.into_inner()));
+            units[at].display_units.push(DisplayUnit::new(
+                &v.display_unit,
+                factor.into_inner(),
+                offset.into_inner(),
+            ));
         }
     }
     units
@@ -129,7 +153,10 @@ pub(super) fn build_sim_meta(
 pub(super) fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVars> {
     let named = |sv: &SimCodeVar::SimVar| cref_display(&sv.name);
     let mut reals = Vec::new();
-    for sv in svs(&vars.stateVars).chain(svs(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
+    for sv in svs(&vars.stateVars)
+        .chain(svs(&vars.derivativeVars))
+        .chain(real_alg_vars(vars))
+    {
         reals.push(named(sv)?);
     }
     let mut ints = Vec::new();
@@ -145,7 +172,13 @@ pub(super) fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_m
         strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
     }
     let n_discrete_real = lst(&vars.discreteAlgVars).count() as u32;
-    Ok(openmodelica_sim_meta::SotiVars { reals, ints, bools, strings, n_discrete_real })
+    Ok(openmodelica_sim_meta::SotiVars {
+        reals,
+        ints,
+        bools,
+        strings,
+        n_discrete_real,
+    })
 }
 
 /// C's `modelData` parameter arrays: the same lists, in the same order, as the
@@ -153,21 +186,41 @@ pub(super) fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_m
 pub(super) fn param_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::ParamVars> {
     let mut reals = Vec::new();
     for sv in lst(&vars.paramVars) {
-        reals.push((cref_display(&sv.name)?.to_string(), const_real(&sv.initialValue).unwrap_or(0.0), sv.isFixed));
+        reals.push((
+            cref_display(&sv.name)?.to_string(),
+            const_real(&sv.initialValue).unwrap_or(0.0),
+            sv.isFixed,
+        ));
     }
     let mut ints = Vec::new();
     for sv in lst(&vars.intParamVars) {
-        ints.push((cref_display(&sv.name)?.to_string(), const_int(&sv.initialValue).unwrap_or(0), sv.isFixed));
+        ints.push((
+            cref_display(&sv.name)?.to_string(),
+            const_int(&sv.initialValue).unwrap_or(0),
+            sv.isFixed,
+        ));
     }
     let mut bools = Vec::new();
     for sv in lst(&vars.boolParamVars) {
-        bools.push((cref_display(&sv.name)?.to_string(), const_int(&sv.initialValue).unwrap_or(0), sv.isFixed));
+        bools.push((
+            cref_display(&sv.name)?.to_string(),
+            const_int(&sv.initialValue).unwrap_or(0),
+            sv.isFixed,
+        ));
     }
     let mut strings = Vec::new();
     for sv in lst(&vars.stringParamVars) {
-        strings.push((cref_display(&sv.name)?.to_string(), const_str(&sv.initialValue).unwrap_or_default()));
+        strings.push((
+            cref_display(&sv.name)?.to_string(),
+            const_str(&sv.initialValue).unwrap_or_default(),
+        ));
     }
-    Ok(openmodelica_sim_meta::ParamVars { reals, ints, bools, strings })
+    Ok(openmodelica_sim_meta::ParamVars {
+        reals,
+        ints,
+        bools,
+        strings,
+    })
 }
 
 /// Name and attribute kind of every attribute-log slot.
@@ -191,9 +244,7 @@ pub(super) fn attr_log_entries(sim_code: &SimCode::SimCode) -> Result<Vec<openmo
 /// subset [`collect_relations`] can evaluate: `delayZeroCrossing` /
 /// `spatialDistributionZeroCrossing` are stored as the bare call, which no target
 /// assigns to `relations[]`, but C's `relationDescription` still names them.
-pub(super) fn rel_descriptions(
-    rels: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>,
-) -> Vec<String> {
+pub(super) fn rel_descriptions(rels: &List<openmodelica_backend_types::BackendDAE::ZeroCrossing>) -> Vec<String> {
     lst(rels).map(|zc| dump_exp(&zc.relation_)).collect()
 }
 
@@ -212,17 +263,24 @@ pub(super) fn zc_descriptions(crossings: &[ZcInfo]) -> Vec<String> {
 /// (`T_COMPLEX`/`EXTERNAL_OBJ`); mirrors `SimCodeFunctionUtil.addDestructor`.
 pub(super) fn extobj_destructor_key(sv: &SimCodeVar::SimVar) -> Result<String> {
     let path = match &*sv.type_ {
-        DAE::Type::T_COMPLEX { complexClassType: openmodelica_frontend_types::ClassInf::State::EXTERNAL_OBJ { path }, .. } => path.clone(),
+        DAE::Type::T_COMPLEX {
+            complexClassType: openmodelica_frontend_types::ClassInf::State::EXTERNAL_OBJ { path },
+            ..
+        } => path.clone(),
         _ => return Err("CodegenWasmJit: external object variable has a non-EXTERNAL_OBJ type"),
     };
     let dpath = openmodelica_frontend_dump::AbsynUtil::joinPaths(
         path,
-        metamodelica::Ref::new(openmodelica_ast::Absyn::Path::IDENT { name: arcstr::literal!("destructor") }),
+        metamodelica::Ref::new(openmodelica_ast::Absyn::Path::IDENT {
+            name: arcstr::literal!("destructor"),
+        }),
     )?;
     crate::CodegenWasmJitFunctions::mangle(&dpath)
 }
 
 /// Flatten a `list<SimEqSystem>` to a Vec of references.
-pub(super) fn flatten_eqs(eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>) -> Vec<metamodelica::Ref<SimCode::SimEqSystem>> {
+pub(super) fn flatten_eqs(
+    eqs: &List<metamodelica::Ref<SimCode::SimEqSystem>>,
+) -> Vec<metamodelica::Ref<SimCode::SimEqSystem>> {
     lst(eqs).cloned().collect()
 }

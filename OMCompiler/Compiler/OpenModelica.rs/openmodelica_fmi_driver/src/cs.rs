@@ -33,11 +33,7 @@ pub struct Run {
 }
 
 /// Drive a Co-Simulation FMU from `start_time` to `stop_time`.
-pub fn simulate(
-    inst: &mut dyn Fmi3CoSimulation,
-    md: &ModelDescription,
-    opts: &Options<'_>,
-) -> Result<Run> {
+pub fn simulate(inst: &mut dyn Fmi3CoSimulation, md: &ModelDescription, opts: &Options<'_>) -> Result<Run> {
     // Event Mode needs the FMU to have one; without it `fmi3EnterEventMode` is
     // not even callable and the FMU handles its events internally.
     let event_mode = opts.event_mode
@@ -47,7 +43,10 @@ pub fn simulate(
 
     // An FMU with a fixed internal step size only advances in multiples of it,
     // so the communication points have to sit on that grid.
-    let step = match md.interface(InterfaceKind::CoSimulation).and_then(|i| i.fixed_internal_step_size) {
+    let step = match md
+        .interface(InterfaceKind::CoSimulation)
+        .and_then(|i| i.fixed_internal_step_size)
+    {
         Some(dt) if dt > 0.0 => (opts.step_size / dt).round().max(1.0) * dt,
         _ => opts.step_size,
     };
@@ -95,10 +94,16 @@ pub fn simulate(
         }
         let r = match inst.do_step(t, h, true) {
             Ok(r) => r,
-            Err(Error::Status { call, status: crate::api::Status::Discard }) => {
+            Err(Error::Status {
+                call,
+                status: crate::api::Status::Discard,
+            }) => {
                 // Retrying needs `fmi3SetFMUState` to put the FMU back where the
                 // step started; without it the master has nothing to retry from.
-                return Err(Error::Status { call, status: crate::api::Status::Discard });
+                return Err(Error::Status {
+                    call,
+                    status: crate::api::Status::Discard,
+                });
             }
             Err(e) => return Err(e),
         };
@@ -162,7 +167,15 @@ pub fn simulate(
         }
     }
     as_common(inst).terminate()?;
-    Ok(Run { recorder: rec, terminated_at, cancelled, steps, events, early_returns, event_times })
+    Ok(Run {
+        recorder: rec,
+        terminated_at,
+        cancelled,
+        steps,
+        events,
+        early_returns,
+        event_times,
+    })
 }
 
 /// How many `fmi3DoStep`s in a row may end where they started before the run is

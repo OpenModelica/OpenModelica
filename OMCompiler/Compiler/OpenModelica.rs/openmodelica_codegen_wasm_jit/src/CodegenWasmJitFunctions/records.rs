@@ -25,9 +25,7 @@ std::thread_local! {
 }
 
 /// Install the module's record declarations (see [`RECORD_DECLS`]).
-pub(crate) fn set_record_decls(
-    decls: &List<SimCodeFunction::RecordDeclaration>,
-) -> Result<()> {
+pub(crate) fn set_record_decls(decls: &List<SimCodeFunction::RecordDeclaration>) -> Result<()> {
     let mut map = HashMap::default();
     for d in decls {
         // Only `RECORD_DECL_FULL` declares a layout.
@@ -37,7 +35,13 @@ pub(crate) fn set_record_decls(
         let path = AbsynUtil::pathString(defPath.clone(), arcstr::literal!("."), true, false)?;
         let mut fields = Vec::new();
         for v in &**variables {
-            let SimCodeFunction::Variable::Variable::VARIABLE { name, ty, value, bind_from_outside, .. } = &**v
+            let SimCodeFunction::Variable::Variable::VARIABLE {
+                name,
+                ty,
+                value,
+                bind_from_outside,
+                ..
+            } = &**v
             else {
                 continue;
             };
@@ -60,7 +64,11 @@ pub(super) fn record_decl_fields(path: &str) -> Option<Arc<Vec<RecDeclField>>> {
 
 /// The declaration of record type `ty`, if the module declares one.
 fn record_decl_of(ty: &DAE::Type) -> Result<Option<Arc<Vec<RecDeclField>>>> {
-    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { path }, .. } = ty else {
+    let DAE::Type::T_COMPLEX {
+        complexClassType: ClassInf::State::RECORD { path },
+        ..
+    } = ty
+    else {
         return Ok(None);
     };
     let path_str = AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
@@ -87,7 +95,11 @@ pub(super) fn record_field(fields: &[(ArcStr, SigTy)], name: &str) -> Result<(u3
 }
 
 pub(crate) fn mem_arg(offset: u32, align_log2: u32) -> we::MemArg {
-    we::MemArg { offset: offset as u64, align: align_log2, memory_index: 0 }
+    we::MemArg {
+        offset: offset as u64,
+        align: align_log2,
+        memory_index: 0,
+    }
 }
 
 /// Load a `wty` value from `(address on stack) + offset` (record field read).
@@ -130,7 +142,11 @@ pub(super) fn emit_record_alloc(ctx: &mut FnCtx, layout: &RecordLayout) -> Resul
 /// table, then store each field value (`field_exps` in declaration order). The
 /// record owns heap field values. Leaves the owned (+1) record handle on the
 /// stack.
-pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy)], field_exps: &[&metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+pub(super) fn emit_record_construction(
+    ctx: &mut FnCtx,
+    fields: &[(ArcStr, SigTy)],
+    field_exps: &[&metamodelica::Ref<DAE::Exp>],
+) -> Result<()> {
     let layout = record_layout(fields);
     let obj = emit_record_alloc(ctx, &layout)?;
     for (i, (_, fty)) in fields.iter().enumerate() {
@@ -152,8 +168,10 @@ pub(super) fn emit_record_construction(ctx: &mut FnCtx, fields: &[(ArcStr, SigTy
 /// variable's own submods (`R r(i=2)`) is applied at its declaration, not here.
 fn record_field_default(v: &DAE::Var) -> Option<metamodelica::Ref<DAE::Exp>> {
     match &*v.binding {
-        DAE::Binding::EQBOUND { source: DAE::BindingSource::BINDING_FROM_RECORD_SUBMODS, .. }
-            if !v.bind_from_outside => None,
+        DAE::Binding::EQBOUND {
+            source: DAE::BindingSource::BINDING_FROM_RECORD_SUBMODS,
+            ..
+        } if !v.bind_from_outside => None,
         DAE::Binding::EQBOUND { exp, .. } => Some(exp.clone()),
         _ => None,
     }
@@ -173,7 +191,11 @@ pub(super) struct RecField {
 
 /// The canonical fields of record type `ty`, or `None` if `ty` is not a record.
 pub(super) fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
-    let DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { path }, varLst, .. } = ty
+    let DAE::Type::T_COMPLEX {
+        complexClassType: ClassInf::State::RECORD { path },
+        varLst,
+        ..
+    } = ty
     else {
         return Ok(None);
     };
@@ -189,7 +211,13 @@ pub(super) fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
         // A `[:,:]` field has its shape only at the use site, which is where C
         // reads it (`var_lst |> v => constVarOrDaeExp(v, ...)`).
         let fty = match var {
-            Some(v) if type_array_dims(&fty).iter().any(|d| matches!(&**d, DAE::Dimension::DIM_UNKNOWN)) => v.ty.clone(),
+            Some(v)
+                if type_array_dims(&fty)
+                    .iter()
+                    .any(|d| matches!(&**d, DAE::Dimension::DIM_UNKNOWN)) =>
+            {
+                v.ty.clone()
+            }
             _ => fty,
         };
         out.push(RecField {
@@ -204,7 +232,12 @@ pub(super) fn record_fields(ty: &DAE::Type) -> Result<Option<Vec<RecField>>> {
 }
 
 pub(super) fn rec_layout(fields: &[RecField]) -> RecordLayout {
-    record_layout(&fields.iter().map(|f| (f.name.clone(), f.sig.clone())).collect::<Vec<_>>())
+    record_layout(
+        &fields
+            .iter()
+            .map(|f| (f.name.clone(), f.sig.clone()))
+            .collect::<Vec<_>>(),
+    )
 }
 
 /// Default-construct a record value of type `ty` (the C target's
@@ -296,7 +329,9 @@ fn emit_type_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
     match ty {
         DAE::Type::T_REAL { .. } => ctx.emit(we::Instruction::F64Const(0.0f64.into())),
         DAE::Type::T_STRING { .. } => {
-            let exp = DAE::Exp::SCONST { string: arcstr::literal!("") };
+            let exp = DAE::Exp::SCONST {
+                string: arcstr::literal!(""),
+            };
             compile_exp(ctx, &exp)?;
         }
         DAE::Type::T_ARRAY { ty: elem, .. } => {
@@ -311,7 +346,10 @@ fn emit_type_default(ctx: &mut FnCtx, ty: &DAE::Type) -> Result<()> {
             }
             ctx.emit(we::Instruction::LocalGet(slot));
         }
-        DAE::Type::T_COMPLEX { complexClassType: ClassInf::State::RECORD { .. }, .. } => {
+        DAE::Type::T_COMPLEX {
+            complexClassType: ClassInf::State::RECORD { .. },
+            ..
+        } => {
             emit_record_default(ctx, ty)?;
         }
         _ => ctx.emit(we::Instruction::I32Const(0)),
@@ -352,7 +390,12 @@ pub(super) fn emit_array_record_defaults(ctx: &mut FnCtx, slot: u32, elem: &DAE:
 
 /// A record literal `R(field=…, …)` (`E::RECORD`): the field values are matched
 /// to the type's declaration order by component name.
-pub(super) fn compile_record(ctx: &mut FnCtx, ty: &DAE::Type, exps: &List<metamodelica::Ref<DAE::Exp>>, comp: &List<ArcStr>) -> Result<()> {
+pub(super) fn compile_record(
+    ctx: &mut FnCtx,
+    ty: &DAE::Type,
+    exps: &List<metamodelica::Ref<DAE::Exp>>,
+    comp: &List<ArcStr>,
+) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: record constructor with non-record type");
     };
@@ -386,7 +429,10 @@ pub(super) fn metarecord_sigty(path: &metamodelica::Ref<Absyn::Path>) -> Result<
     for f in declared.iter() {
         fields.push((f.name.clone(), sig_ty(&f.ty)?));
     }
-    Ok(SigTy::Record { path: path_str, fields: Arc::new(fields) })
+    Ok(SigTy::Record {
+        path: path_str,
+        fields: Arc::new(fields),
+    })
 }
 
 /// The boxed record constructor the frontend emits instead of `E::RECORD` for a
@@ -420,7 +466,11 @@ pub(super) fn compile_metarecord(
 /// A record-constructor *call* `R(v1, v2, …)` (a `CALL` whose result is a record
 /// and which is not a generated function): the positional arguments are the
 /// fields in declaration order.
-pub(super) fn compile_record_call(ctx: &mut FnCtx, ty: &DAE::Type, args: &List<metamodelica::Ref<DAE::Exp>>) -> Result<()> {
+pub(super) fn compile_record_call(
+    ctx: &mut FnCtx,
+    ty: &DAE::Type,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
+) -> Result<()> {
     let SigTy::Record { fields, .. } = sig_ty(ty)? else {
         return Err("CodegenWasmJit: record constructor call with non-record type");
     };
@@ -469,7 +519,13 @@ pub(super) fn compile_rsub(ctx: &mut FnCtx, exp: &DAE::Exp, name: &str) -> Resul
 /// in place. A heap field's previous value is released after the new owned value
 /// is computed; an array/record field assigned from an alias is copied for value
 /// semantics (like a whole-value assignment).
-fn compile_record_field_assign(ctx: &mut FnCtx, rec_idx: u32, fields: &[(ArcStr, SigTy)], name: &str, rhs: &DAE::Exp) -> Result<()> {
+fn compile_record_field_assign(
+    ctx: &mut FnCtx,
+    rec_idx: u32,
+    fields: &[(ArcStr, SigTy)],
+    name: &str,
+    rhs: &DAE::Exp,
+) -> Result<()> {
     let (off, fty) = record_field(fields, name)?;
     let Some(release_fn) = fty.release_fn() else {
         // Scalar field: store directly.
@@ -504,11 +560,7 @@ fn push_record_base(
     ident: &str,
     subs: &List<metamodelica::Ref<DAE::Subscript>>,
 ) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>)> {
-    let (idx, sty) = ctx
-        .locals
-        .get(ident)
-        .ok_or_else(|| unknown_variable(ident))?
-        .clone();
+    let (idx, sty) = ctx.locals.get(ident).ok_or_else(|| unknown_variable(ident))?.clone();
     if subs.is_empty() {
         let SigTy::Record { fields, .. } = sty else {
             return Err("CodegenWasmJit: field access on non-record local");
@@ -549,12 +601,7 @@ pub(super) fn retain_on_stack(ctx: &mut FnCtx, ty: &SigTy) -> Result<()> {
 
 /// Read field `name` out of the borrowed record in `rec` into a fresh temp. The
 /// value is borrowed too.
-fn load_field(
-    ctx: &mut FnCtx,
-    rec: u32,
-    fields: &[(ArcStr, SigTy)],
-    name: &str,
-) -> Result<(u32, SigTy)> {
+fn load_field(ctx: &mut FnCtx, rec: u32, fields: &[(ArcStr, SigTy)], name: &str) -> Result<(u32, SigTy)> {
     let (off, fty) = record_field(fields, name)?;
     let vt = ctx.alloc_temp(fty.wty());
     ctx.emit(we::Instruction::LocalGet(rec));
@@ -605,14 +652,24 @@ fn step_into_record(
 /// to the final field, which may itself be subscripted (a scalar index or a
 /// slice). Leaves the owned field value on the stack.
 pub(super) fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<WTy> {
-    let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
+    let DAE::ComponentRef::CREF_QUAL {
+        ident,
+        subscriptLst,
+        componentRef: rest,
+        ..
+    } = cref
+    else {
         return Err("CodegenWasmJit: compile_cref_read_qual on non-qualified cref");
     };
     let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
     loop {
         match cur {
-            DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } => {
+            DAE::ComponentRef::CREF_IDENT {
+                ident: field,
+                subscriptLst: fsubs,
+                ..
+            } => {
                 let (vt, fty) = load_field(ctx, rec, &fields, field)?;
                 if fsubs.is_empty() {
                     ctx.emit(we::Instruction::LocalGet(vt));
@@ -636,7 +693,12 @@ pub(super) fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) 
                     slice_loaded(ctx, fsubs)
                 };
             }
-            DAE::ComponentRef::CREF_QUAL { ident: field, subscriptLst: fsubs, componentRef: inner, .. } => {
+            DAE::ComponentRef::CREF_QUAL {
+                ident: field,
+                subscriptLst: fsubs,
+                componentRef: inner,
+                ..
+            } => {
                 let (t, f2) = step_into_record(ctx, rec, &fields, field, fsubs)?;
                 rec = t;
                 fields = f2;
@@ -653,18 +715,38 @@ pub(super) fn compile_cref_read_qual(ctx: &mut FnCtx, cref: &DAE::ComponentRef) 
 pub(super) fn navigate_qual<'c>(
     ctx: &mut FnCtx,
     cref: &'c DAE::ComponentRef,
-) -> Result<(u32, Arc<Vec<(ArcStr, SigTy)>>, &'c str, &'c List<metamodelica::Ref<DAE::Subscript>>)> {
-    let DAE::ComponentRef::CREF_QUAL { ident, subscriptLst, componentRef: rest, .. } = cref else {
+) -> Result<(
+    u32,
+    Arc<Vec<(ArcStr, SigTy)>>,
+    &'c str,
+    &'c List<metamodelica::Ref<DAE::Subscript>>,
+)> {
+    let DAE::ComponentRef::CREF_QUAL {
+        ident,
+        subscriptLst,
+        componentRef: rest,
+        ..
+    } = cref
+    else {
         return Err("CodegenWasmJit: navigate_qual on non-qualified cref");
     };
     let (mut rec, mut fields) = push_record_base(ctx, ident, subscriptLst)?;
     let mut cur: &DAE::ComponentRef = rest;
     loop {
         match cur {
-            DAE::ComponentRef::CREF_IDENT { ident: field, subscriptLst: fsubs, .. } => {
+            DAE::ComponentRef::CREF_IDENT {
+                ident: field,
+                subscriptLst: fsubs,
+                ..
+            } => {
                 return Ok((rec, fields, field, fsubs));
             }
-            DAE::ComponentRef::CREF_QUAL { ident: field, subscriptLst: fsubs, componentRef: inner, .. } => {
+            DAE::ComponentRef::CREF_QUAL {
+                ident: field,
+                subscriptLst: fsubs,
+                componentRef: inner,
+                ..
+            } => {
                 let (t, f2) = step_into_record(ctx, rec, &fields, field, fsubs)?;
                 rec = t;
                 fields = f2;

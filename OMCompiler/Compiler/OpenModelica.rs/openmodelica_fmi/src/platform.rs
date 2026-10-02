@@ -22,14 +22,46 @@ impl Platform {
 }
 
 pub const PLATFORMS: &[Platform] = &[
-    Platform { fmi3: "x86_64-linux", fmi2: "linux64", ext: ".so" },
-    Platform { fmi3: "x86-linux", fmi2: "linux32", ext: ".so" },
-    Platform { fmi3: "aarch64-linux", fmi2: "aarch64-linux", ext: ".so" },
-    Platform { fmi3: "x86_64-windows", fmi2: "win64", ext: ".dll" },
-    Platform { fmi3: "x86-windows", fmi2: "win32", ext: ".dll" },
-    Platform { fmi3: "aarch64-windows", fmi2: "aarch64-windows", ext: ".dll" },
-    Platform { fmi3: "x86_64-darwin", fmi2: "darwin64", ext: ".dylib" },
-    Platform { fmi3: "aarch64-darwin", fmi2: "aarch64-darwin", ext: ".dylib" },
+    Platform {
+        fmi3: "x86_64-linux",
+        fmi2: "linux64",
+        ext: ".so",
+    },
+    Platform {
+        fmi3: "x86-linux",
+        fmi2: "linux32",
+        ext: ".so",
+    },
+    Platform {
+        fmi3: "aarch64-linux",
+        fmi2: "aarch64-linux",
+        ext: ".so",
+    },
+    Platform {
+        fmi3: "x86_64-windows",
+        fmi2: "win64",
+        ext: ".dll",
+    },
+    Platform {
+        fmi3: "x86-windows",
+        fmi2: "win32",
+        ext: ".dll",
+    },
+    Platform {
+        fmi3: "aarch64-windows",
+        fmi2: "aarch64-windows",
+        ext: ".dll",
+    },
+    Platform {
+        fmi3: "x86_64-darwin",
+        fmi2: "darwin64",
+        ext: ".dylib",
+    },
+    Platform {
+        fmi3: "aarch64-darwin",
+        fmi2: "aarch64-darwin",
+        ext: ".dylib",
+    },
 ];
 
 /// `None` when no FMU would carry a binary for this machine.

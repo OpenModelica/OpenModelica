@@ -29,8 +29,8 @@ use std::cell::RefCell;
 use std::ffi::{c_char, c_double, c_int};
 use std::ptr;
 
-use metamodelica::List;
 use crate::JSON::JSON;
+use metamodelica::List;
 
 /// Number of live references, matching `MODEL_INSTANCE_REFERENCE_MAX` in the C
 /// runtime. OMEdit fetches and releases each handle promptly, so a small fixed

@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use crate::Dump;
 use metamodelica::Result;
 use metamodelica::*;
 use openmodelica_ast::Absyn;
-use crate::Dump;
-use openmodelica_util::{FlagsUtil, Flags};
+use openmodelica_util::{Flags, FlagsUtil};
+use std::sync::Arc;
 
 // Initialize flags with default values for the current thread.
 // Required by Config-using functions (printExpStr, WILD branch, etc.).
@@ -49,7 +49,11 @@ fn integer_exp(v: i32) -> metamodelica::Ref<Absyn::Exp> {
     metamodelica::Ref::new(Absyn::Exp::INTEGER { value: v })
 }
 
-fn binary_exp(e1: metamodelica::Ref<Absyn::Exp>, op: Absyn::Operator, e2: metamodelica::Ref<Absyn::Exp>) -> metamodelica::Ref<Absyn::Exp> {
+fn binary_exp(
+    e1: metamodelica::Ref<Absyn::Exp>,
+    op: Absyn::Operator,
+    e2: metamodelica::Ref<Absyn::Exp>,
+) -> metamodelica::Ref<Absyn::Exp> {
     metamodelica::Ref::new(Absyn::Exp::BINARY { exp1: e1, op, exp2: e2 })
 }
 

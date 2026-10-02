@@ -7,7 +7,6 @@
 //! shared lowering primitives (`FnCtx`, `compile_exp`, `coerce`, `mem_arg`, …)
 //! through `super::*` without widening their visibility.
 
-
 use metamodelica::Result;
 
 use openmodelica_backend_types::BackendDAE;
@@ -73,9 +72,16 @@ pub(crate) fn residual_rows(residuals: &[NlsResidual]) -> Option<usize> {
 /// (a run `r[res_index + shift]` from iterating `exp` over integer ranges), or a
 /// `SES_GENERIC_RESIDUAL` (the same over a list of flat indices).
 pub(crate) enum NlsResidual {
-    Scalar { exp: metamodelica::Ref<DAE::Exp>, res_index: i32 },
+    Scalar {
+        exp: metamodelica::Ref<DAE::Exp>,
+        res_index: i32,
+    },
     /// An array-valued `SES_RESIDUAL`: `rows` entries from `res_index`.
-    Array { exp: metamodelica::Ref<DAE::Exp>, res_index: i32, rows: usize },
+    Array {
+        exp: metamodelica::Ref<DAE::Exp>,
+        res_index: i32,
+        rows: usize,
+    },
     For {
         iterators: Vec<BackendDAE::SimIterator>,
         exp: metamodelica::Ref<DAE::Exp>,
@@ -159,7 +165,7 @@ pub(crate) fn emit_nls_residual_body(
     let residuals = match residuals {
         NlsResiduals::Explicit(r) => r,
         NlsResiduals::InverseAlgorithm(known) => {
-            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner)
+            return emit_inverse_algorithm_residual(ctx, slots.len(), known, lower_inner);
         }
     };
     lower_inner(ctx)?;
@@ -173,11 +179,7 @@ pub(crate) fn emit_nls_residual_body(
 /// The head of a residual body: C's `residualFunc` profiling
 /// (`SIM_PROF_ADD_NCALL_EQ(block, 1)` under `blocks`, the block's own tick under
 /// `all`) and the copy of the `n` unknowns from `x` into their `slots`.
-pub(crate) fn emit_nls_residual_prologue(
-    ctx: &mut FnCtx,
-    eq_index: i32,
-    slots: &[IterSlot],
-) -> Result<()> {
+pub(crate) fn emit_nls_residual_prologue(ctx: &mut FnCtx, eq_index: i32, slots: &[IterSlot]) -> Result<()> {
     use we::Instruction as I;
     let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
     let clock = prof.as_ref().and_then(|p| p.block_clock(eq_index));
@@ -246,10 +248,19 @@ pub(crate) fn emit_nls_residual_store(
             }
             release_temp_array(ctx, arr)?;
         }
-        NlsResidual::For { iterators, exp, res_index } => {
+        NlsResidual::For {
+            iterators,
+            exp,
+            res_index,
+        } => {
             emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
         }
-        NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
+        NlsResidual::Generic {
+            iterators,
+            scal_indices,
+            exp,
+            res_index,
+        } => {
             emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
         }
     }
@@ -393,7 +404,15 @@ fn emit_for_residual(
         ctx.emit(I::F64Store(mem_arg(0, 3)));
         return Ok(());
     };
-    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name: cref, start, step, stop, size, .. } = sim_it else {
+    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+        name: cref,
+        start,
+        step,
+        stop,
+        size,
+        ..
+    } = sim_it
+    else {
         return Err("CodegenWasmJit: for-residual over a non-range iterator");
     };
     let id = cref_ident(cref)?;
@@ -930,8 +949,23 @@ pub(crate) fn compile_linear_system(
 
     // --- solve, scatter, recover the torn variables, free the scratch. `res0` is
     // spent by now, so the step check reuses it. ---
-    let m1 = method1.then_some(Method1 { res_off: res0_off, residuals });
-    emit_lin_solve_scatter(ctx, base, b_off, aux_off, n, &slots, use_sparse, m1, index, lower_inner, None)
+    let m1 = method1.then_some(Method1 {
+        res_off: res0_off,
+        residuals,
+    });
+    emit_lin_solve_scatter(
+        ctx,
+        base,
+        b_off,
+        aux_off,
+        n,
+        &slots,
+        use_sparse,
+        m1,
+        index,
+        lower_inner,
+        None,
+    )
 }
 
 /// The `(index, time)` a solver's warnings need.
@@ -1035,8 +1069,7 @@ fn emit_aux_x(ctx: &mut FnCtx, base: u32, aux_off: u32, slots: &[u32]) -> Result
 /// The `localData[1]` mirror of the live real slot at `off`.
 fn old_slot(old_real: Option<(u32, u32)>, off: u32) -> Option<u32> {
     let (real_end, base) = old_real?;
-    (off >= openmodelica_sim_meta::REAL_OFF && off < real_end)
-        .then(|| base + (off - openmodelica_sim_meta::REAL_OFF))
+    (off >= openmodelica_sim_meta::REAL_OFF && off < real_end).then(|| base + (off - openmodelica_sim_meta::REAL_OFF))
 }
 
 /// Scatter the solve's result (at `base+b_off`) into `slots`, recover the torn
@@ -1192,7 +1225,11 @@ fn emit_lin_solve_scatter(
     ctx.emit(I::I32Add); // x_ptr
     ctx.emit(I::I32Const(n as i32));
     emit_linsolve_context(ctx, index)?;
-    let solver = if use_sparse { "rt_solve_lin_dense_sparse" } else { "rt_linsolve" };
+    let solver = if use_sparse {
+        "rt_solve_lin_dense_sparse"
+    } else {
+        "rt_linsolve"
+    };
     if !use_sparse {
         ctx.emit(I::I32Const(m1.is_some() as i32)); // a step check follows
         ctx.emit(I::I32Const(ctx.dt_casual() as i32));
@@ -1200,7 +1237,18 @@ fn emit_lin_solve_scatter(
     ctx.emit(I::Call(rt_index(solver)?));
     emit_lin_unsolved(ctx, index, base)?;
     match &m1 {
-        Some(m1) => emit_lin_step(ctx, base, b_off, n, slots, use_sparse, index, m1, lower_inner, reassemble),
+        Some(m1) => emit_lin_step(
+            ctx,
+            base,
+            b_off,
+            n,
+            slots,
+            use_sparse,
+            index,
+            m1,
+            lower_inner,
+            reassemble,
+        ),
         None => emit_scatter_recover_free(ctx, base, b_off, n, slots, lower_inner),
     }
 }
@@ -1235,7 +1283,11 @@ pub(crate) fn compile_linear_system_analytic(
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
         let key = sim_cref_key(cr)?;
-        let slot = ctx.sim()?.vars.get(&key).copied()
+        let slot = ctx
+            .sim()?
+            .vars
+            .get(&key)
+            .copied()
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1295,7 +1347,16 @@ pub(crate) fn compile_linear_system_analytic(
         |c: &mut FnCtx| emit_lin_jac(c, base, n, seed_tab_off, res_tab_off, lower_constant, lower_column);
     // A method-1 system probes at the previous solution, so `xold` is C's `aux_x`.
     emit_lin_solve_scatter(
-        ctx, base, b_off, xold_off, n, &slots, use_sparse, Some(m1), index, lower_inner,
+        ctx,
+        base,
+        b_off,
+        xold_off,
+        n,
+        &slots,
+        use_sparse,
+        Some(m1),
+        index,
+        lower_inner,
         Some(&mut reassemble),
     )
 }
@@ -1483,9 +1544,7 @@ pub(crate) fn compile_linear_system_analytic_csc(
     if n == 0 {
         return Ok(());
     }
-    if residual_rows(residuals) != Some(n) || seed_offs.len() != n || result_offs.len() != n
-        || colptr.len() != n + 1
-    {
+    if residual_rows(residuals) != Some(n) || seed_offs.len() != n || result_offs.len() != n || colptr.len() != n + 1 {
         return Err("CodegenWasmJit: analytic-CSC linear system size mismatch");
     }
     let nnz = rowidx.len();
@@ -1494,7 +1553,11 @@ pub(crate) fn compile_linear_system_analytic_csc(
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
         let key = sim_cref_key(cr)?;
-        let slot = ctx.sim()?.vars.get(&key).copied()
+        let slot = ctx
+            .sim()?
+            .vars
+            .get(&key)
+            .copied()
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1949,12 +2012,7 @@ pub(crate) fn compile_linear_system_symbolic(
 }
 
 /// Emit `b[i] = exp` into the solve scratch at `base + b_off + i*8`.
-fn emit_b_exps(
-    ctx: &mut FnCtx,
-    base: u32,
-    b_off: u32,
-    b_exps: &[&metamodelica::Ref<DAE::Exp>],
-) -> Result<()> {
+fn emit_b_exps(ctx: &mut FnCtx, base: u32, b_off: u32, b_exps: &[&metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     for (i, exp) in b_exps.iter().enumerate() {
         ctx.emit(we::Instruction::LocalGet(base));
         let w = compile_exp(ctx, exp)?;
@@ -2215,12 +2273,7 @@ fn jac_slot_addr(ctx: &mut FnCtx, base: u32, tab: u32, idx: u32) {
 }
 
 /// Emit `for loc in 0..end { body }`.
-fn jac_count_loop(
-    ctx: &mut FnCtx,
-    loc: u32,
-    end: i32,
-    body: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
-) -> Result<()> {
+fn jac_count_loop(ctx: &mut FnCtx, loc: u32, end: i32, body: &mut dyn FnMut(&mut FnCtx) -> Result<()>) -> Result<()> {
     use we::Instruction as I;
     ctx.emit(I::I32Const(0));
     ctx.emit(I::LocalSet(loc));

@@ -55,19 +55,17 @@ impl Inputs {
 /// `fmi3EnterInitializationMode` … `fmi3ExitInitializationMode`, with the
 /// parameters and the inputs at the start time in between — the only place FMI
 /// lets a parameter be set.
-pub fn initialize(
-    inst: &mut dyn Fmi3,
-    md: &ModelDescription,
-    inputs: &mut Inputs,
-    opts: &Options<'_>,
-) -> Result<()> {
+pub fn initialize(inst: &mut dyn Fmi3, md: &ModelDescription, inputs: &mut Inputs, opts: &Options<'_>) -> Result<()> {
     // Without the full trace, still ask for the status categories: the message
     // behind an error status is the only account of what failed.
     let declared = |name: &str| md.log_categories.iter().any(|c| c.name == name);
     let mut categories: Vec<&str> = Vec::new();
     if !opts.logging_on {
         categories.extend(
-            md.log_categories.iter().map(|c| c.name.as_str()).filter(|c| c.starts_with("logStatus")),
+            md.log_categories
+                .iter()
+                .map(|c| c.name.as_str())
+                .filter(|c| c.starts_with("logStatus")),
         );
     }
     categories.extend(opts.log_streams.iter().map(String::as_str).filter(|s| declared(s)));

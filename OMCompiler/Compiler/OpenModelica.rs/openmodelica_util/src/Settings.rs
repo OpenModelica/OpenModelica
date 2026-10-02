@@ -24,8 +24,8 @@
 
 use std::sync::Mutex;
 
-use metamodelica::Result;
 use arcstr::ArcStr;
+use metamodelica::Result;
 
 use crate::Autoconf;
 
@@ -187,9 +187,7 @@ fn strip_bin_path_opt(path: &str) -> Option<ArcStr> {
 fn self_library_path() -> Option<ArcStr> {
     let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
     // SAFETY: a code address in this library; `dladdr` only reads it.
-    if unsafe { libc::dladdr(self_library_path as *const libc::c_void, &mut info) } == 0
-        || info.dli_fname.is_null()
-    {
+    if unsafe { libc::dladdr(self_library_path as *const libc::c_void, &mut info) } == 0 || info.dli_fname.is_null() {
         return None;
     }
     let name = unsafe { std::ffi::CStr::from_ptr(info.dli_fname) };
@@ -230,15 +228,11 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     // Before the `bin`/`lib` walk, which climbs out of a bundle rather than
     // finding its home.
     #[cfg(target_vendor = "apple")]
-    if let Some(path) = self_library_path()
-        .as_deref()
-        .and_then(bundle_home)
-        .or_else(|| {
-            std::env::current_exe()
-                .ok()
-                .and_then(|p| bundle_home(&convert_to_forward_slashes(&p.to_string_lossy())))
-        })
-    {
+    if let Some(path) = self_library_path().as_deref().and_then(bundle_home).or_else(|| {
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| bundle_home(&convert_to_forward_slashes(&p.to_string_lossy())))
+    }) {
         let mut state = STATE.lock().unwrap();
         set_env_var("OPENMODELICAHOME", &path);
         state.installation_path = Some(path.clone());
@@ -258,28 +252,30 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
         .map(|p| convert_to_forward_slashes(&p.to_string_lossy()));
 
     if let Ok(exe) = &exe
-        && let Some((dir, _)) = exe.rsplit_once('/') {
-            let parent_component = dir.rsplit('/').next().unwrap_or("");
-            if parent_component == "bin" || parent_component == "lib" {
-                let path = ArcStr::from(match dir.rsplit_once('/') {
-                    Some(("", _)) => "/",
-                    Some((root, _)) => root,
-                    None => dir,
-                });
-                let mut state = STATE.lock().unwrap();
-                set_env_var("OPENMODELICAHOME", &path);
-                state.installation_path = Some(path.clone());
-                return Ok(path);
-            }
-        }
-
-    if let Ok(env) = std::env::var("OPENMODELICAHOME")
-        && !env.is_empty() {
-            let path = convert_to_forward_slashes(&env);
+        && let Some((dir, _)) = exe.rsplit_once('/')
+    {
+        let parent_component = dir.rsplit('/').next().unwrap_or("");
+        if parent_component == "bin" || parent_component == "lib" {
+            let path = ArcStr::from(match dir.rsplit_once('/') {
+                Some(("", _)) => "/",
+                Some((root, _)) => root,
+                None => dir,
+            });
             let mut state = STATE.lock().unwrap();
+            set_env_var("OPENMODELICAHOME", &path);
             state.installation_path = Some(path.clone());
             return Ok(path);
         }
+    }
+
+    if let Ok(env) = std::env::var("OPENMODELICAHOME")
+        && !env.is_empty()
+    {
+        let path = convert_to_forward_slashes(&env);
+        let mut state = STATE.lock().unwrap();
+        state.installation_path = Some(path.clone());
+        return Ok(path);
+    }
 
     let path = strip_bin_path(&exe?)?;
 
@@ -401,7 +397,10 @@ mod tests {
                 "{macho}"
             );
             // What it rescues: the bin/lib walk cannot find this.
-            assert_ne!(strip_bin_path_opt(&macho).as_deref(), Some(format!("{app}/Resources").as_str()));
+            assert_ne!(
+                strip_bin_path_opt(&macho).as_deref(),
+                Some(format!("{app}/Resources").as_str())
+            );
         }
     }
 
