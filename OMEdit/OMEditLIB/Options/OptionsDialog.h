@@ -1066,6 +1066,7 @@ public:
   OMSimulatorPage(OptionsDialog *pOptionsDialog);
   ComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
   QLineEdit* getCommandLineOptionsTextBox() {return mpCommandLineOptionsTextBox;}
+  QLineEdit* getOMUQPythonTextBox() {return mpOMUQPythonTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
@@ -1073,6 +1074,12 @@ private:
   ComboBox *mpLoggingLevelComboBox;
   Label *mpCommandLineOptionsLabel;
   QLineEdit *mpCommandLineOptionsTextBox;
+  QGroupBox *mpOMUQGroupBox;
+  Label *mpOMUQPythonLabel;
+  QLineEdit *mpOMUQPythonTextBox;
+  QPushButton *mpOMUQPythonBrowseButton;
+private slots:
+  void browseOMUQPython();
 };
 
 class SensitivityOptimizationPage : public QWidget

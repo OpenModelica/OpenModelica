@@ -272,6 +272,11 @@ namespace OptionsDefaults
   namespace OMSimulator {
     QString commandLineOptions = "--suppressPath=true";
     int loggingLevel = 0;
+#ifdef Q_OS_WIN
+    QString omuqPython = "python";
+#else
+    QString omuqPython = "python3";
+#endif
   }
 
   namespace SensitivityOptimization {
