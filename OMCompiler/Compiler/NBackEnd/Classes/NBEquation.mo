@@ -3110,7 +3110,9 @@ public
               (lhs, rhs) := tpl;
               lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(lhs_subs, BVariable.getVarName(lhs), true));
               rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(rhs_subs, BVariable.getVarName(rhs), true));
-              if BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
+              if BVariable.isConst(lhs) then
+                // constants have no storage and keep their value
+              elseif BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
                 // nested record, assign its children
                 stmts := listAppend(toStatement(RECORD_EQUATION(Expression.typeOf(lhs_exp), lhs_exp, rhs_exp, eqn.source, eqn.attr,
                   listLength(BVariable.getRecordChildren(lhs)))), stmts);

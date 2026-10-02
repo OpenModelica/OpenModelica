@@ -5247,6 +5247,18 @@ template contextCrefOld(ComponentRef cr, Context context, Text &auxFunction, Int
   else crefOld(cr, ix)
 end contextCrefOld;
 
+template isJacobianElementVar(ComponentRef cr, Context context)
+  "true if the subscripted cr is a variable of the Jacobian on its own, not an
+   element of an array variable"
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match simVarExactFromHT(cr, jacHT)
+    case SOME(_) then "true"
+    else ""
+  else ""
+end isJacobianElementVar;
+
 template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
 ::=
@@ -6229,7 +6241,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
       // element of the array using a flattened index. $START crefs address the
       // (array valued) start attribute and the flattened index selects the
       // matching start element (see varArrayNameValues).
-      match crefSubs(crefArrayGetFirstCref(cr))
+      // Jacobians can have standalone variables for single elements, e.g. the seed
+      // $SEED.n[1].T of a linear system that only solves n[1].T.
+      if isJacobianElementVar(cr, context) then
+        let &sub = buffer ""
+        '<%contextCref(cr, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
+      else match crefSubs(crefArrayGetFirstCref(cr))
       case {} then
         let &sub = buffer ""
         '<%contextCref(cr, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
