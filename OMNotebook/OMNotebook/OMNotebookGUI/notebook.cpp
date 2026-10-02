@@ -224,6 +224,8 @@ NotebookWindow::~NotebookWindow()
   //2006-01-27 AF, remove document view from application list
   application()->removeDocumentView( this );
 
+  qApp->removeEventFilter( this );
+
   //2006-01-05 AF, add all inputcell to removelist on highlighter
   RemoveHighlighterVisitor visitor;
   subject_->runVisitor( visitor );
@@ -1414,6 +1416,9 @@ void NotebookWindow::createViewMenu()
   // the zoom is done by a paint device with scaled resolution
   zoomDevice_ = QImage( 1, 1, QImage::Format_ARGB32 );
   zoomResetAction->setEnabled( false );
+
+  // Ctrl (macOS: Cmd) + mouse wheel zooms the texts, see eventFilter()
+  qApp->installEventFilter( this );
 }
 
 namespace {
@@ -1470,14 +1475,10 @@ void NotebookWindow::setTextZoom( int percent )
   zoomDevice_.setDotsPerMeterX( dotsPerMeter );
   zoomDevice_.setDotsPerMeterY( dotsPerMeter );
 
-  // cells that are created later (open file, new cell) are zoomed in eventFilter()
-  qApp->removeEventFilter( this );
-  if( percent != 100 )
-    qApp->installEventFilter( this );
-
   zoomResetAction->setEnabled( percent != 100 );
   statusBar()->showMessage( tr("Zoom: %1%").arg( percent ), 3000 );
 
+  // cells that are created later (open file, new cell) are zoomed in eventFilter()
   applyTextZoom();
 }
 
@@ -1563,6 +1564,35 @@ void NotebookWindow::applyTextZoom( QPlainTextEdit *editor )
   */
 bool NotebookWindow::eventFilter( QObject *obj, QEvent *event )
 {
+  // Ctrl (macOS: Cmd, Qt reports it as ControlModifier) + mouse wheel changes the zoom
+  if( event->type() == QEvent::Wheel )
+  {
+    QWheelEvent *wheel = static_cast<QWheelEvent*>( event );
+    QWidget *widget = qobject_cast<QWidget*>( obj );
+    if( widget && centralWidget() && ( wheel->modifiers() & Qt::ControlModifier ) &&
+        wheel->angleDelta().y() != 0 &&
+        ( widget == centralWidget() || centralWidget()->isAncestorOf( widget ) ) )
+    {
+      const int delta = wheel->angleDelta().y();
+      if( zoomWheelDelta_ * delta < 0 )   // direction changed
+        zoomWheelDelta_ = 0;
+      zoomWheelDelta_ += delta;
+
+      // one step per notch (120), touchpads send many small values
+      while( zoomWheelDelta_ >= 120 )
+      {
+        zoomTextIn();
+        zoomWheelDelta_ -= 120;
+      }
+      while( zoomWheelDelta_ <= -120 )
+      {
+        zoomTextOut();
+        zoomWheelDelta_ += 120;
+      }
+      return true;
+    }
+  }
+
   if( event->type() == QEvent::Show && textZoom_ != 100 )
   {
     if( QTextEdit *editor = qobject_cast<QTextEdit*>( obj ) )

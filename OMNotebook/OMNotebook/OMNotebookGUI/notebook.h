@@ -278,6 +278,7 @@ private:
   QAction *zoomOutAction;
   QAction *zoomResetAction;
   int textZoom_ = 100;
+  int zoomWheelDelta_ = 0;
   QImage zoomDevice_;
 
 #if USE_OMSKETCH
