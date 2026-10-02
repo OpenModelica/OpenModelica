@@ -9,6 +9,7 @@ ExternalRHSFlag.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
+GetExternalFunctions.mos \
 ImplicitArray.mos \
 LapackInverse.mos \
 Matrix.mos \
@@ -53,6 +54,7 @@ Func.h \
 InOutStrings_fkn1.cc \
 InOutStrings_fkn2.cc \
 ModelicaUtilities.myExtFunction.c \
+PrebuiltWasmExternals \
 QualifiedCrefArg-f.c \
 testTables.txt \
 UserDllModelicaError-lib.c \
