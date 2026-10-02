@@ -1,0 +1,48 @@
+// name: getDefUseChains7
+// keywords: def-use, lookup, #16964
+// status: correct
+//
+// Tests that the def-use walker finds the same classes as the lookup of the
+// new frontend (-d=checkUsedElementsLookup) for sub-libraries of the Modelica
+// Standard Library, each walked on its own with the scope argument: Blocks,
+// Media and Fluid for replaceable and redeclared packages, MultiBody for the
+// functions called through a component (world.gravityAcceleration), and
+// Electrical.Analog and Thermal.
+
+setCommandLineOptions("-d=checkUsedElementsLookup"); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+getDefUseChains(Modelica.Blocks, scope = Modelica.Blocks, fileName = "getDefUseChains7.json"); getErrorString();
+getDefUseChains(Modelica.Media, scope = Modelica.Media, fileName = "getDefUseChains7.json"); getErrorString();
+getDefUseChains(Modelica.Fluid, scope = Modelica.Fluid, fileName = "getDefUseChains7.json"); getErrorString();
+getDefUseChains(Modelica.Mechanics.MultiBody, scope = Modelica.Mechanics.MultiBody, fileName = "getDefUseChains7.json"); getErrorString();
+getDefUseChains(Modelica.Electrical.Analog, scope = Modelica.Electrical.Analog, fileName = "getDefUseChains7.json"); getErrorString();
+getDefUseChains(Modelica.Thermal, scope = Modelica.Thermal, fileName = "getDefUseChains7.json"); getErrorString();
+
+deleteFile("getDefUseChains7.json");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "getDefUseChains7.json"
+// "Warning: checkUsedElementsLookup: compared 1479 names, skipped 0 looked up through a replaceable class and 0 the new frontend can't look up in the class on its own
+// "
+// "getDefUseChains7.json"
+// "Warning: checkUsedElementsLookup: compared 4327 names, skipped 32 looked up through a replaceable class and 1515 the new frontend can't look up in the class on its own
+// "
+// "getDefUseChains7.json"
+// "Warning: checkUsedElementsLookup: compared 2832 names, skipped 219 looked up through a replaceable class and 63 the new frontend can't look up in the class on its own
+// "
+// "getDefUseChains7.json"
+// "Warning: checkUsedElementsLookup: compared 2616 names, skipped 0 looked up through a replaceable class and 0 the new frontend can't look up in the class on its own
+// "
+// "getDefUseChains7.json"
+// "Warning: checkUsedElementsLookup: compared 1340 names, skipped 0 looked up through a replaceable class and 0 the new frontend can't look up in the class on its own
+// "
+// "getDefUseChains7.json"
+// "Warning: checkUsedElementsLookup: compared 486 names, skipped 0 looked up through a replaceable class and 0 the new frontend can't look up in the class on its own
+// "
+// true
+// endResult
