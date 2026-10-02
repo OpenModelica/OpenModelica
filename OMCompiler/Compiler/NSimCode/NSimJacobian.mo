@@ -307,7 +307,8 @@ public
 
     function create
       input Adjacency.Matrix mat;
-      input list<SimVar> rowVars "Forward results or adjoint seeds, in Jacobian row order";
+      input list<SimVar> resVars "Forward results or adjoint seeds, in Jacobian row order";
+      input Boolean isAdjoint;
       output Sparsity sparsity;
     protected
       list<SparsityRow> rows;
@@ -601,7 +602,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, if jacobian.isAdjoint then seedVars else resVars),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, if jacobian.isAdjoint then seedVars else resVars, jacobian.isAdjoint),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
