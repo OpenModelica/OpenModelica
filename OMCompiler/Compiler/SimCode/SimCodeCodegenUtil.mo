@@ -1095,6 +1095,36 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function hasSymbolicDims
+  "true if an array SimVar has a dimension that is no integer literal, e.g. the
+   parameter N of a resizable array (--resizableArrays). Its number of elements is
+   only known at runtime."
+  input list<SimCodeVar.SimVar> vars;
+  output Boolean b = List.any(vars, isSymbolicArrayVar);
+end hasSymbolicDims;
+
+protected function isSymbolicArrayVar
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) then not List.all(var.numArrayElement, isIntegerString);
+    else false;
+  end match;
+end isSymbolicArrayVar;
+
+protected function isIntegerString
+  input String s;
+  output Boolean b;
+algorithm
+  try
+    _ := stringInt(s);
+    b := true;
+  else
+    b := false;
+  end try;
+end isIntegerString;
+
 public function numScalarElemsBefore
   "Total number of scalar elements of the first n SimVars of a list. The
    scalar offset of the n-th variable (zero-based) when rolling out arrays."

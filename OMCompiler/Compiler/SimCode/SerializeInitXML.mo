@@ -46,7 +46,9 @@ protected
 import BackendDAE.VarKind;
 import ClassInf;
 import CR=ComponentReference;
+import ComponentReferenceBasics;
 import Config;
+import DAE;
 import DAE.{Exp,Type};
 import DAEUtil;
 import Dump;
@@ -54,6 +56,7 @@ import Error;
 import Expression;
 import ExpressionBasics.printExpStr;
 import File.Escape.XML;
+import List;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
@@ -271,6 +274,7 @@ function modelVariables "Generates code for ModelVariables file for FMU target."
   input SimCodeVar.SimVars vars;
 protected
   Integer vr, ix=0;
+  list<tuple<DAE.ComponentRef, Integer>> dims;
 algorithm
   // set starting index
   vr := match Config.simCodeTarget()
@@ -279,30 +283,54 @@ algorithm
     else 1000;
   end match;
 
-  vr := scalarVariables(file, vars.stateVars, "rSta", vr);
-  vr := scalarVariables(file, vars.derivativeVars, "rDer", vr);
-  (vr,ix) := scalarVariables(file, vars.algVars, "rAlg", vr, ix);
-  (vr,ix) := scalarVariables(file, vars.discreteAlgVars, "rAlg", vr, ix);
-  (vr,ix) := scalarVariables(file, vars.realOptimizeConstraintsVars, "rAlg", vr, ix);
-  (vr,ix) := scalarVariables(file, vars.realOptimizeFinalConstraintsVars, "rAlg", vr, ix);
-  vr := scalarVariables(file, vars.paramVars, "rPar", vr);
-  vr := scalarVariables(file, vars.aliasVars, "rAli", vr);
+  dims := dimensionValueReferences(vars, vr);
 
-  vr := scalarVariables(file, vars.intAlgVars, "iAlg", vr);
-  vr := scalarVariables(file, vars.intParamVars, "iPar", vr);
-  vr := scalarVariables(file, vars.intAliasVars, "iAli", vr);
+  vr := scalarVariables(file, vars.stateVars, "rSta", vr, dims = dims);
+  vr := scalarVariables(file, vars.derivativeVars, "rDer", vr, dims = dims);
+  (vr,ix) := scalarVariables(file, vars.algVars, "rAlg", vr, ix, dims);
+  (vr,ix) := scalarVariables(file, vars.discreteAlgVars, "rAlg", vr, ix, dims);
+  (vr,ix) := scalarVariables(file, vars.realOptimizeConstraintsVars, "rAlg", vr, ix, dims);
+  (vr,ix) := scalarVariables(file, vars.realOptimizeFinalConstraintsVars, "rAlg", vr, ix, dims);
+  vr := scalarVariables(file, vars.paramVars, "rPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.aliasVars, "rAli", vr, dims = dims);
 
-  vr := scalarVariables(file, vars.boolAlgVars, "bAlg", vr);
-  vr := scalarVariables(file, vars.boolParamVars, "bPar", vr);
-  vr := scalarVariables(file, vars.boolAliasVars, "bAli", vr);
+  vr := scalarVariables(file, vars.intAlgVars, "iAlg", vr, dims = dims);
+  vr := scalarVariables(file, vars.intParamVars, "iPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.intAliasVars, "iAli", vr, dims = dims);
 
-  vr := scalarVariables(file, vars.stringAlgVars, "sAlg", vr);
-  vr := scalarVariables(file, vars.stringParamVars, "sPar", vr);
-  vr := scalarVariables(file, vars.stringAliasVars, "sAli", vr);
+  vr := scalarVariables(file, vars.boolAlgVars, "bAlg", vr, dims = dims);
+  vr := scalarVariables(file, vars.boolParamVars, "bPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.boolAliasVars, "bAli", vr, dims = dims);
+
+  vr := scalarVariables(file, vars.stringAlgVars, "sAlg", vr, dims = dims);
+  vr := scalarVariables(file, vars.stringParamVars, "sPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.stringAliasVars, "sAli", vr, dims = dims);
 
   // sensitivity variables
-  vr := scalarVariables(file, vars.sensitivityVars, "rSen", vr);
+  vr := scalarVariables(file, vars.sensitivityVars, "rSen", vr, dims = dims);
 end modelVariables;
+
+function dimensionValueReferences
+  "The value references the Integer parameters get in modelVariables. A dimension
+   given by one of them (resizable arrays) refers to it by value reference, so it
+   can be changed with -override before the simulation without compiling the
+   model again."
+  input SimCodeVar.SimVars vars;
+  input Integer firstValueReference;
+  output list<tuple<DAE.ComponentRef, Integer>> dims = {};
+protected
+  Integer vr;
+algorithm
+  // the value reference of the first Integer parameter, see modelVariables
+  vr := firstValueReference + listLength(vars.stateVars) + listLength(vars.derivativeVars)
+    + listLength(vars.algVars) + listLength(vars.discreteAlgVars) + listLength(vars.realOptimizeConstraintsVars)
+    + listLength(vars.realOptimizeFinalConstraintsVars) + listLength(vars.paramVars) + listLength(vars.aliasVars)
+    + listLength(vars.intAlgVars);
+  for var in vars.intParamVars loop
+    dims := (var.name, vr) :: dims;
+    vr := vr + 1;
+  end for;
+end dimensionValueReferences;
 
 function scalarVariables
   input File.File file;
@@ -310,9 +338,10 @@ function scalarVariables
   input String classType;
   input output Integer valueReference;
   input output Integer index=0;
+  input list<tuple<DAE.ComponentRef, Integer>> dims = {} "value references of the parameters that are dimensions";
 algorithm
   for var in vars loop
-    scalarVariable(file, var, classType, valueReference, index);
+    scalarVariable(file, var, classType, valueReference, index, dims);
     index := index + 1;
     valueReference := valueReference + 1;
   end for;
@@ -324,11 +353,12 @@ function scalarVariable
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
+  input list<tuple<DAE.ComponentRef, Integer>> dims;
 protected
   String type_name = if DAEUtil.expTypeArray(var.type_) then "ArrayVariable" else "ScalarVariable";
 algorithm
   File.write(file, "  <" + type_name + "\n");
-  scalarVariableAttribute(file, var, classType, valueReference, classIndex);
+  scalarVariableAttribute(file, var, classType, valueReference, classIndex, dims);
   File.write(file, "    ");
   scalarVariableType(file, var);
   File.write(file, "\n  </" + type_name + ">\n");
@@ -340,6 +370,7 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
+  input list<tuple<DAE.ComponentRef, Integer>> dims;
 protected
   Integer inputIndex = SimCodeCodegenUtil.getInputIndex(simVar);
   SourceInfo info = simVar.source.info;
@@ -412,9 +443,33 @@ algorithm
   File.write(file, "\">\n");
 
   for dim in Expression.arrayDimension(simVar.type_) loop
-    File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
+    _ := match dim
+      local
+        DAE.ComponentRef cr;
+        Integer vr;
+      // a dimension given by a parameter refers to it, see dimensionValueReferences
+      case DAE.DIM_EXP(exp = DAE.CREF(componentRef = cr))
+        algorithm
+          (_, vr) := List.getMemberOnTrue(cr, dims, dimensionRefEqual);
+          File.write(file, "    <Dimension valueReference=\"" + intString(vr) + "\"/>\n");
+        then ();
+      case DAE.DIM_EXP() guard not Expression.isConst(dim.exp)
+        algorithm
+          Error.addCompilerError("The dimension " + printExpStr(dim.exp) + " of " + ComponentReferenceBasics.printComponentRefStr(simVar.name)
+            + " is not an Integer parameter. Resizable arrays (--resizableArrays) do not support dimensions that are expressions of parameters yet.");
+        then fail();
+      else algorithm
+        File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
+      then ();
+    end match;
   end for;
 end scalarVariableAttribute;
+
+function dimensionRefEqual
+  input DAE.ComponentRef cr;
+  input tuple<DAE.ComponentRef, Integer> dim;
+  output Boolean b = ComponentReferenceBasics.crefEqualNoStringCompare(cr, Util.tuple21(dim));
+end dimensionRefEqual;
 
 function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."
   input File.File file;

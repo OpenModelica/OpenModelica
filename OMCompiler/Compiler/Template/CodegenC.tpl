@@ -1185,7 +1185,7 @@ template simulationFile_dae(SimCode simCode)
       let initDAEmode =
         match sparsityPattern
         case SOME(JAC_MATRIX(sparsityMatrix=sparsityMatrix as SPARSITY(), matrixName=matrixName, seedVars=seedVars, crefsHT=crefsHT)) then
-          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
+          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, numScalarElemsExp(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
         case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
           '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
         case NONE() then
@@ -3165,7 +3165,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
-      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, numScalarElemsExp(seedVars), createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, useResizable)
@@ -3205,7 +3205,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
-      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, numScalarElemsExp(seedVars), createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
@@ -3460,7 +3460,7 @@ template generateResizableEmptySparseData(String indexName, String systemType)
   >>
 end generateResizableEmptySparseData;
 
-template generateResizableSparseData(String indexName, String systemType, Sparsity sparsity, Integer nCols, Context context)
+template generateResizableSparseData(String indexName, String systemType, Sparsity sparsity, String nCols, Context context)
 "template generateResizableSparseData
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
@@ -5179,7 +5179,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   >>
 end initializeDAEmodeData;
 
-template initializeDAEmodeDataResizable(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, Sparsity sparsityMatrix, Integer nCols, Integer nRows, Context context, String modelNamePrefix)
+template initializeDAEmodeDataResizable(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, Sparsity sparsityMatrix, String nCols, Integer nRows, Context context, String modelNamePrefix)
   "Generates initialization function for daeMode using NBackEnd resizable sparsity pattern."
 ::=
 match sparsityMatrix
@@ -6189,7 +6189,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
-    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, numScalarElemsExp(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
@@ -6206,7 +6206,31 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
+template numScalarElemsExp(list<SimVar> vars)
+ "Number of scalar elements of the SimVars. A C expression of the structural
+  parameters if a dimension is only known at runtime (resizable arrays), where the
+  parameters can still be changed with -override before the simulation."
+::=
+  if hasSymbolicDims(vars) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &varFrees = buffer ""
+    let &auxFunction = buffer ""
+    let terms = (vars |> v => numScalarElemsVarExp(v, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=" + ")
+    '((size_t)(<%terms%>))'
+  else SimCodeCodegenUtil.numScalarElems(vars)
+end numScalarElemsExp;
+
+template numScalarElemsVarExp(SimVar var, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Number of scalar elements of a SimVar as a C expression."
+::=
+  match var
+  case SIMVAR(type_ = T_ARRAY(dims = dims)) then
+    '(<%dims |> d => dimension(d, contextOther, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=" * "%>)'
+  else '1'
+end numScalarElemsVarExp;
+
+template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, String nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
 "Two-pass CSC construction: count nonzeros per column, allocate, then fill row indices."
 ::=
 match sparsity
@@ -6232,7 +6256,7 @@ match sparsity
     // and its inner dimension is the adjoint seed count (primal rows).
     let patternCols = if isAdjoint then '<%sizeRows%>' else '<%nCols%>'
     let patternRows = if isAdjoint then '<%nCols%>' else '<%sizeRows%>'
-    let tmpvarsSize = (columns |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
+    let tmpvarsSize = (columns |> JAC_COLUMN() => numScalarElemsExp(columnVars); separator="\n")
     let constantEqns = (columns |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
@@ -6310,7 +6334,7 @@ match sparsity
     >>
 end initialResizableAnalyticJacobians;
 
-template resizableSparsityRowCount(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
+template resizableSparsityRowCount(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 "Count phase: for each (row,col) pair in this SparsityRow, increment col_counts[col].
  For REGULAR 1D WHOLEDIM seeds (dep.kinds=[false], not rep) inside WHOLEDIM/multi-dim-WHOLEDIM sc,
  emits a single col_counts[v.index + _wr_k]++ (diagonal). All other cases use REDUCTION (full loop)."
@@ -6478,7 +6502,7 @@ match row
     else ''
 end resizableSparsityRowCount;
 
-template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template resizableColCountRegular(ComponentRef seed, String nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Count phase for a REGULAR 1D whole-array seed: emit col_counts[v.index + _wr<%k%>]++ (one
  column aligned with the outer row-loop variable _wr<%k%>). Only call when dep.kinds=[false]
  and not rep — the caller is responsible for checking those conditions inline."
@@ -6513,7 +6537,7 @@ template wholeDimsSize(list<Dimension> dims, Context context, Text &preExp, Text
   (dims |> dim => '(unsigned int)(<%dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)' ;separator=" * ")
 end wholeDimsSize;
 
-template resizableColCount(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template resizableColCount(ComponentRef seed, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6532,7 +6556,7 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
   else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
 end resizableColCount;
 
-template resizableColCountBase(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template resizableColCountBase(ComponentRef seed, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Increment col_counts for one dependency cref."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6726,7 +6750,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
   else ''
 end resizableColCountBase;
 
-template resizableSparsityRowFill(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
+template resizableSparsityRowFill(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Fill phase: for each (row,col) pair, write spPattern->index[col_fill[col]++] = row.
  Uses resizableFillDepsForRow helper to avoid nested iteration over two record fields."
 ::=
@@ -6748,7 +6772,7 @@ match row
     else ''
 end resizableSparsityRowFill;
 
-template resizableFillDepsForRow(SparsityRow row, Integer nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
+template resizableFillDepsForRow(SparsityRow row, String nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Generate fill code for solved_cref sc (row index k) against all dependencies in row.
  Explicitly binds dependencies and equation_iterators in the SPARSITY_ROW pattern to keep them in scope through nested matches."
 ::=
@@ -6983,7 +7007,7 @@ match row
 end resizableFillDepsForRow;
 
 
-template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
+template resizableColFillRegular(ComponentRef seed, String nCols, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Fill phase for a REGULAR 1D whole-array seed: emit a single diagonal entry
  spPattern->index[col_fill[v.index + _wr<%k%>]++] = row. Only call when dep.kinds=[false]
  and not rep — the caller is responsible for checking those conditions inline."
@@ -7003,7 +7027,7 @@ template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExp
   else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
 end resizableColFillRegular;
 
-template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
+template resizableColFill(ComponentRef seed, String nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -7022,7 +7046,7 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
   else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
 end resizableColFill;
 
-template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
+template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -7259,7 +7283,7 @@ match sparsepattern
     let sizeleadindex = listLength(sparsepattern)
     let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
-    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
+    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => numScalarElemsExp(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
