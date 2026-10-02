@@ -1106,6 +1106,11 @@ public
           SOME(derCref) := derivativeOfPrefix(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
+        elseif Type.isArray(exp.ty) and not Type.hasKnownSize(exp.ty) then
+          // an input of unknown size, e.g. a[:], has the zero derivative fill(0, size(a, 1), ...)
+          res     := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
+            makeZero(Type.arrayElementType(exp.ty)) :: list(Expression.SIZE(exp, SOME(Expression.INTEGER(i))) for i in 1:Type.dimensionCount(exp.ty)),
+            Variability.CONTINUOUS, NFPrefixes.Purity.PURE, exp.ty));
         else
           res     := makeZero(exp.ty);
         end if;
