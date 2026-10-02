@@ -58,11 +58,6 @@ fn runtime_blob() -> &'static [u8] {
     }
 }
 
-/// The ModelicaExternalC WASI side module (`build.rs`), providing the
-/// `ext.Modelica*_*` external functions (table blocks, string scanning, …) on the
-/// web target. Empty when `emcc` was unavailable at build time — these externals
-/// are then reported as unavailable at run time (see [`define_external_imports`]).
-
 thread_local! {
     /// Side-module offsets `env.ModelicaAllocateString` handed out during the
     /// current external "C" call (string outputs live in the side module's memory).
@@ -272,6 +267,20 @@ fn wts<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> std::result::Resu
 }
 
 /// Read a NUL-terminated C string from wasm memory at `ptr` (bounded).
+/// The bytes of the NUL-terminated string at `ptr`, without the NUL.
+pub(crate) fn read_cstr_bytes(view: &wasmer::MemoryView, ptr: u64) -> Vec<u8> {
+    let mut out = Vec::new();
+    let mut at = ptr;
+    while let Ok(b) = view.read_u8(at) {
+        if b == 0 {
+            break;
+        }
+        out.push(b);
+        at += 1;
+    }
+    out
+}
+
 pub(crate) fn read_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, ptr: u32) -> String {
     let view = mem.view(store);
     let mut bytes = Vec::new();
@@ -303,7 +312,7 @@ fn define_external_imports(
     use crate::dylink_wasmer::{self as dl, ExtRt, Library, NlsHooks};
     use wasmer::FunctionType;
 
-    if crate::LIBC_PIC().is_empty() {
+    if model.ext_libc.is_none() && crate::LIBC_PIC().is_empty() {
         crate::set_engine_error_detail(
             "  this omc carries no PIC libc, so no shared library can be loaded".to_owned(),
         );
@@ -327,9 +336,13 @@ fn define_external_imports(
     // `libc.so` first and the rest dependency-first (see `dylink::libraries_for`).
     // The model's own come before the ones omc carries, so a shared symbol is
     // theirs; `usertab` last, so a model's own overrides the erroring default.
-    let mut libs: Vec<Library> = vec![Library { name: "libc.so", bytes: crate::LIBC_PIC() }];
+    let libc = model.ext_libc.as_ref().map_or(crate::LIBC_PIC(), |l| &l.bytes[..]);
+    let mut libs: Vec<Library> = vec![Library { name: "libc.so", bytes: libc }];
     libs.extend(model.ext_libs.iter().map(|l| Library { name: &l.name, bytes: &l.bytes }));
-    let carried = crate::dylink::libraries_for(model.ext_imports.iter().map(|s| s.name.as_str()));
+    let carried = crate::dylink::carried_libraries(
+        model.ext_imports.iter().map(|s| s.name.as_str()),
+        model.ext_libs.iter().map(|l| &l.bytes[..]),
+    );
     for file in &carried {
         if let Some(bytes) = crate::ext_library(file) {
             libs.push(Library { name: file, bytes });
@@ -457,6 +470,14 @@ fn run_utilities_imports(
             .map_err(|e| RuntimeError::new(format!("{e}")))?;
         Ok(p as i32)
     });
+    let duplicate = Function::new_typed_with_env(store, &env, |mut env: FunctionEnvMut<RunEnv>, s: i32| -> std::result::Result<i32, RuntimeError> {
+        let (alloc, mem) = (env.data().alloc.clone(), env.data().memory.clone());
+        let bytes = read_cstr_bytes(&mem.view(&env), s as u64);
+        let p = alloc.call(&mut env, bytes.len() as u32 + 1)?;
+        mem.view(&env).write(p as u64, &[bytes, vec![0]].concat())
+            .map_err(|e| RuntimeError::new(format!("{e}")))?;
+        Ok(p as i32)
+    });
     // `ModelicaInternal_getTime` writes nothing (its seven int* outputs stay as
     // they are) and `getpid` is a constant; only ModelicaRandom's automatic global
     // seed uses them.
@@ -472,6 +493,7 @@ fn run_utilities_imports(
         (["ModelicaFormatWarning", "ModelicaVFormatWarning"], warning_fmt),
         (["ModelicaFormatMessage", "ModelicaVFormatMessage"], message_fmt),
         (["ModelicaAllocateString", "ModelicaAllocateStringWithErrorReturn"], allocate),
+        (["ModelicaDuplicateString", "ModelicaDuplicateStringWithErrorReturn"], duplicate),
     ] {
         for name in names {
             m.insert(name.to_owned(), f.clone());
@@ -635,6 +657,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // are store-bound in wasmer, so they are built here (per run) rather than
     // cached; this is just function-handle creation, negligible next to compile.
     let t_inst = Instant::now();
+    openmodelica_wasi::wasi::set_guest_env(model.ext_env.clone());
     let mut store = wasmer::Store::new(engine.clone());
     let mut imports = wasmer::Imports::new();
     let host_mem = add_host_builtins(&mut store, &mut imports)?;

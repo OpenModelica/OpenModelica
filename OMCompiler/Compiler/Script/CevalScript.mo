@@ -1370,6 +1370,7 @@ algorithm
         end if;
         Print.clearBuf();
         SymbolTable.setAbsyn(p);
+        PackageManagement.installMissingWasmOfLoaded(list(AbsynUtil.classFilename(c) for c in p.classes), CodegenWasmJitFunctions.prebuiltExternalsABI());
         execStat("loadModel("+AbsynUtil.pathString(path)+")");
         outCache := FCore.emptyCache();
       then

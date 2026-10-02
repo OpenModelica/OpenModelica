@@ -186,6 +186,7 @@ pub(super) fn link_fmu_component(
     adapter: &[u8],
     solvers: Option<&[&str]>,
     ext_libs: &[ExtLibrary],
+    libc: Option<&[u8]>,
     native_stub: Option<&[u8]>,
 ) -> Result<Vec<u8>> {
     let sundials = solvers.is_some();
@@ -248,12 +249,12 @@ pub(super) fn link_fmu_component(
                 wanted.extend(dylink_needs(bytes));
             }
             // Under the file name, which is what another library's NEEDED says.
-            for file in openmodelica_wasm_jit::dylink::libraries_for(&wanted) {
+            for file in openmodelica_wasm_jit::dylink::carried_libraries(&wanted, ext_bytes.iter().map(|b| &b[..])) {
                 let Some(bytes) = openmodelica_wasm_jit::ext_library(file) else { continue };
                 l.library(file, bytes, false).map_err(link_err)?;
             }
         }
-        l.library("libc", LIBC_PIC(), false).map_err(link_err)?;
+        l.library("libc", libc.unwrap_or(LIBC_PIC()), false).map_err(link_err)?;
         if has_ext {
             // Last, so a `usertab` from the model's own libraries wins.
             l.library("usertab", USERTAB_DYLINK(), false).map_err(link_err)?;

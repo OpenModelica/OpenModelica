@@ -2116,17 +2116,22 @@ algorithm
         if isWasm then
           dirs := List.union(dirs, paths);
         end if;
-        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) then libNames else {} loop
-          if getGerneralTarget(target)=="msvc" or Autoconf.os=="Windows_NT" then
-            fullLibNames := {name + Autoconf.dllExt, "lib" + name + ".a", "lib" + name + ".lib"};
-          else
-            fullLibNames := {"lib" + name + ".a", "lib" + name + Autoconf.dllExt};
-          end if;
-          lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info, false);
-          // A wasm run uses either form, so both are looked for and built.
-          if isWasm then
-            lookForExtFunctionLibrary({name + ".wasm", "lib" + name + ".wasm"},
-                                      dirs, name, resources, path, info, true);
+        // A bundle installPackage put there covers the `Library` names, some of
+        // which it links in privately.
+        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) and not (isWasm and hasWasmBundle(dirs)) then libNames else {} loop
+          // A wasm run uses either form, so both are looked for and built, unless
+          // the module it loads is there already.
+          if not (isWasm and max(System.regularFileExists(d + n) for d in "" :: list(d + "/" for d in dirs), n in {name + ".wasm", "lib" + name + ".wasm"})) then
+            if getGerneralTarget(target)=="msvc" or Autoconf.os=="Windows_NT" then
+              fullLibNames := {name + Autoconf.dllExt, "lib" + name + ".a", "lib" + name + ".lib"};
+            else
+              fullLibNames := {"lib" + name + ".a", "lib" + name + Autoconf.dllExt};
+            end if;
+            lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info, false);
+            if isWasm then
+              lookForExtFunctionLibrary({name + ".wasm", "lib" + name + ".wasm"},
+                                        dirs, name, resources, path, info, true);
+            end if;
           end if;
         end for;
         if isWasm then
@@ -2139,6 +2144,22 @@ algorithm
     case NONE() then ({}, {}, {},{}, false);
   end match;
 end generateExtFunctionIncludes;
+
+protected function hasWasmBundle
+  "Whether installPackage put prebuilt wasm modules (an `omc-<generation>`
+   directory) in one of `dirs`."
+  input list<String> dirs;
+  output Boolean b = false;
+algorithm
+  for d in dirs loop
+    if (StringUtil.endsWith(d, "wasm32-wasip1") or StringUtil.endsWith(d, "wasm32-wasip1/")) and System.directoryExists(d) then
+      if List.any(System.subDirectories(d), function StringUtil.startsWith(prefix = "omc-")) then
+        b := true;
+        return;
+      end if;
+    end if;
+  end for;
+end hasWasmBundle;
 
 protected function lookForExtFunctionLibrary
   "`forWasm` looks for the wasm module a simulation loads rather than the platform
@@ -2666,9 +2687,7 @@ algorithm
 end getLibraryStringInGccFormat;
 
 protected function isWasmSimCodeTarget
-"An FMU export falls back to C in the testsuite (SimCodeMain.callTargetTemplatesFMU)."
-  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm")
-                          and not (Flags.getConfigBool(Flags.BUILDING_FMU) and Testsuite.isRunning());
+  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm");
 end isWasmSimCodeTarget;
 
 protected function stripLibraryExtension
@@ -2701,16 +2720,18 @@ algorithm
       String str;
       list<String> host;
 
-    // In the runtime already: LAPACK/BLAS are in-wasm, and ModelicaExternalC is
-    // the side module omc carries.
+    // In the runtime already: LAPACK/BLAS are in-wasm, and zlib is inside the
+    // modules that use it.
     case Absyn.STRING("lapack") then ({},{});
     case Absyn.STRING("Lapack") then ({},{});
     case Absyn.STRING("blas") then ({},{});
-    case Absyn.STRING("ModelicaExternalC") then ({},{});
-    case Absyn.STRING("ModelicaStandardTables") then ({},{});
-    case Absyn.STRING("ModelicaIO") then ({},{});
-    case Absyn.STRING("ModelicaMatIO") then ({},{});
     case Absyn.STRING("zlib") then ({},{});
+    // The MSL's: the modules installed with it when there are, else the side
+    // modules omc carries, never a platform library.
+    case Absyn.STRING("ModelicaExternalC") then ({"ModelicaExternalC.wasm"},{});
+    case Absyn.STRING("ModelicaStandardTables") then ({"ModelicaStandardTables.wasm"},{});
+    case Absyn.STRING("ModelicaIO") then ({"ModelicaIO.wasm"},{});
+    case Absyn.STRING("ModelicaMatIO") then ({"ModelicaMatIO.wasm"},{});
 
     case Absyn.STRING(str)
       algorithm

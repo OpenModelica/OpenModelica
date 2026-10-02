@@ -68,21 +68,14 @@ pub(super) fn emit_shared_external_call(
         Ok(Target { out_idx, out_sty, field: cref.and_then(cref_field) })
     };
 
-    let catch = EXT_ERROR_CATCH.with(|c| c.get());
-    let mut temps: Vec<u32> = Vec::new();
-    let mut saved_stack = 0;
-    if let Some(tag) = catch {
-        temps = results.iter().map(|r| ctx.alloc_temp(r.wty())).collect();
-        saved_stack = ctx.alloc_temp(WTy::I32);
-        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_save")?));
-        ctx.emit(we::Instruction::LocalSet(saved_stack));
-        ctx.emit(we::Instruction::Block(we::BlockType::Empty)); // done
-        ctx.emit(we::Instruction::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
-        ctx.emit(we::Instruction::TryTable(
-            we::BlockType::Empty,
-            vec![we::Catch::OneRef { tag, label: 0 }].into(),
-        ));
-    }
+    let catch = match EXT_ERROR_CATCH.with(|c| c.get()) {
+        Some(tag) => Some(open_ext_catch(ctx, tag)?),
+        None => None,
+    };
+    let temps: Vec<u32> = match catch {
+        Some(_) => results.iter().map(|r| ctx.alloc_temp(r.wty())).collect(),
+        None => Vec::new(),
+    };
 
     for a in &**extArgs {
         let is_out = ext_arg_output_index(a) != 0;
@@ -214,54 +207,45 @@ pub(super) fn emit_shared_external_call(
 
     ctx.emit(we::Instruction::Call(index));
 
-    if catch.is_some() {
+    if let Some(catch) = &catch {
         // Out of the `try_table` region: the results travel through locals so every
-        // block here is empty-typed but the one the caught `exnref` lands in.
+        // block here is empty-typed but the ones the caught `exnref`s land in.
         for t in temps.iter().rev() {
             ctx.emit(we::Instruction::LocalSet(*t));
         }
-        ctx.emit(we::Instruction::End); // try_table
-        ctx.emit(we::Instruction::Br(1)); // done
-        ctx.emit(we::Instruction::End); // handler: the exception is on the stack
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-        ctx.emit(we::Instruction::If(we::BlockType::Empty));
-        ctx.emit(we::Instruction::LocalGet(saved_stack));
-        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
-        for c in &cleanups {
-            match c {
-                Cleanup::Cell { ptr, .. } => {
-                    ctx.emit(we::Instruction::LocalGet(*ptr));
-                    ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
-                }
-                Cleanup::F77Array { handle, ptr, .. } => {
-                    ctx.emit(we::Instruction::LocalGet(*handle));
-                    ctx.emit(we::Instruction::LocalGet(*ptr));
-                    ctx.emit(we::Instruction::I32Const(0));
-                    ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
-                }
-                // The call did not return, so nothing is copied back out of it.
-                Cleanup::CRecord { ptr, .. } => {
-                    ctx.emit(we::Instruction::LocalGet(*ptr));
-                    ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
-                }
-                Cleanup::Owned { handle } => {
-                    ctx.emit(we::Instruction::LocalGet(*handle));
-                    ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
-                }
-                Cleanup::StrArray { handle } => {
-                    ctx.emit(we::Instruction::LocalGet(*handle));
-                    ctx.emit(we::Instruction::Call(rt_index("rt_str_array_from_cstr")?));
+        close_ext_catch(ctx, catch, &sig.name, &mut |ctx| {
+            for c in &cleanups {
+                match c {
+                    Cleanup::Cell { ptr, .. } => {
+                        ctx.emit(we::Instruction::LocalGet(*ptr));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                    }
+                    Cleanup::F77Array { handle, ptr, .. } => {
+                        ctx.emit(we::Instruction::LocalGet(*handle));
+                        ctx.emit(we::Instruction::LocalGet(*ptr));
+                        ctx.emit(we::Instruction::I32Const(0));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_f77_arr_out")?));
+                    }
+                    // The call did not return, so nothing is copied back out of it.
+                    Cleanup::CRecord { ptr, .. } => {
+                        ctx.emit(we::Instruction::LocalGet(*ptr));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_free")?));
+                    }
+                    Cleanup::Owned { handle } => {
+                        ctx.emit(we::Instruction::LocalGet(*handle));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_release")?));
+                    }
+                    Cleanup::StrArray { handle } => {
+                        ctx.emit(we::Instruction::LocalGet(*handle));
+                        ctx.emit(we::Instruction::Call(rt_index("rt_str_array_from_cstr")?));
+                    }
                 }
             }
-        }
-        release_heap_locals(ctx)?;
-        push_outputs(ctx)?;
-        ctx.emit(we::Instruction::Return);
-        ctx.emit(we::Instruction::End); // if
-        // Not inside a residual: a `ModelicaError` ends the run, as in C.
-        ctx.emit(we::Instruction::ThrowRef);
-        ctx.emit(we::Instruction::End); // done
+            release_heap_locals(ctx)?;
+            push_outputs(ctx)?;
+            ctx.emit(we::Instruction::Return);
+            Ok(())
+        })?;
         for t in &temps {
             ctx.emit(we::Instruction::LocalGet(*t));
         }
@@ -432,7 +416,7 @@ pub(super) fn emit_known_external_call(
 thread_local! {
     /// When set, `external` calls take the real C/Fortran argument list instead
     /// of the host-trampoline shape ([`emit_shared_external_call`]): a wasm FMU,
-    /// where model, runtime and ModelicaExternalC share one memory.
+    /// where model, runtime and the external libraries share one memory.
     pub(super) static EXTERNALS_SHARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
@@ -496,6 +480,71 @@ pub(super) fn emit_assert_unwind(ctx: &mut FnCtx) {
     }
 }
 
+/// The blocks [`open_ext_catch`] opened around an `ext` call.
+struct ExtCatch {
+    saved_stack: u32,
+    /// A failed `assert()` in an argument unwinds past the call with this tag.
+    assert_tag: Option<u32>,
+}
+
+/// Open the `try_table` an `ext` call runs in: `ModelicaError` (`tag`) lands in the
+/// handler, any other exception (an uncaught C++ one) in `uncaught`.
+fn open_ext_catch(ctx: &mut FnCtx, tag: u32) -> Result<ExtCatch> {
+    use we::Instruction as I;
+    let saved_stack = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::Call(env_extra_index("rt_ext_stack_save")?));
+    ctx.emit(I::LocalSet(saved_stack));
+    let assert_tag = ASSERT_THROW_TAG.with(|c| c.get());
+    ctx.emit(I::Block(we::BlockType::Empty)); // done
+    ctx.emit(I::Block(we::BlockType::Empty)); // uncaught
+    let mut catches = vec![we::Catch::OneRef { tag, label: 0 }];
+    let mut uncaught = 1;
+    if let Some(assert_tag) = assert_tag {
+        ctx.emit(I::Block(we::BlockType::Result(we::ValType::EXNREF))); // assert
+        catches.push(we::Catch::OneRef { tag: assert_tag, label: 1 });
+        uncaught = 2;
+    }
+    ctx.emit(I::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
+    catches.push(we::Catch::All { label: uncaught });
+    ctx.emit(I::TryTable(we::BlockType::Empty, catches.into()));
+    Ok(ExtCatch { saved_stack, assert_tag })
+}
+
+/// Close what [`open_ext_catch`] opened. `recover` releases what the call held and
+/// returns the outputs as they are, for a solver that retries the step.
+fn close_ext_catch(
+    ctx: &mut FnCtx,
+    catch: &ExtCatch,
+    name: &str,
+    recover: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
+) -> Result<()> {
+    use we::Instruction as I;
+    ctx.emit(I::End); // try_table
+    ctx.emit(I::Br(if catch.assert_tag.is_some() { 3 } else { 2 })); // done
+    ctx.emit(I::End); // handler: the exception is on the stack
+    ctx.emit(I::Call(rt_index("rt_nls_recovering")?));
+    ctx.emit(I::If(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(catch.saved_stack));
+    ctx.emit(I::Call(env_extra_index("rt_ext_stack_restore")?));
+    ctx.emit(I::Call(rt_index("rt_nls_note_assert")?));
+    recover(ctx)?;
+    ctx.emit(I::End); // if
+    // Not inside a residual: a `ModelicaError` ends the run, as in C.
+    ctx.emit(I::ThrowRef);
+    if catch.assert_tag.is_some() {
+        ctx.emit(I::End); // assert
+        ctx.emit(I::ThrowRef);
+    }
+    ctx.emit(I::End); // uncaught: natively `std::terminate`
+    ctx.emit(I::LocalGet(catch.saved_stack));
+    ctx.emit(I::Call(env_extra_index("rt_ext_stack_restore")?));
+    emit_shared_str(ctx, &format!("external function `{name}` ended with an exception it did not catch"));
+    ctx.emit(I::Call(rt_index("rt_throw_stream")?));
+    recover(ctx)?;
+    ctx.emit(I::End); // done
+    Ok(())
+}
+
 pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: &[metamodelica::Ref<DAE::Exp>]) -> Result<Vec<SigTy>> {
     let key = format!("ext.{ext_name}");
     let (index, params, results) = match ctx.by_name.get(&key) {
@@ -505,21 +554,14 @@ pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: 
     if args.len() != params.len() {
         return Err("CodegenWasmJit: external input argument count mismatch");
     }
-    let catch = EXT_ERROR_CATCH.with(|c| c.get());
-    let mut temps: Vec<u32> = Vec::new();
-    let mut saved_stack = 0;
-    if let Some(tag) = catch {
-        temps = results.iter().map(|r| ctx.alloc_temp(r.wty())).collect();
-        saved_stack = ctx.alloc_temp(WTy::I32);
-        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_save")?));
-        ctx.emit(we::Instruction::LocalSet(saved_stack));
-        ctx.emit(we::Instruction::Block(we::BlockType::Empty)); // done
-        ctx.emit(we::Instruction::Block(we::BlockType::Result(we::ValType::EXNREF))); // handler
-        ctx.emit(we::Instruction::TryTable(
-            we::BlockType::Empty,
-            vec![we::Catch::OneRef { tag, label: 0 }].into(),
-        ));
-    }
+    let catch = match EXT_ERROR_CATCH.with(|c| c.get()) {
+        Some(tag) => Some(open_ext_catch(ctx, tag)?),
+        None => None,
+    };
+    let temps: Vec<u32> = match catch {
+        Some(_) => results.iter().map(|r| ctx.alloc_temp(r.wty())).collect(),
+        None => Vec::new(),
+    };
 
     // A heap argument reaches the host as an owned reference (reading a String
     // local retains), and the trampoline only copies out of it — so this side
@@ -546,29 +588,20 @@ pub(super) fn emit_general_external_call(ctx: &mut FnCtx, ext_name: &str, args: 
         }
         Ok(())
     };
-    if catch.is_some() {
+    if let Some(catch) = &catch {
         // Out of the `try_table` region: the results travel through locals so every
-        // block here is empty-typed but the one the caught `exnref` lands in.
+        // block here is empty-typed but the ones the caught `exnref`s land in.
         for t in temps.iter().rev() {
             ctx.emit(we::Instruction::LocalSet(*t));
         }
         release_args(ctx)?;
-        ctx.emit(we::Instruction::End); // try_table
-        ctx.emit(we::Instruction::Br(1)); // done
-        ctx.emit(we::Instruction::End); // handler: the exception is on the stack
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-        ctx.emit(we::Instruction::If(we::BlockType::Empty));
-        ctx.emit(we::Instruction::LocalGet(saved_stack));
-        ctx.emit(we::Instruction::Call(env_extra_index("rt_ext_stack_restore")?));
-        ctx.emit(we::Instruction::Call(rt_index("rt_nls_note_assert")?));
-        release_args(ctx)?;
-        release_heap_locals(ctx)?;
-        push_outputs(ctx)?;
-        ctx.emit(we::Instruction::Return);
-        ctx.emit(we::Instruction::End); // if
-        // Not inside a residual: a `ModelicaError` ends the run, as in C.
-        ctx.emit(we::Instruction::ThrowRef);
-        ctx.emit(we::Instruction::End); // done
+        close_ext_catch(ctx, catch, ext_name, &mut |ctx| {
+            release_args(ctx)?;
+            release_heap_locals(ctx)?;
+            push_outputs(ctx)?;
+            ctx.emit(we::Instruction::Return);
+            Ok(())
+        })?;
         for t in &temps {
             ctx.emit(we::Instruction::LocalGet(*t));
         }

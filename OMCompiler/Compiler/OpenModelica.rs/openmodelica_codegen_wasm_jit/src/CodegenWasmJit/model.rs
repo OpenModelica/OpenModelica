@@ -317,31 +317,63 @@ pub(super) fn build_sim_model(
             // wasm library on either host. A wasm artifact carries every
             // implementation, so there the same decision is made off the exports.
             let hook = ext_builtin && include_overrides_builtin(&sources);
-            if hook || ext_host == ExtHost::Wasm {
-                let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
-                if hook || !missing.is_empty() {
-                    if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
-                        // Sources that only wrap a platform library still compile,
-                        // and keeping the result would hide the functions from the
-                        // host fallback that can serve them.
-                        let carried = match ext_builtin {
-                            true => openmodelica_wasm_jit::dylink::libraries_for(ext_imports.iter().map(|s| s.name.as_str())),
-                            false => Vec::new(),
-                        };
-                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm, &carried);
-                        if unresolved.is_empty() {
-                            ext_libs.wasm.push(l);
-                        } else {
-                            ext_lib_notes.push(format!(
-                                "the `Include` C sources compiled for wasm but need `{}`, which no \
-                                 wasm library defines; serving them from the host instead",
-                                unresolved.join("`, `")
-                            ));
+            let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+            if hook || !missing.is_empty() {
+                let carried = match ext_builtin {
+                    true => openmodelica_wasm_jit::dylink::carried_libraries(
+                        ext_imports.iter().map(|s| s.name.as_str()),
+                        ext_libs.wasm.iter().map(|l| &l.bytes[..]),
+                    ),
+                    false => Vec::new(),
+                };
+                // Installed prebuilt modules first, on either host: linked into the
+                // wasm, a call does not go through the host.
+                let mut notes = Vec::new();
+                let prebuilt = prebuilt_include_libraries(&model_fns, &missing, hook, ext_libs.generation, &mut notes);
+                let used_prebuilt = !prebuilt.is_empty();
+                let others: Vec<ExtLibrary> = ext_libs.wasm.iter().chain(&prebuilt).cloned().collect();
+                for l in prebuilt {
+                    let mut unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &others, &carried);
+                    unresolved.retain(|n| !HOST_UTILITIES.contains(&n.as_str()));
+                    if unresolved.is_empty() {
+                        ext_libs.wasm.push(l);
+                    } else {
+                        notes.push(format!(
+                            "the prebuilt wasm module {} needs `{}`, which no wasm library defines",
+                            l.name,
+                            unresolved.join("`, `")
+                        ));
+                    }
+                }
+                if !native_externals_allowed() {
+                    ext_lib_notes.extend(notes);
+                } else if (hook && !used_prebuilt) || ext_host == ExtHost::Wasm {
+                    let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+                    if (hook && !used_prebuilt) || !missing.is_empty() {
+                        if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
+                            // Sources that only wrap a platform library still compile,
+                            // and keeping the result would hide the functions from the
+                            // host fallback that can serve them.
+                            let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm, &carried);
+                            if unresolved.is_empty() {
+                                if ext_libs.libc.is_none() {
+                                    ext_libs.libc = toolchain_libc();
+                                }
+                                ext_libs.wasm.push(l);
+                            } else {
+                                ext_lib_notes.push(format!(
+                                    "the `Include` C sources compiled for wasm but need `{}`, which no \
+                                     wasm library defines; serving them from the host instead",
+                                    unresolved.join("`, `")
+                                ));
+                            }
                         }
                     }
                 }
             }
         }
+        // A prebuilt module may be linked against a library omc carries.
+        ext_builtin = builtin_wasm_needed(&ext_imports, &ext_libs.wasm);
         // What no wasm library defines, a shared-memory kernel hands to the host.
         if ext_host == ExtHost::Wasm && crate::CodegenWasmJitFunctions::externals_shared() {
             ext_native = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
@@ -1839,6 +1871,9 @@ pub(super) fn build_sim_model(
         ext_archives,
         ext_includes,
         ext_lib_notes,
+        ext_env: ext_libs.env,
+        // Under the name the loader takes libc's own symbols by.
+        ext_libc: ext_libs.libc.map(|l| ExtLibrary { name: "libc.so".to_string(), ..l }),
         ext_imports,
         model_name,
         start_time: settings.startTime.into_inner(),

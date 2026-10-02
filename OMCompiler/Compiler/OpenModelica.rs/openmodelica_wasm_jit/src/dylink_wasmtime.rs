@@ -50,6 +50,8 @@ pub struct Loaded {
     /// frames the epilogues that would have handed it back never ran, so the
     /// model's recovery path restores what it saved (`rt_ext_stack_restore`).
     stack_pointer: Option<Global>,
+    /// Tags such as `__cpp_exception`, one per name for every library to share.
+    tags: HashMap<String, wasmtime::Tag>,
 }
 
 impl Loaded {
@@ -111,6 +113,7 @@ pub fn load(
         func_slots: HashMap::new(),
         table,
         stack_pointer: None,
+        tags: HashMap::new(),
     };
     if libs.is_empty() {
         return Ok(loaded);
@@ -210,7 +213,7 @@ pub fn load(
             .map_err(|e| format!("dylink: cannot set GOT.mem.{sym}: {e}"))?;
     }
     for (sym, g) in &got_func {
-        let idx = match func_slot(store, &mut loaded, sym) {
+        let idx = match func_slot(store, &mut loaded, host_imports, sym) {
             Ok(i) => i,
             Err(_) if weak.contains(sym) => 0,
             Err(e) => return Err(e),
@@ -306,13 +309,19 @@ fn reloc_key(lib: &str) -> String {
 }
 
 /// The table index of `sym`, appending it the first time it is taken by address.
-fn func_slot(store: &mut wasmtime::Store<HostState>, loaded: &mut Loaded, sym: &str) -> Result<u32> {
+fn func_slot(
+    store: &mut wasmtime::Store<HostState>,
+    loaded: &mut Loaded,
+    host_imports: &HashMap<String, Func>,
+    sym: &str,
+) -> Result<u32> {
     if let Some(idx) = loaded.func_slots.get(sym) {
         return Ok(*idx);
     }
     let f = loaded
         .funcs
         .get(sym)
+        .or_else(|| host_imports.get(sym))
         .cloned()
         .ok_or_else(|| format!("external \"C\" library takes the address of undefined function `{sym}`"))?;
     let idx = loaded
@@ -364,6 +373,18 @@ fn place(
             ("env", "__table_base32") => Extern::Global(const_i32(store, table_base)?),
             ("GOT.mem", sym) => Extern::Global(got_entry(store, got_mem, sym)?),
             ("GOT.func", sym) => Extern::Global(got_entry(store, got_func, sym)?),
+            ("env", sym) if imp.ty().tag().is_some() => {
+                let tag = match loaded.tags.get(sym) {
+                    Some(t) => t.clone(),
+                    None => {
+                        let t = wasmtime::Tag::new(&mut *store, imp.ty().tag().unwrap())
+                            .map_err(|e| format!("dylink: cannot create the tag env.{sym}: {e}"))?;
+                        loaded.tags.insert(sym.to_string(), t.clone());
+                        t
+                    }
+                };
+                Extern::Tag(tag)
+            }
             ("env", sym) => {
                 // A placed library's export, else a host import, else deferred.
                 let ty = imp
@@ -894,7 +915,10 @@ pub fn ext_libraries(model: &SimModel) -> std::result::Result<Vec<Library>, Stri
             .to_string());
     }
     let mut libs = Vec::with_capacity(model.ext_libs.len() + 3);
-    libs.push(Library::builtin("libc.so", libc));
+    libs.push(match &model.ext_libc {
+        Some(l) => Library::ext(l),
+        None => Library::builtin("libc.so", libc),
+    });
     for l in &model.ext_libs {
         libs.push(Library::ext(l));
     }
@@ -905,17 +929,20 @@ pub fn ext_libraries(model: &SimModel) -> std::result::Result<Vec<Library>, Stri
         // Only the ones this model's `ext` imports reach, and what they need —
         // the family is one library per MSL library. Nothing is fetched here, so
         // the optional ones come too.
-        let carried = dylink::libraries_for(model.ext_imports.iter().map(|s| s.name.as_str()));
+        let carried = dylink::carried_libraries(
+            model.ext_imports.iter().map(|s| s.name.as_str()),
+            model.ext_libs.iter().map(|l| &l.bytes[..]),
+        );
         for file in carried {
             if let Some(bytes) = crate::ext_library(file) {
                 libs.push(Library::builtin(file, bytes));
             }
         }
-        // The dummy `usertab` ModelicaExternalC imports; last, so a `usertab` from
-        // the model's own libraries wins.
-        if !crate::USERTAB_DYLINK().is_empty() {
-            libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
-        }
+    }
+    // The dummy `usertab` ModelicaStandardTables imports, whichever build of it is
+    // loaded; last, so a `usertab` from the model's own libraries wins.
+    if !crate::USERTAB_DYLINK().is_empty() {
+        libs.push(Library::builtin("usertab", crate::USERTAB_DYLINK()));
     }
     Ok(libs)
 }
@@ -1060,6 +1087,22 @@ pub fn modelica_utilities_imports(
     let allocate2 = allocate.clone();
     m.insert("ModelicaAllocateString".into(), Func::wrap(&mut *store, allocate));
     m.insert("ModelicaAllocateStringWithErrorReturn".into(), Func::wrap(&mut *store, allocate2));
+    let alloc = rt.alloc.clone();
+    let duplicate = move |mut caller: Caller<'_, HostState>, s: i32| -> std::result::Result<i32, wasmtime::Error> {
+        let Some(memory) = caller.data().memory else { return Ok(0) };
+        let bytes: Vec<u8> = {
+            let rest = memory.data(&caller).get(s.max(0) as usize..).unwrap_or(&[]);
+            rest[..rest.iter().position(|&b| b == 0).unwrap_or(rest.len())].to_vec()
+        };
+        let p = alloc.call(&mut caller, bytes.len() as u32 + 1)? as usize;
+        let data = memory.data_mut(&mut caller);
+        data[p..p + bytes.len()].copy_from_slice(&bytes);
+        data[p + bytes.len()] = 0;
+        Ok(p as i32)
+    };
+    let duplicate2 = duplicate.clone();
+    m.insert("ModelicaDuplicateString".into(), Func::wrap(&mut *store, duplicate));
+    m.insert("ModelicaDuplicateStringWithErrorReturn".into(), Func::wrap(&mut *store, duplicate2));
     m
 }
 

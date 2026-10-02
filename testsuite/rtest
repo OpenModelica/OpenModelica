@@ -149,6 +149,43 @@ sub wasm_builtins
   return "";
 }
 
+# The newest sysroot installWasmToolchain() put under $dir.
+sub installed_wasi_sysroot
+{
+  my $dir = shift;
+  my @gens = sort { $b <=> $a } grep { -e "$dir/omc-$_/sysroot/lib/wasm32-wasip1/libc.so" }
+             map { m|/omc-(\d+)$| ? $1 : () } bsd_glob("$dir/omc-*");
+  return @gens ? "$dir/omc-$gens[0]/sysroot" : "";
+}
+
+# The sysroot wasm external "C" code is compiled against: the one the package
+# index's modules are built with, which omc downloads on first use. Exported, as
+# omc under --running-testsuite does not look in the home directory.
+sub wasi_sysroot
+{
+  return $ENV{'OMC_WASI_SYSROOT'} if $ENV{'OMC_WASI_SYSROOT'};
+  my $dir = "$ENV{'HOME'}/.openmodelica/wasm32-wasip1";
+  my $sysroot = installed_wasi_sysroot($dir);
+  if (!$sysroot) {
+    mkdir "$ENV{'HOME'}/.openmodelica";
+    # Parallel rtest runs would otherwise unpack it at the same time.
+    open(my $lock, '>', "$ENV{'HOME'}/.openmodelica/wasm32-wasip1.lock") or die;
+    flock($lock, 2);
+    $sysroot = installed_wasi_sysroot($dir);
+    if (!$sysroot) {
+      my ($fh, $mos) = tempfile(SUFFIX => '.mos', UNLINK => 1);
+      print $fh "installWasmToolchain(); getErrorString();\n";
+      close $fh;
+      my $log = `$OPENMODELICAHOME/bin/$OMCEXE $mos 2>&1`;
+      $sysroot = installed_wasi_sysroot($dir);
+      print "Warning: installWasmToolchain() failed:\n$log" if !$sysroot;
+    }
+    close $lock;
+  }
+  $ENV{'OMC_WASI_SYSROOT'} = $sysroot if $sysroot;
+  return $sysroot;
+}
+
 # The toolchain a `setup_command` builds an external "C" library with, so a test
 # spells it $OMC_CC/$OMC_CFLAGS/... instead of hardcoding gcc. Anything already set
 # in the environment wins.
@@ -161,7 +198,7 @@ sub wasm_builtins
 sub setup_command_toolchain
 {
   my $wasm = sim_code_target() =~ /^wasm/;
-  my $sysroot = $ENV{'OMC_WASI_SYSROOT'} || "$OPENMODELICAHOME/lib/wasm32-wasip1/omc/sysroot";
+  my $sysroot = $wasm ? wasi_sysroot() : "";
   my %native = (
     CC           => "gcc",
     CFLAGS       => "-fPIC",

@@ -276,6 +276,41 @@ pub fn libraries_for(symbols: impl IntoIterator<Item = impl AsRef<str>>) -> Vec<
     wanted
 }
 
+/// The manifest of a bundle of prebuilt modules, which the package manager
+/// installs into `Resources/Library/wasm32-wasip1/omc-<generation>`.
+pub const BUNDLE_MANIFEST: &str = "omc-externals.json";
+pub const GENERATION_PREFIX: &str = "omc-";
+
+pub fn generation_of(name: &str) -> Option<u64> {
+    name.strip_prefix(GENERATION_PREFIX)?.parse().ok()
+}
+
+/// The module a bundle's manifest aliases `name` to: a `Library` name, or a
+/// NEEDED one (`libc++.so`).
+pub fn bundle_alias(bundle: &std::path::Path, name: &str) -> Option<std::path::PathBuf> {
+    let text = openmodelica_wasi::fs::read(&bundle.join(BUNDLE_MANIFEST).display().to_string()).ok()?;
+    let manifest: serde_json::Value = serde_json::from_slice(&text).ok()?;
+    Some(bundle.join(manifest.get("libraries")?.get(name)?.get("module")?.as_str()?))
+}
+
+/// [`libraries_for`] `symbols`, and the libraries omc carries that `libs` (a
+/// model's own) name in NEEDED, as a library linked against `liblapack.wasm` does.
+pub fn carried_libraries<'a>(
+    symbols: impl IntoIterator<Item = impl AsRef<str>>,
+    libs: impl IntoIterator<Item = &'a [u8]>,
+) -> Vec<&'static str> {
+    let mut wanted = libraries_for(symbols);
+    for bytes in libs {
+        let Some(dl) = parse(bytes) else { continue };
+        for dep in dl.needed {
+            if let Some((known, _)) = crate::EXT_FAMILY.iter().find(|(f, _)| *f == dep) {
+                push_with_needed(known, &mut wanted);
+            }
+        }
+    }
+    wanted
+}
+
 /// Everything `file` needs, then `file`.
 fn push_with_needed(file: &'static str, out: &mut Vec<&'static str>) {
     if out.contains(&file) {

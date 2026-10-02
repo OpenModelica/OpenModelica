@@ -53,6 +53,11 @@ pub struct SimModel {
     /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
     /// symbol then turns out to be missing.
     pub ext_lib_notes: Vec<String>,
+    /// `NAME=value` variables the `ext_libs` need in the guest's environment.
+    pub ext_env: Vec<String>,
+    /// The libc the generation of prebuilt modules among `ext_libs` was built
+    /// against, loaded in place of the one omc carries.
+    pub ext_libc: Option<ExtLibrary>,
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,

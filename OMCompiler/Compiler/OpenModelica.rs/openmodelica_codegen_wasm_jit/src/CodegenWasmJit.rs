@@ -195,6 +195,9 @@ pub use standalone::*;
 #[path = "CodegenWasmJit/ext_libs.rs"]
 mod ext_libs;
 pub(crate) use ext_libs::*;
+#[path = "CodegenWasmJit/prebuilt.rs"]
+mod prebuilt;
+pub(crate) use prebuilt::*;
 
 // Byte-level rewrites of emitted wasm modules: `dylink.0` sections, import
 // module renames, dropping imports/exports, scanning imports and exports.
