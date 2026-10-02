@@ -1702,6 +1702,9 @@ public
           elseif List.any(func.inputs, InstNode.isFunction) then
             // the body calls the function input, which has no derivative (e.g. solveOneNonlinearEquation)
             fail();
+          elseif Function.isExternal(func) then
+            // external functions without a derivative annotation have no body to differentiate
+            fail();
           else
             (der_func, diffArguments) := differentiateFunction(func, interface_map, diffArguments);
           end if;
@@ -2741,7 +2744,13 @@ public
               local
                 Sections sections;
               case sections as Sections.SECTIONS() algorithm
-                (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
+                try
+                  (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
+                else
+                  // remove the fake derivative, it has the undifferentiated body
+                  UnorderedMap.add(func.path, func, funcDiffArgs.funcMap);
+                  fail();
+                end try;
 
                 // add them to new node
                 sections.algorithms := algorithms;
