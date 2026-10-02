@@ -2,7 +2,7 @@
 // status: correct
 // cflags: -d=-newInst
 
-loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 getDerivedClassModifierValue(Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel.Medium.MassFlowRate,unit); getErrorString();
 not regularFileExists("Modelica_specificEnthalpy_pTX_0.log");
 

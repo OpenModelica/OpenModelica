@@ -13,7 +13,6 @@ else(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${HybrjName} runtime/include/Solver/Modelica.h)
-target_link_libraries(${HybrjName} ${Boost_LIBRARIES})
 target_link_libraries(${HybrjName}  ${SolverName}  ${LAPACK_LIBRARIES} ${CMINPACK_LIBRARY}  ${ModelicaName})
 
 message(STATUS ${CMINPACK_LIBRARY})

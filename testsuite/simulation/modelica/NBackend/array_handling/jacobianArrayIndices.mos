@@ -1,0 +1,45 @@
+// name: jacobianArrayIndices
+// keywords: NewBackend array jacobian sparsity
+// status: correct
+// suite: cSources
+//
+// Without scalarization the index of a Jacobian variable is the position of its
+// first element. The seed of y follows the two elements of x and is column 2 of
+// the sparsity pattern, it was column 1 and the pattern missed entries
+// (IDA DistrictsBenchmark networks needed many more steps).
+
+loadString("
+model jacobianArrayIndices
+  Real x[2](each start = 1, each fixed = true);
+  Real y(start = 1, fixed = true);
+equation
+  der(x[1]) = -1000*x[1] + y;
+  der(x[2]) = -1000*x[2] + y + x[1];
+  der(y) = -y + x[2];
+end jacobianArrayIndices;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+simulate(jacobianArrayIndices); getErrorString();
+regexBool(readFile("jacobianArrayIndices_12jac.c"), "col_counts\\[2\\]\\+\\+");
+regexBool(readFile("jacobianArrayIndices_12jac.c"), "col_counts\\[1\\]\\+\\+");
+val(x[1], 1.0);
+val(y, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "jacobianArrayIndices_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianArrayIndices', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// false
+// 3.689899524037121e-4
+// 0.3686213741248731
+// endResult

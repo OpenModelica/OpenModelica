@@ -39,6 +39,32 @@ void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warn
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
 
+/* An error raised from code that got no threadData (ModelicaError, an external
+   function's assert) finds it through mmc_thread_data_key. Without it there is no
+   jump buffer to leave through, so report and exit rather than crash. The key
+   comes up empty when the executable or an external library linked its own copy
+   of the pthread library: each copy keeps its own thread-specific values. */
+threadData_t* omc_thread_data(threadData_t *threadData, const char *pendingMessage)
+{
+  if (threadData) {
+    return threadData;
+  }
+  threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  if (threadData) {
+    return threadData;
+  }
+  if (pendingMessage) {
+    fprintf(stderr, "%s\n", pendingMessage);
+  }
+  fputs("Internal error: the calling thread has no OpenModelica thread data, so the error "
+        "cannot be handled and the simulation is aborted.\n"
+        "This happens when the simulation executable or an external library links its "
+        "own copy of the pthread library (e.g. a static libwinpthread) instead of the "
+        "one the OpenModelica runtime uses.\n", stderr);
+  fflush(NULL);
+  exit(1);
+}
+
 
 const int firstOMCErrorStream = 1;
 
@@ -285,7 +311,7 @@ void omc_assert_function(threadData_t* threadData, FILE_INFO info, const char *m
   }
   va_end(ap);
   fflush(NULL);
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  threadData = omc_thread_data(threadData, NULL);
   OMC_ERROR_RAISE();
 }
 
@@ -309,7 +335,7 @@ void omc_throw_function(threadData_t *threadData)
 {
   /* Unlike a model's assert this jumps: it ends the run, and no generated frame
      is on the stack to owe a release. */
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  threadData = omc_thread_data(threadData, NULL);
   OMC_THROW_INTERNAL();
 }
 
@@ -323,7 +349,7 @@ void omc_terminate_function(FILE_INFO info, const char *msg, ...)
   fputs("!\n", stderr);
   va_end(ap);
   fflush(NULL);
-  OMC_THROW();
+  omc_throw_function(NULL);
 }
 
 void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
@@ -622,6 +648,21 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
   }
 }
 
+/* omc_thread_data() that reports the message being thrown, formatted only when
+   the lookup fails. */
+threadData_t* omc_thread_data_va(threadData_t *threadData, const char *format, va_list args)
+{
+  if (!threadData && !(threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key))) {
+    char msg[SIZE_LOG_BUFFER];
+    va_list copy;
+    va_copy(copy, args);
+    vsnprintf(msg, SIZE_LOG_BUFFER, format, copy);
+    va_end(copy);
+    threadData = omc_thread_data(NULL, msg);
+  }
+  return threadData;
+}
+
 /**
  * @brief Variadic stream print and throw.
  *
@@ -633,7 +674,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
  */
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  threadData = omc_thread_data_va(threadData, format, args);
 #if !defined(OMC_MINIMAL_LOGGING)
   if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
@@ -659,7 +700,7 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
   va_throwStreamPrint(threadData, format, args);
   va_end(args);
 #else
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  threadData = omc_thread_data(threadData, format);
   longjmp(*getBestJumpBuffer(threadData), 1);
 #endif
 }
@@ -697,11 +738,13 @@ jmp_buf *omc_external_jump_buffer(threadData_t *threadData)
    return, so the caller leaves through its own _return: and runs its releases. */
 void raiseStreamPrint(threadData_t *threadData, const char *format, ...)
 {
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  va_list args;
+  va_start(args, format);
+  threadData = omc_thread_data_va(threadData, format, args);
+  va_end(args);
 #if !defined(OMC_MINIMAL_LOGGING)
   if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
@@ -713,11 +756,13 @@ void raiseStreamPrint(threadData_t *threadData, const char *format, ...)
 
 void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  va_list args;
+  va_start(args, format);
+  threadData = omc_thread_data_va(threadData, format, args);
+  va_end(args);
 #if !defined(OMC_MINIMAL_LOGGING)
   if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
@@ -738,11 +783,13 @@ void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO inf
  */
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
-  threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  va_list args;
+  va_start(args, format);
+  threadData = omc_thread_data_va(threadData, format, args);
+  va_end(args);
 #if !defined(OMC_MINIMAL_LOGGING)
   if (throwPrintsMessage(threadData)) {
     char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);

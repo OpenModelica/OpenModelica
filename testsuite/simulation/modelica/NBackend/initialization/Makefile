@@ -1,7 +1,9 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+attributeInitParameter.mos \
 experimental_initialSimplified.mos \
+discreteCallArgument.mos \
 functionOutputStart.mos \
 functionOutputStartAlias.mos \
 functionAliasStartLoop.mos \

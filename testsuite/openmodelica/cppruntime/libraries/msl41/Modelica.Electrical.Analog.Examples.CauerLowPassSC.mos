@@ -16,11 +16,11 @@ modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
 
 compareVars :=
 {
-   "C3.v",
-   "C7.v",
    "C1.v",
+   "C2.v",
+   "C3.v",
    "C4.v",
-   "C8.v"
+   "C7.v"
 };
 
 runScript(modelTesting);getErrorString();
@@ -35,8 +35,8 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Analog.Examples.CauerLowPassSC
-// {"C3.v", "C7.v", "C1.v", "C4.v", "C8.v"}
-// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|C3.v|C7.v|C1.v|C4.v|C8.v', cflags = '', simflags = ' -emit_protected'
+// {"C1.v", "C2.v", "C3.v", "C4.v", "C7.v"}
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|C1.v|C2.v|C3.v|C4.v|C7.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat
 // Files Equal!
 // "true

@@ -24,3 +24,5 @@ const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true
 match_deref.workspace=true
+openmodelica_susan_index.workspace = true
+serde_json.workspace = true

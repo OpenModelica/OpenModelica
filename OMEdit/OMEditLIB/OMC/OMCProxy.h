@@ -61,6 +61,11 @@ typedef struct {
   OMCInterface::convertUnits_res mConvertUnits;
 } UnitConverion;
 
+#if defined(__EMSCRIPTEN__)
+QStringList omcWorkerFmuPlatforms();
+QStringList omcWorkerFmuCsSolvers();
+#endif
+
 class OMCProxy : public QObject
 {
   Q_OBJECT

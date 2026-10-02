@@ -491,8 +491,8 @@ let numberOfRealInputs = varInfo.numRealInputVars
 
   // define initial state vector as vector of value references (arrays expanded to
   // their scalar element value references)
-  #define STATES { <%vars.stateVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> simvar as SIMVAR(__) => if stringEq(CodegenUtil.crefStr(name),"$dummy") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> simvar as SIMVAR(__) => if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
 
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
@@ -503,10 +503,10 @@ template dervativeNameCStyle(ComponentRef cr)
  "Generates the name of a derivative in c style, replaces ( with _"
 ::=
   match cr
-  case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
+  case CREF_QUAL(ident = "$DER") then 'der_<%CodegenUtil.crefStr(componentRef)%>_'
 end dervativeNameCStyle;
 
-template defineExternalFunction(Function fn)
+template defineExternalFunction(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
@@ -599,9 +599,9 @@ end initializeFunction;
 template initVals(SimVar var, String arrayName) ::=
   match var
     case var as SIMVAR(type_=type_) then
-      if stringEq(crefStr(name),"$dummy") then
+      if stringEq(CodegenUtil.crefStr(name),"$dummy") then
         ''
-      else if stringEq(crefStr(name),"der($dummy)") then
+      else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
         ''
       else
         // For a non-scalarized array the start attribute is a single
@@ -1133,13 +1133,13 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end setExternalFunction2;
 
-template setExternalFunctionsSwitch(list<Function> functions)
+template setExternalFunctionsSwitch(list<SimCodeFunction.Function> functions)
  "Generates external function definitions."
 ::=
   (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
 end setExternalFunctionsSwitch;
 
-template setExternalFunctionSwitch(Function fn)
+template setExternalFunctionSwitch(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
@@ -1156,9 +1156,9 @@ template SwitchVars(SimCode simCode, SimVar simVar, String arrayName)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else
   if stringEq(arrayName, "stringVars")
@@ -1199,7 +1199,7 @@ match simVar
     let crefName = lookupVR(name,simCode)
       match aliasvar
         case ALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
         >>
@@ -1208,7 +1208,7 @@ match simVar
         case <%crefName%> : return get<%arrayName%>(comp, <%lookupVR(varName,simCode)%>); break;
         >>
         case NEGATEDALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
         >>
@@ -1226,9 +1226,9 @@ template SwitchVarsSet(SimCode simCode, SimVar simVar, String arrayName)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else
   if stringEq(arrayName, "stringVars")
@@ -1269,7 +1269,7 @@ match simVar
     let crefName = lookupVR(name,simCode)
       match aliasvar
         case ALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         >>
         else
@@ -1277,7 +1277,7 @@ match simVar
         case <%crefName%> : return set<%arrayName%>(comp, <%lookupVR(varName,simCode)%>, value); break;
         >>
         case NEGATEDALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         >>
         else

@@ -629,7 +629,7 @@ void withEmSccache(Closure body) {
 }
 
 // Main web bundle minus the Qt pages (built separately by buildRustWebQt,
-// merged by assembleWeb).
+// merged by uploadWeb).
 void buildRustWeb() {
   standardSetup()
   unstash 'wasm-jit-runtime'
@@ -681,27 +681,6 @@ void buildRustWebQt() {
     sh "cmake --install build_cmake --component web"
   }
   stash name: 'web-qt', includes: 'install_web/share/omc/web/OMShell-qt/**, install_web/share/omc/web/OMNotebook-qt/**, install_web/share/omc/web/OMEdit-qt/**'
-}
-
-// Merge the Qt pages into the main web tree (both unstash to the same path), zip.
-void assembleWeb() {
-  unstash 'web-partial'
-  unstash 'web-qt'
-  def webZip = "OpenModelicaCompiler-web-${tagName()}.zip"
-  sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
-  archiveArtifacts artifacts: webZip, fingerprint: true
-  stash name: 'web', includes: webZip
-
-  // The testsuite-rust shards, merged and archived. Here since the web
-  // deliverable is already assembled.
-  sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
-  if (shouldWeRunRustTests()) {
-    for (p in [1,2]) {
-      unstash "partest-failed-${p}"
-    }
-    sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
-    archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
-  }
 }
 
 void buildRustGUI() {
@@ -780,7 +759,7 @@ Map nightlyTarget(String name) {
     'win64': [
       triple: 'x86_64-pc-windows-msvc',
       toolchain: "${rs}/xwin-toolchain.cmake",
-      // OpenBLAS, Boost and PThreads4W are fetched/built by windows-deps.cmake,
+      // OpenBLAS and PThreads4W are fetched/built by windows-deps.cmake,
       // which the top-level CMakeLists includes when cross-compiling to Windows.
       configure: noFortran + ['-DENABLE_CPACK=OFF', '-DZMQ_BUILD_TESTS=OFF'],
       qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/msvc2022_64',
@@ -929,8 +908,7 @@ List nightlyCommonFlags(Map t) {
                 '-DOM_USE_CCACHE=OFF',
                 // The downloads default under the build tree, which
                 // standardSetup()'s `git clean -ffdx` deletes first, so they
-                // would be re-fetched once per stage per night (Boost alone is
-                // a 108 MB tarball).
+                // would be re-fetched once per stage per night.
                 '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
                 "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"]
   // linux64 is native, so it has neither.
@@ -1179,9 +1157,8 @@ void uploadRustNightly(String archive) {
 
 // One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
 // The test libraries are installed with that omc. An empty simCodeTarget leaves
-// the compiler default. Without registerJUnit the results are archived artifacts
-// instead.
-void partestRust(String simCodeTarget, partition, partitionmodulo, boolean registerJUnit) {
+// the compiler default.
+void partestRust(String simCodeTarget, partition, partitionmodulo) {
   standardSetup()
   unstash 'omc-rust'
   // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
@@ -1206,26 +1183,21 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
   // works.
   String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
+  // nativeSharedLib links a native shared library, which a wasm target cannot load.
   if (isWasmTarget) {
-    suites += ',-cSources,-fmuCSources'
+    suites += ',-cSources,-fmuCSources,-nativeSharedLib'
   }
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
   String asLimit = isWasmTarget
                    ? '# wasm: address space is not limited, only the cgroup is'
                    : 'ulimit -v 6291456 # Max 6GB per process'
-  // The 'Failed tests:' block (the only tab-indented lines); stdout rather than
-  // failed.<branch>, which dies on branch names with '/'.
-  String failureList = registerJUnit ? '' : """
-      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
-      wc -l ../partest-failed-${partition}.txt"""
   try {
     sh """#!/bin/bash
       set -o pipefail
       ulimit -t 1500
       ${asLimit}
       .CI/scripts/cgroup-memory.sh check
-      rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
       ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
@@ -1234,19 +1206,11 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
       ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
       # anything else, so the results below are still published.
-      test \$CODE = 0 -o \$CODE = 7 || exit 1${failureList}
+      test \$CODE = 0 -o \$CODE = 7 || exit 1
     """
-    if (!registerJUnit) {
-      stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
-    }
   } finally {
     // In finally so a hard shard failure still publishes what ran.
-    if (registerJUnit) {
-      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
-    } else {
-      sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
-      archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
-    }
+    junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
   }
 }
 
@@ -1467,16 +1431,6 @@ private def shouldWeEnableMacOSCMakeBuild() {
   return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
-// The extra Rust-omc partest; wasm-jit always runs.
-private def shouldWeRunRustTests() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/Enable Rust Tests")) {
-      return true
-    }
-  }
-  return params.ENABLE_RUST_PARTEST
-}
-
 // wasm-opt -Oz on the web bundle is slow and only shrinks the shipped artifact;
 // skip it on PRs, keep it for the release build that publishes to the playground.
 def rustWasmOptCMakeFlag() {
@@ -1531,8 +1485,6 @@ Map evaluateBuildFlags() {
   print "shouldWeBuildWindows: ${flags.shouldWeBuildWindows}"
   flags.shouldWeRunTests = shouldWeRunTests()
   print "shouldWeRunTests: ${flags.shouldWeRunTests}"
-  flags.shouldWeRunRustTests = flags.shouldWeRunTests && shouldWeRunRustTests()
-  print "shouldWeRunRustTests: ${flags.shouldWeRunRustTests}"
   return flags
 }
 
@@ -1984,10 +1936,13 @@ void uploadDoc() {
   sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${tagName()}*,${tagName()}/**")])])
 }
 
+// Merge the Qt pages into the main web tree (both unstash to the same path).
 void uploadWeb() {
-  unstash 'web'
+  unstash 'web-partial'
+  unstash 'web-qt'
   echo "${env.NODE_NAME}"
-  sh "rm -rf ${tagName()} && mkdir -p ${tagName()} && (cd ${tagName()} && unzip -o ../OpenModelicaCompiler-web-${tagName()}.zip)"
+  def webZip = "OpenModelicaCompiler-web-${tagName()}.zip"
+  sh "rm -rf ${webZip} ${tagName()} && cp -r install_web/share/omc/web ${tagName()} && (cd ${tagName()} && zip -r -9 ../${webZip} .)"
   sshPublisher(publishers: [sshPublisherDesc(configName: 'playground', transfers: [sshTransfer(sourceFiles: "OpenModelicaCompiler-web-${tagName()}*,${tagName()}/**")])])
 }
 

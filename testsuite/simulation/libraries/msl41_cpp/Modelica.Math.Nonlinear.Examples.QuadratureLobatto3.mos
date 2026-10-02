@@ -10,8 +10,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Math.Nonlinear.Examples.quadratureLobatto3";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Math.Nonlinear.Examples.QuadratureLobatto3);
@@ -30,7 +28,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Math.Nonlinear.Examples.quadratureLobatto3"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Math.Nonlinear.Examples.QuadratureLobatto3
 // {"q", "qd"}

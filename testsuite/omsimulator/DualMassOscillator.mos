@@ -2,6 +2,8 @@
 // status:   correct
 // teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator.py DualMassOscillator.ssp DualMassOscillator_systemCall.log DualMassOscillator_oms.log
 
+// Load the MSL before switching the grammar, the MetaModelica grammar cannot parse MSL 4.
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 setCommandLineOptions("-g=MetaModelica");
 
 loadFile("DualMassOscillator.mo"); getErrorString();
@@ -73,11 +75,10 @@ unloadOMSimulator();
 
 // Result:
 // true
+// ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from DualMassOscillator.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
-// "
+// true
+// ""
 // "DualMassOscillator.System1.fmu"
 // "Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).

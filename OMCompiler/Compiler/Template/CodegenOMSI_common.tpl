@@ -158,7 +158,7 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
 end generateOmsiFunctionCode;
 
 
-template lastIdentOfPath(Path modelName)
+template lastIdentOfPath(Absyn.Path modelName)
 "Helper function. Returns last ident of given path."
 ::=
   match modelName

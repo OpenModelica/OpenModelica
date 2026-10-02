@@ -545,7 +545,7 @@ template genTerminator(MidCode.Function fn, MidCode.Terminator terminator)
   end match
 end genTerminator;
 
-template genVarType(Var var)
+template genVarType(MidCode.Var var)
   "Generate the c type for a variable."
 ::=
   match var case VAR(name=_,ty=ty) then

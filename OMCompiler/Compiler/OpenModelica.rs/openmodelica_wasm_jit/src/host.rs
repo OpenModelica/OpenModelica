@@ -202,12 +202,14 @@ pub struct HostState {
     pub ext_error_report: Option<wasmtime::TypedFunc<u32, ()>>,
     /// The libraries' `vsnprintf`, for `ModelicaFormat*` messages.
     pub vsnprintf: Option<wasmtime::TypedFunc<(i32, i32, i32, i32), i32>>,
+    /// The libraries' `strtod`, for what [`crate::dylink_wasmtime`]'s does not parse.
+    pub strtod: Option<wasmtime::TypedFunc<(i32, i32), f64>>,
 }
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 impl HostState {
     pub fn new(wasi: openmodelica_wasi::wasi::WasiCtx) -> Self {
-        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None }
+        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None, strtod: None }
     }
 }
 
@@ -312,6 +314,12 @@ pub mod array_abi {
     }
 
     /// The dimensions and element-area offset of the array object at `obj`.
+    /// Where the elements start, as [`dims_and_data`] has it.
+    pub fn data_offset(mem: &[u8], obj: usize) -> Option<usize> {
+        let ndims = u32::from_le_bytes(mem.get(obj + 8..obj + 12)?.try_into().ok()?) as usize;
+        Some((16 + ndims * 4 + 7) & !7)
+    }
+
     pub fn dims_and_data(mem: &[u8], obj: usize) -> Option<(Vec<usize>, usize)> {
         let word = |off: usize| -> Option<usize> {
             Some(u32::from_le_bytes(mem.get(off..off + 4)?.try_into().ok()?) as usize)
@@ -324,6 +332,16 @@ pub mod array_abi {
     /// Copy `src` to `dst` converting between row-major and column-major storage
     /// (C's `convert_alloc_*_{to,from}_f77`, without its 2-D-only restriction).
     pub fn reorder(src: &[u8], dst: &mut [u8], dims: &[usize], esz: usize, to_fortran: bool) {
+        if let [d0, d1] = *dims {
+            for i in 0..d0 {
+                for j in 0..d1 {
+                    let (r, c) = (i * d1 + j, i + j * d0);
+                    let (from, to) = if to_fortran { (r, c) } else { (c, r) };
+                    dst[to * esz..(to + 1) * esz].copy_from_slice(&src[from * esz..(from + 1) * esz]);
+                }
+            }
+            return;
+        }
         let total: usize = dims.iter().product();
         let mut idx = vec![0usize; dims.len()];
         for r in 0..total {

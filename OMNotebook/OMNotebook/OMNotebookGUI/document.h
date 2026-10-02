@@ -141,6 +141,7 @@ namespace IAEX
 
     // Link operations
     virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor ) = 0;
+    virtual void textcursorInsertWebLink( QString url, QString text, QTextCursor& cursor ) = 0;
 
     //Utility operations
     virtual Factory *cellFactory() = 0;

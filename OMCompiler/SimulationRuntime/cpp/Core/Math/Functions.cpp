@@ -34,10 +34,7 @@
 #include <Core/Math/Functions.h>
 #include <stdexcept>
 
-#include <Core/Utils/numeric/bindings/ublas.hpp>
-#include <Core/Utils/numeric/utils.h>
 //#include <Core/Utils/extension/logger.hpp>
-namespace bindings = boost::numeric::bindings;
 
 /* Matrixes using column major order (as in Fortran) */
 #ifndef set_matrix_elt

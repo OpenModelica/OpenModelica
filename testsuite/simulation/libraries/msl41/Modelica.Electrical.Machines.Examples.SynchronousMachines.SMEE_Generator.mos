@@ -9,14 +9,14 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_Generator);
 compareVars :=
 {
    "constantSpeed.phi",
+   "smee.is[1]",
+   "smee.is[2]",
    "smee.idq_dr[1]",
    "smee.idq_rr[2]",
    "smee.idq_sr[1]",
@@ -30,11 +30,10 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_Generator"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_Generator
-// {"constantSpeed.phi", "smee.idq_dr[1]", "smee.idq_rr[2]", "smee.idq_sr[1]", "smee.idq_sr[2]"}
-// Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 30000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = 'time|constantSpeed.phi|smee.idq_dr.1.|smee.idq_rr.2.|smee.idq_sr.1.|smee.idq_sr.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"constantSpeed.phi", "smee.is[1]", "smee.is[2]", "smee.idq_dr[1]", "smee.idq_rr[2]", "smee.idq_sr[1]", "smee.idq_sr[2]"}
+// Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 30000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = 'time|constantSpeed.phi|smee.is.1.|smee.is.2.|smee.idq_dr.1.|smee.idq_rr.2.|smee.idq_sr.1.|smee.idq_sr.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_Generator_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

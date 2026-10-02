@@ -55,10 +55,7 @@
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
-//#include <Core/Utils/numeric/bindings/lapack/driver/gesv.hpp>
-#include <Core/Utils/numeric/bindings/ublas.hpp>
-#include <Core/Utils/numeric/utils.h>
-
+//
 
 /**
 Forward declarations for used external C functions
@@ -348,10 +345,10 @@ void Kinsol::initialize()
             _Ai = new int[_nonzeros];//todo + 1 ?
             _Ax = new double[_nonzeros];//todo + 1 ?
 
-            int const* Ti = bindings::begin_compressed_index_major (A);
-            int const* Tj = bindings::begin_index_minor (A);
+            int const* Ti = A.index1_data().begin();
+            int const* Tj = A.index2_data().begin();
 
-            double const* Ax = bindings::begin_value (A);
+            double const* Ax = A.value_data().begin();
 
             memcpy(_Ax,Ax,sizeof(double)* _nonzeros );
             memcpy(_Ap,Ti,sizeof(int)* (_dim + 1) );
@@ -724,9 +721,9 @@ int Kinsol::kin_JacSparse(N_Vector u, N_Vector fu,SlsMat J, void *user_data,N_Ve
 
     const sparsematrix_t& A = _algLoop->getSystemSparseMatrix();
     unsigned int nonzeros= A.nnz();
-    int const* Ti = bindings::begin_compressed_index_major (A);
-    int const* Tj = bindings::begin_index_minor (A);
-    double const* Ax = bindings::begin_value (A);
+    int const* Ti = A.index1_data().begin();
+    int const* Tj = A.index2_data().begin();
+    double const* Ax = A.value_data().begin();
 
     memcpy(J->data,Ax,nonzeros*sizeof(double));
     memcpy(J->rowvals,Tj,nonzeros*sizeof(int));

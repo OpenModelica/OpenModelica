@@ -10,6 +10,7 @@ endif
 
 TESTFILES = \
 linmodel.mos \
+Pendulum.mos \
 simVanDerPol.mos \
 smallValues.mos \
 simLotkaVolterra.mos \

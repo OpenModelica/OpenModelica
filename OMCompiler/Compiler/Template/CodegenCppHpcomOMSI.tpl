@@ -79,7 +79,7 @@ template translateModel(SimCode simCode)
       let() = textFile(simulationCppFile(simCode, contextOther, updateHpcom(allEquations, simCode, &extraFuncs, &extraFuncsDecl, "", contextOther, stateDerVectorName, false),
                                          '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', &extraFuncs, &extraFuncsDecl, className,
                                          additionalHpcomConstructorDefinitions(hpcomData.schedules),
-                                         additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, dotPath(modelInfo.name)),
+                                         additionalHpcomConstructorBodyStatements(hpcomData.schedules, className, CodegenUtil.dotPath(modelInfo.name)),
                                          additionalHpcomDestructorBodyStatements(hpcomData.schedules),
                                          stateDerVectorName, false,numRealVars,numIntVars,numBoolVars,numStringVars,numPreVars), 'OMCpp<%fileNamePrefix%>.cpp')
 
@@ -172,8 +172,6 @@ template additionalHpcomIncludesForParallelCode(SimCode simCode, Text& extraFunc
       #include <tbb/tbb.h>
       #include <tbb/flow_graph.h>
       #include <tbb/tbb_stddef.h>
-      #include <boost/function.hpp>
-      #include <boost/bind.hpp>
       #if TBB_INTERFACE_VERSION >= 8000
       #include <tbb/task_arena.h>
       #endif
@@ -182,11 +180,7 @@ template additionalHpcomIncludesForParallelCode(SimCode simCode, Text& extraFunc
       <<
       #include <mpi.h>
       >>
-    else
-      <<
-      #include <boost/thread/mutex.hpp>
-      #include <boost/thread.hpp>
-      >>
+    else ""
   end match
 end additionalHpcomIncludesForParallelCode;
 
@@ -218,12 +212,7 @@ template additionalHpcomProtectedMemberDeclaration(SimCode simCode, Text& extraF
           else
             <<
             #if defined(USE_THREAD)
-              #if !defined(USE_CPP_03)
-                return std::hash<std::thread::id>()(std::this_thread::get_id());
-              #else
-                boost::hash<std::string> string_hash;
-                return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-              #endif
+              return std::hash<std::thread::id>()(std::this_thread::get_id());
             #else
               return 0;
             #endif

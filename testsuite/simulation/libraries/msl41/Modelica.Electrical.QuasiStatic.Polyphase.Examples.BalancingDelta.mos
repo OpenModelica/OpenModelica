@@ -9,8 +9,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta);
@@ -26,7 +24,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingDelta
 // {"voltageSource.plug_p.reference.gamma"}

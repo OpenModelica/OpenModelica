@@ -65,7 +65,7 @@ protected
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEvents.{EventInfo, Condition};
+  import NBEvents.{EventInfo, Condition, MathEvent};
   import NBPartition.Partition;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -274,6 +274,7 @@ public
       input VarType varType;
       output list<SimVar> simVars = {};
       input output SimCode.SimCodeIndices indices;
+      input Boolean elementIndex = false "the index of an array variable is the position of its first element";
     protected
       Integer uniq = indices.uniqueIndex;
       Integer idx = getTypeIndex(indices, varType);
@@ -283,7 +284,7 @@ public
         var := Pointer.access(var_ptr);
         simVars := create(var, uniq, idx, if varType == VarType.ALIAS then Alias.fromBinding(var.binding) else Alias.NO_ALIAS()) :: simVars;
         uniq := uniq + 1;
-        idx := idx + 1;
+        idx := idx + (if elementIndex then Variable.size(var) else 1);
       end for;
       simVars := listReverseInPlace(simVars);
       indices.uniqueIndex := uniq;
@@ -1460,9 +1461,9 @@ public
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numZeroCrossings             = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)) + sum(MathEvent.numZeroCrossings(mev) for mev in eventInfo.math_lst),
         numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
-        numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
+        numRelations                 = sum(Condition.numRelations(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
         numStateVars                 = listScalarSize(vars.stateVars),
         numAlgVars                   = listScalarSize(vars.algVars),

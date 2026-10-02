@@ -147,6 +147,7 @@ namespace IAEX
     void wheelEvent(QWheelEvent * event) override;
     void insertFromMimeData(const QMimeData *source) override;
     void keyPressEvent(QKeyEvent *event ) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
     // QTextBrowser interface
   protected:

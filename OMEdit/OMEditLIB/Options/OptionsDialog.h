@@ -1036,6 +1036,7 @@ private:
   QGroupBox *mpVersionGroupBox;
   QRadioButton *mpVersion1RadioButton;
   QRadioButton *mpVersion2RadioButton;
+  QRadioButton *mpVersion3RadioButton;
   QGroupBox *mpTypeGroupBox;
   QRadioButton *mpModelExchangeRadioButton;
   QRadioButton *mpCoSimulationRadioButton;

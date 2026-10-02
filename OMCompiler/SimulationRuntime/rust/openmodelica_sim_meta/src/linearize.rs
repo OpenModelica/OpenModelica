@@ -352,6 +352,16 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     let mut cz = vec![0.0; n_z * n_x];
     let mut dz = vec![0.0; n_z * n_u];
 
+    // `-csvInput` writes the variables, not the C host's `inputVars` mirror.
+    if model.inputs.len() == n_u {
+        for (v, inp) in lin.input_vars.iter().zip(&model.inputs) {
+            if v.off != inp.off && inp.wty == crate::WTy::F64 {
+                let live = read_f64(e, sim_data + inp.off)?;
+                write_lin_var(e, sim_data, v, live)?;
+            }
+        }
+    }
+
     let x0 = read_states(e, sim_data, layout.n_states)?;
     let u0: Vec<f64> =
         lin.input_vars.iter().map(|v| read_lin_var(e, sim_data, v)).collect::<Result<_>>()?;

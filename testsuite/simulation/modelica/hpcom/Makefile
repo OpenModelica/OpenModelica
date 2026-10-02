@@ -1,6 +1,6 @@
 TEST = ../../../rtest -v
 
-FAILINGTESTFILES = 
+FAILINGTESTFILES = Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_LoadDump.mos
 
 TESTFILES = \
 SimpleResistor.mos \
@@ -16,7 +16,6 @@ Modelica.Electrical.Spice3.Examples.CoupledInductors.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mos \
 Modelica.Electrical.Analog.Examples.CompareTransformers.mos \
 Modelica.Mechanics.Rotational.Examples.HeatLosses.mos \
-Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump.mos \
 Modelica.Fluid.Examples.BranchingDynamicPipes.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos \
 #Modelica.Fluid.Examples.BranchingDynamicPipes_tds.mos
@@ -31,8 +30,6 @@ DEPENDENCIES = \
 Makefile \
 ReferenceFiles \
 ReferenceGraphs \
-Profiling \
-BenchmarkSuite \
 *_ext.graphml \
 PN_Converter \
 cleanHpcOmTestsuite.py

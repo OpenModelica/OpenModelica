@@ -12,75 +12,6 @@
 # compilation code. It needs to be set to a valid directory resembling path.
 set(SCOREP_INCLUDE_ ".")
 
-# Boost include path for the generated ModelicaConfig_gcc.inc.
-# Use Boost_INCLUDE_DIR if set (MODULE mode or extracted from CONFIG-mode
-# targets above), otherwise fall back to "." (compiler default search path).
-# A plain /usr/include is mapped to "." to not break cross compilation.
-if(Boost_INCLUDE_DIR)
-  if("${Boost_INCLUDE_DIR}" STREQUAL "/usr/include")
-    set(Boost_INCLUDE_ ".")
-  else()
-    set(Boost_INCLUDE_ "${Boost_INCLUDE_DIR}")
-  endif()
-else()
-  set(Boost_INCLUDE_ ".")
-endif()
-# Boost library directory for the -L flag in ModelicaConfig_gcc.inc.
-# Prefer Boost_LIBRARY_DIRS from FindBoost (MODULE mode) or extracted in
-# CONFIG mode. Fall back to deriving it from the imported target location
-# (needed on macOS/Homebrew/MacPorts where Boost lives outside the default
-# linker search path). Standard system dirs map to ".".
-if(Boost_LIBRARY_DIRS)
-  list(GET Boost_LIBRARY_DIRS 0 _boost_lib_dir_tmp)
-  if("${_boost_lib_dir_tmp}" STREQUAL "/usr/lib" OR "${_boost_lib_dir_tmp}" STREQUAL "/usr/lib64" OR "${_boost_lib_dir_tmp}" STREQUAL "/usr/lib/x86_64-linux-gnu" OR "${_boost_lib_dir_tmp}" STREQUAL "/usr/lib/aarch64-linux-gnu")
-    set(Boost_LIBS_ ".")
-  else()
-    set(Boost_LIBS_ "${_boost_lib_dir_tmp}")
-  endif()
-elseif(Boost_LIBRARY_DIR)
-  set(Boost_LIBS_ "${Boost_LIBRARY_DIR}")
-else()
-  # Last resort: derive the -L dir from the imported target location.
-  # Works no matter which find_package mode located Boost.
-  set(Boost_LIBS_ ".")
-  set(_boost_dir_found FALSE)
-  foreach(_comp IN ITEMS filesystem program_options)
-    if(TARGET Boost::${_comp} AND NOT _boost_dir_found)
-      foreach(_cfg IN ITEMS RELEASE "" DEBUG RELWITHDEBINFO MINSIZEREL)
-        # On Windows a shared Boost target's IMPORTED_LOCATION is the DLL
-        # in bin/; the link -L dir must come from IMPORTED_IMPLIB (lib/).
-        if(_cfg STREQUAL "")
-          get_target_property(_loc Boost::${_comp} IMPORTED_IMPLIB)
-          if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
-            get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION)
-          endif()
-        else()
-          get_target_property(_loc Boost::${_comp} IMPORTED_IMPLIB_${_cfg})
-          if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
-            get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION_${_cfg})
-          endif()
-        endif()
-        if(_loc AND NOT _loc STREQUAL "_loc-NOTFOUND")
-          get_filename_component(_dir "${_loc}" DIRECTORY)
-          if(NOT "${_dir}" STREQUAL "/usr/lib" AND NOT "${_dir}" STREQUAL "/usr/lib64"
-             AND NOT "${_dir}" STREQUAL "/usr/lib/x86_64-linux-gnu" AND NOT "${_dir}" STREQUAL "/usr/lib/aarch64-linux-gnu")
-            set(Boost_LIBS_ "${_dir}")
-          endif()
-          set(_boost_dir_found TRUE)
-          break()
-        endif()
-      endforeach()
-    endif()
-  endforeach()
-  unset(_boost_dir_found)
-endif()
-# The actual boost libraries needed to be linked.
-# DEFINED, not truthiness: Boost_LIBRARIES holds CMake target names, which mean
-# nothing in a makefile.
-if (NOT DEFINED Boost_LIBRARIES_)
-set(Boost_LIBRARIES_ ${Boost_LIBRARIES})
-endif()
-
 # Lapack libs are also expected to be in the system directories.
 set(LAPACK_LIBS_ ".")
 if(UNIX)
@@ -103,7 +34,7 @@ set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 
 # Some common flags for the generated simulation code. It is not clear why OMC_BUILD is defined
 # by the old system. It is always defined for some reason. USE_THREAD means use the C++ standard
-# library's thread library (instead of something like boost threads).
+# library's thread library.
 # The generated model is built with the same optimization as the runtime; the
 # autotools build forwarded CMAKE_CXX_FLAGS here and this replaces that.
 if(MSVC)
@@ -116,10 +47,6 @@ endif()
 # themselves (see ../CMakeLists.txt). The generated makefile turns this into that
 # flag itself, so it must not also be listed in SYSTEM_CFLAGS above.
 set(USE_LOGGER_ "ON")
-
-message(STATUS "configuring ModelicaConfig_gcc.inc in OMCompiler/SimulationRuntime/cpp with:")
-message(STATUS "boost include: ${Boost_INCLUDE_DIR}")
-message(STATUS "boost libraries implict / explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
 
 # A coverage build instruments the runtime libraries, so generated code that
 # statically links them (the FMUs, which pull in the OMCpp*_static variants)
@@ -162,6 +89,7 @@ target_sources(OMCppDataExchange PRIVATE ${OMC_SIMRT_CPP_CORE_DATAEXCHANGE_SOURC
 
 target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppDataExchange PUBLIC omc::simrt::cpp::core::utils::extension)
+target_link_libraries(OMCppDataExchange PRIVATE omc::3rd::FMIL::expat)
 
 install(TARGETS OMCppDataExchange)
 
@@ -359,7 +287,6 @@ target_sources(OMCppSimController PRIVATE ${OMC_SIMRT_CPP_CORE_SIMCONTROLLER_SOU
 target_link_libraries(OMCppSimController PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSimController PUBLIC omc::simrt::cpp::simcorefactory::omcfactory)
 target_link_libraries(OMCppSimController PUBLIC omc::simrt::cpp::core::utils::modelica)
-target_link_libraries(OMCppSimController PUBLIC Boost::filesystem)
 
 install(TARGETS OMCppSimController)
 
@@ -383,7 +310,6 @@ target_sources(OMCppSimulationSettings PRIVATE ${OMC_SIMRT_CPP_CORE_SIM_SETTINGS
 
 target_link_libraries(OMCppSimulationSettings PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSimulationSettings PUBLIC omc::simrt::cpp::simcorefactory::omcfactory)
-target_link_libraries(OMCppSimulationSettings PUBLIC Boost::filesystem)
 
 install(TARGETS OMCppSimulationSettings)
 
@@ -414,7 +340,6 @@ target_sources(OMCppSystem PRIVATE ${OMC_SIMRT_CPP_CORE_SYSTEM_SOURCES})
 
 target_link_libraries(OMCppSystem PUBLIC omc::simrt::cpp::config)
 target_link_libraries(OMCppSystem PUBLIC omc::simrt::cpp::simcorefactory::omcfactory)
-target_link_libraries(OMCppSystem PUBLIC Boost::filesystem)
 
 install(TARGETS OMCppSystem)
 

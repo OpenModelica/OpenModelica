@@ -3016,7 +3016,12 @@ public
       // the rows are row major w.r.t. the body dimensions followed by the iterator frames
       location  := listReverse(Slice.indexToLocation(idx, sizes));
       Iterator.createLocationReplacements(iter, listArray(List.lastN(location, listLength(location) - n_body)), replacements);
-      residual  := Expression.map(Equation.getResidualExp(body), function Replacements.applySimpleExp(replacements = replacements));
+      // if-equation bodies become an if-expression of the branch residuals
+      residual  := match body
+        case IF_EQUATION() then IfEquationBody.getResidualExp(body.body);
+        else Equation.getResidualExp(body);
+      end match;
+      residual  := Expression.map(residual, function Replacements.applySimpleExp(replacements = replacements));
       residual  := scalarizeElement(residual, list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in List.firstN(location, n_body)));
       residual  := SimplifyExp.simplifyDump(residual, true, getInstanceName());
     end forArrayBodyRowResidual;
@@ -3110,7 +3115,9 @@ public
               (lhs, rhs) := tpl;
               lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(lhs_subs, BVariable.getVarName(lhs), true));
               rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(rhs_subs, BVariable.getVarName(rhs), true));
-              if BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
+              if BVariable.isConst(lhs) then
+                // constants have no storage and keep their value
+              elseif BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
                 // nested record, assign its children
                 stmts := listAppend(toStatement(RECORD_EQUATION(Expression.typeOf(lhs_exp), lhs_exp, rhs_exp, eqn.source, eqn.attr,
                   listLength(BVariable.getRecordChildren(lhs)))), stmts);
@@ -3449,6 +3456,31 @@ public
         then exp;
       end match;
     end getLHS;
+
+    function getResidualExp
+      "if-expression of the branch residuals, needs a single equation per branch"
+      input IfEquationBody body;
+      output Expression exp;
+    protected
+      Pointer<Equation> eqn_ptr;
+    algorithm
+      exp := match body.then_eqns
+        case {eqn_ptr} algorithm
+          exp := match Pointer.access(eqn_ptr)
+            local
+              IfEquationBody nested;
+            case IF_EQUATION(body = nested) then getResidualExp(nested);
+            else Equation.getResidualExp(Pointer.access(eqn_ptr));
+          end match;
+          if isSome(body.else_if) then
+            exp := Expression.IF(Expression.typeOf(exp), body.condition, exp, getResidualExp(Util.getOption(body.else_if)));
+          end if;
+        then exp;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a branch does not have a single equation:\n" + toString(body)});
+        then fail();
+      end match;
+    end getResidualExp;
 
     function getRHS
       "needs the if equation to be split"

@@ -51,6 +51,7 @@ protected
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Binding = NFBinding;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
@@ -82,6 +83,7 @@ protected
   // SimCode imports
   import SimCode = NSimCode;
   import NSimCode.{Identifier, SimCodeIndices};
+  import NSimGenericCall;
   import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
@@ -512,10 +514,17 @@ public
       output list<Block> nominal_blcks = {};
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input list<StrongComponent> params "primary parameters, solved before the attributes";
     protected
       list<Variable> sim_vars = {};
       Variable var;
+      UnorderedSet<ComponentRef> bound = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
+      for comp in params loop
+        for v in StrongComponent.getVariables(comp) loop
+          UnorderedSet.add(BVariable.getVarName(v), bound);
+        end for;
+      end for;
       for var_ptrs in vars loop
         for var_ptr in VariablePointers.toList(var_ptrs) loop
           var := Pointer.access(var_ptr);
@@ -526,13 +535,13 @@ public
       end for;
       sim_vars := listReverse(sim_vars);
       for var in sim_vars loop
-        (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(var.backendinfo.attributes), nominal_blcks, simCodeIndices);
+        (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(var.backendinfo.attributes), nominal_blcks, simCodeIndices, bound);
       end for;
       for var in sim_vars loop
-        (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(var.backendinfo.attributes), min_blcks, simCodeIndices);
+        (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(var.backendinfo.attributes), min_blcks, simCodeIndices, bound);
       end for;
       for var in sim_vars loop
-        (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(var.backendinfo.attributes), max_blcks, simCodeIndices);
+        (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(var.backendinfo.attributes), max_blcks, simCodeIndices, bound);
       end for;
       min_blcks := listReverse(min_blcks);
       max_blcks := listReverse(max_blcks);
@@ -544,11 +553,13 @@ public
       input Option<Expression> attribute;
       input output list<Block> blcks;
       input output SimCodeIndices simCodeIndices;
+      input UnorderedSet<ComponentRef> bound;
     algorithm
       _ := match attribute
         local
           Expression exp;
-        case SOME(exp) guard not Expression.isLiteralXML(exp) algorithm
+        // attributes depending on parameters of the initialization are unknown at this point
+        case SOME(exp) guard not Expression.isLiteralXML(exp) and not Expression.contains(exp, function isUnknownBeforeInit(bound = bound)) algorithm
           blcks := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, exp, DAE.emptyElementSource,
             EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: blcks;
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -556,6 +567,36 @@ public
         else ();
       end match;
     end createAttributeBlock;
+
+    function isUnknownBeforeInit
+      "true for variables whose value is not known before the initialization"
+      input Expression exp;
+      input UnorderedSet<ComponentRef> bound;
+      output Boolean b;
+    protected
+      Pointer<Variable> var_ptr;
+      Variable var;
+      Option<Expression> value;
+    algorithm
+      b := match exp
+        case Expression.CREF() guard InstNode.isVar(ComponentRef.node(exp.cref)) algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          if BVariable.isConst(var_ptr) or UnorderedSet.contains(BVariable.getVarName(var_ptr), bound) then
+            b := false;
+          elseif BVariable.isParamOrConst(var_ptr) then
+            var := Pointer.access(var_ptr);
+            value := Binding.getExpOpt(var.binding);
+            if isNone(value) then
+              value := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
+            end if;
+            b := not Util.applyOptionOrDefault(value, Expression.isLiteralXML, false);
+          else
+            b := true;
+          end if;
+        then b;
+        else false;
+      end match;
+    end isUnknownBeforeInit;
 
     function createDAEModeBlocks
       input list<Partition.Partition> partitions;
@@ -867,7 +908,7 @@ public
           allLinVarsFound := true;
           for slice in strict.iteration_vars loop
             var := Pointer.access(Slice.getT(slice));
-            if Variable.size(var) > 1 then
+            if Type.isArray(var.ty) then
               for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
@@ -1354,7 +1395,7 @@ public
 
         case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
 
-        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, ConvertDAE.convertStatements(blck.stmts), EquationAttributes.convert(blck.attr));
+        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, NSimGenericCall.setRelationAsubStatements(ConvertDAE.convertStatements(blck.stmts)), EquationAttributes.convert(blck.attr));
 
         case ALIAS() guard(blck.aliasOf > 0) then OldSimCode.SES_ALIAS(blck.index, blck.aliasOf);
 

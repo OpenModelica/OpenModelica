@@ -48,6 +48,7 @@ and contains some tests for basic parts of Susan.
 
 protected import Debug;
 protected import Flags;
+protected import FlagsUtil;
 protected import Print;
 protected import System;
 protected import Error;
@@ -64,8 +65,12 @@ constant SourceInfo dsi = TplAbsyn.dummySourceInfo;
 public function main
   input String inFile;
   input String inOutputDir = "";
+  input String inInterfaceDir = "";
 
 algorithm
+  if inInterfaceDir <> "" then
+    FlagsUtil.setConfigString(Flags.TPL_INTERFACE_DIR, inInterfaceDir);
+  end if;
   () := match inFile
     local
       String file, strErrBuf;
@@ -87,6 +92,26 @@ algorithm
   end match;
 end main;
 
+
+public function transformFile
+  "Parses and elaborates a template for Susan's Rust backend. Fails when that
+  adds an error."
+  input String inFile;
+  input String inInterfaceDir = "";
+  output TplAbsyn.TemplPackage outTplPackage;
+  output TplAbsyn.MMPackage outMMPackage;
+protected
+  Integer nErrors;
+algorithm
+  if inInterfaceDir <> "" then
+    FlagsUtil.setConfigString(Flags.TPL_INTERFACE_DIR, inInterfaceDir);
+  end if;
+  nErrors := Error.getNumErrorMessages();
+  outTplPackage := TplParser.templPackageFromFile(inFile);
+  outMMPackage := TplAbsyn.transformAST(outTplPackage);
+  outTplPackage := TplAbsyn.fullyQualifyTemplatePackage(outTplPackage);
+  true := nErrors == Error.getNumErrorMessages();
+end transformFile;
 
 public function translateFile
   input String inFile;
@@ -521,7 +546,7 @@ typedIdents(TypedIdents decls) <>=
   */
         tplPackage := TplAbsyn.TEMPL_PACKAGE(
            TplAbsyn.IDENT("Susan"),
-           { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true,
+           { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true, true,
              { ("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE())),
                ("TypedIdents", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("Ident")), TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent"))})))),
                ("PathIdent", TplAbsyn.TI_UNION_TYPE({
@@ -781,7 +806,7 @@ end Susan;:)";
           ::_) = types;*/
 
         tequal := valueEq(astDefs,
-           { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true,
+           { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true, true,
              { ("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE())),
                ("TypedIdents", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("Ident")), TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent"))})))),
                ("PathIdent", TplAbsyn.TI_UNION_TYPE({
@@ -815,7 +840,7 @@ end Susan;:)";
         (chars,_, pid, astDefs) := TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
 
         tequal := valueEq(astDefs,
-            { TplAbsyn.AST_DEF(TplAbsyn.IDENT("builtin"), true,
+            { TplAbsyn.AST_DEF(TplAbsyn.IDENT("builtin"), true, true,
              { ("stringListStringChar",
                   TplAbsyn.TI_FUN_TYPE(
                      { ("inString", TplAbsyn.STRING_TYPE()) },

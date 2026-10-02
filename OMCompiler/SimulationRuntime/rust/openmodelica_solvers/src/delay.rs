@@ -59,21 +59,28 @@ pub struct DelayState {
 }
 
 /// Greatest row index whose time is `<= time` (C `findTime`). Caller guarantees a
-/// non-empty buffer.
+/// non-empty buffer, whose times [`DelayState::store`] keeps nondecreasing.
 fn find_time(time: f64, buf: &VecDeque<Row>) -> usize {
     let end = buf.len();
-    let mut pos = 0;
     if time < buf[0].0 {
         return 0;
     }
-    while pos < end - 1 {
-        pos += 1;
-        if buf[pos].0 > time {
-            pos -= 1;
-            break;
+    // The row is usually near the front: gallop, then bisect `(lo, hi]`.
+    let (mut lo, mut step) = (0, 1);
+    while lo + step < end && buf[lo + step].0 <= time {
+        lo += step;
+        step *= 2;
+    }
+    let mut hi = (lo + step).min(end);
+    while hi - lo > 1 {
+        let mid = lo + (hi - lo) / 2;
+        if buf[mid].0 <= time {
+            lo = mid;
+        } else {
+            hi = mid;
         }
     }
-    pos
+    lo
 }
 
 /// Whether the buffer holds an event (two adjacent rows with equal time) at or

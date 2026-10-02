@@ -1323,13 +1323,15 @@ protected
         field := match BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()))
           case SOME(parent) algorithm
             subs := ComponentRef.subscriptsAll(cref);
+            // the skip counts all fields, but only the relevant ones (e.g. not removed aliases) have an index
             crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));
-            crefs := list(c for c guard(UnorderedMap.contains(c, fullmap)) in crefs);
             if skip <= listLength(crefs) then
               for i in 1:skip-1 loop
                 field :: crefs := crefs;
-                field := ComponentRef.setSubscriptsList(subs, field);
-                index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
+                if UnorderedMap.contains(field, fullmap) then
+                  field := ComponentRef.setSubscriptsList(subs, field);
+                  index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
+                end if;
               end for;
               field :: crefs := crefs;
               field := ComponentRef.setSubscriptsList(subs, field);
@@ -1354,13 +1356,16 @@ protected
       // skip to an array element with more or equal skips to dimensions
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
-        index := locationToIndex(list(Dimension.size(dim, true) for dim in ty.dimensions), rest, index);
+        // locationToIndex expects the innermost dimension first
+        index := locationToIndex(listReverse(list(Dimension.size(dim, true) for dim in ty.dimensions)), listReverse(rest), index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
 
       // skip to an array with less skips then dimensions
       case (Type.ARRAY(), rest) algorithm
         (rest_dim, tail_dim) := List.split(ty.dimensions, listLength(rest));
-        index := locationToIndex(list(Dimension.size(dim, true) for dim in rest_dim), rest, index);
+        // offset by the skipped position times the size of the remaining dimensions (may be zero)
+        index := index + (locationToIndex(listReverse(list(Dimension.size(dim, true) for dim in rest_dim)), listReverse(rest), 1) - 1)
+          * Dimension.sizesProduct(tail_dim, true);
         ty.dimensions := tail_dim;
       then (index, ty);
 

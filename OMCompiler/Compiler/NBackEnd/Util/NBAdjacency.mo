@@ -1288,7 +1288,8 @@ public
       input UnorderedMap<ComponentRef, Expression> bindings;
       output Boolean b = false;
     algorithm
-      for sub in ComponentRef.subscriptsAllFlat(cref) loop
+      // whole dimension subscripts (:) have no expression to check
+      for sub in list(s for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)) loop
         for c in UnorderedSet.toList(Expression.extractCrefs(Subscript.toExp(sub))) loop
           if ComponentRef.isIterator(c) and not UnorderedMap.contains(c, bindings) then
             b := true;
@@ -3212,7 +3213,12 @@ public
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
-        Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
+        // discrete arguments cannot be iterated on and no argument can be solved from a
+        // discrete result (e.g. integer(x)), so they are unsolvable
+        for cref in UnorderedSet.toList(set) loop
+          Solvability.update(cref, if not Type.isDiscrete(call.ty) and BVariable.checkCref(cref, function BVariable.isContinuous(staticAsContinuous = true), sourceInfo())
+            then Solvability.IMPLICIT() else Solvability.UNSOLVABLE(), sol_map);
+        end for;
         addRepetitions(set, rep_set);
         // if the return type has to be skipped - add empty skip
         if isTuple then

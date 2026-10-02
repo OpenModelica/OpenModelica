@@ -39,7 +39,9 @@ foreach(figure systemoverview mdt-create-project mdt-build-prompt)
   convert("${SOURCE}/media/${figure}.svg" "${SOURCE}/media/${figure}.png")
 endforeach()
 
-convert("${SOURCE}/media/mathematica-notebooks.svg" "${SOURCE}/media/mathematica-notebooks.pdf")
+foreach(figure mathematica-notebooks lsp-sequence)
+  convert("${SOURCE}/media/${figure}.svg" "${SOURCE}/media/${figure}.pdf")
+endforeach()
 
 # Only the LaTeX title page uses this one.
 convert("${SOURCE}/logo.svg" "${SOURCE}/logo.pdf")

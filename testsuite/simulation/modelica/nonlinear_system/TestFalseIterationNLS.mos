@@ -5,17 +5,17 @@
 // Ticket 4046
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadString("
 model TestFalseIterationNLS
-  Modelica.SIunits.Pressure p;
-  Modelica.SIunits.Temperature T;
+  Modelica.Units.SI.Pressure p;
+  Modelica.Units.SI.Temperature T;
   //Pure Component Properties
-  Modelica.SIunits.PartialPressure p_s \"Saturation partial pressure of condensing component\";
-  Modelica.SIunits.SpecificEnthalpy delta_hv \"Specific enthalpy of vaporation of condensing component\";
-  Modelica.SIunits.SpecificEnthalpy delta_hd \"Specific enthalpy of desublimation of condensing component\";
+  Modelica.Units.SI.PartialPressure p_s \"Saturation partial pressure of condensing component\";
+  Modelica.Units.SI.SpecificEnthalpy delta_hv \"Specific enthalpy of vaporation of condensing component\";
+  Modelica.Units.SI.SpecificEnthalpy delta_hd \"Specific enthalpy of desublimation of condensing component\";
   parameter Integer nc=5;
-  Modelica.SIunits.SpecificEnthalpy h_i[nc];
+  Modelica.Units.SI.SpecificEnthalpy h_i[nc];
 equation
   p_s = 4e6*time;
   T = 273.15 + time * 10;
@@ -23,13 +23,13 @@ equation
 end TestFalseIterationNLS;
 
 function pureComponentProperties_pTnc
-  input Modelica.SIunits.AbsolutePressure p \"Pressure\";
-  input Modelica.SIunits.Temperature T \"Temperature\";
+  input Modelica.Units.SI.AbsolutePressure p \"Pressure\";
+  input Modelica.Units.SI.Temperature T \"Temperature\";
   input Integer nc \"Number of components\";
-  output Modelica.SIunits.PartialPressure ppS \"Saturation partial pressure of condensing component\";
-  output Modelica.SIunits.SpecificEnthalpy delta_hv \"Specific enthalpy of vaporation of condensing component\";
-  output Modelica.SIunits.SpecificEnthalpy delta_hd \"Specific enthalpy of desublimation of condensing component\";
-  output Modelica.SIunits.SpecificEnthalpy h_idealGas[nc] \"Specific enthalpy of theoretical pure component ideal gas state\";
+  output Modelica.Units.SI.PartialPressure ppS \"Saturation partial pressure of condensing component\";
+  output Modelica.Units.SI.SpecificEnthalpy delta_hv \"Specific enthalpy of vaporation of condensing component\";
+  output Modelica.Units.SI.SpecificEnthalpy delta_hd \"Specific enthalpy of desublimation of condensing component\";
+  output Modelica.Units.SI.SpecificEnthalpy h_idealGas[nc] \"Specific enthalpy of theoretical pure component ideal gas state\";
 
   external \"C\" TILMedia_Gas_pureComponentProperties_pT(p, T, ppS, delta_hv, delta_hd, h_idealGas) annotation(Include=\"
 
@@ -185,7 +185,7 @@ val(h_i[5], 1.0); getErrorString();
 //
 // 	Jacobian idx: 5
 //
-//  Jacobian idx: 6
+// 	Jacobian idx: 6
 //
 //
 // modelInfo:

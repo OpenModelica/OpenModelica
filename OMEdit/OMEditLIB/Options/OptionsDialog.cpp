@@ -1470,11 +1470,15 @@ void OptionsDialog::readFMISettings()
     mpFMIPage->getIncludeResourcesCheckBox()->setChecked(OptionsDefaults::FMI::includeResources);
   }
   // read include source code
+#if defined(__EMSCRIPTEN__)
+  mpFMIPage->getIncludeSourceCodeCheckBox()->setChecked(false);
+#else
   if (mpSettings->contains("FMIExport/IncludeSourceCode")) {
     mpFMIPage->getIncludeSourceCodeCheckBox()->setChecked(mpSettings->value("FMIExport/IncludeSourceCode").toBool());
   } else {
     mpFMIPage->getIncludeSourceCodeCheckBox()->setChecked(OptionsDefaults::FMI::includeSourceCode);
   }
+#endif
   // read generate debug symbols
   if (mpSettings->contains("FMIExport/GenerateDebugSymbols")) {
     mpFMIPage->getGenerateDebugSymbolsCheckBox()->setChecked(mpSettings->value("FMIExport/GenerateDebugSymbols").toBool());
@@ -6408,14 +6412,16 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpExportGroupBox = new QGroupBox(Helper::exportt);
   // FMI export version
   mpVersionGroupBox = new QGroupBox(Helper::version);
-  mpVersion1RadioButton = new QRadioButton("1.0");
+  mpVersion1RadioButton = new QRadioButton(tr("1.0 (deprecated)"));
   mpVersion2RadioButton = new QRadioButton("2.0");
-  mpVersion2RadioButton->setChecked(true);
+  mpVersion3RadioButton = new QRadioButton("3.0");
+  setFMIExportVersion(OptionsDefaults::FMI::version);
   // set the version groupbox layout
   QVBoxLayout *pVersionLayout = new QVBoxLayout;
   pVersionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pVersionLayout->addWidget(mpVersion1RadioButton);
   pVersionLayout->addWidget(mpVersion2RadioButton);
+  pVersionLayout->addWidget(mpVersion3RadioButton);
   mpVersionGroupBox->setLayout(pVersionLayout);
   // FMI export type
   mpTypeGroupBox = new QGroupBox(Helper::type);
@@ -6448,12 +6454,23 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
                                FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER + tr(" i.e.,") + " ChuaCircuit");
   // platforms
   mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
+  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
+  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+#if defined(__EMSCRIPTEN__)
+  const QStringList fmuPlatforms = omcWorkerFmuPlatforms();
+  pPlatformsLayout->addWidget(new Label(fmuPlatforms.isEmpty()
+                                        ? tr("Note: No native platform is available here, the FMU only contains the WebAssembly binary.")
+                                        : tr("Note: The FMU always contains the WebAssembly binary.\n"
+                                             "The listed platforms have a precompiled FMU driver and are added as native binaries.")));
+  foreach (QString platform, fmuPlatforms) {
+    QCheckBox *pCheckBox = new QCheckBox(platform);
+    pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platform);
+    pPlatformsLayout->addWidget(pCheckBox);
+  }
+#else
   Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\".\n"
                                            "In order to run docker platforms add docker to PATH.\n"
                                            "A source-code only FMU is generated if no platform is selected."));
-  // set the type groupbox layout
-  QVBoxLayout *pPlatformsLayout = new QVBoxLayout;
-  pPlatformsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pPlatformsLayout->addWidget(pPlatformNoteLabel);
   QCheckBox *pNativePlatformCheckBox = new QCheckBox("Native");
   pNativePlatformCheckBox->setChecked(true);
@@ -6500,11 +6517,19 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pCustomPlatformsTextBox->setPlaceholderText(customPlatformTip);
   pCustomPlatformsTextBox->setToolTip(customPlatformTip);
   pPlatformsLayout->addWidget(pCustomPlatformsTextBox);
+#endif
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
   // Solver for co-simulation
   mpSolverForCoSimulationComboBox = new ComboBox;
-  mpSolverForCoSimulationComboBox->addItem(tr("Explicit Euler"), "");
+#if defined(__EMSCRIPTEN__)
+  mpSolverForCoSimulationComboBox->addItem(tr("Default (the model's method, else DASSL)"), "");
+  foreach (QString solver, omcWorkerFmuCsSolvers()) {
+    mpSolverForCoSimulationComboBox->addItem(solver, solver);
+  }
+#else
+  mpSolverForCoSimulationComboBox->addItem(tr("Explicit Euler"), "euler");
   mpSolverForCoSimulationComboBox->addItem(tr("CVODE"), "cvode");
+#endif
   // Model description filters
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new ComboBox;
@@ -6568,6 +6593,8 @@ void FMIPage::setFMIExportVersion(QString version)
 {
   if (version == "1.0" || version == "1") {
     mpVersion1RadioButton->setChecked(true);
+  } else if (version == "3.0" || version == "3") {
+    mpVersion3RadioButton->setChecked(true);
   } else {
     mpVersion2RadioButton->setChecked(true);
   }
@@ -6582,6 +6609,8 @@ QString FMIPage::getFMIExportVersion()
 {
   if (mpVersion1RadioButton->isChecked()) {
     return "1.0";
+  } else if (mpVersion3RadioButton->isChecked()) {
+    return "3.0";
   } else {
     return "2.0";
   }
@@ -6651,12 +6680,17 @@ void FMIPage::selectFMUDirectory()
  */
 void FMIPage::enableIncludeSourcesCheckBox(int index)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(index);
+  mpIncludeSourceCodeCheckBox->setEnabled(false);
+#else
   const QString modelDescriptionFilter = mpModelDescriptionFiltersComboBox->itemText(index);
   if (modelDescriptionFilter.compare(QStringLiteral("blackBox")) == 0) {
     mpIncludeSourceCodeCheckBox->setEnabled(false);
   } else {
     mpIncludeSourceCodeCheckBox->setEnabled(true);
   }
+#endif
 }
 
 /*!

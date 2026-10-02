@@ -36,8 +36,22 @@
 #include <Core/Utils/extension/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 
-#include <boost/property_tree/xml_parser.hpp>
-using boost::property_tree::xml_parser::encode_char_entities;
+static std::string encode_char_entities(const std::string& s)
+{
+  std::string r;
+  r.reserve(s.size());
+  for (char c : s) {
+    switch (c) {
+      case '<': r += "&lt;"; break;
+      case '>': r += "&gt;"; break;
+      case '&': r += "&amp;"; break;
+      case '"': r += "&quot;"; break;
+      case '\'': r += "&apos;"; break;
+      default: r += c; break;
+    }
+  }
+  return r;
+}
 
 Logger* Logger::_instance = NULL;
 

@@ -15,8 +15,8 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Thermal.FluidHeatFlow.Examples.OneMass);
 compareVars :=
 {
-   "pipe.T",
-   "heatCapacitor.T"
+   "heatCapacitor.T",
+   "pipe.T"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -30,9 +30,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Thermal.FluidHeatFlow.Examples.OneMass
-// {"pipe.T", "heatCapacitor.T"}
+// {"heatCapacitor.T", "pipe.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.OneMass', options = '', outputFormat = 'mat', variableFilter = 'time|pipe.T|heatCapacitor.T', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.OneMass', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|pipe.T', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.OneMass_res.mat
 // Files Equal!
 // "true

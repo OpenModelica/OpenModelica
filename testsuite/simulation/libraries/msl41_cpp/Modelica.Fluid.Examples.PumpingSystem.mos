@@ -17,8 +17,11 @@ compareVars :=
 {
    "PT1.y",
    "pumps.medium.T",
+   "pumps.medium.p",
    "reservoir.level",
-   "reservoir.medium.T"
+   "reservoir.medium.T",
+   "PumpRPMGenerator.y",
+   "controller.y"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -32,9 +35,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.PumpingSystem
-// {"PT1.y", "pumps.medium.T", "reservoir.level", "reservoir.medium.T"}
+// {"PT1.y", "pumps.medium.T", "pumps.medium.p", "reservoir.level", "reservoir.medium.T", "PumpRPMGenerator.y", "controller.y"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|PT1.y|pumps.medium.T|reservoir.level|reservoir.medium.T', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|PT1.y|pumps.medium.T|pumps.medium.p|reservoir.level|reservoir.medium.T|PumpRPMGenerator.y|controller.y', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
 // Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

@@ -57,9 +57,9 @@ readFile("DualMassOscillator_me_systemCall.log");
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from DualMassOscillator.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from DualMassOscillator.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // "DualMassOscillator.System1.fmu"
 // "Notification: Building FMU for platform 'static' (1/1).

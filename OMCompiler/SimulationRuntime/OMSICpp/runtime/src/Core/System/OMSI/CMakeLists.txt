@@ -9,11 +9,11 @@ message(STATUS "${FMILIB_LIB}")
 add_library(${SystemOMSIName} OMSUSystem.cpp FactoryExport.cpp)
 if(TARGET omc::3rd::fmilib)
   target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName}
-    ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings}
+ ${OMCFactoryName} ${SimulationSettings}
     omc::3rd::fmilib ${FMILIB_LIB_EXTRA} ${LibZName})
 else()
   target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName}
-    ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings}
+ ${OMCFactoryName} ${SimulationSettings}
     ${FMILIB_LIB} ${FMILIB_LIB_EXTRA} ${LibZName})
 endif()
 

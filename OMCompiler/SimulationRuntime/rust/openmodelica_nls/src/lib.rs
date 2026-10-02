@@ -857,6 +857,23 @@ pub fn lu_solve_det(a: &[f64], b: &mut [f64], n: usize) -> Option<f64> {
     Some((0..n).map(|k| lu[k * n + k]).product())
 }
 
+/// [`lu_solve_det`] factoring `a` in place.
+fn lu_solve_det_in_place(a: &mut [f64], b: &mut [f64], n: usize) -> Option<f64> {
+    let (mut stack, mut heap) = ([0i32; 64], alloc::vec::Vec::new());
+    let ipiv = if n <= stack.len() {
+        &mut stack[..n]
+    } else {
+        heap.resize(n, 0);
+        &mut heap[..]
+    };
+    let lu = &mut a[..n * n];
+    if dense_lu::getrf(n, lu, ipiv) != 0 {
+        return None;
+    }
+    dense_lu::getrs(n, lu, ipiv, b);
+    Some((0..n).map(|k| lu[k * n + k]).product())
+}
+
 /// [`lu_solve`] reporting `dgesv`'s `info`: `None` on success, else the 0-based
 /// index of the first zero pivot, straight from `dgetrf`. `A` is copied because
 /// `dgetrf` factors in place and the caller keeps it for the total-pivot fallback.
@@ -958,24 +975,52 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
     let mut rank = n;
     let mut ind_row: alloc::vec::Vec<usize> = (0..n).collect();
     let mut ind_col: alloc::vec::Vec<usize> = (0..m).collect();
+    // C indexes the matrix through `ind_row`/`ind_col`; here the rows and columns
+    // are swapped in place instead, so `a[r + c * n]` is C's
+    // `a[indRow[r] + indCol[c] * n]` and every operation is C's.
+    assert!(a.len() >= n * m);
+    let swap_cols = |a: &mut [f64], c1: usize, c2: usize| {
+        if c1 != c2 {
+            let (lo, hi) = a.split_at_mut(c1.max(c2) * n);
+            lo[c1.min(c2) * n..][..n].swap_with_slice(&mut hi[..n]);
+        }
+    };
     if *pos >= 0 {
         let p = *pos as usize;
         ind_col[n] = p;
         ind_col[p] = n;
+        swap_cols(a, p, n);
     } else {
         n_pivot = n + 1;
     }
+    assert!(x.len() >= m);
     for i in 0..n {
-        // Total pivot over rows [i,n) and columns [i,n_pivot).
-        let mut abs_max = a[ind_row[i] + ind_col[i] * n].abs();
+        // Total pivot over rows [i,n) and columns [i,n_pivot): C takes the first
+        // strictly larger magnitude scanning row by row, which is the first
+        // occurrence, rows then columns, of the largest one, NaNs never winning.
+        // The largest is found column by column, each column's in `x[c]`, which is
+        // not written before the back substitution.
+        let mut abs_max = a[i + i * n].abs();
         let (mut p_row, mut p_col) = (i, i);
-        for r in i..n {
+        if !abs_max.is_nan() {
+            let mut largest = abs_max;
             for c in i..n_pivot {
-                let v = a[ind_row[r] + ind_col[c] * n].abs();
-                if v > abs_max {
-                    abs_max = v;
-                    p_row = r;
-                    p_col = c;
+                let v = max_magnitude(&a[c * n + i..c * n + n]);
+                x[c] = v;
+                if v > largest {
+                    largest = v;
+                }
+            }
+            if largest > abs_max {
+                abs_max = largest;
+                p_row = n;
+                for c in i..n_pivot {
+                    if x[c] == largest {
+                        if let Some(r) = a[c * n + i..c * n + p_row].iter().position(|v| v.abs() == largest) {
+                            p_row = i + r;
+                            p_col = c;
+                        }
+                    }
                 }
             }
         }
@@ -987,18 +1032,33 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
         }
         ind_row.swap(i, p_row);
         ind_col.swap(i, p_col);
-        let piv = a[ind_row[i] + ind_col[i] * n];
-        for k in (i + 1)..n {
-            let h = -a[ind_row[k] + ind_col[i] * n] / piv;
-            for j in (i + 1)..m {
-                a[ind_row[k] + ind_col[j] * n] += h * a[ind_row[i] + ind_col[j] * n];
+        if p_row != i {
+            for c in 0..m {
+                unsafe { core::ptr::swap(a.as_mut_ptr().add(i + c * n), a.as_mut_ptr().add(p_row + c * n)) };
             }
-            a[ind_row[k] + ind_col[i] * n] = 0.0;
+        }
+        swap_cols(a, i, p_col);
+        // The multipliers go into column i, which is zeroed after: no update
+        // reads it, so the columns can be eliminated one after the other.
+        let ci = i * n;
+        let piv = a[i + ci];
+        for k in (i + 1)..n {
+            a[k + ci] = -a[k + ci] / piv;
+        }
+        for j in (i + 1)..m {
+            let cj = j * n;
+            let aij = a[i + cj];
+            for k in (i + 1)..n {
+                unsafe { *a.get_unchecked_mut(k + cj) += *a.get_unchecked(k + ci) * aij };
+            }
+        }
+        for k in (i + 1)..n {
+            a[k + ci] = 0.0;
         }
     }
     let mut det = 1.0;
     for k in 0..n {
-        det *= a[ind_row[k] + ind_col[k] * n];
+        det *= a[k + k * n];
     }
     omclog::debug_double(omclog::NLS_JAC, "Determinant = ", det);
     if det.is_nan() {
@@ -1014,16 +1074,16 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
     }
     for i in (0..n).rev() {
         if i >= rank {
-            if a[ind_row[i] + ind_col[n] * n].abs() > 1e-6 {
+            if a[i + n * n].abs() > 1e-6 {
                 return -1;
             }
             x[ind_col[i]] = 0.0;
         } else {
-            let mut xi = -a[ind_row[i] + ind_col[n] * n];
+            let mut xi = -a[i + n * n];
             for j in ((i + 1)..n).rev() {
-                xi -= a[ind_row[i] + ind_col[j] * n] * x[ind_col[j]];
+                xi -= a[i + j * n] * x[ind_col[j]];
             }
-            x[ind_col[i]] = xi / a[ind_row[i] + ind_col[i] * n];
+            x[ind_col[i]] = xi / a[i + i * n];
         }
     }
     x[ind_col[n]] = 1.0;
@@ -1038,6 +1098,29 @@ fn total_pivot_augmented(n: usize, x: &mut [f64], a: &mut [f64], pos: &mut i32, 
         omclog::debug_int(omclog::NLS_V, "position of largest value = ", *pos);
     }
     0
+}
+
+/// The largest `|v|` in `col`, NaNs skipped; 0 for none. Four running maxima,
+/// so the compares do not wait on each other.
+fn max_magnitude(col: &[f64]) -> f64 {
+    let mut m = [0.0f64; 4];
+    let mut chunks = col.chunks_exact(4);
+    for c in &mut chunks {
+        for k in 0..4 {
+            let v = c[k].abs();
+            if v > m[k] {
+                m[k] = v;
+            }
+        }
+    }
+    for (k, v) in chunks.remainder().iter().enumerate() {
+        let v = v.abs();
+        if v > m[k] {
+            m[k] = v;
+        }
+    }
+    let (a, b) = (if m[1] > m[0] { m[1] } else { m[0] }, if m[3] > m[2] { m[3] } else { m[2] });
+    if b > a { b } else { a }
 }
 
 /// Row-equilibrate an `n×(n+1)` matrix (C's `scaleMatrixRows`): divide each row by
@@ -2918,7 +3001,7 @@ fn newton_c(
     // C's `xStart`: the retries below vary off this, not off the last varied point.
     // Taken at the first retry; `x` is unchanged until then.
     let mut x_start: Option<alloc::vec::Vec<f64>> = None;
-    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 640]>::uninit(), alloc::vec::Vec::new());
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 2048]>::uninit(), alloc::vec::Vec::new());
     let mut rest = zeroed(&mut stack, &mut heap, 5 * n + n * n + n * (n + 1));
     let xscaling = carve(&mut rest, n);
     let mut fvec = carve(&mut rest, n);
@@ -3017,7 +3100,7 @@ fn newton_c(
             }
             if form_jac(x, &fvec, &mut jac, &mut rp, &xscaling, eval, jaceval) {
                 row_scaling(n, &jac, res_scaling);
-                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step, casual);
+                regular = total_pivot_step(n, &jac, &fvec, &xscaling, &mut step, &mut aug, casual);
                 if regular {
                     if trace.is_some() {
                         omclog::debug_string(omclog::NLS_V, "regular initial point!!!");
@@ -3062,9 +3145,15 @@ fn newton_c(
     let mut iter = 0i32;
     let mut neg_steps = 0i32;
     let mut cycles = 0i32;
+    let mut stalls = 0i32;
+    let mut hovers = 0i32;
+    let mut creeps = 0i32;
+    let mut error_f_best = 1e100f64;
+    let mut error_f_hover = 1e100f64;
     let mut err_hist = [0.0f64; 4];
     let mut n_hist = 0usize;
     let mut small_steps = 0i32;
+    let mut small_steps_at_hover = 0i32;
     // C's `lambda` as `-nlsInfo` reports it: only the no-damping and cubic
     // branches set it.
     let mut info_lambda = 1.0f64;
@@ -3116,6 +3205,7 @@ fn newton_c(
         }
         let error_f1_sqrd = nsq(&fvec);
         let error_f1_sqrd_scaled = scaled_sq(n, &fvec, res_scaling);
+        let mut step_lambda = lambda1;
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             d("Need to damp, grad_f = ", grad_f);
@@ -3134,6 +3224,7 @@ fn newton_c(
             let lambda2 = (-lambda1 * lambda1 * grad_f
                 / (2.0 * (error_f1_sqrd - error_f_sqrd - lambda1 * grad_f)))
                 .max(LAMBDA_MIN_C);
+            step_lambda = lambda2;
             if trace.is_some() {
                 omclog::debug_double(omclog::NLS_V, "Need to damp this!! lambda2 = ", lambda2);
             }
@@ -3178,6 +3269,7 @@ fn newton_c(
                 }
                 lam = lam.max(LAMBDA_MIN_C);
                 info_lambda = lam;
+                step_lambda = lam;
                 if trace.is_some() {
                     omclog::debug_double(omclog::NLS_V, "Need to damp this!! lambda = ", lam);
                 }
@@ -3232,6 +3324,21 @@ fn newton_c(
         } else {
             0
         };
+        if error_f_sqrd < 0.99 * error_f_best {
+            error_f_best = error_f_sqrd;
+            stalls = 0;
+            hovers = 0;
+        } else if error_f_sqrd < 10.0 * error_f_hover {
+            stalls += 1;
+            hovers += 1;
+        } else {
+            stalls += 1;
+            hovers = 0;
+        }
+        if hovers == 0 || error_f_sqrd < error_f_hover {
+            error_f_hover = error_f_sqrd;
+        }
+        creeps = if step_lambda < 1e-3 { creeps + 1 } else { 0 };
         if trace.is_some() {
             let d = |m: &str, v: f64| omclog::debug_double(omclog::NLS_V, m, v);
             omclog::debug_string(omclog::NLS_V, "error measurements:");
@@ -3252,7 +3359,11 @@ fn newton_c(
             error_f_sqrd_scaled,
             lambda: info_lambda,
         });
-        if neg_steps > 20 || cycles > 20 {
+        // Away from any solution: no 1% improvement for long, or only heavily damped steps.
+        if neg_steps > 20
+            || cycles > 20
+            || ((stalls > 400 || creeps > 400) && error_f_sqrd >= ftol_sq * 1e6 && error_f_sqrd_scaled >= ftol_sq * 1e6)
+        {
             stat_inc(STAT_NEWTON_NEGSTEP);
             if trace.is_some() {
                 omclog::debug_int(omclog::NLS_V, "UPS! Something happened, NegativeSteps = ", neg_steps);
@@ -3313,10 +3424,20 @@ fn newton_c(
             return (false, false);
         }
         small_steps += (delta_x_sqrd < xtol_sq * 1e4 || delta_x_sqrd_scaled < xtol_sq * 1e4) as i32;
-        if delta_x_sqrd < xtol_sq || delta_x_sqrd_scaled < xtol_sq || small_steps > 20 {
-            let less_accurate = error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6;
+        if hovers == 0 {
+            small_steps_at_hover = small_steps;
+        }
+        // The bottom of a stationary cycle without small steps, which are left to their own exit.
+        let at_cycle_bottom = hovers > 20
+            && small_steps == small_steps_at_hover
+            && err_hist[1..].iter().all(|&e| error_f_sqrd <= e);
+        let less_accurate = error_f_sqrd < ftol_sq * 1e6 || error_f_sqrd_scaled < ftol_sq * 1e6;
+        // A stationary residual within the less accuracy band is round-off, like small steps.
+        if delta_x_sqrd < xtol_sq || delta_x_sqrd_scaled < xtol_sq || small_steps > 20 || (less_accurate && at_cycle_bottom) {
             if !less_accurate {
                 stat_inc(STAT_NEWTON_STUCK);
+            } else if at_cycle_bottom {
+                x.copy_from_slice(&x1);
             }
             if let Some(t) = trace {
                 if less_accurate {
@@ -3331,7 +3452,7 @@ fn newton_c(
                 }
                 omclog::debug_string(omclog::NLS_V, BAR);
             }
-            return (less_accurate, false);
+            return (less_accurate, less_accurate && at_cycle_bottom);
         }
 
         x.copy_from_slice(&x1);
@@ -3350,7 +3471,7 @@ fn newton_c(
         aug[n * n..].copy_from_slice(&fvec);
         scale_matrix_rows_aug(n, &mut aug);
         step.copy_from_slice(&aug[n * n..]);
-        let det = match lu_solve_det(&aug[..n * n], &mut step, n) {
+        let det = match lu_solve_det_in_place(&mut aug, &mut step, n) {
             Some(d) => d,
             None => {
                 stat_inc(STAT_NEWTON_SINGULAR);
@@ -3386,14 +3507,24 @@ fn newton_c(
 /// `solveSystemWithTotalPivotSearch` rather than the LAPACK solve its iterations
 /// use: a rank-deficient-but-consistent start point is regular there. Step comes
 /// back unscaled.
-fn total_pivot_step(n: usize, jac: &[f64], fvec: &[f64], xscaling: &[f64], step: &mut [f64], casual: bool) -> bool {
-    let mut aug = vec![0.0f64; n * (n + 1)];
+/// `aug` is scratch of `n * (n + 1)`.
+#[allow(clippy::too_many_arguments)]
+fn total_pivot_step(
+    n: usize,
+    jac: &[f64],
+    fvec: &[f64],
+    xscaling: &[f64],
+    step: &mut [f64],
+    aug: &mut [f64],
+    casual: bool,
+) -> bool {
     aug[..n * n].copy_from_slice(jac);
-    aug[n * n..].copy_from_slice(fvec);
-    scale_matrix_rows_aug(n, &mut aug);
-    let mut sol = vec![0.0f64; n + 1];
+    aug[n * n..n * (n + 1)].copy_from_slice(fvec);
+    scale_matrix_rows_aug(n, aug);
+    let (mut stack, mut heap) = (core::mem::MaybeUninit::<[f64; 65]>::uninit(), alloc::vec::Vec::new());
+    let sol = zeroed(&mut stack, &mut heap, n + 1);
     let mut pos = n as i32;
-    if total_pivot_augmented(n, &mut sol, &mut aug, &mut pos, casual) != 0 {
+    if total_pivot_augmented(n, sol, aug, &mut pos, casual) != 0 {
         return false;
     }
     for i in 0..n {
@@ -3944,7 +4075,7 @@ pub fn solve_nls(
     // Warm start: the current slot values (the fallback guess, and what is
     // restored on failure).
     // The solve's vectors, carved out of one allocation.
-    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 192]>::uninit(), alloc::vec::Vec::new());
+    let (mut work_stack, mut work_heap) = (core::mem::MaybeUninit::<[f64; 512]>::uninit(), alloc::vec::Vec::new());
     let mut rest = zeroed(&mut work_stack, &mut work_heap, 10 * n + m + mem.res_scaling.len());
     let mut warm = carve(&mut rest, n);
     let mut xbuf = carve(&mut rest, m);
@@ -4016,7 +4147,7 @@ pub fn solve_nls(
     // chose to solve sparsely, a dense column-major `n×m` for the rest.
     let jac_csc = has_jac && spec.jac_csc;
     let jac_len = if jac_csc { nnz as usize } else { n * m };
-    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 256]>::uninit(), alloc::vec::Vec::new());
+    let (mut jac_stack, mut jac_heap) = (core::mem::MaybeUninit::<[f64; 1024]>::uninit(), alloc::vec::Vec::new());
     let mut jacbuf = zeroed(&mut jac_stack, &mut jac_heap, if has_jac || has_hom_jac { jac_len } else { 0 });
     // `-nls=` overrides the codegen-time choice (C's per-system `nlsMethod`): `kinsol`
     // takes every patterned system, the dense solvers force dense, unset keeps it.

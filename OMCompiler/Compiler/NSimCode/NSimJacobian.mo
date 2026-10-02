@@ -177,6 +177,64 @@ public
       end if;
     end mergeDuplicateRows;
 
+    function mergeScalarRows
+      "Merges rows that solve the same scalar variables. The rows of these variables
+      are their absolute positions, so every equation of an algebraic loop, which
+      solves all its unknowns, would add the same rows again with its dependencies.
+      This multiplied the non-zeros (with duplicates) and the generated code by the
+      number of loop equations. The merged row has the union of the dependencies.
+      Rows with equation iterators or array solved variables keep their own rows."
+      input list<SparsityRow> rows_in;
+      output list<SparsityRow> rows_out = {};
+    protected
+      UnorderedMap<String, SparsityRow> row_map = UnorderedMap.new<SparsityRow>(stringHashDjb2, stringEq);
+      type DepSet = UnorderedSet<ComponentRef>;
+      UnorderedMap<String, DepSet> dep_map = UnorderedMap.new<DepSet>(stringHashDjb2, stringEq);
+      UnorderedSet<ComponentRef> deps;
+      String key;
+      SparsityRow merged;
+    algorithm
+      for row in rows_in loop
+        if isScalarRow(row) then
+          key := stringDelimitList(list(ComponentRef.toString(c) for c in row.solved_crefs), ",");
+          if UnorderedMap.contains(key, row_map) then
+            merged := UnorderedMap.getSafe(key, row_map, sourceInfo());
+            deps := UnorderedMap.getSafe(key, dep_map, sourceInfo());
+            for dep in row.dependencies loop
+              if not UnorderedSet.contains(Util.tuple31(dep), deps) then
+                UnorderedSet.add(Util.tuple31(dep), deps);
+                merged.dependencies := dep :: merged.dependencies;
+              end if;
+            end for;
+            UnorderedMap.add(key, merged, row_map);
+          else
+            UnorderedMap.add(key, row, row_map);
+            UnorderedMap.add(key, UnorderedSet.fromList(list(Util.tuple31(dep) for dep in row.dependencies), ComponentRef.hash, ComponentRef.isEqual), dep_map);
+            rows_out := row :: rows_out;
+          end if;
+        else
+          rows_out := row :: rows_out;
+        end if;
+      end for;
+      // replace the first occurrences by the merged rows
+      rows_out := listReverse(list(if isScalarRow(row) then UnorderedMap.getSafe(stringDelimitList(list(ComponentRef.toString(c) for c in row.solved_crefs), ","), row_map, sourceInfo()) else row for row in rows_out));
+    end mergeScalarRows;
+
+    function isScalarRow
+      "true if the rows of the solved variables are absolute positions: no equation
+      iterators and only index subscripts"
+      input SparsityRow row;
+      output Boolean b;
+    algorithm
+      b := listEmpty(row.equation_iterators) and not listEmpty(row.solved_crefs)
+        and List.all(row.solved_crefs, crefHasOnlyIndexSubscripts);
+    end isScalarRow;
+
+    function crefHasOnlyIndexSubscripts
+      input ComponentRef cref;
+      output Boolean b = List.all(ComponentRef.subscriptsAllFlat(cref), Subscript.isIndex);
+    end crefHasOnlyIndexSubscripts;
+
     function sortByResultVars
       "Orders the rows like the result variables. The runtime reads row i of the
       pattern as result variable i, but the rows come in equation order.
@@ -258,8 +316,11 @@ public
         case Adjacency.SPARSITY() algorithm
           rows := SparsityRow.mergeDuplicateRows(
             list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
-            SimVars.numScalarElems(rowVars));
-          rows := SparsityRow.sortByResultVars(rows, rowVars);
+            SimVars.numScalarElems(resVars));
+          rows := SparsityRow.mergeScalarRows(rows);
+          if not isAdjoint then
+            rows := SparsityRow.sortByResultVars(rows, resVars);
+          end if;
         then SPARSITY(rows);
         case Adjacency.EMPTY() then EMPTY();
 
@@ -460,10 +521,13 @@ public
             res_lst  := sortByStateIndex(res_lst, simcode_map);
           end if;
 
-          // column and seed var indices always start at 0
-          seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
-          resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
-          tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES());
+          // column and seed var indices always start at 0. Without scalarization the
+          // Jacobian has no index map like the simulation variables, so the index of an
+          // array variable is the position of its first element in seedVars, resultVars
+          // and tmpVars, and in the columns and rows of the sparsity pattern
+          seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+          resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+          tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);

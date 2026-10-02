@@ -5,7 +5,7 @@
 //
 
 
-loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 simulate(Modelica.Electrical.Spice3.Examples.CascodeCircuit);getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.CascodeCircuit_res.mat",
   "ReferenceFiles/CascodeCircuit.mat",

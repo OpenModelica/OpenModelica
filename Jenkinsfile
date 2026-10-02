@@ -6,7 +6,6 @@ def shouldWeBuildFedora
 def shouldWeEnableMacOSCMakeBuild
 def shouldWeBuildWindows
 def shouldWeRunTests
-def shouldWeRunRustTests
 
 pipeline {
   agent none
@@ -29,7 +28,6 @@ pipeline {
     booleanParam(name: 'BUILD_ENTERPRISE_LINUX', defaultValue: false, description: 'Build with Enterprise Linux')
     booleanParam(name: 'BUILD_FEDORA', defaultValue: false, description: 'Build with Fedora 44')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
-    booleanParam(name: 'ENABLE_RUST_PARTEST', defaultValue: false, description: 'Enable the extra partest run on the Rust omc (the wasm-jit partest always runs)')
     // Read at queue time, before common.groovy is loaded.
     string(name: 'BUILD_PRIORITY',
            defaultValue: env.CHANGE_ID ? '3' : '5',
@@ -64,7 +62,6 @@ pipeline {
           shouldWeEnableMacOSCMakeBuild = buildFlags.shouldWeEnableMacOSCMakeBuild
           shouldWeBuildWindows = buildFlags.shouldWeBuildWindows
           shouldWeRunTests = buildFlags.shouldWeRunTests
-          shouldWeRunRustTests = buildFlags.shouldWeRunRustTests
         }
       }
     }
@@ -313,58 +310,6 @@ pipeline {
     }
     stage('tests + extras') {
       parallel {
-        // partest against the Rust-built omc; dedicated runtest cache. See
-        // common.partestRust(). Opt-in, on the default simCodeTarget; the
-        // wasm-jit run is stages 23/24.
-        stage('01 testsuite-rust 1/2') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunRustTests }
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
-                                     common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('', 1, 2, false)
-              }
-            }
-          }
-        }
-        stage('02 testsuite-rust 2/2') {
-          agent {
-            node {
-              label 'linux'
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunRustTests }
-          }
-          steps {
-            script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
-                                     common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('', 2, 2, false)
-              }
-            }
-          }
-        }
-
         // The only shard that runs the coverage-instrumented CMake build: its
         // counters become the coverage report in 'check-and-upload'. The clang
         // shard below runs an uninstrumented build and records none.
@@ -456,7 +401,7 @@ pipeline {
         }
 
         // The slow Qt web pages (OMShell/OMNotebook/OMEdit-qt), in parallel;
-        // merged by assemble-web.
+        // merged by upload-web.
         stage('10b qt-web target') {
           agent {
             docker {
@@ -683,14 +628,15 @@ pipeline {
           }
         }
 
-        // The wasm-jit partest, same setup as stages 01/02. Last in the block
-        // (against the ordering rule above): the fastest of the testsuite runs,
-        // so it loses the least by starting after the others. Unpartitioned - it
-        // is fast enough not to need the split the C targets use.
+        // The wasm-jit partest against the Rust-built omc; dedicated runtest
+        // cache. See common.partestRust(). Last in the block (against the
+        // ordering rule above): the fastest of the testsuite runs, so it loses
+        // the least by starting after the others. Unpartitioned - it is fast
+        // enough not to need the split the C targets use.
         stage('19 testsuite-wasm-jit') {
           agent {
             node {
-              label 'linux'
+              label 'linux && !slow'
               customWorkspace 'ws/OpenModelica'
             }
           }
@@ -709,7 +655,7 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
-                common.partestRust('wasm-jit', 1, 1, true)
+                common.partestRust('wasm-jit', 1, 1)
               }
             }
           }
@@ -767,26 +713,8 @@ pipeline {
         }
       }
     }
-    stage('FMPy') {
+    stage('check-and-upload') {
       parallel {
-        // Merge stages 10 + 10b into the published web zip.
-        stage('assemble-web') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
-              label 'linux'
-              alwaysPull true
-              customWorkspace 'ws/OpenModelica'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script { common.assembleWeb() }
-          }
-        }
         stage('linux-FMPy') {
           agent {
             docker {
@@ -807,13 +735,9 @@ pipeline {
             script { common.fmpyLinux() }
           }
         }
-      }
-    }
-    stage('check-and-upload') {
-      parallel {
         // Turns the coverage counters of the testsuite-gcc shard into a
-        // report. Unlike its neighbours it is not gated on !isPR: the point is
-        // to get the number on every PR.
+        // report. Unlike the uploads it is not gated on !isPR: the point is to
+        // get the number on every PR.
         stage('coverage-report') {
           agent {
             node {
@@ -885,7 +809,8 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { !isPR }
+            branch 'master'
+            expression { shouldWeRunTests }
           }
           steps {
             script { common.uploadWeb() }

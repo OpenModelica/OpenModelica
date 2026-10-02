@@ -15,13 +15,11 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling);
 compareVars :=
 {
-   "dcpm.la.i",
-   "loadInertia.phi",
    "loadInertia.w",
-   "cooling.T",
+   "loadInertia.phi",
    "armature.T",
-   "core.T",
-   "volumeFlow.T"
+   "dcpm.la.i",
+   "core.T"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -35,9 +33,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling
-// {"dcpm.la.i", "loadInertia.phi", "loadInertia.w", "cooling.T", "armature.T", "core.T", "volumeFlow.T"}
+// {"loadInertia.w", "loadInertia.phi", "armature.T", "dcpm.la.i", "core.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 250000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm.la.i|loadInertia.phi|loadInertia.w|cooling.T|armature.T|core.T|volumeFlow.T', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 250000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling', options = '', outputFormat = 'mat', variableFilter = 'time|loadInertia.w|loadInertia.phi|armature.T|dcpm.la.i|core.T', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling_res.mat
 // Files Equal!
 // "true

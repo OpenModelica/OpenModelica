@@ -9,8 +9,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.Machines.Examples.TransformerTestbench);
@@ -26,7 +24,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.QuasiStatic.Machines.Examples.TransformerTestbench
 // {"source.plug_p.reference.gamma"}

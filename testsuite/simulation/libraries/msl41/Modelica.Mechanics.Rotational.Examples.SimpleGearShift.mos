@@ -19,7 +19,13 @@ compareVars :=
    "engine.phi",
    "engine.w",
    "load.phi",
-   "load.w"
+   "load.w",
+   "brake.mode",
+   "brake.startBackward",
+   "brake.startForward",
+   "clutch.mode",
+   "clutch.startBackward",
+   "clutch.startForward"
 };
 
 runScript(modelTesting);getErrorString();
@@ -31,8 +37,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Rotational.Examples.SimpleGearShift
-// {"clutch.phi_rel", "clutch.w_rel", "engine.phi", "engine.w", "load.phi", "load.w"}
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.SimpleGearShift', options = '', outputFormat = 'mat', variableFilter = 'time|clutch.phi_rel|clutch.w_rel|engine.phi|engine.w|load.phi|load.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"clutch.phi_rel", "clutch.w_rel", "engine.phi", "engine.w", "load.phi", "load.w", "brake.mode", "brake.startBackward", "brake.startForward", "clutch.mode", "clutch.startBackward", "clutch.startForward"}
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.SimpleGearShift', options = '', outputFormat = 'mat', variableFilter = 'time|clutch.phi_rel|clutch.w_rel|engine.phi|engine.w|load.phi|load.w|brake.mode|brake.startBackward|brake.startForward|clutch.mode|clutch.startBackward|clutch.startForward', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.SimpleGearShift_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
