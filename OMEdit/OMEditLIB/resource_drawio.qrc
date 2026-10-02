@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/drawio">
+        <file alias="viewer-static.min.js">Resources/drawio/viewer-static.min.js</file>
+    </qresource>
+</RCC>

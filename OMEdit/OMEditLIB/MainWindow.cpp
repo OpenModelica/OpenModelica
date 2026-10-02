@@ -61,6 +61,7 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Modeling/DocumentationWidget.h"
+#include "Modeling/ClassDiagramWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
@@ -574,6 +575,19 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   mpDocumentationDockWidget->hide();
   connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
+#ifdef OM_OMEDIT_CLASS_DIAGRAM
+  // Create ClassDiagramWidget dock, tabbed with the documentation, floating until the user docks it
+  mpClassDiagramWidget = new ClassDiagramWidget;
+  mpClassDiagramDockWidget = new QDockWidget(Helper::classDiagram, this);
+  mpClassDiagramDockWidget->setObjectName("ClassDiagram");
+  mpClassDiagramDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+  mpClassDiagramDockWidget->setWidget(mpClassDiagramWidget);
+  addDockWidget(Qt::RightDockWidgetArea, mpClassDiagramDockWidget);
+  tabifyDockWidget(mpDocumentationDockWidget, mpClassDiagramDockWidget);
+  connect(mpClassDiagramDockWidget, SIGNAL(topLevelChanged(bool)), mpClassDiagramWidget, SLOT(floatingChanged(bool)));
+  mpClassDiagramDockWidget->setFloating(true);
+  mpClassDiagramDockWidget->hide();
+#endif
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -5265,6 +5279,9 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpElementDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
+#ifdef OM_OMEDIT_CLASS_DIAGRAM
+  pViewWindowsMenu->addAction(mpClassDiagramDockWidget->toggleViewAction());
+#endif
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());

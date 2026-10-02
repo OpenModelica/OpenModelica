@@ -3310,6 +3310,21 @@ QString OMCProxy::checkModel(QString className)
 }
 
 /*!
+ * \brief OMCProxy::getClassDiagram
+ * Returns the UML class diagram of a class as a draw.io file, see getClassDiagram.
+ * \param className
+ * \param depth - how many levels of used classes to include.
+ * \param showModifiers
+ * \return the diagram, or an empty string if there is none.
+ */
+QString OMCProxy::getClassDiagram(QString className, int depth, bool showModifiers)
+{
+  QString result = mpOMCInterface->getClassDiagram(className, "", "drawio", depth, QList<QString>() << "Modelica.Icons", showModifiers);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   Converts a given ngspice netlist to equivalent Modelica code.
   Filename is the name of the ngspice netlist. Subcircuit and device model (.lib) files
   are to be present in the same directory. The Modelica model is created in the same directory
