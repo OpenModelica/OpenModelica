@@ -7024,6 +7024,7 @@ dependencies = [
  "arcstr",
  "const-str 1.1.0",
  "encoding_rs",
+ "libc",
  "loop_unwrap",
  "metamodelica",
  "openmodelica_error",

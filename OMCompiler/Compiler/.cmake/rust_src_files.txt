@@ -43,6 +43,7 @@ metamodelica/src/list/mod.rs
 metamodelica/src/misc.rs
 metamodelica/src/real/mod.rs
 metamodelica/src/real/ryu.rs
+metamodelica/src/serial.rs
 metamodelica/src/source_info.rs
 metamodelica/src/string/hash.rs
 metamodelica/src/string/mod.rs

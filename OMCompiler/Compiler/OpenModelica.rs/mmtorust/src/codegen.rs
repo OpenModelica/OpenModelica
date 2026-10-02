@@ -984,12 +984,15 @@ impl GenCtx {
     /// interior-mutability / `dyn Fn` shapes [`derives_for`] strips down, so the
     /// base derive always begins `#[derive(Clone, …`.
     fn type_derives(&self, qname: &str) -> String {
-        let base = self.derives_for(qname);
+        let mut derives = self.derives_for(qname).to_owned();
         if self.copy_type_qnames.contains(qname) {
-            base.replacen("Clone", "Clone, Copy", 1)
-        } else {
-            base.to_owned()
+            derives = derives.replacen("Clone", "Clone, Copy", 1);
         }
+        // The parse cache stores Absyn programs.
+        if qname.starts_with("Absyn.") {
+            derives = derives.replacen(")]", ", metamodelica::serial::MMSerial)]", 1);
+        }
+        derives
     }
 
     /// Wrap a fallible Rust expression with the appropriate error-propagation
