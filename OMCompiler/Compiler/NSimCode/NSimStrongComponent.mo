@@ -51,6 +51,7 @@ protected
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Binding = NFBinding;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
@@ -513,10 +514,17 @@ public
       output list<Block> nominal_blcks = {};
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input list<StrongComponent> params "primary parameters, solved before the attributes";
     protected
       list<Variable> sim_vars = {};
       Variable var;
+      UnorderedSet<ComponentRef> bound = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
+      for comp in params loop
+        for v in StrongComponent.getVariables(comp) loop
+          UnorderedSet.add(BVariable.getVarName(v), bound);
+        end for;
+      end for;
       for var_ptrs in vars loop
         for var_ptr in VariablePointers.toList(var_ptrs) loop
           var := Pointer.access(var_ptr);
@@ -527,13 +535,13 @@ public
       end for;
       sim_vars := listReverse(sim_vars);
       for var in sim_vars loop
-        (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(var.backendinfo.attributes), nominal_blcks, simCodeIndices);
+        (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(var.backendinfo.attributes), nominal_blcks, simCodeIndices, bound);
       end for;
       for var in sim_vars loop
-        (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(var.backendinfo.attributes), min_blcks, simCodeIndices);
+        (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(var.backendinfo.attributes), min_blcks, simCodeIndices, bound);
       end for;
       for var in sim_vars loop
-        (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(var.backendinfo.attributes), max_blcks, simCodeIndices);
+        (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(var.backendinfo.attributes), max_blcks, simCodeIndices, bound);
       end for;
       min_blcks := listReverse(min_blcks);
       max_blcks := listReverse(max_blcks);
@@ -545,11 +553,13 @@ public
       input Option<Expression> attribute;
       input output list<Block> blcks;
       input output SimCodeIndices simCodeIndices;
+      input UnorderedSet<ComponentRef> bound;
     algorithm
       _ := match attribute
         local
           Expression exp;
-        case SOME(exp) guard not Expression.isLiteralXML(exp) algorithm
+        // attributes depending on parameters of the initialization are unknown at this point
+        case SOME(exp) guard not Expression.isLiteralXML(exp) and not Expression.contains(exp, function isUnknownBeforeInit(bound = bound)) algorithm
           blcks := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, exp, DAE.emptyElementSource,
             EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: blcks;
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -557,6 +567,36 @@ public
         else ();
       end match;
     end createAttributeBlock;
+
+    function isUnknownBeforeInit
+      "true for variables whose value is not known before the initialization"
+      input Expression exp;
+      input UnorderedSet<ComponentRef> bound;
+      output Boolean b;
+    protected
+      Pointer<Variable> var_ptr;
+      Variable var;
+      Option<Expression> value;
+    algorithm
+      b := match exp
+        case Expression.CREF() guard InstNode.isVar(ComponentRef.node(exp.cref)) algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          if BVariable.isConst(var_ptr) or UnorderedSet.contains(BVariable.getVarName(var_ptr), bound) then
+            b := false;
+          elseif BVariable.isParamOrConst(var_ptr) then
+            var := Pointer.access(var_ptr);
+            value := Binding.getExpOpt(var.binding);
+            if isNone(value) then
+              value := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
+            end if;
+            b := not Util.applyOptionOrDefault(value, Expression.isLiteralXML, false);
+          else
+            b := true;
+          end if;
+        then b;
+        else false;
+      end match;
+    end isUnknownBeforeInit;
 
     function createDAEModeBlocks
       input list<Partition.Partition> partitions;
