@@ -2167,7 +2167,9 @@ algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
 
-        if Type.isArray(ty) and InstContext.inEquation(context) then
+        // A slice over a resizable parameter keeps its size symbolic.
+        if Type.isArray(ty) and InstContext.inEquation(context) and
+           not Expression.contains(e, Expression.isResizableCref) then
           Structural.markExp(e);
           e := Ceval.tryEvalExp(e);
           ty := Expression.typeOf(e);

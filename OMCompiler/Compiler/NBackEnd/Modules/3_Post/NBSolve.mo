@@ -359,11 +359,17 @@ public
           if solve_status == Status.EXPLICIT then
             // successfully solved explicitly; use result directly
             comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+            // the matched cref has resizable parameters in its subscripts replaced by
+            // their values (x[N+1] -> x[11]), the solved equation keeps them symbolic
+            comp.var_cref := solvedCref(eqn, comp.var_cref);
           else
             // IMPLICIT (cref hidden inside array expression) or UNSOLVABLE:
             // try expanding array sums to find an explicit solution for the slice
             (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
             comp.eqn := eqn_slice;
+            if solve_status == Status.EXPLICIT then
+              comp.var_cref := solvedCref(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref);
+            end if;
           end if;
           comp.status := solve_status;
         then ({comp}, solve_status);
@@ -584,6 +590,26 @@ public
     input Operator op;
     output Expression exp = Expression.BINARY(exp1, op, exp2);
   end makeBinary;
+
+  function solvedCref
+    "The cref an explicitly solved equation assigns, if it is the variable of
+    var_cref (same name, possibly other but equal subscripts), else var_cref.
+    Only without scalarization: scalarized, the evaluated element is the variable."
+    input Equation eqn;
+    input output ComponentRef var_cref;
+  algorithm
+    if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+      return;
+    end if;
+    var_cref := match Equation.getLHS(eqn)
+      local
+        ComponentRef lhs;
+      case SOME(Expression.CREF(cref = lhs))
+        guard ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(lhs), ComponentRef.stripSubscriptsAll(var_cref))
+        then lhs;
+      else var_cref;
+    end match;
+  end solvedCref;
 
   function solveSingleStrongComponent
     input output Equation eqn;

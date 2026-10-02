@@ -242,6 +242,67 @@ public
     end match;
   end detect;
 
+  function addDimensionParameters
+    "A dimension of a resizable array that is an expression of parameters (N-1,
+    nT+1) gets an Integer parameter $DIM_k with the expression as start value.
+    The init.xml refers to it by value reference like to a plain size parameter,
+    and the generated function updateStructuralParameters computes it from the
+    start values of the other parameters (possibly changed with -override) before
+    the runtime allocates the arrays."
+    input output VarData varData;
+  protected
+    list<Expression> dim_exps = {};
+    list<Pointer<Variable>> dim_params = {};
+    Pointer<Variable> var_ptr;
+    Variable var;
+    ComponentRef cref;
+    Integer idx = 1;
+  algorithm
+    varData := match varData
+      case VarData.VAR_DATA_SIM() algorithm
+        // all lists: e.g. the function alias variables of the initialization are not in variables
+        for v in List.flatten(list(VariablePointers.toList(l) for l in {varData.variables, varData.unknowns,
+            varData.knowns, varData.initials, varData.auxiliaries, varData.aliasVars, varData.nonTrivialAlias})) loop
+          for dim in Type.arrayDims(Variable.typeOf(Pointer.access(v))) loop
+            dim_exps := match dim
+              case Dimension.RESIZABLE() guard isDimensionExpression(dim.exp) and not List.isMemberOnTrue(dim.exp, dim_exps, Expression.isEqual)
+                then dim.exp :: dim_exps;
+              case Dimension.EXP() guard isDimensionExpression(dim.exp) and not List.isMemberOnTrue(dim.exp, dim_exps, Expression.isEqual)
+                then dim.exp :: dim_exps;
+              else dim_exps;
+            end match;
+          end for;
+        end for;
+        for e in listReverse(dim_exps) loop
+          (var_ptr, cref) := BVariable.makeAuxVar("$DIM", idx, Type.INTEGER(), true);
+          var := BVariable.setStartAttribute(Pointer.access(var_ptr), e, true);
+          Pointer.update(var_ptr, var);
+          dim_params := var_ptr :: dim_params;
+          idx := idx + 1;
+        end for;
+        if not listEmpty(dim_params) then
+          dim_params := listReverse(dim_params);
+          varData.variables := VariablePointers.addList(dim_params, varData.variables);
+          varData.knowns := VariablePointers.addList(dim_params, varData.knowns);
+          varData.resizables := VariablePointers.addList(dim_params, varData.resizables);
+        end if;
+      then varData;
+      else varData;
+    end match;
+  end addDimensionParameters;
+
+  function isDimensionExpression
+    "true for a dimension that is neither a literal nor a plain parameter"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.INTEGER() then false;
+      case Expression.CREF() then false;
+      else not Expression.isLiteral(exp);
+    end match;
+  end isDimensionExpression;
+
   function orderFailed
     input EvalOrder eo;
     output Boolean b = eo == EvalOrder.FAILED;

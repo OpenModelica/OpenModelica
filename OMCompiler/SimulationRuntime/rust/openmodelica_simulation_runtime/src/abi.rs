@@ -1012,6 +1012,9 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     pub fmiIntegerAliasIndexes: *const c_int,
     pub fmiBooleanAliasIndexes: *const c_int,
     pub fmiStringAliasIndexes: *const c_int,
+    /// The size parameters of derived dimensions of resizable arrays (N-1), from
+    /// the start values; before the sizes are computed. `None` if the model has none.
+    pub updateStructuralParameters: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
 }
 
 /// The solver defaults `initializeDataStruc` installs (util/simulation_options.h,

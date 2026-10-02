@@ -407,6 +407,14 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   const int *fmiIntegerAliasIndexes;
   const int *fmiBooleanAliasIndexes;
   const int *fmiStringAliasIndexes;
+
+  /*
+  * The size parameters of derived dimensions of resizable arrays (N-1), computed
+  * from the start values of the parameters (possibly changed with -override).
+  * Called after the start values are read and before the sizes of the arrays are
+  * computed (calculateAllScalarLength). NULL when the model has none.
+  */
+  void (*updateStructuralParameters)(DATA* data, threadData_t* threadData);
 };
 
 
