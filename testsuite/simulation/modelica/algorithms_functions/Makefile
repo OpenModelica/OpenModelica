@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+17035.mos \
 AlgorithmCondAssign1.mos \
 AlgorithmCondAssign2.mos \
 AlgorithmForInClass.mos \

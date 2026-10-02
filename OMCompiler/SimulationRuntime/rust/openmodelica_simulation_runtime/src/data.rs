@@ -522,6 +522,11 @@ pub fn initialize_data_struc(data: *mut DATA, _thread_data: *mut threadData_t) {
     let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
     let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
 
+    // The size parameters of derived dimensions (N-1) need the start values, which
+    // already hold the -override values, and are needed for the sizes.
+    if let Some(f) = unsafe { (*(*data).callback).updateStructuralParameters } {
+        unsafe { f(data, _thread_data) };
+    }
     array_index_maps(md, si);
 
     md.nStates = unsafe { *si.realVarsIndex.add(md.nStatesArray as usize) } as c_long;
@@ -977,6 +982,10 @@ pub fn build_rt(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
     let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
     let cb = unsafe { &*(*data).callback };
+    // The sizes of a resizable Jacobian are the values of structural parameters
+    // (possibly changed with -override); the initialization sets the same values
+    // again later.
+    crate::fmi::setAllParamsToStart(si, md);
     init_jac_a(data, thread_data);
     crate::linearize::initialize(data, thread_data);
     crate::datarecon::initialize(data, thread_data);

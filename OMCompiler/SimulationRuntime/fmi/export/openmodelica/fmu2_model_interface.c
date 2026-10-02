@@ -783,6 +783,9 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
+  if (comp->fmuData->callback->updateStructuralParameters) {
+    comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
+  }
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
@@ -1163,6 +1166,9 @@ fmi2Status fmi2Reset(fmi2Component c)
      * initialized and filled again, mirroring fmi2Instantiate. */
     allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
     scalarAllocArrayAttributes(comp->fmuData->modelData);
+    if (comp->fmuData->callback->updateStructuralParameters) {
+      comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
+    }
     calculateAllScalarLength(comp->fmuData->modelData);
   }
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);

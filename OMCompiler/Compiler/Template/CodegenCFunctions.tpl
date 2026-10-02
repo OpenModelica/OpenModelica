@@ -5259,6 +5259,24 @@ template isJacobianElementVar(ComponentRef cr, Context context)
   else ""
 end isJacobianElementVar;
 
+template jacobianVarIndex(SimVar var, Context context)
+ "The position of a Jacobian variable in its seed, tmp or result array, an
+  expression of the structural parameters if a variable before it has a size
+  only known at runtime (resizable arrays), see jacobianIndexExp."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match jacobianIndexExp(var, jacHT)
+    case ICONST(__) then integer
+    case e then
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let &varFrees = buffer ""
+      let &auxFunction = buffer ""
+      '(<%daeExp(e, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>)'
+  else match var case SIMVAR(__) then index
+end jacobianVarIndex;
+
 template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
 ::=
@@ -5269,14 +5287,14 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
      let seedField = if stringEq(jacName, "ADJ") then "seedVarsAdj" else "seedVars"
      match simVarFromHT(cr, jacHT)
      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then
-       if stringEq(sub, "") then 'jacobian-><%resultField%>[<%index%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian-><%resultField%>[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%resultField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%resultField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then
-       if stringEq(sub, "") then 'jacobian-><%tmpField%>[<%index%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian-><%tmpField%>[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%tmpField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%tmpField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-       if stringEq(sub, "") then 'jacobian-><%seedField%>[<%index%>]<%crefCCommentWithVariability(v)%>'
-       else '(&(jacobian-><%seedField%>[<%index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+       if stringEq(sub, "") then 'jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+       else '(&(jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
      case SIMVAR(index=-2) then
        if boolAnd(stringEq(sub, ""), isJacobianColumnCref(cr)) then '0.0' else
        // Subscripted seed cref not in jac_map (e.g. a cross-Jacobian seed
@@ -5287,14 +5305,14 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
        // Otherwise fall through to crefOld for actual values / loop iterators.
        match simVarFromHT(crefStripSubs(cr), jacHT)
        case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-         if stringEq(sub, "") then 'jacobian-><%seedField%>[<%v.index%>]<%crefCCommentWithVariability(v)%>'
-         else '(&(jacobian-><%seedField%>[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+         if stringEq(sub, "") then 'jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+         else '(&(jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
        else
          // Still not found: seed cached under a different Jacobian's name. Retry with the root renamed to this Jacobian.
          match simVarFromHT(crefRenameSeedRoot(crefStripSubs(cr), jacName), jacHT)
          case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then
-           if stringEq(sub, "") then 'jacobian-><%seedField%>[<%v.index%>]<%crefCCommentWithVariability(v)%>'
-           else '(&(jacobian-><%seedField%>[<%v.index%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
+           if stringEq(sub, "") then 'jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]<%crefCCommentWithVariability(v)%>'
+           else '(&(jacobian-><%seedField%>[<%jacobianVarIndex(v, context)%>]))<%&sub%><%crefCCommentWithVariability(v)%>'
          else crefOldSub(cr, ix, &sub)
 end jacCrefs;
 
@@ -9040,6 +9058,7 @@ template startArrayScatter(ComponentRef cr, Text type, Text arr, Text &varDecls,
 ::=
   let idx = tempDecl("modelica_integer", &varDecls, &varFrees)
   <<
+  <%startArrayScatterEnsureSize(cr, type, arr)%>
   for (<%idx%> = 0; <%idx%> < base_array_nr_of_elements(<%arr%>); <%idx%>++) {
     <%if stringEq(type, "string")
        then 'omc_string_store(&(<%startArrayElement(cr, type, idx)%>), ((modelica_string*)<%arr%>.data)[<%idx%>]);'
@@ -9069,15 +9088,35 @@ template startArrayEnsureSize(ComponentRef cr)
   else ""
 end startArrayEnsureSize;
 
+template startArrayScatterEnsureSize(ComponentRef cr, Text type, Text arr)
+ "Without --simCodeScalarize the array is one VarsData entry. Its start
+  attribute may hold a single value for all elements (each), so it gets one per
+  element before they are written."
+::=
+  match getSimCode()
+  case SIMCODE(scalarized=false) then
+    if boolNot(stringEq(type, "string")) then
+      match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
+      case var as SIMVAR(__) then
+        '<%type%>_array_ensure_size(&data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute.start, base_array_nr_of_elements(<%arr%>));'
+end startArrayScatterEnsureSize;
+
 template startArrayElement(ComponentRef cr, Text type, Text idx)
  "Element `idx`'s start attribute. With --simCodeScalarize the array's elements
-  are consecutive VarsData entries, each holding its own."
+  are consecutive VarsData entries, each holding its own. Without, the array is
+  one entry whose start attribute holds one value per element, or a single value
+  for all of them (each)."
 ::=
   match cref2simvar(crefStripSubs(popCref(cr)), getSimCode())
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'startArrayElement got negative index=<%index%> for <%CodegenUtil.crefStr(name)%>') else
-    let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
-    '((modelica_<%type%>*)(<%entry%>.data))[0]'
+    match getSimCode()
+    case SIMCODE(scalarized=false) then
+      let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute.start'
+      '((modelica_<%type%>*)(<%entry%>.data))[(<%idx%>) % base_array_nr_of_elements(<%entry%>)]'
+    else
+      let entry = 'data->modelData-><%varArrayName(var)%>Data[<%index%> + <%idx%>].attribute.start'
+      '((modelica_<%type%>*)(<%entry%>.data))[0]'
 end startArrayElement;
 
 template varArrayName(SimVar var)

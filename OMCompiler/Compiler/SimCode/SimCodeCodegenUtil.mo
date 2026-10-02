@@ -1095,6 +1095,119 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function jacobianIndexExp
+  "The position of a variable of a Jacobian in its seed, tmp or result array:
+   its index, unless a variable before it in the same array has a size that is
+   only known at runtime (resizable arrays). Then it is the sum of the sizes of
+   these variables, an expression of the structural parameters."
+  input SimCodeVar.SimVar var;
+  input HashTableCrefSimVar.HashTable ht;
+  output DAE.Exp exp = DAE.ICONST(var.index);
+protected
+  list<SimCodeVar.SimVar> before = {};
+  list<Integer> seen = {};
+algorithm
+  if var.index <= 0 then
+    return;
+  end if;
+  for v in BaseHashTable.hashTableValueList(ht) loop
+    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not List.isMemberOnTrue(v.index, seen, intEq) then
+      seen := v.index :: seen;
+      before := v :: before;
+    end if;
+  end for;
+  if List.any(before, isSymbolicArrayVar) then
+    exp := DAE.ICONST(0);
+    for v in before loop
+      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+    end for;
+  end if;
+end jacobianIndexExp;
+
+protected function simVarSizeExp
+  "The number of scalar elements of a SimVar as an expression."
+  input SimCodeVar.SimVar var;
+  output DAE.Exp exp = DAE.ICONST(1);
+algorithm
+  for d in Expression.arrayDimension(var.type_) loop
+    exp := DAE.BINARY(exp, DAE.MUL(DAE.T_INTEGER_DEFAULT), match d
+      case DAE.DIM_EXP() then d.exp;
+      else DAE.ICONST(Expression.dimensionSize(d));
+    end match);
+  end for;
+end simVarSizeExp;
+
+public function isDimensionParameter
+  "true for a size parameter $DIM_k of a derived dimension of a resizable array,
+   see NBResizable.addDimensionParameters. Its start value is the expression of
+   the dimension."
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM(), initialValue = SOME(_))
+      then StringUtil.startsWith(ComponentReferenceBasics.printComponentRefStr(var.name), "$DIM_");
+    else false;
+  end match;
+end isDimensionParameter;
+
+public function jacobianResultVars
+  "The result variables of a Jacobian with the resizable sparsity pattern of the
+   new backend: the variables its rows are solved for, each once. Empty if one of
+   them is not in the Jacobian's variables."
+  input SimCode.Sparsity sparsity;
+  input Option<HashTableCrefSimVar.HashTable> crefsHT;
+  output list<SimCodeVar.SimVar> vars = {};
+protected
+  HashTableCrefSimVar.HashTable ht;
+  list<DAE.ComponentRef> crefs = {};
+  list<SimCode.SparsityRow> rows;
+algorithm
+  try
+    SOME(ht) := crefsHT;
+    SimCode.SPARSITY(rows = rows) := sparsity;
+    for row in rows loop
+      for cr in row.solved_crefs loop
+        crefs := ComponentReference.crefStripSubs(cr) :: crefs;
+      end for;
+    end for;
+    crefs := List.unique(listReverse(crefs));
+    vars := list(BaseHashTable.get(cr, ht) for cr in crefs);
+  else
+    vars := {};
+  end try;
+end jacobianResultVars;
+
+public function hasSymbolicDims
+  "true if an array SimVar has a dimension that is no integer literal, e.g. the
+   parameter N of a resizable array (--resizableArrays). Its number of elements is
+   only known at runtime."
+  input list<SimCodeVar.SimVar> vars;
+  output Boolean b = List.any(vars, isSymbolicArrayVar);
+end hasSymbolicDims;
+
+protected function isSymbolicArrayVar
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) then not List.all(var.numArrayElement, isIntegerString);
+    else false;
+  end match;
+end isSymbolicArrayVar;
+
+protected function isIntegerString
+  input String s;
+  output Boolean b;
+algorithm
+  try
+    _ := stringInt(s);
+    b := true;
+  else
+    b := false;
+  end try;
+end isIntegerString;
+
 public function numScalarElemsBefore
   "Total number of scalar elements of the first n SimVars of a list. The
    scalar offset of the n-th variable (zero-based) when rolling out arrays."
@@ -2212,7 +2325,7 @@ algorithm
     local
       list<SimCodeVar.SimVar> vars;
       SimCode.SimCode simCode;
-      Integer index;
+      SimCodeVar.SimVar prev;
       list<DAE.ComponentRef> crf_lst;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
@@ -2220,20 +2333,30 @@ algorithm
         crf_lst := ComponentReference.expandCref(e.componentRef, true);
         vars := list(cref2simvar(cr, simCode) for cr in crf_lst);
         if not listEmpty(vars) then
-          SimCodeVar.SIMVAR(index=index)::vars := vars;
+          prev::vars := vars;
           for v in vars loop
-            // The array needs to be expanded because it's not stored in contiguous memory
-            if v.index <> index+1 then
+            // The array needs to be expanded because it's not stored in contiguous memory.
+            // Without scalarization the elements of an array variable are one SimVar.
+            if not (v.index == prev.index + 1 or (not simCode.scalarized and isSameArrayVar(v, prev))) then
               e := Expression.expandCrefs(e, false /*do not expand records*/);
               break;
             end if;
-            index := v.index;
+            prev := v;
           end for;
         end if;
       then e;
     else e;
   end match;
 end codegenExpSanityCheck;
+
+protected function isSameArrayVar
+  "Whether two elements of a non-scalarized array belong to the same SimVar.
+   The index alone is not enough, it is only unique within a kind of variable."
+  input SimCodeVar.SimVar v1;
+  input SimCodeVar.SimVar v2;
+  output Boolean b = v1.index == v2.index and valueEq(v1.varKind, v2.varKind)
+    and ComponentReferenceBasics.crefEqualNoStringCompare(ComponentReference.crefStripSubs(v1.name), ComponentReference.crefStripSubs(v2.name));
+end isSameArrayVar;
 
 public function unboxFunctionReferenceCall
   "Drops the boxing around a call through a function value: C calls it with the

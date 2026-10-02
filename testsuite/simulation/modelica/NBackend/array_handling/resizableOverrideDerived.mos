@@ -1,0 +1,58 @@
+// name: resizableOverrideDerived
+// keywords: NewBackend resizable override
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableOverrideDerived_3.mat resizableOverrideDerived_20.mat resizableOverrideDerived_3.log resizableOverrideDerived_20.log
+//
+// Derived sizes of resizable arrays (N-1 of a slice, N+1, the output of a
+// function) get size parameters $DIM_k that the generated function
+// updateStructuralParameters computes from N after -override, before the
+// arrays are allocated. One build, simulated for N = 3 and N = 20.
+
+loadString("
+model resizableOverrideDerived
+  function f
+    input Real x[:];
+    output Real y[size(x, 1)];
+  algorithm
+    y := 2 * x;
+  end f;
+  parameter Integer N = 10;
+  parameter Real tau = 0.1;
+  Real u;
+  Real x[N](each start = 0, each fixed = true);
+  Real y[N + 1];
+  Real z[N];
+equation
+  u = 1;
+  tau * der(x) = cat(1, {u - x[1]}, x[1:N-1] - x[2:N]);
+  y = cat(1, x, {u});
+  z = f(x);
+end resizableOverrideDerived;
+"); getErrorString();
+
+buildModel(resizableOverrideDerived, stopTime = 2); getErrorString();
+system("./resizableOverrideDerived -override=N=20 -r=resizableOverrideDerived_20.mat", "resizableOverrideDerived_20.log");
+// x[20](2) = 1 - exp(-20)*sum(20^k/k! for k in 0:19)
+abs(val(x[20], 2, "resizableOverrideDerived_20.mat") - 0.529743) < 1e-4;
+abs(val(z[20], 2, "resizableOverrideDerived_20.mat") - 2 * 0.529743) < 2e-4;
+val(y[21], 2, "resizableOverrideDerived_20.mat");
+system("./resizableOverrideDerived -override=N=3 -r=resizableOverrideDerived_3.mat", "resizableOverrideDerived_3.log");
+abs(val(x[3], 0.2, "resizableOverrideDerived_3.mat") - 0.323324) < 1e-4;
+val(y[4], 2, "resizableOverrideDerived_3.mat");
+readSimulationResultVars("resizableOverrideDerived_3.mat");
+// Result:
+// true
+// ""
+// {"resizableOverrideDerived", "resizableOverrideDerived_init.xml"}
+// ""
+// 0
+// true
+// true
+// 1.0
+// 0
+// true
+// 1.0
+// {"N", "der(x[1])", "der(x[2])", "der(x[3])", "tau", "time", "u", "x[1]", "x[2]", "x[3]", "y[1]", "y[2]", "y[3]", "y[4]", "z[1]", "z[2]", "z[3]"}
+// endResult

@@ -410,11 +410,15 @@ The constructor for a :code:`ModelicaSystemOMC` object creates an :code:`OMCSess
 If this is not desired or additional configuration is needed, several options exist:
 
 -  :code:`command_line_options` (optional) - a list of additional command line options for OMC. The
-   list elements are provided to OMC via :code:`setCommandLineOptions()`. If the option is set, the
-   default command line options of OMC are overridden; pass an empty list to disable all of them.
-   The default of OMPython itself sets :code:`--linearizationDumpLanguage=python` and
+   list elements are provided to OMC via :code:`setCommandLineOptions()` in addition to OMPython's
+   default options. The default of OMPython itself sets :code:`--linearizationDumpLanguage=python` and
    :code:`--generateSymbolicLinearization`, which make :code:`linearize()` fast and let the model
-   executable be reused for a linearization:
+   executable be reused for a linearization. Use :code:`use_default_command_line_options=False` to
+   disable these defaults; any :code:`command_line_options` are still applied, and an omitted or empty
+   list then runs without command line options:
+
+-  :code:`use_default_command_line_options` (optional, default :code:`True`) - whether to apply
+   OMPython's default linearization options.
 
 -  :code:`work_directory` (optional) - the directory which is used for the model build and for
    temporary files such as the model executable and the result file. If it is not given, a unique

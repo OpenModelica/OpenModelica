@@ -820,6 +820,9 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
+  if (comp->fmuData->callback->updateStructuralParameters) {
+    comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
+  }
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
@@ -1204,6 +1207,9 @@ fmi3Status omcReset(ModelInstance* c)
      * initialized and filled again, mirroring fmi3Instantiate. */
     allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
     scalarAllocArrayAttributes(comp->fmuData->modelData);
+    if (comp->fmuData->callback->updateStructuralParameters) {
+      comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
+    }
     calculateAllScalarLength(comp->fmuData->modelData);
   }
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);

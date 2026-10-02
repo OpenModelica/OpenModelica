@@ -385,7 +385,9 @@ public
     b := match Pointer.access(eqn_ptr)
       local
         Equation body;
+      // a size one array equation, e.g. a[i, :] = b[1:1, i], determines the elements as well
       case Equation.FOR_EQUATION(body = {body}) then Equation.size(Pointer.create(body)) == 1
+        and not Type.isArray(Equation.getType(body))
         and List.any(ComponentRef.subscriptsAllFlat(cref), Subscript.isWhole);
       else false;
     end match;
