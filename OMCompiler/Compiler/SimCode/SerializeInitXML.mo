@@ -56,12 +56,12 @@ import Error;
 import Expression;
 import ExpressionBasics.printExpStr;
 import File.Escape.XML;
-import List;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
 import Types;
 import TypesDump;
+import UnorderedMap;
 import Util;
 import SimCodeCodegenUtil;
 
@@ -274,7 +274,7 @@ function modelVariables "Generates code for ModelVariables file for FMU target."
   input SimCodeVar.SimVars vars;
 protected
   Integer vr, ix=0;
-  list<tuple<DAE.ComponentRef, Integer>> dims;
+  UnorderedMap<DAE.ComponentRef, Integer> dims;
 algorithm
   // set starting index
   vr := match Config.simCodeTarget()
@@ -317,7 +317,7 @@ function dimensionValueReferences
    model again."
   input SimCodeVar.SimVars vars;
   input Integer firstValueReference;
-  output list<tuple<DAE.ComponentRef, Integer>> dims = {};
+  output UnorderedMap<DAE.ComponentRef, Integer> dims = UnorderedMap.new<Integer>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqualNoStringCompare);
 protected
   Integer vr;
 algorithm
@@ -327,7 +327,7 @@ algorithm
     + listLength(vars.realOptimizeFinalConstraintsVars) + listLength(vars.paramVars) + listLength(vars.aliasVars)
     + listLength(vars.intAlgVars);
   for var in vars.intParamVars loop
-    dims := (var.name, vr) :: dims;
+    UnorderedMap.add(var.name, vr, dims);
     vr := vr + 1;
   end for;
 end dimensionValueReferences;
@@ -338,7 +338,7 @@ function scalarVariables
   input String classType;
   input output Integer valueReference;
   input output Integer index=0;
-  input list<tuple<DAE.ComponentRef, Integer>> dims = {} "value references of the parameters that are dimensions";
+  input UnorderedMap<DAE.ComponentRef, Integer> dims "value references of the parameters that are dimensions";
 algorithm
   for var in vars loop
     scalarVariable(file, var, classType, valueReference, index, dims);
@@ -353,7 +353,7 @@ function scalarVariable
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
-  input list<tuple<DAE.ComponentRef, Integer>> dims;
+  input UnorderedMap<DAE.ComponentRef, Integer> dims;
 protected
   String type_name = if DAEUtil.expTypeArray(var.type_) then "ArrayVariable" else "ScalarVariable";
 algorithm
@@ -370,7 +370,7 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
-  input list<tuple<DAE.ComponentRef, Integer>> dims;
+  input UnorderedMap<DAE.ComponentRef, Integer> dims;
 protected
   Integer inputIndex = SimCodeCodegenUtil.getInputIndex(simVar);
   SourceInfo info = simVar.source.info;
@@ -450,7 +450,7 @@ algorithm
       // a dimension given by a parameter refers to it, see dimensionValueReferences
       case DAE.DIM_EXP(exp = DAE.CREF(componentRef = cr))
         algorithm
-          (_, vr) := List.getMemberOnTrue(cr, dims, dimensionRefEqual);
+          vr := UnorderedMap.getOrFail(cr, dims);
           File.write(file, "    <Dimension valueReference=\"" + intString(vr) + "\"/>\n");
         then ();
       case DAE.DIM_EXP() guard not Expression.isConst(dim.exp)
@@ -464,12 +464,6 @@ algorithm
     end match;
   end for;
 end scalarVariableAttribute;
-
-function dimensionRefEqual
-  input DAE.ComponentRef cr;
-  input tuple<DAE.ComponentRef, Integer> dim;
-  output Boolean b = ComponentReferenceBasics.crefEqualNoStringCompare(cr, Util.tuple21(dim));
-end dimensionRefEqual;
 
 function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."
   input File.File file;
