@@ -6206,6 +6206,18 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
+template resizableJacobianRows(list<JacobianColumn> columns, Sparsity sparsity, Context context)
+ "Number of rows of a resizable Jacobian. numberOfResultVars counts a dimension
+  that is only known at runtime as 1, then the rows are the elements of the
+  variables the sparsity rows are solved for."
+::=
+  let nRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
+  match context
+  case JACOBIAN_CONTEXT(jacHT = jacHT as SOME(_)) then
+    if hasSymbolicDims(jacobianResultVars(sparsity, jacHT)) then numScalarElemsExp(jacobianResultVars(sparsity, jacHT)) else nRows
+  else nRows
+end resizableJacobianRows;
+
 template numScalarElemsExp(list<SimVar> vars)
  "Number of scalar elements of the SimVars. A C expression of the structural
   parameters if a dimension is only known at runtime (resizable arrays), where the
@@ -6250,7 +6262,7 @@ match sparsity
     let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n")
     let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, 'jacobian->sparsePattern') ;separator="\n")
     let &varDecls += 'unsigned int local_row_base = 0;<%\n%>'
-    let sizeRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
+    let sizeRows = resizableJacobianRows(columns, sparsity, context)
     // Adjoint metadata describes the primal CSC pattern using adjoint variable
     // names. Its outer dimension is the adjoint result count (primal columns),
     // and its inner dimension is the adjoint seed count (primal rows).

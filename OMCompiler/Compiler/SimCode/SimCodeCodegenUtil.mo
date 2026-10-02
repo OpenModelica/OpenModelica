@@ -1095,6 +1095,33 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function jacobianResultVars
+  "The result variables of a Jacobian with the resizable sparsity pattern of the
+   new backend: the variables its rows are solved for, each once. Empty if one of
+   them is not in the Jacobian's variables."
+  input SimCode.Sparsity sparsity;
+  input Option<HashTableCrefSimVar.HashTable> crefsHT;
+  output list<SimCodeVar.SimVar> vars = {};
+protected
+  HashTableCrefSimVar.HashTable ht;
+  list<DAE.ComponentRef> crefs = {};
+  list<SimCode.SparsityRow> rows;
+algorithm
+  try
+    SOME(ht) := crefsHT;
+    SimCode.SPARSITY(rows = rows) := sparsity;
+    for row in rows loop
+      for cr in row.solved_crefs loop
+        crefs := ComponentReference.crefStripSubs(cr) :: crefs;
+      end for;
+    end for;
+    crefs := List.unique(listReverse(crefs));
+    vars := list(BaseHashTable.get(cr, ht) for cr in crefs);
+  else
+    vars := {};
+  end try;
+end jacobianResultVars;
+
 public function hasSymbolicDims
   "true if an array SimVar has a dimension that is no integer literal, e.g. the
    parameter N of a resizable array (--resizableArrays). Its number of elements is
