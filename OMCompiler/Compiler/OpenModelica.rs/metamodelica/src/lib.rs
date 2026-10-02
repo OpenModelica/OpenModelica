@@ -71,6 +71,7 @@ pub mod value;
 pub mod misc;
 pub mod ext;
 pub mod Dangerous;
+pub mod serial;
 
 // Flatten the public API back to the crate root: generated code refers
 // to `metamodelica::<builtin>` regardless of which module now defines it.
