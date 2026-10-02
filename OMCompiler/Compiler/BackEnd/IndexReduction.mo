@@ -1261,7 +1261,11 @@ algorithm
   ht := HashTableCrIntToExp.emptyHashTable();
   (systs, shared, ht) := dynamicStateSelection_mapEqsystem(systs, shared, inArgs, 1, ht);
   if intGt(BaseHashTable.hashTableCurrentSize(ht), 0) then
-    (systs, shared) :=  List.map1Fold(systs, replaceDummyDerivatives, ht, shared);
+    for syst in systs loop
+      BackendDAEUtil.traverseBackendDAEExpsEqns(syst.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                (replaceDummyDerivativesExp, ht));
+    end for;
+    replaceDummyDerivativesShared(shared, ht);
   end if;
   outDAE := BackendDAE.DAE(systs, shared);
 end dynamicStateSelection;
@@ -4028,23 +4032,18 @@ algorithm
   Error.addMessage(Error.COMPILER_WARNING, {"IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(exp) + "!"});
 end warnDummyDerivativeFailed;
 
-protected function replaceDummyDerivatives
+protected function replaceDummyDerivativesShared
 "author Frenkel TUD 2012-08"
-  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared shared;
   input HashTableCrIntToExp.HashTable ht;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSyst = inSyst;
-  output BackendDAE.Shared outShared = inShared;
 algorithm
-  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.aliasVars, replaceDummyDerivativesVar, ht);
-  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, replaceDummyDerivativesVar, ht);
-  BackendDAEUtil.traverseBackendDAEExpsEqns( outShared.initialEqs, Expression.traverseSubexpressionsHelper,
+  BackendVariable.traverseBackendDAEVarsWithUpdate(shared.aliasVars, replaceDummyDerivativesVar, ht);
+  BackendVariable.traverseBackendDAEVarsWithUpdate(shared.globalKnownVars, replaceDummyDerivativesVar, ht);
+  BackendDAEUtil.traverseBackendDAEExpsEqns( shared.initialEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-  BackendDAEUtil.traverseBackendDAEExpsEqns( outSyst.removedEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( shared.removedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-  BackendDAEUtil.traverseBackendDAEExpsEqns( outShared.removedEqs, Expression.traverseSubexpressionsHelper,
-                                                       (replaceDummyDerivativesExp, ht) );
-end replaceDummyDerivatives;
+end replaceDummyDerivativesShared;
 
 protected function replaceDummyDerivativesVar
 "author: Frenkel TUD 2012-08"
