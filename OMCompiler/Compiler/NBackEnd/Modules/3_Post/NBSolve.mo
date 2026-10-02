@@ -841,6 +841,56 @@ public
     end match;
   end arrayElementEquation;
 
+  function solveIfBranches
+    "solves every branch of an if-equation with a single equation per branch for the cref"
+    input output Equation eqn;
+    input ComponentRef cref;
+    input UnorderedMap<Path, Function> funcMap;
+    output Status status;
+  protected
+    IfEquationBody body;
+  algorithm
+    (eqn, status) := match eqn
+      case Equation.IF_EQUATION() algorithm
+        (body, status) := solveIfBranchesBody(eqn.body, cref, funcMap);
+        eqn.body := body;
+      then (eqn, status);
+      else (eqn, Status.UNSOLVABLE);
+    end match;
+  end solveIfBranches;
+
+  function solveIfBranchesBody
+    input output IfEquationBody body;
+    input ComponentRef cref;
+    input UnorderedMap<Path, Function> funcMap;
+    output Status status;
+  protected
+    Equation branch_eqn;
+    IfEquationBody else_if;
+    list<ComponentRef> crefs;
+  algorithm
+    if not List.hasOneElement(body.then_eqns) then
+      status := Status.UNSOLVABLE;
+      return;
+    end if;
+    branch_eqn := Pointer.access(listHead(body.then_eqns));
+    // solve for the element that occurs in the branch, e.g. p[2] for p
+    crefs := UnorderedSet.unique_list(Equation.collectCrefs(branch_eqn, function Slice.getSliceCandidates(name = ComponentRef.stripSubscriptsAll(cref))), ComponentRef.hash, ComponentRef.isEqual);
+    if not List.hasOneElement(crefs) then
+      status := Status.UNSOLVABLE;
+      return;
+    end if;
+    (branch_eqn, status, _) := solveBody(branch_eqn, listHead(crefs), funcMap);
+    if status <> Status.EXPLICIT then
+      return;
+    end if;
+    body.then_eqns := {Pointer.create(branch_eqn)};
+    if isSome(body.else_if) then
+      (else_if, status) := solveIfBranchesBody(Util.getOption(body.else_if), cref, funcMap);
+      body.else_if := SOME(else_if);
+    end if;
+  end solveIfBranchesBody;
+
   function solveBody
     input output Equation eqn;
     input ComponentRef cref;
@@ -853,6 +903,13 @@ public
     Expression residual, derivative;
     Differentiate.DifferentiationArguments diffArgs;
   algorithm
+    // a row of a for-equation with an if-equation body, solve every branch
+    if Equation.isIfEquation(Pointer.create(eqn)) then
+      (eqn, status) := solveIfBranches(eqn, cref, funcMap);
+      invertRelation := RelationInversion.FALSE;
+      return;
+    end if;
+
     // fix crefs where the array is of size one
     fixed_cref := ComponentRef.stripSubscriptsAll(cref);
     ty := ComponentRef.getSubscriptedType(fixed_cref, true);

@@ -715,7 +715,14 @@ public
       comp := match Equation.getLHS(eqn)
         local
           Expression lhs;
-        case SOME(lhs as Expression.CREF()) then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(lhs), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+          Pointer<Variable> var_ptr;
+        case SOME(lhs as Expression.CREF()) algorithm
+          var_ptr := BVariable.getVarPointer(lhs.cref, sourceInfo());
+          // an element of an array variable keeps its subscripts, e.g. p[2] in an if-equation branch
+          comp := if BVariable.isArray(var_ptr) and not Type.isArray(Expression.typeOf(lhs))
+            then SLICED_COMPONENT(lhs.cref, Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT)
+            else SINGLE_COMPONENT(var_ptr, eqn_ptr, NBSolve.Status.EXPLICIT);
+        then comp;
         else MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
       end match;
     end simpleSolvedEquation;
