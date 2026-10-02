@@ -197,6 +197,8 @@ SOURCES += Util/Helper.cpp \
   CrashReport/CrashReportDialog.cpp \
   CRML/CRMLTranslateAsDialog.cpp \
   CRML/CRMLTranslatorOutputWidget.cpp \
+  OMUQ/OMUQDialog.cpp \
+  OMUQ/OMUQOutputWidget.cpp \
   Git/GitCommands.cpp \
   Git/CommitChangesDialog.cpp \
   Git/RevertCommitsDialog.cpp \
@@ -339,6 +341,8 @@ HEADERS  += Util/Helper.h \
   CRML/CRMLTranslateAsDialog.h \
   CRML/CRMLTranslatorOptions.h \
   CRML/CRMLTranslatorOutputWidget.h \
+  OMUQ/OMUQDialog.h \
+  OMUQ/OMUQOutputWidget.h \
   Git/GitCommands.h \
   Git/CommitChangesDialog.h \
   Git/RevertCommitsDialog.h \

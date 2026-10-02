@@ -1515,6 +1515,12 @@ void OptionsDialog::readOMSimulatorSettings()
   if (index > -1) {
     mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
   }
+  // read the omuq python
+  if (mpSettings->contains("OMSimulator/omuqPython") && !mpSettings->value("OMSimulator/omuqPython").toString().isEmpty()) {
+    mpOMSimulatorPage->getOMUQPythonTextBox()->setText(mpSettings->value("OMSimulator/omuqPython").toString());
+  } else {
+    mpOMSimulatorPage->getOMUQPythonTextBox()->setText(OptionsDefaults::OMSimulator::omuqPython);
+  }
 }
 
 /*!
@@ -3099,6 +3105,13 @@ void OptionsDialog::saveOMSimulatorSettings()
     mpSettings->remove("OMSimulator/loggingLevel");
   } else {
     mpSettings->setValue("OMSimulator/loggingLevel", loggingLevel);
+  }
+  // set the omuq python
+  QString omuqPython = mpOMSimulatorPage->getOMUQPythonTextBox()->text().trimmed();
+  if (omuqPython.isEmpty() || omuqPython.compare(OptionsDefaults::OMSimulator::omuqPython) == 0) {
+    mpSettings->remove("OMSimulator/omuqPython");
+  } else {
+    mpSettings->setValue("OMSimulator/omuqPython", omuqPython);
   }
   // commandLineOptions, loggingLevel, workingDirectory, logFile, tempDirectory are
   // passed as CLI args to OMSimulatorSimulationServer.py at simulation launch — not sent to GuiServer.
@@ -6724,10 +6737,44 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 1, 0);
   pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 1, 1);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
+  // omuq, the uncertainty quantification of SSP models
+  mpOMUQGroupBox = new QGroupBox(tr("Uncertainty Quantification (omuq)"));
+  Label *pOMUQInfoLabel = new Label(tr("UQ activities run the omuq Python package, see the "
+                                       "<a href=\"https://github.com/adrpo/omuq\">omuq GitHub page</a>. "
+                                       "Specify a Python executable that has omuq and OMSimulator installed."));
+  pOMUQInfoLabel->setWordWrap(true);
+  pOMUQInfoLabel->setOpenExternalLinks(true);
+  pOMUQInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  pOMUQInfoLabel->setToolTip("");
+  mpOMUQPythonLabel = new Label(tr("Python:"));
+  mpOMUQPythonTextBox = new QLineEdit(OptionsDefaults::OMSimulator::omuqPython);
+  mpOMUQPythonBrowseButton = new QPushButton(Helper::browse);
+  mpOMUQPythonBrowseButton->setAutoDefault(false);
+  connect(mpOMUQPythonBrowseButton, SIGNAL(clicked()), SLOT(browseOMUQPython()));
+  QGridLayout *pOMUQGroupBoxLayout = new QGridLayout;
+  pOMUQGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pOMUQGroupBoxLayout->addWidget(pOMUQInfoLabel, 0, 0, 1, 3);
+  pOMUQGroupBoxLayout->addWidget(mpOMUQPythonLabel, 1, 0);
+  pOMUQGroupBoxLayout->addWidget(mpOMUQPythonTextBox, 1, 1);
+  pOMUQGroupBoxLayout->addWidget(mpOMUQPythonBrowseButton, 1, 2);
+  mpOMUQGroupBox->setLayout(pOMUQGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->addWidget(mpGeneralGroupBox);
+  pMainLayout->addWidget(mpOMUQGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief OMSimulatorPage::browseOMUQPython
+ * Selects the Python executable used to run omuq.
+ */
+void OMSimulatorPage::browseOMUQPython()
+{
+  QString python = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile));
+  if (!python.isEmpty()) {
+    mpOMUQPythonTextBox->setText(python);
+  }
 }
 
 /*!
