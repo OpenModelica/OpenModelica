@@ -515,8 +515,8 @@ pub fn flush(file: &File) -> Result<()> {
     Ok(())
 }
 
-/// Flush every file the reference registry still holds, for callers leaving
-/// through `process::exit`, which runs no thread-local destructor.
+/// Flush every file the reference registry still holds, for callers about to
+/// exit the process.
 pub fn flush_all_registered() {
     FILE_REGISTRY.with(|r| {
         for f in r.borrow().values() {

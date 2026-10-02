@@ -193,6 +193,14 @@ fn set_revision() {
     capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
 }
 
+/// The process exits next: flush the buffered writers and skip freeing the
+/// loaded program.
+#[cfg(not(target_arch = "wasm32"))]
+fn prepare_exit() {
+    openmodelica_util::File::flush_all_registered();
+    openmodelica_backend_main::Globals::leak_program_for_exit();
+}
+
 /// Run the standalone `omc` command-line interface and return its process exit
 /// code (`0` on success, `1` on a failed MetaModelica execution or a panic).
 ///
@@ -256,9 +264,9 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
             .collect()
     };
     let arglist: metamodelica::List<_> = args.into_iter().collect();
+    openmodelica_util::System::set_exit_hook(prepare_exit);
     let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
-    // `process::exit` drops no thread-local, so flush the buffered writers here.
-    openmodelica_util::File::flush_all_registered();
+    prepare_exit();
     match status {
         Ok(Ok(())) => 0,
         // Mirror the launcher's old inline `run()`: flush stdout, report on
