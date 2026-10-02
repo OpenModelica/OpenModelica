@@ -157,6 +157,22 @@ namespace IAEX {
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
   }
 
+  /*!
+   * \brief The width of the line number area depends on the font. Adapt it
+   * when the font changes, e.g. when the text is zoomed.
+   */
+  void MyTextEdit2a::changeEvent(QEvent *e)
+  {
+    QPlainTextEdit::changeEvent(e);
+
+    if (e->type() == QEvent::FontChange && lineNumberArea) {
+      updateLineNumberAreaWidth(0);
+      QRect cr = contentsRect();
+      lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+      lineNumberArea->update();
+    }
+  }
+
   void MyTextEdit2a::highlightCurrentLine(bool highlight)
   {
     QList<QTextEdit::ExtraSelection> extraSelections;
