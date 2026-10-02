@@ -431,7 +431,7 @@ public
             // min, max and nominal attributes that have to be evaluated after the parameters, they come
             // before the parameters in the info file, so they need indices in that order
             (min, max, nominal, simCodeIndices) := SimStrongComponent.Block.createAttributeBlocks(
-              {varData.states, varData.algebraics, varData.discretes, varData.discrete_states}, simCodeIndices, simcode_map);
+              {varData.states, varData.algebraics, varData.discretes, varData.discrete_states}, simCodeIndices, simcode_map, bdae.parameters);
 
             // the bindings of the primary parameters are solved before the initialization, they come after the
             // equations and before the Jacobians in the info file, so they need indices in that order
