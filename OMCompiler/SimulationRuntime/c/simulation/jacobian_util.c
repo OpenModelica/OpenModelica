@@ -35,6 +35,7 @@
 #include "jacobian_colpack.h"
 
 static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, unsigned int nRows, unsigned int nCols);
+static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols);
 
 /**
  * @brief Initialize analytic jacobian.
@@ -482,13 +483,13 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
 {
   SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
   SPARSE_PATTERN* adjsp = fwd->sparsePatternT;
-  const unsigned int nCols = fwd->sizeCols;
-  const unsigned int nRows = fwd->sizeRows;
+  unsigned int nCols = fwd->sizeCols;
+  unsigned int nRows = fwd->sizeRows;
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
-  sortSparseColumns(fwdsp, nCols);
-  sortSparseColumns(adjsp, nRows);
+  sortUniqueSparsePattern(fwdsp, nCols);
+  sortUniqueSparsePattern(adjsp, nRows);
 
   if(computeStarBicoloring(fwdsp, adjsp, nRows, nCols) == 1) {
     // handle failure, e.g., print a warning or return
