@@ -3229,7 +3229,7 @@ protected
 
               else
                 algorithm
-                  Error.addSourceMessage(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
+                  Error.addStrictMessage(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
                 then
                   ();
             end match;
