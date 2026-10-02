@@ -14,7 +14,7 @@ model HeatingSystem
 end HeatingSystem;
 "); getErrorString();
 
-setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic +simCodeTarget=C.old"); getErrorString();
 
 // Build model
 buildModel(HeatingSystem); getErrorString();

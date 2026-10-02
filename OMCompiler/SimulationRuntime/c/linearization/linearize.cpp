@@ -332,8 +332,8 @@ int functionJacA(DATA* data, threadData_t *threadData, double* jac){
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, NULL);
   }
 
   for(i=0; i < jacobian->sizeCols; i++)
@@ -379,8 +379,8 @@ int functionJacB(DATA* data, threadData_t *threadData, double* jac){
 
   unsigned int i,j,k;
   k = 0;
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, NULL);
   }
 
   for(i=0; i < jacobian->sizeCols; i++)
@@ -424,8 +424,8 @@ int functionJacC(DATA* data, threadData_t *threadData, double* jac){
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, NULL);
   }
 
   for(i=0; i < jacobian->sizeCols; i++)
@@ -467,8 +467,8 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  if (jacobian->constColEqns) {
+    jacobian->constColEqns(data, threadData, jacobian, NULL);
   }
 
   for(i=0; i < jacobian->sizeCols; i++)

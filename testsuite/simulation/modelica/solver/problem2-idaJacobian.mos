@@ -32,7 +32,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.
 getErrorString();
 
 
-setCommandLineOptions("--generateDynamicJacobian=symbolic");
+setCommandLineOptions("--generateDynamicJacobian=symbolic +simCodeTarget=C.old");
 getErrorString();
 simulate(testSolver.problem2, stopTime=stopTime, method="ida", simflags="-jacobian=coloredSymbolical"); getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem2_res.mat",

@@ -274,11 +274,20 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       /* GBODE always needs the forward Jacobian A for its evaluation DAG and the
        * multi-rate path so set requireForwardJacobian=TRUE. */
       jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, TRUE);
-      if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
+      if (jacobian->sparsePattern) {
+        infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->nnz, jacobian->sparsePattern->maxColors);
+        messageClose(OMC_LOG_SOLVER);
+      }
+      else {
+        throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
+      }
+      if (jacobian->sparsePattern == NULL) {
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
 
-      gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
+      gbfData->symJacAvailable = jacobian->evalColumn != NULL;
       // change GBODE specific jacobian method
       if (jacobianMethod == SYMJAC) {
         warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
@@ -294,11 +303,10 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     }
     /* The evaluation DAG is generated and consumed for the forward Jacobian A,
      * even when the selected Jacobian evaluates adjoint directions. */
-    JACOBIAN* forwardJacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-    if (forwardJacobian->availability == JACOBIAN_AVAILABLE) {
-      data->callback->getDAG_JacA(data, threadData, forwardJacobian);
+    if (jacobian->evalColumn) {
+      data->callback->getDAG_JacA(data, threadData, jacobian);
     }
-    if (!forwardJacobian->dag) {
+    if (!jacobian->dag) {
       throwStreamPrint(threadData,
                        "Cannot create multirate data structures without a valid Jacobian DAG. Use a symbolic Jacobian "
                        "(--generateDynamicJacobian=symbolic), an explicit integrator, or switch to single-rate integration.");
@@ -530,11 +538,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     /* GBODE always needs the forward Jacobian A for its evaluation DAG and the
      * multi-rate path, see gbInternal_evalJacobian() and initRK_NLS_DATA_MR(). */
     jacobian = initSymbolicOdeJacobian(data, threadData, &jacobianMethod, TRUE);
-    if (jacobian->availability != JACOBIAN_AVAILABLE && jacobian->availability != JACOBIAN_ONLY_SPARSITY) {
+    if (jacobian->sparsePattern == NULL) {
       throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
     }
 
-    gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
+    gbData->symJacAvailable = jacobian->evalColumn != NULL;
     // change GBODE specific jacobian method
     if (jacobianMethod == SYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
@@ -889,7 +897,7 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
 static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
 {
   size_t k;
-  EVAL_SELECTION* selection = gbData->gbfData->jacobian->evalSelection;
+  EVAL_SELECTION* selection = gbData->gbfData->jacobian->evalSelectionCol;
 
   clearEvalSelection(selection);
 
