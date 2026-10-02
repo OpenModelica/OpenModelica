@@ -1993,7 +1993,12 @@ algorithm
   end if;
 
   checkOuterComponentMod(node, context);
-  comp_node := InstNode.resolveInner(node);
+
+  if InstNode.isOnlyOuter(node) then
+    return;
+  end if;
+
+  comp_node := InstNode.resolveOuter(node);
   comp := InstNode.component(comp_node);
   parent := InstNode.parent(comp_node);
 
@@ -2931,11 +2936,11 @@ protected
   Component c;
   array<Dimension> dims;
 algorithm
-  if InstNode.isEmpty(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 
-  node := InstNode.resolveInner(component);
+  node := InstNode.resolveOuter(component);
   c := InstNode.component(node);
 
   () := match c
