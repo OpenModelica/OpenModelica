@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+reductionSkips.mos \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \
