@@ -307,7 +307,7 @@ public
 
     function create
       input Adjacency.Matrix mat;
-      input list<SimVar> resVars "Forward results or adjoint seeds, in Jacobian row order";
+      input list<SimVar> resVars;
       input Boolean isAdjoint;
       output Sparsity sparsity;
     protected
@@ -319,9 +319,7 @@ public
             list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
             SimVars.numScalarElems(resVars));
           rows := SparsityRow.mergeScalarRows(rows);
-          if not isAdjoint then
-            rows := SparsityRow.sortByResultVars(rows, resVars);
-          end if;
+          rows := SparsityRow.sortByResultVars(rows, resVars);
         then SPARSITY(rows);
         case Adjacency.EMPTY() then EMPTY();
 
