@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+externalFunctionDerivative.mos\
 builtin_functions.mos\
 inlineAttributes15947.mos\
 ifEquationFunctionCall.mos\
