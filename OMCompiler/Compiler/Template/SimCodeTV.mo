@@ -1533,6 +1533,17 @@ package SimCodeCodegenUtil
     output Integer n;
   end numScalarElems;
 
+  function jacobianResultVars
+    input SimCode.Sparsity sparsity;
+    input Option<HashTableCrefSimVar.HashTable> crefsHT;
+    output list<SimCodeVar.SimVar> vars;
+  end jacobianResultVars;
+
+  function hasSymbolicDims
+    input list<SimCodeVar.SimVar> vars;
+    output Boolean b;
+  end hasSymbolicDims;
+
   function numScalarElemsBefore
     input list<SimCodeVar.SimVar> vars;
     input Integer n;

@@ -977,6 +977,10 @@ pub fn build_rt(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
     let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
     let cb = unsafe { &*(*data).callback };
+    // The sizes of a resizable Jacobian are the values of structural parameters
+    // (possibly changed with -override); the initialization sets the same values
+    // again later.
+    crate::fmi::setAllParamsToStart(si, md);
     init_jac_a(data, thread_data);
     crate::linearize::initialize(data, thread_data);
     crate::datarecon::initialize(data, thread_data);

@@ -1095,6 +1095,63 @@ algorithm
   n := getNumScalars(vars);
 end numScalarElems;
 
+public function jacobianResultVars
+  "The result variables of a Jacobian with the resizable sparsity pattern of the
+   new backend: the variables its rows are solved for, each once. Empty if one of
+   them is not in the Jacobian's variables."
+  input SimCode.Sparsity sparsity;
+  input Option<HashTableCrefSimVar.HashTable> crefsHT;
+  output list<SimCodeVar.SimVar> vars = {};
+protected
+  HashTableCrefSimVar.HashTable ht;
+  list<DAE.ComponentRef> crefs = {};
+  list<SimCode.SparsityRow> rows;
+algorithm
+  try
+    SOME(ht) := crefsHT;
+    SimCode.SPARSITY(rows = rows) := sparsity;
+    for row in rows loop
+      for cr in row.solved_crefs loop
+        crefs := ComponentReference.crefStripSubs(cr) :: crefs;
+      end for;
+    end for;
+    crefs := List.unique(listReverse(crefs));
+    vars := list(BaseHashTable.get(cr, ht) for cr in crefs);
+  else
+    vars := {};
+  end try;
+end jacobianResultVars;
+
+public function hasSymbolicDims
+  "true if an array SimVar has a dimension that is no integer literal, e.g. the
+   parameter N of a resizable array (--resizableArrays). Its number of elements is
+   only known at runtime."
+  input list<SimCodeVar.SimVar> vars;
+  output Boolean b = List.any(vars, isSymbolicArrayVar);
+end hasSymbolicDims;
+
+protected function isSymbolicArrayVar
+  input SimCodeVar.SimVar var;
+  output Boolean b;
+algorithm
+  b := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) then not List.all(var.numArrayElement, isIntegerString);
+    else false;
+  end match;
+end isSymbolicArrayVar;
+
+protected function isIntegerString
+  input String s;
+  output Boolean b;
+algorithm
+  try
+    _ := stringInt(s);
+    b := true;
+  else
+    b := false;
+  end try;
+end isIntegerString;
+
 public function numScalarElemsBefore
   "Total number of scalar elements of the first n SimVars of a list. The
    scalar offset of the n-th variable (zero-based) when rolling out arrays."
@@ -2212,7 +2269,7 @@ algorithm
     local
       list<SimCodeVar.SimVar> vars;
       SimCode.SimCode simCode;
-      Integer index;
+      SimCodeVar.SimVar prev;
       list<DAE.ComponentRef> crf_lst;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
@@ -2220,20 +2277,30 @@ algorithm
         crf_lst := ComponentReference.expandCref(e.componentRef, true);
         vars := list(cref2simvar(cr, simCode) for cr in crf_lst);
         if not listEmpty(vars) then
-          SimCodeVar.SIMVAR(index=index)::vars := vars;
+          prev::vars := vars;
           for v in vars loop
-            // The array needs to be expanded because it's not stored in contiguous memory
-            if v.index <> index+1 then
+            // The array needs to be expanded because it's not stored in contiguous memory.
+            // Without scalarization the elements of an array variable are one SimVar.
+            if not (v.index == prev.index + 1 or (not simCode.scalarized and isSameArrayVar(v, prev))) then
               e := Expression.expandCrefs(e, false /*do not expand records*/);
               break;
             end if;
-            index := v.index;
+            prev := v;
           end for;
         end if;
       then e;
     else e;
   end match;
 end codegenExpSanityCheck;
+
+protected function isSameArrayVar
+  "Whether two elements of a non-scalarized array belong to the same SimVar.
+   The index alone is not enough, it is only unique within a kind of variable."
+  input SimCodeVar.SimVar v1;
+  input SimCodeVar.SimVar v2;
+  output Boolean b = v1.index == v2.index and valueEq(v1.varKind, v2.varKind)
+    and ComponentReferenceBasics.crefEqualNoStringCompare(ComponentReference.crefStripSubs(v1.name), ComponentReference.crefStripSubs(v2.name));
+end isSameArrayVar;
 
 public function unboxFunctionReferenceCall
   "Drops the boxing around a call through a function value: C calls it with the
