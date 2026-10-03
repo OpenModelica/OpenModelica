@@ -7028,16 +7028,26 @@ fn arm_bindings_dead_at_subject_write(case: &TypedCase, subj: &str) -> bool {
         }
     }
     let branch_move_ok = |e: &TypedExp| branch_move_ok(e, subj, &reads_exp);
-    match case.stmts.iter().position(|st| stmt_writes_or_moves(st, subj)) {
-        None => branch_move_ok(&case.result),
-        Some(k) => {
-            let at_k = match &case.stmts[k] {
-                TypedStmt::Assign { rhs, .. } if !exp_writes_or_moves(rhs, subj) => false,
-                TypedStmt::Assign { lhs: TypedPat::Var(_), rhs, .. } => !branch_move_ok(rhs),
-                st => reads_stmt(st),
-            };
-            !at_k && !case.stmts[k + 1..].iter().any(reads_stmt) && !reads_exp(&case.result)
-        }
+    // No binding is read from the first write or move of `subj` in `stmts`
+    // to their end; an `if` statement may move it in branches that each obey this.
+    fn block_ok(stmts: &[TypedStmt], subj: &str, reads_stmt: &dyn Fn(&TypedStmt) -> bool, branch_move_ok: &dyn Fn(&TypedExp) -> bool) -> bool {
+        let Some(k) = stmts.iter().position(|st| stmt_writes_or_moves(st, subj)) else { return true };
+        let at_k = match &stmts[k] {
+            TypedStmt::Assign { rhs, .. } if !exp_writes_or_moves(rhs, subj) => false,
+            TypedStmt::Assign { lhs: TypedPat::Var(_), rhs, .. } => !branch_move_ok(rhs),
+            TypedStmt::If { cond, then_, elseif, else_ }
+                if !exp_writes_or_moves(cond, subj) && elseif.iter().all(|(c, _)| !exp_writes_or_moves(c, subj)) =>
+                !(block_ok(then_, subj, reads_stmt, branch_move_ok)
+                    && elseif.iter().all(|(_, b)| block_ok(b, subj, reads_stmt, branch_move_ok))
+                    && block_ok(else_, subj, reads_stmt, branch_move_ok)),
+            st => reads_stmt(st),
+        };
+        !at_k && !stmts[k + 1..].iter().any(reads_stmt)
+    }
+    if case.stmts.iter().any(|st| stmt_writes_or_moves(st, subj)) {
+        block_ok(&case.stmts, subj, &reads_stmt, &branch_move_ok) && !reads_exp(&case.result)
+    } else {
+        branch_move_ok(&case.result)
     }
 }
 
