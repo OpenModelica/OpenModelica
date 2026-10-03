@@ -258,6 +258,22 @@ pub(super) fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<Strin
     map
 }
 
+/// `global = rt_alloc(len)`, filled from the constant pool.
+fn emit_const_block(f: &mut we::Function, literals: &mut Literals, bytes: &[u8], global: u32) {
+    use we::Instruction as I;
+    if bytes.is_empty() {
+        return;
+    }
+    let off = literals.intern(bytes);
+    f.instruction(&I::I32Const(bytes.len() as i32));
+    f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
+    f.instruction(&I::GlobalSet(global));
+    f.instruction(&I::GlobalGet(global));
+    f.instruction(&I::I32Const(off as i32));
+    f.instruction(&I::I32Const(bytes.len() as i32));
+    f.instruction(&I::MemoryInit { mem: 0, data_index: 0 });
+}
+
 /// Per-system scratch offsets for the analytic-Jacobian `nls_jac` callback: the
 /// seed slots (one per differentiation column) and the column-result slots (one
 /// per residual row). Both live in the `nls_jac_off` region, registered as var
@@ -287,6 +303,7 @@ pub(super) fn emit_nls_start(
     nominals: &[f64],
     bounds: &[f64],
     patterns: &[i32],
+    literals: &mut Literals,
 ) {
     use we::Instruction as I;
     use crate::CodegenWasmJitFunctions::{NLS_BOUNDS_GLOBAL, NLS_NOMINAL_GLOBAL, NLS_PAT_GLOBAL};
@@ -307,41 +324,14 @@ pub(super) fn emit_nls_start(
         f.instruction(&I::Call(rt_index("rt_nls_register").expect("rt_nls_register is a runtime builtin")));
         hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(*n);
     }
-    // nominal block: rt_alloc, then store each system's iteration-variable nominal
-    // constants (concatenated in system order) for `rt_solve_nls`'s x-scaling.
-    if !nominals.is_empty() {
-        f.instruction(&I::I32Const((nominals.len() * 8) as i32));
-        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
-        f.instruction(&I::GlobalSet(NLS_NOMINAL_GLOBAL));
-        for (i, nom) in nominals.iter().enumerate() {
-            f.instruction(&I::GlobalGet(NLS_NOMINAL_GLOBAL));
-            f.instruction(&I::F64Const((*nom).into()));
-            f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
-        }
-    }
-    // bounds block: the `min`/`max` pair per iteration variable, same order.
-    if !bounds.is_empty() {
-        f.instruction(&I::I32Const((bounds.len() * 8) as i32));
-        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
-        f.instruction(&I::GlobalSet(NLS_BOUNDS_GLOBAL));
-        for (i, v) in bounds.iter().enumerate() {
-            f.instruction(&I::GlobalGet(NLS_BOUNDS_GLOBAL));
-            f.instruction(&I::F64Const((*v).into()));
-            f.instruction(&I::F64Store(crate::CodegenWasmJitFunctions::mem_arg((i * 8) as u32, 3)));
-        }
-    }
-    // sparse-pattern block: the concatenated `colptr`/`rowidx` of every system
-    // solved sparsely, indexed by each job's `pat_off`.
-    if !patterns.is_empty() {
-        f.instruction(&I::I32Const((patterns.len() * 4) as i32));
-        f.instruction(&I::Call(rt_index("rt_alloc").expect("rt_alloc is a runtime builtin")));
-        f.instruction(&I::GlobalSet(NLS_PAT_GLOBAL));
-        for (i, v) in patterns.iter().enumerate() {
-            f.instruction(&I::GlobalGet(NLS_PAT_GLOBAL));
-            f.instruction(&I::I32Const(*v));
-            f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg((i * 4) as u32, 2)));
-        }
-    }
+    // Per iteration variable its nominal and `min`/`max`; the patterns are indexed
+    // by `pat_off`.
+    let nominal_bytes: Vec<u8> = nominals.iter().flat_map(|v| v.to_le_bytes()).collect();
+    emit_const_block(f, literals, &nominal_bytes, NLS_NOMINAL_GLOBAL);
+    let bound_bytes: Vec<u8> = bounds.iter().flat_map(|v| v.to_le_bytes()).collect();
+    emit_const_block(f, literals, &bound_bytes, NLS_BOUNDS_GLOBAL);
+    let pattern_bytes: Vec<u8> = patterns.iter().flat_map(|v| v.to_le_bytes()).collect();
+    emit_const_block(f, literals, &pattern_bytes, NLS_PAT_GLOBAL);
     // base = table.grow(null, 4n) — returns the old size (the growable table's max
     // is unbounded, so this cannot fail here). Four slots per system:
     // `4k`=residual, `4k+1`=load, `4k+2`=jac, `4k+3`=the strict tearing set's solve

@@ -118,13 +118,17 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
         for (flat, bindings) in iterator_expansion(&iters).ok()?.into_iter().enumerate() {
             for sc in lst(&row.solved_crefs) {
                 let sc = BoundCref::new(sc, &bindings)?;
-                let sc_offs = match sc.whole_1d() && !bindings.is_empty() {
+                // A trailing whole dimension of a looped residual is the loop itself.
+                let iter_row = !bindings.is_empty() && sc.whole.last() == Some(&true);
+                let sc_offs = match iter_row {
                     true => vec![slots.base(&sc.cref)? + flat],
                     false => slots.offsets(&sc)?,
                 };
+                let whole_2d = sc.dims.len() == 2 && sc.whole.iter().all(|w| *w);
+                let pairs_regular = sc.whole_1d() || (iter_row && !whole_2d);
                 for (seed, dep, rep) in lst(&row.dependencies) {
                     let seed = BoundCref::new(seed, &bindings)?;
-                    let regular = !*rep && lst(&dep.kinds).next() == Some(&false) && seed.whole_1d() && sc.whole_1d();
+                    let regular = !*rep && lst(&dep.kinds).next() == Some(&false) && seed.whole_1d() && pairs_regular;
                     if regular {
                         let (rb, cb) = (slots.base(&sc.cref)?, slots.base(&seed.cref)?);
                         match bindings.is_empty() {
@@ -375,6 +379,18 @@ fn computed_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> Vec<Vec<u32>> 
             color_cols[color_ptr[c] as usize..color_ptr[c + 1] as usize].iter().map(|&j| j as u32).collect()
         })
         .collect()
+}
+
+/// C's `sparsityNonzeros`: a resizable pattern counts its rows' dependencies
+/// unexpanded.
+pub(super) fn sparsity_nonzeros(jm: &SimCode::JacobianMatrix) -> Option<usize> {
+    if lst(&jm.sparsity).next().is_some() {
+        return Some(lst(&jm.sparsity).map(|(_, rows)| count(rows)).sum());
+    }
+    match &jm.sparsityMatrix {
+        SimCode::Sparsity::SPARSITY { rows } => Some(lst(rows).map(|r| count(&r.dependencies)).sum()),
+        SimCode::Sparsity::EMPTY => None,
+    }
 }
 
 /// The nonzero count of a nonlinear system's Jacobian, matching C's

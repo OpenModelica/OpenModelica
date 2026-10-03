@@ -472,6 +472,11 @@ fn index_exp(exp: &metamodelica::Ref<DAE::Exp>, idx: &[i32]) -> metamodelica::Re
                 }
             }
         }
+        E::REDUCTION { reductionInfo, expr, iterators } => {
+            if let Some(e) = reduction_element(reductionInfo, expr, iterators, idx[0]) {
+                return index_exp(&e, &idx[1..]);
+            }
+        }
         _ => {}
     }
     let sub: List<metamodelica::Ref<DAE::Subscript>> = idx
@@ -482,6 +487,35 @@ fn index_exp(exp: &metamodelica::Ref<DAE::Exp>, idx: &[i32]) -> metamodelica::Re
     openmodelica_frontend_base::ExpressionSimplify::simplify1(asub.clone())
         .map(|(e, _)| e)
         .unwrap_or(asub)
+}
+
+/// Element `i` of `{expr for it in start:step:stop}` without expanding the array.
+fn reduction_element(
+    info: &DAE::ReductionInfo,
+    expr: &metamodelica::Ref<DAE::Exp>,
+    iterators: &DAE::ReductionIterators,
+    i: i32,
+) -> Option<metamodelica::Ref<DAE::Exp>> {
+    if !matches!(&*info.path, openmodelica_ast::Absyn::Path::IDENT { name } if name.as_str() == "array") {
+        return None;
+    }
+    let mut iters = lst(iterators);
+    let (it, None) = (iters.next()?, iters.next()) else { return None };
+    if it.guardExp.is_some() {
+        return None;
+    }
+    let DAE::Exp::RANGE { start, step, stop, .. } = &*it.exp else { return None };
+    let (start, stop) = (const_int_exp(start)?, const_int_exp(stop)?);
+    let step = match step {
+        Some(s) => const_int_exp(s)?,
+        None => 1,
+    };
+    let v = start.checked_add(i.checked_sub(1)?.checked_mul(step)?)?;
+    if i < 1 || step == 0 || (step > 0 && v > stop) || (step < 0 && v < stop) {
+        return None;
+    }
+    let body = subst_iterator(expr, &it.id, &metamodelica::Ref::new(DAE::Exp::ICONST { integer: v })).ok()?;
+    Some(openmodelica_frontend_base::ExpressionSimplify::simplify1(body.clone()).map(|(e, _)| e).unwrap_or(body))
 }
 
 /// Subscript an alias target by the same `idx`; `NOALIAS` passes through.
