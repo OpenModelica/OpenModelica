@@ -2092,14 +2092,11 @@ author:Waurich TUD 2016-05"
   input Boolean isInitial;
   output list<CommonSubExp> cseOut;
 protected
-  BackendDAE.AdjacencyMatrix m, mT;
-  BackendDAE.EqSystem eqSys;
+  BackendDAE.AdjacencyMatrix mT;
   BackendDAE.Variables pathVars;
-  list<BackendDAE.Equation> eqLst;
-  BackendDAE.EquationArray eqs;
-  Integer numVars, varIdx;
-  array<Integer> pathVarIdxMap;
-  list<Integer> partition, adjEqs, pathVarIdcs;
+  Integer numVars, varIdx, absV;
+  array<Integer> pathVarIdxMap, partArr;
+  list<Integer> adjEqs, pathVarIdcs, row, touched;
   list<CommonSubExp> cses;
 algorithm
   try
@@ -2110,37 +2107,35 @@ algorithm
     pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
     cses := cseIn;
     if BackendVariable.varsSize(pathVars) > 0 then
+      mT := arrayCreate(BackendVariable.varsSize(pathVars), {});
       for partition in allPartitions loop
-        //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
-        //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
+        // The transposed adjacency matrix of the partition's equations, filled
+        // like BackendDAEUtil.adjacencyMatrixDispatch but only for the
+        // variables they touch.
+        partArr := listArray(partition);
+        touched := {};
+        for eqIdx in 1:arrayLength(partArr) loop
+          (row, _) := BackendDAEUtil.adjacencyRow(BackendEquation.get(allEqs, partArr[eqIdx]), pathVars, BackendDAE.SOLVABLE(), NONE(), {}, isInitial);
+          for v in BackendDAEUtil.uniqueRow(row) loop
+            absV := intAbs(v);
+            adjEqs := arrayGet(mT, absV);
+            if listEmpty(adjEqs) then
+              touched := absV :: touched;
+            end if;
+            arrayUpdate(mT, absV, (if v < 0 then -eqIdx else eqIdx) :: adjEqs);
+          end for;
+        end for;
 
-        //get only the partition equations
-        eqLst := list(BackendEquation.get(allEqs, i) for i in partition);
-        eqs := BackendEquation.listEquation(eqLst);
-
-        eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
-        (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(eqSys, BackendDAE.SOLVABLE(), NONE(), isInitial);
-
-          //BackendDump.dumpAdjacencyMatrix(m);
-          //BackendDump.dumpAdjacencyMatrixT(mT);
-          //varAtts := List.threadMap(List.fill(false, arrayLength(mT)), List.fill("", arrayLength(mT)), Util.makeTuple);
-          //eqAtts := List.threadMap(List.fill(false, arrayLength(m)), List.fill("", arrayLength(m)), Util.makeTuple);
-          //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
-
-       for idx in 1:arrayLength(mT) loop
-         adjEqs := MetaModelica.Dangerous.arrayGetNoBoundsChecking(mT,idx);
-
-         if listLength(adjEqs)==2 then
-         //print("varIdx1 "+intString(varIdx)+"\n");
-         //print("adjEqs "+stringDelimitList(List.map(adjEqs,intString),",")+"\n");
-           adjEqs := list(arrayGet(eqMap,listGet(partition,eq)) for eq in adjEqs);
-           varIdx := arrayGet(pathVarIdxMap,idx);
-           cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
-         end if;
-       end for; //end the variables
-       GCExt.free(m);
-       GCExt.free(mT);
-     end for;  //end all partitions
+        for idx in List.sort(touched, intGt) loop
+          adjEqs := arrayGet(mT, idx);
+          if listLength(adjEqs) == 2 then
+            adjEqs := list(arrayGet(eqMap, partArr[eq]) for eq in adjEqs);
+            varIdx := arrayGet(pathVarIdxMap, idx);
+            cses := SHORTCUT_CSE(adjEqs, varIdx) :: cses;
+          end if;
+          arrayUpdate(mT, idx, {});
+        end for;
+      end for;
       //print("the SHORTPATH cses : \n"+stringDelimitList(List.map(cses, printCSE), "\n")+"\n");
     end if;
     cseOut := cses;
