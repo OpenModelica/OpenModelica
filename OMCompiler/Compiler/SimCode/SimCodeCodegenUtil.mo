@@ -3329,14 +3329,18 @@ algorithm
     case DAE.ICONST() then DAE.RCONST(abs(intReal(expr.integer)));
     case DAE.RCONST() then DAE.RCONST(abs(expr.real));
 
+    // time is monotonic, a relation on it cannot chatter
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")) then DAE.RCONST(0.0);
+
     case DAE.CREF(componentRef = cr, ty = t) algorithm
       v := cref2simvar(cr, getSimCode());
     then match v.nominalValue
       case SOME(DAE.RCONST(r1)) then DAE.RCONST(abs(r1));
       case SOME(e1) then Expression.makePureBuiltinCall("abs", {e1}, t);
       case NONE() then match v.varKind
-        // for parameters use their actual value
+        // for parameters and discrete variables use their actual value
         case BackendDAE.PARAM() then Expression.makePureBuiltinCall("abs", {expr}, t);
+        case BackendDAE.DISCRETE() then Expression.makePureBuiltinCall("abs", {expr}, t);
         else DAE.RCONST(1.0);
         // TODO use min/max to deduce better nominal value than 1.
       end match;
