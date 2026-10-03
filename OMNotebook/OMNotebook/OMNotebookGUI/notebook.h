@@ -53,6 +53,7 @@
 #include <QAction>
 #include <QImage>
 #include <QPlainTextEdit>
+#include <QPointer>
 #include <QTextEdit>
 #include <QActionGroup>
 #include <QKeyEvent>
@@ -272,13 +273,25 @@ private:
   // Zoom of the cell texts (view only, the notebook content is not changed)
   void setTextZoom( int percent );
   void applyTextZoom();
-  void applyTextZoom( QTextEdit *editor );
-  void applyTextZoom( QPlainTextEdit *editor );
+  void applyTextZoom( QTextEdit *editor, bool immediate = false );
+  void applyTextZoom( QPlainTextEdit *editor, bool immediate = false );
+  QScrollArea *documentScrollArea();
+  void captureZoomAnchor();
+  void restoreZoomAnchor();
   QAction *zoomInAction;
   QAction *zoomOutAction;
   QAction *zoomResetAction;
   int textZoom_ = 100;
   int zoomWheelDelta_ = 0;
+
+  // The point of the document that keeps its position on the screen while zooming
+  bool zoomByMouse_ = false;               // true: wheel zoom
+  QPoint zoomMousePos_;                    // global position of the mouse (wheel zoom)
+  QPointer<QWidget> zoomMouseWidget_;      // widget under the mouse (wheel zoom)
+  QPointer<QWidget> zoomAnchorCell_;
+  double zoomAnchorFraction_ = 0.0;        // position in the cell, 0 = top, 1 = bottom
+  int zoomAnchorViewportY_ = 0;            // position in the visible area
+  int zoomAnchorOffset_ = 0;               // widget position of the cell minus its position from the cell heights
   QImage zoomDevice_;
 
 #if USE_OMSKETCH
