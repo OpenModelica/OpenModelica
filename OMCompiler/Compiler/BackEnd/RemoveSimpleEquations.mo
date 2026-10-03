@@ -339,6 +339,10 @@ protected
   list<BackendDAE.Var> knownVarList = {};
   list<DAE.ComponentRef> crlst;
 algorithm
+  // Without local known variables no binding can depend on one.
+  if BackendVariable.varsSize(dae.shared.localKnownVars) == 0 then
+    return;
+  end if;
   globalKnownVars := dae.shared.globalKnownVars;
 
   for var in BackendVariable.varList(globalKnownVars) loop
