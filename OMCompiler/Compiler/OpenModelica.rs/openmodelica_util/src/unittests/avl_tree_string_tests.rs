@@ -30,7 +30,7 @@ use crate::AvlTreeString as T;
 fn tree_of(pairs: &[(&str, i32)], cf: T::ConflictFunc) -> Result<metamodelica::Ref<T::Tree>> {
     let mut t = T::new();
     for (k, v) in pairs {
-        t = T::add(t, &arcstr::format!("{}", k), *v, &*cf)?;
+        t = T::add(t, &arcstr::format!("{}", k), *v, &|a0, a1, a2| (cf)(a0, a1, ::std::clone::Clone::clone(a2)))?;
     }
     Ok(t)
 }
@@ -152,7 +152,7 @@ fn test_haskey_empty_tree() -> Result<()> {
 fn test_conflict_fail_on_duplicate() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_fail())?;
     // Inserting the same key again should fail.
-    let result = T::add(t, &literal!("k"), 2, &*conflict_fail());
+    let result = T::add(t, &literal!("k"), 2, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)));
     assert!(result.is_err(),
         "addConflictFail should return an error when inserting a duplicate key");
     Ok(())
@@ -161,7 +161,7 @@ fn test_conflict_fail_on_duplicate() -> Result<()> {
 #[test]
 fn test_conflict_keep_preserves_old_value() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_keep())?;
-    let t = T::add(t, &literal!("k"), 999, &*conflict_keep())?;
+    let t = T::add(t, &literal!("k"), 999, &|a0, a1, a2| (conflict_keep())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(T::get(&t, literal!("k"))?, 1,
         "addConflictKeep should keep the OLD value when there is a conflict");
     Ok(())
@@ -178,7 +178,7 @@ fn test_conflict_keep_preserves_old_value() -> Result<()> {
 #[test]
 fn test_conflict_replace_uses_new_value() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_replace())?;
-    let t = T::add(t, &literal!("k"), 999, &*conflict_replace())?;
+    let t = T::add(t, &literal!("k"), 999, &|a0, a1, a2| (conflict_replace())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(T::get(&t, literal!("k"))?, 999,
         "addConflictReplace should use the NEW value when there is a conflict; \
          assign_variant_field! shadowing causes the update to be silently skipped");
@@ -191,7 +191,7 @@ fn test_conflict_replace_uses_new_value() -> Result<()> {
 #[test]
 fn test_conflict_default_is_fail() -> Result<()> {
     let t = tree_of(&[("k", 1)], conflict_default())?;
-    let result = T::add(t, &literal!("k"), 2, &*conflict_default());
+    let result = T::add(t, &literal!("k"), 2, &|a0, a1, a2| (conflict_default())(a0, a1, ::std::clone::Clone::clone(a2)));
     assert!(result.is_err());
     Ok(())
 }
@@ -230,7 +230,7 @@ fn test_addlist() -> Result<()> {
         (literal!("a"), 1i32),
         (literal!("b"), 2i32)
     ];
-    let t = T::addList(T::new(), &pairs, &*conflict_fail())?;
+    let t = T::addList(T::new(), &pairs, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(keys_vec(t.clone()), vec!["a", "b", "c"]);
     assert_eq!(vals_vec(t), vec![1, 2, 3]);
     Ok(())
@@ -244,7 +244,7 @@ fn test_fromlist() -> Result<()> {
         (literal!("x"), 10i32),
         (literal!("y"), 20i32)
     ];
-    let t = T::fromList(&pairs, &*conflict_fail())?;
+    let t = T::fromList(&pairs, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(T::get(&t, literal!("x"))?, 10);
     assert_eq!(T::get(&t,         literal!("y"))?, 20);
     Ok(())
@@ -255,7 +255,7 @@ fn test_fromlist() -> Result<()> {
 #[test]
 fn test_addupdate_insert_new() -> Result<()> {
     let t = T::new();
-    let t = T::addUpdate(t, &literal!("k"), &|opt: Option<i32>| {
+    let t = T::addUpdate(t, &literal!("k"), &|opt: &Option<i32>| {
         assert!(opt.is_none(), "key is new, oldValue should be None");
         Ok(42)
     })?;
@@ -267,7 +267,7 @@ fn test_addupdate_insert_new() -> Result<()> {
 fn test_addupdate_update_existing() -> Result<()> {
     let t = tree_of(&[("k", 10)], conflict_fail())?;
     let t = T::addUpdate(t, &literal!("k"), &|opt| {
-        assert_eq!(opt, Some(10), "key exists, oldValue should be Some(10)");
+        assert_eq!(*opt, Some(10), "key exists, oldValue should be Some(10)");
         Ok(99)
     })?;
     assert_eq!(T::get(&t, literal!("k"))?, 99);
@@ -298,7 +298,7 @@ fn test_fold_collects_keys_in_order() -> Result<()> {
     // fold visits in in-order (key-ascending).
     let collected = T::fold(
         &t,
-        &|k: ArcStr, _v, mut acc: Vec<String>| { acc.push(k.to_string()); Ok(acc) },
+        &|__b0: &_, _v, __b2: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); let mut acc: Vec<String> = ::std::clone::Clone::clone(__b2); { acc.push(k.to_string()); Ok(acc) } },
         vec![],
     )?;
     assert_eq!(collected, vec!["a", "b", "c"]);
@@ -315,7 +315,7 @@ fn test_foreach_visits_all_in_order() -> Result<()> {
     let t = tree_of(&[("c", 30), ("a", 10), ("b", 20)], conflict_fail())?;
     let visited: Rc<RefCell<Vec<(String, i32)>>> = Rc::new(RefCell::new(vec![]));
     let visited_clone = visited.clone();
-    T::forEach(&t, &move |k: ArcStr, v| {
+    T::forEach(&t, &move |k: &ArcStr, v| {
         visited_clone.borrow_mut().push((k.to_string(), v));
         Ok(())
     })?;
@@ -365,7 +365,7 @@ fn test_map_empty_tree() -> Result<()> {
 fn test_join_disjoint() -> Result<()> {
     let t1 = tree_of(&[("a", 1), ("b", 2)], conflict_fail())?;
     let t2 = tree_of(&[("c", 3), ("d", 4)], conflict_fail())?;
-    let joined = T::join(t1, &t2, &*conflict_fail())?;
+    let joined = T::join(t1, &t2, &|a0, a1, a2| (conflict_fail())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(keys_vec(joined.clone()), vec!["a", "b", "c", "d"]);
     assert_eq!(vals_vec(joined), vec![1, 2, 3, 4]);
     Ok(())
@@ -375,7 +375,7 @@ fn test_join_disjoint() -> Result<()> {
 fn test_join_with_conflict_keep() -> Result<()> {
     let t1 = tree_of(&[("shared", 1)], conflict_keep())?;
     let t2 = tree_of(&[("shared", 999)], conflict_keep())?;
-    let joined = T::join(t1, &t2, &*conflict_keep())?;
+    let joined = T::join(t1, &t2, &|a0, a1, a2| (conflict_keep())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(T::get(&joined, literal!("shared"))?, 1,
         "join with conflict_keep should preserve the original value");
     Ok(())
@@ -386,7 +386,7 @@ fn test_join_with_conflict_keep() -> Result<()> {
 fn test_join_with_conflict_replace() -> Result<()> {
     let t1 = tree_of(&[("shared", 1)], conflict_replace())?;
     let t2 = tree_of(&[("shared", 999)], conflict_replace())?;
-    let joined = T::join(t1, &t2, &*conflict_replace())?;
+    let joined = T::join(t1, &t2, &|a0, a1, a2| (conflict_replace())(a0, a1, ::std::clone::Clone::clone(a2)))?;
     assert_eq!(T::get(&joined, literal!("shared"))?, 999,
         "join with conflict_replace should overwrite with the new value; \
          assign_variant_field! shadowing prevents the update");

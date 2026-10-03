@@ -8,6 +8,14 @@
 //! loop-lowered (tail-recursive) function a self-call must pass it on unchanged
 //! or replace it by a field of a borrowed parameter. Callers then pass `&x`
 //! instead of cloning the value into the call.
+//!
+//! The same fixpoint chooses callback *slots*: the inputs of a borrowed
+//! callback parameter that the function passes by reference (`&dyn Fn(&T)`).
+//! A slot input qualifies when every function or partial application passed
+//! there borrows it or takes a `Copy` type, so no adapter has to clone, or when
+//! the function could not move its argument there anyway (a loop variable, a
+//! pattern binding, an unwritten variable read in a loop), so the clone only
+//! moves from the function into the adapter.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
@@ -18,19 +26,27 @@ use rayon::prelude::*;
 use openmodelica_ast::Absyn;
 
 pub(crate) type BorrowMasks = BTreeMap<String, Vec<bool>>;
+/// (function, callback parameter) -> inputs the callback takes by reference.
+pub(crate) type SlotMasks = BTreeMap<(String, String), Vec<bool>>;
 
 static MASKS: std::sync::OnceLock<BorrowMasks> = std::sync::OnceLock::new();
+static SLOTS: std::sync::OnceLock<SlotMasks> = std::sync::OnceLock::new();
 
 /// Hand-written functions whose parameters are borrowed.
 const HANDWRITTEN_MASKS: &[(&str, &[bool])] = &[
     ("System.dladdr", &[true]),
 ];
 
-pub(crate) fn install(mut masks: BorrowMasks) {
+pub(crate) fn install(mut masks: BorrowMasks, slots: SlotMasks) {
     for (q, m) in HANDWRITTEN_MASKS {
         masks.insert((*q).to_owned(), m.to_vec());
     }
     let _ = MASKS.set(masks);
+    let _ = SLOTS.set(slots);
+}
+
+pub(crate) fn slot_mask(qname: &str, param: &str) -> Option<&'static [bool]> {
+    SLOTS.get()?.get(&(qname.to_owned(), param.to_owned())).map(|v| v.as_slice())
 }
 
 /// The borrow mask of the function `qname`, if any of its parameters is borrowed.
@@ -61,6 +77,19 @@ fn candidate_kind(ty: &Ty, types: &Types<'_>) -> Option<Kind> {
             Some(Kind::Handle),
         _ => None,
     }
+}
+
+fn is_copy(ty: &Ty, types: &Types<'_>) -> bool {
+    match ty {
+        Ty::I32 | Ty::F64 | Ty::Bool | Ty::Enumeration(_) => true,
+        Ty::RustStruct(q) | Ty::RustEnum(q) | Ty::AliasTo(q) => types.copy.contains(q),
+        Ty::Tuple(ts) => ts.iter().all(|t| is_copy(t, types)),
+        _ => false,
+    }
+}
+
+fn slot_candidate(ty: &Ty, types: &Types<'_>) -> bool {
+    !matches!(ty, Ty::Function { .. } | Ty::FunctionAlias { .. } | Ty::Unknown) && !is_copy(ty, types)
 }
 
 /// Builtins lowered with the argument read in place (see `emit_place_arg`).
@@ -127,11 +156,35 @@ pub(crate) fn param_tail_bindings(
     out
 }
 
+#[derive(Clone, Debug)]
+enum Target {
+    Param(String, usize),
+    Slot(String, String, usize),
+}
+
 #[derive(Clone)]
 enum Pos {
     Owned,
     Borrow,
-    Arg(String, usize),
+    Arg(Target),
+}
+
+/// An argument of a callback call, for deciding whether it could be moved.
+enum CbArg {
+    /// A fresh value per iteration: a `for`/reduction variable.
+    Loop,
+    Name { name: String, in_loop: bool },
+    Other,
+}
+
+/// What a function value passed to a callback slot needs, per slot input.
+#[derive(Clone, Debug)]
+enum Req {
+    Ok,
+    Fail,
+    /// The adapter clones, which only a free slot pays nothing for.
+    Clone,
+    Param(Target),
 }
 
 struct Scan<'a, 'b> {
@@ -149,12 +202,24 @@ struct Scan<'a, 'b> {
     tails: HashMap<String, Vec<String>>,
     recursive: &'b BTreeSet<String>,
     disq: HashSet<String>,
-    deps: Vec<(String, String, usize)>,
+    deps: Vec<(String, Target)>,
+    callbacks: &'b HashMap<String, Vec<bool>>,
+    types: &'b Types<'b>,
+    /// Function values passed to callback slots: (callee, formal, per input).
+    srcs: Vec<(String, String, Vec<Req>)>,
+    /// Arguments of calls through callback parameters: (parameter, input, arg).
+    cb_args: Vec<(String, usize, CbArg)>,
+    written: HashSet<String>,
+    /// Bound inside a destructuring pattern, i.e. read out of a shared value.
+    part_bound: HashSet<String>,
+    destructure_depth: usize,
+    loop_vars: Vec<String>,
+    loop_depth: usize,
     /// Match-arm nesting of the current read.
     case_depth: usize,
     /// Owned uses inside a match arm, which a recursive function pays for with
     /// a clone there instead of one per call: (param, callee slot or `None`).
-    soft: Vec<(String, Option<(String, usize)>)>,
+    soft: Vec<(String, Option<Target>)>,
     calls_self: bool,
     /// `MMTORUST_TRACE_BORROW=<qname suffix>` reports why a parameter is by value.
     trace: Option<&'b str>,
@@ -176,7 +241,32 @@ impl Scan<'_, '_> {
     }
 
     fn bind(&mut self, name: &str) {
+        self.written.insert(name.to_owned());
+        if self.destructure_depth > 0 {
+            self.part_bound.insert(name.to_owned());
+        }
         self.disqualify(name, &"written or shadowed");
+    }
+
+    /// Whether every call through callback `p` passes input `j` a value it
+    /// could not have moved.
+    fn slot_free(&self, p: &str, j: usize) -> bool {
+        let mut any = false;
+        for (q, i, a) in &self.cb_args {
+            if q != p || *i != j {
+                continue;
+            }
+            any = true;
+            let free = match a {
+                CbArg::Loop => true,
+                CbArg::Name { name, in_loop } => self.part_bound.contains(name) || !self.written.contains(name) && *in_loop,
+                CbArg::Other => false,
+            };
+            if !free {
+                return false;
+            }
+        }
+        any
     }
 
     fn pat(&mut self, p: &TypedPat) {
@@ -186,15 +276,23 @@ impl Scan<'_, '_> {
                 self.bind(var);
                 self.pat(pat);
             }
-            TypedPat::Some_(inner) => self.pat(inner),
+            TypedPat::Some_(inner) => {
+                self.destructure_depth += 1;
+                self.pat(inner);
+                self.destructure_depth -= 1;
+            }
             TypedPat::Cons { head, tail } => {
+                self.destructure_depth += 1;
                 self.pat(head);
                 self.pat(tail);
+                self.destructure_depth -= 1;
             }
             TypedPat::Tuple(ps) => ps.iter().for_each(|p| self.pat(p)),
             TypedPat::Constructor { fields, named_fields, .. } => {
+                self.destructure_depth += 1;
                 fields.iter().for_each(|p| self.pat(p));
                 named_fields.iter().for_each(|(_, p)| self.pat(p));
+                self.destructure_depth -= 1;
             }
             TypedPat::Index { base, index } => {
                 if let TypedExp::Var { name, segments, .. } = base {
@@ -234,11 +332,17 @@ impl Scan<'_, '_> {
                 self.bind(var);
                 let p = if matches!(range.ty(), Ty::List(_)) { Pos::Borrow } else { Pos::Owned };
                 self.arg(range, p);
+                self.loop_vars.push(var.clone());
+                self.loop_depth += 1;
                 self.stmts(body);
+                self.loop_depth -= 1;
+                self.loop_vars.pop();
             }
             TypedStmt::While { cond, body } => {
+                self.loop_depth += 1;
                 self.exp(cond, Pos::Owned);
                 self.stmts(body);
+                self.loop_depth -= 1;
             }
             TypedStmt::Try { body, else_body, .. } => {
                 self.stmts(body);
@@ -249,15 +353,77 @@ impl Scan<'_, '_> {
         }
     }
 
-    fn user_callee(&self, func: &str) -> Option<(String, Vec<String>)> {
+    fn user_callee(&self, func: &str) -> Option<(String, Vec<crate::hierarchy::FunctionInput>)> {
         if self.locals.contains(func) {
             return None;
         }
         let (qname, node) = typedexp::resolve_call_node(func, self.top_level, self.pkg_prefix)?;
         match &node.ty {
-            Ty::Function { inputs, .. } => Some((qname, inputs.iter().map(|i| i.name.clone()).collect())),
+            Ty::Function { inputs, .. } => Some((qname, inputs.clone())),
             _ => None,
         }
+    }
+
+    fn named_fn(&self, name: &str) -> Option<(String, Vec<crate::hierarchy::FunctionInput>)> {
+        let (qname, node) = typedexp::resolve_call_node(name, self.top_level, self.pkg_prefix)?;
+        let NodeKind::Class(_) = &node.kind else { return None };
+        match &node.ty {
+            Ty::Function { inputs, .. } => Some((qname, inputs.clone())),
+            _ => None,
+        }
+    }
+
+    /// A function used as a value is called through `Arc<dyn Fn>` values its
+    /// callers cannot see, so its callback inputs get an unknown source.
+    fn escaping_fn(&mut self, name: &str) {
+        let Some((f, ins)) = self.named_fn(name) else { return };
+        for i in ins {
+            if let Ty::Function { inputs, .. } = &i.ty {
+                self.srcs.push((f.clone(), i.name.clone(), vec![Req::Clone; inputs.len()]));
+            }
+        }
+    }
+
+    fn fn_value_source(&mut self, callee: &str, formal: &crate::hierarchy::FunctionInput, a: &TypedExp) {
+        let Ty::Function { inputs: slot_ins, .. } = &formal.ty else { return };
+        let need = |f: &str, ins: &[crate::hierarchy::FunctionInput], idx: Option<usize>| -> Req {
+            match idx.and_then(|i| ins.get(i).map(|inp| (i, inp))) {
+                Some((_, inp)) if is_copy(&inp.ty, self.types) => Req::Ok,
+                Some((i, _)) => Req::Param(Target::Param(f.to_owned(), i)),
+                None => Req::Fail,
+            }
+        };
+        let reqs: Vec<Req> = match a {
+            TypedExp::Var { name, segments, .. } if is_plain(name, segments) && self.callbacks.contains_key(name.as_str()) =>
+                (0..slot_ins.len()).map(|j| Req::Param(Target::Slot(self.qname.to_owned(), name.clone(), j))).collect(),
+            TypedExp::Var { name, segments, .. } if is_plain(name, segments) && self.locals.contains(name.as_str()) =>
+                vec![Req::Clone; slot_ins.len()],
+            TypedExp::Var { name, segments, .. } if segments.iter().all(|s| s.subscripts.is_empty()) => {
+                match (self.named_fn(name), typedexp::builtin_function_ty(name)) {
+                    (Some((f, ins)), _) => (0..slot_ins.len()).map(|j| need(&f, &ins, Some(j))).collect(),
+                    (None, Some(Ty::Function { inputs: ins, .. })) => (0..slot_ins.len())
+                        .map(|j| match ins.get(j) {
+                            Some(inp) if is_copy(&inp.ty, self.types) => Req::Ok,
+                            _ => Req::Clone,
+                        })
+                        .collect(),
+                    _ => vec![Req::Clone; slot_ins.len()],
+                }
+            }
+            TypedExp::PartEval { func, args, named_args, .. } if !self.locals.contains(func.as_str()) => {
+                match self.named_fn(func) {
+                    Some((f, ins)) => {
+                        let unbound: Vec<usize> = (args.len()..ins.len())
+                            .filter(|&i| !named_args.iter().any(|(n, _)| *n == ins[i].name))
+                            .collect();
+                        (0..slot_ins.len()).map(|j| need(&f, &ins, unbound.get(j).copied())).collect()
+                    }
+                    None => vec![Req::Clone; slot_ins.len()],
+                }
+            }
+            _ => vec![Req::Fail; slot_ins.len()],
+        };
+        self.srcs.push((callee.to_owned(), formal.name.clone(), reqs));
     }
 
     fn arg(&mut self, a: &TypedExp, pos: Pos) {
@@ -284,6 +450,9 @@ impl Scan<'_, '_> {
         match e {
             TypedExp::Var { name, segments, ty, .. } => {
                 let base = crate::codegen::var_base_name(name, segments);
+                if !self.locals.contains(base.as_str()) && segments.iter().all(|s| s.subscripts.is_empty()) {
+                    self.escaping_fn(name);
+                }
                 if !self.candidates.contains(&base) {
                     return;
                 }
@@ -296,8 +465,8 @@ impl Scan<'_, '_> {
                             self.disqualify(&base, &why);
                         }
                         Pos::Borrow => {}
-                        Pos::Arg(q, i) if soft => self.soft.push((base, Some((q, i)))),
-                        Pos::Arg(q, i) => self.deps.push((base, q, i)),
+                        Pos::Arg(t) if soft => self.soft.push((base, Some(t))),
+                        Pos::Arg(t) => self.deps.push((base, t)),
                     }
                 } else {
                     for s in segments {
@@ -327,7 +496,7 @@ impl Scan<'_, '_> {
                             _ => None,
                         };
                         if let (Some(p), Some(j)) = (inputs.get(i), field_of) {
-                            self.deps.push((p.clone(), self.qname.to_owned(), j));
+                            self.deps.push((p.clone(), Target::Param(self.qname.to_owned(), j)));
                             continue;
                         }
                         let tail_of: Option<Vec<usize>> = match a {
@@ -337,7 +506,7 @@ impl Scan<'_, '_> {
                         };
                         if let (Some(p), Some(js)) = (inputs.get(i), tail_of) {
                             for j in js {
-                                self.deps.push((p.clone(), self.qname.to_owned(), j));
+                                self.deps.push((p.clone(), Target::Param(self.qname.to_owned(), j)));
                             }
                             continue;
                         }
@@ -351,21 +520,47 @@ impl Scan<'_, '_> {
                             self.disqualify(p, &"defaulted in a tail self-call");
                         }
                     }
+                } else if let Some(slots) = self.callbacks.get(func.as_str()) {
+                    let slots = slots.clone();
+                    for (j, a) in args.iter().enumerate() {
+                        let shape = match a {
+                            TypedExp::Var { name, segments, .. } if is_plain(name, segments) =>
+                                if self.loop_vars.contains(name) {
+                                    CbArg::Loop
+                                } else {
+                                    CbArg::Name { name: name.clone(), in_loop: self.loop_depth > 0 }
+                                },
+                            _ => CbArg::Other,
+                        };
+                        self.cb_args.push((func.clone(), j, shape));
+                        if named_args.is_empty() && slots.get(j) == Some(&true) {
+                            self.arg(a, Pos::Arg(Target::Slot(self.qname.to_owned(), func.clone(), j)));
+                        } else {
+                            self.exp(a, Pos::Owned);
+                        }
+                    }
+                    named_args.iter().for_each(|(_, a)| self.exp(a, Pos::Owned));
                 } else if let Some((q, formals)) = self.user_callee(func) {
                     if q == self.qname {
                         self.calls_self = true;
                     }
                     let fixed = HANDWRITTEN_MASKS.iter().find(|(h, _)| *h == q).map(|(_, m)| *m);
                     for (i, a) in args.iter().enumerate() {
+                        if let Some(f) = formals.get(i) {
+                            self.fn_value_source(&q, f, a);
+                        }
                         match fixed {
                             Some(m) if m.get(i) == Some(&true) => self.arg(a, Pos::Borrow),
                             Some(_) => self.exp(a, Pos::Owned),
-                            None => self.arg(a, Pos::Arg(q.clone(), i)),
+                            None => self.arg(a, Pos::Arg(Target::Param(q.clone(), i))),
                         }
                     }
                     for (n, a) in named_args {
-                        match formals.iter().position(|f| f == n) {
-                            Some(i) => self.arg(a, Pos::Arg(q.clone(), i)),
+                        match formals.iter().position(|f| f.name == *n) {
+                            Some(i) => {
+                                self.fn_value_source(&q, &formals[i], a);
+                                self.arg(a, Pos::Arg(Target::Param(q.clone(), i)));
+                            }
                             None => self.exp(a, Pos::Owned),
                         }
                     }
@@ -462,6 +657,21 @@ impl Scan<'_, '_> {
             }
             TypedExp::PartEval { func, args, named_args, .. } => {
                 self.disqualify(func, &"partially applied");
+                if !self.locals.contains(func.as_str()) {
+                    self.escaping_fn(func);
+                }
+                if let Some((q, formals)) = self.user_callee(func) {
+                    for (i, a) in args.iter().enumerate() {
+                        if let Some(f) = formals.get(i) {
+                            self.fn_value_source(&q, f, a);
+                        }
+                    }
+                    for (n, a) in named_args {
+                        if let Some(f) = formals.iter().find(|f| f.name == *n) {
+                            self.fn_value_source(&q, f, a);
+                        }
+                    }
+                }
                 // The closure captures a clone once; a callback cannot be cloned
                 // out of a `&dyn Fn`.
                 let capture = |a: &TypedExp| if matches!(a.ty(), Ty::Function { .. }) { Pos::Owned } else { Pos::Borrow };
@@ -493,11 +703,17 @@ impl Scan<'_, '_> {
                 for it in iterators {
                     self.bind(&it.name);
                     self.exp(&it.range, Pos::Owned);
+                    self.loop_vars.push(it.name.clone());
+                }
+                self.loop_depth += 1;
+                for it in iterators {
                     if let Some(g) = &it.guard {
                         self.exp(g, Pos::Owned);
                     }
                 }
                 self.exp(body, Pos::Owned);
+                self.loop_depth -= 1;
+                self.loop_vars.truncate(self.loop_vars.len() - iterators.len());
             }
             TypedExp::Lit(_) | TypedExp::Todo(_) => {}
         }
@@ -508,7 +724,11 @@ struct FnScan {
     inputs: Vec<String>,
     candidates: HashSet<String>,
     disq: HashSet<String>,
-    deps: Vec<(String, String, usize)>,
+    deps: Vec<(String, Target)>,
+    slots: HashMap<String, Vec<bool>>,
+    /// Slot inputs that need no borrowing callee (see [`Scan::slot_free`]).
+    free: HashMap<String, Vec<bool>>,
+    srcs: Vec<(String, String, Vec<Req>)>,
 }
 
 fn scan_fn<'a>(
@@ -520,8 +740,8 @@ fn scan_fn<'a>(
     trace: Option<&str>,
 ) -> Option<FnScan> {
     let top_pkg = qname.split('.').next().unwrap_or("");
-    if excluded.contains(qname)
-        || crate::codegen::HANDWRITTEN_TOP_PACKAGES.contains(&top_pkg)
+    let own_masks = !excluded.contains(qname);
+    if crate::codegen::HANDWRITTEN_TOP_PACKAGES.contains(&top_pkg)
         || crate::codegen::function_source_replacement(qname).is_some()
         || node.base_fn.is_some()
         || !node.extends.is_empty()
@@ -545,14 +765,19 @@ fn scan_fn<'a>(
         }
     }
     let kinds: HashMap<String, Kind> = inputs.iter()
-        .filter(|i| !outputs.contains(&i.name))
+        .filter(|i| own_masks && !outputs.contains(&i.name))
         .filter_map(|i| Some((i.name.clone(), candidate_kind(&i.ty, types)?)))
         .collect();
     let candidates: HashSet<String> = kinds.keys().cloned().collect();
     let values: HashSet<String> = kinds.iter().filter(|(_, k)| **k == Kind::Value).map(|(n, _)| n.clone()).collect();
-    if candidates.is_empty() {
-        return None;
-    }
+    let callbacks: HashMap<String, Vec<bool>> = inputs.iter()
+        .filter(|i| !outputs.contains(&i.name))
+        .filter_map(|i| match &i.ty {
+            Ty::Function { inputs: ins, .. } => Some((i.name.clone(),
+                ins.iter().map(|x| candidates.contains(&i.name) && slot_candidate(&x.ty, types)).collect())),
+            _ => None,
+        })
+        .collect();
     let stmts = crate::codegen::typedexp_function_body_for_analysis(qname, node, top_level);
     let short = qname.rsplit('.').next().unwrap_or(qname);
     let input_names: Vec<String> = inputs.iter().map(|i| i.name.clone()).collect();
@@ -570,6 +795,15 @@ fn scan_fn<'a>(
         recursive: types.recursive,
         disq: HashSet::new(),
         deps: Vec::new(),
+        callbacks: &callbacks,
+        types,
+        srcs: Vec::new(),
+        cb_args: Vec::new(),
+        written: HashSet::new(),
+        part_bound: HashSet::new(),
+        destructure_depth: 0,
+        loop_vars: Vec::new(),
+        loop_depth: 0,
         case_depth: 0,
         soft: Vec::new(),
         calls_self: false,
@@ -583,17 +817,24 @@ fn scan_fn<'a>(
     if !scan.calls_self && scan.self_call.is_none() {
         for (p, slot) in std::mem::take(&mut scan.soft) {
             match slot {
-                Some((q, i)) => scan.deps.push((p, q, i)),
+                Some(t) => scan.deps.push((p, t)),
                 None => scan.disqualify(&p, &"read in a match arm"),
             }
         }
     }
-    let (disq, deps) = (scan.disq, scan.deps);
+    let free: HashMap<String, Vec<bool>> = callbacks.iter()
+        .map(|(p, v)| (p.clone(), (0..v.len()).map(|j| v[j] && scan.slot_free(p, j)).collect()))
+        .collect();
+    let (disq, deps, srcs) = (scan.disq, scan.deps, scan.srcs);
+    let slots = callbacks.into_iter().filter(|(_, v)| v.contains(&true)).collect();
     Some(FnScan {
         inputs: input_names,
         candidates,
         disq,
         deps,
+        slots,
+        free,
+        srcs,
     })
 }
 
@@ -604,11 +845,12 @@ pub(crate) fn analyze<'a>(
     types: &Types<'_>,
     excluded: &HashSet<String>,
     forced: &BorrowMasks,
-) -> BorrowMasks {
+) -> (BorrowMasks, SlotMasks) {
     let mut all_fns: Vec<(String, &'a NameNode<'a>)> = Vec::new();
     crate::codegen::collect_all_function_nodes(top_level, "", &mut all_fns);
 
     let trace = std::env::var("MMTORUST_TRACE_BORROW").ok();
+    let traced = |q: &str| trace.as_deref().is_some_and(|t| q.ends_with(t));
     let scans: BTreeMap<String, FnScan> = all_fns.par_iter()
         .filter_map(|(qname, node)| Some((qname.clone(), scan_fn(qname, node, top_level, types, excluded, trace.as_deref())?)))
         .collect();
@@ -616,24 +858,57 @@ pub(crate) fn analyze<'a>(
     let mut borrowed: HashMap<String, HashSet<String>> = scans.iter()
         .map(|(q, s)| (q.clone(), s.candidates.difference(&s.disq).cloned().collect()))
         .collect();
+    let mut slots: HashMap<(String, String), Vec<bool>> = scans.iter()
+        .flat_map(|(q, s)| s.slots.iter().map(move |(p, v)| ((q.clone(), p.clone()), v.clone())))
+        .collect();
+    let param_ok = |borrowed: &HashMap<String, HashSet<String>>, callee: &str, idx: usize| match forced.get(callee) {
+        Some(m) => m.get(idx).copied().unwrap_or(false),
+        None => scans.get(callee)
+            .and_then(|cs| cs.inputs.get(idx))
+            .is_some_and(|formal| borrowed[callee].contains(formal)),
+    };
+    let target_ok = |borrowed: &HashMap<String, HashSet<String>>, slots: &HashMap<(String, String), Vec<bool>>, t: &Target| match t {
+        Target::Param(callee, idx) => param_ok(borrowed, callee, *idx),
+        Target::Slot(q, p, j) => slots.get(&(q.clone(), p.clone())).is_some_and(|v| v.get(*j) == Some(&true)),
+    };
     loop {
         let mut changed = false;
         for (q, s) in &scans {
-            for (param, callee, idx) in &s.deps {
-                if !borrowed[q].contains(param) {
-                    continue;
-                }
-                let ok = match forced.get(callee) {
-                    Some(m) => m.get(*idx).copied().unwrap_or(false),
-                    None => scans.get(callee)
-                        .and_then(|cs| cs.inputs.get(*idx))
-                        .is_some_and(|formal| borrowed[callee].contains(formal)),
-                };
-                if !ok {
-                    if trace.as_deref().is_some_and(|t| q.ends_with(t)) {
-                        eprintln!("[borrow] {q}: `{param}` by value: passed to {callee} #{idx}");
+            for (param, target) in &s.deps {
+                if borrowed[q].contains(param) && !target_ok(&borrowed, &slots, target) {
+                    if traced(q) {
+                        eprintln!("[borrow] {q}: `{param}` by value: passed on to a by-value input");
                     }
                     borrowed.get_mut(q).unwrap().remove(param);
+                    changed = true;
+                }
+            }
+        }
+        for ((q, p), v) in slots.iter_mut() {
+            if !borrowed[q].contains(p) && v.contains(&true) {
+                v.iter_mut().for_each(|b| *b = false);
+                changed = true;
+            }
+        }
+        for (caller, s) in &scans {
+            for (h, k, reqs) in &s.srcs {
+                let key = (h.clone(), k.clone());
+                let Some(v) = slots.get(&key) else { continue };
+                let free = |j: usize| scans[h].free.get(k).is_some_and(|f| f.get(j) == Some(&true));
+                let drop: Vec<usize> = (0..v.len())
+                    .filter(|&j| v[j] && match reqs.get(j) {
+                        Some(Req::Ok) => false,
+                        Some(Req::Param(t)) => !free(j) && !target_ok(&borrowed, &slots, t),
+                        Some(Req::Clone) => !free(j),
+                        Some(Req::Fail) | None => true,
+                    })
+                    .collect();
+                if !drop.is_empty() {
+                    if traced(h) {
+                        eprintln!("[borrow] {h}: callback `{k}` inputs {drop:?} by value: {caller} passes {:?}", reqs);
+                    }
+                    let v = slots.get_mut(&key).unwrap();
+                    drop.into_iter().for_each(|j| v[j] = false);
                     changed = true;
                 }
             }
@@ -648,5 +923,11 @@ pub(crate) fn analyze<'a>(
         .map(|(q, s)| (q.clone(), s.inputs.iter().map(|i| borrowed[q].contains(i)).collect()))
         .collect();
     masks.extend(forced.iter().filter(|(_, m)| m.contains(&true)).map(|(q, m)| (q.clone(), m.clone())));
-    masks
+    let slots: SlotMasks = slots.into_iter().filter(|(_, v)| v.contains(&true)).collect();
+    for ((q, p), v) in &slots {
+        if traced(q) {
+            eprintln!("[borrow] {q}: callback `{p}` takes {v:?} by reference");
+        }
+    }
+    (masks, slots)
 }

@@ -705,6 +705,10 @@ struct GenCtx {
     /// While set, a function value is emitted as `&closure` for a `&dyn Fn`
     /// parameter instead of being boxed in an `Arc`. Consumed like `borrow_reads`.
     fn_value_ref: bool,
+    /// The inputs the `&dyn Fn` slot of `fn_value_ref` takes by reference;
+    /// `fn_slot_used` reports that the emitted adapter honoured it.
+    fn_slot: Option<&'static [bool]>,
+    fn_slot_used: bool,
     /// Stack of enclosing loop labels (innermost last), one entry per active
     /// `for`/`while` loop. `Some(label)` when the loop was emitted with an
     /// explicit `'__loopN:` label because its body contains a `break`/`continue`
@@ -827,6 +831,8 @@ impl GenCtx {
             borrow_mask: Vec::new(),
             borrowed_params: HashSet::new(),
             fn_value_ref: false,
+            fn_slot: None,
+            fn_slot_used: false,
             loop_label_stack: Vec::new(),
             loop_range_reads: Vec::new(),
             param_tails: HashSet::new(),
@@ -1869,10 +1875,11 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
         }
     }
     let types = crate::borrow_params::Types { recursive: &hier.recursive_types, copy: &copy_type_qnames };
-    let masks = crate::borrow_params::analyze(&hier.top_level, &types, &borrow_excluded, &forced);
+    let (masks, slots) = crate::borrow_params::analyze(&hier.top_level, &types, &borrow_excluded, &forced);
     let n_params: usize = masks.values().map(|m| m.iter().filter(|b| **b).count()).sum();
-    println!("Borrowed parameters: {n_params} in {} functions", masks.len());
-    crate::borrow_params::install(masks);
+    let n_slots: usize = slots.values().map(|m| m.iter().filter(|b| **b).count()).sum();
+    println!("Borrowed parameters: {n_params} in {} functions, {n_slots} callback inputs in {} callbacks", masks.len(), slots.len());
+    crate::borrow_params::install(masks, slots);
     phase_times.push(("borrowed params", _pp.elapsed()));
 
     // Parallel pass: each file is generated independently. Accumulate the sum of
@@ -7937,7 +7944,10 @@ fn emit_function<'a>(out: &mut String, name: &str, node: &NameNode<'_>, c: &MM::
         .map(|inp| {
             let ty_s = match &inp.ty {
                 Ty::Function { inputs, output, .. } if borrowed.contains(&inp.name) => {
-                    let ins = inputs.iter().map(|i| fmt_param_ty(&i.ty, ctx)).collect::<Vec<_>>().join(", ");
+                    let slot = crate::borrow_params::slot_mask(&fn_qname, &inp.name).unwrap_or(&[]);
+                    let ins = inputs.iter().enumerate()
+                        .map(|(j, i)| format!("{}{}", if slot.get(j) == Some(&true) { "&" } else { "" }, fmt_param_ty(&i.ty, ctx)))
+                        .collect::<Vec<_>>().join(", ");
                     format!("dyn ::std::ops::Fn({ins}) -> Result<{}>", fmt_param_ty(output, ctx))
                 }
                 _ => try_alias(&inp.name, None).unwrap_or_else(|| fmt_param_ty(&inp.ty, ctx)),
@@ -9280,6 +9290,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
     let borrow_here = std::mem::take(&mut ctx.borrow_reads);
     let place_here = std::mem::take(&mut ctx.place_reads);
     let fn_ref_here = std::mem::take(&mut ctx.fn_value_ref);
+    let slot_here = std::mem::take(&mut ctx.fn_slot);
     let borrow_mask = std::mem::take(&mut ctx.borrow_mask);
     match exp {
         TypedExp::Lit(Lit::Int(v))  => v.to_string(),
@@ -9620,8 +9631,12 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                         .unwrap_or_default();
                     let var_str = format!("{var_str}{tf}");
                     let bmask = resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask);
-                    let closure = if let Some(m) = bmask {
-                        borrow_adapter(&var_str, m, inputs, &input_tys, true)
+                    let slot = slot_here.filter(|_| fn_ref_here && gated_value_feat.is_none());
+                    let closure = if let Some(sl) = slot {
+                        ctx.fn_slot_used = true;
+                        borrow_adapter(&var_str, resolved_fn_qname.as_deref(), bmask.unwrap_or(&[]), inputs, &input_tys, true, sl)
+                    } else if let Some(m) = bmask {
+                        borrow_adapter(&var_str, resolved_fn_qname.as_deref(), m, inputs, &input_tys, true, &[])
                     } else if input_tys.is_empty() {
                         format!("fnptr!({var_str})")
                     } else {
@@ -9764,9 +9779,14 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                     let tf = resolved_fn_qname.as_deref()
                         .and_then(|q| fn_ref_turbofish(q, ctx, top_level))
                         .unwrap_or_default();
-                    let f = match resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask) {
-                        Some(m) => borrow_adapter(&format!("{var_str}{tf}"), m, inputs, &input_tys, false),
-                        None => format!("{var_str}{tf}"),
+                    let bmask = resolved_fn_qname.as_deref().and_then(crate::borrow_params::mask);
+                    let f = match (slot_here.filter(|_| fn_ref_here && gated_value_feat.is_none()), bmask) {
+                        (Some(sl), m) => {
+                            ctx.fn_slot_used = true;
+                            borrow_adapter(&format!("{var_str}{tf}"), resolved_fn_qname.as_deref(), m.unwrap_or(&[]), inputs, &input_tys, false, sl)
+                        }
+                        (None, Some(m)) => borrow_adapter(&format!("{var_str}{tf}"), resolved_fn_qname.as_deref(), m, inputs, &input_tys, false, &[]),
+                        (None, None) => format!("{var_str}{tf}"),
                     };
                     if fn_ref_here && gated_value_feat.is_none() {
                         return format!("&{f}");
@@ -10301,6 +10321,8 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             };
             let callee_mask: Option<&'static [bool]> = if is_const {
                 None
+            } else if !func.contains('.') && matches!(ctx.fn_env_vars.get(func), Some(Ty::Function { .. })) {
+                crate::borrow_params::slot_mask(&ctx.current_fn_qname, func)
             } else if local_shadows_fn {
                 resolved_fn_qname.clone().or_else(|| resolve_call_qname(func, ctx, top_level))
                     .and_then(|q| crate::borrow_params::mask(&q))
@@ -10488,6 +10510,11 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 } else {
                     let slots: Vec<TypedExp> = slots.into_iter().map(Option::unwrap).collect();
                     let borrowed = |i: usize| callee_mask.is_some_and(|m| m.get(i) == Some(&true));
+                    let callee_q = if callee_mask.is_some() {
+                        resolved_fn_qname.clone().or_else(|| resolve_call_qname(func, ctx, top_level))
+                    } else {
+                        None
+                    };
                     (0..slots.len())
                         .map(|i| {
                             if borrowed(i) {
@@ -10495,6 +10522,8 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                                     .filter(|(j, e)| *j != i && !(borrowed(*j) && matches!(e, TypedExp::Var { .. })))
                                     .map(|(_, e)| e)
                                     .collect();
+                                ctx.fn_slot = callee_q.as_deref()
+                                    .and_then(|q| crate::borrow_params::slot_mask(q, &formals[i].0));
                                 emit_borrowed_arg(&slots[i], &others, formal_at(i).as_ref(), ctx, top_level)
                             } else {
                                 emit_call_arg_with_formal(&slots[i], formal_at(i).as_ref(), is_const, ctx, top_level)
@@ -11040,7 +11069,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
             emit_reduction(func, body, iterators, *iter_kind, ty, is_const, ctx, top_level),
 
         TypedExp::PartEval { func, args, named_args, sig_ty, callee_is_local, .. } =>
-            emit_parteval(func, args, named_args, sig_ty, *callee_is_local, fn_ref_here, is_const, ctx, top_level),
+            emit_parteval(func, args, named_args, sig_ty, *callee_is_local, fn_ref_here, slot_here, is_const, ctx, top_level),
 
         TypedExp::Todo(s) => format!("todo!(/*{}*/)", s.chars().take(60).collect::<String>()),
     }
@@ -11074,10 +11103,12 @@ fn emit_parteval<'a>(
     sig_ty: &Ty,
     callee_is_local: bool,
     by_ref: bool,
+    slot: Option<&'static [bool]>,
     is_const: bool,
     ctx: &mut GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> String {
+    let slot = slot.filter(|_| by_ref);
     // A builtin whose call form lowers to a method/index (no nameable `fn`)
     // must reference its runtime free-function backing (see `builtin_value_fn`)
     // when the closure body calls it — `arrayGet` → `metamodelica::arrayGet`.
@@ -11204,6 +11235,15 @@ fn emit_parteval<'a>(
         (true, Some(Ty::Function { .. })) => "&*",
         (true, _) => "&",
     };
+    let pe_q = if callee_is_local { None } else { resolve_call_qname(func, ctx, top_level) };
+    let captured = |i: usize, cap_name: &str| -> String {
+        let sl = pe_q.as_deref().and_then(|q| crate::borrow_params::slot_mask(q, &formal_names[i]));
+        match (amp(i), sl, formal_tys.get(i)) {
+            ("&*", Some(sl), Some(Ty::Function { inputs, .. })) => slot_wrapper(cap_name, None, sl, inputs.len()),
+            ("", ..) => format!("{cap_name}.clone()"),
+            (a, ..) => format!("{a}{cap_name}"),
+        }
+    };
     for (i, formal_name) in formal_names.iter().enumerate() {
         let formal_ty = formal_tys.get(i).cloned();
         let cap_annot = formal_ty.as_ref().and_then(|t| dyn_fn_annot(t, ctx));
@@ -11218,19 +11258,25 @@ fn emit_parteval<'a>(
             let v = emit_call_arg_with_formal(&args[i], formal_ty.as_ref(), is_const, ctx, top_level);
             let cap_name = format!("__pe_b{i}");
             captures.push(cap_decl(&cap_name, &v));
-            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("{}{cap_name}", amp(i)) });
+            call_arg_exprs.push(captured(i, &cap_name));
         } else if let Some(named_expr) = named_map.remove(formal_name.as_str()) {
             // Named binding (looked up by formal name).
             let v = emit_call_arg_with_formal(named_expr, formal_ty.as_ref(), is_const, ctx, top_level);
             let cap_name = format!("__pe_b{i}");
             captures.push(cap_decl(&cap_name, &v));
-            call_arg_exprs.push(if amp(i).is_empty() { format!("{cap_name}.clone()") } else { format!("{}{cap_name}", amp(i)) });
+            call_arg_exprs.push(captured(i, &cap_name));
         } else {
             // Unbound — becomes a closure parameter.
             let p = format!("__pe_a{i}");
+            let by_slot = slot.is_some_and(|m| m.get(closure_params.len()) == Some(&true));
             closure_params.push(p.clone());
             closure_param_tys.push(formal_tys.get(i).cloned().unwrap_or(Ty::Unknown));
-            call_arg_exprs.push(format!("{}{p}", amp(i)));
+            call_arg_exprs.push(match (by_slot, amp(i)) {
+                (true, "&") => p,
+                (true, "&*") => captured(i, &p),
+                (true, _) => format!("::std::clone::Clone::clone({p})"),
+                (false, a) => format!("{a}{p}"),
+            });
         }
     }
 
@@ -11298,6 +11344,9 @@ fn emit_parteval<'a>(
         .collect();
     let out_ty_str = if ty_mentions_typevar(&fn_output) { "_".to_owned() } else { fmt_param_ty(&fn_output, ctx) };
     if by_ref && ctx.gated_feature_for_path(&func_str).is_none() {
+        if slot.is_some() {
+            ctx.fn_slot_used = true;
+        }
         return format!("&({closure_block})");
     }
     let cast = format!("(std::sync::Arc::new({closure_block}) as std::sync::Arc<dyn ::std::ops::Fn({}) -> Result<{out_ty_str}> + 'static>)",
@@ -12012,8 +12061,9 @@ fn emit_borrowed_arg<'a>(
     ctx: &mut GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> String {
+    let slot = std::mem::take(&mut ctx.fn_slot);
     if matches!(formal_ty, Some(Ty::Function { .. })) {
-        return emit_fn_ref_arg(arg, formal_ty, ctx, top_level);
+        return emit_fn_ref_arg(arg, formal_ty, slot, ctx, top_level);
     }
     if let TypedExp::Var { name, segments, .. } = arg
         && segments.len() <= 1 && !name.contains('.')
@@ -12065,18 +12115,33 @@ fn emit_borrowed_arg<'a>(
 fn emit_fn_ref_arg<'a>(
     arg: &TypedExp,
     formal_ty: Option<&Ty>,
+    slot: Option<&'static [bool]>,
     ctx: &mut GenCtx,
     top_level: &'a BTreeMap<String, NameNode<'a>>,
 ) -> String {
+    let slot = slot.filter(|m| m.contains(&true));
+    let n_inputs = match formal_ty {
+        Some(Ty::Function { inputs, .. }) => inputs.len(),
+        _ => 0,
+    };
     if let TypedExp::Var { name, segments, .. } = arg
         && segments.len() <= 1
         && !name.contains('.')
     {
         if ctx.borrowed_params.contains(name.as_str()) {
-            return escape_ident(name);
+            let own = crate::borrow_params::slot_mask(&ctx.current_fn_qname, name);
+            let flags = |m: Option<&[bool]>| (0..n_inputs).map(|j| m.is_some_and(|m| m.get(j) == Some(&true))).collect::<Vec<_>>();
+            return if flags(own) == flags(slot) {
+                escape_ident(name)
+            } else {
+                slot_wrapper(&escape_ident(name), own, slot.unwrap_or(&[]), n_inputs)
+            };
         }
         if ctx.fn_input_names.contains(name.as_str()) && ctx.place_mode.get(name.as_str()) == Some(&PlaceMode::Owned) {
-            return format!("&*{}", escape_ident(name));
+            return match slot {
+                Some(sl) => slot_wrapper(&escape_ident(name), None, sl, n_inputs),
+                None => format!("&*{}", escape_ident(name)),
+            };
         }
     }
     // A branch-local `&closure` would not outlive its branch: box the branches.
@@ -12090,23 +12155,74 @@ fn emit_fn_ref_arg<'a>(
             out.push_str(&format!(" else if ({ec}) {{ {eb} }}"));
         }
         let e = emit_call_arg_with_formal(else_, formal_ty, false, ctx, top_level);
-        return format!("{out} else {{ {e} }})");
+        let r = format!("{out} else {{ {e} }})");
+        return match slot {
+            Some(sl) => slot_wrapper(&format!("({r})"), None, sl, n_inputs),
+            None => r,
+        };
     }
     ctx.fn_value_ref = true;
+    ctx.fn_slot = slot;
+    ctx.fn_slot_used = false;
     let r = emit_call_arg_with_formal(arg, formal_ty, false, ctx, top_level);
     ctx.fn_value_ref = false;
-    if r.starts_with('&') { r } else { format!("&*({r})") }
+    ctx.fn_slot = None;
+    let used = std::mem::take(&mut ctx.fn_slot_used);
+    let r = if r.starts_with('&') { r } else { format!("&*({r})") };
+    match slot {
+        Some(sl) if !used => {
+            let callee = r.strip_prefix("&*(").and_then(|x| x.strip_suffix(".clone())"))
+                .filter(|x| x.chars().all(|c| c.is_alphanumeric() || c == '_'))
+                .map_or_else(|| format!("({r})"), |x| x.to_owned());
+            slot_wrapper(&callee, None, sl, n_inputs)
+        }
+        _ => r,
+    }
 }
 
-/// A closure with the by-value signature of the function at `path`, which
-/// takes the parameters flagged in `mask` by reference.
-fn borrow_adapter(path: &str, mask: &[bool], inputs: &[FunctionInput], input_tys: &[String], wrap_ok: bool) -> String {
-    let params: Vec<String> = input_tys.iter().enumerate().map(|(i, t)| format!("__a{i}: {t}")).collect();
+/// `arc` (a `&Arc<dyn Fn>`) as the `&dyn Fn` the callback input `formal` of
+/// `callee_q` takes.
+fn arc_callback_arg(arc: &str, callee_q: Option<&str>, formal: &FunctionInput) -> String {
+    match (callee_q.and_then(|q| crate::borrow_params::slot_mask(q, &formal.name)), &formal.ty) {
+        (Some(sl), Ty::Function { inputs, .. }) => {
+            let holes = vec!["_"; inputs.len()].join(", ");
+            let r = format!("metamodelica::arc_ref::<dyn ::std::ops::Fn({holes}) -> _>({arc})");
+            slot_wrapper(&r, None, sl, inputs.len())
+        }
+        _ => format!("metamodelica::arc_ref({arc})"),
+    }
+}
+
+/// A closure for a callback slot taking the inputs flagged in `slot` by
+/// reference, calling `callee`, which takes those flagged in `own` by reference.
+fn slot_wrapper(callee: &str, own: Option<&[bool]>, slot: &[bool], n: usize) -> String {
+    let params: Vec<String> = (0..n).map(|j| format!("__c{j}")).collect();
+    let args: Vec<String> = (0..n)
+        .map(|j| match (slot.get(j) == Some(&true), own.is_some_and(|m| m.get(j) == Some(&true))) {
+            (true, false) => format!("::std::clone::Clone::clone(__c{j})"),
+            (false, true) => format!("&__c{j}"),
+            _ => format!("__c{j}"),
+        })
+        .collect();
+    format!("&|{}| {callee}({})", params.join(", "), args.join(", "))
+}
+
+/// A closure for a callback slot that passes the inputs flagged in `slot` by
+/// reference, calling the function at `path`, which takes the parameters
+/// flagged in `mask` by reference.
+fn borrow_adapter(path: &str, callee_q: Option<&str>, mask: &[bool], inputs: &[FunctionInput], input_tys: &[String], wrap_ok: bool, slot: &[bool]) -> String {
+    let in_slot = |i: usize| slot.get(i) == Some(&true);
+    let params: Vec<String> = input_tys.iter().enumerate()
+        .map(|(i, t)| if in_slot(i) { format!("__a{i}: &{t}") } else { format!("__a{i}: {t}") })
+        .collect();
     let args: Vec<String> = (0..input_tys.len())
-        .map(|i| match (mask.get(i) == Some(&true), inputs.get(i).map(|inp| &inp.ty)) {
-            (false, _) => format!("__a{i}"),
-            (true, Some(Ty::Function { .. })) => format!("metamodelica::arc_ref(&__a{i})"),
-            (true, _) => format!("&__a{i}"),
+        .map(|i| match (in_slot(i), mask.get(i) == Some(&true), inputs.get(i)) {
+            (s, true, Some(inp @ FunctionInput { ty: Ty::Function { .. }, .. })) =>
+                arc_callback_arg(&format!("{}__a{i}", if s { "" } else { "&" }), callee_q, inp),
+            (true, true, _) => format!("__a{i}"),
+            (true, false, _) => format!("::std::clone::Clone::clone(__a{i})"),
+            (false, false, _) => format!("__a{i}"),
+            (false, true, _) => format!("&__a{i}"),
         })
         .collect();
     let call = format!("{path}({})", args.join(", "));
@@ -13878,9 +13994,11 @@ fn emit_call_arg_with_formal<'a>(
         _ => None,
     };
     let by_ref = std::mem::take(&mut ctx.fn_value_ref);
+    let slot = std::mem::take(&mut ctx.fn_slot);
     let raw = if !needs_first {
         let raw = ctx.with_arg_fn_formal(arg_fn_formal.clone(), |ctx| {
             ctx.fn_value_ref = by_ref && matches!(arg, TypedExp::Var { .. } | TypedExp::PartEval { .. });
+            ctx.fn_slot = slot.filter(|_| ctx.fn_value_ref);
             emit_cloned_call_arg(arg, is_const, ctx, top_level)
         });
         if by_ref && raw.starts_with('&') {
@@ -14020,8 +14138,11 @@ fn emit_call_arg_with_formal<'a>(
                 }).collect();
                 let _ = output;
                 let bmask = if is_user_fn { user_q.as_deref().and_then(crate::borrow_params::mask) } else { None };
-                let fnptr = if let Some(m) = bmask {
-                    borrow_adapter(path, m, inputs, &in_tys, true)
+                let fnptr = if let Some(sl) = slot.filter(|_| by_ref) {
+                    ctx.fn_slot_used = true;
+                    borrow_adapter(path, user_q.as_deref().filter(|_| is_user_fn), bmask.unwrap_or(&[]), inputs, &in_tys, true, sl)
+                } else if let Some(m) = bmask {
+                    borrow_adapter(path, user_q.as_deref().filter(|_| is_user_fn), m, inputs, &in_tys, true, &[])
                 } else if in_tys.is_empty() {
                     format!("fnptr!({path})")
                 } else {
