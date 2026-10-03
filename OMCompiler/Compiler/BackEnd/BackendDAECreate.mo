@@ -145,6 +145,7 @@ algorithm
       (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
     end if;
     vars := BackendVariable.listVar(varlst);
+    vars := setReinitStateSelect(reqns, vars);
 
     // handle alias equations
     (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
@@ -2551,6 +2552,42 @@ algorithm
   end matchcontinue;
 end lowerWhenEqn;
 
+protected function setReinitStateSelect
+  "MLS (version 3.6) section 3.7.5: [The first argument of `reinit`] is
+   implicitly defined to have `StateSelect.always`.
+   https://github.com/OpenModelica/OpenModelica/issues/13247"
+  input list<BackendDAE.Equation> eqns;
+  input output BackendDAE.Variables vars;
+protected
+  Option<BackendDAE.WhenEquation> when_eq;
+  list<BackendDAE.WhenOperator> ops;
+  Option<list<BackendDAE.Var>> var_opt;
+algorithm
+  for eq in eqns loop
+    when_eq := match eq
+      case BackendDAE.WHEN_EQUATION() then SOME(eq.whenEquation);
+      else NONE();
+    end match;
+    while isSome(when_eq) loop
+      SOME(BackendDAE.WHEN_STMTS(whenStmtLst = ops, elsewhenPart = when_eq)) := when_eq;
+      for op in ops loop
+        () := match op
+          case BackendDAE.REINIT()
+            algorithm
+              var_opt := BackendVariable.getVarTryHard(op.stateVar, vars);
+              if isSome(var_opt) then
+                for var in Util.getOption(var_opt) loop
+                  vars := BackendVariable.addVar(BackendVariable.setVarStateSelect(var, DAE.StateSelect.ALWAYS()), vars);
+                end for;
+              end if;
+            then ();
+          else ();
+        end match;
+      end for;
+    end while;
+  end for;
+end setReinitStateSelect;
+
 protected function lowerWhenEqn2
 "Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
@@ -2584,8 +2621,6 @@ algorithm
       BackendDAE.Equation eq;
       BackendDAE.WhenEquation whenEq;
       BackendDAE.WhenOperator whenOp;
-      Option<list<BackendDAE.Var>> var_opt;
-      BackendDAE.Variables vars;
 
     case {} then (iEquationLst, iREquationLst);
     case DAE.EQUEQUATION(cr1 = cr, cr2 = cr2, source = source)::xs
@@ -2710,20 +2745,6 @@ algorithm
         whenOp := BackendDAE.REINIT(cr, e, source);
         whenEq := BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq := BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-
-        // MLS (version 3.6) section 3.7.5:
-        // [The first argument of `reinit`] is implicitly defined to have `StateSelect.always`.
-        // https://github.com/OpenModelica/OpenModelica/issues/13247
-        vars := BackendVariable.listVar(outVar_lst);
-        var_opt := BackendVariable.getVarTryHard(cr, vars);
-        if isSome(var_opt) then
-          for var in Util.getOption(var_opt) loop
-            var := BackendVariable.setVarStateSelect(var, DAE.StateSelect.ALWAYS());
-            vars := BackendVariable.addVar(var, vars);
-          end for;
-        end if;
-        outVar_lst := BackendVariable.varList(vars);
-
         (eqnl, reqnl, outVar_lst) := lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst, outVar_lst);
       then
         (eqnl, reqnl);
