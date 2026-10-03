@@ -2015,6 +2015,7 @@ protected
   list<BackendDAE.Var> varLst;
   list<CommonSubExp> cseLst2, cseLst3, shortenPathsCSE;
   AvlSetInt.Tree varIdcsSet;
+  array<Integer> eqMap, varMap;
 algorithm
   try
     range := List.intRange(arrayLength(mIn));
@@ -2040,9 +2041,11 @@ algorithm
     partitions := ResolveLoops.partitionBipartiteGraph(m, mT);
     partitions := List.filterOnFalse(partitions,listEmpty);
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
-    cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
+    eqMap := listArray(eqIdcs);
+    varMap := listArray(varIdcs);
+    cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqMap, varMap=varMap), {});
 
-    shortenPathsCSE := shortenPaths(partitions, m, mT, vars, eqs, listArray(eqIdcs), listArray(varIdcs), {}, isInitial);
+    shortenPathsCSE := shortenPaths(partitions, m, mT, vars, eqs, eqMap, varMap, {}, isInitial);
 
     // check for CSE of length 2
       //print("CHECK FOR CSE 3\n");
@@ -2066,7 +2069,7 @@ algorithm
         //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE3_"+intString(arrayLength(mIn)));
     partitions := ResolveLoops.partitionBipartiteGraph(m, mT);
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
-    cseLst3 := List.fold(partitions, function getCSE3(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
+    cseLst3 := List.fold(partitions, function getCSE3(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=listArray(eqIdcs), varMap=listArray(varIdcs)), {});
     cseOut := listAppend(cseLst2, listAppend(cseLst3,shortenPathsCSE));
         //print("the cses : \n"+stringDelimitList(List.map(cseOut, printCSE), "\n")+"\n");
   else
@@ -2153,8 +2156,8 @@ author:Waurich TUD 2014-11"
   input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.Variables vars;  // for partition
   input BackendDAE.EquationArray eqs;  // for partition
-  input list<Integer> eqMap;
-  input list<Integer> varMap;
+  input array<Integer> eqMap;
+  input array<Integer> varMap;
   input list<CommonSubExp> cseIn;
   output list<CommonSubExp> cseOut;
 algorithm
@@ -2193,10 +2196,10 @@ algorithm
          //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
          //print("is equal\n");
       // build CSE
-      sharedVarIdcs := List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
+      sharedVarIdcs := List.map1(sharedVarIdcs, Array.getIndexFirst, varMap);
       varIdcs2 := listAppend(varIdcs1, varIdcs2);
-      varIdcs2 := List.map1(varIdcs2, List.getIndexFirst, varMap);
-      eqIdcs := List.map1(partition, List.getIndexFirst, eqMap);
+      varIdcs2 := List.map1(varIdcs2, Array.getIndexFirst, varMap);
+      eqIdcs := List.map1(partition, Array.getIndexFirst, eqMap);
     then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseIn;
   else cseIn;
   end matchcontinue;
@@ -2209,8 +2212,8 @@ author:Waurich TUD 2014-11"
   input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.Variables vars;  // for partition
   input BackendDAE.EquationArray eqs;  // for partition
-  input list<Integer> eqMap;
-  input list<Integer> varMap;
+  input array<Integer> eqMap;
+  input array<Integer> varMap;
   input list<CommonSubExp> cseIn;
   output list<CommonSubExp> cseOut;
 algorithm
@@ -2223,7 +2226,6 @@ algorithm
     BackendDAE.Equation eq1, eq2;
     BackendDAE.Var var1, var2;
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
-    array<Integer> varMapArr, eqMapArr;
     list<CommonSubExp> cseLst;
   case _
     algorithm
@@ -2258,14 +2260,10 @@ algorithm
                //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
                //print("is equal\n");
             // build CSE
-            eqMapArr := listArray(eqMap);
-            varMapArr := listArray(varMap);
-            sharedVarIdcs := list(arrayGet(varMapArr, i) for i in sharedVarIdcs);
+            sharedVarIdcs := list(arrayGet(varMap, i) for i in sharedVarIdcs);
             varIdcs2 := listAppend(varIdcs1, varIdcs2);
-            varIdcs2 := list(arrayGet(varMapArr, i) for i in varIdcs2);
-            eqIdcs := list(arrayGet(eqMapArr,i) for i in loop1);
-            GCExt.free(eqMapArr);
-            GCExt.free(varMapArr);
+            varIdcs2 := list(arrayGet(varMap, i) for i in varIdcs2);
+            eqIdcs := list(arrayGet(eqMap,i) for i in loop1);
             cseLst := ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseLst;
           end if;
       end for;
