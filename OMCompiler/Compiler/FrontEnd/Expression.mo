@@ -9082,9 +9082,10 @@ algorithm
       Absyn.Path path;
       DAE.Function func;
     case DAE.CALL(path=path)
-      algorithm
-        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
-         then listEmpty(DAEUtil.getFunctionElements(func));
+      then match AvlTreePathFunction.getOpt(funcsIn,path)
+        case SOME(SOME(func)) then listEmpty(DAEUtil.getFunctionElements(func));
+        else false;
+      end match;
     else false;
   end match;
 end isRecordCall;
