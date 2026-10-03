@@ -203,6 +203,12 @@ impl SimEngine for InWasmEngine {
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
     }
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        Some(String::from_utf8_lossy(crate::nls::last_suppressed_error()).into_owned())
+    }
+    fn clear_suppressed_error(&mut self) {
+        crate::nls::clear_suppressed_error();
+    }
     fn set_rhs_final(&mut self, final_eval: bool) {
         unsafe { rt_host_rhs_final(final_eval as i32) };
     }

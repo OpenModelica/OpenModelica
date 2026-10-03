@@ -24,6 +24,8 @@
  * OSMC-PL.
  *
  */
+#include <float.h>
+#include <math.h>
 #include <string.h>
 #include <setjmp.h>
 #include <time.h>
@@ -129,6 +131,7 @@ void  DDASKR(
 );
 
 static int continue_DASSL(int* idid, double* tolarence);
+static int dasslStuck(DASSL_DATA* dasslData, double t);
 
 /* function for calculating state values on residual form */
 static int functionODE_residual(double *t, double *y, double *yd, double* cj,
@@ -218,6 +221,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   assertStreamPrint(threadData, 0 != dasslData->info,"out of memory");
 
   dasslData->idid = 0;
+  dasslData->tinySteps = 0;
 
   dasslData->ysave = (double*) malloc(N*sizeof(double));
   dasslData->delta_hh = (double*) malloc(N*sizeof(double));
@@ -646,7 +650,12 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         warningStreamPrint(OMC_LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
         break;
       }
-      else if(dasslData->idid == 5)
+      else if(dasslStuck(dasslData, solverInfo->currentTime))
+      {
+        retVal = -1;
+        break;
+      }
+      if(dasslData->idid == 5)
       {
         threadData->currentErrorStage = ERROR_EVENTSEARCH;
       }
@@ -725,6 +734,34 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   return retVal;
+}
+
+#define DASSL_STUCK_STEPS 1000
+
+/* A run of accepted steps that are each only a few hundred ulp of time long.
+ * DASKR accepts them, so without this the simulation never ends. */
+static int dasslStuck(DASSL_DATA* dasslData, double t)
+{
+  const double tiny = 1000 * DBL_EPSILON * fmax(fabs(t), 1.0);
+  const char *suppressed;
+
+  if (dasslData->rwork[6] >= tiny) {
+    dasslData->tinySteps = 0;
+    return 0;
+  }
+  if (0 == dasslData->tinySteps++) {
+    omc_clear_last_suppressed_error();
+  }
+  if (dasslData->tinySteps < DASSL_STUCK_STEPS) {
+    return 0;
+  }
+  errorStreamPrint(OMC_LOG_STDOUT, 1, "The integrator is stuck at time %.15g: its last %d steps were each shorter than %g, too short to move time forward. The model is probably singular or discontinuous here.", t, DASSL_STUCK_STEPS, tiny);
+  suppressed = omc_last_suppressed_error();
+  if (suppressed[0]) {
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "The last error a nonlinear solver recovered from: %s", suppressed);
+  }
+  messageClose(OMC_LOG_STDOUT);
+  return 1;
 }
 
 static int continue_DASSL(int* idid, double* atol)

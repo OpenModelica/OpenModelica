@@ -634,6 +634,11 @@ pub trait SimEngine {
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
+    /// C's `omc_last_suppressed_error`, for the stuck-integrator report.
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        None
+    }
+    fn clear_suppressed_error(&mut self) {}
     /// C's `RHSFinalFlag` (`dassl.c`): 0 while DASKR evaluates the residual, 1
     /// while the accepted step's outputs are evaluated, for `external "C"` to read.
     fn set_rhs_final(&mut self, _final_eval: bool) {}
@@ -5698,6 +5703,47 @@ impl Drop for ResCtxGuard {
     }
 }
 
+/// C's `dasslStuck` (`dassl.c`).
+#[derive(Default)]
+struct TinySteps(u32);
+
+const DASSL_STUCK_STEPS: u32 = 1000;
+
+impl TinySteps {
+    /// Reaches the engine through `RES_CTX`, so only while that is installed.
+    fn stuck(&mut self, h: f64, t: f64) -> bool {
+        let tiny = 1000.0 * f64::EPSILON * t.abs().max(1.0);
+        if h >= tiny {
+            self.0 = 0;
+            return false;
+        }
+        self.0 += 1;
+        let ctx = RES_CTX.load(Ordering::Relaxed);
+        let engine = (!ctx.is_null()).then(|| unsafe { &mut *(*ctx).engine });
+        if self.0 == 1 {
+            if let Some(e) = engine {
+                e.clear_suppressed_error();
+            }
+            return false;
+        }
+        if self.0 < DASSL_STUCK_STEPS {
+            return false;
+        }
+        omclog::error!(
+            omclog::STDOUT,
+            true,
+            "The integrator is stuck at time {}: its last {DASSL_STUCK_STEPS} steps were each shorter than {}, too short to move time forward. The model is probably singular or discontinuous here.",
+            format_g(t, 15),
+            format_g(tiny, 6),
+        );
+        if let Some(msg) = engine.and_then(|e| e.last_suppressed_error()).filter(|m| !m.is_empty()) {
+            omclog::info!(omclog::STDOUT, false, "The last error a nonlinear solver recovered from: {msg}");
+        }
+        omclog::close(omclog::STDOUT);
+        true
+    }
+}
+
 /// DASSL residual `G(t, y, y') = y' - f(t, y)`. Writes `t` and the candidate
 /// states `y` into `SimData`, calls the wasm `functionODE` to get `f` into the
 /// derivative slots, then `delta := y' - f`. A wasm trap sets `IRES = -2`
@@ -6552,6 +6598,7 @@ struct DasslDriver {
     /// DASKR continuations spent on the in-progress interval (persisted so the
     /// runaway cap bounds one interval across yields).
     work_retries: i32,
+    tiny_steps: TinySteps,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
     /// C's degenerate first `-noEquidistantTimeGrid` iteration has been emitted.
@@ -6684,6 +6731,7 @@ impl DasslDriver {
             step_emit: StepEmit::new(),
             no_grid_primed: false,
             work_retries: 0,
+            tiny_steps: TinySteps::default(),
             pending_terminate,
             finished: false,
             jac_a,
@@ -6927,6 +6975,14 @@ impl Driver for DasslDriver {
                 log_solver_finished(self.t);
                 return Err(err);
             }
+            if self.tiny_steps.stuck(self.rwork[6], self.t) {
+                for i in 0..n_states {
+                    write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                }
+                solver_fail_store::set(self.t);
+                log_solver_finished(self.t);
+                return Err(SOLVER_FAILED_ERR);
+            }
             // IDID=1: one internal step with TOUT still ahead. C's `dassl_step` loops
             // on that until the interval is covered, and breaks out per step only for
             // `-noEquidistantTimeGrid`, where a step is an output point of its own.
@@ -7085,6 +7141,7 @@ struct DaskrState {
     past: DaskrCounters,
     /// The in-progress target's DASKR continuation count (IDID=-1 work quota).
     ev_retries: i32,
+    tiny_steps: TinySteps,
     /// The "A" Jacobian's sparsity, coloring and symbolic columns; `None` ⇒ daskr's
     /// own numerical Jacobian.
     jac_a: Option<JacAInfo>,
@@ -7140,6 +7197,7 @@ impl DaskrState {
             idid: 0,
             past: DaskrCounters::default(),
             ev_retries: 0,
+            tiny_steps: TinySteps::default(),
             jac_a,
             jac_method,
         }
@@ -7187,6 +7245,10 @@ impl DaskrState {
         }
         if self.idid < 0 {
             return Progress::Failed(report_dassl_failure(self.idid, *t));
+        }
+        if self.tiny_steps.stuck(self.rwork[6], *t) {
+            solver_fail_store::set(*t);
+            return Progress::Failed(SOLVER_FAILED_ERR);
         }
         // IDID=5: stopped at a zero-crossing root; IDID=1: intermediate-output step.
         match self.idid {

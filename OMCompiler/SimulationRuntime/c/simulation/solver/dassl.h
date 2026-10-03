@@ -48,6 +48,7 @@ typedef struct DASSL_DATA{
   int* info;
 
   int idid;
+  int tinySteps;                /* consecutive steps too short to move time */
   int* ipar;
   double** rpar;
   /* size of work arrays for DASSL */

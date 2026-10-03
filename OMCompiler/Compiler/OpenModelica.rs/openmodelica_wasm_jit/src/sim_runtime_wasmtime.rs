@@ -1757,7 +1757,7 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         funcs: Default::default(),
         funcs2: Default::default(),
         absent: Default::default(),
-        addrs: [None; 3],
+        addrs: [None; 4],
     };
     Ok((Box::new(engine), sim_data))
 }
@@ -1828,7 +1828,7 @@ struct WasmtimeEngine {
     /// Optional entry points the model does not export.
     absent: foldhash::HashSet<String>,
     /// The runtime's fixed addresses, by [`RtAddr`].
-    addrs: [Option<u32>; 3],
+    addrs: [Option<u32>; 4],
 }
 
 #[derive(Clone, Copy)]
@@ -1836,6 +1836,7 @@ enum RtAddr {
     Context,
     ErrorStage,
     NoThrowDivZero,
+    SuppressedError,
 }
 
 impl WasmtimeEngine {
@@ -1856,6 +1857,7 @@ impl WasmtimeEngine {
             RtAddr::Context => "rt_context_addr",
             RtAddr::ErrorStage => "rt_error_stage_addr",
             RtAddr::NoThrowDivZero => "rt_no_throw_div_zero_addr",
+            RtAddr::SuppressedError => "rt_suppressed_error_addr",
         };
         let a = self
             .rt_inst
@@ -1976,6 +1978,23 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     }
     fn no_throw_div_zero_addr(&mut self) -> u32 {
         self.rt_addr(RtAddr::NoThrowDivZero)
+    }
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        let addr = self.rt_addr(RtAddr::SuppressedError);
+        if addr == 0 {
+            return None;
+        }
+        let mut len = [0u8; 4];
+        self.read_bytes(addr, &mut len).ok()?;
+        let mut text = vec![0u8; u32::from_le_bytes(len) as usize];
+        self.read_bytes(addr + 4, &mut text).ok()?;
+        Some(String::from_utf8_lossy(&text).into_owned())
+    }
+    fn clear_suppressed_error(&mut self) {
+        let addr = self.rt_addr(RtAddr::SuppressedError);
+        if addr != 0 {
+            let _ = self.write_bytes(addr, &[0; 4]);
+        }
     }
     fn clean_nls_history(&mut self, time: f64) {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
