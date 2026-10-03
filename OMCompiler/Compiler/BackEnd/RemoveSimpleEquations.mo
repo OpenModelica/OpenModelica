@@ -1876,36 +1876,46 @@ protected function traversingTimeVarsFinder "author: Frenkel 2012-12"
   output Boolean cont;
   output tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> outTuple;
 algorithm
-  (outExp,cont,outTuple) := matchcontinue (inExp,inTuple)
+  (outExp,cont,outTuple) := match (inExp,inTuple)
     local
-      Boolean b, b1, b2;
+      Boolean b, b1, b2, c, topLevelInput;
       BackendDAE.Variables vars, globalKnownVars;
       DAE.ComponentRef cr;
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
+      tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> tpl;
 
     case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, globalKnownVars, b1, b2, ilst))
     then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
     case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) algorithm
-      (varlst, _::_):= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
-      false := List.none(varlst, toplevelInputOrUnfixed);
-    then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+      try
+        (varlst, _::_):= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
+        topLevelInput := not List.none(varlst, toplevelInputOrUnfixed);
+      else
+        topLevelInput := false;
+      end try;
+      if topLevelInput then
+        (c, tpl) := (false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+      else
+        // var
+        try
+          (_::_, vlst):= BackendVariable.getVar(cr, vars);
+          (c, tpl) := (true, (b, vars, globalKnownVars, b1, b2, listAppend(ilst, vlst)));
+        else
+          (c, tpl) := (not b, inTuple);
+        end try;
+      end if;
+    then (inExp, c, tpl);
 
     case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
     case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst) );
     case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
     case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
-    // var
-    case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) algorithm
-      (_::_, vlst):= BackendVariable.getVar(cr, vars);
-      vlst := listAppend(ilst, vlst);
-    then (inExp, true, (b, vars, globalKnownVars, b1, b2, vlst));
-
     case (_, (b, _, _, _, _, _))
     then (inExp, not b, inTuple);
-  end matchcontinue;
+  end match;
 end traversingTimeVarsFinder;
 
 protected function solveTimeIndependentAcausal "author: Frenkel TUD 2012-12
@@ -4420,23 +4430,31 @@ protected function traverserExpUnreplaceable
   output DAE.Exp outExp;
   output HashSet.HashSet outHt;
 algorithm
-  (outExp,outHt) := matchcontinue e
+  (outExp,outHt) := match e
     local
       DAE.ComponentRef cr;
       list<DAE.Exp> explst;
       list<DAE.ComponentRef> crlst;
     case DAE.CREF(componentRef = cr)
       algorithm
-        outHt := traverseCrefUnreplaceable(cr, NONE(), unReplaceable);
+        try
+          outHt := traverseCrefUnreplaceable(cr, NONE(), unReplaceable);
+        else
+          outHt := unReplaceable;
+        end try;
       then (e, outHt);
-     case DAE.CALL(path=Absyn.IDENT(name = "pre"), expLst=explst)
+    case DAE.CALL(path=Absyn.IDENT(name = "pre"), expLst=explst)
       algorithm
-        crlst := List.flatten(List.map(explst, Expression.extractCrefsFromExp));
-        crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
-        outHt := List.fold(crlst, BaseHashSet.add, unReplaceable);
+        try
+          crlst := List.flatten(List.map(explst, Expression.extractCrefsFromExp));
+          crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
+          outHt := List.fold(crlst, BaseHashSet.add, unReplaceable);
+        else
+          outHt := unReplaceable;
+        end try;
       then (e, outHt);
     else (e,unReplaceable);
-  end matchcontinue;
+  end match;
 end traverserExpUnreplaceable;
 
 protected function traverseCrefUnreplaceable
