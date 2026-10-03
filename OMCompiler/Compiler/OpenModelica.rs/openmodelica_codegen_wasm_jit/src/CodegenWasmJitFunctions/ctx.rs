@@ -138,6 +138,7 @@ impl ProfPlan {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct SimCtx {
     /// wasm local index holding the `SimData` base pointer.
     pub(crate) data_local: u32,
@@ -827,16 +828,14 @@ impl<'a> FnCtx<'a> {
         attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
+        let mut stores: std::collections::BTreeMap<u32, Vec<u8>> = std::collections::BTreeMap::new();
         for (off, value) in defaults {
-            self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::F64Const((*value).into()));
-            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+            stores.insert(*off, value.to_le_bytes().to_vec());
         }
         for (off, value) in int_defaults {
-            self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::I32Const(*value));
-            self.emit(we::Instruction::I32Store(mem_arg(*off, 2)));
+            stores.insert(*off, value.to_le_bytes().to_vec());
         }
+        emit_sim_const_stores(self, &stores)?;
         if attrs.is_empty() {
             return Ok(());
         }
@@ -930,13 +929,8 @@ impl<'a> FnCtx<'a> {
     /// Store each real variable's declared `start` value in its start attribute
     /// slot at `off`.
     pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)]) -> Result<()> {
-        let data = self.sim()?.data_local;
-        for (value, off) in starts {
-            self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::F64Const((*value).into()));
-            self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
-        }
-        Ok(())
+        let stores = starts.iter().map(|(value, off)| (*off, value.to_le_bytes().to_vec())).collect();
+        emit_sim_const_stores(self, &stores)
     }
 
     /// Emit `functionZeroCrossings`: store each crossing `k`'s g-value as f64 at
@@ -1205,4 +1199,113 @@ impl<'a> FnCtx<'a> {
 fn set_dim_index() -> Option<u32> {
     static INDEX: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
     *INDEX.get_or_init(|| rt_index("rt_array_set_dim").ok())
+}
+
+/// Functions split out of an equation body, called through a module table of
+/// their own, so a large system's equations neither exceed wasmtime's function
+/// body limit nor get compiled once per entry point evaluating them.
+struct Outlined {
+    types: [u32; 2],
+    table: u32,
+    fns: Vec<(we::Function, u32)>,
+    by_body: HashMap<Vec<u8>, u32>,
+}
+
+thread_local! {
+    static OUTLINED: std::cell::RefCell<Option<Outlined>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Collects outlined functions for table `table` while alive; `types` are the
+/// `(SimData*) -> ()` and `(SimData*, i32) -> ()` type indices.
+pub(crate) struct OutlineScope;
+
+impl OutlineScope {
+    pub(crate) fn begin(types: [u32; 2], table: u32) -> OutlineScope {
+        OUTLINED.with(|o| *o.borrow_mut() = Some(Outlined { types, table, fns: Vec::new(), by_body: HashMap::default() }));
+        OutlineScope
+    }
+
+    /// The outlined functions and their types, in table slot order; lowering after
+    /// this inlines again.
+    pub(crate) fn finish(&self) -> Vec<(we::Function, u32)> {
+        OUTLINED.with(|o| o.borrow_mut().take().map(|o| o.fns).unwrap_or_default())
+    }
+}
+
+impl Drop for OutlineScope {
+    fn drop(&mut self) {
+        OUTLINED.with(|o| *o.borrow_mut() = None);
+    }
+}
+
+fn outlining() -> bool {
+    OUTLINED.with(|o| o.borrow().is_some())
+}
+
+const OUTLINE_BUDGET: usize = 4096;
+
+pub(crate) const OUTLINE_MIN_UNITS: usize = 64;
+
+impl FnCtx<'_> {
+    /// Lower `n` units (`lower(sub, i)`) into outlined functions and call them from
+    /// here, passing local `arg` on as the outlined function's local 1. `false` when
+    /// no module is collecting, leaving the caller to lower them inline.
+    pub(crate) fn emit_outlined(
+        &mut self,
+        n: usize,
+        arg: Option<u32>,
+        mut lower: impl FnMut(&mut FnCtx, usize) -> Result<()>,
+    ) -> Result<bool> {
+        if !outlining() {
+            return Ok(false);
+        }
+        let data = self.sim()?.data_local;
+        let mut sim = self.sim()?.clone();
+        sim.data_local = 0;
+        let mut i = 0;
+        while i < n {
+            let n_params = 1 + arg.is_some() as u32;
+            let mut sub = FnCtx::new_sim_params(sim.clone(), self.by_name, &mut *self.literals, n_params);
+            while i < n {
+                lower(&mut sub, i)?;
+                i += 1;
+                if sub.instr_len() >= OUTLINE_BUDGET {
+                    break;
+                }
+            }
+            let (locals, instrs) = sub.finish_sim();
+            let mut f = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+            for ins in &instrs {
+                f.instruction(ins);
+            }
+            let (slot, ty, table) = outline_fn(f, arg.is_some()).ok_or("CodegenWasmJit: outlined function outside a module")?;
+            self.emit(we::Instruction::LocalGet(data));
+            if let Some(arg) = arg {
+                self.emit(we::Instruction::LocalGet(arg));
+            }
+            self.emit(we::Instruction::I32Const(slot as i32));
+            self.emit(we::Instruction::CallIndirect { type_index: ty, table_index: table });
+        }
+        Ok(true)
+    }
+}
+
+/// `f`'s slot, type and table, reusing an identical body's slot; `None` when no
+/// module is collecting.
+fn outline_fn(f: we::Function, with_arg: bool) -> Option<(u32, u32, u32)> {
+    use wasm_encoder::Encode;
+    OUTLINED.with(|o| {
+        let mut o = o.borrow_mut();
+        let o = o.as_mut()?;
+        let ty = o.types[with_arg as usize];
+        let mut body = ty.to_le_bytes().to_vec();
+        f.encode(&mut body);
+        if let Some(&slot) = o.by_body.get(&body) {
+            return Some((slot, ty, o.table));
+        }
+        let slot = o.fns.len() as u32;
+        o.fns.push((f, ty));
+        o.by_body.insert(body, slot);
+        Some((slot, ty, o.table))
+    })
 }

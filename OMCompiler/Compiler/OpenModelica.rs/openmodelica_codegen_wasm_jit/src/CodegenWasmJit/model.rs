@@ -655,6 +655,9 @@ pub(super) fn build_sim_model(
 
     // --- Compile bodies (collecting String literals into the module pool). ---
     let mut literals = Literals::default();
+    // Table 1 is parmod's when there is one.
+    let outline_table = 1 + parmod_info.is_some() as u32;
+    let outline = crate::CodegenWasmJitFunctions::OutlineScope::begin([eqfn_type, dae_fn_type], outline_table);
     let mut bodies: Vec<we::Function> = Vec::new();
     // With a tag in the module, every `ext` call is lowered under a `try_table`
     // (tag index 0: the module imports none).
@@ -1360,9 +1363,16 @@ pub(super) fn build_sim_model(
         }
     };
 
+    let outline_first = pool.len();
+    for (k, (f, ty)) in outline.finish().into_iter().enumerate() {
+        pool.push(f, ty, format!("outlined${k}"));
+    }
+    let outline_range = outline_first..pool.len();
+
     // The chunks, after all fixed-index bodies; each entry point's placeholder
     // becomes a thunk calling the ones it needs.
     let chunk_base = import_base + bodies.len() as u32;
+    let outlined: Vec<u32> = outline_range.map(|c| chunk_base + c as u32).collect();
     let ChunkPool { fns: chunk_fns, meta: chunk_meta } = pool;
     bodies.extend(chunk_fns);
     for s in &splits {
@@ -1482,7 +1492,7 @@ pub(super) fn build_sim_model(
         }
         if let Some((fn_indices, _)) = &nls_wiring {
             let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
-            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns);
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns, &mut literals);
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -1511,7 +1521,7 @@ pub(super) fn build_sim_model(
         functions.function(throw_fn_type);
         bodies.push(f);
     }
-    if nls_wiring.is_some() || !thunk_indices.is_empty() || parmod_fns.is_some() {
+    if nls_wiring.is_some() || !thunk_indices.is_empty() || parmod_fns.is_some() || !outlined.is_empty() {
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
             table64: false,
@@ -1729,15 +1739,17 @@ pub(super) fn build_sim_model(
     module.section(&types);
     module.section(&imports);
     module.section(&functions);
-    if let Some(tasks) = &parmod_tasks {
+    if parmod_tasks.is_some() || !outlined.is_empty() {
         let mut tables = we::TableSection::new();
-        tables.table(we::TableType {
-            element_type: we::RefType::FUNCREF,
-            table64: false,
-            minimum: tasks.len() as u64,
-            maximum: Some(tasks.len() as u64),
-            shared: false,
-        });
+        for fns in parmod_tasks.iter().chain((!outlined.is_empty()).then_some(&outlined)) {
+            tables.table(we::TableType {
+                element_type: we::RefType::FUNCREF,
+                table64: false,
+                minimum: fns.len() as u64,
+                maximum: Some(fns.len() as u64),
+                shared: false,
+            });
+        }
         module.section(&tables);
     }
     if let Some(ti) = error_tag_type {
@@ -1776,6 +1788,10 @@ pub(super) fn build_sim_model(
     }
     if let Some(tasks) = &parmod_tasks {
         elements.active(Some(1), &we::ConstExpr::i32_const(0), we::Elements::Functions(tasks.as_slice().into()));
+        have_elements = true;
+    }
+    if !outlined.is_empty() {
+        elements.active(Some(outline_table), &we::ConstExpr::i32_const(0), we::Elements::Functions(outlined.as_slice().into()));
         have_elements = true;
     }
     if have_elements {
