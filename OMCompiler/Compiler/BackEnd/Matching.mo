@@ -5976,11 +5976,12 @@ protected function removeEdgesToDiscreteEquations""
 protected
   Boolean isDiscrete;
   Integer idx, idx2, size, varIdx;
-  list<Integer> varIdxs, row, eqIdxs;
+  list<Integer> varIdxs, eqIdxs;
   BackendDAE.EquationArray eqs;
   BackendDAE.Variables vars;
   list<BackendDAE.Var> varLst;
   array<list<Integer>> eqIdxArray;
+  UnorderedSet<Integer> idxSet;
 algorithm
   vars := sys.orderedVars;
   eqs := sys.orderedEqs;
@@ -6007,16 +6008,14 @@ algorithm
       eqIdxs := eqIdxArray[idx];
       //print("remove edges between eqs: "+stringDelimitList(List.map(eqIdxs,intString),", ")+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
+      idxSet := UnorderedSet.fromList(varIdxs, Util.id, intEq);
       for e in eqIdxs loop
-        row := m[e];
-        row := UnorderedSet.difference_list(row, varIdxs, Util.id, intEq);
-        arrayUpdate(m,e,row);
+        arrayUpdate(m, e, UnorderedSet.difference_list_set(m[e], varIdxs, idxSet));
       end for;
       //update mt
+      idxSet := UnorderedSet.fromList(eqIdxs, Util.id, intEq);
       for varIdx in varIdxs loop
-        row := mt[varIdx];
-        row := UnorderedSet.difference_list(row, eqIdxs, Util.id, intEq);
-        arrayUpdate(mt,varIdx,row);
+        arrayUpdate(mt, varIdx, UnorderedSet.difference_list_set(mt[varIdx], eqIdxs, idxSet));
       end for;
     end if;
     idx := idx+1;
