@@ -1418,10 +1418,7 @@ algorithm
       String valueReference;
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
-    case (_, _, _) guard(stringEqual(Config.simCodeTarget(), "Cpp")
-                        or stringEqual(Config.simCodeTarget(), "omsic")
-            /*Temporary disabled omsicpp*/
-            /*or stringEqual(Config.simCodeTarget(), "omsicpp")*/)
+    case (_, _, _) guard stringEqual(Config.simCodeTarget(), "Cpp")
     algorithm
       // resolve aliases to get multi-dimensional arrays right
       // (this should possibly be done in getVarIndexByMapping?)
@@ -1780,37 +1777,6 @@ algorithm
   end for;
   residuals := listReverse(residuals);
 end fmi3DaeResiduals;
-
-public function getLocalValueReference
- "returns the local value reference of current OMSIFuncton of a variable for
-  direct memory access considering aliases and array storage order."
-  input SimCodeVar.SimVar inSimVar;
-  input SimCode.SimCode inSimCode;
-  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-  input Boolean inElimNegAliases "=false to keep negative alias references";
-  output String outValueReference;
-algorithm
-  outValueReference := matchcontinue (inSimVar, inCrefToSimVarHT)
-    local
-      DAE.ComponentRef cref;
-      String valueReference;
-      HashTableCrefSimVar.HashTable crefToSimVarHT;
-
-    // default case
-    case (SimCodeVar.SIMVAR(name=cref), crefToSimVarHT)
-    algorithm
-      valueReference := localCref2Index(cref, crefToSimVarHT);
-      // if localy no index was found search globaly
-      if stringEqual(valueReference, "-1") then
-        valueReference := getValueReference(inSimVar, inSimCode, inElimNegAliases);
-      end if;
-      then valueReference;
-    else
-      algorithm
-      Error.addInternalError("getLocalValueReference failed.", sourceInfo());
-      then "ERROR: getLocalValueReference failed";
-  end matchcontinue;
-end getLocalValueReference;
 
 protected function getNLSysRHS
     input list<SimCode.SimEqSystem> eqs;
@@ -2263,50 +2229,6 @@ public function createJacContext
 algorithm
   outContext := SimCodeFunction.JACOBIAN_CONTEXT(name, jacHT);
 end createJacContext;
-
-public function localCref2SimVar
-"Used by templates to find SIMVAR in given hashTable for given cref
- (to gain representaion index info mainly). Does not check if variable is alias."
-  input DAE.ComponentRef inCref;
-  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-  output SimCodeVar.SimVar outSimVar;
-algorithm
-  outSimVar := matchcontinue (inCref, inCrefToSimVarHT)
-    local
-      DAE.ComponentRef cref, badcref;
-      SimCodeVar.SimVar sv;
-      SimCode.HashTableCrefSimVar.HashTable crefToSimVarHT;
-    case (cref, crefToSimVarHT)
-      algorithm
-        sv := BaseHashTable.get(cref, crefToSimVarHT);
-      then sv;
-
-    case (_,_)
-      algorithm
-        badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
-  end matchcontinue;
-end localCref2SimVar;
-
-public function localCref2Index
-"Finds local value reference for given cref and hash table"
-  input DAE.ComponentRef inCref;
-  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-  output String outIndex;
-algorithm
-  outIndex:= matchcontinue (inCref, inCrefToSimVarHT)
-    local
-      DAE.ComponentRef cref;
-      HashTableCrefSimVar.HashTable crefToSimVarHT;
-      SimCodeVar.SimVar sv;
-    case (cref, crefToSimVarHT)
-      algorithm
-        sv := BaseHashTable.get(cref, crefToSimVarHT);
-      then String(sv.index);
-    else
-      then "-1";
-  end matchcontinue;
-end localCref2Index;
 
 public function codegenExpSanityCheck "Handle some things that Susan cannot handle:
 * Expand simulation context arrays that contain variables stored in different locations...

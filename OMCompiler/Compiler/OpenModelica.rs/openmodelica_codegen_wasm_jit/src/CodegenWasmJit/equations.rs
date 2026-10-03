@@ -357,8 +357,7 @@ fn eq_attr_of(eq: &SimCode::SimEqSystem) -> Option<&openmodelica_backend_types::
         | E::SES_MIXED { eqAttr, .. }
         | E::SES_WHEN { eqAttr, .. }
         | E::SES_FOR_LOOP { eqAttr, .. }
-        | E::SES_FOR_EQUATION { eqAttr, .. }
-        | E::SES_ALGEBRAIC_SYSTEM { eqAttr, .. } => Some(eqAttr),
+        | E::SES_FOR_EQUATION { eqAttr, .. } => Some(eqAttr),
         E::SES_ALIAS { .. } => None,
     }
 }
@@ -401,7 +400,6 @@ pub(crate) fn eq_kind_name(eq: &SimCode::SimEqSystem) -> &'static str {
         E::SES_FOR_LOOP { .. } => "SES_FOR_LOOP",
         E::SES_FOR_EQUATION { .. } => "SES_FOR_EQUATION",
         E::SES_ALIAS { .. } => "SES_ALIAS",
-        E::SES_ALGEBRAIC_SYSTEM { .. } => "SES_ALGEBRAIC_SYSTEM",
     }
 }
 
@@ -632,7 +630,6 @@ pub(super) fn eq_index_of(eq: &SimCode::SimEqSystem) -> i32 {
         | E::SES_INVERSE_ALGORITHM { index, .. }
         | E::SES_MIXED { index, .. }
         | E::SES_WHEN { index, .. }
-        | E::SES_ALGEBRAIC_SYSTEM { index, .. }
         | E::SES_FOR_LOOP { index, .. } => *index,
         // Torn systems carry their index inside the system record, not as a
         // top-level field; an `SES_ALIAS` can point at the whole system.

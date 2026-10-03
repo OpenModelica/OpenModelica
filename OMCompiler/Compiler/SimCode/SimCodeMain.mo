@@ -76,12 +76,9 @@ import CodegenFMU2;
 import CodegenFMU3;
 import CodegenFMUCommon;
 import CodegenFMUCpp;
-import CodegenOMSICpp;
 import CodegenFMUCppHpcom;
 import CodegenCpp;
 import CodegenCppHpcom;
-import CodegenOMSIC;
-import CodegenOMSI_common;
 import CodegenXML;
 import CodegenJS;
 import CodegenWasmJit;
@@ -213,12 +210,7 @@ protected
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
-  /*Temporary disabled omsicpp*/
-  if ((Config.simCodeTarget() ==  "omsic") /*or (Config.simCodeTarget() == "omsicpp")*/) then
-    fileDir := listHead(AbsynUtil.pathToStringList(className))+".tmp";
-  else
-    fileDir := ProgramUtil.getFileDir(a_cref, p);
-  end if;
+  fileDir := ProgramUtil.getFileDir(a_cref, p);
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
@@ -230,12 +222,7 @@ algorithm
   ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/
-  if Config.simCodeTarget() == "omsicpp" then
-     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType, p, translateOnly);
-  else
-    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p, translateOnly);
-  end if;
+  callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p, translateOnly);
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
 
@@ -319,14 +306,7 @@ algorithm
   fileDir := ProgramUtil.getFileDir(a_cref, p);
 
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
-   /*Temporary disabled omsicpp
-   if Config.simCodeTarget() ==  "omsicpp" then
-     fmuVersion:="2.0";
-     simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,isFMU=true, FMUVersion=fmuVersion,
-    fmuTargetName=listHead(AbsynUtil.pathToStringList(className)), inFMIDer=inFMIDer);
-   else*/
-    simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
-   /*end if;*/
+  simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -820,20 +800,6 @@ algorithm
     Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
   end if;
 end callTargetTemplatesCPP;
-
-protected function callTargetTemplatesOMSICpp
-  input SimCode.SimCode iSimCode;
-  input Absyn.Program program;
-  protected
-  String fmuVersion;
-  String fmuType;
-
-algorithm
-    fmuVersion:="2.0";
-    fmuType:="me";
-   Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
-   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType,program);
-end callTargetTemplatesOMSICpp;
 
 protected function visualizationCadFiles
   "Absolute paths of the CAD files referenced as shape types in the visxml, so the
@@ -1519,39 +1485,6 @@ algorithm
           CodegenFMU.settingsfile,
           simCode,
           txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
-        /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
-        if Config.simCodeTarget() ==  "omsicpp" then
-         runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
-         end if;
-      then ();
-    case (_,"omsic")
-       algorithm
-        guid := System.getUUIDStr();
-        fileprefix := simCode.fileNamePrefix;
-
-        // create tmp directory for generated files, but first remove the old one!
-        if System.directoryExists(simCode.fullPathPrefix) then
-          if not System.removeDirectory(simCode.fullPathPrefix) then
-            Error.addInternalError("Failed to remove directory: " + simCode.fullPathPrefix, sourceInfo());
-            fail();
-          end if;
-        end if;
-        if not System.createDirectory(simCode.fullPathPrefix) then
-          Error.addInternalError("Failed to create tmp folder "+simCode.fullPathPrefix, sourceInfo());
-          System.fflush();
-          fail();
-        end if;
-
-        SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid);
-        SerializeSparsityPattern.serialize(simCode);
-        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-
-        runTpl(func = function CodegenOMSI_common.generateFMUModelDescriptionFile(a_simCode=simCode, a_guid=guid, a_FMUVersion=FMUVersion, a_FMUType=FMUType, a_sourceFiles={}, a_fileName=simCode.fullPathPrefix+"/"+"modelDescription.xml"));
-        runTplWriteFile(func = function CodegenOMSIC.createMakefile(a_simCode=simCode, a_target=Config.simulationCodeTarget(), a_makeflieName=fileprefix+"_FMU.makefile"), file=simCode.fullPathPrefix+"/"+fileprefix+"_FMU.makefile");
-
-        runTplWriteFile(func = function CodegenOMSIC.generateOMSIC(a_simCode=simCode), file=simCode.fullPathPrefix+"/"+fileprefix+"_omsic.c");
-
-        runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
       then ();
     case (_,"Cpp")
       algorithm
@@ -2575,7 +2508,6 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       inlineEquations             = {},
-      omsiData                    = NONE(),
       scalarized                  = true,
       fmiFigures                  = {}
     );

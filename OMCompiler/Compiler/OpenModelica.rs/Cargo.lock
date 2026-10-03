@@ -7097,10 +7097,8 @@ dependencies = [
  "openmodelica_codegen_cfunctions",
  "openmodelica_codegen_cpp",
  "openmodelica_codegen_cpp_ext",
- "openmodelica_codegen_cpp_omsi_ext",
  "openmodelica_codegen_fmu",
  "openmodelica_codegen_fmu_c",
- "openmodelica_codegen_fmu_omsi",
  "openmodelica_codegen_util",
  "openmodelica_codegen_wasm_jit",
  "openmodelica_codegen_xml",
@@ -7321,54 +7319,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openmodelica_codegen_cpp_omsi"
-version = "0.1.0"
-dependencies = [
- "arcstr",
- "const-str 1.1.0",
- "loop_unwrap",
- "match_deref",
- "metamodelica",
- "openmodelica_ast",
- "openmodelica_backend_types",
- "openmodelica_codegen",
- "openmodelica_codegen_cpp_common",
- "openmodelica_codegen_util",
- "openmodelica_frontend_base",
- "openmodelica_frontend_dump",
- "openmodelica_frontend_types",
- "openmodelica_simcode_types",
- "openmodelica_simcode_util",
- "openmodelica_tpl",
- "openmodelica_util",
- "openmodelica_util_datatypes_basic",
-]
-
-[[package]]
-name = "openmodelica_codegen_cpp_omsi_ext"
-version = "0.1.0"
-dependencies = [
- "arcstr",
- "const-str 1.1.0",
- "loop_unwrap",
- "match_deref",
- "metamodelica",
- "openmodelica_ast",
- "openmodelica_backend_types",
- "openmodelica_codegen_cpp_common",
- "openmodelica_codegen_cpp_omsi",
- "openmodelica_codegen_fmu",
- "openmodelica_codegen_util",
- "openmodelica_frontend_base",
- "openmodelica_frontend_dump",
- "openmodelica_frontend_types",
- "openmodelica_simcode_types",
- "openmodelica_tpl",
- "openmodelica_util",
- "openmodelica_util_datatypes_basic",
-]
-
-[[package]]
 name = "openmodelica_codegen_fmu"
 version = "0.1.0"
 dependencies = [
@@ -7408,29 +7358,6 @@ dependencies = [
  "openmodelica_codegen_util",
  "openmodelica_frontend_base",
  "openmodelica_frontend_dump",
- "openmodelica_frontend_types",
- "openmodelica_simcode_types",
- "openmodelica_tpl",
- "openmodelica_util",
- "openmodelica_util_datatypes_basic",
-]
-
-[[package]]
-name = "openmodelica_codegen_fmu_omsi"
-version = "0.1.0"
-dependencies = [
- "arcstr",
- "const-str 1.1.0",
- "loop_unwrap",
- "match_deref",
- "metamodelica",
- "openmodelica_ast",
- "openmodelica_backend_types",
- "openmodelica_codegen",
- "openmodelica_codegen_cfunctions",
- "openmodelica_codegen_fmu",
- "openmodelica_codegen_util",
- "openmodelica_frontend_base",
  "openmodelica_frontend_types",
  "openmodelica_simcode_types",
  "openmodelica_tpl",

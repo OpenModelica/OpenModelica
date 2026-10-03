@@ -8022,8 +8022,7 @@ template equationSimpleAssignLhs(ComponentRef cref, Context context,
 ::=
   match context
   case FUNCTION_CONTEXT(__)
-  case JACOBIAN_CONTEXT(__)
-  case OMSI_CONTEXT(__) then
+  case JACOBIAN_CONTEXT(__) then
     contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
   else
     // Note: $START crefs address the (array valued) start attribute and must

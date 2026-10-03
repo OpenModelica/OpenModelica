@@ -180,7 +180,7 @@ Windows.
 
 You can compile the OpenModelica compiler (`omc`) and the C and C++ simulation runtimes
 with the Microsoft Visual C++ compiler (MSVC). Some parts are not built with MSVC yet:
-ModelicaExternalC, the OMSI runtimes, ParModelica and PRIMME support. Compiling and
+ModelicaExternalC, ParModelica and PRIMME support. Compiling and
 simulating models with such a build may still need some work.
 
 The MSVC build that CI exercises is a cross-compile from Linux with clang-cl, including the
