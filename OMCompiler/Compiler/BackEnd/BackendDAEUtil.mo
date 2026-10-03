@@ -3066,20 +3066,19 @@ public function traversingadjacencyRowExpSolvableFinder "Helper for statesAndVar
   output Boolean cont;
   output tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> outTpl;
 algorithm
-  (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
+  (outExp, cont, outTpl) := match (inExp, inTpl)
     local
       list<Integer> p, p2;
       list<Integer> pa;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e1, e2;
+      DAE.Exp e, e1, e2;
       list<BackendDAE.Var> varslst;
       Boolean b, b1, b2, isInitial;
       list<DAE.Exp> explst;
       Integer i;
       list<DAE.ComponentRef> crlst;
       Option<AvlTreePathFunction.Tree> ofunctionTree;
-      AvlTreePathFunction.Tree functionTree;
       tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
       Integer diffindx;
       list<DAE.Subscript> subs;
@@ -3093,59 +3092,85 @@ algorithm
     then (inExp, false, tpl);
 
     case (DAE.IFEXP(), tpl)
-    then traversingadjacencyRowIfExpSolvableFinder(inExp, tpl);
+      algorithm
+        try
+          (e, b, tpl) := traversingadjacencyRowIfExpSolvableFinder(inExp, tpl);
+        else
+          (e, b, tpl) := (inExp, true, inTpl);
+        end try;
+    then (e, b, tpl);
 
     case (DAE.RANGE(), tpl)
     then (inExp, false, tpl);
 
-    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=subs), (vars, pa, visitedPaths, isInitial, ofunctionTree))
+    // a range subscript, else a constant index into the array expression
+    case (DAE.ASUB(exp=e1, sub=subs), (vars, pa, visitedPaths, isInitial, ofunctionTree))
       algorithm
-        explst := List.map(subs, Expression.getSubscriptExp);
-        {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst);
-        subs := list(DAE.INDEX(e) for e in extendRange(e1, vars));
-        crlst := list(ComponentReference.subscriptCref(cr, {s}) for s in subs);
-        (varslst, p) := BackendVariable.getVarLst(crlst, vars);
-        pa := adjacencyRowExp1(varslst, p, pa, 0);
-      then
-        (inExp, false, (vars, pa, visitedPaths, isInitial, ofunctionTree));
+        try
+          DAE.CREF(componentRef=cr) := e1;
+          explst := List.map(subs, Expression.getSubscriptExp);
+          {e2 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst);
+          crlst := list(ComponentReference.subscriptCref(cr, {DAE.INDEX(e)}) for e in extendRange(e2, vars));
+          (varslst, p) := BackendVariable.getVarLst(crlst, vars);
+          pa := adjacencyRowExp1(varslst, p, pa, 0);
+          tpl := (vars, pa, visitedPaths, isInitial, ofunctionTree);
+          b := false;
+        else
+          try
+            {DAE.INDEX(DAE.ICONST(i))} := subs;
+            e1 := Expression.nthArrayExp(e1, i);
+            (_, tpl) := Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, inTpl);
+            b := false;
+          else
+            (b, tpl) := (true, inTpl);
+          end try;
+        end try;
+    then (inExp, b, tpl);
 
-    case (DAE.ASUB(exp=e1, sub={DAE.INDEX(DAE.ICONST(i))}), tpl) algorithm
-      e1 := Expression.nthArrayExp(e1, i);
-      (_, tpl) := Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, tpl);
-    then (inExp, false, tpl);
-
-    // otherwise
-    case (DAE.ASUB(), _)
-    then fail();
-
-    case (DAE.TSUB(exp=e1), tpl) algorithm
-      (_, tpl) := Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, tpl);
-    then (inExp, false, tpl);
+    case (DAE.TSUB(exp=e1), tpl)
+      algorithm
+        try
+          (_, tpl) := Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, tpl);
+          b := false;
+        else
+          (b, tpl) := (true, inTpl);
+        end try;
+    then (inExp, b, tpl);
 
     // cref and $START.cref
-    case (DAE.CREF(componentRef=cr), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
-      (varslst, p) := BackendVariable.getVar(cr, vars);
-      pa := adjacencyRowExp1(varslst, p, pa, 0);
-
-      if vars.hasStartVars then
+    case (DAE.CREF(componentRef=cr), (vars, pa, visitedPaths, isInitial, ofunctionTree))
+      algorithm
         try
-          (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
-          pa := adjacencyRowExp1(varslst, p2, pa, 0);
+          (varslst, p) := BackendVariable.getVar(cr, vars);
+          pa := adjacencyRowExp1(varslst, p, pa, 0);
+          if vars.hasStartVars then
+            try
+              (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+              pa := adjacencyRowExp1(varslst, p2, pa, 0);
+            else
+            end try;
+          end if;
+          tpl := (vars, pa, visitedPaths, isInitial, ofunctionTree);
         else
+          tpl := inTpl;
         end try;
-      end if;
-    then (inExp, true, (vars, pa, visitedPaths, isInitial, ofunctionTree));
+    then (inExp, true, tpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
-      (varslst, p) := BackendVariable.getVar(cr, vars);
-      pa := adjacencyRowExp1(varslst, p, pa, 1);
-    then (inExp, false,(vars, pa, visitedPaths, isInitial, ofunctionTree));
-
-    /* higher derivative, is only present during index reduction */
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr), DAE.ICONST(diffindx)}), (vars, pa, visitedPaths, isInitial, ofunctionTree)) algorithm
-      (varslst, p) := BackendVariable.getVar(cr, vars);
-      pa := adjacencyRowExp1(varslst, p, pa, diffindx);
-    then (inExp, false,(vars, pa, visitedPaths, isInitial, ofunctionTree));
+    // der(cr), and der(cr, n) for higher derivatives during index reduction
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst=DAE.CREF(componentRef=cr)::explst), (vars, pa, visitedPaths, isInitial, ofunctionTree))
+      algorithm
+        try
+          diffindx := match explst
+            case {} then 1;
+            case {DAE.ICONST(diffindx)} then diffindx;
+          end match;
+          (varslst, p) := BackendVariable.getVar(cr, vars);
+          pa := adjacencyRowExp1(varslst, p, pa, diffindx);
+          (e, b, tpl) := (inExp, false, (vars, pa, visitedPaths, isInitial, ofunctionTree));
+        else
+          (e, b, tpl) := traversingadjacencyRowSolvableCall(inExp, inTpl);
+        end try;
+    then (e, b, tpl);
 
     /* pre(v) is considered a known variable */
     /* previous(v) is considered a known variable */
@@ -3153,38 +3178,86 @@ algorithm
     then (inExp, false, tpl);
 
     /* delay(...) can be used to break algebraic loops given some solver options */
-    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst = {_, _, e1, e2}), tpl) algorithm
-      b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1, e2);
-    then (inExp, not b, tpl);
+    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst = {_, _, e1, e2}), tpl)
+      algorithm
+        try
+          b := not (Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1, e2));
+          e := inExp;
+        else
+          (e, b, tpl) := traversingadjacencyRowSolvableCall(inExp, inTpl);
+        end try;
+    then (e, b, tpl);
 
     // homotopy operator for simulation system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, _, false, _))
-    then traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+      algorithm
+        try
+          (e, b, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+        else
+          (e, b, tpl) := traversingadjacencyRowSolvableCall(inExp, inTpl);
+        end try;
+    then (e, b, tpl);
 
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, true, _))
       algorithm
-        (_, b1, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
-        (_, b2, tpl) := traversingadjacencyRowExpSolvableFinder(e2, tpl);
-    then (inExp, b1 and b2, tpl);
+        try
+          (_, b1, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+          (_, b2, tpl) := traversingadjacencyRowExpSolvableFinder(e2, tpl);
+          (e, b) := (inExp, b1 and b2);
+        else
+          (e, b, tpl) := traversingadjacencyRowSolvableCall(inExp, inTpl);
+        end try;
+    then (e, b, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
       algorithm
-        (_, _, tpl) := traversingadjacencyRowExpSolvableFinder(e2, inTpl);
-    then traversingadjacencyRowExpSolvableFinder(e1, tpl);
+        try
+          (_, _, tpl) := traversingadjacencyRowExpSolvableFinder(e2, inTpl);
+          (e, b, tpl) := traversingadjacencyRowExpSolvableFinder(e1, tpl);
+        else
+          (e, b, tpl) := traversingadjacencyRowSolvableCall(inExp, inTpl);
+        end try;
+    then (e, b, tpl);
 
-    // use the inlined function to analyze the ocuring variables
-    case (DAE.CALL(path=Absyn.IDENT()), (vars, pa, visitedPaths, isInitial, ofunctionTree as SOME(functionTree))) guard not AvlSetPath.hasKey(visitedPaths, inExp.path)
-      algorithm
-        (e1,_) := Inline.forceInlineCall(inExp, {}, (SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}));
-        false := referenceEq(inExp,e1);
-        (_, tpl) := Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, (vars, pa, AvlSetPath.add(visitedPaths, inExp.path), isInitial, ofunctionTree));
-      then (inExp, false, tpl);
+    case (DAE.CALL(path=Absyn.IDENT()), _)
+    then traversingadjacencyRowSolvableCall(inExp, inTpl);
 
     else (inExp, true, inTpl);
-  end matchcontinue;
+  end match;
 end traversingadjacencyRowExpSolvableFinder;
+
+protected function traversingadjacencyRowSolvableCall
+  "Uses the inlined function to analyze the occurring variables of a call,
+  else continues into its arguments."
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> inTpl;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output tuple<BackendDAE.Variables, list<Integer>, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> outTpl;
+protected
+  BackendDAE.Variables vars;
+  list<Integer> pa;
+  AvlSetPath.Tree visitedPaths;
+  Boolean isInitial;
+  Option<AvlTreePathFunction.Tree> ofunctionTree;
+  AvlTreePathFunction.Tree functionTree;
+  Absyn.Path path;
+  DAE.Exp e1;
+algorithm
+  try
+    DAE.CALL(path = path as Absyn.IDENT()) := inExp;
+    (vars, pa, visitedPaths, isInitial, ofunctionTree as SOME(functionTree)) := inTpl;
+    false := AvlSetPath.hasKey(visitedPaths, path);
+    (e1,_) := Inline.forceInlineCall(inExp, {}, (SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}));
+    false := referenceEq(inExp, e1);
+    (_, outTpl) := Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, (vars, pa, AvlSetPath.add(visitedPaths, path), isInitial, ofunctionTree));
+    cont := false;
+  else
+    (cont, outTpl) := (true, inTpl);
+  end try;
+end traversingadjacencyRowSolvableCall;
 
 protected function traversingadjacencyRowIfExpSolvableFinder
   "author: kabdelhak FHB 2020-01
