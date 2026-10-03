@@ -7506,6 +7506,7 @@ dependencies = [
  "openmodelica_wasi",
  "openmodelica_wasm_jit",
  "ordered-float",
+ "serde_json",
  "wasm-encoder 0.259.0",
  "wasmer",
  "wasmparser 0.259.0",
@@ -7981,6 +7982,7 @@ dependencies = [
  "openmodelica_arrow_writer",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_nls",
  "openmodelica_plt_writer",
  "openmodelica_solvers",
 ]
@@ -8061,9 +8063,20 @@ dependencies = [
  "match_deref",
  "metamodelica",
  "openmodelica_error",
+ "openmodelica_susan_index",
  "openmodelica_tpl",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
+ "serde_json",
+]
+
+[[package]]
+name = "openmodelica_susan_index"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "serde_json",
+ "syn 3.0.6",
 ]
 
 [[package]]
@@ -8133,6 +8146,7 @@ dependencies = [
  "arcstr",
  "daskr",
  "foldhash 0.2.0",
+ "js-sys",
  "libc",
  "libffi",
  "metamodelica",
@@ -8145,6 +8159,7 @@ dependencies = [
  "openmodelica_wasi_libc",
  "rsparse",
  "serde_json",
+ "wasm-bindgen",
  "wasm-encoder 0.259.0",
  "wasmer",
  "wasmtime",

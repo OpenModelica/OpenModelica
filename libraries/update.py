@@ -105,6 +105,9 @@ for key in data["libs"]:
 now = datetime.now(ZoneInfo("Europe/Stockholm"))
 stamp = now.strftime("%Y%m%d%H%M%S.stamp")
 
+# The testsuite also runs the wasm-jit target, for which installPackage fetches
+# the prebuilt wasm modules too.
+wasm = 'setCommandLineOptions("--simCodeTarget=wasm-jit");\n' if args.test else ""
 with open(args.filenameprefix + "index.mos", "w") as fout:
   fout.write('''
 setEnvironmentVar("HOME", OpenModelica.Scripting.cd());
@@ -114,7 +117,7 @@ getErrorString();
 setModelicaPath(OpenModelica.Scripting.cd() + "/.openmodelica/libraries/");
 getModelicaPath();
 echo(false);
-OpenModelica.Scripting.mkdir(".openmodelica");
+{wasm}OpenModelica.Scripting.mkdir(".openmodelica");
 if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
   print("\\nmkdir failed\\n");
   print(getErrorString());
@@ -131,7 +134,7 @@ if vers[1] <> "4.1.0+maint.om" then
   print(getErrorString());
   exit(1);
 end if;
-''')
+'''.replace("{wasm}", wasm))
   # Sorted, so that regenerating gives a stable order instead of the iteration order of the sets.
   for lib in sorted(desired.keys()):
     for version in sorted(desired[lib]):
@@ -146,6 +149,9 @@ end if;
   fout.write(f'system("touch .openmodelica/{stamp}")\n')
 
 with open(args.filenameprefix + "index.json", "w") as fout:
-  fout.write(json.dumps({"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}, indent=2) + "\n")
+  index = {"libs":newdata,"mirrors":["https://libraries.openmodelica.org/cache/"]}
+  # What the versions' prebuilt wasm modules use.
+  index.update({k: data[k] for k in ("systemLibraries", "wasmToolchain") if k in data})
+  fout.write(json.dumps(index, indent=2) + "\n")
 with open("Makefile.version", "w") as fout:
   fout.write(f'STAMP={stamp}\n')

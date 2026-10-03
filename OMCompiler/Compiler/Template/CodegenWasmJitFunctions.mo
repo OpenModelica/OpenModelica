@@ -67,5 +67,13 @@ function loadAndExecute
 algorithm
 end loadAndExecute;
 
+function prebuiltExternalsABI
+  " The ABI of the prebuilt external \"C\" modules installPackage fetches: for
+    the wasm-jit target, or when this omc cannot compile Include sources;
+    otherwise 0. Implemented in Rust. "
+  output Integer abi = 0;
+algorithm
+end prebuiltExternalsABI;
+
 annotation(__OpenModelica_Interface="codegen_wasm_jit");
 end CodegenWasmJitFunctions;

@@ -155,6 +155,7 @@ openmodelica_codegen_wasm_jit/src/CodegenWasmJit/eq_fns.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/equations.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/events.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/ext_libs.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/prebuilt.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/flags.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/fmu.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/fmu_link.rs
@@ -353,10 +354,6 @@ openmodelica_gendoc/src/links.rs
 openmodelica_gendoc/src/main.rs
 openmodelica_gendoc/src/packages.rs
 openmodelica_gendoc/src/style.css
-openmodelica_hdf5/Cargo.lock
-openmodelica_hdf5/Cargo.toml
-openmodelica_hdf5/build.rs
-openmodelica_hdf5/src/lib.rs
 openmodelica_frontend/Cargo.toml
 openmodelica_frontend/src/Globals.rs
 openmodelica_frontend_base/Cargo.toml
@@ -496,7 +493,6 @@ openmodelica_wasi/src/wasi.rs
 openmodelica_wasi_libc/Cargo.toml
 openmodelica_wasi_libc/build.rs
 openmodelica_wasi_libc/external_c_callbacks.c
-openmodelica_wasi_libc/external_c_stubs.c
 openmodelica_wasi_libc/src/lib.rs
 openmodelica_wasm_jit/Cargo.toml
 openmodelica_wasm_jit/build.rs

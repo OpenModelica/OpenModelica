@@ -139,11 +139,28 @@ fn define_external_imports(
         return Err("CodegenWasmJit: this omc was built without the PIC wasi-libc, so it cannot \
                     load an external \"C\" library");
     }
-    libs.push(dl::Library::builtin("libc.so", libc));
+    match &sig.libc {
+        Some(path) => libs.push(dl::Library::model(
+            "libc.so",
+            openmodelica_wasi::fs::read(path).map_err(|_| "CodegenWasmJit: cannot read the libc of the prebuilt modules")?,
+        )),
+        None => libs.push(dl::Library::builtin("libc.so", libc)),
+    }
+    let mut own = Vec::with_capacity(sig.libs.len());
     for path in &sig.libs {
-        let bytes = openmodelica_wasi::fs::read(path)
-            .map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?;
+        own.push(openmodelica_wasi::fs::read(path).map_err(|_| "CodegenWasmJit: cannot read an external \"C\" library")?);
+    }
+    let carried = openmodelica_wasm_jit::dylink::carried_libraries(std::iter::empty::<&str>(), own.iter().map(|b| &b[..]));
+    for (path, bytes) in sig.libs.iter().zip(own) {
         libs.push(dl::Library::model(path, bytes));
+    }
+    for file in carried {
+        if let Some(bytes) = openmodelica_wasm_jit::ext_library(file) {
+            libs.push(dl::Library::builtin(file, bytes));
+        }
+    }
+    if !openmodelica_wasm_jit::USERTAB_DYLINK().is_empty() {
+        libs.push(dl::Library::builtin("usertab", openmodelica_wasm_jit::USERTAB_DYLINK()));
     }
     let table = rt_inst
         .get_table(&mut *store, "__indirect_function_table")
@@ -218,6 +235,8 @@ fn valtype(w: openmodelica_wasm_jit::sig::WTy) -> wasmtime::ValType {
 struct Sig {
     inputs: Vec<SigTy>,
     outputs: Vec<SigTy>,
+    /// The libc a generation of prebuilt modules among `libs` was built against.
+    libc: Option<String>,
     libs: Vec<String>,
     /// The same implementations as platform shared libraries.
     native_libs: Vec<String>,
@@ -233,12 +252,14 @@ fn read_sig(path: &str) -> Result<Sig> {
     };
     let inputs = parse(lines.next())?;
     let outputs = parse(lines.next())?;
+    let mut libc = None;
     let mut libs = Vec::new();
     let mut native_libs = Vec::new();
     let mut ext_imports = Vec::new();
     let mut notes = Vec::new();
     for line in lines {
         match line.split_once('\t') {
+            Some(("libc", rest)) => libc = Some(rest.to_string()),
             Some(("lib", rest)) => libs.push(rest.to_string()),
             Some(("nlib", rest)) => native_libs.push(rest.to_string()),
             Some(("ext", rest)) => ext_imports.push(super::parse_ext_sig(rest)?),
@@ -246,7 +267,7 @@ fn read_sig(path: &str) -> Result<Sig> {
             _ => {}
         }
     }
-    Ok(Sig { inputs, outputs, libs, native_libs, ext_imports, notes })
+    Ok(Sig { inputs, outputs, libc, libs, native_libs, ext_imports, notes })
 }
 
 

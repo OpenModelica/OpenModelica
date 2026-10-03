@@ -526,6 +526,7 @@ pub(super) fn emit_fmu(
                 adapter,
                 solvers.as_deref(),
                 &model.ext_libs,
+                model.ext_libc.as_ref().map(|l| &l.bytes[..]),
                 natives.as_ref().map(|n| &n.stub[..]),
             )?
         };
