@@ -16853,6 +16853,35 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     match_uses_match_deref(&input_ty, std::slice::from_ref(c), ctx, top_level));
             let mc_uses_tuple_rewrite: bool = false;
             let _ = needs_tuple_arc_rewrite;
+            // Arms read outer variables by clone (retries may need them), so
+            // a subject of locals no arm writes or rebinds can be borrowed:
+            // matching the borrows binds what matching `&(clones)` did.
+            let mc_place_subject: Option<String> = if any_arm_needs_match_deref && as_prefix.is_none() && !take_first {
+                let mut written = HashSet::new();
+                for case in cases {
+                    stmts_assigned_var_names(&case.stmts, &mut written);
+                    exp_assigned_var_names(&case.result, &mut written);
+                    written.extend(typedexp::pat_bindings(&case.pattern).into_iter().map(|(n, _)| n));
+                }
+                let place = |e: &TypedExp| match e {
+                    TypedExp::Var { name, segments, .. } if !name.contains('.') && segments.len() <= 1
+                        && segments.iter().all(|s| s.subscripts.is_empty()) && !written.contains(name.as_str()) =>
+                        if ctx.borrowed_params.contains(name.as_str()) {
+                            Some(escape_ident(name))
+                        } else if ctx.place_mode.get(name.as_str()) == Some(&PlaceMode::Owned) && !ctx.match_refbound.contains(name.as_str()) {
+                            Some(format!("&{}", escape_ident(name)))
+                        } else {
+                            None
+                        },
+                    _ => None,
+                };
+                match input {
+                    TypedExp::Tuple(es) => es.iter().map(place).collect::<Option<Vec<_>>>().map(|v| format!("({})", v.join(", "))),
+                    e => place(e),
+                }
+            } else {
+                None
+            };
             if mc_uses_tuple_rewrite {
                 let TypedExp::Tuple(elems) = input else { unreachable!() };
                 let mut parts: Vec<String> = Vec::with_capacity(elems.len());
@@ -16874,6 +16903,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // for arm bodies that read or shadow it (mirrors the
                 // `.clone()` the MatchKind::Match subject uses for as-bindings).
                 s.push_str(&format!("        let __mc_input = {input_str}.clone();\n"));
+            } else if let Some(sub) = &mc_place_subject {
+                s.push_str(&format!("        let __mc_input = {sub};\n"));
             } else {
                 s.push_str(&format!("        let __mc_input = {input_str};\n"));
             }
@@ -17323,7 +17354,11 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // fallback drops out of the IIFE on a mismatch, so the
                     // next matchcontinue arm runs — preserving the
                     // try-each-arm semantics of `matchcontinue`.
-                    s.push_str("            ::match_deref::match_deref! { match &__mc_input {\n");
+                    s.push_str(if mc_place_subject.is_some() {
+                        "            ::match_deref::match_deref! { match __mc_input {\n"
+                    } else {
+                        "            ::match_deref::match_deref! { match &__mc_input {\n"
+                    });
                     s.push_str(&format!("                {pat} => {{\n"));
                     s.push_str(&guard_check.replace("            ", "                    "));
                     s.push_str(&body.replace("            ", "                    "));
