@@ -78,6 +78,9 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
+  import Class = NFClass;
+  import ErrorExt;
+  import AbsynUtil;
   import UnorderedMap;
   import UnorderedSet;
 
@@ -1573,6 +1576,7 @@ protected
   function connectionSets
     input Vector<Vertex> vertices;
     input list<Edge> edges;
+    input list<tuple<Integer, Box>> extraSplits = {} "boxes of vertices the pieces have to respect";
     output Sets sets;
     output list<Aff> facts;
   protected
@@ -1580,13 +1584,32 @@ protected
     list<Merge> merges;
     list<Edge> el = edges;
     array<list<Box>> pieces;
+    UnorderedMap<Integer, Merge> merged_by_x;
+    list<tuple<Integer, Box>> splits;
+    Integer v;
+    Box b;
+    Merge m;
   algorithm
     facts := indexFacts(vertices, el);
     alive := arrayCreate(Vector.size(vertices), true);
     (el, merges) := contract(vertices, alive, el, facts);
     (el, alive) := reduceSelfShifts(vertices, alive, el, facts);
-    pieces := computePieces(vertices, alive, el,
-      list((m.y, mergedImage(vertexBox(vertices, m.x), m.tr, facts)) for m in merges), facts);
+    // the extra boxes of merged vertices are boxes of the vertices they are merged into
+    merged_by_x := UnorderedMap.new<Merge>(Util.id, intEq);
+    for mg in merges loop
+      UnorderedMap.add(mg.x, mg, merged_by_x);
+    end for;
+    splits := list((mg.y, mergedImage(vertexBox(vertices, mg.x), mg.tr, facts)) for mg in merges);
+    for sp in extraSplits loop
+      (v, b) := sp;
+      if UnorderedMap.contains(v, merged_by_x) then
+        m := UnorderedMap.getOrFail(v, merged_by_x);
+        splits := (m.y, mergedImage(b, m.tr, facts)) :: splits;
+      else
+        splits := (v, b) :: splits;
+      end if;
+    end for;
+    pieces := computePieces(vertices, alive, el, splits, facts);
     sets := SETS(Vector.new<Integer>(), Vector.new<Box>(), Vector.new<Integer>(), Vector.new<Integer>(),
                  Vector.new<Integer>(), Vector.new<Sym>(), Vector.new<Boolean>(),
                  arrayCreate(Vector.size(vertices), {}));
@@ -1963,42 +1986,13 @@ protected
     input Context ctx;
     input output list<Edge> edges;
   protected
-    Integer va, vb, it;
-    list<SubEntry> ea, eb, sa, sb;
-    list<Integer> ia, ib;
-    list<Sym> oa, ob;
-    Box d, slice_ivs;
-    Sym lo, hi, len_a, len_b;
-    list<Aff> facts = {};
+    Sym lo, hi;
   algorithm
     edges := match eq
       local
         Expression range;
       case Equation.CONNECT()
-        algorithm
-          (va, ea) := connectSide(eq.lhs, iterNames, eq.source, ctx);
-          (vb, eb) := connectSide(eq.rhs, iterNames, eq.source, ctx);
-          sa := list(e for e guard isSliced(e) in ea);
-          sb := list(e for e guard isSliced(e) in eb);
-          if listLength(sa) <> listLength(sb) then
-            unsupported("connecting arrays with different numbers of dimensions", eq.source);
-          end if;
-          // every pair of slices gets a new iterator 1:n
-          slice_ivs := {};
-          it := listLength(dom);
-          for p in List.zip(sa, sb) loop
-            len_a := symSub(sliceHi(Util.tuple21(p)), sliceLo(Util.tuple21(p)), facts);
-            len_b := symSub(sliceHi(Util.tuple22(p)), sliceLo(Util.tuple22(p)), facts);
-            if not symEq(len_a, len_b) then
-              unsupported("connecting slices whose sizes " + symString(len_a) + " + 1 and " + symString(len_b) +
-                " + 1 are not equal symbolically", eq.source);
-            end if;
-            slice_ivs := IV(symInt(1), symAddInt(len_a, 1, facts)) :: slice_ivs;
-          end for;
-          d := listAppend(dom, listReverse(slice_ivs));
-          (ia, oa) := sideDims(ea, it, facts);
-          (ib, ob) := sideDims(eb, it, facts);
-        then EDGE(d, SIDE(va, ia, oa), SIDE(vb, ib, ob), eq.source) :: edges;
+        then makeEdge(eq.lhs, eq.rhs, iterNames, dom, eq.source, ctx) :: edges;
 
       case Equation.FOR(range = SOME(range as Expression.RANGE()))
         algorithm
@@ -2016,6 +2010,50 @@ protected
       then fail();
     end match;
   end collectEdges;
+
+  function makeEdge
+    "the edge between two connectors (or connector arrays, paired slice by slice)
+     in the domain of the surrounding loops"
+    input Expression lhs;
+    input Expression rhs;
+    input list<String> iterNames;
+    input Box dom;
+    input DAE.ElementSource source;
+    input Context ctx;
+    output Edge edge;
+  protected
+    Integer va, vb, it;
+    list<SubEntry> ea, eb, sa, sb;
+    list<Integer> ia, ib;
+    list<Sym> oa, ob;
+    Box d, slice_ivs;
+    Sym len_a, len_b;
+    list<Aff> facts = {};
+  algorithm
+          (va, ea) := connectSide(lhs, iterNames, source, ctx);
+          (vb, eb) := connectSide(rhs, iterNames, source, ctx);
+          sa := list(e for e guard isSliced(e) in ea);
+          sb := list(e for e guard isSliced(e) in eb);
+          if listLength(sa) <> listLength(sb) then
+            unsupported("connecting arrays with different numbers of dimensions", source);
+          end if;
+          // every pair of slices gets a new iterator 1:n
+          slice_ivs := {};
+          it := listLength(dom);
+          for p in List.zip(sa, sb) loop
+            len_a := symSub(sliceHi(Util.tuple21(p)), sliceLo(Util.tuple21(p)), facts);
+            len_b := symSub(sliceHi(Util.tuple22(p)), sliceLo(Util.tuple22(p)), facts);
+            if not symEq(len_a, len_b) then
+              unsupported("connecting slices whose sizes " + symString(len_a) + " + 1 and " + symString(len_b) +
+                " + 1 are not equal symbolically", source);
+            end if;
+            slice_ivs := IV(symInt(1), symAddInt(len_a, 1, facts)) :: slice_ivs;
+          end for;
+          d := listAppend(dom, listReverse(slice_ivs));
+          (ia, oa) := sideDims(ea, it, facts);
+          (ib, ob) := sideDims(eb, it, facts);
+          edge := EDGE(d, SIDE(va, ia, oa), SIDE(vb, ib, ob), source);
+  end makeEdge;
 
   function isSliced
     input SubEntry e;
@@ -2281,43 +2319,7 @@ protected
     list<Equation> body;
     Option<Sym> trange_lo, trange_hi;
   algorithm
-    cls := UnorderedMap.new<ClassNodes>(Util.id, intEq);
-    for p in members loop
-      for d in 1:listLength(Vector.get(sets.pieceBox, p)) loop
-        (c, off) := dimFind(sets, dimNode(sets, p, d), facts);
-        if not UnorderedMap.contains(c, cls) then
-          cls_order := c :: cls_order;
-        end if;
-        UnorderedMap.addUpdate(c, function prependNode(node = (p, d, off)), cls);
-      end for;
-    end for;
-    cls_order := listReverseInPlace(cls_order);
-
-    // free classes: no collapsed node, every member exactly once
-    for c in cls_order loop
-      nodes := UnorderedMap.getOrFail(c, cls);
-      collapsed := false;
-      for nd in nodes loop
-        if Vector.get(sets.collapsed, dimNode(sets, Util.tuple31(nd), Util.tuple32(nd))) then
-          collapsed := true;
-        end if;
-      end for;
-      for p in members loop
-        cnt := 0;
-        for nd in nodes loop
-          if Util.tuple31(nd) == p then
-            cnt := cnt + 1;
-          end if;
-        end for;
-        if cnt <> 1 then
-          collapsed := true;
-        end if;
-      end for;
-      if not collapsed then
-        free := c :: free;
-      end if;
-    end for;
-    free := listReverseInPlace(free);
+    (cls, free) := setFreeClasses(members, sets, facts);
 
     // the members that may be non-empty
     nonempty := list(p for p guard boxEmpty(Vector.get(sets.pieceBox, p), facts) <> YES in members);
@@ -2440,10 +2442,62 @@ protected
   algorithm
     res := match old
       local list<tuple<Integer, Integer, Sym>> l;
-      case SOME(l) then listAppend(l, {node});
+      case SOME(l) then node :: l;
       else {node};
     end match;
   end prependNode;
+
+  function setFreeClasses
+    "the dimension classes of the members of a set (class -> its nodes: piece,
+     dimension, offset) and the free ones, in the order of the members: no
+     collapsed node, every member exactly once"
+    input list<Integer> members;
+    input Sets sets;
+    input list<Aff> facts;
+    output UnorderedMap<Integer, ClassNodes> cls;
+    output list<Integer> free = {};
+  protected
+    list<Integer> cls_order = {};
+    Integer c;
+    Sym off;
+    Boolean collapsed;
+    UnorderedMap<Integer, Integer> counts;
+  algorithm
+    cls := UnorderedMap.new<ClassNodes>(Util.id, intEq);
+    for p in members loop
+      for d in 1:listLength(Vector.get(sets.pieceBox, p)) loop
+        (c, off) := dimFind(sets, dimNode(sets, p, d), facts);
+        if not UnorderedMap.contains(c, cls) then
+          cls_order := c :: cls_order;
+        end if;
+        UnorderedMap.addUpdate(c, function prependNode(node = (p, d, off)), cls);
+      end for;
+    end for;
+    for c in listReverse(cls_order) loop
+      collapsed := false;
+      counts := UnorderedMap.new<Integer>(Util.id, intEq);
+      for nd in UnorderedMap.getOrFail(c, cls) loop
+        if Vector.get(sets.collapsed, dimNode(sets, Util.tuple31(nd), Util.tuple32(nd))) then
+          collapsed := true;
+        end if;
+        UnorderedMap.addUpdate(Util.tuple31(nd), function incCount(dummy = 0), counts);
+      end for;
+      if UnorderedMap.size(counts) <> listLength(members) or
+         List.any(list(n <> 1 for n in UnorderedMap.valueList(counts)), Util.id) then
+        collapsed := true;
+      end if;
+      if not collapsed then
+        free := c :: free;
+      end if;
+    end for;
+    free := listReverseInPlace(free);
+  end setFreeClasses;
+
+  function incCount
+    input Option<Integer> old;
+    input Integer dummy;
+    output Integer n = Util.getOptionOrDefault(old, 0) + 1;
+  end incCount;
 
   function vertexConn
     input Vector<Vertex> vertices;
@@ -2674,10 +2728,827 @@ protected
   end dumpSets;
 
   // ---------------------------------------------------------------------------
+  // the overconstrained connection graph with symbolic sizes
+  //
+  // Like NFOCConnectionGraph, but on the symbolic connection sets instead of
+  // the elements: G1 is the graph of the connections of the overconstrained
+  // connectors (redundant connections are ignored), G2 adds the branches. G2 is
+  // a forest (no broken connections) iff  components(G1) - branches =
+  // components(G2), checked as an identity of polynomials in the size
+  // parameters. Every component of G2 gets its definite root, or the potential
+  // root of the smallest priority (both have to be unique). Everything else
+  // (rooted, uniqueRoot, broken connections, ...) is not supported: the caller
+  // uses the classic graph then.
+  // ---------------------------------------------------------------------------
+
+  uniontype Poly
+    "a polynomial in the size parameters"
+    record POLY
+      list<tuple<String, Integer>> terms "monomial (names joined by *, sorted) -> coefficient, sorted, no zeros";
+    end POLY;
+  end Poly;
+
+  function polyConst
+    input Integer c;
+    output Poly p = POLY(if c == 0 then {} else {("", c)});
+  end polyConst;
+
+  function polyFromAff
+    input Aff a;
+    output Poly p;
+  protected
+    Integer c;
+    list<tuple<String, Integer>> k;
+  algorithm
+    AFF(c, k) := a;
+    p := polyNormalize((if c == 0 then {} else {("", c)}) :: {k});
+  end polyFromAff;
+
+  function polyNormalize
+    "the sum of lists of terms"
+    input list<list<tuple<String, Integer>>> termLists;
+    output Poly p;
+  protected
+    UnorderedMap<String, Integer> acc = UnorderedMap.new<Integer>(stringHashDjb2, stringEq);
+    String m;
+    Integer c;
+  algorithm
+    for l in termLists loop
+      for t in l loop
+        (m, c) := t;
+        UnorderedMap.addUpdate(m, function addInt(c = c), acc);
+      end for;
+    end for;
+    p := POLY(list((m, UnorderedMap.getOrFail(m, acc)) for m guard UnorderedMap.getOrFail(m, acc) <> 0
+      in List.sort(UnorderedMap.keyList(acc), stringGreater)));
+  end polyNormalize;
+
+  function addInt
+    input Option<Integer> old;
+    input Integer c;
+    output Integer n = Util.getOptionOrDefault(old, 0) + c;
+  end addInt;
+
+  function polyAdd
+    input Poly a;
+    input Poly b;
+    output Poly p = polyNormalize({a.terms, b.terms});
+  end polyAdd;
+
+  function polySub
+    input Poly a;
+    input Poly b;
+    output Poly p = polyNormalize({a.terms, list((Util.tuple21(t), -Util.tuple22(t)) for t in b.terms)});
+  end polySub;
+
+  function polyMul
+    input Poly a;
+    input Poly b;
+    output Poly p;
+  protected
+    list<tuple<String, Integer>> terms = {};
+  algorithm
+    for ta in a.terms loop
+      for tb in b.terms loop
+        terms := (monomialMul(Util.tuple21(ta), Util.tuple21(tb)), Util.tuple22(ta) * Util.tuple22(tb)) :: terms;
+      end for;
+    end for;
+    p := polyNormalize({terms});
+  end polyMul;
+
+  function monomialMul
+    input String m1;
+    input String m2;
+    output String m;
+  protected
+    list<String> n1 = {}, n2 = {};
+  algorithm
+    if m1 <> "" then
+      n1 := Util.stringSplitAtChar(m1, "*");
+    end if;
+    if m2 <> "" then
+      n2 := Util.stringSplitAtChar(m2, "*");
+    end if;
+    m := stringDelimitList(List.sort(listAppend(n1, n2), stringGreater), "*");
+  end monomialMul;
+
+  function polyString
+    input Poly p;
+    output String str = if listEmpty(p.terms) then "0" else
+      stringDelimitList(list(intString(Util.tuple22(t)) + (if Util.tuple21(t) == "" then "" else "*" + Util.tuple21(t)) for t in p.terms), " + ");
+  end polyString;
+
+  function polyEq
+    input Poly a;
+    input Poly b;
+    output Boolean eq = polyString(a) == polyString(b);
+  end polyEq;
+
+  function ocUnsupported
+    "the symbolic overconstrained graph does not support this, the classic one is used"
+    input String msg;
+  algorithm
+    if Flags.isSet(Flags.CGRAPH) then
+      print("NFResizableConnections: symbolic overconstrained connection graph not used: " + msg + "\n");
+    end if;
+    fail();
+  end ocUnsupported;
+
+  function symLength
+    "the number of elements of lo:hi as polynomial, lo:hi certainly not empty"
+    input Sym lo;
+    input Sym hi;
+    input list<Aff> facts;
+    output Poly p;
+  protected
+    Sym d = symSub(hi, lo, facts);
+  algorithm
+    if not symIsAff(d) or symLe(lo, hi, facts) <> YES then
+      ocUnsupported("the size of " + symString(lo) + ":" + symString(hi) + " is not polynomial");
+    end if;
+    p := polyFromAff(affAdd(symGetAff(d), affInt(1)));
+  end symLength;
+
+  function boxCount
+    input Box box;
+    input list<Aff> facts;
+    output Poly p = polyConst(1);
+  algorithm
+    for iv in box loop
+      p := polyMul(p, symLength(ivLo(iv), ivHi(iv), facts));
+    end for;
+  end boxCount;
+
+  function setGroups
+    "the members of each set"
+    input Sets sets;
+    output list<list<Integer>> groups = {};
+  protected
+    Integer n = Vector.size(sets.pieceVertex);
+    array<list<Integer>> g = arrayCreate(n, {});
+    Integer r;
+  algorithm
+    for p in n:-1:1 loop
+      r := pieceFind(sets, p);
+      arrayUpdate(g, r, p :: g[r]);
+    end for;
+    for p in n:-1:1 loop
+      if not listEmpty(g[p]) then
+        groups := g[p] :: groups;
+      end if;
+    end for;
+  end setGroups;
+
+  function setComponents
+    "the number of components of a set: the product of the sizes of its free
+     classes; NONE for a set of virtual hubs only"
+    input list<Integer> members;
+    input Sets sets;
+    input Vector<Vertex> vertices;
+    input list<Aff> facts;
+    output Option<Poly> count;
+  protected
+    UnorderedMap<Integer, ClassNodes> cls;
+    list<Integer> free;
+    Integer p, d;
+    Sym off, lo, hi;
+    Box box;
+    Poly c;
+  algorithm
+    for m in members loop
+      if boxEmpty(Vector.get(sets.pieceBox, m), facts) <> NO then
+        ocUnsupported("a piece of " + vertexName(vertices, Vector.get(sets.pieceVertex, m)) + " may be empty");
+      end if;
+    end for;
+    if not List.any(list(isSome(vertexConn(vertices, Vector.get(sets.pieceVertex, m))) for m in members), Util.id) then
+      count := NONE();
+      return;
+    end if;
+    (cls, free) := setFreeClasses(members, sets, facts);
+    c := polyConst(1);
+    for fc in free loop
+      (p, d, off) := listHead(UnorderedMap.getOrFail(fc, cls));
+      box := Vector.get(sets.pieceBox, p);
+      lo := symAdd(ivLo(listGet(box, d)), off, facts);
+      hi := symAdd(ivHi(listGet(box, d)), off, facts);
+      for nd in UnorderedMap.getOrFail(fc, cls) loop
+        (p, d, off) := nd;
+        box := Vector.get(sets.pieceBox, p);
+        if not (symEq(symAdd(ivLo(listGet(box, d)), off, facts), lo) and symEq(symAdd(ivHi(listGet(box, d)), off, facts), hi)) then
+          ocUnsupported("different ranges in one set");
+        end if;
+      end for;
+      c := polyMul(c, symLength(lo, hi, facts));
+    end for;
+    count := SOME(c);
+  end setComponents;
+
+  function componentCount
+    input Sets sets;
+    input Vector<Vertex> vertices;
+    input list<Aff> facts;
+    output Poly count = polyConst(0);
+  protected
+    Option<Poly> oc;
+    Poly c;
+  algorithm
+    for members in setGroups(sets) loop
+      oc := setComponents(members, sets, vertices, facts);
+      if isSome(oc) then
+        SOME(c) := oc;
+        count := polyAdd(count, c);
+      end if;
+    end for;
+  end componentCount;
+
+  uniontype OcRoot
+    "a Connections.root (priority -1) or potentialRoot call: the elements of a connector"
+    record OC_ROOT
+      Integer vertex;
+      Box elements;
+      Integer priority;
+    end OC_ROOT;
+  end OcRoot;
+
+  uniontype OcGraph
+    record OC_GRAPH
+      UnorderedMap<String, String> members "connector -> its overconstrained member";
+      UnorderedSet<String> prefixes "the prefixes of the overconstrained connectors";
+      list<Edge> connections;
+      list<Edge> branches;
+      list<OcRoot> roots;
+      list<tuple<Integer, Box>> boxes "the elements of roots and isRoot arguments";
+    end OC_GRAPH;
+  end OcGraph;
+
+  function ocMembers
+    "the connectors with an overconstrained member (e.g. terminal for terminal.theta)"
+    input list<Variable> variables;
+    output UnorderedMap<String, String> members = UnorderedMap.new<String>(stringHashDjb2, stringEq);
+    output UnorderedSet<String> prefixes = UnorderedSet.new(stringHashDjb2, stringEq);
+  protected
+    ComponentRef c, conn;
+    String key, name;
+    Option<String> old;
+  algorithm
+    for var in variables loop
+      c := var.name;
+      while not ComponentRef.isEmpty(c) loop
+        if InstNode.isComponent(ComponentRef.node(c)) and
+           Class.isOverdetermined(InstNode.getClass(ComponentRef.node(c))) then
+          conn := ComponentRef.rest(c);
+          if not ComponentRef.isEmpty(conn) then
+            key := ComponentRef.toString(ComponentRef.stripSubscriptsAll(conn));
+            name := ComponentRef.firstName(c);
+            old := UnorderedMap.get(key, members);
+            if isSome(old) and Util.getOption(old) <> name then
+              ocUnsupported("the connector " + key + " has several overconstrained members");
+            end if;
+            UnorderedMap.add(key, name, members);
+            while not ComponentRef.isEmpty(conn) loop
+              UnorderedSet.add(ComponentRef.toString(ComponentRef.stripSubscriptsAll(conn)), prefixes);
+              conn := ComponentRef.rest(conn);
+            end while;
+          end if;
+          break;
+        end if;
+        c := ComponentRef.rest(c);
+      end while;
+    end for;
+  end ocMembers;
+
+  function connectorKey
+    input Expression exp;
+    output String key = ComponentRef.toString(ComponentRef.stripSubscriptsAll(Expression.toCref(exp)));
+  end connectorKey;
+
+  function ocConnector
+    "the connector of an overconstrained member, e.g. a[i].terminal for a[i].terminal.theta"
+    input Expression arg;
+    input OcGraph g;
+    output Expression conn;
+  protected
+    ComponentRef cr = Expression.toCref(arg), rest;
+    String key;
+  algorithm
+    rest := ComponentRef.rest(cr);
+    key := if ComponentRef.isEmpty(rest) then "" else ComponentRef.toString(ComponentRef.stripSubscriptsAll(rest));
+    if key == "" or not UnorderedMap.contains(key, g.members) or
+       UnorderedMap.getOrFail(key, g.members) <> ComponentRef.firstName(cr) or
+       not listEmpty(ComponentRef.getSubscripts(cr)) then
+      ocUnsupported("the argument " + Expression.toString(arg) + " of a Connections operator");
+    end if;
+    conn := Expression.fromCref(rest);
+  end ocConnector;
+
+  function sideElements
+    "the vertex and the elements of a connector (array) in the domain of the
+     surrounding loops, every slice an own dimension"
+    input Expression conn;
+    input list<String> iterNames;
+    input Box dom;
+    input DAE.ElementSource source;
+    input Context ctx;
+    output Integer v;
+    output Box elements;
+  protected
+    list<SubEntry> entries;
+    list<Integer> iters;
+    list<Sym> offs;
+    Box d, slice_ivs = {};
+    list<Aff> facts = {};
+  algorithm
+    (v, entries) := connectSide(conn, iterNames, source, ctx);
+    for e in entries loop
+      if isSliced(e) then
+        slice_ivs := IV(symInt(1), symAddInt(symSub(sliceHi(e), sliceLo(e), facts), 1, facts)) :: slice_ivs;
+      end if;
+    end for;
+    d := listAppend(dom, listReverse(slice_ivs));
+    (iters, offs) := sideDims(entries, listLength(dom), facts);
+    elements := sideImage(SIDE(v, iters, offs), d, facts);
+  end sideElements;
+
+  type OcOp = enumeration(BRANCH, ROOT, POTENTIAL_ROOT, IS_ROOT, OTHER, NOT_OPERATOR)
+    "the Connections operators (OTHER: rooted, uniqueRoot, uniqueRootIndices)";
+
+  function connectionsOperator
+    input Expression exp;
+    output OcOp op;
+  algorithm
+    op := match exp
+      local Function fn;
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
+        then match AbsynUtil.pathString(Function.name(fn))
+          case "Connections.branch" then OcOp.BRANCH;
+          case "Connections.root" then OcOp.ROOT;
+          case "Connections.potentialRoot" then OcOp.POTENTIAL_ROOT;
+          case "Connections.isRoot" then OcOp.IS_ROOT;
+          case "Connections.rooted" then OcOp.OTHER;
+          case "rooted" then OcOp.OTHER;
+          case "Connections.uniqueRoot" then OcOp.OTHER;
+          case "Connections.uniqueRootIndices" then OcOp.OTHER;
+          else OcOp.NOT_OPERATOR;
+        end match;
+      else OcOp.NOT_OPERATOR;
+    end match;
+  end connectionsOperator;
+
+  function callArgs
+    input Expression exp;
+    output list<Expression> args;
+  algorithm
+    Expression.CALL(call = Call.TYPED_CALL(arguments = args)) := exp;
+  end callArgs;
+
+  function collectOc
+    "the connections of overconstrained connectors, the branches, roots and the
+     elements of the isRoot arguments"
+    input Equation eq;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input output OcGraph g;
+  protected
+    Sym lo, hi;
+    Integer v;
+    Box elements;
+    list<Expression> args;
+    Integer prio;
+  algorithm
+    () := match eq
+      local
+        Expression range, e;
+      case Equation.CONNECT()
+        algorithm
+          if UnorderedMap.contains(connectorKey(eq.lhs), g.members) and UnorderedMap.contains(connectorKey(eq.rhs), g.members) then
+            g.connections := makeEdge(eq.lhs, eq.rhs, iterNames, dom, eq.source, ctx) :: g.connections;
+          elseif UnorderedSet.contains(connectorKey(eq.lhs), g.prefixes) or UnorderedSet.contains(connectorKey(eq.rhs), g.prefixes) then
+            ocUnsupported("a connection of connectors that contain overconstrained connectors");
+          end if;
+        then ();
+
+      case Equation.FOR(range = SOME(range as Expression.RANGE()))
+        algorithm
+          checkStep(range.step, eq.source);
+          lo := expToSym(range.start, ctx, eq.source);
+          hi := expToSym(range.stop, ctx, eq.source);
+          for b in eq.body loop
+            g := collectOc(b, listAppend(iterNames, {InstNode.name(eq.iterator)}), listAppend(dom, {IV(lo, hi)}), ctx, g);
+          end for;
+        then ();
+
+      case Equation.NORETCALL(exp = e)
+        algorithm
+          () := match connectionsOperator(e)
+            case OcOp.BRANCH
+              algorithm
+                args := callArgs(e);
+                g.branches := makeEdge(ocConnector(listHead(args), g), ocConnector(listGet(args, 2), g),
+                  iterNames, dom, eq.source, ctx) :: g.branches;
+              then ();
+            case OcOp.ROOT
+              algorithm
+                (v, elements) := sideElements(ocConnector(listHead(callArgs(e)), g), iterNames, dom, eq.source, ctx);
+                g.roots := OC_ROOT(v, elements, -1) :: g.roots;
+                g.boxes := (v, elements) :: g.boxes;
+              then ();
+            case OcOp.POTENTIAL_ROOT
+              algorithm
+                args := callArgs(e);
+                prio := match listGet(args, 2)
+                  local Integer pv;
+                  case Expression.INTEGER(value = pv) then pv;
+                  else algorithm ocUnsupported("a potential root priority that is no literal"); then fail();
+                end match;
+                (v, elements) := sideElements(ocConnector(listHead(args), g), iterNames, dom, eq.source, ctx);
+                g.roots := OC_ROOT(v, elements, prio) :: g.roots;
+                g.boxes := (v, elements) :: g.boxes;
+              then ();
+            case OcOp.NOT_OPERATOR
+              algorithm
+                g := collectIsRoot(eq, iterNames, dom, ctx, g);
+              then ();
+            else algorithm ocUnsupported(Expression.toString(e)); then fail();
+          end match;
+        then ();
+
+      else algorithm
+        g := collectIsRoot(eq, iterNames, dom, ctx, g);
+      then ();
+    end match;
+  end collectOc;
+
+  function collectIsRoot
+    "the elements of the isRoot arguments of an equation"
+    input Equation eq;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input output OcGraph g;
+  protected
+    Pointer<OcGraph> gp = Pointer.create(g);
+  algorithm
+    _ := Equation.mapExp(eq, function collectIsRootExp(iterNames = iterNames, dom = dom, ctx = ctx, gp = gp, source = Equation.source(eq)));
+    g := Pointer.access(gp);
+  end collectIsRoot;
+
+  function collectIsRootExp
+    input output Expression exp;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input Pointer<OcGraph> gp;
+    input DAE.ElementSource source;
+  algorithm
+    _ := Expression.map(exp, function collectIsRootCall(iterNames = iterNames, dom = dom, ctx = ctx, gp = gp, source = source));
+  end collectIsRootExp;
+
+  function collectIsRootCall
+    input output Expression exp;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input Pointer<OcGraph> gp;
+    input DAE.ElementSource source;
+  protected
+    OcGraph g;
+    Integer v;
+    Box elements;
+  algorithm
+    () := match connectionsOperator(exp)
+      case OcOp.NOT_OPERATOR then ();
+      case OcOp.IS_ROOT
+        algorithm
+          g := Pointer.access(gp);
+          (v, elements) := sideElements(ocConnector(listHead(callArgs(exp)), g), iterNames, dom, source, ctx);
+          g.boxes := (v, elements) :: g.boxes;
+          Pointer.update(gp, g);
+        then ();
+      else algorithm ocUnsupported(Expression.toString(exp)); then fail();
+    end match;
+  end collectIsRootCall;
+
+  function piecesOf
+    "the pieces of the elements (that have to be whole pieces)"
+    input Integer v;
+    input Box elements;
+    input Sets sets;
+    input list<Aff> facts;
+    output list<Integer> pieces = {};
+  protected
+    Box pbox;
+  algorithm
+    for p in sets.vertexPieces[v] loop
+      pbox := Vector.get(sets.pieceBox, p);
+      if boxEmpty(boxInter(elements, pbox, facts), facts) <> YES then
+        if not boxContains(elements, pbox, facts) then
+          ocUnsupported("elements that are no whole pieces");
+        end if;
+        pieces := p :: pieces;
+      end if;
+    end for;
+  end piecesOf;
+
+  function rootsOfSet
+    "the root pieces of a set: its definite root, else its potential root of the
+     smallest priority, both unique per component of the set"
+    input list<Integer> members;
+    input UnorderedMap<Integer, Integer> priority "piece -> smallest priority, -1 for a definite root";
+    input Sets sets;
+    input Vector<Vertex> vertices;
+    input list<Aff> facts;
+    output list<Integer> roots = {};
+  protected
+    UnorderedMap<Integer, ClassNodes> cls;
+    list<Integer> free, cands;
+    Integer best = -2, pr;
+    UnorderedSet<Integer> free_set;
+    Poly count;
+    Integer c;
+    Sym off;
+  algorithm
+    for m in members loop
+      if UnorderedMap.contains(m, priority) then
+        pr := UnorderedMap.getOrFail(m, priority);
+        if best == -2 or pr < best then
+          best := pr;
+        end if;
+      end if;
+    end for;
+    if best == -2 then
+      return;
+    end if;
+    cands := list(m for m guard UnorderedMap.contains(m, priority) and UnorderedMap.getOrFail(m, priority) == best in members);
+    (cls, free) := setFreeClasses(members, sets, facts);
+    if listEmpty(free) then
+      // one component: exactly one root element
+      count := polyConst(0);
+      for m in cands loop
+        count := polyAdd(count, boxCount(Vector.get(sets.pieceBox, m), facts));
+      end for;
+      if not polyEq(count, polyConst(1)) then
+        ocUnsupported(polyString(count) + " roots in one component");
+      end if;
+    else
+      // a component for every value of the free dimensions: one root piece,
+      // all of its other dimensions single elements
+      if listLength(cands) <> 1 then
+        ocUnsupported("several roots in one component");
+      end if;
+      free_set := UnorderedSet.fromList(free, Util.id, intEq);
+      for d in 1:listLength(Vector.get(sets.pieceBox, listHead(cands))) loop
+        (c, off) := dimFind(sets, dimNode(sets, listHead(cands), d), facts);
+        if not UnorderedSet.contains(c, free_set) and
+           not symEq(ivLo(listGet(Vector.get(sets.pieceBox, listHead(cands)), d)), ivHi(listGet(Vector.get(sets.pieceBox, listHead(cands)), d))) then
+          ocUnsupported("several roots in one component");
+        end if;
+      end for;
+    end if;
+    roots := cands;
+  end rootsOfSet;
+
+  function evalIsRoot
+    "isRoot of elements: true if all of them are roots, false if none"
+    input Integer v;
+    input Box elements;
+    input Sets sets;
+    input UnorderedSet<Integer> roots;
+    input list<Aff> facts;
+    output Boolean isRoot;
+  protected
+    list<Integer> pieces = piecesOf(v, elements, sets, facts);
+    Boolean all_roots = true, any_root = false;
+  algorithm
+    for p in pieces loop
+      if UnorderedSet.contains(p, roots) then
+        any_root := true;
+      else
+        all_roots := false;
+      end if;
+    end for;
+    if any_root and not all_roots then
+      ocUnsupported("isRoot of elements of which only some are roots");
+    end if;
+    isRoot := any_root;
+  end evalIsRoot;
+
+  function rewriteOc
+    "the equations with isRoot evaluated and the Connections operators removed"
+    input Equation eq;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input OcGraph g;
+    input Sets sets;
+    input UnorderedSet<Integer> roots;
+    input list<Aff> facts;
+    output Equation outEq;
+  protected
+    Sym lo, hi;
+  algorithm
+    outEq := match eq
+      local
+        Expression range;
+      case Equation.FOR(range = SOME(range as Expression.RANGE()))
+        algorithm
+          lo := expToSym(range.start, ctx, eq.source);
+          hi := expToSym(range.stop, ctx, eq.source);
+          eq.body := list(rewriteOc(b, listAppend(iterNames, {InstNode.name(eq.iterator)}), listAppend(dom, {IV(lo, hi)}),
+            ctx, g, sets, roots, facts) for b in eq.body);
+        then eq;
+      else Equation.mapExp(eq, function rewriteIsRootExp(iterNames = iterNames, dom = dom, ctx = ctx, g = g,
+        sets = sets, roots = roots, facts = facts, source = Equation.source(eq)));
+    end match;
+  end rewriteOc;
+
+  function rewriteIsRootExp
+    input output Expression exp;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input OcGraph g;
+    input Sets sets;
+    input UnorderedSet<Integer> roots;
+    input list<Aff> facts;
+    input DAE.ElementSource source;
+  algorithm
+    exp := Expression.map(exp, function rewriteIsRootCall(iterNames = iterNames, dom = dom, ctx = ctx, g = g,
+      sets = sets, roots = roots, facts = facts, source = source));
+  end rewriteIsRootExp;
+
+  function rewriteIsRootCall
+    input output Expression exp;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    input OcGraph g;
+    input Sets sets;
+    input UnorderedSet<Integer> roots;
+    input list<Aff> facts;
+    input DAE.ElementSource source;
+  protected
+    Integer v;
+    Box elements;
+  algorithm
+    () := match connectionsOperator(exp)
+      case OcOp.IS_ROOT
+        algorithm
+          (v, elements) := sideElements(ocConnector(listHead(callArgs(exp)), g), iterNames, dom, source, ctx);
+          exp := Expression.BOOLEAN(evalIsRoot(v, elements, sets, roots, facts));
+        then ();
+      else ();
+    end match;
+  end rewriteIsRootCall;
+
+  function isConnectionsOperatorCall
+    input Expression exp;
+    output Boolean b = connectionsOperator(exp) <> OcOp.NOT_OPERATOR;
+  end isConnectionsOperatorCall;
+
+  function hasConnectionsOperator
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := Expression.contains(exp, isConnectionsOperatorCall);
+  end hasConnectionsOperator;
+
+  function resolveOverconstrainedSymbolic
+    input output FlatModel flatModel;
+  protected
+    Context ctx;
+    OcGraph g;
+    Sets g1, g2;
+    list<Aff> facts1, facts2;
+    Vector<Vertex> v1, v2;
+    Poly c1, c2, b;
+    UnorderedMap<Integer, Integer> priority;
+    UnorderedSet<Integer> roots;
+    Integer pr;
+    Option<Expression> obind;
+    UnorderedMap<String, String> members;
+    UnorderedSet<String> prefixes;
+  algorithm
+    ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
+      UnorderedMap.new<Expression>(stringHashDjb2, stringEq), UnorderedMap.new<Variable>(stringHashDjb2, stringEq));
+    for var in flatModel.variables loop
+      UnorderedMap.add(ComponentRef.toString(var.name), var, ctx.variables);
+      obind := Binding.getExpOpt(var.binding);
+      if isSome(obind) and hasConnectionsOperator(Util.getOption(obind)) then
+        ocUnsupported("a Connections operator in the binding of " + ComponentRef.toString(var.name));
+      end if;
+    end for;
+    for eq in flatModel.initialEquations loop
+      _ := Equation.mapExp(eq, failOnConnectionsOperator);
+    end for;
+
+    (members, prefixes) := ocMembers(flatModel.variables);
+    g := OC_GRAPH(members, prefixes, {}, {}, {}, {});
+    for eq in flatModel.equations loop
+      g := collectOc(eq, {}, {}, ctx, g);
+    end for;
+
+    // G1 (connections) and G2 (connections and branches), on copies of the
+    // vertices (the sets add virtual hubs to them)
+    v1 := Vector.copy(ctx.vertices);
+    v2 := Vector.copy(ctx.vertices);
+    (g1, facts1) := connectionSets(v1, g.connections, g.boxes);
+    (g2, facts2) := connectionSets(v2, listAppend(g.connections, g.branches), g.boxes);
+    c1 := componentCount(g1, v1, facts1);
+    c2 := componentCount(g2, v2, facts2);
+    b := polyConst(0);
+    for e in g.branches loop
+      b := polyAdd(b, boxCount(e.dom, facts2));
+    end for;
+    if Flags.isSet(Flags.CGRAPH) then
+      print("NFResizableConnections: components of the connections " + polyString(c1) + ", branches " + polyString(b) +
+        ", components " + polyString(c2) + "\n");
+    end if;
+    if not polyEq(polySub(c1, b), c2) then
+      ocUnsupported("the branches close loops (broken connections)");
+    end if;
+
+    // the roots: the smallest priority of every piece, -1 for a definite root
+    priority := UnorderedMap.new<Integer>(Util.id, intEq);
+    for r in g.roots loop
+      for p in piecesOf(r.vertex, r.elements, g2, facts2) loop
+        UnorderedMap.addUpdate(p, function minPriority(pr = r.priority), priority);
+      end for;
+    end for;
+    roots := UnorderedSet.new(Util.id, intEq);
+    for set_members in setGroups(g2) loop
+      for p in rootsOfSet(set_members, priority, g2, v2, facts2) loop
+        UnorderedSet.add(p, roots);
+      end for;
+    end for;
+
+    flatModel.equations := removeGraphOperators(flatModel.equations);
+    flatModel.equations := list(rewriteOc(eq, {}, {}, ctx, g, g2, roots, facts2) for eq in flatModel.equations);
+  end resolveOverconstrainedSymbolic;
+
+  function removeGraphOperators
+    "removes Connections.root, potentialRoot and branch, also inside for loops;
+     a for loop with nothing else is removed"
+    input list<Equation> equations;
+    output list<Equation> outEquations = {};
+  algorithm
+    for eq in equations loop
+      outEquations := match eq
+        local
+          Expression e;
+        case Equation.NORETCALL(exp = e)
+          guard connectionsOperator(e) == OcOp.ROOT or
+                connectionsOperator(e) == OcOp.POTENTIAL_ROOT or
+                connectionsOperator(e) == OcOp.BRANCH
+          then outEquations;
+        case Equation.FOR()
+          algorithm
+            eq.body := removeGraphOperators(eq.body);
+          then if listEmpty(eq.body) then outEquations else eq :: outEquations;
+        else eq :: outEquations;
+      end match;
+    end for;
+    outEquations := listReverseInPlace(outEquations);
+  end removeGraphOperators;
+
+  function minPriority
+    input Option<Integer> old;
+    input Integer pr;
+    output Integer res = if isSome(old) then intMin(Util.getOption(old), pr) else pr;
+  end minPriority;
+
+  function failOnConnectionsOperator
+    input output Expression exp;
+  algorithm
+    if hasConnectionsOperator(exp) then
+      ocUnsupported("a Connections operator in an initial equation");
+    end if;
+  end failOnConnectionsOperator;
+
+  // ---------------------------------------------------------------------------
   // entry point
   // ---------------------------------------------------------------------------
 
 public
+  function resolveOverconstrained
+    "Connections.root, potentialRoot, branch and isRoot of overconstrained
+     connectors with symbolic sizes (the graph does not depend on the sizes).
+     Returns false without changing the model if this is not supported, the
+     caller uses the classic graph on the unrolled connections then."
+    input output FlatModel flatModel;
+    output Boolean ok;
+  algorithm
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      flatModel := resolveOverconstrainedSymbolic(flatModel);
+      ok := true;
+      ErrorExt.delCheckpoint(getInstanceName());
+    else
+      ok := false;
+      ErrorExt.rollBack(getInstanceName());
+    end try;
+  end resolveOverconstrained;
+
   function resolve
     "Generates the connection equations of the connect equations of the model
      with symbolic sizes and adds them to the equations."
