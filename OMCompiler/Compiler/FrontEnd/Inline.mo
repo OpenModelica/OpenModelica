@@ -52,9 +52,12 @@ import BaseHashTable;
 import DAE;
 import HashTableCG;
 import SCode;
+import UnorderedMap;
 import Util;
 
 type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>>;
+type ArgMemo = UnorderedMap<DAE.ComponentRef, DAE.Exp>;
+type ReplaceArgsTuple = tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean,ArgMemo>;
 
 protected
 
@@ -861,7 +864,7 @@ algorithm
           // add noEvent to avoid events as usually for functions
           // MSL 3.2.1 need GenerateEvents to disable this
           newExp := Expression.addNoEventToRelationsAndConds(newExp);
-          (newExp,(_,_,true)) := Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+          newExp := replaceArgsInExp(newExp,argmap,checkcr);
           // for inlinecalls in functions
           (newExp1,assrtLst) := Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
         else // normal Modelica
@@ -884,7 +887,7 @@ algorithm
             // MSL 3.2.1 need GenerateEvents to disable this
             generateEvents := hasGenerateEventsAnnotation(comment);
             newExp := if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-            (newExp,(_,_,true)) := Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+            newExp := replaceArgsInExp(newExp,argmap,checkcr);
             // for inlinecalls in functions
             (newExp1,assrtLst) := Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
           else // assert detected
@@ -901,7 +904,7 @@ algorithm
             // MSL 3.2.1 need GenerateEvents to disable this
             generateEvents := hasGenerateEventsAnnotation(comment);
             newExp := if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-            (newExp,(_,_,true)) := Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+            newExp := replaceArgsInExp(newExp,argmap,checkcr);
             assrt := inlineAssert(assrt,fns,argmap,checkcr);
             // for inlinecalls in functions
             (newExp1,assrtLst) := Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrt::assrtLst);
@@ -927,9 +930,9 @@ protected
   DAE.Exp cond, msg, level;
 algorithm
   DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
-  (cond,(_,_,true)) := Expression.traverseExpBottomUp(cond,replaceArgs,(argmap,checkcr,true));
+  cond := replaceArgsInExp(cond,argmap,checkcr);
   //print("ASSERT inlined: "+ExpressionBasics.printExpStr(cond)+"\n");
-  (msg,(_,_,true)) := Expression.traverseExpBottomUp(msg,replaceArgs,(argmap,checkcr,true));
+  msg := replaceArgsInExp(msg,argmap,checkcr);
   // These clear checkcr/repl and need to be performed last
   // (cond,_,_,_) := inlineExp(cond,fns,source);
   // (msg,_,_,_) := inlineExp(msg,fns,source);
@@ -1004,7 +1007,7 @@ algorithm
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents := hasGenerateEventsAnnotation(comment);
         newExp := if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-        (newExp,(_,_,true)) := Expression.traverseExpBottomUp(newExp,replaceArgs,(argmap,checkcr,true));
+        newExp := replaceArgsInExp(newExp,argmap,checkcr);
         // for inlinecalls in functions
         (newExp1,assrtLst) := Expression.traverseExpBottomUp(newExp,function forceInlineCall(fns=fns,visitedPaths=AvlSetPath.add(visitedPaths, p)),assrtLst);
       then (newExp1,assrtLst);
@@ -1499,12 +1502,72 @@ algorithm
   end match;
 end getRhsExp;
 
+protected function replaceArgsInExp
+  "Replaces the function inputs in exp by the call's arguments, failing if
+   that is not possible."
+  input output DAE.Exp exp;
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> argmap;
+  input HashTableCG.HashTable checkcr;
+algorithm
+  (exp,(_,_,true,_)) := Expression.traverseExpBottomUp(exp,replaceArgs,(argmap,checkcr,true,newArgMemo()));
+end replaceArgsInExp;
+
+public function newArgMemo
+  output ArgMemo memo = UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+end newArgMemo;
+
+protected function getArgReplacement
+  "The simplified argument expression for cref. Crefs without subscripts or
+   with constant indices give the same result each time, so it is memoized."
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> argmap;
+  input DAE.ComponentRef cref;
+  input ArgMemo memo;
+  output DAE.Exp exp;
+protected
+  Boolean cache = hasOnlyConstantIndices(cref);
+  Option<DAE.Exp> oexp;
+algorithm
+  if cache then
+    oexp := UnorderedMap.get(cref, memo);
+    if isSome(oexp) then
+      SOME(exp) := oexp;
+      return;
+    end if;
+  end if;
+  exp := getExpFromArgMap(argmap, cref);
+  (exp, _) := ExpressionSimplify.simplify(exp);
+  if cache then
+    UnorderedMap.add(cref, exp, memo);
+  end if;
+end getArgReplacement;
+
+protected function hasOnlyConstantIndices
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.CREF_IDENT() then List.all(cref.subscriptLst, isConstantIndex);
+    case DAE.CREF_QUAL() then List.all(cref.subscriptLst, isConstantIndex) and hasOnlyConstantIndices(cref.componentRef);
+    else false;
+  end match;
+end hasOnlyConstantIndices;
+
+protected function isConstantIndex
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match sub
+    case DAE.INDEX(exp = DAE.ICONST()) then true;
+    else false;
+  end match;
+end isConstantIndex;
+
 public function replaceArgs
 "finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
   input DAE.Exp inExp;
-  input tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> inTuple;
+  input ReplaceArgsTuple inTuple;
   output DAE.Exp outExp;
-  output tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> outTuple;
+  output ReplaceArgsTuple outTuple;
 algorithm
   (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
@@ -1518,19 +1581,17 @@ algorithm
       DAE.InlineType inlineType;
       DAE.TailCall tc;
       HashTableCG.HashTable checkcr;
+      ArgMemo memo;
 
-    case (DAE.CREF(componentRef = cref),(argmap,_,true))
-      algorithm
-        e := getExpFromArgMap(argmap,cref);
-        (e,_) := ExpressionSimplify.simplify(e);
-      then (e,inTuple);
+    case (DAE.CREF(componentRef = cref),(argmap,_,true,memo))
+      then (getArgReplacement(argmap,cref,memo),inTuple);
 
-    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
+    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true,memo))
       guard
         BaseHashTable.hasKey(ComponentReferenceBasics.crefFirstCref(cref),checkcr)
-      then (inExp,(argmap,checkcr,false));
+      then (inExp,(argmap,checkcr,false,memo));
 
-    case (DAE.CREF(componentRef = cref),(argmap,_,true))
+    case (DAE.CREF(componentRef = cref),(argmap,_,true,_))
       algorithm
         firstCref := ComponentReferenceBasics.crefFirstCref(cref);
         {} := ComponentReferenceBasics.crefSubs(firstCref);
@@ -1542,13 +1603,13 @@ algorithm
         end while;
       then (e,inTuple);
 
-    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
+    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true,memo))
       algorithm
         getExpFromArgMap(argmap,ComponentReference.crefStripSubs(ComponentReferenceBasics.crefFirstCref(cref)));
         // We have something like v[i].re and v is in the inputs... So we fail to inline.
-      then (inExp,(argmap,checkcr,false));
+      then (inExp,(argmap,checkcr,false,memo));
 
-    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc,_)),ty),(argmap,_,true))
+    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc,_)),ty),(argmap,_,true,_))
       algorithm
         cref := ComponentReference.pathToCref(path);
         e as DAE.CREF(componentRef=cref,ty=ty2) := getExpFromArgMap(argmap,cref);
@@ -1560,14 +1621,14 @@ algorithm
         (e,_) := ExpressionSimplify.simplify(e);
       then (e,inTuple);
 
-    case (e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true))
+    case (e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true,memo))
       algorithm
         cref := ComponentReference.pathToCref(path);
         true := BaseHashTable.hasKey(cref,checkcr);
-      then (e,(argmap,checkcr,false));
+      then (e,(argmap,checkcr,false,memo));
 
     // TODO: Use the inlineType of the function reference!
-    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc,_)),(argmap,_,true))
+    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc,_)),(argmap,_,true,_))
       algorithm
         cref := ComponentReference.pathToCref(path);
         e as DAE.CREF(componentRef=cref,ty=ty) := getExpFromArgMap(argmap,cref);
@@ -1581,11 +1642,11 @@ algorithm
         (e,_) := ExpressionSimplify.simplify(e);
       then (e,inTuple);
 
-    case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(),builtin=false)),(argmap,checkcr,true))
+    case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(),builtin=false)),(argmap,checkcr,true,memo))
       algorithm
         cref := ComponentReference.pathToCref(path);
         true := BaseHashTable.hasKey(cref,checkcr);
-      then (e,(argmap,checkcr,false));
+      then (e,(argmap,checkcr,false,memo));
 
     else (inExp,inTuple);
   end matchcontinue;
