@@ -657,31 +657,35 @@ function: inlineExp
   output Boolean inlined;
   output list<DAE.Statement> assrtLstOut;
 algorithm
-  (outExp,outSource,inlined,assrtLstOut) := matchcontinue (inExp,inElementList,inSource)
+  (outExp,outSource,inlined,assrtLstOut) := match inExp
     local
-      Functiontuple fns;
-      DAE.Exp e,e_1,e_2;
+      DAE.Exp e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
+      Boolean b;
 
     // never inline WILD!
-    case (DAE.CREF(componentRef = DAE.WILD()),_,_) then (inExp,inSource,false,{});
+    case DAE.CREF(componentRef = DAE.WILD()) then (inExp,inSource,false,{});
 
-    case (e,fns,source)
+    else
       algorithm
-        (e_1,assrtLst) := Expression.traverseExpBottomUp(e,function inlineCall(fns=fns),{});
-        false := referenceEq(e, e_1);
-        if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-          source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-          (DAE.PARTIAL_EQUATION(e_2),source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+        try
+          (e_1,assrtLst) := Expression.traverseExpBottomUp(inExp,function inlineCall(fns=inElementList),{});
+          false := referenceEq(inExp, e_1);
+          if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+            source := ElementSource.addSymbolicTransformation(inSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(inExp),DAE.PARTIAL_EQUATION(e_1)));
+            (DAE.PARTIAL_EQUATION(e_2),source) := ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+          else
+            e_2 := ExpressionSimplify.simplify(e_1);
+            source := inSource;
+          end if;
+          b := true;
         else
-          e_2 := ExpressionSimplify.simplify(e_1);
-        end if;
+          (e_2,source,b,assrtLst) := (inExp,inSource,false,{});
+        end try;
       then
-        (e_2,source,true,assrtLst);
-
-    else (inExp,inSource,false,{});
-  end matchcontinue;
+        (e_2,source,b,assrtLst);
+  end match;
 end inlineExp;
 
 public function forceInlineExp "
