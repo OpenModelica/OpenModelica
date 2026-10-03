@@ -16468,6 +16468,22 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 // the trailing `result` reference.
                 let algo_tail_rhs: Option<&TypedExp> =
                     if active_tail.is_some() { case_algo_tail_rhs(case) } else { None };
+                // The result runs after the owned rebind of reassigned
+                // bindings emitted below.
+                {
+                    let mut names: Vec<String> = Vec::new();
+                    if use_match_deref {
+                        pat_collect_all_bindings(&case.pattern, &mut names);
+                    } else {
+                        pat_deref_bindings(&case.pattern, &input_ty, ctx, top_level, &mut names);
+                    }
+                    let mut assigned: HashSet<String> = HashSet::new();
+                    stmts_assigned_var_names(&case.stmts, &mut assigned);
+                    for n in names.iter().filter(|n| assigned.contains(*n) && !escaping_outputs.contains(*n)) {
+                        ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
+                        ctx.match_refbound.remove(n);
+                    }
+                }
                 let result = match (active_tail.as_ref(), algo_tail_rhs) {
                     (Some((sn, fb)), None) => emit_tail_value_exp(&case.result, sn, *fb, ctx, top_level),
                     (Some((sn, fb)), Some(rhs)) => emit_tail_value_exp(rhs, sn, *fb, ctx, top_level),
@@ -16706,6 +16722,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                                     && matches!(*shape, VarShape::RefArc) {
                                         *shape = VarShape::Arc;
                                     }
+                                ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
+                                ctx.match_refbound.remove(n);
                             }
                         }
                     }
@@ -17247,6 +17265,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                                     && matches!(*shape, VarShape::RefArc) {
                                         *shape = VarShape::Arc;
                                     }
+                                ctx.place_mode.insert(n.clone(), PlaceMode::Owned);
+                                ctx.match_refbound.remove(n);
                             }
                         }
                     }
