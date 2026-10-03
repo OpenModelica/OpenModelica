@@ -6169,6 +6169,7 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, cx: &mut LiveCx) {
                             live_exp(d, &mut clive, cx);
                         }
                     }
+                    case.live_in = Some(clive.clone());
                     // Pattern-bound names are arm-local: kill them (without
                     // marking) so they don't leak as live above the match. The
                     // guard is intentionally not walked for marking — its reads
@@ -15437,6 +15438,7 @@ fn append_access_segments(base: &TypedExp, tail_segs: &[CrefSegment], ty: &Ty) -
                     locals: c.locals.clone(),
                     stmts: c.stmts.clone(),
                     result: append_access_segments(&c.result, tail_segs, ty)?,
+                    live_in: c.live_in.clone(),
                 });
             }
             Some(TypedExp::Match {
@@ -15580,6 +15582,7 @@ fn substitute_formal_refs(exp: &TypedExp, bindings: &HashMap<String, TypedExp>) 
                 locals: c.locals.clone(),
                 stmts: c.stmts.clone(),
                 result: substitute_formal_refs(&c.result, bindings),
+                live_in: c.live_in.clone(),
             }).collect(),
             ty: ty.clone(),
             as_binding: as_binding.clone(),
@@ -15760,14 +15763,31 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
             Some(var_base_name(name, segments)),
         _ => None,
     };
-    // A local or borrowed parameter matched through `match_deref!` is borrowed
-    // in place (`&x`), the type the cloned subject had, so bindings of the
-    // whole subject keep their type.
-    let place_subject = plain_var.as_ref().filter(|n| !plain_ref_match
-        && (ctx.borrowed_params.contains(n.as_str())
-            || ctx.place_mode.get(n.as_str()) == Some(&PlaceMode::Owned) && !ctx.match_refbound.contains(n.as_str()))
-        && match_uses_match_deref(&deref_ty, cases, ctx, top_level)).cloned();
-    let arc_place_subject = place_subject.is_some();
+    // Locals and borrowed parameters matched through `match_deref!` are
+    // borrowed in place (`&x`, `(&x, y)`), the types the cloned subject had,
+    // so bindings of a whole subject or column keep their type.
+    let is_place = |n: &str| ctx.borrowed_params.contains(n)
+        || ctx.place_mode.get(n) == Some(&PlaceMode::Owned) && !ctx.match_refbound.contains(n);
+    let plain_name = |e: &TypedExp| match e {
+        TypedExp::Var { name, segments, .. } if !name.contains('.') && segments.len() <= 1
+            && segments.iter().all(|s| s.subscripts.is_empty()) => Some(var_base_name(name, segments)),
+        _ => None,
+    };
+    let place_names: Option<Vec<String>> = if matches!(kind, MatchKind::Match) && !take_first && !plain_ref_match
+        && match_uses_match_deref(&deref_ty, cases, ctx, top_level)
+    {
+        match input {
+            TypedExp::Tuple(es) => es.iter().map(|e| plain_name(e).filter(|n| is_place(n))).collect::<Option<Vec<_>>>()
+                .filter(|ns| ns.iter().collect::<HashSet<_>>().len() == ns.len()),
+            e => plain_name(e).filter(|n| is_place(n)).map(|n| vec![n]),
+        }
+    } else {
+        None
+    };
+    // A pattern binding named like a subject writes it back in the arm.
+    let place_names = place_names.filter(|ns| !cases.iter().any(|c|
+        typedexp::pat_bindings(&c.pattern).iter().any(|(b, _)| ns.contains(b))));
+    let arc_place_subject = place_names.is_some();
     // A pattern binding a whole subject would see `&&T` where it used to get
     // `&Arc<T>`, changing what `.clone()` yields; keep those owned.
     let pat_binds_whole = |p: &TypedPat| match p {
@@ -15795,10 +15815,11 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     };
     // A match on a local may write the local once the arm is done with its
     // pattern bindings (the borrow of the subject ends at their last use).
-    let plain_subject = plain_var.filter(|_| plain_ref_match || arc_place_subject);
-    let subject_writes_ok = match &plain_subject {
-        Some(s) => cases.iter().all(|c| arm_bindings_dead_at_subject_write(c, s)),
-        None => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
+    let plain_subject = plain_var.filter(|_| plain_ref_match);
+    let subject_writes_ok = match (&place_names, &plain_subject) {
+        (Some(ns), _) => ns.iter().all(|n| cases.iter().all(|c| arm_bindings_dead_at_subject_write(c, n))),
+        (None, Some(s)) => cases.iter().all(|c| arm_bindings_dead_at_subject_write(c, s)),
+        (None, None) => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
     };
     // Reassigning a borrowed parameter does not disturb a borrow of its target.
     let is_borrowed_var = |e: &TypedExp| matches!(e, TypedExp::Var { name, segments, .. }
@@ -15818,12 +15839,18 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         eprintln!("[match-clone] {} {why} {subj}", ctx.current_fn_qname);
     }
     let arc_place_borrow = borrow_scrutinee && arc_place_subject;
+    let place_ref = |n: &String| if ctx.borrowed_params.contains(n.as_str()) { escape_ident(n) } else { format!("&{}", escape_ident(n)) };
+    let place_subject_str: Option<String> = place_names.as_ref().filter(|_| arc_place_borrow).map(|ns| match ns.as_slice() {
+        [n] => place_ref(n),
+        ns => format!("({})", ns.iter().map(place_ref).collect::<Vec<_>>().join(", ")),
+    });
     ctx.borrow_reads = borrow_scrutinee && !arc_place_borrow;
-    ctx.place_reads = arc_place_borrow;
     ctx.borrow_mask = if ctx.borrow_reads { borrow_mask } else { Vec::new() };
-    let raw_input_str = emit_exp(input, is_const, ctx, top_level);
+    let raw_input_str = match &place_subject_str {
+        Some(s) => s.clone(),
+        None => emit_exp(input, is_const, ctx, top_level),
+    };
     ctx.borrow_reads = false;
-    ctx.place_reads = false;
     let raw_input_str = if take_first {
         input_ty = first_elem_ty.unwrap();
         format!("({raw_input_str}).0")
@@ -15973,8 +16000,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         .flatten();
     let match_subject = if let Some(s) = &param_subject {
         s.clone()
-    } else if let Some(n) = place_subject.as_ref().filter(|_| arc_place_borrow) {
-        if ctx.borrowed_params.contains(n.as_str()) { escape_ident(n) } else { format!("&{}", escape_ident(n)) }
+    } else if let Some(s) = &place_subject_str {
+        s.clone()
     } else if let Some(s) = &tuple_arc_rewrite {
         s.clone()
     } else if plain_ref_match {
@@ -16386,7 +16413,17 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                 let col_prologue: String = match drop_prologue.get(case_idx) {
                     None => String::new(),
                     Some(binds) => binds.iter().map(|(n, e)| {
-                        let init = emit_exp(e, is_const, ctx, top_level);
+                        let dead_after = match e {
+                            TypedExp::Var { name, .. } => case.live_in.as_ref().is_some_and(|l| !l.contains(name)),
+                            _ => false,
+                        };
+                        let init = match e {
+                            TypedExp::Var { name, segments, ty, .. } if dead_after => {
+                                let moved = TypedExp::Var { name: name.clone(), segments: segments.clone(), ty: ty.clone(), last_use: true };
+                                emit_exp(&moved, is_const, ctx, top_level)
+                            }
+                            _ => emit_exp(e, is_const, ctx, top_level),
+                        };
                         let t = e.ty();
                         if !matches!(t, Ty::Unknown) {
                             ctx.fn_env_vars.insert(n.clone(), t);
