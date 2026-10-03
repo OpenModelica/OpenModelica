@@ -49,6 +49,7 @@ import SimCode;
 import SimCodeFunction;
 import SimCodeVar;
 import Types;
+import UnorderedSet;
 import Util;
 
 protected
@@ -1104,15 +1105,21 @@ public function jacobianIndexExp
   input HashTableCrefSimVar.HashTable ht;
   output DAE.Exp exp = DAE.ICONST(var.index);
 protected
-  list<SimCodeVar.SimVar> before = {};
-  list<Integer> seen = {};
+  list<SimCodeVar.SimVar> vars, before = {};
+  UnorderedSet<Integer> seen;
 algorithm
-  if var.index <= 0 then
+  // only non-scalarized arrays can have a size that is known at runtime
+  if var.index <= 0 or Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
     return;
   end if;
-  for v in BaseHashTable.hashTableValueList(ht) loop
-    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not List.isMemberOnTrue(v.index, seen, intEq) then
-      seen := v.index :: seen;
+  vars := BaseHashTable.hashTableValueList(ht);
+  if not List.any(vars, isSymbolicArrayVar) then
+    return;
+  end if;
+  seen := UnorderedSet.new(Util.id, intEq);
+  for v in vars loop
+    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not UnorderedSet.contains(v.index, seen) then
+      UnorderedSet.add(v.index, seen);
       before := v :: before;
     end if;
   end for;
