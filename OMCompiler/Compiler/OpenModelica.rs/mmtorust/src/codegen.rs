@@ -11477,7 +11477,7 @@ fn emit_reduction<'a>(
     // matching MetaModelica's parallel-iteration semantics.
 
     // Build the for-loop opening for one iterator.
-    fn open_for(it: &ReductionIter, is_const: bool, ctx: &mut GenCtx, top_level: &BTreeMap<String, NameNode>) -> String {
+    fn open_for(it: &ReductionIter, by_ref: bool, is_const: bool, ctx: &mut GenCtx, top_level: &BTreeMap<String, NameNode>) -> String {
         let range_s = emit_exp(&it.range, is_const, ctx, top_level);
         // MetaModelica takes the first output of a multi-output call when it is
         // used in single-value position — here, as a comprehension iterator's
@@ -11490,8 +11490,8 @@ fn emit_reduction<'a>(
             t => (range_s, t),
         };
         let iter_expr = match range_ty {
-            // Lists yield &T; clone so the loop body owns its element (matches
-            // the rest of the generated code which clones liberally).
+            // The element is a `PlaceMode::Ref` binding (see `emit_reduction`).
+            Ty::List(_) if by_ref => format!("(&({range_s})).into_iter()"),
             Ty::List(_) => format!("({range_s}).into_iter().cloned()"),
             Ty::Array(_) => format!("({range_s}).borrow().iter()"),
             _ => format!("({range_s}).into_iter()"),
@@ -11760,6 +11760,29 @@ fn emit_reduction<'a>(
         let iter_newly_init = ctx.fn_initialized_vars.insert(it.name.clone());
         (it.name.clone(), prev, iter_newly_init)
     }).collect();
+    // List elements the body does not write are bound by reference: a read
+    // that needs the value clones.
+    let mut written = HashSet::new();
+    exp_assigned_var_names(body, &mut written);
+    for it in iterators {
+        if let Some(g) = &it.guard {
+            exp_assigned_var_names(g, &mut written);
+        }
+    }
+    let mut by_ref_iters: HashSet<String> = HashSet::new();
+    let saved_iter_modes: Vec<(String, Option<PlaceMode>, Option<Option<VarShape>>)> = iterators.iter()
+        .filter(|it| !written.contains(&it.name))
+        .filter_map(|it| {
+            let Ty::List(elem) = (match it.range.ty() {
+                Ty::Tuple(ts) if !ts.is_empty() => ts[0].clone(),
+                t => t,
+            }) else { return None };
+            by_ref_iters.insert(it.name.clone());
+            let mode = ctx.place_mode.insert(it.name.clone(), PlaceMode::Ref);
+            let shape = is_arc_wrapped(&elem, ctx).then(|| ctx.variant_shapes.insert(it.name.clone(), VarShape::RefArc));
+            Some((it.name.clone(), mode, shape))
+        })
+        .collect();
     let mut body_s = emit_exp(body, is_const, ctx, top_level);
     // NOTE: iterator bindings stay registered in fn_env_vars until *after* the
     // loop-building block below. The iterator guards (`guard_check`) and the
@@ -11889,7 +11912,7 @@ fn emit_reduction<'a>(
                 .collect();
             for (i, it) in iterators.iter().enumerate() {
                 s.push_str(&indents[i]);
-                s.push_str(&open_for(it, is_const, ctx, top_level));
+                s.push_str(&open_for(it, by_ref_iters.contains(&it.name), is_const, ctx, top_level));
                 s.push_str(&guard_check(it, is_const, ctx, top_level, &format!("{}    ", indents[i])));
             }
             let inner_indent = format!("{}    ", indents.last().unwrap());
@@ -11904,6 +11927,17 @@ fn emit_reduction<'a>(
 
     // Restore the iterator bindings now that the body, guards and ranges have
     // all been emitted (see the NOTE above the body emission).
+    for (name, mode, shape) in saved_iter_modes.into_iter().rev() {
+        match mode {
+            Some(m) => { ctx.place_mode.insert(name.clone(), m); }
+            None => { ctx.place_mode.remove(&name); }
+        }
+        match shape {
+            Some(Some(v)) => { ctx.variant_shapes.insert(name, v); }
+            Some(None) => { ctx.variant_shapes.remove(&name); }
+            None => {}
+        }
+    }
     for (name, prev, iter_newly_init) in saved_iter_tys.into_iter().rev() {
         if iter_newly_init { ctx.fn_initialized_vars.remove(&name); }
         match prev {
@@ -15716,12 +15750,31 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         for st in &case.stmts { collect_moved_names_stmt(st, &mut written); }
         collect_moved_names(&case.result, &mut written);
     }
+    let plain_ref_match = matches!(kind, MatchKind::Match)
+        && match_uses_match_deref(&deref_ty, cases, ctx, top_level)
+        && match_is_plain_ref(&deref_ty, cases, ctx, top_level);
+    let plain_var = match input {
+        TypedExp::Var { name, segments, .. }
+            if matches!(kind, MatchKind::Match) && !take_first && !name.contains('.') && segments.len() <= 1
+                && segments.iter().all(|s| s.subscripts.is_empty()) =>
+            Some(var_base_name(name, segments)),
+        _ => None,
+    };
+    // A local or borrowed parameter matched through `match_deref!` is borrowed
+    // in place (`&x`), the type the cloned subject had, so bindings of the
+    // whole subject keep their type.
+    let place_subject = plain_var.as_ref().filter(|n| !plain_ref_match
+        && (ctx.borrowed_params.contains(n.as_str())
+            || ctx.place_mode.get(n.as_str()) == Some(&PlaceMode::Owned) && !ctx.match_refbound.contains(n.as_str()))
+        && match_uses_match_deref(&deref_ty, cases, ctx, top_level)).cloned();
+    let arc_place_subject = place_subject.is_some();
     // A pattern binding a whole subject would see `&&T` where it used to get
     // `&Arc<T>`, changing what `.clone()` yields; keep those owned.
-    fn pat_binds_whole(p: &TypedPat) -> bool {
-        matches!(p, TypedPat::Var(_) | TypedPat::As { .. } | TypedPat::Index { .. }
-                    | TypedPat::FieldAccess { .. } | TypedPat::Todo(_))
-    }
+    let pat_binds_whole = |p: &TypedPat| match p {
+        TypedPat::Var(_) | TypedPat::As { .. } => !arc_place_subject,
+        TypedPat::Index { .. } | TypedPat::FieldAccess { .. } | TypedPat::Todo(_) => true,
+        _ => false,
+    };
     let (borrowable, borrow_mask) = if let TypedExp::Tuple(elems) = input {
         let mut mask = vec![true; elems.len()];
         let mut ok = true;
@@ -15740,18 +15793,9 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
     } else {
         (!cases.iter().any(|c| pat_binds_whole(&c.pattern)), Vec::new())
     };
-    let plain_ref_match = matches!(kind, MatchKind::Match)
-        && match_uses_match_deref(&deref_ty, cases, ctx, top_level)
-        && match_is_plain_ref(&deref_ty, cases, ctx, top_level);
-    // A plain match on a local may write the local once the arm is done with
-    // its pattern bindings (the borrow of `&*subj` ends at their last use).
-    let plain_subject = match input {
-        TypedExp::Var { name, segments, .. }
-            if plain_ref_match && !take_first && !name.contains('.') && segments.len() <= 1
-                && segments.iter().all(|s| s.subscripts.is_empty()) =>
-            Some(var_base_name(name, segments)),
-        _ => None,
-    };
+    // A match on a local may write the local once the arm is done with its
+    // pattern bindings (the borrow of the subject ends at their last use).
+    let plain_subject = plain_var.filter(|_| plain_ref_match || arc_place_subject);
     let subject_writes_ok = match &plain_subject {
         Some(s) => cases.iter().all(|c| arm_bindings_dead_at_subject_write(c, s)),
         None => !subject_names.iter().any(|n| written.contains(n) || ctx.assign_lhs_names.contains(n)),
@@ -15767,10 +15811,19 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         && as_binding.is_none()
         && (subject_is_borrowed_param || subject_writes_ok)
         && match_uses_match_deref(&deref_ty, cases, ctx, top_level);
-    ctx.borrow_reads = borrow_scrutinee;
-    ctx.borrow_mask = if borrow_scrutinee { borrow_mask } else { Vec::new() };
+    if !borrow_scrutinee && std::env::var_os("MMTORUST_TRACE_MATCH_CLONE").is_some() {
+        let deref = match_uses_match_deref(&deref_ty, cases, ctx, top_level);
+        let why = if !deref { "no-match_deref" } else if !borrowable { "binds-whole" } else if as_binding.is_some() { "as-binding" } else { "subject-written" };
+        let subj = match input { TypedExp::Var { name, .. } => name.clone(), TypedExp::Tuple(_) => "<tuple>".into(), _ => "<expr>".into() };
+        eprintln!("[match-clone] {} {why} {subj}", ctx.current_fn_qname);
+    }
+    let arc_place_borrow = borrow_scrutinee && arc_place_subject;
+    ctx.borrow_reads = borrow_scrutinee && !arc_place_borrow;
+    ctx.place_reads = arc_place_borrow;
+    ctx.borrow_mask = if ctx.borrow_reads { borrow_mask } else { Vec::new() };
     let raw_input_str = emit_exp(input, is_const, ctx, top_level);
     ctx.borrow_reads = false;
+    ctx.place_reads = false;
     let raw_input_str = if take_first {
         input_ty = first_elem_ty.unwrap();
         format!("({raw_input_str}).0")
@@ -15920,6 +15973,8 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
         .flatten();
     let match_subject = if let Some(s) = &param_subject {
         s.clone()
+    } else if let Some(n) = place_subject.as_ref().filter(|_| arc_place_borrow) {
+        if ctx.borrowed_params.contains(n.as_str()) { escape_ident(n) } else { format!("&{}", escape_ident(n)) }
     } else if let Some(s) = &tuple_arc_rewrite {
         s.clone()
     } else if plain_ref_match {
