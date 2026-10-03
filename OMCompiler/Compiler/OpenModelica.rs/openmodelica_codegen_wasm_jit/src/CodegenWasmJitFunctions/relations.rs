@@ -202,17 +202,22 @@ fn compile_relation_hyst(
 
 /// Emit `diff <op> (±eps)`, leaving an i32 boolean. `dir` is the current relation
 /// value; it selects which side of the band the boundary sits on so the relation
-/// resists flipping.
+/// resists flipping. On the band edge `dir` decides too, so a band of width zero
+/// keeps the current value (C's `LessZC`/`GreaterZC`).
 fn emit_hyst_cmp(ctx: &mut FnCtx, op: &DAE::Operator, diff: u32, eps: u32, dir: bool) -> Result<()> {
     use DAE::Operator as O;
     use we::Instruction as I;
-    // (comparison, whether the +eps edge applies for this direction).
-    let (cmp, plus) = match op {
-        O::LESSEQ { .. } => (I::F64Lt, dir),
-        O::LESS { .. } => (I::F64Le, dir),
-        O::GREATER { .. } => (I::F64Ge, !dir),
-        O::GREATEREQ { .. } => (I::F64Gt, !dir),
+    let less = match op {
+        O::LESS { .. } | O::LESSEQ { .. } => true,
+        O::GREATER { .. } | O::GREATEREQ { .. } => false,
         other => return Err("CodegenWasmJit: non-inequality in hysteresis path"),
+    };
+    // (comparison, whether the +eps edge applies for this direction).
+    let (cmp, plus) = match (less, dir) {
+        (true, true) => (I::F64Le, true),
+        (true, false) => (I::F64Lt, false),
+        (false, true) => (I::F64Ge, false),
+        (false, false) => (I::F64Gt, true),
     };
     ctx.emit(I::LocalGet(diff));
     ctx.emit(I::LocalGet(eps));
