@@ -418,7 +418,8 @@ public
       stripped := ComponentRef.stripSubscriptsAll(cref);
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
-      sizes := ComponentRef.sizes(stripped, false);
+      // the sizes of the scalarization (resized, like the mapping)
+      sizes := ComponentRef.sizes(stripped, false, true);
       int_subs := ComponentRef.subscriptsToInteger(cref);
       var_scal_idx := locationToIndex(sizes, int_subs, var_start);
       indices := var_scal_idx :: indices;
@@ -1194,7 +1195,7 @@ public
       (replaced, stripped)  := getReplacedAndStripped(cref);
       var_arr_idx           := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _)        := mapping.var_AtS[var_arr_idx];
-      var_scal_idx          := indexFromReplacedStripped(replaced, stripped, var_start);
+      var_scal_idx          := indexFromReplacedStripped(replaced, stripped, var_start, resize = true);
       indices               := var_scal_idx :: indices;
     end for;
   end upgradeRowFull;
@@ -1252,12 +1253,13 @@ protected
     input ComponentRef replaced;
     input ComponentRef stripped;
     input Integer var_start;
+    input Boolean resize = false "the sizes of resizable dimensions as resized, like scalarizeAll(cref, true)";
     output Integer index;
   protected
     list<Integer> sizes, int_subs;
   algorithm
     // get the sizes and subscripts as integers and compute the final scalar index
-    sizes     := ComponentRef.sizes(stripped, false);
+    sizes     := ComponentRef.sizes(stripped, false, resize);
     int_subs  := ComponentRef.subscriptsToInteger(replaced);
     index     := locationToIndex(sizes, int_subs, var_start);
   end indexFromReplacedStripped;

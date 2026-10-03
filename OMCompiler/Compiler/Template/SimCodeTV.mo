@@ -1501,6 +1501,39 @@ package SimCodeCodegenUtil
     output Boolean b;
   end hasSymbolicDims;
 
+  function isSymbolicArrayVar
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isSymbolicArrayVar;
+
+  function simVarSizeExp
+    input SimCodeVar.SimVar var;
+    output DAE.Exp exp;
+  end simVarSizeExp;
+
+  function simVarDimExps
+    input SimCodeVar.SimVar var;
+    output list<DAE.Exp> exps;
+  end simVarDimExps;
+
+  function isWholeResizableArray
+    input DAE.ComponentRef cr;
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isWholeResizableArray;
+
+  function residualOffsetExp
+    input list<SimCode.SimEqSystem> eqs;
+    input Integer n;
+    output DAE.Exp exp;
+  end residualOffsetExp;
+
+  function numScalarElemsBeforeExp
+    input list<SimCodeVar.SimVar> vars;
+    input Integer n;
+    output DAE.Exp exp;
+  end numScalarElemsBeforeExp;
+
   function numScalarElemsBefore
     input list<SimCodeVar.SimVar> vars;
     input Integer n;
