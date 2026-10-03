@@ -389,6 +389,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPrefixes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRangeIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRecord.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFResizableConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRestriction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFScalarize.mo

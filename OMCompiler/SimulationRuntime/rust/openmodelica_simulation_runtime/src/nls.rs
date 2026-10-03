@@ -460,6 +460,9 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     }
     for i in 0..md.nNonLinearSystems as usize {
         let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
+        if let Some(f) = sys.updateSize {
+            sys.size = unsafe { f(data, thread_data) } as _;
+        }
         let size = sys.size.max(0) as usize;
         sys.numberOfFEval = 0;
         sys.numberOfIterations = 0;

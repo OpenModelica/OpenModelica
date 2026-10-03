@@ -1281,7 +1281,7 @@ public
         case SCALAR_EQUATION()            then 1;
         case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty, resize);
         case RECORD_EQUATION()            then Type.sizeOf(eqn.ty, resize);
-        case ALGORITHM()                  then eqn.size;
+        case ALGORITHM()                  then if resize then algorithmSize(eqn.alg, eqn.size) else eqn.size;
         case IF_EQUATION()                then if resize then IfEquationBody.size(eqn.body, resize) else eqn.size;
         case FOR_EQUATION(body = {body})  then if resize then Iterator.size(eqn.iter, resize) * Equation.size(Pointer.create(body), resize) else eqn.size;
         case WHEN_EQUATION()              then if resize then WhenEquationBody.size(eqn.body, resize) else eqn.size;
@@ -1292,6 +1292,15 @@ public
         then fail();
       end match;
     end size;
+
+    function algorithmSize
+      "the size of the outputs of an algorithm with the resized sizes of resizable dimensions"
+      input Algorithm alg;
+      input Integer size "the size without resizing";
+      output Integer s;
+    algorithm
+      s := if listEmpty(alg.outputs) then size else sum(ComponentRef.size(out, false, true) for out in alg.outputs);
+    end algorithmSize;
 
     function sizes
       input Pointer<Equation> eqn_ptr;
@@ -1305,7 +1314,7 @@ public
         case SCALAR_EQUATION() then {1};
         case ARRAY_EQUATION()  then list(Dimension.size(dim, resize) for dim in Type.arrayDims(eqn.ty));
         case RECORD_EQUATION() then {Type.sizeOf(eqn.ty, resize)};
-        case ALGORITHM()       then {eqn.size};
+        case ALGORITHM()       then {if resize then algorithmSize(eqn.alg, eqn.size) else eqn.size};
         case IF_EQUATION()     then {eqn.size};
         case FOR_EQUATION()    then listReverse(Iterator.sizes(eqn.iter, resize)); // does only consider frames and not conditions
         case WHEN_EQUATION()   then {eqn.size};

@@ -8893,11 +8893,22 @@ template startArrayEnsureSize(ComponentRef cr)
         case "integer"
         case "boolean" then
           let &nosub = buffer ""
-          '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%sizes ; separator="*"%>);'
+          let size = if isSymbolicArrayVar(var) then varSizeRuntime(var) else (sizes ; separator="*")
+          '<%ty%>_array_ensure_size(&<%varAttributes(var, &nosub)%>.start, <%size%>);'
         else ""
     else ""
   else ""
 end startArrayEnsureSize;
+
+template varSizeRuntime(SimVar var)
+ "the number of elements of an array variable at runtime (resizable arrays)"
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let &aux = buffer ""
+  '(<%daeExp(simVarSizeExp(var), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+end varSizeRuntime;
 
 template startArrayScatterEnsureSize(ComponentRef cr, Text type, Text arr)
  "Without --simCodeScalarize the array is one VarsData entry. Its start
