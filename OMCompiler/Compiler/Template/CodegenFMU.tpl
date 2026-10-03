@@ -1437,14 +1437,6 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion, String fileNamePr
   <%\t%>cp -a <%prefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
   >>
   %>
-  <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
-     match  Config.simCodeTarget()
-     case "omsicpp" then
-     <<
-     <%\t%>chmod +x <%dotPath(modelInfo.name)%>.sh
-     >>
-     end match
-  %>
   <%\n%>
   >>
 end fmuSourceMakefile;

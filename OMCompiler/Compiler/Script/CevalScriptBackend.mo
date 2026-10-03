@@ -1390,23 +1390,7 @@ algorithm
       algorithm
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        if not Config.simCodeTarget() == "omsic" then
-          (b,outCache,compileDir,executable,_,_,initfilename,_,_,vals,_) := buildModel(outCache, inEnv, vals, msg);
-        else
-          filenameprefix := AbsynUtil.pathString(className);
-          try
-            (outCache, Values.STRING(str)) := buildModelFMU(outCache, inEnv, className, "2.0", "me", "<default>", true, {"static"});
-            if stringEmpty(str) then
-              fail();
-            end if;
-            b := true;
-          else
-            b := false;
-          end try;
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          executable := filenameprefix + "_me_FMU";
-          initfilename := filenameprefix + "_init_xml";
-        end if;
+        (b,outCache,compileDir,executable,_,_,initfilename,_,_,vals,_) := buildModel(outCache, inEnv, vals, msg);
         executable := if not Testsuite.isRunning() then compileDir + executable else executable;
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
@@ -1460,29 +1444,8 @@ algorithm
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
           resultValues := zeroBuildPhaseResultValues;
-        elseif Config.simCodeTarget() == "omsicpp" then
-
-         filenameprefix := AbsynUtil.pathString(className);
-         (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
-         try
-             (outCache, Values.STRING(str)) := buildModelFMU(outCache, inEnv, className, "2.0", "me", "<default>", true, {"static"},SOME(simSettings));
-            if stringEmpty(str) then
-              fail();
-            end if;
-           b := true;
-          else
-            b := false;
-          end try;
-
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          executable := filenameprefix;
-          simflags:="";
-          resultValues:=zeroBuildPhaseResultValues;
-        elseif not Config.simCodeTarget() == "omsic" then
-          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         else
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Can't simulate for SimCodeTarget=omsic!\n"});
-          fail();
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         end if;
 
         if b then
@@ -3593,12 +3556,6 @@ algorithm
       then ".bat";
     case ("Cpp","Unix")
       then ".sh";
-    case ("omsicpp","WIN64")
-     then ".bat";
-    case ("omsicpp","WIN32")
-      then ".bat";
-    case ("omsicpp","Unix")
-      then ".sh";
     else Autoconf.exeExt;
   end match;
 end getSimulationExtension;
@@ -4851,15 +4808,8 @@ algorithm
     end if;
     return;
   end if;
-  /*Temporary disabled omsicpp*/
-  if not ((Config.simCodeTarget() == "omsic")/* or (Config.simCodeTarget() == "omsicpp")*/) then
-    CevalScript.compileModel(filenameprefix+"_FMU" , libs);
-    ExecStat.execStat("buildModelFMU: Generate the FMI files");
-  else
-    fmutmp := fmutmp + Autoconf.pathDelimiter;
-    CevalScript.compileModel(filenameprefix+"_FMU" , libs, fmutmp);
-    return;
-  end if;
+  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
+  ExecStat.execStat("buildModelFMU: Generate the FMI files");
 
   // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
   needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));

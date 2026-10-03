@@ -50,8 +50,6 @@ import SimCode;
 
 protected
 import Algorithm;
-import Autoconf;
-import Config;
 import DAEDump;
 import Error;
 import Expression;
@@ -86,12 +84,7 @@ algorithm
 
     case SimCode.SIMCODE(modelInfo = mi as SimCode.MODELINFO())
       algorithm
-        /*Temporary disabled omsicpp*/
-        if (Config.simCodeTarget() == "omsic") /*or (Config.simCodeTarget() ==  "omsicpp") */ then
-          fileName := code.fullPathPrefix + Autoconf.pathDelimiter + code.fileNamePrefix + "_info.json";
-        else
-          fileName := code.fileNamePrefix + "_info.json";
-        end if;
+        fileName := code.fileNamePrefix + "_info.json";
         File.open(file,fileName,File.Mode.Write);
         File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
         serializePath(file, mi.name);

@@ -47,7 +47,6 @@ import BackendDAE.VarKind;
 import ClassInf;
 import CR=ComponentReference;
 import ComponentReferenceBasics;
-import Config;
 import DAE;
 import DAE.{Exp,Type};
 import DAEUtil;
@@ -85,30 +84,20 @@ protected
   VarInfo vi;
   SimulationSettings s;
   File.File file = File.File();
-  String fileName, FMUType;
+  String fileName;
 algorithm
   try
-    fileName := match Config.simCodeTarget()
-      case "omsic" then simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml";
-      /*Temporary disabled omsicpp
-      case "omsicpp" then simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml";*/
-      else simCode.fileNamePrefix + "_init.xml";
-    end match;
+    fileName := simCode.fileNamePrefix + "_init.xml";
     File.open(file, fileName, File.Mode.Write);
 
     vi := simCode.modelInfo.varInfo;
     SOME(s) := simCode.simulationSettingsOpt;
-    FMUType := match Config.simCodeTarget()
-      case "omsic" then "2.0";
-      case "omsicpp" then "2.0";
-      else "1.0";
-    end match;
 
 
     File.write(file, "<?xml version = \"1.0\" encoding=\"UTF-8\"?>\n\n");
     File.write(file, "<!-- description of the model interface using an extention of the FMI standard -->\n");
     File.write(file, "<fmiModelDescription\n");
-    File.write(file, "  fmiVersion                          = \""+FMUType+"\"\n\n");
+    File.write(file, "  fmiVersion                          = \"1.0\"\n\n");
 
     File.write(file, "  modelName                           = \"");
     Dump.writePath(file, simCode.modelInfo.name, initialDot=false);
@@ -278,11 +267,7 @@ protected
   UnorderedMap<DAE.Exp, Integer> dims;
 algorithm
   // set starting index
-  vr := match Config.simCodeTarget()
-    case "omsic" then 0;
-    case "omsicpp" then 0;
-    else 1000;
-  end match;
+  vr := 1000;
 
   dims := dimensionValueReferences(vars, vr);
 

@@ -1425,12 +1425,10 @@ fn feature_for_crate(crate_name: &str) -> Option<&'static str> {
     Some(match crate_name {
         "openmodelica_codegen_cpp"
         | "openmodelica_codegen_cpp_common"
-        | "openmodelica_codegen_cpp_omsi"
-        | "openmodelica_codegen_cpp_ext"
-        | "openmodelica_codegen_cpp_omsi_ext" => "cpp",
+        | "openmodelica_codegen_cpp_ext" => "cpp",
         "openmodelica_codegen_c" => "codegen_c",
         "openmodelica_codegen_fmu" => "codegen_fmu",
-        "openmodelica_codegen_fmu_c" | "openmodelica_codegen_fmu_omsi" => "codegen_fmu_c",
+        "openmodelica_codegen_fmu_c" => "codegen_fmu_c",
         "openmodelica_susan" => "susan",
         _ => return None,
     })

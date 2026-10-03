@@ -136,11 +136,8 @@ openmodelica_codegen_cfunctions/Cargo.toml
 openmodelica_codegen_cpp/Cargo.toml
 openmodelica_codegen_cpp_common/Cargo.toml
 openmodelica_codegen_cpp_ext/Cargo.toml
-openmodelica_codegen_cpp_omsi/Cargo.toml
-openmodelica_codegen_cpp_omsi_ext/Cargo.toml
 openmodelica_codegen_fmu/Cargo.toml
 openmodelica_codegen_fmu_c/Cargo.toml
-openmodelica_codegen_fmu_omsi/Cargo.toml
 openmodelica_codegen_graphml/Cargo.toml
 openmodelica_codegen_util/Cargo.toml
 openmodelica_codegen_util/src/Globals.rs
