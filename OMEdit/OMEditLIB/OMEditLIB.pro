@@ -406,6 +406,7 @@ CONFIG(animation) {
 }
 
 OTHER_FILES += Resources/css/stylesheet.qss \
+  Resources/css/stylesheet-dark.qss \
   Debugger/Parser/GDBMIOutput.g \
   Debugger/Parser/GDBMIParser.h \
   Debugger/Parser/GDBMIParser.cpp \

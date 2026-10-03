@@ -52,6 +52,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QPalette>
 #include <QTextCodec>
 #include <QTimer>
 
@@ -122,6 +123,16 @@ namespace {
     return false;
   }
 
+  bool darkModeArgumentValue(const QString &argument, bool *pEnabled)
+  {
+    const QString optionPrefix = "--DarkMode=";
+    if (argument.startsWith(optionPrefix)) {
+      *pEnabled = argument.mid(optionPrefix.length()) == "true";
+      return true;
+    }
+    return false;
+  }
+
   bool readStyleSheetFile(const QString &fileName, QString *pStyleSheet, QString *pErrorString)
   {
     QFile styleSheetFile(fileName);
@@ -140,6 +151,48 @@ namespace {
       pStyleSheet->append("\n");
     }
     pStyleSheet->append(styleSheet);
+  }
+
+  /* The dark palette. Widgets take their colors from here; stylesheet-dark.qss
+   * only restyles what stylesheet.qss restyles.
+   */
+  QPalette darkPalette()
+  {
+    QPalette palette;
+    const QColor window(32, 33, 36);
+    const QColor base(17, 24, 39);
+    const QColor alternateBase(31, 41, 55);
+    const QColor text(243, 244, 246);
+    const QColor button(55, 65, 81);
+    const QColor disabledText(156, 163, 175);
+    const QColor highlight(29, 78, 216);
+    const QColor link(96, 165, 250);
+    palette.setColor(QPalette::Window, window);
+    palette.setColor(QPalette::WindowText, text);
+    palette.setColor(QPalette::Base, base);
+    palette.setColor(QPalette::AlternateBase, alternateBase);
+    palette.setColor(QPalette::Text, text);
+    palette.setColor(QPalette::PlaceholderText, disabledText);
+    palette.setColor(QPalette::Button, button);
+    palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::BrightText, Qt::white);
+    palette.setColor(QPalette::Highlight, highlight);
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::ToolTipBase, base);
+    palette.setColor(QPalette::ToolTipText, text);
+    palette.setColor(QPalette::Link, link);
+    palette.setColor(QPalette::LinkVisited, QColor(192, 132, 252));
+    palette.setColor(QPalette::Light, QColor(107, 114, 128));
+    palette.setColor(QPalette::Midlight, QColor(75, 85, 99));
+    palette.setColor(QPalette::Mid, QColor(43, 45, 49));
+    palette.setColor(QPalette::Dark, QColor(24, 24, 27));
+    palette.setColor(QPalette::Shadow, Qt::black);
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
+    palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
+    palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
+    palette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(55, 65, 81));
+    palette.setColor(QPalette::Disabled, QPalette::HighlightedText, disabledText);
+    return palette;
   }
 }
 
@@ -196,13 +249,27 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 #endif // #ifdef Q_OS_LINUX
 
-/* We need a better handling of ligth and dark themes.
- * For now just force light theme for Qt 6.8
- * The default color scheme is based on the system theme, so Qt will automatically use light or dark theme based on the user's system settings.
+  bool darkMode = false;
+  if (arguments().size() > 1 && !testsuiteRunning) {
+    for (int i = 1; i < arguments().size(); i++) {
+      bool argumentDarkMode = false;
+      if (darkModeArgumentValue(arguments().at(i), &argumentDarkMode)) {
+        darkMode = argumentDarkMode;
+      }
+    }
+  }
+  setProperty("omeditDarkMode", darkMode);
+
+/* Qt 6.8 defaults to the system color scheme. Keep OMEdit in light mode unless
+ * dark mode is explicitly requested so the built-in stylesheets remain
+ * deterministic.
  */
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-  styleHints()->setColorScheme(Qt::ColorScheme::Light);  // must be before setStyleSheet
+  styleHints()->setColorScheme(darkMode ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);  // must be before setStyleSheet
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  if (darkMode) {
+    setPalette(darkPalette());  // must be before setStyleSheet
+  }
   // set the stylesheet
   QString applicationStyleSheet;
   QStringList styleSheetLoadErrors;
@@ -210,6 +277,15 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   const bool defaultStyleSheetLoaded = readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &defaultStyleSheetLoadError);
   if (!defaultStyleSheetLoaded) {
     styleSheetLoadErrors.append(defaultStyleSheetLoadError);
+  }
+  if (defaultStyleSheetLoaded && darkMode) {
+    QString darkStyleSheet;
+    QString darkStyleSheetLoadError;
+    if (readStyleSheetFile(":/Resources/css/stylesheet-dark.qss", &darkStyleSheet, &darkStyleSheetLoadError)) {
+      appendStyleSheet(&applicationStyleSheet, darkStyleSheet);
+    } else {
+      styleSheetLoadErrors.append(darkStyleSheetLoadError);
+    }
   }
   if (defaultStyleSheetLoaded && arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
@@ -298,6 +374,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
       QString styleSheetFileName;
+      bool darkModeEnabled = false;
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
         debugArg.remove("--Debug=");
@@ -320,6 +397,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         dumpQtPaths();
       } else if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
         // The stylesheet option is handled before MainWindow initialization.
+      } else if (darkModeArgumentValue(arguments().at(i), &darkModeEnabled)) {
+        // The dark mode option is handled before MainWindow initialization.
       } else {
         fileName = arguments().at(i);
         if (!fileName.isEmpty()) {

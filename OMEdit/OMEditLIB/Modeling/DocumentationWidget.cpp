@@ -1386,6 +1386,17 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
+  /* The application palette and stylesheet do not reach the web content. Let
+   * Chromium render the documentation dark; the document itself is untouched.
+   * The editor keeps the light canvas, so the colors its tools write are the
+   * colors the user sees.
+   */
+  if (!mIsContentEditable && qApp->property("omeditDarkMode").toBool()) {
+    settings()->setAttribute(QWebEngineSettings::ForceDarkMode, true);
+    page()->setBackgroundColor(QColor(32, 33, 36));
+  }
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
   // set DocumentationViewer web page policy
   // Set the contenteditable="true" in pageLoaded()
   /* Qt WebEngine doesn't support DelegateAllLinks, linkClicked

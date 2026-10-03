@@ -32,6 +32,7 @@
         <file>Resources/icons/translateAs.svg</file>
         <file>Resources/icons/runScript.svg</file>
         <file>Resources/css/stylesheet.qss</file>
+        <file>Resources/css/stylesheet-dark.qss</file>
         <file>Resources/icons/check.svg</file>
         <file>Resources/icons/check-all.svg</file>
         <file>Resources/icons/zoomReset.svg</file>
