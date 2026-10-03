@@ -490,14 +490,26 @@ pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &metamode
     ctx.emit(I::I32Const(0)); // minimum length
     ctx.emit(I::I32Const(0)); // left justified
     ctx.emit(I::Call(rt_index("rt_real_format")?));
-    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_str_literal(ctx, d.tail.as_bytes())?;
-    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_model_error(ctx)?;
     ctx.emit(I::End);
 
     ctx.emit(I::LocalGet(t));
     Ok(())
+}
+
+/// `rt_concat` of the two owned Strings on the stack, releasing both.
+fn emit_concat_owned(ctx: &mut FnCtx) -> Result<()> {
+    let b = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(b));
+    let a = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(a));
+    ctx.emit(we::Instruction::LocalGet(b));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    release_temp(ctx, a)?;
+    release_temp(ctx, b)
 }
 
 /// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
@@ -525,7 +537,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     emit_str_literal(ctx, format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes())?;
     ctx.emit(we::Instruction::LocalGet(nt));
     ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
-    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_model_error(ctx)?;
     ctx.emit(we::Instruction::End);
 
@@ -547,7 +559,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::I32Const(0)); // minimum length
     ctx.emit(we::Instruction::I32Const(0)); // left justified
     ctx.emit(we::Instruction::Call(rt_index("rt_real_format")?));
-    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_model_error(ctx)?;
     ctx.emit(we::Instruction::End);
 
