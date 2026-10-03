@@ -12805,6 +12805,17 @@ fn emit_builtin_call<'a>(func: &str, args: &[TypedExp], is_const: bool, ctx: &mu
             // The Option lowering matches on `&(operand)`, which accepts a place.
             let as_place = matches!(ty, Ty::Option(_)) && !is_const;
             let emit_operand = |i: usize, a: &TypedExp, ctx: &mut GenCtx| {
+                // A by-reference `&Arc<T>` binding derefs twice.
+                if borrowable && !is_const
+                    && let TypedExp::Var { name, segments, .. } = a
+                    && segments.len() <= 1 && !name.contains('.')
+                    && segments.iter().all(|s| s.subscripts.is_empty())
+                    && !ctx.borrowed_params.contains(name.as_str())
+                    && (ctx.place_mode.get(name.as_str()) == Some(&PlaceMode::Ref) || ctx.match_refbound.contains(name.as_str()))
+                    && matches!(ctx.variant_shapes.get(name.as_str()), Some(VarShape::RefArc))
+                {
+                    return format!("&**{}", escape_ident(name));
+                }
                 let is_var = matches!(a, TypedExp::Var { .. });
                 ctx.borrow_reads = borrowable && is_var;
                 ctx.place_reads = as_place && is_var;
