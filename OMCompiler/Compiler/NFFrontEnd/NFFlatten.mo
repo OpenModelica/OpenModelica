@@ -2940,11 +2940,17 @@ protected
   Connections conns;
   Connections.BrokenEdges broken;
   FlatModel unrolled;
+  Boolean symbolic_oc;
 algorithm
   // Overconstrained connections: build the graph like resolveConnections, which
   // evaluates the Connections.* operators (isRoot, rooted). The connect equations
   // stay in the model for the array handler.
-  if System.getHasOverconstrainedConnectors() then
+  // with resizable arrays the graph is built with symbolic sizes if possible
+  symbolic_oc := false;
+  if System.getHasOverconstrainedConnectors() and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    (flatModel, symbolic_oc) := ResizableConnections.resolveOverconstrained(flatModel);
+  end if;
+  if System.getHasOverconstrainedConnectors() and not symbolic_oc then
     // the graph needs the single connections, roots and branches: unroll the
     // for loops of a copy of the equations for it
     unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, flatModel.source);
