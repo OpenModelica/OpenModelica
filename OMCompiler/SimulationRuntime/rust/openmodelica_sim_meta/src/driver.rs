@@ -9,6 +9,7 @@
 //! `SimEngine` impl (memory access + function calls) plus its own module
 //! compilation and external-"C" import wiring, then hands an engine to [`drive`].
 
+use openmodelica_solvers::dassl;
 use openmodelica_solvers::fmath;
 use alloc::boxed::Box;
 use alloc::format;
@@ -6404,22 +6405,6 @@ fn emit_post_event_row(model: &SimModel, time: f64) -> bool {
     grid == time || fmath::fabs(grid - time) / (fmath::fabs(grid) + fmath::fabs(time)) < 1e-15
 }
 
-/// `-maxIntegrationOrder` (INFO(9)/IWORK(3)) and the step-size cap
-/// (INFO(7)/RWORK(2)), which `-noEquidistantOutputTime` also sets, as `dassl.c` does.
-fn daskr_limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
-    let (order, h_max, out_time) = crate::simflags::with_flags(|f| {
-        (f.max_order, f.max_step_size, f.no_equidistant_time)
-    });
-    if let Some(n) = order {
-        info[8] = 1;
-        iwork[2] = n;
-    }
-    if let Some(h) = h_max.or(out_time) {
-        info[6] = 1;
-        rwork[1] = h;
-    }
-}
-
 /// `dassl.c`'s `dasslStepsFreq` / `dasslStepsTime`: every n-th step, or the first
 /// step past each multiple of `t`. Neither set = every step.
 #[derive(Default)]
@@ -6599,6 +6584,8 @@ struct DasslDriver {
     /// runaway cap bounds one interval across yields).
     work_retries: i32,
     tiny_steps: TinySteps,
+    /// [`dassl::restart_first_step`]s since DASKR last succeeded.
+    first_step_restarts: u32,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
     /// C's degenerate first `-noEquidistantTimeGrid` iteration has been emitted.
@@ -6700,7 +6687,7 @@ impl DasslDriver {
         }
         let mut rwork = vec![0.0f64; lrw];
         let mut iwork = vec![0i32; liw];
-        daskr_limits(&mut info, &mut rwork, &mut iwork);
+        dassl::limits(&mut info, &mut rwork, &mut iwork);
         Ok(DasslDriver {
             sim_data,
             n_states,
@@ -6732,6 +6719,7 @@ impl DasslDriver {
             no_grid_primed: false,
             work_retries: 0,
             tiny_steps: TinySteps::default(),
+            first_step_restarts: 0,
             pending_terminate,
             finished: false,
             jac_a,
@@ -6940,6 +6928,7 @@ impl Driver for DasslDriver {
                 );
             }
             e.set_rhs_final(true); // ... and set for the output evaluation
+            dassl::reset_initial_step(&mut self.info);
             publish_steps(|| {
                 let mut total = self.past;
                 total.fold(&self.iwork);
@@ -6962,6 +6951,19 @@ impl Driver for DasslDriver {
                 // Work quota expended before TOUT: stay on this interval, continue.
                 self.info[0] = 1;
                 self.work_retries += 1;
+                self.pending_tout = Some(tout);
+                self.retry.close(e)?;
+                continue;
+            }
+            if self.idid >= 0 {
+                self.first_step_restarts = 0;
+            } else if dassl::restart_first_step(
+                self.idid,
+                &mut self.info,
+                &self.rwork,
+                &self.iwork,
+                &mut self.first_step_restarts,
+            ) {
                 self.pending_tout = Some(tout);
                 self.retry.close(e)?;
                 continue;
@@ -7142,6 +7144,8 @@ struct DaskrState {
     /// The in-progress target's DASKR continuation count (IDID=-1 work quota).
     ev_retries: i32,
     tiny_steps: TinySteps,
+    /// [`dassl::restart_first_step`]s since DASKR last succeeded.
+    first_step_restarts: u32,
     /// The "A" Jacobian's sparsity, coloring and symbolic columns; `None` ⇒ daskr's
     /// own numerical Jacobian.
     jac_a: Option<JacAInfo>,
@@ -7183,7 +7187,7 @@ impl DaskrState {
         }
         let mut rwork = vec![0.0f64; lrw];
         let mut iwork = vec![0i32; liw];
-        daskr_limits(&mut info, &mut rwork, &mut iwork);
+        dassl::limits(&mut info, &mut rwork, &mut iwork);
         DaskrState {
             info,
             rtol,
@@ -7198,6 +7202,7 @@ impl DaskrState {
             past: DaskrCounters::default(),
             ev_retries: 0,
             tiny_steps: TinySteps::default(),
+            first_step_restarts: 0,
             jac_a,
             jac_method,
         }
@@ -7212,23 +7217,38 @@ impl DaskrState {
             JacobianMethod::InternalNumJac => solver::dummy_jacd,
             _ => dassl_jac,
         };
-        let mut tt = target;
         let logging = log_dassl();
-        if logging {
-            log_dassl_step(*t);
+        loop {
+            let mut tt = target;
+            if logging {
+                log_dassl_step(*t);
+            }
+            rtclock::tick(rtclock::SOLVER);
+            unsafe {
+                solver::ddaskr(
+                    dassl_res, neq, t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
+                    self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
+                    self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
+                    self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
+                    solver::dummy_jack, solver::dummy_psol, rt_fn, self.nrt,
+                    self.jroot.as_mut_ptr(),
+                );
+            }
+            rtclock::accumulate(rtclock::SOLVER);
+            dassl::reset_initial_step(&mut self.info);
+            if self.idid >= 0 {
+                self.first_step_restarts = 0;
+            } else if dassl::restart_first_step(
+                self.idid,
+                &mut self.info,
+                &self.rwork,
+                &self.iwork,
+                &mut self.first_step_restarts,
+            ) {
+                continue;
+            }
+            break;
         }
-        rtclock::tick(rtclock::SOLVER);
-        unsafe {
-            solver::ddaskr(
-                dassl_res, neq, t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
-                self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
-                self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
-                self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
-                solver::dummy_jack, solver::dummy_psol, rt_fn, self.nrt,
-                self.jroot.as_mut_ptr(),
-            );
-        }
-        rtclock::accumulate(rtclock::SOLVER);
         if logging && self.idid != -1 {
             log_dassl_stats(self.idid, *t, &self.rwork, &self.iwork);
         }
