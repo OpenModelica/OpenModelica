@@ -1124,7 +1124,7 @@ algorithm
   end if;
 end jacobianIndexExp;
 
-protected function simVarSizeExp
+public function simVarSizeExp
   "The number of scalar elements of a SimVar as an expression."
   input SimCodeVar.SimVar var;
   output DAE.Exp exp = DAE.ICONST(1);
@@ -1136,6 +1136,98 @@ algorithm
     end match);
   end for;
 end simVarSizeExp;
+
+public function simVarDimExps
+  "The dimensions of a SimVar as expressions, outermost first."
+  input SimCodeVar.SimVar var;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := list(match d
+      case DAE.DIM_EXP() then d.exp;
+      else DAE.ICONST(Expression.dimensionSize(d));
+    end match for d in Expression.arrayDimension(var.type_));
+end simVarDimExps;
+
+public function isWholeResizableArray
+  "true if an iteration variable of an algebraic loop is a whole array whose
+   size is only known at runtime (resizable arrays): the loop has to be sized at
+   runtime then."
+  input DAE.ComponentRef cr;
+  input SimCodeVar.SimVar var;
+  output Boolean b = listEmpty(ComponentReference.crefLastSubs(cr)) and isSymbolicArrayVar(var);
+end isWholeResizableArray;
+
+public function residualOffsetExp
+  "The position of the n-th residual (zero-based, counting only the residual
+   equations, like the index of the residual template) of an algebraic loop in
+   its residual vector: the sum of the sizes of the residuals before it, an
+   expression of the size parameters for resizable arrays."
+  input list<SimCode.SimEqSystem> eqs;
+  input Integer n;
+  output DAE.Exp exp = DAE.ICONST(0);
+protected
+  Integer count = 0;
+  Option<DAE.Exp> osz;
+  DAE.Exp sz;
+algorithm
+  for eq in eqs loop
+    if count >= n then
+      break;
+    end if;
+    osz := match eq
+      case SimCode.SES_RESIDUAL() then SOME(typeSizeExp(Expression.typeof(eq.exp)));
+      case SimCode.SES_FOR_RESIDUAL() algorithm
+        sz := typeSizeExp(Expression.typeof(eq.exp));
+        for it in eq.iterators loop
+          sz := DAE.BINARY(sz, DAE.MUL(DAE.T_INTEGER_DEFAULT), simIteratorSizeExp(it));
+        end for;
+      then SOME(sz);
+      case SimCode.SES_GENERIC_RESIDUAL() then SOME(DAE.ICONST(listLength(eq.scal_indices)));
+      else NONE();
+    end match;
+    if isSome(osz) then
+      SOME(sz) := osz;
+      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), sz);
+      count := count + 1;
+    end if;
+  end for;
+end residualOffsetExp;
+
+protected function simIteratorSizeExp
+  input BackendDAE.SimIterator it;
+  output DAE.Exp exp;
+algorithm
+  exp := match it
+    case BackendDAE.SIM_ITERATOR_RANGE() then it.size;
+    case BackendDAE.SIM_ITERATOR_LIST() then DAE.ICONST(it.size);
+  end match;
+end simIteratorSizeExp;
+
+protected function typeSizeExp
+  "the number of scalar elements of a type as an expression"
+  input DAE.Type ty;
+  output DAE.Exp exp = DAE.ICONST(1);
+algorithm
+  for d in Expression.arrayDimension(ty) loop
+    exp := DAE.BINARY(exp, DAE.MUL(DAE.T_INTEGER_DEFAULT), match d
+      case DAE.DIM_EXP() then d.exp;
+      else DAE.ICONST(Expression.dimensionSize(d));
+    end match);
+  end for;
+end typeSizeExp;
+
+public function numScalarElemsBeforeExp
+  "Like numScalarElemsBefore as an expression: the scalar offset of the n-th
+   variable (zero-based), with the sizes of resizable arrays as expressions of
+   their size parameters."
+  input list<SimCodeVar.SimVar> vars;
+  input Integer n;
+  output DAE.Exp exp = DAE.ICONST(0);
+algorithm
+  for v in List.firstN(vars, n) loop
+    exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+  end for;
+end numScalarElemsBeforeExp;
 
 public function isDimensionParameter
   "true for a size parameter $DIM_k of a derived dimension of a resizable array,
@@ -1186,7 +1278,8 @@ public function hasSymbolicDims
   output Boolean b = List.any(vars, isSymbolicArrayVar);
 end hasSymbolicDims;
 
-protected function isSymbolicArrayVar
+public function isSymbolicArrayVar
+  "true if an array SimVar has a dimension that is no integer literal"
   input SimCodeVar.SimVar var;
   output Boolean b;
 algorithm

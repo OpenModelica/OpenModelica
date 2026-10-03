@@ -364,6 +364,7 @@ openmodelica_nf_frontend/src/NFPackage.rs
 openmodelica_nf_frontend/src/NFPrefixes.rs
 openmodelica_nf_frontend/src/NFRangeIterator.rs
 openmodelica_nf_frontend/src/NFRecord.rs
+openmodelica_nf_frontend/src/NFResizableConnections.rs
 openmodelica_nf_frontend/src/NFRestriction.rs
 openmodelica_nf_frontend/src/NFSBGraphUtil.rs
 openmodelica_nf_frontend/src/NFScalarize.rs

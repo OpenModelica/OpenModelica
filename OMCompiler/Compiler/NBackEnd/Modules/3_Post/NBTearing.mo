@@ -475,15 +475,22 @@ protected
     StrongComponent tmp;
     Integer idx = 0;
     Adjacency.Matrix full "full adjacency matrix containing solvability info";
+    Boolean resizable;
+    list<Module.tearingInterface> pre_funcs;
+    Module.tearingInterface fin;
   algorithm
     for part in partitions loop
       if isSome(part.strongComponents) and isSome(part.adjacencyMatrix) then
         SOME(strongComponents) := part.strongComponents;
         SOME(full) := part.adjacencyMatrix;
+        // with resizable arrays adjacent parts of the same loop are merged before
+        // they are finalized (the last function), see mergeResizableLoops
+        resizable := Flags.getConfigBool(Flags.RESIZABLE_ARRAYS);
+        pre_funcs := if resizable then List.firstN(funcs, listLength(funcs) - 1) else funcs;
         for i in 1:arrayLength(strongComponents) loop
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
-          for func in funcs loop
+          for func in pre_funcs loop
             (tmp, full, idx) := func(tmp, full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
           end for;
           // only update if it changed
@@ -491,6 +498,14 @@ protected
             arrayUpdate(strongComponents, i, tmp);
           end if;
         end for;
+        if resizable then
+          strongComponents := mergeResizableLoops(strongComponents);
+          fin := List.last(funcs);
+          for i in 1:arrayLength(strongComponents) loop
+            (tmp, full, idx) := fin(strongComponents[i], full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
+            arrayUpdate(strongComponents, i, tmp);
+          end for;
+        end if;
         part.strongComponents := SOME(strongComponents);
         part.adjacencyMatrix := SOME(full);
       end if;
@@ -498,6 +513,141 @@ protected
     end for;
     new_partitions := listReverse(new_partitions);
   end tearingTraverser;
+
+  function mergeResizableLoops
+    "Adjacent algebraic loops that are parts of the same variables and equations
+     are merged if together they are whole: with resizable arrays the parts are
+     only known for the analysis sizes, the whole loop is valid for every size.
+     Solving adjacent loops together is always correct."
+    input array<StrongComponent> comps;
+    output array<StrongComponent> outComps;
+  protected
+    list<StrongComponent> acc = {};
+    Option<StrongComponent> merged;
+    StrongComponent m;
+  algorithm
+    for c in comps loop
+      if not listEmpty(acc) then
+        merged := mergeLoops(listHead(acc), c);
+        if isSome(merged) then
+          SOME(m) := merged;
+          acc := m :: listRest(acc);
+          continue;
+        end if;
+      end if;
+      acc := c :: acc;
+    end for;
+    outComps := listArray(listReverse(acc));
+  end mergeResizableLoops;
+
+  function mergeLoops
+    input StrongComponent comp1;
+    input StrongComponent comp2;
+    output Option<StrongComponent> merged = NONE();
+  protected
+    Option<list<Slice<VariablePointer>>> ovars;
+    Option<list<Slice<EquationPointer>>> oeqns;
+    list<Slice<VariablePointer>> vars;
+    list<Slice<EquationPointer>> eqns;
+  algorithm
+    merged := match (comp1, comp2)
+      local
+        StrongComponent c1, c2;
+        Tearing t1, t2;
+      case (c1 as StrongComponent.ALGEBRAIC_LOOP(strict = t1 as TEARING_SET(), casual = NONE()),
+            c2 as StrongComponent.ALGEBRAIC_LOOP(strict = t2 as TEARING_SET(), casual = NONE()))
+        algorithm
+          ovars := mergeSliceLists(t1.iteration_vars, t2.iteration_vars, function sliceName(name = varSliceName));
+          oeqns := mergeSliceLists(t1.residual_eqns, t2.residual_eqns, function sliceName(name = eqnSliceName));
+          if isSome(ovars) and isSome(oeqns) then
+            SOME(vars) := ovars;
+            SOME(eqns) := oeqns;
+            vars := list(wholeVarSlice(v) for v in vars);
+            eqns := list(wholeEqnSlice(e) for e in eqns);
+            if List.all(list(listEmpty(v.indices) for v in vars), Util.id) and
+               List.all(list(listEmpty(e.indices) for e in eqns), Util.id) then
+              t1.iteration_vars := vars;
+              t1.residual_eqns := eqns;
+              t1.innerEquations := listArray(listAppend(arrayList(t1.innerEquations), arrayList(t2.innerEquations)));
+              t1.jac := NONE();
+              c1.strict := t1;
+              c1.linear := c1.linear and c2.linear;
+              c1.mixed := c1.mixed or c2.mixed;
+              c1.homotopy := c1.homotopy or c2.homotopy;
+              merged := SOME(c1);
+            end if;
+          end if;
+        then merged;
+      else NONE();
+    end match;
+  end mergeLoops;
+
+  function varSliceName
+    input Slice<VariablePointer> slice;
+    output String name = ComponentRef.toString(BVariable.getVarName(Slice.getT(slice)));
+  end varSliceName;
+
+  function eqnSliceName
+    input Slice<EquationPointer> slice;
+    output String name = ComponentRef.toString(Equation.getEqnName(Slice.getT(slice)));
+  end eqnSliceName;
+
+  function sliceName<T>
+    input Slice<T> slice;
+    input NameFunc name;
+    output String str = name(slice);
+    partial function NameFunc
+      input Slice<T> slice;
+      output String str;
+    end NameFunc;
+  end sliceName;
+
+  function mergeSliceLists<T>
+    "the slices of the same objects (by name) merged, NONE if the lists do not
+     contain the same objects"
+    input list<Slice<T>> l1;
+    input list<Slice<T>> l2;
+    input NameFunc name;
+    output Option<list<Slice<T>>> merged = NONE();
+    partial function NameFunc
+      input Slice<T> slice;
+      output String str;
+    end NameFunc;
+  protected
+    list<Slice<T>> res = {};
+    Slice<T> s2;
+    array<Slice<T>> arr2 = listArray(l2);
+    Option<Integer> opos;
+    Integer pos;
+    UnorderedMap<String, Integer> by_name "name -> position in l2";
+    UnorderedSet<Integer> indices;
+  algorithm
+    if listLength(l1) <> listLength(l2) then
+      return;
+    end if;
+    by_name := UnorderedMap.new<Integer>(stringHashDjb2, stringEq);
+    for i in 1:arrayLength(arr2) loop
+      UnorderedMap.add(name(arr2[i]), i, by_name);
+    end for;
+    for s1 in l1 loop
+      opos := UnorderedMap.get(name(s1), by_name);
+      if isNone(opos) then
+        return;
+      end if;
+      SOME(pos) := opos;
+      s2 := arr2[pos];
+      if listEmpty(s1.indices) or listEmpty(s2.indices) then
+        res := Slice.SLICE(Slice.getT(s1), {}) :: res;
+      else
+        indices := UnorderedSet.fromList(s1.indices, Util.id, intEq);
+        for i in s2.indices loop
+          UnorderedSet.add(i, indices);
+        end for;
+        res := Slice.SLICE(Slice.getT(s1), List.sort(UnorderedSet.toList(indices), intGt)) :: res;
+      end if;
+    end for;
+    merged := SOME(listReverse(res));
+  end mergeSliceLists;
 
   function noFilterVar extends BVariable.checkVar;
     input Boolean init;
@@ -592,6 +742,12 @@ protected
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        // slices with all elements are whole slices: with resizable arrays the
+        // elements are only known for the analysis sizes, a whole slice stays
+        // valid for every size
+        strict.iteration_vars := list(wholeVarSlice(v) for v in strict.iteration_vars);
+        strict.residual_eqns := list(wholeEqnSlice(e) for e in strict.residual_eqns);
+
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
@@ -611,6 +767,32 @@ protected
       else comp;
     end match;
   end finalize;
+
+  function numUnique
+    "the number of different indices"
+    input list<Integer> indices;
+    output Integer n = UnorderedSet.size(UnorderedSet.fromList(indices, Util.id, intEq));
+  end numUnique;
+
+  function wholeVarSlice
+    "a slice of all elements of a variable (at the resized sizes) as whole slice"
+    input output Slice<VariablePointer> slice;
+  algorithm
+    if not listEmpty(slice.indices) and
+       numUnique(slice.indices) == BVariable.size(Slice.getT(slice), true) then
+      slice := Slice.SLICE(Slice.getT(slice), {});
+    end if;
+  end wholeVarSlice;
+
+  function wholeEqnSlice
+    "a slice of all elements of an equation (at the resized sizes) as whole slice"
+    input output Slice<EquationPointer> slice;
+  algorithm
+    if not listEmpty(slice.indices) and
+       numUnique(slice.indices) == Equation.size(Slice.getT(slice), true) then
+      slice := Slice.SLICE(Slice.getT(slice), {});
+    end if;
+  end wholeEqnSlice;
 
   function minimal extends Module.tearingInterface;
     // only extracts discrete variables to be solved as inner equations
