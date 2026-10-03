@@ -52,6 +52,7 @@
 #include "dassl.h"
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
+#define DASSL_FIRST_STEP_RESTARTS 3
 
 #ifdef __cplusplus
 extern "C" {
@@ -524,6 +525,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   int saveJumpState;
   static unsigned int dasslStepsOutputCounter = 1;
   int return_from_small_step = 0;
+  int firstStepRestarts = 0;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -622,6 +624,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
               dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
               (double*) (void*) dasslData->rpar, dasslData->ipar, callJacobian, dummy_precondition,
               dasslData->zeroCrossingFunction, (int*) &dasslData->ng, dasslData->jroot);
+      dasslData->info[7] = omc_flag[FLAG_INITIAL_STEP_SIZE] ? 1 : 0;
 
       /* closing new step message */
       messageClose(OMC_LOG_DASSL);
@@ -641,6 +644,18 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         dasslData->info[0] = 1; /* try again */
         if (solverInfo->currentTime <= data->simulationInfo->stopTime)
           continue;
+      }
+      else if(dasslData->idid == -7 && dasslData->iwork[10] == 0 && firstStepRestarts < DASSL_FIRST_STEP_RESTARTS)
+      {
+        /* DASKR gives up after ten corrector failures, each quartering H, so a
+         * first step needing a smaller H is never taken: restart from the H it
+         * reached (RWORK(3)). */
+        firstStepRestarts++;
+        infoStreamPrint(OMC_LOG_DASSL, 0, "The corrector could not converge on the first step. Restarting with initial step size %g.", dasslData->rwork[2]);
+        dasslData->info[0] = 0;
+        dasslData->info[7] = 1;
+        dasslData->idid = 1;
+        continue;
       }
       else if(dasslData->idid < 0)
       {
