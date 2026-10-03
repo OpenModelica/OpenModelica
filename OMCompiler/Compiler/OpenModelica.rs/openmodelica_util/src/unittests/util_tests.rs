@@ -497,29 +497,29 @@ fn test_get_option_or_default() {
 fn test_option_equal_both_none() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(U::optionEqual(None::<i32>, None::<i32>, &*eq_fn).unwrap());
+    assert!(U::optionEqual(None::<i32>, None::<i32>, &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 #[test]
 fn test_option_equal_both_some_equal() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(U::optionEqual(Some(5i32), Some(5i32), &*eq_fn).unwrap());
+    assert!(U::optionEqual(Some(5i32), Some(5i32), &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 #[test]
 fn test_option_equal_both_some_not_equal() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(!U::optionEqual(Some(5i32), Some(6i32), &*eq_fn).unwrap());
+    assert!(!U::optionEqual(Some(5i32), Some(6i32), &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 #[test]
 fn test_option_equal_one_none() {
     let eq_fn: Arc<dyn Fn(i32, i32) -> Result<bool>> =
         Arc::new(|a, b| Ok(a == b));
-    assert!(!U::optionEqual(Some(5i32), None, &*eq_fn).unwrap());
-    assert!(!U::optionEqual(None, Some(5i32), &*eq_fn).unwrap());
+    assert!(!U::optionEqual(Some(5i32), None, &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
+    assert!(!U::optionEqual(None, Some(5i32), &|a0, a1| (eq_fn)(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 // ── applyOption ───────────────────────────────────────────────────────────────
@@ -527,13 +527,13 @@ fn test_option_equal_one_none() {
 #[test]
 fn test_apply_option_some() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOption(Some(5i32), &*double).unwrap(), Some(10));
+    assert_eq!(U::applyOption(Some(5i32), &|a0| (double)(::std::clone::Clone::clone(a0))).unwrap(), Some(10));
 }
 
 #[test]
 fn test_apply_option_none() {
     let double: Arc<dyn Fn(i32) -> Result<i32>> = Arc::new(|x| Ok(x * 2));
-    assert_eq!(U::applyOption(None::<i32>, &*double).unwrap(), None);
+    assert_eq!(U::applyOption(None::<i32>, &|a0| (double)(::std::clone::Clone::clone(a0))).unwrap(), None);
 }
 
 // ── applyOptionOrDefault ──────────────────────────────────────────────────────
