@@ -1434,7 +1434,7 @@ algorithm
   // replace inputs variables
   argmap := List.zip(listReverse(fnInputs), args);
   (argmap,checkcr) := Inline.extendCrefRecords(argmap, HashTableCG.emptyHashTable());
-  BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(outEqs, replaceArgs, (argmap,checkcr,true));
+  BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(outEqs, replaceArgs, (argmap,checkcr,true,Inline.newArgMemo()));
 
 
   // debug
@@ -1481,12 +1481,15 @@ end addReplacement;
 protected function replaceArgs
 "finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
   input DAE.Exp inExp;
-  input tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> inTuple;
+  input Inline.ReplaceArgsTuple inTuple;
   output DAE.Exp outExp;
-  output tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> outTuple;
+  output Inline.ReplaceArgsTuple outTuple;
+protected
+  Boolean ok;
 algorithm
   (outExp,outTuple) := Expression.traverseExpBottomUp(inExp,Inline.replaceArgs,inTuple);
-  if not Util.tuple33(outTuple) then
+  (_,_,ok,_) := outTuple;
+  if not ok then
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.traceln("BackendInline.replaceArgs failed");
     end if;
