@@ -75,7 +75,6 @@ import ExpressionSolve;
 import Flags;
 import Global;
 import HashTableExpToExp;
-import HashTableExpToIndex;
 import HashTable;
 import HashTableCrToExpSourceTpl;
 import Inline;
@@ -1028,57 +1027,57 @@ protected function processBuiltinExpressions "author: lochel
   output AvlTreePathFunction.Tree outTree;
   output list<BackendDAE.TimeEvent> outTimeEvents;
 protected
-  HashTableExpToIndex.HashTable ht;
+  UnorderedMap<DAE.Exp, Integer> ht;
 algorithm
-  ht := HashTableExpToIndex.emptyHashTable();
+  ht := UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
   (outDAE, outTree, (_, (_, _, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, 0, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
   Helper for transformBuiltinExpressions"
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
+  input tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
   output DAE.Exp outExp;
-  output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
+  output tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
 algorithm
   (outExp,outTuple) := match (inExp, inTuple)
     local
       DAE.Exp start, interval;
       list<DAE.Exp> es;
-      HashTableExpToIndex.HashTable ht;
+      UnorderedMap<DAE.Exp, Integer> ht;
       Integer iDelay, iSample, iSpatial;
       list<BackendDAE.TimeEvent> timeEvents;
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // delay [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      ht := BaseHashTable.add((inExp, iDelay+1), ht);
+      UnorderedMap.add(inExp, iDelay+1, ht);
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, iSpatial, timeEvents));
 
     // spatialDistribution [already in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
+    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // spatialDistribution [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      ht := BaseHashTable.add((inExp, iSpatial+1), ht);
+      UnorderedMap.add(inExp, iSpatial+1, ht);
     then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(iSpatial)::es, attr), (ht, iDelay, iSample, iSpatial+1, timeEvents));
 
     // sample [already in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _, _))
-      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and BaseHashTable.hasKey(inExp, ht)) algorithm
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and UnorderedMap.contains(inExp, ht)) algorithm
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // sample [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
       iSample := iSample+1;
       timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
-      ht := BaseHashTable.add((inExp, iSample), ht);
+      UnorderedMap.add(inExp, iSample, ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents));
 
     else (inExp,inTuple);
