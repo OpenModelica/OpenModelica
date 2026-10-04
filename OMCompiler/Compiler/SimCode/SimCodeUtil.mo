@@ -58,7 +58,6 @@ import File;
 import HashTable;
 import HashTableCrIListArray;
 import HashTableCrILst;
-import HashTableExpToIndex;
 import SCode;
 import SCodeUtil;
 import SimCode;
@@ -205,7 +204,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCodeFunction.RecordDeclaration> recordDecls;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;
   input String FMUVersion="";
@@ -232,7 +231,7 @@ protected
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCodeFunction.MakefileParams makefileParams;
   SimCode.ModelInfo modelInfo;
-  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literalsAcc = literals;
+  tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literalsAcc = literals;
   list<SimCodeFunction.RecordDeclaration> recordDeclsAcc = recordDecls;
   AvlTreePathFunction.Tree fmiDerInitFuncTree;
   HashTable.HashTable crefToClockIndexHT;
@@ -10647,12 +10646,12 @@ end calcPriority;
 public function findSimCodeLiterals
   "Replaces the literals in simCode by shared literals and returns them all."
   input output SimCode.SimCode simCode;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inLiterals;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inLiterals;
   output list<DAE.Exp> literals;
 protected
-  HashTableExpToIndex.HashTable uses;
+  UnorderedMap<DAE.Exp, Integer> uses;
 algorithm
-  (_, uses) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.countStringUses, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize));
+  (_, uses) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.countStringUses, SimCodeFunctionUtil.newExpIndexMap());
   (simCode, (_, _, literals)) := traverseExpsSimCode(simCode, function SimCodeFunctionUtil.findLiteralsHelperKeepSingle(uses = uses), inLiterals);
   literals := listReverse(literals);
 end findSimCodeLiterals;
@@ -12337,7 +12336,7 @@ protected function addFmiDerInitFunctions
   input AvlTreePathFunction.Tree fmiDerInitFuncTree "functions the FMIDERINIT jacobian calls";
   input AvlTreePathFunction.Tree elaboratedFuncTree "functions that are elaborated already";
   input output SimCode.ModelInfo modelInfo;
-  input output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   input list<SimCodeFunction.RecordDeclaration> recordDecls;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls = recordDecls;
 protected
