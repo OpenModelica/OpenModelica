@@ -2374,8 +2374,15 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
 fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
     use std::sync::OnceLock;
     static POOL: OnceLock<Option<rayon::ThreadPool>> = OnceLock::new();
-    POOL.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(n).build().ok())
-        .as_ref()
+    POOL.get_or_init(|| {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .stack_size(metamodelica::thread_stack_size())
+            .thread_name(|i| format!("omc-parallel-{i}"))
+            .build()
+            .ok()
+    })
+    .as_ref()
 }
 
 // Real-threaded map, opted into per call site. The `Send` bounds reject the

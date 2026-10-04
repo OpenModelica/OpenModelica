@@ -44,6 +44,15 @@ pub mod gc;
 pub mod cancel;
 pub mod heap_limit;
 
+/// The stack omc gives a thread that runs compiler code: the parser and much
+/// of the frontend recurse as deep as the input nests.
+pub fn thread_stack_size() -> usize {
+    std::env::var("OPENMODELICA_STACK_SIZE_KB")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .map_or(64 * 1024 * 1024, |kb| kb * 1024)
+}
+
 /// MetaModelica `array<T>`. See module-level docs for rationale.
 pub type Array<A> = Rc<RefCell<Vec<A>>>;
 
