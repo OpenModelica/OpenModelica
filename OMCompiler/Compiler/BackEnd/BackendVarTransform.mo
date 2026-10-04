@@ -488,9 +488,21 @@ protected function addExtendReplacement
   output CrefSet outExtendrepl = extendrepl;
 protected
   list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>>> worklist = {(cr, preCr)};
-  DAE.ComponentRef wcr;
+  DAE.ComponentRef wcr, pk;
   Option<DAE.ComponentRef> wpre;
 algorithm
+  // A walk adds the prefixes top-down, so when the deepest one is present
+  // already only the last identifier is left to handle.
+  if isNone(preCr) then
+    try
+      DAE.CREF_QUAL() := cr;
+      pk := ComponentReference.crefStripLastIdent(cr);
+      if UnorderedSet.contains(ComponentReferenceBasics.crefStripLastSubs(pk), extendrepl) then
+        worklist := {(ComponentReferenceBasics.crefLastCref(cr), SOME(pk))};
+      end if;
+    else
+    end try;
+  end if;
   // The replacement set is mutated in-place, so visiting order does not matter
   while not listEmpty(worklist) loop
     (wcr, wpre) := listHead(worklist);
