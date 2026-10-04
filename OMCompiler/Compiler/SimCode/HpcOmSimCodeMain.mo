@@ -43,7 +43,7 @@ encapsulated package HpcOmSimCodeMain
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import HashTableExpToIndex;
+public import UnorderedMap;
 public import HpcOmSimCode;
 public import HpcOmTaskGraph;
 public import HpcOmEqSystems;
@@ -89,7 +89,7 @@ public function createSimCode "
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCodeFunction.RecordDeclaration> recordDecls;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
 algorithm

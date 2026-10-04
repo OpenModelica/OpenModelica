@@ -49,7 +49,7 @@ import BackendDAEUtil;
 import Ceval;
 import DAE;
 import FCore;
-import HashTableExpToIndex;
+import UnorderedMap;
 import Tpl;
 import Values;
 import SimCode;
@@ -206,7 +206,7 @@ protected
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
   list<String> libPaths;
-  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  tuple<Integer,UnorderedMap<DAE.Exp, Integer>,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
@@ -249,7 +249,7 @@ protected
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   list<String> libPaths;
   Absyn.ComponentRef a_cref;
-  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  tuple<Integer,UnorderedMap<DAE.Exp, Integer>,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
@@ -290,7 +290,7 @@ protected
   SimCode.SimCode simCode;
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
-  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   Integer numCheckpoints;
 
 algorithm
@@ -348,7 +348,7 @@ protected function createSimCode "
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCodeFunction.RecordDeclaration> recordDecls;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;
   input String FMUVersion="";
@@ -2158,7 +2158,7 @@ protected
   SimCode.SimCode simCode;
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
-  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   list<DAE.Exp> lits;
   Integer numCheckpoints;
   list<SimCodeVar.SimVar> tempVars = {};
