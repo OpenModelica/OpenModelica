@@ -21909,7 +21909,11 @@ impl<'a> UseBeforeDef<'a> {
                         };
                         probe.stmts.iter_mut().for_each(|st| walk_stmt_mut(st, &mut visit));
                         walk_exp_mut(&mut probe.result, &mut visit);
-                        for v in &arm_writes { self.read(v, assigned); }
+                        // Only a shadow the arm may read before writing is seeded.
+                        let mut outs: HashSet<String> = self.outputs.clone();
+                        outs.extend(arm_writes.iter().cloned());
+                        let live_in = mc_arm_live_in(c, &arm_writes, &outs);
+                        for v in arm_writes.iter().filter(|v| live_in.contains(*v)) { self.read(v, assigned); }
                     }
                     // Arm bodies run conditionally: collect their reads against a
                     // throwaway copy of `assigned` and discard any assignments
