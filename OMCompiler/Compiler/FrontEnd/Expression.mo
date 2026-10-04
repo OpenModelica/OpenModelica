@@ -5792,18 +5792,33 @@ public function traverseExpListTopDown
   end FuncExpType;
 protected
   DAE.Exp e_1;
-  Boolean same = true;
+  list<DAE.Exp> rest = inExpl, acc;
+  Integer nEq = 0;
 algorithm
-  for e in inExpl loop
-    (e_1,outA) := traverseExpTopDown(e, rel, outA);
-    same := if referenceEq(e,e_1) then same else false;
-    outExpl := e_1::outExpl;
-  end for;
-  if same then
-    outExpl := inExpl;
-  else
-    outExpl := MetaModelica.Dangerous.listReverseInPlace(outExpl);
-  end if;
+  // Allocates only once an element changes, like traverseExpList.
+  outExpl := inExpl;
+  while not listEmpty(rest) loop
+    (e_1, outA) := traverseExpTopDown(listHead(rest), rel, outA);
+    if not referenceEq(listHead(rest), e_1) then
+      acc := {};
+      for e in inExpl loop
+        if nEq < 1 then
+          break;
+        end if;
+        acc := e :: acc;
+        nEq := nEq - 1;
+      end for;
+      acc := e_1 :: acc;
+      for e in listRest(rest) loop
+        (e_1, outA) := traverseExpTopDown(e, rel, outA);
+        acc := e_1 :: acc;
+      end for;
+      outExpl := MetaModelica.Dangerous.listReverseInPlace(acc);
+      return;
+    end if;
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpListTopDown;
 
 public function traverseExpOpt "Calls traverseExpBottomUp for SOME(exp) and does nothing for NONE"
