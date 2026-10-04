@@ -2669,8 +2669,8 @@ algorithm
          inSimulation and BackendVariable.isStateVar(var) and not listMember(index, always) then
         always := index :: always;
 
-      // Also prefer variables with start value
-      elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) then
+      // Also prefer variables with start value that is not just the default of their type
+      elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) and not BackendVariable.varStartFromType(var) then
         prefer := index :: prefer;
       end if;
     end if;
