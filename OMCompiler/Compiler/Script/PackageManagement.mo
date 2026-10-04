@@ -864,7 +864,8 @@ protected
 algorithm
   try
     o := JSON.get(JSON.get(JSON.get(JSON.get(index, "libs"), pkg), "versions"), SemanticVersion.toString(version));
-    if shaOrZip <> "" and getShaOrZipfile(o) == shaOrZip then
+    // A package installed from an index without shas only knows its zipfile.
+    if shaOrZip <> "" and (getShaOrZipfile(o) == shaOrZip or JSON.hasKey(o, "zipfile") and System.basename(JSON.getString(JSON.get(o, "zipfile"))) == shaOrZip) then
       obj := o;
     end if;
   else

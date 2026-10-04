@@ -704,7 +704,10 @@ fn modelica_utilities_imports(
     m.insert("ModelicaDuplicateString".into(), duplicate.clone());
     m.insert("ModelicaDuplicateStringWithErrorReturn".into(), duplicate);
     m.insert("ModelicaInternal_getTime".into(), get_time);
-    m.insert("ModelicaInternal_getpid".into(), getpid);
+    m.insert("ModelicaInternal_getpid".into(), getpid.clone());
+    // wasi-libc leaves getpid to its emulation library, which the bundles' libc
+    // does not carry; expat seeds its hash salt with it.
+    m.insert("getpid".into(), getpid);
     m
 }
 

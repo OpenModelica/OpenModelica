@@ -1103,6 +1103,9 @@ pub fn modelica_utilities_imports(
     let duplicate2 = duplicate.clone();
     m.insert("ModelicaDuplicateString".into(), Func::wrap(&mut *store, duplicate));
     m.insert("ModelicaDuplicateStringWithErrorReturn".into(), Func::wrap(&mut *store, duplicate2));
+    // wasi-libc leaves getpid to its emulation library, which the bundles' libc
+    // does not carry; expat seeds its hash salt with it.
+    m.insert("getpid".into(), Func::wrap(&mut *store, || -> i32 { 1 }));
     m
 }
 
