@@ -60,7 +60,6 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import BackendVarTransform;
-import BaseHashSet;
 import BaseHashTable;
 import Ceval;
 import ComponentReference;
@@ -75,13 +74,13 @@ import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
 import GCExt;
-import HashSet;
 import HashTableCrToCrEqLst;
 import HashTableCrToExp;
 import HashTableExpToIndex;
 import List;
 import SimCodeUtil;
 import Types;
+import UnorderedSet;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
 
@@ -532,19 +531,19 @@ protected
   BackendVarTransform.VariableReplacements repl;
   Boolean b, warnAliasConflicts;
   Integer size;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
 algorithm
   // get the size of the system to set up the replacement hashmap
   size := BackendDAEUtil.daeSize(inDAE);
   size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
-  unReplaceable := HashSet.emptyHashSet();
+  unReplaceable := newCrefSet();
   unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   (_,unReplaceable) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
-    BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
+    dumpCrefSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
   // traverse all systems and remove simple equations
   (outDAE, (repl, b, _, _, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS), false));
@@ -555,18 +554,39 @@ algorithm
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
 end fastAcausal;
 
+protected function newCrefSet
+  output UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+end newCrefSet;
+
+protected function addCref
+  input DAE.ComponentRef cr;
+  input output UnorderedSet<DAE.ComponentRef> set;
+algorithm
+  UnorderedSet.add(cr, set);
+end addCref;
+
+protected function dumpCrefSet
+  "Prints the set like BackendDump.dumpHashSet, in bucket order."
+  input UnorderedSet<DAE.ComponentRef> set;
+  input String heading;
+algorithm
+  print("\n" + heading + " (" + intString(UnorderedSet.size(set)) + ")\n" + BackendDump.UNDERLINE + "\n");
+  print(stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(cr) for cr in UnorderedSet.toList(set)), "\n"));
+  print("\n");
+end dumpCrefSet;
+
 protected function addUnreplaceable
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input HashSet.HashSet inUnreplaceable;
-  output HashSet.HashSet outUnreplaceable = inUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> inUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnreplaceable = inUnreplaceable;
 protected
   BackendDAE.Variables orderedVars;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars) := syst;
   for var in BackendVariable.varList(orderedVars) loop
     if BackendVariable.varUnreplaceable(var) then
-      outUnreplaceable := BaseHashSet.add(BackendVariable.varCref(var), outUnreplaceable);
+      outUnreplaceable := addCref(BackendVariable.varCref(var), outUnreplaceable);
     end if;
   end for;
 end addUnreplaceable;
@@ -575,13 +595,13 @@ protected function fastAcausal1 "author: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer, Boolean> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements, Boolean, UnorderedSet<DAE.ComponentRef>, Integer, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem = BackendDAEUtil.copyEqSystem(inSystem);
   output BackendDAE.Shared outShared;
-  output tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer, Boolean> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements, Boolean, UnorderedSet<DAE.ComponentRef>, Integer, Boolean> outTpl;
 protected
   BackendVarTransform.VariableReplacements repl;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
   list<BackendDAE.Equation> eqnslst;
   list<SimpleContainer> simpleeqnslst;
   BackendDAE.Variables vars;
@@ -633,14 +653,14 @@ protected function causalFinder "author: Frenkel TUD 2012-12"
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
-  input HashSet.HashSet iUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> iUnreplaceable;
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean inGlobalFoundSimple;
   output BackendDAE.Variables outVars = iVars;
   output BackendDAE.Shared outShared = ishared;
   output BackendVarTransform.VariableReplacements outRepl = iRepl;
-  output HashSet.HashSet outUnReplaceable = iUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnReplaceable = iUnreplaceable;
   output list<BackendDAE.Equation> outEqnslst;
   output Boolean outGlobalFoundSimple = inGlobalFoundSimple;
   input output Boolean warnAliasConflicts;
@@ -677,14 +697,14 @@ protected function causalFinder1 "author: Frenkel TUD 2012-12"
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
-  input HashSet.HashSet iUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> iUnreplaceable;
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean inGlobalFoundSimple;
   output BackendDAE.Variables outVars = iVars;
   output BackendDAE.Shared outShared = ishared;
   output BackendVarTransform.VariableReplacements outRepl = iRepl;
-  output HashSet.HashSet outUnReplaceable = iUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnReplaceable = iUnreplaceable;
   output list<BackendDAE.Equation> outEqnslst = listAppend(iEqnslst, iGlobalEqnslst);
   input output Boolean warnAliasConflicts;
 algorithm
@@ -721,19 +741,19 @@ protected
   BackendVarTransform.VariableReplacements repl;
   Boolean b, warnAliasConflicts;
   Integer size;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
 algorithm
   // get the size of the system to set up the replacement hashmap
   size := BackendDAEUtil.daeSize(inDAE);
   size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
-  unReplaceable := HashSet.emptyHashSet();
+  unReplaceable := newCrefSet();
   unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   (_,unReplaceable) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
-    BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
+    dumpCrefSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
   (outDAE, (repl, _, b, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, allAcausal1, (repl, unReplaceable, false, false));
   if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
@@ -748,15 +768,15 @@ protected function allAcausal1 "author: Frenkel TUD 2012-12
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements, UnorderedSet<DAE.ComponentRef>, Boolean, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
-  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements, UnorderedSet<DAE.ComponentRef>, Boolean, Boolean> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendVarTransform.VariableReplacements repl;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
   Boolean b, b1, warnAliasConflicts;
   array<list<Integer>> mT;
   list<BackendDAE.Equation> eqnslst;
@@ -796,21 +816,21 @@ protected
   BackendVarTransform.VariableReplacements repl;
   Boolean b, warnAliasConflicts;
   Integer size;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
 algorithm
   // get the size of the system to set up the replacement hashmap
   size := BackendDAEUtil.daeSize(inDAE);
   size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unReplaceable crefs
-  unReplaceable := HashSet.emptyHashSet();
+  unReplaceable := newCrefSet();
   unReplaceable := BackendDAEUtil.foldEqSystem(inDAE, addUnreplaceable, unReplaceable);
   (_,unReplaceable) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   // do not replace state sets
   unReplaceable := addUnreplaceableFromStateSets(inDAE, unReplaceable);
   if Flags.isSet(Flags.DUMP_REPL) then
-    BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
+    dumpCrefSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
   (outDAE, (repl, _, b, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, causal1, (repl, unReplaceable, false, false));
   if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
@@ -825,16 +845,16 @@ protected function causal1 "author: Frenkel TUD 2012-12
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements, UnorderedSet<DAE.ComponentRef>, Boolean, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
-  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements, UnorderedSet<DAE.ComponentRef>, Boolean, Boolean> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendDAE.StrongComponents comps;
   BackendVarTransform.VariableReplacements repl;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
   Boolean b, b1, warnAliasConflicts;
   array<list<Integer>> mT;
   list<BackendDAE.Equation> eqnslst;
@@ -939,13 +959,13 @@ end traverseComponents;
 
 protected function allCausalFinder "author: Frenkel TUD 2012-12"
   input list<BackendDAE.Equation> eqns;
-  input tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean, Boolean> inTpl;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean, Boolean> outTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, UnorderedSet<DAE.ComponentRef>, array<list<Integer>>, list<BackendDAE.Equation>, Boolean, Boolean> inTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, UnorderedSet<DAE.ComponentRef>, array<list<Integer>>, list<BackendDAE.Equation>, Boolean, Boolean> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.Shared shared;
   BackendVarTransform.VariableReplacements repl;
-  HashSet.HashSet unReplaceable;
+  UnorderedSet<DAE.ComponentRef> unReplaceable;
   array<list<Integer>> mt;
   Boolean b, b1, b2, b3, globalFoundSimple, warnAliasConflicts;
   list<BackendDAE.Equation> globaleqnslst, eqnslst;
@@ -967,14 +987,14 @@ protected function allCausalFinder1 "author: Frenkel TUD 2012-12"
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
-  input HashSet.HashSet iUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> iUnreplaceable;
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean globalFoundSimple;
   output BackendDAE.Variables outVars;
   output BackendDAE.Shared outShared;
   output BackendVarTransform.VariableReplacements outRepl;
-  output HashSet.HashSet outUnReplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnReplaceable;
   output list<BackendDAE.Equation> outEqnslst;
   output Boolean outGlobalFoundSimple;
   input output Boolean warnAliasConflicts;
@@ -1013,14 +1033,14 @@ protected function allCausalFinder2 "author: Frenkel TUD 2012-12"
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
-  input HashSet.HashSet iUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> iUnreplaceable;
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean globalFoundSimple;
   output BackendDAE.Variables outVars;
   output BackendDAE.Shared outShared;
   output BackendVarTransform.VariableReplacements outRepl;
-  output HashSet.HashSet outUnReplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnReplaceable;
   output list<BackendDAE.Equation> outEqnslst;
   output Boolean outGlobalFoundSimple;
   input output Boolean warnAliasConflicts;
@@ -2119,7 +2139,7 @@ protected function handleSets "author: Frenkel TUD 2012-12
   input Integer inMark;
   input array<SimpleContainer> containerArr;
   input array<list<Integer>> iMT;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   input output BackendDAE.Variables vars;
   input output list<BackendDAE.Equation> eqnslst;
   input output BackendDAE.Shared shared;
@@ -2171,7 +2191,7 @@ protected function getAlias "author: Frenkel TUD 2012-12
   input array<SimpleContainer> containerArr;
   input array<list<Integer>> iMT;//[varIdx] = simpleContainer
   input BackendDAE.Variables vars;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   input Boolean negate;
   input list<Integer> stack;
   input Option<tuple<Integer, Integer>> iRmax;
@@ -2268,7 +2288,7 @@ protected function getAliasScore "author: Frenkel TUD 2012-12
   input Integer varIdx;
   input Integer containerIdx;
   input BackendDAE.Variables vars;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   input Option<tuple<Integer, Integer>> iRmax;
   input Option<tuple<Integer, Integer>> iSmax;
   input Option<Integer> iUnremovable;
@@ -2480,7 +2500,7 @@ end setVisited;
 protected function replaceableAlias "author Frenkel TUD 2012-11
   check if the variable is a replaceable_ alias."
   input BackendDAE.Var var;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   output Boolean res;
   output Boolean res1 "true if not in unReplaceable Map";
 algorithm
@@ -2496,7 +2516,7 @@ algorithm
       false := BackendVariable.isVarOnTopLevelAndInput(var);
       false := BackendVariable.varHasUncertainValueRefine(var) and BackendDAEUtil.isDataReconciliationEnabled();
       cr := ComponentReferenceBasics.crefStripLastSubs(cr);
-      b := not BaseHashSet.has(cr, unReplaceable);
+      b := not UnorderedSet.contains(cr, unReplaceable);
     then (true, b);
 
     else
@@ -2513,7 +2533,7 @@ protected function handleSet "author: Frenkel TUD 2012-12
   input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   input BackendDAE.Variables iVars;
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Shared ishared;
@@ -2845,7 +2865,7 @@ protected function traverseAliasTree "author: Frenkel TUD 2012-12
   input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   input BackendDAE.Variables iVars;
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Shared ishared;
@@ -2894,7 +2914,7 @@ protected function traverseAliasTree1 "author: Frenkel TUD 2012-12
   input Integer mark; //how to mark a visited container
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   input BackendDAE.Variables iVars;
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Shared ishared;
@@ -3899,7 +3919,7 @@ algorithm
       list< BackendDAE.Var> varA, statescandidates, ovars, varJ;
       list< BackendDAE.Equation> eqns, oeqns;
       BackendVarTransform.VariableReplacements repl;
-      HashSet.HashSet hs;
+      UnorderedSet<DAE.ComponentRef> hs;
       Boolean b, b1;
       BackendDAE.Jacobian jac;
     case {} then (listReverse(iAcc), inB, iStatesetrepl);
@@ -3907,8 +3927,8 @@ algorithm
       algorithm
         repl := getAliasReplacements(iStatesetrepl, aliasVars);
         // do not replace the set variables
-        hs := HashSet.emptyHashSet();
-        hs := List.applyAndFold(statescandidates, BaseHashSet.add, BackendVariable.varCref, hs);
+        hs := newCrefSet();
+        hs := List.applyAndFold(statescandidates, addCref, BackendVariable.varCref, hs);
         ovars := replaceOtherStateSetVars(ovars, vars, aliasVars, hs, {});
         (eqns, b) := BackendVarTransform.replaceEquations(eqns, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         (oeqns, b1) := BackendVarTransform.replaceEquations(oeqns, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
@@ -3952,7 +3972,7 @@ protected function replaceOtherStateSetVars "author: Frenkel TUD 2012-12"
   input list< BackendDAE.Var> iVarLst;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables aliasVars;
-  input HashSet.HashSet hs;
+  input UnorderedSet<DAE.ComponentRef> hs;
   input list< BackendDAE.Var> iAcc;
   output list< BackendDAE.Var> oVarLst;
 algorithm
@@ -3967,11 +3987,11 @@ algorithm
     case var::varlst
       algorithm
         cr := BackendVariable.varCref(var);
-        false := BaseHashSet.has(cr, hs);
+        false := UnorderedSet.contains(cr, hs);
         (var, _) := BackendVariable.getVarSingle(cr, aliasVars);
         exp := BackendVariable.varBindExp(var);
         cr::{} := Expression.extractCrefsFromExp(exp);
-        b := BaseHashSet.has(cr, hs);
+        b := UnorderedSet.contains(cr, hs);
         (var, _) := BackendVariable.getVarSingle(cr, vars);
         varlst := List.consOnTrue(not b, var, iAcc);
       then
@@ -3979,7 +3999,7 @@ algorithm
     case var::varlst
       algorithm
         cr := BackendVariable.varCref(var);
-        true := BaseHashSet.has(cr, hs);
+        true := UnorderedSet.contains(cr, hs);
       then
         replaceOtherStateSetVars(varlst, vars, aliasVars, hs, iAcc);
     case var::varlst
@@ -4178,8 +4198,8 @@ end replaceOptExprTraverser;
 
 protected function addUnreplaceableFromStateSets "author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
-  input HashSet.HashSet inUnreplaceable;
-  output HashSet.HashSet outUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> inUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnreplaceable;
 protected
   BackendDAE.EqSystems systs;
 algorithm
@@ -4190,13 +4210,13 @@ end addUnreplaceableFromStateSets;
 protected function addUnreplaceableFromStateSetSystem "author: Frenkel TUD 2012-12
   traverse an equation system to handle states sets"
   input BackendDAE.EqSystem isyst;
-  input HashSet.HashSet inUnreplaceable;
-  output HashSet.HashSet outUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> inUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnreplaceable;
 algorithm
   outUnreplaceable:= match isyst
     local
       BackendDAE.StateSets stateSets;
-      HashSet.HashSet unReplaceable;
+      UnorderedSet<DAE.ComponentRef> unReplaceable;
     // no stateSet
     case BackendDAE.EQSYSTEM(stateSets={}) then inUnreplaceable;
     // sets
@@ -4210,8 +4230,8 @@ end addUnreplaceableFromStateSetSystem;
 
 protected function addUnreplaceableFromStateSet "author: Frenkel TUD 2012-12"
   input BackendDAE.StateSet iStateSet;
-  input HashSet.HashSet inUnreplaceable;
-  output HashSet.HashSet outUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> inUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnreplaceable;
 protected
   list<BackendDAE.Var> statevars;
   list<DAE.ComponentRef> crlst;
@@ -4219,14 +4239,14 @@ algorithm
   BackendDAE.STATESET(statescandidates=statevars) := iStateSet;
   crlst := List.map(statevars, BackendVariable.varCref);
   crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
-  outUnreplaceable := List.fold(crlst, BaseHashSet.add, inUnreplaceable);
+  outUnreplaceable := List.fold(crlst, addCref, inUnreplaceable);
 end addUnreplaceableFromStateSet;
 
 protected function addUnreplaceableFromWhens "collect all lhs of whens and array assign statement because these are not
   replaceable_ or if they are replaced the initial system get in trouble"
   input BackendDAE.BackendDAE inDAE;
-  input HashSet.HashSet inUnreplaceable;
-  output HashSet.HashSet outUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> inUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnreplaceable;
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray eqns;
@@ -4238,9 +4258,9 @@ end addUnreplaceableFromWhens;
 
 protected function addUnreplaceableFromEqnsExp
   input DAE.Exp e;
-  input HashSet.HashSet hs;
+  input UnorderedSet<DAE.ComponentRef> hs;
   output DAE.Exp outExp;
-  output HashSet.HashSet ohs;
+  output UnorderedSet<DAE.ComponentRef> ohs;
 algorithm
   (outExp,ohs) := match e
     local
@@ -4251,7 +4271,7 @@ algorithm
     case DAE.CREF(componentRef=cr)
       algorithm
         cr := ComponentReferenceBasics.crefStripLastSubs(cr);
-        ohs := BaseHashSet.add(cr, hs);
+        ohs := addCref(cr, hs);
       then (e,ohs);
     // let WILD pass
     else (e,hs);
@@ -4260,8 +4280,8 @@ end addUnreplaceableFromEqnsExp;
 
 protected function addUnreplaceableFromWhensSystem "traverse the Whens of an  equation system to add all variables set in when"
   input BackendDAE.EqSystem isyst;
-  input HashSet.HashSet inUnreplaceable;
-  output HashSet.HashSet outUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> inUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> outUnreplaceable;
 protected
   BackendDAE.EquationArray eqns;
 algorithm
@@ -4271,9 +4291,9 @@ end addUnreplaceableFromWhensSystem;
 
 protected function addUnreplaceableFromWhenEqn
   input BackendDAE.Equation inEq;
-  input HashSet.HashSet inHs;
+  input UnorderedSet<DAE.ComponentRef> inHs;
   output BackendDAE.Equation eqn;
-  output HashSet.HashSet hs;
+  output UnorderedSet<DAE.ComponentRef> hs;
 algorithm
   (eqn,hs) := match (inEq,inHs)
     local
@@ -4295,14 +4315,14 @@ end addUnreplaceableFromWhenEqn;
 
 protected function addUnreplaceableFromWhenStmt
   input DAE.Statement inStmt;
-  input HashSet.HashSet inHS;
-  output HashSet.HashSet outHS;
+  input UnorderedSet<DAE.ComponentRef> inHS;
+  output UnorderedSet<DAE.ComponentRef> outHS;
 algorithm
   outHS := matchcontinue inStmt
     local
       DAE.Statement stmt;
       list<DAE.Statement> stmts;
-      HashSet.HashSet hs;
+      UnorderedSet<DAE.ComponentRef> hs;
       DAE.ComponentRef cr;
 
     case DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()) algorithm
@@ -4317,7 +4337,7 @@ algorithm
     // add also lhs of array assign stmts because these are not replaceable with array(...)
     case DAE.STMT_ASSIGN_ARR(lhs=DAE.CREF(componentRef=cr)) algorithm
       cr := ComponentReferenceBasics.crefStripLastSubs(cr);
-      hs := BaseHashSet.add(cr, inHS);
+      hs := addCref(cr, inHS);
     then hs;
 
     // lochel: do not replace arrays that appear on lhs [#2271]
@@ -4327,7 +4347,7 @@ algorithm
       // failure({} = ComponentReference.crefLastSubs(cr));
       // true = ComponentReference.isArrayElement(cr);
       cr := ComponentReferenceBasics.crefStripLastSubs(cr);
-      hs := BaseHashSet.add(cr, inHS);
+      hs := addCref(cr, inHS);
     then hs;
 
     else
@@ -4337,30 +4357,30 @@ end addUnreplaceableFromWhenStmt;
 
 protected function addUnreplaceableFromStmt
   input DAE.Statement inStmt;
-  input HashSet.HashSet inHS;
-  output HashSet.HashSet outHS;
+  input UnorderedSet<DAE.ComponentRef> inHS;
+  output UnorderedSet<DAE.ComponentRef> outHS;
 algorithm
   outHS := match inStmt
     local
       DAE.ComponentRef cr;
-      HashSet.HashSet hs;
+      UnorderedSet<DAE.ComponentRef> hs;
       list<DAE.Exp> expExpLst;
       list<DAE.ComponentRef> crlst;
 
     case DAE.STMT_ASSIGN(exp1=DAE.CREF(componentRef=cr)) algorithm
       cr := ComponentReferenceBasics.crefStripLastSubs(cr);
-      hs := BaseHashSet.add(cr, inHS);
+      hs := addCref(cr, inHS);
     then hs;
 
     case DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst) algorithm
       crlst := List.flatten(List.map(expExpLst, Expression.extractCrefsFromExp));
       crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
-      hs := List.fold(crlst, BaseHashSet.add, inHS);
+      hs := List.fold(crlst, addCref, inHS);
     then hs;
 
     case DAE.STMT_ASSIGN_ARR(lhs=DAE.CREF(componentRef=cr)) algorithm
       cr := ComponentReferenceBasics.crefStripLastSubs(cr);
-      hs := BaseHashSet.add(cr, inHS);
+      hs := addCref(cr, inHS);
     then hs;
 
     else
@@ -4370,13 +4390,13 @@ end addUnreplaceableFromStmt;
 
 protected function addUnreplaceableFromWhen "This is a helper function for addUnreplaceableFromWhenEqn."
   input BackendDAE.WhenEquation inWEqn;
-  input HashSet.HashSet iHs;
-  output HashSet.HashSet oHs;
+  input UnorderedSet<DAE.ComponentRef> iHs;
+  output UnorderedSet<DAE.ComponentRef> oHs;
 algorithm
   oHs := match inWEqn
     local
       BackendDAE.WhenEquation weqn;
-      HashSet.HashSet hs;
+      UnorderedSet<DAE.ComponentRef> hs;
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<BackendDAE.WhenEquation> oweqn;
 
@@ -4394,8 +4414,8 @@ end addUnreplaceableFromWhen;
 protected function addUnreplaceableFromWhenOps
 "This is a helper function for addUnreplaceableFromWhenEqn."
   input list<BackendDAE.WhenOperator> inWhenOps;
-  input HashSet.HashSet iHs;
-  output HashSet.HashSet oHs;
+  input UnorderedSet<DAE.ComponentRef> iHs;
+  output UnorderedSet<DAE.ComponentRef> oHs;
 algorithm
   oHs := match inWhenOps
   local
@@ -4403,12 +4423,12 @@ algorithm
     list<DAE.ComponentRef> crefLst;
     DAE.Exp e;
     list<BackendDAE.WhenOperator> rest;
-    HashSet.HashSet hs;
+    UnorderedSet<DAE.ComponentRef> hs;
 
     case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left))::rest
       algorithm
         left := ComponentReferenceBasics.crefStripLastSubs(left);
-        hs := BaseHashSet.add(left, iHs);
+        hs := addCref(left, iHs);
       then addUnreplaceableFromWhenOps(rest, hs);
     case BackendDAE.ASSIGN(left = e)::rest
       algorithm
@@ -4416,7 +4436,7 @@ algorithm
         hs := iHs;
         for left in crefLst loop
           left := ComponentReferenceBasics.crefStripLastSubs(left);
-          hs := BaseHashSet.add(left, hs);
+          hs := addCref(left, hs);
         end for;
       then addUnreplaceableFromWhenOps(rest, hs);
     else
@@ -4426,9 +4446,9 @@ end addUnreplaceableFromWhenOps;
 
 protected function traverserExpUnreplaceable
   input DAE.Exp e;
-  input HashSet.HashSet unReplaceable;
+  input UnorderedSet<DAE.ComponentRef> unReplaceable;
   output DAE.Exp outExp;
-  output HashSet.HashSet outHt;
+  output UnorderedSet<DAE.ComponentRef> outHt;
 algorithm
   (outExp,outHt) := match e
     local
@@ -4448,7 +4468,7 @@ algorithm
         try
           crlst := List.flatten(List.map(explst, Expression.extractCrefsFromExp));
           crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
-          outHt := List.fold(crlst, BaseHashSet.add, unReplaceable);
+          outHt := List.fold(crlst, addCref, unReplaceable);
         else
           outHt := unReplaceable;
         end try;
@@ -4460,8 +4480,8 @@ end traverserExpUnreplaceable;
 protected function traverseCrefUnreplaceable
   input DAE.ComponentRef inCref;
   input Option<DAE.ComponentRef> preCref;
-  input HashSet.HashSet iUnreplaceable;
-  output HashSet.HashSet oUnreplaceable;
+  input UnorderedSet<DAE.ComponentRef> iUnreplaceable;
+  output UnorderedSet<DAE.ComponentRef> oUnreplaceable;
 algorithm
   oUnreplaceable := match(inCref, preCref)
     local
@@ -4469,29 +4489,29 @@ algorithm
       DAE.ComponentRef cr, pcr;
       DAE.Type ty;
       list<DAE.Subscript> subs;
-      HashSet.HashSet unReplaceable;
+      UnorderedSet<DAE.ComponentRef> unReplaceable;
       Boolean b;
 
     case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), SOME(pcr)) algorithm
       (_, b) := Expression.traverseExpTopDownSubs(subs, Expression.traversingComponentRefPresent, false);
       pcr := if b then ComponentReference.crefPrependIdent(pcr, name, {}, ty) else pcr;
-      unReplaceable := if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+      unReplaceable := if b then addCref(pcr, iUnreplaceable) else iUnreplaceable;
       pcr := ComponentReference.crefPrependIdent(pcr, name, subs, ty);
     then traverseCrefUnreplaceable(cr, SOME(pcr), unReplaceable);
 
     case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), NONE()) algorithm
       (_, b) := Expression.traverseExpTopDownSubs(subs, Expression.traversingComponentRefPresent, false);
-      unReplaceable := if b then BaseHashSet.add(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
+      unReplaceable := if b then addCref(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
     then traverseCrefUnreplaceable(cr, SOME(DAE.CREF_IDENT(name, ty, subs)), unReplaceable);
 
     case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), SOME(pcr)) algorithm
       (_, b) := Expression.traverseExpTopDownSubs(subs, Expression.traversingComponentRefPresent, false);
-      unReplaceable := if b then BaseHashSet.add(ComponentReference.crefPrependIdent(pcr, name, {}, ty), iUnreplaceable) else iUnreplaceable;
+      unReplaceable := if b then addCref(ComponentReference.crefPrependIdent(pcr, name, {}, ty), iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
     case (DAE.CREF_IDENT(ident=name, identType=ty), NONE()) algorithm
       (_, b) := Expression.traverseExpTopDownCrefHelper(inCref, Expression.traversingComponentRefPresent, false);
-      unReplaceable := if b then BaseHashSet.add(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
+      unReplaceable := if b then addCref(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
     case (DAE.OPTIMICA_ATTR_INST_CREF(), _) then iUnreplaceable;
