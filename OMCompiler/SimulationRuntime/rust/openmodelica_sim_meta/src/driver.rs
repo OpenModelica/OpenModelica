@@ -1248,6 +1248,12 @@ pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
     ROW_SINK.store(rows.map_or(0, |f| f as usize), Ordering::Relaxed);
     ROW_SINK_FINISH.store(finish.map_or(0, |f| f as usize), Ordering::Relaxed);
 }
+/// The output buffer, reserved for a first stretch of rows: a sink takes them as
+/// they come, and a whole long run's can exceed what wasm32 can address.
+fn rows_buffer(n_rows: u32, n_reals: u32) -> Vec<f64> {
+    Vec::with_capacity(n_rows.min(1024) as usize * n_reals as usize)
+}
+
 /// Hand `rows` to the sink and empty the buffer; nothing without a sink.
 pub fn commit_rows(rows: &mut Vec<f64>) {
     let p = ROW_SINK.load(Ordering::Relaxed);
@@ -5352,7 +5358,7 @@ impl EulerDriver {
             row: 0,
             pending_time: None,
             dss,
-            rows: Vec::with_capacity((n_rows * n_reals) as usize),
+            rows: rows_buffer(n_rows, n_reals),
             retry,
         })
     }
@@ -6641,7 +6647,7 @@ impl DasslDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         // Dynamic state selection, then row 0 at the start time. For an explicit ODE
         // the consistent initial derivative is exactly f(t0, y0), which `functionODE`
         // (called by `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
@@ -9782,7 +9788,7 @@ impl EventsDriver {
         let n_reals = layout.n_row_total();
 
         let samp = Samples::load(e, sim_data, layout, start)?;
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
         let dss = StateSelection::initial(e, sim_data, model)?;
@@ -10471,7 +10477,7 @@ impl CvodeDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
@@ -11436,7 +11442,7 @@ impl IdaDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         // For an explicit ODE the consistent `y'` is f(t0, y0), which the initial
         // row leaves in the derivative slots.
         let dss = StateSelection::initial(e, sim_data, model)?;
