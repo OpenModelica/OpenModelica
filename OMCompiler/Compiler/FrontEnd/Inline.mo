@@ -813,6 +813,20 @@ public function inlineCall
   input output list<DAE.Statement> assrtLst;
   input Functiontuple fns;
 algorithm
+  () := match exp
+    case DAE.CALL()
+      algorithm
+        (exp, assrtLst) := inlineCallWork(exp, assrtLst, fns);
+      then ();
+    else ();
+  end match;
+end inlineCall;
+
+protected function inlineCallWork
+  input output DAE.Exp exp;
+  input output list<DAE.Statement> assrtLst;
+  input Functiontuple fns;
+algorithm
   (exp,assrtLst) := matchcontinue exp
     local
       list<DAE.Element> fn;
@@ -920,7 +934,7 @@ algorithm
     else (exp,assrtLst);
 
   end matchcontinue;
-end inlineCall;
+end inlineCallWork;
 
 protected function inlineAssert "inlines an assert.
 author:Waurich TUD 2013-10"
