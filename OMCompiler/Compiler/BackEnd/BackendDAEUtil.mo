@@ -3144,10 +3144,10 @@ algorithm
     case (DAE.CREF(componentRef=cr), (pa, visitedPaths))
       algorithm
         try
-          (varslst, p) := BackendVariable.getVar(cr, vars);
-          pa := adjacencyRowExp1(varslst, p, pa, 0);
+          pa := adjacencyRowCref(cr, vars, pa, 0);
           if vars.hasStartVars then
             try
+              (varslst, _) := BackendVariable.getVar(cr, vars);
               (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
               pa := adjacencyRowExp1(varslst, p2, pa, 0);
             else
@@ -3167,8 +3167,7 @@ algorithm
             case {} then 1;
             case {DAE.ICONST(diffindx)} then diffindx;
           end match;
-          (varslst, p) := BackendVariable.getVar(cr, vars);
-          pa := adjacencyRowExp1(varslst, p, pa, diffindx);
+          pa := adjacencyRowCref(cr, vars, pa, diffindx);
           (e, b, tpl) := (inExp, false, (pa, visitedPaths));
         else
           (e, b, tpl) := traversingadjacencyRowSolvableCall(inExp, inTpl, vars, isInitial, ofunctionTree);
@@ -3601,7 +3600,7 @@ public function traversingadjacencyRowExpFinder "
 algorithm
   (outExp,cont,outPa) := match inExp
     local
-      list<Integer> p, p2, pa;
+      list<Integer> p2, pa;
       DAE.ComponentRef cr;
       DAE.Exp e,e1,e2;
       list<BackendDAE.Var> varslst;
@@ -3612,10 +3611,10 @@ algorithm
     case DAE.CREF(componentRef=cr)
       algorithm
         try
-          (varslst, p) := BackendVariable.getVar(cr, vars);
-          pa := adjacencyRowExp1(varslst, p, inPa, 0);
+          pa := adjacencyRowCref(cr, vars, inPa, 0);
           if vars.hasStartVars then
             try
+              (varslst, _) := BackendVariable.getVar(cr, vars);
               (_, p2) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
               pa := adjacencyRowExp1(varslst, p2, pa, 0);
             else
@@ -3697,8 +3696,7 @@ algorithm
           try
             DAE.CREF(componentRef=cr) := e1;
             cr := ComponentReference.subscriptCrefWithInt(cr, i);
-            (varslst, p) := BackendVariable.getVar(cr, vars);
-            pa := adjacencyRowExp1(varslst, p, inPa, 0);
+            pa := adjacencyRowCref(cr, vars, inPa, 0);
           else
             e1 := Expression.nthArrayExp(e1, i);
             (_, pa) := Expression.traverseExpTopDown(e1, function traversingadjacencyRowExpFinder(vars = vars, isInitial = isInitial), inPa);
@@ -3730,12 +3728,8 @@ protected function traversingadjacencyRowDer
   input list<Integer> inPa;
   input Boolean isInitial;
   output list<Integer> pa;
-protected
-  list<BackendDAE.Var> varslst;
-  list<Integer> p;
 algorithm
-  (varslst, p) := BackendVariable.getVar(cr, vars);
-  pa := adjacencyRowExp1(varslst, p, inPa, 1);
+  pa := adjacencyRowCref(cr, vars, inPa, 1);
   (_, pa) := Expression.traverseExpTopDownCrefHelper(cr, function traversingadjacencyRowExpFinder(vars = vars, isInitial = isInitial), pa);
 end traversingadjacencyRowDer;
 
@@ -3749,30 +3743,60 @@ protected function adjacencyRowExp1
 algorithm
   outVarIndxLst := match (inVarLst,inIntegerLst)
     local
+       BackendDAE.Var v;
        list<BackendDAE.Var> rest;
        list<Integer> irest;
-       list<Integer> vars;
-       Integer i,i1,diffidx;
+       Integer i;
     case ({},{}) then inVarIndxLst;
-    /*If variable x is a state, der(x) is a variable in adjacency matrix,
-         x is inserted as negative value, since it is needed by debugging and
-         index reduction using dummy derivatives */
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))::rest,i::irest)
-      algorithm
-        i1 := if intGe(diffindex,1) then i else -i;
-        vars := i1 :: inVarIndxLst;
-      then adjacencyRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))::rest,i::irest)
-      algorithm
-        i1 := if intGe(diffindex,diffidx) then i else -i;
-        vars := i1 :: inVarIndxLst;
-      then adjacencyRowExp1(rest,irest,vars,diffindex);
-    case (_::rest,i::irest)
-      algorithm
-        vars := i :: inVarIndxLst;
-      then adjacencyRowExp1(rest,irest,vars,diffindex);
+    case (v::rest,i::irest)
+      then adjacencyRowExp1(rest,irest,adjacencyRowVar(v,i,inVarIndxLst,diffindex),diffindex);
   end match;
 end adjacencyRowExp1;
+
+protected function adjacencyRowVar
+  "Adds the adjacency matrix entry of variable i: a state x enters as -i
+   unless diffindex says der(x) is meant (used by index reduction)."
+  input BackendDAE.Var var;
+  input Integer i;
+  input list<Integer> inRow;
+  input Integer diffindex;
+  output list<Integer> row;
+algorithm
+  row := match var
+    local
+      Integer diffidx;
+    case BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))
+      then (if intGe(diffindex,1) then i else -i) :: inRow;
+    case BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))
+      then (if intGe(diffindex,diffidx) then i else -i) :: inRow;
+    else i :: inRow;
+  end match;
+end adjacencyRowVar;
+
+protected function adjacencyRowCref
+  "adjacencyRowExp1 for the variables cr names, as BackendVariable.getVar
+   finds them, without building lists for a single variable. Fails if cr
+   names none."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  input list<Integer> inRow;
+  input Integer diffindex;
+  output list<Integer> row;
+protected
+  Integer hash = ComponentReferenceBasics.hashComponentRef(cr);
+  BackendDAE.Var v;
+  Integer i;
+  list<BackendDAE.Var> vl;
+  list<Integer> il;
+algorithm
+  try
+    (v, i) := BackendVariable.getVarHashed(cr, hash, vars);
+    row := adjacencyRowVar(v, i, inRow, diffindex);
+  else
+    (vl, il) := BackendVariable.getVarExpanded(cr, hash, vars);
+    row := adjacencyRowExp1(vl, il, inRow, diffindex);
+  end try;
+end adjacencyRowCref;
 
 protected function adjacencyRowExp1DiscreteOrArray
   "Adds an adjacency matrix entry for all variables in the inVarLst, if they are discrete."
