@@ -187,6 +187,7 @@ mod parse_cache {
             let thread_dir = dir.clone();
             std::thread::Builder::new()
                 .name("parse-cache".into())
+                .stack_size(metamodelica::thread_stack_size())
                 .spawn(move || {
                     maintain(&base, &thread_dir);
                     for (entry, program, messages) in jobs {
@@ -394,9 +395,10 @@ pub fn parse(
     // Loader cancel chokepoint: loadModel/loadFile/installPackage parse each file
     // through here, so a per-file check makes the whole parse phase cancellable.
     metamodelica::cancel::bail_if_cancelled()?;
-    metamodelica::cancel::report_progress(
+    let _step = metamodelica::cancel::report_progress_step(
         metamodelica::cancel::PROGRESS_INDETERMINATE,
         metamodelica::cancel::PHASE_PARSE,
+        &format!("parsing {filename}"),
     );
     let grammar = select_grammar(acceptedGram, languageStandardInt);
     // Like parseFile in Parser/parse.c: classes parsed from a file the user
