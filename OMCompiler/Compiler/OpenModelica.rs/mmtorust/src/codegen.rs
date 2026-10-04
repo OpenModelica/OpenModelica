@@ -10752,7 +10752,7 @@ fn emit_exp<'a>(exp: &TypedExp, is_const: bool, ctx: &mut GenCtx, top_level: &'a
                 let parts: Vec<String> = elems.iter().map(|e| {
                     emit_call_arg_with_formal(e, elem_ty.as_ref(), is_const, ctx, top_level)
                 }).collect();
-                format!("list![{}]", parts.join(", "))
+                literal_list(elems, &parts, is_const)
             }
         }
 
@@ -12233,6 +12233,23 @@ fn arc_callback_arg(arc: &str, callee_q: Option<&str>, formal: &FunctionInput) -
             slot_wrapper(&r, None, sl, inputs.len())
         }
         _ => format!("metamodelica::arc_ref({arc})"),
+    }
+}
+
+/// A list of string or integer literals is built once into a static.
+fn literal_list(elems: &[TypedExp], parts: &[String], is_const: bool) -> String {
+    let elem_ty = if elems.iter().all(|e| matches!(e, TypedExp::Lit(Lit::Str(_)))) {
+        Some("arcstr::ArcStr")
+    } else if elems.iter().all(|e| matches!(e, TypedExp::Lit(Lit::Int(_)))) {
+        Some("i32")
+    } else {
+        None
+    };
+    match elem_ty {
+        Some(t) if !is_const => format!(
+            "({{ static __L: ::std::sync::OnceLock<metamodelica::List<{t}>> = ::std::sync::OnceLock::new(); __L.get_or_init(|| list![{}]).clone() }})",
+            parts.join(", ")),
+        _ => format!("list![{}]", parts.join(", ")),
     }
 }
 
@@ -14033,7 +14050,7 @@ fn emit_call_arg_with_formal<'a>(
             let parts: Vec<String> = elems.iter().map(|e| {
                 emit_call_arg_with_formal(e, Some(&elem_formal), is_const, ctx, top_level)
             }).collect();
-            return format!("list![{}]", parts.join(", "));
+            return literal_list(elems, &parts, is_const);
         }
     // Tuple→first coercion only kicks in when the formal is a *concrete* scalar
     // slot. TypeVar formals (e.g. `Vector.updateNoBounds<T>`) may be instantiated
