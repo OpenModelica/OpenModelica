@@ -525,9 +525,7 @@ algorithm
 
     if System.regularFileExists(destPathPkgMo) then
       wasmZips := list(z for z guard System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) in wasmExternalsZips(pack.json, wasmABI));
-      for z in wasmZips loop
-        unpackWasm(destPath, z, cachePath);
-      end for;
+      unpackWasm(destPath, wasmZips, cachePath);
       if not listEmpty(wasmZips) then
         wasmDirs := destPath :: wasmDirs;
       end if;
@@ -881,25 +879,60 @@ function installMissingWasm
   output Boolean unpacked = false;
 protected
   list<tuple<String,String>> missing;
+  String lock = destPath + "/Resources/Library/wasm32-wasip1.lock";
 algorithm
   missing := list(z for z guard not wasmUnpacked(destPath, z) in zips);
   if listEmpty(missing) then
     return;
   end if;
+  // Another omc is unpacking them; this one goes on with what is there.
+  if not wasmLock(lock) then
+    return;
+  end if;
+  missing := list(z for z guard not wasmUnpacked(destPath, z) in zips);
   // The library's own zip unpacks into the generation directory that holds the
   // system libraries' ones, so replacing it replaces them all.
   if List.any(missing, wasmIsGenerationZip) then
     missing := zips;
   end if;
-  Util.createDirectoryTree(cachePath);
-  if not Curl.multiDownload(list(({Util.tuple21(z)}, cachePath + System.basename(Util.tuple21(z))) for z guard not System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) in missing)) then
-    return;
-  end if;
-  for z in missing loop
-    unpackWasm(destPath, z, cachePath);
-  end for;
-  unpacked := true;
+  try
+    Util.createDirectoryTree(cachePath);
+    if not listEmpty(missing) and Curl.multiDownload(list(({Util.tuple21(z)}, cachePath + System.basename(Util.tuple21(z))) for z guard not System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) in missing)) then
+      unpackWasm(destPath, missing, cachePath);
+      unpacked := true;
+    end if;
+  else
+    System.removeDirectory(lock);
+    fail();
+  end try;
+  System.removeDirectory(lock);
 end installMissingWasm;
+
+function wasmLock
+  "Takes the lock directory `lock`, unless another omc holds it. Renaming a
+   non-empty directory onto an existing one fails, which makes it exclusive. A
+   lock older than ten minutes was left by an omc that died and is taken over."
+  input String lock;
+  output Boolean locked;
+protected
+  String tmp;
+  Option<Real> t;
+algorithm
+  Util.createDirectoryTree(System.dirname(lock));
+  tmp := System.createTemporaryDirectory(lock + ".");
+  System.writeFile(tmp + "/owner", "");
+  locked := System.rename(tmp, lock);
+  if not locked then
+    t := System.getFileModificationTime(lock);
+    if isSome(t) and System.getCurrentTime() - Util.getOption(t) > 600 then
+      System.removeDirectory(lock);
+      locked := System.rename(tmp, lock);
+    end if;
+  end if;
+  if not locked then
+    System.removeDirectory(tmp);
+  end if;
+end wasmLock;
 
 constant String wasmZipMarker = ".omc-zipfile" "Names the zip a directory of wasm modules was unpacked from";
 
@@ -919,18 +952,51 @@ algorithm
 end wasmUnpacked;
 
 function unpackWasm
-  "Replaces the directory `zip` unpacks into with its contents."
+  "Unpacks zips of prebuilt wasm modules into Resources/Library/wasm32-wasip1.
+   A generation's system libraries go into its tree before it is renamed into
+   place, so an omc running at the same time never sees it half written."
   input String destPath;
-  input tuple<String,String> zip;
+  input list<tuple<String,String>> zips;
   input String cachePath;
 protected
-  String dir = destPath + "/Resources/Library/wasm32-wasip1/" + Util.tuple22(zip);
+  String base = destPath + "/Resources/Library/wasm32-wasip1/";
+  list<tuple<String,String>> gens, libs;
 algorithm
-  System.removeDirectory(dir);
-  Util.createDirectoryTree(dir);
-  Unzip.unzipPath(cachePath + System.basename(Util.tuple21(zip)), "", dir);
-  System.writeFile(dir + "/" + wasmZipMarker, System.basename(Util.tuple21(zip)));
+  (gens, libs) := List.splitOnTrue(zips, wasmIsGenerationZip);
+  for g in gens loop
+    unpackWasmTree(base + Util.tuple22(g), g :: list(z for z guard System.dirname(Util.tuple22(z)) == Util.tuple22(g) in libs), cachePath);
+    libs := list(z for z guard System.dirname(Util.tuple22(z)) <> Util.tuple22(g) in libs);
+  end for;
+  for z in libs loop
+    unpackWasmTree(base + Util.tuple22(z), {z}, cachePath);
+  end for;
 end unpackWasm;
+
+function unpackWasmTree
+  "Replaces `dir` with the first zip's contents and each other's in a
+   subdirectory named after it, built beside `dir` and renamed into place."
+  input String dir;
+  input list<tuple<String,String>> zips;
+  input String cachePath;
+protected
+  String tmp, sub;
+  Boolean first = true;
+algorithm
+  Util.createDirectoryTree(System.dirname(dir));
+  tmp := System.createTemporaryDirectory(dir + ".tmp");
+  for z in zips loop
+    sub := if first then tmp else tmp + "/" + System.basename(Util.tuple22(z));
+    first := false;
+    Util.createDirectoryTree(sub);
+    Unzip.unzipPath(cachePath + System.basename(Util.tuple21(z)), "", sub);
+    System.writeFile(sub + "/" + wasmZipMarker, System.basename(Util.tuple21(z)));
+  end for;
+  System.removeDirectory(dir);
+  if not System.rename(tmp, dir) then
+    // Another omc put its copy in place first.
+    System.removeDirectory(tmp);
+  end if;
+end unpackWasmTree;
 
 function wasmExternalsZips
   "The zip-files with the prebuilt wasm external \"C\" modules of a package

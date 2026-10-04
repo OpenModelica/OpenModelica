@@ -475,7 +475,10 @@ pub fn precompile_libraries(dirs: &[std::path::PathBuf]) -> std::result::Result<
         let Ok(rd) = std::fs::read_dir(dir) else { return };
         for p in rd.flatten().map(|e| e.path()) {
             if p.is_dir() {
-                collect(&p, out);
+                // Another omc's half-unpacked bundle (PackageManagement.unpackWasmTree).
+                if !p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.contains(".tmp")) {
+                    collect(&p, out);
+                }
             } else if p.extension().is_some_and(|e| e == "wasm" || e == "so") {
                 out.push(p);
             }
