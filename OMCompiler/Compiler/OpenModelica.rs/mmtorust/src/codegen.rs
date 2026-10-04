@@ -4804,6 +4804,37 @@ fn pat_covers_variant(pat: &TypedPat, variant_simple: &str, top_level: &BTreeMap
 /// exhaustiveness sense). `matchcontinue` is never considered exhaustive
 /// because any arm body may `fail()` and fall through to the next arm,
 /// eventually exhausting all arms even with full pattern coverage.
+/// Whether a rendered Rust pattern matches every value: `_`, a binding, or a
+/// tuple of those. Rustc then reports anything after it as unreachable.
+fn rust_pat_irrefutable(pat: &str) -> bool {
+    let p = pat.trim();
+    if let Some(inner) = p.strip_prefix('(').and_then(|q| q.strip_suffix(')')) {
+        let mut depth = 0i32;
+        let mut start = 0;
+        let mut parts = Vec::new();
+        for (i, c) in inner.char_indices() {
+            match c {
+                '(' | '[' | '{' | '<' => depth += 1,
+                ')' | ']' | '}' | '>' => depth -= 1,
+                ',' if depth == 0 => { parts.push(&inner[start..i]); start = i + 1; }
+                _ => {}
+            }
+        }
+        parts.push(&inner[start..]);
+        return parts.iter().filter(|q| !q.trim().is_empty()).all(|q| rust_pat_irrefutable(q));
+    }
+    let p = p.strip_prefix("mut ").unwrap_or(p);
+    let p = p.strip_prefix("r#").unwrap_or(p);
+    p == "_" || (p != "true" && p != "false" && p.starts_with(|c: char| c.is_ascii_lowercase() || c == '_')
+        && p.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'))
+}
+
+/// The `pattern guard` head of a rendered arm `        PAT GUARD => …`.
+fn arm_head(arm: &str) -> &str {
+    let line = arm.trim_start().lines().next().unwrap_or("");
+    line.split(" => ").next().unwrap_or(line)
+}
+
 fn cases_exhaustive(kind: &MatchKind, cases: &[TypedCase], scrut_ty: &Ty, top_level: &BTreeMap<String, NameNode<'_>>) -> bool {
     if !matches!(kind, MatchKind::Match) { return false; }
     let pats: Vec<&TypedPat> = cases.iter()
@@ -16842,7 +16873,15 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
             // keep the existing behaviour (no fallback for proven-exhaustive
             // matches, since Rust's own check handles it).
             let force_fallback = md_macro;
-            let fallback = if exhaustive && !force_fallback {
+            let mut arms = arms;
+            let catch_all = arms.iter().position(|a| rust_pat_irrefutable(arm_head(a)));
+            if let Some(i) = catch_all { arms.truncate(i + 1); }
+            // Rustc ignores `Deref @` arms and guarded arms when checking
+            // exhaustiveness, so proven coverage holds for it only without them.
+            let rustc_sees_exhaustive = exhaustive && cases.iter().zip(&arms)
+                .filter(|(c, _)| c.guard.is_none())
+                .all(|(_, a)| !arm_head(a).contains("Deref @") && !arm_head(a).contains(" if "));
+            let fallback = if catch_all.is_some() || (exhaustive && (!force_fallback || rustc_sees_exhaustive)) {
                 String::new()
             } else if ctx.in_tail_lowered_fn {
                 // In a loop-lowered tail-position match every sibling arm
@@ -17474,7 +17513,9 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     s.push_str(&body.replace("            ", "                    "));
                     s.push_str(&format!("                    Ok({result})\n"));
                     s.push_str("                }\n");
-                    s.push_str("                _ => return Err(\"nomatch\"),\n");
+                    if !rust_pat_irrefutable(&pat) {
+                        s.push_str("                _ => return Err(\"nomatch\"),\n");
+                    }
                     s.push_str("            }}\n");
                 } else {
                     if bind_arc_directly {
@@ -17484,12 +17525,10 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         };
                         let mut_prefix = if true { "mut " } else { "" };
                         s.push_str(&format!("            let {mut_prefix}{var_name} = __mc_input.clone();\n"));
-                    } else if mc_uses_tuple_rewrite {
-                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ return Err(\"nomatch\") }};\n"));
-                    } else if input_is_arc {
-                        s.push_str(&format!("            let {pat} = __mc_input.as_ref() else {{ return Err(\"nomatch\") }};\n"));
                     } else {
-                        s.push_str(&format!("            let {pat} = __mc_input.clone() else {{ return Err(\"nomatch\") }};\n"));
+                        let src = if input_is_arc && !mc_uses_tuple_rewrite { "__mc_input.as_ref()" } else { "__mc_input.clone()" };
+                        let els = if rust_pat_irrefutable(&pat) { "" } else { " else { return Err(\"nomatch\") }" };
+                        s.push_str(&format!("            let {pat} = {src}{els};\n"));
                     }
                     s.push_str(&guard_check);
                     s.push_str(&body);
