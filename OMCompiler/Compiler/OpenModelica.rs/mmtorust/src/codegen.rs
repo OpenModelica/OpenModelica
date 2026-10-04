@@ -2239,6 +2239,10 @@ fn generate_lib_file(hier: &InstanceHierarchy<'_>, this_dir: &str, default_dir: 
     if std::path::Path::new(&format!("{this_dir}/NBASSCExt.rs")).exists() {
         writeln!(out, "pub mod NBASSCExt;").unwrap();
     }
+    // Hand-written `JSON.parse`/`parseFile` (Parsers/JSON.rust.mo).
+    if std::path::Path::new(&format!("{this_dir}/JSONExt.rs")).exists() {
+        writeln!(out, "pub mod JSONExt;").unwrap();
+    }
     // Hand-written in-process embedding API (`openmodelica_backend_main/src/
     // capi.rs`): a thin `pub` wrapper over `Main::init`/`readSettings`/
     // `handleCommand` so the `libopenmodelica_compiler` cdylib can expose an

@@ -8040,6 +8040,8 @@ dependencies = [
  "openmodelica_wasi",
  "rayon",
  "roxmltree",
+ "serde",
+ "serde_json",
  "zip",
  "zmq",
 ]
