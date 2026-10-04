@@ -26289,7 +26289,7 @@ fn escape_ident_segment(name: &str) -> String {
         "where" | "while" |
         // reserved keywords
         "abstract" | "async" | "await" | "become" | "box" | "do" | "dyn" |
-        "final" | "macro" | "override" | "priv" | "try" | "typeof" |
+        "final" | "gen" | "macro" | "override" | "priv" | "try" | "typeof" |
         "unsized" | "virtual" | "yield" |
         // primitive/builtin types that can appear as identifiers in translated MM code
         "str" => format!("r#{name}"),
