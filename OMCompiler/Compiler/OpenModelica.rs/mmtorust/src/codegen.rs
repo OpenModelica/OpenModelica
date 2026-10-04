@@ -5988,7 +5988,15 @@ fn live_stmt(stmt: &mut TypedStmt, live: &mut HashSet<String>, cx: &mut LiveCx) 
             pat_kill_and_gen(lhs, live, cx);
             live_exp(rhs, live, cx);
         }
-        TypedStmt::NoRetCall { call, .. } => live_exp(call, live, cx),
+        TypedStmt::NoRetCall { call, .. } => {
+            // Nothing after a failure runs (`try`/`failure()` bodies, which
+            // catch it, are not analysed statement by statement), but an
+            // enclosing loop's iterator still borrows its range.
+            if is_fail_call(call) {
+                *live = cx.loops.iter().flat_map(|(exit, _)| exit.iter().cloned()).collect();
+            }
+            live_exp(call, live, cx);
+        }
         TypedStmt::If { cond, then_, elseif, else_ } => {
             // Branches are mutually exclusive: analyse each from the same
             // post-`if` live set, then union their live-ins for the enclosing
