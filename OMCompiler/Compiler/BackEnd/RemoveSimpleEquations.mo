@@ -1823,8 +1823,8 @@ algorithm
     case (_, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       algorithm
         // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) := Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
-        (_, (false, _, _, _, _, ilst)) := Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, ilst));
+        (_, (false, ilst)) := Expression.traverseExpTopDown(lhs, function traversingTimeVarsFinder(vars = vars, globalKnownVars = globalKnownVars), (false, {}));
+        (_, (false, ilst)) := Expression.traverseExpTopDown(rhs, function traversingTimeVarsFinder(vars = vars, globalKnownVars = globalKnownVars), (false, ilst));
         tree := AvlSetInt.new();
         tree := AvlSetInt.addList(tree, ilst);
         ilst := AvlSetInt.listKeys(tree);
@@ -1860,7 +1860,7 @@ algorithm
     case (_, (vars, BackendDAE.SHARED(globalKnownVars=globalKnownVars), _, _, _, _, _))
       algorithm
         // collect vars and check if variable time not there
-        (_, (false, _, _, _, _, ilst)) := Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, globalKnownVars, false, false, {}));
+        (_, (false, ilst)) := Expression.traverseExpTopDown(exp, function traversingTimeVarsFinder(vars = vars, globalKnownVars = globalKnownVars), (false, {}));
         tree := AvlSetInt.new();
         tree := AvlSetInt.addList(tree, ilst);
         ilst := AvlSetInt.listKeys(tree);
@@ -1889,26 +1889,29 @@ algorithm
        BackendVariable.isParam(inVar) and not BackendVariable.varFixed(inVar);
 end toplevelInputOrUnfixed;
 
-protected function traversingTimeVarsFinder "author: Frenkel 2012-12"
+protected function traversingTimeVarsFinder "author: Frenkel 2012-12
+  Collects the variables of an expression; the flag is set when it depends on
+  time. Bind vars and globalKnownVars by partial application."
   input DAE.Exp inExp;
-  input tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> inTuple;
+  input tuple<Boolean, list<Integer>> inTuple;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables globalKnownVars;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> outTuple;
+  output tuple<Boolean, list<Integer>> outTuple;
 algorithm
   (outExp,cont,outTuple) := match (inExp,inTuple)
     local
-      Boolean b, b1, b2, c, topLevelInput;
-      BackendDAE.Variables vars, globalKnownVars;
+      Boolean b, c, topLevelInput;
       DAE.ComponentRef cr;
       list<Integer> ilst, vlst;
       list<BackendDAE.Var> varlst;
-      tuple<Boolean, BackendDAE.Variables, BackendDAE.Variables, Boolean, Boolean, list<Integer>> tpl;
+      tuple<Boolean, list<Integer>> tpl;
 
-    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, vars, globalKnownVars, b1, b2, ilst))
-    then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+    case (DAE.CREF(DAE.CREF_IDENT(ident="time", subscriptLst={}), _), (b, ilst))
+    then (inExp, false, if b then inTuple else (true, ilst));
 
-    case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) algorithm
+    case (DAE.CREF(cr, _), (b, ilst)) algorithm
       try
         (varlst, _::_):= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
         topLevelInput := not List.none(varlst, toplevelInputOrUnfixed);
@@ -1916,24 +1919,24 @@ algorithm
         topLevelInput := false;
       end try;
       if topLevelInput then
-        (c, tpl) := (false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+        (c, tpl) := (false, if b then inTuple else (true, ilst));
       else
         // var
         try
           (_::_, vlst):= BackendVariable.getVar(cr, vars);
-          (c, tpl) := (true, (b, vars, globalKnownVars, b1, b2, listAppend(ilst, vlst)));
+          (c, tpl) := (true, (b, listAppend(ilst, vlst)));
         else
           (c, tpl) := (not b, inTuple);
         end try;
       end if;
     then (inExp, c, tpl);
 
-    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst) );
-    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
-    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, ilst)) then (inExp, false, if b then inTuple else (true, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="previous")), (b, ilst)) then (inExp, false, if b then inTuple else (true, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="change")), (b, ilst)) then (inExp, false, if b then inTuple else (true, ilst));
+    case (DAE.CALL(path = Absyn.IDENT(name="edge")), (b, ilst)) then (inExp, false, if b then inTuple else (true, ilst));
 
-    case (_, (b, _, _, _, _, _))
+    case (_, (b, _))
     then (inExp, not b, inTuple);
   end match;
 end traversingTimeVarsFinder;
