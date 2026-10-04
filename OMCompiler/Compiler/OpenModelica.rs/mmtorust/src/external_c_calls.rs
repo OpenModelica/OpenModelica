@@ -604,15 +604,14 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("om_unzip", Infallible);
 
         // ── omc_file_ext.h inline file API ─────────────────────────────────
-        // The om_file_* family of helpers are static inline; none of them
-        // call MMC_THROW or report failure beyond their integer status.
+        // open/write* fail through ModelicaFormatError.
         m.insert("om_file_new", Infallible);
         m.insert("om_file_free", Infallible);
-        m.insert("om_file_open", Infallible);
-        m.insert("om_file_write", Infallible);
-        m.insert("om_file_write_int", Infallible);
-        m.insert("om_file_write_real", Infallible);
-        m.insert("om_file_write_escape", Infallible);
+        m.insert("om_file_open", Fallible);
+        m.insert("om_file_write", Fallible);
+        m.insert("om_file_write_int", Fallible);
+        m.insert("om_file_write_real", Fallible);
+        m.insert("om_file_write_escape", Fallible);
         m.insert("om_file_seek", Infallible);
         m.insert("om_file_tell", Infallible);
         m.insert("om_file_get_filename", Infallible);
