@@ -2383,7 +2383,7 @@ public function copyVariables
 algorithm
   outVariables := inVariables;
   outVariables.crefIndices := arrayCopy(inVariables.crefIndices);
-  outVariables.prefixIndices := arrayCopy(inVariables.prefixIndices);
+  outVariables.prefixIndices := arrayCreate(1, arrayCopy(arrayGet(inVariables.prefixIndices, 1)));
   outVariables.varArr := copyArray(inVariables.varArr);
 end copyVariables;
 
@@ -2400,7 +2400,7 @@ algorithm
   buckets := bucketCount(arr_size);
   indices := arrayCreate(buckets, {});
   arr := vararrayEmpty(arr_size);
-  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(buckets, {}), arr, buckets, 0, false);
+  outVariables := BackendDAE.VARIABLES(indices, arrayCreate(1, arrayCreate(0, {})), arr, buckets, 0, false);
 end emptyVars;
 
 protected function bucketCount
@@ -2409,8 +2409,8 @@ protected function bucketCount
 end bucketCount;
 
 protected function growBuckets
-  "Rebuilds the cref and prefix indices with buckets for twice the current
-   number of variables; the variable array is kept as it is."
+  "Rebuilds the cref index with buckets for twice the current number of
+   variables and drops the prefix index; the variable array is kept as it is."
   input output BackendDAE.Variables vars;
 protected
   array<list<BackendDAE.CrefIndex>> indices;
@@ -2420,14 +2420,13 @@ algorithm
   buckets := bucketCount(2 * vars.numberOfVars);
   indices := arrayCreate(buckets, {});
   vars.crefIndices := indices;
-  vars.prefixIndices := arrayCreate(buckets, {});
+  vars.prefixIndices := arrayCreate(1, arrayCreate(0, {}));
   vars.bucketSize := buckets;
   for i in 1:vars.varArr.numberOfElements loop
     if isSome(vars.varArr.varOptArr[i]) then
       SOME(v) := vars.varArr.varOptArr[i];
       idx := intMod(ComponentReferenceBasics.hashComponentRef(v.varName), buckets) + 1;
       arrayUpdate(indices, idx, BackendDAE.CREFINDEX(v.varName, i - 1) :: indices[idx]);
-      updatePrefixIndices(v.varName, i - 1, vars);
     end if;
   end for;
 end growBuckets;
@@ -3086,7 +3085,7 @@ algorithm
     end if;
     outVariables.varArr := vararrayAdd(outVariables.varArr, inVar);
     arrayUpdate(outVariables.crefIndices, hash_idx, (BackendDAE.CREFINDEX(inVar.varName, outVariables.numberOfVars)::indices));
-    updatePrefixIndices(inVar.varName, outVariables.numberOfVars, outVariables);
+    updatePrefixIndices(inVar.varName, outVariables.numberOfVars, arrayGet(outVariables.prefixIndices, 1));
     outVariables.numberOfVars := outVariables.numberOfVars + 1;
     if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
       outVariables.hasStartVars := true;
@@ -3131,7 +3130,7 @@ algorithm
   varr := vararrayAdd(varr, inVar);
   indices := hashvec[idx];
   arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(inVar.varName, num_vars)::indices));
-  updatePrefixIndices(inVar.varName, num_vars, outVariables);
+  updatePrefixIndices(inVar.varName, num_vars, arrayGet(outVariables.prefixIndices, 1));
   outVariables.varArr := varr;
   outVariables.numberOfVars := num_vars + 1;
   if not outVariables.hasStartVars and ComponentReference.isStartCref(inVar.varName) then
@@ -3470,6 +3469,7 @@ protected function getPrefixIndices
 protected
   DAE.ComponentRef c = cr;
   Boolean last = false;
+  array<list<BackendDAE.PrefixIndex>> table;
 algorithm
   while not last loop
     (nsubs, last, c) := match c
@@ -3478,8 +3478,9 @@ algorithm
     end match;
     depth := depth + 1;
   end while;
-  bucket := intMod(hash, vars.bucketSize) + 1;
-  for e in arrayGet(vars.prefixIndices, bucket) loop
+  table := prefixIndexTable(vars);
+  bucket := intMod(hash, arrayLength(table)) + 1;
+  for e in arrayGet(table, bucket) loop
     if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
       indices := e.indices;
       return;
@@ -3487,6 +3488,26 @@ algorithm
   end for;
   fail();
 end getPrefixIndices;
+
+protected function prefixIndexTable
+  "The prefix index of vars, built on first use."
+  input BackendDAE.Variables vars;
+  output array<list<BackendDAE.PrefixIndex>> table = arrayGet(vars.prefixIndices, 1);
+protected
+  BackendDAE.Var v;
+algorithm
+  if arrayLength(table) > 0 then
+    return;
+  end if;
+  table := arrayCreate(vars.bucketSize, {});
+  arrayUpdate(vars.prefixIndices, 1, table);
+  for i in 1:vars.varArr.numberOfElements loop
+    if isSome(vars.varArr.varOptArr[i]) then
+      SOME(v) := vars.varArr.varOptArr[i];
+      updatePrefixIndices(v.varName, i - 1, table);
+    end if;
+  end for;
+end prefixIndexTable;
 
 protected function setPrefixIndices
   "Narrows the entry cr names to indices, dropping the entry when none is left.
@@ -3499,14 +3520,15 @@ protected function setPrefixIndices
   input list<Integer> indices;
   input BackendDAE.Variables vars;
 protected
-  list<BackendDAE.PrefixIndex> entries = arrayGet(vars.prefixIndices, bucket), acc = {};
+  array<list<BackendDAE.PrefixIndex>> table = arrayGet(vars.prefixIndices, 1);
+  list<BackendDAE.PrefixIndex> entries = arrayGet(table, bucket), acc = {};
   BackendDAE.PrefixIndex e;
 algorithm
   while not listEmpty(entries) loop
     e :: entries := entries;
     if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
       e.indices := indices;
-      arrayUpdate(vars.prefixIndices, bucket, List.append_reverse(acc, if listEmpty(indices) then entries else e :: entries));
+      arrayUpdate(table, bucket, List.append_reverse(acc, if listEmpty(indices) then entries else e :: entries));
       return;
     end if;
     acc := e :: acc;
@@ -3517,10 +3539,11 @@ protected function updatePrefixIndices
   "Adds index under every proper prefix of cr that queryShape's prefix query
    can name: each qualifier of an array or record type, with each leading part
    of its subscripts. The hash of a prefix is the hashComponentRef of that prefix, so
-   every qualifier is walked even where nothing is stored."
+   every qualifier is walked even where nothing is stored. Does nothing while
+   table is not built."
   input DAE.ComponentRef cr;
   input Integer index;
-  input BackendDAE.Variables vars;
+  input array<list<BackendDAE.PrefixIndex>> table;
 protected
   DAE.ComponentRef c = cr;
   Integer hash = ComponentReferenceBasics.crefHashSeed, depth = 0, nsubs, count;
@@ -3528,6 +3551,9 @@ protected
   DAE.Type ty;
   Boolean last, ok, store;
 algorithm
+  if arrayLength(table) == 0 then
+    return;
+  end if;
   while true loop
     (subs, ty, last, ok) := match c
       case DAE.CREF_IDENT() then (c.subscriptLst, c.identType, true, true);
@@ -3543,13 +3569,13 @@ algorithm
     nsubs := 0;
     store := isExpandableType(ty);
     if store and not (last and count == 0) then
-      updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
+      updatePrefixIndex(cr, depth, nsubs, hash, index, table);
     end if;
     for sub in subs loop
       hash := ComponentReferenceBasics.crefHashSubscript(sub, hash);
       nsubs := nsubs + 1;
       if store and not (last and nsubs == count) then
-        updatePrefixIndex(cr, depth, nsubs, hash, index, vars);
+        updatePrefixIndex(cr, depth, nsubs, hash, index, table);
       end if;
     end for;
     if last then
@@ -3565,22 +3591,22 @@ protected function updatePrefixIndex
   input Integer nsubs;
   input Integer hash;
   input Integer index;
-  input BackendDAE.Variables vars;
+  input array<list<BackendDAE.PrefixIndex>> table;
 protected
-  Integer b = intMod(hash, vars.bucketSize) + 1;
-  list<BackendDAE.PrefixIndex> entries = arrayGet(vars.prefixIndices, b), acc = {};
+  Integer b = intMod(hash, arrayLength(table)) + 1;
+  list<BackendDAE.PrefixIndex> entries = arrayGet(table, b), acc = {};
   BackendDAE.PrefixIndex e;
 algorithm
   while not listEmpty(entries) loop
     e :: entries := entries;
     if e.depth == depth and e.numSubscripts == nsubs and prefixEqual(e.cref, cr, depth, nsubs) then
       e.indices := index :: e.indices;
-      arrayUpdate(vars.prefixIndices, b, List.append_reverse(acc, e :: entries));
+      arrayUpdate(table, b, List.append_reverse(acc, e :: entries));
       return;
     end if;
     acc := e :: acc;
   end while;
-  arrayUpdate(vars.prefixIndices, b, BackendDAE.PREFIXINDEX(cr, depth, nsubs, {index}) :: arrayGet(vars.prefixIndices, b));
+  arrayUpdate(table, b, BackendDAE.PREFIXINDEX(cr, depth, nsubs, {index}) :: arrayGet(table, b));
 end updatePrefixIndex;
 
 protected function prefixEqual
