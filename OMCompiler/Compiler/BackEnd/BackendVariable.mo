@@ -3256,16 +3256,8 @@ public function getVar
   output list<Integer> outIntegerLst = {};
 protected
   BackendDAE.Var v;
-  Integer hash, indx, depth;
+  Integer hash, indx;
   Boolean found;
-  list<DAE.ComponentRef> crlst;
-  DAE.ComponentRef cr1;
-  list<Integer> indices, live = {};
-  Integer nsubs, bucket;
-  Boolean died = false;
-  Option<BackendDAE.Var> var_opt;
-  DAE.Type ty;
-  list<DAE.Dimension> dims;
 algorithm
   hash := ComponentReferenceBasics.hashComponentRef(cr);
   try
@@ -3276,10 +3268,32 @@ algorithm
   else
     found := false;
   end try;
-  if found then
-    return;
+  if not found then
+    (outVarLst, outIntegerLst) := getVarExpanded(cr, hash, inVariables);
   end if;
+end getVar;
 
+public function getVarExpanded
+  "The part of getVar for a cref that is not itself a variable: an array or
+  record prefix, or an array element with variable indices. hash is
+  ComponentReferenceBasics.hashComponentRef(cr)."
+  input DAE.ComponentRef cr;
+  input Integer hash;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst = {};
+  output list<Integer> outIntegerLst = {};
+protected
+  BackendDAE.Var v;
+  Integer depth;
+  list<DAE.ComponentRef> crlst;
+  DAE.ComponentRef cr1;
+  list<Integer> indices, live = {};
+  Integer nsubs, bucket;
+  Boolean died = false;
+  Option<BackendDAE.Var> var_opt;
+  DAE.Type ty;
+  list<DAE.Dimension> dims;
+algorithm
   if isPrefixQuery(cr) then
     (indices, depth, nsubs, bucket) := getPrefixIndices(cr, hash, inVariables);
     (ty, dims) := TypesDump.flattenArrayType(ComponentReference.crefLastType(cr));
@@ -3320,7 +3334,7 @@ algorithm
     crlst := ComponentReference.expandCref(cr1, true);
     (outVarLst as _::_, outIntegerLst) := getVarLst(crlst, inVariables);
   end try;
-end getVar;
+end getVarExpanded;
 
 protected function isPrefixQuery
   "Whether getVar can answer cr from the prefix index: an array or record
@@ -3843,7 +3857,9 @@ algorithm
   (outVar, outIndex) := getVarHashed(inCref, ComponentReferenceBasics.hashComponentRef(inCref), inVariables);
 end getVar2;
 
-protected function getVarHashed
+public function getVarHashed
+  "The variable inCref names and its index, without expanding arrays; fails
+  if it names none. hash is ComponentReferenceBasics.hashComponentRef(inCref)."
   input DAE.ComponentRef inCref;
   input Integer hash;
   input BackendDAE.Variables inVariables;
