@@ -64,6 +64,7 @@ mmtorust/src/fallibility.rs
 mmtorust/src/fix.rs
 mmtorust/src/hierarchy.rs
 mmtorust/src/main.rs
+mmtorust/src/mutfix.rs
 mmtorust/src/overrides.rs
 mmtorust/src/mc_disjoint.rs
 mmtorust/src/mutable_cycles.rs

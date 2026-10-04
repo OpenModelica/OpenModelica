@@ -1921,7 +1921,7 @@ pub fn generate_all(hier: &InstanceHierarchy<'_>, output_dir: &str) -> std::io::
                 format!("codegen for {file_path} exceeded {file_timeout_secs}s"),
             ));
         }
-        write_if_changed(&file_path, &content)?;
+        write_if_changed(&file_path, &crate::mutfix::drop_unused_mut(&content))?;
         Ok(())
     })?;
     let file_phase_wall = file_phase_t0.elapsed();
