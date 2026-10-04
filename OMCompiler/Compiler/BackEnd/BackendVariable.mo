@@ -3292,9 +3292,11 @@ protected
   Boolean died = false;
   Option<BackendDAE.Var> var_opt;
   DAE.Type ty;
+  Boolean prefix, scalar;
   list<DAE.Dimension> dims;
 algorithm
-  if isPrefixQuery(cr) then
+  (prefix, scalar) := queryShape(cr);
+  if prefix then
     (indices, depth, nsubs, bucket) := getPrefixIndices(cr, hash, inVariables);
     (ty, dims) := TypesDump.flattenArrayType(ComponentReference.crefLastType(cr));
     // latest added first, as expanding cr and looking its elements up gave
@@ -3321,7 +3323,7 @@ algorithm
     return;
   end if;
 
-  if isScalarQuery(cr) then
+  if scalar then
     fail();
   end if;
 
@@ -3336,23 +3338,47 @@ algorithm
   end try;
 end getVarExpanded;
 
-protected function isPrefixQuery
-  "Whether getVar can answer cr from the prefix index: an array or record
-   with constant indices, every qualifier but the last fully indexed, so that
-   expandCref would only append subscripts and record fields to cr."
+protected function queryShape
+  "prefix: getVar can answer cr from the prefix index (an array or record with
+   constant indices, every qualifier but the last fully indexed, so that
+   expandCref would only append subscripts and record fields to cr).
+   scalar: expandCref would return cr itself (every identifier fully indexed
+   with constant subscripts, the last one not a record), so a hash miss is
+   final. The qualifiers are checked once for both."
   input DAE.ComponentRef cr;
-  output Boolean b;
+  output Boolean prefix;
+  output Boolean scalar;
 algorithm
-  b := match cr
+  (prefix, scalar) := match cr
+    local
+      Boolean ints, p, s;
     case DAE.CREF_IDENT()
-      then List.all(cr.subscriptLst, isIntSubscript) and isExpandableType(cr.identType);
+      algorithm
+        ints := allIntSubscripts(cr.subscriptLst);
+      then (ints and isExpandableType(cr.identType),
+            ints and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
+              and not Types.isRecord(Types.arrayElementType(cr.identType)));
     case DAE.CREF_QUAL()
-      then List.all(cr.subscriptLst, isIntSubscript)
+      guard allIntSubscripts(cr.subscriptLst)
         and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
-        and isPrefixQuery(cr.componentRef);
-    else false;
+      algorithm
+        (p, s) := queryShape(cr.componentRef);
+      then (p, s);
+    else (false, false);
   end match;
-end isPrefixQuery;
+end queryShape;
+
+protected function allIntSubscripts
+  input list<DAE.Subscript> subs;
+  output Boolean b = true;
+algorithm
+  for sub in subs loop
+    if not isIntSubscript(sub) then
+      b := false;
+      return;
+    end if;
+  end for;
+end allIntSubscripts;
 
 protected function isExpandableType
   input DAE.Type ty;
@@ -3364,26 +3390,6 @@ algorithm
     else false;
   end match;
 end isExpandableType;
-
-protected function isScalarQuery
-  "Whether expandCref would return cr itself: every identifier fully indexed
-   with constant subscripts and the last one not a record. The hash miss
-   before this check is then final."
-  input DAE.ComponentRef cr;
-  output Boolean b;
-algorithm
-  b := match cr
-    case DAE.CREF_IDENT()
-      then List.all(cr.subscriptLst, isIntSubscript)
-        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
-        and not Types.isRecord(Types.arrayElementType(cr.identType));
-    case DAE.CREF_QUAL()
-      then List.all(cr.subscriptLst, isIntSubscript)
-        and listLength(cr.subscriptLst) >= Types.numberOfDimensions(cr.identType)
-        and isScalarQuery(cr.componentRef);
-    else false;
-  end match;
-end isScalarQuery;
 
 protected function isElementOf
   "Whether var, which the query (depth qualifiers, last one of element type ty
@@ -3508,7 +3514,7 @@ algorithm
 end setPrefixIndices;
 
 protected function updatePrefixIndices
-  "Adds index under every proper prefix of cr that isPrefixQuery
+  "Adds index under every proper prefix of cr that queryShape's prefix query
    can name: each qualifier of an array or record type, with each leading part
    of its subscripts. The hash of a prefix is the hashComponentRef of that prefix, so
    every qualifier is walked even where nothing is stored."
