@@ -176,11 +176,13 @@ impl<T: Clone> List<T> {
     #[inline(never)]
     fn unlink(&mut self) {
         let mut cur = self.0.take();
-        while let Some(mut node) = cur {
-            match Arc::get_mut(&mut node) {
-                Some(Cons { tail, .. }) => cur = tail.0.take(),
-                _ => break,
-            }
+        // `into_inner` checks for the last owner in the same atomic step that
+        // releases the node; a shared node is just released.
+        while let Some(node) = cur {
+            cur = match Arc::into_inner(node) {
+                Some(Cons { mut tail, .. }) => tail.0.take(),
+                _ => None,
+            };
         }
     }
 }
