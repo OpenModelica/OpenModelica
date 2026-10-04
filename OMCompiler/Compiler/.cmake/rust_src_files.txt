@@ -445,6 +445,7 @@ openmodelica_util/src/Flags.handwritten.rs
 openmodelica_util/src/Global.rs
 openmodelica_util/src/Globals.rs
 openmodelica_util/src/IOStreamExt.rs
+openmodelica_util/src/JSONExt.rs
 openmodelica_util/src/Lapack.rs
 openmodelica_util/src/ModelInstanceReference.rs
 openmodelica_util/src/OMSimulatorExt.rs
@@ -463,6 +464,7 @@ openmodelica_util/src/unittests/avl_tree_string_tests.rs
 openmodelica_util/src/unittests/diff_algorithm_tests.rs
 openmodelica_util/src/unittests/flags_util_tests.rs
 openmodelica_util/src/unittests/hash_set_string_tests.rs
+openmodelica_util/src/unittests/json_ext_tests.rs
 openmodelica_util/src/unittests/mod.rs
 openmodelica_util/src/unittests/sb_tests.rs
 openmodelica_util/src/unittests/string_allocator_tests.rs

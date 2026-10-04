@@ -658,6 +658,10 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("intMaxLit", Infallible);
         m.insert("realMaxLit", Infallible);
 
+        // JSON.rust.mo: serde_json in openmodelica_util/src/JSONExt.rs.
+        m.insert("JSON_parseFile", Fallible);
+        m.insert("JSON_parse", Fallible);
+
         // NFApi.mo
         m.insert("ModelInstanceReference_store", Infallible);
         m.insert("ModelInstanceReference_release", Infallible);
@@ -791,6 +795,8 @@ pub fn external_c_impl_path(c_name: &str) -> Option<&'static str> {
         // `openmodelica_util/src/ModelInstanceReference.rs`.
         "ModelInstanceReference_store" => Some("openmodelica_util::ModelInstanceReference::store"),
         "ModelInstanceReference_release" => Some("openmodelica_util::ModelInstanceReference::release"),
+        "JSON_parseFile" => Some("crate::JSONExt::parseFile"),
+        "JSON_parse" => Some("crate::JSONExt::parse"),
         _ => None,
     }
 }
