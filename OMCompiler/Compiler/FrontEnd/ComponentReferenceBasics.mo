@@ -778,6 +778,8 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
 
+    case DAE.CREF_IDENT(subscriptLst = {}) then inComponentRef;
+
     case DAE.CREF_IDENT(ident = id,identType = t2)
       then
         makeCrefIdent(id,t2,{});
@@ -786,7 +788,7 @@ algorithm
       algorithm
         cr_1 := crefStripLastSubs(cr);
       then
-        makeCrefQual(id,t2,s,cr_1);
+        if referenceEq(cr, cr_1) then inComponentRef else makeCrefQual(id,t2,s,cr_1);
   end match;
 end crefStripLastSubs;
 
