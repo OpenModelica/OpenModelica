@@ -3294,6 +3294,38 @@ void NotebookWindow::redoEdit()
   if( doc ) doc->redo();
 }
 
+namespace {
+  // The text of a cell as it is visible on the screen: a closed group shows
+  // only its first cell, an open group all its cells.
+  QString visibleCellText( Cell *cell )
+  {
+    if( !dynamic_cast<CellGroup *>( cell ) )
+      return cell->text();
+
+    QStringList texts;
+    for( Cell *child = cell->child(); child; child = child->next() )
+    {
+      // the cell cursor is part of the cell list, but it is not a cell of the group
+      if( dynamic_cast<CellCursor *>( child ) )
+        continue;
+
+      texts << visibleCellText( child );
+      if( cell->isClosed() )
+        break;
+    }
+    return texts.join( "\n\n" );
+  }
+
+  // The text of the cells, as plain text for the clipboard of the system
+  QString cellsText( const std::vector<Cell *> &cells )
+  {
+    QStringList texts;
+    for( Cell *cell : cells )
+      texts << visibleCellText( cell );
+    return texts.join( "\n\n" );
+  }
+}
+
 /*!
   * \author Anders Fernström
   * \date 2006-02-03
@@ -3308,8 +3340,13 @@ void NotebookWindow::cutEdit()
 {
   if( subject_ )
   {
-    if( subject_->getSelection().size() > 0 )
+    const std::vector<Cell *> cells = subject_->getSelection();
+    if( cells.size() > 0 )
+    {
+      const QString text = cellsText( cells );
       cutCell();
+      putCellsOnClipboard( text );
+    }
     else
       subject_->textcursorCutText();
   }
@@ -3329,8 +3366,13 @@ void NotebookWindow::copyEdit()
 {
   if( subject_ )
   {
-    if( subject_->getSelection().size() > 0 )
+    const std::vector<Cell *> cells = subject_->getSelection();
+    if( cells.size() > 0 )
+    {
+      const QString text = cellsText( cells );
       copyCell();
+      putCellsOnClipboard( text );
+    }
     else
       subject_->textcursorCopyText();
   }
@@ -3343,18 +3385,58 @@ void NotebookWindow::copyEdit()
   *
   * \brief Method for pasteing text
   *
-  * 2006-04-27 AF, if the cell cursor is selected, paste
-  * cell instead of text.
+  * Pastes the copied cells at the position of the cell cursor if the
+  * clipboard contains the mark of a cell copy, otherwise the text.
   */
 void NotebookWindow::pasteEdit()
 {
   if( subject_ )
   {
-    if( subject_->getCursor()->isClickedOn() )
+    if( cellsOnClipboard() )
       pasteCell();
     else
       subject_->textcursorPasteText();
   }
+}
+
+namespace {
+  // The copied cells are in the pasteboard of the application. The clipboard of
+  // the system gets the text of the cells and a mark in this format.
+  const char cellsMimeType[] = "application/x-openmodelica-notebook-cells";
+  int cellsCopyCounter = 0;   // the same for all windows of the process
+
+  QString cellsCopyId()
+  {
+    return QString( "%1:%2" ).arg( QCoreApplication::applicationPid() ).arg( cellsCopyCounter );
+  }
+}
+
+/*!
+  * \brief Puts the text of the copied cells and the mark of a cell copy on the
+  * clipboard of the system.
+  */
+void NotebookWindow::putCellsOnClipboard( const QString &text )
+{
+  if( application()->pasteboard().size() == 0 )
+    return;
+
+  ++cellsCopyCounter;
+  QMimeData *mime = new QMimeData;
+  mime->setText( text );
+  mime->setData( cellsMimeType, cellsCopyId().toUtf8() );
+  qApp->clipboard()->setMimeData( mime );
+}
+
+/*!
+  * \brief True if the last thing that was copied to the clipboard are the cells
+  * in the pasteboard of the application.
+  */
+bool NotebookWindow::cellsOnClipboard()
+{
+  const QMimeData *mime = qApp->clipboard()->mimeData();
+  return mime && mime->hasFormat( cellsMimeType ) &&
+         QString::fromUtf8( mime->data( cellsMimeType ) ) == cellsCopyId() &&
+         application()->pasteboard().size() > 0;
 }
 
 /*!

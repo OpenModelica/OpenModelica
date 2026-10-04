@@ -1060,6 +1060,11 @@ namespace IAEX {
 
     // 2005-12-16 AF, unblock signals and tell highlighter to highlight
     input_->document()->blockSignals(state);
+
+    // highlight the new text
+    if( mpModelicaTextHighlighter )
+      mpModelicaTextHighlighter->rehighlight();
+
     contentChanged();
   }
 
@@ -1095,6 +1100,17 @@ namespace IAEX {
     if( !text.isNull() && !text.isEmpty() )
     {
       output_->setPlainText( text );
+
+      // apply the character format of the Output style to the whole text
+      Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+      CellStyle style = sheet->getStyle( "Output" );
+      if( style.name() != "null" )
+      {
+        QTextCursor cursor( output_->document() );
+        cursor.select( QTextCursor::Document );
+        cursor.mergeCharFormat( *style.textCharFormat() );
+      }
+
       evaluated_ = true;
       contentChanged();
     }

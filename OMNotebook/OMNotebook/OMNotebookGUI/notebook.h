@@ -198,6 +198,8 @@ private:
   void createAboutMenu();
 
   bool cellEditable();
+  void putCellsOnClipboard( const QString &text );
+  bool cellsOnClipboard();
   void evalCells();
   //void createSavingTimer();
 #ifdef __EMSCRIPTEN__
