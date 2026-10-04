@@ -1624,7 +1624,7 @@ algorithm
       then
         // the same size parameter everywhere: in loop ranges and indices as in
         // the dimensions, see resizableDimensionAlias
-        if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and Type.isInteger(exp.ty)
+        if Type.isInteger(exp.ty) and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
         then resizableDimensionAlias(exp, prefix, info) else exp;
 
     case Expression.SUBSCRIPTED_EXP(split = true)
