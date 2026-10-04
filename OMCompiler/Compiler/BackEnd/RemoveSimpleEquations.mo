@@ -1890,8 +1890,9 @@ algorithm
 end toplevelInputOrUnfixed;
 
 protected function traversingTimeVarsFinder "author: Frenkel 2012-12
-  Collects the variables of an expression; the flag is set when it depends on
-  time. Bind vars and globalKnownVars by partial application."
+  Collects the variable indices of an expression, in no particular order; the
+  flag is set when it depends on time. Bind vars and globalKnownVars by
+  partial application."
   input DAE.Exp inExp;
   input tuple<Boolean, list<Integer>> inTuple;
   input BackendDAE.Variables vars;
@@ -1924,7 +1925,7 @@ algorithm
         // var
         try
           (_::_, vlst):= BackendVariable.getVar(cr, vars);
-          (c, tpl) := (true, (b, listAppend(ilst, vlst)));
+          (c, tpl) := (true, (b, listAppend(vlst, ilst)));
         else
           (c, tpl) := (not b, inTuple);
         end try;
