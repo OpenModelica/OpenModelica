@@ -7238,9 +7238,8 @@ algorithm
       algorithm
         (subs_1, arg) := traverseExpSubs(subs, rel, arg);
         (cr_1, arg) := traverseExpCref(cr, rel, arg);
-        cr := if referenceEq(cr,cr_1) and referenceEq(subs,subs_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1);
       then
-        (cr, arg);
+        (if referenceEq(cr,cr_1) and referenceEq(subs,subs_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), arg);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), arg)
       algorithm
