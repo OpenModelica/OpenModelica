@@ -407,7 +407,7 @@ pipeline {
             docker {
               alwaysPull true
               image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-wasm'
-              label 'linux'
+              label 'linux&&!slow'
               args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
                    "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
                    "--mount type=volume,source=emscripten-cache,target=/cache/emscripten " +
