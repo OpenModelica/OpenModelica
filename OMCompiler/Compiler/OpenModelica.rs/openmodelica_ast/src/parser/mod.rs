@@ -3299,9 +3299,12 @@ fn literal_expression(input: &mut TokenInput) -> Option<Absyn::Exp> {
     match *input {
         [LexToken { kind: TK::Ident(_), .. }, ..] => {
             // `a.b.c` without subscripts, as `component_reference2` builds it.
-            let n = input.iter().step_by(2).take_while(|t| matches!(t.kind, TK::Ident(_))).count();
-            let dots = input[1..].iter().step_by(2).take(n).take_while(|t| t.kind == TK::Dot).count();
-            let n = n.min(dots + 1);
+            let mut n = 1;
+            while matches!(input.get(2 * n - 1), Some(LexToken { kind: TK::Dot, .. }))
+                && matches!(input.get(2 * n), Some(LexToken { kind: TK::Ident(_), .. }))
+            {
+                n += 1;
+            }
             if !ends_expression(input.get(2 * n - 1)) {
                 return None;
             }
