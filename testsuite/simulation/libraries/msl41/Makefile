@@ -261,6 +261,7 @@ Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature.mos \
 Modelica.Thermal.HeatTransfer.Examples.Motor.mos \
 Modelica.Thermal.HeatTransfer.Examples.TwoMasses.mos \
 Modelica.Utilities.Examples.readRealParameterModel.mos \
+ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState.mos \
 
 
 # Run make failingtest
