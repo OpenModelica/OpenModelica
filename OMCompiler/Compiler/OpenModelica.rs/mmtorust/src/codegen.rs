@@ -6124,7 +6124,8 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, cx: &mut LiveCx) {
                 // matchcontinue retries earlier arms when an arm fails — a value
                 // moved in one arm could be needed on retry. Conservative.
                 let mut reads = HashSet::new();
-                for case in cases.iter() {
+                for case in cases.iter_mut() {
+                    case.live_out = Some(live.clone());
                     collect_case_names(case, &mut reads);
                 }
                 live.extend(reads);
@@ -6189,6 +6190,26 @@ fn live_exp(exp: &mut TypedExp, live: &mut HashSet<String>, cx: &mut LiveCx) {
             }
         }
     }
+}
+
+/// Names a matchcontinue arm may read before writing, given the arm-closure
+/// tail reads `end_reads`.
+fn mc_arm_live_in(case: &TypedCase, end_reads: &HashSet<String>, outputs: &HashSet<String>) -> HashSet<String> {
+    let mut stmts = case.stmts.clone();
+    let mut result = case.result.clone();
+    let mut live = end_reads.clone();
+    let mut cx = LiveCx { outputs: outputs.clone(), loops: Vec::new() };
+    live_exp(&mut result, &mut live, &mut cx);
+    live_stmts(&mut stmts, &mut live, &mut cx);
+    if let Some(g) = &case.guard {
+        collect_exp_names(g, &mut live);
+    }
+    for (_, _, default, _) in &case.locals {
+        if let Some(d) = default {
+            collect_exp_names(d, &mut live);
+        }
+    }
+    live
 }
 
 /// Reset `last_use` on every `Var` in `exp` (and, for an embedded `match`, its
@@ -15483,6 +15504,7 @@ fn append_access_segments(base: &TypedExp, tail_segs: &[CrefSegment], ty: &Ty) -
                     stmts: c.stmts.clone(),
                     result: append_access_segments(&c.result, tail_segs, ty)?,
                     live_in: c.live_in.clone(),
+                    live_out: c.live_out.clone(),
                 });
             }
             Some(TypedExp::Match {
@@ -15627,6 +15649,7 @@ fn substitute_formal_refs(exp: &TypedExp, bindings: &HashMap<String, TypedExp>) 
                 stmts: c.stmts.clone(),
                 result: substitute_formal_refs(&c.result, bindings),
                 live_in: c.live_in.clone(),
+                live_out: None,
             }).collect(),
             ty: ty.clone(),
             as_binding: as_binding.clone(),
@@ -17071,6 +17094,7 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     for (n, _, _, _) in &case.locals { arm_local.insert(n.clone()); }
                     let mut v: Vec<String> = assigned.into_iter()
                         .filter(|n| !arm_local.contains(n)
+                            && case.live_out.as_ref().is_none_or(|l| l.contains(n))
                             && ctx.fn_env_vars.contains_key(n)
                             && ctx.fn_initialized_vars.contains(n)
                             && !ctx.match_refbound.contains(n))
@@ -17312,6 +17336,12 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                     // across codegen runs (deterministic output).
                     let mut assigned_sorted: Vec<&String> = assigned.iter().collect();
                     assigned_sorted.sort();
+                    let arm_live_in = {
+                        let end_reads: HashSet<String> = arm_writeback.iter().cloned().collect();
+                        let mut outputs: HashSet<String> = ctx.fn_outputs.iter().cloned().collect();
+                        outputs.extend(end_reads.iter().cloned());
+                        mc_arm_live_in(case, &end_reads, &outputs)
+                    };
                     for name in assigned_sorted {
                         if shadow_seen.contains(name) { continue; }
                         let Some(ty) = ctx.fn_env_vars.get(name).cloned() else { continue };
@@ -17329,7 +17359,9 @@ fn emit_match<'a>(kind: &MatchKind, input: &TypedExp, cases: &[TypedCase], as_bi
                         // semantics where the arm body's writes propagate to
                         // the outer scope via the `'mc:` block's tuple return).
                         let init_from_outer = ctx.fn_initialized_vars.contains(name);
-                        if matches!(ty, Ty::Unknown) {
+                        if init_from_outer && !arm_live_in.contains(name) && !matches!(ty, Ty::Unknown) {
+                            body.push_str(&format!("            let mut {id}: {};\n", fmt_ty(&ty, ctx)));
+                        } else if matches!(ty, Ty::Unknown) {
                             if init_from_outer {
                                 body.push_str(&format!("            let mut {id} = {id}.clone(); // TODO: shadow of function-scope input with unresolved type\n"));
                             } else {
