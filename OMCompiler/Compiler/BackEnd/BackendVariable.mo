@@ -326,6 +326,18 @@ algorithm
   so := DAEUtil.getStartOrigin(attr);
 end varStartOrigin;
 
+public function varStartFromType
+  "Returns true if the start attribute of a variable comes from its type."
+  input BackendDAE.Var v;
+  output Boolean fromType;
+algorithm
+  fromType := match varStartOrigin(v)
+    case SOME(DAE.StartOrigin.TYPE_CONFIDENCE()) then true;
+    case SOME(DAE.StartOrigin.TYPE_ORIGIN()) then true;
+    else false;
+  end match;
+end varStartFromType;
+
 public function varBindExp "author: Frenkel TUD 2010-12
   Returns the bindExp of a variable if available otherwise fails."
   input BackendDAE.Var v;
