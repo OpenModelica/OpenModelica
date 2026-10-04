@@ -5314,7 +5314,7 @@ end GC_expand_hp;
 
 function GC_set_max_heap_size
   "Forces the GC to limit the maximum heap size."
-  input Integer size;
+  input Real size "In bytes; a Real so that sizes past 2^31 fit";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

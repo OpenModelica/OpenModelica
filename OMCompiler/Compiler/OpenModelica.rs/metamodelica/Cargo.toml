@@ -11,6 +11,7 @@ num-traits.workspace=true
 # `clock()` reads the monotonic clock here (wasm-safe; std::time::Instant::now
 # panics on wasm32-unknown-unknown). No workspace deps of its own → no cycle.
 openmodelica_wasi.workspace = true
+backtrace = "0.3"
 
 # `heap_limit` probes physical memory and RLIMIT_AS through sysconf/getrlimit.
 [target.'cfg(unix)'.dependencies]

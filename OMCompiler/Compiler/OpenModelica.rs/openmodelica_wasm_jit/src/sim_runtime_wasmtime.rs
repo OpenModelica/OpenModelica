@@ -371,8 +371,10 @@ pub fn library_module(
             return Ok(m.clone());
         }
     }
+    // A prebuilt library is named by its path; the key already tells blobs apart.
+    let file = std::path::Path::new(name).file_name().and_then(|f| f.to_str()).unwrap_or(name);
     let m = match fixed {
-        true => aot_module(engine, &format!("lib-{name}"), blob)?,
+        true => aot_module(engine, &format!("lib-{file}"), blob)?,
         false => wts(wasmtime::Module::new(engine, blob))?,
     };
     memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, (engine.clone(), m.clone()));
@@ -382,8 +384,9 @@ pub fn library_module(
 /// Compile every fixed blob into `dir`, for the build to install beside omc.
 ///
 /// The names are [`aot_cache_path`]'s, so [`aot_module`] finds them; a blob the
-/// build did not produce is skipped.
-pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+/// build did not produce is skipped. `prune` removes every other artifact, which
+/// only the install directory may do: the per-user cache also holds libraries'.
+pub fn precompile_fixed_blobs(dir: &std::path::Path, prune: bool) -> std::result::Result<Vec<String>, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let mut blobs: Vec<(String, &[u8])> = vec![
         ("runtime".to_string(), runtime_blob()),
@@ -398,13 +401,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         blobs.push((format!("lib-{file}"), bytes()));
     }
     blobs.retain(|(_, b)| !b.is_empty());
-    // Every engine a run can land on: the inliner is off for a model with one
-    // enormous function, and `-alarm` picks the epoch-interrupting engine, which
-    // every testsuite and library-testing run asks for.
-    let engines: Vec<&wasmtime::Engine> = [true, false]
-        .iter()
-        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
-        .collect();
+    let engines = all_engines();
     let current: Vec<String> = blobs
         .iter()
         .flat_map(|(tag, blob)| {
@@ -414,7 +411,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     // What an earlier build left for a blob that has since changed. Keyed by the
     // blob's hash, so it will never be looked up again; without this every change
     // adds another artifact to the install.
-    if let Ok(rd) = std::fs::read_dir(dir) {
+    if let Some(rd) = prune.then(|| std::fs::read_dir(dir).ok()).flatten() {
         for stale in rd.flatten().map(|e| e.path()).filter(|p| {
             p.extension().is_some_and(|e| e == "cwasm")
                 && p.file_name()
@@ -426,24 +423,78 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     }
     let mut written = Vec::new();
     for (tag, blob) in blobs {
-        for &engine in &engines {
-            let name = aot_cache_name(&tag, aot_cache_key(engine, blob));
-            // Rebuilt on every build, so skip what is already there: only a blob that
-            // actually changed is worth minutes of Cranelift.
-            if dir.join(&name).is_file() {
-                continue;
-            }
-            let path = dir.join(&name);
-            // Gigabytes of Cranelift each, and what one frees stays mapped, so
-            // drop it and hand the pages back before compiling the next.
-            {
-                let module = wts(wasmtime::Module::new(engine, blob))?;
-                let bytes = wts(module.serialize())?;
-                std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
-            }
-            metamodelica::heap_limit::release();
-            written.push(name);
+        written.extend(precompile_blob(dir, &tag, blob, &engines)?);
+    }
+    Ok(written)
+}
+
+/// Every engine a run can land on: the inliner is off for a model with one
+/// enormous function, and `-alarm` picks the epoch-interrupting engine, which
+/// every testsuite and library-testing run asks for.
+fn all_engines() -> Vec<&'static wasmtime::Engine> {
+    [true, false]
+        .iter()
+        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
+        .collect()
+}
+
+/// Compile `blob` into `dir` for each engine that has no artifact yet, here or
+/// beside omc.
+fn precompile_blob(
+    dir: &std::path::Path,
+    tag: &str,
+    blob: &[u8],
+    engines: &[&wasmtime::Engine],
+) -> std::result::Result<Vec<String>, String> {
+    let mut written = Vec::new();
+    for &engine in engines {
+        let key = aot_cache_key(engine, blob);
+        let name = aot_cache_name(tag, key);
+        let path = dir.join(&name);
+        if path.is_file() || aot_installed_path(tag, key).is_some() {
+            continue;
         }
+        // Gigabytes of Cranelift each, and what one frees stays mapped, so
+        // drop it and hand the pages back before compiling the next.
+        {
+            let module = wts(wasmtime::Module::new(engine, blob))?;
+            let bytes = wts(module.serialize())?;
+            let tmp = path.with_extension(format!("cwasm.tmp{}", std::process::id()));
+            std::fs::write(&tmp, &bytes).map_err(|e| format!("{}: {e}", tmp.display()))?;
+            std::fs::rename(&tmp, &path).map_err(|e| format!("{}: {e}", path.display()))?;
+        }
+        metamodelica::heap_limit::release();
+        written.push(name);
+    }
+    Ok(written)
+}
+
+/// Compile these libraries' prebuilt modules into the per-user cache.
+pub fn precompile_libraries(dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
+    fn collect(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        for p in rd.flatten().map(|e| e.path()) {
+            if p.is_dir() {
+                collect(&p, out);
+            } else if p.extension().is_some_and(|e| e == "wasm" || e == "so") {
+                out.push(p);
+            }
+        }
+    }
+    let mut files = Vec::new();
+    for d in dirs {
+        collect(&d.join("Resources").join("Library").join("wasm32-wasip1"), &mut files);
+    }
+    let cache = aot_cache_dir();
+    let engines = all_engines();
+    let mut written = Vec::new();
+    for f in files {
+        let Ok(blob) = std::fs::read(&f) else { continue };
+        if !blob.starts_with(b"\0asm") {
+            continue;
+        }
+        let file = f.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        written.extend(precompile_blob(&cache, &format!("lib-{file}"), &blob, &engines)?);
     }
     Ok(written)
 }
@@ -498,6 +549,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Mo
             match handle.join() {
                 Ok(Ok(m)) => Ok(m),
                 Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
+                Err(p) if p.is::<metamodelica::heap_limit::OutOfMemory>() => std::panic::resume_unwind(p),
                 Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
             }
         }

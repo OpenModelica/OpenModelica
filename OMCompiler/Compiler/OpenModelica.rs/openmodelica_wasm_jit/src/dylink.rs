@@ -280,6 +280,9 @@ pub fn libraries_for(symbols: impl IntoIterator<Item = impl AsRef<str>>) -> Vec<
 /// installs into `Resources/Library/wasm32-wasip1/omc-<generation>`.
 pub const BUNDLE_MANIFEST: &str = "omc-externals.json";
 pub const GENERATION_PREFIX: &str = "omc-";
+/// What omc's loader expects of a bundle: the manifest, the wrappers' names and C
+/// calling convention, the host imports. Not the toolchain or libc that built it.
+pub const PREBUILT_ABI: i32 = 2;
 
 pub fn generation_of(name: &str) -> Option<u64> {
     name.strip_prefix(GENERATION_PREFIX)?.parse().ok()

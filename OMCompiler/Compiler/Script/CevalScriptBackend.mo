@@ -2310,7 +2310,10 @@ algorithm
         ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
     case ("installPackage",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2), Values.BOOL(b)})
-      then Values.BOOL(PackageManagement.installPackage(str1, str2, b, wasmABI=CodegenWasmJitFunctions.prebuiltExternalsABI()));
+      algorithm
+        (b, files) := PackageManagement.installPackage(str1, str2, b, wasmABI=CodegenWasmJitFunctions.prebuiltExternalsABI());
+        CodegenWasmJitFunctions.precompilePrebuiltModules(files);
+      then Values.BOOL(b);
 
     case ("installPackage",{Values.CODE(Absyn.C_TYPENAME(path as Absyn.QUALIFIED())), _, _})
       algorithm
@@ -3836,7 +3839,7 @@ algorithm
   end if;
 
   flags := loadCommandLineOptionsFromModel(className);
-  PackageManagement.installMissingWasmOfLoaded(loadedClassFiles(), CodegenWasmJitFunctions.prebuiltExternalsABI());
+  CodegenWasmJitFunctions.precompilePrebuiltModules(PackageManagement.installMissingWasmOfLoaded(loadedClassFiles(), CodegenWasmJitFunctions.prebuiltExternalsABI()));
 
   try
     (success, outCache, outLibs, outFileDir, resultValues) :=

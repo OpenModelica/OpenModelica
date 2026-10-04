@@ -7954,7 +7954,7 @@ algorithm
   // A user cancel unwinds through this checkpoint like a failure; report it as
   // such (after the rollback, so the message survives) rather than as overflow.
   Error.checkCancel();
-  Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  Error.addInternalError(StackOverflow.errorPrefix() + " in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);

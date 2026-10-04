@@ -227,6 +227,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmer::Modu
         Some(handle) => match handle.join() {
             Ok(Ok(m)) => Ok(m),
             Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
+            Err(p) if p.is::<metamodelica::heap_limit::OutOfMemory>() => std::panic::resume_unwind(p),
             Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
         },
         #[cfg(target_arch = "wasm32")]
@@ -1292,7 +1293,11 @@ impl Drop for InWasmSession {
 }
 
 /// Only the wasmtime backend keeps an on-disk artifact cache.
-pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+pub fn precompile_fixed_blobs(_dir: &std::path::Path, _prune: bool) -> std::result::Result<Vec<String>, String> {
+    Ok(Vec::new())
+}
+
+pub fn precompile_libraries(_dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
     Ok(Vec::new())
 }
 
