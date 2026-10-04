@@ -1,4 +1,5 @@
 use openmodelica_ast::parser::parse;
+mod mutfix;
 mod overrides;
 use openmodelica_ast::parser::Grammar;
 use openmodelica_ast::Absyn;
