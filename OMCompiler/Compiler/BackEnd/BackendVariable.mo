@@ -3597,13 +3597,16 @@ protected
   DAE.Subscript sub1, sub2;
 algorithm
   for i in 1:depth-1 loop
-    if not (ComponentReferenceBasics.crefFirstIdent(c1) == ComponentReferenceBasics.crefFirstIdent(c2)
-            and ExpressionBasics.subscriptEqual(ComponentReference.crefFirstSubs(c1), ComponentReference.crefFirstSubs(c2))) then
+    (equal, c1, c2) := match (c1, c2)
+      case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
+        then (c1.ident == c2.ident and ExpressionBasics.subscriptEqual(c1.subscriptLst, c2.subscriptLst),
+              c1.componentRef, c2.componentRef);
+    end match;
+    if not equal then
       return;
     end if;
-    c1 := ComponentReference.crefRest(c1);
-    c2 := ComponentReference.crefRest(c2);
   end for;
+  equal := false;
   if ComponentReferenceBasics.crefFirstIdent(c1) <> ComponentReferenceBasics.crefFirstIdent(c2) then
     return;
   end if;
