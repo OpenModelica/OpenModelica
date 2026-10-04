@@ -325,7 +325,12 @@ algorithm
        */
       Error.clearCurrentComponent();
     end if;
-    Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(inStatement), str});
+    str_1 := StackOverflow.outOfMemoryMessage();
+    if stringEmpty(str_1) then
+      Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(inStatement), str});
+    else
+      Error.addMessage(Error.OUT_OF_MEMORY_DETAILED, {GlobalScriptDump.printIstmtStr(inStatement), str_1, str});
+    end if;
     Error.clearCurrentComponent();
     outString := "";
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);

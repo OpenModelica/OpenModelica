@@ -32,6 +32,17 @@ pub fn prebuiltExternalsABI() -> i32 {
     if wasm_jit || !crate::CodegenWasmJit::native_externals_allowed() { crate::CodegenWasmJit::PREBUILT_ABI as i32 } else { 0 }
 }
 
+/// `CodegenWasmJitFunctions.precompilePrebuiltModules`. Best effort.
+pub fn precompilePrebuiltModules(libraryDirs: List<ArcStr>) {
+    if libraryDirs.is_empty() {
+        return;
+    }
+    let dirs: Vec<std::path::PathBuf> = libraryDirs.iter().map(|d| std::path::PathBuf::from(&**d)).collect();
+    if let Err(e) = openmodelica_wasm_jit::sim_runtime::precompile_libraries(&dirs) {
+        let _ = openmodelica_util::Error::addCompilerWarning(ArcStr::from(format!("Could not precompile the prebuilt wasm modules: {e}")));
+    }
+}
+
 fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<()> {
     let BuiltModule { bytes, in_sig, out_sig, ext_imports } = build_module(fn_code)?;
     let base = fn_code.name.to_string();

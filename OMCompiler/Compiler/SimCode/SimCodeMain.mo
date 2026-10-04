@@ -323,7 +323,7 @@ algorithm
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
   ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-  Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  Error.addInternalError(StackOverflow.errorPrefix() + " in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
@@ -460,7 +460,7 @@ algorithm
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-    Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    Error.addInternalError(StackOverflow.errorPrefix() + " in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     /* Do not fail or we can loop too much */
     StackOverflow.clearStacktraceMessages();
     fail();

@@ -75,5 +75,12 @@ function prebuiltExternalsABI
 algorithm
 end prebuiltExternalsABI;
 
+function precompilePrebuiltModules
+  " Compiles the prebuilt external \"C\" modules of these libraries into the
+    wasm-jit cache, so that no simulation has to. Implemented in Rust. "
+  input list<String> libraryDirs;
+algorithm
+end precompilePrebuiltModules;
+
 annotation(__OpenModelica_Interface="codegen_wasm_jit");
 end CodegenWasmJitFunctions;

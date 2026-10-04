@@ -736,7 +736,7 @@ algorithm
       print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats at end of program:") + "\n");
     end if;
   else
-    print("Stack overflow detected and was not caught.\n" +
+    print(StackOverflow.errorPrefix() + " detected and was not caught.\n" +
           "Send us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n" +
           "    Include the following trace:\n");
     for s in StackOverflow.readableStacktraceMessages() loop

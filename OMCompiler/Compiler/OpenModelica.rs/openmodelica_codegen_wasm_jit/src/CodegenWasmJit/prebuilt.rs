@@ -15,9 +15,7 @@
 use super::*;
 use serde_json::Value;
 
-/// What omc's loader expects of a bundle: the manifest, the wrappers' names and C
-/// calling convention, the host imports. Not the toolchain or libc that built it.
-pub(crate) const PREBUILT_ABI: i64 = 2;
+pub(crate) const PREBUILT_ABI: i64 = openmodelica_wasm_jit::dylink::PREBUILT_ABI as i64;
 pub(crate) use openmodelica_wasm_jit::dylink::{generation_of, BUNDLE_MANIFEST as MANIFEST, GENERATION_PREFIX};
 const BUNDLE_DIR: &str = "Resources/Library/wasm32-wasip1";
 

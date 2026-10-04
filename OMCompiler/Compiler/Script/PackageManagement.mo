@@ -444,6 +444,7 @@ function installPackage
   input Boolean skipDownload = false;
   input Integer wasmABI = 0 "Also install the prebuilt wasm external \"C\" modules of this ABI, if the index has any";
   output Boolean success;
+  output list<String> wasmDirs = {} "The libraries prebuilt wasm modules were unpacked into";
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<list<String>,String>> urlPathList, urlPathListToDownload;
@@ -465,7 +466,9 @@ algorithm
   if not skipDownload then
     for p in packageList loop
       if not p.needsInstall then
-        installMissingWasm(p.path, wasmExternalsZips(p.json, wasmABI), cachePath);
+        if installMissingWasm(p.path, wasmExternalsZips(p.json, wasmABI), cachePath) then
+          wasmDirs := p.path :: wasmDirs;
+        end if;
       end if;
     end for;
   end if;
@@ -521,12 +524,13 @@ algorithm
     end if;
 
     if System.regularFileExists(destPathPkgMo) then
-      wasmZips := wasmExternalsZips(pack.json, wasmABI);
+      wasmZips := list(z for z guard System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) in wasmExternalsZips(pack.json, wasmABI));
       for z in wasmZips loop
-        if System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) then
-          unpackWasm(destPath, z, cachePath);
-        end if;
+        unpackWasm(destPath, z, cachePath);
       end for;
+      if not listEmpty(wasmZips) then
+        wasmDirs := destPath :: wasmDirs;
+      end if;
       if oldSha == "" then
         Error.addSourceMessage(Error.NOTIFY_PKG_INSTALL_DONE, {pack.sha}, makeSourceInfo(destPathPkgMo));
       else
@@ -612,6 +616,7 @@ function installMissingWasmOfLoaded
    or before the index had them. `files` are the loaded top-level classes' files."
   input list<String> files;
   input Integer abi;
+  output list<String> wasmDirs = {} "The libraries the modules were unpacked into";
 protected
   list<String> dirs;
   JSON index, installed, obj;
@@ -634,7 +639,9 @@ algorithm
     try
       installed := JSON.parseFile(dir + "/" + metaDataFileName);
       obj := installedIndexEntry(index, listHead(System.strtok(System.basename(dir), " ")), SemanticVersion.parse(JSON.getString(JSON.get(installed, "version"))), getShaOrZipfile(installed));
-      installMissingWasm(dir, wasmExternalsZips(obj, abi), getCachePath());
+      if installMissingWasm(dir, wasmExternalsZips(obj, abi), getCachePath()) then
+        wasmDirs := dir :: wasmDirs;
+      end if;
     else
     end try;
   end for;
@@ -870,6 +877,7 @@ function installMissingWasm
   input String destPath;
   input list<tuple<String,String>> zips;
   input String cachePath;
+  output Boolean unpacked = false;
 protected
   list<tuple<String,String>> missing;
 algorithm
@@ -889,6 +897,7 @@ algorithm
   for z in missing loop
     unpackWasm(destPath, z, cachePath);
   end for;
+  unpacked := true;
 end installMissingWasm;
 
 constant String wasmZipMarker = ".omc-zipfile" "Names the zip a directory of wasm modules was unpacked from";

@@ -5966,6 +5966,7 @@ name = "metamodelica"
 version = "0.1.0"
 dependencies = [
  "arcstr",
+ "backtrace",
  "libc",
  "metamodelica_derive",
  "num-traits",

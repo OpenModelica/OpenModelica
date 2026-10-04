@@ -1098,6 +1098,8 @@ public constant ErrorTypes.Message MIXED_DETERMINED = ErrorTypes.MESSAGE(584, Er
   "The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values. Use -d=initialization for more information.");
 public constant ErrorTypes.Message STACK_OVERFLOW_DETAILED = ErrorTypes.MESSAGE(585, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Stack overflow occurred while evaluating %s:\n%s");
+public constant ErrorTypes.Message OUT_OF_MEMORY_DETAILED = ErrorTypes.MESSAGE(628, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Out of memory while evaluating %s: %s.\n%s");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
