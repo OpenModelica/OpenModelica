@@ -842,11 +842,11 @@ algorithm
     // remove empty calls entirely if it is not impure
     case DAE.CALL(p,_,DAE.CALL_ATTR(ty=ty))
       algorithm
+        // no return value?
+        0 := Types.getDimensionProduct(ty);
         // is impure?
         func := getFunction(p,fns);
         false := DAEUtil.getFunctionImpureAttribute(func);
-        // no return value?
-        0 := Types.getDimensionProduct(ty);
         newExp := Expression.makeArray({}, ty, true);
       then (newExp, assrtLst);
 
