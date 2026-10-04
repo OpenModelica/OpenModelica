@@ -3023,16 +3023,43 @@ fn emit_doc_comment(out: &mut String, indent: &str, text: Option<&str>) {
     if text.chars().all(char::is_whitespace) {
         return;
     }
-    for line in text.lines() {
+    // The first line follows the opening quote; the rest carry the source
+    // indentation. Left as is, rustdoc reads 4+ spaces as a code block.
+    let indent_of = |l: &str| l.len() - l.trim_start_matches([' ', '\t']).len();
+    let common = text.lines().skip(1)
+        .filter(|l| !l.trim().is_empty())
+        .map(indent_of)
+        .min()
+        .unwrap_or(0);
+    let lines: Vec<&str> = text.lines().enumerate().map(|(i, line)| {
         let line = line.trim_end();
-        // Strip a single leading space so source comments that were padded
-        // for in-source readability don't produce ` ///` shifted output.
-        let line = line.strip_prefix(' ').unwrap_or(line);
+        if i == 0 { line.trim_start() } else { &line[common.min(indent_of(line))..] }
+    }).collect();
+    // Indented blocks are examples (often Modelica), not Rust doctests.
+    let mut in_fence = false;
+    let mut blanks = 0;
+    for (i, line) in lines.iter().enumerate() {
         if line.is_empty() {
-            writeln!(out, "{indent}///").unwrap();
-        } else {
-            writeln!(out, "{indent}/// {line}").unwrap();
+            blanks += 1;
+            continue;
         }
+        let indented = indent_of(line) > 0;
+        if in_fence && !indented {
+            writeln!(out, "{indent}/// ```").unwrap();
+            in_fence = false;
+        }
+        for _ in 0..blanks {
+            writeln!(out, "{indent}///").unwrap();
+        }
+        if !in_fence && indented && i > 0 && blanks > 0 {
+            writeln!(out, "{indent}/// ```text").unwrap();
+            in_fence = true;
+        }
+        blanks = 0;
+        writeln!(out, "{indent}/// {line}").unwrap();
+    }
+    if in_fence {
+        writeln!(out, "{indent}/// ```").unwrap();
     }
 }
 
