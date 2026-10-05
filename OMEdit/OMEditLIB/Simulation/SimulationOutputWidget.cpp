@@ -487,6 +487,7 @@ void SimulationOutputWidget::start()
 void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParameters)
 {
   mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
+  mIsLogFileWrittenByOmc = true;
   mpProgressBar->setRange(0, 0);
   mpProgressLabel->setText(tr("Running simulation of %1.").arg(mSimulationOptions.getClassName()));
   writeCompilationOutput(tr("Model translated to the wasm-jit target; running in-process (no external compilation)."), Qt::black);

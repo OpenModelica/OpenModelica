@@ -98,6 +98,7 @@ public:
   QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
   bool isOutputStructured() {return mIsOutputStructured;}
+  bool isLogFileWrittenByOmc() {return mIsLogFileWrittenByOmc;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
   QTcpServer* getTcpServer() {return mpTcpServer;}
   QProcess* getCompilationProcess() {return mpCompilationProcess;}
@@ -155,6 +156,8 @@ private:
   // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
   bool mIsWasmJitSimulationRunning = false;
   bool mWasmJitCancelled = false;
+  // simulate() writes <prefix>.log itself; OMEdit must not truncate it or hold it open.
+  bool mIsLogFileWrittenByOmc = false;
   QDateTime mResultFileLastModifiedDateTime;
 
   void compileModel();
