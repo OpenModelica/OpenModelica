@@ -149,7 +149,7 @@ impl RefScan {
     pub(crate) fn scan_exp(&mut self, e: &Absyn::Exp) {
         use Absyn::Exp::*;
         match e {
-            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK => {}
+            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK | UNITFUL_LITERAL { .. } => {}
             CODE { .. } => {}
             // A bare CREF in expression position may denote a function value
             // (e.g. `List.map(stringGet, xs)`). Record the dotted name; the
