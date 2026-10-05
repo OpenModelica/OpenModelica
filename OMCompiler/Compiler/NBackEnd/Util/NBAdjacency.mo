@@ -3317,6 +3317,12 @@ public
     list<ComponentRef> scalar_matches;
     Boolean hasSetSub = false;
   algorithm
+    // function references (e.g. f in solveOneNonlinearEquation(f, ...)) are no dependencies
+    if ComponentRef.isFunction(cref) then
+      crefs := {};
+      return;
+    end if;
+
     for s in ComponentRef.subscriptsAllFlat(cref) loop
       // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
       // that the exact-match check below already handles correctly -- only a
