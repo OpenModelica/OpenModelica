@@ -66,8 +66,8 @@
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
-use std::sync::{Arc, Weak};
+use std::rc::{Rc, Weak};
+use std::sync::Arc;
 
 use arcstr::ArcStr;
 
@@ -517,9 +517,9 @@ fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
     // Holding strong handles for the duration of the collection keeps every
     // candidate alive until we are done with it: each snapshot handle adds
     // exactly 1 to its cell's strong count, accounted for below.
-    let snapshot: Vec<Arc<dyn TraceableCell>> = CELL_REGISTRY.with(|r| {
+    let snapshot: Vec<Rc<dyn TraceableCell>> = CELL_REGISTRY.with(|r| {
         let mut reg = r.borrow_mut();
-        let alive: Vec<Arc<dyn TraceableCell>> =
+        let alive: Vec<Rc<dyn TraceableCell>> =
             reg.iter().filter_map(Weak::upgrade).collect();
         reg.retain(|w| w.strong_count() > 0);
         alive
@@ -527,9 +527,9 @@ fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
     stats.candidate_cells = snapshot.len();
 
     // The data address of a cell, as its own `MMTrace` impl reports it via
-    // `visit_shared` (the `Arc<CellInner<T>>` payload address). Casting the
+    // `visit_shared` (the `Rc<CellInner<T>>` payload address). Casting the
     // fat trait-object pointer to `*const ()` keeps exactly that address.
-    let addr = |cell: &Arc<dyn TraceableCell>| Arc::as_ptr(cell) as *const ();
+    let addr = |cell: &Rc<dyn TraceableCell>| Rc::as_ptr(cell) as *const ();
 
     // Counting pass: traverse each cell's interior once, building the
     // allocation graph. Cells reached as handle slots first (from another
@@ -547,7 +547,7 @@ fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
         count.nodes.insert(
             a,
             AllocNode {
-                strong: Arc::strong_count(cell),
+                strong: Rc::strong_count(cell),
                 slots: 0,
                 type_name: "<registered cell>",
                 edges: Vec::new(),

@@ -16,7 +16,7 @@
 // are O(1) and the persistent semantics of Tpl.mo's cons list hold.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{Arc, Mutex};
 use metamodelica::gc::{MMTrace, MMVisitor};
 use super::*;
 use metamodelica::List;
@@ -159,11 +159,6 @@ impl Buf {
     /// `i` must be below a length this buffer has published — every `Toks`
     /// view's `len` is, because a view copies the length the buffer had when the
     /// view was taken and a *shared* buffer only ever grows its length.
-    ///
-    /// Reading needs no atomic of its own. As with `Arc`'s own `Deref`, the
-    /// happens-before that makes the token visible is whatever moved the `Toks`
-    /// handle to this thread: everything below that handle's `len` was written
-    /// and published by `push_at`'s release store before the handle existed.
     unsafe fn get(&self, i: usize) -> &Tok {
         debug_assert!(i < self.len.load(Ordering::Relaxed));
         unsafe { &*self.data.add(i) }
@@ -180,17 +175,6 @@ impl Drop for Buf {
         }
     }
 }
-
-// The raw pointer denies both by default; a token is written once and then only
-// read, and `get` hands out a `&Tok` that crosses threads with the text —
-// templates render on a thread pool (`System.launchParallelTasks`).
-unsafe impl Send for Buf {}
-unsafe impl Sync for Buf {}
-
-const _: fn() = || {
-    fn shareable<T: Send + Sync>() {}
-    shareable::<Tok>();
-};
 
 /// The tokens of a text in output order: a prefix view of a shared buffer.
 #[derive(Clone, Default)]
@@ -360,7 +344,11 @@ impl MMTrace for Text {
     }
 }
 
-pub static emptyTxt: LazyLock<Text> = LazyLock::new(Text::default);
+thread_local! { static __EMPTY_TXT_TLS: Text = Text::default(); }
+
+pub fn emptyTxt() -> Text {
+    __EMPTY_TXT_TLS.with(Text::clone)
+}
 
 fn mem(toks: Toks) -> Text {
     Text::Mem(MemText { toks, stack: nil() })
@@ -999,7 +987,7 @@ pub fn closeFile(text: Text) -> Result<Text> {
     };
     let _ = File::releaseReference(f.file.clone());
     File::flush(&f.file)?;
-    Ok(emptyTxt.clone())
+    Ok(emptyTxt())
 }
 
 /// Writes the pending iteration separator, then the token.
