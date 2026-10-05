@@ -5700,13 +5700,17 @@ algorithm
           Check if Index Reduction is necessary
           -------------------------------------
         */
-        // remove some edges which do not have to be traversed when finding the MSSS
-        m1 := arrayCopy(m);
-        m1t := arrayCopy(mt);
-        (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,syst,ishared);
-        (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,syst,ishared);
+        if listEmpty(unmatched_eqs) then
+          meqns1 := {};
+        else
+          // remove some edges which do not have to be traversed when finding the MSSS
+          m1 := arrayCopy(m);
+          m1t := arrayCopy(mt);
+          (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,syst,ishared);
+          (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,syst,ishared);
 
-        meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m1,m1t,ass1_1,ass2_1,inArg);
+          meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m1,m1t,ass1_1,ass2_1,inArg);
+        end if;
         /*
           -----------------------------------------
           remove artificial states which cause
