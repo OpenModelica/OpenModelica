@@ -1,0 +1,92 @@
+// name: arrayConnectOutside
+// keywords: NewBackend array connect record flow
+// status: correct
+// cflags: --newBackend -d=arrayConnect
+//
+// The array connection handler connects records in connectors field by field,
+// and the flows of outside connectors enter the flow equation with a negative
+// sign, the same as the classic connection handler.
+
+loadString("
+record Cplx
+  Real re;
+  Real im;
+end Cplx;
+
+connector Pin
+  Cplx v;
+  flow Cplx i;
+end Pin;
+
+model Res
+  parameter Real R = 2;
+  Pin p, n;
+equation
+  p.i.re + n.i.re = 0;
+  p.i.im + n.i.im = 0;
+  p.v.re - n.v.re = R*p.i.re;
+  p.v.im - n.v.im = R*p.i.im;
+end Res;
+
+model Gnd
+  Pin p;
+equation
+  p.v.re = 0;
+  p.v.im = 0;
+end Gnd;
+
+model Load
+  Pin p;
+  Res r;
+  Gnd g;
+equation
+  connect(p, r.p);
+  connect(r.n, g.p);
+end Load;
+
+model Src
+  Pin p, n;
+equation
+  p.v.re - n.v.re = 1;
+  p.v.im - n.v.im = 2;
+  p.i.re + n.i.re = 0;
+  p.i.im + n.i.im = 0;
+end Src;
+
+model arrayConnectOutside
+  Src s;
+  Load l[2];
+  Load single;
+  Gnd g;
+equation
+  for k in 1:2 loop
+    connect(s.p, l[k].p);
+  end for;
+  connect(s.p, single.p);
+  connect(s.n, g.p);
+end arrayConnectOutside;
+"); getErrorString();
+
+simulate(arrayConnectOutside, stopTime = 1); getErrorString();
+val(single.p.i.re, 1);
+val(single.r.p.i.im, 1);
+val(l[2].p.i.re, 1);
+val(l[2].r.p.i.im, 1);
+val(s.p.i.re, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "arrayConnectOutside_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayConnectOutside', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// 1.0
+// 0.5
+// 1.0
+// -1.5
+// endResult

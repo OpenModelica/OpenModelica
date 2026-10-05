@@ -8,6 +8,7 @@ jacobianElementSeed.mos \
 jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
+arrayConnectOutside.mos \
 resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableConnectArrays.mos \

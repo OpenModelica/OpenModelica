@@ -51,6 +51,8 @@ protected
   import Array;
   import Call = NFCall;
   import Ceval = NFCeval;
+  import Class = NFClass;
+  import NFClassTree.ClassTree;
   import Component = NFComponent;
   import DAE;
   import Dimension = NFDimension;
@@ -58,6 +60,7 @@ protected
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
   import NFInstNode;
+  import NFPrefixes.ConnectorType;
   import NFPrefixes.Purity;
   import NFPrefixes.Variability;
   import NFBuiltin;
@@ -112,7 +115,7 @@ protected
 public
   type NameVertexTable = UnorderedMap<String, VertexDescriptor>;
   type SBGraph = IncidenceList<SetVertex, SetEdge>;
-  type ConnVar = tuple<ComponentRef, Integer, String>;
+  type ConnVar = tuple<ComponentRef, Integer, String, Boolean> "variable, dimensions of its connector, path inside the connector, outside connector";
   type VertexList = list<VertexDescriptor>;
   type VertexSets = UnorderedMap<SBAtomicSet, VertexDescriptor>;
 
@@ -557,13 +560,15 @@ protected
           name := Connector.name(v.name);
 
           if ComponentRef.isPrefix(name, var.name) then
-            cv := (var.name, listLength(crefDims(name)), memberName(var.name, name));
+            for field in recordFields(var.name) loop
+              cv := (field, listLength(crefDims(name)), memberName(field, name), Connector.isOutside(v.name));
 
-            if is_pot then
-              potVars[d] := cv :: potVars[d];
-            else
-              flowVars[d] := cv :: flowVars[d];
-            end if;
+              if is_pot then
+                potVars[d] := cv :: potVars[d];
+              else
+                flowVars[d] := cv :: flowVars[d];
+              end if;
+            end for;
           end if;
         end for;
       end if;
@@ -574,6 +579,31 @@ protected
       flowVars[d] := listReverseInPlace(flowVars[d]);
     end for;
   end vertexVars;
+
+  function recordFields
+    "The scalar fields of a record variable, or the variable itself if it is
+     not a record."
+    input ComponentRef cref;
+    input output list<ComponentRef> fields = {};
+  protected
+    Type ty = Type.arrayElementType(ComponentRef.nodeType(cref));
+    array<InstNode> comps;
+    Component c;
+  algorithm
+    if Type.isRecord(ty) then
+      comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(Type.complexNode(ty))));
+
+      for i in arrayLength(comps):-1:1 loop
+        c := InstNode.component(comps[i]);
+
+        if not ConnectorType.isPotentiallyPresent(Component.connectorType(c)) then
+          fields := recordFields(ComponentRef.append(ComponentRef.fromNode(comps[i], Component.getType(c)), cref), fields);
+        end if;
+      end for;
+    else
+      fields := cref :: fields;
+    end if;
+  end recordFields;
 
   function generateEquations
     input SBPWLinearMap pw;
@@ -667,9 +697,9 @@ protected
     Equation eq;
   algorithm
     for v1 in vars1 loop
-      (var1, n1, m1) := v1;
+      (var1, n1, m1, _) := v1;
       for v2 in vars2 loop
-        (var2, n2, m2) := v2;
+        (var2, n2, m2, _) := v2;
         // the same member of both connectors: a connector can have several
         // potential variables of the same type (e.g. v and an angle theta)
         // (the element types: the dimensions of a node can belong to the
@@ -729,11 +759,10 @@ protected
     input output list<Equation> equations;
   protected
     SBMultiInterval mi, mi_range, mi_range2;
-    SBSet sauxi;
     array<SBInterval> inters;
     array<Expression> ranges;
     list<Expression> expl, inds;
-    Boolean is_sum;
+    Boolean is_sum, outside;
     list<ConnVar> vars;
     ComponentRef var;
     Integer n;
@@ -743,7 +772,7 @@ protected
     Equation eq;
     UnorderedMap<String, ExpList> named_expl = UnorderedMap.new<ExpList>(stringHashDjb2, stringEq) "the terms of each sum, in reverse order";
     UnorderedSet<String> elementwise = UnorderedSet.new(stringHashDjb2, stringEq);
-    list<tuple<ComponentRef, Integer, String, list<Expression>, Boolean>> terms = {};
+    list<tuple<ComponentRef, Integer, String, Boolean, list<Expression>, Boolean>> terms = {};
     Integer sz;
   algorithm
     mi := SBAtomicSet.aset(aset);
@@ -757,14 +786,11 @@ protected
       mi := SBAtomicSet.aset(auxi);
       mi_range2 := applyOffset(mi, getOffset(auxi, vertexSets));
       (inds, is_sum) := transMulti(mi_range, mi_range2, iterators, true);
-
-      sauxi := SBSet.newEmpty();
-      sauxi := SBSet.addAtomicSet(auxi, sauxi);
       vars := getVars(auxi, vertexSets, flowVars);
 
       for v in vars loop
-        (var, n, m) := v;
-        terms := (var, n, m, inds, is_sum) :: terms;
+        (var, n, m, outside) := v;
+        terms := (var, n, m, outside, inds, is_sum) :: terms;
         // a flow variable that is an array in its connector (e.g. i[3]) summed
         // over a range of connectors has to be summed element by element
         if is_sum and Type.isArray(ComponentRef.nodeType(var)) then
@@ -774,15 +800,15 @@ protected
     end for;
 
     for t in listReverse(terms) loop
-      (var, n, m, inds, is_sum) := t;
+      (var, n, m, outside, inds, is_sum) := t;
       if UnorderedSet.contains(m, elementwise) then
         sz := memberSize(var);
         for k in 1:sz loop
-          e := flowTerm(ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(k))}, var), inds, n, is_sum);
+          e := flowTerm(ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(k))}, var), inds, n, is_sum, outside);
           addNamed(m + "[" + intString(k) + "]", e, named_expl);
         end for;
       else
-        e := flowTerm(var, inds, n, is_sum);
+        e := flowTerm(var, inds, n, is_sum, outside);
         addNamed(m, e, named_expl);
       end if;
     end for;
@@ -811,6 +837,7 @@ protected
     input list<Expression> inds;
     input Integer connectorDims;
     input Boolean isSum;
+    input Boolean outside;
     output Expression e;
   algorithm
     e := generateConnector(var, inds, connectorDims);
@@ -822,6 +849,10 @@ protected
       end if;
       e := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SUM,
         {e}, Expression.variability(e), Purity.PURE, Type.arrayElementType(Expression.typeOf(e))));
+    end if;
+
+    if outside then
+      e := Expression.negate(e);
     end if;
   end flowTerm;
 
