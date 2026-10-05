@@ -255,9 +255,21 @@ impl<T: Clone> List<T> {
         if lst2.is_empty() {
             return self.clone();
         }
-        let items: Vec<&T> = self.into_iter().collect();
+        // The list is consed back to front; a short one needs no heap buffer.
+        const N: usize = 32;
+        let mut head: [Option<&T>; N] = [None; N];
+        let mut rest: Vec<&T> = Vec::new();
+        let mut n = 0;
+        for item in self {
+            if n < N {
+                head[n] = Some(item);
+                n += 1;
+            } else {
+                rest.push(item);
+            }
+        }
         let mut result = lst2.clone();
-        for item in items.into_iter().rev() {
+        for item in rest.into_iter().rev().chain(head[..n].iter().rev().flatten().copied()) {
             result = cons(item.clone(), result);
         }
         result
@@ -475,6 +487,10 @@ mod tests {
             let empty: List<i32> = nil();
             assert_eq!(empty.append(&b), b);
             assert_eq!(a.append(&empty), a);
+
+            let long: List<i32> = (0..100).rev().fold(nil(), |acc, i| cons(i, acc));
+            let appended: Vec<i32> = long.append(&b).into_iter().copied().collect();
+            assert_eq!(appended, (0..100).chain([4, 5]).collect::<Vec<_>>());
         }
 
         #[test]
