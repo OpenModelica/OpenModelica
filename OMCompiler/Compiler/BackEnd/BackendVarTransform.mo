@@ -771,7 +771,11 @@ algorithm
     case (DAE.CREF(componentRef = cr,ty = t),cond)
         guard replaceExpCond(cond, inExp)
       algorithm
-        (cr,c) := replaceCrefSubs(cr,inVariableReplacements,cond);
+        if ComponentReferenceBasics.crefHasNoSubscripts(cr) then
+          c := false;
+        else
+          (cr,c) := replaceCrefSubs(cr,inVariableReplacements,cond);
+        end if;
         try
           e1 := getReplacement(inVariableReplacements, cr);
           e := avoidDoubleHashLookup(e1,t);

@@ -4951,7 +4951,7 @@ algorithm
     then (e, ext_arg);
 
     case DAE.CREF(cr, tp) algorithm
-      if crefHasNoSubscripts(cr) then
+      if ComponentReferenceBasics.crefHasNoSubscripts(cr) then
         (e, ext_arg) := inFunc(inExp, inExtArg);
       else
         (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
@@ -5552,7 +5552,7 @@ algorithm
       then (e, ext_arg);
     case (_,DAE.ENUM_LITERAL(),ext_arg) then (inExp,ext_arg);
     case (_,DAE.CREF(componentRef = cr),ext_arg)
-      guard crefHasNoSubscripts(cr)
+      guard ComponentReferenceBasics.crefHasNoSubscripts(cr)
       then (inExp,ext_arg);
     case (_,DAE.CREF(cr,tp),ext_arg)
       algorithm
@@ -7341,19 +7341,6 @@ algorithm
 
   end match;
 end traverseExpSubs;
-
-protected function crefHasNoSubscripts
-  "A cref of plain qualifiers and identifiers, which the traversals have
-   nothing to visit in."
-  input DAE.ComponentRef cr;
-  output Boolean b;
-algorithm
-  b := match cr
-    case DAE.CREF_QUAL(subscriptLst = {}) then crefHasNoSubscripts(cr.componentRef);
-    case DAE.CREF_IDENT(subscriptLst = {}) then true;
-    else false;
-  end match;
-end crefHasNoSubscripts;
 
 public function traverseExpTopDownCrefHelper
   input DAE.ComponentRef inCref;
