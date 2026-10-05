@@ -367,6 +367,10 @@ algorithm
         (e2_1, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter);
         (e2_1, _) := ExpressionSimplify.simplify(e2_1);
 
+        if valueEq(inDiffType, BackendDAE.DIFFERENTIATION_TIME()) then
+          (e1_1, e2_1) := keepDiscreteTupleElements(e1, e2, e1_1, e2_1);
+        end if;
+
         op1 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e1, e1_1);
         op2 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e2, e2_1);
         source := List.foldr({op1, op2}, ElementSource.addSymbolicTransformation, source);
@@ -429,6 +433,34 @@ algorithm
   end if;
 end differentiateEquationFragile;
 
+
+protected function keepDiscreteTupleElements
+  "Discrete elements of a tuple equation keep their undifferentiated equation,
+  so the derivative still solves for them and keeps the size of the original."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Exp dlhs;
+  input DAE.Exp drhs;
+  output DAE.Exp outLhs = dlhs;
+  output DAE.Exp outRhs = drhs;
+protected
+  list<DAE.Exp> lhsLst, dlhsLst, rhsLst, drhsLst;
+  list<Boolean> isDiscrete;
+algorithm
+  (lhsLst, dlhsLst) := match (lhs, dlhs)
+    case (DAE.TUPLE(PR = lhsLst), DAE.TUPLE(PR = dlhsLst)) then (lhsLst, dlhsLst);
+    else ({}, {});
+  end match;
+  isDiscrete := list(BackendEquation.isDiscreteTupleElement(e) for e in lhsLst);
+  if not listMember(true, isDiscrete) then
+    return;
+  end if;
+
+  rhsLst := BackendEquation.tupleElements(rhs, lhsLst);
+  drhsLst := BackendEquation.tupleElements(drhs, dlhsLst);
+  outLhs := DAE.TUPLE(list(if d then l else dl threaded for d in isDiscrete, l in lhsLst, dl in dlhsLst));
+  outRhs := DAE.TUPLE(list(if d then r else dr threaded for d in isDiscrete, r in rhsLst, dr in drhsLst));
+end keepDiscreteTupleElements;
 
 protected function differentiateEquations
   "Differentiates an equation with respect to a cref."
