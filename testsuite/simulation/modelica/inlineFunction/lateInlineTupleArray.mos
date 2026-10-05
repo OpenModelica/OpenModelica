@@ -1,0 +1,61 @@
+// name: lateInlineTupleArray
+// keywords: inline, LateInline, tuple, array, #14185
+// status: correct
+//
+// A late-inlined wrapper that passes all outputs of another function through,
+// with an array output whose size depends on an input (Real[size(xi, 1)]).
+
+loadString("
+model lateInlineTupleArray
+  function core
+    input Real x;
+    input Real xi[:];
+    output Real a;
+    output Real b[size(xi, 1)];
+    output Real c;
+  algorithm
+    a := x;
+    b := xi;
+    c := 2*x;
+    annotation(Inline=false);
+  end core;
+
+  function wrapper
+    input Real x;
+    input Real xi[:];
+    output Real a;
+    output Real b[size(xi, 1)];
+    output Real c;
+  algorithm
+    (a, b, c) := core(x, xi);
+    annotation(Inline=false, LateInline=true);
+  end wrapper;
+
+  Real a, c;
+  Real b[2];
+  Real a0, c0;
+  Real b0[0];
+equation
+  (a, b, c) = wrapper(time, {0.5, 0.25});
+  (a0, b0, c0) = wrapper(time, fill(0.5, 0));
+end lateInlineTupleArray;
+"); getErrorString();
+
+simulate(lateInlineTupleArray); getErrorString();
+val(b[2], 1.0); val(c, 1.0); val(c0, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "lateInlineTupleArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'lateInlineTupleArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.25
+// 2.0
+// 2.0
+// endResult

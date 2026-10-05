@@ -906,6 +906,7 @@ algorithm
             generateEvents := hasGenerateEventsAnnotation(comment);
             newExp := if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
             newExp := replaceArgsInExp(newExp,argmap,checkcr);
+            newExp := setTsubTypesFromCall(newExp, ty);
             // for inlinecalls in functions
             (newExp1,assrtLst) := Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
           else // assert detected
@@ -923,6 +924,7 @@ algorithm
             generateEvents := hasGenerateEventsAnnotation(comment);
             newExp := if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
             newExp := replaceArgsInExp(newExp,argmap,checkcr);
+            newExp := setTsubTypesFromCall(newExp, ty);
             assrt := inlineAssert(assrt,fns,argmap,checkcr);
             // for inlinecalls in functions
             (newExp1,assrtLst) := Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrt::assrtLst);
@@ -935,6 +937,74 @@ algorithm
 
   end matchcontinue;
 end inlineCallWork;
+
+protected function setTsubTypesFromCall
+"A function body (a, b) := f(x, xi) is inlined as (f(..)[1], f(..)[2]). The type
+ of each TSUB is the type of the output variable inside the function, so its
+ dimensions may refer to the function's inputs, e.g. Real[size(xi, 1)], which can
+ not be evaluated in the calling model. Use the type of the inlined call instead,
+ which is evaluated for the actual arguments (ticket #14185).
+ If the body just passes all outputs of f through, the result is f(..) itself."
+  input DAE.Exp inExp;
+  input DAE.Type inCallType;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match (inExp, inCallType)
+    local
+      list<DAE.Exp> expLst;
+      list<DAE.Type> types;
+      DAE.Exp call;
+      DAE.CallAttributes attr;
+
+    // (f(..)[1], ..., f(..)[n]) with all outputs of f in order -> f(..)
+    case (DAE.TUPLE(PR=expLst as DAE.TSUB(exp=call as DAE.CALL(attr=attr as DAE.CALL_ATTR(ty=DAE.T_TUPLE())))::_), DAE.T_TUPLE())
+      guard isTsubTupleOfCall(expLst, call)
+      algorithm
+        attr.ty := inCallType;
+        call.attr := attr;
+      then call;
+
+    case (DAE.TUPLE(PR=expLst), DAE.T_TUPLE(types=types))
+      guard listLength(expLst) == listLength(types)
+      then DAE.TUPLE(list(setTsubType(e, t) threaded for e in expLst, t in types));
+
+    case (DAE.TSUB(), _)
+      then setTsubType(inExp, inCallType);
+
+    else inExp;
+  end match;
+end setTsubTypesFromCall;
+
+protected function isTsubTupleOfCall
+"Returns true if inExpLst is {call[1], call[2], ..., call[n]} with all n outputs of call."
+  input list<DAE.Exp> inExpLst;
+  input DAE.Exp inCall;
+  output Boolean b;
+protected
+  Integer i = 1;
+  list<DAE.Type> types;
+algorithm
+  DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(types=types))) := inCall;
+  b := listLength(inExpLst) == listLength(types);
+  for e in inExpLst loop
+    b := b and (match e
+      case DAE.TSUB() then e.ix == i and ExpressionBasics.expEqual(e.exp, inCall);
+      else false;
+    end match);
+    i := i + 1;
+  end for;
+end isTsubTupleOfCall;
+
+protected function setTsubType
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match inExp
+    case DAE.TSUB() then DAE.TSUB(inExp.exp, inExp.ix, inType);
+    else inExp;
+  end match;
+end setTsubType;
 
 protected function inlineAssert "inlines an assert.
 author:Waurich TUD 2013-10"
