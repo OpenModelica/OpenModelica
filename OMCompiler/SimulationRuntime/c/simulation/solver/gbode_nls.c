@@ -631,12 +631,12 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
 
   // Set states
   for (i = 0; i < nStates; i++)
-    assertStreamPrint(threadData, !isnan(xloc[i]), "residual_MS: xloc is NAN");
+    assertStreamPrint(threadData, isfinite(xloc[i]), "residual_MS: xloc is %g", xloc[i]);
   memcpy(sData->realVars, xloc, nStates*sizeof(modelica_real));
   // Evaluate right hand side of ODE
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
   for (i = 0; i < nStates; i++)
-    assertStreamPrint(threadData, !isnan(fODE[i]), "residual_MS: fODE is NAN");
+    assertStreamPrint(threadData, isfinite(fODE[i]), "residual_MS: fODE is %g", fODE[i]);
 
   // Evaluate residuals
   for (i = 0; i < nStates; i++) {
@@ -679,7 +679,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
   // Set fast states
   // ph: are slow states interpolated and set correctly?
   for (ii = 0; ii < nFastStates; ii++) {
-    assertStreamPrint(threadData, !isnan(xloc[ii]), "residual_MS_MR: xloc is NAN");
+    assertStreamPrint(threadData, isfinite(xloc[ii]), "residual_MS_MR: xloc is %g", xloc[ii]);
     i = gbfData->fastStatesIdx[ii];
     sData->realVars[i] = xloc[ii];
   }
@@ -689,7 +689,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
     i = gbfData->fastStatesIdx[ii];
-    assertStreamPrint(threadData, !isnan(fODE[i]), "residual_MS_MR: fODE is NAN");
+    assertStreamPrint(threadData, isfinite(fODE[i]), "residual_MS_MR: fODE is %g", fODE[i]);
     res[ii] = gbfData->res_const[i]
               - xloc[ii] * gbfData->tableau->c[nStages-1]
               + fODE[i]  * gbfData->tableau->b[nStages-1] * gbfData->stepSize;
@@ -729,14 +729,14 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
   sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
   // Set states
   for (i = 0; i < nStates; i++)
-    assertStreamPrint(threadData, !isnan(xloc[i]), "residual_DIRK: xloc is NAN");
+    assertStreamPrint(threadData, isfinite(xloc[i]), "residual_DIRK: xloc is %g", xloc[i]);
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
   // Evaluate right hand side of ODE
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
   // Evaluate residuals
   for (i = 0; i < nStates; i++) {
-    assertStreamPrint(threadData, !isnan(fODE[i]), "residual_DIRK: fODE is NAN");
+    assertStreamPrint(threadData, isfinite(fODE[i]), "residual_DIRK: fODE is %g", fODE[i]);
     res[i] = gbData->res_const[i] - xloc[i] + fac * fODE[i];
   }
 
@@ -785,7 +785,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
   // Set fast states
   // ph: are slow states interpolated and set correctly?
   for (ii = 0; ii < nFastStates; ii++) {
-    assertStreamPrint(threadData, !isnan(xloc[ii]), "residual_DIRK_MR: xloc is NAN");
+    assertStreamPrint(threadData, isfinite(xloc[ii]), "residual_DIRK_MR: xloc is %g", xloc[ii]);
     i = gbfData->fastStatesIdx[ii];
     sData->realVars[i] = xloc[ii];
   }
@@ -795,7 +795,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
     i = gbfData->fastStatesIdx[ii];
-    assertStreamPrint(threadData, !isnan(fODE[i]), "residual_DIRK_MR: fODE is NAN");
+    assertStreamPrint(threadData, isfinite(fODE[i]), "residual_DIRK_MR: fODE is %g", fODE[i]);
     res[ii] = gbfData->res_const[i] - xloc[ii] + fac * fODE[i];
   }
 }
@@ -829,7 +829,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
   int stage, stage_;
 
   for (i = 0; i < nStages*nStates; i++)
-    assertStreamPrint(threadData, !isnan(xloc[i]), "residual_IRK: xloc is NAN");
+    assertStreamPrint(threadData, isfinite(xloc[i]), "residual_IRK: xloc is %g", xloc[i]);
 
   // Update the derivatives for current estimate of the states
   for (stage_ = 0; stage_ < nStages; stage_++) {
@@ -839,7 +839,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
       memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       for (i = 0; i < nStates; i++)
-        assertStreamPrint(threadData, !isnan(fODE[i]), "residual_IRK: fODE is NAN");
+        assertStreamPrint(threadData, isfinite(fODE[i]), "residual_IRK: fODE is %g", fODE[i]);
       memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
     } else {
       // memcpy(sData->realVars, gbData->yLeft, nStates*sizeof(double));
@@ -899,7 +899,7 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   }
 
   for (i = 0; i < jacobian->sizeCols; i++) {
-    assertStreamPrint(threadData, !isnan(jacobian_ODE->resultVars[i]), "jacobian_SR_column: jacobian_ODE is NAN");
+    assertStreamPrint(threadData, isfinite(jacobian_ODE->resultVars[i]), "jacobian_SR_column: jacobian_ODE is %g", jacobian_ODE->resultVars[i]);
     jacobian->resultVars[i] = fac * jacobian_ODE->resultVars[i] - jacobian->seedVars[i];
   }
 
@@ -956,7 +956,7 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 
   for (ii = 0; ii < nFastStates; ii++) {
     i = gbData->fastStatesIdx[ii];
-    assertStreamPrint(threadData, !isnan(jacobian_ODE->resultVars[i]), "jacobian_MR_column: jacobian_ODE is NAN");
+    assertStreamPrint(threadData, isfinite(jacobian_ODE->resultVars[i]), "jacobian_MR_column: jacobian_ODE is %g", jacobian_ODE->resultVars[i]);
     jacobian->resultVars[ii] = fac * jacobian_ODE->resultVars[i] - jacobian->seedVars[ii];
   }
 
@@ -1013,7 +1013,7 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
   // call jacobian_ODE with the mapped seedVars
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
   for (i = 0; i < nStates; i++)
-    assertStreamPrint(threadData, !isnan(jacobian_ODE->resultVars[i]), "jacobian_SR_column: jacobian_ODE is NAN");
+    assertStreamPrint(threadData, isfinite(jacobian_ODE->resultVars[i]), "jacobian_SR_column: jacobian_ODE is %g", jacobian_ODE->resultVars[i]);
 
   /* Update resultVars array for corresponding jacobian->seedVars*/
   for (stage = 0; stage < nStages; stage++) {
