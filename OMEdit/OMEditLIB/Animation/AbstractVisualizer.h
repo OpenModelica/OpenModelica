@@ -232,8 +232,8 @@ public:
   virtual VisualizerType getVisualizerType() const final {return mVisualizerType;}
   virtual StateSetAction getStateSetAction() const final {return mStateSetAction;}
   virtual void setStateSetAction(const StateSetAction action) final {mStateSetAction = action;}
-  // Opaque handle to the renderer's scene node for this visualizer (an
-  // osg::Transform* in the OSG backend). Owned by the scene graph, not here.
+  // Opaque handle to the renderer's scene node for this visualizer.
+  // Owned by the scene graph, not here.
   virtual void* getTransformNode() const final {return mTransformNode;}
   virtual void setTransformNode(void* transform) final {mTransformNode = transform;}
 private:

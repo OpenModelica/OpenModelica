@@ -3,6 +3,7 @@
 // suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi2_array_nonscalarized.fmu fmi2_array_nonscalarized.fmutmp/ fmi2_array_nonscalarized.dims fmi2_array_nonscalarized.log fmi2_array_nonscalarized_info.json index.html
+// cflags: --fmiSources=true
 //
 // #15926, new backend, non-scalarized arrays (--simCodeScalarize=false), C
 // runtime. Here the array variable IS a runtime array and must be dimensioned

@@ -239,7 +239,7 @@ fn write_traces(p: &Profiler) {
     for (suffix, bytes) in [("_prof.realdata", &p.real), ("_prof.intdata", &p.int)] {
         let name = format!("{}{}{suffix}", p.out, p.prefix);
         if !files::write(&name, bytes) {
-            omclog::warning(omclog::STDOUT, false, &format!("Time measurements output file {name} could not be opened"));
+            omclog::warning!(omclog::STDOUT, false, "Time measurements output file {name} could not be opened");
         }
     }
 }
@@ -568,7 +568,7 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
     let xml_name = format!("{out}{prefix}_prof.xml");
     let plt_name = format!("{out}{prefix}_prof.plt");
     if !files::write(&xml_name, x.as_bytes()) {
-        omclog::warning(omclog::STDOUT, false, &format!("Failed to open {xml_name}"));
+        omclog::warning!(omclog::STDOUT, false, "Failed to open {xml_name}");
         return;
     }
     if !files::write(&plt_name, plt.as_bytes()) {
@@ -580,7 +580,7 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
         if html {
             let cmd = format!("gnuplot {plt_name}");
             if !run_shell(&cmd) {
-                omclog::warning(omclog::DIVISION, false, &format!("Plot command failed: {cmd}\n"));
+                omclog::warning!(omclog::DIVISION, false, "Plot command failed: {cmd}\n");
             }
         }
         let (gen_html_failed, cmd) = match openmodelica_home() {
@@ -593,19 +593,17 @@ fn print_model_info(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_file:
             None => (true, "OPENMODELICAHOME missing".to_string()),
         };
         if gen_html_failed {
-            omclog::warning(omclog::STDOUT, false, &format!("Failed to generate html version of profiling results: {cmd}\n"));
+            omclog::warning!(omclog::STDOUT, false, "Failed to generate html version of profiling results: {cmd}\n");
         }
     }
     if html {
-        omclog::info(
+        omclog::info!(
             omclog::STDOUT,
             false,
-            &format!(
-                "Time measurements are stored in {out}{prefix}_prof.html (human-readable) and {out}{prefix}_prof.xml (for XSL transforms or more details)"
-            ),
+            "Time measurements are stored in {out}{prefix}_prof.html (human-readable) and {out}{prefix}_prof.xml (for XSL transforms or more details)",
         );
     } else {
-        omclog::info(omclog::STDOUT, false, &format!("Time measurements are stored in {out}{prefix}_prof.json"));
+        omclog::info!(omclog::STDOUT, false, "Time measurements are stored in {out}{prefix}_prof.json");
     }
 }
 
@@ -713,6 +711,6 @@ fn print_model_info_json(p: &Profiler, info: &ProfInfo, model: &SimMeta, result_
     j.push_str("\n]\n}");
     let name = format!("{out}{prefix}_prof.json");
     if !files::write(&name, j.as_bytes()) {
-        omclog::warning(omclog::STDOUT, false, &format!("Failed to open file {name} for writing"));
+        omclog::warning!(omclog::STDOUT, false, "Failed to open file {name} for writing");
     }
 }

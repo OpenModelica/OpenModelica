@@ -2,7 +2,7 @@
 // cflags: --flowThreshold=1e-15
 // status: correct
 
-loadModel(Modelica,{"3.2"});
+loadModel(Modelica,{"4.1.0"});
 getErrorString();
 
 loadFile("DrumBoiler.mo");

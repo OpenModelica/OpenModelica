@@ -11,6 +11,7 @@
 //! (`SimulationRuntime/c/util/simulation_options.c`). Every selector is an
 //! `Option`: `None` keeps the built-in default.
 
+use crate::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -133,6 +134,19 @@ pub fn cvode_config(f: &SimFlags) -> (CvodeLmm, CvodeIter) {
     (lmm, iter)
 }
 
+/// `-newton`, the damping of the `-nls=newton` iteration. The discriminants are
+/// C's `NEWTON_STRATEGY` and the wire code `rt_set_nls_options` carries.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum NewtonStrategy {
+    Damped = 1,
+    /// C's default.
+    Damped2 = 2,
+    DampedLs = 3,
+    DampedBt = 4,
+    Pure = 5,
+}
+
 /// `-idaLS`, the linear solver IDA's Newton iteration uses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IdaLs {
@@ -159,6 +173,9 @@ pub struct SimFlags {
     /// precision (C's `FLAG_SINGLE_PRECISION`). The simulation itself always runs
     /// in double; this only narrows the result file.
     pub single_precision: bool,
+    /// `-mat_sync=<n>`: rewrite the `.mat` header (flush a record batch of an
+    /// `.arrow`) every `n` emitted rows, so the file is readable during the run.
+    pub mat_sync: Option<u32>,
     /// `-outputPath=<dir>`: holds `<prefix>_res.<format>` unless `-r` names a file.
     pub output_path: Option<String>,
     /// `-measureTimePlotFormat=<fmt>`: the `+profiling` plots' gnuplot terminal.
@@ -179,6 +196,19 @@ pub struct SimFlags {
     pub newton_ftol: Option<f64>,
     pub newton_xtol: Option<f64>,
     pub newton_max_step_factor: Option<f64>,
+    pub newton_strategy: Option<NewtonStrategy>,
+    /// `-newtonMaxSteps` / `-newtonJacUpdates`: gbode's KINSOL iteration cap and
+    /// its four phases' Jacobian reuse (C's `newtonMaxSteps`, `maxJacUpdate`).
+    pub newton_max_steps: Option<i32>,
+    pub newton_jac_updates: Option<[i32; 4]>,
+    /// `-noScaling`: KINSOL's variables and residuals unscaled.
+    pub no_scaling: bool,
+    /// `-stopAtSystem`: `-nls=experimental-kinsol` fails the run once it has
+    /// solved this system.
+    pub stop_at_system: Option<i32>,
+    /// `-deltaXSolver`: C's `numericalDifferentiationDeltaXsolver`, read through
+    /// [`delta_x_solver`].
+    pub delta_x_solver: Option<f64>,
     /// `-nlsJacTestATol` / `-nlsJacTestRTol`: what `LOG_NLS_DERIVATIVE_TEST` calls
     /// an anomaly, read through [`jac_test_tolerances`].
     pub nls_jac_test_atol: Option<f64>,
@@ -202,6 +232,26 @@ pub struct SimFlags {
     pub show_all_warnings: bool,
     /// `-logFormat=xml`, installed by [`set_flags`] (C's `setStreamPrintXML`).
     pub log_xml: bool,
+    /// `-logFormat=xmltcp`: the XML log goes to [`port`](Self::port) instead of
+    /// stdout. Implies [`log_xml`](Self::log_xml).
+    pub log_xmltcp: bool,
+    /// `-port`: where the host sends the log and its progress.
+    pub port: Option<u16>,
+    /// `-f`: the `_init.xml` to read instead of `<prefix>_init.xml`.
+    pub init_xml: Option<String>,
+    /// `-cpu` / `-steps`: `$cpuTime` / `$solverSteps` columns in the result file.
+    pub cpu_time: bool,
+    pub solver_steps: bool,
+    /// `-clock=RT|CYC|CPU`: what the statistics timers read. An unknown value
+    /// falls back to `RT` with a warning, as in C.
+    pub clock: Option<String>,
+    /// `-rt`: pace the run at this many wall-clock seconds per simulated second
+    /// (C's `real_time_sync.scaling`; 0 disables).
+    pub real_time: Option<f64>,
+    /// `-lv_system=i,j,…`: only these systems' solves log (C's `setLVSystems`).
+    pub lv_system: Option<String>,
+    /// `-nlsInfo`: per-system CSV files of every nonlinear solve.
+    pub nls_info: bool,
     /// `-daeMode`, deprecated in C: `--daeMode` at translation is what selects it.
     pub dae_mode: bool,
     pub nls: Option<Nls>,
@@ -696,6 +746,11 @@ pub enum JacobianMethod {
 }
 
 impl JacobianMethod {
+    /// C's `JACOBIAN_METHOD_NAME`, the `-jacobian` value.
+    pub fn name(self) -> &'static str {
+        JACOBIAN_METHODS.iter().find(|(_, m, _)| *m == self).map_or("", |(n, _, _)| n)
+    }
+
     /// C's `setJacobianMethod` log line, one per enumerator.
     pub fn desc(self) -> &'static str {
         match self {
@@ -705,7 +760,7 @@ impl JacobianMethod {
             JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
             JacobianMethod::NumJac => "Numerical Jacobian.",
             JacobianMethod::SymJac => "Symbolical Jacobian.",
-            JacobianMethod::BicoloredSymJac => "Bicolored (bidirectional) symbolical Jacobian.",
+            JacobianMethod::BicoloredSymJac => "Bicolored symbolical bidirectional Jacobian.",
         }
     }
 }
@@ -723,6 +778,19 @@ const JACOBIAN_METHODS: &[Value<JacobianMethod>] = &[
 
 /// C flags deliberately let through.
 const IGNORED_FLAGS: &[&str] = &[];
+
+static EXECUTABLE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// Accept the flags only a simulation executable serves: `-port`,
+/// `-logFormat=xmltcp`, `-f`, `-cpu`, `-steps`, `-clock`, `-rt`, `-lv_system` and
+/// `-nlsInfo`.
+pub fn serve_executable() {
+    EXECUTABLE.store(true, core::sync::atomic::Ordering::Relaxed);
+}
+
+fn executable_served() -> bool {
+    EXECUTABLE.load(core::sync::atomic::Ordering::Relaxed)
+}
 
 /// Parse an argv slice (`argv[0]` is the program name and is skipped).
 /// `-flag=value` and `-flag value` are both accepted, as in the C runtime.
@@ -787,6 +855,7 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "outputFormat" => f.output_format = Some(output_format(&value(name)?)?),
             "noemit" => f.noemit = true,
             "single" => f.single_precision = true,
+            "mat_sync" => f.mat_sync = Some(int(name, &value(name)?)?.max(0) as u32),
             "outputPath" => f.output_path = Some(value(name)?),
             "measureTimePlotFormat" => f.measure_time_plot_format = Some(value(name)?),
             "iit" => f.init_time = Some(real(name, &value(name)?)?),
@@ -816,6 +885,12 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "newtonFTol" => f.newton_ftol = Some(real(name, &value(name)?)?),
             "newtonXTol" => f.newton_xtol = Some(real(name, &value(name)?)?),
             "newtonMaxStepFactor" => f.newton_max_step_factor = Some(real(name, &value(name)?)?),
+            "newton" => f.newton_strategy = Some(pick("newton", &value(name)?, NEWTON_STRATEGIES)?),
+            "newtonMaxSteps" => f.newton_max_steps = Some(int(name, &value(name)?)?),
+            "newtonJacUpdates" => f.newton_jac_updates = Some(jac_updates(&value(name)?)?),
+            "noScaling" => f.no_scaling = true,
+            "stopAtSystem" => f.stop_at_system = Some(int(name, &value(name)?)?),
+            "deltaXSolver" => f.delta_x_solver = Some(real(name, &value(name)?)?),
             "saveInitialGuess_system" => {
                 let v = value(name)?;
                 let bad = || {
@@ -837,12 +912,23 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             "steadyStateTol" => f.steady_state_tol = Some(real(name, &value(name)?)?),
             "w" => f.show_all_warnings = true,
             "daeMode" => f.dae_mode = true,
-            // C's third format, `xmltcp`, belongs to its `-port` server.
             "logFormat" => match value(name)?.as_str() {
-                "text" => f.log_xml = false,
-                "xml" => f.log_xml = true,
+                "text" => (f.log_xml, f.log_xmltcp) = (false, false),
+                "xml" => (f.log_xml, f.log_xmltcp) = (true, false),
+                "xmltcp" if executable_served() => (f.log_xml, f.log_xmltcp) = (true, true),
                 v => return Err(format!("-logFormat={v}: this runtime writes `text` or `xml` logs")),
             },
+            "f" if executable_served() => f.init_xml = Some(value(name)?),
+            "cpu" if executable_served() => f.cpu_time = true,
+            "steps" if executable_served() => f.solver_steps = true,
+            "clock" if executable_served() => f.clock = Some(value(name)?),
+            "rt" if executable_served() => f.real_time = Some(real(name, &value(name)?)?),
+            "lv_system" if executable_served() => f.lv_system = Some(value(name)?),
+            "nlsInfo" if executable_served() => f.nls_info = true,
+            "port" if executable_served() => {
+                let v = value(name)?;
+                f.port = Some(v.trim().parse().map_err(|_| format!("-port={v}: expected a TCP port"))?);
+            }
             "emit_protected" => f.emit_protected = true,
             "ignoreHideResult" => f.ignore_hide_result = true,
             "variableFilter" => f.variable_filter = Some(value(name)?),
@@ -978,6 +1064,9 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
             }
         }
     }
+    if f.log_xmltcp && f.port.is_none() {
+        return Err("xmltcp log format requires a TCP-port to be passed (and successfully open)".into());
+    }
     // As C joins it at each read site: always for `-csvInput`, and for `-iif` only
     // when the name does not already resolve on its own.
     if let Some(dir) = f.input_path.clone() {
@@ -1050,13 +1139,13 @@ fn file_exists(_path: &str) -> bool {
     false
 }
 
-/// C's `initializeResultData` formats. `mat`, `csv`, `plt` and `empty` are the
-/// ones this runtime has a writer for; `ia` is C's and would need one of its own.
+/// C's `initializeResultData` formats. `ia` is C's and would need a writer of
+/// its own.
 fn output_format(v: &str) -> Result<String, String> {
     match v {
-        "mat" | "csv" | "plt" | "empty" => Ok(v.to_string()),
+        "mat" | "csv" | "plt" | "arrow" | "empty" => Ok(v.to_string()),
         "ia" => Err(format!(
-            "-outputFormat={v}: this runtime writes `mat`/`csv`/`plt` results, or `empty` for none"
+            "-outputFormat={v}: this runtime writes `mat`/`csv`/`plt`/`arrow` results, or `empty` for none"
         )),
         _ => Err(format!("Unknown output format: {v}")),
     }
@@ -1166,6 +1255,28 @@ pub fn notices(f: &SimFlags) -> Vec<(crate::omclog::LogType, String)> {
                 .to_string(),
         ));
     }
+    if let Some(v) = f.newton_xtol {
+        out.push((
+            crate::omclog::INFO,
+            format!("Tolerance for updating solution vector in Newton solver changed to {}", g(v)),
+        ));
+    }
+    if let Some(v) = f.newton_ftol {
+        out.push((
+            crate::omclog::INFO,
+            format!("Tolerance for accepting accuracy in Newton solver changed to {}", g(v)),
+        ));
+    }
+    if let Some(n) = f.newton_max_steps {
+        out.push((crate::omclog::INFO, format!("Maximum number of Newton steps for GBODE changed to {n}")));
+    }
+    if f.newton_max_step_factor.is_some() {
+        // C prints `newtonFTol` here, not the factor.
+        out.push((
+            crate::omclog::INFO,
+            format!("Maximum step size factor for a Newton step changed to {}", g(newton_tuning(f).0)),
+        ));
+    }
     if f.dae_mode {
         out.push((
             crate::omclog::WARNING,
@@ -1232,6 +1343,43 @@ pub fn newton_tuning(f: &SimFlags) -> (f64, f64, f64) {
     )
 }
 
+/// C's `numericalDifferentiationDeltaXsolver`: `sqrt(DBL_EPSILON)` unless
+/// `-deltaXSolver` says otherwise.
+pub fn delta_x_solver(f: &SimFlags) -> f64 {
+    f.delta_x_solver.unwrap_or(1.4901161193847656e-8)
+}
+
+/// `-newton`, `-noScaling` and `-stopAtSystem` as the wire codes
+/// `rt_set_nls_options` takes.
+pub fn nls_option_codes(f: &SimFlags) -> (u32, u32, i32) {
+    (f.newton_strategy.map_or(0, |s| s as u32), f.no_scaling as u32, f.stop_at_system.unwrap_or(-1))
+}
+
+/// C's `newtonMaxSteps` and `maxJacUpdate`, with C's defaults.
+pub fn gb_kinsol_tuning(f: &SimFlags) -> (u32, [u32; 4]) {
+    (
+        f.newton_max_steps.unwrap_or(20).max(0) as u32,
+        f.newton_jac_updates.unwrap_or([10, 3, 1, 1]).map(|v| v as u32),
+    )
+}
+
+fn jac_updates(v: &str) -> Result<[i32; 4], String> {
+    let mut out = [10, 3, 1, 1];
+    let items: Vec<&str> = v.split(',').collect();
+    if items.len() > 4 {
+        return Err(format!("-newtonJacUpdates={v}: at most 4 entries"));
+    }
+    for (slot, item) in out.iter_mut().zip(items) {
+        *slot = item
+            .trim()
+            .parse::<i32>()
+            .ok()
+            .filter(|n| *n >= 0)
+            .ok_or_else(|| format!("newtonJacUpdates: takes non-negative integers (got '{v}')"))?;
+    }
+    Ok(out)
+}
+
 /// C's `nlsKinsolDenseDerivativeTest` tolerances: `100 * DBL_EPSILON` and `1e-4`
 /// where the flags are absent.
 pub fn jac_test_tolerances(f: &SimFlags) -> (f64, f64) {
@@ -1246,8 +1394,8 @@ pub fn jac_test_tolerances(f: &SimFlags) -> (f64, f64) {
 pub fn svd_params(f: &SimFlags) -> (i32, f64, f64) {
     (
         f.svd_count.unwrap_or(0),
-        libm::fabs(f.svd_sigma.unwrap_or(1e-8)),
-        libm::fabs(f.svd_tol.unwrap_or(1e-8)),
+        fmath::fabs(f.svd_sigma.unwrap_or(1e-8)),
+        fmath::fabs(f.svd_tol.unwrap_or(1e-8)),
     )
 }
 
@@ -1415,6 +1563,15 @@ const CVODE_ITER_VALUES: &[Value<CvodeIter>] = &[
     ("CV_ITER_FIXED_POINT", CvodeIter::FixedPoint, Offer::Always),
 ];
 
+/// C's `NEWTONSTRATEGY_NAME`.
+const NEWTON_STRATEGIES: &[Value<NewtonStrategy>] = &[
+    ("damped", NewtonStrategy::Damped, Offer::Always),
+    ("damped2", NewtonStrategy::Damped2, Offer::Always),
+    ("damped_ls", NewtonStrategy::DampedLs, Offer::Always),
+    ("damped_bt", NewtonStrategy::DampedBt, Offer::Always),
+    ("pure", NewtonStrategy::Pure, Offer::Always),
+];
+
 /// `-idaLS`. All five reach a SUNLinearSolver; the whole entry rides on `cap.ida`.
 const IDA_LS_VALUES: &[Value<IdaLs>] = &[
     ("klu", IdaLs::Klu, Offer::Always),
@@ -1564,6 +1721,28 @@ mod tests {
         assert_eq!((f.nls, f.nls_ls, f.ls, f.lss), (None, None, None, None));
         assert!(f.log.is_empty() && f.overrides.is_empty() && !f.abort_slow);
         assert!(check(&f, NOTHING).is_ok());
+    }
+
+    #[test]
+    fn newton_tuning_flags() {
+        let f = parse(&argv(&["-newton=damped_ls", "-newtonJacUpdates=0,2", "-newtonMaxSteps=7",
+                              "-deltaXSolver=1e-6", "-noScaling", "-stopAtSystem=12"]))
+            .expect("parses");
+        assert_eq!(f.newton_strategy, Some(NewtonStrategy::DampedLs));
+        assert_eq!(gb_kinsol_tuning(&f), (7, [0, 2, 1, 1]));
+        assert_eq!(delta_x_solver(&f), 1e-6);
+        assert_eq!(nls_option_codes(&f), (3, 1, 12));
+        assert!(parse(&argv(&["-newtonJacUpdates=1,2,3,4,5"])).is_err());
+        assert!(parse(&argv(&["-newtonJacUpdates=-1"])).is_err());
+        assert!(parse(&argv(&["-newton=fast"])).is_err());
+    }
+
+    #[test]
+    fn executable_flags_are_refused_elsewhere() {
+        for arg in ["-cpu", "-steps", "-clock=CPU", "-rt=1", "-lv_system=3", "-nlsInfo", "-f=x.xml"] {
+            let e = parse(&argv(&[arg])).expect_err(arg);
+            assert!(e.contains("not implemented by this runtime"), "{arg}: {e}");
+        }
     }
 
     #[test]
@@ -1841,6 +2020,7 @@ mod tests {
                    Some("empty"));
         assert_eq!(parse(&argv(&["-outputFormat=csv"])).expect("csv writer").output_format.as_deref(), Some("csv"));
         assert_eq!(parse(&argv(&["-outputFormat=plt"])).expect("plt writer").output_format.as_deref(), Some("plt"));
+        assert_eq!(parse(&argv(&["-outputFormat=arrow"])).expect("arrow writer").output_format.as_deref(), Some("arrow"));
         assert!(parse(&argv(&["-outputFormat=ia"])).expect_err("no ia writer").contains("mat"));
         assert!(parse(&argv(&["-outputFormat=nope"])).expect_err("unknown").contains("Unknown"));
         // `-noemit` is C's `sim_noemit`, which it treats exactly as `empty`.

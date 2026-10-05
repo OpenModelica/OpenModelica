@@ -1,7 +1,6 @@
 //! Mutable (aliasing) `Array<T>` builtins. Read-only constant tables
 //! use [`static_array::StaticArray`].
 
-use std::sync::Arc;
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::Result;
@@ -17,7 +16,7 @@ pub fn arrayFromVec<A>(v: Vec<A>) -> Array<A> {
 }
 
 // All array fns take `Array<A>` by value: cloning an `Rc` is one atomic-free
-// refcount bump, so the by-value convention matches how `Arc<List<A>>` is
+// refcount bump, so the by-value convention matches how `List<A>` is
 // handled elsewhere and lets generated call sites pass `arr.clone()` directly
 // without needing an explicit `&` prefix.
 
@@ -67,8 +66,8 @@ pub fn arrayCreateDefault<A: Clone + Default>(size: i32) -> Array<A> {
 }
 
 /// Converts an array to a list. O(n).
-pub fn arrayList<A: Clone>(arr: Array<A>) -> Arc<List<A>> {
-    let mut result = Arc::new(List::Nil);
+pub fn arrayList<A: Clone>(arr: Array<A>) -> List<A> {
+    let mut result = crate::nil();
     for item in arr.borrow().iter().rev().cloned() {
         result = List::cons(result, item);
     }
@@ -76,9 +75,9 @@ pub fn arrayList<A: Clone>(arr: Array<A>) -> Arc<List<A>> {
 }
 
 /// Converts a list to an array. O(n).
-pub fn listArray<A: Clone>(lst: Arc<List<A>>) -> Array<A> {
+pub fn listArray<A: Clone>(lst: List<A>) -> Array<A> {
     let mut result = Vec::new();
-    for item in &*lst {
+    for item in &lst {
         result.push(item.clone());
     }
     arrayFromVec(result)

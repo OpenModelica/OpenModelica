@@ -20,7 +20,7 @@ pub trait Resolver {
     fn value(&self, cref: &str, t: f64) -> f64;
 }
 
-/// One shape placed for a single time point. `rot`/`pos` follow OMEdit's OSG
+/// One shape placed for a single time point. `rot`/`pos` follow OMEdit's
 /// "poke" convention: a local point `p` (length axis = local +Z) maps to world
 /// as `p·rot + pos` (row-vector). `size` is (length, width, height); `color` is
 /// Modelica's 0–255 RGB.

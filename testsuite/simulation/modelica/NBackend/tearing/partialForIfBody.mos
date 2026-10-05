@@ -1,0 +1,49 @@
+// name: partialForIfBody
+// keywords: NewBackend, tearing, if equation, for equation
+// status: correct
+// suite: cSources
+//
+// Only the first row of a for-equation with an if-equation body is part of the torn loop.
+// The torn row becomes an if-expression residual, the other row is solved branch-wise for p[2].
+// Reference values from the old backend: p[1](0.25) = 0.798904, p[2](1) = 2.1
+
+loadString("
+model PartialForIfBody
+  Real p[2](each start = 1), m[2](each start = 1), q(start = 1);
+  Boolean c[2] = {time < 0.5, true};
+equation
+  for i in 1:2 loop
+    if c[i] then
+      p[i] = q + 0.1 * m[i]^3;
+    else
+      p[i] = q;
+    end if;
+  end for;
+  m[1] = 0.2 * sin(p[1]) + 1;
+  q = 0.5 * p[1] + time;
+  m[2] = time;
+end PartialForIfBody;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(PartialForIfBody); getErrorString();
+abs(val(p[1], 0.25) - 0.798904) < 1e-5;
+abs(val(p[1], 1.0) - 2.0) < 1e-5;
+abs(val(p[2], 1.0) - 2.1) < 1e-5;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PartialForIfBody_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'PartialForIfBody', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// true
+// endResult

@@ -1,0 +1,44 @@
+// name: print_array_var_names
+// keywords: NewBackend array LOG_SOLVER_V
+// status: correct
+// suite: cSources
+//
+// printAllVars and dassl_setNominals name each scalar element of a
+// non-scalarized array variable.
+
+loadString("
+model print_array_var_names
+  Real x[2](each start = 1, each fixed = true);
+  Integer k[2] = {1, 2};
+equation
+  der(x) = -x;
+end print_array_var_names;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C.old"); getErrorString();
+
+buildModel(print_array_var_names, stopTime=0.1, numberOfIntervals=1); getErrorString();
+system("./print_array_var_names -lv=LOG_SOLVER_V | grep -E ' -> |\\(pre: ' > print_array_var_names_solver.log"); getErrorString();
+readFile("print_array_var_names_solver.log");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"print_array_var_names", "print_array_var_names_init.xml"}
+// ""
+// 0
+// ""
+// "LOG_SOLVER_V      | info    | 1. x[1] -> 1e-06
+// LOG_SOLVER_V      | info    | 2. x[2] -> 1e-06
+// LOG_SOLVER_V      | info    | 1. x[1] -> 1e-06
+// LOG_SOLVER_V      | info    | 2. x[2] -> 1e-06
+// |                 | |       | | | 1: x[1] = 1 (pre: 1)
+// |                 | |       | | | 2: x[2] = 1 (pre: 1)
+// |                 | |       | | | 3: der(x)[1] = -1 (pre: -1)
+// |                 | |       | | | 4: der(x)[2] = -1 (pre: -1)
+// |                 | |       | | | 1: k[1] = 1 (pre: 1)
+// |                 | |       | | | 2: k[2] = 2 (pre: 2)
+// "
+// endResult

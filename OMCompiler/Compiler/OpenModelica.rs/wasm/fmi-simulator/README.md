@@ -100,11 +100,13 @@ lose their href rather than pretend to work.
 
 ## Results
 
-Samples are recorded for every numeric variable that can change. The download
-button in the header writes the usual OpenModelica `.mat` through WASI and hands
-it over — the same file OMPlot and `omc-diff` read for a simulated model. It is
-written when asked for rather than after every run, since serialising the whole
-result is the expensive part and most runs are only ever plotted.
+Samples are recorded for every numeric variable that can change, and the plot
+reads them straight out of the recorder as the run produces them. They become a
+file only when the download button asks for one — serialising the whole result
+is the expensive part, and most runs are only ever plotted. The picker beside
+the button chooses the format: `.arrow` keeps the column types, the
+discrete-time encoding, `relativeQuantity` and the FMU's own unit definitions,
+while `.mat` is the file OMPlot and `omc-diff` have always read.
 
 A cref in a figure or in the 3D scene often names an FMI 3.0 `<Alias>` rather
 than the variable holding the data — an alias shares its base variable's
@@ -115,11 +117,17 @@ name.
 
 Inputs are expressions in `t` (`sin(2*PI*t)`, `t < 1 ? 0 : 1`) evaluated by the
 driver wherever the solver asks for a value; parameters are constants applied
-during initialization, which is the only mode FMI allows them to be set in.
+during initialization, which is the only mode FMI allows them to be set in. An
+array variable is one value reference and is set whole, so its field takes one
+expression or value per element, separated by commas (`0, -9.81, 0`).
 
 ## Gaps
 
 * Scheduled Execution is not driven; such an FMU is reported as unsupported.
+* An FMI 1.0/2.0 FMU is read and shown but not simulated: those versions number
+  value references per base type, and only the FMU's own loader
+  (`openmodelica_fmi_ls_wasm_to_native`) translates that to the FMI 3.0
+  numbering the component uses. Run is disabled and the page says so.
 * String and binary variables are shown but cannot be set.
 * `fmi3GetFMUState`/`fmi3SetFMUState` are unused: no rollback, so a
   Co-Simulation FMU that discards a step fails the run rather than retrying it

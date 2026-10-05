@@ -1,7 +1,6 @@
 //! String builtins: char conversions, length/get/compare, append, and
 //! `substring`. Hashing lives in [`hash`], URI resolution in [`uri`].
 
-use std::sync::Arc;
 use crate::Result;
 use arcstr::{ArcStr, format};
 use ordered_float::OrderedFloat;
@@ -63,19 +62,19 @@ pub fn stringReal(str: ArcStr) -> Result<Real> {
 }
 
 /// Converts a string to a list of single-character strings.
-pub fn stringListStringChar(str: ArcStr) -> Arc<List<ArcStr>> {
+pub fn stringListStringChar(str: ArcStr) -> List<ArcStr> {
     // TODO: We could have constants for all these short strings to avoid allocations.
-    Arc::new(str.chars().map(|c| format!("{}", c)).collect())
+    str.chars().map(|c| format!("{}", c)).collect()
 }
 
 /// Appends a list of strings into a single string.
-pub fn stringAppendList(strs: Arc<List<ArcStr>>) -> ArcStr {
+pub fn stringAppendList(strs: List<ArcStr>) -> ArcStr {
     let mut len = 0;
-    for s in &*strs {
+    for s in &strs {
         len += s.len();
     }
     let mut result = String::with_capacity(len);
-    for s in &*strs {
+    for s in &strs {
         result.push_str(s);
     }
     result.into()
@@ -83,17 +82,17 @@ pub fn stringAppendList(strs: Arc<List<ArcStr>>) -> ArcStr {
 
 /// Takes a list of strings and a delimiter and joins them with the delimiter inserted between elements.
 /// Example: stringDelimitList({"x","y","z"}, ", ") => "x, y, z"
-pub fn stringDelimitList(strs: Arc<List<ArcStr>>, delimiter: ArcStr) -> ArcStr {
+pub fn stringDelimitList(strs: List<ArcStr>, delimiter: ArcStr) -> ArcStr {
     let mut len = 0;
     let delimiter_len = delimiter.len();
-    for s in &*strs {
+    for s in &strs {
         len += s.len() + delimiter_len;
     }
 
     let mut result = String::with_capacity(len);
     let mut first = true;
 
-    for s in &*strs {
+    for s in &strs {
         if !first {
             result.push_str(&delimiter);
         }
@@ -105,19 +104,19 @@ pub fn stringDelimitList(strs: Arc<List<ArcStr>>, delimiter: ArcStr) -> ArcStr {
 }
 
 /// Returns the length of the string (number of bytes).
-pub fn stringLength(str: ArcStr) -> i32 {
-    str.len() as i32
+pub fn stringLength(str: impl AsRef<str>) -> i32 {
+    str.as_ref().len() as i32
 }
 
 /// Returns true if the string is empty.
-pub fn stringEmpty(str: ArcStr) -> bool {
-    str.is_empty()
+pub fn stringEmpty(str: impl AsRef<str>) -> bool {
+    str.as_ref().is_empty()
 }
 
 /// Returns the byte value at the given 1-based index.
-pub fn stringGet(str: ArcStr, index: i32) -> Result<i32> {
+pub fn stringGet(str: impl AsRef<str>, index: i32) -> Result<i32> {
     let idx = (index - 1) as usize; // 1-based to 0-based
-    str.bytes().nth(idx)
+    str.as_ref().bytes().nth(idx)
         .map(|b| b as i32)
         .ok_or_else(|| "Index {} out of bounds for string of length {}")
 }
@@ -153,20 +152,20 @@ pub fn stringAppend(s1: ArcStr, s2: ArcStr) -> ArcStr {
 
 /// Compares two strings for equality.
 #[inline(always)]
-pub fn stringEq(s1: ArcStr, s2: ArcStr) -> bool {
-    s1 == s2
+pub fn stringEq(s1: impl AsRef<str>, s2: impl AsRef<str>) -> bool {
+    s1.as_ref() == s2.as_ref()
 }
 #[inline(always)]
-pub fn stringEqual(s1: ArcStr, s2: ArcStr) -> bool {
-    s1 == s2
+pub fn stringEqual(s1: impl AsRef<str>, s2: impl AsRef<str>) -> bool {
+    s1.as_ref() == s2.as_ref()
 }
 
 /// Compares two strings lexicographically.
 /// Returns negative if s1 < s2, zero if s1 == s2, positive if s1 > s2.
-pub fn stringCompare(s1: ArcStr, s2: ArcStr) -> i32 {
+pub fn stringCompare(s1: impl AsRef<str>, s2: impl AsRef<str>) -> i32 {
     // Byte-by-byte comparison for consistency
-    let bytes1 = s1.as_bytes();
-    let bytes2 = s2.as_bytes();
+    let bytes1 = s1.as_ref().as_bytes();
+    let bytes2 = s2.as_ref().as_bytes();
     let len = bytes1.len().min(bytes2.len());
     for i in 0..len {
         if bytes1[i] < bytes2[i] {
@@ -214,12 +213,12 @@ pub fn substring(str: ArcStr, start: i32, stop: i32) -> Result<ArcStr> {
 }
 
 /// Alias for string_append_list (maps a list of single-char strings to one string).
-pub fn listStringCharString(strs: Arc<List<ArcStr>>) -> ArcStr {
+pub fn listStringCharString(strs: List<ArcStr>) -> ArcStr {
     stringAppendList(strs)
 }
 
 /// Alias for string_append_list (maps a list of single-char strings to one string).
-pub fn stringCharListString(strs: Arc<List<ArcStr>>) -> ArcStr {
+pub fn stringCharListString(strs: List<ArcStr>) -> ArcStr {
     stringAppendList(strs)
 }
 
@@ -274,7 +273,7 @@ mod tests {
         #[test]
         fn test_string_list_string_char() {
             let result = stringListStringChar(literal!("abc "));
-            assert_eq!(&*result, &List::from_iter([literal!("a"), literal!("b"), literal!("c"), literal!(" ")]));
+            assert_eq!(result, List::from_iter([literal!("a"), literal!("b"), literal!("c"), literal!(" ")]));
         }
 
         #[test]
@@ -285,7 +284,7 @@ mod tests {
 
         #[test]
         fn test_string_delimit_list() {
-            let strs: Arc<List<ArcStr>> = list![literal!("x"), literal!("y"), literal!("z")];
+            let strs: List<ArcStr> = list![literal!("x"), literal!("y"), literal!("z")];
             assert_eq!(stringDelimitList(strs, literal!(", ")), "x, y, z");
         }
     }
@@ -295,14 +294,14 @@ mod tests {
 
         #[test]
         fn test_string_length() {
-            assert_eq!(stringLength("hello".into()), 5);
-            assert_eq!(stringLength("".into()), 0);
+            assert_eq!(stringLength("hello"), 5);
+            assert_eq!(stringLength(""), 0);
         }
 
         #[test]
         fn test_string_empty() {
-            assert!(stringEmpty("".into()));
-            assert!(!stringEmpty("hello".into()));
+            assert!(stringEmpty(""));
+            assert!(!stringEmpty("hello"));
         }
     }
 
@@ -399,13 +398,13 @@ mod tests {
 
         #[test]
         fn test_list_string_char_string() {
-            let strs: Arc<List<ArcStr>> = list![literal!("a"), literal!("b"), literal!("c")];
+            let strs: List<ArcStr> = list![literal!("a"), literal!("b"), literal!("c")];
             assert_eq!(&*listStringCharString(strs), "abc");
         }
 
         #[test]
         fn test_string_char_list_string() {
-            let strs: Arc<List<ArcStr>> = list![literal!("a"), literal!("b"), literal!("c")];
+            let strs: List<ArcStr> = list![literal!("a"), literal!("b"), literal!("c")];
             assert_eq!(&*stringCharListString(strs), "abc");
         }
     }

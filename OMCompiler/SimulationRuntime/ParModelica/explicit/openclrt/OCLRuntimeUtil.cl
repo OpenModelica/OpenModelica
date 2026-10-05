@@ -54,11 +54,13 @@
   #define omc_assert(td,i,s) (printf("Assertion: %s, Line %d, info %d\n", s, __LINE__, i))
   #define omc_assert_withEquationIndexes(td,i,idx,s) (printf("Assertion: %s, Line %d, info %d\n", s, __LINE__, i))
   #define throwStreamPrint(td,str,exp) (printf("Assertion: %s\n, expression %s, Line %d\n", str, exp, __LINE__))
+  #define raiseStreamPrint(td,str,exp) (printf("Assertion: %s\n, expression %s, Line %d\n", str, exp, __LINE__))
   #define printline() printf("At line %d\n", __LINE__)
 #else
   #define omc_assert(td,i,s)
   #define omc_assert_withEquationIndexes(td,i,idx,s)
   #define throwStreamPrint(td,str,exp)
+  #define raiseStreamPrint(td,str,exp)
   #define printline()
 #endif
 

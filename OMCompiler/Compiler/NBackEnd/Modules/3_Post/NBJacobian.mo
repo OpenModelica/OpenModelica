@@ -92,6 +92,7 @@ protected
 
   // Util imports
   import StringUtil;
+  import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
   import Util;
@@ -148,7 +149,8 @@ public
             then fail();
           end match;
 
-          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
+          // DAE mode: SimCode reads only the DAE partition jacobian
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func, kind <> NBPartition.Kind.DAE);
           bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
           bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
           bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
@@ -171,8 +173,9 @@ public
     input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
+    input Boolean simJacobian = true "also create the partition jacobian";
   algorithm
-    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
+    partitions := list(partJacobian(part, funcMap, knowns, name, func, simJacobian) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
@@ -190,17 +193,32 @@ public
       then jacobianSymbolic
       else jacobianNumeric;
   algorithm
-    jacobian := func(
-        name                = name,
-        jacType             = JacobianType.NLS,
-        seedCandidates      = seedCandidates,
-        partialCandidates   = partialCandidates,
-        equations           = equations,
-        strongComponents    = SOME(comps),
-        full                = full,
-        funcMap             = funcMap,
-        staticAsContinuous  = staticAsContinuous
-      );
+    try
+      jacobian := func(
+          name                = name,
+          jacType             = JacobianType.NLS,
+          seedCandidates      = seedCandidates,
+          partialCandidates   = partialCandidates,
+          equations           = equations,
+          strongComponents    = SOME(comps),
+          full                = full,
+          funcMap             = funcMap,
+          staticAsContinuous  = staticAsContinuous
+        );
+    else
+      // not everything can be differentiated symbolically, e.g. functions with function inputs
+      jacobian := jacobianNumeric(
+          name                = name,
+          jacType             = JacobianType.NLS,
+          seedCandidates      = seedCandidates,
+          partialCandidates   = partialCandidates,
+          equations           = equations,
+          strongComponents    = SOME(comps),
+          full                = full,
+          funcMap             = funcMap,
+          staticAsContinuous  = staticAsContinuous
+        );
+    end try;
   end nonlinear;
 
   function combine
@@ -438,6 +456,7 @@ protected
     input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
+    input Boolean simJacobian = true;
   protected
     JacobianType jacType;
     VariablePointers unknowns;
@@ -463,7 +482,7 @@ protected
     end match;
 
     // create the simulation jacobian
-    if Partition.Partition.isODEorDAE(part) then
+    if simJacobian and Partition.Partition.isODEorDAE(part) then
       partialCandidates := part.unknowns;
       unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
       jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
@@ -571,7 +590,8 @@ protected
           // for-loop starts at 1 but x is sliced from x[2], so a symbolic body term like
           // x[$i1] at $i1=1 needs a seed for x[1], which per-element scalarization of just
           // x[2..4] can never provide).
-          elem_vars := Scalarize.scalarizeBackendVariable(var_elem, var_slice.indices);
+          // the slice indices refer to the resized sizes of resizable dimensions
+          elem_vars := Scalarize.scalarizeBackendVariable(var_elem, var_slice.indices, resize = true);
           for v in elem_vars loop
             seed_candidates := Pointer.create(v) :: seed_candidates;
           end for;
@@ -597,6 +617,11 @@ protected
     constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
+      // nothing to differentiate if all iteration variables are discrete (e.g. Boolean)
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict)
+        guard(not List.any(list(Slice.getT(v) for v in strict.iteration_vars), function BVariable.isContinuous(staticAsContinuous = staticAsContinuous)))
+      then (comp, false);
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
@@ -1805,12 +1830,11 @@ protected
     ty         := ComponentRef.getSubscriptedType(baseCref, false);
 
     // Build a fresh VAR_NODE with the SSA name; the variable pointer is
-    // initially a dummy and becomes cyclic via makeVarPtrCyclic below.
+    // initially a dummy and is linked to the real variable by makeVarPtr below.
     newNode := InstNode.VAR_NODE(
       ComponentRef.firstName(baseCref) + "_" + intString(idx),
-      Pointer.create(NBVariable.DUMMY_VARIABLE));
-    ssaCref := ComponentRef.CREF(newNode, {}, ty,
-      NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+      PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE)));
+    ssaCref := ComponentRef.fromNode(newNode, ty);
 
     // Clear any inherited partner pointers (pDer, seed) so that a fresh pDer
     // variable is created for this SSA temporary rather than reusing the
@@ -1828,7 +1852,7 @@ protected
     );
 
     // Establish the cyclic Variable <-> InstNode pointer link
-    (ssaVarPtr, ssaCref) := BVariable.makeVarPtrCyclic(origVar, ssaCref);
+    (ssaVarPtr, ssaCref) := BVariable.makeVarPtr(origVar, ssaCref);
   end makeSSAVar;
 
   function algorithmToSSA

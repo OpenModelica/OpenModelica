@@ -1,0 +1,41 @@
+// name:     Modelica.Electrical.Spice3.Examples.Oscillator
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Oscillator);
+compareVars :=
+{
+   "T1.vbe",
+   "T2.vbe"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Spice3.Examples.Oscillator
+// {"T1.vbe", "T2.vbe"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 0.025, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Oscillator', options = '', outputFormat = 'mat', variableFilter = 'time|T1.vbe|T2.vbe', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Spice3.Examples.Oscillator_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -44,19 +44,26 @@ import SimCodeVar;
 
 protected
 import BackendDAE.VarKind;
+import ClassInf;
 import CR=ComponentReference;
-import Config;
+import ComponentReferenceBasics;
+import DAE;
 import DAE.{Exp,Type};
+import DAEUtil;
 import Dump;
+import Error;
 import Expression;
+import ExpressionBasics;
 import ExpressionBasics.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
-import SimCodeUtil;
 import Types;
+import TypesDump;
+import UnorderedMap;
 import Util;
+import SimCodeCodegenUtil;
 
 public
 
@@ -77,30 +84,20 @@ protected
   VarInfo vi;
   SimulationSettings s;
   File.File file = File.File();
-  String fileName, FMUType;
+  String fileName;
 algorithm
   try
-    fileName := match Config.simCodeTarget()
-      case "omsic" then simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml";
-      /*Temporary disabled omsicpp
-      case "omsicpp" then simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml";*/
-      else simCode.fileNamePrefix + "_init.xml";
-    end match;
+    fileName := simCode.fileNamePrefix + "_init.xml";
     File.open(file, fileName, File.Mode.Write);
 
     vi := simCode.modelInfo.varInfo;
     SOME(s) := simCode.simulationSettingsOpt;
-    FMUType := match Config.simCodeTarget()
-      case "omsic" then "2.0";
-      case "omsicpp" then "2.0";
-      else "1.0";
-    end match;
 
 
     File.write(file, "<?xml version = \"1.0\" encoding=\"UTF-8\"?>\n\n");
     File.write(file, "<!-- description of the model interface using an extention of the FMI standard -->\n");
     File.write(file, "<fmiModelDescription\n");
-    File.write(file, "  fmiVersion                          = \""+FMUType+"\"\n\n");
+    File.write(file, "  fmiVersion                          = \"1.0\"\n\n");
 
     File.write(file, "  modelName                           = \"");
     Dump.writePath(file, simCode.modelInfo.name, initialDot=false);
@@ -267,38 +264,64 @@ function modelVariables "Generates code for ModelVariables file for FMU target."
   input SimCodeVar.SimVars vars;
 protected
   Integer vr, ix=0;
+  UnorderedMap<DAE.Exp, Integer> dims;
 algorithm
   // set starting index
-  vr := match Config.simCodeTarget()
-    case "omsic" then 0;
-    case "omsicpp" then 0;
-    else 1000;
-  end match;
+  vr := 1000;
 
-  vr := scalarVariables(file, vars.stateVars, "rSta", vr);
-  vr := scalarVariables(file, vars.derivativeVars, "rDer", vr);
-  (vr,ix) := scalarVariables(file, vars.algVars, "rAlg", vr, ix);
-  (vr,ix) := scalarVariables(file, vars.discreteAlgVars, "rAlg", vr, ix);
-  (vr,ix) := scalarVariables(file, vars.realOptimizeConstraintsVars, "rAlg", vr, ix);
-  (vr,ix) := scalarVariables(file, vars.realOptimizeFinalConstraintsVars, "rAlg", vr, ix);
-  vr := scalarVariables(file, vars.paramVars, "rPar", vr);
-  vr := scalarVariables(file, vars.aliasVars, "rAli", vr);
+  dims := dimensionValueReferences(vars, vr);
 
-  vr := scalarVariables(file, vars.intAlgVars, "iAlg", vr);
-  vr := scalarVariables(file, vars.intParamVars, "iPar", vr);
-  vr := scalarVariables(file, vars.intAliasVars, "iAli", vr);
+  vr := scalarVariables(file, vars.stateVars, "rSta", vr, dims = dims);
+  vr := scalarVariables(file, vars.derivativeVars, "rDer", vr, dims = dims);
+  (vr,ix) := scalarVariables(file, vars.algVars, "rAlg", vr, ix, dims);
+  (vr,ix) := scalarVariables(file, vars.discreteAlgVars, "rAlg", vr, ix, dims);
+  (vr,ix) := scalarVariables(file, vars.realOptimizeConstraintsVars, "rAlg", vr, ix, dims);
+  (vr,ix) := scalarVariables(file, vars.realOptimizeFinalConstraintsVars, "rAlg", vr, ix, dims);
+  vr := scalarVariables(file, vars.paramVars, "rPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.aliasVars, "rAli", vr, dims = dims);
 
-  vr := scalarVariables(file, vars.boolAlgVars, "bAlg", vr);
-  vr := scalarVariables(file, vars.boolParamVars, "bPar", vr);
-  vr := scalarVariables(file, vars.boolAliasVars, "bAli", vr);
+  vr := scalarVariables(file, vars.intAlgVars, "iAlg", vr, dims = dims);
+  vr := scalarVariables(file, vars.intParamVars, "iPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.intAliasVars, "iAli", vr, dims = dims);
 
-  vr := scalarVariables(file, vars.stringAlgVars, "sAlg", vr);
-  vr := scalarVariables(file, vars.stringParamVars, "sPar", vr);
-  vr := scalarVariables(file, vars.stringAliasVars, "sAli", vr);
+  vr := scalarVariables(file, vars.boolAlgVars, "bAlg", vr, dims = dims);
+  vr := scalarVariables(file, vars.boolParamVars, "bPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.boolAliasVars, "bAli", vr, dims = dims);
+
+  vr := scalarVariables(file, vars.stringAlgVars, "sAlg", vr, dims = dims);
+  vr := scalarVariables(file, vars.stringParamVars, "sPar", vr, dims = dims);
+  vr := scalarVariables(file, vars.stringAliasVars, "sAli", vr, dims = dims);
 
   // sensitivity variables
-  vr := scalarVariables(file, vars.sensitivityVars, "rSen", vr);
+  vr := scalarVariables(file, vars.sensitivityVars, "rSen", vr, dims = dims);
 end modelVariables;
+
+function dimensionValueReferences
+  "The value references the Integer parameters get in modelVariables, keyed by
+   the dimension they stand for: the parameter itself, and for a size parameter
+   $DIM_k of a derived dimension (N-1) its start expression. A dimension given by
+   one of them (resizable arrays) refers to it by value reference, so it can be
+   changed with -override before the simulation without compiling the model
+   again; a $DIM_k is computed by updateStructuralParameters."
+  input SimCodeVar.SimVars vars;
+  input Integer firstValueReference;
+  output UnorderedMap<DAE.Exp, Integer> dims = UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
+protected
+  Integer vr;
+algorithm
+  // the value reference of the first Integer parameter, see modelVariables
+  vr := firstValueReference + listLength(vars.stateVars) + listLength(vars.derivativeVars)
+    + listLength(vars.algVars) + listLength(vars.discreteAlgVars) + listLength(vars.realOptimizeConstraintsVars)
+    + listLength(vars.realOptimizeFinalConstraintsVars) + listLength(vars.paramVars) + listLength(vars.aliasVars)
+    + listLength(vars.intAlgVars);
+  for var in vars.intParamVars loop
+    UnorderedMap.add(DAE.CREF(var.name, var.type_), vr, dims);
+    if SimCodeCodegenUtil.isDimensionParameter(var) then
+      UnorderedMap.add(Util.getOption(var.initialValue), vr, dims);
+    end if;
+    vr := vr + 1;
+  end for;
+end dimensionValueReferences;
 
 function scalarVariables
   input File.File file;
@@ -306,9 +329,10 @@ function scalarVariables
   input String classType;
   input output Integer valueReference;
   input output Integer index=0;
+  input UnorderedMap<DAE.Exp, Integer> dims "value references of the parameters that are dimensions";
 algorithm
   for var in vars loop
-    scalarVariable(file, var, classType, valueReference, index);
+    scalarVariable(file, var, classType, valueReference, index, dims);
     index := index + 1;
     valueReference := valueReference + 1;
   end for;
@@ -320,11 +344,12 @@ function scalarVariable
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
+  input UnorderedMap<DAE.Exp, Integer> dims;
 protected
   String type_name = if DAEUtil.expTypeArray(var.type_) then "ArrayVariable" else "ScalarVariable";
 algorithm
   File.write(file, "  <" + type_name + "\n");
-  scalarVariableAttribute(file, var, classType, valueReference, classIndex);
+  scalarVariableAttribute(file, var, classType, valueReference, classIndex, dims);
   File.write(file, "    ");
   scalarVariableType(file, var);
   File.write(file, "\n  </" + type_name + ">\n");
@@ -336,8 +361,9 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
+  input UnorderedMap<DAE.Exp, Integer> dims;
 protected
-  Integer inputIndex = SimCodeUtil.getInputIndex(simVar);
+  Integer inputIndex = SimCodeCodegenUtil.getInputIndex(simVar);
   SourceInfo info = simVar.source.info;
 algorithm
 
@@ -408,7 +434,25 @@ algorithm
   File.write(file, "\">\n");
 
   for dim in Expression.arrayDimension(simVar.type_) loop
-    File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
+    _ := match dim
+      local
+        Integer vr;
+      // a dimension given by a parameter, or a derived one by its size parameter $DIM_k, refers to it
+      case DAE.DIM_EXP() guard not Expression.isConst(dim.exp)
+        algorithm
+          try
+            SOME(vr) := UnorderedMap.get(dim.exp, dims);
+          else
+            Error.addCompilerError("The dimension " + printExpStr(dim.exp) + " of " + ComponentReferenceBasics.printComponentRefStr(simVar.name)
+              + " is neither an Integer parameter nor has a size parameter. It is not supported for resizable arrays (--resizableArrays).");
+            fail();
+          end try;
+          File.write(file, "    <Dimension valueReference=\"" + intString(vr) + "\"/>\n");
+        then ();
+      else algorithm
+        File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
+      then ();
+    end match;
   end for;
 end scalarVariableAttribute;
 
@@ -440,6 +484,9 @@ algorithm
       scalarVariableTypeAttribute(file, v.maxValue, "max");
       scalarVariableTypeStringAttribute(file, v.unit, "unit");
       scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
+      if v.relativeQuantity then
+        File.write(file, " relativeQuantity=\"true\"");
+      end if;
       File.write(file, " />");
     then ();
   case Type.T_BOOL()
@@ -575,7 +622,7 @@ algorithm
       File.write(file, "\"alias\" aliasVariable=\"");
       CR.writeCref(file, aliasvar.varName, XML);
       File.write(file, "\" aliasVariableId=\"");
-      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true));
+      File.write(file, SimCodeCodegenUtil.getValueReference(simVar, SimCodeCodegenUtil.getSimCode(), true));
       File.write(file, "\"");
     then ();
   case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.NEGATEDALIAS())
@@ -583,7 +630,7 @@ algorithm
       File.write(file, "\"negatedAlias\" aliasVariable=\"");
       CR.writeCref(file, aliasvar.varName, XML);
       File.write(file, "\" aliasVariableId=\"");
-      File.write(file, SimCodeUtil.getValueReference(simVar, SimCodeUtil.getSimCode(), true));
+      File.write(file, SimCodeCodegenUtil.getValueReference(simVar, SimCodeCodegenUtil.getSimCode(), true));
       File.write(file, "\"");
     then ();
   else
@@ -613,12 +660,25 @@ algorithm
     case Exp.SCONST() then Util.escapeModelicaStringToXmlString(exp.string);
     case Exp.BCONST() then boolString(exp.bool);
     case Exp.ENUM_LITERAL() then intString(exp.index);
-    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(expString(e) for e in exp.array), " ");
+    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(arrayElementString(e) for e in exp.array), " ");
     case Exp.REDUCTION() then expString(exp.expr);
     else fail();
     //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
   end match;
 end expString;
+
+function arrayElementString
+  "Like expString, but String elements are enclosed in quotes, so the values
+   of a String array can be told apart."
+  input Exp exp;
+  output String str;
+algorithm
+  str := match exp
+    case Exp.SCONST() then "&quot;" + Util.escapeModelicaStringToXmlString(exp.string) + "&quot;";
+    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(arrayElementString(e) for e in exp.array), " ");
+    else expString(exp);
+  end match;
+end arrayElementString;
 
 annotation(__OpenModelica_Interface="backend_tools");
 end SerializeInitXML;

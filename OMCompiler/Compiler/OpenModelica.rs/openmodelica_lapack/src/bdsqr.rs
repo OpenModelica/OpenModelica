@@ -114,7 +114,7 @@ pub(crate) fn dlasv2(f: f64, g: f64, h: f64) -> (f64, f64, f64, f64, f64, f64) {
 }
 
 fn sign(x: f64, y: f64) -> f64 {
-    libm::copysign(x, y)
+    x.copysign(y)
 }
 
 /// `DLASR('L', 'V', …)`: apply the plane rotations `(c[j], s[j])` in the
@@ -215,7 +215,7 @@ pub fn dbdsqr(
 
     // The relative tolerance the deflation tests use, and the absolute floor
     // beneath it.
-    let tolmul = 10.0f64.max(100.0f64.min(libm::pow(EPS, -0.125)));
+    let tolmul = 10.0f64.max(100.0f64.min(EPS.powf(-0.125)));
     let tol = tolmul * EPS;
     let mut smax = 0.0f64;
     for v in d[..n].iter() {

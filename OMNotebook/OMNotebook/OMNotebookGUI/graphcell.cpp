@@ -126,11 +126,7 @@ namespace IAEX {
         max /= 10;
         ++digits;
     }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
     int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
-#else // QT_VERSION_CHECK
-    int space = 3 + fontMetrics().width(QLatin1Char('9')) * digits;
-#endif // QT_VERSION_CHECK
 
     return space;
   }
@@ -667,11 +663,9 @@ namespace IAEX {
   *
   * Input cells is placed where the user can do input. To evaluate
   * the content of an GraphCell just press shift+enter. It will
-  * throw an exception if it cant find OMC. Start OMC with
-  * following commandline:
-  *
-  * # omc +d=interactiveCorba
-  *
+  * throw an exception if it cant find OMC. OMC is linked in through
+  * libOpenModelicaCompiler and evaluated in-process; no separate omc
+  * process is started.
   *
   * \todo Make it possible to add and change syntax coloring of code.(Ingemar Axelsson)
   */
@@ -1480,11 +1474,7 @@ namespace IAEX {
       lst << "";              // Skip --ylabel-right 19th argument
       lst << "";              // Skip --yrange-right first value 20th argument
       lst << ""; // Skip --yrange-right second value 21st argument
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
       lst << QString(variables).split(" ", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-      lst << QString(variables).split(" ", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
       emit pGraphCell->plotVariables(lst);  // yes we need to use signal & slot since command is executed in different thread.
     }
   }
@@ -1562,11 +1552,7 @@ namespace IAEX {
   * highlightning is used in the output cell.
   *
   */
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
   QRecursiveMutex guard;
-#else // QT_VERSION_CHECK
-  QMutex guard(QMutex::Recursive);
-#endif // QT_VERSION_CHECK
 
   void GraphCell::eval()
   {

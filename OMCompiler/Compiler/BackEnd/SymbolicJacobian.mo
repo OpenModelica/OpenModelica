@@ -185,7 +185,7 @@ algorithm
     // prepare a DAE
     DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
     if debug then execStat("detectSparsePatternODE -> copy dae "); end if;
-    DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
+    DAE := BackendDAEOptimize.collapseIndependentContinuousBlocks(DAE);
     if debug then execStat("detectSparsePatternODE -> collapse blocks "); end if;
     DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
     if debug then execStat("detectSparsePatternODE -> transform backend dae "); end if;
@@ -335,7 +335,7 @@ algorithm
     print("analytical Jacobians -> start generate system for matrix A time : " + realString(clock()) + "\n");
   end if;
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-  backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+  backendDAE2 := BackendDAEOptimize.collapseIndependentContinuousBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
   BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
 
@@ -404,7 +404,7 @@ algorithm
   end if;
 
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
-  backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+  backendDAE2 := BackendDAEOptimize.collapseIndependentContinuousBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
   BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
 
@@ -1646,6 +1646,21 @@ protected
   FCore.Cache cache;
   FCore.Graph graph;
 algorithm
+  // Dependency analysis only, nothing to differentiate, and one partition: take
+  // the pattern from the system as it stands rather than causalizing a collapsed
+  // copy of it. Several partitions are clocked ones, which sample each other's
+  // variables, so those still have to be collapsed to be seen across.
+  if Flags.isSet(Flags.DIS_SYMJAC_FMI20) and listLength(inBackendDAE.eqs) == 1 then
+    (sparsePattern, sparseColoring) := fmiDerSparsePattern(inBackendDAE);
+    outJacobianMatrices := {(
+      SOME((BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())},
+                           BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), inBackendDAE.shared.info,
+                                                            inBackendDAE.shared.cache, inBackendDAE.shared.graph)),
+            "FMIDER", {}, {}, {}, {})),
+      sparsePattern, sparseColoring, BackendDAE.emptyNonlinearPattern)};
+    outFunctionTree := inBackendDAE.shared.functionTree;
+    return;
+  end if;
 try
   // for now perform on collapsed system
   backendDAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
@@ -1712,6 +1727,29 @@ else
 end try;
 end createFMIModelDerivatives;
 
+protected function fmiDerSparsePattern
+  "The FMIDER dependency pattern of a DAE that is a single partition, taken as it
+   stands: collapsing it is a no-op merge that drops the matching only for
+   transformBackendDAE to compute it again."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outColoring;
+protected
+  // generateSparsePattern adds the seed variables to the system it is given.
+  BackendDAE.BackendDAE dae = BackendDAEUtil.copyBackendDAE(inDAE);
+  BackendDAE.EqSystem syst = listHead(dae.eqs);
+  list<BackendDAE.Var> states, inputvars, outputvars;
+algorithm
+  states := if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+    BackendVariable.getAllClockedStatesFromVariables(syst.orderedVars) else {};
+  states := listAppend(BackendVariable.getAllStateVarFromVariables(syst.orderedVars), states);
+  outputvars := List.select(BackendVariable.varList(syst.orderedVars), BackendVariable.isVarOnTopLevelAndOutput);
+  inputvars := List.select(BackendVariable.varList(dae.shared.globalKnownVars), BackendVariable.isVarOnTopLevelAndInput);
+
+  (outSparsePattern, outColoring) := generateSparsePattern(dae, listAppend(states, inputvars),
+                                                           listAppend(states, outputvars), withColoring = false);
+end fmiDerSparsePattern;
+
 public function createFMIModelDerivativesForInitialization
 "This function genererate the stucture output and the
  partial derivatives for FMI, which are basically the jacobian matrices."
@@ -1725,11 +1763,11 @@ public function createFMIModelDerivativesForInitialization
   output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
   output AvlTreePathFunction.Tree outFunctionTree "may contain functions created by the differentiation, e.g. partial derivatives";
 protected
-  BackendDAE.BackendDAE backendDAE, backendDAE_1, emptyBDAE;
-  BackendDAE.EqSystem eqSyst, currentSystem;
+  BackendDAE.BackendDAE backendDAE_1, emptyBDAE;
+  BackendDAE.EqSystem currentSystem;
   Option<BackendDAE.SymbolicJacobian> outJacobian;
-  list<BackendDAE.Var> varlst, knvarlst, states, inputvars, paramvars;
-  BackendDAE.Variables v, globalKnownVars, statesarr, inputvarsarr, paramvarsarr, depVarsArr;
+  list<BackendDAE.Var> varlst, knvarlst, states, clockedStates, inputvars, paramvars;
+  BackendDAE.Variables statesarr, inputvarsarr, paramvarsarr, depVarsArr;
   BackendDAE.ExtraInfo ei;
   FCore.Cache cache;
   FCore.Graph graph;
@@ -1841,16 +1879,18 @@ try
 
   //BackendDump.printBackendDAE(backendDAE_1);
 
-  //prepare simulation DAE
-  backendDAE := BackendDAEUtil.copyBackendDAE(simDAE);
-  backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
-
-  eqSyst::{} := backendDAE.eqs;
-  v := eqSyst.orderedVars;
-  // get state var from simulation DAE
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
-    BackendVariable.getAllClockedStatesFromVariables(v) else {};
-  states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
+  // Only the state variables are read from the simulation DAE, so it needs
+  // neither a copy nor a collapse. The finders cons and collapsing folds the
+  // systems in reverse, so reading them forwards keeps the old order.
+  states := {};
+  clockedStates := {};
+  for syst in simDAE.eqs loop
+    states := List.append_reverse(BackendVariable.getAllStateVarFromVariables(syst.orderedVars), states);
+    if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
+      clockedStates := List.append_reverse(BackendVariable.getAllClockedStatesFromVariables(syst.orderedVars), clockedStates);
+    end if;
+  end for;
+  states := listAppend(listReverse(states), listReverse(clockedStates));
 
   // prepare all needed variables from initialization DAE
   varlst := BackendVariable.varList(currentSystem.orderedVars);
@@ -3973,6 +4013,10 @@ algorithm
       then (exp,false,tpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "previous")),_)
       then (exp,false,tpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "smooth")),_)
+      then (exp,true,tpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "noEvent")),_)
+      then (exp,true,tpl);
     case (DAE.CALL(expLst=expLst),_)
       algorithm
         // check if vars occurs not in argument list

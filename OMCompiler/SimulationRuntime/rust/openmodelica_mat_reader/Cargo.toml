@@ -11,4 +11,8 @@ workspace = "../../../Compiler/OpenModelica.rs"
 [lib]
 
 [dependencies]
-openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi" }
+openmodelica_wasi = { path = "../../../Compiler/OpenModelica.rs/openmodelica_wasi", optional = true }
+
+[features]
+# openmodelica_wasi's in-memory store instead of `std::fs`; see src/fs.rs.
+vfs = ["dep:openmodelica_wasi"]

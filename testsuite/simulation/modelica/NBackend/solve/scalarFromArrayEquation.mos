@@ -1,0 +1,46 @@
+// name: scalarFromArrayEquation
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+//
+// A scalar that is solved from an array equation with an array constructor on
+// the left hand side only needs the element of the equation that contains it.
+
+loadString("
+model scalarFromArrayEquation
+  parameter Real epsR = 1e-5;
+  parameter Real epsG = 1e-5;
+  Boolean closed = time < 0.5;
+  Boolean arc = time > 0.7;
+  Real v, i, v_arc, i_arc;
+  Real s = 1 + time;
+  Real v_out, i_out;
+equation
+  v_arc = 2;
+  i_arc = 3;
+  {v, i} = if closed then {epsR * s, s} else if arc then {v_arc, i_arc} else {s, epsG * s};
+  v_out = v;
+  i_out = i;
+end scalarFromArrayEquation;
+"); getErrorString();
+
+simulate(scalarFromArrayEquation, stopTime = 1); getErrorString();
+abs(val(v_out, 0.25) - 1.25e-5) < 1e-12; val(i_out, 0.25); val(v_out, 0.6); abs(val(i_out, 0.6) - 1.6e-5) < 1e-12; val(v_out, 0.9); val(i_out, 0.9);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "scalarFromArrayEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'scalarFromArrayEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 1.25
+// 1.6
+// true
+// 2.0
+// 3.0
+// endResult

@@ -16,8 +16,18 @@ openmodelica_util.workspace = true
 openmodelica_util_datatypes_basic.workspace=true
 openmodelica_ast_collections.workspace = true
 openmodelica_frontend_inst.workspace = true
-openmodelica_script_util.workspace = true
+# Declared by path, not `workspace = true`: cargo forbids overriding the
+# workspace dep's default-features when inheriting, and the `curl` feature has
+# to be forwarded rather than always on (see [features]).
+openmodelica_script_util = { path = "../openmodelica_script_util", default-features = false }
+openmodelica_loader = { path = "../openmodelica_loader", default-features = false }
 const-str.workspace=true
 arcstr.workspace=true
 loop_unwrap.workspace=true
 match_deref.workspace=true
+
+[features]
+# Downloads over libcurl, forwarded to openmodelica_script_util. On by default;
+# omgendoc turns it off, which drops libcurl and its TLS/LDAP/SSH tail.
+default = ["curl"]
+curl = ["openmodelica_script_util/curl", "openmodelica_loader/curl"]

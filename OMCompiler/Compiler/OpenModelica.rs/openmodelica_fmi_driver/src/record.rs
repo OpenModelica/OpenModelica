@@ -2,27 +2,60 @@
 //!
 //! The columns are chosen the way a plot wants them: every numeric variable
 //! that can change, grouped by type so one `fmi3Get*` call fetches a whole
-//! group. Parameters and constants are read once, after initialization, and go
-//! into the `.mat`'s time-invariant half — the same layout a simulated
-//! OpenModelica model writes, so OMPlot and `omc-diff` read an FMU run
-//! unchanged. An alias (an FMI 3.0 `<Alias>` child, or an FMI 1.0 `alias`
-//! variable) shares its variable's column.
+//! group. Parameters and constants are read once, after initialization, and are
+//! stored as the time-invariant values a simulated OpenModelica model writes, so
+//! OMPlot and `omc-diff` read an FMU run unchanged. An alias (an FMI 3.0
+//! `<Alias>` child, or an FMI 1.0 `alias` variable) shares its variable's
+//! column. `.mat` and `.arrow` are written from the same columns; only the
+//! latter has anywhere to put their types, units and `relativeQuantity`.
+//!
+//! With [`Recorder::stream_to`] each row goes to the file as it is sampled; a host
+//! that reads the samples itself leaves it unset and uses [`Recorder::raw`].
 
 use crate::api::Fmi3;
 use crate::{Error, Result};
 use openmodelica_fmi::{
     Alias, Causality, Dimension, ModelDescription, VarType, Variability, Variable,
 };
+use openmodelica_arrow_writer as arrow;
+use openmodelica_fmi::description as fmi_unit;
 use openmodelica_mat_writer as mat;
 use std::collections::HashMap;
+use std::io::{BufWriter, Seek, SeekFrom, Write};
+use std::path::Path;
 
 pub struct Column {
     pub name: String,
     pub description: String,
     pub unit: Option<String>,
+    /// The unit it is preferably shown in, a display unit of `unit`.
+    pub display_unit: Option<String>,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub relative_quantity: bool,
+    pub ty: VarType,
+    /// Changes only at events, so the Arrow file run-end encodes it.
+    pub discrete: bool,
     pub causality: Causality,
     /// A continuous state (something differentiates it).
     pub is_state: bool,
+}
+
+/// A name that is not a column of its own: a time-invariant value, or an affine
+/// function of a column. It carries the same metadata a column does, because the
+/// result file records it per name.
+pub struct Entry {
+    pub name: String,
+    pub description: String,
+    pub unit: Option<String>,
+    pub display_unit: Option<String>,
+    pub relative_quantity: bool,
+    pub ty: VarType,
+    /// For an alias, the column (or parameter slot) it reads; unused otherwise.
+    pub target: usize,
+    pub negated: bool,
+    /// A parameter's value, read once after initialization; 0 for an alias.
+    pub value: f64,
 }
 
 /// Variables of one type, fetched together. An array variable is one value
@@ -37,18 +70,81 @@ struct Group {
     n_values: usize,
 }
 
+/// The result file the rows stream to, begun at the first sample (the writers
+/// want the initial row).
+struct Stream {
+    out: FileOut,
+    start_time: f64,
+    stop_time: f64,
+    units: Vec<fmi_unit::Unit>,
+    kind: StreamKind,
+}
+
+enum StreamKind {
+    Unbegun { arrow: bool },
+    Mat(mat::Mat4Stream),
+    Arrow(arrow::ArrowStream),
+    Done,
+}
+
+/// The first write error is kept for `finish`.
+struct FileOut {
+    file: BufWriter<std::fs::File>,
+    error: Option<std::io::Error>,
+}
+
+impl FileOut {
+    fn note(&mut self, r: std::io::Result<()>) {
+        if let Err(e) = r {
+            self.error.get_or_insert(e);
+        }
+    }
+}
+
+impl mat::Out for FileOut {
+    fn write(&mut self, bytes: &[u8]) {
+        let r = self.file.write_all(bytes);
+        self.note(r);
+    }
+    fn write_at(&mut self, pos: u64, bytes: &[u8]) {
+        let r = (|| {
+            let end = self.file.stream_position()?;
+            self.file.seek(SeekFrom::Start(pos))?;
+            self.file.write_all(bytes)?;
+            self.file.seek(SeekFrom::Start(end))?;
+            self.file.flush()
+        })();
+        self.note(r);
+    }
+}
+
+impl arrow::Out for FileOut {
+    fn write(&mut self, bytes: &[u8]) {
+        let r = self.file.write_all(bytes);
+        self.note(r);
+    }
+    fn flush(&mut self) {
+        let r = self.file.flush();
+        self.note(r);
+    }
+}
+
 pub struct Recorder {
     pub columns: Vec<Column>,
     groups: Vec<Group>,
     /// Row-major, `1 + columns.len()` values per row, starting with the time.
+    /// Empty when the rows stream to a file instead.
     rows: Vec<f64>,
+    stream: Option<Stream>,
+    n_rows: usize,
+    row: Vec<f64>,
     /// The time-invariant signals, and their values once initialization is over.
-    parameters: Vec<(String, String, f64)>,
+    parameters: Vec<Entry>,
     param_groups: Vec<Group>,
-    /// Aliases: `(name, description, column of the variable it aliases, negated)`.
-    aliases: Vec<(String, String, usize, bool)>,
-    /// Aliases of parameters: `(name, description, index into `parameters`, negated)`.
-    param_aliases: Vec<(String, String, usize, bool)>,
+    /// Aliases, each naming the column it reads.
+    aliases: Vec<Entry>,
+    /// Aliases of parameters, each naming its slot in `parameters`.
+    param_aliases: Vec<Entry>,
     scratch: Vec<f64>,
 }
 
@@ -165,6 +261,21 @@ fn element_names(name: &str, dimensions: &[usize]) -> Vec<String> {
     out.into_iter().map(|index| format!("{name}[{index}]")).collect()
 }
 
+/// One non-column name, taking its metadata from the variable it belongs to.
+fn entry(name: String, description: &str, v: &Variable, target: usize, negated: bool, value: f64) -> Entry {
+    Entry {
+        name,
+        description: description.to_string(),
+        unit: v.unit.clone(),
+        display_unit: v.display_unit.clone(),
+        relative_quantity: v.relative_quantity,
+        ty: v.ty,
+        target,
+        negated,
+        value,
+    }
+}
+
 impl Recorder {
     pub fn new(md: &ModelDescription, keep: Option<&dyn Fn(&str) -> bool>) -> Recorder {
         // Dropped here, not at write time: the sampling is the cost.
@@ -184,13 +295,17 @@ impl Recorder {
                     name: element,
                     description: description.to_string(),
                     unit: v.unit.clone(),
+                    display_unit: v.display_unit.clone(),
+                    relative_quantity: v.relative_quantity,
+                    ty: v.ty,
+                    discrete: v.variability == Variability::Discrete,
                     causality: v.causality,
                     is_state: states.contains(&v.value_reference),
                 });
             }
             for (alias, description, negated) in &names[1..] {
                 for (k, element) in element_names(alias, &extents).into_iter().enumerate() {
-                    aliases.push((element, description.to_string(), first + k, *negated));
+                    aliases.push(entry(element, description, v, first + k, *negated, 0.0));
                 }
             }
             recorded.push((v, first, columns.len() + 1 - first));
@@ -212,11 +327,12 @@ impl Recorder {
                 _ => Vec::new(),
             };
             for (k, element) in element_names(name, &extents).into_iter().enumerate() {
-                parameters.push((element, description.to_string(), starts.get(k).copied().unwrap_or(0.0)));
+                let start = starts.get(k).copied().unwrap_or(0.0);
+                parameters.push(entry(element, description, v, 0, false, start));
             }
             for (alias, description, negated) in &names[1..] {
                 for (k, element) in element_names(alias, &extents).into_iter().enumerate() {
-                    param_aliases.push((element, description.to_string(), first + k, *negated));
+                    param_aliases.push(entry(element, description, v, first + k, *negated, 0.0));
                 }
             }
             params.push((v, first, parameters.len() - first));
@@ -227,6 +343,9 @@ impl Recorder {
             param_groups: group_by_type(&params),
             columns,
             rows: Vec::new(),
+            stream: None,
+            n_rows: 0,
+            row: vec![0.0; n_values + 1],
             parameters,
             aliases,
             param_aliases,
@@ -234,19 +353,100 @@ impl Recorder {
         }
     }
 
+    /// Stream the rows to `path` (`.arrow` by suffix, else `.mat`); [`Recorder::finish`]
+    /// completes the file. Created here, so an unwritable path fails before the run.
+    pub fn stream_to(&mut self, path: &Path, start_time: f64, stop_time: f64, units: &[fmi_unit::Unit]) -> Result<()> {
+        let file = std::fs::File::create(path).map_err(|e| Error::Io(format!("{}: {e}", path.display())))?;
+        let arrow = path.extension().and_then(|e| e.to_str()) == Some("arrow");
+        self.stream = Some(Stream {
+            out: FileOut { file: BufWriter::new(file), error: None },
+            start_time,
+            stop_time,
+            units: units.to_vec(),
+            kind: StreamKind::Unbegun { arrow },
+        });
+        Ok(())
+    }
+
+    /// Complete a streamed file; a no-op otherwise.
+    pub fn finish(&mut self) -> Result<()> {
+        let Some(stream) = self.stream.as_mut() else { return Ok(()) };
+        match std::mem::replace(&mut stream.kind, StreamKind::Done) {
+            StreamKind::Unbegun { arrow } => {
+                // No row was sampled: the file still gets its header.
+                let kind = self.begin_stream(arrow, &[]);
+                let stream = self.stream.as_mut().expect("set above");
+                stream.kind = kind;
+                return self.finish();
+            }
+            StreamKind::Mat(mut s) => s.finish(&mut stream.out),
+            StreamKind::Arrow(mut s) => s.finish(&mut stream.out),
+            StreamKind::Done => {}
+        }
+        match stream.out.error.take() {
+            Some(e) => Err(Error::Io(e.to_string())),
+            None => Ok(()),
+        }
+    }
+
+    fn begin_stream(&mut self, arrow: bool, first_row: &[f64]) -> StreamKind {
+        let n_reals = self.columns.len() as u32 + 1;
+        let stream = self.stream.as_mut().expect("a stream is open");
+        let (start, stop) = (stream.start_time, stream.stop_time);
+        if arrow {
+            let (vars, params, col_types) = arrow_vars(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
+            let defs = arrow::units::declared(stream.units.iter().map(unit_def));
+            let s = arrow::ArrowStream::begin(
+                &mut stream.out,
+                &vars,
+                &params,
+                first_row,
+                n_reals,
+                &col_types,
+                arrow::block_rows(0),
+                arrow::no_strings(),
+                &arrow::FileMeta { span: Some((start, stop)), units: &defs, zstd: None },
+            );
+            StreamKind::Arrow(s)
+        } else {
+            let (signals, params) = mat_signals(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
+            let s = mat::Mat4Stream::begin(&mut stream.out, &signals, start, stop, first_row, n_reals, &params, mat::Precision::Double);
+            StreamKind::Mat(s)
+        }
+    }
+
+    fn push_row(&mut self) {
+        self.n_rows += 1;
+        if self.stream.is_none() {
+            self.rows.extend_from_slice(&self.row);
+            return;
+        }
+        let row = std::mem::take(&mut self.row);
+        if let StreamKind::Unbegun { arrow } = self.stream.as_ref().expect("checked").kind {
+            let kind = self.begin_stream(arrow, &row);
+            self.stream.as_mut().expect("checked").kind = kind;
+        }
+        let stream = self.stream.as_mut().expect("checked");
+        match &mut stream.kind {
+            StreamKind::Mat(s) => s.push_rows(&mut stream.out, &row),
+            StreamKind::Arrow(s) => s.push_rows(&mut stream.out, &row),
+            StreamKind::Unbegun { .. } | StreamKind::Done => {}
+        }
+        self.row = row;
+    }
+
     pub fn len(&self) -> usize {
-        let width = self.columns.len() + 1;
-        if width == 0 { 0 } else { self.rows.len() / width }
+        self.n_rows
     }
 
     pub fn is_empty(&self) -> bool {
-        self.rows.is_empty()
+        self.n_rows == 0
     }
 
     /// The time-invariant signals and the values they were read with, for a
     /// host that shows them beside the plot.
     pub fn parameters(&self) -> impl Iterator<Item = (&str, f64)> {
-        self.parameters.iter().map(|(name, _, value)| (name.as_str(), *value))
+        self.parameters.iter().map(|p| (p.name.as_str(), p.value))
     }
 
     /// The samples as they are stored: `stride()` values per row, the time
@@ -269,18 +469,17 @@ impl Recorder {
 
     /// Read every recorded variable at `time` and append a row.
     pub fn sample(&mut self, inst: &mut dyn Fmi3, time: f64) -> Result<()> {
-        let base = self.rows.len();
-        self.rows.resize(base + self.columns.len() + 1, 0.0);
-        self.rows[base] = time;
+        self.row[0] = time;
         for g in &self.groups {
             let out = &mut self.scratch[..g.n_values];
             inst.get_numeric(g.ty, &g.vrs, out)?;
             let mut k = 0;
             for (col, len) in &g.spans {
-                self.rows[base + col..base + col + len].copy_from_slice(&out[k..k + len]);
+                self.row[*col..col + len].copy_from_slice(&out[k..k + len]);
                 k += len;
             }
         }
+        self.push_row();
         Ok(())
     }
 
@@ -297,7 +496,7 @@ impl Recorder {
             let mut k = 0;
             for (slot, len) in &g.spans {
                 for j in 0..*len {
-                    self.parameters[slot + j].2 = out[k + j];
+                    self.parameters[slot + j].value = out[k + j];
                 }
                 k += len;
             }
@@ -305,47 +504,9 @@ impl Recorder {
         Ok(())
     }
 
-    /// Serialize as the MATLAB v4 result file the OpenModelica tools read.
+    /// The buffered rows as the MATLAB v4 result file the OpenModelica tools read.
     pub fn to_mat(&self, start_time: f64, stop_time: f64) -> Vec<u8> {
-        let mut signals = vec![mat::MatVar {
-            name: "time",
-            comment: "Simulation time [s]",
-            kind: mat::MatKind::Time,
-        }];
-        for (i, c) in self.columns.iter().enumerate() {
-            signals.push(mat::MatVar {
-                name: &c.name,
-                comment: &c.description,
-                kind: mat::MatKind::Column { col: i as u32 + 1, negate: mat::Neg::None },
-            });
-        }
-        for (name, description, col, negated) in &self.aliases {
-            signals.push(mat::MatVar {
-                name,
-                comment: description,
-                kind: mat::MatKind::Column {
-                    col: *col as u32,
-                    negate: if *negated { mat::Neg::Arith } else { mat::Neg::None },
-                },
-            });
-        }
-        let mut params: Vec<f64> = Vec::with_capacity(self.parameters.len() + self.param_aliases.len());
-        for (name, description, value) in &self.parameters {
-            signals.push(mat::MatVar {
-                name,
-                comment: description,
-                kind: mat::MatKind::Param { negate: mat::Neg::None },
-            });
-            params.push(*value);
-        }
-        for (name, description, index, negated) in &self.param_aliases {
-            signals.push(mat::MatVar {
-                name,
-                comment: description,
-                kind: mat::MatKind::Param { negate: if *negated { mat::Neg::Arith } else { mat::Neg::None } },
-            });
-            params.push(self.parameters[*index].2);
-        }
+        let (signals, params) = mat_signals(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
         mat::write_mat4(
             &signals,
             start_time,
@@ -357,10 +518,204 @@ impl Recorder {
         )
     }
 
-    /// Write the result file. On the web this goes through WASI like every other
-    /// file the simulation writes.
-    pub fn write_mat(&self, path: &std::path::Path, start_time: f64, stop_time: f64) -> Result<()> {
-        std::fs::write(path, self.to_mat(start_time, stop_time))
-            .map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    /// The buffered rows as the Arrow result file, which unlike the `.mat` keeps the
+    /// column types, the discrete-time encoding, the units and `relativeQuantity`.
+    pub fn to_arrow(&self, start_time: f64, stop_time: f64, units: &[fmi_unit::Unit]) -> Vec<u8> {
+        let n_reals = self.columns.len() as u32 + 1;
+        let (vars, params, col_types) = arrow_vars(&self.columns, &self.aliases, &self.parameters, &self.param_aliases);
+        let defs = arrow::units::declared(units.iter().map(unit_def));
+        arrow::write_arrow(
+            &vars,
+            &self.rows,
+            n_reals,
+            &params,
+            &col_types,
+            arrow::no_strings(),
+            &arrow::FileMeta { span: Some((start_time, stop_time)), units: &defs, zstd: None },
+        )
+    }
+
+    /// Write the buffered rows as the result file the suffix asks for (`.arrow` or
+    /// `.mat`).
+    pub fn write(&self, path: &std::path::Path, start_time: f64, stop_time: f64, units: &[fmi_unit::Unit]) -> Result<()> {
+        let bytes = match path.extension().and_then(|e| e.to_str()) {
+            Some("arrow") => self.to_arrow(start_time, stop_time, units),
+            _ => self.to_mat(start_time, stop_time),
+        };
+        std::fs::write(path, bytes).map_err(|e| Error::Io(format!("{}: {e}", path.display())))
+    }
+}
+
+impl Drop for Recorder {
+    /// A failed run still leaves a readable file.
+    fn drop(&mut self) {
+        let _ = self.finish();
+    }
+}
+
+/// The `.mat` signal table and the parameter values in its `Param` order.
+fn mat_signals<'a>(
+    columns: &'a [Column],
+    aliases: &'a [Entry],
+    parameters: &'a [Entry],
+    param_aliases: &'a [Entry],
+) -> (Vec<mat::MatVar<'a>>, Vec<f64>) {
+    let mut signals = vec![mat::MatVar {
+        name: "time",
+        comment: "Simulation time [s]",
+        kind: mat::MatKind::Time,
+        unvarying: false,
+    }];
+    for (i, c) in columns.iter().enumerate() {
+        signals.push(mat::MatVar {
+            name: &c.name,
+            comment: &c.description,
+            kind: mat::MatKind::Column { col: i as u32 + 1, negate: mat::Neg::None },
+            unvarying: false,
+        });
+    }
+    for a in aliases {
+        signals.push(mat::MatVar {
+            name: &a.name,
+            comment: &a.description,
+            kind: mat::MatKind::Column {
+                col: a.target as u32,
+                negate: if a.negated { mat::Neg::Arith } else { mat::Neg::None },
+            },
+            unvarying: false,
+        });
+    }
+    let mut params: Vec<f64> = Vec::with_capacity(parameters.len() + param_aliases.len());
+    for p in parameters {
+        signals.push(mat::MatVar {
+            name: &p.name,
+            comment: &p.description,
+            kind: mat::MatKind::Param { negate: mat::Neg::None },
+            unvarying: false,
+        });
+        params.push(p.value);
+    }
+    for a in param_aliases {
+        signals.push(mat::MatVar {
+            name: &a.name,
+            comment: &a.description,
+            kind: mat::MatKind::Param { negate: if a.negated { mat::Neg::Arith } else { mat::Neg::None } },
+            unvarying: false,
+        });
+        params.push(parameters[a.target].value);
+    }
+    (signals, params)
+}
+
+/// The Arrow variable table, the parameter values in its `Param` order, and the
+/// stored column types.
+fn arrow_vars<'a>(
+    columns: &'a [Column],
+    aliases: &'a [Entry],
+    parameters: &'a [Entry],
+    param_aliases: &'a [Entry],
+) -> (Vec<arrow::ArrowVar<'a>>, Vec<f64>, Vec<arrow::ColTy>) {
+    let mut vars = vec![arrow::ArrowVar {
+        name: "time",
+        comment: "Simulation time [s]",
+        unit: "s",
+        display_unit: "",
+        relative_quantity: false,
+        ty: arrow::VarTy::Real,
+        discrete: false,
+        kind: arrow::ArrowKind::Time,
+        unvarying: false,
+        enumeration: None,
+    }];
+    for (i, c) in columns.iter().enumerate() {
+        vars.push(arrow::ArrowVar {
+            name: &c.name,
+            comment: &c.description,
+            unit: c.unit.as_deref().unwrap_or_default(),
+            display_unit: c.display_unit.as_deref().unwrap_or_default(),
+            relative_quantity: c.relative_quantity,
+            ty: arrow_ty(c.ty),
+            discrete: c.discrete,
+            kind: arrow::ArrowKind::Column { col: i as u32 + 1, affine: arrow::Affine::IDENTITY },
+            unvarying: false,
+            enumeration: None,
+        });
+    }
+    let affine = |e: &Entry| {
+        if !e.negated {
+            arrow::Affine::IDENTITY
+        } else if arrow_ty(e.ty) == arrow::VarTy::Boolean {
+            arrow::Affine::NOT
+        } else {
+            arrow::Affine::NEGATE
+        }
+    };
+    for a in aliases {
+        vars.push(entry_var(a, arrow::ArrowKind::Column { col: a.target as u32, affine: affine(a) }));
+    }
+    let mut params: Vec<f64> = Vec::with_capacity(parameters.len() + param_aliases.len());
+    for p in parameters {
+        vars.push(entry_var(p, arrow::ArrowKind::Param { affine: arrow::Affine::IDENTITY }));
+        params.push(p.value);
+    }
+    for a in param_aliases {
+        vars.push(entry_var(a, arrow::ArrowKind::Param { affine: affine(a) }));
+        params.push(parameters[a.target].value);
+    }
+    let mut col_types = vec![arrow::ColTy::F64];
+    col_types.extend(columns.iter().map(|c| match arrow_ty(c.ty) {
+        arrow::VarTy::Integer => arrow::ColTy::I32,
+        arrow::VarTy::Boolean => arrow::ColTy::Bool,
+        _ => arrow::ColTy::F64,
+    }));
+    (vars, params, col_types)
+}
+
+fn entry_var<'a>(e: &'a Entry, kind: arrow::ArrowKind) -> arrow::ArrowVar<'a> {
+    arrow::ArrowVar {
+        name: &e.name,
+        comment: &e.description,
+        unit: e.unit.as_deref().unwrap_or_default(),
+        display_unit: e.display_unit.as_deref().unwrap_or_default(),
+        relative_quantity: e.relative_quantity,
+        ty: arrow_ty(e.ty),
+        discrete: false,
+        kind,
+        unvarying: false,
+        enumeration: None,
+    }
+}
+
+/// An FMI variable type as the result file's Modelica type. An enumeration is
+/// stored as its Integer value; the FMU's literal names are not carried.
+fn arrow_ty(ty: VarType) -> arrow::VarTy {
+    match ty {
+        VarType::Boolean => arrow::VarTy::Boolean,
+        VarType::String | VarType::Binary => arrow::VarTy::String,
+        VarType::Float32 | VarType::Float64 => arrow::VarTy::Real,
+        _ => arrow::VarTy::Integer,
+    }
+}
+
+/// An FMU's `<Unit>` as a `modelica.units` entry; the two are FMI 3.0's own
+/// definitions, so this only reshapes the base exponents into their array.
+fn unit_def(u: &fmi_unit::Unit) -> arrow::units::UnitDef {
+    arrow::units::UnitDef {
+        name: u.name.clone(),
+        base: u.base_unit.as_ref().map(|b| arrow::units::BaseUnit {
+            exponents: [b.kg, b.m, b.s, b.a, b.k, b.mol, b.cd, b.rad],
+            factor: b.factor,
+            offset: b.offset,
+        }),
+        display_units: u
+            .display_units
+            .iter()
+            .map(|d| arrow::units::DisplayUnit {
+                name: d.name.clone(),
+                factor: d.factor,
+                offset: d.offset,
+                inverse: d.inverse,
+            })
+            .collect(),
     }
 }

@@ -35,7 +35,7 @@
 #![allow(non_snake_case)]
 
 use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::thread::ThreadId;
 
 use arcstr::ArcStr;
@@ -52,7 +52,7 @@ use crate::ErrorTypes::{Message, Severity, MessageType, TotalMessage};
 #[derive(Clone, Debug)]
 struct QueuedMessage {
     msg: Message,
-    tokens: Arc<List<ArcStr>>,
+    tokens: List<ArcStr>,
     info: SourceInfo,
 }
 
@@ -129,11 +129,11 @@ impl QueuedMessage {
 /// in one template. On a missing token the C++ side prints an internal
 /// error to stderr and renders the message as the empty string — we
 /// preserve that so test output matches.
-fn substitute_tokens(template: &str, tokens: &Arc<List<ArcStr>>) -> String {
+fn substitute_tokens(template: &str, tokens: &List<ArcStr>) -> String {
     let toks: Vec<&ArcStr> = {
         let mut v = Vec::new();
         let mut cur = tokens;
-        while let List::Cons { head, tail } = &**cur {
+        while let metamodelica::ListNode::Cons { head, tail } = &**cur {
             v.push(head);
             cur = tail;
         }
@@ -303,7 +303,7 @@ pub fn addSourceMessage(
     read_only: bool,
     filename: ArcStr,
     msg: ArcStr,
-    tokens: Arc<List<ArcStr>>,
+    tokens: List<ArcStr>,
 ) {
     let entry = QueuedMessage {
         msg: Message {
@@ -382,7 +382,7 @@ pub fn deleteNumCheckpoints(n: i32) {
 /// that must be `delete`d. In Rust the `QueuedMessage` lives by value, so
 /// there is nothing to free — the handle list is purely an opaque
 /// MetaModelica value we no longer reference once it is dropped.
-pub fn freeMessages(_handles: Arc<List<i32>>) {
+pub fn freeMessages(_handles: List<i32>) {
     // Intentionally empty — see doc comment.
 }
 
@@ -390,7 +390,7 @@ pub fn freeMessages(_handles: Arc<List<i32>>) {
 /// oldest first. Like `ErrorImpl__getCheckpointMessages` this *consumes*
 /// the messages (popping consecutive duplicates as it goes); callers that
 /// want to keep them re-add via `Error.addTotalMessages`.
-pub fn getCheckpointMessages() -> Arc<List<TotalMessage>> {
+pub fn getCheckpointMessages() -> List<TotalMessage> {
     with_state(|s| {
         let mut out = nil::<TotalMessage>();
         let Some(&(boundary, _)) = s.check_points.last() else {
@@ -408,7 +408,7 @@ pub fn getCheckpointMessages() -> Arc<List<TotalMessage>> {
 }
 
 /// `Error_getMessages`: `listReverse(ErrorImpl__getMessages())`, so newest first.
-pub fn getMessages() -> Arc<List<TotalMessage>> {
+pub fn getMessages() -> List<TotalMessage> {
     with_state(|s| {
         let mut newest_first = Vec::with_capacity(s.queue.len());
         while !s.queue.is_empty() {
@@ -675,7 +675,7 @@ pub fn moveMessagesToParentThread() {
 /// The returned list of "handles" mirrors the C++ runtime's `void*` queue
 /// of detached `ErrorMessage*`s; on the Rust side it is stored in a
 /// thread-local side table keyed by an opaque integer.
-pub fn popCheckPoint(id: ArcStr) -> Arc<List<i32>> {
+pub fn popCheckPoint(id: ArcStr) -> List<i32> {
     with_state(|s| {
         let start = s.check_points.last().map(|(p, _)| *p).unwrap_or(0);
         if !s.check_points.last().map(|(_, cid)| cid == &id).unwrap_or(false) {
@@ -756,10 +756,10 @@ pub fn printMessagesStr(warningsAsErrors: bool) -> ArcStr {
 }
 
 /// Push previously [`popCheckPoint`]-detached handles back onto the queue.
-pub fn pushMessages(handles: Arc<List<i32>>) {
+pub fn pushMessages(handles: List<i32>) {
     let mut cur = handles;
     let mut batch = Vec::new();
-    while let List::Cons { head, tail } = &*cur {
+    while let metamodelica::ListNode::Cons { head, tail } = &*cur {
         if let Some(d) = take_detached(*head) {
             batch.push(d);
         }

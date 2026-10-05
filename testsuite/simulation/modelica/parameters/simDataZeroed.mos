@@ -1,0 +1,44 @@
+// name:     simDataZeroed
+// keywords: parameters string
+// status:   correct
+// teardown_command: rm -rf simDataZeroedx* output.log
+//
+// A String parameter is a heap slot, and the code that assigns one releases the
+// handle already in the slot, so `SimData` has to start zeroed: wasm-jit's
+// allocator recycles blocks, and an unzeroed one carries the last object's bytes
+// into the slot, which the first assignment then releases as if it were a
+// pointer. The prefix is 120 characters because the runtime allocates and frees
+// it right before `SimData`, in the same size class -- that is the block
+// `SimData` gets back.
+//
+
+loadString("
+model simDataZeroed
+  function rep
+    input Integer n;
+    output String s = \"\";
+  algorithm
+    for i in 1:n loop
+      s := s + \"a\";
+    end for;
+  end rep;
+  parameter String lit = \"aaaaa\";
+  parameter String computed = rep(5);
+  Boolean same = lit == computed;
+end simDataZeroed;
+");getErrorString();
+simulate(simDataZeroed, fileNamePrefix="simDataZeroedxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", simflags="-output=same");getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "simDataZeroedxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simDataZeroedxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=same'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// time=1,same=1
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

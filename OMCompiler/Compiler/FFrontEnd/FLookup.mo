@@ -125,9 +125,8 @@ algorithm
     case (g, OPTIONS(_, _, false), _)
       algorithm
         true := FNode.isRefImplicitScope(inRef);
-        p := FNode.parents(FNode.fromRef(inRef));
-        // get the original parent
-        r := FNode.original(p);
+        // the original parent
+        r := FNode.refOriginalParent(inRef);
         (g, r) := id(g, r, inName, inOptions, inMsg);
       then
         (g, r);
@@ -172,9 +171,8 @@ algorithm
         false := FNode.isRefImplicitScope(inRef);
         false := FNode.isEncapsulated(FNode.fromRef(inRef));
         true := FNode.hasParents(FNode.fromRef(inRef));
-        p := FNode.parents(FNode.fromRef(inRef));
-        // get the original parent
-        r := FNode.original(p);
+        // the original parent
+        r := FNode.refOriginalParent(inRef);
         (g, r) := search(g, {r}, inName, inOptions, inMsg);
       then
         (g, r);
@@ -342,7 +340,7 @@ algorithm
       algorithm
         true := FNode.isClassExtends(FNode.fromRef(inRef));
         // get the original parent
-        r := FNode.original(FNode.parents(FNode.fromRef(inRef)));
+        r := FNode.refOriginalParent(inRef);
         (g, r) := id(g, r, inName, ignoreNothing, inMsg);
         // print("Found it in: " + FNode.toPathStr(FNode.fromRef(r)) + "\n");
       then

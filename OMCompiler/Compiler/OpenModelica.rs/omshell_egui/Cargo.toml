@@ -19,8 +19,8 @@ omshell_core = { path = "../omshell_core" }
 omshell_omc = { path = "../omshell_omc" }
 # The shared WebGPU demo (Help -> WebGPU test), composited via an egui_wgpu callback.
 omshell_wgpu = { path = "../omshell_wgpu" }
-egui = "0.34"
-eframe = { version = "0.34", default-features = false, features = [
+egui = "0.35"
+eframe = { version = "0.35", default-features = false, features = [
     "wgpu",
     "default_fonts",
     "wayland",
@@ -28,7 +28,7 @@ eframe = { version = "0.34", default-features = false, features = [
 ] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rfd = "0.15"
+rfd = "0.17"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen-futures = "0.4"

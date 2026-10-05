@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# nmake for the makefiles omc generates for the msvc target: GNU make reads them
+# with the nmake directives they use rewritten, cl/clang-cl is xwin-clang-cl and
+# the recipes run the cmake next to this.
+here=$(dirname "$(readlink -f "$0")")
+source "$here/unix-path.sh"
+cc=$here/xwin-clang-cl
+export PATH="$here:$PATH"
+
+to_gnu_make() {
+  local line re_if='^!IF +"([^"]*)" *(==|!=) *"([^"]*)"' re_self='^([A-Za-z_][A-Za-z0-9_]*)=\$\(\1\)(.*)$'
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ $line =~ ^!INCLUDE\ +\"?([^\"]*)\"? ]]; then
+      echo "include $(unix_path "${BASH_REMATCH[1]}")"
+    elif [[ $line =~ $re_if ]]; then
+      [ "${BASH_REMATCH[2]}" = "==" ] && echo -n "ifeq" || echo -n "ifneq"
+      echo " (\"${BASH_REMATCH[1]}\",\"${BASH_REMATCH[3]}\")"
+    elif [[ $line =~ ^!ELSE ]]; then
+      echo "else"
+    elif [[ $line =~ ^!ENDIF ]]; then
+      echo "endif"
+    elif [[ $line =~ $re_self ]]; then
+      echo "${BASH_REMATCH[1]}+=${BASH_REMATCH[2]}"
+    else
+      echo "$line"
+    fi
+  done < "$1"
+}
+
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    /nologo) ;;
+    /f)
+      gnu=$(mktemp "$2.XXXXXX")
+      trap 'rm -f "$gnu"' EXIT
+      to_gnu_make "$2" > "$gnu"
+      args+=(-f "$gnu"); shift;;
+    CC=cl|CC=clang-cl) args+=("CC=$cc");;
+    CXX=cl|CXX=clang-cl) args+=("CXX=$cc");;
+    *) args+=("$1");;
+  esac
+  shift
+done
+make "${args[@]}"

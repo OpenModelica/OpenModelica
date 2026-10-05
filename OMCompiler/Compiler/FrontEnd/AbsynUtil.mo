@@ -1622,18 +1622,16 @@ public function pathSuffixOf "returns true if suffix_path is a suffix of path"
   input Absyn.Path path;
   output Boolean res;
 algorithm
-  res := matchcontinue path
+  res := match path
   local Absyn.Path p;
-    case _
-      algorithm
-      true := pathEqual(suffix_path,path);
+    case _ guard pathEqual(suffix_path,path)
       then true;
     case Absyn.FULLYQUALIFIED(path = p)
       then pathSuffixOf(suffix_path,p);
     case Absyn.QUALIFIED(path = p)
       then pathSuffixOf(suffix_path,p);
     else false;
-  end matchcontinue;
+  end match;
 end pathSuffixOf;
 
 public function pathSuffixOfr "returns true if suffix_path is a suffix of path"
@@ -5859,26 +5857,22 @@ protected function partsHasLocalClass
   input list<Absyn.ClassPart> inParts;
   output Boolean res;
 algorithm
-  res := matchcontinue inParts
+  res := match inParts
     local
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> parts;
 
-    case Absyn.PUBLIC(elts) :: _
-      algorithm
-        true := eltsHasLocalClass(elts);
+    case Absyn.PUBLIC(elts) :: _ guard eltsHasLocalClass(elts)
       then
         true;
 
-    case Absyn.PROTECTED(elts) :: _
-      algorithm
-        true := eltsHasLocalClass(elts);
+    case Absyn.PROTECTED(elts) :: _ guard eltsHasLocalClass(elts)
       then
         true;
 
     case _ :: parts then partsHasLocalClass(parts);
     else false;
-  end matchcontinue;
+  end match;
 end partsHasLocalClass;
 
 protected function eltsHasLocalClass

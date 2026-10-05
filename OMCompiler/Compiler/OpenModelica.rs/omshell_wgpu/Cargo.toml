@@ -7,7 +7,7 @@ edition = "2024"
 # Help -> WebGPU test. Pure wgpu, no windowing: the egui paint callback (native +
 # web) and the dioxus DOM-canvas path (web) share this one renderer; only surface
 # acquisition differs between front-ends. wgpu is pinned to the version egui_wgpu
-# (eframe 0.34) uses, so the same Device/Queue/RenderPass types flow through the
+# (eframe 0.35) uses, so the same Device/Queue/RenderPass types flow through the
 # egui callback.
 [lib]
 path = "src/lib.rs"

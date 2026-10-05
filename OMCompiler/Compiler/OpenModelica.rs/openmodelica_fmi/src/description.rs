@@ -156,10 +156,15 @@ impl Start {
     /// The first element as an `f64`, for the numeric types a master can set
     /// without knowing which one it is.
     pub fn first_f64(&self) -> Option<f64> {
+        self.f64s().and_then(|v| v.first().copied())
+    }
+
+    /// Every element as an `f64`; `None` for the types that have no number.
+    pub fn f64s(&self) -> Option<Vec<f64>> {
         match self {
-            Start::Reals(v) => v.first().copied(),
-            Start::Ints(v) => v.first().map(|&i| i as f64),
-            Start::Bools(v) => v.first().map(|&b| b as u8 as f64),
+            Start::Reals(v) => Some(v.clone()),
+            Start::Ints(v) => Some(v.iter().map(|&i| i as f64).collect()),
+            Start::Bools(v) => Some(v.iter().map(|&b| b as u8 as f64).collect()),
             _ => None,
         }
     }
@@ -372,8 +377,9 @@ pub struct DisplayUnit {
     pub name: String,
     pub factor: f64,
     pub offset: f64,
-    /// FMI 3.0: the display value is `factor * (value + offset)` when set, the
-    /// FMI 2.0 form `factor * value + offset` when not.
+    /// FMI 3.0's reciprocal display units (mpg, Siemens): the display value is
+    /// `factor / value`, and the spec allows it only with `offset = 0`. Plain
+    /// `factor * value + offset` when not set.
     pub inverse: bool,
 }
 
@@ -409,7 +415,8 @@ pub struct TypeDefinition {
     pub items: Vec<EnumerationItem>,
 }
 
-/// A `<Tool name=…>` annotation, kept as the XML the tool wrote.
+/// One `<Annotations>` entry, kept as the XML the tool wrote. `name` is FMI 3.0's
+/// `type` or the older `<Tool name=…>`.
 #[derive(Clone, Debug)]
 pub struct ToolAnnotation {
     pub name: String,

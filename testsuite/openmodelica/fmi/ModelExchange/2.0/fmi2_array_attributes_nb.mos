@@ -3,6 +3,7 @@
 // suite: fmuCSources
 // status: correct
 // teardown_command: rm -rf fmi2_array_attributes_nb.fmu fmi2_array_attributes_nb.fmutmp/ fmi2_array_attributes_nb.dims fmi2_array_attributes_nb.log fmi2_array_attributes_nb_info.json index.html
+// cflags: --fmiSources=true
 //
 // #15926, new backend, scalarized (default), C runtime. A scalarized array
 // element must not be dimensioned in the exported FMU init (numberOfDimensions

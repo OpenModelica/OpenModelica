@@ -110,7 +110,11 @@ public:
     setLogStreams(QStringList() << "LOG_STDOUT" << "LOG_ASSERT" << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
+#if defined(__EMSCRIPTEN__)
+    setOutputFormat("arrow");
+#else
     setOutputFormat("mat");
+#endif
     setSinglePrecision(false);
     setFileNamePrefix("");
     setResultFileName("");

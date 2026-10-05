@@ -125,6 +125,8 @@ typedef struct {
   fmi3Float64 stopTime;
 
   int _need_update;
+  int _held_assert_logged;
+  int _event_found;
   int _terminate_simulation_requested;
   int _has_jacobian;
   int _has_jacobian_intialization;
@@ -144,6 +146,9 @@ typedef struct {
   modelica_integer* integerParameter;
   modelica_boolean* booleanParameter;
   modelica_string* stringParameter;
+  /* delay() and spatialDistribution() histories, see delayStateWords */
+  double* history;
+  size_t nHistory;
 } INTERNAL_FMU_STATE;
 
 fmi3Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);

@@ -10,7 +10,7 @@
 use std::path::Path;
 
 pub use openmodelica_ext_native_marshal as marshal;
-use marshal::{Scalar, Sig, Table, Ty, Value};
+use marshal::{Arg, Scalar, Sig, Table, Ty, Value};
 
 #[cfg(all(feature = "utilities", unix))]
 pub mod utilities;
@@ -122,12 +122,12 @@ fn dl_error() -> String {
     if e.is_null() { "unknown dlopen error".to_string() } else { unsafe { CStr::from_ptr(e) }.to_string_lossy().into_owned() }
 }
 
-fn ffi_ty(ty: &Ty, out: bool) -> libffi::middle::Type {
+fn ffi_ty(sig: &Sig, a: &Arg) -> libffi::middle::Type {
     use libffi::middle::Type;
-    if out {
+    if a.out || marshal::is_ref(sig, a) {
         return Type::pointer();
     }
-    match ty {
+    match &a.ty {
         Ty::Scalar(Scalar::Real) => Type::f64(),
         // Every integer argument fills a 64-bit slot, correct for `int` and `long` alike.
         Ty::Scalar(_) => Type::i64(),
@@ -185,7 +185,7 @@ impl Natives {
         for sig in &table.fns {
             let addr = resolve(&handles, &sig.name)
                 .ok_or_else(|| format!("`external \"C\"` function `{}` is in none of the FMU's libraries", sig.name))?;
-            let args: Vec<libffi::middle::Type> = sig.args.iter().map(|a| ffi_ty(&a.ty, a.out)).collect();
+            let args: Vec<libffi::middle::Type> = sig.args.iter().map(|a| ffi_ty(sig, a)).collect();
             let (ret, ret_bytes) = match &sig.ret {
                 None => (libffi::middle::Type::void(), 8),
                 Some(Ty::Scalar(Scalar::Real)) => (libffi::middle::Type::f64(), 8),
@@ -218,13 +218,24 @@ impl Natives {
         let mut cells: Vec<(usize, Box<Cell>)> = Vec::new();
         let mut next = args.iter();
         for (j, a) in sig.args.iter().enumerate() {
-            if marshal::is_cell(a) {
+            if marshal::is_cell(sig, a) {
                 let mut cell = Box::new(Cell(0));
                 slots.push(Cell(&mut *cell as *mut Cell as u64));
                 cells.push((j, cell));
                 continue;
             }
             let v = next.next().ok_or_else(|| format!("`{}`: too few arguments", sig.name))?;
+            if marshal::is_ref(sig, a) {
+                let word = match (&a.ty, v) {
+                    (Ty::Scalar(Scalar::Real), Value::Real(x)) => x.to_bits(),
+                    (Ty::Scalar(_), Value::Int(i)) => *i as u32 as u64,
+                    _ => return Err(format!("`{}`: argument {} has the wrong type", sig.name, j + 1)),
+                };
+                let mut cell = Box::new(Cell(word));
+                slots.push(Cell(&mut *cell as *mut Cell as u64));
+                cells.push((j, cell));
+                continue;
+            }
             slots.push(match (&a.ty, v) {
                 (Ty::Scalar(Scalar::Real), Value::Real(x)) => Cell(x.to_bits()),
                 (Ty::Scalar(_), Value::Int(i)) => Cell(*i as i64 as u64),

@@ -237,10 +237,10 @@ enum OMC_LOG_STREAM
   OMC_SIM_LOG_MAX
 };
 
-extern const int firstOMCErrorStream;
-extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const int firstOMCErrorStream;
+DLLDataDirection extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
 
 /* ──────────────────── Rust embedding entry points ─────────────────────────
  * Implemented in the cdylib (csrc/mmc_compat.c over the Rust omc_compiler_*

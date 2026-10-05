@@ -1,7 +1,16 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+attributeInitParameter.mos \
 experimental_initialSimplified.mos \
+discreteCallArgument.mos \
+functionOutputStart.mos \
+functionOutputStartAlias.mos \
+functionAliasStartLoop.mos \
+primaryParameterFor.mos \
+primaryParameterRecord.mos \
+resizableParameterBinding.mos \
+primaryParameterRecordArray.mos \
 homotopy_indirect.mos \
 homotopy_no_loop.mos \
 init_if_eq.mos \

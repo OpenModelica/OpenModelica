@@ -27,7 +27,6 @@
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 use metamodelica::Result;
 use arcstr::{ArcStr, literal};
@@ -563,7 +562,7 @@ impl UnitParser {
     /// All unit symbols, in reverse key order (the C++ prepends while iterating
     /// the sorted map). `getDerivedUnits` relies on this to ultimately produce
     /// an ascending list.
-    fn all_unit_symbols(&self) -> Arc<List<ArcStr>> {
+    fn all_unit_symbols(&self) -> List<ArcStr> {
         let mut res = nil();
         for u in self.units.values() {
             res = cons(ArcStr::from(u.unit_symbol.as_str()), res);
@@ -983,6 +982,7 @@ impl UnitParser {
         self.add_derived(d("plane angle", "revolutions", "rev", "rad", 0, 31415926535897932, 5000000000000000, 0, 1, 1.0));
         self.add_derived(d("angular velocity", "revolutions per minute", "rpm", "rad/s", 0, 31415926535897932, 300000000000000000, 0, 1, 1.0));
         self.add_derived(d("energy", "watt hour", "Wh", "J", 0, 3600, 1, 0, 1, 1.0));
+        self.add_derived(d("energy", "electron volt", "eV", "J", -19, 1602176634, 1000000000, 0, 1, 1.0));
         self.add_derived(d("velocity", "knot", "kn", "m/s", 0, 1852, 3600, 0, 1, 1.0));
         self.add_derived(d("mass", "metric ton", "t", "kg", 3, 1, 1, 0, 1, 1.0));
         self.add_derived(d("volume", "litre", "l", "m3", 0, 1, 1000, 0, 1, 1.0));
@@ -1043,11 +1043,11 @@ pub fn initSIUnits() {
 }
 
 pub fn unit2str(
-    noms: Arc<List<i32>>,
-    denoms: Arc<List<i32>>,
-    tpnoms: Arc<List<i32>>,
-    tpdenoms: Arc<List<i32>>,
-    tpstrs: Arc<List<ArcStr>>,
+    noms: List<i32>,
+    denoms: List<i32>,
+    tpnoms: List<i32>,
+    tpdenoms: List<i32>,
+    tpstrs: List<ArcStr>,
     _scaleFactor: Real,
     _offset: Real,
 ) -> ArcStr {
@@ -1071,11 +1071,11 @@ pub fn unit2str(
 pub fn str2unit(
     res: ArcStr,
 ) -> Result<(
-    Arc<List<i32>>,
-    Arc<List<i32>>,
-    Arc<List<i32>>,
-    Arc<List<i32>>,
-    Arc<List<ArcStr>>,
+    List<i32>,
+    List<i32>,
+    List<i32>,
+    List<i32>,
+    List<ArcStr>,
     Real,
     Real,
 )> {
@@ -1086,7 +1086,7 @@ pub fn str2unit(
         // Matches the C++ `Error parsing unit <str>: <reason>` message.
         Error::addMessage(
             ERROR_PARSING_UNIT.clone(),
-            Arc::new(List::from_iter([ArcStr::from(input), ArcStr::from(e.message())])),
+            List::from_iter([ArcStr::from(input), ArcStr::from(e.message())]),
         )?;
         return Err("Error parsing unit {}: {}");
     }
@@ -1094,18 +1094,18 @@ pub fn str2unit(
     let scale_factor = unit.scale_factor.to_real() * 10f64.powf(unit.prefix_expo.to_real());
     let offset = unit.offset.to_real();
 
-    let noms = Arc::new(List::from_iter(unit.unit_vec.iter().map(|r| r.num as i32)));
-    let denoms = Arc::new(List::from_iter(unit.unit_vec.iter().map(|r| r.denom as i32)));
-    let tpnoms = Arc::new(List::from_iter(unit.type_param_vec.values().map(|r| r.num as i32)));
-    let tpdenoms = Arc::new(List::from_iter(unit.type_param_vec.values().map(|r| r.denom as i32)));
-    let tpstrs = Arc::new(List::from_iter(
+    let noms = List::from_iter(unit.unit_vec.iter().map(|r| r.num as i32));
+    let denoms = List::from_iter(unit.unit_vec.iter().map(|r| r.denom as i32));
+    let tpnoms = List::from_iter(unit.type_param_vec.values().map(|r| r.num as i32));
+    let tpdenoms = List::from_iter(unit.type_param_vec.values().map(|r| r.denom as i32));
+    let tpstrs = List::from_iter(
         unit.type_param_vec.keys().map(|k| ArcStr::from(k.as_str())),
-    ));
+    );
 
     Ok((noms, denoms, tpnoms, tpdenoms, tpstrs, OrderedFloat(scale_factor), OrderedFloat(offset)))
 }
 
-pub fn allUnitSymbols() -> Arc<List<ArcStr>> {
+pub fn allUnitSymbols() -> List<ArcStr> {
     with_state(|s| s.parser.all_unit_symbols())
 }
 

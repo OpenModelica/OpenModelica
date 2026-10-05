@@ -18,13 +18,60 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use core::sync::atomic::{AtomicUsize, Ordering};
 
+/// `omclog::info!(stream, indent_next, "…", args)`, the form to write: an
+/// inactive stream costs the check alone, where the function plus a `&format!`
+/// built the message either way. C's `infoStreamPrint` is variadic for the same
+/// reason.
+#[macro_export]
+macro_rules! omclog_info {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::info_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::warning`](omclog::warning).
+#[macro_export]
+macro_rules! omclog_warning {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::warning_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::warning_with_limit`](omclog::warning_with_limit).
+#[macro_export]
+macro_rules! omclog_warning_with_limit {
+    ($stream:expr, $n:expr, $max:expr, $($arg:tt)*) => {
+        $crate::omclog::warning_with_limit_fmt($stream, $n, $max, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::debug`](omclog::debug).
+#[macro_export]
+macro_rules! omclog_debug {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::debug_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+/// [`omclog_info`] for [`omclog::error`](omclog::error), which prints whatever the
+/// mask says and so only drops the `&format!`.
+#[macro_export]
+macro_rules! omclog_error {
+    ($stream:expr, $indent:expr, $($arg:tt)*) => {
+        $crate::omclog::error_fmt($stream, $indent, ::core::format_args!($($arg)*))
+    };
+}
+
+pub mod atomic64;
 pub mod clock;
 pub mod counters;
 pub mod dassl;
 pub mod events;
 pub mod fixedstep;
+pub mod fmath;
 pub mod delay;
 pub mod gbode;
+pub mod klu;
 pub mod omclog;
 pub mod simflags;
 pub mod solverflags;
@@ -42,6 +89,9 @@ pub const IDA: bool = cfg!(sundials);
 
 /// Solver errors are the C runtime's messages, which are all static.
 pub type Result<T> = core::result::Result<T, &'static str>;
+
+/// C's `retValIntegrator != 0`: the solver has logged why it gave up.
+pub const SOLVER_FAILED_ERR: &str = "integrator failed";
 
 /// C's `MINIMAL_STEP_SIZE` (`simulation/solver/epsilon.h`), the bisection's
 /// absolute tolerance.
@@ -62,6 +112,14 @@ pub trait Ode {
     /// on is current.
     fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> Result<()>;
 
+    /// C's `updateContinuousSystem` then `saveZeroCrossings` at the accepted end of
+    /// a step: `f` and `zc` there, after the model recorded the point (`delay`,
+    /// `spatialDistribution`), which the crossings then see. `false`: nothing was
+    /// done, and the caller evaluates both itself.
+    fn accept(&mut self, _t: f64, _y: &[f64], _f: &mut [f64], _zc: &mut [f64]) -> Result<bool> {
+        Ok(false)
+    }
+
     /// State nominals, for the error norm and the finite-difference step. One
     /// per state; an empty slice means "one".
     fn nominals(&self) -> &[f64] {
@@ -76,6 +134,12 @@ pub trait Ode {
     /// State `max` attributes, for the finite-difference step's sign choice.
     /// Empty ⇒ unbounded.
     fn maxs(&self) -> &[f64] {
+        &[]
+    }
+
+    /// State `min` attributes, which KINSOL's sign constraints read. Empty ⇒
+    /// unbounded.
+    fn mins(&self) -> &[f64] {
         &[]
     }
 
@@ -104,6 +168,19 @@ pub trait Ode {
         false
     }
 
+    /// The whole `df/dy` into `j` (column-major, pattern entries only) through the
+    /// adjoint Jacobian, alone or with the forward one, as `method` says. `false` ⇒
+    /// the model cannot.
+    fn jacobian_matrix(
+        &mut self,
+        _t: f64,
+        _y: &[f64],
+        _method: crate::simflags::JacobianMethod,
+        _j: &mut [f64],
+    ) -> bool {
+        false
+    }
+
     /// C's `setContext(JACOBIAN)` around a finite-difference Jacobian, and the
     /// `ALGEBRAIC` it restores to. A model whose runtime has no such state
     /// leaves both alone.
@@ -127,12 +204,31 @@ pub trait Ode {
     }
 }
 
+/// A residual Jacobian's sparsity, from a caller that knows it. `rows_by_col[j]`
+/// are the rows of `F` that unknown `j` appears in — the states first, then the
+/// algebraic ones, the order `y` follows — and `colors` groups columns sharing no
+/// row, so one residual evaluation differences a whole group.
+///
+/// The pattern is `∂F/∂y + cj·∂F/∂y'`, which for a state column means the rows
+/// reached through either `x` or `der(x)`: one difference carries both terms.
+pub struct DaeSparsity {
+    pub rows_by_col: alloc::vec::Vec<alloc::vec::Vec<u32>>,
+    pub colors: alloc::vec::Vec<alloc::vec::Vec<u32>>,
+}
+
 /// A model in residual form, `F(t, y, y') = 0` over `y = [states | algebraic
 /// unknowns]`, which only IDA integrates. `y'` carries a derivative per component,
 /// the algebraic ones being whatever IDA holds there.
 pub trait Dae {
     /// `res := F(t, y, y')`.
     fn residual(&mut self, t: f64, y: &[f64], yp: &[f64], res: &mut [f64]) -> Result<()>;
+
+    /// The residual Jacobian's sparsity, when the caller can supply one; IDA then
+    /// factorizes with KLU over a coloured difference-quotient Jacobian instead of
+    /// building its own dense one.
+    fn sparsity(&self) -> Option<&DaeSparsity> {
+        None
+    }
 
     /// The zero-crossing functions at `(t, y, y')`.
     fn eval_zc(&mut self, t: f64, y: &[f64], yp: &[f64], zc: &mut [f64]) -> Result<()>;
@@ -155,7 +251,7 @@ pub trait Dae {
 pub fn bisection_iterations(width: f64, ttol: f64) -> i64 {
     match simflags::with_flags(|f| f.max_bisection_iter) {
         Some(n) if n > 0 => n as i64,
-        _ => 1 + libm::ceil(libm::log(libm::fabs(width) / ttol) / libm::log(2.0)) as i64,
+        _ => 1 + fmath::ceil(fmath::log(fmath::fabs(width) / ttol) / fmath::log(2.0)) as i64,
     }
 }
 
@@ -228,16 +324,16 @@ pub fn format_g(v: f64, p: i32) -> String {
 }
 
 /// `v`'s decimal exponent and the mantissa in `[1, 10)`. `log10` is not exactly
-/// rounded (the `libm` crate's lands an ULP off an exact power of ten, where glibc
-/// does not), so the mantissa decides the exponent rather than the other way round —
-/// otherwise `1e-06` prints as `10e-07`.
+/// rounded (the `libm` crate's, in the `no_std` build, lands an ULP off an exact
+/// power of ten where glibc does not), so the mantissa decides the exponent
+/// rather than the other way round — otherwise `1e-06` prints as `10e-07`.
 pub(crate) fn decimal_exp(v: f64) -> (i32, f64) {
-    let mut exp = libm::floor(libm::log10(libm::fabs(v))) as i32;
-    let mut m = v / libm::pow(10.0, exp as f64);
-    if libm::fabs(m) >= 10.0 {
+    let mut exp = fmath::floor(fmath::log10(fmath::fabs(v))) as i32;
+    let mut m = v / fmath::pow(10.0, exp as f64);
+    if fmath::fabs(m) >= 10.0 {
         m /= 10.0;
         exp += 1;
-    } else if libm::fabs(m) < 1.0 {
+    } else if fmath::fabs(m) < 1.0 {
         m *= 10.0;
         exp -= 1;
     }

@@ -180,13 +180,6 @@ if (QWT_WITH_PLOT)
         qwt_scale_widget.cpp)
 endif ()
 
-if (QWT_WITH_OPENGL)
-  if (NOT USE_QT6)
-    list (APPEND QWT_HEADERS qwt_plot_glcanvas.h)
-    list (APPEND QWT_SOURCES qwt_plot_glcanvas.cpp)
-  endif ()
-endif ()
-
 if (QWT_WITH_SVG)
   list (APPEND QWT_HEADERS qwt_plot_svgitem.h)
   list (APPEND QWT_SOURCES qwt_plot_svgitem.cpp)
@@ -242,26 +235,15 @@ target_include_directories(omqwt
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:include>)
 
-if (USE_QT6)
-  target_link_libraries(omqwt
-    PUBLIC
-      Qt6::Core
-      Qt6::OpenGL
-      Qt6::OpenGLWidgets
-    PRIVATE
-      Qt6::Concurrent
-      Qt6::PrintSupport
-      Qt6::Svg)
-else ()
-    target_link_libraries(omqwt
-    PUBLIC
-      Qt5::Core
-      Qt5::OpenGL
-    PRIVATE
-      Qt5::Concurrent
-      Qt5::PrintSupport
-      Qt5::Svg)
-endif ()
+target_link_libraries(omqwt
+  PUBLIC
+    Qt6::Core
+    Qt6::OpenGL
+    Qt6::OpenGLWidgets
+  PRIVATE
+    Qt6::Concurrent
+    Qt6::PrintSupport
+    Qt6::Svg)
 
 set_target_properties(omqwt PROPERTIES
   VERSION ${QWT_VERSION}

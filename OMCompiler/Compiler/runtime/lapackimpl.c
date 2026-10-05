@@ -53,6 +53,7 @@ extern "C" {
 #include "util/rtclock.h"
 #include "omc_config.h"
 #include "errorext.h"
+#include "omc_lapack.h"
 
 /*
  * Platform specific includes and defines
@@ -91,70 +92,6 @@ static void OMC_NO_LAPACK_ERROR() {
 
 
 #ifdef HAVE_LAPACK
-
-#ifdef HAVE_LAPACK_DEPRECATED
-
-extern int dgeqpf_(integer *m, integer *n, doublereal *a, integer *lda,
-  integer *jpvt, doublereal *tau, doublereal *work, integer *info);
-
-extern int dgegv_(const char *jobvl, const char *jobvr, integer *n, doublereal *a,
-  integer *lda, doublereal *b, integer *ldb, doublereal *alphar,
-  doublereal *alphai, doublereal *beta, doublereal *vl, integer *ldvl,
-  doublereal *vr, integer *ldvr, doublereal *work, integer *lwork,
-  integer *info);
-
-extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a,
-  integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
-  integer *rank, doublereal *work, integer *info);
-
-#endif
-
-extern int dgeev_(const char *jobvl, const char *jobvr, integer *n,
-  doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
-  integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work,
-  integer *lwork, integer *info);
-
-extern int dgels_(const char *trans, integer *m, integer *n, integer *nrhs,
-  doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal *work,
-  integer *lwork, integer *info);
-
-extern int dgelsy_(integer *m, integer *n, integer *nrhs, doublereal *a,
-  integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
-  integer *rank, doublereal *work, integer *lwork, integer *info);
-
-extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda,
-  integer *ipiv, doublereal *b, integer *ldb, integer *info);
-
-extern int dgglse_(integer *m, integer *n, integer *p, doublereal *a,
-  integer *lda, doublereal *b, integer *ldb, doublereal *c, doublereal *d,
-  doublereal *x, doublereal *work, integer *lwork, integer *info);
-
-extern int dgtsv_(integer *n, integer *nrhs, doublereal *dl, doublereal *d,
-  doublereal *du, doublereal *b, integer *ldb, integer *info);
-
-extern int dgbsv_(integer *n, integer *kl, integer *ku, integer *nrhs,
-  doublereal *ab, integer *ldab, integer *ipiv, doublereal *b,
-  integer *ldb, integer *info);
-
-extern int dgesvd_(const char *jobu, const char *jobvt, integer *m, integer *n,
-  doublereal *a, integer *lda, doublereal *s, doublereal *u, integer *ldu,
-  doublereal *vt, integer *ldvt, doublereal *work, integer *lwork, integer *info);
-
-extern int dgetrf_(integer *m, integer *n, doublereal *a, integer *lda,
-  integer *ipiv, integer *info);
-
-extern int dgetrs_(const char *trans, integer *n, integer *nrhs, doublereal *a,
-  integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
-
-extern int dgetri_(integer *n, doublereal *a, integer *lda, integer *ipiv,
-  doublereal *work, integer *lwork, integer *info);
-
-extern int dorgqr_(integer *m, integer *n, integer *k, doublereal *a,
-  integer *lda, doublereal *tau, doublereal *work, integer *lwork, integer *info);
-
-extern int dhseqr_(const char *job, const char *compz, integer *n, integer *ilo,
-  integer *ihi, doublereal *h, integer *ldh, doublereal *wr, doublereal *wi,
-  doublereal *z, integer *ldz, doublereal *work, integer *lwork, integer *info);
 
 static double* alloc_real_matrix(int N, int M, void *data)
 {
@@ -347,7 +284,7 @@ void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, i
   vl = alloc_zeroed_real_matrix(ldvl, n);
   vr = alloc_zeroed_real_matrix(ldvr, n);
 
-  dgeev_(jobvl, jobvr, &n, a, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work,
+  OMC_LAPACK(dgeev_)(jobvl, jobvr, &n, a, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work,
     &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
@@ -394,7 +331,7 @@ void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int
   vr = alloc_zeroed_real_matrix(ldvl, n);
   work = alloc_real_vector(lwork, inWORK);
 
-  dgegv_(&*jobvl, &*jobvr, &n, a, &lda, b, &ldb, alphar, alphai, beta, vl,
+  OMC_LAPACK(dgegv_)(&*jobvl, &*jobvr, &n, a, &lda, b, &ldb, alphar, alphai, beta, vl,
     &ldvl, vr, &ldvr, work, &lwork, &info);
 
   *ALPHAR = mk_rml_real_vector(n, alphar);
@@ -437,7 +374,7 @@ void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
   b = alloc_real_matrix(lda, nrhs, inB);
   work = alloc_real_vector(lwork, inWORK);
 
-  dgels_(&*trans, &m, &n, &nrhs, a, &lda, b, &ldb, work, &lwork, &info);
+  OMC_LAPACK(dgels_)(&*trans, &m, &n, &nrhs, a, &lda, b, &ldb, work, &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(lda, nrhs, b);
@@ -473,7 +410,7 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
   work = alloc_real_vector(lwork, WORK);
   jpvt = alloc_int_vector(n, inJPVT);
 
-  dgelsx_(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, work, &info);
+  OMC_LAPACK(dgelsx_)(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, work, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(lda, nrhs, b);
@@ -511,7 +448,7 @@ void LapackImpl__dgelsy(int M, int N, int NRHS, void *inA, int LDA,
   work = alloc_real_vector(lwork, inWORK);
   jpvt = alloc_int_vector(n, inJPVT);
 
-  dgelsy_(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, work, &lwork, &info);
+  OMC_LAPACK(dgelsy_)(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, work, &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(lda, nrhs, b);
@@ -546,7 +483,7 @@ void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
   b = alloc_real_matrix(ldb, nrhs, inB);
   ipiv = alloc_zeroed_int_vector(n);
 
-  dgesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
+  OMC_LAPACK(dgesv_)(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
@@ -584,7 +521,7 @@ void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
   x = alloc_zeroed_real_vector(n);
   work = alloc_real_vector(lwork, inWORK);
 
-  dgglse_(&m, &n, &p, a, &lda, b, &ldb, c, d, x, work, &lwork, &info);
+  OMC_LAPACK(dgglse_)(&m, &n, &p, a, &lda, b, &ldb, c, d, x, work, &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(ldb, n, b);
@@ -622,7 +559,7 @@ void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
   du = alloc_real_vector(n - 1, inDU);
   b = alloc_real_matrix(ldb, nrhs, inB);
 
-  dgtsv_(&n, &nrhs, dl, d, du, b, &ldb, &info);
+  OMC_LAPACK(dgtsv_)(&n, &nrhs, dl, d, du, b, &ldb, &info);
 
   *outDL = mk_rml_real_vector(n - 1, dl);
   *outD = mk_rml_real_vector(n, d);
@@ -659,7 +596,7 @@ void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB,
   b = alloc_real_matrix(ldb, nrhs, inB);
   ipiv = alloc_zeroed_int_vector(n);
 
-  dgbsv_(&n, &kl, &ku, &nrhs, ab, &ldab, ipiv, b, &ldb, &info);
+  OMC_LAPACK(dgbsv_)(&n, &kl, &ku, &nrhs, ab, &ldab, ipiv, b, &ldb, &info);
 
   *outAB = mk_rml_real_matrix(ldab, n, ab);
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
@@ -699,7 +636,7 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
   vt = alloc_zeroed_real_matrix(ldvt, n);
   work = alloc_real_vector(lwork, inWORK);
 
-  dgesvd_(&*jobu, &*jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work,
+  OMC_LAPACK(dgesvd_)(&*jobu, &*jobvt, &m, &n, a, &lda, s, u, &ldu, vt, &ldvt, work,
     &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
@@ -735,7 +672,7 @@ void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
   a = alloc_real_matrix(lda, n, inA);
   ipiv = alloc_zeroed_int_vector(ldipiv);
 
-  dgetrf_(&m, &n, a, &lda, ipiv, &info);
+  OMC_LAPACK(dgetrf_)(&m, &n, a, &lda, ipiv, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *IPIV = mk_rml_int_vector(ldipiv, ipiv);
@@ -765,7 +702,7 @@ void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
   b = alloc_real_matrix(ldb, nrhs, inB);
   ipiv = alloc_int_vector(n, IPIV);
 
-  dgetrs_(&*trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
+  OMC_LAPACK(dgetrs_)(&*trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
 
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
   *INFO = info;
@@ -794,7 +731,7 @@ void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
   work = alloc_real_vector(lwork, inWORK);
   ipiv = alloc_int_vector(n, IPIV);
 
-  dgetri_(&n, a, &lda, ipiv, work, &lwork, &info);
+  OMC_LAPACK(dgetri_)(&n, a, &lda, ipiv, work, &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outWORK = mk_rml_real_vector(lwork, work);
@@ -827,7 +764,7 @@ void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
   tau = alloc_zeroed_real_vector(ldtau);
   work = alloc_real_vector(lwork, WORK);
 
-  dgeqpf_(&m, &n, a, &lda, jpvt, tau, work, &info);
+  OMC_LAPACK(dgeqpf_)(&m, &n, a, &lda, jpvt, tau, work, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outJPVT = mk_rml_int_vector(n, jpvt);
@@ -861,7 +798,7 @@ void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
   tau = alloc_real_vector(k, TAU);
   work = alloc_real_vector(lwork, inWORK);
 
-  dorgqr_(&m, &n, &k, a, &lda, tau, work, &lwork, &info);
+  OMC_LAPACK(dorgqr_)(&m, &n, &k, a, &lda, tau, work, &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outWORK = mk_rml_real_vector(lwork, work);
@@ -896,7 +833,7 @@ void LapackImpl__dhseqr(const char *job, const char *compz, int N, int ILO, int 
   wi = alloc_zeroed_real_vector(n);
   work = alloc_real_vector(lwork, inWORK);
 
-  dhseqr_(job, compz, &n, &ilo, &ihi, h, &ldh, wr, wi, z, &ldz, work, &lwork, &info);
+  OMC_LAPACK(dhseqr_)(job, compz, &n, &ilo, &ihi, h, &ldh, wr, wi, z, &ldz, work, &lwork, &info);
 
   *outH = mk_rml_real_matrix(ldh, n, h);
   *WR = mk_rml_real_vector(n, wr);

@@ -1,6 +1,6 @@
 // status: correct
 
-loadModel(Modelica,{"3.2.2"});getErrorString();
+loadModel(Modelica,{"4.1.0"});getErrorString();
 loadFile("ReaderTMY3_total.mo");getErrorString();
 buildModel(ReaderTMY3_total, stopTime=0);getErrorString();
 // -lv=-LOG_STDOUT: the table reader logs the weather file's absolute path.
@@ -12,7 +12,12 @@ simulate(ReaderTMY3_total, stopTime=0, simflags="-lv=-LOG_STDOUT", resimulateExe
 // true
 // ""
 // {"ReaderTMY3_total", "ReaderTMY3_total_init.xml"}
-// ""
+// "[simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:581:9-615:33:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3' contains a call to impure function 'Modelica.Utilities.Streams.readLine'.
+// [simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:631:9-643:29:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getLongitudeTMY3' contains a call to impure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3'.
+// [simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:617:9-629:28:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getLatitudeTMY3' contains a call to impure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3'.
+// [simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:645:9-657:28:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getTimeZoneTMY3' contains a call to impure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getHeaderElementTMY3'.
+// [simulation/libraries/3rdParty/Buildings/ReaderTMY3_total.mo:573:9-579:28:writable] Warning: Pure function 'Buildings.BoundaryConditions.WeatherData.BaseClasses.getAbsolutePath' contains a call to impure function 'Modelica.Utilities.Files.exist'.
+// "
 // record SimulationResult
 //     resultFile = "ReaderTMY3_total_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ReaderTMY3_total', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=-LOG_STDOUT'",

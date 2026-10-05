@@ -153,7 +153,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/BaseHashSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ClockIndexes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Config.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Corba.mo
     #${CMAKE_CURRENT_SOURCE_DIR}/Util/Database.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Debug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DoubleEnded.mo
@@ -187,6 +186,8 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Lapack.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/List.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/MutableWeak.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/PointerWeak.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SemanticVersion.mo
@@ -340,6 +341,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCeval.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassDiagram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClockKind.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
@@ -352,6 +354,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDefUseChains.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDimension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEquation.mo
@@ -372,6 +375,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInline.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstanceAPI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstNode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookup.mo
@@ -385,6 +389,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPrefixes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRangeIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRecord.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFResizableConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRestriction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFScalarize.mo
@@ -400,6 +405,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFTyping.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnitCheck.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUsedElements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVariable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVerifyModel.mo
@@ -435,6 +441,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/ReverseLookup.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
@@ -443,6 +450,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
@@ -450,25 +458,19 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/AbsynJLDumpTpl.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenEmbeddedC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenESP32.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppCommon.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCpp.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcom.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcomOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppInit.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU1.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU2.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU3.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppOMSI.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSI_common.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSIC.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSIC_Equations.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSICpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenJS.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenMidToC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenUtilSimulation.mo

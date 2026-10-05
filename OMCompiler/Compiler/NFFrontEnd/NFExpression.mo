@@ -443,7 +443,7 @@ public
       local
         Absyn.Path path;
 
-      case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
+      case INTEGER() then intHashDjb2Continue(exp.value, hash);
       case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
       case STRING() then stringHashDjb2Continue(exp.value, hash);
       case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);
@@ -1089,6 +1089,13 @@ public
     output Integer sz = Type.sizeOf(typeOf(exp));
   end sizeOf;
 
+  function callOf
+    input Expression exp;
+    output Call call;
+  algorithm
+    CALL(call = call) := exp;
+  end callOf;
+
   function sizeZero
     "returns true if its a constructor that is definitely of size zero;"
     input Expression exp;
@@ -1097,7 +1104,15 @@ public
     try
       b := 0 == sizeOf(exp);
     else
+      // fill(x, ..., 0, ...) is empty even if its dimension is not known as an integer
       b := false;
+      if isCallNamed(exp, "fill") then
+        for arg in listRest(Call.arguments(callOf(exp))) loop
+          if isZero(arg) then
+            b := true;
+          end if;
+        end for;
+      end if;
     end try;
   end sizeZero;
 
@@ -1238,6 +1253,15 @@ public
         then
           UNARY(Operator.setType(t, exp.operator), typeCast(exp.exp, ety));
 
+      // Integer arithmetic is cast by casting the operands, so that a result
+      // that does not fit in an Integer is still the exact Real one.
+      case BINARY()
+        guard Type.isReal(ety) and isCastableIntegerArithmetic(exp.operator)
+        algorithm
+          t := Type.setArrayElementType(Operator.typeOf(exp.operator), ety);
+        then
+          BINARY(typeCast(exp.exp1, ety), Operator.setType(t, exp.operator), typeCast(exp.exp2, ety));
+
       // If-expressions are handled by casting each of the branches.
       case IF()
         algorithm
@@ -1266,6 +1290,36 @@ public
       else typeCastGeneric(exp, ety);
     end match;
   end typeCast;
+
+  function isCastableIntegerArithmetic
+    "Whether an Integer operation gives the same value on the operands cast to
+     Real: addition, subtraction and multiplication, but not division or ^."
+    input Operator op;
+    output Boolean res;
+  protected
+    import NFOperator.Op;
+  algorithm
+    res := Type.isInteger(Type.arrayElementType(Operator.typeOf(op))) and
+      (match op.op
+        case Op.ADD then true;
+        case Op.SUB then true;
+        case Op.MUL then true;
+        case Op.ADD_EW then true;
+        case Op.SUB_EW then true;
+        case Op.MUL_EW then true;
+        case Op.ADD_SCALAR_ARRAY then true;
+        case Op.ADD_ARRAY_SCALAR then true;
+        case Op.SUB_SCALAR_ARRAY then true;
+        case Op.SUB_ARRAY_SCALAR then true;
+        case Op.MUL_SCALAR_ARRAY then true;
+        case Op.MUL_ARRAY_SCALAR then true;
+        case Op.MUL_VECTOR_MATRIX then true;
+        case Op.MUL_MATRIX_VECTOR then true;
+        case Op.SCALAR_PRODUCT then true;
+        case Op.MATRIX_PRODUCT then true;
+        else false;
+      end match);
+  end isCastableIntegerArithmetic;
 
   function typeCastGeneric
     input output Expression exp;
@@ -1363,11 +1417,26 @@ public
   end makeArrayCheckLiteral;
 
   function makeEmptyArray
+    "Creates an array from a type where at least one of the dimensions is zero."
     input Type ty;
     output Expression outExp;
+  protected
+    list<Dimension> dims, non_empty_dims = {};
+    Type arr_ty;
   algorithm
-    outExp := ARRAY(ty, listArray({}), true);
-    annotation(__OpenModelica_EarlyInline = true);
+    // Split the dimensions on the first zero dimension.
+    dims := Type.arrayDims(ty);
+
+    while not Dimension.isZero(listHead(dims)) loop
+      non_empty_dims := listHead(dims) :: non_empty_dims;
+      dims := listRest(dims);
+    end while;
+
+    // Create an empty array with the zero dimension and the dimensions after.
+    arr_ty := Type.ARRAY(Type.arrayElementType(ty), dims);
+    outExp := ARRAY(arr_ty, listArray({}), true);
+    // Lift the empty array with the dimensions preceeding the zero dimension.
+    outExp := liftArrayList(non_empty_dims, outExp);
   end makeEmptyArray;
 
   function makeIntegerArray
@@ -1573,6 +1642,16 @@ public
         then applySubscriptCall(subscript, exp, restSubscripts, applyToScope);
 
       case IF() then applySubscriptIf(subscript, exp, restSubscripts, applyToScope);
+
+      case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
+        then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
+
+      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator)) and
+                         List.all(subscript :: restSubscripts, isCheapSubscript)
+        algorithm
+          outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
+        then
+          UNARY(Operator.setType(typeOf(outExp), exp.operator), outExp);
 
       case UNBOX()
         algorithm
@@ -1825,14 +1904,29 @@ public
     Option<Expression> step_exp;
     Type ty;
     list<Subscript> subs;
+    Integer step, offset;
   algorithm
     Subscript.INDEX(index = index_exp) := index;
+    RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
 
-    if isScalarLiteral(index_exp) then
-      RANGE(start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
+    if isScalarLiteral(index_exp) and isScalarLiteral(start_exp) and
+       Util.applyOptionOrDefault(step_exp, isScalarLiteral, true) then
       outExp := applyIndexSubscriptRange2(start_exp, step_exp, stop_exp, toInteger(index_exp));
+    elseif isScalarLiteral(index_exp) and toInteger(index_exp) == 1 then
+      outExp := start_exp;
+    elseif Type.isInteger(Type.arrayElementType(ty)) and isScalarLiteral(start_exp) and
+           Util.applyOptionOrDefault(step_exp, isScalarLiteral, true) then
+      // (start:step:stop)[i] = step*i + (start - step), e.g. (1:n)[i] = i
+      step := Util.applyOptionOrDefault(step_exp, toInteger, 1);
+      offset := toInteger(start_exp) - step;
+      outExp := index_exp;
+      if step <> 1 then
+        outExp := BINARY(INTEGER(step), Operator.makeMul(Type.INTEGER()), outExp);
+      end if;
+      if offset <> 0 then
+        outExp := BINARY(outExp, Operator.makeAdd(Type.INTEGER()), INTEGER(offset));
+      end if;
     else
-      RANGE(ty = ty) := rangeExp;
       subs := {index};
       ty := Type.subscript(ty, subs);
       outExp := SUBSCRIPTED_EXP(rangeExp, subs, ty, false);
@@ -1973,6 +2067,78 @@ public
     end if;
   end applySubscriptIf;
 
+  function isCheapSubscript
+    "Whether the subscript can be duplicated into the operands of an operator."
+    input Subscript subscript;
+    output Boolean cheap;
+  algorithm
+    cheap := match subscript
+      case Subscript.INDEX() then isCref(subscript.index) or isScalarLiteral(subscript.index);
+      case Subscript.WHOLE() then true;
+      else false;
+    end match;
+  end isCheapSubscript;
+
+  function applySubscriptBinary
+    "Moves the subscripts into the operands of an element-wise operator:
+     (a .* b)[i] = a[i] * b[i], (a * s)[i] = a[i] * s."
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
+    output Expression outExp;
+  protected
+    import NFOperator.Op;
+    Expression e1, e2;
+    Operator op;
+    Op scalar_op;
+    Boolean sub1, sub2;
+  algorithm
+    BINARY(e1, op, e2) := exp;
+
+    (sub1, sub2, scalar_op) := match op.op
+      case Op.ADD guard Type.isArray(op.ty) then (true, true, Op.ADD);
+      case Op.SUB guard Type.isArray(op.ty) then (true, true, Op.SUB);
+      case Op.ADD_EW then (true, true, Op.ADD);
+      case Op.SUB_EW then (true, true, Op.SUB);
+      case Op.MUL_EW then (true, true, Op.MUL);
+      case Op.DIV_EW then (true, true, Op.DIV);
+      case Op.POW_EW then (true, true, Op.POW);
+      case Op.ADD_ARRAY_SCALAR then (true, false, Op.ADD);
+      case Op.SUB_ARRAY_SCALAR then (true, false, Op.SUB);
+      case Op.MUL_ARRAY_SCALAR then (true, false, Op.MUL);
+      case Op.DIV_ARRAY_SCALAR then (true, false, Op.DIV);
+      case Op.POW_ARRAY_SCALAR then (true, false, Op.POW);
+      case Op.ADD_SCALAR_ARRAY then (false, true, Op.ADD);
+      case Op.SUB_SCALAR_ARRAY then (false, true, Op.SUB);
+      case Op.MUL_SCALAR_ARRAY then (false, true, Op.MUL);
+      case Op.DIV_SCALAR_ARRAY then (false, true, Op.DIV);
+      case Op.POW_SCALAR_ARRAY then (false, true, Op.POW);
+      else (false, false, op.op);
+    end match;
+
+    if not (sub1 or sub2) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    if sub1 then
+      e1 := applySubscript(subscript, e1, restSubscripts, applyToScope);
+    end if;
+
+    if sub2 then
+      e2 := applySubscript(subscript, e2, restSubscripts, applyToScope);
+    end if;
+
+    op.ty := typeOf(if sub1 then e1 else e2);
+
+    if Type.isScalar(op.ty) then
+      op.op := scalar_op;
+    end if;
+
+    outExp := BINARY(e1, op, e2);
+  end applySubscriptBinary;
+
   function makeSubscriptedExp
     input list<Subscript> subscripts;
     input Expression exp;
@@ -2031,9 +2197,9 @@ public
         list<String> fields;
 
       // Cref is simple identifier, i
-      case CREF(cref = ComponentRef.CREF(node = node))
+      case CREF(cref = ComponentRef.CREF())
         guard ComponentRef.isSimple(exp.cref)
-        then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
+        then if InstNode.refEqual(iterator, ComponentRef.node(exp.cref)) then iteratorValue else exp;
 
       // Cref is qualified identifier, i.x
       case CREF(cref = ComponentRef.CREF())
@@ -2072,11 +2238,9 @@ public
       output Boolean res;
     algorithm
       res := match exp
-        local
-          InstNode node;
-
-        case CREF(cref = ComponentRef.CREF(node = node))
-          then InstNode.refEqual(node, iterator);
+        // Only the first (last in stored order) part of a cref can be an iterator: `i.x`.
+        case CREF() guard ComponentRef.isIterator(exp.cref)
+          then InstNode.refEqual(ComponentRef.node(ComponentRef.last(exp.cref)), iterator);
         else false;
       end match;
     end containsIterator2;
@@ -2556,14 +2720,17 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> varPointer;
+        PointerWeak<Variable> varPointer;
         Option<Expression> nominal;
         Operator operator;
         Operator.SizeClassification sizeClass;
 
       // replace variables with their nominal values
-      case CREF(cref = ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer))) algorithm
-        nominal := Variable.getNominal(Pointer.access(varPointer));
+      case CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref))
+      algorithm
+        InstNode.VAR_NODE(varPointer = varPointer) := ComponentRef.node(exp.cref);
+        nominal := Variable.getNominal(Pointer.access(PointerWeak.upgrade(varPointer)));
       then Util.getOptionOrDefault(nominal, exp);
 
       // remove negation
@@ -5130,7 +5297,7 @@ public
       case Type.INTEGER() then INTEGER(0);
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ARRAY()   then fillType(ty, makeZero(Type.arrayElementType(ty)));
-      case Type.COMPLEX() then makeOperatorRecordZero(ty.cls);
+      case Type.COMPLEX() then makeOperatorRecordZero(Type.complexNode(ty));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Type.toString(ty)});
       then fail();
@@ -5917,27 +6084,22 @@ public
 
   function tupleElement
     input Expression exp;
-    input Type ty;
     input Integer index;
     output Expression tupleElem;
   algorithm
     tupleElem := match exp
-      local
-        Type ety;
-
       case TUPLE() then listGet(exp.elements, index);
 
       case ARRAY()
         algorithm
-          ety := Type.unliftArray(ty);
-          exp.elements := Array.map(exp.elements, function tupleElement(ty = ety, index = index));
+          exp.elements := Array.map(exp.elements, function tupleElement(index = index));
         then
           exp;
 
       case SUBSCRIPTED_EXP(split = true)
-        then mapSplitExpressions(exp, function tupleElement(ty = ty, index = index));
+        then mapSplitExpressions(exp, function tupleElement(index = index));
 
-      else TUPLE_ELEMENT(exp, index, ty);
+      else TUPLE_ELEMENT(exp, index, Type.nthTupleType(typeOf(exp), index));
     end match;
   end tupleElement;
 
@@ -5959,8 +6121,9 @@ public
         ComponentRef cref;
         array<Expression> arr;
 
-      case RECORD(ty = Type.COMPLEX(cls = node))
+      case RECORD(ty = Type.COMPLEX())
         algorithm
+          node := Type.complexNode(recordExp.ty);
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
         then
@@ -5968,7 +6131,7 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -5977,9 +6140,10 @@ public
         then
           CREF(ty, cref);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
@@ -5987,8 +6151,9 @@ public
         then
           makeEmptyArray(ty);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
           arr := Array.map(recordExp.elements, function nthRecordElement(index = index));
           ty := Type.liftArrayLeft(typeOf(arrayGet(arr, 1)),
@@ -6008,7 +6173,7 @@ public
       else
         algorithm
           ty := typeOf(recordExp);
-          Type.COMPLEX(cls = node) := Type.arrayElementType(ty);
+          node := Type.complexNode(Type.arrayElementType(ty));
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := Type.liftArrayLeftList(
@@ -6038,14 +6203,15 @@ public
 
       case CREF()
         algorithm
-          Type.COMPLEX(cls = node) := Type.arrayElementType(typeOf(recordExp));
+          node := Type.complexNode(Type.arrayElementType(typeOf(recordExp)));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         guard arrayEmpty(recordExp.elements)
-        then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
+        then makeEmptyArray(InstNode.getType(Class.nthComponent(index,
+          InstNode.getClass(Type.complexNode(Type.arrayElementType(recordExp.ty))))));
 
       case ARRAY()
         algorithm
@@ -6054,8 +6220,9 @@ public
         then
           makeArray(ty, arr);
 
-      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX()))
         algorithm
+          node := Type.complexNode(Type.arrayElementType(recordExp.ty));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node),
@@ -6077,7 +6244,7 @@ public
 
       else
         algorithm
-          Type.COMPLEX(cls = node) := typeOf(recordExp);
+          node := Type.complexNode(typeOf(recordExp));
           node := Class.nthComponent(index, InstNode.getClass(node));
         then
           RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));
@@ -6113,8 +6280,9 @@ public
 
       case RANGE()
         algorithm
-          exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), Absyn.dummyInfo);
+          exp.ty := TypeCheck.keepRangeSize(
+            TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
+              typeOf(exp.start), Absyn.dummyInfo), exp.ty);
         then
           ();
 
@@ -6318,8 +6486,8 @@ public
     output Boolean matching;
   algorithm
     matching := match sub
-      case Subscript.SPLIT_INDEX() then InstNode.refEqual(sub.node, node);
-      case Subscript.SPLIT_PROXY() then InstNode.refEqual(sub.parent, node);
+      case Subscript.SPLIT_INDEX() then InstNode.refEqual(InstNode.borrow(sub.node), node);
+      case Subscript.SPLIT_PROXY() then InstNode.refEqual(InstNode.borrow(sub.parent), node);
       else false;
     end match;
   end filterSplitIndices2;
@@ -6381,6 +6549,11 @@ public
     list<Subscript> subs;
     list<Expression> sub_exps, dim_sizes;
   algorithm
+    if not containsSplitSubscriptedExp(exp) then
+      outExp := func(exp);
+      return;
+    end if;
+
     (outExp, osub_repls) := mapFold(exp, replaceSplitSubscripts, NONE());
 
     if isNone(osub_repls) then
@@ -6395,6 +6568,23 @@ public
       outExp := applySubscripts(subs, outExp);
     end if;
   end mapSplitExpressions;
+
+  function containsSplitSubscriptedExp
+    "Like contains(exp, isSplitSubscriptedExp), but also looks into iterator
+     ranges like mapFold does. Literal arrays are skipped, like in
+     Ceval.subscriptBinding2."
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true) then true;
+      case ARRAY(literal = true) then false;
+      case CALL()
+        then containsShallow(exp, containsSplitSubscriptedExp) or
+             List.any(list(Util.tuple22(i) for i in Call.iterators(exp.call)), containsSplitSubscriptedExp);
+      else containsShallow(exp, containsSplitSubscriptedExp);
+    end match;
+  end containsSplitSubscriptedExp;
 
   function replaceSplitSubscripts
     input output Expression exp;
@@ -6611,15 +6801,18 @@ public
   end isComponentExpression;
 
   function clone
+    "Clones an expression to make it and any expression it contains unique,
+     such that e.g. arrays don't share their internal arrays."
     input output Expression exp;
   algorithm
-    () := match exp
+    exp := match exp
       case ARRAY()
         algorithm
-          exp.elements := arrayCopy(exp.elements);
+          exp.elements := Array.map(exp.elements, clone);
         then
-          ();
-      else ();
+          exp;
+
+      else mapShallow(exp, clone);
     end match;
   end clone;
 
@@ -6988,12 +7181,14 @@ public
   algorithm
     exp := match exp
       local
-        Pointer<Variable> var;
+        PointerWeak<Variable> var;
         Integer v;
 
       // backend replacement
-      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
-      then match Pointer.access(var)
+      case Expression.CREF(cref = ComponentRef.CREF())
+        guard InstNode.isVar(ComponentRef.node(exp.cref)) and ComponentRef.isResizable(exp.cref)
+      then match Pointer.access(PointerWeak.upgrade(
+          InstNode.varPointer(ComponentRef.node(exp.cref))))
           // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);

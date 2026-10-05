@@ -685,12 +685,7 @@ void NotebookWindow::createFormatMenu()
   auto fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  QFontDatabase fontDatabase;
-  QStringList fonts = fontDatabase.families( QFontDatabase::Latin );
-#else
   QStringList fonts = QFontDatabase::families( QFontDatabase::Latin );
-#endif
 
   for( int index = 0; index < fonts.count(); ++index )
   {
@@ -1294,6 +1289,13 @@ void NotebookWindow::createInsertMenu()
   insertLinkAction->setIcon(QIcon(":/Resources/toolbarIcons/text_under.png"));
   toolBar->addAction(insertLinkAction);
 
+  // WEB LINK
+  insertWebLinkAction = new QAction( tr("&Web link..."), this );
+  insertWebLinkAction->setShortcut( QKeySequence("Ctrl+Shift+K") );
+  insertWebLinkAction->setStatusTip( tr("Insert or change a link to a web page (http/https)") );
+  connect( insertWebLinkAction, SIGNAL( triggered() ),
+           this, SLOT( insertWebLink() ));
+
   toolBar->addSeparator();
 
 #if USE_OMSKETCH
@@ -1373,6 +1375,7 @@ void NotebookWindow::createInsertMenu()
   auto insertMenu = menuBar()->addMenu( tr("&Insert") );
   insertMenu->addAction( insertImageAction );
   insertMenu->addAction( insertLinkAction );
+  insertMenu->addAction( insertWebLinkAction );
 
   connect( insertMenu, SIGNAL( aboutToShow() ),
            this, SLOT( updateMenus() ));
@@ -1542,6 +1545,7 @@ void NotebookWindow::updateMenus()
   chooseFont->setEnabled( editable );
   insertImageAction->setEnabled( editable );
   insertLinkAction->setEnabled( editable );
+  insertWebLinkAction->setEnabled( editable );
 }
 
 /*!
@@ -1739,9 +1743,7 @@ void NotebookWindow::updateFontMenu()
   QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
   if( !cursor.isNull() )
   {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    const QStringList families = {cursor.charFormat().fontFamily()};
-#elif (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
+#if (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
     const QStringList families = cursor.charFormat().fontFamilies().toStringList();
 #else
     const QStringList families = cursor.charFormat().fontFamilies();
@@ -3478,6 +3480,136 @@ void NotebookWindow::insertLink()
         tr("A text that should make up the link, must be selected"));
     }
   }
+}
+
+/*!
+  * \brief Method for inserting a link to a web page (http/https).
+  *
+  * If text is selected it becomes the link text. If the cursor is placed in
+  * an existing web link, that link is edited.
+  */
+void NotebookWindow::insertWebLink()
+{
+  if( !cellEditable() )
+    return;
+
+  QTextCursor cursor = subject_->getCursor()->currentCell()->textCursor();
+  if( cursor.isNull() )
+    return;
+
+  QString url;
+
+  bool editing = false;
+
+  // If the cursor is in (or at the border of) a web link, or the selection
+  // lies inside one, select the whole link to change its text and/or url.
+  {
+    const int selStart = cursor.selectionStart();
+    const int selEnd = cursor.selectionEnd();
+    QString runHref;
+    int runStart = -1, runEnd = -1;
+    bool found = false;
+
+    auto isWeb = []( const QString &href )
+    {
+      const QString scheme = QUrl( href ).scheme().toLower();
+      return scheme == QLatin1String("http") || scheme == QLatin1String("https");
+    };
+    auto runContains = [&]()
+    {
+      return runStart >= 0 && runStart <= selStart && selEnd <= runEnd;
+    };
+
+    const QTextBlock block = cursor.document()->findBlock( selStart );
+    for( QTextBlock::iterator it = block.begin(); !it.atEnd(); ++it )
+    {
+      const QTextFragment f = it.fragment();
+      const QTextCharFormat fmt = f.charFormat();
+      const bool web = fmt.isAnchor() && isWeb( fmt.anchorHref() );
+
+      if( web && runStart >= 0 && fmt.anchorHref() == runHref )
+      {
+        // same link continues (e.g. partly bold text)
+        runEnd = f.position() + f.length();
+      }
+      else
+      {
+        if( runContains() )
+        {
+          found = true;
+          break;
+        }
+        if( web )
+        {
+          runStart = f.position();
+          runEnd = f.position() + f.length();
+          runHref = fmt.anchorHref();
+        }
+        else
+          runStart = -1;
+      }
+    }
+    if( !found && runContains() )
+      found = true;
+
+    if( found )
+    {
+      cursor.setPosition( runStart );
+      cursor.setPosition( runEnd, QTextCursor::KeepAnchor );
+      url = runHref;
+      editing = true;
+    }
+  }
+
+  QString text = cursor.selectedText();
+  text.replace( QChar::ParagraphSeparator, QLatin1Char(' ') );
+  text.replace( QChar::LineSeparator, QLatin1Char(' ') );
+
+  QDialog dialog( this );
+  dialog.setWindowTitle( editing ? tr("Edit Web Link") : tr("Insert Web Link") );
+  QFormLayout *form = new QFormLayout( &dialog );
+  // let the input fields use the full width of the dialog (some styles
+  // keep them at their small size hint otherwise)
+  form->setFieldGrowthPolicy( QFormLayout::AllNonFixedFieldsGrow );
+  QLineEdit *textEdit = new QLineEdit( text, &dialog );
+  QLineEdit *urlEdit = new QLineEdit( url, &dialog );
+  urlEdit->setPlaceholderText( "https://www.openmodelica.org" );
+  textEdit->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Fixed );
+  urlEdit->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Fixed );
+  form->addRow( tr("Text:"), textEdit );
+  form->addRow( tr("URL:"), urlEdit );
+  QDialogButtonBox *buttons = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog );
+  form->addRow( buttons );
+  dialog.setMinimumWidth( 500 );
+
+  QString validUrl;
+  connect( buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject );
+  connect( buttons, &QDialogButtonBox::accepted, &dialog, [&]()
+  {
+    QString u = urlEdit->text().trimmed();
+    if( !u.contains( "://" ) )
+      u = "https://" + u;
+    const QUrl parsed( u, QUrl::StrictMode );
+    const QString scheme = parsed.scheme().toLower();
+    if( !parsed.isValid() || parsed.host().isEmpty() ||
+        ( scheme != QLatin1String("http") && scheme != QLatin1String("https") ) )
+    {
+      QMessageBox::warning( &dialog, tr("Error"),
+        tr("Please enter a valid web address starting with http:// or https://") );
+      return;
+    }
+    validUrl = u;
+    dialog.accept();
+  });
+
+  ( url.isEmpty() ? urlEdit : textEdit )->setFocus();
+  // resizable in width only: fix the height to what the layout needs
+  dialog.setFixedHeight( dialog.sizeHint().height() );
+  if( dialog.exec() != QDialog::Accepted )
+    return;
+
+  subject_->textcursorInsertWebLink( validUrl, textEdit->text().trimmed(), cursor );
 }
 
 void NotebookWindow::indent()

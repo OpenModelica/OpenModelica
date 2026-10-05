@@ -63,10 +63,12 @@ pub struct Dassl {
     pub jacobians: u64,
 }
 
-/// C's `dassl_limits`: `-maxIntegrationOrder` and `-maxStepSize`.
-fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
-    let (order, h_max, out_time) =
-        crate::simflags::with_flags(|f| (f.max_order, f.max_step_size, f.no_equidistant_time));
+/// C's `dassl_limits`: `-maxIntegrationOrder`, `-maxStepSize` (which
+/// `-noEquidistantOutputTime` also sets) and `-initialStepSize`.
+pub fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
+    let (order, h_max, out_time, h0) = crate::simflags::with_flags(|f| {
+        (f.max_order, f.max_step_size, f.no_equidistant_time, f.initial_step_size)
+    });
     if let Some(n) = order {
         info[8] = 1;
         iwork[2] = n;
@@ -75,6 +77,50 @@ fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
         info[6] = 1;
         rwork[1] = h;
     }
+    if let Some(h) = h0 {
+        info[7] = 1;
+        rwork[2] = h;
+    }
+}
+
+/// Restarts of a failed first step [`restart_first_step`] allows in a row.
+pub const FIRST_STEP_RESTARTS: u32 = 3;
+
+/// DASKR gives up after ten corrector failures, each quartering H, so a first
+/// step that needs a smaller H is never taken. When IDID = -7 came before any
+/// step, set DASKR up to restart from the H it reached (RWORK(3)); the caller
+/// calls it again and then [`reset_initial_step`].
+pub fn restart_first_step(
+    idid: i32,
+    info: &mut [i32; 24],
+    rwork: &[f64],
+    iwork: &[i32],
+    restarts: &mut u32,
+) -> bool {
+    use crate::omclog;
+    if idid != -7 || iwork[10] != 0 || *restarts >= FIRST_STEP_RESTARTS {
+        return false;
+    }
+    *restarts += 1;
+    if omclog::active(omclog::DASSL) {
+        omclog::info(
+            omclog::DASSL,
+            false,
+            &alloc::format!(
+                "The corrector could not converge on the first step. Restarting with initial step size {}.",
+                omclog::g(rwork[2], 0, 6)
+            ),
+        );
+    }
+    info[0] = 0;
+    info[7] = 1;
+    true
+}
+
+/// INFO(8) back to what `-initialStepSize` asked for, once a restart from
+/// [`restart_first_step`] has been made.
+pub fn reset_initial_step(info: &mut [i32; 24]) {
+    info[7] = crate::simflags::with_flags(|f| f.initial_step_size.is_some()) as i32;
 }
 
 impl Dassl {
@@ -126,10 +172,18 @@ impl Dassl {
     }
 
     /// The step history is invalid after an event changed the states: DASKR is
-    /// restarted from the new ones (C's `INFO(1) = 0`).
+    /// restarted from the new ones (C's `INFO(1) = 0`). YPRIME stands, as in C's
+    /// `dassl_step`.
     pub fn restart(&mut self) {
         self.info[0] = 0;
-        self.yp.fill(0.0);
+    }
+
+    /// The derivatives at the point the next step starts from, which DASKR's
+    /// first step is sized against (`0.001*(tout - t)` capped by `0.5/‖y'‖`).
+    /// C's `solver_main` hands DASSL `realVars + nStates`.
+    pub fn set_derivatives(&mut self, yp: &[f64]) {
+        let n = self.yp.len().min(yp.len());
+        self.yp[..n].copy_from_slice(&yp[..n]);
     }
 
     /// Integrate from `(t, y)` toward `target`.
@@ -151,6 +205,8 @@ impl Dassl {
         // without it DASKR differences the matrix itself, one state at a time.
         let coloured = !ode.jac_colors().is_empty();
         self.info[4] = coloured as i32; // INFO(5)=1: a dense user Jacobian routine
+        // DASKR counts from zero again when it is restarted.
+        let counted = if self.info[0] == 0 { 0 } else { self.iwork[10] as u64 };
         let mut ctx = Context {
             ode,
             n_states: y.len(),
@@ -170,6 +226,7 @@ impl Dassl {
         let rt: solver::RtFn = if self.n_zc > 0 { root } else { solver::dummy_rt };
         let jac: solver::JacFn = if coloured { jacobian } else { solver::dummy_jacd };
         let mut tout = target;
+        let mut restarts = 0;
         loop {
             unsafe {
                 solver::ddaskr(
@@ -197,6 +254,7 @@ impl Dassl {
                     self.jroot.as_mut_ptr(),
                 );
             }
+            reset_initial_step(&mut self.info);
             // The model reported a failure through the residual; its own message
             // is the one worth showing.
             if let Some(e) = ctx.failed.take() {
@@ -209,11 +267,14 @@ impl Dassl {
                 self.quota_retries += 1;
                 continue;
             }
+            if restart_first_step(self.idid, &mut self.info, &self.rwork, &self.iwork, &mut restarts) {
+                continue;
+            }
             break;
         }
         self.quota_retries = 0;
         self.jacobians += ctx.jacobians;
-        self.steps = self.iwork[10] as u64; // IWORK(11) = number of steps taken
+        self.steps += (self.iwork[10] as u64).saturating_sub(counted); // IWORK(11): steps taken
         match self.idid {
             5 => Ok(DasslStep::Root(*t)),
             1 => Ok(DasslStep::Stepped),
@@ -369,16 +430,14 @@ unsafe fn root(
     }
 }
 
-/// C's `numericalDifferentiationDeltaXsolver`: `sqrt(DBL_EPSILON)`.
-const DELTA_X_SOLVER: f64 = 1.4901161193847656e-8;
-
-/// C's difference step for the DASSL Jacobian: scaled by the state, its rate of
-/// change and its nominal, and signed like `h*y'`.
-fn difference_step(yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
+/// C's difference step for the DASSL Jacobian: `delta_x` (C's
+/// `numericalDifferentiationDeltaXsolver`) scaled by the state, its rate of change
+/// and its nominal, and signed like `h*y'`.
+fn difference_step(delta_x: f64, yi: f64, hyp: f64, tol: f64, nominal: f64) -> f64 {
     let scale = yi.abs().max(hyp.abs());
     let weight = tol * (yi.abs() + nominal);
     let step = if scale > weight { scale } else { weight.max(nominal) };
-    let magnitude = DELTA_X_SOLVER * step;
+    let magnitude = delta_x * step;
     if hyp >= 0.0 { magnitude } else { -magnitude }
 }
 
@@ -436,14 +495,15 @@ unsafe fn jacobian(
         return;
     }
     ctx.ode.set_context_jacobian();
+    let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
     for group in &colors {
         for &col in group {
             let ci = col as usize;
             let nominal = ctx.nominals.get(ci).copied().unwrap_or(1.0).abs().max(1e-32);
-            let mut step = difference_step(y[ci], h * yprime[ci], ctx.tolerance, nominal);
+            let mut step = difference_step(delta_x, y[ci], h * yprime[ci], ctx.tolerance, nominal);
             step = y[ci] + step - y[ci]; // the step the addition actually took
             if step == 0.0 {
-                step = DELTA_X_SOLVER;
+                step = delta_x;
             }
             ctx.saved[ci] = y[ci];
             ctx.step[ci] = step;
@@ -529,5 +589,34 @@ mod tests {
         let te = found.expect("no root located");
         assert!((te - 2f64.ln()).abs() < 1e-7, "root at {te}, not ln 2");
         assert_eq!(d.root_index(), 0);
+    }
+
+    /// A caller that leaves the derivatives at zero gets a first step a
+    /// thousandth of the distance to `tout`, whatever the model is doing.
+    #[test]
+    fn the_first_step_follows_the_derivatives() {
+        struct Fast(Option<f64>);
+        impl Ode for Fast {
+            fn eval(&mut self, t: f64, _y: &[f64], f: &mut [f64]) -> Result<()> {
+                self.0.get_or_insert(t);
+                f[0] = 1e6;
+                Ok(())
+            }
+            fn eval_zc(&mut self, _t: f64, _y: &[f64], _zc: &mut [f64]) -> Result<()> {
+                Ok(())
+            }
+        }
+        let first = |yp: Option<f64>| {
+            let mut d = Dassl::new(1, 0, 1e-6, &[1.0]);
+            if let Some(yp) = yp {
+                d.set_derivatives(&[yp]);
+            }
+            let mut ode = Fast(None);
+            let (mut t, mut y) = (0.0, [0.0]);
+            d.step(&mut ode, 1000.0, &mut t, &mut y).expect("step");
+            ode.0.expect("no evaluation")
+        };
+        assert!(first(None) >= 1.0, "{} is not a thousandth of 1000", first(None));
+        assert!(first(Some(1e6)) < 1e-6, "first step of {} does not follow y'", first(Some(1e6)));
     }
 }

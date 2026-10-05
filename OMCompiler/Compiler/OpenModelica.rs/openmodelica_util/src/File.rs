@@ -90,6 +90,12 @@ struct FileInner {
     name: ArcStr,
 }
 
+// Reports like C's registered ModelicaFormatError: a runtime error, then failure.
+fn fail(msg: String) -> &'static str {
+    openmodelica_error::ErrorExt::runtime_error(&msg);
+    "File: I/O error"
+}
+
 impl FileInner {
     fn write_bytes(&mut self, bytes: &[u8], what: &str) -> Result<()> {
         #[cfg(not(target_arch = "wasm32"))]
@@ -97,14 +103,14 @@ impl FileInner {
             match self.file.as_mut() {
                 Some(f) => f
                     .write_all(bytes)
-                    .map_err(|e| "File.{what}: write to {}: {}"),
-                None => return Err("File.{what}: Failed to write to file: {} (not open)"),
+                    .map_err(|e| fail(format!("File.{what}: Failed to write to file: {} error: {e}", self.name))),
+                None => Err(fail(format!("File.{what}: Failed to write to file: {} (not open)", self.name))),
             }
         }
         #[cfg(target_arch = "wasm32")]
         {
             if self.mode != Some(Mode::Write) {
-                return Err("File.{what}: Failed to write to file: {} (not open)");
+                return Err(fail(format!("File.{what}: Failed to write to file: {} (not open)", self.name)));
             }
             let end = self.pos + bytes.len();
             if self.buf.len() < end {
@@ -227,7 +233,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
                 .truncate(true)
                 .open(filename.as_str()),
         }
-        .map_err(|e| "File.open: Failed to open file {filename} with mode {mode:?}: {e}")?;
+        .map_err(|e| fail(format!("File.open: Failed to open file {filename} with mode {}: {e}", mode as i32)))?;
         guard.file = Some(BufWriter::with_capacity(64 * 1024, handle));
         guard.name = filename;
         Ok(())
@@ -239,7 +245,7 @@ pub fn open(file: File, filename: ArcStr, mode: Mode) -> Result<()> {
         match mode {
             Mode::Read => {
                 let bytes = openmodelica_wasi::read(filename.as_str()).ok_or_else(|| {
-                    "File.open: Failed to open file {filename} with mode {mode:?}: no such file"
+                    fail(format!("File.open: Failed to open file {filename} with mode {}: No such file or directory", mode as i32))
                 })?;
                 guard.buf = bytes;
             }
@@ -484,6 +490,14 @@ pub fn releaseReference(file: File) -> Result<()> {
 }
 
 pub fn writeSpace(file: File, n: i32) -> Result<()> {
+    write_space(&file, n)
+}
+
+pub fn write_str(file: &File, s: &str) -> Result<()> {
+    file.inner.lock().unwrap().write_bytes(s.as_bytes(), "write")
+}
+
+pub fn write_space(file: &File, n: i32) -> Result<()> {
     const BLANKS: [u8; 64] = [b' '; 64];
     let mut guard = file.inner.lock().unwrap();
     let mut left = n.max(0) as usize;
@@ -495,8 +509,20 @@ pub fn writeSpace(file: File, n: i32) -> Result<()> {
     Ok(())
 }
 
-/// Flush every file the reference registry still holds, for callers leaving
-/// through `process::exit`, which runs no thread-local destructor.
+/// Flushes buffered output so a reader that follows sees the whole file.
+pub fn flush(file: &File) -> Result<()> {
+    let mut guard = file.inner.lock().unwrap();
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Some(f) = guard.file.as_mut() {
+        f.flush().map_err(|_| "File.flush: write failed")?;
+    }
+    #[cfg(target_arch = "wasm32")]
+    guard.flush_to_vfs();
+    Ok(())
+}
+
+/// Flush every file the reference registry still holds, for callers about to
+/// exit the process.
 pub fn flush_all_registered() {
     FILE_REGISTRY.with(|r| {
         for f in r.borrow().values() {

@@ -80,20 +80,6 @@ namespace IAEX
   {
   }
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  /*!
-   * \author Ingemar Axelsson and Anders Fernström
-   * date 2005-11-03
-   *
-   * 2005-11-03 AF, Updated the function to reflect the changes made
-   * in qt (from v3 to v4). The function now takes a QUrl as parameter
-   * instead of a QString (in qt3).
-   */
-  void MyTextBrowser::setSource(const QUrl &name)
-  {
-    emit openLink( &name );
-  }
-#endif
 
   /*!
    * \author Anders Fernström
@@ -113,6 +99,47 @@ namespace IAEX
     }
 
     emit clickOnCell();
+  }
+
+  /*!
+   * \brief Context menu, adds "Edit web link..." when right-clicking a
+   * link to a web page (http/https).
+   */
+  void MyTextBrowser::contextMenuEvent(QContextMenuEvent *event)
+  {
+    const QString href = anchorAt( event->pos() );
+    const QString scheme = QUrl( href ).scheme().toLower();
+    if( scheme != QLatin1String("http") && scheme != QLatin1String("https") )
+    {
+      QTextBrowser::contextMenuEvent( event );
+      return;
+    }
+
+    // Cursor inside the clicked link. The current selection is not touched
+    // before the menu is shown (Copy etc. still work on it), but "Edit web
+    // link..." always works on the clicked link, never on another selection.
+    QTextCursor linkCursor = cursorForPosition( event->pos() );
+    if( linkCursor.charFormat().anchorHref() != href )
+      linkCursor.movePosition( QTextCursor::NextCharacter ); // click was at the link's left border
+
+    QMenu *menu = createStandardContextMenu( event->pos() );
+    menu->addSeparator();
+    QAction *editAction = menu->addAction( tr("Edit web link...") );
+    editAction->setEnabled( !isReadOnly() );
+
+    QAction *chosen = menu->exec( event->globalPos() );
+    delete menu;
+
+    if( chosen == editAction )
+    {
+      // drop the other selection, move the cursor into the link and make sure
+      // this cell is the current one (a press on a selection doesn't do that)
+      setTextCursor( linkCursor );
+      emit clickOnCell();
+
+      // the notebook window owns the dialog
+      QMetaObject::invokeMethod( window(), "insertWebLink", Qt::QueuedConnection );
+    }
   }
 
   /*!
@@ -205,7 +232,6 @@ namespace IAEX
 
   }
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   /*!
    * \brief MyTextBrowser::doSetSource
    * Attempts to load the document at the given url with the specified type.
@@ -217,7 +243,6 @@ namespace IAEX
   {
     emit openLink( &name );
   }
-#endif
 
 
 

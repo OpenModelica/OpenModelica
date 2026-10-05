@@ -167,7 +167,7 @@ public
   algorithm
     classInst := match component
       case COMPONENT()    then component.classInst;
-      case ITERATOR(ty = Type.COMPLEX(cls = classInst)) then classInst;
+      case ITERATOR(ty = Type.COMPLEX()) then Type.complexNode(component.ty);
       case ITERATOR()     then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
       else InstNode.EMPTY_NODE();
     end match;
@@ -984,6 +984,16 @@ public
       else false;
     end match;
   end isInvalid;
+
+  function isIterator
+    input Component component;
+    output Boolean iterator;
+  algorithm
+    iterator := match component
+      case ITERATOR() then true;
+      else false;
+    end match;
+  end isIterator;
 
   function isTypeAttribute
     input Component component;

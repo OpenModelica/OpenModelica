@@ -60,7 +60,6 @@ We simulate as usual, after setting the profiling flag:
 .. omc-mos ::
   :hidden:
 
-  :target: ProfilingTest_prof.999.svg
   system("pandoc -o ProfilingTest_prof.rst ProfilingTest_prof.html")
   system("sed -i= 's/:target: ProfilingTest_prof.*/:width: 32px/' ProfilingTest_prof.rst")
   system("mv ProfilingTest_prof.rst ../source/ProfilingTest_prof.inc")

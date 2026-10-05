@@ -44,12 +44,16 @@ encapsulated package Autoconf
   constant String make = "";
   constant String exeExt = "";
   constant String dllExt = "";
+  constant Boolean isWasm = false;
   constant String ldflags_basic = "";
 
   constant String ldflags_runtime = "";
+  constant String ldflags_runtime_mmc = "";
   constant String ldflags_runtime_sim = "";
   constant String ldflags_runtime_sim_rust = "";
   constant String ldflags_runtime_fmu = "";
+  constant String hdf5Libs = "";
+  constant String fmilibLibs = "";
 
   constant String parModelicaAutoLibs = "";
 
@@ -57,7 +61,6 @@ encapsulated package Autoconf
   constant String pathDelimiter = "/";
   constant String groupDelimiter = ";";
 
-  constant String corbaLibs = "";
   constant list<String> systemLibs = {};
 
   constant String triple = "";

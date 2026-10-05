@@ -30,12 +30,22 @@
 #
 # See the full OSMC Public License conditions for more details.
 
+# Only the animation windows use Qt Quick 3D, and configure can turn them off.
+win32 {
+  CONFIG += animation
+} else {
+  include($$PWD/OMEdit.animation.unix.config.pri)
+}
+
 QT += network core gui xml svg opengl printsupport widgets concurrent webenginewidgets
-equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat openglwidgets
-  greaterThan(QT_MINOR_VERSION, 4) {
-    QT += httpserver
-  }
+CONFIG(animation) {
+  QT += quick quick3d qml quickwidgets
+}
+QT += core5compat openglwidgets
+qtHaveModule(httpserver) {
+  QT += httpserver
+} else {
+  message("QtHttpServer not found; building without the MCP server")
 }
 
 # Set the C++ standard.
@@ -44,6 +54,9 @@ CONFIG += c++17
 CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
+# OMEdit builds omc's values, so it links libOpenModelicaRuntimeMMC and has to
+# say so before any header picks the counted allocator instead.
+DEFINES += OMC_METAMODELICA_RUNTIME=1
 
 # Build OMEdit against the Rust omc port (libOpenModelicaCompiler.so) in-process.
 # Enable by either setting OMEDIT_RUST_OMC=1 in the environment, or passing

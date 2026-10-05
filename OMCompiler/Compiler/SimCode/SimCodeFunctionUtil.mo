@@ -43,7 +43,6 @@ import Types;
 import Util;
 import Global;
 import ProgramUtil;
-import HashTableExpToIndex;
 import HashTableStringToPath;
 import SimCodeFunction;
 import SimCodeVar;
@@ -204,6 +203,18 @@ algorithm
         crefExp;
   end match;
 end buildCrefExpFromSubs;
+
+public function padAsubSubscripts
+"Used by templates: the subscripts of an ASUB of exp, with a whole-dimension
+ subscript for each trailing dimension they leave out."
+  input DAE.Exp exp;
+  input list<DAE.Subscript> subs;
+  output list<DAE.Subscript> outSubs;
+protected
+  Integer n = listLength(Expression.arrayDimension(Expression.typeof(exp))) - listLength(subs);
+algorithm
+  outSubs := if n > 0 then listAppend(subs, List.fill(DAE.WHOLEDIM(), n)) else subs;
+end padAsubSubscripts;
 
 public function incrementInt
 "Used by templates to create new integers that are increments of another."
@@ -527,6 +538,7 @@ algorithm
 
   collectRecDeclsFromMetaRecCallExps(literals, recDeclsMap);
   collectRecDeclsFromTypes(metarecordTypes, recDeclsMap);
+  addRecordDeclsForExtraConstructors(recDeclsMap);
 
   recordDecls := UnorderedMap.valueList(recDeclsMap);
   recordDecls := List.sort(recordDecls, orderRecordDecls);
@@ -537,6 +549,37 @@ algorithm
   g := Graph.buildGraph(recordDecls, getRecordDependencies, recordDecls);
   (recordDecls, {}) := Graph.topologicalSort(g, isRecordDeclEqual);
 end elaborateFunctions;
+
+protected function addRecordDeclsForExtraConstructors
+  "An extra constructor builds a struct of its record type, which is otherwise
+   only declared where the record is used with its own defaults. Added after
+   collecting, so that such a use always provides the declaration."
+  input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
+algorithm
+  for decl in UnorderedMap.valueList(recDeclsMap) loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR() guard not UnorderedMap.contains(decl.name, recDeclsMap)
+        algorithm
+          UnorderedMap.add(decl.name, SimCodeFunction.RECORD_DECL_FULL(decl.name, NONE(), decl.defPath,
+            list(variableWithoutBinding(v) for v in decl.variables), decl.usedExternally), recDeclsMap);
+        then ();
+      else ();
+    end match;
+  end for;
+end addRecordDeclsForExtraConstructors;
+
+protected function variableWithoutBinding
+  input output SimCodeFunction.Variable var;
+algorithm
+  () := match var
+    case SimCodeFunction.VARIABLE()
+      algorithm
+        var.value := NONE();
+        var.bind_from_outside := false;
+      then ();
+    else ();
+  end match;
+end variableWithoutBinding;
 
 protected function getRecordDependencies
   input SimCodeFunction.RecordDeclaration decl;
@@ -586,6 +629,59 @@ algorithm
   name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
   decl := List.find1(allDecls, recordDeclHasName, name);
 end getRecordDependenciesFromType;
+
+public function setTrivialRecords
+  "Registers the records whose members are all scalars without references, or
+   such records. The declarations come sorted by their dependencies."
+  input list<SimCodeFunction.RecordDeclaration> recordDecls;
+protected
+  list<String> trivial = {};
+algorithm
+  for decl in recordDecls loop
+    () := match decl
+      case SimCodeFunction.RECORD_DECL_FULL()
+        guard List.all(decl.variables, function isTrivialRecordMember(allDecls = recordDecls, trivial = trivial))
+        algorithm
+          trivial := decl.name :: trivial;
+        then ();
+      else ();
+    end match;
+  end for;
+  setGlobalRoot(Global.trivialRecords, trivial);
+end setTrivialRecords;
+
+public function isTrivialRecord
+  input String name;
+  output Boolean b;
+algorithm
+  b := listMember(name, getGlobalRoot(Global.trivialRecords));
+end isTrivialRecord;
+
+protected function isTrivialRecordMember
+  input SimCodeFunction.Variable var;
+  input list<SimCodeFunction.RecordDeclaration> allDecls;
+  input list<String> trivial;
+  output Boolean b;
+protected
+  String name;
+algorithm
+  b := match getVarType(var)
+    case DAE.T_REAL() then true;
+    case DAE.T_INTEGER() then true;
+    case DAE.T_BOOL() then true;
+    case DAE.T_ENUMERATION() then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
+      algorithm
+        try
+          SimCodeFunction.RECORD_DECL_FULL(name = name) := getRecordDependenciesFromType(getVarType(var), allDecls);
+          b := listMember(name, trivial);
+        else
+          b := false;
+        end try;
+      then b;
+    else false;
+  end match;
+end isTrivialRecordMember;
 
 protected function recordDeclHasName
   input SimCodeFunction.RecordDeclaration decl;
@@ -1216,17 +1312,21 @@ public function findLiterals
 algorithm
   (ofns, (_, _, literals)) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper,
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
+    (0, newExpIndexMap(), {}));
   literals := listReverse(literals);
 end findLiterals;
 
 public
 
+function newExpIndexMap
+  output UnorderedMap<DAE.Exp, Integer> map = UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual, BaseHashTable.bigBucketSize);
+end newExpIndexMap;
+
 function findLiteralsHelper
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp exp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> tpl;
 algorithm
   exp := inExp;
   tpl := inTpl;
@@ -1236,7 +1336,102 @@ algorithm
   (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
 end findLiteralsHelper;
 
+function findLiteralsHelperKeepSingle
+  "findLiteralsHelper, except that a string used once (per uses) that is not
+   a literal yet stays in place."
+  input DAE.Exp inExp;
+  input UnorderedMap<DAE.Exp, Integer> uses;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
+  output DAE.Exp exp;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> tpl;
+algorithm
+  (exp, tpl) := Expression.traverseExpBottomUp(inExp,
+    function Patternm.traverseConstantPatternsHelper(func=function replaceLiteralExpKeepSingle(uses=uses)),
+    inTpl);
+  (exp, tpl) := Expression.traverseExpTopDown(exp, replaceLiteralArrayExp, tpl);
+end findLiteralsHelperKeepSingle;
+
+function countStringUses
+  input DAE.Exp inExp;
+  input UnorderedMap<DAE.Exp, Integer> inUses;
+  output DAE.Exp exp = inExp;
+  output UnorderedMap<DAE.Exp, Integer> uses;
+algorithm
+  (_, uses) := Expression.traverseExpBottomUp(inExp, countStringUse, inUses);
+end countStringUses;
+
 protected
+
+function isSconst
+  input DAE.Exp e;
+  output Boolean b;
+algorithm
+  b := match e case DAE.SCONST() then true; else false; end match;
+end isSconst;
+
+function countStringUse
+  input DAE.Exp inExp;
+  input UnorderedMap<DAE.Exp, Integer> inUses;
+  output DAE.Exp exp = inExp;
+  output UnorderedMap<DAE.Exp, Integer> uses = inUses;
+algorithm
+  if isSconst(inExp) then
+    uses := addStringUse(inExp, uses);
+  else
+    // A lifted literal array cannot hold an unlifted string
+    for e in literalElements(inExp) loop
+      if isSconst(e) then
+        uses := addStringUse(e, uses);
+      end if;
+    end for;
+  end if;
+end countStringUse;
+
+function addStringUse
+  input DAE.Exp e;
+  input output UnorderedMap<DAE.Exp, Integer> uses;
+algorithm
+  UnorderedMap.add(e, UnorderedMap.getOrDefault(e, uses, 0) + 1, uses);
+end addStringUse;
+
+function literalElements
+  input DAE.Exp e;
+  output list<DAE.Exp> elts;
+algorithm
+  elts := match e
+    local
+      DAE.Exp e1, e2;
+    case DAE.ARRAY() then e.array;
+    case DAE.MATRIX() then List.flatten(e.matrix);
+    case DAE.BOX(e1) then {e1};
+    case DAE.META_OPTION(SOME(e1)) then {e1};
+    case DAE.CONS(e1, e2) then {e1, e2};
+    case DAE.LIST() then e.valList;
+    case DAE.META_TUPLE() then e.listExp;
+    case DAE.METARECORDCALL() then e.args;
+    case DAE.CALL(path = Absyn.IDENT("listArrayLiteral")) then e.expLst;
+    else {};
+  end match;
+end literalElements;
+
+function replaceLiteralExpKeepSingle
+  input DAE.Exp inExp;
+  input UnorderedMap<DAE.Exp, Integer> uses;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
+  output DAE.Exp outExp;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
+protected
+  UnorderedMap<DAE.Exp, Integer> ht;
+algorithm
+  (_, ht, _) := inTpl;
+  if isSconst(inExp) and UnorderedMap.getOrDefault(inExp, uses, 0) == 1 and not UnorderedMap.contains(inExp, ht) then
+    outExp := inExp;
+    outTpl := inTpl;
+  else
+    (outExp, outTpl) := replaceLiteralExp(inExp, inTpl);
+  end if;
+end replaceLiteralExpKeepSingle;
+
 
 function replaceLiteralArrayExp
   "The tuples contain:
@@ -1248,15 +1443,15 @@ function replaceLiteralArrayExp
   Handles only array expressions (needs to be performed in a top-down fashion)
   "
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont=true;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 algorithm
   (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp2;
-      tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+      tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> tpl;
     case (DAE.ARRAY(), tpl)
       algorithm
         try
@@ -1289,15 +1484,15 @@ function replaceLiteralExp
   * The list of literals
   "
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp;
       String msg;
-      tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> t;
+      tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> t;
       list<DAE.Exp> es;
     case (exp, t)
       algorithm
@@ -1338,24 +1533,24 @@ function replaceLiteralExp2
   * The list of literals
   "
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp, nexp;
       Integer i, ix;
       list<DAE.Exp> l;
-      HashTableExpToIndex.HashTable ht;
+      UnorderedMap<DAE.Exp, Integer> ht;
     case (exp, (_, ht, _))
       algorithm
-        ix := BaseHashTable.get(exp, ht);
+        ix := UnorderedMap.getOrFail(exp, ht);
         nexp := DAE.SHARED_LITERAL(ix, exp);
       then (nexp, inTpl);
     case (exp, (i, ht, l))
       algorithm
-        ht := BaseHashTable.add((exp, i), ht);
+        UnorderedMap.add(exp, i, ht);
         nexp := DAE.SHARED_LITERAL(i, exp);
       then (nexp, (i+1, ht, exp::l));
   end matchcontinue;
@@ -1620,7 +1815,7 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       SimCodeFunction.RecordDeclaration recDecl;
       Option<SimCodeFunction.RecordDeclaration> optRecDecl;
-      Boolean is_default, usedExternally, bool1;
+      Boolean is_default, usedExternally, bool1, changed;
 
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst, usedExternally = usedExternally)
       algorithm
@@ -1633,9 +1828,10 @@ algorithm
           // If it already exists check if we need to update it.
           if isSome(optRecDecl) then
             SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
+            (vars, changed) := addMissingDefaults(vars, varlst);
 
-            if usedExternally and not bool1 then
-              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, true);
+            if changed or (usedExternally and not bool1) then
+              recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars, usedExternally or bool1);
               UnorderedMap.add(sname, recDecl, recDeclsMap);
             end if;
           // Add it if it does not exist.
@@ -1652,16 +1848,8 @@ algorithm
           // Add it if does not exist. Otherwise do nothing.
           if isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars, path, usedExternally);
             UnorderedMap.add(sname, recDecl, recDeclsMap);
-          end if;
-          // Also ensure the struct type itself is declared. Without this, sizeof(name) and
-          // function return types using 'name' produce "unknown type name" C errors, because
-          // RECORD_DECL_ADD_CONSTRCTOR does not emit a typedef or struct for the base record.
-          if Flags.getConfigBool(Flags.NEW_BACKEND) and isNone(UnorderedMap.get(name, recDeclsMap)) then
-            vars := List.map(varlst, typesVar);
-            recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars, usedExternally);
-            UnorderedMap.add(name, recDecl, recDeclsMap);
             collectRecDeclsFromTypesVars(varlst, recDeclsMap);
           end if;
         end if;
@@ -1683,6 +1871,40 @@ algorithm
 
   end match;
 end collectRecDeclsFromType;
+
+protected function addMissingDefaults
+  "Not every type of a record carries the defaults of its fields, so the
+   declaration takes each missing default from the next type that has it."
+  input list<SimCodeFunction.Variable> inVars;
+  input list<DAE.Var> typeVars;
+  output list<SimCodeFunction.Variable> vars = {};
+  output Boolean changed = false;
+protected
+  Option<DAE.Exp> value;
+  SimCodeFunction.Variable var;
+algorithm
+  for v in inVars loop
+    var := v;
+    () := match var
+      case SimCodeFunction.VARIABLE(value = NONE())
+        algorithm
+          for tv in typeVars loop
+            if stringEq(tv.name, ComponentReferenceBasics.crefFirstIdent(var.name)) then
+              value := checkSourceAndGetBindingExp(tv.binding);
+              if isSome(value) then
+                var.value := value;
+                changed := true;
+              end if;
+              break;
+            end if;
+          end for;
+        then ();
+      else ();
+    end match;
+    vars := var :: vars;
+  end for;
+  vars := listReverse(vars);
+end addMissingDefaults;
 
 protected function typesVarNoBinding
   input DAE.Var inTypesVar;
@@ -1825,9 +2047,11 @@ protected function collectRecDeclsFromTypesVars
   input UnorderedMap<String, SimCodeFunction.RecordDeclaration> recDeclsMap;
 algorithm
   for recTyVar in inRecordTypeVars loop
-    () := match recTyVar
-      case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))) algorithm
-        collectRecDeclsFromType(recTyVar.ty, recDeclsMap);
+    () := match Types.arrayElementType(recTyVar.ty)
+      local
+        DAE.Type ty;
+      case ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) algorithm
+        collectRecDeclsFromType(ty, recDeclsMap);
       then ();
 
       else ();
@@ -1878,7 +2102,7 @@ algorithm
   match inAbsynAnnotationOption
     local
       SCode.Mod mod;
-      Boolean b;
+      Boolean b, isWasm;
       String target;
       Option<String> resources;
       list<String> libNames, fullLibNames, dirs;
@@ -1890,15 +2114,33 @@ algorithm
         (libs, libNames) := generateExtFunctionIncludesLibstr(target,mod);
         includes := generateExtFunctionIncludesIncludestr(mod);
         (libs, dirs, resources) := generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
-        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) then libNames else {} loop
-          if getGerneralTarget(target)=="msvc" or Autoconf.os=="Windows_NT" then
-            fullLibNames := {name + Autoconf.dllExt, "lib" + name + ".a", "lib" + name + ".lib"};
-          else
-            fullLibNames := {"lib" + name + ".a", "lib" + name + Autoconf.dllExt};
-          end if;
-          lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info);
-        end for;
+        isWasm := isWasmSimCodeTarget();
         paths := generateExtFunctionLibraryDirectoryPaths(program, path, mod);
+        if isWasm then
+          dirs := List.union(dirs, paths);
+        end if;
+        // A bundle installPackage put there covers the `Library` names, some of
+        // which it links in privately.
+        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) and not (isWasm and hasWasmBundle(dirs)) then libNames else {} loop
+          // A wasm run uses either form, so both are looked for and built, unless
+          // the module it loads is there already.
+          if not (isWasm and max(System.regularFileExists(d + n) for d in "" :: list(d + "/" for d in dirs), n in {name + ".wasm", "lib" + name + ".wasm"})) then
+            if getGerneralTarget(target)=="msvc" or Autoconf.os=="Windows_NT" then
+              fullLibNames := {name + Autoconf.dllExt, "lib" + name + ".a", "lib" + name + ".lib"};
+            else
+              fullLibNames := {"lib" + name + ".a", "lib" + name + Autoconf.dllExt};
+            end if;
+            lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info, false);
+            if isWasm then
+              lookForExtFunctionLibrary({name + ".wasm", "lib" + name + ".wasm"},
+                                        dirs, name, resources, path, info, true);
+            end if;
+          end if;
+        end for;
+        if isWasm then
+          // A wasm target gets no -L flags, so the search dirs travel as libPaths.
+          paths := List.union(paths, list(d for d guard System.directoryExists(d) in listReverse(dirs)));
+        end if;
         includeDirs := generateExtFunctionIncludeDirectoryFlags(program, path, mod, includes);
       then
         (includes, includeDirs, libs,paths, b);
@@ -1906,13 +2148,33 @@ algorithm
   end match;
 end generateExtFunctionIncludes;
 
+protected function hasWasmBundle
+  "Whether installPackage put prebuilt wasm modules (an `omc-<generation>`
+   directory) in one of `dirs`."
+  input list<String> dirs;
+  output Boolean b = false;
+algorithm
+  for d in dirs loop
+    if (StringUtil.endsWith(d, "wasm32-wasip1") or StringUtil.endsWith(d, "wasm32-wasip1/")) and System.directoryExists(d) then
+      if List.any(System.subDirectories(d), function StringUtil.startsWith(prefix = "omc-")) then
+        b := true;
+        return;
+      end if;
+    end if;
+  end for;
+end hasWasmBundle;
+
 protected function lookForExtFunctionLibrary
+  "`forWasm` looks for the wasm module a simulation loads rather than the platform
+   library a host links, and builds that instead. A library without a wasm build is
+   the ordinary case, so this pass does not report one missing."
   input list<String> names;
   input list<String> dirs;
   input String name;
   input Option<String> resources;
   input Absyn.Path path;
   input SourceInfo info;
+  input Boolean forWasm;
 protected
   list<String> dirs2;
 algorithm
@@ -1920,44 +2182,49 @@ algorithm
   if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
     () := match resources
       local
-        String resourcesStr, tmpdir, cmd, pwd, contents, found;
+        String resourcesStr, tmpdir, srcdir, builddir, cmd, pwd, contents, found;
         Integer status;
-        Boolean didFind;
+        Boolean didFind, isCMake;
       case SOME(resourcesStr)
         algorithm
-          if System.directoryExists(resourcesStr) then
+          if System.directoryExists(resourcesStr) and not extLibraryBuildAttempted(resourcesStr, name, forWasm) then
             didFind := false;
-            for dir in list(dir for dir guard System.regularFileExists(resourcesStr + "/BuildProjects/" + dir + "/autogen.sh") in System.subDirectories(resourcesStr + "/BuildProjects")) loop
+            for dir in extLibraryBuildProjects(resourcesStr, forWasm) loop
+              srcdir := resourcesStr + (if dir == "." then "" else "/" + dir);
+              isCMake := System.regularFileExists(srcdir + "/CMakeLists.txt");
               tmpdir := System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/omc_compile_" + name + "_");
               Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Created directory " + tmpdir}, info);
-              cmd := "cp -a \"" + resourcesStr + "\"/* \"" + tmpdir + "\"";
-              Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {cmd}, info);
-              System.systemCall(cmd);
+              if isCMake then
+                // Out of source: the project is read where it lies.
+                builddir := tmpdir;
+              else
+                // autotools builds in-tree, so it gets a copy of Resources.
+                builddir := tmpdir + "/" + dir;
+                cmd := "cp -a \"" + resourcesStr + "\"/* \"" + tmpdir + "\"";
+                Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {cmd}, info);
+                System.systemCall(cmd);
+              end if;
               pwd := System.pwd();
-              if 0==System.cd(tmpdir + "/BuildProjects/" + dir) then
+              if 0==System.cd(builddir) then
                 Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Changed directory to " + System.pwd()}, info);
-                // TODO: Add $(host)
-                cmd := "sh ./autogen.sh && ./configure --libdir='"+userCompiledBinariesDirectory(path)+"' && make && make install";
+                cmd := extLibraryBuildCommand(path, forWasm, if isCMake then srcdir else "");
                 status := System.systemCall(cmd, "log");
                 contents := System.readFile("log");
                 if status <> 0 then
                   Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to run "+cmd+": " + contents}, info);
                 else
                   Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Succeeded with compilation and installation of the library using:\ncommand: "+cmd+"\n" + contents}, info);
-                  didFind := true;
-                  for d in dirs2, n in names loop
-                    if not System.regularFileExists(d+"/"+n) then
-                      Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {n, cmd, System.pwd()}, info);
-                      didFind := false;
-                    end if;
-                  end for;
+                  // The names are spellings of one library, not files that must all exist.
+                  didFind := max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names);
                   if didFind then
                     found := listHead(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs2, n in names))));
-                    Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Compiled "+found+" by running build project " + resourcesStr + "/BuildProjects/" + dir}, info);
+                    Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Compiled "+found+" by running build project " + resourcesStr + "/" + dir}, info);
+                  else
+                    Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {name, cmd, System.pwd()}, info);
                   end if;
                 end if;
               else
-                Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to change directory to " + tmpdir + "/BuildProjects/" + dir}, info);
+                Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to change directory to " + builddir}, info);
               end if;
               System.cd(pwd);
               System.removeDirectory(tmpdir);
@@ -1972,7 +2239,7 @@ algorithm
     end match;
     if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
       // suppress this warning if we're running the testsuite
-      if not Testsuite.isRunning() then
+      if not (forWasm or Testsuite.isRunning()) then
         Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d + "/" + n for d in dirs2, n in names)}, info);
       end if;
     end if;
@@ -2036,8 +2303,17 @@ algorithm
                    uri + "/" + System.openModelicaPlatform(),
                    uri + "/" + System.openModelicaPlatformAlternative(),
                    (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
+                   // Where an MSL-shaped build project forces its CMAKE_INSTALL_LIBDIR.
+                   (userCompiledBinariesDirectory(path) + "/Library/" + System.modelicaPlatform()),
                    (installationDir + "/lib/"),
                    (installationDir + "/lib/" + Autoconf.triple + "/omc")};
+
+      // A build project run for a wasm target installs beside, not over, the host build.
+      if isWasmSimCodeTarget() then
+        libPaths := userCompiledBinariesDirectory(path) + "/" + wasmLibraryTriple ::
+                    userCompiledBinariesDirectory(path) + "/" + wasmLibraryTriple + "/Library/" + wasmLibraryTriple ::
+                    libPaths;
+      end if;
 
       if Autoconf.os == "Windows_NT" then
         libPaths := List.appendElt(installationDir + "/bin/", libPaths);
@@ -2112,6 +2388,83 @@ protected function userCompiledBinariesDirectory
   input Absyn.Path path;
   output String str = Settings.getHomeDir(false)+"/.openmodelica/binaries/"+AbsynUtil.pathFirstIdent(path);
 end userCompiledBinariesDirectory;
+
+constant String wasmLibraryTriple = "wasm32-wasip1";
+
+protected function extLibraryBuildProjects
+  "Build projects, most preferred first, relative to Resources. Only a CMake one
+   can cross-compile, so only it can build the wasm module. Resources itself comes
+   first: that is where the MSL puts the CMakeLists.txt a tool is meant to run."
+  input String resources;
+  input Boolean forWasm;
+  output list<String> projects;
+protected
+  list<String> dirs, cmakeProjects;
+algorithm
+  dirs := list("BuildProjects/" + d for d in System.subDirectories(resources + "/BuildProjects"));
+  if System.regularFileExists(resources + "/CMakeLists.txt") then
+    dirs := "." :: dirs;
+  end if;
+  cmakeProjects := list(d for d guard
+    System.regularFileExists(resources + "/" + d + "/CMakeLists.txt") in dirs);
+  projects := if forWasm then cmakeProjects else
+    listAppend(cmakeProjects, list(d for d guard
+      not listMember(d, cmakeProjects) and
+      System.regularFileExists(resources + "/" + d + "/autogen.sh") in dirs));
+end extLibraryBuildProjects;
+
+protected function extLibraryBuildAttempted
+  "Whether the build projects have already been run this session, and marks them
+   run. A failed build installs nothing, so every further external function of the
+   library would otherwise repeat it, copying the whole Resources tree each time."
+  input String resources;
+  input String name;
+  input Boolean forWasm;
+  output Boolean attempted;
+protected
+  list<String> done;
+  String key = resources + "\n" + name + "\n" + String(forWasm);
+algorithm
+  done := getGlobalRoot(Global.extLibraryBuildIndex);
+  attempted := listMember(key, done);
+  if not attempted then
+    setGlobalRoot(Global.extLibraryBuildIndex, key :: done);
+  end if;
+end extLibraryBuildAttempted;
+
+protected function extLibraryBuildCommand
+  "Build and install one build project, run in an empty build directory for CMake
+   and in the copied project directory for autotools."
+  input Absyn.Path path;
+  input Boolean forWasm;
+  input String cmakeSourceDir "empty for an autotools project";
+  output String cmd;
+protected
+  String libdir, extra;
+algorithm
+  libdir := userCompiledBinariesDirectory(path);
+  if cmakeSourceDir <> "" then
+    if forWasm then
+      libdir := libdir + "/" + wasmLibraryTriple;
+      // A wasm target loads a module rather than linking an archive.
+      extra := " -DBUILD_SHARED_LIBS=ON \"-DCMAKE_TOOLCHAIN_FILE=" +
+               Settings.getInstallationDirectoryPath() + "/share/omc/cmake/" +
+               wasmLibraryTriple + ".cmake\"";
+    else
+      extra := "";
+    end if;
+    // How an MSL-shaped project asks for the tool's ModelicaUtilities.h.
+    extra := extra + " \"-DMODELICA_UTILITIES_INCLUDE_DIR=" +
+             Settings.getInstallationDirectoryPath() + "/include/omc/c\"";
+    // -S/-B and `cmake --install` need a newer CMake than RHEL 8's 3.11.
+    cmd := "cmake -DCMAKE_BUILD_TYPE=Release \"-DCMAKE_INSTALL_PREFIX=" +
+           libdir + "\" -DCMAKE_INSTALL_LIBDIR=." + extra + " \"" + cmakeSourceDir +
+           "\" && cmake --build . && cmake --build . --target install";
+  else
+    // TODO: Add $(host)
+    cmd := "sh ./autogen.sh && ./configure --libdir='" + libdir + "' && make && make install";
+  end if;
+end extLibraryBuildCommand;
 
 protected function generateExtFunctionLibraryDirectoryPaths
   "Process LibraryDirectory and IncludeDirectory"
@@ -2198,7 +2551,7 @@ algorithm
     case Absyn.STRING(str) guard str=="Lapack" or str=="lapack"
       then ({"lapack_win32_MT.lib", "f2c.lib"}, {});
 
-    // omcruntime on windows needs linking with mico2313 and wsock and then some :)
+    // omcruntime on windows needs linking with wsock and then some :)
     case Absyn.STRING("omcruntime")
       algorithm
         true := "Windows_NT" == Autoconf.os;
@@ -2206,21 +2559,14 @@ algorithm
       then
         (strs, {});
 
-    // Wonder if there may be issues if we have duplicates in the Corba libs
-    // and the other libs. Some other developer will probably swear over this
-    // hack some day, but at least I get an early weekend.
-    case Absyn.STRING("OpenModelicaCorba")
-      algorithm
-        str := Autoconf.corbaLibs;
-      then ({str},{});
-
     case Absyn.STRING("fmilib")
       then ({"fmilib.lib","shlwapi.lib"},{});
 
-    // If the string starts with a -, it's probably -l or -L gcc flags
+    // A file is passed as it is, and if the string starts with a -, it's
+    // probably a linker flag
     case Absyn.STRING(str)
       algorithm
-        true := "-" == stringGetStringChar(str, 1);
+        true := System.regularFileExists(str) or "-" == stringGetStringChar(str, 1);
       then ({str},{});
 
     case Absyn.STRING(str)
@@ -2289,10 +2635,16 @@ algorithm
         Error.addCompilerNotification("X11 library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
+    // The installed archive carries the MAT v7.3 paths, so a link line naming
+    // it needs HDF5 too, ahead of the zlib that follows in the expansion below:
+    // HDF5's deflate filter calls compress2.
+    case Absyn.STRING("ModelicaMatIO") guard Autoconf.hdf5Libs <> ""
+      then ({"-lModelicaMatIO", Autoconf.hdf5Libs},{});
+
     case Absyn.STRING(str as "omcruntime")
       algorithm
         if "Windows_NT" == Autoconf.os then
-          // omcruntime on windows needs linking with mico2313 and wsock and then some :)
+          // omcruntime on windows needs linking with wsock and then some :)
           str := "-l" + str;
           strs := str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-ltre" :: "-lws2_32" :: "-lRpcrt4" :: "-lregex" :: {};
         else
@@ -2300,16 +2652,11 @@ algorithm
         end if;
       then  (strs,{});
 
-    // Wonder if there may be issues if we have duplicates in the Corba libs
-    // and the other libs. Some other developer will probably swear over this
-    // hack some day, but at least I get an early weekend.
-    case Absyn.STRING("OpenModelicaCorba")
-      algorithm
-        str := Autoconf.corbaLibs;
-      then ({str},{});
-
+    // One element per library, which the wasm-jit loads one by one.
     case Absyn.STRING("fmilib")
-      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});
+      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"}
+            elseif Autoconf.fmilibLibs == "" then {"-lfmilib"}
+            else "-lfmilib" :: Util.stringSplitAtChar(Autoconf.fmilibLibs, " "),{});
 
     case Absyn.STRING(str)
       algorithm
@@ -2343,9 +2690,7 @@ algorithm
 end getLibraryStringInGccFormat;
 
 protected function isWasmSimCodeTarget
-"An FMU export falls back to C in the testsuite (SimCodeMain.callTargetTemplatesFMU)."
-  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm")
-                          and not (Flags.getConfigBool(Flags.BUILDING_FMU) and Testsuite.isRunning());
+  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm");
 end isWasmSimCodeTarget;
 
 protected function stripLibraryExtension
@@ -2378,29 +2723,29 @@ algorithm
       String str;
       list<String> host;
 
-    // In the runtime already: LAPACK/BLAS are in-wasm, and ModelicaExternalC is
-    // the side module omc carries.
+    // In the runtime already: LAPACK/BLAS are in-wasm, and zlib is inside the
+    // modules that use it.
     case Absyn.STRING("lapack") then ({},{});
     case Absyn.STRING("Lapack") then ({},{});
     case Absyn.STRING("blas") then ({},{});
-    case Absyn.STRING("ModelicaExternalC") then ({},{});
-    case Absyn.STRING("ModelicaStandardTables") then ({},{});
-    case Absyn.STRING("ModelicaIO") then ({},{});
-    case Absyn.STRING("ModelicaMatIO") then ({},{});
     case Absyn.STRING("zlib") then ({},{});
+    // The MSL's: the modules installed with it when there are, else the side
+    // modules omc carries, never a platform library.
+    case Absyn.STRING("ModelicaExternalC") then ({"ModelicaExternalC.wasm"},{});
+    case Absyn.STRING("ModelicaStandardTables") then ({"ModelicaStandardTables.wasm"},{});
+    case Absyn.STRING("ModelicaIO") then ({"ModelicaIO.wasm"},{});
+    case Absyn.STRING("ModelicaMatIO") then ({"ModelicaMatIO.wasm"},{});
 
     case Absyn.STRING(str)
       algorithm
         // Linker flags mean nothing here; only a library name can be resolved.
         if "-" == stringGetStringChar(str, 1) then
           strs := {};
+          names := {};
         else
-          (host, _) := getLibraryStringInGccFormat(exp);
+          (host, names) := getLibraryStringInGccFormat(exp);
           strs := (stripLibraryExtension(str) + ".wasm") :: host;
         end if;
-        // No name for the generic existence check: it looks for host libraries,
-        // while the wasm code generator resolves the module itself.
-        names := {};
       then (strs, names);
 
     else
@@ -2732,6 +3077,8 @@ algorithm
 end aliasRecordDeclarations2;
 
 protected function variableString
+  "The member as it is laid out in the struct: an array member is an array
+   descriptor whatever its dimension sizes."
   input SimCodeFunction.Variable var;
   output String str;
 algorithm
@@ -2740,7 +3087,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
+      then TypesDump.unparseType(Types.arrayElementType(ty)) + "[" + intString(Types.numberOfDimensions(ty)) + "] " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;
@@ -2768,10 +3115,14 @@ algorithm
             (if Flags.isSet(Flags.HPCOM) then "-fopenmp" else "");
   cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
-  if Flags.getConfigBool(Flags.PARMODAUTO) then
+  // The Rust simulation runtime serves ParModelica/auto's own interface, so
+  // linking the C++ one beside it would define PM_Model_create and friends twice.
+  if Flags.getConfigBool(Flags.PARMODAUTO) and not Config.simCodeRustRuntime() then
     ldflags := " " + Autoconf.parModelicaAutoLibs + " " + ldflags;
   end if;
-  rtlibs := if isFunction then Autoconf.ldflags_runtime
+  // A MetaModelica function library is dlopened into omc and hands values back
+  // through omc's own vocabulary, so it links the runtime omc links.
+  rtlibs := if isFunction then (if Config.acceptMetaModelicaGrammar() then Autoconf.ldflags_runtime_mmc else Autoconf.ldflags_runtime)
             elseif isFMU then Autoconf.ldflags_runtime_fmu
             elseif Config.simCodeRustRuntime() then Autoconf.ldflags_runtime_sim_rust
             else Autoconf.ldflags_runtime_sim;

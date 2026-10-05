@@ -26,11 +26,11 @@ fn eq_str(a: ArcStr, b: ArcStr) -> Result<bool> {
 
 // ── construction helpers ──────────────────────────────────────────────────────
 
-fn empty_map() -> Arc<UM::UnorderedMap<ArcStr, i32>> {
+fn empty_map() -> metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>> {
     UM::new(Arc::new(hash_str), Arc::new(eq_str), 13)
 }
 
-fn map_of(pairs: &[(&str, i32)]) -> Result<Arc<UM::UnorderedMap<ArcStr, i32>>> {
+fn map_of(pairs: &[(&str, i32)]) -> Result<metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>>> {
     let m = empty_map();
     for (k, v) in pairs {
         UM::add(arcstr::format!("{}", k), *v, m.clone())?;
@@ -39,7 +39,7 @@ fn map_of(pairs: &[(&str, i32)]) -> Result<Arc<UM::UnorderedMap<ArcStr, i32>>> {
 }
 
 /// Collect (keyList, valueList) as sorted-by-key pairs for comparison.
-fn to_sorted_pairs(m: Arc<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(String, i32)> {
+fn to_sorted_pairs(m: metamodelica::Ref<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(String, i32)> {
     let keys = UM::keyList(m.clone());
     let vals = UM::valueList(m.clone());
     let mut pairs: Vec<(String, i32)> = vec![];
@@ -47,8 +47,8 @@ fn to_sorted_pairs(m: Arc<UM::UnorderedMap<ArcStr, i32>>) -> Vec<(String, i32)> 
     let mut vi = vals.as_ref();
     loop {
         match (ki, vi) {
-            (metamodelica::List::Cons { head: k, tail: kt },
-             metamodelica::List::Cons { head: v, tail: vt }) => {
+            (metamodelica::ListNode::Cons { head: k, tail: kt },
+             metamodelica::ListNode::Cons { head: v, tail: vt }) => {
                 pairs.push((k.to_string(), *v));
                 ki = kt.as_ref();
                 vi = vt.as_ref();
@@ -327,7 +327,7 @@ fn test_tolist_contains_all_pairs() -> Result<()> {
 fn test_from_lists_basic() -> Result<()> {
     let keys = list![literal!("a"), literal!("b"), literal!("c")];
     let vals = list![1_i32, 2_i32, 3_i32];
-    let m = UM::fromLists(keys, vals, Arc::new(hash_str), Arc::new(eq_str))?;
+    let m = UM::fromLists(&keys, vals, Arc::new(hash_str), Arc::new(eq_str))?;
     assert_eq!(UM::get(literal!("a"), m.clone())?, Some(1));
     assert_eq!(UM::get(literal!("b"), m.clone())?, Some(2));
     assert_eq!(UM::get(literal!("c"), m.clone())?, Some(3));
@@ -336,9 +336,9 @@ fn test_from_lists_basic() -> Result<()> {
 
 #[test]
 fn test_from_lists_empty() -> Result<()> {
-    let keys: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
-    let vals: Arc<metamodelica::List<i32>>    = metamodelica::nil();
-    let m = UM::fromLists(keys, vals, Arc::new(hash_str), Arc::new(eq_str))?;
+    let keys: metamodelica::List<ArcStr> = metamodelica::nil();
+    let vals: metamodelica::List<i32>    = metamodelica::nil();
+    let m = UM::fromLists(&keys, vals, Arc::new(hash_str), Arc::new(eq_str))?;
     assert!(UM::isEmpty(m));
     Ok(())
 }
@@ -348,7 +348,7 @@ fn test_from_lists_mismatched_length_fails() -> Result<()> {
     // More keys than values – should fail.
     let keys = list![literal!("a"), literal!("b")];
     let vals = list![1_i32];
-    let result = UM::fromLists(keys, vals, Arc::new(hash_str), Arc::new(eq_str));
+    let result = UM::fromLists(&keys, vals, Arc::new(hash_str), Arc::new(eq_str));
     assert!(result.is_err());
     Ok(())
 }

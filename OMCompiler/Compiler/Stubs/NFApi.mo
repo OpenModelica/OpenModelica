@@ -65,6 +65,10 @@ function mkFullyQual
   output Absyn.Path qualPath = pathToQualify;
 end mkFullyQual;
 
+public
+function clearCache
+end clearCache;
+
 function getInheritedClasses
   input Absyn.Path classPath;
   input Absyn.Program program;

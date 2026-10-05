@@ -482,5 +482,5 @@ algorithm
   end match;
 end expToString;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="loader");
 end Parser;

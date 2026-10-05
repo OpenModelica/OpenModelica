@@ -350,6 +350,12 @@ fn engine() -> wasmtime::Result<Engine> {
     // A model with external "C" carries the `model_error` tag its call sites catch.
     // The exporter's engine must agree, or the `.cwasm` it precompiled is rejected.
     cfg.wasm_exceptions(true);
+    // The GC heap holds only exception objects; left to default it would reserve
+    // another 4 GiB + guard per instance, like a linear memory.
+    cfg.gc_heap_reservation(16 << 20);
+    cfg.gc_heap_reservation_for_growth(16 << 20);
+    cfg.gc_heap_guard_size(0);
+    cfg.gc_heap_may_move(true);
     Engine::new(&cfg)
 }
 
@@ -412,7 +418,7 @@ fn new_store(engine: &Engine, res: &str, env: *mut c_void, log: Log, iu: Interme
     // What fmi3Instantiate* points at: a file-based CombiTable reads its table
     // through this preopen.
     if Path::new(res).is_dir() {
-        builder.preopened_dir(res, "/", wasmtime_wasi::DirPerms::READ, wasmtime_wasi::FilePerms::READ)?;
+        builder.preopened_dir(res, "/", wasmtime_wasi::FsPerms::ReadOnly)?;
     }
     Ok(Store::new(
         engine,

@@ -764,6 +764,11 @@ algorithm
   end match;
 end valueExp;
 
+public function valueExpNoOriginal "valueExp without an original expression; Susan cannot pass NONE()."
+  input Values.Value inValue;
+  output DAE.Exp outExp = valueExp(inValue);
+end valueExpNoOriginal;
+
 protected function valueExpArray
   input list<Values.Value> values;
   input list<Integer> inDims;

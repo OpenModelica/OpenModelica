@@ -3,7 +3,6 @@
 //! calls it from the loops (`CodegenC.tpl:equationGenericAssign`); here it is
 //! inlined, the way `SES_IFEQUATION` inlines its branches.
 
-use std::sync::Arc;
 
 use metamodelica::Result;
 
@@ -18,7 +17,7 @@ use super::*;
 pub(crate) fn emit_resizable_assign(
     ctx: &mut FnCtx,
     call_index: i32,
-    iters: &Arc<List<BackendDAE::SimIterator>>,
+    iters: &List<BackendDAE::SimIterator>,
 ) -> Result<()> {
     let call = lookup_call(ctx, call_index)?;
     let iters: Vec<&BackendDAE::SimIterator> = (&**iters).into_iter().collect();
@@ -29,7 +28,7 @@ pub(crate) fn emit_resizable_assign(
 pub(crate) fn emit_generic_assign(
     ctx: &mut FnCtx,
     call_index: i32,
-    scal_indices: &Arc<List<i32>>,
+    scal_indices: &List<i32>,
 ) -> Result<()> {
     let call = lookup_call(ctx, call_index)?;
     let indices: Vec<i32> = (&**scal_indices).into_iter().copied().collect();
@@ -41,12 +40,12 @@ pub(crate) fn emit_generic_assign(
 /// own index list in turn. The order is constant, so C's switch unrolls.
 pub(crate) fn emit_entwined_assign(
     ctx: &mut FnCtx,
-    call_order: &Arc<List<i32>>,
-    single_calls: &Arc<List<Arc<SimCode::SimEqSystem>>>,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    call_order: &List<i32>,
+    single_calls: &List<metamodelica::Ref<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
 ) -> Result<()> {
     use SimCode::SimEqSystem as E;
-    let calls: Vec<Arc<SimCode::SimEqSystem>> = (&**single_calls).into_iter().cloned().collect();
+    let calls: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = (&**single_calls).into_iter().cloned().collect();
     let mut consumed = vec![0usize; calls.len()];
     for slot in (&**call_order).into_iter() {
         let eq = calls
@@ -128,7 +127,7 @@ pub(crate) fn emit_decoded_iters(
                 ctx.emit(I::I32Add);
                 ctx.emit(I::I32Load(mem_arg(0, 2)));
                 ctx.emit(I::LocalSet(it));
-                (name, Arc::new(DAE::Exp::ICONST { integer: *size }))
+                (name, metamodelica::Ref::new(DAE::Exp::ICONST { integer: *size }))
             }
         };
         ctx.emit(I::LocalGet(tmp));
@@ -190,15 +189,15 @@ pub(crate) fn emit_index_list_loop(
 /// A constant `Integer[:]` table as a module-wide object; leaves its element-data
 /// address in a fresh local.
 fn emit_const_int_table(ctx: &mut FnCtx, values: &[i32]) -> Result<u32> {
-    let array: List<Arc<DAE::Exp>> =
-        values.iter().map(|&v| Arc::new(DAE::Exp::ICONST { integer: v })).collect();
-    let ty = Arc::new(DAE::Type::T_ARRAY {
-        ty: Arc::new(DAE::Type::T_INTEGER { varLst: metamodelica::nil() }),
-        dims: metamodelica::list![Arc::new(DAE::Dimension::DIM_INTEGER {
+    let array: List<metamodelica::Ref<DAE::Exp>> =
+        values.iter().map(|&v| metamodelica::Ref::new(DAE::Exp::ICONST { integer: v })).collect();
+    let ty = metamodelica::Ref::new(DAE::Type::T_ARRAY {
+        ty: metamodelica::Ref::new(DAE::Type::T_INTEGER { varLst: metamodelica::nil() }),
+        dims: metamodelica::list![metamodelica::Ref::new(DAE::Dimension::DIM_INTEGER {
             integer: values.len() as i32
         })],
     });
-    let exp = DAE::Exp::ARRAY { ty, scalar: true, array: Arc::new(array) };
+    let exp = DAE::Exp::ARRAY { ty, scalar: true, array };
     let g = shared_lits::intern_const(&exp);
     let ptr = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::GlobalGet(g));
@@ -207,11 +206,11 @@ fn emit_const_int_table(ctx: &mut FnCtx, values: &[i32]) -> Result<u32> {
     Ok(ptr)
 }
 
-fn int_list(values: &Arc<List<i32>>) -> Vec<i32> {
+fn int_list(values: &List<i32>) -> Vec<i32> {
     (&**values).into_iter().copied().collect()
 }
 
-fn call_iters(call: &SimCode::SimGenericCall) -> &Arc<List<BackendDAE::SimIterator>> {
+fn call_iters(call: &SimCode::SimGenericCall) -> &List<BackendDAE::SimIterator> {
     use SimCode::SimGenericCall as G;
     match call {
         G::SINGLE_GENERIC_CALL { iters, .. }
@@ -220,7 +219,7 @@ fn call_iters(call: &SimCode::SimGenericCall) -> &Arc<List<BackendDAE::SimIterat
     }
 }
 
-type SubIters = Arc<List<(Arc<DAE::ComponentRef>, metamodelica::Array<Arc<DAE::Exp>>)>>;
+type SubIters = List<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Array<metamodelica::Ref<DAE::Exp>>)>;
 
 fn iter_sub_iter(iter: &BackendDAE::SimIterator) -> &SubIters {
     use BackendDAE::SimIterator as S;
@@ -351,13 +350,13 @@ fn emit_in_range(ctx: &mut FnCtx, it: u32, start_l: u32, stop_l: u32) {
 /// C's `subIterator`: `name = name_arr[parent - 1]`.
 fn emit_sub_iters(
     ctx: &mut FnCtx,
-    sub_iter: &Arc<List<(Arc<DAE::ComponentRef>, metamodelica::Array<Arc<DAE::Exp>>)>>,
+    sub_iter: &List<(metamodelica::Ref<DAE::ComponentRef>, metamodelica::Array<metamodelica::Ref<DAE::Exp>>)>,
     parent: u32,
 ) -> Result<Vec<IterBinding>> {
     use we::Instruction as I;
     let mut bounds = Vec::new();
     for (name, range) in &**sub_iter {
-        let elems: Vec<Arc<DAE::Exp>> = range.borrow().clone();
+        let elems: Vec<metamodelica::Ref<DAE::Exp>> = range.borrow().clone();
         if elems.is_empty() {
             return Err("CodegenWasmJit: dependent for-equation iterator over an empty range");
         }
@@ -422,7 +421,7 @@ fn emit_call_body(ctx: &mut FnCtx, call: &SimCode::SimGenericCall) -> Result<()>
 }
 
 /// C's `genericBranch` chain; a branch with no condition is the trailing `else`.
-fn emit_branches(ctx: &mut FnCtx, branches: &Arc<List<SimCode::SimBranch>>) -> Result<()> {
+fn emit_branches(ctx: &mut FnCtx, branches: &List<SimCode::SimBranch>) -> Result<()> {
     use SimCode::SimBranch as B;
     let mut depth = 0;
     for branch in &**branches {

@@ -139,7 +139,7 @@ fn simple_ty(ts: &TypeSpec, extra_dims: usize) -> Option<STy> {
 /// that here: a simple-literal default whose type does not match the scalar
 /// parameter excludes the function. Non-literal defaults and non-scalar params
 /// are not judged (left in).
-fn default_ok(modif: &Option<Arc<Modification>>, ty: &STy) -> bool {
+fn default_ok(modif: &Option<metamodelica::Ref<Modification>>, ty: &STy) -> bool {
     let Some(m) = modif else { return true };
     let EqMod::EQMOD { exp, .. } = &*m.eqMod else { return true };
     match (&**exp, ty) {
@@ -158,7 +158,7 @@ fn default_ok(modif: &Option<Arc<Modification>>, ty: &STy) -> bool {
 }
 
 /// Direct sub-classes (CLASSDEF elements) of a package, in source order.
-fn sub_classes(c: &Class) -> Vec<Arc<Class>> {
+fn sub_classes(c: &Class) -> Vec<metamodelica::Ref<Class>> {
     let mut out = Vec::new();
     if let ClassDef::PARTS { classParts, .. } = &*c.body {
         for part in &**classParts {
@@ -180,7 +180,7 @@ fn sub_classes(c: &Class) -> Vec<Arc<Class>> {
     out
 }
 
-fn find_class(classes: &[Arc<Class>], name: &str) -> Option<Arc<Class>> {
+fn find_class(classes: &[metamodelica::Ref<Class>], name: &str) -> Option<metamodelica::Ref<Class>> {
     classes.iter().find(|c| c.name.as_str() == name).cloned()
 }
 
@@ -302,7 +302,7 @@ fn main() {
     let program = parse(&code, builtin_path, builtin_path, Grammar::MetaModelica, false, 0.0)
         .unwrap_or_else(|e| panic!("parse {builtin_path}: {e}"));
 
-    let top: Vec<Arc<Class>> = (&*program.classes).into_iter().cloned().collect();
+    let top: Vec<metamodelica::Ref<Class>> = (&*program.classes).into_iter().cloned().collect();
     let openmodelica = find_class(&top, "OpenModelica")
         .expect("no `OpenModelica` package in the builtin file");
     let scripting = find_class(&sub_classes(&openmodelica), "Scripting")

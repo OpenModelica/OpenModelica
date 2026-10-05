@@ -53,8 +53,14 @@ QString Helper::userHomeDirectory = "";
 QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OMEditInternal = "OMEditInternal";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
-                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)";
+QString Helper::omFileTypes = QString("All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml%1);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
+                                      ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)%2")
+#if defined(__EMSCRIPTEN__)
+                              // An archive is the only way a browser hands over a library with its Resources/.
+                              .arg(" *.zip", ";;Zipped Libraries (*.zip)");
+#else
+                              .arg("", "");
+#endif
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
@@ -65,12 +71,12 @@ QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::infoXmlFileTypes = "OM Info Files (*_info.json)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::csvFileTypes = "CSV Files (*.csv)";
-QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
-QString Helper::omResultFileTypesRegExp = "\\b(mat|plt|csv)\\b";
+QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.arrow *.plt *.csv)";
+QString Helper::omResultFileTypesRegExp = "\\b(mat|arrow|plt|csv)\\b";
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
-QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.arrow *.csv *.fmu);;Visualization MAT(*.mat *.arrow);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
 int Helper::treeIndentation = 20;
 QSize Helper::iconSize = QSize(20, 20);
@@ -82,7 +88,7 @@ QString Helper::busConnectorFormat = "bus/connector";
 QString Helper::cutCopyPasteFormat = "application/OMEdit.cut-copy-paste";
 qreal Helper::shapesStrokeWidth = 2.0;
 int Helper::headingFontSize = 18;
-QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv";
+QString Helper::ModelicaSimulationOutputFormats = "mat,arrow,plt,csv";
 QString Helper::clockOptions = ",RT,CYC,CPU";
 QString Helper::internalLevel = ".OpenModelica.Scripting.ErrorLevel.internal";
 QString Helper::notificationLevel = ".OpenModelica.Scripting.ErrorLevel.notification";

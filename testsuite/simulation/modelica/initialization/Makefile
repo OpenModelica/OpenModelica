@@ -49,6 +49,7 @@ parameterWithoutBinding.mos \
 pre1.mos \
 pre2.mos \
 pre3.mos \
+RecursiveTearingLambda0.mos \
 setNumberOfInitLambda.mos \
 scaling1.mos \
 scaling2.mos \
@@ -91,6 +92,7 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 redundantInitialEquations.mos \
 conflictingStartValues.mos \
 conflictingStartValues2.mos \
+startAttributePriority.mos \
 Ticket5340.mos \
 
 

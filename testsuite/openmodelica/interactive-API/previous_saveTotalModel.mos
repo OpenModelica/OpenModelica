@@ -1,0 +1,67 @@
+// name: previous_saveTotalModel
+// keywords: saveTotalModel #5248
+// status: correct
+// teardown_command: rm -f PreviousSaveTotal_total.mo
+//
+// previous_saveTotalModel keeps the previous implementation of
+// saveTotalModel, which finds the used classes with the dependency analysis
+// of the old frontend, for comparison.
+//
+
+loadString("
+  package P
+    constant Real k = 2;
+
+    model A
+      parameter Real p = k;
+      Real x(start = p);
+    equation
+      der(x) = -x;
+    end A;
+
+    model Unused
+    end Unused;
+  end P;
+
+  model PreviousSaveTotal
+    P.A a;
+  end PreviousSaveTotal;
+"); getErrorString();
+previous_saveTotalModel("PreviousSaveTotal_total.mo", PreviousSaveTotal); getErrorString();
+readFile("PreviousSaveTotal_total.mo");
+clear(); getErrorString();
+loadFile("PreviousSaveTotal_total.mo"); getErrorString();
+checkModel(PreviousSaveTotal_total); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "package P
+//   constant Real k = 2;
+//
+//   model A
+//     parameter Real p = k;
+//     Real x(start = p);
+//   equation
+//     der(x) = -x;
+//   end A;
+// end P;
+//
+// model PreviousSaveTotal
+//   P.A a;
+// end PreviousSaveTotal;
+//
+// model PreviousSaveTotal_total
+//   extends PreviousSaveTotal;
+// end PreviousSaveTotal_total;
+// "
+// true
+// ""
+// true
+// ""
+// "Check of PreviousSaveTotal_total completed successfully.
+// Class PreviousSaveTotal_total has 1 equation(s) and 1 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

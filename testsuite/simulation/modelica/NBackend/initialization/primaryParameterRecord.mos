@@ -1,0 +1,44 @@
+// name: primaryParameterRecord
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model primaryParameterRecord
+  record R
+    Real a;
+    Real b;
+  end R;
+  function mk
+    input Real u;
+    output R r;
+  algorithm
+    r := R(u, 2*u);
+  end mk;
+  parameter Real g = 5;
+  parameter R r1 = R(g, 2*g);
+  parameter R r2 = mk(r1.a);
+  parameter Real s = r2.b + r1.a;
+  Real x(start=1, fixed=true);
+equation
+  der(x) = -x*s/100;
+end primaryParameterRecord;
+"); getErrorString();
+
+simulate(primaryParameterRecord, stopTime = 1); getErrorString();
+val(s, 0); val(r2.b, 0); val(r1.b, 0);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "primaryParameterRecord_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'primaryParameterRecord', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 15.0
+// 10.0
+// 10.0
+// endResult

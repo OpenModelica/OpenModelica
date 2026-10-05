@@ -50,6 +50,7 @@ public
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
   import Class = NFClass;
+  import Restriction = NFRestriction;
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
@@ -1075,6 +1076,10 @@ public
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
+        list<ComponentRef> elem_crefs;
+        list<Expression> elem_exps;
+        Expression elem_res;
+        Boolean hasSetSub;
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
       // -------------------------------------
@@ -1090,15 +1095,34 @@ public
       // Any variable that is in the HT will be differentiated accordingly. 0 otherwise
       case (Expression.CREF(), DifferentiationType.FUNCTION, SOME(diff_map)) algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
-        if UnorderedMap.contains(strippedCref, diff_map) then
+        // discrete variables (e.g. for-loop iterators with the name of a local) have no derivative
+        if not Type.isDiscrete(Type.arrayElementType(exp.ty)) and UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
+        elseif not Type.isDiscrete(Type.arrayElementType(exp.ty)) and isSome(derivativeOfPrefix(strippedCref, diff_map)) then
+          // a field of a record input, e.g. s.T -> $Ds.T
+          SOME(derCref) := derivativeOfPrefix(strippedCref, diff_map);
+          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
+          res     := Expression.fromCref(derCref);
+        elseif Type.isArray(exp.ty) and not Type.hasKnownSize(exp.ty) then
+          // an input of unknown size, e.g. a[:], has the zero derivative fill(0, size(a, 1), ...)
+          res     := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC,
+            makeZero(Type.arrayElementType(exp.ty)) :: list(Expression.SIZE(exp, SOME(Expression.INTEGER(i))) for i in 1:Type.dimensionCount(exp.ty)),
+            Variability.CONTINUOUS, NFPrefixes.Purity.PURE, exp.ty));
         else
-          res     := Expression.makeZero(exp.ty);
+          res     := makeZero(exp.ty);
         end if;
       then (res, diffArguments);
+
+      // Types: (SIMPLE, TIME)
+      // a record variable is differentiated fieldwise, D(r)/dr.x => R(1, 0, ...)
+      case (Expression.CREF(), _, _)
+        guard((diffArguments.diffType == DifferentiationType.SIMPLE or diffArguments.diffType == DifferentiationType.TIME)
+          and Type.isRecord(exp.ty) and not ComponentRef.isEqual(exp.cref, diffArguments.diffCref)
+          and BVariable.checkCref(exp.cref, BVariable.isRecord, sourceInfo()))
+      then differentiateRecordCref(exp, diffArguments);
 
       // -------------------------------------
       //    Generic Rules
@@ -1128,7 +1152,7 @@ public
       //  D(x)/dx => 1
       case (Expression.CREF(), DifferentiationType.SIMPLE, _)
         guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
-      then (Expression.makeOne(exp.ty), diffArguments);
+      then (makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
@@ -1200,7 +1224,10 @@ public
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(diff_map))
         guard(diffArguments.scalarized)
       algorithm
-        if UnorderedMap.contains(exp.cref, diff_map) then
+        if Type.isRecord(exp.ty) and isMixedRecordDerivative(ComponentRef.stripSubscriptsAll(exp.cref), diff_map) then
+          // a record with a seed of its own whose fields are not all seeds is differentiated fieldwise
+          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+        elseif UnorderedMap.contains(exp.cref, diff_map) then
           res := Expression.fromCref(UnorderedMap.getOrFail(exp.cref, diff_map));
 
           // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
@@ -1208,8 +1235,31 @@ public
             UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
           end if;
         else
-          // Everything that is not in diff_map gets differentiated to zero
-          res := Expression.makeZero(exp.ty);
+          // an array whose elements are in diff_map (e.g. a partially torn array) is differentiated
+          // elementwise, everything else that is not in diff_map gets differentiated to zero
+          hasSetSub := false;
+          elem_crefs := {};
+          if Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+            elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
+            for c in elem_crefs loop
+              if UnorderedMap.contains(c, diff_map) then
+                hasSetSub := true;
+                break;
+              end if;
+            end for;
+          end if;
+          if hasSetSub then
+            elem_exps := {};
+            for c in elem_crefs loop
+              (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
+              elem_exps := elem_res :: elem_exps;
+            end for;
+            res := makeShapedArray(exp.ty, listReverse(elem_exps));
+          elseif Type.isRecord(exp.ty) then
+            (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+          else
+            res := differentiateIteratorElement(exp, diffArguments, diff_map);
+          end if;
         end if;
       then (res, diffArguments);
 
@@ -1223,7 +1273,9 @@ public
         dbg("[dCREF:JAC] cref=" + ComponentRef.toString(exp.cref)
             + " | stripped=" + ComponentRef.toString(strippedCref)
             + " | subs=" + Subscript.toStringList(expCrefSubscripts));
-        if UnorderedMap.contains(exp.cref, diff_map) then
+        if Type.isRecord(exp.ty) and isMixedRecordDerivative(strippedCref, diff_map) then
+          (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+        elseif UnorderedMap.contains(exp.cref, diff_map) then
           // exp.cref is itself one of this Jacobian's own registered unknowns:
           // use it directly rather than falling through to the base-cref template,
           // which may belong to an unrelated element sharing the same base cref.
@@ -1258,7 +1310,53 @@ public
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
         else
-          res     := Expression.makeZero(exp.ty);
+          // a cref with a set/array-valued subscript whose individual scalar elements
+          // are each registered in diff_map (e.g. i_s[{1, 2}] when the Jacobian's seeds
+          // are the individual i_s[1]/i_s[2], as produced for a torn slice's residual
+          // equation -- see NBTearing.scalarSlices) has no single matching diff_map
+          // entry of its own: neither the exact nor the whole-base-stripped lookup
+          // above can find it, so without this the symbolic derivative fell through to
+          // a hardcoded zero, silently producing a zero column in the analytical
+          // Jacobian for those seeds. Differentiate it elementwise instead, matching how
+          // dependency collection resolves the same shape of cref (see
+          // NBAdjacency.collectDependenciesCref).
+          hasSetSub := false;
+          for s in ComponentRef.subscriptsAllFlat(exp.cref) loop
+            // WHOLE (":") and SLICE (e.g. "1:3") are ordinary range subscripts, not
+            // the literal/array-valued INDEX subscript case (e.g. "{1, 2}") this is
+            // meant to catch -- see NBAdjacency.collectDependenciesCref.
+            if not Subscript.isScalar(s) and not Subscript.isSliced(s) then
+              hasSetSub := true;
+            end if;
+          end for;
+          // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
+          if not hasSetSub and Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+            for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
+              if UnorderedMap.contains(c, diff_map) then
+                hasSetSub := true;
+                break;
+              end if;
+            end for;
+          end if;
+          if not hasSetSub then
+            // no set-valued subscript to expand (e.g. a fully bare/unsubscripted
+            // matrix cref like Rot_dq): keep the original whole-type zero, since
+            // building it element-by-element would flatten its shape and break
+            // codegen for multi-dimensional types.
+            if Type.isRecord(exp.ty) then
+              (res, diffArguments) := differentiateRecordCref(exp, diffArguments);
+            else
+              res := differentiateIteratorElement(exp, diffArguments, diff_map);
+            end if;
+          else
+            elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
+            elem_exps := {};
+            for c in elem_crefs loop
+              (elem_res, diffArguments) := differentiateComponentRef(Expression.fromCref(c), diffArguments);
+              elem_exps := elem_res :: elem_exps;
+            end for;
+            res := makeShapedArray(exp.ty, listReverse(elem_exps));
+          end if;
         end if;
       then (res, diffArguments);
 
@@ -1269,6 +1367,215 @@ public
 
     end match;
   end differentiateComponentRef;
+
+  function makeShapedArray
+    "Builds an array expression of type ty from its scalar elements given in row-major
+     order. A multi-dimensional type gets one nested array per leading dimension, e.g.
+     Real[2, 1] with {a, b} becomes {{a}, {b}}, so that the shape matches the type. A flat
+     array of scalars typed as a matrix breaks the code generation."
+    input Type ty;
+    input list<Expression> elems "row-major";
+    output Expression res;
+  protected
+    list<Dimension> dims = Type.arrayDims(ty);
+    Type row_ty;
+    Integer row_size, n_rows;
+    list<Expression> rows = {}, row, remaining = elems;
+  algorithm
+    if listLength(dims) < 2 then
+      res := Expression.makeArray(ty, listArray(elems));
+    else
+      row_ty := Type.ARRAY(Type.arrayElementType(ty), listRest(dims));
+      row_size := Type.sizeOf(row_ty);
+      if row_size < 1 or listLength(elems) <> row_size * Dimension.size(listHead(dims)) then
+        // sizes that do not add up, keep the previous (flat) result rather than guess
+        res := Expression.makeArray(ty, listArray(elems));
+      else
+        n_rows := Dimension.size(listHead(dims));
+        for i in 1:n_rows loop
+          (row, remaining) := List.split(remaining, row_size);
+          rows := makeShapedArray(row_ty, row) :: rows;
+        end for;
+        res := Expression.makeArray(ty, listArray(listReverse(rows)));
+      end if;
+    end if;
+  end makeShapedArray;
+
+  function derivativeOfPrefix
+    "The derivative of a cref whose prefix has a derivative, e.g. s.T -> $Ds.T if s -> $Ds."
+    input ComponentRef cref "without subscripts";
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Option<ComponentRef> derCref;
+  algorithm
+    derCref := match cref
+      local
+        ComponentRef rest, der_rest;
+      case ComponentRef.CREF(restCref = rest as ComponentRef.CREF()) algorithm
+        if UnorderedMap.contains(rest, diff_map) then
+          derCref := SOME(ComponentRef.prepend(UnorderedMap.getOrFail(rest, diff_map), cref));
+        else
+          derCref := match derivativeOfPrefix(rest, diff_map)
+            case SOME(der_rest) then SOME(ComponentRef.prepend(der_rest, cref));
+            else NONE();
+          end match;
+        end if;
+      then derCref;
+      else NONE();
+    end match;
+  end derivativeOfPrefix;
+
+  function isMixedRecordDerivative
+    "true if the fields of a record do not all have derivatives of the same kind as the record itself,
+    e.g. a torn record with seeds and inner variables. It has to be differentiated fieldwise then."
+    input ComponentRef cref;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Boolean b = false;
+  protected
+    Option<ComponentRef> der_opt = UnorderedMap.get(cref, diff_map);
+    String root;
+  algorithm
+    if isSome(der_opt) and BVariable.checkCref(cref, BVariable.isRecord, sourceInfo()) then
+      root := crefRoot(Util.getOption(der_opt));
+      for child in BVariable.getRecordChildrenCref(cref) loop
+        b := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(child), diff_map)
+          local
+            ComponentRef child_der;
+          case SOME(child_der) then crefRoot(child_der) <> root;
+          else true;
+        end match;
+        if b then break; end if;
+      end for;
+    end if;
+  end isMixedRecordDerivative;
+
+  function crefRoot
+    input ComponentRef cref;
+    output String root = listHead(Util.stringSplitAtChar(ComponentRef.toString(cref), "."));
+  end crefRoot;
+
+  function makeZero
+    "Expression.makeZero, but records without a '0' operator are zero field by field"
+    input Type ty;
+    output Expression zero;
+  protected
+    InstNode node;
+    list<Expression> fields = {};
+  algorithm
+    zero := match ty
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+        node := Type.complexNode(ty);
+        for comp in Class.getComponents(InstNode.getClass(node)) loop
+          fields := makeZero(InstNode.getType(comp)) :: fields;
+        end for;
+      then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
+      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
+      then Expression.fillType(ty, makeZero(Type.arrayElementType(ty)));
+      // strings of a record have no derivative
+      case Type.STRING() then Expression.STRING("");
+      else Expression.makeZero(ty);
+    end match;
+  end makeZero;
+
+  function makeOne
+    "Expression.makeOne, but records without a '1' operator are one field by field"
+    input Type ty;
+    output Expression one;
+  protected
+    InstNode node;
+    list<Expression> fields = {};
+  algorithm
+    one := match ty
+      case Type.COMPLEX() guard(Type.isRecord(ty) and not Restriction.isOperatorRecord(Class.restriction(InstNode.getClass(Type.complexNode(ty))))) algorithm
+        node := Type.complexNode(ty);
+        for comp in Class.getComponents(InstNode.getClass(node)) loop
+          fields := makeOne(InstNode.getType(comp)) :: fields;
+        end for;
+      then Expression.makeRecord(InstNode.fullPath(node), ty, listReverse(fields));
+      case Type.ARRAY() guard(Type.isRecord(Type.arrayElementType(ty)))
+      then Expression.fillType(ty, makeOne(Type.arrayElementType(ty)));
+      // strings of a record have no derivative
+      case Type.STRING() then Expression.STRING("");
+      else Expression.makeOne(ty);
+    end match;
+  end makeOne;
+
+  function differentiateRecordCref
+    "A record variable whose fields are differentiated on their own: Record(der(field1), ...)."
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  protected
+    list<ComponentRef> children;
+    list<Expression> elements = {};
+    Expression elem;
+    ComponentRef cref;
+    Type ty;
+  algorithm
+    (cref, ty) := match exp
+      case Expression.CREF() then (exp.cref, exp.ty);
+      else (ComponentRef.EMPTY(), Type.UNKNOWN());
+    end match;
+    if Type.isRecord(ty) and BVariable.checkCref(cref, BVariable.isRecord, sourceInfo()) then
+      children := BVariable.getRecordChildrenCref(cref);
+      if List.compareLength(children, Type.recordFields(ty)) == 0 then
+        for child in children loop
+          // strings have no derivative, keep them
+          if Type.isString(ComponentRef.getSubscriptedType(child)) then
+            elem := Expression.fromCref(child);
+          else
+            (elem, diffArguments) := differentiateComponentRef(Expression.fromCref(child), diffArguments);
+          end if;
+          elements := elem :: elements;
+        end for;
+      end if;
+    end if;
+    if listEmpty(elements) then
+      exp := Expression.makeZero(Expression.typeOf(exp));
+    else
+      exp := Expression.makeRecord(InstNode.fullPath(Type.complexNode(ty)), ty, listReverse(elements));
+    end if;
+  end differentiateRecordCref;
+
+  function differentiateIteratorElement
+    "An element of an array with iterator subscripts (e.g. x[i] in a reduction) whose
+    elements are seeds on their own: {der(x[1]), ..., der(x[n])}[i]. Zero otherwise."
+    input Expression exp;
+    input DifferentiationArguments diffArguments;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output Expression res;
+  protected
+    ComponentRef base;
+    list<Subscript> subs;
+    list<ComponentRef> elem_crefs;
+    list<Expression> elem_exps = {};
+    Expression elem_res;
+    Type base_ty;
+    DifferentiationArguments args = diffArguments;
+    Boolean found;
+  algorithm
+    res := Expression.makeZero(Expression.typeOf(exp));
+    // subscripts of all parts, e.g. module[i].x for a component array
+    (base, subs) := match exp
+      case Expression.CREF() then (ComponentRef.stripSubscriptsAll(exp.cref), ComponentRef.subscriptsAllFlat(exp.cref));
+      else (ComponentRef.EMPTY(), {});
+    end match;
+    if listEmpty(subs) or List.all(subs, Subscript.isLiteral) then return; end if;
+    base_ty := ComponentRef.getSubscriptedType(base, true);
+    if not Type.isArray(base_ty) or Type.sizeOf(base_ty) > 256 then return; end if;
+    elem_crefs := listReverse(ComponentRef.scalarizeAll(base, false));
+    found := false;
+    for c in elem_crefs loop
+      if UnorderedMap.contains(c, diff_map) then
+        found := true;
+        break;
+      end if;
+    end for;
+    if not found then return; end if;
+    for c in elem_crefs loop
+      (elem_res, args) := differentiateComponentRef(Expression.fromCref(c), args);
+      elem_exps := elem_res :: elem_exps;
+    end for;
+    res := Expression.applySubscripts(subs, makeShapedArray(base_ty, listReverse(elem_exps)));
+  end differentiateIteratorElement;
 
   function differentiateComponentRefNoCollect
     input output Expression exp;
@@ -1334,7 +1641,7 @@ public
         list<Expression> arguments = {};
         list<tuple<Expression, InstNode>> arguments_inputs;
         InstNode inp;
-        Boolean isCont, isReal, isFunc, isSkipped;
+        Boolean isCont, isReal, isFunc, isSkipped, skippedVarying = false;
         // interface map. If the map contains a variable it has a zero derivative
         // if the value is "true" it has to be stripped from the interface
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
@@ -1382,7 +1689,8 @@ public
             isCont := ((diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.containsContinuousVar(arg));
 
             // input type has to be real value or a function pointer, skip if its in the interface diff info
-            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg)));
+            // records are differentiated fieldwise
+            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg))) or Type.isRecord(Type.arrayElementType(Expression.typeOf(arg)));
             isFunc    := InstNode.isFunction(inp);
             isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
             if isSkipped or not (isFunc or (isCont and isReal)) then
@@ -1396,6 +1704,12 @@ public
           if isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
             der_func := addDiffInfo(func, der_func, diffArguments);
+          elseif List.any(func.inputs, InstNode.isFunction) then
+            // the body calls the function input, which has no derivative (e.g. solveOneNonlinearEquation)
+            fail();
+          elseif Function.isExternal(func) then
+            // external functions without a derivative annotation have no body to differentiate
+            fail();
           else
             (der_func, diffArguments) := differentiateFunction(func, interface_map, diffArguments);
           end if;
@@ -1406,15 +1720,23 @@ public
             // only keep the arguments which are not in the map or have value false
             if not (isSkipped or UnorderedMap.getOrDefault(InstNode.name(inp), interface_map, false)) then
               arguments := arg :: arguments;
-            else
+            elseif isSkipped and diffArguments.diffType <> DifferentiationType.FUNCTION and BackendUtil.containsContinuousVar(arg) then
+              // inputs of a derivative function are not differentiated again, but it still depends on them
+              skippedVarying := true;
             end if;
           end for;
 
           // differentiate type arguments and append to original ones
           (arguments, diffArguments) := List.mapFold(arguments, differentiateExpression, diffArguments);
-          arguments := listAppend(call.arguments, arguments);
-
-          ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
+          if diffArguments.diffType <> DifferentiationType.FUNCTION and not skippedVarying and List.all(arguments, isZeroDerivative)
+             and not Type.isTuple(Expression.typeOf(exp)) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)))
+             and (not Type.isArray(Expression.typeOf(exp)) or Type.hasKnownSize(Expression.typeOf(exp))) then
+            // no argument depends on the differentiation variable (keeps the arguments out of the derivative)
+            ret := Expression.makeZero(Expression.typeOf(exp));
+          else
+            arguments := listAppend(call.arguments, arguments);
+            ret := Expression.CALL(Call.makeTypedCall(der_func, arguments, call.var, call.purity));
+          end if;
         else
           // The function is not in the function tree and not builtin -> error
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -1473,6 +1795,8 @@ public
     Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
     Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
+    // math functions that trigger events have the index of their event values as last argument
+    exp := stripMathEventIndex(name, exp);
     exp := match exp
       local
         Integer i;
@@ -2042,6 +2366,27 @@ public
     end match;
   end differentiateBuiltinCall;
 
+  function stripMathEventIndex
+    "integer(x, index), floor(x, index), ceil(x, index), div(x, y, index) and mod(x, y, index)
+    are differentiated like the functions without the index"
+    input String name;
+    input output Expression exp;
+  protected
+    list<Expression> args;
+    Integer n;
+  algorithm
+    exp := match exp
+      case Expression.CALL() algorithm
+        args := Call.arguments(exp.call);
+        n := listLength(args);
+        if ((name == "integer" or name == "floor" or name == "ceil") and n == 2) or ((name == "div" or name == "mod") and n == 3) then
+          exp.call := Call.setArguments(exp.call, List.firstN(args, n - 1));
+        end if;
+      then exp;
+      else exp;
+    end match;
+  end stripMathEventIndex;
+
   function differentiateBuiltinCall1Arg
     "differentiate a builtin call with one argument."
     input String name;
@@ -2295,8 +2640,8 @@ public
     for node in func.locals loop
       UnorderedSet.add(node, diffInfo);
     end for;
-    for node in func.outputs loop
-      UnorderedSet.add(node, diffInfo);
+    for o in func.outputs loop
+      UnorderedSet.add(InstNode.fromHandle(o), diffInfo);
     end for;
 
     der_func.interfaceDiffInfo  := SOME(diffInfo);
@@ -2327,11 +2672,13 @@ public
         list<InstNode> inputs, locals, outputs, local_outputs, uninitialized;
         list<Slot> slots;
 
-      case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
+      case der_func as Function.FUNCTION() algorithm
+        node := InstNode.fromHandle(der_func.node);
+        InstNode.CLASS_NODE(cls = cls) := node;
         new_cls := match Pointer.access(cls)
           case new_cls as Class.INSTANCED_CLASS() algorithm
             // prepare outputs that become locals
-            local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, lout) for lout in der_func.outputs);
+            local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, InstNode.fromHandle(lout)) for lout in der_func.outputs);
             local_outputs     := list(InstNode.protect(lout) for lout in local_outputs);
 
             // prepare differentiation arguments
@@ -2346,18 +2693,18 @@ public
 
             createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
             createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-            createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+            createInterfaceDerivatives(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map);
             funcDiffArgs.diff_map := SOME(diff_map);
 
             // differentiate interface arguments
             (inputs, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, funcDiffArgs, diffInfo, true);
             (locals, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, diffInfo, false);
-            (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, funcDiffArgs, diffInfo, false);
+            (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map, funcDiffArgs, diffInfo, false);
 
             // update inputs, outputs and locals, add old outputs to locals as they might still be used as temporary variables
             der_func.inputs   := inputs;
             der_func.locals   := List.flatten({der_func.locals, locals, local_outputs});
-            der_func.outputs  := outputs;
+            der_func.outputs  := list(NFInstNode.NodeHandle.VALUE(o) for o in outputs);
             // also add the new locals to the class
             new_cls.elements := ClassTree.appendComponentsToFlatTree(locals, new_cls.elements);
 
@@ -2368,22 +2715,26 @@ public
             // create "fake" function with correct interface to have the interface
             // in the case of recursive differentiation (e.g. function calls itself)
             dummy_func      := func;
-            node.cls        := Pointer.create(new_cls);
+            node            := InstNode.replaceClass(new_cls, node);
             der_func_name   := NBVariable.FUNCTION_DERIVATIVE_STR + intString(listLength(func.derivatives));
-            node.name       := der_func_name + "." + node.name;
-            node.definition := SCodeUtil.setElementName(node.definition, node.name);
+            // A copy of the differentiated function, not an update of it: it
+            // needs its own identity, or both nodes publish into one cell and
+            // the derivative reads back the function it was derived from.
+            node            := InstNode.rename(der_func_name + "." + InstNode.name(node), node);
+            node            := InstNode.setDefinition(
+              SCodeUtil.setElementName(InstNode.definition(node), InstNode.name(node)), node);
             // create "fake" function from new node, update cache to get correct derivative name
             der_func.path               := AbsynUtil.prefixPath(der_func_name, der_func.path);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
             cachedData                  := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node               := InstNode.newFuncCache(node, cachedData);
+            der_func.node               := NFInstNode.NodeHandle.VALUE(InstNode.newFuncCache(node, cachedData));
 
             // create fake derivative
             funcDer := FunctionDerivative.FUNCTION_DER(
-              derivativeFn          = der_func.node,
-              derivedFn             = dummy_func.node,
+              derivativeFn          = InstNode.identityCell(InstNode.fromHandle(der_func.node)),
+              derivedFn             = InstNode.identityCell(InstNode.fromHandle(dummy_func.node)),
               order                 = Expression.INTEGER(1),
               conditions            = FunctionDerivative.conditionsFromMap(interface_map),
               lowerOrderDerivatives = {}  // possibly needs updating
@@ -2398,7 +2749,13 @@ public
               local
                 Sections sections;
               case sections as Sections.SECTIONS() algorithm
-                (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
+                try
+                  (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
+                else
+                  // remove the fake derivative, it has the undifferentiated body
+                  UnorderedMap.add(func.path, func, funcDiffArgs.funcMap);
+                  fail();
+                end try;
 
                 // add them to new node
                 sections.algorithms := algorithms;
@@ -2409,19 +2766,21 @@ public
 
             // update the class pointer in place; the fake node created above for
             // recursive differentiation shares it and reaches codegen via the cache
-            Pointer.update(node.cls, new_cls);
+            InstNode.CLASS_NODE(cls = cls) := node;
+            Pointer.update(cls, new_cls);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
             cachedData                  := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node               := InstNode.newFuncCache(node, cachedData);
+            der_func.node               := NFInstNode.NodeHandle.VALUE(InstNode.newFuncCache(node, cachedData));
 
             // check the generated body for use-before-assign and initialize
             // variables not provably assigned (the frontend check is skipped here)
             uninitialized := Function.checkUseBeforeAssignGenerated(der_func);
             if not listEmpty(uninitialized) then
               new_cls.sections := Function.initializeUninitialized(new_cls.sections, uninitialized, AbsynUtil.pathString(der_func.path));
-              Pointer.update(node.cls, new_cls);
+              InstNode.CLASS_NODE(cls = cls) := node;
+              Pointer.update(cls, new_cls);
             end if;
 
             // save the function tree
@@ -2429,7 +2788,7 @@ public
           then new_cls;
 
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), func.node) + "."});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for class " + Class.toFlatString(Pointer.access(cls), InstNode.fromHandle(func.node)) + "."});
           then fail();
         end match;
 
@@ -2437,8 +2796,8 @@ public
         UnorderedMap.add(der_func.path, der_func, diffArguments.funcMap);
         // add new function as derivative to original function
         funcDer := FunctionDerivative.FUNCTION_DER(
-          derivativeFn          = der_func.node,
-          derivedFn             = func.node,
+          derivativeFn          = InstNode.identityCell(InstNode.fromHandle(der_func.node)),
+          derivedFn             = InstNode.identityCell(InstNode.fromHandle(func.node)),
           order                 = Expression.INTEGER(1),
           conditions            = FunctionDerivative.conditionsFromMap(interface_map),
           lowerOrderDerivatives = {}  // possibly needs updating
@@ -2504,9 +2863,10 @@ public
     cref := ComponentRef.fromNode(node, InstNode.getType(node));
       diff_cref := UnorderedMap.getSafe(cref, diff_map, sourceInfo());
       diff_cref := match diff_cref
-        case ComponentRef.CREF(node = d_node as InstNode.COMPONENT_NODE()) algorithm
+        case ComponentRef.CREF() guard InstNode.isComponent(ComponentRef.node(diff_cref)) algorithm
+          d_node := ComponentRef.node(diff_cref);
           // differentiate bindings
-          comp := Pointer.access(d_node.component);
+          comp := InstNode.component(d_node);
           comp := match comp
             case comp as Component.COMPONENT() algorithm
               (binding, diffArgs) := differentiateBinding(comp.binding, diffArgs);
@@ -2514,8 +2874,8 @@ public
             then comp;
             else comp;
           end match;
-          d_node.component := Pointer.create(comp);
-          diff_cref.node := d_node;
+          d_node := InstNode.replaceComponent(comp, d_node);
+          diff_cref.node := ComponentRef.storeNode(d_node, update = true);
         then diff_cref;
         else diff_cref;
       end match;
@@ -2603,7 +2963,8 @@ public
 
   algorithm
     func := match func
-      case der_func as Function.FUNCTION(node = InstNode.CLASS_NODE(cls = cls)) algorithm
+      case der_func as Function.FUNCTION() algorithm
+        InstNode.CLASS_NODE(cls = cls) := InstNode.fromHandle(der_func.node);
         wrap_cls := Pointer.access(cls);
         new_cls := match wrap_cls
           case wrap_cls as Class.TYPED_DERIVED(baseClass = node as InstNode.CLASS_NODE(cls = tmp_cls)) algorithm
@@ -2625,21 +2986,21 @@ public
                   UnorderedMap.remove(InstNode.name(var), interface_map);
 
                   // prepare outputs that become locals
-                  local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, node) for node in der_func.outputs);
+                  local_outputs     := list(InstNode.setComponentDirection(NFPrefixes.Direction.NONE, InstNode.fromHandle(node)) for node in der_func.outputs);
                   local_outputs     := list(InstNode.protect(node) for node in local_outputs);
 
                   // differentiate interface arguments
                   createInterfaceDerivatives({var}, interface_map, diff_map);
                   createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-                  createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+                  createInterfaceDerivatives(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map);
                   diffArgs.diff_map   := SOME(diff_map);
 
                   (locals, diffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, diffInfo, true);
-                  (outputs, diffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, diffInfo, false);
+                  (outputs, diffArgs) := differentiateFunctionInterfaceNodes(list(InstNode.fromHandle(o) for o in der_func.outputs), interface_map, diff_map, diffArgs, diffInfo, false);
 
                   diffCref                    := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
                   der_func.locals             := listAppend(locals, local_outputs);
-                  der_func.outputs            := outputs;
+                  der_func.outputs            := list(NFInstNode.NodeHandle.VALUE(o) for o in outputs);
                   der_func.interfaceDiffInfo  := SOME(diffInfo);
 
                   // differentiate function statements
@@ -2659,7 +3020,7 @@ public
                 der_func.derivedInputs      := {};
                 der_func.interfaceDiffInfo  := SOME(diffInfo);
                 cachedData                  := CachedData.FUNCTION({der_func}, true, false);
-                der_func.node               := InstNode.newFuncCache(node, cachedData);
+                der_func.node               := NFInstNode.NodeHandle.VALUE(InstNode.newFuncCache(node, cachedData));
 
 
                 changed := true;
@@ -2712,6 +3073,17 @@ public
     alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, SOME(diffInfo), alg.scope, alg.source);
   end differentiateAlgorithm;
 
+  function wildIfNotCref
+    "replaces direct non-cref tuple elements by a wildcard"
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.TUPLE()
+      then Expression.TUPLE(exp.ty, list(if Expression.isCref(e) then e else Expression.CREF(Expression.typeOf(e), ComponentRef.WILD()) for e in exp.elements));
+      else exp;
+    end match;
+  end wildIfNotCref;
+
   function differentiateStatement
     input Statement stmt;
     input UnorderedSet<Statement> diffInfo;
@@ -2752,6 +3124,16 @@ public
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
+        diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
+
+      // I-c. differentiate tuple assignment from a function call
+      // (a, b) := f(x) -> (a', b') := f'(x, x')
+      case diff_stmt as Statement.ASSIGNMENT(lhs = Expression.TUPLE()) guard(Expression.isCall(diff_stmt.rhs)) algorithm
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        // outputs without a derivative variable (e.g. Integer) are ignored
+        diff_stmt.lhs := wildIfNotCref(lhs);
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};
 
@@ -2842,6 +3224,22 @@ public
     end for;
     iterOut := NBEquation.Iterator.fromFrames(List.zip3(names, listReverse(revRanges), maps));
   end reverseEquationIterator;
+
+  function bothZero
+    "true if both derivatives of a product or quotient are zero, then the derivative is zero as well
+    (keeps the operands out of it, they would make it look nonlinear)"
+    input Expression diffExp1;
+    input Expression diffExp2;
+    input Operator operator;
+    output Boolean b = isZeroDerivative(diffExp1) and isZeroDerivative(diffExp2)
+                       and (not Type.isArray(Operator.typeOf(operator)) or Type.hasKnownSize(Operator.typeOf(operator)));
+  end bothZero;
+
+  function isZeroDerivative
+    "zero after simplification, e.g. a subscripted array of zeros"
+    input Expression exp;
+    output Boolean b = Expression.isZero(exp) or Expression.isZero(SimplifyExp.simplify(exp));
+  end isZeroDerivative;
 
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().
@@ -3027,7 +3425,8 @@ public
         addOp := Operator.fromClassification(
           (NFOperator.MathClassification.ADDITION, sizeClass),
           operator.ty);
-      then (Expression.MULTARY(
+      then (if not isReverse and bothZero(diffExp1, diffExp2, operator) then Expression.makeZero(Operator.typeOf(operator))
+            else Expression.MULTARY(
               {Expression.BINARY(diffExp1, operator, exp2),       // f'g
                 Expression.BINARY(exp1, operator, diffExp2)},     // fg'
               {},
@@ -3078,7 +3477,8 @@ public
           // the addition in the numerator f'g +/- fg' must be element-wise when the result is an array (same as multiplication case)
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, Operator.classifyAddition(operator)), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-      then (Expression.MULTARY(
+      then (if not isReverse and bothZero(diffExp1, diffExp2, operator) then Expression.makeZero(Operator.typeOf(operator))
+            else Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.BINARY(diffExp1, mulOp, exp2)},              // f'g
                 {Expression.BINARY(exp1, mulOp, diffExp2)},              // - fg'

@@ -39,9 +39,10 @@
 
 <script type="module">
 import init, {
-  omc_set_env, omc_init, omc_eval,
+  omc_set_env, omc_init, omc_eval, omc_enable_wasm_blobs,
   omc_take_pending_downloads, omc_take_plot_commands, wasi_write_file,
 } from '../omc/OpenModelicaCompiler.js';
+import { installWasmBlobs } from '../wasm-blobs.js';
 
 const log = document.getElementById('log');
 const input = document.getElementById('input');
@@ -98,6 +99,8 @@ async function evalWithDownloads(src) {
     line('omc_init() failed — see the devtools console.', 'err');
     return;
   }
+  installWasmBlobs();
+  omc_enable_wasm_blobs();
   // The browser omc ships no pre-installed library; install the MSL so the shell
   // is immediately usable (mirrors the worker-hosted terminals' init).
   line('Installing Modelica library…', 'meta');

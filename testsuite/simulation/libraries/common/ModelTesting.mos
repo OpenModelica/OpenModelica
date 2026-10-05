@@ -82,7 +82,7 @@ elseif modelTestingType == OpenModelicaModelTesting.Kind.Compilation then
   error:=getErrorString();
   print(if res[1] <> "" then "Compilation succeeded\n" else "Compilation failed\n");
   print(error);
-  if res[1] <> "" then
+  if res[1] <> "" and not ignoreSimulation then
     base := basename(res[1]);
     info:=checkSettings();
     os:=info.OS;
@@ -157,7 +157,8 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
   end if;
   /* We can only compare to a reference file if we have one */
   modelNameStr := typeNameString(modelName);
-  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/"+referenceFileDir+"/" + modelNameStr + ".mat" else referenceFile;
+  referenceFileBase := if referenceFileName == "" then modelNameStr else referenceFileName;
+  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/"+referenceFileDir+"/" + referenceFileBase + ".mat" else referenceFile;
   if regularFileExists(referenceFile+".xz") then
     (refFileExists, _, refFileTime) := stat(referenceFile);
     (_, _, refFileXzTime) := stat(referenceFile + ".xz");

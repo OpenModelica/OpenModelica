@@ -1,0 +1,109 @@
+// name: getClassDiagram1
+// keywords: UML, class diagram, PlantUML, #16938
+// status: correct
+//
+// Tests getClassDiagram with PlantUML: extends with modifiers, a class extends
+// of a replaceable function, a replaceable package and the redeclare of it in
+// a modifier, the depth and showModifiers arguments, a class that doesn't
+// exist and a format that doesn't.
+
+loadString("package R
+  partial package PartialMedium
+    constant Integer nX = 1;
+    replaceable function h
+      input Real x;
+      output Real y = x;
+    end h;
+  end PartialMedium;
+  package Water
+    extends PartialMedium(nX = 2);
+    redeclare function extends h
+    algorithm
+      y := 2*x;
+    end h;
+  end Water;
+  model Pipe
+    replaceable package Medium = PartialMedium;
+    Real z[Medium.nX] = fill(Medium.h(1), Medium.nX);
+  end Pipe;
+  model System
+    Pipe p(redeclare package Medium = Water);
+  end System;
+end R;
+", "getClassDiagram1.mo"); getErrorString();
+
+getClassDiagram(R.System); getErrorString();
+// Only the class and its base classes.
+getClassDiagram(R.Pipe, depth = 0); getErrorString();
+getClassDiagram(R.Water, showModifiers = false); getErrorString();
+getClassDiagram(R.NoSuchClass); getErrorString();
+getClassDiagram(R.System, format = "svg"); getErrorString();
+
+// Result:
+// true
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"R.System\" as R_System <<model>> {
+//   {field} + Pipe p(redeclare package Medium = Water)
+// }
+// class \"R.Pipe\" as R_Pipe <<model>> {
+//   {field} + replaceable package Medium = PartialMedium
+//   {field} + Real z[Medium.nX] = fill(Medium.h(1), Medium.nX)
+// }
+// class \"R.Water\" as R_Water <<package>>
+// abstract class \"R.PartialMedium\" as R_PartialMedium <<package>> {
+//   {field} + constant Integer nX = 1
+// }
+// class \"R.Water.h\" as R_Water_h <<redeclare function extends>>
+// class \"R.PartialMedium.h\" as R_PartialMedium_h <<replaceable function>> {
+//   {field} + input Real x
+//   {field} + output Real y = x
+// }
+// R_System *-- R_Pipe : p
+// R_System ..> R_Water : p(redeclare package Medium = Water)
+// R_Pipe ..> R_PartialMedium : replaceable package Medium
+// R_PartialMedium <|-- R_Water : (nX = 2)
+// R_Water +-- R_Water_h
+// R_PartialMedium +-- R_PartialMedium_h
+// R_PartialMedium_h <|-- R_Water_h
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"R.Pipe\" as R_Pipe <<model>> {
+//   {field} + replaceable package Medium = PartialMedium
+//   {field} + Real z[Medium.nX] = fill(Medium.h(1), Medium.nX)
+// }
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"R.Water\" as R_Water <<package>>
+// abstract class \"R.PartialMedium\" as R_PartialMedium <<package>> {
+//   {field} + constant Integer nX
+// }
+// class \"R.Water.h\" as R_Water_h <<redeclare function extends>>
+// class \"R.PartialMedium.h\" as R_PartialMedium_h <<replaceable function>> {
+//   {field} + input Real x
+//   {field} + output Real y
+// }
+// R_PartialMedium <|-- R_Water
+// R_Water +-- R_Water_h
+// R_PartialMedium +-- R_PartialMedium_h
+// R_PartialMedium_h <|-- R_Water_h
+// @enduml
+// "
+// ""
+// ""
+// "Error: Class R.NoSuchClass not found in scope <TOP>.
+// "
+// ""
+// "Error: getClassDiagram: unknown format svg, expected plantuml, mermaid or drawio.
+// "
+// endResult

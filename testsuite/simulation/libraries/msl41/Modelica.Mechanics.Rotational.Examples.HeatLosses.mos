@@ -1,0 +1,61 @@
+// name:     Modelica.Mechanics.Rotational.Examples.HeatLosses
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.HeatLosses);
+// Not compared, they differ from the official MSL reference: oneWayClutch.startForward, brake.startForward
+compareVars :=
+{
+   "clutch.phi_rel",
+   "clutch.w_rel",
+   "damper.phi_rel",
+   "damper.w_rel",
+   "elastoBacklash.phi_rel",
+   "elastoBacklash.w_rel",
+   "inertia5.phi",
+   "inertia5.w",
+   "oneWayClutch.phi_rel",
+   "oneWayClutch.w_rel",
+   "springDamper.phi_rel",
+   "springDamper.w_rel",
+   "bearingFriction.mode",
+   "bearingFriction.startBackward",
+   "bearingFriction.startForward",
+   "brake.mode",
+   "brake.startBackward",
+   "clutch.mode",
+   "clutch.startBackward",
+   "clutch.startForward",
+   "lossyGear.mode",
+   "oneWayClutch.stuck"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.Rotational.Examples.HeatLosses
+// {"clutch.phi_rel", "clutch.w_rel", "damper.phi_rel", "damper.w_rel", "elastoBacklash.phi_rel", "elastoBacklash.w_rel", "inertia5.phi", "inertia5.w", "oneWayClutch.phi_rel", "oneWayClutch.w_rel", "springDamper.phi_rel", "springDamper.w_rel", "bearingFriction.mode", "bearingFriction.startBackward", "bearingFriction.startForward", "brake.mode", "brake.startBackward", "clutch.mode", "clutch.startBackward", "clutch.startForward", "lossyGear.mode", "oneWayClutch.stuck"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = 'time|clutch.phi_rel|clutch.w_rel|damper.phi_rel|damper.w_rel|elastoBacklash.phi_rel|elastoBacklash.w_rel|inertia5.phi|inertia5.w|oneWayClutch.phi_rel|oneWayClutch.w_rel|springDamper.phi_rel|springDamper.w_rel|bearingFriction.mode|bearingFriction.startBackward|bearingFriction.startForward|brake.mode|brake.startBackward|clutch.mode|clutch.startBackward|clutch.startForward|lossyGear.mode|oneWayClutch.stuck', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Mechanics.Rotational.Examples.HeatLosses_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

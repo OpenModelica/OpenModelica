@@ -72,7 +72,29 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     "FlagsUtil.allDebugFlags",
     // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the FMI 2.0 wasm FMU
     // ships these offsets for its loader.
-    "SimCodeUtil.getFMI2ValueReferenceOffsets",
+    "SimCodeCodegenUtil.getFMI2ValueReferenceOffsets",
+    // openmodelica_codegen_wasm_jit/src/CodegenWasmJit.rs → the arrow result
+    // file's `modelica.units` needs the unit database's display conversions.
+    "SimCodeCodegenUtil.unitConversion",
+    // openmodelica_gendoc/src/{icons,main}.rs → the documentation generator
+    // instantiates a library once and renders each class' icon from the model
+    // instance, then drops the top scope.
+    "BackendInterface.initializeWithoutBackend",
+    "NFInstanceAPI.mkTop",
+    "NFInstanceAPI.builtinAbsyn",
+    "NFInstanceAPI.builtinSCode",
+    "NFInstanceAPI.programSCode",
+    "NFInstanceAPI.topFromSCode",
+    "NFInstanceAPI.iconJSONFromTop",
+    "NFInstanceAPI.resolveNamesFromTop",
+    "NFInstanceAPI.diagramJSONFromTop",
+    "NFInstanceAPI.clearTopScopeCache",
+    // openmodelica_susan/src/main.rs → Susan's Rust backend, and the types it
+    // matches on (reached only through single-record uniontypes, which the
+    // interface fixpoint does not descend into).
+    "TplMain.transformFile",
+    "TplAbsyn.MMDeclaration",
+    "TplAbsyn.TypeInfo",
 ];
 
 /// Result of [`analyze`]: the set of function FQNs that must keep full `pub`

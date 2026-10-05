@@ -38,6 +38,8 @@
 #include <cmath>
 
 #include <QColorDialog>
+#include <QCoreApplication>
+#include <QEventLoop>
 #include <QInputDialog>
 #include <QMatrix3x3>
 #include <QMenu>
@@ -90,6 +92,42 @@ Item {
   }
 }
 )QML";
+
+// The QML modules the animation needs, each with a type to instantiate.
+const struct { const char* module; const char* type; } kRequiredQmlModules[] = {
+  {"QtQml", "QtObject"},
+  {"QtQuick", "Item"},
+  {"QtQuick3D", "Node"}
+};
+
+// Import each required module on its own so every missing one is named, not
+// just the first import the shell failed on.
+QStringList missingQmlModules(QQmlEngine* engine)
+{
+  QStringList missing;
+  for (const auto& required : kRequiredQmlModules) {
+    QQmlComponent probe(engine);
+    probe.setData(QStringLiteral("import %1\n%2 {}\n").arg(QLatin1String(required.module),
+                                                           QLatin1String(required.type)).toUtf8(),
+                  QUrl(QStringLiteral("qrc:/om/Quick3DModuleProbe.qml")));
+    if (probe.isError()) {
+      missing << QLatin1String(required.module);
+    }
+  }
+  return missing;
+}
+
+// QML errors plus the module/path information an incomplete installation needs.
+QString qmlDiagnostics(const QString& errorString, QQmlEngine* engine)
+{
+  QString text = errorString.trimmed();
+  const QStringList missing = missingQmlModules(engine);
+  if (!missing.isEmpty()) {
+    text += QStringLiteral("\nMissing QML modules: %1").arg(missing.join(QStringLiteral(", ")));
+  }
+  text += QStringLiteral("\nQML import paths: %1").arg(engine->importPathList().join(QStringLiteral(", ")));
+  return text;
+}
 } // namespace
 
 Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
@@ -97,29 +135,95 @@ Quick3DViewerWidget::Quick3DViewerWidget(QWidget* parent)
     mpScene(nullptr),
     mpSceneRoot(nullptr),
     mpCamera(nullptr),
+    mpShellComponent(nullptr),
     mpAnimationWindow(qobject_cast<AbstractAnimationWindow*>(parent)),
     mpSelectedVisualizer(nullptr),
     mCenter(0.0f, 0.0f, 0.0f),
     mDistance(5.0f)
 {
   setResizeMode(QQuickWidget::SizeRootObjectToView);
+#ifdef Q_OS_WIN
+  // Make sure QtQuick3D (and any other QML modules) resolve from the
+  // windeployqt-default deployment location, "<exe-dir>/qml".
+  engine()->addImportPath(QCoreApplication::applicationDirPath() + QStringLiteral("/qml"));
+#endif // #ifdef Q_OS_WIN
+  // The shell imports QtQuick3D, whose module/plugin loading may finish
+  // asynchronously; building the scene ahead of time would leave getScene()
+  // null. Load it now and create the scene from the statusChanged handler.
+  mpShellComponent = new QQmlComponent(engine(), this);
+  connect(mpShellComponent, &QQmlComponent::statusChanged, this,
+          [this](QQmlComponent::Status status) {
+            if (status == QQmlComponent::Ready) {
+              createSceneFromShell();
+            } else if (status == QQmlComponent::Error) {
+              recordShellError();
+            }
+          });
+  mpShellComponent->setData(kShellQml, QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")));
+  if (mpShellComponent->isReady()) {
+    createSceneFromShell(); // load completed synchronously
+  } else if (mpShellComponent->isError()) {
+    recordShellError();
+  }
+}
 
-  QQmlComponent* shell = new QQmlComponent(engine(), this);
-  shell->setData(kShellQml, QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")));
-  if (shell->isError()) {
-    qWarning("Quick3DViewerWidget: shell error: %s", qPrintable(shell->errorString()));
+void Quick3DViewerWidget::recordShellError()
+{
+  mSceneError = qmlDiagnostics(mpShellComponent->errorString(), engine());
+  qWarning("Quick3DViewerWidget: shell error: %s", qPrintable(mSceneError));
+}
+
+void Quick3DViewerWidget::createSceneFromShell()
+{
+  if (mpScene || !mpShellComponent || !mpShellComponent->isReady()) {
     return;
   }
-  QObject* root = shell->create(engine()->rootContext());
-  setContent(QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")), shell, root);
-
-  mpSceneRoot = root ? qobject_cast<QQuick3DObject*>(root->findChild<QObject*>(QStringLiteral("sceneRoot"))) : nullptr;
-  mpCamera = root ? root->findChild<QObject*>(QStringLiteral("camera")) : nullptr;
-  if (mpSceneRoot) {
-    mpScene = new Quick3DScene(engine(), mpSceneRoot);
-  } else {
-    qWarning("Quick3DViewerWidget: scene root not found");
+  QObject* root = mpShellComponent->create(engine()->rootContext());
+  if (!root) {
+    recordShellError();
+    return;
   }
+  setContent(QUrl(QStringLiteral("qrc:/om/Quick3DSceneShell.qml")), mpShellComponent, root);
+
+  mpSceneRoot = qobject_cast<QQuick3DObject*>(root->findChild<QObject*>(QStringLiteral("sceneRoot")));
+  mpCamera = root->findChild<QObject*>(QStringLiteral("camera"));
+  if (!mpSceneRoot) {
+    mSceneError = qmlDiagnostics(QStringLiteral("The scene root Node is missing from the loaded QML shell."), engine());
+    qWarning("Quick3DViewerWidget: scene root not found");
+    return;
+  }
+  Quick3DScene* scene = new Quick3DScene(engine(), mpSceneRoot);
+  if (!scene->initError().isEmpty()) {
+    mSceneError = qmlDiagnostics(scene->initError(), engine());
+    qWarning("Quick3DViewerWidget: item component error: %s", qPrintable(mSceneError));
+    delete scene;
+    return;
+  }
+  mpScene = scene;
+}
+
+bool Quick3DViewerWidget::ensureScene() const
+{
+  if (mpScene) {
+    return true;
+  }
+  if (!mpShellComponent) {
+    return false;
+  }
+  // QML loads in chunks; keep the loop alive until the shell resolves (create()
+  // needs status Ready) or fails.
+  while (!mpScene && mpShellComponent->status() == QQmlComponent::Loading) {
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
+  }
+  return mpScene != nullptr;
+}
+
+QString Quick3DViewerWidget::sceneError() const
+{
+  if (!mSceneError.isEmpty()) {
+    return mSceneError;
+  }
+  return qmlDiagnostics(QStringLiteral("The Qt Quick 3D scene shell did not finish loading."), engine());
 }
 
 Quick3DViewerWidget::~Quick3DViewerWidget()
@@ -174,8 +278,7 @@ void Quick3DViewerWidget::fitToScene()
 
 void Quick3DViewerWidget::setCameraView(CameraView view)
 {
-  // Match the OSG presets (their camera-to-world matrices): right/up/eye-direction
-  // per view, looking at the origin so the world axes line up as they do in OSG.
+  // Right/up/eye-direction per view, looking at the origin.
   switch (view) {
     case Isometric:
       mOrientation = orientationFromBasis(QVector3D(0.7071f, 0.0f, -0.7071f),
@@ -226,7 +329,7 @@ QString Quick3DViewerWidget::pickName(const QPointF& viewPos)
     return QString();
   }
   // pick() takes logical view pixels, which is exactly the widget-local mouse
-  // position (no devicePixelRatio scaling, unlike the OSG window picker).
+  // position (no devicePixelRatio scaling).
   QVariant ret;
   QMetaObject::invokeMethod(root, "pickName", Q_RETURN_ARG(QVariant, ret),
                             Q_ARG(QVariant, viewPos.x()), Q_ARG(QVariant, viewPos.y()));
@@ -311,8 +414,7 @@ void Quick3DViewerWidget::mousePressEvent(QMouseEvent* event)
 void Quick3DViewerWidget::mouseMoveEvent(QMouseEvent* event)
 {
   const QPoint delta = event->pos() - mLastMousePos;
-  // OSG MultiTouchTrackballManipulator mapping: left = rotate, middle (or
-  // Ctrl+left) = pan, right = zoom.
+  // Trackball mapping: left = rotate, middle (or Ctrl+left) = pan, right = zoom.
   const bool pan = (event->buttons() & Qt::MiddleButton) ||
                    ((event->buttons() & Qt::LeftButton) && (event->modifiers() & Qt::ControlModifier));
   if (pan) {

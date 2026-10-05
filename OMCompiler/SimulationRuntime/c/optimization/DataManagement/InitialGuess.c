@@ -106,6 +106,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
   DATA* data = optData->data;
   threadData_t *threadData = optData->threadData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
+  const char *solverMethod = NULL;
 
   if(!data->simulationInfo->external_input.active){
      externalInputallocate(data);
@@ -117,6 +118,8 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
    data->simulationInfo->tolerance = fmin(fmax(tol,1e-8),1e-3);
 
    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial Guess: Initializing DASSL");
+   /* Borrowed for the duration of the guess; sInfo owns the name it came with. */
+   solverMethod = sInfo->solverMethod;
    sInfo->solverMethod = "dassl";
    solverInfo->solverMethod = S_DASSL;
    dassl_initial(data, threadData, solverInfo, dasslData);
@@ -218,7 +221,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
 
   dassl_deinitial(data, solverInfo->solverData);
   solverInfo->solverData = (void*)optData;
-  sInfo->solverMethod = "optimization";
+  sInfo->solverMethod = solverMethod;
   data->simulationInfo->tolerance = tol;
 
   externalInputFree(data);

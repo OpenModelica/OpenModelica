@@ -72,6 +72,7 @@ import Binding;
 import BlockCallRewrite;
 import CevalScript;
 import CodegenWasmJit;
+import CodegenWasmJitFunctions;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
@@ -119,6 +120,9 @@ import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
+import NFClassDiagram;
+import NFDefUseChains;
+import NFUsedElements;
 import Obfuscate;
 import OMGraphics;
 import PackageManagement;
@@ -135,6 +139,7 @@ import Settings;
 import SimCodeMain;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
+import SimCodeUtil;
 import StateMachineFlatten;
 import SimpleModelicaParser;
 import SimulationResults;
@@ -150,6 +155,7 @@ import Types;
 import Uncertainties;
 import UnitAbsynBuilder;
 import UnitParserExt;
+import UnorderedSet;
 import Util;
 import ValuesDump;
 import ValuesMake;
@@ -1384,23 +1390,7 @@ algorithm
       algorithm
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        if not Config.simCodeTarget() == "omsic" then
-          (b,outCache,compileDir,executable,_,_,initfilename,_,_,vals,_) := buildModel(outCache, inEnv, vals, msg);
-        else
-          filenameprefix := AbsynUtil.pathString(className);
-          try
-            (outCache, Values.STRING(str)) := buildModelFMU(outCache, inEnv, className, "2.0", "me", "<default>", true, {"static"});
-            if stringEmpty(str) then
-              fail();
-            end if;
-            b := true;
-          else
-            b := false;
-          end try;
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          executable := filenameprefix + "_me_FMU";
-          initfilename := filenameprefix + "_init_xml";
-        end if;
+        (b,outCache,compileDir,executable,_,_,initfilename,_,_,vals,_) := buildModel(outCache, inEnv, vals, msg);
         executable := if not Testsuite.isRunning() then compileDir + executable else executable;
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
@@ -1454,29 +1444,8 @@ algorithm
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
           resultValues := zeroBuildPhaseResultValues;
-        elseif Config.simCodeTarget() == "omsicpp" then
-
-         filenameprefix := AbsynUtil.pathString(className);
-         (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
-         try
-             (outCache, Values.STRING(str)) := buildModelFMU(outCache, inEnv, className, "2.0", "me", "<default>", true, {"static"},SOME(simSettings));
-            if stringEmpty(str) then
-              fail();
-            end if;
-           b := true;
-          else
-            b := false;
-          end try;
-
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          executable := filenameprefix;
-          simflags:="";
-          resultValues:=zeroBuildPhaseResultValues;
-        elseif not Config.simCodeTarget() == "omsic" then
-          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         else
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Can't simulate for SimCodeTarget=omsic!\n"});
-          fail();
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         end if;
 
         if b then
@@ -2038,6 +2007,24 @@ algorithm
                             Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
       then Values.BOOL(false);
 
+    case ("previous_saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
+                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then
+          saveTotalModel(filename, classpath, b1, b2, b3, previous = true);
+          b := true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b := false;
+        end if;
+      then
+        Values.BOOL(b);
+
+    case ("previous_saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
+                                     Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+      then Values.BOOL(false);
+
     case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                  Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       algorithm
@@ -2323,7 +2310,10 @@ algorithm
         ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
     case ("installPackage",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2), Values.BOOL(b)})
-      then Values.BOOL(PackageManagement.installPackage(str1, str2, b));
+      algorithm
+        (b, files) := PackageManagement.installPackage(str1, str2, b, wasmABI=CodegenWasmJitFunctions.prebuiltExternalsABI());
+        CodegenWasmJitFunctions.precompilePrebuiltModules(files);
+      then Values.BOOL(b);
 
     case ("installPackage",{Values.CODE(Absyn.C_TYPENAME(path as Absyn.QUALIFIED())), _, _})
       algorithm
@@ -2337,8 +2327,11 @@ algorithm
     case ("updatePackageIndex",{})
       then Values.BOOL(PackageManagement.updateIndex());
 
+    case ("installWasmToolchain",{Values.BOOL(b)})
+      then Values.STRING(PackageManagement.installWasmToolchain(b));
+
     case ("upgradeInstalledPackages",{Values.BOOL(b)})
-      then Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
+      then Values.BOOL(PackageManagement.upgradeInstalledPackages(b, wasmABI=CodegenWasmJitFunctions.prebuiltExternalsABI()));
 
     case ("getAvailablePackageVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
       then ValuesMake.makeArray(list(ValuesMake.makeString(s) for s in PackageManagement.versionsThatProvideTheWanted(str1, str2, true)));
@@ -2386,31 +2379,6 @@ algorithm
         str := Interactive.getDerivedClassModifierValue(absynClass, path);
       then
         Values.STRING(str);
-
-    case ("getAstAsCorbaString",{Values.STRING("<interactive>")})
-      algorithm
-        Print.clearBuf();
-        Dump.getAstAsCorbaString(SymbolTable.getAbsyn());
-        str := Print.getString();
-        Print.clearBuf();
-      then
-        Values.STRING(str);
-
-    case ("getAstAsCorbaString",{Values.STRING(str)})
-      algorithm
-        Print.clearBuf();
-        Dump.getAstAsCorbaString(SymbolTable.getAbsyn());
-        Print.writeBuf(str);
-        Print.clearBuf();
-        str := "Wrote result to file: " + str;
-      then
-        Values.STRING(str);
-
-    case ("getAstAsCorbaString",_)
-      algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"getAstAsCorbaString failed"});
-      then
-        Values.STRING("");
 
     case ("readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)})
       algorithm
@@ -3545,6 +3513,19 @@ algorithm
     case ("getDefaultOpenCLDevice", {})
       then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
 
+    case ("getDefUseChains", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
+      then ValuesMake.makeString(getDefUseChains(path, str, classpath, b));
+
+    case ("getDependencyGraph", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.BOOL(b)})
+      then ValuesMake.makeString(getDependencyGraph(classpath, str, b));
+
+    case ("getDefinitionAt", {Values.STRING(str), Values.INTEGER(x), Values.INTEGER(y), Values.BOOL(b)})
+      then ValuesMake.makeString(getDefinitionAt(str, x, y, b));
+
+    case ("getClassDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
+                              Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
+      then ValuesMake.makeString(getClassDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b));
+
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
 
@@ -3577,12 +3558,6 @@ algorithm
     case ("Cpp","WIN64")
       then ".bat";
     case ("Cpp","Unix")
-      then ".sh";
-    case ("omsicpp","WIN64")
-     then ".bat";
-    case ("omsicpp","WIN32")
-      then ".bat";
-    case ("omsicpp","Unix")
       then ".sh";
     else Autoconf.exeExt;
   end match;
@@ -3864,6 +3839,7 @@ algorithm
   end if;
 
   flags := loadCommandLineOptionsFromModel(className);
+  CodegenWasmJitFunctions.precompilePrebuiltModules(PackageManagement.installMissingWasmOfLoaded(loadedClassFiles(), CodegenWasmJitFunctions.prebuiltExternalsABI()));
 
   try
     (success, outCache, outLibs, outFileDir, resultValues) :=
@@ -3876,6 +3852,14 @@ algorithm
     fail();
   end try;
 end translateModel;
+
+protected function loadedClassFiles
+  output list<String> files;
+protected
+  Absyn.Program p = SymbolTable.getAbsyn();
+algorithm
+  files := list(AbsynUtil.classFilename(c) for c in p.classes);
+end loadedClassFiles;
 
 protected function getProcsStr
   input Boolean isMake = false;
@@ -3908,12 +3892,25 @@ protected
   String quote, dquote, defaultFmiIncludeDirectoy;
   String CC;
   SimCodeFunction.MakefileParams makefileParams;
+  String msvcEnv, rmrf;
 algorithm
   makefileParams := SimCodeFunctionUtil.createMakefileParams({}, {}, {}, false, true);
   fmuSourceDir := fmutmp+"/sources/";
   quote := "'";
   dquote := if isWindows then "\"" else "'";
-  CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+  msvcEnv := SimCodeUtil.msvcEnvironment();
+  if msvcEnv <> "" then
+    // cmake picks cl from the Visual Studio environment.
+    CC := "";
+    CMAKE_GENERATOR := "-G \"NMake Makefiles\" ";
+    rmrf := "rmdir /S /Q ";
+  else
+    CC := "-DCMAKE_C_COMPILER=" + dquote + System.basename(makefileParams.ccompiler) + dquote;
+    if isWindows then
+      CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
+    end if;
+    rmrf := "rm -rf ";
+  end if;
   defaultFmiIncludeDirectoy := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   // Set build type
@@ -3948,18 +3945,15 @@ algorithm
       list<String> locations;
     case {"dynamic"}
       algorithm
-        if isWindows then
-          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
-        end if;
         buildDir := "build_cmake_dynamic";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -3967,18 +3961,15 @@ algorithm
         then();
     case {"static"}
       algorithm
-        if isWindows then
-          CMAKE_GENERATOR := "-G " + dquote + "MSYS Makefiles" + dquote + " ";
-        end if;
         buildDir := "build_cmake_static";
         cmakeCall := Autoconf.cmake + " " + CMAKE_GENERATOR +
                      CMAKE_BUILD_TYPE + " " + CC +
                      " ..";
-        cmd := "cd " + dquote + fmuSourceDir + dquote + " && " +
+        cmd := msvcEnv + "cd " + dquote + fmuSourceDir + dquote + " && " +
                "mkdir " + buildDir + " && cd " + buildDir + " && " +
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
-               "cd .. && rm -rf " + buildDir;
+               "cd .. && " + rmrf + buildDir;
         if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
@@ -4092,7 +4083,7 @@ algorithm
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
                   cmakeCall + " && " +
-                  "cmake --build . &&  make " + getProcsStr(true) + " install && " +
+                  "cmake --build . --parallel " + getProcsStr() + " --target install && " +
                   "cd .. && rm -rf " + buildDir +
                 dquote;
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
@@ -4164,204 +4155,15 @@ algorithm
   end if;
 end runDockerCmd;
 
-protected function configureFMU
-"Configures Makefile.in of FMU for traget configuration."
+protected function isDockerPlatform
   input String platform;
-  input String fmutmp;
-  input String logfile;
-  input Boolean isWindows;
-  input Boolean needs3rdPartyLibs;
-protected
-  String CC, CFLAGS, CPPFLAGS, LDFLAGS, SUNDIALS, makefileStr, host, nozip, dir=fmutmp+"/sources/", cmd="",
-    quote="'",
-    dquote = if isWindows then "\"" else "'",
-    includeDefaultFmi, volumeID, cidFile, containerID;
-  list<String> rest;
-  Boolean finishedBuild;
-  Integer uid;
-  Boolean verbose = false;
+  output Boolean isDocker;
 algorithm
-  includeDefaultFmi := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
-
-  CC := System.getCCompiler();
-
-  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
-    CFLAGS := "-O0 -g " + System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
-  else
-    CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
-  end if;
-
-  LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
-              "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
-              System.getLDFlags()+" ");
-  CPPFLAGS := "-I. -I" + includeDefaultFmi + " -DOMC_FMI_RUNTIME=1";
-  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
-    CPPFLAGS := CPPFLAGS + " -O0 -g ";
-  end if;
-  if needs3rdPartyLibs then
-    SUNDIALS :=  "1";
-    CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1 -DSUNDIALS_STATIC_DEFINE" + " -Isundials";
-  else
-    SUNDIALS :=  "";
-  end if;
-  if System.regularFileExists(logfile) then
-    System.removeFile(logfile);
-  end if;
-  nozip := Autoconf.make + " -j" + intString(Config.noProc()) + " nozip";
-  finishedBuild := match Util.stringSplitAtChar(platform, " ")
-    case {"dynamic"}
-      algorithm
-        makefileStr := System.readFile(dir + "Makefile.in");
-        // replace @XX@ variables in the Makefile
-        makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
-        makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+Autoconf.ldflags_runtime_sim);
-        makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
-        makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
-        makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
-        makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
-        makefileStr := System.stringReplace(makefileStr, "@NEED_CMINPACK@", "");
-        makefileStr := System.stringReplace(makefileStr, "@NEED_SUNDIALS@", "");
-        makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", CPPFLAGS + " -DOMC_SIM_SETTINGS_CMDLINE");
-        makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
-        makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
-        makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
-        makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
-        System.writeFile(dir + "Makefile", makefileStr);
-        System.writeFile(dir + "config.log", "Using cached values for dynamic platform");
-        cmd := "cached values";
-      then false;
-    case {"static"}
-      algorithm
-        makefileStr := System.readFile(dir + "Makefile.in");
-        // replace @XX@ variables in the Makefile
-        makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
-        makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS + Autoconf.ldflags_runtime_fmu_static);
-        makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
-        makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
-        makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
-        makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
-        makefileStr := System.stringReplace(makefileStr, "@NEED_CMINPACK@", "");
-        makefileStr := System.stringReplace(makefileStr, "@NEED_SUNDIALS@", SUNDIALS);
-        makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", CPPFLAGS + " -DCMINPACK_NO_DLL=1");
-        makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
-        makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
-        makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
-        makefileStr := System.stringReplace(makefileStr, "\r\n", "\n");
-        System.writeFile(dir + "Makefile", makefileStr);
-        System.writeFile(dir + "config.log", "Using cached values for static platform");
-        cmd := "cached values";
-      then false;
-    case {_}
-      algorithm
-        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+
-               " CFLAGS=" + quote + "-Os" + quote + " CPPFLAGS=" + quote + CPPFLAGS + quote+
-               " LDFLAGS= && " + nozip;
-        if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-          System.removeFile(logfile);
-          fail();
-        end if;
-      then true;
-    case host::"docker"::"run"::rest
-      algorithm
-        uid := System.getuid();
-        // Create a docker volume for the FMU since we can't forward volumes
-        // to the docker run command depending on where the FMU was generated (inside another volume)
-        cmd := "docker volume create";
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
-          fail();
-        elseif verbose then
-           print(cmd + "\n" + System.readFile(logfile) +"\n");
-        end if;
-        cidFile := fmutmp+".cidfile";
-        if System.regularFileExists(cidFile) then
-          System.removeFile(cidFile);
-        end if;
-        volumeID := System.trim(System.readFile(logfile));
-        cmd := "docker run --cidfile "+cidFile+" -v "+volumeID+":/data busybox true";
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
-          // Cleanup
-          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
-          fail();
-        elseif verbose then
-           print(cmd + "\n" + System.readFile(logfile) +"\n");
-        end if;
-        containerID := System.trim(System.readFile(cidFile));
-        System.removeFile(cidFile);
-        // Copy the FMU contents to the container
-        cmd := "docker cp "+fmutmp+" "+containerID+":/data";
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
-          // Cleanup
-          System.systemCall("docker rm " + containerID, outFile=logfile);
-          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
-          fail();
-        elseif verbose then
-           print(cmd + "\n" + System.readFile(logfile) +"\n");
-        end if;
-        // Copy the FMI headers to the container
-        cmd := "docker cp "+includeDefaultFmi+" "+containerID+":/data/fmiInclude";
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
-          // Cleanup
-          System.systemCall("docker rm " + containerID, outFile=logfile);
-          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
-          fail();
-        elseif verbose then
-           print(cmd + "\n" + System.readFile(logfile) +"\n");
-        end if;
-        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+volumeID+":/fmu "+stringDelimitList(rest," ")+ " sh -c " + dquote +
-               "cd " + dquote + "/fmu/" + System.basename(fmutmp) + "/sources" + dquote + " && " +
-               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS=-I/fmu/fmiInclude LDFLAGS= && " +
-               nozip + dquote;
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
-          // Cleanup
-          System.systemCall("docker rm " + containerID, outFile=logfile);
-          System.systemCall("docker volume rm " + volumeID, outFile=logfile);
-          System.removeFile(logfile);
-          fail();
-        elseif verbose then
-           print(cmd + "\n" + System.readFile(logfile) +"\n");
-        end if;
-        // Copy the files back from the volume (via the container) to the filesystem
-        cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " .";
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
-          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
-          fail();
-        elseif verbose then
-           print(cmd + "\n" + System.readFile(logfile) +"\n");
-        end if;
-        // Cleanup
-        System.systemCall("docker rm " + containerID, outFile=logfile);
-        System.systemCall("docker volume rm " + volumeID, outFile=logfile);
-      then true;
-    else
-      algorithm
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown platform (contains spaces but does does not conform to \"platform docker run [args] container\""});
-      then fail();
+  isDocker := match Util.stringSplitAtChar(platform, " ")
+    case _::"docker"::"run"::_ then true;
+    else false;
   end match;
-  ExecStat.execStat("buildModelFMU: configured platform " + platform + " using " + cmd);
-  if not finishedBuild then
-    if not isWindows then
-      if 0 <> System.systemCallRestrictedEnv("cd " + dir + " && "+ Autoconf.make + " clean > /dev/null 2>&1") then
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to make clean"});
-        fail();
-      end if;
-    end if;
-    if 0 <> System.systemCall("cd \"" +  fmutmp + "/sources\" && " + nozip, outFile=logfile) then
-      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-      System.removeFile(logfile);
-      fail();
-    end if;
-  end if;
-end configureFMU;
+end isDockerPlatform;
 
 protected function translateModelFMU
   "translates modelica model as FMU, generates only c code and does not build"
@@ -4486,8 +4288,8 @@ algorithm
 end callTranslateModelFMU;
 
 public function generateFMI3GraphicalRepresentation
-  "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
-   model instance (issue #15219) for the *graphical* side only, this renders the
+  "FMI 3.0 graphical user annotations (issue #15686 task 9). From an in-memory
+   structure holding the model's graphics alone (issue #15219), this renders the
    model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0
    <GraphicalRepresentation> to terminalsAndIcons.xml, and for every placed
    connector component renders its port icon to terminalsAndIcons/<iconBaseName>.png
@@ -4510,9 +4312,7 @@ protected
   list<String> parts;
 algorithm
   try
-    // Full in-memory model instance: the model Icon plus the connector components
-    // (placement + connector-type icons). Graphics only.
-    Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
+    Values.INTEGER(handle) := NFApi.getModelInstanceIconReference(className);
     if handle > 0 then
       // Inner try so the model-instance handle is released on EVERY exit path
       // (a failure in the graphics work below must not leak the reference).
@@ -4870,7 +4670,7 @@ public function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean success;
-  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd, msvcEnv;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
@@ -5011,26 +4811,20 @@ algorithm
     end if;
     return;
   end if;
-  /*Temporary disabled omsicpp*/
-  if not ((Config.simCodeTarget() == "omsic")/* or (Config.simCodeTarget() == "omsicpp")*/) then
-    CevalScript.compileModel(filenameprefix+"_FMU" , libs);
-    ExecStat.execStat("buildModelFMU: Generate the FMI files");
-  else
-    fmutmp := fmutmp + Autoconf.pathDelimiter;
-    CevalScript.compileModel(filenameprefix+"_FMU" , libs, fmutmp);
-    return;
-  end if;
+  CevalScript.compileModel(filenameprefix+"_FMU" , libs);
+  ExecStat.execStat("buildModelFMU: Generate the FMI files");
 
   // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
   needs3rdPartyLibs := SimCodeUtil.cvodeFmiFlagIsSet(SimCodeUtil.createFMISimulationFlags(false));
 
-  // Warn about deprecated Makefile build
-  if not Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
-    Error.addCompilerNotification("The Makefile build for FMUs is deprecated and will be removed in a future version of OpenModelica."
-                                  + " Use \"--" + Flags.getConfigName(Flags.FMU_CMAKE_BUILD) + "=true\".");
+  // A docker build compiles the FMU from sources/, which --fmiSources=false only
+  // strips when packing, so the Rust half has to be there too.
+  if Config.simCodeRustRuntime() and not System.directoryExists(fmutmp + "/sources/rust")
+     and List.any(platforms, isDockerPlatform) then
+    SimCodeMain.copyFmuRustSources(fmutmp);
   end if;
 
-  // Configure the FMU Makefile
+  // Configure and build the FMU with CMake
   // Compiling for several platforms takes minutes per platform, so report which one is
   // being built. Error.checkCancel() hands the thread to the host UI between platforms,
   // which is what keeps OMEdit responsive and lets Cancel through.
@@ -5045,11 +4839,7 @@ algorithm
     Error.addCompilerNotification("Building FMU for platform '" + platformName + "' (" + String(platformIndex) + "/" + String(platformCount) + ").");
 
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(platformName,"/","-")+".log";
-    if Flags.getConfigBool(Flags.FMU_CMAKE_BUILD) then
-      configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
-    else
-      configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
-    end if;
+    configureFMU_cmake(platform, fmutmp, filenameprefix, configureLogFile, libs, isWindows, needs3rdPartyLibs);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED then
       System.removeFile(configureLogFile);
     end if;
@@ -5060,14 +4850,20 @@ algorithm
   System.reportProgressMessage("Packing FMU");
   Error.checkCancel();
 
-  // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
-  if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+  // check for '--fmiSources=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
+  if Flags.getConfigEnum(Flags.FMI_SOURCES) == Flags.FMI_SOURCES_NONE or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
     if not System.removeDirectory(fmutmp + "/sources/") then
       Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
     end if;
   end if;
 
-  cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  msvcEnv := SimCodeUtil.msvcEnvironment();
+  if msvcEnv <> "" then
+    cmd := msvcEnv + Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && " +
+           Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
+  else
+    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  end if;
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");
@@ -6964,25 +6760,8 @@ protected function applyRewriteRulesOnBackend
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue inBackendDAE
-    local
-
-    // no rewrites!
-    case _
-      algorithm
-        true := RewriteRules.noRewriteRulesBackEnd();
-      then
-        inBackendDAE;
-
-    // some rewrites
-    case _
-      algorithm
-        false := RewriteRules.noRewriteRulesBackEnd();
-        outBackendDAE := BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
-      then
-        outBackendDAE;
-
-  end matchcontinue;
+  outBackendDAE := if RewriteRules.noRewriteRulesBackEnd() then inBackendDAE
+                   else BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
 end applyRewriteRulesOnBackend;
 
 protected function getClassnamesInClassList
@@ -8298,10 +8077,15 @@ protected function saveTotalModel
   input Boolean stripAnnotations;
   input Boolean stripComments;
   input Boolean obfuscate;
+  input Boolean previous = false "Use previousGetTotalModel.";
 protected
   String result, obfuscate_map;
 algorithm
-  (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  if previous then
+    (result, obfuscate_map) := previousGetTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  else
+    (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  end if;
   if obfuscate then
     System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
   end if;
@@ -8309,6 +8093,50 @@ algorithm
 end saveTotalModel;
 
 protected function getTotalModel
+  input Absyn.Path classpath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
+  output String result;
+  output String obfuscate_map = "";
+protected
+  SCode.Program scodeP;
+  String str1,str2,str3;
+  SCode.Element cls;
+  SCode.Comment cmt;
+  Absyn.Path cls_path = classpath;
+  Boolean extendable;
+algorithm
+  loadProgram(cls_path);
+  (scodeP, cls) := getTotalProgramNF(cls_path);
+  SCode.CLASS(cmt = cmt) := cls;
+  // A model can't extend a package or a function, those get no _total model.
+  extendable := not (SCodeUtil.isPackage(cls) or SCodeUtil.isFunction(cls));
+  scodeP := SCodeUtil.removeBuiltinsFromTopScope(scodeP);
+
+  if stripAnnotations or stripComments then
+    scodeP := SCodeUtil.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
+  end if;
+
+  if obfuscate then
+    (scodeP, cls_path, cmt, obfuscate_map) := Obfuscate.obfuscateProgram(scodeP, cls_path, cmt);
+  end if;
+
+  result := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
+
+  if extendable then
+    str1 := AbsynUtil.pathLastIdent(cls_path) + "_total";
+    str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
+    str2 := if stringEq(str2,"") then "" else (" " + str2);
+    str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+    str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
+    result := result + "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
+  end if;
+end getTotalModel;
+
+protected function previousGetTotalModel
+  "The previous implementation of getTotalModel, which finds the used classes
+   with NFSCodeFlatten. Kept for comparison by previous_saveTotalModel."
   input Absyn.Path classpath;
   input Boolean stripAnnotations;
   input Boolean stripComments;
@@ -8344,7 +8172,456 @@ algorithm
   str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
   str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
   result := str + str1;
-end getTotalModel;
+end previousGetTotalModel;
+
+protected function getTotalProgramNF
+  "Returns the loaded program reduced to the given class and what it uses. The
+   class is kept whole, and the names in it, in every class declared in it and
+   in everything they use are looked up with the new frontend to find what they
+   use, without instantiating them. That also works for packages and for
+   classes that can't be instantiated."
+  input Absyn.Path classPath;
+  output SCode.Program program;
+  output SCode.Element cls "The class as saved.";
+protected
+  UnorderedSet<String> used;
+  Boolean nf_inst;
+  SCode.Program builtin_p, annotation_p;
+algorithm
+  cls := InteractiveUtil.getPathedSCodeElementInProgram(classPath, SymbolTable.getSCode());
+
+  // Only the used elements are wanted from the lookups, not their messages.
+  ErrorExt.setCheckpoint(getInstanceName());
+  // The new frontend needs its own builtin classes, also with -d=nonewInst.
+  nf_inst := FlagsUtil.set(Flags.SCODE_INST, true);
+
+  try
+    (_, builtin_p) := FBuiltin.getInitialFunctions();
+    annotation_p := AbsynToSCode.translateAbsyn2SCode(
+      InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    used := NFUsedElements.collect(classPath :: getNestedClassPaths(cls, classPath),
+      listAppend(builtin_p, SymbolTable.getSCode()), annotation_p);
+  else
+    used := UnorderedSet.new<String>(stringHashDjb2, stringEq);
+  end try;
+
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst);
+  ErrorExt.rollBack(getInstanceName());
+  markElementUsed(cls, used);
+
+  // Lookups may have loaded libraries, so fetch the program afterwards.
+  program := SymbolTable.getSCode();
+  program := filterUsedClasses(program, used, program);
+  cls := InteractiveUtil.getPathedSCodeElementInProgram(classPath, program);
+end getTotalProgramNF;
+
+protected function getDefUseChains
+  "Returns the def-use chains of the names in a class as JSON, or writes them
+   to a file and returns its name."
+  input Absyn.Path className "A class, or a component declared in a class.";
+  input String fileName;
+  input Absyn.Path scope "The class to look for the uses in, or AllLoadedClasses.";
+  input Boolean prettyPrint;
+  output String result;
+protected
+  Absyn.Path cls_path = className;
+  list<Absyn.Path> paths = {};
+  SCode.Program program;
+  SCode.Element cls;
+  list<NFUsedElements.Definition> defs;
+  list<NFUsedElements.Use> uses, unresolved;
+algorithm
+  program := SymbolTable.getSCode();
+
+  // A component gives the chain of the component, the class it's declared in is walked.
+  try
+    cls := InteractiveUtil.getPathedSCodeElementInProgram(className, program);
+    if not SCodeUtil.elementIsClass(cls) then
+      cls_path := AbsynUtil.stripLast(className);
+    end if;
+  else
+    cls_path := AbsynUtil.stripLast(className);
+  end try;
+
+  paths := scopeClassPaths(scope, program);
+
+  if not isAllLoadedClasses(scope) and not AbsynUtil.pathPrefixOf(scope, cls_path) then
+    try
+      cls := InteractiveUtil.getPathedSCodeElementInProgram(cls_path, program);
+      paths := getNestedClassPaths(cls, cls_path, cls_path :: paths);
+    else
+    end try;
+  end if;
+
+  (defs, uses, unresolved) := collectDefUse(paths, program);
+  result := NFDefUseChains.toJSON(AbsynUtil.pathString(className), defs, uses, unresolved,
+    if isAllLoadedClasses(scope) then "" else AbsynUtil.pathString(scope), prettyPrint);
+
+  if not stringEmpty(fileName) then
+    System.writeFile(fileName, result);
+    result := fileName;
+  end if;
+end getDefUseChains;
+
+protected function getClassDiagram
+  "Returns a UML class diagram of a class, see NFClassDiagram, or writes it to a
+   file and returns its name."
+  input Absyn.Path className;
+  input String fileName;
+  input String format;
+  input Integer depth;
+  input list<String> exclude;
+  input Boolean showModifiers;
+  output String result = "";
+protected
+  SCode.Program program, builtin_p, annotation_p;
+  Boolean nf_inst;
+algorithm
+  if format <> "plantuml" and format <> "mermaid" and format <> "drawio" then
+    Error.addCompilerError("getClassDiagram: unknown format " + format + ", expected plantuml, mermaid or drawio.");
+    return;
+  end if;
+
+  program := SymbolTable.getSCode();
+
+  try
+    _ := InteractiveUtil.getPathedSCodeElementInProgram(className, program);
+  else
+    Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
+    return;
+  end try;
+
+  // Only the uses are wanted from the lookups, not their messages, see collectDefUse.
+  ErrorExt.setCheckpoint(getInstanceName());
+  nf_inst := FlagsUtil.set(Flags.SCODE_INST, true);
+
+  try
+    (_, builtin_p) := FBuiltin.getInitialFunctions();
+    annotation_p := AbsynToSCode.translateAbsyn2SCode(
+      InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    result := NFClassDiagram.generate(className, listAppend(builtin_p, program), annotation_p,
+      format, depth, exclude, showModifiers);
+  else
+  end try;
+
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst);
+  ErrorExt.rollBack(getInstanceName());
+
+  if not stringEmpty(fileName) and not stringEmpty(result) then
+    System.writeFile(fileName, result);
+    result := fileName;
+  end if;
+end getClassDiagram;
+
+protected function getDependencyGraph
+  "Returns the classes in a scope, the hashes of their source and the classes
+   they use as JSON, or writes it to a file and returns its name."
+  input Absyn.Path scope "A class, or AllLoadedClasses.";
+  input String fileName;
+  input Boolean prettyPrint;
+  output String result;
+protected
+  SCode.Program program;
+  list<NFUsedElements.Definition> defs;
+  list<NFUsedElements.Use> uses;
+algorithm
+  program := SymbolTable.getSCode();
+  (defs, uses, _) := collectDefUse(scopeClassPaths(scope, program), program);
+  result := NFDefUseChains.dependencyGraphJSON(AbsynUtil.pathString(scope), defs, uses, prettyPrint);
+
+  if not stringEmpty(fileName) then
+    System.writeFile(fileName, result);
+    result := fileName;
+  end if;
+end getDependencyGraph;
+
+protected function getDefinitionAt
+  "Returns the definition of the name at a position in a file as JSON."
+  input String fileName;
+  input Integer line;
+  input Integer column;
+  input Boolean prettyPrint;
+  output String result;
+protected
+  SCode.Program program;
+  Option<tuple<Absyn.Path, String>> found = NONE();
+  Absyn.Path path;
+  String file = fileName, real_path;
+  list<NFUsedElements.Definition> defs = {};
+  list<NFUsedElements.Use> uses = {};
+algorithm
+  program := SymbolTable.getSCode();
+  real_path := System.realpath(fileName);
+
+  for c in program loop
+    found := findClassAt(c, Absyn.IDENT(SCodeUtil.elementName(c)), fileName, real_path, line, column, found);
+  end for;
+
+  // The names in the innermost class the position is in are looked up. The
+  // classes it's in and their class extends and redeclared classes are also
+  // walked, since those replace what the names are looked up through.
+  if isSome(found) then
+    SOME((path, file)) := found;
+    (defs, uses, _) := collectDefUse(path :: enclosingReplacingClasses(path, program), program);
+  end if;
+
+  result := NFDefUseChains.definitionAtJSON(file, line, column, defs, uses, prettyPrint);
+end getDefinitionAt;
+
+protected function enclosingReplacingClasses
+  "Returns the classes a class is in and the class extends and redeclared
+   classes declared in them, outermost first."
+  input Absyn.Path path;
+  input SCode.Program program;
+  output list<Absyn.Path> paths = {};
+protected
+  Absyn.Path p = path;
+  SCode.Element cls;
+algorithm
+  while AbsynUtil.pathIsQual(p) loop
+    p := AbsynUtil.stripLast(p);
+
+    try
+      cls := InteractiveUtil.getPathedSCodeElementInProgram(p, program);
+
+      for e in SCodeUtil.getClassElements(cls) loop
+        if SCodeUtil.elementIsClass(e) and (SCodeUtil.isClassExtends(e) or SCodeUtil.isElementRedeclare(e)) then
+          paths := AbsynUtil.suffixPath(p, SCodeUtil.elementName(e)) :: paths;
+        end if;
+      end for;
+
+      paths := p :: paths;
+    else
+    end try;
+  end while;
+end enclosingReplacingClasses;
+
+protected function findClassAt
+  "Finds the innermost class declared in a file that a position is in, and the
+   name of the file as the class has it."
+  input SCode.Element element;
+  input Absyn.Path path;
+  input String fileName;
+  input String realPath "fileName with a full path.";
+  input Integer line;
+  input Integer column;
+  input output Option<tuple<Absyn.Path, String>> found;
+protected
+  SourceInfo info;
+algorithm
+  if not SCodeUtil.elementIsClass(element) then
+    return;
+  end if;
+
+  info := SCodeUtil.elementInfo(element);
+
+  if (info.fileName == fileName or info.fileName == realPath) and
+     (line > info.lineNumberStart or (line == info.lineNumberStart and column >= info.columnNumberStart)) and
+     (line < info.lineNumberEnd or (line == info.lineNumberEnd and column <= info.columnNumberEnd)) then
+    found := SOME((path, info.fileName));
+  end if;
+
+  // A class in a file of its own is declared in a class in another file.
+  for e in SCodeUtil.getClassElements(element) loop
+    if SCodeUtil.elementIsClass(e) then
+      found := findClassAt(e, AbsynUtil.suffixPath(path, SCodeUtil.elementName(e)),
+        fileName, realPath, line, column, found);
+    end if;
+  end for;
+end findClassAt;
+
+protected function isAllLoadedClasses
+  input Absyn.Path path;
+  output Boolean res = AbsynUtil.pathEqual(path, Absyn.Path.IDENT("AllLoadedClasses"));
+end isAllLoadedClasses;
+
+protected function scopeClassPaths
+  "Returns the paths of a class and all classes declared in it, or of all
+   loaded classes."
+  input Absyn.Path scope;
+  input SCode.Program program;
+  output list<Absyn.Path> paths = {};
+protected
+  SCode.Element cls;
+algorithm
+  if isAllLoadedClasses(scope) then
+    for c in program loop
+      if SCodeUtil.elementIsClass(c) and SCodeUtil.elementName(c) <> "OpenModelica" then
+        paths := getNestedClassPaths(c, Absyn.IDENT(SCodeUtil.elementName(c)),
+          Absyn.IDENT(SCodeUtil.elementName(c)) :: paths);
+      end if;
+    end for;
+  else
+    try
+      cls := InteractiveUtil.getPathedSCodeElementInProgram(scope, program);
+      paths := getNestedClassPaths(cls, scope, {scope});
+    else
+    end try;
+  end if;
+end scopeClassPaths;
+
+protected function collectDefUse
+  "Walks the given classes and returns the definitions and uses of the names in
+   them, see NFUsedElements.collectUses."
+  input list<Absyn.Path> paths "In reverse order.";
+  input SCode.Program program;
+  output list<NFUsedElements.Definition> defs = {};
+  output list<NFUsedElements.Use> uses = {};
+  output list<NFUsedElements.Use> unresolved = {};
+protected
+  SCode.Program builtin_p, annotation_p;
+  Boolean nf_inst;
+algorithm
+  // Only the uses are wanted from the lookups, not their messages.
+  ErrorExt.setCheckpoint(getInstanceName());
+  // The new frontend needs its own builtin classes, also with -d=nonewInst.
+  nf_inst := FlagsUtil.set(Flags.SCODE_INST, true);
+
+  try
+    (_, builtin_p) := FBuiltin.getInitialFunctions();
+    annotation_p := AbsynToSCode.translateAbsyn2SCode(
+      InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
+    (defs, uses, unresolved) := NFUsedElements.collectUses(listReverse(paths),
+      listAppend(builtin_p, program), annotation_p);
+  else
+  end try;
+
+  FlagsUtil.set(Flags.SCODE_INST, nf_inst);
+  ErrorExt.rollBack(getInstanceName());
+end collectDefUse;
+
+protected function getNestedClassPaths
+  "Returns the paths of all classes declared in a class, at any depth."
+  input SCode.Element cls;
+  input Absyn.Path clsPath;
+  input output list<Absyn.Path> paths = {};
+protected
+  Absyn.Path path;
+algorithm
+  for e in SCodeUtil.getClassElements(cls) loop
+    if SCodeUtil.elementIsClass(e) then
+      path := AbsynUtil.suffixPath(clsPath, SCodeUtil.elementName(e));
+      paths := getNestedClassPaths(e, path, path :: paths);
+    end if;
+  end for;
+end getNestedClassPaths;
+
+protected function markElementUsed
+  "Adds an element and everything declared in it to the used set."
+  input SCode.Element element;
+  input UnorderedSet<String> used;
+algorithm
+  UnorderedSet.add(NFUsedElements.elementKey(element), used);
+
+  if SCodeUtil.elementIsClass(element) then
+    for e in SCodeUtil.getClassElements(element) loop
+      if SCodeUtil.elementIsClass(e) or SCodeUtil.isComponent(e) then
+        markElementUsed(e, used);
+      end if;
+    end for;
+  end if;
+end markElementUsed;
+
+protected function filterUsedClasses
+  "Removes the classes that aren't in the used set from a list of elements,
+   also from the classes that are kept. Components are only removed from
+   packages, where they are constants that may or may not be used."
+  input list<SCode.Element> elements;
+  input UnorderedSet<String> used;
+  input SCode.Program program "The whole program, to resolve imports in.";
+  input Boolean inPackage = false;
+  output list<SCode.Element> outElements = {};
+algorithm
+  for e in elements loop
+    if SCodeUtil.elementIsClass(e) then
+      if UnorderedSet.contains(NFUsedElements.elementKey(e), used) then
+        outElements := filterUsedNestedClasses(e, used, program) :: outElements;
+      end if;
+    elseif inPackage and SCodeUtil.isComponent(e) then
+      if UnorderedSet.contains(NFUsedElements.elementKey(e), used) then
+        outElements := e :: outElements;
+      end if;
+    elseif not isUnusedImport(e, used, program) then
+      outElements := e :: outElements;
+    end if;
+  end for;
+
+  outElements := listReverse(outElements);
+end filterUsedClasses;
+
+protected function filterUsedNestedClasses
+  input output SCode.Element cls;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+algorithm
+  () := match cls
+    case SCode.CLASS()
+      algorithm
+        cls.classDef := filterUsedClassDef(cls.classDef, used, program, SCodeUtil.isPackage(cls));
+      then
+        ();
+
+    else ();
+  end match;
+end filterUsedNestedClasses;
+
+protected function filterUsedClassDef
+  input output SCode.ClassDef classDef;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+  input Boolean inPackage;
+algorithm
+  () := match classDef
+    case SCode.PARTS()
+      algorithm
+        classDef.elementLst := filterUsedClasses(classDef.elementLst, used, program, inPackage);
+      then
+        ();
+
+    case SCode.CLASS_EXTENDS()
+      algorithm
+        classDef.composition := filterUsedClassDef(classDef.composition, used, program, inPackage);
+      then
+        ();
+
+    else ();
+  end match;
+end filterUsedClassDef;
+
+protected function isUnusedImport
+  "Returns true for an import of a single element that is declared in the
+   program but wasn't used. Imports are only resolved when a name is looked up
+   through them, so the import of a used element has recorded it."
+  input SCode.Element element;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+  output Boolean unused;
+protected
+  Absyn.Path path;
+algorithm
+  unused := match element
+    case SCode.IMPORT(imp = Absyn.Import.NAMED_IMPORT(path = path))
+      then isUnusedElementPath(path, used, program);
+    case SCode.IMPORT(imp = Absyn.Import.QUAL_IMPORT(path = path))
+      then isUnusedElementPath(path, used, program);
+    else false;
+  end match;
+end isUnusedImport;
+
+protected function isUnusedElementPath
+  input Absyn.Path path;
+  input UnorderedSet<String> used;
+  input SCode.Program program;
+  output Boolean unused;
+algorithm
+  try
+    unused := not UnorderedSet.contains(NFUsedElements.elementKey(
+      InteractiveUtil.getPathedSCodeElementInProgram(path, program)), used);
+  else
+    // Not declared where the path points, e.g. inherited. Keep the import.
+    unused := false;
+  end try;
+end isUnusedElementPath;
 
 protected function saveTotalModelDebug
   input String filename;

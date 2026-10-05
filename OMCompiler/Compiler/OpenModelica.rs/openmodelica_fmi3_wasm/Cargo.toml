@@ -1,5 +1,3 @@
-cargo-features = ["panic-immediate-abort"]
-
 # Model-agnostic FMI 3.0 Model-Exchange adapter, compiled ONCE to
 # wasm32-unknown-unknown and merged (wasm-merge) with a per-model kernel module
 # emitted by CodegenWasmJit, then componentized (wit-component) into an
@@ -22,25 +20,27 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+# `rlib` too: a native FMU links this crate instead of instantiating it as a
+# component, and drives the same state machine over its own engine.
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wit-bindgen = { version = "0.43", default-features = false, features = ["macros"] }
-openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false }
+wit-bindgen = { version = "0.62", default-features = false, features = ["macros"], optional = true }
+openmodelica_codegen_wasm_jit_runtime = { path = "../openmodelica_codegen_wasm_jit_runtime", default-features = false, optional = true }
 openmodelica_sim_meta = { path = "../../../SimulationRuntime/rust/openmodelica_sim_meta", default-features = false }
 # The result-file serializers, for the `om:sim/simulation` export: the same
 # writers the standalone export and the host use, so the three cannot drift.
-openmodelica_mat_writer = { path = "../../../SimulationRuntime/rust/openmodelica_mat_writer" }
-openmodelica_plt_writer = { path = "../../../SimulationRuntime/rust/openmodelica_plt_writer" }
-openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal" }
+openmodelica_mat_writer = { path = "../../../SimulationRuntime/rust/openmodelica_mat_writer", optional = true }
+openmodelica_plt_writer = { path = "../../../SimulationRuntime/rust/openmodelica_plt_writer", optional = true }
+openmodelica_ext_native_marshal = { path = "../openmodelica_ext_native_marshal", optional = true }
 
 [profile.release]
 opt-level = "s"
 lto = true
-# Not just `abort`: a panic here can only become a wasm trap anyway (no stderr on
-# wasm32-unknown-unknown), so aborting at the site makes std's formatting/hook
-# machinery unreachable to LTO as well — ~61 KB per adapter.
-panic = "immediate-abort"
+# openmodelica_wasm_jit/build.rs sharpens this to `-Cpanic=immediate-abort`
+# (~190 KB). Not the profile value: its `cargo-features` key would force nightly
+# cargo on the native FMU that links this crate as an rlib.
+panic = "abort"
 strip = true
 
 [workspace]
@@ -48,7 +48,19 @@ strip = true
 [features]
 # The FMI interfaces this build exports. `me` alone → Model Exchange, `cs` alone
 # → Co-Simulation, both → a single me_cs component exporting both.
-default = ["me"]
+default = ["me", "wasm"]
+# The wasm component: the `env` model imports, the linear-memory engine, the WIT
+# bindings and the in-wasm runtime. Off, the crate is the FMI state machine
+# alone, for a host that brings its own `FmiHost`/`SimEngine` -- a native FMU.
+wasm = [
+    "dep:wit-bindgen",
+    "dep:openmodelica_codegen_wasm_jit_runtime",
+    "dep:openmodelica_mat_writer",
+    "dep:openmodelica_plt_writer",
+    "dep:openmodelica_ext_native_marshal",
+    # src/sim_run.rs serializes the run's rows itself.
+    "openmodelica_sim_meta/mat-writer",
+]
 me = []
 cs = []
 # Export the FMI 3.0 C API from the core module (src/capi.rs) beside the

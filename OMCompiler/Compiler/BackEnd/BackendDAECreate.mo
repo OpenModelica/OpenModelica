@@ -75,7 +75,6 @@ import ExpressionSolve;
 import Flags;
 import Global;
 import HashTableExpToExp;
-import HashTableExpToIndex;
 import HashTable;
 import HashTableCrToExpSourceTpl;
 import Inline;
@@ -145,6 +144,7 @@ algorithm
       (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
     end if;
     vars := BackendVariable.listVar(varlst);
+    vars := setReinitStateSelect(reqns, vars);
 
     // handle alias equations
     (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
@@ -197,7 +197,7 @@ algorithm
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    Error.addInternalError(StackOverflow.errorPrefix() + " in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     /* Do not fail or we can loop too much */
     StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
@@ -1027,57 +1027,57 @@ protected function processBuiltinExpressions "author: lochel
   output AvlTreePathFunction.Tree outTree;
   output list<BackendDAE.TimeEvent> outTimeEvents;
 protected
-  HashTableExpToIndex.HashTable ht;
+  UnorderedMap<DAE.Exp, Integer> ht;
 algorithm
-  ht := HashTableExpToIndex.emptyHashTable();
+  ht := UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
   (outDAE, outTree, (_, (_, _, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, 0, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
   Helper for transformBuiltinExpressions"
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
+  input tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
   output DAE.Exp outExp;
-  output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
+  output tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
 algorithm
   (outExp,outTuple) := match (inExp, inTuple)
     local
       DAE.Exp start, interval;
       list<DAE.Exp> es;
-      HashTableExpToIndex.HashTable ht;
+      UnorderedMap<DAE.Exp, Integer> ht;
       Integer iDelay, iSample, iSpatial;
       list<BackendDAE.TimeEvent> timeEvents;
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // delay [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      ht := BaseHashTable.add((inExp, iDelay+1), ht);
+      UnorderedMap.add(inExp, iDelay+1, ht);
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, iSpatial, timeEvents));
 
     // spatialDistribution [already in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
+    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // spatialDistribution [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      ht := BaseHashTable.add((inExp, iSpatial+1), ht);
+      UnorderedMap.add(inExp, iSpatial+1, ht);
     then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(iSpatial)::es, attr), (ht, iDelay, iSample, iSpatial+1, timeEvents));
 
     // sample [already in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _, _))
-      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and BaseHashTable.hasKey(inExp, ht)) algorithm
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and UnorderedMap.contains(inExp, ht)) algorithm
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // sample [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
       iSample := iSample+1;
       timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
-      ht := BaseHashTable.add((inExp, iSample), ht);
+      UnorderedMap.add(inExp, iSample, ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents));
 
     else (inExp,inTuple);
@@ -1408,7 +1408,8 @@ algorithm
   attr :=
   match attr
     local
-      Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
+      Option<DAE.Exp> q,u,du,i,f,n,min,max;
+      Option<DAE.StartOrigin> so;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
@@ -2550,6 +2551,42 @@ algorithm
   end matchcontinue;
 end lowerWhenEqn;
 
+protected function setReinitStateSelect
+  "MLS (version 3.6) section 3.7.5: [The first argument of `reinit`] is
+   implicitly defined to have `StateSelect.always`.
+   https://github.com/OpenModelica/OpenModelica/issues/13247"
+  input list<BackendDAE.Equation> eqns;
+  input output BackendDAE.Variables vars;
+protected
+  Option<BackendDAE.WhenEquation> when_eq;
+  list<BackendDAE.WhenOperator> ops;
+  Option<list<BackendDAE.Var>> var_opt;
+algorithm
+  for eq in eqns loop
+    when_eq := match eq
+      case BackendDAE.WHEN_EQUATION() then SOME(eq.whenEquation);
+      else NONE();
+    end match;
+    while isSome(when_eq) loop
+      SOME(BackendDAE.WHEN_STMTS(whenStmtLst = ops, elsewhenPart = when_eq)) := when_eq;
+      for op in ops loop
+        () := match op
+          case BackendDAE.REINIT()
+            algorithm
+              var_opt := BackendVariable.getVarTryHard(op.stateVar, vars);
+              if isSome(var_opt) then
+                for var in Util.getOption(var_opt) loop
+                  vars := BackendVariable.addVar(BackendVariable.setVarStateSelect(var, DAE.StateSelect.ALWAYS()), vars);
+                end for;
+              end if;
+            then ();
+          else ();
+        end match;
+      end for;
+    end while;
+  end for;
+end setReinitStateSelect;
+
 protected function lowerWhenEqn2
 "Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
@@ -2583,8 +2620,6 @@ algorithm
       BackendDAE.Equation eq;
       BackendDAE.WhenEquation whenEq;
       BackendDAE.WhenOperator whenOp;
-      Option<list<BackendDAE.Var>> var_opt;
-      BackendDAE.Variables vars;
 
     case {} then (iEquationLst, iREquationLst);
     case DAE.EQUEQUATION(cr1 = cr, cr2 = cr2, source = source)::xs
@@ -2709,20 +2744,6 @@ algorithm
         whenOp := BackendDAE.REINIT(cr, e, source);
         whenEq := BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq := BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-
-        // MLS (version 3.6) section 3.7.5:
-        // [The first argument of `reinit`] is implicitly defined to have `StateSelect.always`.
-        // https://github.com/OpenModelica/OpenModelica/issues/13247
-        vars := BackendVariable.listVar(outVar_lst);
-        var_opt := BackendVariable.getVarTryHard(cr, vars);
-        if isSome(var_opt) then
-          for var in Util.getOption(var_opt) loop
-            var := BackendVariable.setVarStateSelect(var, DAE.StateSelect.ALWAYS());
-            vars := BackendVariable.addVar(var, vars);
-          end for;
-        end if;
-        outVar_lst := BackendVariable.varList(vars);
-
         (eqnl, reqnl, outVar_lst) := lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst, outVar_lst);
       then
         (eqnl, reqnl);
@@ -3816,7 +3837,7 @@ algorithm
       algorithm
         false := BackendVariable.isVarOnTopLevelAndOutput(var);
         false := BackendVariable.isVarOnTopLevelAndInput(var);
-        false := BackendVariable.varHasUncertainValueRefine(var);
+        false := BackendVariable.varHasUncertainValueRefine(var) and BackendDAEUtil.isDataReconciliationEnabled();
       then
         ();
   end match;

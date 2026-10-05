@@ -10,7 +10,6 @@
 //! into this list, so the model raises a flag in `SimData` and
 //! [`Sync::take_fired`] turns it into a timer once the model call returns.
 
-use alloc::format;
 use alloc::vec::Vec;
 
 use crate::driver::{
@@ -160,6 +159,18 @@ impl Sync {
         self.clocks.is_empty()
     }
 
+    /// The timer list as `(base, sub or -1, time)` words, for an FMU state.
+    pub fn timer_words(&self) -> Vec<f64> {
+        self.timers.iter().flat_map(|t| [t.base as f64, t.sub.map_or(-1.0, |s| s as f64), t.time]).collect()
+    }
+
+    pub fn set_timer_words(&mut self, w: &[f64]) {
+        self.timers = w
+            .chunks_exact(3)
+            .map(|c| Timer { base: c[0] as u32, sub: (c[1] >= 0.0).then_some(c[1] as u32), time: c[2] })
+            .collect();
+    }
+
     /// C's `checkForSynchronous`: the earliest activation time still scheduled, so
     /// the integrator can cut its step short and land on it. `+inf` when idle.
     pub fn next_time(&self) -> f64 {
@@ -268,16 +279,18 @@ impl Sync {
             e.call2(MODEL_FN_UPDATE_SYNC, self.sim_data, base)?;
             let interval = read_f64(e, off + clock_field::INTERVAL)?;
             self.insert(Timer { base, sub: None, time: time + interval });
-            omclog::info(
+            omclog::info!(
                 omclog::SYNCHRONOUS,
                 false,
-                &format!("Activated base-clock {base} at time {}", driver::format_f(time)),
+                "Activated base-clock {base} at time {}",
+                driver::format_f(time),
             );
         } else {
-            omclog::info(
+            omclog::info!(
                 omclog::SYNCHRONOUS,
                 false,
-                &format!("Activated event-clock {base} at time {}", driver::format_f(time)),
+                "Activated event-clock {base} at time {}",
+                driver::format_f(time),
             );
         }
 
@@ -329,10 +342,11 @@ impl Sync {
         write_f64(e, s_off + clock_field::SUB_LAST_ACTIVATION, time)?;
         e.call2(MODEL_FN_EQS_SYNC, self.sim_data, flat)?;
         let what = if hold { "which triggered event " } else { "" };
-        omclog::info(
+        omclog::info!(
             omclog::SYNCHRONOUS,
             false,
-            &format!("Activated sub-clock ({base},{sub}) {what}at time {}", driver::format_f(time)),
+            "Activated sub-clock ({base},{sub}) {what}at time {}",
+            driver::format_f(time),
         );
         Ok(if hold { Fired::Event } else { Fired::Timer })
     }
@@ -343,9 +357,9 @@ impl Sync {
             return Ok(());
         }
         omclog::info(omclog::SYNCHRONOUS, true, "Initialized synchronous timers.");
-        omclog::info(omclog::SYNCHRONOUS, false, &format!("Number of base clocks: {}", self.clocks.len()));
+        omclog::info!(omclog::SYNCHRONOUS, false, "Number of base clocks: {}", self.clocks.len());
         for (i, c) in self.clocks.iter().enumerate() {
-            omclog::info(omclog::SYNCHRONOUS, true, &format!("Base clock {}", i + 1));
+            omclog::info!(omclog::SYNCHRONOUS, true, "Base clock {}", i + 1);
             let off = self.sim_data + self.layout.base_clock_off(i as u32);
             let interval = read_f64(e, off + clock_field::INTERVAL)?;
             let counter = read_i32(e, off + clock_field::INTERVAL_COUNTER)?;
@@ -354,26 +368,28 @@ impl Sync {
             } else {
                 if counter != -1 {
                     let res = read_i32(e, off + clock_field::RESOLUTION)?;
-                    omclog::info(
+                    omclog::info!(
                         omclog::SYNCHRONOUS,
                         false,
-                        &format!("intervalCounter/resolution = : {counter}/{res}"),
+                        "intervalCounter/resolution = : {counter}/{res}",
                     );
                 }
-                omclog::info(omclog::SYNCHRONOUS, false, &format!("interval: {}", omclog::e(interval, 0, 6)));
+                omclog::info!(omclog::SYNCHRONOUS, false, "interval: {}", omclog::e(interval, 0, 6));
             }
-            omclog::info(omclog::SYNCHRONOUS, false, &format!("Number of sub-clocks: {}", c.sub.len()));
+            omclog::info!(omclog::SYNCHRONOUS, false, "Number of sub-clocks: {}", c.sub.len());
             for (j, s) in c.sub.iter().enumerate() {
-                omclog::info(
+                omclog::info!(
                     omclog::SYNCHRONOUS,
                     true,
-                    &format!("Sub-clock {} of base clock {}", j + 1, i + 1),
+                    "Sub-clock {} of base clock {}",
+                    j + 1,
+                    i + 1,
                 );
-                omclog::info(omclog::SYNCHRONOUS, false, &format!("shift: {}/{}", s.shift_num, s.shift_den));
-                omclog::info(omclog::SYNCHRONOUS, false, &format!("factor: {}/{}", s.factor_num, s.factor_den));
+                omclog::info!(omclog::SYNCHRONOUS, false, "shift: {}/{}", s.shift_num, s.shift_den);
+                omclog::info!(omclog::SYNCHRONOUS, false, "factor: {}/{}", s.factor_num, s.factor_den);
                 let method = if s.external_solver { "External" } else { "none" };
-                omclog::info(omclog::SYNCHRONOUS, false, &format!("solverMethod: {method}"));
-                omclog::info(omclog::SYNCHRONOUS, false, &format!("holdEvents: {}", s.hold_events));
+                omclog::info!(omclog::SYNCHRONOUS, false, "solverMethod: {method}");
+                omclog::info!(omclog::SYNCHRONOUS, false, "holdEvents: {}", s.hold_events);
                 omclog::close(omclog::SYNCHRONOUS);
             }
             omclog::close(omclog::SYNCHRONOUS);

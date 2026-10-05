@@ -46,8 +46,6 @@ pub enum Error {
     Solver(&'static str),
     /// The FMU's own simulation runtime reported a failure.
     Simulation(String),
-    /// The FMU asked for termination during initialization.
-    TerminatedAtInit,
     /// `-alarm=N` expired.
     Alarm,
     Cancelled,
@@ -69,9 +67,6 @@ impl std::fmt::Display for Error {
             Error::Io(m) => write!(f, "{m}"),
             Error::Solver(m) => write!(f, "{m}"),
             Error::Simulation(m) => write!(f, "{m}"),
-            Error::TerminatedAtInit => {
-                write!(f, "the FMU requested termination during initialization")
-            }
             Error::Alarm => write!(f, "simulation aborted (-alarm)"),
             Error::Cancelled => write!(f, "cancelled"),
         }
@@ -153,20 +148,22 @@ impl Solver {
     }
 }
 
-/// A value the master feeds an input variable, as a function of time.
+/// A value the master feeds an input variable, as a function of time. An array
+/// variable has one value reference and one expression per element, in the
+/// row-major order FMI flattens them in.
 pub struct Input {
     pub value_reference: u32,
     pub ty: VarType,
-    /// An expression in `t` ([`expr`]).
-    pub value: expr::Expr,
+    /// Expressions in `t` ([`expr`]), one per element.
+    pub values: Vec<expr::Expr>,
 }
 
 /// A value applied once, in Initialization Mode. FMI allows no other time for a
-/// parameter.
+/// parameter; an array takes one value per element, as for [`Input`].
 pub struct Parameter {
     pub value_reference: u32,
     pub ty: VarType,
-    pub value: f64,
+    pub values: Vec<f64>,
 }
 
 pub struct Options<'a> {
@@ -204,6 +201,9 @@ pub struct Options<'a> {
     /// `-variableFilter`: which variables the result file keeps; `None` keeps all.
     /// Borrowed, since the caller owns the compiled regex; this crate has none.
     pub keep: Option<&'a dyn Fn(&str) -> bool>,
+    /// Where the rows stream to ([`record::Recorder::stream_to`]); `None` keeps
+    /// them in the recorder.
+    pub result_file: Option<std::path::PathBuf>,
 }
 
 impl Options<'_> {
@@ -235,6 +235,7 @@ impl Options<'_> {
             cancelled: None,
             alarm: None,
             keep: None,
+            result_file: None,
         }
     }
 

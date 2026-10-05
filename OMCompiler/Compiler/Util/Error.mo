@@ -922,6 +922,14 @@ public constant ErrorTypes.Message NON_POSITIVE_NTH_ROOT = ErrorTypes.MESSAGE(42
   "Invalid operation nthRoot(v = %s, n = %s), n must be a positive integer.");
 public constant ErrorTypes.Message NEGATIVE_NTH_ROOT = ErrorTypes.MESSAGE(423, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid operation nthRoot(v = %s, n = %s), v must be non-negative when n is even.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_CONTEXT = ErrorTypes.MESSAGE(424, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "spatialDistribution may only be used as the right hand side of an equation.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT0 = ErrorTypes.MESSAGE(425, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The first output of spatialDistribution may only be ignored if positiveVelocity is true.");
+public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT1 = ErrorTypes.MESSAGE(426, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "The second output of spatialDistribution may not be ignored.");
+public constant ErrorTypes.Message ELEMENT_IS_NOT_ALLOWED_IN_CONTEXT = ErrorTypes.MESSAGE(427, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "%s is not allowed in %s.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");
@@ -1090,6 +1098,8 @@ public constant ErrorTypes.Message MIXED_DETERMINED = ErrorTypes.MESSAGE(584, Er
   "The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values. Use -d=initialization for more information.");
 public constant ErrorTypes.Message STACK_OVERFLOW_DETAILED = ErrorTypes.MESSAGE(585, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Stack overflow occurred while evaluating %s:\n%s");
+public constant ErrorTypes.Message OUT_OF_MEMORY_DETAILED = ErrorTypes.MESSAGE(628, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  "Out of memory while evaluating %s: %s.\n%s");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1349,6 +1359,8 @@ public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_C_CS = ErrorTypes.MESSAGE
   "DAE mode (--daeMode) is not supported by the C simulation runtime, so it cannot build a Co-Simulation FMU either. Export with platforms={\"wasm\"}, whose runtime does support it, or remove the --daeMode flag.");
 public constant ErrorTypes.Message ALARM_EXPIRED = ErrorTypes.MESSAGE(7031, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Operation aborted: the time limit set by the alarm ran out.");
+public constant ErrorTypes.Message FMU_EXPORT_FMI_LS_DAE_DRAFT = ErrorTypes.MESSAGE(7032, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  "The Model Exchange FMU carries a DAE formulation as fmi-ls-dae %s, implemented against the draft of %s (commit %s). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.");
 public constant ErrorTypes.Message FMU_EXPORT_WASM_FMI1 = ErrorTypes.MESSAGE(7029, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "The wasm FMU export does not serve the deprecated FMI 1.0. Ask for version=\"2.0\" or version=\"3.0\", or drop \"wasm\" from platforms to export a C FMU.");
 

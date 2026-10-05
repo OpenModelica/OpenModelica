@@ -17,19 +17,19 @@ public
     annotation (extent=[20,-40; 40,-20]);
   Modelica.Electrical.Analog.Basic.Inductor I3(L=1)
     annotation (extent=[-20,-40; 0,-20]);
-  Modelica.Electrical.Analog.Sources.SineVoltage S1(freqHz=1, V=1, phase=0)
+  Modelica.Electrical.Analog.Sources.SineVoltage S1(f=1, V=1, phase=0)
     annotation (extent=[-60,40; -40,60], rotation=0);
-  Modelica.Electrical.Analog.Sources.SineVoltage S3(freqHz=1, V=1, phase=4*pi/3)
+  Modelica.Electrical.Analog.Sources.SineVoltage S3(f=1, V=1, phase=4*pi/3)
     annotation (extent=[-60,-40; -40,-20], rotation=0);
-  Modelica.Electrical.Analog.Sources.SineVoltage S2(freqHz=1, V=1, phase=2*pi/3)
+  Modelica.Electrical.Analog.Sources.SineVoltage S2(f=1, V=1, phase=2*pi/3)
     annotation (extent=[-60,0; -40,20], rotation=0);
   Modelica.Electrical.Analog.Basic.Ground G
     annotation (extent=[70,-84; 90,-64]);
-  Modelica.Electrical.Analog.Sources.SineVoltage SS1(freqHz=1, V=1, phase=shift)
+  Modelica.Electrical.Analog.Sources.SineVoltage SS1(f=1, V=1, phase=shift)
     annotation (extent=[60,40; 80,60], rotation=0);
-  Modelica.Electrical.Analog.Sources.SineVoltage SS2(freqHz=1, V=1, phase=2*pi/3 + shift)
+  Modelica.Electrical.Analog.Sources.SineVoltage SS2(f=1, V=1, phase=2*pi/3 + shift)
                annotation (extent=[60,0; 80,20], rotation=0);
-  Modelica.Electrical.Analog.Sources.SineVoltage SS3(freqHz=1, V=1, phase=4*pi/3 + shift)
+  Modelica.Electrical.Analog.Sources.SineVoltage SS3(f=1, V=1, phase=4*pi/3 + shift)
                annotation (extent=[60,-40; 80,-20], rotation=0);
 equation
   theta = 2*pi*time;

@@ -1462,6 +1462,13 @@ algorithm
       then
         (zero, inFunctionTree);
 
+    case (e as DAE.CALL(attr=DAE.CALL_ATTR(ty=tp,builtin=false)), _, _, BackendDAE.DIFF_FULL_JACOBIAN())
+      guard not (Expression.isRecordCall(e, inFunctionTree) or expHasRelatedCref(e, inDiffwrtCref))
+      algorithm
+        (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        (zero, inFunctionTree);
+
     // differentiate builtin calls with 1 argument
     case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={e}), _, _, _)
       algorithm
@@ -1505,6 +1512,34 @@ algorithm
   end match;
   if debug then print("Differentiate-ExpCall-result: " + ExpressionBasics.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateCalls;
+
+protected function expHasRelatedCref
+  "Returns true if the expression contains a cref that is cr, an array or
+   record containing cr, or a part of cr, ignoring subscripts."
+  input DAE.Exp exp;
+  input DAE.ComponentRef cr;
+  output Boolean hasCref;
+algorithm
+  (_, hasCref) := Expression.traverseExpTopDown(exp, function expHasRelatedCrefWork(cr = cr), false);
+end expHasRelatedCref;
+
+protected function expHasRelatedCrefWork
+  input output DAE.Exp exp;
+  output Boolean cont;
+  input output Boolean hasCref;
+  input DAE.ComponentRef cr;
+algorithm
+  if not hasCref then
+    hasCref := match exp
+      case DAE.CREF() then ComponentReferenceBasics.crefEqualWithoutSubs(exp.componentRef, cr) or
+                           ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(cr, exp.componentRef) or
+                           (Types.isArray(exp.ty) or Types.isComplexType(exp.ty)) and
+                           ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(exp.componentRef, cr);
+      else false;
+    end match;
+  end if;
+  cont := not hasCref;
+end expHasRelatedCrefWork;
 
 protected function differentiateCallExp1Arg
   "This function differentiates built-in call expressions with 1 argument
@@ -2362,7 +2397,7 @@ algorithm
           print(stringDelimitList(List.map(dexpl, ExpressionBasics.printExpStr), ", ") + "\n");
         end if;
         e := DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc,DAE.NoReturn.RETURNS));
-        e := createPartialArguments(ty, dexpl, dexplZero, expl, e);
+        e := createPartialArguments(ty, dexpl, dexplZero, expl, e, inDiffType);
       then
         (e,functions);
 
@@ -2451,7 +2486,7 @@ algorithm
         (dexplZero, functions, success) := tryZeroDiff(expl1, functions, maxIter);
         if success then
           e := DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc,DAE.NoReturn.RETURNS));
-          exp := createPartialArguments(ty, dexpl, dexplZero, expl, e);
+          exp := createPartialArguments(ty, dexpl, dexplZero, expl, e, inDiffType);
         else
           exp := DAE.CALL(dpath,listAppend(expl,dexpl),DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc,DAE.NoReturn.RETURNS));
         end if;
@@ -2530,6 +2565,7 @@ protected function createPartialArguments
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
   input DAE.Exp inCall;
+  input BackendDAE.DifferentiationType inDiffType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(outputType, inCall)
@@ -2543,18 +2579,30 @@ algorithm
       list<DAE.Var> varLst;
       list<String> varNames;
 
-    case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rPath),varLst=varLst), DAE.CALL(path=path))
+    case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rPath),varLst=varLst), DAE.CALL(path=path, attr=attr))
     algorithm
-      tys := list(DAEUtil.varType(v) for v in varLst);
-      varNames := list(DAEUtil.typeVarIdent(v) for v in varLst);
-      expLst := createPartialArgumentsRecord(tys, varNames, inArgs, inDiffedArgs, inOrginalExpl, inCall);
-    then DAE.RECORD(rPath, expLst, varNames, outputType);
+      // In a function body the result is a statement, so one call with the
+      // actual seeds gives the whole record - the derivative function is linear
+      // in them. Collecting the partials per component instead costs a call per
+      // (component, argument) pair. Everywhere else the result becomes an
+      // equation that BackendEquation.scalarComplexEquations has to be able to
+      // split, and that needs the record.
+      if boolAnd(not List.all(inArgs, isZeroDerivative),
+                 valueEq(inDiffType, BackendDAE.DIFFERENTIATION_FUNCTION())) then
+        e := DAE.CALL(path, listAppend(inOrginalExpl, inArgs), attr);
+      else
+        tys := list(DAEUtil.varType(v) for v in varLst);
+        varNames := list(DAEUtil.typeVarIdent(v) for v in varLst);
+        expLst := createPartialArgumentsRecord(tys, varNames, inArgs, inDiffedArgs, inOrginalExpl, inCall, inDiffType);
+        e := DAE.RECORD(rPath, expLst, varNames, outputType);
+      end if;
+    then e;
 
     case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()), DAE.TSUB(exp=DAE.CALL(path=path, attr=attr)))
     then DAE.CALL(path, listAppend(inOrginalExpl,inArgs), attr);
 
     case (DAE.T_TUPLE(types = tys), _) algorithm
-      expLst := createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, inCall);
+      expLst := createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, inCall, inDiffType);
     then DAE.TUPLE(expLst);
 
     case (_, _)
@@ -2577,10 +2625,11 @@ protected function createPartialArgumentsTuple
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
   input DAE.Exp inCall;
+  input BackendDAE.DifferentiationType inDiffType;
   output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst := list( createPartialArguments(
-                                             tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.TSUB(inCall, number, tp))
+                                             tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.TSUB(inCall, number, tp)), inDiffType
                                            )
                      threaded  for tp in inTypesLst, number  in 1:listLength(inTypesLst));
 end createPartialArgumentsTuple;
@@ -2592,9 +2641,10 @@ protected function createPartialArgumentsRecord
   input list<DAE.Exp> inDiffedArgs;
   input list<DAE.Exp> inOrginalExpl;
   input DAE.Exp inCall;
+  input BackendDAE.DifferentiationType inDiffType;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := list( createPartialArguments(tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.RSUB(inCall, -1, name, tp)) )
+  outExpLst := list( createPartialArguments(tp, inArgs, inDiffedArgs, inOrginalExpl, (DAE.RSUB(inCall, -1, name, tp)), inDiffType )
                      threaded  for tp in inTypesLst, name in inVarNames);
 end createPartialArgumentsRecord;
 

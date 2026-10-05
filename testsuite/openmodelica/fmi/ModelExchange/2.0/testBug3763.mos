@@ -2,7 +2,7 @@
 // teardown_command: rm -rf DrumBoiler.fmu DrumBoiler.log DrumBoiler_info.json binaries sources resources documentation modelDescription.xml
 // cflags: -d=-newInst
 
-loadModel(Modelica, {"3.2.3"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadString("
 model DrumBoiler
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs=false);

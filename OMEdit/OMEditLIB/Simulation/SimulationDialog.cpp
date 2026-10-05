@@ -47,7 +47,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/Commands.h"
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
 #include "Animation/AnimationWindow.h"
 #endif
 #include "TranslationFlagsWidget.h"
@@ -56,8 +56,13 @@
 #include <QDesktopServices>
 #include <QDockWidget>
 #include <QMessageBox>
-
+#include <QRegularExpression>
 #include <limits>
+
+static bool isSinglePrecisionFormat(const QString &outputFormat)
+{
+  return outputFormat.compare("mat") == 0 || outputFormat.compare("arrow") == 0;
+}
 
 /*!
  * \class SimulationDialog
@@ -119,7 +124,7 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
   mpBuildOnlyCheckBox->setChecked(buildOnly);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpLaunchAnimationCheckBox->setChecked(launchAnimation);
 #else
   assert(false==launchAnimation);
@@ -275,7 +280,7 @@ void SimulationDialog::setUpForm()
   mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
   // Launch Algorithmic Debugger checkbox
   mpLaunchAlgorithmicDebuggerCheckBox = new QCheckBox(tr("Launch Algorithmic Debugger"));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // Launch Animation
   mpLaunchAnimationCheckBox = new QCheckBox(tr("Launch Animation"));
 #endif
@@ -283,7 +288,7 @@ void SimulationDialog::setUpForm()
   pLaunchOptionsLayout->setAlignment(Qt::AlignTop);
   pLaunchOptionsLayout->addWidget(mpBuildOnlyCheckBox, 0, 0);
   pLaunchOptionsLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 0, 1);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   pLaunchOptionsLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 1, 0);
   pLaunchOptionsLayout->addWidget(mpLaunchAnimationCheckBox, 1, 1);
 #else
@@ -797,8 +802,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpOutputVariablesTextBox->setText(value);
           } else if (simulationFlag.compare("r") == 0) {
             mpResultFileNameTextBox->setText(value);
-            QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
-            if (resultFilesRegExp.indexIn(value) != -1) {
+            QRegularExpression resultFilesRegExp(Helper::omResultFileTypesRegExp);
+            if (resultFilesRegExp.match(value).hasMatch()) {
               int currentIndex = mpOutputFormatComboBox->findText(StringHandler::getLastWordAfterDot(value));
               if (currentIndex > -1) {
                 mpOutputFormatComboBox->setCurrentIndex(currentIndex);
@@ -807,11 +812,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           } else if (simulationFlag.compare("s") == 0) {
             mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
           } else if (simulationFlag.compare("lv") == 0) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
             QStringList logStreams = value.split(",", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-            QStringList logStreams = value.split(",", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
             int i = 0;
             while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
               if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
@@ -975,7 +976,7 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpLaunchTransformationalDebuggerCheckBox->setChecked(simulationOptions.getLaunchTransformationalDebugger());
   // Launch Algorithmic Debugger checkbox
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(simulationOptions.getLaunchAlgorithmicDebugger());
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // Simulate with Animation checkbox
   mpLaunchAnimationCheckBox->setChecked(simulationOptions.getSimulateWithAnimation());
 #endif
@@ -1039,7 +1040,7 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpOutputFormatComboBox->blockSignals(state);
   // single precision
   mpSinglePrecisionCheckBox->setChecked(simulationOptions.getSinglePrecision());
-  mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
+  mpSinglePrecisionCheckBox->setEnabled(isSinglePrecisionFormat(mpOutputFormatComboBox->currentText()));
   // Output filename
   if (simulationOptions.getFileNamePrefix().startsWith("_omcQuot_")) {
     mpFileNameTextBox->setText(QByteArray::fromHex(simulationOptions.getFileNamePrefix().toUtf8()));
@@ -1109,7 +1110,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=gendebugsymbols");
   }
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // set the visulation flag before translation
   if (mpLaunchAnimationCheckBox->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=visxml");
@@ -1188,7 +1189,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setBuildOnly(mpBuildOnlyCheckBox->isChecked());
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   simulationOptions.setSimulateWithAnimation(mpLaunchAnimationCheckBox->isChecked());
 #endif
 
@@ -1302,7 +1303,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     }
   }
   // single precision
-  if ((simulationOptions.getOutputFormat().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+  if (isSinglePrecisionFormat(simulationOptions.getOutputFormat()) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.append("-single");
   }
   // emit protected variables
@@ -1597,21 +1598,13 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (logStreams.size() > 0) {
     simulationFlags.insert("lv", logStreams.join(","));
   }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-  QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
   foreach (QString additionalSimulationFlag, additionalSimulationFlags) {
     additionalSimulationFlag = additionalSimulationFlag.trimmed();
     if (additionalSimulationFlag.startsWith('-')) {
       additionalSimulationFlag.remove(0, 1);
     }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList nameValueList = additionalSimulationFlag.split("=", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-    QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
     if (nameValueList.size() < 2) {
       simulationFlags.insert(nameValueList.at(0), "()");
     } else {
@@ -1620,7 +1613,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   // Flags from Output tab
   simulationFlags.insert("s", mpMethodComboBox->currentText());
-  if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+  if (isSinglePrecisionFormat(mpOutputFormatComboBox->currentText()) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.insert("single", "()");
   }
   if (!mpResultFileNameTextBox->text().isEmpty()) {
@@ -2007,8 +2000,8 @@ OpcUaClient* SimulationDialog::getOpcUaClient(int port)
 void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
 {
   QString workingDirectory = simulationOptions.getWorkingDirectory();
-  QRegExp regExp(Helper::omResultFileTypesRegExp);
-  bool resultFileKnown = regExp.indexIn(simulationOptions.getFullResultFileName()) != -1;
+  QRegularExpression regExp(Helper::omResultFileTypesRegExp);
+  bool resultFileKnown = regExp.match(simulationOptions.getFullResultFileName()).hasMatch();
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getFullResultFileName()));
   resultFileInfo.setCaching(false);
@@ -2034,10 +2027,11 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // variables' QSortFilterProxyModel sort while it is live traps; doing it first keeps the
     // sort synchronous and intact (and is harmless ordering on every platform).
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, QStringList(), simulationOptions);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
-      if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
+      const bool animatable = simulationOptions.getFullResultFileName().endsWith(".mat") || simulationOptions.getFullResultFileName().endsWith(".arrow");
+      if (animatable) {
         MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow();
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
         if (pAnimationWindow) {
@@ -2175,7 +2169,7 @@ void SimulationDialog::buildOnly(bool checked)
   if (!mpInteractiveSimulationGroupBox->isChecked()) {
     mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
   }
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpLaunchAnimationCheckBox->setEnabled(!checked);
 #endif
   mpSimulationFlagsTab->setEnabled(!checked);
@@ -2191,7 +2185,7 @@ void SimulationDialog::interactiveSimulation(bool checked)
 {
   mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
   mpLaunchTransformationalDebuggerCheckBox->setEnabled(!checked);
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   mpLaunchAnimationCheckBox->setEnabled(!checked);
 #endif
 }
@@ -2306,7 +2300,7 @@ void SimulationDialog::resultFileNameChanged(int index)
   Q_UNUSED(index);
   ComboBox *pComboBoxSender = qobject_cast<ComboBox*>(sender());
   if (pComboBoxSender) {
-    mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
+    mpSinglePrecisionCheckBox->setEnabled(isSinglePrecisionFormat(mpOutputFormatComboBox->currentText()));
     mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName).arg(mpOutputFormatComboBox->currentText()));
   }
 }

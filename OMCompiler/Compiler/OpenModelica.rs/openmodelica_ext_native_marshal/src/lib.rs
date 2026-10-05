@@ -6,7 +6,8 @@
 //!
 //! The frame is one 8-byte slot per C argument in declaration order, the return
 //! value in the slot after them ([`result_slot`]). A String or array argument is
-//! the runtime handle; an `_Out_` scalar or String is the address of a cell.
+//! the runtime handle; an `_Out_` scalar or String is the address of a cell. A
+//! FORTRAN 77 scalar goes through a cell both ways, arrays column-major.
 #![no_std]
 extern crate alloc;
 
@@ -179,6 +180,7 @@ pub trait Guest {
     fn str_data(&self, handle: u32) -> u32;
     fn array_total(&self, handle: u32) -> u32;
     fn array_data(&self, handle: u32) -> u32;
+    fn array_dims(&self, handle: u32) -> Vec<u32>;
     fn alloc(&mut self, len: u32) -> u32;
     fn free(&mut self, addr: u32);
 }
@@ -186,35 +188,69 @@ pub trait Guest {
 /// Whether the callee writes this argument through a scalar cell the caller
 /// allocates, and so is neither an input value nor a wasm result. An array or
 /// record crosses as a pointer, which *is* the value.
-pub fn is_cell(a: &Arg) -> bool {
-    a.out && !matches!(a.ty, Ty::Array(_) | Ty::Record(_))
+pub fn is_cell(sig: &Sig, a: &Arg) -> bool {
+    a.out && !matches!(a.ty, Ty::Array(_) | Ty::Record(_)) && !is_ref(sig, a)
+}
+
+/// A FORTRAN 77 scalar: by reference, in and out.
+pub fn is_ref(sig: &Sig, a: &Arg) -> bool {
+    sig.fortran && matches!(a.ty, Ty::Scalar(_))
+}
+
+/// Row-major <-> column-major, the runtime's `f77_reorder`.
+pub fn reorder(src: &[u8], dims: &[u32], esz: usize, to_f77: bool) -> Vec<u8> {
+    let total = src.len() / esz.max(1);
+    if dims.len() < 2 || total == 0 {
+        return src.to_vec();
+    }
+    let mut dst = alloc::vec![0u8; src.len()];
+    for i in 0..total {
+        let mut rest = i;
+        let mut col = 0usize;
+        let mut sub = Vec::with_capacity(dims.len());
+        for d in dims.iter().rev() {
+            let d = (*d as usize).max(1);
+            sub.push(rest % d);
+            rest /= d;
+        }
+        for (d, s) in dims.iter().rev().zip(&sub) {
+            col = col * (*d as usize).max(1) + s;
+        }
+        let (from, to) = if to_f77 { (i, col) } else { (col, i) };
+        dst[to * esz..(to + 1) * esz].copy_from_slice(&src[from * esz..(from + 1) * esz]);
+    }
+    dst
+}
+
+fn read_array(g: &dyn Guest, h: u32, elem: Scalar, fortran: bool) -> Vec<u8> {
+    if h == 0 {
+        return Vec::new();
+    }
+    let esz = Ty::elem_size(elem);
+    let bytes = g.read(g.array_data(h), g.array_total(h) * esz);
+    if fortran { reorder(&bytes, &g.array_dims(h), esz as usize, true) } else { bytes }
 }
 
 /// The host's argument list, read out of the frame.
 pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String> {
-    if sig.fortran {
-        return Err(format!("native externals: `{}` is FORTRAN 77, which is not served natively", sig.name));
-    }
     let mut out = Vec::with_capacity(sig.args.len());
     for (j, a) in sig.args.iter().enumerate() {
-        if is_cell(a) {
+        if is_cell(sig, a) {
             continue;
         }
         let slot = frame + 8 * j as u32;
+        // Fortran: the slot holds the cell's address.
+        let at = if is_ref(sig, a) { g.load_i32(slot) as u32 } else { slot };
         out.push(match &a.ty {
-            Ty::Scalar(Scalar::Real) => Value::Real(g.load_f64(slot)),
-            Ty::Scalar(_) => Value::Int(g.load_i32(slot)),
+            Ty::Scalar(Scalar::Real) => Value::Real(g.load_f64(at)),
+            Ty::Scalar(_) => Value::Int(g.load_i32(at)),
             Ty::Ptr => Value::Handle(g.load_i32(slot) as u32),
             Ty::Str => {
                 let h = g.load_i32(slot) as u32;
                 let bytes = if h == 0 { Vec::new() } else { g.read(g.str_data(h), g.str_len(h)) };
                 Value::Str(String::from_utf8_lossy(&bytes).into_owned())
             }
-            Ty::Array(elem) => {
-                let h = g.load_i32(slot) as u32;
-                let bytes = if h == 0 { Vec::new() } else { g.read(g.array_data(h), g.array_total(h) * Ty::elem_size(*elem)) };
-                Value::Bytes(bytes)
-            }
+            Ty::Array(elem) => Value::Bytes(read_array(g, g.load_i32(slot) as u32, *elem, sig.fortran)),
             // The slot holds the address of the kernel's scratch struct.
             Ty::Record(size) => {
                 let p = g.load_i32(slot) as u32;
@@ -226,8 +262,8 @@ pub fn gather(sig: &Sig, frame: u32, g: &dyn Guest) -> Result<Vec<Value>, String
 }
 
 /// Put the host's results where the kernel reads them: return value, `_Out_`
-/// cells, `_Out_` array elements. A `char*` the kernel copies out of is
-/// allocated here and listed in `scratch` for the caller to free at the next call.
+/// and Fortran cells, `_Out_` array elements. A `char*` the kernel copies out of
+/// is allocated here and listed in `scratch` for the caller to free at the next call.
 pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scratch: &mut Vec<u32>) -> Result<(), String> {
     let mut results = results.iter();
     let mut next = |what: &str| results.next().ok_or_else(|| format!("native externals: `{}` returned no {what}", sig.name));
@@ -256,7 +292,7 @@ pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scra
         store(g, frame + result_slot(sig), ret, v, scratch)?;
     }
     for (j, a) in sig.args.iter().enumerate() {
-        if is_cell(a) {
+        if is_cell(sig, a) || is_ref(sig, a) {
             let cell = g.load_i32(frame + 8 * j as u32) as u32;
             let v = next("output")?;
             store(g, cell, &a.ty, v, scratch)?;
@@ -285,7 +321,13 @@ pub fn scatter(sig: &Sig, frame: u32, results: &[Value], g: &mut dyn Guest, scra
                 bytes.len()
             ));
         }
-        g.write(at, bytes);
+        match &a.ty {
+            Ty::Array(elem) if sig.fortran => {
+                let h = g.load_i32(frame + 8 * j as u32) as u32;
+                g.write(at, &reorder(bytes, &g.array_dims(h), Ty::elem_size(*elem) as usize, false));
+            }
+            _ => g.write(at, bytes),
+        }
     }
     Ok(())
 }
@@ -316,12 +358,18 @@ mod tests {
             h
         }
         fn reals(&mut self, v: &[f64]) -> u32 {
-            let h = self.alloc(24 + 8 * v.len() as u32);
-            self.put(h + 8, &1u32.to_le_bytes());
+            self.reals_nd(v, &[v.len() as u32])
+        }
+        fn reals_nd(&mut self, v: &[f64], dims: &[u32]) -> u32 {
+            let data = (16 + 4 * dims.len() as u32 + 7) & !7;
+            let h = self.alloc(data + 8 * v.len() as u32);
+            self.put(h + 8, &(dims.len() as u32).to_le_bytes());
             self.put(h + 12, &(v.len() as u32).to_le_bytes());
-            self.put(h + 16, &(v.len() as u32).to_le_bytes());
+            for (k, d) in dims.iter().enumerate() {
+                self.put(h + 16 + 4 * k as u32, &d.to_le_bytes());
+            }
             for (i, x) in v.iter().enumerate() {
-                self.put(h + 24 + 8 * i as u32, &x.to_le_bytes());
+                self.put(h + data + 8 * i as u32, &x.to_le_bytes());
             }
             h
         }
@@ -356,6 +404,9 @@ mod tests {
         }
         fn array_data(&self, h: u32) -> u32 {
             h + ((16 + 4 * self.load_i32(h + 8) as u32 + 7) & !7)
+        }
+        fn array_dims(&self, h: u32) -> Vec<u32> {
+            (0..self.load_i32(h + 8) as u32).map(|k| self.load_i32(h + 16 + 4 * k) as u32).collect()
         }
         fn alloc(&mut self, len: u32) -> u32 {
             let p = self.next + 1024;
@@ -416,5 +467,32 @@ mod tests {
         assert_eq!(m.read(ret, 4), b"out\0");
         assert_eq!(scratch, vec![ret]);
         assert!(scatter(&sig, frame, &results[..2], &mut m, &mut scratch).is_err());
+    }
+
+    /// `SUBROUTINE F(N, A, INFO)`, `A` a 2x3 matrix the callee overwrites.
+    #[test]
+    fn fortran_cells_and_column_major() {
+        let sig = parse("fn f_ F - I *[R *I").unwrap().fns.remove(0);
+        assert!(sig.fortran);
+        assert!(is_ref(&sig, &sig.args[0]) && is_ref(&sig, &sig.args[2]) && !is_cell(&sig, &sig.args[2]));
+        let mut m = Mem::default();
+        let a = m.reals_nd(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]);
+        let n = m.alloc(8);
+        m.store_i32(n, 3);
+        let info = m.alloc(8);
+        let frame = m.alloc(8 * 4);
+        m.store_i32(frame, n as i32);
+        m.store_i32(frame + 8, a as i32);
+        m.store_i32(frame + 16, info as i32);
+        let args = gather(&sig, frame, &m).unwrap();
+        let col: Vec<u8> = [1.0f64, 4.0, 2.0, 5.0, 3.0, 6.0].iter().flat_map(|x| x.to_le_bytes()).collect();
+        assert_eq!(args, vec![Value::Int(3), Value::Bytes(col.clone()), Value::Int(0)]);
+        let mut scratch = Vec::new();
+        let back: Vec<u8> = [10.0f64, 40.0, 20.0, 50.0, 30.0, 60.0].iter().flat_map(|x| x.to_le_bytes()).collect();
+        scatter(&sig, frame, &[Value::Int(3), Value::Int(7), Value::Bytes(back)], &mut m, &mut scratch).unwrap();
+        assert_eq!(m.load_i32(info), 7);
+        let d = m.array_data(a);
+        assert_eq!((0..6).map(|k| m.load_f64(d + 8 * k)).collect::<Vec<_>>(), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]);
+        assert!(scratch.is_empty());
     }
 }

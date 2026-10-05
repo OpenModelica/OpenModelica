@@ -88,6 +88,38 @@ constant Integer fmi3VariableAliasCache = 34;
 // SOME((simCode, FMUVersion, FMUType)). Lives until the next translation.
 constant Integer fmuTranslation = 35;
 
+// Build projects already run this session; a failed build installs nothing.
+constant Integer extLibraryBuildIndex = 36;
+
+// Simplified if-conditions of the adjacency-row traversals, one translation:
+// SOME(HashTableExpToExp.HashTable). See BackendDAEUtil.simplifyIfCondCached.
+constant Integer adjacencyIfCondCache = 37;
+
+// The NF top scope of the current frontend run: list<NFInstNode.InstNode>,
+// empty or a single node. Every other NF node refers to its enclosing scope
+// weakly, so without this root the top scope has no owner at all.
+constant Integer nfTopScope = 38;
+
+// Every backend variable made by NBVariable.makeVarPtr. A variable and
+// its own cref refer to each other, so the cref's side is weak and the run
+// owns the variables until they reach `VariablePointers`.
+constant Integer nbCreatedVars = 39;
+
+// The icon annotation JSON of each class a diagram has drawn a component of,
+// for the documentation generator. A diagram dumps the icon of every one of its
+// components, and a library draws the same few dozen types across thousands of
+// diagrams; the dump depends only on the class, since the component's own
+// modifications are not applied to it. Dropped with the top scope by
+// NFInstanceAPI.clearTopScopeCache.
+constant Integer nfDiagramIconCache = 40;
+// SOME(true) while the old uncertainty extraction (modelEquationsUC) lowers a
+// model, which, like data reconciliation, must keep its uncertain=refine
+// variables out of alias elimination.
+constant Integer uncertaintyExtraction = 41;
+// C names of the records whose members own nothing, so the generated C code
+// neither retains nor releases them. Set by SimCodeFunctionUtil.setTrivialRecords.
+constant Integer trivialRecords = 42;
+
 // indexes in System.tick
 // ----------------------
 // temp vars index
@@ -126,6 +158,13 @@ algorithm
   setGlobalRoot(fmi3ValueReferenceCache, NONE());
   setGlobalRoot(fmi3VariableAliasCache, NONE());
   setGlobalRoot(fmuTranslation, NONE());
+  setGlobalRoot(extLibraryBuildIndex, {});
+  setGlobalRoot(adjacencyIfCondCache, NONE());
+  setGlobalRoot(nfTopScope, {});
+  setGlobalRoot(nbCreatedVars, {});
+  setGlobalRoot(nfDiagramIconCache, NONE());
+  setGlobalRoot(uncertaintyExtraction, NONE());
+  setGlobalRoot(trivialRecords, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

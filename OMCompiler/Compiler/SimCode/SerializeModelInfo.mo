@@ -50,8 +50,6 @@ import SimCode;
 
 protected
 import Algorithm;
-import Autoconf;
-import Config;
 import DAEDump;
 import Error;
 import Expression;
@@ -68,6 +66,7 @@ import SimCodeVar;
 import SCodeDump;
 import Util;
 import UnorderedSet;
+import SimCodeCodegenUtil;
 
 function serializeWork "Always succeeds in order to clean-up external objects"
   input SimCode.SimCode code;
@@ -85,12 +84,7 @@ algorithm
 
     case SimCode.SIMCODE(modelInfo = mi as SimCode.MODELINFO())
       algorithm
-        /*Temporary disabled omsicpp*/
-        if (Config.simCodeTarget() == "omsic") /*or (Config.simCodeTarget() ==  "omsicpp") */ then
-          fileName := code.fullPathPrefix + Autoconf.pathDelimiter + code.fileNamePrefix + "_info.json";
-        else
-          fileName := code.fileNamePrefix + "_info.json";
-        end if;
+        fileName := code.fileNamePrefix + "_info.json";
         File.open(file,fileName,File.Mode.Write);
         File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
         serializePath(file, mi.name);
@@ -107,7 +101,7 @@ algorithm
           ("initial-lambda0", code.initialEquations_lambda0),
           ("removed-initial", code.removedInitialEquations),
           ("regular", code.allEquations),
-          ("synchronous", SimCodeUtil.getClockedEquations(SimCodeUtil.getSubPartitions(code.clockedPartitions))),
+          ("synchronous", SimCodeCodegenUtil.getClockedEquations(SimCodeCodegenUtil.getSubPartitions(code.clockedPartitions))),
           ("start", code.startValueEquations),
           ("nominal", code.nominalValueEquations),
           ("min", code.minValueEquations),
@@ -119,11 +113,11 @@ algorithm
           ("jacobian", code.jacobianEquations)
         } loop
           (eqsName, eqsLst) := tpl;
-          for eq in SimCodeUtil.sortEqSystems(eqsLst) loop
+          for eq in SimCodeCodegenUtil.sortEqSystems(eqsLst) loop
             try
               serializeEquation(file, eq, eqsName, withOperations);
             else
-              Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo.serializeWork failed for section=" + eqsName + " eqIndex=" + intString(SimCodeUtil.simEqSystemIndex(eq))});
+              Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo.serializeWork failed for section=" + eqsName + " eqIndex=" + intString(SimCodeCodegenUtil.simEqSystemIndex(eq))});
               fail();
             end try;
           end for;
@@ -150,6 +144,7 @@ algorithm
   b := serializeVarsHelp(file, vars.stateVars, withOperations, true);
   b := serializeVarsHelp(file, vars.derivativeVars, withOperations, b);
   b := serializeVarsHelp(file, vars.algVars, withOperations, b);
+  b := serializeVarsHelp(file, vars.aliasVars, withOperations, b);
   b := serializeVarsHelp(file, vars.intAlgVars, withOperations, b);
   b := serializeVarsHelp(file, vars.boolAlgVars, withOperations, b);
   b := serializeVarsHelp(file, vars.inputVars, withOperations, b);
@@ -200,6 +195,23 @@ algorithm
   serializeSource(file,var.source,withOperations);
   File.write(file, ",\"index\":");
   File.writeInt(file, var.index);
+  () := match var.aliasvar
+    local
+      DAE.ComponentRef cr;
+    case SimCodeVar.ALIAS(varName = cr)
+      algorithm
+        File.write(file, ",\"alias\":\"");
+        writeCref(file, cr, escape=JSON);
+        File.write(file, "\"");
+      then ();
+    case SimCodeVar.NEGATEDALIAS(varName = cr)
+      algorithm
+        File.write(file, ",\"alias\":\"-");
+        writeCref(file, cr, escape=JSON);
+        File.write(file, "\"");
+      then ();
+    else ();
+  end match;
   File.write(file,"}");
 end serializeVar;
 
@@ -609,14 +621,14 @@ algorithm
       i := listLength(lSystem.beqs);
       j := listLength(lSystem.simJac);
 
-      eqs := SimCodeUtil.sortEqSystems(lSystem.residual);
+      eqs := SimCodeCodegenUtil.sortEqSystems(lSystem.residual);
       if not listEmpty(eqs) then
         serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true,assign_type=if lSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
         for e in listRest(eqs) loop serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then AssignType.TORN else AssignType.NORMAL); end for;
       end if;
 
       jeqs := match lSystem.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeCodegenUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
       if not listEmpty(jeqs) then
@@ -669,14 +681,14 @@ algorithm
       i := listLength(lSystem.beqs);
       j := listLength(lSystem.simJac);
 
-      eqs := SimCodeUtil.sortEqSystems(lSystem.residual);
+      eqs := SimCodeCodegenUtil.sortEqSystems(lSystem.residual);
       if not listEmpty(eqs) then
         serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true,assign_type=if lSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
         for e in listRest(eqs) loop serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then AssignType.TORN else AssignType.NORMAL); end for;
       end if;
 
       jeqs := match lSystem.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeCodegenUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
       if not listEmpty(jeqs) then
@@ -726,14 +738,14 @@ algorithm
       i := listLength(atL.beqs);
       j := listLength(atL.simJac);
 
-      eqs := SimCodeUtil.sortEqSystems(atL.residual);
+      eqs := SimCodeCodegenUtil.sortEqSystems(atL.residual);
       if not listEmpty(eqs) then
         serializeEquation(file,listHead(eqs),section,withOperations,parent=atL.index,first=true,assign_type=if atL.tornSystem then AssignType.TORN else AssignType.NORMAL);
         for e in listRest(eqs) loop serializeEquation(file,e,section,withOperations,parent=atL.index,assign_type=if atL.tornSystem then AssignType.TORN else AssignType.NORMAL); end for;
       end if;
 
       jeqs := match atL.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeCodegenUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
       if not listEmpty(jeqs) then
@@ -831,18 +843,18 @@ algorithm
 
     // no dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = NONE()) algorithm
-      eqs := SimCodeUtil.sortEqSystems(nlSystem.eqs);
+      eqs := SimCodeCodegenUtil.sortEqSystems(nlSystem.eqs);
       for e in eqs loop
         try
-          serializeEquation(file,e,section,withOperations,parent=nlSystem.index,first=(SimCodeUtil.simEqSystemIndex(e)==SimCodeUtil.simEqSystemIndex(listHead(eqs))),assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
+          serializeEquation(file,e,section,withOperations,parent=nlSystem.index,first=(SimCodeCodegenUtil.simEqSystemIndex(e)==SimCodeCodegenUtil.simEqSystemIndex(listHead(eqs))),assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
         else
-          Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo inner eq failed in NLS " + intString(nlSystem.index) + " for inner eqIndex=" + intString(SimCodeUtil.simEqSystemIndex(e))});
+          Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo inner eq failed in NLS " + intString(nlSystem.index) + " for inner eqIndex=" + intString(SimCodeCodegenUtil.simEqSystemIndex(e))});
           fail();
         end try;
       end for;
 
       jeqs := match nlSystem.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeCodegenUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
       if not listEmpty(jeqs) then
@@ -881,12 +893,12 @@ algorithm
     // dynamic tearing
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = SOME(atNL as SimCode.NONLINEARSYSTEM())) algorithm
       // for strict tearing set
-      eqs := SimCodeUtil.sortEqSystems(nlSystem.eqs);
+      eqs := SimCodeCodegenUtil.sortEqSystems(nlSystem.eqs);
       serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL);
       for e in listRest(eqs) loop serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=if nlSystem.tornSystem then AssignType.TORN else AssignType.NORMAL); end for;
 
       jeqs := match nlSystem.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeCodegenUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
       if not listEmpty(jeqs) then
@@ -922,12 +934,12 @@ algorithm
       File.write(file, "]]},");
 
       // for casual tearing set
-      eqs := SimCodeUtil.sortEqSystems(atNL.eqs);
+      eqs := SimCodeCodegenUtil.sortEqSystems(atNL.eqs);
       serializeEquation(file,listHead(eqs),section,withOperations,parent=atNL.index,first=true,assign_type=if atNL.tornSystem then AssignType.TORN else AssignType.NORMAL);
       for e in listRest(eqs) loop serializeEquation(file,e,section,withOperations,parent=atNL.index,assign_type=if atNL.tornSystem then AssignType.TORN else AssignType.NORMAL); end for;
 
       jeqs := match atNL.jacobianMatrix
-        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
+        case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeCodegenUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
       if not listEmpty(jeqs) then
@@ -1077,7 +1089,7 @@ algorithm
         local
           SimCode.SimEqSystem e;
         case SOME(e) algorithm
-          if SimCodeUtil.simEqSystemIndex(e) <>0 then
+          if SimCodeCodegenUtil.simEqSystemIndex(e) <>0 then
             serializeEquation(file,e,section,withOperations);
           end if;
         then ();
@@ -1179,7 +1191,7 @@ algorithm
     case BackendDAE.DAE_RESIDUAL_VAR() then "residual variable for dae mode";
     else
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + SimCodeUtil.simVarString(var)});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + SimCodeCodegenUtil.simVarString(var)});
       then fail();
   end match;
 end varKindString;
@@ -1283,7 +1295,7 @@ function serializeEquationIndex
   input File.File file;
   input SimCode.SimEqSystem eq;
 algorithm
-  File.writeInt(file, SimCodeUtil.simEqSystemIndex(eq));
+  File.writeInt(file, SimCodeCodegenUtil.simEqSystemIndex(eq));
 end serializeEquationIndex;
 
 function serializeIfBranch

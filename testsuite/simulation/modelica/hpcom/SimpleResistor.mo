@@ -1,5 +1,5 @@
 model SimpleResistor " simple testcase with 3 simple equations"
-  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=50, freqHz=10)
+  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=50, f=10)
     annotation (Placement(transformation(extent={{-58,60},{-38,80}})));
   Modelica.Electrical.Analog.Basic.Resistor resistor(R=100) annotation (
       Placement(transformation(

@@ -119,6 +119,7 @@ void FMI3ModelExchangeDestructor_OMC(void* in_fmi3me)
   fmi_import_free_context(FMI3ME->FMIImportContext);
   free(FMI3ME->FMIWorkingDirectory);
   free(FMI3ME->FMIInstanceName);
+  free(FMI3ME);
 }
 
 /*

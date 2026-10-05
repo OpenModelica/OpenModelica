@@ -214,12 +214,20 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
       if (i > 0) {
         toolTip += QString("<br /><br />");
       }
-      toolTip += QString("Name: <b>%1</b><br />Value: <b>%2</b> at <b>%3</b> %4<br />Filename: <b>%5</b>")
-                 .arg(pPlotCurve->title().text())
-                 .arg(y)
-                 .arg(x)
-                 .arg(timeUnit)
-                 .arg(pPlotCurve->getFileName());
+      if (mpPlot->getParentPlotWindow()->isPlotParametric() || mpPlot->getParentPlotWindow()->isPlotArrayParametric()) {
+        toolTip += QString("Name: <b>%1</b><br />X: <b>%2</b><br />Y: <b>%4</b><br />Filename: <b>%6</b>")
+                   .arg(pPlotCurve->title().text())
+                   .arg(x)
+                   .arg(y)
+                   .arg(pPlotCurve->getFileName());
+      } else {
+        toolTip += QString("Name: <b>%1</b><br />Value: <b>%2</b> at <b>%3</b> %4<br />Filename: <b>%5</b>")
+                   .arg(pPlotCurve->title().text())
+                   .arg(y)
+                   .arg(x)
+                   .arg(timeUnit)
+                   .arg(pPlotCurve->getFileName());
+      }
     }
     QToolTip::showText(canvas()->mapToGlobal(pos), toolTip, nullptr);
   } else {

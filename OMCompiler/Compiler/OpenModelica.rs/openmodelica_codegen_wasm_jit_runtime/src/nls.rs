@@ -50,7 +50,41 @@ fn install_hooks() {
 /// C's `throwStreamPrint`, with this runtime's reporting installed.
 pub(crate) fn throw_stream(s: &str) {
     install_hooks();
+    if nls::error_caught() {
+        note_suppressed(s.as_bytes());
+    }
     nls::throw_stream(s)
+}
+
+const SUPPRESSED_CAP: usize = 508;
+
+/// `[len: u32][bytes]`, C's `omc_last_suppressed_error`. Fixed-size, so it needs
+/// no allocation when the heap is what failed.
+#[repr(C, align(4))]
+struct Suppressed(UnsafeCell<[u8; 4 + SUPPRESSED_CAP]>);
+unsafe impl Sync for Suppressed {}
+static SUPPRESSED: Suppressed = Suppressed(UnsafeCell::new([0; 4 + SUPPRESSED_CAP]));
+
+fn note_suppressed(msg: &[u8]) {
+    let buf = unsafe { &mut *SUPPRESSED.0.get() };
+    let n = msg.len().min(SUPPRESSED_CAP);
+    buf[4..4 + n].copy_from_slice(&msg[..n]);
+    buf[..4].copy_from_slice(&(n as u32).to_le_bytes());
+}
+
+pub fn last_suppressed_error() -> &'static [u8] {
+    let buf = unsafe { &*SUPPRESSED.0.get() };
+    let n = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+    &buf[4..4 + n.min(SUPPRESSED_CAP)]
+}
+
+pub fn clear_suppressed_error() {
+    unsafe { (&mut *SUPPRESSED.0.get())[..4].fill(0) };
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_suppressed_error_addr() -> u32 {
+    SUPPRESSED.0.get() as usize as u32
 }
 
 /// A string literal the module's pool owns, borrowed for the length of the call.
@@ -138,9 +172,12 @@ pub extern "C" fn rt_nls_assert_failed(
     // report only what C's jump would have reached -- as [`throw_stream`] does.
     let report = nls::throw_reports() && assert_logged();
     nls::note_assert();
+    if msg != 0 {
+        note_suppressed(unsafe { crate::str_bytes(msg as u32) });
+    }
     if report {
         use openmodelica_sim_meta::TIME_OFF;
-        use openmodelica_sim_meta::driver::{AssertInfo, log_assert_block};
+        use openmodelica_sim_meta::driver::{self, AssertInfo, log_assert_block};
         let info = AssertInfo {
             msg: rt_string(msg),
             file: rt_string(file),
@@ -150,14 +187,29 @@ pub extern "C" fn rt_nls_assert_failed(
             line_end: eline,
             col_end: ecol,
         };
-        let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        // A function's `assert()` (no condition) inside an FMU is `omc_assert_fmi`,
+        // which reports to the importer instead, as `rt_assert` does for one that
+        // the solver does not absorb.
+        if cond == 0 && driver::ext_errors_go_to_logger() {
+            driver::report_ext_error(&driver::ext_assert_message(&info.file, info.line_start, &info.msg));
+        } else {
+            let time =
+                if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
+            log_assert_block(&info, &rt_string(cond), time, initial != 0);
+        }
     }
     for h in [msg, file, cond] {
         if h != 0 {
             crate::rt_release(h as u32);
         }
     }
+}
+
+/// Model side (emitted by `emit_assert`): is the `noThrowAsserts` window open?
+/// Checked before anything else, as C's generated assert does; arms `needToReThrow`.
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_suppressed() -> i32 {
+    note_no_throw_assert() as i32
 }
 
 /// Arm C's `needToReThrow` where the `noThrowAsserts` window is open. The driver
@@ -191,14 +243,12 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     if note_no_throw_assert() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        crate::omclog::info(
+        crate::omclog::info!(
             crate::omclog::ASSERT,
             false,
-            &alloc::format!(
-                "The following assertion has been violated {}at time {}",
-                if initial != 0 { "during initialization " } else { "" },
-                crate::omclog::f(time, 0, 6)
-            ),
+            "The following assertion has been violated {}at time {}",
+            if initial != 0 { "during initialization " } else { "" },
+            crate::omclog::f(time, 0, 6),
         );
         if msg != 0 {
             crate::rt_release(msg as u32);
@@ -209,20 +259,21 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
     if nls::throw_reports() {
         use openmodelica_sim_meta::TIME_OFF;
         let time = if sim_data != 0 { unsafe { load_f64(sim_data as u32 + TIME_OFF) } } else { 0.0 };
-        crate::omclog::warning(
+        crate::omclog::warning!(
             crate::omclog::ASSERT,
             false,
-            &alloc::format!(
-                "The following assertion has been violated {}at time {}",
-                if initial != 0 { "during initialization " } else { "" },
-                crate::omclog::f(time, 0, 6)
-            ),
+            "The following assertion has been violated {}at time {}",
+            if initial != 0 { "during initialization " } else { "" },
+            crate::omclog::f(time, 0, 6),
         );
         if nls::throw_logged() {
             crate::omclog::debug(crate::omclog::ASSERT, false, &rt_string(msg));
         }
     }
     if msg != 0 {
+        if caught {
+            note_suppressed(unsafe { crate::str_bytes(msg as u32) });
+        }
         crate::rt_release(msg as u32);
     }
     if caught {
@@ -277,13 +328,11 @@ pub extern "C" fn rt_div_sim(a: f64, b: f64, msg: u32, time: f64, initial: i32) 
         // domain check somewhere downstream.
         return 0.0;
     } else if no_throw_div_zero() {
-        crate::omclog::warning(
+        crate::omclog::warning!(
             crate::omclog::DIVISION,
             false,
-            &alloc::format!(
-                "solver will try to handle division by zero at time {}: {s}",
-                format_g(time, 16)
-            ),
+            "solver will try to handle division by zero at time {}: {s}",
+            format_g(time, 16),
         );
         a / b
     } else {
@@ -391,7 +440,9 @@ fn nls_ls_backend() -> solverflags::Sparse {
     }
 }
 
-/// Count at `count_addr`, then `HIST_DEPTH` × (time, `n` values) from `base`.
+/// A ring of `HIST_DEPTH` × (time, `n` values) from `base`. The word at
+/// `count_addr` holds the count in its low half and the slot of entry 0 in its
+/// high half, so storing a solution moves no other entry.
 struct MemHistory {
     count_addr: u32,
     base: u32,
@@ -399,14 +450,21 @@ struct MemHistory {
 }
 
 impl MemHistory {
+    fn head(&self) -> usize {
+        (unsafe { load_u32(self.count_addr) } >> 16) as usize % HIST_DEPTH
+    }
     fn entry(&self, k: usize) -> u32 {
-        self.base + (k * (8 + self.n * 8)) as u32
+        let slot = (self.head() + k) % HIST_DEPTH;
+        self.base + (slot * (8 + self.n * 8)) as u32
+    }
+    fn set_word(&self, len: usize, head: usize) {
+        unsafe { store_u32(self.count_addr, len as u32 | (head as u32) << 16) };
     }
 }
 
 impl History for MemHistory {
     fn len(&self) -> usize {
-        (unsafe { load_u32(self.count_addr) } as usize).min(HIST_DEPTH)
+        (unsafe { load_u32(self.count_addr) } as usize & 0xffff).min(HIST_DEPTH)
     }
     fn time(&self, k: usize) -> f64 {
         unsafe { load_f64(self.entry(k)) }
@@ -426,33 +484,47 @@ impl History for MemHistory {
         for (i, v) in x.iter().enumerate() {
             unsafe { store_f64(at + 8 + (i * 8) as u32, *v) };
         }
-        unsafe { store_u32(self.count_addr, len as u32) };
+        self.set_word(len, self.head());
     }
     fn set_len(&mut self, len: usize) {
-        unsafe { store_u32(self.count_addr, len as u32) };
+        self.set_word(len, self.head());
+    }
+    fn push_front(&mut self, time: f64, x: &[f64]) {
+        let len = (self.len() + 1).min(HIST_DEPTH);
+        self.set_word(len, (self.head() + HIST_DEPTH - 1) % HIST_DEPTH);
+        self.put(0, len, time, x);
     }
 }
 
 /// C's `simulationInfo->nonlinearSystemData`: each system's (state address, size),
-/// filled by the module `start`.
-struct RosterCell(UnsafeCell<alloc::vec::Vec<(u32, usize)>>);
+/// filled by the module `start`. `index` is the reverse map, wanted per solve.
+struct Roster {
+    sys: alloc::vec::Vec<(u32, usize)>,
+    index: alloc::collections::BTreeMap<u32, u32>,
+}
+struct RosterCell(UnsafeCell<Roster>);
 // Single-threaded wasm: no concurrent access.
 unsafe impl Sync for RosterCell {}
-static ROSTER: RosterCell = RosterCell(UnsafeCell::new(alloc::vec::Vec::new()));
+static ROSTER: RosterCell =
+    RosterCell(UnsafeCell::new(Roster { sys: alloc::vec::Vec::new(), index: alloc::collections::BTreeMap::new() }));
 
 /// `k == 0` starts a fresh roster, so a second model replaces the first.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_register(k: u32, hist_addr: u32, n: u32) {
     let roster = unsafe { &mut *ROSTER.0.get() };
-    roster.truncate(k as usize);
-    roster.push((hist_addr, n as usize));
+    let keep = roster.sys.len().min(k as usize);
+    for (addr, _) in roster.sys.drain(keep..) {
+        roster.index.remove(&addr);
+    }
+    roster.index.insert(hist_addr, roster.sys.len() as u32);
+    roster.sys.push((hist_addr, n as usize));
 }
 
 /// C's `sysNumber`: the index in `nonlinearSystemData` the homotopy messages quote
 /// (not the equation index). The roster is registered in that order.
 fn nls_sys_number(hist_addr: u32) -> u32 {
     let roster = unsafe { &*ROSTER.0.get() };
-    roster.iter().position(|(h, _)| *h == hist_addr).unwrap_or(0) as u32
+    roster.index.get(&hist_addr).copied().unwrap_or(0)
 }
 
 /// [`set_var_names`] across the module boundary: `ptr`/`len` are a NUL-separated
@@ -510,7 +582,7 @@ pub(crate) fn set_diag(systems: &[openmodelica_sim_meta::NlsVars]) {
 /// C's `cleanUpOldValueListAfterEvent`, called once per event.
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_nls_clean_history(time: f64) {
-    for &(addr, n) in unsafe { &*ROSTER.0.get() } {
+    for &(addr, n) in &unsafe { &*ROSTER.0.get() }.sys {
         let mut hist = MemHistory { count_addr: addr, base: addr + 16 + 2 * (n * 8) as u32, n };
         history_clean(&mut hist, time);
     }
@@ -535,8 +607,9 @@ fn scaled_max_norm(v: &[f64], scale: &[f64]) -> f64 {
 
 /// The sparse nonlinear solver a system with an analytic sparsity pattern gets, as
 /// in C: KINSOL over the Jacobian assembled straight into CSC, factorized by KLU.
-/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, and
-/// serves `-nlsLS=rsparse`. `pattern` is `colptr[n+1] ++ rowidx[nnz]`.
+/// [`newton_sparse_solve`] stands in for it where SUNDIALS is not linked in, where an
+/// FMU left the two libraries out, and for `-nlsLS=rsparse`. `pattern` is
+/// `colptr[n+1] ++ rowidx[nnz]`.
 #[allow(clippy::too_many_arguments)]
 fn kinsol_sparse_solve(
     n: usize,
@@ -554,12 +627,16 @@ fn kinsol_sparse_solve(
     has_jacobian: bool,
     colors: &[u32],
     max: &[f64],
+    min: &[f64],
     old_values: &[f64],
     load_guess: &mut dyn FnMut(&mut [f64]),
     eval: &mut dyn FnMut(&[f64], &mut [f64]),
 ) -> bool {
     #[cfg(sundials)]
-    if nls_ls_backend() == solverflags::Sparse::Klu {
+    if nls_ls_backend() == solverflags::Sparse::Klu
+        && crate::sundials::have_kinsol()
+        && crate::sundials::have_klu()
+    {
         // C's retry ladder re-picks the start point, but only through settings its
         // loop head overrides; `warm` is the caller's own second attempt.
         let colptr: alloc::vec::Vec<i32> = pattern[..n + 1].iter().map(|v| *v as i32).collect();
@@ -569,14 +646,14 @@ fn kinsol_sparse_solve(
         // `make_assemble`'s dense gather buffer is never needed.
         let gather = (has_jacobian && !jac_csc).then(|| pattern.to_vec());
         let mut assemble = make_assemble(n, jac, gather);
-        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max };
+        let pat = nls::kinsol::Pattern { nnz, colptr: &colptr, rowidx: &rowidx, colors, max, min };
         return crate::sundials::kinsol_solve_selected(
             handle, n, &pat, nominal, guess, old_values, x, eq_index, time, has_jacobian,
             load_guess, eval, &mut assemble,
         );
     }
     // only the KINSOL path names the system it dumps
-    let _ = (eq_index, time, old_values);
+    let _ = (eq_index, time, old_values, min);
     let _ = load_guess; // only the KINSOL-B rung re-reads the model's own values
     newton_sparse_solve(
         n, x, guess, warm, nominal, jac, pattern, nnz, jac_csc, handle, has_jacobian, colors, max,
@@ -787,7 +864,7 @@ struct WasmModel {
     load_idx: u32,
     jac_idx: u32,
     strict_idx: u32,
-    /// Scratch for the unknowns, residuals and Jacobian; freed by `rt_solve_nls`.
+    /// Scratch for the unknowns, residuals and Jacobian, owned by `rt_solve_nls`.
     x_ptr: u32,
     r_ptr: u32,
     jac_ptr: u32,
@@ -919,7 +996,7 @@ impl NlsBackend for WasmBackend<'_> {
         kinsol_sparse_solve(
             req.n, req.x, req.guess, req.warm, req.nominal, jac, self.pattern, self.nnz,
             self.jac_csc, self.handle, req.eq_index, req.time, req.has_jacobian, req.colors,
-            req.max, req.old_values, load_guess, eval,
+            req.max, req.min, req.old_values, load_guess, eval,
         )
     }
 
@@ -947,6 +1024,10 @@ struct MemBlock {
 }
 
 impl MemBlock {
+    /// The header's spare word, zeroed by `rt_alloc`: 0 is C's `useXScaling = 1`.
+    fn xscaling_off(&self) -> u32 {
+        self.hist_addr + 4
+    }
     fn last_solved(&self) -> u32 {
         self.hist_addr + 8
     }
@@ -955,16 +1036,6 @@ impl MemBlock {
     }
     fn extrap(&self) -> u32 {
         self.scale() + (self.n * 8) as u32
-    }
-    fn read(&self, at: u32, out: &mut [f64]) {
-        for (i, v) in out.iter_mut().enumerate() {
-            *v = unsafe { load_f64(at + (i * 8) as u32) };
-        }
-    }
-    fn write(&self, at: u32, v: &[f64]) {
-        for (i, x) in v.iter().enumerate() {
-            unsafe { store_f64(at + (i * 8) as u32, *x) };
-        }
     }
 }
 
@@ -1012,43 +1083,51 @@ pub extern "C" fn rt_solve_nls(
     } else {
         hist_n * size
     };
+    // The model callbacks read and write these through their linear-memory
+    // addresses, which a local array on the shadow stack has too.
+    let words = (size + 1) + size.max(1) + if has_jacobian { jac_len.max(1) } else { 0 };
+    let mut small = core::mem::MaybeUninit::<[f64; 64]>::uninit();
+    let heap = words > 64;
+    let base = if heap { rt_alloc((words * 8) as u32) } else { small.as_mut_ptr() as u32 };
+    let r_ptr = base + ((size + 1) * 8) as u32;
     let mut model = WasmModel {
         sim_data,
         res_idx,
         load_idx,
         jac_idx,
         strict_idx,
-        x_ptr: rt_alloc(((size + 1) * 8) as u32),
-        r_ptr: rt_alloc((size.max(1) * 8) as u32),
-        jac_ptr: if has_jacobian { rt_alloc((jac_len.max(1) * 8) as u32) } else { 0 },
+        x_ptr: base,
+        r_ptr,
+        jac_ptr: if has_jacobian { r_ptr + (size.max(1) * 8) as u32 } else { 0 },
     };
     let mut state =
         WasmState { nls_fail_addr, rel_fresh_addr, rel_addr, n_rel, lambda_addr };
 
-    let mut nominal = vec![0.0f64; size];
-    for (i, v) in nominal.iter_mut().enumerate() {
-        *v = unsafe { load_f64(nominal_addr + (i * 8) as u32) };
-    }
-    let mut bounds = vec![0.0f64; 2 * size];
-    for (i, v) in bounds.iter_mut().enumerate() {
-        *v = unsafe { load_f64(bounds_addr + (i * 8) as u32) };
-    }
+    // `rt_alloc`ed blocks of f64, so aligned; a system without unknowns has none.
+    let (nominal, bounds): (&[f64], &[f64]) = if size == 0 {
+        (&[], &[])
+    } else {
+        unsafe {
+            (
+                core::slice::from_raw_parts(nominal_addr as *const f64, size),
+                core::slice::from_raw_parts(bounds_addr as *const f64, 2 * size),
+            )
+        }
+    };
     // `colptr[size+1] ++ rowidx[nnz] ++ colorCols[size]`; C keeps `sparsePattern`
     // whether or not the model carries an analytic Jacobian, and so does this.
-    let pattern: alloc::vec::Vec<u32> = if nnz != 0 {
-        (0..2 * size + 1 + nnz as usize)
-            .map(|k| unsafe { load_u32(pat_addr + (k * 4) as u32) })
-            .collect()
+    let pattern: &[u32] = if nnz != 0 {
+        unsafe { core::slice::from_raw_parts(pat_addr as *const u32, 2 * size + 1 + nnz as usize) }
     } else {
-        alloc::vec::Vec::new()
+        &[]
     };
 
     let block = MemBlock { hist_addr, n: hist_n };
-    let mut res_scaling = vec![0.0f64; hist_n];
-    let mut extrapolation = vec![0.0f64; hist_n];
-    block.read(block.scale(), &mut res_scaling);
-    block.read(block.extrap(), &mut extrapolation);
+    // The history block is an `rt_alloc` object, so its f64 fields are aligned.
+    let res_scaling = unsafe { core::slice::from_raw_parts_mut(block.scale() as *mut f64, hist_n) };
+    let extrapolation = unsafe { core::slice::from_raw_parts_mut(block.extrap() as *mut f64, hist_n) };
     let mut last_solved = unsafe { load_f64(block.last_solved()) };
+    let mut use_xscaling = unsafe { load_u32(block.xscaling_off()) } == 0;
     let mut hist =
         MemHistory { count_addr: hist_addr, base: block.extrap() + (hist_n * 8) as u32, n: hist_n };
 
@@ -1063,30 +1142,28 @@ pub extern "C" fn rt_solve_nls(
         nnz,
         jac_csc: sparse_default != 0,
         sys_num: nls_sys_number(hist_addr),
-        nominal: &nominal,
-        bounds: &bounds,
-        pattern: &pattern,
+        nominal,
+        bounds,
+        pattern,
         has_jacobian,
     };
     let mut backend =
-        WasmBackend { pattern: &pattern, nnz: nnz as usize, jac_csc: sparse_default != 0, handle: lss_handle };
+        WasmBackend { pattern, nnz: nnz as usize, jac_csc: sparse_default != 0, handle: lss_handle };
     let ret = {
         let mut mem = NlsPersistent {
             history: &mut hist,
-            res_scaling: &mut res_scaling,
-            extrapolation: &mut extrapolation,
+            res_scaling,
+            extrapolation,
             last_solved: &mut last_solved,
+            use_xscaling: &mut use_xscaling,
         };
         solve_nls(&spec, &mut model, &mut state, &mut mem, &mut backend)
     };
-    block.write(block.scale(), &res_scaling);
-    block.write(block.extrap(), &extrapolation);
     unsafe { store_f64(block.last_solved(), last_solved) };
+    unsafe { store_u32(block.xscaling_off(), u32::from(!use_xscaling)) };
 
-    rt_free(model.x_ptr);
-    rt_free(model.r_ptr);
-    if has_jacobian {
-        rt_free(model.jac_ptr);
+    if heap {
+        rt_free(base);
     }
     ret
 }

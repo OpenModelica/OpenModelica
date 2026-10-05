@@ -1,6 +1,12 @@
+if(COMMAND om_windows_fetch_curl)
+  om_windows_fetch_curl()
+endif()
 find_package(CURL REQUIRED)
-find_package(Intl REQUIRED)
-find_package(Iconv REQUIRED)
+# MSVC builds go without gettext and iconv, see systemimpl.h and systemimpl.c.
+if(NOT MSVC)
+  find_package(Intl REQUIRED)
+  find_package(Iconv REQUIRED)
+endif()
 
 if(OM_OMC_USE_LAPACK)
   message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
@@ -44,6 +50,7 @@ set(OMC_RUNTIME_SOURCES
     ErrorMessage.cpp
     System_omc.c
     Lapack_omc.cpp
+    omc_lapack.c
     Settings_omc.cpp
     UnitParserExt_omc.cpp
     unitparser.cpp
@@ -77,65 +84,64 @@ target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
+if(NOT MSVC)
+  target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
+endif()
+target_link_libraries(omcruntime PUBLIC omc::mmc::runtime)
+# The scripting API reads and converts .arrow result files through libomc_result.
+target_link_libraries(omcruntime PUBLIC omc::result)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
+target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip)
 
 if(OM_OMC_ENABLE_COLPACK)
   target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)
 endif()
 
 if(OM_OMC_USE_LAPACK)
-  target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  if(WIN32)
+    # Do not import LAPACK into the compiler on Windows. OpenBLAS allocates its
+    # per-thread buffers in DllMain, which Windows charges as committed memory
+    # (~128 MB per hardware thread) on every omc process even though the
+    # compiler never writes to them. lapackimpl.c loads the library on demand
+    # instead, with the thread count pinned to one across the load. See #16638.
+    #
+    # Hand it the library the build resolved so it does not have to guess: an
+    # import library such as libopenblas.dll.a names the DLL beside it. Only the
+    # first entry is needed, it is the one carrying the LAPACK routines, and the
+    # loader in lapackimpl.c falls back to the usual names if it does not open.
+    list(GET LAPACK_LIBRARIES 0 OMC_LAPACK_DLL)
+    if(OMC_LAPACK_DLL MATCHES "^-l(.+)$")
+      # A bare linker flag rather than a path, e.g. -lopenblas.
+      set(OMC_LAPACK_DLL "lib${CMAKE_MATCH_1}")
+    endif()
+    get_filename_component(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}" NAME)
+    string(REGEX REPLACE "\\.(a|lib)$" "" OMC_LAPACK_DLL "${OMC_LAPACK_DLL}")
+    if(NOT OMC_LAPACK_DLL MATCHES "\\.dll$")
+      set(OMC_LAPACK_DLL "${OMC_LAPACK_DLL}.dll")
+    endif()
+    message(STATUS "omc will load LAPACK on demand from ${OMC_LAPACK_DLL}")
+    target_compile_definitions(omcruntime PRIVATE OMC_LAPACK_DLL_NAMES="${OMC_LAPACK_DLL}")
+  else()
+    target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+  endif()
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+if(MSVC)
+  target_compile_definitions(omcruntime PRIVATE NOMINMAX)
+  # dirent.h for MSVC.
+  target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/simdjson/windows)
+endif()
 
 # uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
 # explicitly use it.
 if(UNIX AND NOT APPLE)
   target_link_libraries(omcruntime PUBLIC ${UUID_LIB})
 endif()
-
-# Corba support
-if(OM_OMC_USE_CORBA)
-  if(MINGW)
-    if(DEFINED ENV{MSYSTEM_PREFIX})
-      string(FIND $ENV{MSYSTEM_PREFIX} "ucrt64" IS_UCRT64)
-      if(IS_UCRT64)
-        message(FATAL_ERROR "No corba support on UCRT64")
-      endif()
-    endif()
-    # setup omniORB for MinGW OMDev
-    include(.cmake/omdev_omniorb_setup.cmake)
-    # Include the macro for compiling corba targets.
-    include(.cmake/omc_omniorb_corba_target.cmake)
-
-    # Make a directory specifically for generated files
-    set(GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
-    file(MAKE_DIRECTORY ${GENERATED_DIRECTORY})
-
-    # add a corba target for omc_communication.idl. The outputs will be put in the generated files directory.
-    omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl
-                                 ${GENERATED_DIRECTORY})
-    # Add the generated files to the sources of the library
-    target_sources(omcruntime PRIVATE ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp
-                                      Corba_omc.cpp)
-
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
-    target_link_libraries(omcruntime PUBLIC omdev::omniORB::omnithread40_rt)
-    target_compile_definitions(omcruntime PRIVATE USE_CORBA)
-    target_include_directories(omcruntime PRIVATE ${GENERATED_DIRECTORY})
-  else() # Not MinGW
-    message(FATAL "Corba support for non-MinGW omc builds is not yet implemented.")
-  endif()
-else() # No corba support requested. Use the stub file.
-  target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
-endif(OM_OMC_USE_CORBA)
 
 # Install omcruntime. It is needed by bootstrapping tests.
 install(TARGETS omcruntime)
@@ -162,7 +168,7 @@ target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 
 target_link_libraries(omcbackendruntime PUBLIC omc::config)
 target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
+target_link_libraries(omcbackendruntime PUBLIC omc::mmc::runtime)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
@@ -186,9 +192,6 @@ target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # tree; the feature vars set elsewhere in this file (above) are still in scope
 # for the configure_file inside it.
 include(${CMAKE_CURRENT_SOURCE_DIR}/omc_config_unix.cmake)
-
-configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
-
 
 # Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
 
@@ -243,4 +246,8 @@ if(NOT OMC_PARMODELICA_TBB_LINK_NAME)
 endif()
 set(PARMODELICAAUTO_LDFLAGS " -lParModelicaAuto -l${OMC_PARMODELICA_TBB_LINK_NAME} ")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+# Written into the source tree, which all build directories share. A build from
+# prebuilt sources does not read it, so it leaves the file alone.
+if(NOT OM_OMC_PREBUILT_C_SOURCES)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+endif()

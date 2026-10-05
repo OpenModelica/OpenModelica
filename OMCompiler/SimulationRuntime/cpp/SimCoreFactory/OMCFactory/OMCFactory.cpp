@@ -30,6 +30,24 @@
  *  @{
  */
 
+#ifdef _WIN32
+  #include <winsock2.h>
+  typedef SOCKET socket_t;
+  #define OMC_INVALID_SOCKET INVALID_SOCKET
+  #define omc_closesocket closesocket
+#else
+  #include <arpa/inet.h>
+  #include <netinet/in.h>
+  #include <sys/socket.h>
+  #include <unistd.h>
+  typedef int socket_t;
+  #define OMC_INVALID_SOCKET (-1)
+  #define omc_closesocket close
+#endif
+#ifndef MSG_NOSIGNAL
+  #define MSG_NOSIGNAL 0
+#endif
+
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
@@ -37,44 +55,96 @@
 #include <Core/System/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/container/vector.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/program_options.hpp>
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <functional>
+#include <optional>
 
-namespace fs = boost::filesystem;
-namespace po = boost::program_options;
+namespace fs = std::filesystem;
+
+static std::string socketError()
+{
+#ifdef _WIN32
+  return "error " + std::to_string(WSAGetLastError());
+#else
+  return strerror(errno);
+#endif
+}
 
 /**
  * Logger for XML messages through TCP port
  */
-#include <boost/asio.hpp>
-
 class LoggerXMLTCP: public LoggerXML
 {
  public:
   virtual ~LoggerXMLTCP()
   {
-    _socket.close();
+    omc_closesocket(_socket);
+#ifdef _WIN32
+    WSACleanup();
+#endif
   }
 
-  static void initialize(std::string host, int port, LogSettings &logSettings)
+  static void initialize(int port, LogSettings &logSettings)
   {
-    _instance = new LoggerXMLTCP(host, port, logSettings);
+    _instance = new LoggerXMLTCP(port, logSettings);
   }
 
  protected:
-  LoggerXMLTCP(std::string host, int port, LogSettings &logSettings)
+  LoggerXMLTCP(int port, LogSettings &logSettings)
     : LoggerXML(logSettings, true, _sstream)
-    , _endpoint(boost::asio::ip::make_address(host), port)
-    , _socket(_ios)
+    , _socket(OMC_INVALID_SOCKET)
   {
     if (logSettings.format != LF_XML && logSettings.format != LF_XMLTCP) {
       throw ModelicaSimulationError(MODEL_FACTORY,
         "xmltcp logger requires log-format xml");
     }
-    _socket.connect(_endpoint);
+#ifdef _WIN32
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+      throw std::runtime_error("WSAStartup failed");
+#endif
+    _socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (_socket == OMC_INVALID_SOCKET) {
+      std::string err = socketError();
+#ifdef _WIN32
+      WSACleanup();
+#endif
+      throw std::runtime_error("socket: " + err);
+    }
+#ifdef SO_NOSIGPIPE
+    int on = 1;
+    setsockopt(_socket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+#endif
+    sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short)port);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if (connect(_socket, (sockaddr*)&addr, sizeof(addr)) != 0) {
+      std::string err = socketError();
+      omc_closesocket(_socket);
+#ifdef _WIN32
+      WSACleanup();
+#endif
+      throw std::runtime_error("connect: " + err);
+    }
+  }
+
+  void sendString(const std::string& str)
+  {
+    const char* p = str.data();
+    size_t left = str.size();
+    while (left > 0) {
+      int n = send(_socket, p, (int)left, MSG_NOSIGNAL);
+      if (n <= 0)
+        throw std::runtime_error("send: " + socketError());
+      p += n;
+      left -= n;
+    }
   }
 
   virtual void writeInternal(string msg, LogCategory cat, LogLevel lvl,
@@ -83,7 +153,7 @@ class LoggerXMLTCP: public LoggerXML
     _sstream.str("");
     LoggerXML::writeInternal(msg, cat, lvl, ls);
     if (_logSettings.format == LF_XMLTCP)
-      _socket.send(boost::asio::buffer(_sstream.str()));
+      sendString(_sstream.str());
     else
       std::cout << _sstream.str();
   }
@@ -99,21 +169,215 @@ class LoggerXMLTCP: public LoggerXML
                << "\" currentStepSize=\"" << currentStepSize
                << "\" progress=\"" << completion
                << "\" />" << std::endl;
-      _socket.send(boost::asio::buffer(_sstream.str()));
+      sendString(_sstream.str());
     }
     else {
       // send status in old format for backwards compatibility
       _sstream.str("");
       _sstream << completion << " " << phase << std::endl;
-      _socket.send(boost::asio::buffer(_sstream.str()));
+      sendString(_sstream.str());
     }
   }
 
-  boost::asio::io_context _ios;
-  boost::asio::ip::tcp::endpoint _endpoint;
-  boost::asio::ip::tcp::socket _socket;
+  socket_t _socket;
   std::stringstream _sstream;
 };
+
+namespace {
+
+/**
+ * Command line parser: --name[=value] and -name[=value] for long names,
+ * -X[value] for short ones; a missing value is taken from the next argument.
+ */
+class CommandLine
+{
+ public:
+  enum Kind { FLAG, VALUE, VALUES };
+  enum Type { STRING, REAL, INT, UINT };
+
+  void add(const string& name, char shortName, Kind kind, Type type,
+           const string& help, std::optional<string> defaultValue = std::nullopt,
+           bool hidden = false)
+  {
+    Option o = {name, shortName, kind, type, help, defaultValue, hidden, {}};
+    if (kind == FLAG)
+      o.defaultValue = "false";
+    _options.push_back(o);
+  }
+
+  /** Returns the arguments that are not registered options. */
+  vector<string> parse(int argc, const char* argv[],
+                       const std::function<pair<string, string>(const string&)>& extraParser)
+  {
+    vector<string> unrecognized;
+    vector<string> args(argv + 1, argv + argc);
+    for (size_t i = 0; i < args.size(); i++) {
+      const string& tok = args[i];
+      Option* opt = nullptr;
+      std::optional<string> value;
+      pair<string, string> replaced = extraParser(tok);
+      if (!replaced.first.empty()) {
+        opt = findLong(replaced.first);
+        if (!replaced.second.empty())
+          value = replaced.second;
+      }
+      else if (tok.size() >= 3 && tok[0] == '-' && tok[1] == '-') {
+        opt = findLong(tok.substr(2, tok.find('=') - 2));
+        value = adjacentValue(tok);
+      }
+      else if (tok.size() >= 2 && tok[0] == '-') {
+        if ((opt = findLong(tok.substr(1, tok.find('=') - 1))))
+          value = adjacentValue(tok);
+        else if ((opt = findShort(tok[1])) && tok.size() > 2)
+          value = tok.substr(tok[2] == '=' ? 3 : 2);
+      }
+      if (!opt) {
+        unrecognized.push_back(tok);
+        continue;
+      }
+      if (opt->kind == FLAG) {
+        if (value)
+          throw std::invalid_argument("option '--" + opt->name + "' does not take any arguments");
+        value = "true";
+      }
+      else if (!value) {
+        if (i + 1 == args.size() || isOption(args[i + 1]))
+          throw std::invalid_argument("the required argument for option '--" + opt->name + "' is missing");
+        value = args[++i];
+      }
+      store(*opt, *value);
+    }
+    return unrecognized;
+  }
+
+  size_t count(const string& name) const
+  {
+    const Option& o = get(name);
+    return !o.values.empty() || o.defaultValue ? 1 : 0;
+  }
+
+  const string& str(const string& name) const
+  {
+    const Option& o = get(name);
+    return o.values.empty() ? *o.defaultValue : o.values.front();
+  }
+
+  const vector<string>& values(const string& name) const { return get(name).values; }
+  double real(const string& name) const { return std::strtod(str(name).c_str(), nullptr); }
+  int integer(const string& name) const { return (int)std::strtol(str(name).c_str(), nullptr, 10); }
+  unsigned int uinteger(const string& name) const { return (unsigned int)std::strtoul(str(name).c_str(), nullptr, 10); }
+  bool flag(const string& name) const { return str(name) == "true"; }
+
+  void printHelp(std::ostream& os) const
+  {
+    vector<string> left;
+    size_t width = 0;
+    for (const Option& o : _options) {
+      string l = o.shortName ? string("-") + o.shortName + " [ --" + o.name + " ]" : "--" + o.name;
+      if (o.kind != FLAG)
+        l += o.defaultValue ? " arg (=" + *o.defaultValue + ")" : " arg";
+      width = (std::max)(width, l.size());
+      left.push_back(l);
+    }
+    os << "Allowed options:" << std::endl;
+    for (size_t i = 0; i < _options.size(); i++)
+      if (!_options[i].hidden)
+        os << "  " << left[i] << string(width - left[i].size() + 2, ' ') << _options[i].help << std::endl;
+  }
+
+ private:
+  struct Option
+  {
+    string name;
+    char shortName;
+    Kind kind;
+    Type type;
+    string help;
+    std::optional<string> defaultValue;
+    bool hidden;
+    vector<string> values;
+  };
+
+  Option* findLong(const string& name)
+  {
+    for (Option& o : _options)
+      if (o.name == name)
+        return &o;
+    return nullptr;
+  }
+
+  Option* findShort(char c)
+  {
+    for (Option& o : _options)
+      if (o.shortName == c)
+        return &o;
+    return nullptr;
+  }
+
+  const Option& get(const string& name) const
+  {
+    for (const Option& o : _options)
+      if (o.name == name)
+        return o;
+    throw std::logic_error("unknown option " + name);
+  }
+
+  bool isOption(const string& tok)
+  {
+    if (tok.size() == 2 && tok[0] == '-')
+      return findShort(tok[1]) != nullptr;
+    return tok.size() > 2 && tok[0] == '-' && tok[1] == '-' && findLong(tok.substr(2, tok.find('=') - 2));
+  }
+
+  std::optional<string> adjacentValue(const string& tok)
+  {
+    size_t eq = tok.find('=');
+    if (eq == string::npos)
+      return std::nullopt;
+    if (eq + 1 == tok.size())
+      throw std::invalid_argument("the argument for option '" + tok + "' should follow immediately after the equal sign");
+    return tok.substr(eq + 1);
+  }
+
+  void store(Option& o, const string& value)
+  {
+    if (o.kind != VALUES && !o.values.empty())
+      throw std::invalid_argument("option '--" + o.name + "' cannot be specified more than once");
+    const char* begin = value.c_str();
+    char* end = nullptr;
+    errno = 0;
+    switch (o.type) {
+      case REAL: std::strtod(begin, &end); break;
+      case INT: {
+        long l = std::strtol(begin, &end, 10);
+        if (l < INT_MIN || l > INT_MAX)
+          errno = ERANGE;
+        break;
+      }
+      case UINT: std::strtoul(begin, &end, 10); break;
+      case STRING: break;
+    }
+    if (o.type != STRING && (value.empty() || *end != '\0' || errno == ERANGE))
+      throw std::invalid_argument("the argument ('" + value + "') for option '--" + o.name + "' is invalid");
+    o.values.push_back(value);
+  }
+
+  vector<Option> _options;
+};
+
+vector<string> split(const string& str, char sep)
+{
+  vector<string> parts;
+  size_t start = 0, pos;
+  while ((pos = str.find(sep, start)) != string::npos) {
+    parts.push_back(str.substr(start, pos - start));
+    start = pos + 1;
+  }
+  parts.push_back(str.substr(start));
+  return parts;
+}
+
+}
 
 inline void normalizePath(std::string& path)
 {
@@ -177,10 +441,6 @@ pair<string, string> OMCFactory::replaceCRuntimeArguments(const string &arg)
         else if (value == "klu")
           value = "linearSolver"; // contains klu for sparse
       }
-      else if (key == "non-lin-solver") {
-        if (value == "hybrid")
-          value = "hybrj";
-      }
     }
     else {
       // check for space in replacement, separating a value
@@ -199,7 +459,7 @@ pair<string, string> OMCFactory::replaceCRuntimeArguments(const string &arg)
   return make_pair(string(), string());// don't touch arg
 }
 
-static LogSettings initializeLogger(const po::variables_map& vm)
+static LogSettings initializeLogger(const CommandLine& vm)
 {
   map<string, LogCategory> logCatMap = MAP_LIST_OF
     "init", LC_INIT MAP_LIST_SEP "nls", LC_NLS MAP_LIST_SEP
@@ -223,15 +483,13 @@ static LogSettings initializeLogger(const po::variables_map& vm)
   std::string logWarning;
   bool logUsingOMEdit = false;
   if (vm.count("log-settings")) {
-    vector<string> log_vec = vm["log-settings"].as<vector<string> >();
-    vector<string> opt_vec;
-    vector<string> cat_lvl;
+    const vector<string>& log_vec = vm.values("log-settings");
     for (int i = 0; i < log_vec.size(); i++) {
       // each log setting may be a comma separated list of options
-      boost::split(opt_vec, log_vec[i], boost::is_any_of(","));
+      vector<string> opt_vec = split(log_vec[i], ',');
       for (int j = 0; j < opt_vec.size(); j++) {
         // check for option with level, like "-V ls=warning" (default for "-V ls": LL_DEBUG)
-        boost::split(cat_lvl, opt_vec[j], boost::is_any_of("="));
+        vector<string> cat_lvl = split(opt_vec[j], '=');
         if (!logUsingOMEdit && opt_vec[j].rfind("LOG_", 0) == 0)
           logUsingOMEdit = true;
         if (logUsingOMEdit && logOMEditMap.find(opt_vec[j]) != logOMEditMap.end()) {
@@ -283,14 +541,14 @@ static LogSettings initializeLogger(const po::variables_map& vm)
     }
   }
 
-  if (vm.count("warn-all") && vm["warn-all"].as<bool>()) {
+  if (vm.flag("warn-all")) {
     for (int i = 0; i < logSettings.modes.size(); i++)
       if (logSettings.modes[i] < LL_WARNING)
         logSettings.modes[i] = LL_WARNING;
   }
 
   if (vm.count("log-format")) {
-    string logFormat_str = vm["log-format"].as<string>();
+    string logFormat_str = vm.str("log-format");
     if (logFormatMap.find(logFormat_str) != logFormatMap.end())
       logSettings.format = logFormatMap[logFormat_str];
     else
@@ -304,10 +562,10 @@ static LogSettings initializeLogger(const po::variables_map& vm)
 
   // initialize logger if it has been enabled
   if (Logger::isEnabled()) {
-    int port = vm["log-port"].as<int>();
+    int port = vm.integer("log-port");
     if (port > 0) {
       try {
-        LoggerXMLTCP::initialize("127.0.0.1", port, logSettings);
+        LoggerXMLTCP::initialize(port, logSettings);
       }
       catch (std::exception &ex) {
         throw ModelicaSimulationError(MODEL_FACTORY,
@@ -351,80 +609,54 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
        "all", EMIT_ALL MAP_LIST_SEP "hidden", EMIT_HIDDEN MAP_LIST_SEP
        "protected", EMIT_PROTECTED MAP_LIST_SEP "public", EMIT_PUBLIC MAP_LIST_SEP
        "none", EMIT_NONE MAP_LIST_END;
-     po::options_description desc("Allowed options");
+     CommandLine vm;
 
-     //program options that can be overwritten by OMEdit must be declared as vector
+     //program options that can be overwritten by OMEdit must be declared as VALUES
      //so that the same value can be set multiple times
      //(e.g. 'executable -F arg1 -r=arg2' -> 'executable -F arg1 -F=arg2')
      //the variables of OMEdit are always the first elements of the result vectors, if they are set
-     desc.add_options()
-          ("help", "produce help message")
-          ("nls-continue", po::bool_switch()->default_value(false), "non linear solver will continue if it can not reach the given precision")
-          ("runtime-library,R", po::value<string>(), "path to cpp runtime libraries")
-          ("modelica-system-library,M",  po::value<string>(), "path to Modelica library")
-          ("input-path", po::value< string >(), "directory with input files, like init xml (defaults to modelica-system-library)")
-          ("output-path", po::value< string >(), "directory for output files, like results (defaults to modelica-system-library)")
-          ("results-file,F", po::value<vector<string> >(),"name of results file")
-          ("start-time,S", po::value< double >()->default_value(0.0), "simulation start time")
-          ("stop-time,E", po::value< double >()->default_value(1.0), "simulation stop time")
-          ("step-size,H", po::value< double >()->default_value(0.0), "simulation step size")
-          ("solver,I", po::value< string >()->default_value("euler"), "solver method")
-          ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver), "linear solver method")
-          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolvers[0]),  "non linear solver method")
-          ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
-          ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
-          ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
-          ("log-settings,V", po::value< vector<string> >(), "cat[=lvl][,cat[=lvl]]... with cat: all, init, nls, ls, solver, output, events, model, other and lvl: error, warning, info, debug")
-          ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml, xmltcp")
-          ("log-port", po::value< int >()->default_value(0), "tcp port for log messages (default 0 meaning stdout/stderr)")
-          ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
-          ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
-          ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
-          ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, hidden, protected, public, none")
-          ("ignore-hide-result", po::bool_switch()->default_value(false), "ignore HideResult annotations")
-          ("variable-filter,B", po::value< string >()->default_value(".*"), "only write variables that match filter")
-          ;
+     vm.add("help", 0, CommandLine::FLAG, CommandLine::STRING, "produce help message");
+     vm.add("nls-continue", 0, CommandLine::FLAG, CommandLine::STRING, "non linear solver will continue if it can not reach the given precision");
+     vm.add("runtime-library", 'R', CommandLine::VALUE, CommandLine::STRING, "path to cpp runtime libraries");
+     vm.add("modelica-system-library", 'M', CommandLine::VALUE, CommandLine::STRING, "path to Modelica library");
+     vm.add("input-path", 0, CommandLine::VALUE, CommandLine::STRING, "directory with input files, like init xml (defaults to modelica-system-library)");
+     vm.add("output-path", 0, CommandLine::VALUE, CommandLine::STRING, "directory for output files, like results (defaults to modelica-system-library)");
+     vm.add("results-file", 'F', CommandLine::VALUES, CommandLine::STRING, "name of results file");
+     vm.add("start-time", 'S', CommandLine::VALUE, CommandLine::REAL, "simulation start time", "0");
+     vm.add("stop-time", 'E', CommandLine::VALUE, CommandLine::REAL, "simulation stop time", "1");
+     vm.add("step-size", 'H', CommandLine::VALUE, CommandLine::REAL, "simulation step size", "0");
+     vm.add("solver", 'I', CommandLine::VALUE, CommandLine::STRING, "solver method", "euler");
+     vm.add("lin-solver", 'L', CommandLine::VALUE, CommandLine::STRING, "linear solver method", _defaultLinSolver);
+     vm.add("non-lin-solver", 'N', CommandLine::VALUE, CommandLine::STRING, "non linear solver method", _defaultNonLinSolvers[0]);
+     vm.add("number-of-intervals", 'G', CommandLine::VALUE, CommandLine::INT, "number of intervals in equidistant grid", "500");
+     vm.add("tolerance", 'T', CommandLine::VALUE, CommandLine::REAL, "solver tolerance", "1e-06");
+     vm.add("warn-all", 'W', CommandLine::FLAG, CommandLine::STRING, "issue all warning messages");
+     vm.add("log-settings", 'V', CommandLine::VALUES, CommandLine::STRING, "cat[=lvl][,cat[=lvl]]... with cat: all, init, nls, ls, solver, output, events, model, other and lvl: error, warning, info, debug");
+     vm.add("log-format", 'X', CommandLine::VALUE, CommandLine::STRING, "log format: txt, xml, xmltcp", "txt");
+     vm.add("log-port", 0, CommandLine::VALUE, CommandLine::INT, "tcp port for log messages (default 0 meaning stdout/stderr)", "0");
+     vm.add("alarm", 'A', CommandLine::VALUE, CommandLine::UINT, "sets timeout in seconds for simulation", "360");
+     vm.add("output-type", 'O', CommandLine::VALUE, CommandLine::STRING, "the points in time written to result file: all (output steps + events), step (just output points), none", "all");
+     vm.add("output-format", 'P', CommandLine::VALUE, CommandLine::STRING, "simulation results output format: csv, mat, buffer, empty", "mat");
+     vm.add("emit-results", 'U', CommandLine::VALUE, CommandLine::STRING, "emit results: all, hidden, protected, public, none", "public");
+     vm.add("ignore-hide-result", 0, CommandLine::FLAG, CommandLine::STRING, "ignore HideResult annotations");
+     vm.add("variable-filter", 'B', CommandLine::VALUE, CommandLine::STRING, "only write variables that match filter", ".*");
+     vm.add("solver-threads", 0, CommandLine::VALUE, CommandLine::INT, "number of threads that can be used by the solver", "1", true);
 
-     // a group for all options that should not be visible if '--help' is set
-     po::options_description descHidden("Hidden options");
-     descHidden.add_options()
-          ("ignored", po::value<vector<string> >(), "ignored options")
-          ("unrecognized", po::value<vector<string> >(), "unsupported options")
-          ("solver-threads", po::value<int>()->default_value(1), "number of threads that can be used by the solver")
-          ;
-
-     po::options_description descAll("All options");
-     descAll.add(desc);
-     descAll.add(descHidden);
-
-     po::variables_map vm;
      vector<string> unrecognized;
      try {
-       po::parsed_options parsed = po::command_line_parser(argc, argv)
-         .options(descAll)
-         .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
-         .extra_parser([this](const string& arg) { return replaceCRuntimeArguments(arg); })
-         .allow_unregistered()
-         .run();
-       po::store(parsed, vm);
-       po::notify(vm);
-       unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
+       unrecognized = vm.parse(argc, argv, [this](const string& arg) { return replaceCRuntimeArguments(arg); });
      }
-     catch (std::exception ex) {
+     catch (std::exception& ex) {
          throw ModelicaSimulationError(MODEL_FACTORY, ex.what());
      }
-     if (vm.count("help")) {
-         cout << desc << endl;
+     if (vm.flag("help")) {
+         vm.printHelp(cout);
          throw ModelicaSimulationError(MODEL_FACTORY, "Cannot parse command line arguments correctly, because the help message was requested.", "",true);
      }
 
      LogSettings logSettings = initializeLogger(vm);
 
      // warn about unrecognized command line options
-     if (vm.count("unrecognized")) {
-         vector<string> opts = vm["unrecognized"].as<vector<string> >();
-         unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
-     }
      if (unrecognized.size() > 0) {
          ostringstream os;
          os << "Warning: unrecognized command line options ";
@@ -434,26 +666,25 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      string runtime_lib_path;
      string modelica_lib_path;
-     double starttime =  vm["start-time"].as<double>();
-     double stoptime = vm["stop-time"].as<double>();
-     double stepsize =vm["step-size"].as<double>();
-     bool nlsContinueOnError = vm["nls-continue"].as<bool>();
-     int solverThreads = vm["solver-threads"].as<int>();
+     double starttime =  vm.real("start-time");
+     double stoptime = vm.real("stop-time");
+     double stepsize =vm.real("step-size");
+     bool nlsContinueOnError = vm.flag("nls-continue");
+     int solverThreads = vm.integer("solver-threads");
 
      if (!(stepsize > 0.0))
-         stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
+         stepsize = (stoptime - starttime) / vm.integer("number-of-intervals");
 
-     double tolerance = vm["tolerance"].as<double>();
-     string solver = vm["solver"].as<string>();
+     double tolerance = vm.real("tolerance");
+     string solver = vm.str("solver");
      std::vector<string> nonLinSolvers;
-     nonLinSolvers.push_back(vm["non-lin-solver"].as<string>());
+     nonLinSolvers.push_back(vm.str("non-lin-solver"));
      nonLinSolvers.push_back(nonLinSolvers[0] != _defaultNonLinSolvers[1]? _defaultNonLinSolvers[1]: _defaultNonLinSolvers[0]);
-     string linSolver = vm["lin-solver"].as<string>();
-     unsigned int timeOut = vm["alarm"].as<unsigned int>();
+     string linSolver = vm.str("lin-solver");
+     unsigned int timeOut = vm.uinteger("alarm");
      if (vm.count("runtime-library"))
      {
-         //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << endl;
-         runtime_lib_path = vm["runtime-library"].as<string>();
+         runtime_lib_path = vm.str("runtime-library");
          normalizePath(runtime_lib_path);
      }
      else
@@ -461,8 +692,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      if (vm.count("modelica-system-library"))
      {
-         //cout << "Modelica library path set to " << vm["Modelica-system-library"].as<string>()  << endl;
-         modelica_lib_path = vm["modelica-system-library"].as<string>();
+         modelica_lib_path = vm.str("modelica-system-library");
          normalizePath(modelica_lib_path);
      }
      else
@@ -470,13 +700,13 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      string inputPath, outputPath;
      if (vm.count("input-path")) {
-         inputPath = vm["input-path"].as<string>();
+         inputPath = vm.str("input-path");
          normalizePath(inputPath);
      }
      else
          inputPath = modelica_lib_path;
      if (vm.count("output-path")) {
-         outputPath = vm["output-path"].as<string>();
+         outputPath = vm.str("output-path");
          normalizePath(outputPath);
      }
      else
@@ -485,8 +715,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      string resultsFileName;
      if (vm.count("results-file"))
      {
-         //cout << "results file: " << vm["results-file"].as<string>() << endl;
-         resultsFileName = vm["results-file"].as<vector<string> >().front();
+         resultsFileName = vm.values("results-file").front();
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
@@ -494,7 +723,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      OutputPointType outputPointType;
      if (vm.count("output-type"))
      {
-       string outputType_str = vm["output-type"].as<string>();
+       string outputType_str = vm.str("output-type");
        if (outputPointTypeMap.find(outputType_str) != outputPointTypeMap.end())
          outputPointType = outputPointTypeMap[outputType_str];
        else
@@ -507,7 +736,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      OutputFormat outputFormat;
      if (vm.count("output-format"))
      {
-       string outputFormat_str = vm["output-format"].as<string>();
+       string outputFormat_str = vm.str("output-format");
        if (outputFormatMap.find(outputFormat_str) != outputFormatMap.end())
          outputFormat = outputFormatMap[outputFormat_str];
        else
@@ -526,14 +755,14 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      EmitResults emitResults = EMIT_PUBLIC; // emit public per default for OMC use
      if (vm.count("emit-results"))
      {
-       string emitResults_str = vm["emit-results"].as<string>();
+       string emitResults_str = vm.str("emit-results");
        if (emitResultsMap.find(emitResults_str) != emitResultsMap.end())
          emitResults = emitResultsMap[emitResults_str];
        else
          throw ModelicaSimulationError(MODEL_FACTORY,
            "Unknown emit-results " + emitResults_str);
      }
-     if (vm.count("ignore-hide-result") && vm["ignore-hide-result"].as<bool>())
+     if (vm.flag("ignore-hide-result"))
      {
        switch (emitResults) {
          case EMIT_NONE:
@@ -550,7 +779,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      string variableFilter = ".*";
      if (vm.count("variable-filter"))
      {
-       variableFilter = vm["variable-filter"].as<string>();
+       variableFilter = vm.str("variable-filter");
      }
 
      fs::path libraries_path = fs::path( runtime_lib_path) ;

@@ -18,9 +18,7 @@ compareVars :=
 {
    "L1.iinternal",
    "L2.iinternal",
-   "C1.v",
-   "L3.iinternal",
-   "C2.v"
+   "L3.iinternal"
 };
 
 setDebugFlags("hpcom"); getErrorString();

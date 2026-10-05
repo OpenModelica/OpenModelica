@@ -53,6 +53,10 @@ interface co-simulation {
     /// True if the step stopped before the requested end point. Only possible
     /// when the instance was created with early-return-allowed.
     early-return:          bool,
+    /// True if the FMU could not reach the requested end point and stands at
+    /// last-successful-time instead (fmi3Discard with its outputs written): the
+    /// master resumes from there.
+    discarded:             bool,
   }
 
   resource co-simulation-instance {

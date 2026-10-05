@@ -34,7 +34,6 @@ openmodelica_backend/src/BackendVarTransform.rs
 openmodelica_backend/src/BackendVariable.rs
 openmodelica_backend/src/BinaryTree.rs
 openmodelica_backend/src/Causalize.rs
-openmodelica_backend/src/CodegenUtil.rs
 openmodelica_backend/src/CommonSubExpression.rs
 openmodelica_backend/src/DAEMode.rs
 openmodelica_backend/src/DataReconciliation.rs
@@ -61,7 +60,6 @@ openmodelica_backend/src/IndexReduction.rs
 openmodelica_backend/src/Initialization.rs
 openmodelica_backend/src/InlineArrayEquations.rs
 openmodelica_backend/src/Matching.rs
-openmodelica_backend/src/MidCode.rs
 openmodelica_backend/src/OnRelaxation.rs
 openmodelica_backend/src/PriorityQueue.rs
 openmodelica_backend/src/ReduceDAE.rs
@@ -120,6 +118,7 @@ openmodelica_backend_types/src/BackendDAE.rs
 openmodelica_backend_types/src/ZeroCrossings.rs
 openmodelica_backend_util/src/Coloring.rs
 openmodelica_codegen/src/CodegenEmbeddedC.rs
+openmodelica_codegen/src/CodegenESP32.rs
 openmodelica_codegen/src/CodegenJS.rs
 openmodelica_codegen/src/CodegenMidToC.rs
 openmodelica_codegen/src/CodegenUtilSimulation.rs
@@ -131,20 +130,17 @@ openmodelica_codegen_cpp_common/src/CodegenCppInit.rs
 openmodelica_codegen_cpp_ext/src/CodegenCppHpcom.rs
 openmodelica_codegen_cpp_ext/src/CodegenFMUCpp.rs
 openmodelica_codegen_cpp_ext/src/CodegenFMUCppHpcom.rs
-openmodelica_codegen_cpp_omsi/src/CodegenCppOMSI.rs
-openmodelica_codegen_cpp_omsi_ext/src/CodegenCppHpcomOMSI.rs
-openmodelica_codegen_cpp_omsi_ext/src/CodegenFMUCppHpcomOMSI.rs
-openmodelica_codegen_cpp_omsi_ext/src/CodegenFMUCppOMSI.rs
-openmodelica_codegen_cpp_omsi_ext/src/CodegenOMSICpp.rs
 openmodelica_codegen_fmu/src/CodegenFMU1.rs
 openmodelica_codegen_fmu/src/CodegenFMU2.rs
 openmodelica_codegen_fmu/src/CodegenFMUCommon.rs
+openmodelica_codegen_fmu/src/CodegenFMUModelDescription.rs
 openmodelica_codegen_fmu_c/src/CodegenFMU.rs
-openmodelica_codegen_fmu_omsi/src/CodegenOMSIC.rs
-openmodelica_codegen_fmu_omsi/src/CodegenOMSIC_Equations.rs
-openmodelica_codegen_fmu_omsi/src/CodegenOMSI_common.rs
 openmodelica_codegen_graphml/src/GraphML.rs
 openmodelica_codegen_graphml/src/GraphMLDumpTpl.rs
+openmodelica_codegen_util/src/CodegenUtil.rs
+openmodelica_codegen_util/src/HpcOmCodegenUtil.rs
+openmodelica_codegen_util/src/MidCode.rs
+openmodelica_codegen_util/src/SimCodeCodegenUtil.rs
 openmodelica_codegen_xml/src/CodegenXML.rs
 openmodelica_dump_extra/src/BlockCallRewrite.rs
 openmodelica_dump_extra/src/DumpGraphviz.rs
@@ -322,6 +318,7 @@ openmodelica_nf_frontend/src/NFCardinalityTable.rs
 openmodelica_nf_frontend/src/NFCeval.rs
 openmodelica_nf_frontend/src/NFCheckModel.rs
 openmodelica_nf_frontend/src/NFClass.rs
+openmodelica_nf_frontend/src/NFClassDiagram.rs
 openmodelica_nf_frontend/src/NFClassTree.rs
 openmodelica_nf_frontend/src/NFClockKind.rs
 openmodelica_nf_frontend/src/NFComplexType.rs
@@ -334,6 +331,7 @@ openmodelica_nf_frontend/src/NFConnectionSets.rs
 openmodelica_nf_frontend/src/NFConnections.rs
 openmodelica_nf_frontend/src/NFConnector.rs
 openmodelica_nf_frontend/src/NFConvertDAE.rs
+openmodelica_nf_frontend/src/NFDefUseChains.rs
 openmodelica_nf_frontend/src/NFDimension.rs
 openmodelica_nf_frontend/src/NFDuplicateTree.rs
 openmodelica_nf_frontend/src/NFEquation.rs
@@ -366,6 +364,7 @@ openmodelica_nf_frontend/src/NFPackage.rs
 openmodelica_nf_frontend/src/NFPrefixes.rs
 openmodelica_nf_frontend/src/NFRangeIterator.rs
 openmodelica_nf_frontend/src/NFRecord.rs
+openmodelica_nf_frontend/src/NFResizableConnections.rs
 openmodelica_nf_frontend/src/NFRestriction.rs
 openmodelica_nf_frontend/src/NFSBGraphUtil.rs
 openmodelica_nf_frontend/src/NFScalarize.rs
@@ -466,12 +465,10 @@ openmodelica_codegen_cfunctions/src/lib.rs
 openmodelica_codegen_cpp/src/lib.rs
 openmodelica_codegen_cpp_common/src/lib.rs
 openmodelica_codegen_cpp_ext/src/lib.rs
-openmodelica_codegen_cpp_omsi/src/lib.rs
-openmodelica_codegen_cpp_omsi_ext/src/lib.rs
 openmodelica_codegen_fmu/src/lib.rs
 openmodelica_codegen_fmu_c/src/lib.rs
-openmodelica_codegen_fmu_omsi/src/lib.rs
 openmodelica_codegen_graphml/src/lib.rs
+openmodelica_codegen_util/src/lib.rs
 openmodelica_codegen_wasm_jit/src/lib.rs
 openmodelica_codegen_xml/src/lib.rs
 openmodelica_dump_extra/src/lib.rs
@@ -482,7 +479,9 @@ openmodelica_frontend_inst/src/lib.rs
 openmodelica_frontend_types/src/lib.rs
 openmodelica_nbackend/src/lib.rs
 openmodelica_nf_frontend/src/lib.rs
+openmodelica_nf_api/src/lib.rs
 openmodelica_omgraphics/src/lib.rs
+openmodelica_loader/src/lib.rs
 openmodelica_program_util/src/lib.rs
 openmodelica_script_util/src/lib.rs
 openmodelica_simcode_types/src/lib.rs

@@ -41,14 +41,14 @@ end CevalBinding5;
 //   final parameter Real b[1].r2.r.x[1] = 0.0;
 //   final parameter Real b[1].r2.r.x[2] = 0.0;
 //   protected final parameter Boolean b[1].b = false;
-//   protected parameter Real b[1].eff.r2.r.x[1] = 0.0;
-//   protected parameter Real b[1].eff.r2.r.x[2] = 0.0;
+//   protected final parameter Real b[1].eff.r2.r.x[1] = 0.0;
+//   protected final parameter Real b[1].eff.r2.r.x[2] = 0.0;
 //   protected final parameter Boolean b[1].eff.b = false;
 //   final parameter Real b[2].r2.r.x[1] = 0.0;
 //   final parameter Real b[2].r2.r.x[2] = 0.0;
 //   protected final parameter Boolean b[2].b = false;
-//   protected parameter Real b[2].eff.r2.r.x[1] = 0.0;
-//   protected parameter Real b[2].eff.r2.r.x[2] = 0.0;
+//   protected final parameter Real b[2].eff.r2.r.x[1] = 0.0;
+//   protected final parameter Real b[2].eff.r2.r.x[2] = 0.0;
 //   protected final parameter Boolean b[2].eff.b = false;
 // end CevalBinding5;
 // endResult

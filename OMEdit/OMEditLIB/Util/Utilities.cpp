@@ -39,6 +39,9 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#if defined(__EMSCRIPTEN__)
+#include "PersistentStorage.h"
+#endif
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
 #include "Editors/BaseEditor.h"
@@ -53,7 +56,7 @@
 #include <QColorDialog>
 #include <QDir>
 #include <QRegularExpression>
-#include <QRegExp>
+#include <QDesktopServices>
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -243,9 +246,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpCollapseAllButton->setAutoRaise(true);
   // show hide button
   mpShowHideButton = new QToolButton;
-  QString showHideButtonText = tr("Show/hide filters");
+  QString showHideButtonText = tr("Filter Setup");
   mpShowHideButton->setText(showHideButtonText);
-  mpShowHideButton->setIcon(QIcon(":/Resources/icons/down.svg"));
+  mpShowHideButton->setIcon(QIcon(":/Resources/icons/settings.svg"));
   mpShowHideButton->setToolTip(showHideButtonText);
   mpShowHideButton->setAutoRaise(true);
   mpShowHideButton->setCheckable(true);
@@ -264,12 +267,18 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpSyntaxComboBox->addItem(tr("Wildcard"), TreeSearchFilters::Wildcard);
   mpSyntaxComboBox->addItem(tr("Fixed String"), TreeSearchFilters::FixedString);
   Utilities::setToolTip(mpSyntaxComboBox, "Filters", syntaxDescriptions);
+  // filter help button, opens the users guide link for
+  mpFiltersHelpButton = new QToolButton;
+  mpFiltersHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpFiltersHelpButton->setToolTip(tr("Filters help"));
+  connect(mpFiltersHelpButton, SIGNAL(clicked()), SLOT(showFiltersHelp()));
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pFiltersWidgetLayout->setAlignment(Qt::AlignTop);
   pFiltersWidgetLayout->addWidget(mpCaseSensitiveCheckBox, 0, 0);
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
+  pFiltersWidgetLayout->addWidget(mpFiltersHelpButton, 0, 2);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
   mpFiltersWidget->hide();
   // create the layout
@@ -286,6 +295,11 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief TreeSearchFilters::showHideFilters
+ * Shows or hides the filters widget.
+ * \param On
+ */
 void TreeSearchFilters::showHideFilters(bool On)
 {
   if (On) {
@@ -295,26 +309,16 @@ void TreeSearchFilters::showHideFilters(bool On)
   }
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 /*!
- * \brief TreeSearchFilters::getFilterRegExp
- * Returns the QRegExp for the given filter text, case sensitivity and syntax.
- * \param filterText
- * \param caseSensitivity
- * \param syntax
- * \return
+ * \brief TreeSearchFilters::showFiltersHelp
+ * Opens the OpenModelica Users Guide link for filters help.
  */
-QRegExp TreeSearchFilters::getFilterRegExp(const QString &filterText, Qt::CaseSensitivity caseSensitivity, TreeSearchFilters::FilterSyntax syntax)
+void TreeSearchFilters::showFiltersHelp()
 {
-  QRegExp regExp(filterText, caseSensitivity, QRegExp::PatternSyntax(syntax));
-  // An invalid pattern (e.g. typing 'mass[') is treated as a literal string so that
-  // it matches something instead of silently matching nothing.
-  if (!regExp.isValid()) {
-    regExp.setPattern(QRegExp::escape(filterText));
-  }
-  return regExp;
+  QUrl filtersHelpPath(QString("https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/omedit.html#variables-browser").arg(Helper::OpenModelicaUsersGuideVersion));
+  QDesktopServices::openUrl(filtersHelpPath);
 }
-#else
+
 /*!
  * \brief TreeSearchFilters::getFilterRegularExpression
  * Returns the QRegularExpression for the given filter text, case sensitivity and syntax.
@@ -328,9 +332,10 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   const QRegularExpression::PatternOptions options = (caseSensitivity == Qt::CaseSensitive) ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption;
   QRegularExpression regExp;
   switch (syntax) {
-    case TreeSearchFilters::Wildcard:
+    case TreeSearchFilters::Wildcard: {
       regExp = QRegularExpression::fromWildcard(filterText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion);
       break;
+    }
     case TreeSearchFilters::FixedString:
       regExp = QRegularExpression(QRegularExpression::escape(filterText), options);
       break;
@@ -345,7 +350,6 @@ QRegularExpression TreeSearchFilters::getFilterRegularExpression(const QString &
   }
   return regExp;
 }
-#endif
 
 /*!
  * \class FileDataNotifier
@@ -421,37 +425,21 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
-#else // QT_VERSION_CHECK
-  if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
-#endif // QT_VERSION_CHECK
     return QLabel::minimumSizeHint();
   }
   const QFontMetrics &fm = fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance("..."), fm.height()+5);
-#else // QT_VERSION_CHECK
-  QSize size(fm.width("..."), fm.height()+5);
-#endif // QT_VERSION_CHECK
   return size;
 }
 
 QSize Label::sizeHint() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
-#else // QT_VERSION_CHECK
-  if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
-#endif // QT_VERSION_CHECK
     return QLabel::sizeHint();
   }
   const QFontMetrics& fm = fontMetrics();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance(mText), fm.height()+5);
-#else // QT_VERSION_CHECK
-  QSize size(fm.width(mText), fm.height()+5);
-#endif // QT_VERSION_CHECK
   return size;
 }
 
@@ -713,26 +701,27 @@ QDetachableProcess::QDetachableProcess(QObject *pParent)
 void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
 {
   QProcess::start(program, arguments, mode);
-  waitForStarted();
-  setProcessState(QProcess::NotRunning);
+  finishStart();
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-/*!
- * \brief QDetachableProcess::start
- * Starts a process and detaches from it.
- * \param command
- * \param mode
- */
-void QDetachableProcess::start(const QString &command, QIODevice::OpenMode mode)
+
+void QDetachableProcess::finishStart()
 {
-  QProcess::start(command, mode);
-  waitForStarted();
+  mStartupError = false;
+  mStartupErrorString.clear();
+  if (!waitForStarted()) {
+    mStartupError = true;
+    mStartupErrorString = errorString();
+  } else if (waitForFinished(250) && (exitStatus() != QProcess::NormalExit || exitCode() != 0)) {
+    mStartupError = true;
+    mStartupErrorString = QString::fromLocal8Bit(readAllStandardError()).trimmed();
+    if (mStartupErrorString.isEmpty()) {
+      mStartupErrorString = tr("Process exited with code %1").arg(exitCode());
+    }
+  }
   setProcessState(QProcess::NotRunning);
 }
-#endif
 #endif // QT_CONFIG(process)
-
 
 JsonDocument::JsonDocument(QObject *pParent)
   : QObject(pParent)
@@ -883,9 +872,12 @@ QSettings* Utilities::getApplicationSettings()
   static QSettings *pSettings;
   if (!init) {
     init = 1;
+#if defined(__EMSCRIPTEN__)
+    // QSettings' own location is MEMFS, which the reload throws away. Put the ini
+    // in the tree PersistentStorage mirrors to IndexedDB instead.
+    pSettings = new QSettings(QString("%1/%2.ini").arg(PersistentStorage::root(), Helper::application), QSettings::IniFormat);
+#else
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
 #endif
   }
   return pSettings;
@@ -957,8 +949,8 @@ bool Utilities::isValueLiteralConstant(QString value)
    * Issue #11840. Allow setting array of values.
    * The following regular expression allows decimal values and array of decimal values. The values can be negative.
    */
-  QRegExp rx("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?");
-  return rx.exactMatch(value);
+  QRegularExpression rx(QRegularExpression::anchoredPattern("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?"));
+  return rx.match(value).hasMatch();
 }
 
 /*!
@@ -971,8 +963,8 @@ bool Utilities::isValueScalarLiteralConstant(QString value)
   /* Issue #13636
    * Check if value is scalar and literal constant.
    */
-  QRegExp rx("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?");
-  return rx.exactMatch(value);
+  QRegularExpression rx(QRegularExpression::anchoredPattern("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?"));
+  return rx.match(value).hasMatch();
 }
 
 /*!
@@ -1154,18 +1146,9 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
   qint64 processId = 0;
 #if !QT_CONFIG(process)
   Q_UNUSED(pProcess); /* no QProcess on wasm */
-#elif QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
-  processId = pProcess->processId();
-#else /* Qt4 */
-#if defined(_WIN32)
-  _PROCESS_INFORMATION *procInfo = pProcess->pid();
-  if (procInfo) {
-    processId = procInfo->dwProcessId;
-  }
 #else
-  processId = pProcess->pid();
-#endif /* WIN32 */
-#endif /* QT_VERSION */
+  processId = pProcess->processId();
+#endif
   return processId;
 }
 
@@ -1352,10 +1335,10 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
     return false;
   }
   QString textToMatch = text.mid(index, keyword.length());
-  QRegExp keywordRegExp("\\b" + keyword + "\\b");
-  if (keywordRegExp.indexIn(textToMatch) != -1 && (index + keyword.length() == text.length() ||
-                                                   text[index + keyword.length()].isSpace() ||
-                                                   (checkParenthesis && text[index + keyword.length()] == '('))) {
+  QRegularExpression keywordRegExp("\\b" + keyword + "\\b");
+  if (keywordRegExp.match(textToMatch).hasMatch() && (index + keyword.length() == text.length() ||
+                                                      text[index + keyword.length()].isSpace() ||
+                                                      (checkParenthesis && text[index + keyword.length()] == '('))) {
     return true;
   }
   return false;

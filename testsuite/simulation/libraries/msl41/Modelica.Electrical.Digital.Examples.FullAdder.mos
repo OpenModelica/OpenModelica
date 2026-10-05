@@ -1,0 +1,52 @@
+// name:     Modelica.Electrical.Digital.Examples.FullAdder
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Digital.Examples.FullAdder);
+compareVars :=
+{
+   "Adder1.Adder1.AND.G2.x",
+   "Adder1.Adder1.AND.G2.y",
+   "Adder1.Adder1.XOR.G2.x",
+   "Adder1.Adder1.XOR.G2.y",
+   "Adder1.Adder2.AND.G2.x",
+   "Adder1.Adder2.AND.G2.y",
+   "Adder1.Adder2.XOR.G2.x",
+   "Adder1.Adder2.XOR.G2.y",
+   "Counter.FF1.RS1.TD1.x",
+   "Counter.FF1.RS2.TD1.x",
+   "Counter.FF2.RS1.TD1.x",
+   "Counter.FF2.RS2.TD1.x",
+   "Counter.FF3.RS1.TD1.x",
+   "Counter.FF3.RS2.TD1.x"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Digital.Examples.FullAdder
+// {"Adder1.Adder1.AND.G2.x", "Adder1.Adder1.AND.G2.y", "Adder1.Adder1.XOR.G2.x", "Adder1.Adder1.XOR.G2.y", "Adder1.Adder2.AND.G2.x", "Adder1.Adder2.AND.G2.y", "Adder1.Adder2.XOR.G2.x", "Adder1.Adder2.XOR.G2.y", "Counter.FF1.RS1.TD1.x", "Counter.FF1.RS2.TD1.x", "Counter.FF2.RS1.TD1.x", "Counter.FF2.RS2.TD1.x", "Counter.FF3.RS1.TD1.x", "Counter.FF3.RS2.TD1.x"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.FullAdder', options = '', outputFormat = 'mat', variableFilter = 'time|Adder1.Adder1.AND.G2.x|Adder1.Adder1.AND.G2.y|Adder1.Adder1.XOR.G2.x|Adder1.Adder1.XOR.G2.y|Adder1.Adder2.AND.G2.x|Adder1.Adder2.AND.G2.y|Adder1.Adder2.XOR.G2.x|Adder1.Adder2.XOR.G2.y|Counter.FF1.RS1.TD1.x|Counter.FF1.RS2.TD1.x|Counter.FF2.RS1.TD1.x|Counter.FF2.RS2.TD1.x|Counter.FF3.RS1.TD1.x|Counter.FF3.RS2.TD1.x', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Digital.Examples.FullAdder_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

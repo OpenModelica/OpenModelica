@@ -39,7 +39,7 @@ fn s(a: &mut [f64], lda: usize, i: usize, j: usize, v: f64) {
 }
 
 fn sign(x: f64, y: f64) -> f64 {
-    libm::copysign(x, y)
+    x.copysign(y)
 }
 
 /// `DLAPY2`.
@@ -348,7 +348,7 @@ pub fn dlanv2(
     const MULTPL: f64 = 4.0;
     // DLAMCH('B')**INT(LOG(SAFMIN/EPS)/LOG(DLAMCH('B'))/2): the power of two the
     // "make the diagonal equal" branch scales by to stay in range.
-    let safmn2 = libm::pow(2.0, libm::trunc(libm::log(SAFMIN / ULP) / libm::log(2.0) / 2.0));
+    let safmn2 = 2f64.powf(((SAFMIN / ULP).ln() / 2f64.ln() / 2.0).trunc());
     let safmx2 = 1.0 / safmn2;
 
     let (mut cs, mut sn) = (1.0f64, 0.0f64);

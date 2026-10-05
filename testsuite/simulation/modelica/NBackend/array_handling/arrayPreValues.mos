@@ -1,0 +1,48 @@
+// name: arrayPreValues
+// keywords: NewBackend array pre
+// status: correct
+// suite: cSources
+//
+// Without scalarization the pre values of array variables have to use the index of
+// the array elements like the values, pre(p.d) read the wrong variable before.
+
+loadString("
+  model P
+    input Real m;
+    Real v;
+    discrete Real d;
+  initial equation
+    d = sign(v);
+  algorithm
+    v := m/2;
+  algorithm
+    when abs(v) > 1e-5 and sign(v)*pre(d) <= 0 then
+      d := sign(v);
+    end when;
+  end P;
+
+  model arrayPreValues
+    P p[2](m = {time, -time});
+  end arrayPreValues;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+simulate(arrayPreValues); getErrorString();
+val(p.d[1], 0.5);
+val(p.d[2], 0.5);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "arrayPreValues_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayPreValues', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// -1.0
+// endResult

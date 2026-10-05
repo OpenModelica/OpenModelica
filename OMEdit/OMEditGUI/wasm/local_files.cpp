@@ -51,6 +51,7 @@
 #include <QFileInfo>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QMap>
 #include <QRegularExpression>
 #include <QStringList>
 #include <QTimer>
@@ -60,9 +61,13 @@
 
 #include <cstdlib>
 
+// Defined in OMEditLIB/OMC/OMCProxy.cpp (the omc worker bridge).
+QStringList omcWorkerListDir(const char *path);
+int omcWorkerLoadZip(const char *mount, const QByteArray &data);
+
 // Settles Module.__omeditPick exactly once: `change`, `cancel`, or — where `cancel`
 // is not fired — the window regaining focus with nothing being read.
-EM_JS(void, omedit_pick_open, (const char *accept, int multiple), {
+EM_JS(void, omedit_pick_open, (const char *accept, int multiple, int directory), {
   const st = { settled: false, reading: false, files: [], error: "" };
   Module.__omeditPick = st;
   // Without transient activation click() is ignored and no event ever arrives; the
@@ -74,9 +79,15 @@ EM_JS(void, omedit_pick_open, (const char *accept, int multiple), {
   }
   const input = document.createElement("input");
   input.type = "file";
-  const acc = UTF8ToString(accept);
-  if (acc) input.accept = acc;
-  if (multiple) input.multiple = true;
+  if (directory) {
+    // Files then arrive named by their path below the picked folder, and an
+    // `accept` list would hide the rest of the library.
+    input.webkitdirectory = true;
+  } else {
+    const acc = UTF8ToString(accept);
+    if (acc) input.accept = acc;
+    if (multiple) input.multiple = true;
+  }
   input.style.display = "none";
   document.body.appendChild(input);
   const settle = () => {
@@ -84,24 +95,33 @@ EM_JS(void, omedit_pick_open, (const char *accept, int multiple), {
     st.settled = true;
     try { input.remove(); } catch (e) { /* already gone */ }
   };
+  // Where the browser reports a dismissal itself, nothing else may settle the pick:
+  // a folder pick adds an "upload N files?" confirmation that the page regains focus
+  // in front of, and settling there reports an empty pick.
+  const hasCancel = "oncancel" in input;
   input.addEventListener("cancel", settle);
   input.addEventListener("change", async () => {
     st.reading = true;
     try {
       for (const f of input.files) {
-        st.files.push({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) });
+        st.files.push({ name: f.webkitRelativePath || f.name,
+                        bytes: new Uint8Array(await f.arrayBuffer()) });
       }
     } catch (e) {
       st.error = String(e);
     }
     settle();
   });
-  window.addEventListener("focus", () => {
-    setTimeout(() => { if (!st.reading) settle(); }, 750);
-  }, { once: true });
+  const idle = () => !st.reading && input.files.length === 0;
+  if (!hasCancel) {
+    // Long, so it outlasts the upload confirmation.
+    window.addEventListener("focus", () => {
+      setTimeout(() => { if (idle()) settle(); }, 30000);
+    }, { once: true });
+  }
   input.click();
   if (!activated) {
-    setTimeout(() => { if (!st.reading) settle(); }, 3000);
+    setTimeout(() => { if (idle()) settle(); }, 3000);
   }
 });
 
@@ -173,11 +193,26 @@ QString acceptFromNameFilter(const QString &nameFilter)
   return suffixes.join(QLatin1Char(','));
 }
 
+// Keep the path a folder pick came with — a library needs its Resources/ next to
+// its .mo — without letting it escape the upload directory.
+QString stagePath(const QString &pickedName)
+{
+  QStringList parts;
+  const QStringList given = QDir::cleanPath(pickedName).split(QLatin1Char('/'), Qt::SkipEmptyParts);
+  for (const QString &part : given) {
+    if (part == QLatin1String("..") || part == QLatin1String(".")) {
+      return QString();
+    }
+    parts << part;
+  }
+  return parts.join(QLatin1Char('/'));
+}
+
 // One picked file, from the JS side into the omc filesystem.
 QString stageFile(int index)
 {
   char *rawName = omedit_pick_name(index);
-  const QString name = QFileInfo(QString::fromUtf8(rawName)).fileName();
+  const QString name = stagePath(QString::fromUtf8(rawName));
   free(rawName);
   if (name.isEmpty()) {
     return QString();
@@ -207,15 +242,51 @@ QString stageFile(int index)
   return path;
 }
 
-} // namespace
-
-/*!
- * \brief Ask the browser for files and stage them in the omc filesystem.
- * \return the paths they were staged at, empty if the user cancelled.
- */
-QStringList WasmLocalFiles::openFiles(const QString &nameFilter, bool multiple)
+// Everything under dir, files only, as absolute paths.
+QStringList listTree(const QString &dir)
 {
-  omedit_pick_open(acceptFromNameFilter(nameFilter).toUtf8().constData(), multiple ? 1 : 0);
+  QStringList files;
+  const QStringList entries = omcWorkerListDir(dir.toUtf8().constData());
+  for (const QString &entry : entries) {
+    if (entry.endsWith(QLatin1Char('/'))) {
+      files << listTree(QString("%1/%2").arg(dir, entry.left(entry.size() - 1)));
+    } else {
+      files << QString("%1/%2").arg(dir, entry);
+    }
+  }
+  return files;
+}
+
+QStringList entryFiles(const QStringList &paths)
+{
+  static const QStringList suffixes = {QStringLiteral("mo"), QStringLiteral("mol"),
+                                       QStringLiteral("bmo"), QStringLiteral("ssp"),
+                                       QStringLiteral("crml")};
+  QMap<int, QStringList> byDepth;
+  QString package;
+  int packageDepth = -1;
+  for (const QString &path : paths) {
+    const QFileInfo info(path);
+    if (!suffixes.contains(info.suffix().toLower())) {
+      continue;
+    }
+    const int depth = path.count(QLatin1Char('/'));
+    if (info.fileName().compare(QLatin1String("package.mo"), Qt::CaseInsensitive) == 0
+        && (packageDepth < 0 || depth < packageDepth)) {
+      package = path;
+      packageDepth = depth;
+    }
+    byDepth[depth] << path;
+  }
+  if (!package.isEmpty()) {
+    return QStringList{package};
+  }
+  return byDepth.isEmpty() ? QStringList() : byDepth.first();
+}
+
+QStringList pickFiles(const QString &accept, bool multiple, bool directory)
+{
+  omedit_pick_open(accept.toUtf8().constData(), multiple ? 1 : 0, directory ? 1 : 0);
   // Wait as every omc call on this thread does (OMCProxy::omcWorkerWaitReply): a
   // nonzero poll, or Qt never yields to the browser, and exec() re-entered because
   // it can return without the condition holding.
@@ -245,10 +316,68 @@ QStringList WasmLocalFiles::openFiles(const QString &nameFilter, bool multiple)
   free(rawError);
   omedit_pick_release();
   // A refusal is silent in the browser, so say so rather than look like a no-op.
-  if (paths.isEmpty() && !error.isEmpty()) {
-    qWarning() << "[OMEdit-wasm] file dialog:" << error;
+  if (paths.isEmpty()) {
+    qWarning() << "[OMEdit-wasm] file dialog picked nothing" << error;
   }
   return paths;
+}
+
+} // namespace
+
+/*!
+ * \brief Ask the browser for files and stage them in the omc filesystem.
+ * \return the paths they were staged at, empty if the user cancelled.
+ */
+QStringList WasmLocalFiles::openFiles(const QString &nameFilter, bool multiple)
+{
+  return pickFiles(acceptFromNameFilter(nameFilter), multiple, false);
+}
+
+/*!
+ * \brief Ask the browser for a folder and stage the tree, structure intact.
+ * \return the directory it was staged at, empty if the user cancelled.
+ */
+QString WasmLocalFiles::openFolder()
+{
+  const QStringList paths = pickFiles(QString(), true, true);
+  if (paths.isEmpty()) {
+    return QString();
+  }
+  const QString relative = paths.first().mid(kUploadDir.size() + 1);
+  if (!relative.contains(QLatin1Char('/'))) {
+    return QString(kUploadDir);
+  }
+  return QString("%1/%2").arg(kUploadDir, relative.section(QLatin1Char('/'), 0, 0));
+}
+
+/*!
+ * \brief Unzip a staged archive into the omc filesystem.
+ * \return the directory it was unpacked into, empty if nothing was.
+ */
+QString WasmLocalFiles::expandArchive(const QString &archivePath)
+{
+  QFile archive(archivePath);
+  if (!archive.open(QIODevice::ReadOnly)) {
+    qWarning() << "[OMEdit-wasm] could not read" << archivePath << archive.errorString();
+    return QString();
+  }
+  const QByteArray data = archive.readAll();
+  archive.close();
+  const QString mount = QString("%1/%2").arg(kUploadDir, QFileInfo(archivePath).completeBaseName());
+  if (omcWorkerLoadZip(mount.toUtf8().constData(), data) <= 0) {
+    qWarning() << "[OMEdit-wasm] nothing extracted from" << archivePath;
+    return QString();
+  }
+  return mount;
+}
+
+/*!
+ * \brief The files to load from a staged tree: its package.mo, else the loadable
+ * files in the shallowest directory that holds any.
+ */
+QStringList WasmLocalFiles::libraryFiles(const QString &dir)
+{
+  return entryFiles(listTree(dir));
 }
 
 /*!

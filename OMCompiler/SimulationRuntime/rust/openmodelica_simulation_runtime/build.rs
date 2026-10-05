@@ -15,19 +15,38 @@ use std::path::PathBuf;
 fn link_runtime_c() {
     println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DIR");
     println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_LINK");
+    println!("cargo:rerun-if-env-changed=OMC_RUNTIME_C_DEF");
     // MSVC links the static archive *into* SimulationRuntimeC.dll, so absorb it
     // the same way. CMake names its dependencies, which an archive lacks.
     if let Ok(libs) = std::env::var("OMC_RUNTIME_C_LINK") {
         for lib in libs.split('|').filter(|s| !s.is_empty()) {
             println!("cargo:rustc-cdylib-link-arg={lib}");
         }
+        // Absorbing it leaves its symbols unexported, and --simCodeTarget=C
+        // links this cdylib rather than SimulationRuntimeC.dll. reexport_def.cmake
+        // derives /EXPORT: switches from the archive; they have to be a response
+        // file because rustc writes the cdylib's own .def and ours would replace it.
+        if let Ok(rsp) = std::env::var("OMC_RUNTIME_C_DEF") {
+            println!("cargo:rustc-cdylib-link-arg=@{rsp}");
+        }
         return;
     }
     let Ok(dir) = std::env::var("OMC_RUNTIME_C_DIR") else { return };
     println!("cargo:rustc-link-search=native={dir}");
     println!("cargo:rustc-link-lib=dylib=OpenModelicaRuntimeC");
-    if !matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "ios")) {
-        println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined");
+    match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
+        Ok("windows") => {}
+        // It is installed beside the dylib, which links it as @rpath/.
+        Ok("macos" | "ios") => println!("cargo:rustc-cdylib-link-arg=-Wl,-rpath,@loader_path"),
+        _ => println!("cargo:rustc-cdylib-link-arg=-Wl,--no-undefined"),
+    }
+}
+
+/// ld64 defaults a dylib's install name to its output path in the cargo target
+/// directory, which every simulation linking it would then load from.
+fn macos_install_name() {
+    if matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("macos" | "ios")) {
+        println!("cargo:rustc-cdylib-link-arg=-Wl,-install_name,@rpath/libSimulationRuntimeRust.dylib");
     }
 }
 
@@ -47,6 +66,19 @@ fn link_blas() {
     println!("cargo:rustc-cdylib-link-arg=Accelerate");
 }
 
+/// The architectures src/shim_export.rs has a tail jump for. There Rust owns
+/// the public names of shim.c's variadic entry points and rustc exports them
+/// like any other, which is what the version script below is for elsewhere.
+fn shim_trampolines() -> bool {
+    println!("cargo:rustc-check-cfg=cfg(shim_trampolines)");
+    let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    let ok = matches!(arch.as_str(), "x86_64" | "x86" | "aarch64" | "arm" | "riscv64");
+    if ok {
+        println!("cargo:rustc-cfg=shim_trampolines");
+    }
+    ok
+}
+
 /// The variadic entry points src/shim.c defines.
 const SHIM_ENTRY_POINTS: &[&str] = &[
     "omc_assert_simulation",
@@ -57,7 +89,9 @@ const SHIM_ENTRY_POINTS: &[&str] = &[
 ];
 
 /// A cdylib exports only the symbols Rust itself defines, so without this the
-/// generated model does not link.
+/// generated model does not link. Only for the architectures `shim_trampolines`
+/// does not cover: ld before 2.41 rejects this version script beside the one
+/// rustc writes for its own exports.
 fn export_shim_entry_points() {
     let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
     match std::env::var("CARGO_CFG_TARGET_OS").as_deref() {
@@ -86,11 +120,39 @@ const RENAME: &[(&str, &str)] = &[("ty", "type")];
 /// Mirrors of a plain C `struct` with no typedef, which C must name with the tag.
 const C_TAG: &[&str] = &["OpenModelicaGeneratedFunctionCallbacks"];
 
+/// The FMU flavour of this runtime: an archive a source-code FMU links, where the
+/// C half is the FMU's own minimal one. What it cannot rely on there is behind
+/// `cfg(omc_fmi_runtime)`.
+fn fmi_runtime_cfg() -> bool {
+    println!("cargo:rustc-check-cfg=cfg(omc_fmi_runtime)");
+    println!("cargo:rerun-if-env-changed=OMC_SIMRT_FMI");
+    let fmi = std::env::var("OMC_SIMRT_FMI").is_ok_and(|v| v != "0" && !v.is_empty())
+        || std::env::var_os("CARGO_FEATURE_FMU_RUNTIME").is_some();
+    if fmi {
+        println!("cargo:rustc-cfg=omc_fmi_runtime");
+    }
+    fmi
+}
+
+/// The attribute that takes a mirror item out of the FMU flavour. `build.rs` reads
+/// `abi.rs` as text, so it has to honour the same gate the compiler will.
+const FMI_GATE: &str = "#[cfg(not(omc_fmi_runtime))]";
+
 fn main() {
+    let fmi = fmi_runtime_cfg();
     println!("cargo:rerun-if-changed=src/shim.c");
-    cc::Build::new().file("src/shim.c").warnings(true).compile("omc_rust_runtime_shim");
-    export_shim_entry_points();
+    let trampolines = shim_trampolines();
+    let mut shim = cc::Build::new();
+    shim.file("src/shim.c").warnings(true);
+    if trampolines {
+        shim.define("OMR_SHIM_TRAMPOLINES", None);
+    }
+    shim.compile("omc_rust_runtime_shim");
+    if !trampolines {
+        export_shim_entry_points();
+    }
     link_runtime_c();
+    macos_install_name();
     link_blas();
     println!("cargo:rerun-if-changed=src/abi.rs");
     println!("cargo:rerun-if-env-changed=OMC_SIMRT_INCLUDE_DIRS");
@@ -100,8 +162,16 @@ fn main() {
          fn checks() -> Vec<(String, u64)> {\n  let mut v: Vec<(String, u64)> = Vec::new();\n",
     );
     let mut lines = src.lines().peekable();
+    let mut gated = false;
     while let Some(line) = lines.next() {
+        if line.trim() == FMI_GATE {
+            gated = true;
+            continue;
+        }
         if line.trim() != "#[repr(C)]" {
+            if !line.trim().starts_with("#[") {
+                gated = false;
+            }
             continue;
         }
         // Skip the derives between the attribute and the item.
@@ -109,11 +179,12 @@ fn main() {
         while head.trim_start().starts_with("#[") {
             head = lines.next().unwrap_or("");
         }
+        let struct_gated = core::mem::take(&mut gated);
         let Some(name) = head.trim().strip_prefix("pub struct ").and_then(|s| s.split_whitespace().next())
         else {
             continue;
         };
-        if !head.trim_end().ends_with('{') || SKIP.contains(&name) {
+        if !head.trim_end().ends_with('{') || SKIP.contains(&name) || (fmi && struct_gated) {
             continue;
         }
         let c_name = if C_TAG.contains(&name) { format!("struct {name}") } else { name.to_string() };
@@ -123,6 +194,7 @@ fn main() {
         );
         // Fields end at the closing brace; `pub <name>:` at one indent level.
         let mut depth = 1usize;
+        let mut field_gated = false;
         for body in lines.by_ref() {
             depth += body.matches('{').count();
             depth -= body.matches('}').count();
@@ -130,7 +202,15 @@ fn main() {
                 break;
             }
             let t = body.trim();
+            if t == FMI_GATE {
+                field_gated = true;
+                continue;
+            }
             let Some(field) = t.strip_prefix("pub ").and_then(|s| s.split(':').next()) else { continue };
+            if fmi && core::mem::take(&mut field_gated) {
+                continue;
+            }
+            field_gated = false;
             if !field.chars().all(|c| c.is_alphanumeric() || c == '_') || field.is_empty() {
                 continue;
             }
@@ -142,15 +222,22 @@ fn main() {
         }
     }
     // The `enum _FLAG` indices `omc_flag`/`omc_flagValue` are addressed with, the
-    // `errorStage` values `threadData->currentErrorStage` takes, and the solver
-    // enumerations `simulationInfo` holds.
+    // `errorStage` values `threadData->currentErrorStage` takes, the solver
+    // enumerations `simulationInfo` holds and the table sizes `-help` reads.
     for line in src.lines() {
         let t = line.trim();
         for (prefix, ty) in [
             ("pub const FLAG_", ": usize = "),
             ("pub const ERROR_", ": i32 = "),
             ("pub const LS_", ": c_int = "),
+            ("pub const LSS_", ": c_int = "),
             ("pub const NLS_", ": c_int = "),
+            ("pub const S_", ": c_int = "),
+            ("pub const IIM_", ": c_int = "),
+            ("pub const NEWTON_", ": c_int = "),
+            ("pub const JAC_", ": c_int = "),
+            ("pub const IDA_LS_", ": c_int = "),
+            ("pub const OMC_SIM_LOG_", ": c_int = "),
         ] {
             let Some(rest) = t.strip_prefix(prefix) else { continue };
             let Some((name, value)) = rest.split_once(ty) else { continue };

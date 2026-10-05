@@ -56,6 +56,7 @@ public
   import BEquation = NBEquation;
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
+  import Variable = NFVariable;
   import Jacobian = NBJacobian;
   import Partition = NBPartition;
 
@@ -65,7 +66,7 @@ public
   import SimGenericCall = NSimGenericCall;
   import NSimCode.Identifier;
   import SimStrongComponent = NSimStrongComponent;
-  import NSimVar.{SimVar, SimVars, VarType};
+  import NSimVar.{SimVar, SimVars, VarType, ConvertMemo};
 
   // Old SimCode imports
   import OldSimCode = SimCode;
@@ -176,6 +177,117 @@ public
       end if;
     end mergeDuplicateRows;
 
+    function mergeScalarRows
+      "Merges rows that solve the same scalar variables. The rows of these variables
+      are their absolute positions, so every equation of an algebraic loop, which
+      solves all its unknowns, would add the same rows again with its dependencies.
+      This multiplied the non-zeros (with duplicates) and the generated code by the
+      number of loop equations. The merged row has the union of the dependencies.
+      Rows with equation iterators or array solved variables keep their own rows."
+      input list<SparsityRow> rows_in;
+      output list<SparsityRow> rows_out = {};
+    protected
+      UnorderedMap<String, SparsityRow> row_map = UnorderedMap.new<SparsityRow>(stringHashDjb2, stringEq);
+      type DepSet = UnorderedSet<ComponentRef>;
+      UnorderedMap<String, DepSet> dep_map = UnorderedMap.new<DepSet>(stringHashDjb2, stringEq);
+      UnorderedSet<ComponentRef> deps;
+      String key;
+      SparsityRow merged;
+    algorithm
+      for row in rows_in loop
+        if isScalarRow(row) then
+          key := stringDelimitList(list(ComponentRef.toString(c) for c in row.solved_crefs), ",");
+          if UnorderedMap.contains(key, row_map) then
+            merged := UnorderedMap.getSafe(key, row_map, sourceInfo());
+            deps := UnorderedMap.getSafe(key, dep_map, sourceInfo());
+            for dep in row.dependencies loop
+              if not UnorderedSet.contains(Util.tuple31(dep), deps) then
+                UnorderedSet.add(Util.tuple31(dep), deps);
+                merged.dependencies := dep :: merged.dependencies;
+              end if;
+            end for;
+            UnorderedMap.add(key, merged, row_map);
+          else
+            UnorderedMap.add(key, row, row_map);
+            UnorderedMap.add(key, UnorderedSet.fromList(list(Util.tuple31(dep) for dep in row.dependencies), ComponentRef.hash, ComponentRef.isEqual), dep_map);
+            rows_out := row :: rows_out;
+          end if;
+        else
+          rows_out := row :: rows_out;
+        end if;
+      end for;
+      // replace the first occurrences by the merged rows
+      rows_out := listReverse(list(if isScalarRow(row) then UnorderedMap.getSafe(stringDelimitList(list(ComponentRef.toString(c) for c in row.solved_crefs), ","), row_map, sourceInfo()) else row for row in rows_out));
+    end mergeScalarRows;
+
+    function isScalarRow
+      "true if the rows of the solved variables are absolute positions: no equation
+      iterators and only index subscripts"
+      input SparsityRow row;
+      output Boolean b;
+    algorithm
+      b := listEmpty(row.equation_iterators) and not listEmpty(row.solved_crefs)
+        and List.all(row.solved_crefs, crefHasOnlyIndexSubscripts);
+    end isScalarRow;
+
+    function crefHasOnlyIndexSubscripts
+      input ComponentRef cref;
+      output Boolean b = List.all(ComponentRef.subscriptsAllFlat(cref), Subscript.isIndex);
+    end crefHasOnlyIndexSubscripts;
+
+    function sortByResultVars
+      "Orders the rows like the result variables. The runtime reads row i of the
+      pattern as result variable i, but the rows come in equation order.
+      Leaves the rows unchanged if a solved variable is not a result variable."
+      input list<SparsityRow> rows_in;
+      input list<SimVar> resVars;
+      output list<SparsityRow> rows_out = rows_in;
+    protected
+      UnorderedMap<ComponentRef, Integer> first_index = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      ComponentRef name;
+      list<tuple<Integer, Integer, SparsityRow>> keyed = {};
+      Integer key, pos = 0;
+    algorithm
+      for sv in resVars loop
+        name := ComponentRef.stripSubscriptsAll(sv.name);
+        UnorderedMap.add(name, intMin(sv.index, UnorderedMap.getOrDefault(name, first_index, sv.index)), first_index);
+      end for;
+
+      for row in rows_in loop
+        key := -1;
+        for cref in row.solved_crefs loop
+          () := match UnorderedMap.get(ComponentRef.stripSubscriptsAll(cref), first_index)
+            local
+              Integer idx;
+            case SOME(idx) algorithm
+              key := if key < 0 then idx else intMin(key, idx);
+            then ();
+            else ();
+          end match;
+        end for;
+        if key < 0 then
+          return;
+        end if;
+        keyed := (key, pos, row) :: keyed;
+        pos := pos + 1;
+      end for;
+
+      keyed := List.sort(keyed, rowKeyGreater);
+      rows_out := list(Util.tuple33(t) for t in keyed);
+    end sortByResultVars;
+
+    function rowKeyGreater
+      input tuple<Integer, Integer, SparsityRow> row1;
+      input tuple<Integer, Integer, SparsityRow> row2;
+      output Boolean b;
+    protected
+      Integer key1, key2, pos1, pos2;
+    algorithm
+      (key1, pos1, _) := row1;
+      (key2, pos2, _) := row2;
+      b := key1 > key2 or (key1 == key2 and pos1 > pos2);
+    end rowKeyGreater;
+
     function dependencyCrefEqual
       input tuple<ComponentRef, Dependency, Boolean> dep1;
       input tuple<ComponentRef, Dependency, Boolean> dep2;
@@ -195,13 +307,22 @@ public
 
     function create
       input Adjacency.Matrix mat;
-      input Integer numberOfResultVars;
+      input list<SimVar> resVars;
+      input Boolean isAdjoint;
       output Sparsity sparsity;
+    protected
+      list<SparsityRow> rows;
     algorithm
       sparsity := match mat
-        case Adjacency.SPARSITY() then SPARSITY(SparsityRow.mergeDuplicateRows(
-          list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
-          numberOfResultVars));
+        case Adjacency.SPARSITY() algorithm
+          rows := SparsityRow.mergeDuplicateRows(
+            list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
+            SimVars.numScalarElems(resVars));
+          rows := SparsityRow.mergeScalarRows(rows);
+          if not isAdjoint then
+            rows := SparsityRow.sortByResultVars(rows, resVars);
+          end if;
+        then SPARSITY(rows);
         case Adjacency.EMPTY() then EMPTY();
 
         else algorithm
@@ -362,10 +483,7 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          VariablePointers seed_vec, res_vec, tmp_vec;
-          Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
-          Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
-          Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
+          list<Pointer<Variable>> seed_lst, res_lst, tmp_lst;
           list<SimVar> seedVars, resVars, tmpVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           SimJacobian jac;
@@ -388,24 +506,29 @@ public
           generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
 
-          // scalarize variables for sim code
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
-            seed_vec := VariablePointers.scalarize(varData.seedVars);
-            res_vec  := VariablePointers.scalarize(varData.resultVars);
-            tmp_vec  := VariablePointers.scalarize(varData.tmpVars);
+            seed_lst := VariablePointers.toList(VariablePointers.scalarize(varData.seedVars));
+            res_lst  := VariablePointers.toList(VariablePointers.scalarize(varData.resultVars));
+            tmp_lst  := VariablePointers.toList(VariablePointers.scalarize(varData.tmpVars));
           else
-            seed_vec := varData.seedVars;
-            res_vec  := varData.resultVars;
-            tmp_vec  := varData.tmpVars;
+            seed_lst := VariablePointers.toList(varData.seedVars);
+            res_lst  := VariablePointers.toList(varData.resultVars);
+            tmp_lst  := VariablePointers.toList(varData.tmpVars);
           end if;
 
-          // use dummy simcode indices to always start at 0 for column and seed vars
-          VariablePointers.map(seed_vec,  function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(res_vec,   function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(tmp_vec,   function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          seedVars  := listReverse(Pointer.access(seedVars_ptr));
-          resVars   := listReverse(Pointer.access(resVars_ptr));
-          tmpVars   := listReverse(Pointer.access(tmpVars_ptr));
+          // the runtime reads column and row i of the ODE Jacobian as state i
+          if jacobian.jacType == NBJacobian.JacobianType.ODE and not jacobian.isAdjoint then
+            seed_lst := sortByStateIndex(seed_lst, simcode_map);
+            res_lst  := sortByStateIndex(res_lst, simcode_map);
+          end if;
+
+          // column and seed var indices always start at 0. Without scalarization the
+          // Jacobian has no index map like the simulation variables, so the index of an
+          // array variable is the position of its first element in seedVars, resultVars
+          // and tmpVars, and in the columns and rows of the sparsity pattern
+          seedVars := SimVar.createList(seed_lst, VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+          resVars  := SimVar.createList(res_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+          tmpVars  := SimVar.createList(tmp_lst,  VarType.SIMULATION, NSimCode.EMPTY_SIM_CODE_INDICES(), not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
@@ -479,7 +602,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, SimVars.numScalarElems(resVars)),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
@@ -688,17 +811,20 @@ public
       OldSimCode.JacobianColumn oldJacCol;
     algorithm
       oldJac := match simJac
+        local
+          ConvertMemo memo;
         case SIM_JAC() algorithm
+          memo := SimVar.newConvertMemo(listLength(simJac.seedVars) + listLength(simJac.columnVars));
           oldJacCol := OldSimCode.JAC_COLUMN(
             columnEqns          = list(SimStrongComponent.Block.convert(blck) for blck in simJac.columnEqns),
-            columnVars          = list(SimVar.convert(var) for var in simJac.columnVars),
+            columnVars          = SimVar.convertListMemo(simJac.columnVars, memo),
             numberOfResultVars  = simJac.numberOfResultVars,
             constantEqns        = list(SimStrongComponent.Block.convert(blck) for blck in simJac.constantEqns)
           );
 
           oldJac := OldSimCode.JAC_MATRIX(
             columns             = {oldJacCol},
-            seedVars            = SimVar.convertList(simJac.seedVars),
+            seedVars            = SimVar.convertListMemo(simJac.seedVars, memo),
             matrixName          = simJac.name,
             sparsityMatrix      = Sparsity.convert(simJac.sparsityMatrix),
             sparsity            = {},
@@ -711,7 +837,7 @@ public
             jacobianIndex       = simJac.jacobianIndex,
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
-            crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap),
+            crefsHT             = Util.applyOption(simJac.jac_map, function SimCodeUtil.convertSimCodeMap(memo = memo)),
             isAdjoint           = simJac.isAdjoint,
             isBidirectional     = simJac.isBidirectional,
             adjointJacobianIndex = simJac.adjointJacobianIndex,
@@ -792,20 +918,71 @@ public
         Type node_ty;
         ComponentRef rest;
         list<tuple<Integer, Integer>> rest_pairs, node_pairs;
-      case ComponentRef.CREF(node = _, subscripts = subs, restCref = rest)
+        list<Dimension> dims;
+        Integer own;
+      case ComponentRef.CREF(subscripts = subs, restCref = rest)
         algorithm
           rest_pairs := crefSubDimPairsLeafToRoot(rest);
           // Use the node's own declared type (before applying these subscripts)
           // so record-valued fields also expose their array dimensions.
-          node_ty := InstNode.getType(cref.node);
+          node_ty := InstNode.getType(ComponentRef.node(cref));
+          // the type of a record field can have the dimensions of its parents lifted in front
+          dims := Type.arrayDims(node_ty);
+          own := listLength(dims) - listLength(ComponentRef.subscriptsAllFlat(rest));
+          if own >= listLength(subs) and own < listLength(dims) then
+            dims := List.lastN(dims, own);
+          end if;
           // Collect this node's pairs outer-first, then reverse to get inner-first.
           // Append rest_pairs (which are from the outer/restCref direction) after.
-          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, Type.arrayDims(node_ty)));
+          node_pairs := listReverse(collectNodeSubDimPairsOuterFirst(subs, dims));
         then
           listAppend(node_pairs, rest_pairs);
       else {};
     end match;
   end crefSubDimPairsLeafToRoot;
+
+  protected function sortByStateIndex
+    "Orders seed or result variables like the simulation variables they belong to.
+    Unchanged if one of them is not a simulation variable."
+    input list<Pointer<Variable>> vars;
+    input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    output list<Pointer<Variable>> sorted = vars;
+  protected
+    list<tuple<Integer, Pointer<Variable>>> keyed = {};
+    Option<SimVar> osv;
+    SimVar sv;
+  algorithm
+    for v in vars loop
+      osv := UnorderedMap.get(stripRootNode(BVariable.getVarName(v)), simcode_map);
+      if isNone(osv) then
+        return;
+      end if;
+      SOME(sv) := osv;
+      keyed := (sv.index, v) :: keyed;
+    end for;
+    keyed := List.sort(keyed, indexGreater);
+    sorted := list(Util.tuple22(t) for t in keyed);
+  end sortByStateIndex;
+
+  protected function indexGreater
+    input tuple<Integer, Pointer<Variable>> t1;
+    input tuple<Integer, Pointer<Variable>> t2;
+    output Boolean b = Util.tuple21(t1) > Util.tuple21(t2);
+  end indexGreater;
+
+  protected function stripRootNode
+    "$SEED_ODE_JAC.x -> x"
+    input ComponentRef cref;
+    output ComponentRef stripped;
+  algorithm
+    stripped := match cref
+      case ComponentRef.CREF(restCref = ComponentRef.EMPTY()) then ComponentRef.EMPTY();
+      case ComponentRef.CREF() algorithm
+        cref.restCref := stripRootNode(cref.restCref);
+      then cref;
+      else cref;
+    end match;
+  end stripRootNode;
 
   protected function crefFlatOffset
     "Compute the 0-based flat array index encoded by all integer subscripts in

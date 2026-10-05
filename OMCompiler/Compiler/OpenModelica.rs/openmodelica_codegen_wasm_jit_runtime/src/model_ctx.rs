@@ -119,6 +119,7 @@ pub(crate) fn write(path: &str) -> Result<(), &'static str> {
     let mut vars: Vec<MatVar> = Vec::new();
     let mut params: Vec<f64> = Vec::new();
     for (v, &keep) in model.vars.iter().zip(&keep) {
+        let keep = keep && v.ty != openmodelica_sim_meta::VarTy::String;
         if let MetaKind::Param { off, wty, .. } = &v.kind
             && keep
         {
@@ -128,7 +129,7 @@ pub(crate) fn write(path: &str) -> Result<(), &'static str> {
             });
         }
         if keep {
-            vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat() });
+            vars.push(MatVar { name: &v.name, comment: &v.comment, kind: v.kind.mat(), unvarying: v.unvarying });
         }
     }
     let bytes = openmodelica_mat_writer::write_mat4(

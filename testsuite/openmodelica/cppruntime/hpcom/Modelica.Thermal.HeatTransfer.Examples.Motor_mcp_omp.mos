@@ -13,8 +13,8 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Thermal.HeatTransfer.Examples.Motor);
 compareVars :=
 {
-   "winding.T",
-   "core.T"
+   "core.T",
+   "winding.T"
 };
 
 setDebugFlags("hpcom"); getErrorString();

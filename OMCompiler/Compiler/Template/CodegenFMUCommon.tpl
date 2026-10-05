@@ -190,9 +190,9 @@ case SIMVAR(type_ = T_ARRAY()) then
     ScalarVariable(var, simCode, stateVars, FMUVersion)
     ;separator="\n"%>'
 case SIMVAR(__) then
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else if isFMIVersion20(FMUVersion) then
     if isSome(exportVar) then
@@ -220,7 +220,7 @@ template ScalarVariableAttribute(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
-  let variability_ = getVariability(variability)
+  let variability_ = getVariabilityFMI1(variability, type_)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
@@ -244,7 +244,7 @@ match c
   else "internal" // needed to support for FMI 1.0 since causality= PARAMETER, CALCULATED__PARAMETER and LOCAL are not handled
 end getCausality;
 
-template getVariability(Option<Variability> variability_)
+template getVariability(Option<SimCodeVar.Variability> variability_)
  "Returns the variability Attribute of ScalarVariable."
 ::=
 match variability_
@@ -254,6 +254,19 @@ match variability_
   case SOME(CONTINUOUS(__)) then "continuous"
   else "continuous"
 end getVariability;
+
+template getVariabilityFMI1(Option<SimCodeVar.Variability> variability_, DAE.Type type_)
+ "getVariability of an FMI 1.0 ScalarVariable: continuous is for Real only, as
+  in FMI 2.0 (see getVariabilityFMI2)."
+::=
+match type_
+  case T_REAL(__) then getVariability(variability_)
+  else
+    match variability_
+      case SOME(CONTINUOUS(__)) then "discrete"
+      case NONE() then "discrete"
+      else getVariability(variability_)
+end getVariabilityFMI1;
 
 template getAliasVar(AliasVariable aliasvar)
  "Returns the alias Attribute of ScalarVariable."
@@ -278,7 +291,7 @@ case SIMVAR(__) then
     case T_REAL(__) then '<Real<%StartString(simvar)/*%><%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
     case T_BOOL(__) then '<Boolean<%StartString(simvar)%>/>'
     case T_STRING(__) then '<String<%StartString(simvar)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString(simvar)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%StartString(simvar)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
@@ -316,7 +329,7 @@ case MODELINFO(__) then
   (functions |> fn => externalFunction(fn) ; separator="\n")
 end externalFunctions;
 
-template externalFunction(Function fn)
+template externalFunction(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
@@ -498,14 +511,14 @@ template FmiUnknownDependencies(list<Integer> dependencies)
   // Note: dependencies="" means no dependencies;
   // missing dependencies means dependent on all knowns (see FMI 2.0 spec).
   <<
-   dependencies="<%SimCodeUtil.fmiDependenciesString(dependencies)%>"
+   dependencies="<%SimCodeCodegenUtil.fmiDependenciesString(dependencies)%>"
   >>
 end FmiUnknownDependencies;
 
 template FmiUnknownDependenciesKind(list<String> dependenciesKind)
 ::=
   <<
-   dependenciesKind="<%SimCodeUtil.fmiDependenciesKindString(dependenciesKind)%>"
+   dependenciesKind="<%SimCodeCodegenUtil.fmiDependenciesKindString(dependenciesKind)%>"
   >>
 end FmiUnknownDependenciesKind;
 
@@ -535,7 +548,7 @@ match simVar
   >>
 end ScalarVariableAttribute2;
 
-template getVariability2(Option<Variability> variability)
+template getVariability2(Option<SimCodeVar.Variability> variability)
  "Returns the variability Attribute of ScalarVariable."
 ::=
 match variability
@@ -547,7 +560,7 @@ match variability
   else ""
 end getVariability2;
 
-template getVariabilityFMI2(Option<Variability> variability, DAE.Type type_)
+template getVariabilityFMI2(Option<SimCodeVar.Variability> variability, DAE.Type type_)
  "Returns the variability Attribute of an FMI 2.0 ScalarVariable.
 
   FMI 2.0 allows variability='continuous' only for Real (FMI 2.0 specification,
@@ -605,7 +618,7 @@ case SIMVAR(__) then
     case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
-    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
     else 'UNKOWN_TYPE'
 end ScalarVariableType2;
 
@@ -720,6 +733,40 @@ case SIMVAR(unit = unit, displayUnit = displayUnit) then
   '<%unitString%>'
 end UnitString2;
 
+template UnitString3(SimVar simvar, SimCode simCode)
+ "UnitString2 with the display unit, which FMI 3.0 may name now that the unit
+  definitions declare it. Left off where it resolved to no <DisplayUnit>, which a
+  variable may not name."
+::=
+match simvar
+case SIMVAR(unit = unit, displayUnit = displayUnit) then
+  let unitString = if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnitString = if declaredDisplayUnit(unit, displayUnit, simCode) then
+        ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
+  '<%unitString%><%displayUnitString%>'
+end UnitString3;
+
+template declaredDisplayUnit(String unit, String displayUnit, SimCode simCode)
+ "Non-empty when `displayUnit` is another unit of `unit`\'s dimensions, which is exactly
+  when UnitDefinitions nested it as a <DisplayUnit> of it."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(unitDefinitions=unitDefinitions)) then
+  let dims = (unitDefinitions |> u => unitDimensionsNamed(u, unit))
+  let displayDims = (unitDefinitions |> u => unitDimensionsNamed(u, displayUnit))
+  if boolAnd(boolNot(stringEq(dims, "")),
+             boolAnd(stringEq(dims, displayDims), boolNot(stringEq(unit, displayUnit)))) then "declared"
+end declaredDisplayUnit;
+
+template unitDimensionsNamed(UnitDefinition unitDefinition, String wanted)
+ "This unit\'s dimensions when it is the one named, so a fold over the list picks it out.
+  `wanted` may not be called `name`: a record field of that name shadows the parameter."
+::=
+match unitDefinition
+case UNITDEFINITION(name=unitName, baseUnit=baseUnit) then
+  if stringEq(unitName, wanted) then baseUnitDimensions(baseUnit)
+end unitDimensionsNamed;
+
 template relativeQuantity(SimVar simvar)
 ::=
 match simvar
@@ -732,7 +779,7 @@ end relativeQuantity;
 template statesnumwithDummy(list<SimVar> vars)
 " return number of states without dummy vars"
 ::=
- (vars |> var =>  match var case SIMVAR(__) then if stringEq(crefStr(name),"$dummy") then '0' else '1' ;separator="\n")
+ (vars |> var =>  match var case SIMVAR(__) then if stringEq(CodegenUtil.crefStr(name),"$dummy") then '0' else '1' ;separator="\n")
 end statesnumwithDummy;
 
 template xsdateTime(DateTime dt)
@@ -760,22 +807,53 @@ template UnitDefinitionsHelper(list<UnitDefinition> unitDefinitions)
   if unitDefinitions then
   <<
   <UnitDefinitions>
-    <%unitDefinitions |> unitDefinition => UnitDefinitionsHelper1(unitDefinition) ;separator="\n"%>
+    <%unitDefinitions |> unitDefinition => UnitDefinitionsHelper1(unitDefinition, unitDefinitions) ;separator="\n"%>
   </UnitDefinitions>
   >>
 end UnitDefinitionsHelper;
 
-template UnitDefinitionsHelper1(UnitDefinition unitDefinition)
+template UnitDefinitionsHelper1(UnitDefinition unitDefinition, list<UnitDefinition> allUnits)
  "helper function to generates code for UnitDefinition for FMU target."
 ::=
 match unitDefinition
 case UNITDEFINITION(name=name, baseUnit=baseUnit) then
   <<
   <Unit <%unitDefinitionAttribute(name)%>>
-    <%baseUnitAttributes(baseUnit)%>
+    <%baseUnitAttributes(baseUnit)%><%displayUnits(name, baseUnit, allUnits)%>
   </Unit>
   >>
 end UnitDefinitionsHelper1;
+
+template displayUnits(String unitName, BaseUnit baseUnit, list<UnitDefinition> allUnits)
+ "Every other unit of the same dimensions, nested as a <DisplayUnit> of this one:
+  FMI lets a variable name a display unit only among its own unit\'s children.
+  Fields are bound by name; Susan will not pass on the ones `__` brings into scope."
+::=
+match baseUnit
+case BASEUNIT(factor=unitFactor, offset=unitOffset) then
+  let dims = baseUnitDimensions(baseUnit)
+  (allUnits |> other => displayUnit(unitName, dims, unitFactor, unitOffset, other))
+end displayUnits;
+
+template displayUnit(String unitName, String dims, Real unitFactor, Real unitOffset, UnitDefinition other)
+ "`other` as a <DisplayUnit> of the unit whose SI pair is (unitFactor, unitOffset), when
+  it is a different unit of the same dimensions. Both carry the pair taking them to SI,
+  so the display value is
+  value_display = (unitFactor/displayFactor)*value + (unitOffset - displayOffset)/displayFactor."
+::=
+match other
+case UNITDEFINITION(name=otherName, baseUnit=(otherBase as BASEUNIT(factor=displayFactor, offset=displayOffset))) then
+  if boolAnd(stringEq(dims, baseUnitDimensions(otherBase)), boolNot(stringEq(unitName, otherName))) then
+  '<%\n%><DisplayUnit name="<%Util.escapeModelicaStringToXmlString(otherName)%>" factor="<%realDiv(unitFactor, displayFactor)%>" offset="<%realDiv(realSub(unitOffset, displayOffset), displayFactor)%>"/>'
+end displayUnit;
+
+template baseUnitDimensions(BaseUnit baseUnit)
+ "The seven exponents as a key, so two units are compared as one string. Empty where
+  there is no base unit to compare."
+::=
+match baseUnit
+case BASEUNIT(__) then '<%s%>.<%m%>.<%kg%>.<%A%>.<%K%>.<%mol%>.<%cd%>'
+end baseUnitDimensions;
 
 template unitDefinitionAttribute(String unitName)
  "Generates code for UnitDefinition Attribute for FMU target."
@@ -814,7 +892,7 @@ case SIMCODE(modelInfo=modelInfo) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  <%TypeDefinitionsHelper(simCode, SimCodeUtil.getEnumerationTypes(vars), FMUVersion)%>
+  <%TypeDefinitionsHelper(simCode, SimCodeCodegenUtil.getEnumerationTypes(vars), FMUVersion)%>
   >>
 end fmiTypeDefinitions;
 
@@ -847,7 +925,7 @@ match type_
   case T_ENUMERATION(__) then
   if isFMIVersion20(FMUVersion) then
   <<
-  <SimpleType name="<%AbsynUtil.pathString(path, ".", false)%>">
+  <SimpleType name="<%AbsynUtil.pathString(path, ".", false, false)%>">
     <Enumeration>
       <%names |> name hasindex i0 fromindex 1 => '<Item name="<%name%>" value="<%i0%>"/>' ;separator="\n"%>
     </Enumeration>
@@ -855,7 +933,7 @@ match type_
   >>
   else
   <<
-  <Type name="<%AbsynUtil.pathString(path, ".", false)%>">
+  <Type name="<%AbsynUtil.pathString(path, ".", false, false)%>">
     <EnumerationType>
       <%names |> name => '<Item name="<%name%>"/>' ;separator="\n"%>
     </EnumerationType>
@@ -904,6 +982,242 @@ template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
     }
     >>
 end fmuSimulationFlagsFile;
+
+template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
+ "returns compilation commands for the platform. "
+::=
+let fmudirname = '<%Util.hashFileNamePrefix(fileNamePrefix)%>.fmutmp'
+match platform
+  case "win32"
+  case "win64" then
+  <<
+  <%fileNamePrefix%>_FMU: nozip
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
+  <%\t%>mkdir.exe -p ../binaries/<%platform%>
+  <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
+  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+
+  >>
+  else
+  <<
+  <%fileNamePrefix%>_FMU: nozip
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
+  ifeq (@LIBTYPE_DYNAMIC@,1)
+  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
+  endif
+  <%if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), 4) then
+  '<%\t%>head -n20 Makefile > ../resources/$(FMIPLATFORM).summary'
+   %>
+  ifeq (@LIBTYPE_STATIC@,1)
+  <%\t%>rm -f <%modelNamePrefix%>.a
+  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
+  endif
+  <% if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "\t$(MAKE) distclean" %>
+  distclean: clean
+  <%\t%>rm -f Makefile config.status config.log
+  clean:
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  >>
+end getPlatformString2;
+
+template fmudeffile(SimCode simCode, String FMUVersion)
+ "Generates the def file of the fmu."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  if isFMIVersion30(FMUVersion) then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3GetVersion
+    <%fileNamePrefix%>_fmi3SetDebugLogging
+    <%fileNamePrefix%>_fmi3InstantiateModelExchange
+    <%fileNamePrefix%>_fmi3InstantiateCoSimulation
+    <%fileNamePrefix%>_fmi3InstantiateScheduledExecution
+    <%fileNamePrefix%>_fmi3FreeInstance
+    <%fileNamePrefix%>_fmi3EnterInitializationMode
+    <%fileNamePrefix%>_fmi3ExitInitializationMode
+    <%fileNamePrefix%>_fmi3EnterEventMode
+    <%fileNamePrefix%>_fmi3Terminate
+    <%fileNamePrefix%>_fmi3Reset
+    <%fileNamePrefix%>_fmi3GetFloat32
+    <%fileNamePrefix%>_fmi3GetFloat64
+    <%fileNamePrefix%>_fmi3GetInt8
+    <%fileNamePrefix%>_fmi3GetUInt8
+    <%fileNamePrefix%>_fmi3GetInt16
+    <%fileNamePrefix%>_fmi3GetUInt16
+    <%fileNamePrefix%>_fmi3GetInt32
+    <%fileNamePrefix%>_fmi3GetUInt32
+    <%fileNamePrefix%>_fmi3GetInt64
+    <%fileNamePrefix%>_fmi3GetUInt64
+    <%fileNamePrefix%>_fmi3GetBoolean
+    <%fileNamePrefix%>_fmi3GetString
+    <%fileNamePrefix%>_fmi3GetBinary
+    <%fileNamePrefix%>_fmi3GetClock
+    <%fileNamePrefix%>_fmi3SetFloat32
+    <%fileNamePrefix%>_fmi3SetFloat64
+    <%fileNamePrefix%>_fmi3SetInt8
+    <%fileNamePrefix%>_fmi3SetUInt8
+    <%fileNamePrefix%>_fmi3SetInt16
+    <%fileNamePrefix%>_fmi3SetUInt16
+    <%fileNamePrefix%>_fmi3SetInt32
+    <%fileNamePrefix%>_fmi3SetUInt32
+    <%fileNamePrefix%>_fmi3SetInt64
+    <%fileNamePrefix%>_fmi3SetUInt64
+    <%fileNamePrefix%>_fmi3SetBoolean
+    <%fileNamePrefix%>_fmi3SetString
+    <%fileNamePrefix%>_fmi3SetBinary
+    <%fileNamePrefix%>_fmi3SetClock
+    <%fileNamePrefix%>_fmi3GetNumberOfVariableDependencies
+    <%fileNamePrefix%>_fmi3GetVariableDependencies
+    <%fileNamePrefix%>_fmi3GetFMUState
+    <%fileNamePrefix%>_fmi3SetFMUState
+    <%fileNamePrefix%>_fmi3FreeFMUState
+    <%fileNamePrefix%>_fmi3SerializedFMUStateSize
+    <%fileNamePrefix%>_fmi3SerializeFMUState
+    <%fileNamePrefix%>_fmi3DeserializeFMUState
+    <%fileNamePrefix%>_fmi3GetDirectionalDerivative
+    <%fileNamePrefix%>_fmi3GetAdjointDerivative
+    <%fileNamePrefix%>_fmi3EnterConfigurationMode
+    <%fileNamePrefix%>_fmi3ExitConfigurationMode
+    <%fileNamePrefix%>_fmi3GetIntervalDecimal
+    <%fileNamePrefix%>_fmi3GetIntervalFraction
+    <%fileNamePrefix%>_fmi3GetShiftDecimal
+    <%fileNamePrefix%>_fmi3GetShiftFraction
+    <%fileNamePrefix%>_fmi3SetIntervalDecimal
+    <%fileNamePrefix%>_fmi3SetIntervalFraction
+    <%fileNamePrefix%>_fmi3SetShiftDecimal
+    <%fileNamePrefix%>_fmi3SetShiftFraction
+    <%fileNamePrefix%>_fmi3EvaluateDiscreteStates
+    <%fileNamePrefix%>_fmi3UpdateDiscreteStates
+    ;***************************************************
+    ;Functions for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterContinuousTimeMode
+    <%fileNamePrefix%>_fmi3CompletedIntegratorStep
+    <%fileNamePrefix%>_fmi3SetTime
+    <%fileNamePrefix%>_fmi3SetContinuousStates
+    <%fileNamePrefix%>_fmi3GetContinuousStateDerivatives
+    <%fileNamePrefix%>_fmi3GetEventIndicators
+    <%fileNamePrefix%>_fmi3GetContinuousStates
+    <%fileNamePrefix%>_fmi3GetNominalsOfContinuousStates
+    <%fileNamePrefix%>_fmi3GetNumberOfEventIndicators
+    <%fileNamePrefix%>_fmi3GetNumberOfContinuousStates
+    ;***************************************************
+    ;Functions for Co-Simulation
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterStepMode
+    <%fileNamePrefix%>_fmi3GetOutputDerivatives
+    <%fileNamePrefix%>_fmi3DoStep
+    ;***************************************************
+    ;Functions for Scheduled Execution
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3ActivateModelPartition
+  >>
+  else if isFMIVersion20(FMUVersion) then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmiGetTypesPlatform @1
+    <%fileNamePrefix%>_fmiGetVersion @2
+    <%fileNamePrefix%>_fmiSetDebugLogging @3
+    <%fileNamePrefix%>_fmiInstantiate @4
+    <%fileNamePrefix%>_fmiFreeInstance @5
+    <%fileNamePrefix%>_fmiSetupExperiment @6
+    <%fileNamePrefix%>_fmiEnterInitializationMode @7
+    <%fileNamePrefix%>_fmiExitInitializationMode @8
+    <%fileNamePrefix%>_fmiTerminate @9
+    <%fileNamePrefix%>_fmiReset @10
+    <%fileNamePrefix%>_fmiGetReal @11
+    <%fileNamePrefix%>_fmiGetInteger @12
+    <%fileNamePrefix%>_fmiGetBoolean @13
+    <%fileNamePrefix%>_fmiGetString @14
+    <%fileNamePrefix%>_fmiSetReal @15
+    <%fileNamePrefix%>_fmiSetInteger @16
+    <%fileNamePrefix%>_fmiSetBoolean @17
+    <%fileNamePrefix%>_fmiSetString @18
+    <%fileNamePrefix%>_fmiGetFMUstate @19
+    <%fileNamePrefix%>_fmiSetFMUstate @20
+    <%fileNamePrefix%>_fmiFreeFMUstate @21
+    <%fileNamePrefix%>_fmiSerializedFMUstateSize @22
+    <%fileNamePrefix%>_fmiSerializeFMUstate @23
+    <%fileNamePrefix%>_fmiDeSerializeFMUstate @24
+    <%fileNamePrefix%>_fmiGetDirectionalDerivative @25
+    ;***************************************************
+    ;Functions for FMI for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmiEnterEventMode @26
+    <%fileNamePrefix%>_fmiNewDiscreteStates @27
+    <%fileNamePrefix%>_fmiEnterContinuousTimeMode @28
+    <%fileNamePrefix%>_fmiCompletedIntegratorStep @29
+    <%fileNamePrefix%>_fmiSetTime @30
+    <%fileNamePrefix%>_fmiSetContinuousStates @31
+    <%fileNamePrefix%>_fmiGetDerivatives @32
+    <%fileNamePrefix%>_fmiGetEventIndicators @33
+    <%fileNamePrefix%>_fmiGetContinuousStates @34
+    <%fileNamePrefix%>_fmiGetNominalsOfContinuousStates @35
+    ;***************************************************
+    ;Functions for FMI for Co-Simulation
+    ;****************************************************
+    <%fileNamePrefix%>_fmiSetRealInputDerivatives @36
+    <%fileNamePrefix%>_fmiGetRealOutputDerivatives @37
+    <%fileNamePrefix%>_fmiDoStep @38
+    <%fileNamePrefix%>_fmiCancelStep @39
+    <%fileNamePrefix%>_fmiGetStatus @40
+    <%fileNamePrefix%>_fmiGetRealStatus @41
+    <%fileNamePrefix%>_fmiGetIntegerStatus @42
+    <%fileNamePrefix%>_fmiGetBooleanStatus @43
+    <%fileNamePrefix%>_fmiGetStringStatus @44
+    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
+    <<
+    ;***************************************************
+    ; Experimetnal function for FMI for ModelExchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmiGetSpecificDerivatives @45
+    >> %>
+  >>
+  else
+  <<
+  EXPORTS
+    <%fileNamePrefix%>_fmiCompletedIntegratorStep @1
+    <%fileNamePrefix%>_fmiEventUpdate @2
+    <%fileNamePrefix%>_fmiFreeModelInstance @3
+    <%fileNamePrefix%>_fmiGetBoolean @4
+    <%fileNamePrefix%>_fmiGetContinuousStates @5
+    <%fileNamePrefix%>_fmiGetDerivatives @6
+    <%fileNamePrefix%>_fmiGetEventIndicators @7
+    <%fileNamePrefix%>_fmiGetInteger @8
+    <%fileNamePrefix%>_fmiGetModelTypesPlatform @9
+    <%fileNamePrefix%>_fmiGetNominalContinuousStates @10
+    <%fileNamePrefix%>_fmiGetReal @11
+    <%fileNamePrefix%>_fmiGetStateValueReferences @12
+    <%fileNamePrefix%>_fmiGetString @13
+    <%fileNamePrefix%>_fmiGetVersion @14
+    <%fileNamePrefix%>_fmiInitialize @15
+    <%fileNamePrefix%>_fmiInstantiateModel @16
+    <%fileNamePrefix%>_fmiSetBoolean @17
+    <%fileNamePrefix%>_fmiSetContinuousStates @18
+    <%fileNamePrefix%>_fmiSetDebugLogging @19
+    <%fileNamePrefix%>_fmiSetExternalFunction @20
+    <%fileNamePrefix%>_fmiSetInteger @21
+    <%fileNamePrefix%>_fmiSetReal @22
+    <%fileNamePrefix%>_fmiSetString @23
+    <%fileNamePrefix%>_fmiSetTime @24
+    <%fileNamePrefix%>_fmiTerminate @25
+  >>
+end fmudeffile;
 
 annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMUCommon;

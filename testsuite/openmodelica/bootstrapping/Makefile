@@ -3,7 +3,6 @@ TEST = ../../rtest
 
 TESTFILES = \
 DiffAlgorithm.mos \
-DumpTest.mos \
 ExpandableArrayTest.mos \
 ExpressionTest.mos \
 GraphTest.mos \
@@ -26,7 +25,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-BreakProcess.cpp \
 LinkMain.makefile.in \
 LinkMain.makefile.mingw \
 SusanTestSmall.tpl \

@@ -3,10 +3,12 @@ cmake_minimum_required(VERSION 3.21)
 # Qt-for-WebAssembly build of OMEdit. See HANDOFF.md.
 # Standalone configure (own scratch dir, NOT a build-* under the repo):
 #   source /opt/emsdk/emsdk_env.sh
-#   TC=/opt/Qt/6.10.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
+#   TC=/opt/Qt/6.11.2/wasm_singlethread/lib/cmake/Qt6/qt.toolchain.cmake
 #   cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$TC \
-#     -DQT_HOST_PATH=/opt/Qt/6.10.2/gcc_64 -S . -B /tmp/omedit-test
+#     -DQT_HOST_PATH=/opt/Qt/6.11.2/gcc_64 -S . -B /tmp/omedit-test
 project(OMEditQtWasm LANGUAGES C CXX)
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/omc_job_server.cmake)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -46,6 +48,9 @@ set(QWT_WITH_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(OMQWT_LIBRARY_TYPE STATIC)
 add_subdirectory(${QWT} ${CMAKE_BINARY_DIR}/qwt)
 
+# ---- libomc_result (result readers/writers) ----
+include(${OM_ROOT}/cmake/omc_result_emscripten.cmake)
+
 # ---- OMPlotLib (library only) ----
 add_library(OMPlotLib STATIC
   ${OMPLOT}/Plot.cpp ${OMPLOT}/PlotZoomer.cpp ${OMPLOT}/Legend.cpp
@@ -57,14 +62,13 @@ add_library(OMPlotLib STATIC
   ${OMPLOT}/PlotPicker.h ${OMPLOT}/PlotGrid.h ${OMPLOT}/PlotCurve.h ${OMPLOT}/PlotWindow.h
   ${OMPLOT}/PlotWindowContainer.h ${OMPLOT}/PlotMainWindow.h ${OMPLOT}/ScaleDraw.h
   ${OMPLOT}/LogScaleEngine.h ${OMPLOT}/LinearScaleEngine.h
-  ${SIMRT}/util/read_matlab4.c ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c
-  ${SIMRT}/util/omc_numbers.c
-  # TODO: give OMEdit its own copy; reuse the OMNotebook stdio shim for now.
-  ${OM_ROOT}/OMNotebook/OMNotebook/OMNotebookGUI/wasm/omc_file_shim.c)
+  # VisualizationCSV still uses the C csv reader (om_strtod from omc_numbers.c).
+  ${SIMRT}/util/read_csv.c ${SIMRT}/util/libcsv.c ${SIMRT}/util/omc_numbers.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/omc_file_shim.c)
 target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
 target_include_directories(OMPlotLib PUBLIC ${OMPLOT} PRIVATE ${SIMRT})
 target_link_libraries(OMPlotLib PUBLIC
-  Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt)
+  Qt6::Widgets Qt6::PrintSupport Qt6::Svg Qt6::Core5Compat omqwt omc::result)
 
 # ---- OMEditLib (static) ----
 # Glob the native sources minus the subsystems stubbed on wasm. /generatedfiles/
@@ -87,6 +91,8 @@ endforeach()
 # IS compiled: the wasm-jit run drives it via runWasmJitSimulation() and its
 # QProcess/QTcpServer paths are guarded out under __EMSCRIPTEN__.
 set(WASM_EXCLUDE_FILES
+  # Desktop OAuth redirect (QTcpServer loopback); the browser uses a popup instead.
+  "Cloud/OAuth2RedirectLoopback.cpp"
   "Simulation/OpcUaClient.cpp"
   "OMS/OMSSimulationOutputWidget.cpp")
 foreach(f ${WASM_EXCLUDE_FILES})
@@ -121,25 +127,28 @@ list(APPEND OMEDITLIB_SOURCES
   # QAbstractFileEngineHandler that serves worker-VFS files to main-thread QFile.
   ${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
   # Browser file picker / download, for the user's own filesystem.
-  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
+  # localStorage persistence: settings, cloud mounts and their sync manifests.
+  ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
+  # IndexedDB cache of the cloud working copies, so a reload does not re-download.
+  ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
+  # OAuth popup + same-origin callback page (the desktop half is a loopback socket).
+  ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/worker_vfs_engine.cpp
-                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp PROPERTIES SKIP_AUTOMOC ON)
+                            ${CMAKE_CURRENT_SOURCE_DIR}/local_files.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/persist_store.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/cloud_cache_idb.cpp
+                            ${CMAKE_CURRENT_SOURCE_DIR}/oauth_redirect_wasm.cpp PROPERTIES SKIP_AUTOMOC ON)
 # The simulation metadata tables OMCProxy reads (SOLVER_METHOD_NAME, FLAG_NAME,
 # OMC_LOG_STREAM_NAME, ...); native OMEdit gets them from libOpenModelicaCompiler.
 list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/omc_error.c)
 # omc_error.c reaches <gc.h> for threadData_t; declarations only, no collector call.
 set_source_files_properties(${SIMRT}/util/omc_error.c PROPERTIES
   INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/gc/include)
-# TimeManager drives the result-replay time slider in VariablesWidget. It is the
-# one Animation/ source that has no OpenSceneGraph/GL dependency (just rtclock +
-# QTimer), so compile it (rtclock entry points are provided by wasm_stubs.cpp)
-# rather than guarding its ~40 use sites out.
+# TimeManager drives the result-replay time slider in VariablesWidget.
 list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
-# 3D animation via Qt Quick 3D (OSG does not build for wasm). The renderer-neutral
-# data classes + the Quick 3D backend; the OSG renderer sources (ViewerWidget,
-# ExtraShapes, GLWidget/OpenGLWidget, the OSGScene/UpdateVisitor parts of
-# Visualization.cpp) stay out via the OMEDIT_ANIMATION_QUICK3D guards. FMU animation
-# (VisualizationFMU/FMUWrapper/FMUSettingsDialog) is excluded (no fmilib on wasm).
+# 3D animation via Qt Quick 3D. FMU animation (VisualizationFMU/FMUWrapper/
+# FMUSettingsDialog) is excluded (no fmilib on wasm).
 list(APPEND OMEDITLIB_SOURCES
   ${LIB}/Animation/AbstractVisualizer.cpp
   ${LIB}/Animation/Shape.cpp
@@ -160,14 +169,9 @@ set_source_files_properties(
 
 add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS}
   ${LIB}/resource_omedit.qrc)
-# WITHOUT_OSG: no OpenSceneGraph animation. OMC_RUST_ABI: the MMC-free embedding
-# ABI (omc_rust_embedding.h). PUBLIC so main.cpp inherits both.
-# OMEDIT_ANIMATION_QUICK3D selects the Qt Quick 3D animation backend (over OSG).
-# WITHOUT_OSG is intentionally NOT defined: it gates off the animation *features*
-# (the New Animation action, addAnimationWindow, simulate-with-animation), which are
-# now available through the Quick 3D backend. OSG-renderer code stays out via the
-# OMEDIT_ANIMATION_QUICK3D guards in Animation/, not via WITHOUT_OSG.
-target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI OMEDIT_ANIMATION_QUICK3D)
+# OMC_RUST_ABI: the MMC-free embedding ABI (omc_rust_embedding.h). PUBLIC so
+# main.cpp inherits it.
+target_compile_definitions(OMEditLib PUBLIC OMC_RUST_ABI)
 set(RUST_OMC ${OM_ROOT}/OMCompiler/Compiler/OpenModelica.rs)
 # Headers for subsystems whose libs aren't linked on wasm (antlr/OMParser,
 # open62541) compile fine for the static lib; the symbols are deferred.

@@ -14,12 +14,12 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 roxmltree.workspace = true
 # fmi-ls-wasm component inspection: which core modules a component carries and
 # what they import/export, which is what the driver needs to link against one.
-wasmparser = { version = "0.252", optional = true }
+wasmparser = { version = "0.259", optional = true }
 # The component's `component-type` custom section decodes back to the WIT world
 # it implements, which is how an FMU is checked against fmi:fmi3.
-wit-component = { version = "0.252", optional = true }
+wit-component = { version = "0.259", optional = true }
 # `WorldKey`, to name the interfaces a decoded component imports and exports.
-wit-parser = { version = "0.252", optional = true }
+wit-parser = { version = "0.259", optional = true }
 
 [features]
 default = ["component"]

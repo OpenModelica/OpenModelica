@@ -38,11 +38,29 @@ pub fn prepare_native_externals(_model: &SimModel, _sigs: &[crate::sig::ExtCallS
     Ok(())
 }
 
-pub fn run(_model: &SimModel, _meta: &openmodelica_sim_meta::SimMeta) -> std::result::Result<RunResult, String> {
+pub fn ensure_prepared(_model: &SimModel) {}
+
+/// One engine, whatever the module: nothing to select.
+pub fn select_engine_for(_wasm: &[u8]) {}
+
+pub fn run(
+    _model: &SimModel,
+    _meta: &openmodelica_sim_meta::SimMeta,
+    _result: crate::result_sink::ResultTarget,
+) -> std::result::Result<(RunResult, crate::result_sink::Written), String> {
     return Err(NO_ENGINE.to_string())
 }
 
 /// No engine here, so nothing to precompile.
-pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+pub fn precompile_fixed_blobs(_dir: &std::path::Path, _prune: bool) -> std::result::Result<Vec<String>, String> {
     Ok(Vec::new())
+}
+
+pub fn precompile_libraries(_dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
+    Ok(Vec::new())
+}
+
+/// No artifacts to keep, so nowhere to keep them.
+pub fn aot_cache_dir() -> std::path::PathBuf {
+    std::env::temp_dir()
 }

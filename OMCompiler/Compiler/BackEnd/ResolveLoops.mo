@@ -63,6 +63,8 @@ import List;
 import Tearing;
 import Util;
 
+protected type IntList = list<Integer>;
+
 public function resolveLoops "author:Waurich TUD 2013-12
   traverses the equations and finds simple equations(i.e. linear functions
   withcoefficients of 1 or -1). if these equations form loops, they will be
@@ -208,7 +210,7 @@ algorithm
           // check if its worth to resolve the loops
           if isSome(optStructureMapping) then
             SOME((mapIndices,map,loops)) := optStructureMapping;
-            loops := List.filter1OnTrueAndUpdate(loops,evaluateTripleLoop,updateTripleLoop,(m_uncut,mapIndices,map));
+            loops := List.filter1OnTrueAndUpdate(loops,evaluateTripleLoop,updateTripleLoop,tripleLoopInfo(m_uncut,arrayLength(mT_uncut),mapIndices,map));
           else
             loops := List.filterOnFalse(loops,listEmpty);
             loops := List.filter1OnTrue(loops,evaluateLoop,(m_uncut,mT_uncut,eqCrossLst));
@@ -586,82 +588,79 @@ protected function removeEqualPaths
   input output list<list<Integer>> uniquePaths;
   input output list<Integer> mapIndices;
   input output BackendDAE.AdjacencyMatrix map;
-  input output list<Integer> accCrossNodes = {};
+  output list<Integer> accCrossNodes = {};
+protected
+  UnorderedMap<IntList, Integer> groups;
+  array<Integer> groupOf = arrayCreate(arrayLength(minAdj), 0);
+  array<Boolean> merged = arrayCreate(arrayLength(minAdj), false), collected = arrayCreate(arrayLength(minAdj), false);
+  Integer cn1, numGroups = 0, numMerged = 0;
+  list<Integer> row, nodes = crossNodes, rest, assigned, unassigned;
 algorithm
-  (minAdj,uniquePaths,mapIndices,map,accCrossNodes) := match crossNodes
-    local
-      Integer cn1;
-      list<Integer> rest, assigned = {}, unassigned = {};
-    case cn1::rest algorithm
-      if not listMember(cn1, accCrossNodes) then
-        accCrossNodes:=cn1::accCrossNodes;
-      end if;
-      for cn2 in rest loop
-        if HpcOmTaskGraph.equalLists(arrayGet(minAdj,cn1),arrayGet(minAdj,cn2)) then
-          assigned := cn2::assigned;
-          arrayUpdate(minAdj,cn2,{});
-          uniquePaths := removeNode(cn2,uniquePaths);
-        else
-          unassigned := cn2::unassigned;
-          if not listMember(cn2, accCrossNodes) then
-            accCrossNodes := cn2::accCrossNodes;
-          end if;
+  groups := UnorderedMap.new<Integer>(hashIntList, HpcOmTaskGraph.equalLists);
+  for node in crossNodes loop
+    row := arrayGet(minAdj, node);
+    if not UnorderedMap.contains(row, groups) then
+      numGroups := numGroups + 1;
+      UnorderedMap.add(row, numGroups, groups);
+    end if;
+    arrayUpdate(groupOf, node, UnorderedMap.getOrFail(row, groups));
+  end for;
+  while not listEmpty(nodes) loop
+    cn1 :: rest := nodes;
+    if not collected[cn1] then
+      arrayUpdate(collected, cn1, true);
+      accCrossNodes := cn1 :: accCrossNodes;
+    end if;
+    assigned := {};
+    unassigned := {};
+    for cn2 in rest loop
+      if groupOf[cn2] == groupOf[cn1] then
+        assigned := cn2 :: assigned;
+        arrayUpdate(minAdj, cn2, {});
+        arrayUpdate(merged, cn2, true);
+        numMerged := numMerged + 1;
+      else
+        unassigned := cn2 :: unassigned;
+        if not collected[cn2] then
+          arrayUpdate(collected, cn2, true);
+          accCrossNodes := cn2 :: accCrossNodes;
         end if;
-      end for;
-      if not listEmpty(assigned) then
-         mapIndices := cn1::mapIndices;
-         map := Array.appendToElement(cn1, assigned, map);
       end if;
-      then removeEqualPaths(unassigned,minAdj,uniquePaths,mapIndices,map,accCrossNodes);
-    else (minAdj,uniquePaths,mapIndices,map,accCrossNodes);
-  end match;
+    end for;
+    if not listEmpty(assigned) then
+      mapIndices := cn1 :: mapIndices;
+      map := Array.appendToElement(cn1, assigned, map);
+    end if;
+    nodes := unassigned;
+  end while;
+  uniquePaths := list(path for path guard not pathContainsMerged(path, merged) in uniquePaths);
+  // removing them one at a time reversed the list once per node
+  if intMod(numMerged, 2) == 1 then
+    uniquePaths := listReverse(uniquePaths);
+  end if;
 end removeEqualPaths;
 
-protected function removeNode
-  "author: kabdelhak FHB 2019-06
-  Helper function for findEqualPathStructure. It removes all paths containing
-  a specific node."
-  input Integer node;
-  input list<list<Integer>> inPaths;
-  input output list<list<Integer>> accPaths={};
+protected function hashIntList
+  input list<Integer> lst;
+  output Integer hash = 17;
 algorithm
-  accPaths:=match inPaths
-    local
-      list<Integer> path;
-      list<list<Integer>> rest, acc;
-    case path::rest
-      algorithm
-        if not pathContainsNode(node,path) then
-          acc := path::accPaths;
-        else
-          acc := accPaths;
-        end if;
-      then removeNode(node,rest,acc);
-    case {}
-      then accPaths;
-  end match;
-end removeNode;
+  for i in lst loop
+    hash := intMod(hash * 31 + i, 65599);
+  end for;
+end hashIntList;
 
-protected function pathContainsNode
-  "author: kabdelhak FHB 2019-06
-  Helper function for findEqualPathStructure. Returns true, if the node is contained
-  in given path."
-  input Integer node;
-  input list<Integer> inPath;
-  output Boolean c;
+protected function pathContainsMerged
+  input list<Integer> path;
+  input array<Boolean> merged;
+  output Boolean c = false;
 algorithm
-  c := match inPath
-    local
-      Integer n;
-      list<Integer> rest;
-    case n::_ guard(intEq(n,node))
-      then true;
-    case _::rest
-      then pathContainsNode(node,rest);
-    case {}
-      then false;
-  end match;
-end pathContainsNode;
+  for n in path loop
+    if n <= arrayLength(merged) and merged[n] then
+      c := true;
+      return;
+    end if;
+  end for;
+end pathContainsMerged;
 
  protected function listContains
     input list<Integer> lst;
@@ -719,46 +718,97 @@ protected function getShortPathsBetweenEqCrossNodes"find closedLoops between 2 e
 author: vwaurich TUD 12-2016"
   input list<Integer> eqCrossLstIn;
   input AvlSetInt.Tree eqCrossSet;
-  input BackendDAE.AdjacencyMatrix mIn;
-  input BackendDAE.AdjacencyMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn "rows sorted ascending";
+  input BackendDAE.AdjacencyMatrixT mTIn "rows sorted ascending";
   input list<list<Integer>> pathsIn;
   input Boolean findExactlyOneLoop;
-  output list<list<Integer>> pathsOut;
+  output list<list<Integer>> pathsOut = pathsIn;
+protected
+  Integer hub;
+  list<Integer> adjVars, adjEqs, newPath;
+  list<list<Integer>> paths;
 algorithm
-  pathsOut := match eqCrossLstIn
-    local
-      Integer crossEq, adjVar, adjEq;
-      list<Integer> rest, adjVars, newPath;
-      list<list<Integer>> paths = {};
-  case crossEq::rest
-    algorithm
-      //print("check crossEq "+intString(crossEq)+"\n");
-      adjVars := arrayGet(mIn, crossEq);
-      for adjVar in adjVars loop
-          //print("all adj eqs "+stringDelimitList(List.map(adjEqs, intString),",")+"\n");
-        //all adjEqs which are crossnodes as well
-        for adjEq in arrayGet(mTIn, adjVar) loop
-          if if adjEq > crossEq then (not AvlSetInt.hasKey(eqCrossSet, adjEq)) else true then
-            continue;
+  for crossEq in eqCrossLstIn loop
+    paths := {};
+    adjVars := arrayGet(mIn, crossEq);
+    // the row of a variable shared by most equations is not walked
+    hub := longestRow(adjVars, mTIn);
+    for adjVar in adjVars loop
+      adjEqs := if adjVar == hub then eqsSharingVia(adjVars, hub, mIn, mTIn) else arrayGet(mTIn, adjVar);
+      //all adjEqs which are crossnodes as well
+      for adjEq in adjEqs loop
+        if if adjEq > crossEq then (not AvlSetInt.hasKey(eqCrossSet, adjEq)) else true then
+          continue;
+        end if;
+        if hasSameIntSortedExcept(adjVars, arrayGet(mIn, adjEq), adjVar) then
+          newPath := adjEq::{crossEq};
+          paths := List.unionElt(newPath, paths);
+          if if findExactlyOneLoop then (not listEmpty(pathsOut)) else false then
+            fail();
           end if;
-          //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
-          if hasSameIntSortedExcept(adjVars, arrayGet(mIn, adjEq), adjVar) then
-            newPath := adjEq::{crossEq};
-            // TODO: List.unionElt is slow
-            paths := List.unionElt(newPath, paths);
-            //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
-            if if findExactlyOneLoop then (not listEmpty(pathsIn)) else false then
-              fail();
-            end if;
-          end if;
-        end for;
+        end if;
       end for;
-      paths := getShortPathsBetweenEqCrossNodes(rest, eqCrossSet, mIn, mTIn, listAppend(paths, pathsIn), findExactlyOneLoop);
-    then paths;
-  case {}
-    then pathsIn;
-  end match;
+    end for;
+    pathsOut := listAppend(paths, pathsOut);
+  end for;
 end getShortPathsBetweenEqCrossNodes;
+
+protected function longestRow "walks the rows in lockstep, so a long row costs no more than the others"
+  input list<Integer> vars;
+  input BackendDAE.AdjacencyMatrixT mT;
+  output Integer var = 0;
+protected
+  list<tuple<Integer, list<Integer>>> rows = list((v, arrayGet(mT, v)) for v in vars), left;
+  Integer v;
+  list<Integer> row;
+algorithm
+  while not listEmpty(rows) loop
+    (var, _) := listHead(rows);
+    if listEmpty(listRest(rows)) then
+      return;
+    end if;
+    left := {};
+    for r in rows loop
+      (v, row) := r;
+      if not listEmpty(row) then
+        left := (v, listRest(row)) :: left;
+      end if;
+    end for;
+    rows := listReverse(left);
+  end while;
+end longestRow;
+
+protected function eqsSharingVia "the equations containing var and another of vars, ascending like the rows of mT"
+  input list<Integer> vars;
+  input Integer var;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  output list<Integer> eqs = {};
+algorithm
+  for v in vars loop
+    if v <> var then
+      for eq in arrayGet(mT, v) loop
+        if sortedListContains(arrayGet(m, eq), var) then
+          eqs := eq :: eqs;
+        end if;
+      end for;
+    end if;
+  end for;
+  eqs := List.sortedUnique(List.sort(eqs, intGt), intEq);
+end eqsSharingVia;
+
+protected function sortedListContains
+  input list<Integer> lst "ascending";
+  input Integer x;
+  output Boolean found = false;
+algorithm
+  for i in lst loop
+    if i >= x then
+      found := i == x;
+      return;
+    end if;
+  end for;
+end sortedListContains;
 
 protected function connectsLoops "author:Waurich TUD 2014-02
   checks if the given path connects 2 closed simple Loops"
@@ -1666,34 +1716,88 @@ algorithm
   end if;
 end evaluateLoop;
 
+protected uniontype TripleLoopInfo
+  record TRIPLE_LOOP_INFO
+    BackendDAE.AdjacencyMatrix m;
+    list<Integer> mapIndices;
+    BackendDAE.AdjacencyMatrix map;
+    array<Integer> count "occurrences of each variable in the merged nodes' rows";
+    Integer entries, distinct, singles "of those rows";
+  end TRIPLE_LOOP_INFO;
+end TripleLoopInfo;
+
+protected function tripleLoopInfo
+  "Every triple loop is evaluated together with the rows of all merged nodes,
+   so those are counted once."
+  input BackendDAE.AdjacencyMatrix m;
+  input Integer numVars;
+  input list<Integer> mapIndices;
+  input BackendDAE.AdjacencyMatrix map;
+  output TripleLoopInfo info;
+protected
+  array<Integer> count = arrayCreate(numVars, 0);
+  Integer entries = 0, distinct = 0, singles = 0;
+algorithm
+  for i in mapIndices loop
+    for j in arrayGet(map,i) loop
+      (entries, distinct, singles) := countRow(arrayGet(m,j), count, entries, distinct, singles, 1);
+    end for;
+  end for;
+  info := TRIPLE_LOOP_INFO(m, mapIndices, map, count, entries, distinct, singles);
+end tripleLoopInfo;
+
+protected function countRow
+  input list<Integer> row;
+  input array<Integer> count;
+  input output Integer entries, distinct, singles;
+  input Integer delta "1 to add the row, -1 to remove it again";
+protected
+  Integer c;
+algorithm
+  for v in row loop
+    c := count[v] + delta;
+    arrayUpdate(count, v, c);
+    entries := entries + delta;
+    if delta > 0 then
+      if c == 1 then
+        distinct := distinct + 1;
+        singles := singles + 1;
+      elseif c == 2 then
+        singles := singles - 1;
+      end if;
+    else
+      if c == 0 then
+        distinct := distinct - 1;
+        singles := singles - 1;
+      elseif c == 1 then
+        singles := singles + 1;
+      end if;
+    end if;
+  end for;
+end countRow;
+
 protected function evaluateTripleLoop
   "author:kabdelhak FHB 2019-07
   Special case for loops containing three eqCrossNodes"
   input list<Integer> loopIn;
-  input tuple<BackendDAE.AdjacencyMatrix,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
+  input TripleLoopInfo info;
   output Boolean resolve = true;
 protected
   Boolean r1,r2;
-  Integer n,numInLoop=0,numOutLoop=0;
-  BackendDAE.AdjacencyMatrix m,map;
-  list<Integer> mapIndices,chk={},dup={};
+  Integer entries, distinct, singles, numInLoop, numOutLoop;
 algorithm
   if not intEq(Flags.getConfigInt(Flags.RESHUFFLE),3) then
-//print("loopIn "+stringDelimitList(List.map(loopIn,intString),",")+"\n");
-    (m,mapIndices,map) := tplIn;
+    (entries, distinct, singles) := (info.entries, info.distinct, info.singles);
     for j in loopIn loop
-      (n, chk, dup) := countDoubleEntriesInLst(arrayGet(m,j), chk, dup);
-      numInLoop := numInLoop+ n;
+      (entries, distinct, singles) := countRow(arrayGet(info.m,j), info.count, entries, distinct, singles, 1);
     end for;
-    for i in mapIndices loop
-      for j in arrayGet(map,i) loop
-        (n, chk, dup) := countDoubleEntriesInLst(arrayGet(m,j), chk, dup);
-        numInLoop := numInLoop + n;
-      end for;
+    for j in loopIn loop
+      countRow(arrayGet(info.m,j), info.count, 0, 0, 0, -1);
     end for;
+    numInLoop := entries - distinct;
+    numOutLoop := singles;
 
     // check if its worth to resolve the loop. Therefore compare the amount of vars in and outside the loop
-    numOutLoop := listLength(chk)-listLength(dup);
     r1 := intGe(numInLoop,numOutLoop-1) and intLe(numInLoop,10);
     r2 := intGe(numInLoop,numOutLoop-2);
     r1 := if intEq(Flags.getConfigInt(Flags.RESHUFFLE),1) then r1 else false;
@@ -1705,14 +1809,10 @@ protected function updateTripleLoop
   "author:kabdelhak FHB 2019-07
   Update function for special case including for loops containing three eqCrossNodes"
   input output list<Integer> loopFull;
-  input tuple<BackendDAE.AdjacencyMatrix,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
-protected
-  BackendDAE.AdjacencyMatrix map;
-  list<Integer> mapIndices;
+  input TripleLoopInfo info;
 algorithm
-  (_,mapIndices,map) := tplIn;
-  for i in mapIndices loop
-    loopFull := listAppend(arrayGet(map,i),loopFull);
+  for i in info.mapIndices loop
+    loopFull := listAppend(arrayGet(info.map,i),loopFull);
   end for;
 end updateTripleLoop;
 

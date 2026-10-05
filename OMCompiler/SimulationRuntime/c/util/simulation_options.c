@@ -205,7 +205,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DELTA_X_SOLVER */               "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
   /* FLAG_EMBEDDED_SERVER */              "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMBEDDED_SERVER_PORT */         "[int (default 4841)] value specifies the port number used by the embedded server",
-  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header after emitting every N time-points (default disabled)",
+  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header (flushes a record batch of an arrow file) after emitting every N time-points (default disabled)",
   /* FLAG_EMIT_PROTECTED */               "emits protected variables to the result-file",
   /* FLAG_DATA_RECONCILE_Eps */           "value specifies the number of convergence iteration to be performed for DataReconciliation",
   /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",
@@ -354,7 +354,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
 const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "unknown",
   /* FLAG_ABORT_SLOW */
-  "  Aborts if the simulation chatters.",
+  "  Aborts if the simulation chatters: 1000 state events in a row within 1e-6 times\n"
+  "  the simulation interval, or 100 within 1e-9 times it, and within the step size.",
   /* FLAG_ALARM */
   "  Aborts after the given number of seconds (default=0 disables the alarm).",
   /* FLAG_CLOCK */
@@ -491,7 +492,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Select the calculation method for Jacobian used by the integration method:\n",
   /* FLAG_JACOBIAN_NOMINAL_FACTOR */
   "  The numerical Jacobian differences column i over\n"
-  "    delta_h * max(|x[i]|, |h*x'[i]|)\n"
+  "\n"
+  "    ``delta_h * max(|x[i]|, |h*x'[i]|)``\n"
+  "\n"
   "  and, where that is inside the variable's own absolute tolerance and so is\n"
   "  no scale of its own, over delta_h*factor*nominal[i] instead.\n"
   "  Lower the factor for a model that is non-smooth at that wider step;\n"
@@ -656,7 +659,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_SR_CTRL_FILTER */
   "  Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.",
   /* FLAG_SR_CTRL_FHR */
-  "  Applies adaptive damping to the step size factor using Führer’s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.",
+  "  Applies adaptive damping to the step size factor using Führer’s approach, scaling it by ``h_fac *= (h_n / h_n1)^gamma`` to penalize repeated rejections or reward successful step acceptance.",
   /* FLAG_SR_ERR */
   "  Error estimation method for solver gbode (single-rate, slow states integrator)\n"
   "  Possible values:\n\n"
@@ -712,7 +715,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_STEADY_STATE */
   "  Aborts the simulation if steady state is reached.",
   /* FLAG_STEADY_STATE_TOL */
-  "  This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol",
+  "  This relative tolerance is used to detect steady state: ``max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol``",
   /* FLAG_STEP_SIZE */
   "  Sets stepSize for the simulation.",
   /* FLAG_STOP_AT_SYSTEM */

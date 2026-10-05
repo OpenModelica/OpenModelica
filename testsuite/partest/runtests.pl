@@ -18,9 +18,6 @@
 #
 # NOTE: This script has been tested on Linux, Windows and OSX so far, and will
 #       probably work on all other platforms.
-#
-# TODO: MetaModelicaDev in meta is not run yet, since those tests are organized
-#       a bit differently.
 
 use strict;
 use warnings;
@@ -86,11 +83,11 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm disabled);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow nativeSharedLib smoke disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
-  cppmsl       => 0,  # simulation/libraries/msl32_cpp; slow, so opt-in.
+  cppmsl       => 0,  # simulation/libraries/msl41_cpp; slow, so opt-in.
   tearing      => 1,  # */tearing/*
   hpcom        => 1,  # */hpcom/*
   metamodelica => 1,  # Needs MetaModelica code generation, i.e. the C runtime.
@@ -105,33 +102,59 @@ my %suite_enabled = (
                       # where that target exists: the Rust omc, which JIT-compiles
                       # the model in-process. The C omc's CodegenWasmJit is a stub
                       # that fails, so the suite is opt-in rather than off-by-build.
+  hdf5         => 0,  # Needs ModelicaMatIO built with HAVE_HDF5, i.e. MAT v7.3.
+                      # Only the CMake build provides HDF5 (OM_ENABLE_HDF5, Linux
+                      # for now); the autotools one never defines it, so this is
+                      # opt-in like wasm rather than off-by-build.
+  arrow        => 1,  # Needs the Rust result library libomc_result, which reads
+                      # and writes the arrow format.
+  nativeSharedLib => 1, # Links the model against a native shared library the test
+                      # builds; a wasm target only loads prebuilt wasm modules.
+  smoke       => 1,  # Also run on their own, where the whole testsuite is too
+                      # slow: testsuite/runWindowsTests.sh.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that
   # fail, hang or eat the machine, so they are opt-in and rtest skips them too
   # unless RTEST_RUN_DISABLED is set below.
   disabled     => 0,
 );
+my %suite_default = %suite_enabled;
+
+# The suite configuration the partitioning is computed over, see -partition-suites.
+my $partition_suites;
+my %partition_base;
+my %partition_shared;
 
 sub set_suites {
-  for my $spec (split(/[,\s]+/, shift)) {
+  my $spec_list = shift;
+  my $enabled = shift // \%suite_enabled;
+
+  for my $spec (split(/[,\s]+/, $spec_list)) {
     next if $spec eq "";
     my ($sign, $name) = $spec =~ /^([-+]?)(.*)$/;
 
-    if (!exists $suite_enabled{$name}) {
+    if (!exists $enabled->{$name}) {
       print STDERR "Unknown test suite '$name'. Known suites: " .
-                   join(" ", sort keys %suite_enabled) . "\n";
+                   join(" ", sort keys %$enabled) . "\n";
       exit 1;
     }
 
-    $suite_enabled{$name} = $sign eq "-" ? 0 : 1;
+    $enabled->{$name} = $sign eq "-" ? 0 : 1;
   }
+}
+
+# A test belongs to a configuration if its category and all its tags are enabled there.
+sub suites_selected {
+  my ($cat, $suites, $enabled) = @_;
+  return 0 unless $enabled->{$cat};
+  return !grep { !$enabled->{$_} } @$suites;
 }
 
 # The category suite a test directory belongs to.
 sub dir_suite {
   my $dir = shift;
 
-  return "cppmsl"  if $dir =~ m"/simulation/libraries/msl32_cpp\b";
+  return "cppmsl"  if $dir =~ m"/simulation/libraries/msl41_cpp\b";
   return "cpp"     if $dir =~ m"/cppruntime\b";
   return "hpcom"   if $dir =~ m"/hpcom\b";
   return "tearing" if $dir =~ m"/tearing\b";
@@ -182,6 +205,8 @@ for(@ARGV){
     print("  -omcflags=F    Extra flags passed to omc for every test (via RTEST_OMCFLAGS).\n");
     print("  -simCodeTarget=T Override simCodeTarget for every simulation test, e.g. wasm-jit.\n");
     print("  -partition=M/N M=1..N, partition the tests into N equal shares and run only the Mth partition.\n");
+    print("  -partition-suites=LIST  Partition only the tests this suite configuration selects;\n");
+    print("                 anything -suites= adds on top of it runs in every partition.\n");
     print("  -printtests    Don't run the test; only print them.\n");
     print("  -with-xml      Output XML log.\n");
     print("  -with-txt      Output TXT log.\n");
@@ -233,6 +258,9 @@ for(@ARGV){
   elsif(/^-printtests$/) {
     $print_tests = 1;
   }
+  elsif(/^-partition-suites=(.*)$/) {
+    $partition_suites = $1;
+  }
   elsif(/^-partition=([0-9]+)\/([0-9]+)$/) {
     $partition = $1;
     $partitionmodulo = $2;
@@ -275,6 +303,14 @@ for(@ARGV){
   }
 }
 
+# -file= is an explicit list of tests, not a suite selection: nothing to share out.
+undef $partition_suites if defined $file;
+
+if (defined $partition_suites) {
+  %partition_base = %suite_default;
+  set_suites($partition_suites, \%partition_base);
+}
+
 # rtest skips a test tagged '// suite: disabled' on its own, so tell it when the
 # run does want them. Needed for -failing and for -file= lists of failing tests,
 # where the suite filtering below does not apply.
@@ -292,6 +328,7 @@ if ($use_db) {
 }
 
 my @test_list;
+my %test_category; # test file -> the category suite of the directory it lives in
 my $test_queue = Thread::Queue->new();
 my $tests_failed :shared = 0;
 my @failed_tests :shared;
@@ -377,12 +414,12 @@ sub parse_testfiles {
 sub add_tests {
   my @tests = split(/\s|=|\\/, shift);
   my $path = shift;
-
-  return unless $suite_enabled{dir_suite($path)};
+  my $cat = dir_suite($path);
 
   @tests = grep(/\.mo|\.mof|\.mos/, @tests);
   @tests = map { $_ = ("$path/$_" =~ s/\/\//\//rg) } @tests;
 
+  $test_category{$_} = $cat for @tests;
   push @test_list, @tests;
 }
 
@@ -432,25 +469,47 @@ if (!defined($file)) {
   } else {
     read_makefile(".", "FAILINGTESTFILES|WRONGRESULTTEST|NOTCOMPILETEST|NOTSIMULATETEST");
   }
-  # Categories were filtered while parsing the makefiles; tags need the test
-  # files. Not done for -file=: an explicit list of tests is not a selection.
+  # Categories come from the directory, tags from the test file itself. Not done
+  # for -file=: an explicit list of tests is not a selection.
   my @unmarked;
-  @test_list = grep {
-    my @suites = test_suites($_);
+  my @selected;
+  my @outside_run;
+  for my $test (@test_list) {
+    my $cat = $test_category{$test};
+    next unless $suite_enabled{$cat} or (defined $partition_suites and $partition_base{$cat});
+
+    my @suites = test_suites($test);
     my $disabled = grep { $_ eq "disabled" } @suites;
     if ($run_failing) {
       # A test in one of the failing lists that forgot the tag; rtest would run
       # it as an ordinary test, which is what the tag is there to prevent.
-      push @unmarked, $_ unless $disabled;
+      push @unmarked, $test unless $disabled;
     } elsif ($disabled) {
       # The other way around: the test is in TESTFILES, so it is part of the
       # testsuite, but the tag would silently deselect it from every run.
-      print STDERR "$_: listed in TESTFILES but marked '// suite: disabled'; " .
+      print STDERR "$test: listed in TESTFILES but marked '// suite: disabled'; " .
                    "remove the marking or move the test to FAILINGTESTFILES\n";
       exit 1;
     }
-    !grep { !$suite_enabled{$_} } @suites;
-  } @test_list;
+
+    my $in_run = suites_selected($cat, \@suites, \%suite_enabled);
+    my $in_base = defined $partition_suites
+                  && suites_selected($cat, \@suites, \%partition_base);
+    # A test the baseline selects but this run does not takes an index here that
+    # no partition hands out, so it would drop out of all of them.
+    push @outside_run, $test if $in_base and !$in_run;
+
+    next unless $in_run;
+    push @selected, $test;
+    $partition_shared{$test} = 1 if $in_base;
+  }
+  @test_list = @selected;
+  if (@outside_run) {
+    print STDERR "-partition-suites=$partition_suites selects tests this run does not:\n";
+    print STDERR "  $_\n" for @outside_run;
+    print STDERR "It has to be a subset of the suites the run itself enables.\n";
+    exit 1;
+  }
   if (@unmarked) {
     print STDERR "Warning: not marked '// suite: disabled' in their header:\n";
     print STDERR "  $_\n" for @unmarked;
@@ -474,6 +533,12 @@ if ($partitionmodulo > 1) {
   my @partitioned_list;
   my $i = 0;
   foreach my $test (@test_list) {
+    # Its suites are enabled only here, so no other partition can run it: give it
+    # to this one without letting it shift the shared tests' indices.
+    if (defined $partition_suites and !$partition_shared{$test}) {
+      push(@partitioned_list,$test);
+      next;
+    }
     if (($partition-1) == ($i % $partitionmodulo)) {
       push(@partitioned_list,$test);
     }
@@ -529,9 +594,6 @@ if ($check_proc_cpu) {
     }
   }
 }
-# Make sure that omc-diff is generated before trying to run any tests.
-system("make --quiet -j$thread_count omc-diff ReferenceFiles > /dev/null 2>&1");
-
 # I really don't think this is needed anymore!
 # symlink('../Compiler', 'Compiler');
 

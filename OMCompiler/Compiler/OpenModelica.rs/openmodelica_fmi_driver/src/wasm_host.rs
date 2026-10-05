@@ -45,6 +45,7 @@ struct DoStepOut {
     event_handling_needed: u32,
     terminate: u32,
     early_return: u32,
+    discarded: u32,
     last_successful_time: f64,
 }
 
@@ -62,6 +63,8 @@ unsafe extern "C" {
     ) -> i32;
     fn fmu_exit_initialization_mode() -> i32;
     fn fmu_enter_event_mode() -> i32;
+    fn fmu_enter_configuration_mode() -> i32;
+    fn fmu_exit_configuration_mode() -> i32;
     fn fmu_enter_continuous_time_mode() -> i32;
     fn fmu_enter_step_mode() -> i32;
     fn fmu_terminate() -> i32;
@@ -180,6 +183,14 @@ impl Fmi3 for HostFmu {
 
     fn enter_event_mode(&mut self) -> Result<()> {
         check_host("fmi3EnterEventMode", unsafe { fmu_enter_event_mode() })
+    }
+
+    fn enter_configuration_mode(&mut self) -> Result<()> {
+        check_host("fmi3EnterConfigurationMode", unsafe { fmu_enter_configuration_mode() })
+    }
+
+    fn exit_configuration_mode(&mut self) -> Result<()> {
+        check_host("fmi3ExitConfigurationMode", unsafe { fmu_exit_configuration_mode() })
     }
 
     fn update_discrete_states(&mut self) -> Result<DiscreteStates> {
@@ -343,6 +354,7 @@ impl Fmi3CoSimulation for HostFmu {
             terminate: out.terminate != 0,
             early_return: out.early_return != 0,
             last_successful_time: out.last_successful_time,
+            discarded: out.discarded != 0,
         })
     }
 }

@@ -5,7 +5,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 
 loadString("
 package ExternalRecord
@@ -45,11 +45,12 @@ val(r2.b, 0);
 // true
 // ""
 // true
-// ""
+// "[<interactive>:7:3-16:8:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
 // record SimulationResult
-// resultFile = "ExternalRecord.Test_res.mat",
-// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalRecord.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-// messages = ""
+//     resultFile = "ExternalRecord.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalRecord.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
 // end SimulationResult;
 // ""
 // 1.0

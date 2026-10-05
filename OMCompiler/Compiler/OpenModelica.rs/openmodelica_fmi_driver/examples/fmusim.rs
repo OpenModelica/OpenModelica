@@ -2,7 +2,8 @@
 //! the masters, natively.
 //!
 //! Options: `--me`/`--cs`, `--start`, `--stop`, `--step`, `--tolerance`,
-//! `--solver <name>` (`Solver::all`), `--input vr=expr`, `--parameter vr=value`,
+//! `--solver <name>` (`Solver::all`), `--input vr=expr`, `--parameter vr=value`
+//! (an array takes one expression or value per element, comma separated),
 //! `--output file.mat`, `--csv` (the trajectory on stdout), `--log`,
 //! `--difference-jacobian` (ignore what the FMU offers).
 
@@ -31,7 +32,7 @@ struct Args {
     output: Option<PathBuf>,
     csv: bool,
     inputs: Vec<(u32, String)>,
-    parameters: Vec<(u32, f64)>,
+    parameters: Vec<(u32, Vec<f64>)>,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -78,7 +79,11 @@ fn parse_args() -> Result<Args, String> {
                 if arg == "--input" {
                     a.inputs.push((vr, rest.to_string()));
                 } else {
-                    a.parameters.push((vr, rest.trim().parse().map_err(|_| "bad parameter value")?));
+                    let values: Result<Vec<f64>, _> = rest
+                        .split(',')
+                        .map(|v| v.trim().parse::<f64>().map_err(|_| "bad parameter value"))
+                        .collect();
+                    a.parameters.push((vr, values?));
                 }
             }
             _ if arg.starts_with("--") => return Err(format!("unknown option {arg}")),
@@ -112,14 +117,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         opts.inputs.push(Input {
             value_reference: *vr,
             ty: v.ty,
-            value: expr::Expr::parse(text)?,
+            values: expr::Expr::parse_list(text)?,
         });
     }
-    for (vr, value) in &args.parameters {
+    for (vr, values) in &args.parameters {
         let v = md
             .variable_by_vr(*vr)
             .ok_or_else(|| format!("no variable has value reference {vr}"))?;
-        opts.parameters.push(Parameter { value_reference: *vr, ty: v.ty, value: *value });
+        opts.parameters.push(Parameter { value_reference: *vr, ty: v.ty, values: values.clone() });
     }
 
     // The FMU is unpacked next to itself; a native binary has to exist on disk
@@ -193,7 +198,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let output = args
         .output
         .unwrap_or_else(|| PathBuf::from(format!("{}_res.mat", md.model_name)));
-    rec.write_mat(&output, opts.start_time, opts.stop_time)?;
+    rec.write(&output, opts.start_time, opts.stop_time, &md.units)?;
     println!("wrote {}", output.display());
     for (i, c) in rec.columns.iter().enumerate() {
         let last = rec.values(i).last().unwrap_or(f64::NAN);

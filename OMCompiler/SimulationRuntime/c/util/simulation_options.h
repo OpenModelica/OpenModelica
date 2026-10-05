@@ -29,6 +29,7 @@
 
 #ifndef OPENMODELICA_SIMULATION_OPTIONS_H
 #define OPENMODELICA_SIMULATION_OPTIONS_H
+#include "../omc_dll.h"
 
 #if defined(__cplusplus)
   extern "C" {
@@ -224,11 +225,11 @@ typedef enum {
   FLAG_REPEAT_POLICY_COMBINE
 } flag_repeat_policy;
 
-extern const char *FLAG_NAME[FLAG_MAX+1];
-extern const char *FLAG_DESC[FLAG_MAX+1];
-extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
-extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
-extern const int FLAG_TYPE[FLAG_MAX];
+DLLDataDirection extern const char *FLAG_NAME[FLAG_MAX+1];
+DLLDataDirection extern const char *FLAG_DESC[FLAG_MAX+1];
+DLLDataDirection extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
+DLLDataDirection extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
+DLLDataDirection extern const int FLAG_TYPE[FLAG_MAX];
 
 enum GB_METHOD {
   GB_UNKNOWN = 0,
@@ -299,8 +300,8 @@ enum GB_METHOD {
   RK_MAX
 };
 
-extern const char *GB_METHOD_NAME[RK_MAX];
-extern const char *GB_METHOD_DESC[RK_MAX];
+DLLDataDirection extern const char *GB_METHOD_NAME[RK_MAX];
+DLLDataDirection extern const char *GB_METHOD_DESC[RK_MAX];
 
 enum GB_NLS_METHOD {
   GB_NLS_UNKNOWN = 0,
@@ -313,8 +314,8 @@ enum GB_NLS_METHOD {
   GB_NLS_MAX
 };
 
-extern const char *GB_NLS_METHOD_NAME[GB_NLS_MAX];
-extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
+DLLDataDirection extern const char *GB_NLS_METHOD_NAME[GB_NLS_MAX];
+DLLDataDirection extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
 
 /**
  * @brief Step size controller method
@@ -340,8 +341,8 @@ enum GB_CTRL_METHOD {
   GB_CTRL_MAX
 };
 
-extern const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX];
-extern const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX];
+DLLDataDirection extern const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX];
+DLLDataDirection extern const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX];
 
 enum GB_INTERPOL_METHOD {
   GB_INTERPOL_UNKNOWN = 0,      /* Unknown interpolation method */
@@ -356,8 +357,8 @@ enum GB_INTERPOL_METHOD {
   GB_INTERPOL_MAX
 };
 
-extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
-extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
+DLLDataDirection extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
+DLLDataDirection extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
 
 /**
  * @brief Method for single-rate / multi-rate error estimation.
@@ -375,8 +376,8 @@ enum GB_ERROR_METHOD {
   GB_ERROR_MAX
 };
 
-extern const char *GB_ERROR_METHOD_NAME[GB_ERROR_MAX];
-extern const char *GB_ERROR_METHOD_DESC[GB_ERROR_MAX];
+DLLDataDirection extern const char *GB_ERROR_METHOD_NAME[GB_ERROR_MAX];
+DLLDataDirection extern const char *GB_ERROR_METHOD_DESC[GB_ERROR_MAX];
 
 enum SOLVER_METHOD
 {
@@ -396,8 +397,8 @@ enum SOLVER_METHOD
   S_MAX
 };
 
-extern const char *SOLVER_METHOD_NAME[S_MAX];
-extern const char *SOLVER_METHOD_DESC[S_MAX];
+DLLDataDirection extern const char *SOLVER_METHOD_NAME[S_MAX];
+DLLDataDirection extern const char *SOLVER_METHOD_DESC[S_MAX];
 
 enum INIT_INIT_METHOD
 {
@@ -407,8 +408,8 @@ enum INIT_INIT_METHOD
   IIM_MAX
 };
 
-extern const char *INIT_METHOD_NAME[IIM_MAX];
-extern const char *INIT_METHOD_DESC[IIM_MAX];
+DLLDataDirection extern const char *INIT_METHOD_NAME[IIM_MAX];
+DLLDataDirection extern const char *INIT_METHOD_DESC[IIM_MAX];
 
 typedef enum LINEAR_SOLVER
 {
@@ -428,8 +429,8 @@ typedef enum LINEAR_SOLVER
   LS_MAX
 } LINEAR_SOLVER;
 
-extern const char *LS_NAME[LS_MAX];
-extern const char *LS_DESC[LS_MAX];
+DLLDataDirection extern const char *LS_NAME[LS_MAX];
+DLLDataDirection extern const char *LS_DESC[LS_MAX];
 
 typedef enum LINEAR_SPARSE_SOLVER
 {
@@ -446,8 +447,8 @@ typedef enum LINEAR_SPARSE_SOLVER
   LSS_MAX
 } LINEAR_SPARSE_SOLVER;
 
-extern const char *LSS_NAME[LSS_MAX];
-extern const char *LSS_DESC[LSS_MAX];
+DLLDataDirection extern const char *LSS_NAME[LSS_MAX];
+DLLDataDirection extern const char *LSS_DESC[LSS_MAX];
 
 typedef enum NONLINEAR_SOLVER
 {
@@ -471,8 +472,8 @@ typedef enum NONLINEAR_SOLVER
   NLS_MAX
 } NONLINEAR_SOLVER;
 
-extern const char *NLS_NAME[NLS_MAX];
-extern const char *NLS_DESC[NLS_MAX];
+DLLDataDirection extern const char *NLS_NAME[NLS_MAX];
+DLLDataDirection extern const char *NLS_DESC[NLS_MAX];
 
 typedef enum NEWTON_STRATEGY
 {
@@ -487,8 +488,8 @@ typedef enum NEWTON_STRATEGY
   NEWTON_MAX
 } NEWTON_STRATEGY;
 
-extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
-extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];
+DLLDataDirection extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
+DLLDataDirection extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];
 
 typedef enum JACOBIAN_METHOD
 {
@@ -505,8 +506,8 @@ typedef enum JACOBIAN_METHOD
   JAC_MAX
 } JACOBIAN_METHOD;
 
-extern const char *JACOBIAN_METHOD_NAME[JAC_MAX];
-extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
+DLLDataDirection extern const char *JACOBIAN_METHOD_NAME[JAC_MAX];
+DLLDataDirection extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
 
 /**
  * @brief Linear system solver method
@@ -526,8 +527,8 @@ enum IDA_LS
   IDA_LS_MAX        /* Maximum number of methods available. Not a method itself! */
 };
 
-extern const char *IDA_LS_METHOD_NAME[IDA_LS_MAX];
-extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
+DLLDataDirection extern const char *IDA_LS_METHOD_NAME[IDA_LS_MAX];
+DLLDataDirection extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
 
 /**
  * @brief Type of non-linear solver method
@@ -547,8 +548,8 @@ typedef enum NLS_LS
   NLS_LS_MAX
 } NLS_LS;
 
-extern const char *NLS_LS_METHOD_NAME[NLS_LS_MAX];
-extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
+DLLDataDirection extern const char *NLS_LS_METHOD_NAME[NLS_LS_MAX];
+DLLDataDirection extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
 
 /**
  * @brief Solver method for linear systems
@@ -565,8 +566,8 @@ enum IMPRK_LS
   IMPRK_LS_MAX
 };
 
-extern const char *IMPRK_LS_METHOD_NAME[IMPRK_LS_MAX];
-extern const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX];
+DLLDataDirection extern const char *IMPRK_LS_METHOD_NAME[IMPRK_LS_MAX];
+DLLDataDirection extern const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX];
 
 enum HOMOTOPY_BACKTRACE_STRATEGY
 {
@@ -578,8 +579,8 @@ enum HOMOTOPY_BACKTRACE_STRATEGY
   HOM_BACK_STRAT_MAX
 };
 
-extern const char *HOM_BACK_STRAT_NAME[HOM_BACK_STRAT_MAX];
-extern const char *HOM_BACK_STRAT_DESC[HOM_BACK_STRAT_MAX];
+DLLDataDirection extern const char *HOM_BACK_STRAT_NAME[HOM_BACK_STRAT_MAX];
+DLLDataDirection extern const char *HOM_BACK_STRAT_DESC[HOM_BACK_STRAT_MAX];
 
 enum FMU_FLAG
 {
@@ -592,7 +593,7 @@ enum FMU_FLAG
 };
 
 /* Flag mapping to use the same descriptions and names for FMU.*/
-extern const int FMU_FLAG_MAP[FMU_FLAG_MAX];
+DLLDataDirection extern const int FMU_FLAG_MAP[FMU_FLAG_MAX];
 
 #if defined(__cplusplus)
   }

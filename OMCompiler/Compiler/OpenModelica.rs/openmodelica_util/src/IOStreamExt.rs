@@ -12,7 +12,6 @@
 
 #![allow(non_snake_case)]
 
-use std::sync::Arc;
 
 use metamodelica::Result;
 use arcstr::ArcStr;
@@ -83,7 +82,7 @@ pub fn printBuffer(_bufferID: i32, _whereToPrint: i32) -> Result<()> {
 /// Concatenate a *reversed* list of strings: the IOStream LIST() backend
 /// conses new chunks onto the head, so the last list element is the first
 /// chunk of the output.
-pub fn appendReversedList(inStringLst: Arc<List<ArcStr>>) -> ArcStr {
+pub fn appendReversedList(inStringLst: List<ArcStr>) -> ArcStr {
     let chunks: Vec<&ArcStr> = (&*inStringLst).into_iter().collect();
     let total: usize = chunks.iter().map(|s| s.len()).sum();
     let mut out = String::with_capacity(total);
@@ -95,7 +94,7 @@ pub fn appendReversedList(inStringLst: Arc<List<ArcStr>>) -> ArcStr {
 
 /// Print a *reversed* list of strings to stdout (`whereToPrint` = 1) or
 /// stderr (= 2); any other destination fails like the C version.
-pub fn printReversedList(inStringLst: Arc<List<ArcStr>>, whereToPrint: i32) -> Result<()> {
+pub fn printReversedList(inStringLst: List<ArcStr>, whereToPrint: i32) -> Result<()> {
     use std::io::Write;
     let chunks: Vec<&ArcStr> = (&*inStringLst).into_iter().collect();
     match whereToPrint {

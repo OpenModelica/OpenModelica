@@ -1,39 +1,29 @@
-//! Size the JIT linear-memory reservation to the `RLIMIT_AS` budget.
+//! wasmtime's default reservation stands: 4 GiB per 32-bit memory plus 2 GiB for
+//! growth, which a `ulimit -v` counts and a session needs twice over. Sizing it
+//! to the limit instead would cost the simulations their reservation, and the
+//! reservation is a tunable a precompiled artifact is validated against
+//! (`sim_runtime_wasmtime::aot_cache_key`) -- a process that picked its own value
+//! could not use what any other one compiled.
 
-const FAST_PATH_MIN_AS: u64 = 8 * 1024 * 1024 * 1024;
-const CONSTRAINED_MIB: u64 = 256;
+const MIB: u64 = 1 << 20;
+const GROWTH_CAP: u64 = 2048 * MIB;
 
-fn reservation_bytes() -> Option<u64> {
-    if let Ok(s) = std::env::var("OMC_WASM_MEMORY_RESERVATION_MB") {
-        if let Ok(mb) = s.trim().parse::<u64>() {
-            return Some(mb * 1024 * 1024);
-        }
-    }
-    match address_space_limit() {
-        Some(limit) if limit < FAST_PATH_MIN_AS => Some(CONSTRAINED_MIB * 1024 * 1024),
-        _ => None,
-    }
-}
+/// The GC heap holds only exception objects; left to default it would reserve
+/// another 4 GiB + guard per store, like a linear memory.
+const GC_HEAP_RESERVATION: u64 = 16 * MIB;
 
-#[cfg(target_os = "linux")]
-fn address_space_limit() -> Option<u64> {
-    unsafe {
-        let mut rl: libc::rlimit = std::mem::zeroed();
-        if libc::getrlimit(libc::RLIMIT_AS, &mut rl) == 0 && rl.rlim_cur != libc::RLIM_INFINITY {
-            return Some(rl.rlim_cur as u64);
-        }
-    }
-    None
-}
-
-#[cfg(not(target_os = "linux"))]
-fn address_space_limit() -> Option<u64> {
-    None
-}
-
-/// `memory_may_move` (default on) lets a memory outgrow the reservation.
+/// A run that sets `OMC_WASM_MEMORY_RESERVATION_MB` compiles its own artifacts.
 pub fn tune_memory(cfg: &mut wasmtime::Config) {
-    if let Some(bytes) = reservation_bytes() {
-        cfg.memory_reservation(bytes);
-    }
+    cfg.gc_heap_reservation(GC_HEAP_RESERVATION);
+    cfg.gc_heap_reservation_for_growth(GC_HEAP_RESERVATION);
+    cfg.gc_heap_guard_size(0);
+    cfg.gc_heap_may_move(true);
+    let Some(mb) = std::env::var("OMC_WASM_MEMORY_RESERVATION_MB")
+        .ok()
+        .and_then(|s| s.trim().parse::<u64>().ok())
+    else {
+        return;
+    };
+    cfg.memory_reservation(mb * MIB);
+    cfg.memory_reservation_for_growth((mb * MIB).min(GROWTH_CAP));
 }

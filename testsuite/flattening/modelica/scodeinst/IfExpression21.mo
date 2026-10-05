@@ -27,7 +27,7 @@ end IfExpression21;
 //   input Integer N;
 //   output Real[N] vec;
 // algorithm
-//   vec := if N == 1 then {x1} else array(x1 + (x2 - x1) * /*Real*/(i - 1) / /*Real*/(N - 1) for i in 1:N);
+//   vec := if N == 1 then {x1} else array(x1 + (x2 - x1) * (/*Real*/(i) - 1.0) / (/*Real*/(N) - 1.0) for i in 1:N);
 // end linspaceExt;
 //
 // class IfExpression21

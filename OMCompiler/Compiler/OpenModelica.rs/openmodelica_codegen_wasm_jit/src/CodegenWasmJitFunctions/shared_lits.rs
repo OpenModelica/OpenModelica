@@ -10,8 +10,8 @@
 // copies it (`value_rhs_is_fresh`).
 
 use std::cell::{Cell, RefCell};
-use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
+use std::collections::BTreeMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 
 use metamodelica::Result;
 use openmodelica_frontend_types::DAE;
@@ -22,10 +22,10 @@ use super::{FnCtx, FnInfo, WTy, compile_exp, exp_sigty, rt_index};
 struct LitPool {
     /// Global slots in order: entry `i` lives in `base_global + i`. `None` is a
     /// mutable flag `start` leaves at 0, not a literal.
-    slots: Vec<Option<Arc<DAE::Exp>>>,
+    slots: Vec<Option<metamodelica::Ref<DAE::Exp>>>,
     /// Ordered, not hashed: `MetaCmp` gives every `Exp` `Ord` (with an `Arc::ptr_eq`
     /// fast path), while `Hash` is only derived for the ones holding no array.
-    by_exp: BTreeMap<Arc<DAE::Exp>, u32>,
+    by_exp: BTreeMap<metamodelica::Ref<DAE::Exp>, u32>,
     base_global: u32,
 }
 
@@ -46,7 +46,7 @@ pub(crate) fn begin(base_global: u32) {
 }
 
 /// The global slots, in order, once every body is lowered.
-pub(crate) fn take() -> Vec<Option<Arc<DAE::Exp>>> {
+pub(crate) fn take() -> Vec<Option<metamodelica::Ref<DAE::Exp>>> {
     POOL.with(|p| core::mem::take(&mut p.borrow_mut().slots))
 }
 
@@ -80,46 +80,62 @@ pub(crate) fn compile(ctx: &mut FnCtx, e: &DAE::Exp) -> Result<Option<WTy>> {
     Ok(Some(WTy::I32))
 }
 
-/// The body the module's `start` calls: build every literal into its global.
-pub(crate) fn build_init_fn(
-    slots: &[Option<Arc<DAE::Exp>>],
+/// Push the pool's own handle to `e`'s literal, without taking a reference.
+pub(crate) fn compile_borrowed(ctx: &mut FnCtx, e: &DAE::Exp) {
+    ctx.emit(we::Instruction::GlobalGet(intern(e)));
+}
+
+/// The bodies the module's `start` calls in turn: build every literal into its
+/// global. Temporaries are never reused and wasm caps a function at 50000
+/// locals, so the literals are cut into chunks.
+pub(crate) fn build_init_fns(
+    slots: &[Option<metamodelica::Ref<DAE::Exp>>],
     base_global: u32,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut super::Literals,
-) -> Result<we::Function> {
+) -> Result<Vec<we::Function>> {
     HOISTING.with(|h| h.set(false));
-    let mut ctx = FnCtx {
-        locals: HashMap::new(),
-        extra_locals: Vec::new(),
-        n_params: 0,
-        outputs: Vec::new(),
-        by_name,
-        literals,
-        instrs: Vec::new(),
-        ctrl_depth: 0,
-        loops: Vec::new(),
-        borrowed_locals: Vec::new(),
-        elem_ptr_tmp: None,
-        src_loc: None,
-        sim: None,
-        dt_local_cons: false,
-        dt_fallback: None,
-    };
-    for (i, e) in slots.iter().enumerate() {
-        let Some(e) = e else { continue };
-        if compile_exp(&mut ctx, e)? != WTy::I32 {
-            return Err("CodegenWasmJit: shared literal is not a heap value");
+    let mut fns = Vec::new();
+    let mut todo = slots.iter().enumerate().filter_map(|(i, e)| Some((i, e.as_ref()?))).peekable();
+    while todo.peek().is_some() {
+        let mut ctx = FnCtx {
+            locals: HashMap::default(),
+            extra_locals: Vec::new(),
+            n_params: 0,
+            outputs: Vec::new(),
+            by_name,
+            literals: &mut *literals,
+            instrs: Vec::new(),
+            ctrl_depth: 0,
+            loops: Vec::new(),
+            borrowed_locals: Vec::new(),
+            null_locals: Vec::new(),
+            elem_ptr_tmp: None,
+            src_loc: None,
+            sim: None,
+            dt_local_cons: false,
+            dt_fallback: None,
+            flat: HashMap::default(),
+            flat_outs: Vec::new(),
+            flat_results: false,
+        };
+        while ctx.instr_len() < 4096 {
+            let Some((i, e)) = todo.next() else { break };
+            if compile_exp(&mut ctx, e)? != WTy::I32 {
+                return Err("CodegenWasmJit: shared literal is not a heap value");
+            }
+            ctx.emit(we::Instruction::GlobalSet(base_global + i as u32));
         }
-        ctx.emit(we::Instruction::GlobalSet(base_global + i as u32));
+        ctx.emit(we::Instruction::End);
+        let FnCtx { extra_locals, instrs, .. } = ctx;
+        let mut f = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
+        for i in &instrs {
+            f.instruction(i);
+        }
+        fns.push(f);
     }
-    ctx.emit(we::Instruction::End);
     HOISTING.with(|h| h.set(true));
-    let FnCtx { extra_locals, instrs, .. } = ctx;
-    let mut f = we::Function::new(extra_locals.into_iter().map(|t| (1u32, t)));
-    for i in &instrs {
-        f.instruction(i);
-    }
-    Ok(f)
+    Ok(fns)
 }
 
 /// Intern a heap-valued constant the backend did not mark `SHARED_LITERAL`: the
@@ -131,7 +147,7 @@ pub(crate) fn intern_const(e: &DAE::Exp) -> u32 {
 fn intern(e: &DAE::Exp) -> u32 {
     POOL.with(|p| {
         let mut p = p.borrow_mut();
-        let key = Arc::new(e.clone());
+        let key = metamodelica::Ref::new(e.clone());
         if let Some(&g) = p.by_exp.get(&key) {
             return g;
         }

@@ -153,6 +153,7 @@ CevalFuncArray3.mo \
 CevalFuncArray4.mo \
 CevalFuncArray5.mo \
 CevalFuncArray6.mo \
+CevalFuncArray7.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
@@ -203,6 +204,7 @@ CevalRecord5.mo \
 CevalRecord6.mo \
 CevalRecord7.mo \
 CevalRecord8.mo \
+CevalRecord9.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray3.mo \
@@ -551,6 +553,7 @@ ForEquation4.mo \
 ForEquation5.mo \
 ForEquation6.mo \
 ForEquation7.mo \
+ForEquation8.mo \
 ForEquationEnum1.mo \
 ForEquationEnum2.mo \
 ForEquationNonParam.mo \
@@ -632,6 +635,8 @@ FuncBuiltinSqrt.mo \
 FuncBuiltinSubSample1.mo \
 FuncBuiltinSubSample2.mo \
 FuncBuiltinSum.mo \
+FuncBuiltinSum2.mo \
+FuncBuiltinSum3.mo \
 FuncBuiltinSuperSample1.mo \
 FuncBuiltinSuperSample2.mo \
 FuncBuiltinSymmetric.mo \
@@ -736,6 +741,8 @@ FunctionUnitialized1.mo \
 FunctionUnitialized2.mo \
 FunctionUnitialized3.mo \
 FunctionUnitialized4.mo \
+FunctionUnitialized5.mo \
+FunctionUnitialized6.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
@@ -775,6 +782,7 @@ IfExpression19.mo \
 IfExpression20.mo \
 IfExpression21.mo \
 IfExpression22.mo \
+IntegerArithmeticCast1.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -832,6 +840,7 @@ InnerOuter10.mo \
 InnerOuter11.mo \
 InnerOuter12.mo \
 InnerOuter13.mo \
+InnerOuter14.mo \
 InnerOuterClass1.mo \
 InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \
@@ -926,6 +935,7 @@ MultiInheritanceRedeclare2.mo \
 NoEvent1.mo \
 NoEvent2.mo \
 NonConnectorFlow1.mo \
+NonLiteralRange1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 NonFixedConstant1.mo \
@@ -1040,6 +1050,7 @@ RecordBinding15.mo \
 RecordBinding16.mo \
 RecordBinding17.mo \
 RecordBinding18.mo \
+RecordBinding19.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \

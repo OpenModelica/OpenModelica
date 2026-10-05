@@ -163,6 +163,7 @@ public
     Integer factor;
     Integer shift_value, v2;
     EvalOrder eval;
+    Boolean stop;
   algorithm
     order := match eqn
       case Equation.FOR_EQUATION() algorithm
@@ -175,6 +176,7 @@ public
             subs  := list(ComponentRef.subscriptsAllWithWholeFlat(cref) for cref in occ_lst);
             subs  := List.transposeList(subs);
             subs_to_solve := ComponentRef.subscriptsAllWithWholeFlat(cref_to_solve);
+            stop := false;
             for dim in List.zip(subs, subs_to_solve) loop
               (local_subs, sub_to_solve) := dim;
               ite_occurences := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -183,6 +185,9 @@ public
               end for;
               iterators := UnorderedSet.toList(ite_occurences);
               () := match iterators
+                // literal subscripts in this dimension do not restrict the order
+                case {} then ();
+
                 case {iter} algorithm
                   eval := UnorderedMap.getSafe(iter, order, sourceInfo());
                   if eval < EvalOrder.FAILED then
@@ -223,9 +228,10 @@ public
                   for it in iterators loop
                     UnorderedMap.add(it, EvalOrder.FAILED, order);
                   end for;
-                  break;
+                  stop := true;
                 then ();
               end match;
+              if stop then break; end if;
             end for;
           end if;
         end for;
@@ -235,6 +241,67 @@ public
       then order;
     end match;
   end detect;
+
+  function addDimensionParameters
+    "A dimension of a resizable array that is an expression of parameters (N-1,
+    nT+1) gets an Integer parameter $DIM_k with the expression as start value.
+    The init.xml refers to it by value reference like to a plain size parameter,
+    and the generated function updateStructuralParameters computes it from the
+    start values of the other parameters (possibly changed with -override) before
+    the runtime allocates the arrays."
+    input output VarData varData;
+  protected
+    list<Expression> dim_exps = {};
+    list<Pointer<Variable>> dim_params = {};
+    Pointer<Variable> var_ptr;
+    Variable var;
+    ComponentRef cref;
+    Integer idx = 1;
+  algorithm
+    varData := match varData
+      case VarData.VAR_DATA_SIM() algorithm
+        // all lists: e.g. the function alias variables of the initialization are not in variables
+        for v in List.flatten(list(VariablePointers.toList(l) for l in {varData.variables, varData.unknowns,
+            varData.knowns, varData.initials, varData.auxiliaries, varData.aliasVars, varData.nonTrivialAlias})) loop
+          for dim in Type.arrayDims(Variable.typeOf(Pointer.access(v))) loop
+            dim_exps := match dim
+              case Dimension.RESIZABLE() guard isDimensionExpression(dim.exp) and not List.isMemberOnTrue(dim.exp, dim_exps, Expression.isEqual)
+                then dim.exp :: dim_exps;
+              case Dimension.EXP() guard isDimensionExpression(dim.exp) and not List.isMemberOnTrue(dim.exp, dim_exps, Expression.isEqual)
+                then dim.exp :: dim_exps;
+              else dim_exps;
+            end match;
+          end for;
+        end for;
+        for e in listReverse(dim_exps) loop
+          (var_ptr, cref) := BVariable.makeAuxVar("$DIM", idx, Type.INTEGER(), true);
+          var := BVariable.setStartAttribute(Pointer.access(var_ptr), e, true);
+          Pointer.update(var_ptr, var);
+          dim_params := var_ptr :: dim_params;
+          idx := idx + 1;
+        end for;
+        if not listEmpty(dim_params) then
+          dim_params := listReverse(dim_params);
+          varData.variables := VariablePointers.addList(dim_params, varData.variables);
+          varData.knowns := VariablePointers.addList(dim_params, varData.knowns);
+          varData.resizables := VariablePointers.addList(dim_params, varData.resizables);
+        end if;
+      then varData;
+      else varData;
+    end match;
+  end addDimensionParameters;
+
+  function isDimensionExpression
+    "true for a dimension that is neither a literal nor a plain parameter"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.INTEGER() then false;
+      case Expression.CREF() then false;
+      else not Expression.isLiteral(exp);
+    end match;
+  end isDimensionExpression;
 
   function orderFailed
     input EvalOrder eo;
@@ -806,7 +873,8 @@ protected
     for tpl in UnorderedMap.toList(c2p) loop
       (const, params) := tpl;
       for param in params loop
-        UnorderedMap.add(param, const :: UnorderedMap.getSafe(param, p2c, sourceInfo()), p2c);
+        // constraints of single elements (e.g. from expanded connections) may contain parameters that were not collected
+        UnorderedMap.add(param, const :: UnorderedMap.getOrDefault(param, p2c, {}), p2c);
       end for;
     end for;
   end invertConstraintParameterMap;

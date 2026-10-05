@@ -697,11 +697,7 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
                   QLineF line1(mPoints.at(i), mPoints.at(i + 1));
                   QLineF line2(points.at(j), points.at(j + 1));
                   QPointF intersectionPoint;
-    #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
                   QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
-    #else // < Qt 5.14
-                  QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
-    #endif // QT_VERSION_CHECK
                   /* Issue #12399. Exclude first and last points.
                    * Do not draw the node on colliding connection when the intersectionPoint is same as first or last point of connection.
                    */

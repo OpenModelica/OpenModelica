@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+openmodelica_loader = { path = "../openmodelica_loader", default-features = false }
 openmodelica_tpl.workspace = true
 openmodelica_error.workspace = true
 metamodelica.workspace=true
@@ -12,6 +13,7 @@ openmodelica_backend.workspace=true
 openmodelica_backend_tools.workspace=true
 openmodelica_backend_types.workspace=true
 openmodelica_simcode_util.workspace=true
+openmodelica_codegen_util.workspace=true
 openmodelica_nbackend.workspace=true
 openmodelica_simcode_types.workspace=true
 openmodelica_codegen.workspace=true
@@ -24,13 +26,11 @@ openmodelica_codegen_xml.workspace=true
 # that references these, so the features live here.
 openmodelica_codegen_fmu = { workspace = true, optional = true }
 openmodelica_codegen_fmu_c = { workspace = true, optional = true }
-openmodelica_codegen_fmu_omsi = { workspace = true, optional = true }
 openmodelica_codegen_c = { workspace = true, optional = true }
 openmodelica_codegen_cfunctions.workspace=true
 openmodelica_codegen_wasm_jit.workspace=true
 openmodelica_codegen_cpp = { workspace = true, optional = true }
 openmodelica_codegen_cpp_ext = { workspace = true, optional = true }
-openmodelica_codegen_cpp_omsi_ext = { workspace = true, optional = true }
 openmodelica_dump_extra.workspace=true
 openmodelica_frontend.workspace=true
 openmodelica_frontend_base.workspace = true
@@ -38,6 +38,7 @@ openmodelica_frontend_dump.workspace=true
 openmodelica_frontend_inst.workspace=true
 openmodelica_frontend_types.workspace=true
 openmodelica_nf_frontend.workspace=true
+openmodelica_nf_api.workspace=true
 openmodelica_program_util.workspace=true
 openmodelica_script_util.workspace=true
 openmodelica_omgraphics.workspace=true
@@ -64,13 +65,11 @@ default = ["cpp", "codegen_c", "codegen_fmu_c"]
 cpp = [
     "dep:openmodelica_codegen_cpp",
     "dep:openmodelica_codegen_cpp_ext",
-    "dep:openmodelica_codegen_cpp_omsi_ext",
 ]
 codegen_c = ["dep:openmodelica_codegen_c"]
 codegen_fmu = ["dep:openmodelica_codegen_fmu"]
 codegen_fmu_c = [
     "dep:openmodelica_codegen_fmu_c",
-    "dep:openmodelica_codegen_fmu_omsi",
     "codegen_fmu",
     "codegen_c",
 ]

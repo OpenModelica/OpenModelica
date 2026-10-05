@@ -17,20 +17,20 @@ use arcstr::literal;
 use openmodelica_ast::Absyn;
 use crate::AbsynUtil;
 
-fn ident(name: &str) -> Arc<Absyn::Path> {
-    Arc::new(Absyn::Path::IDENT { name: arcstr::ArcStr::from(name) })
+fn ident(name: &str) -> metamodelica::Ref<Absyn::Path> {
+    metamodelica::Ref::new(Absyn::Path::IDENT { name: arcstr::ArcStr::from(name) })
 }
 
-fn qualified(name: &str, path: Arc<Absyn::Path>) -> Arc<Absyn::Path> {
-    Arc::new(Absyn::Path::QUALIFIED { name: arcstr::ArcStr::from(name), path })
+fn qualified(name: &str, path: metamodelica::Ref<Absyn::Path>) -> metamodelica::Ref<Absyn::Path> {
+    metamodelica::Ref::new(Absyn::Path::QUALIFIED { name: arcstr::ArcStr::from(name), path })
 }
 
-fn fully_qualified(path: Arc<Absyn::Path>) -> Arc<Absyn::Path> {
-    Arc::new(Absyn::Path::FULLYQUALIFIED { path })
+fn fully_qualified(path: metamodelica::Ref<Absyn::Path>) -> metamodelica::Ref<Absyn::Path> {
+    metamodelica::Ref::new(Absyn::Path::FULLYQUALIFIED { path })
 }
 
 /// a.b.c
-fn abc() -> Arc<Absyn::Path> {
+fn abc() -> metamodelica::Ref<Absyn::Path> {
     qualified("a", qualified("b", ident("c")))
 }
 

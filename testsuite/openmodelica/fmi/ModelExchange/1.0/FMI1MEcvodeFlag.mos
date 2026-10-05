@@ -2,7 +2,7 @@
 // keywords: fmu export fmi 1.0 model exchange cvode fmiFlags
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_info.json ExpDecayCvode* ExpDecayCvode_cmake.txt
-// cflags: -d=-newInst
+// cflags: -d=-newInst --fmiSources=true
 //
 // Regression test for #15838: exporting an FMI 1.0 Model-Exchange FMU with the
 // in-FMU CVODE integrator requested (--fmiFlags=s:cvode) used to break the FMU

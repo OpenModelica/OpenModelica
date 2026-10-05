@@ -57,7 +57,10 @@ protected
   import ElementSource;
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import NFPrefixes.Purity;
+  import NFPrefixes.Variability;
+  import NFBuiltin;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import SBFunctions;
@@ -406,7 +409,7 @@ protected
     SBSet vc_dom, vc_im, aux_s, vc_domi, vc_domi_aux;
     array<InstNode> iterators;
     list<Variable> pot_vars, flow_vars;
-    list<ComponentRef> vars;
+    list<tuple<ComponentRef, Integer, String>> vars;
     list<Expression> iter_expl;
   algorithm
     vc_dom := SBPWLinearMap.wholeDom(pw);
@@ -453,7 +456,7 @@ protected
   function generatePotentialEquations
     input SBAtomicSet aset;
     input SBSet dom;
-    input list<ComponentRef> vars;
+    input list<tuple<ComponentRef, Integer, String>> vars;
     input array<InstNode> iterators;
     input list<Expression> iterExps;
     input list<Variable> potVars;
@@ -465,7 +468,7 @@ protected
     SBMultiInterval mi, mi_range, aux_mi;
     array<SBInterval> inters;
     array<Expression> ranges;
-    list<ComponentRef> vars1;
+    list<tuple<ComponentRef, Integer, String>> vars1;
     list<Equation> eql;
     list<Expression> inds;
   algorithm
@@ -489,23 +492,38 @@ protected
   end generatePotentialEquations;
 
   function generatePotentialEquations2
-    input list<ComponentRef> vars1;
-    input list<ComponentRef> vars2;
+    input list<tuple<ComponentRef, Integer, String>> vars1;
+    input list<tuple<ComponentRef, Integer, String>> vars2;
     input list<Expression> inds1;
     input list<Expression> inds2;
     output list<Equation> equations = {};
   protected
+    ComponentRef var1, var2;
+    Integer n1, n2;
+    String m1, m2;
     Expression l, r;
     Type ty;
     Equation eq;
   algorithm
-    for var1 in vars1 loop
-      for var2 in vars2 loop
-        if Type.isEqual(ComponentRef.nodeType(var1), ComponentRef.nodeType(var2)) then
-          l := generateConnector(var1, inds1);
-          r := generateConnector(var2, inds2);
+    for v1 in vars1 loop
+      (var1, n1, m1) := v1;
+      for v2 in vars2 loop
+        (var2, n2, m2) := v2;
+        // the same member of both connectors: a connector can have several
+        // potential variables of the same type (e.g. v and an angle theta)
+        // (the element types: the dimensions of a node can belong to the
+        // connector, e.g. u[3] for an array of input connectors)
+        if m1 == m2 and
+           Type.isEqual(Type.arrayElementType(ComponentRef.nodeType(var1)), Type.arrayElementType(ComponentRef.nodeType(var2))) then
+          l := generateConnector(var1, inds1, n1);
+          r := generateConnector(var2, inds2, n2);
           ty := Expression.typeOf(l);
-          eq := Equation.makeEquality(l, r, ty, scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
+          if ComponentRef.variability(var1) > Variability.PARAMETER and ComponentRef.variability(var2) > Variability.PARAMETER then
+            eq := Equation.makeEquality(l, r, ty, scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
+          else
+            // connected constants and parameters are checked, like the classic connection handler does
+            eq := makeEqualityAssert(l, r, ty);
+          end if;
           equations := eq :: equations;
         end if;
       end for;
@@ -513,6 +531,33 @@ protected
 
     equations := listReverseInPlace(equations);
   end generatePotentialEquations2;
+
+  function makeEqualityAssert
+    "assert(abs(l - r) <= 0) for Reals, assert(l == r) else; like
+     NFConnectEquations.makeEqualityAssert, for array connections"
+    input Expression l;
+    input Expression r;
+    input Type ty;
+    output Equation eq;
+  protected
+    Type elem_ty = Type.arrayElementType(ty);
+    Expression exp;
+  algorithm
+    if Type.isArray(ty) then
+      Error.addInternalError(getInstanceName() + ": connected parameters of array type are not supported with array connections yet: "
+        + Expression.toString(l) + ", " + Expression.toString(r), sourceInfo());
+      fail();
+    end if;
+    if Type.isReal(elem_ty) then
+      exp := Expression.BINARY(l, Operator.makeSub(elem_ty), r);
+      exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp), Purity.PURE));
+      exp := Expression.RELATION(exp, Operator.makeLessEq(elem_ty), Expression.REAL(0.0), -1);
+    else
+      exp := Expression.RELATION(l, Operator.makeEqual(elem_ty), r, -1);
+    end if;
+    eq := Equation.ASSERT(exp, Expression.STRING("Connected constants/parameters must be equal"),
+      NFBuiltin.ASSERTIONLEVEL_ERROR, NFInstNode.NO_SCOPE, DAE.emptyElementSource);
+  end makeEqualityAssert;
 
   function generateFlowEquation
     input SBAtomicSet aset;
@@ -529,10 +574,17 @@ protected
     array<Expression> ranges;
     list<Expression> expl, inds;
     Boolean is_sum;
-    list<ComponentRef> vars;
+    list<tuple<ComponentRef, Integer, String>> vars;
+    ComponentRef var;
+    Integer n;
+    String m;
     Expression e, sum_exp;
     Type ty;
     Equation eq;
+    UnorderedMap<String, ExpList> named_expl = UnorderedMap.new<ExpList>(stringHashDjb2, stringEq) "the terms of each sum, in reverse order";
+    UnorderedSet<String> elementwise = UnorderedSet.new(stringHashDjb2, stringEq);
+    list<tuple<ComponentRef, Integer, String, list<Expression>, Boolean>> terms = {};
+    Integer sz;
   algorithm
     mi := SBAtomicSet.aset(aset);
     mi_range := applyOffset(mi, getOffset(mi, nmvTable));
@@ -540,6 +592,7 @@ protected
     ranges := Array.map(inters, intervalToRange);
     expl := {};
 
+    // collect the flow variables of all connectors of the set with their indices
     for auxi in UnorderedSet.toArray(SBSet.asets(dom)) loop
       mi := SBAtomicSet.aset(auxi);
       mi_range2 := applyOffset(mi, getOffset(mi, nmvTable));
@@ -549,19 +602,35 @@ protected
       sauxi := SBSet.addAtomicSet(auxi, sauxi);
       vars := getVars(flowVars, sauxi, graph);
 
-      for var in vars loop
-        e := generateConnector(var, inds);
-
-        if is_sum then
-          e := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SUM,
-            {e}, Expression.variability(e), Purity.PURE, Type.arrayElementType(Expression.typeOf(e))));
+      for v in vars loop
+        (var, n, m) := v;
+        terms := (var, n, m, inds, is_sum) :: terms;
+        // a flow variable that is an array in its connector (e.g. i[3]) summed
+        // over a range of connectors has to be summed element by element
+        if is_sum and Type.isArray(ComponentRef.nodeType(var)) then
+          UnorderedSet.add(m, elementwise);
         end if;
-
-        expl := e :: expl;
       end for;
     end for;
 
-    if not listEmpty(expl) then
+    for t in listReverse(terms) loop
+      (var, n, m, inds, is_sum) := t;
+      if UnorderedSet.contains(m, elementwise) then
+        sz := memberSize(var);
+        for k in 1:sz loop
+          e := flowTerm(ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(k))}, var), inds, n, is_sum);
+          addNamed(m + "[" + intString(k) + "]", e, named_expl);
+        end for;
+      else
+        e := flowTerm(var, inds, n, is_sum);
+        addNamed(m, e, named_expl);
+      end if;
+    end for;
+
+    // one sum for each flow variable of the connectors (a connector can have several),
+    // in the order of their first terms
+    for name in UnorderedMap.keyList(named_expl) loop
+      expl := UnorderedMap.getOrFail(name, named_expl);
       sum_exp :: expl := expl;
 
       while not listEmpty(expl) loop
@@ -572,21 +641,78 @@ protected
       ty := Expression.typeOf(sum_exp);
       eq := Equation.makeEquality(sum_exp, Expression.makeZero(ty), ty);
       equations := generateForLoop({eq}, iterators, ranges, equations);
-    end if;
+    end for;
   end generateFlowEquation;
 
+  function flowTerm
+    "A flow variable of a connector in the flow equation of its set, summed if a
+     range of connectors is connected to one."
+    input ComponentRef var;
+    input list<Expression> inds;
+    input Integer connectorDims;
+    input Boolean isSum;
+    output Expression e;
+  algorithm
+    e := generateConnector(var, inds, connectorDims);
+    if isSum then
+      if Type.isArray(Expression.typeOf(e)) and Type.dimensionCount(Expression.typeOf(e)) > 1 then
+        Error.addInternalError(getInstanceName() + ": the flow variable " + ComponentRef.toString(var) +
+          " has several dimensions inside its connector, connecting a range of such connectors to one is not supported yet.", sourceInfo());
+        fail();
+      end if;
+      e := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SUM,
+        {e}, Expression.variability(e), Purity.PURE, Type.arrayElementType(Expression.typeOf(e))));
+    end if;
+  end flowTerm;
+
+  function memberSize
+    "The size of a flow variable that is a vector in its connector."
+    input ComponentRef var;
+    output Integer sz;
+  protected
+    list<Dimension> dims = Type.arrayDims(ComponentRef.nodeType(var));
+  algorithm
+    if listLength(dims) <> 1 or not Dimension.isKnown(listHead(dims)) then
+      Error.addInternalError(getInstanceName() + ": the flow variable " + ComponentRef.toString(var) +
+        " has to be a vector of known size inside its connector to connect a range of connectors to one.", sourceInfo());
+      fail();
+    end if;
+    sz := Dimension.size(listHead(dims));
+  end memberSize;
+
+  type ExpList = list<Expression>;
+
+  function addNamed
+    "adds a term to the sum of the flow variable name"
+    input String name;
+    input Expression e;
+    input UnorderedMap<String, ExpList> namedExpl;
+  algorithm
+    UnorderedMap.addUpdate(name, function prependTerm(e = e), namedExpl);
+  end addNamed;
+
+  function prependTerm
+    input Option<list<Expression>> old;
+    input Expression e;
+    output list<Expression> res = e :: Util.getOptionOrDefault(old, {});
+  end prependTerm;
+
   function generateConnector
+    "The variable of a connector, subscripted with the indices of the connector.
+     Dimensions of the variable inside the connector (e.g. v[3] in the connector)
+     stay whole."
     input ComponentRef cr;
     input list<Expression> indices;
+    input Integer connectorDims "the number of dimensions of the connector";
     output Expression outExp;
   protected
     list<Subscript> subs;
   algorithm
     outExp := Expression.fromCref(cr);
 
-    if Type.isArray(Expression.typeOf(outExp)) then
+    if Type.isArray(Expression.typeOf(outExp)) and connectorDims > 0 then
       subs := list(Subscript.fromTypedExp(i) for i in indices);
-      subs := List.firstN(subs, Type.dimensionCount(Expression.typeOf(outExp)));
+      subs := List.firstN(subs, intMin(connectorDims, Type.dimensionCount(Expression.typeOf(outExp))));
       outExp := Expression.applySubscripts(subs, outExp);
     end if;
   end generateConnector;
@@ -606,7 +732,7 @@ protected
         // instead of creating an unnecessary for loop here.
         body := Equation.replaceIteratorList(body, iterators[i], ranges[i]);
       else
-        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, InstNode.EMPTY_NODE(), DAE.emptyElementSource)};
+        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, NFInstNode.NO_SCOPE, DAE.emptyElementSource)};
       end if;
     end for;
 
@@ -676,11 +802,42 @@ protected
     end if;
   end applyOffset;
 
+  function memberName
+    "The path of a connector variable inside its connector, e.g. v for line.a.v
+     of the connector line.a, empty if the connector is the variable itself
+     (connector RealInput = input Real)."
+    input ComponentRef var;
+    input ComponentRef conn;
+    output String name;
+  protected
+    list<String> var_names = crefNames(var);
+  algorithm
+    for i in 1:listLength(crefNames(conn)) loop
+      var_names := List.restOrEmpty(var_names);
+    end for;
+    name := stringDelimitList(var_names, ".");
+  end memberName;
+
+  function crefNames
+    "The identifiers of a cref from the outermost one, without subscripts."
+    input ComponentRef cref;
+    output list<String> names = {};
+  protected
+    ComponentRef c = cref;
+  algorithm
+    while not ComponentRef.isEmpty(c) loop
+      names := ComponentRef.firstName(c) :: names;
+      c := ComponentRef.rest(c);
+    end while;
+  end crefNames;
+
   function getVars
+    "The variables of the connectors of the vertices in sauxi, with the number of
+     dimensions of their connector and their path inside the connector."
     input list<Variable> vars;
     input SBSet sauxi;
     input SBGraph graph;
-    output list<ComponentRef> res = {};
+    output list<tuple<ComponentRef, Integer, String>> res = {};
   protected
     list<SetVertex> vl;
   algorithm
@@ -689,7 +846,7 @@ protected
       if not SBSet.isEmpty(SBSet.intersection(v.vs, sauxi)) then
         for var in vars loop
           if ComponentRef.isPrefix(Connector.name(v.name), var.name) then
-            res := var.name :: res;
+            res := (var.name, listLength(crefDims(Connector.name(v.name))), memberName(var.name, Connector.name(v.name))) :: res;
           end if;
         end for;
       end if;

@@ -115,6 +115,7 @@ void FMI2ModelExchangeDestructor_OMC(void* in_fmi2me)
   free(FMI2ME->FMIWorkingDirectory);
   free(FMI2ME->FMIInstanceName);
   free(FMI2ME->FMIEventInfo);
+  free(FMI2ME);
 }
 
 /*

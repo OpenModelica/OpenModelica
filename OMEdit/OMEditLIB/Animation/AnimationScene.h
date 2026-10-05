@@ -47,9 +47,8 @@ class VectorObject;
  * Renderer-neutral scene interface. It is the only coupling point between the
  * renderer-agnostic visualization data classes (VisualizationAbstract /
  * OMVisualBase) and the backend that draws the model: building a node per
- * visualizer and pushing per-frame transform/material updates to it. OSGScene
- * is the OpenSceneGraph implementation; a Qt Quick 3D implementation plugs in
- * here without the data classes knowing the backend.
+ * visualizer and pushing per-frame transform/material updates to it.
+ * Quick3DScene is the implementation.
  */
 class AnimationScene
 {

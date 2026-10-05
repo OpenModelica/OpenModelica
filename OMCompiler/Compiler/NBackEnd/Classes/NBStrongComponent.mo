@@ -373,6 +373,26 @@ public
     end match;
   end removeAlias;
 
+  function solvesInsideReduction
+    "true if a scalar for-equation is solved for a cref with a whole dimension, e.g. x[i, :] for
+    y[i] = sum(x[i, j] for j in 1:n) matched to x[i, 1]. The cref does not determine the solved
+    elements, they have to be solved one by one. A whole dimension of an array equation inside
+    the for-equation, e.g. a[i, :] = b * i, determines them."
+    input Pointer<Equation> eqn_ptr;
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(eqn_ptr)
+      local
+        Equation body;
+      // a size one array equation, e.g. a[i, :] = b[1:1, i], determines the elements as well
+      case Equation.FOR_EQUATION(body = {body}) then Equation.size(Pointer.create(body)) == 1
+        and not Type.isArray(Equation.getType(body))
+        and List.any(ComponentRef.subscriptsAllFlat(cref), Subscript.isWhole);
+      else false;
+    end match;
+  end solvesInsideReduction;
+
   function createPseudoSlice
     input Integer var_arr_idx;
     input Integer eqn_arr_idx;
@@ -408,9 +428,10 @@ public
       eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in eqn_scal_indices));
     end if;
 
-    // check if it is a resizable component
+    // check if it is a resizable component. a variable inside a reduction can only be solved as a slice
     order := Resizable.detect(Pointer.access(eqn_ptr), cref_to_solve);
-    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size then
+    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size
+       and not solvesInsideReduction(eqn_ptr, cref_to_solve) then
       comp := RESIZABLE_COMPONENT(
         var_cref  = cref_to_solve,
         var       = var_slice,
@@ -686,6 +707,8 @@ public
     Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
     Equation eqn = Pointer.access(eqn_ptr);
     IfEquationBody body;
+    list<Subscript> subs;
+    ComponentRef lhs_cref;
     function simpleSolvedEquation
       input Equation eqn;
       input Pointer<Equation> eqn_ptr;
@@ -694,28 +717,48 @@ public
       comp := match Equation.getLHS(eqn)
         local
           Expression lhs;
-        case SOME(lhs as Expression.CREF()) then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(lhs), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+          Pointer<Variable> var_ptr;
+        case SOME(lhs as Expression.CREF()) algorithm
+          var_ptr := BVariable.getVarPointer(lhs.cref, sourceInfo());
+          // an element of an array variable keeps its subscripts, e.g. p[2] in an if-equation branch
+          comp := if BVariable.isArray(var_ptr) and not Type.isArray(Expression.typeOf(lhs))
+            then SLICED_COMPONENT(lhs.cref, Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT)
+            else SINGLE_COMPONENT(var_ptr, eqn_ptr, NBSolve.Status.EXPLICIT);
+        then comp;
         else MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
       end match;
     end simpleSolvedEquation;
   algorithm
-    comp := match eqn
-      case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
-      case Equation.IF_EQUATION(body = body) algorithm
-        if IfEquationBody.isSplit(body) then
-          comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
-        else
-          comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
-        end if;
-      then comp;
-      case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
-      // ToDo: the other types
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
-      then fail();
-    end match;
+    // a genuine partial slice of an array equation (e.g. one row of a torn
+    // matrix-shaped subsystem, see NBTearing.scalarSlices) needs a
+    // SLICED_COMPONENT, not a SINGLE_COMPONENT -- the latter's .eqn field is a
+    // whole Pointer<Equation> with no room for which row this is, so every
+    // slice of the same array equation previously collapsed to an identical
+    // whole-array component, undercounting rows for the caller's adjacency/
+    // sparsity build (e.g. NBJacobian.compJacobian, empty Jacobian columns).
+    if not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(eqn_ptr) and List.hasOneElement(eqn_slice.indices) then
+      subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(listHead(eqn_slice.indices), Equation.sizes(eqn_ptr)));
+      lhs_cref := ComponentRef.setSubscripts(subs, Expression.toCref(Util.getOption(Equation.getLHS(eqn))));
+      comp := SLICED_COMPONENT(lhs_cref, Slice.SLICE(BVariable.getVarPointer(lhs_cref, sourceInfo()), {}), eqn_slice, NBSolve.Status.EXPLICIT);
+    else
+      comp := match eqn
+        case Equation.SCALAR_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+        case Equation.ARRAY_EQUATION()  then simpleSolvedEquation(eqn, eqn_ptr);
+        case Equation.RECORD_EQUATION() then simpleSolvedEquation(eqn, eqn_ptr);
+        case Equation.IF_EQUATION(body = body) algorithm
+          if IfEquationBody.isSplit(body) then
+            comp := SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(eqn))), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+          else
+            comp := MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
+          end if;
+        then comp;
+        case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
+        // ToDo: the other types
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Slice.toString(eqn_slice, function Equation.pointerToString(str = ""))});
+        then fail();
+      end match;
+    end if;
   end fromSolvedEquationSlice;
 
   function toSolvedEquation
@@ -1151,6 +1194,7 @@ public
         Slice<VariablePointer> var_slice;
         Slice<EquationPointer> eqn_slice;
         Pointer<Boolean> homotopy = Pointer.create(false);
+        ComponentRef resolved_cref;
 
       // Size 1 strong component
       // - case 1: sliced equation because of for-equation
@@ -1191,11 +1235,19 @@ public
         (comp_vars, comp_eqns) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
         comp := match (comp_vars, comp_eqns)
           case ({var_slice}, {eqn_slice}) guard(not (Equation.isForEquation(Slice.getT(eqn_slice)) or Equation.isAlgorithm(Slice.getT(eqn_slice))))
-          then createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, eqn_slice);
+          algorithm
+            // var_slice can be a genuine partial slice (e.g. i_s[{1, 2}]); the bare
+            // declared name loses that, so resolve the cref that actually occurs in the
+            // equation with the matching size instead (SLICED_COMPONENT.var_cref is
+            // documented to carry subscripts, see NBSolve.solveStrongComponent).
+            resolved_cref := if Slice.isFull(var_slice) then BVariable.getVarName(Slice.getT(var_slice))
+              else Slice.resolveSlicedCref(BVariable.getVarName(Slice.getT(var_slice)), Pointer.access(Slice.getT(eqn_slice)), Slice.size(var_slice, function BVariable.size(resize = false)));
+          then createSliceOrSingle(resolved_cref, var_slice, eqn_slice);
 
           // for equations that are not algebraic loops are caught earlier! Any for equation
-          // getting to this point is an actual algebraic loop
-          case (_, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)))
+          // getting to this point is an actual algebraic loop, unless it is a tuple that
+          // assigns a variable to each of its outputs in every iteration
+          case (_, {eqn_slice}) guard(not Equation.isForEquation(Slice.getT(eqn_slice)) or Equation.isRecordOrTupleEquation(Slice.getT(eqn_slice)))
           then MULTI_COMPONENT(
             vars    = comp_vars,
             eqn     = eqn_slice,
@@ -1295,16 +1347,28 @@ protected
       (var_scal_idx, _)       := mapping.var_AtS[var_arr_idx];
       var                     := VariablePointers.getVarAt(vars, var_arr_idx);
       idx_lst                 := if listLength(idx_lst) == BVariable.size(var) then {} else list(i - var_scal_idx for i in idx_lst);
-      acc_vars                := Slice.SLICE(var, List.sort(idx_lst, intGt)) :: acc_vars;
+      acc_vars                := Slice.SLICE(var, sortAscending(idx_lst)) :: acc_vars;
     end for;
     for tpl in UnorderedMap.toList(eqn_map) loop
       (eqn_arr_idx, idx_lst)  := tpl;
       (eqn_scal_idx, _)       := mapping.eqn_AtS[eqn_arr_idx];
       eqn                     := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
       idx_lst                 := if listLength(idx_lst) == Equation.size(eqn) then {} else list(i - eqn_scal_idx for i in idx_lst);
-      acc_eqns                := Slice.SLICE(eqn, List.sort(idx_lst, intGt)) :: acc_eqns;
+      acc_eqns                := Slice.SLICE(eqn, sortAscending(idx_lst)) :: acc_eqns;
     end for;
   end getLoopVarsAndEqns;
+
+  function sortAscending
+    "List.sort(lst, intGt) without the merge sort's allocations"
+    input list<Integer> lst;
+    output list<Integer> sorted;
+  algorithm
+    if listEmpty(lst) or listEmpty(listRest(lst)) then
+      sorted := lst;
+    else
+      sorted := arrayList(Array.heapSort(listArray(lst)));
+    end if;
+  end sortAscending;
 
   function updateDependencyMap
     input ComponentRef cref                                   "cref representing current equation";

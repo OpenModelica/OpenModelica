@@ -46,6 +46,7 @@ protected
 public
   import Expression = NFExpression;
   import Binding = NFBinding;
+  import Util;
 
   record ARRAY_ITERATOR
     array<Expression> arr;
@@ -64,11 +65,6 @@ public
   record NONE_ITERATOR
   end NONE_ITERATOR;
 
-  record REPEAT_ITERATOR
-    list<Expression> current;
-    list<Expression> all;
-  end REPEAT_ITERATOR;
-
   function toString
     input ExpressionIterator iter;
     output String str;
@@ -84,7 +80,6 @@ public
         inPrintEmpty  = false,
         maxLength     = 0), "[ARRY] array iterator:\n", "", "\n", "");
 
-      case REPEAT_ITERATOR() then "[REAP] repeat iterator:\n" + List.toString(iter.all, Expression.toString);
       case SCALAR_ITERATOR() then "[SCAL] scalar iterator: " + Expression.toString(iter.exp) + "\n";
       case EACH_ITERATOR() then "[EACH] each iterator: " + Expression.toString(iter.exp) + "\n";
       case NONE_ITERATOR() then "[NONE] no iterator.\n";
@@ -167,6 +162,38 @@ public
     end match;
   end fromBinding;
 
+  function isUniform
+    "Whether every element the iterator yields is the same expression object,
+     so one element stands for all of them."
+    input ExpressionIterator iterator;
+    output Boolean uniform;
+  algorithm
+    uniform := match iterator
+      case ARRAY_ITERATOR() then isUniformArrays(iterator.arr :: iterator.arrays);
+      case EACH_ITERATOR() then true;
+      case NONE_ITERATOR() then true;
+      else false;
+    end match;
+  end isUniform;
+
+  function isUniformArrays
+    input list<array<Expression>> arrays;
+    output Boolean uniform = true;
+  protected
+    Option<Expression> first = NONE();
+  algorithm
+    for arr in arrays loop
+      for e in arr loop
+        if isNone(first) then
+          first := SOME(e);
+        elseif not referenceEq(e, Util.getOption(first)) then
+          uniform := false;
+          return;
+        end if;
+      end for;
+    end for;
+  end isUniformArrays;
+
   function hasNext
     input ExpressionIterator iterator;
     output Boolean hasNext;
@@ -176,7 +203,6 @@ public
       case SCALAR_ITERATOR() then true;
       case EACH_ITERATOR() then true;
       case NONE_ITERATOR() then false;
-      case REPEAT_ITERATOR() then true;
     end match;
   end hasNext;
 
@@ -215,17 +241,6 @@ public
         then (NONE_ITERATOR(), iterator.exp);
 
       case EACH_ITERATOR() then (iterator, iterator.exp);
-
-      case REPEAT_ITERATOR(rest, arr)
-        algorithm
-          if not listEmpty(rest) then
-            next :: rest := rest;
-          else
-            next :: rest := arr;
-          end if;
-        then
-          (REPEAT_ITERATOR(rest, arr), next);
-
     end match;
   end next;
 

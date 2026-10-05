@@ -7,7 +7,6 @@
 // `crate::NBASSCExt::ASSC_setMatrix`, etc.), so the generated `NBASSC.rs`
 // calls into this hand-written module rather than emitting `todo!()`.
 
-use std::sync::Arc;
 
 use metamodelica::{Result, Array, List};
 
@@ -49,8 +48,8 @@ pub fn ASSC_setMatrix(
     nv: i32,
     ne: i32,
     nz: i32,
-    adj: Array<Arc<List<i32>>>,
-    val: Array<Arc<List<i32>>>,
+    adj: Array<List<i32>>,
+    val: Array<List<i32>>,
 ) {
     let mut m = AsscMatrix {
         nv,
@@ -80,7 +79,7 @@ pub fn ASSC_setMatrix(
 
 /// `ASSC_getMatrix(adj, val)`: fill pre-allocated adj/val arrays from the stored
 /// rows, respecting the row permutation established by the last Bareiss call.
-pub fn ASSC_getMatrix(adj: Array<Arc<List<i32>>>, val: Array<Arc<List<i32>>>) {
+pub fn ASSC_getMatrix(adj: Array<List<i32>>, val: Array<List<i32>>) {
     ASSC_MATRIX.with(|s| {
         let borrow = s.borrow();
         let Some(m) = borrow.as_ref() else { return };
@@ -90,12 +89,12 @@ pub fn ASSC_getMatrix(adj: Array<Arc<List<i32>>>, val: Array<Arc<List<i32>>>) {
             if !m.rows[row_idx].is_empty() {
                 // Build immutable cons lists in forward order by folding in reverse.
                 let adj_list = m.rows[row_idx].iter().rev().fold(
-                    Arc::new(List::Nil),
-                    |tail, &(idx, _)| Arc::new(List::Cons { head: idx, tail }),
+                    metamodelica::nil(),
+                    |tail, &(idx, _)| metamodelica::cons(idx, tail),
                 );
                 let val_list = m.rows[row_idx].iter().rev().fold(
-                    Arc::new(List::Nil),
-                    |tail, &(_, v)| Arc::new(List::Cons { head: v, tail }),
+                    metamodelica::nil(),
+                    |tail, &(_, v)| metamodelica::cons(v, tail),
                 );
                 adj.borrow_mut()[i] = adj_list;
                 val.borrow_mut()[i] = val_list;

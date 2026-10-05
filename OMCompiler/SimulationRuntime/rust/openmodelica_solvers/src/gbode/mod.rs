@@ -21,9 +21,11 @@ mod math;
 mod multirate;
 mod nls;
 mod nls_generic;
+pub mod nls_hook;
 mod tableau;
 mod tableau_data;
 
+use crate::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec;
@@ -32,6 +34,7 @@ use alloc::vec::Vec;
 pub use conf::GbConf;
 use conf::{Interpolation, NlsMethod};
 pub use crate::Ode;
+pub(crate) use linsol::color_columns;
 pub(crate) use nls::Solved;
 use nls::GbNls;
 use nls_generic::GbNlsGeneric;
@@ -171,19 +174,21 @@ pub struct Gbode {
 impl Gbode {
     /// C's `gbode_allocateData`: read the flags, build the tableau, size the work
     /// arrays. `jac_colors` is the ODE Jacobian's color count (0 without a pattern);
-    /// `sym_jac_available` whether the model answers [`Ode::jacobian_vector`].
+    /// `sym_jac_available` whether the model answers [`Ode::jacobian_vector`],
+    /// `adj_jac_available` whether it carries an adjoint for [`Ode::jacobian_matrix`].
     pub fn new(
         n_states: usize,
         tolerance: f64,
         n_zc: usize,
         jac_colors: usize,
         sym_jac_available: bool,
+        adj_jac_available: bool,
     ) -> core::result::Result<Self, String> {
         let conf = GbConf::from_flags()?;
         let tol = if tolerance > 0.0 { tolerance } else { 1e-6 };
         // C's `gbode_allocateData` logging, in its order (`getGB_method` first, then
         // `initButcherTableau` and `analyseButcherTableau`).
-        omclog::info(omclog::SOLVER, false, &format!("Chosen gbode method: {}", conf.method_name()));
+        omclog::info!(omclog::SOLVER, false, "Chosen gbode method: {}", conf.method_name());
         let (mut t, _nls_size) = tableau::init(conf.method, conf.err_method, n_states);
         if t.richardson {
             omclog::info(
@@ -203,28 +208,62 @@ impl Gbode {
         );
         let is_explicit = t.gm_type == GmType::Explicit;
         if !is_explicit {
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!("Chosen gbode NLS method: {}", conf.nls_method_name()),
+                "Chosen gbode NLS method: {}",
+                conf.nls_method_name(),
             );
         }
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!("Chosen gbode step size control: {}", conf.ctrl_method_name()),
+            "Chosen gbode step size control: {}",
+            conf.ctrl_method_name(),
         );
         let internal_nls = !is_explicit && conf.nls_method == NlsMethod::Internal;
         let two_step_fallback = tableau::finalize_error(&mut t, internal_nls).map_err(String::from)?;
         // C's `setJacobianMethod` against what the model carries, then gbode's own
         // downgrades: colored evaluation is the only kind it implements. The
         // warning is emitted below, where C prints it.
-        let (sym_jac, jac_warning) = if is_explicit {
+        let mut jac_warnings: Vec<String> = Vec::new();
+        let (sym_jac, whole_jac) = if is_explicit {
             (false, None)
         } else {
             use crate::simflags::JacobianMethod as M;
             let requested = crate::simflags::with_flags(|f| f.jacobian);
-            let sym_avail = sym_jac_available && requested != Some(M::ColoredSymJacAdj);
+            // C's `getGbodeJacobianMethod`: only the internal NLS assembles the whole
+            // matrix these directions produce; the others ask for single columns.
+            let requested = match requested {
+                Some(m @ (M::ColoredSymJacAdj | M::BicoloredSymJac)) if !internal_nls => {
+                    jac_warnings.push(format!(
+                        "Jacobian method {} requires the internal non-linear solver of GBODE. \
+                         Use `-gbnls=internal` / `-gbfnls=internal`. Switching to the forward \
+                         symbolic Jacobian.",
+                        m.name(),
+                    ));
+                    None
+                }
+                // `initSymbolicOdeJacobian`.
+                Some(M::ColoredSymJacAdj) if !adj_jac_available => {
+                    jac_warnings.push(String::from(
+                        "No adjoint symbolic Jacobian was generated (compile with \
+                         --generateDynamicJacobian=symbolicAdjoint or =bidirectional). Switching \
+                         to the forward symbolic Jacobian.",
+                    ));
+                    None
+                }
+                Some(M::BicoloredSymJac) if !adj_jac_available => {
+                    jac_warnings.push(String::from(
+                        "No bidirectional symbolic Jacobian was generated (compile with \
+                         --generateDynamicJacobian=bidirectional). Switching to the forward \
+                         symbolic Jacobian.",
+                    ));
+                    None
+                }
+                r => r,
+            };
+            let sym_avail = sym_jac_available;
             let method = if sym_avail {
                 requested.unwrap_or(M::ColoredSymJac)
             } else if jac_colors > 0 {
@@ -238,26 +277,28 @@ impl Gbode {
                 M::InternalNumJac
             };
             match method {
-                M::SymJac => (
-                    true,
-                    Some(
+                M::SymJac => {
+                    jac_warnings.push(String::from(
                         "Symbolic Jacobians without coloring are currently not supported by \
                          GBODE. Colored symbolical Jacobian will be used.",
-                    ),
-                ),
-                M::NumJac | M::ColoredNumJac | M::InternalNumJac => (
-                    false,
-                    Some(
+                    ));
+                    (true, None)
+                }
+                M::NumJac | M::ColoredNumJac | M::InternalNumJac => {
+                    jac_warnings.push(String::from(
                         "Numerical Jacobians without coloring are currently not supported by \
                          GBODE. Colored numerical Jacobian will be used.",
-                    ),
-                ),
+                    ));
+                    (false, None)
+                }
+                M::ColoredSymJacAdj | M::BicoloredSymJac => (sym_avail, Some(method)),
                 _ => (sym_avail, None),
             }
         };
-        let nls = internal_nls.then(|| GbNls::new(&t, n_states, tol, jac_colors, sym_jac));
-        let gnls =
-            (!is_explicit && !internal_nls).then(|| GbNlsGeneric::new(&t, n_states, sym_jac));
+        let nls =
+            internal_nls.then(|| GbNls::new(&t, n_states, tol, jac_colors, sym_jac, whole_jac));
+        let gnls = (!is_explicit && !internal_nls)
+            .then(|| GbNlsGeneric::new(&t, n_states, sym_jac, conf.nls_method));
         let multi_rate = conf.ratio > 0.0 && conf.ratio < 1.0;
         // With the birate mode and no explicit `-gbint`, C defaults to dense output.
         let base_interpolation =
@@ -294,21 +335,20 @@ impl Gbode {
                 String::from("initial step size not set")
             },
         );
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!(
-                "gbode performs a restart after an event occurs {}",
-                if no_restart { "NO" } else { "YES" }
-            ),
+            "gbode performs a restart after an event occurs {}",
+            if no_restart { "NO" } else { "YES" },
         );
-        if let Some(msg) = jac_warning {
+        for msg in &jac_warnings {
             omclog::warning(omclog::STDOUT, false, msg);
         }
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!("Chosen gbode interpolation method: {}", conf.interpolation_name()),
+            "Chosen gbode interpolation method: {}",
+            conf.interpolation_name(),
         );
         omclog::info(
             omclog::SOLVER,
@@ -329,17 +369,15 @@ impl Gbode {
             // C: the outer step's last stage is not reused with a fast integration
             // in between.
             t.k_right = false;
-            let i = (libm::round(n_states as f64 * conf.ratio).max(1.0) as usize)
+            let i = (fmath::round(n_states as f64 * conf.ratio).max(1.0) as usize)
                 .min(n_states.saturating_sub(1));
-            omclog::info(
+            omclog::info!(
                 omclog::SOLVER,
                 false,
-                &format!(
-                    "Number of states {} ({} slow states, {} fast states)",
-                    n_states,
-                    n_states - i,
-                    i
-                ),
+                "Number of states {} ({} slow states, {} fast states)",
+                n_states,
+                n_states - i,
+                i,
             );
             Some(alloc::boxed::Box::new(gbf))
         } else {
@@ -525,14 +563,12 @@ impl Gbode {
         if self.did_event_step && !self.conf.evnt_reinit {
             self.step_size = (old_step * 1e-1).max(self.step_size);
         }
-        omclog::info(
+        omclog::info!(
             omclog::SOLVER,
             false,
-            &format!(
-                "Initial step size = {} at time {}",
-                omclog::g(self.step_size, 0, 6),
-                omclog::g(self.time, 0, 6)
-            ),
+            "Initial step size = {} at time {}",
+            omclog::g(self.step_size, 0, 6),
+            omclog::g(self.time, 0, 6),
         );
         self.initial_failures = -1;
         Ok(())

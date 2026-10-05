@@ -87,6 +87,7 @@ set(_xwin_inc
 set(_xwin_flags "--target=${_xwin_arch}-pc-windows-msvc -fuse-ld=lld-link -Wno-unused-command-line-argument /DWIN32_LEAN_AND_MEAN ${_xwin_inc}")
 set(CMAKE_C_FLAGS_INIT "${_xwin_flags}")
 set(CMAKE_CXX_FLAGS_INIT "${_xwin_flags}")
+set(CMAKE_ASM_FLAGS_INIT "${_xwin_flags}")
 
 # llvm-rc needs the SDK headers via its own -I (e.g. winver.h). /C 1252 sets the
 # input codepage so Latin-1 bytes in .rc files (e.g. xerces's © in LegalCopyright)
@@ -113,12 +114,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
-
-# Boost.Context (vcpkg dep of boost-asio): use the Windows-fibers backend, which
-# is pure C++ — no assembly. The default fcontext backend assembles a MASM
-# trampoline via ml64, and llvm-ml64 rejects Boost's MASM (EXPORT / .seh_); its
-# CMake build can't select the clang-gas .S variant that would assemble cleanly.
-set(BOOST_CONTEXT_IMPLEMENTATION winfib CACHE STRING "" FORCE)
 
 # Qt's WrapVulkanHeaders (a Qt6::Gui dep) finds the host /usr/include/vulkan and
 # leaks the whole host /usr/include as a system include for the Windows target,

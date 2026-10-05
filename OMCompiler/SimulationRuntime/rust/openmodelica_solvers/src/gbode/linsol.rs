@@ -55,7 +55,7 @@ pub(super) fn factor(a: &[f64], n: usize) -> Result<GbLu> {
             let sp = rsparse::data::Sprs { nzmax, m: n, n, p, i, x };
             let mut s = rsparse::sqr(&sp, 2, false);
             let nm = rsparse::lu(&sp, &mut s, 1.0)
-                .map_err(|_| "CodegenWasmJit: gbode: singular Newton matrix")?;
+                .map_err(|_| "##GBODE## singular Newton matrix")?;
             return Ok(GbLu::Sparse { s, nm, x: vec![0.0; n], n });
         }
     }
@@ -64,7 +64,7 @@ pub(super) fn factor(a: &[f64], n: usize) -> Result<GbLu> {
     let mut info = 0i32;
     daskr::linpack::dgefa(&mut lu, n as i32, n as i32, &mut ipvt, &mut info);
     if info != 0 {
-        return Err("CodegenWasmJit: gbode: singular Newton matrix");
+        return Err("##GBODE## singular Newton matrix");
     }
     Ok(GbLu::Dense { lu, ipvt, n })
 }
@@ -105,7 +105,7 @@ impl GbLu {
 /// Greedy distance-2 coloring of a column pattern, C's `colorSparsePattern`
 /// (`gbode_sparse.c`) for one stage block: columns whose row sets are disjoint
 /// share a color and can be differenced (or seeded) together.
-pub(super) fn color_columns(rows_by_col: &[Vec<usize>], n_rows: usize) -> Vec<Vec<usize>> {
+pub(crate) fn color_columns(rows_by_col: &[Vec<usize>], n_rows: usize) -> Vec<Vec<usize>> {
     let n_cols = rows_by_col.len();
     let mut colored = vec![false; n_cols];
     let mut row_mark = vec![0usize; n_rows];

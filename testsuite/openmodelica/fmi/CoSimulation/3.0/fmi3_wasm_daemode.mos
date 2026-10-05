@@ -48,7 +48,8 @@ diffSimulationResults("daemode_cs.mat", "daemode_plain_res.mat", "diff_daemode_c
 // true
 // ""
 // "DaeModeWhenLoop.fmu"
-// "Notification: Building FMU for platform 'wasm' (1/1).
+// "Notification: The Model Exchange FMU carries a DAE formulation as fmi-ls-dae 1.0.0-alpha.1, implemented against the draft of 2026-09-02 (commit 78313f4). fmi-ls-dae is not a released layered standard yet, so an importer written against another revision of the draft may not read the manifest.
+// Notification: Building FMU for platform 'wasm' (1/1).
 // Notification: Finished FMU for platform 'wasm' (1/1).
 // "
 // record SimulationResult

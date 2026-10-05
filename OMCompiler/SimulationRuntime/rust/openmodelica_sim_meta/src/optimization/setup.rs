@@ -2,6 +2,7 @@
 //! model (`MoveData.c`), the derivative/Hessian structure (`DerStructure.c`), the
 //! initial guess (`InitialGuess.c`) and writing the solution back (`res2file`).
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
@@ -145,13 +146,11 @@ fn pick_up_dim(data: &mut OptData) {
     let np = match crate::simflags::with_flags(|f| f.optimizer_np) {
         Some(n) if n == 1 || n == 3 => n as usize,
         Some(n) => {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "FLAG_OPTIZER_NP is {n}. Currently optimizer support only 1 and 3.\n\
-                     FLAG_OPTIZER_NP set of 3"
-                ),
+                "FLAG_OPTIZER_NP is {n}. Currently optimizer support only 1 and 3.\n\
+                 FLAG_OPTIZER_NP set of 3",
             );
             3
         }
@@ -204,7 +203,7 @@ fn grid_file_rows(file: &str, nsi: usize) -> (usize, bool) {
             (nsi, false)
         }
         Ok(times) if times.len() < 2 => {
-            omclog::warning(omclog::STDOUT, false, &format!("time grid file: {file} is empty"));
+            omclog::warning!(omclog::STDOUT, false, "time grid file: {file} is empty");
             (nsi, false)
         }
         Ok(times) => (times.len() - 1, true),
@@ -226,7 +225,7 @@ fn pick_up_time(data: &mut OptData) {
         1 => vec![1.0],
         3 => C3.to_vec(),
         n => {
-            omclog::error(omclog::STDOUT, false, &format!("Not support np = {n}"));
+            omclog::error!(omclog::STDOUT, false, "Not support np = {n}");
             vec![1.0]
         }
     };
@@ -237,11 +236,7 @@ fn pick_up_time(data: &mut OptData) {
     t.dt[0] = (t.tf - t.t0) / nsi as f64;
     t.t = vec![zeros(np); nsi];
     if nsi < 1 {
-        omclog::error(
-            omclog::STDOUT,
-            false,
-            &format!("Not support numberOfIntervals = {nsi} < 1"),
-        );
+        omclog::error!(omclog::STDOUT, false, "Not support numberOfIntervals = {nsi} < 1");
     }
     let dc: Vec<f64> = c.iter().map(|ck| ck * t.dt[0]).collect();
     for k in 0..np {
@@ -286,10 +281,12 @@ fn overwrite_time_grid_file(data: &mut OptData, file: &str, c: &[f64]) {
     t.dt[0] = t.t[0][np1] - t.t0;
     if t.dt[0] <= 0.0 {
         omclog::warning(omclog::STDOUT, false, "read time grid from file fail!");
-        omclog::warning(
+        omclog::warning!(
             omclog::STDOUT,
             false,
-            &format!("line 0: {} <= {}", format_g(t.t[0][np1], 6), format_g(t.t0, 6)),
+            "line 0: {} <= {}",
+            format_g(t.t[0][np1], 6),
+            format_g(t.t0, 6),
         );
         return;
     }
@@ -305,14 +302,12 @@ fn overwrite_time_grid_file(data: &mut OptData, file: &str, c: &[f64]) {
         }
         if t.dt[i] <= 0.0 {
             omclog::warning(omclog::STDOUT, false, "read time grid");
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!(
-                    "line {i}/{nsi}: {} <= {}",
-                    format_g(t.t[i][np1], 6),
-                    format_g(t.t[i - 1][np1], 6)
-                ),
+                "line {i}/{nsi}: {} <= {}",
+                format_g(t.t[i][np1], 6),
+                format_g(t.t[i - 1][np1], 6),
             );
             omclog::warning(omclog::STDOUT, false, "failed!");
             return;
@@ -395,7 +390,7 @@ fn pick_up_bounds(data: &mut OptData) {
             umax,
             data.bounds.vnom[i],
             use_nominal_input[k],
-            libm::fabs(data.bounds.u0[k]),
+            fmath::fabs(data.bounds.u0[k]),
         );
         data.bounds.vnom[i] = nom;
         data.bounds.scal_f[i] = 1.0 / nom;
@@ -415,13 +410,13 @@ fn pick_up_bounds(data: &mut OptData) {
 /// C's `check_nominal`: the heuristic when a variable has no `nominal` of its own.
 fn check_nominal(min: f64, max: f64, nominal: f64, set: bool, x0: f64) -> f64 {
     if set {
-        return libm::fabs(nominal).max(1e-16);
+        return fmath::fabs(nominal).max(1e-16);
     }
-    let (amax, amin) = (libm::fabs(max), libm::fabs(min));
+    let (amax, amin) = (fmath::fabs(max), fmath::fabs(min));
     let mut nom = amax.max(amin);
     if nom > 1e12 {
         let tmp = amax.min(amin);
-        let ax0 = libm::fabs(x0);
+        let ax0 = fmath::fabs(x0);
         nom = if tmp < 1e12 { tmp.max(ax0) } else { 1.0 + ax0 };
     }
     nom.max(1e-16)
@@ -541,11 +536,11 @@ fn print_some_model_infos(data: &mut OptData) {
 fn pick_up_states(data: &mut OptData) {
     let Some(file) = crate::simflags::with_flags(|f| f.state_file.clone()) else { return };
     let Some(text) = crate::extinput::read_file(&file) else {
-        omclog::warning(omclog::STDOUT, false, &format!("OMC can't find the file {file}."));
+        omclog::warning!(omclog::STDOUT, false, "OMC can't find the file {file}.");
         return;
     };
     if text.lines().next().is_none() {
-        omclog::error(omclog::STDOUT, false, &format!("External input file: {file} is empty!"));
+        omclog::error!(omclog::STDOUT, false, "External input file: {file} is empty!");
         return;
     }
     let mut out = String::new();
@@ -560,10 +555,11 @@ fn pick_up_states(data: &mut OptData) {
                 data.v0[slot] = start;
                 out.push_str(&format!("\n[{i}]set {name}.start {}", format_g(start, 6)));
             }
-            None => omclog::warning(
+            None => omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!("it was impossible to set {name}.start {}", format_g(start, 6)),
+                "it was impossible to set {name}.start {}",
+                format_g(start, 6),
             ),
         }
     }
@@ -581,10 +577,10 @@ pub(crate) fn allocate_der_struct(data: &mut OptData) -> Result<()> {
     data.dim.update_hessian = match crate::simflags::with_flags(|f| f.keep_hessian) {
         Some(n) if n >= 0 => n,
         Some(n) => {
-            omclog::warning(
+            omclog::warning!(
                 omclog::STDOUT,
                 false,
-                &format!("not support {n} for keep hessian-matrix constant."),
+                "not support {n} for keep hessian-matrix constant.",
             );
             0
         }
@@ -1026,7 +1022,7 @@ fn initial_guess_cflag(data: &mut OptData, cflag: &str) -> i32 {
             2
         }
         other => {
-            omclog::warning(omclog::STDOUT, false, &format!("not support ipopt_init={other}"));
+            omclog::warning!(omclog::STDOUT, false, "not support ipopt_init={other}");
             1
         }
     }
@@ -1161,21 +1157,20 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
                 let v = data.v(i, j)[l];
                 if v < lo || v > hi {
                     driver::log_line(omclog::STDOUT, omclog::INFO, "\n********************************************\n");
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::STDOUT,
                         false,
-                        &format!("Initial guess failure at time {}", format_g(t, 6)),
+                        "Initial guess failure at time {}",
+                        format_g(t, 6),
                     );
-                    omclog::warning(
+                    omclog::warning!(
                         omclog::STDOUT,
                         false,
-                        &format!(
-                            "{}<= ({}={}) <={}",
-                            format_g(lo, 6),
-                            data.names.get(l).map(String::as_str).unwrap_or(""),
-                            format_g(v, 6),
-                            format_g(hi, 6)
-                        ),
+                        "{}<= ({}={}) <={}",
+                        format_g(lo, 6),
+                        data.names.get(l).map(String::as_str).unwrap_or(""),
+                        format_g(v, 6),
+                        format_g(hi, 6),
                     );
                     driver::log_line(omclog::STDOUT, omclog::INFO, "\n********************************************");
                 }
@@ -1267,8 +1262,8 @@ pub(crate) fn res2file(data: &mut OptData) -> Result<()> {
         ],
         1 => vec![1.0],
         n => {
-            omclog::error(omclog::STDOUT, false, &format!("Not support np = {n}"));
-            return Err("CodegenWasmJit: unsupported number of collocation points");
+            omclog::error!(omclog::STDOUT, false, "Not support np = {n}");
+            return Err("unsupported number of collocation points");
         }
     };
     let vopt = core::mem::take(&mut data.ipop.vopt);
@@ -1315,11 +1310,7 @@ pub(crate) fn res2file(data: &mut OptData) -> Result<()> {
     // C keeps `optimizeInput.csv` open from the initial guess to here; the rows were
     // collected in `input_csv`.
     if let Err(e) = std::fs::write("optimizeInput.csv", &data.input_csv) {
-        omclog::warning(
-            omclog::STDOUT,
-            false,
-            &format!("optimizeInput.csv could not be written: {e}"),
-        );
+        omclog::warning!(omclog::STDOUT, false, "optimizeInput.csv could not be written: {e}");
     }
     Ok(())
 }

@@ -51,17 +51,16 @@ VisualizationMAT::VisualizationMAT(const std::string& modelFile, const std::stri
  */
 VisualizationMAT::~VisualizationMAT()
 {
-  if (_matReader.file) {
-    omc_free_matlab4_reader(&_matReader);
-  }
 }
 
 void VisualizationMAT::initData()
 {
   VisualizationAbstract::initData();
   readMat(mpOMVisualBase->getModelFile(), mpOMVisualBase->getPath());
-  mpTimeManager->setStartTime(omc_matlab4_startTime(&_matReader));
-  mpTimeManager->setEndTime(omc_matlab4_stopTime(&_matReader));
+  if (_matReader.isOpen()) {
+    mpTimeManager->setStartTime(_matReader.startTime());
+    mpTimeManager->setEndTime(_matReader.stopTime());
+  }
 }
 
 void VisualizationMAT::initializeVisAttributes(const double time)
@@ -88,7 +87,11 @@ void VisualizationMAT::readMat(const std::string& modelFile, const std::string& 
   else
   {
     // Read mat file.
-    omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
+    try {
+      _matReader.open(resFileName);
+    } catch (const omc::ResultError &e) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString(e.what()), Helper::scriptingKind, Helper::errorLevel));
+    }
     //auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
     // Check return value.
 //    if (0 != ret)
@@ -127,17 +130,15 @@ void VisualizationMAT::updateVisualizerAttributeMAT(VisualizerAttribute& attr, c
   }
 }
 
-double VisualizationMAT::omcGetVarValue(ModelicaMatReader* reader, const char* varName, const double time)
+double VisualizationMAT::omcGetVarValue(omc::ResultFile* reader, const char* varName, const double time)
 {
   double val = 0.0;
-  ModelicaMatVariable_t* var = nullptr;
-  var = omc_matlab4_find_var(reader, varName);
-  if (var == nullptr) {
+  if (!reader->isOpen() || !reader->hasVariable(varName)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           QString(QObject::tr("Did not get variable from result file. Variable name is %1."))
                                                           .arg(varName), Helper::scriptingKind, Helper::errorLevel));
   } else {
-    omc_matlab4_val(&val, reader, var, time);
+    reader->valueAt(varName, time, val);
   }
 
   return val;

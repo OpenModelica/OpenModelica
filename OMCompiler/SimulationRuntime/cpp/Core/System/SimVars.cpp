@@ -34,8 +34,6 @@
 
 #include <Core/System/FactoryExport.h>
 #include <Core/System/SimVars.h>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
 
 /**
 * Constructor for SimVars, stores all model variable in continuous block of memory
@@ -421,7 +419,7 @@ string* SimVars::initStringArrayVar(size_t size, size_t start_index)
 */
 void SimVars::initRealAliasArray(int indices[], size_t n, double* ref_data[])
 {
-	std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getRealVarPtr,this,boost::lambda::_1));
+	std::transform(indices,indices+n,ref_data,[this](int i) { return this->getRealVarPtr(i); });
 }
 
 void SimVars::initRealAliasArray(std::vector<int> indices, double* ref_data[])
@@ -437,7 +435,7 @@ void SimVars::initRealAliasArray(std::vector<int> indices, double* ref_data[])
 */
 void SimVars::initIntAliasArray(int indices[], size_t n, int* ref_data[])
 {
-	std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getIntVarPtr,this,boost::lambda::_1));
+	std::transform(indices,indices+n,ref_data,[this](int i) { return this->getIntVarPtr(i); });
 }
 
 void SimVars::initIntAliasArray(std::vector<int> indices, int* ref_data[])
@@ -453,7 +451,7 @@ void SimVars::initIntAliasArray(std::vector<int> indices, int* ref_data[])
 */
 void SimVars::initBoolAliasArray(int indices[], size_t n, bool* ref_data[])
 {
-	std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getBoolVarPtr,this,boost::lambda::_1));
+	std::transform(indices,indices+n,ref_data,[this](int i) { return this->getBoolVarPtr(i); });
 }
 
 void SimVars::initBoolAliasArray(std::vector<int> indices, bool* ref_data[])
@@ -463,7 +461,7 @@ void SimVars::initBoolAliasArray(std::vector<int> indices, bool* ref_data[])
 
 void SimVars::initStringAliasArray(int indices[], size_t n, string* ref_data[])
 {
-	std::transform(indices,indices+n,ref_data,boost::lambda::bind(&SimVars::getStringVarPtr,this,boost::lambda::_1));
+	std::transform(indices,indices+n,ref_data,[this](int i) { return this->getStringVarPtr(i); });
 }
 
 void SimVars::initStringAliasArray(std::vector<int> indices, string* ref_data[])

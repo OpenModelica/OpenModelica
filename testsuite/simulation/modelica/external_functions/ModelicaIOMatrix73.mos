@@ -1,0 +1,35 @@
+// name:     ModelicaIOMatrix73
+// keywords: ModelicaIO, writeRealMatrix, readRealMatrix, MAT v7.3, HDF5
+// status:   correct
+// suite:    hdf5
+// teardown_command: rm -rf ModelicaIOMatrix73_* ModelicaIOMatrix73 ModelicaIOMatrix73.exe ModelicaIOMatrix73.mat ModelicaIOMatrix73.c ModelicaIOMatrix73.h ModelicaIOMatrix73.o ModelicaIOMatrix73.libs ModelicaIOMatrix73.log ModelicaIOMatrix73.makefile ModelicaIOMatrix73.wasm output.log
+//
+// MAT v7.3 is an HDF5 container, which ModelicaMatIO reads and writes only
+// under HAVE_HDF5. Appending "N" reopens the file, a code path of its own.
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadFile("ModelicaIOMatrix73.mo"); getErrorString();
+simulate(ModelicaIOMatrix73, stopTime=1.0); getErrorString();
+val(x, 1.0);
+val(dims[1], 1.0);
+val(dims[2], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaIOMatrix73_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaIOMatrix73', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | info    | ... loading \"M\" from \"ModelicaIOMatrix73.mat\"
+// LOG_STDOUT        | info    | ... loading \"N\" from \"ModelicaIOMatrix73.mat\"
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 22.749999999999996
+// 2.0
+// 3.0
+// endResult

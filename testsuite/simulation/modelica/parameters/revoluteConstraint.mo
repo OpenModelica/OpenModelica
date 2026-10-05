@@ -86,5 +86,5 @@ equation
       thickness=0.5,
       smooth=Smooth.None));
   annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
-            -100},{100,100}}), graphics), uses(Modelica(version="3.2.1")));
+            -100},{100,100}}), graphics), uses(Modelica(version="4.1.0")));
 end revoluteConstraint;

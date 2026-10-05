@@ -247,6 +247,18 @@ void PlotCurve::setCustomColor(bool value)
   mCustomColor = value;
 }
 
+void PlotCurve::clearXAxisVector()
+{
+  resetPrefixUnit(true);
+  mXAxisVector.clear();
+}
+
+void PlotCurve::clearYAxisVector()
+{
+  resetPrefixUnit(true);
+  mYAxisVector.clear();
+}
+
 bool PlotCurve::hasCustomColor()
 {
   return mCustomColor;
@@ -338,6 +350,9 @@ void PlotCurve::plotData(bool toggleSign)
             updateXAxisValue(i, mXAxisVector.at(i) / qPow(10, mXExponent));
           }
         }
+      } else {
+        mXUnitPrefix = "";
+        mXExponent = 0;
       }
 
       if (canUseYPrefixUnits) {
@@ -348,6 +363,9 @@ void PlotCurve::plotData(bool toggleSign)
             updateYAxisValue(i, mYAxisVector.at(i) / qPow(10, mYExponent));
           }
         }
+      } else {
+        mYUnitPrefix = "";
+        mYExponent = 0;
       }
     } else {
       // revert the values when there is no perfixUnits.

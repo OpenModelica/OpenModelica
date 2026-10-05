@@ -30,7 +30,8 @@ for f in "$@"; do
     done
   done
 done
-if test "NOERROR" = "1"; then
-  exit
+# NOERROR=1: remove the unused imports but do not fail.
+if test "$NOERROR" = "1"; then
+  exit 0
 fi
 exit "$EXIT"

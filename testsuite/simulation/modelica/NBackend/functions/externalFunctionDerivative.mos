@@ -1,0 +1,40 @@
+// name: externalFunctionDerivative
+// keywords: NewBackend, differentiation, external function
+// status: correct
+// suite: cSources
+//
+// Matrices.solve calls an external function without a derivative annotation.
+// Differentiating it has to fail cleanly and must not leave a broken derivative function.
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+loadString("
+model ExternalFunctionDerivative
+  Real x[2](each start = 1);
+  Real A[2,2] = [2 + time, 1; 1, 3];
+equation
+  x = Modelica.Math.Matrices.solve(A, {sin(x[2]) + 1, cos(x[1])});
+end ExternalFunctionDerivative;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ExternalFunctionDerivative); getErrorString();
+abs(val(x[1], 1.0) - 0.332857) < 1e-4;
+abs(val(x[2], 1.0) - 0.204088) < 1e-4;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ExternalFunctionDerivative_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalFunctionDerivative', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// endResult

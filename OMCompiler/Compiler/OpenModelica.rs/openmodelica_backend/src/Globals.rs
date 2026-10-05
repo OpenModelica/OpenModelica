@@ -10,7 +10,6 @@
 #![allow(non_snake_case, non_upper_case_globals, clippy::type_complexity)]
 
 use std::cell::RefCell;
-use std::sync::Arc;
 
 // ── Thread-local roots (process-global by MetaModelica semantics) ─────────────
 
@@ -24,32 +23,16 @@ thread_local! {
     // before `reset()` could store anything. Seed with the default empty
     // `SymbolTable` (same shape `reset()` builds) so the slot is valid on
     // first touch; it is overwritten by `reset()`/`update()` as before.
-    pub static symbolTable: RefCell<Arc<crate::SymbolTable::SymbolTable>> =
-        RefCell::new(Arc::new(<crate::SymbolTable::SymbolTable as ::std::default::Default>::default()));
+    pub static symbolTable: RefCell<metamodelica::Ref<crate::SymbolTable::SymbolTable>> =
+        RefCell::new(metamodelica::Ref::new(<crate::SymbolTable::SymbolTable as ::std::default::Default>::default()));
 
     // Index 19 — rewriteRulesIndex
     //
     // Optional list of active rewrite rules. Set to Some(rules) when a
     // rewrite-rule file is loaded; None otherwise.
     // Source: RewriteRules.mo.
-    pub static rewriteRulesIndex: RefCell<Option<Arc<metamodelica::List<crate::RewriteRules::Rule>>>> =
+    pub static rewriteRulesIndex: RefCell<Option<metamodelica::List<crate::RewriteRules::Rule>>> =
         const { RefCell::new(None) };
-
-    // Index 25 — optionSimCode
-    //
-    // The current SimCode structure, set during SimCode generation.
-    // None when not in a SimCode generation pass.
-    pub static optionSimCode: RefCell<Option<openmodelica_simcode_types::SimCode::SimCode>> =
-        const { RefCell::new(None) };
-
-    // Index 34 — fmi3VariableAliasCache
-    //
-    // Value reference -> the FMI 3.0 <Alias> members nested under the variable
-    // with that value reference. Live only while one modelDescription.xml is
-    // being written; source: SimCodeUtil.cacheFMI3VariableAliases.
-    pub static fmi3VariableAliasCache: RefCell<
-        Option<metamodelica::Array<Arc<metamodelica::List<openmodelica_simcode_types::SimCodeVar::SimVar>>>>,
-    > = const { RefCell::new(None) };
 
     // Index 26 — interactiveCache
     //

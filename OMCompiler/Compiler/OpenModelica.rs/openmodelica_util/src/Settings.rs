@@ -148,6 +148,19 @@ fn strip_bin_path(path: &str) -> Result<ArcStr> {
     })
 }
 
+/// The home for a file in a macOS app bundle: `Contents/Resources`. The Mach-O
+/// lives in `Contents/{MacOS,Frameworks}`, neither under a `bin`/`lib` component,
+/// so [`strip_bin_path_opt`] cannot find it. Not `cfg`-gated, so it is testable
+/// off macOS; only the caller is.
+#[cfg_attr(not(target_vendor = "apple"), allow(dead_code))]
+fn bundle_home(path: &str) -> Option<ArcStr> {
+    let (dir, _) = path.rsplit_once('/')?;
+    let contents = dir.strip_suffix("/Frameworks").or_else(|| dir.strip_suffix("/MacOS"))?;
+    contents
+        .ends_with("/Contents")
+        .then(|| ArcStr::from(format!("{contents}/Resources")))
+}
+
 fn strip_bin_path_opt(path: &str) -> Option<ArcStr> {
     if !path.contains("bin") && !path.contains("lib") {
         return None;
@@ -192,8 +205,7 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     //   2. the prefix of the library this code is in, as C deduces it;
     //   3. the install root (the directory above the executable's `bin`/`lib`);
     //   4. `$OPENMODELICAHOME` — the dev-workflow fallback for running the
-    //      port straight out of `target/debug` (also what the C
-    //      OMC_BOOTSTRAPPING build reads);
+    //      port straight out of `target/debug`;
     //   5. the `strip_bin_path` prefix of the executable as a last resort.
     {
         let state = STATE.lock().unwrap();
@@ -211,6 +223,24 @@ pub fn getInstallationDirectoryPath() -> Result<ArcStr> {
     {
         let path = convert_to_forward_slashes(&env);
         let mut state = STATE.lock().unwrap();
+        state.installation_path = Some(path.clone());
+        return Ok(path);
+    }
+
+    // Before the `bin`/`lib` walk, which climbs out of a bundle rather than
+    // finding its home.
+    #[cfg(target_vendor = "apple")]
+    if let Some(path) = self_library_path()
+        .as_deref()
+        .and_then(bundle_home)
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|p| bundle_home(&convert_to_forward_slashes(&p.to_string_lossy())))
+        })
+    {
+        let mut state = STATE.lock().unwrap();
+        set_env_var("OPENMODELICAHOME", &path);
         state.installation_path = Some(path.clone());
         return Ok(path);
     }
@@ -352,3 +382,39 @@ pub fn setEcho(echo: i32) {
 public function dumpSettings
   external "C" Settings_dumpSettings() annotation(Library = "omcruntime");
 end dumpSettings;*/
+
+#[cfg(test)]
+mod tests {
+    use super::{bundle_home, strip_bin_path_opt};
+
+    #[test]
+    fn bundle_home_maps_macho_dirs_to_resources() {
+        let app = "/Applications/OMEdit.app/Contents";
+        for macho in [
+            format!("{app}/Frameworks/libOpenModelicaCompiler.dylib"),
+            format!("{app}/MacOS/omc"),
+            format!("{app}/MacOS/OMEdit"),
+        ] {
+            assert_eq!(
+                bundle_home(&macho).as_deref(),
+                Some(format!("{app}/Resources").as_str()),
+                "{macho}"
+            );
+            // What it rescues: the bin/lib walk cannot find this.
+            assert_ne!(strip_bin_path_opt(&macho).as_deref(), Some(format!("{app}/Resources").as_str()));
+        }
+    }
+
+    #[test]
+    fn bundle_home_ignores_anything_else() {
+        for path in [
+            "/usr/lib/aarch64-apple-darwin/omc/libOpenModelicaCompiler.dylib",
+            "/opt/om/bin/omc",
+            // `Frameworks` that is not a bundle's.
+            "/opt/Frameworks/libOpenModelicaCompiler.dylib",
+            "/Applications/OMEdit.app/Contents/Resources/lib/x/omc/libfoo.dylib",
+        ] {
+            assert_eq!(bundle_home(path), None, "{path}");
+        }
+    }
+}

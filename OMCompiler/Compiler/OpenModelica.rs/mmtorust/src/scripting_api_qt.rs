@@ -128,7 +128,7 @@ fn collect_output_names(c: &Absyn::Class, out: &mut HashMap<String, Vec<String>>
 
 /// Apply `f` to each element specification in the public/protected parts.
 fn for_each_element(
-    parts: &metamodelica::List<std::sync::Arc<Absyn::ClassPart>>,
+    parts: &metamodelica::List<metamodelica::Ref<Absyn::ClassPart>>,
     mut f: impl FnMut(&Absyn::ElementSpec),
 ) {
     for part in parts {
@@ -231,7 +231,7 @@ fn rust_ty(ty: &Ty) -> String {
         Ty::I32 => "i32".to_string(),
         Ty::F64 => "metamodelica::Real".to_string(),
         Ty::Bool => "bool".to_string(),
-        Ty::List(inner) => format!("std::sync::Arc<metamodelica::List<{}>>", rust_ty(inner)),
+        Ty::List(inner) => format!("metamodelica::List<{}>", rust_ty(inner)),
         other => unreachable!("rust_ty on unsupported {other:?}"),
     }
 }
@@ -333,7 +333,7 @@ fn gen_rust_wrapper(s: &mut String, f: &Func) {
     for (i, (n, ty)) in f.inputs.iter().enumerate() {
         let local = format!("__a{i}");
         writeln!(&mut conv, "        let {local} = {};", abi_in(ty, &arg_ident(n), 0)).unwrap();
-        call_args.push(local);
+        call_args.push(format!("{}{local}", borrow_amp(f, i)));
     }
     let call = format!(
         "openmodelica_backend_main::OpenModelicaScriptingAPI::{}({})",
@@ -379,6 +379,13 @@ fn default_ret(ty: &Ty) -> String {
     }
 }
 
+/// `&` when the API function takes input `i` by reference.
+fn borrow_amp(f: &Func, i: usize) -> &'static str {
+    let borrowed = crate::borrow_params::mask(&format!("OpenModelicaScriptingAPI.{}", f.name))
+        .is_some_and(|m| m.get(i) == Some(&true));
+    if borrowed { "&" } else { "" }
+}
+
 // ── wasm worker-side ABI dispatch generation ───────────────────────────────
 // Emits `omc_abi_dispatch`, which decodes the JSON request `{fn, args}` the
 // main-side bridge posts, calls the matching `OpenModelicaScriptingAPI` function,
@@ -401,7 +408,7 @@ fn gen_dispatch_arm(s: &mut String, f: &Func) {
     let mut call_args: Vec<String> = Vec::new();
     for (i, (_n, ty)) in f.inputs.iter().enumerate() {
         writeln!(s, "                let __a{i} = {};", json_arg(ty, i)).unwrap();
-        call_args.push(format!("__a{i}"));
+        call_args.push(format!("{}__a{i}", borrow_amp(f, i)));
     }
     writeln!(
         s,
@@ -449,7 +456,7 @@ fn json_arg(ty: &Ty, idx: usize) -> String {
         Ty::F64 => format!("__jf64(a, {idx})"),
         Ty::Bool => format!("__jbool(a, {idx})"),
         Ty::List(inner) => format!(
-            "std::sync::Arc::new(a.get({idx}).and_then(|__v| __v.as_array()).map(|__arr0| __arr0.iter().map(|__o0| {}).collect::<metamodelica::List<{}>>()).unwrap_or(metamodelica::List::Nil))",
+            "a.get({idx}).and_then(|__v| __v.as_array()).map(|__arr0| __arr0.iter().map(|__o0| {}).collect::<metamodelica::List<{}>>()).unwrap_or_default()",
             json_elem(inner, "__o0", 1),
             rust_ty(inner)
         ),
@@ -468,7 +475,7 @@ fn json_elem(ty: &Ty, o: &str, depth: usize) -> String {
             let arr = format!("__arr{depth}");
             let o2 = format!("__o{depth}");
             format!(
-                "std::sync::Arc::new({o}.as_array().map(|{arr}| {arr}.iter().map(|{o2}| {}).collect::<metamodelica::List<{}>>()).unwrap_or(metamodelica::List::Nil))",
+                "{o}.as_array().map(|{arr}| {arr}.iter().map(|{o2}| {}).collect::<metamodelica::List<{}>>()).unwrap_or_default()",
                 json_elem(inner, &o2, depth + 1),
                 rust_ty(inner)
             )
@@ -591,7 +598,7 @@ fn abi_in(ty: &Ty, c: &str, depth: usize) -> String {
         Ty::List(inner) => {
             let o = format!("__o{depth}");
             format!(
-                "std::sync::Arc::new(unsafe {{ seq_slice({c}) }}.iter().map(|{o}| {}).collect::<metamodelica::List<{}>>())",
+                "unsafe {{ seq_slice({c}) }}.iter().map(|{o}| {}).collect::<metamodelica::List<{}>>()",
                 read_elem(inner, &o, depth + 1),
                 rust_ty(inner)
             )
@@ -614,7 +621,7 @@ fn read_elem(ty: &Ty, o: &str, depth: usize) -> String {
         Ty::List(inner) => {
             let o2 = format!("__o{depth}");
             format!(
-                "match {o} {{ OmcVal::Seq(__sb) => std::sync::Arc::new(__sb.0.iter().map(|{o2}| {}).collect::<metamodelica::List<{}>>()), _ => std::sync::Arc::new(metamodelica::List::Nil) }}",
+                "match {o} {{ OmcVal::Seq(__sb) => __sb.0.iter().map(|{o2}| {}).collect::<metamodelica::List<{}>>(), _ => metamodelica::nil() }}",
                 read_elem(inner, &o2, depth + 1),
                 rust_ty(inner)
             )

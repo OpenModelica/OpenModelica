@@ -10,7 +10,7 @@
 //!   Real -> OrderedFloat<f64> (aliased as `metamodelica::Real`)
 //!   Boolean -> bool
 //!   String -> String
-//!   List<T> -> Arc<List<T>>           (persistent singly-linked list)
+//!   list<T> -> List<T>                (persistent singly-linked list; Option<Arc<ListNode<T>>>)
 //!   array<T> -> Array<T> = Rc<RefCell<Vec<T>>>
 //!
 //! Note: MetaModelica uses 1-based indexing; Rust uses 0-based.
@@ -42,9 +42,23 @@ pub type Result<T, E = &'static str> = ::core::result::Result<T, E>;
 
 pub mod gc;
 pub mod cancel;
+pub mod heap_limit;
+
+/// The stack omc gives a thread that runs compiler code: the parser and much
+/// of the frontend recurse as deep as the input nests.
+pub fn thread_stack_size() -> usize {
+    std::env::var("OPENMODELICA_STACK_SIZE_KB")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .map_or(64 * 1024 * 1024, |kb| kb * 1024)
+}
 
 /// MetaModelica `array<T>`. See module-level docs for rationale.
 pub type Array<A> = Rc<RefCell<Vec<A>>>;
+
+/// The box codegen puts around a recursive uniontype, and the one place to
+/// change if that boxing ever has to differ.
+pub type Ref<T> = std::sync::Arc<T>;
 
 /// MetaModelica `Real`. Wraps `f64` with `OrderedFloat` so that values
 /// containing `Real` can implement `Ord` / `Eq` / `Hash` — required for
@@ -66,6 +80,7 @@ pub mod value;
 pub mod misc;
 pub mod ext;
 pub mod Dangerous;
+pub mod serial;
 
 // Flatten the public API back to the crate root: generated code refers
 // to `metamodelica::<builtin>` regardless of which module now defines it.
@@ -80,6 +95,52 @@ pub use list::*;
 pub use array::*;
 pub use value::*;
 pub use misc::*;
+
+/// An owned `T` from a value bound either by move (`T`) or through a borrow
+/// (`&T`): moves the former, clones the latter.
+pub trait Own<T> {
+    fn own(self) -> T;
+}
+
+impl<T> Own<T> for T {
+    #[inline(always)]
+    fn own(self) -> T {
+        self
+    }
+}
+
+impl<T: Clone> Own<T> for &T {
+    #[inline(always)]
+    fn own(self) -> T {
+        self.clone()
+    }
+}
+
+/// The callback in an `Arc`, for a `&dyn Fn` parameter. Unlike `&*a` it needs
+/// no known type for `a`, so it works on an inferred closure parameter.
+#[inline(always)]
+pub fn arc_ref<F: ?Sized>(a: &std::sync::Arc<F>) -> &F {
+    a
+}
+
+/// A `&T` from a value bound either by move (`T`) or through a borrow (`&T`).
+pub trait AsArg<T> {
+    fn as_arg(&self) -> &T;
+}
+
+impl<T> AsArg<T> for T {
+    #[inline(always)]
+    fn as_arg(&self) -> &T {
+        self
+    }
+}
+
+impl<T> AsArg<T> for &T {
+    #[inline(always)]
+    fn as_arg(&self) -> &T {
+        self
+    }
+}
 
 /// Wrap an infallible function value so it satisfies a function-pointer type
 /// whose signature expects `Result<T>`.

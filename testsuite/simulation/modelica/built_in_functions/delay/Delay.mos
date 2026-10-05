@@ -23,10 +23,10 @@ equation
 end Delay;
 ");
 simulate(Delay, startTime=0, stopTime=10, simflags="-lv=LOG_EVENTS");
-val(x, 5);        // sin(2.5) + 1.0
-val(y, 5.0001);   // cos(5.0001)
-val(z, 5);        // sin(4.99)
-val(w, 5);        // sin(3)
+val(x, 5);      // sin(2.5) + 1.0
+val(y, 5.0001); // cos(5.0001)
+val(z, 5);      // sin(4.99)
+val(w, 5);      // sin(3)
 
 // Result:
 // true

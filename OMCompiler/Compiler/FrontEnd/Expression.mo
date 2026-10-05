@@ -4951,9 +4951,13 @@ algorithm
     then (e, ext_arg);
 
     case DAE.CREF(cr, tp) algorithm
-      (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
-      e := if referenceEq(cr, cr_1) then inExp else DAE.CREF(cr_1, tp);
-      (e, ext_arg) := inFunc(e, ext_arg);
+      if ComponentReferenceBasics.crefHasNoSubscripts(cr) then
+        (e, ext_arg) := inFunc(inExp, inExtArg);
+      else
+        (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
+        e := if referenceEq(cr, cr_1) then inExp else DAE.CREF(cr_1, tp);
+        (e, ext_arg) := inFunc(e, ext_arg);
+      end if;
     then (e, ext_arg);
 
     // unary
@@ -5155,7 +5159,7 @@ algorithm
     case DAE.MATCHEXPRESSION(matchTy, expl, aliases, localDecls, cases, tp) algorithm
       // Don't traverse the local declarations; we don't store bindings there (yet)
       (expl_1, ext_arg) := traverseExpList(expl, inFunc, inExtArg);
-      (cases_1, ext_arg) := traverseCases(cases, inFunc, ext_arg);
+      (cases_1, ext_arg) := traverseMatchCases(cases, inFunc, ext_arg);
       e := if referenceEq(expl, expl_1) and referenceEq(cases, cases_1) then inExp else DAE.MATCHEXPRESSION(matchTy, expl_1, aliases, localDecls, cases_1, tp);
       (e, ext_arg) := inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -5507,12 +5511,11 @@ protected function traverseExpTopDown1
     output Type_a outArg;
   end FuncExpType;
 algorithm
-  (outExp,outArg) := match (cont,inExp,func,inArg)
+  (outExp,outArg) := match (cont,inExp,inArg)
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3;
       Operator op;
-      FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn;
       Boolean scalar;
@@ -5537,201 +5540,204 @@ algorithm
       list<DAE.Type> typeVars;
       list<DAE.Subscript> subs;
 
-    case (false,_,_,_) then (inExp,inArg);
-    case (_,DAE.ICONST(_),_,ext_arg) then (inExp,ext_arg);
-    case (_,DAE.RCONST(_),_,ext_arg) then (inExp,ext_arg);
-    case (_,DAE.SCONST(_),_,ext_arg) then (inExp,ext_arg);
-    case (_,DAE.BCONST(_),_,ext_arg) then (inExp,ext_arg);
-    case (_,DAE.CLKCONST(clk),_,ext_arg)
+    case (false,_,_) then (inExp,inArg);
+    case (_,DAE.ICONST(_),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.RCONST(_),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.SCONST(_),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.BCONST(_),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.CLKCONST(clk),ext_arg)
       algorithm
         (clk1, ext_arg) := traverseExpTopDownClockHelper(clk,func,ext_arg);
         e := if referenceEq(clk1,clk) then inExp else DAE.CLKCONST(clk1);
       then (e, ext_arg);
-    case (_,DAE.ENUM_LITERAL(),_,ext_arg) then (inExp,ext_arg);
-    case (_,DAE.CREF(cr,tp),rel,ext_arg)
+    case (_,DAE.ENUM_LITERAL(),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.CREF(componentRef = cr),ext_arg)
+      guard ComponentReferenceBasics.crefHasNoSubscripts(cr)
+      then (inExp,ext_arg);
+    case (_,DAE.CREF(cr,tp),ext_arg)
       algorithm
-        (cr_1,ext_arg_1) := traverseExpTopDownCrefHelper(cr,rel,ext_arg);
+        (cr_1,ext_arg_1) := traverseExpTopDownCrefHelper(cr,func,ext_arg);
       then (if referenceEq(cr,cr_1) then inExp else DAE.CREF(cr_1,tp),ext_arg_1);
     // unary
-    case (_,DAE.UNARY(operator = op,exp = e1),rel,ext_arg)
+    case (_,DAE.UNARY(operator = op,exp = e1),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then
         (if referenceEq(e1, e1_1) then inExp else DAE.UNARY(op,e1_1),ext_arg_1);
 
     // binary
-    case (_,DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
+    case (_,DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.BINARY(e1_1,op,e2_1),ext_arg_2);
 
     // logical unary
-    case (_,DAE.LUNARY(operator = op,exp = e1),rel,ext_arg)
+    case (_,DAE.LUNARY(operator = op,exp = e1),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then (if referenceEq(e1, e1_1) then inExp else DAE.LUNARY(op,e1_1),ext_arg_1);
 
     // logical binary
-    case (_,DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),rel,ext_arg)
+    case (_,DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.LBINARY(e1_1,op,e2_1),ext_arg_2);
 
     // relation
-    case (_,DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),rel,ext_arg)
+    case (_,DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),ext_arg_2);
 
     // if expressions
-    case (_,(DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),rel,ext_arg)
+    case (_,(DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
-        (e3_1,ext_arg_3) := traverseExpTopDown(e3, rel, ext_arg_2);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
+        (e3_1,ext_arg_3) := traverseExpTopDown(e3, func, ext_arg_2);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3);
 
     // call
-    case (_,(DAE.CALL(path = fn,expLst = expl,attr = attr)),rel,ext_arg)
+    case (_,(DAE.CALL(path = fn,expLst = expl,attr = attr)),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.CALL(fn,expl_1,attr),ext_arg_1);
 
-    case (_,(DAE.RECORD(path = fn,exps = expl,comp = fieldNames,ty = tp)),rel,ext_arg)
+    case (_,(DAE.RECORD(path = fn,exps = expl,comp = fieldNames,ty = tp)),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.RECORD(fn,expl_1,fieldNames,tp),ext_arg_1);
 
-    case (_,(DAE.PARTEVALFUNCTION(fn, expl, tp, t)),rel,ext_arg)
+    case (_,(DAE.PARTEVALFUNCTION(fn, expl, tp, t)),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.PARTEVALFUNCTION(fn,expl_1,tp,t),ext_arg_1);
 
-    case (_,(DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
+    case (_,(DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.ARRAY(tp,scalar,expl_1),ext_arg_1);
 
-    case (_,(DAE.MATRIX(ty = tp,integer = dim,matrix = lstexpl)),rel,ext_arg)
+    case (_,(DAE.MATRIX(ty = tp,integer = dim,matrix = lstexpl)),ext_arg)
       algorithm
-        (lstexpl_1,ext_arg_1) := traverseExpMatrixTopDown(lstexpl, rel, ext_arg);
+        (lstexpl_1,ext_arg_1) := traverseExpMatrixTopDown(lstexpl, func, ext_arg);
       then (DAE.MATRIX(tp,dim,lstexpl_1),ext_arg_1);
 
-    case (_,(DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),rel,ext_arg)
+    case (_,(DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2);
 
-    case (_,(DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),rel,ext_arg)
+    case (_,(DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
-        (e3_1,ext_arg_3) := traverseExpTopDown(e3, rel, ext_arg_2);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
+        (e3_1,ext_arg_3) := traverseExpTopDown(e3, func, ext_arg_2);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3);
 
-    case (_,(DAE.TUPLE(PR = expl)),rel,ext_arg)
+    case (_,(DAE.TUPLE(PR = expl)),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.TUPLE(expl_1),ext_arg_1);
 
-    case (_,(DAE.CAST(ty = tp,exp = e1)),rel,ext_arg)
+    case (_,(DAE.CAST(ty = tp,exp = e1)),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then (DAE.CAST(tp,e1_1),ext_arg_1);
 
-    case (_,(DAE.ASUB(exp = e1,sub = subs)),rel,ext_arg)
+    case (_,(DAE.ASUB(exp = e1,sub = subs)),ext_arg)
       algorithm
         expl_1 := list(Expression.getSubscriptExp(sub) for sub in subs);
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (expl_1,ext_arg_2) := traverseExpListTopDown(expl_1, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (expl_1,ext_arg_2) := traverseExpListTopDown(expl_1, func, ext_arg_1);
       then (makeASUB(e1_1,expl_1),ext_arg_2);
 
-    case (_,(DAE.TSUB(e1,i,tp)),rel,ext_arg)
+    case (_,(DAE.TSUB(e1,i,tp)),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then (DAE.TSUB(e1_1,i,tp),ext_arg_1);
 
-    case (_,e1 as DAE.RSUB(),rel,ext_arg)
+    case (_,e1 as DAE.RSUB(),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1.exp, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1.exp, func, ext_arg);
         if not referenceEq(e1.exp, e1_1) then
           e1.exp := e1_1;
         end if;
       then (e1,ext_arg_1);
 
-    case (_,(DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
+    case (_,(DAE.SIZE(exp = e1,sz = NONE())),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then (DAE.SIZE(e1_1,NONE()),ext_arg_1);
 
-    case (_,(DAE.SIZE(exp = e1,sz = SOME(e2))),rel,ext_arg)
+    case (_,(DAE.SIZE(exp = e1,sz = SOME(e2))),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2);
 
-    case (_,DAE.CODE(),_,ext_arg) then (inExp,ext_arg);
+    case (_,DAE.CODE(),ext_arg) then (inExp,ext_arg);
 
-    case (_,DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters),rel,ext_arg)
+    case (_,DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters),ext_arg)
       algorithm
-        (e1,ext_arg) := traverseExpTopDown(e1, rel, ext_arg);
-        (riters,ext_arg) := traverseReductionIteratorsTopDown(riters, rel, ext_arg);
+        (e1,ext_arg) := traverseExpTopDown(e1, func, ext_arg);
+        (riters,ext_arg) := traverseReductionIteratorsTopDown(riters, func, ext_arg);
       then (DAE.REDUCTION(reductionInfo,e1,riters),ext_arg);
 
-    case (_, DAE.EMPTY(), _, _)
+    case (_, DAE.EMPTY(), _)
       then (inExp, inArg);
 
     // MetaModelica list
-    case (_,DAE.CONS(e1,e2),rel,ext_arg)
+    case (_,DAE.CONS(e1,e2),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) := traverseExpTopDown(e2, rel, ext_arg_1);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
+        (e2_1,ext_arg_2) := traverseExpTopDown(e2, func, ext_arg_1);
       then (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.CONS(e1_1,e2_1),ext_arg_2);
 
-    case (_,DAE.LIST(expl),rel,ext_arg)
+    case (_,DAE.LIST(expl),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.LIST(expl_1),ext_arg_1);
 
-    case (_,DAE.META_TUPLE(expl),rel,ext_arg)
+    case (_,DAE.META_TUPLE(expl),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.META_TUPLE(expl_1),ext_arg_1);
 
-    case (_,DAE.META_OPTION(oe1),rel,ext_arg)
+    case (_,DAE.META_OPTION(oe1),ext_arg)
       algorithm
-        (oe1,ext_arg) := traverseExpOptTopDown(oe1, rel, ext_arg);
+        (oe1,ext_arg) := traverseExpOptTopDown(oe1, func, ext_arg);
       then (DAE.META_OPTION(oe1),ext_arg);
 
-    case (_,DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),rel,ext_arg)
+    case (_,DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg)
       algorithm
-        (expl,ext_arg) := traverseExpListTopDown(expl,rel,ext_arg);
-        (cases, ext_arg) := traverseCasesTopDown(cases, rel, ext_arg);
+        (expl,ext_arg) := traverseExpListTopDown(expl,func,ext_arg);
+        (cases, ext_arg) := traverseMatchCasesTopDown(cases, func, ext_arg);
       then (DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg);
 
-    case (_,DAE.METARECORDCALL(fn,expl,fieldNames,i,typeVars),rel,ext_arg)
+    case (_,DAE.METARECORDCALL(fn,expl,fieldNames,i,typeVars),ext_arg)
       algorithm
-        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) := traverseExpListTopDown(expl, func, ext_arg);
       then (DAE.METARECORDCALL(fn,expl_1,fieldNames,i,typeVars),ext_arg_1);
 
-    case (_,DAE.UNBOX(e1,tp),rel,ext_arg)
+    case (_,DAE.UNBOX(e1,tp),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then (DAE.UNBOX(e1_1,tp),ext_arg_1);
 
-    case (_,DAE.BOX(e1),rel,ext_arg)
+    case (_,DAE.BOX(e1),ext_arg)
       algorithm
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, rel, ext_arg);
+        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
       then (DAE.BOX(e1_1),ext_arg_1);
 
-    case (_,DAE.PATTERN(),_,ext_arg)
+    case (_,DAE.PATTERN(),ext_arg)
       then (inExp,ext_arg);
 
-    case (_,DAE.SHARED_LITERAL(),_,ext_arg)
+    case (_,DAE.SHARED_LITERAL(),ext_arg)
       then (inExp,ext_arg);
 
     else
@@ -5793,18 +5799,33 @@ public function traverseExpListTopDown
   end FuncExpType;
 protected
   DAE.Exp e_1;
-  Boolean same = true;
+  list<DAE.Exp> rest = inExpl, acc;
+  Integer nEq = 0;
 algorithm
-  for e in inExpl loop
-    (e_1,outA) := traverseExpTopDown(e, rel, outA);
-    same := if referenceEq(e,e_1) then same else false;
-    outExpl := e_1::outExpl;
-  end for;
-  if same then
-    outExpl := inExpl;
-  else
-    outExpl := MetaModelica.Dangerous.listReverseInPlace(outExpl);
-  end if;
+  // Allocates only once an element changes, like traverseExpList.
+  outExpl := inExpl;
+  while not listEmpty(rest) loop
+    (e_1, outA) := traverseExpTopDown(listHead(rest), rel, outA);
+    if not referenceEq(listHead(rest), e_1) then
+      acc := {};
+      for e in inExpl loop
+        if nEq < 1 then
+          break;
+        end if;
+        acc := e :: acc;
+        nEq := nEq - 1;
+      end for;
+      acc := e_1 :: acc;
+      for e in listRest(rest) loop
+        (e_1, outA) := traverseExpTopDown(e, rel, outA);
+        acc := e_1 :: acc;
+      end for;
+      outExpl := MetaModelica.Dangerous.listReverseInPlace(acc);
+      return;
+    end if;
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpListTopDown;
 
 public function traverseExpOpt "Calls traverseExpBottomUp for SOME(exp) and does nothing for NONE"
@@ -7239,9 +7260,8 @@ algorithm
       algorithm
         (subs_1, arg) := traverseExpSubs(subs, rel, arg);
         (cr_1, arg) := traverseExpCref(cr, rel, arg);
-        cr := if referenceEq(cr,cr_1) and referenceEq(subs,subs_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1);
       then
-        (cr, arg);
+        (if referenceEq(cr,cr_1) and referenceEq(subs,subs_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), arg);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), arg)
       algorithm
@@ -9083,9 +9103,10 @@ algorithm
       Absyn.Path path;
       DAE.Function func;
     case DAE.CALL(path=path)
-      algorithm
-        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
-         then listEmpty(DAEUtil.getFunctionElements(func));
+      then match AvlTreePathFunction.getOpt(funcsIn,path)
+        case SOME(SOME(func)) then listEmpty(DAEUtil.getFunctionElements(func));
+        else false;
+      end match;
     else false;
   end match;
 end isRecordCall;
@@ -12402,6 +12423,41 @@ algorithm
       then (cases,a);
   end match;
 end traverseCases;
+
+protected function traverseMatchCases<A>
+  "traverseCases for a match expression met by traverseExpBottomUp."
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> outCases;
+  output A oa;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end FuncExpType;
+algorithm
+  (outCases, oa) := traverseCases(inCases, func, inA);
+end traverseMatchCases;
+
+protected function traverseMatchCasesTopDown<A>
+  "traverseCasesTopDown for a match expression met by traverseExpTopDown."
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> cases;
+  output A a;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output A outA;
+  end FuncExpType;
+algorithm
+  (cases, a) := traverseCasesTopDown(inCases, func, inA);
+end traverseMatchCasesTopDown;
 
 public function traverseCasesTopDown<A>
   "Traverses the expressions in a list of match-expression cases (top-down).

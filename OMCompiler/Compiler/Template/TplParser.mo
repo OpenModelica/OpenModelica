@@ -646,11 +646,15 @@ protected function typeviewDefsFromInterfaceFile
   output Option<String> errOpt;
   input output CacheTree.Tree cachedDefs;
 protected
-  String file;
+  String file, dir;
   list<String> chars;
   list<TplAbsyn.ASTDef> newAstDefs;
 algorithm
   file := TplAbsyn.pathIdentString(interfaceName) + ".mo";
+  dir := Flags.getConfigString(Flags.TPL_INTERFACE_DIR);
+  if dir <> "" and System.regularFileExists(dir + "/" + file) then
+    file := dir + "/" + file;
+  end if;
   try
     if CacheTree.hasKey(cachedDefs, file) then
       // Return cached result, because it's very slow if we don't...
@@ -696,8 +700,8 @@ algorithm
   try
     if CacheTree.hasKey(cachedDefs, file) then
       // We cache everything. But we need to pass isUnqualifiedImport=true|false...
-      {TplAbsyn.AST_DEF(_, _, astTypes)} := CacheTree.get(cachedDefs, file);
-      astDefs := TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, astTypes)::astDefs;
+      {TplAbsyn.AST_DEF(types = astTypes)} := CacheTree.get(cachedDefs, file);
+      astDefs := TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, false, astTypes)::astDefs;
       linfo := LINE_INFO(PARSE_INFO("cachedResult",{},false),0,0,{});
       errOpt := NONE();
       return;
@@ -708,7 +712,7 @@ algorithm
     TplAbsyn.TEMPL_PACKAGE(templateDefs = templateDefs)
       := TplAbsyn.fullyQualifyTemplatePackage(tplPackage);
     astTypes := List.map(templateDefs, templateDefToAstDefType);
-    newAstDef := TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, astTypes);
+    newAstDef := TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, false, astTypes);
     cachedDefs := CacheTree.add(cachedDefs, file, newAstDef::{});
     astDefs :=  newAstDef :: astDefs;
     if Flags.isSet(Flags.FAILTRACE) then
@@ -1760,7 +1764,7 @@ absynDef:
   publicProtected:isD  'package' pathIdent:pid  stringComment
     absynTypes:types
   endDefPathIdent(pid)
-  =>  AST_DEF(pid, isD, types)
+  =>  AST_DEF(pid, isD, true, types)
 */
 public function absynDef
   input list<String> inChars;
@@ -1793,7 +1797,7 @@ algorithm
         (chars, linfo, types) := absynTypes(chars, linfo);
         (chars, linfo) := interleave(chars, linfo);
         (chars, linfo) := endDefPathIdent(chars, linfo,pid);
-      then (chars, linfo, TplAbsyn.AST_DEF(pid,isD,types));
+      then (chars, linfo, TplAbsyn.AST_DEF(pid, isD, true, types));
 
   end match;
 end absynDef;
@@ -2306,6 +2310,7 @@ algorithm
         (chars, linfo) := interleaveExpectKeyWord(chars, linfo, {"A","n","y"}, true);
         (chars, linfo) := interleave(chars, linfo);
         (chars, linfo) := semicolon(chars,linfo);
+        (chars, linfo) := interleave(chars, linfo);
         (chars, linfo, tyvars) := typeVars(chars, linfo, id::tyvars);
       then (chars, linfo, tyvars);
 

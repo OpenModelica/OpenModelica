@@ -3,8 +3,9 @@ project(OMCompiler C CXX)
 
 # For now, unless explicitly specified otherwise, we set install component simrt
 # for everything installed from the OMCompiler directory. There are some places that
-# modify this explicitly, e.g., the omc compiler ('COMPONENT omc'), the cpp runtime (COMPONENT simrtcpp),
-# and FMU realted installtions (COMPONENT fmu)
+# modify this explicitly, e.g., the omc compiler ('COMPONENT omc') and the cpp runtime
+# (COMPONENT simrtcpp). The FMU export sources and libraries are installed under this default:
+# they are only ever used by omc-generated code, so they are not a component of their own.
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrt)
 
 ## OPTIONS #################################################################################################
@@ -43,16 +44,16 @@ omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack."
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
-# Its own switch because it is the last thing in the C runtime tree needing Boost
-# and oneTBB, which a cross build has no reason to acquire.
+omc_option(OM_OMC_ENABLE_C_OLD_RUNTIME "Build libSimulationRuntimeC, the C simulation runtime --simCodeTarget=C.old links." ON)
+
+# Its own switch because it is the last thing in the C runtime tree needing
+# oneTBB, which a cross build has no reason to acquire.
 omc_option(OM_OMC_ENABLE_PARMODELICA "Enable, build, and install the ParModelica (--parmodauto) runtime." ON)
 
 # OFF builds only the simulation runtime: what cross-compiling the target side
 # wants, since the compiler runs on -- and is built for -- the build host. Also
 # skips its host-only prerequisites (a JDK and ANTLR for the parser, libintl).
 omc_option(OM_OMC_ENABLE_COMPILER "Build the omc compiler itself, not just the simulation runtime." ON)
-
-omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
@@ -61,6 +62,33 @@ omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 # `cargo build`ing them (see Compiler/.cmake/rust_omc.cmake); bomc/omc are never
 # compiled from C. The simulation/function runtime C libraries are still built.
 omc_option(OM_OMC_ENABLE_RUST "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." OFF)
+
+# A native omc (C or Rust) that runs Susan and translates the MetaModelica sources
+# in place of bomc, which a cross build of the C omc cannot run.
+set(OM_OMC_HOST_EXECUTABLE "" CACHE FILEPATH "omc for the build host to translate the compiler sources with instead of bomc.")
+omc_add_to_report(OM_OMC_HOST_EXECUTABLE)
+# The compiler sources as translated to C for this target by a native build of
+# the same revision (for MSVC: its generate-msvc-c-sources target). Nothing is
+# then translated here.
+set(OM_OMC_PREBUILT_C_SOURCES "" CACHE PATH "Directory holding the translated compiler sources (*.c, *.h) to build instead.")
+omc_add_to_report(OM_OMC_PREBUILT_C_SOURCES)
+if(CMAKE_CROSSCOMPILING AND OM_OMC_ENABLE_COMPILER AND NOT OM_OMC_ENABLE_RUST AND NOT OM_OMC_HOST_EXECUTABLE AND NOT OM_OMC_PREBUILT_C_SOURCES)
+  message(FATAL_ERROR "Cross-compiling the C omc needs -DOM_OMC_PREBUILT_C_SOURCES=<dir> or -DOM_OMC_HOST_EXECUTABLE=<native omc>.")
+endif()
+
+# libOMCDLL: the omc C-API wrapper library (Compiler/omcCAPI). Lets external
+# programs drive omc in-process (InitOMC/SendCommand/...). Windows releases used
+# to ship it; keep that the default there, opt-in elsewhere. Not built by the
+# Rust omc port. MSVC has never built the wrapper -> default OFF there too.
+if(WIN32 AND NOT MSVC)
+  set(OM_OMC_BUILD_OMCDLL_DEFAULT ON)
+else()
+  set(OM_OMC_BUILD_OMCDLL_DEFAULT OFF)
+endif()
+omc_option(OM_OMC_BUILD_OMCDLL "Build libOMCDLL, the omc C-API wrapper library (InitOMC/SendCommand/...)." ${OM_OMC_BUILD_OMCDLL_DEFAULT})
+if(OM_OMC_BUILD_OMCDLL AND OM_OMC_ENABLE_RUST)
+  message(WARNING "OM_OMC_BUILD_OMCDLL is not supported together with OM_OMC_ENABLE_RUST; libOMCDLL will not be built.")
+endif()
 
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
@@ -87,9 +115,17 @@ if(WIN32)
     endif()
   endif()
 endif()
-# Build dir first: it holds the CMake-generated omc_config.unix.h (the source dir
-# may hold the autotools build's copy); source dir provides omc_config.h itself.
+# Build dir first: it holds the CMake-generated omc_config.unix.h (a stale copy
+# may linger in the source dir); source dir provides omc_config.h itself.
 target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+
+# omc_config.h quote-includes revision.h on the MinGW/MSVC branch, so everything
+# linking omc::config needs it — including the simulation runtime, which is built
+# in Rust mode too. Generated here rather than in Compiler/runtime/CMakeLists.txt,
+# which Compiler/CMakeLists.txt's Rust early return() skips. SOURCE_REVISION comes
+# from cmake/omc_git_revision.cmake. Written in-source next to omc_config.h, where
+# the quoted include finds it ahead of any -I.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
 
 
 ## Subdirectories ##########################################################################################
@@ -99,12 +135,76 @@ target_include_directories(omc_config INTERFACE ${OMCompiler_BINARY_DIR} ${CMAKE
 # SuiteSparse writes SuiteSparse_config.h into its shared source tree.
 set(SUITESPARSE_C_TO_FORTRAN "(name,NAME) name##_" CACHE STRING "C to Fortran name mangling" FORCE)
 
+# The FMI platform tuples, which name the binaries/<platform> subdirectory omc
+# looks in when importing an FMU. FMIL's fmiplatform.cmake takes the OS from the
+# *host* and the architecture from the target, so a cross build gets a tuple that
+# describes neither (`x86_64-linux` in a darwin build). Seeded here from the
+# target alone; a -DFMILIB_FMI<n>_PLATFORM= on the command line still wins, since
+# these are not FORCEd and it reaches the cache first.
+if(WIN32)
+  set(_fmi12_os "win")
+else()
+  string(TOLOWER "${CMAKE_SYSTEM_NAME}" _fmi12_os)
+endif()
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" _fmi3_os)
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+  set(_fmi12_bits "32")
+else()
+  set(_fmi12_bits "64")
+endif()
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _fmi3_arch)
+if(_fmi3_arch MATCHES "^(arm64|aarch64)$")
+  set(_fmi3_arch "aarch64")
+elseif(_fmi3_arch MATCHES "^(arm32|aarch32)$")
+  set(_fmi3_arch "aarch32")
+elseif(_fmi3_arch MATCHES "^(amd64|ia64|em64t|x86_64)$")
+  set(_fmi3_arch "x86_64")
+endif()
+set(FMILIB_FMI1_PLATFORM "${_fmi12_os}${_fmi12_bits}" CACHE STRING "FMI 1.0 platform tuple")
+set(FMILIB_FMI2_PLATFORM "${_fmi12_os}${_fmi12_bits}" CACHE STRING "FMI 2.0 platform tuple")
+set(FMILIB_FMI3_PLATFORM "${_fmi3_arch}-${_fmi3_os}" CACHE STRING "FMI 3.0 platform tuple")
+
 # The C/C++ 3rd-party libraries (fmilib, libzmq, lapack, …) are linked only by the
 # native omc artifacts and the simulation runtime. The wasm/web bundle uses none
 # of them (the cdylib is built --no-default-features), so skip them in wasm mode.
 if(NOT OM_OMC_WASM)
   omc_add_subdirectory(3rdParty)
 endif()
+
+# What a link line naming libfmilib.a needs besides it (Autoconf.fmilibLibs), i.e. the code of an
+# imported FMU. FMIL merges only the expat and minizip it builds itself into the archive, so with
+# OM_USE_SYSTEM_EXPAT/OM_USE_SYSTEM_MINIZIP their XML_* and unz* functions are left undefined.
+# Full paths, as for HDF5, not -lexpat/-lminizip: those need the -dev packages' symlinks, which
+# an installed omc does not otherwise require. The soname link (libexpat.so.1) rather than the file
+# it points to, which a minor update of the library renames. A system minizip brings its zlib.
+function(om_fmilib_soname_path lib out)
+  file(REAL_PATH "${lib}" _real)
+  string(REGEX REPLACE "(\\.so\\.[0-9]+)\\..*$" "\\1" _soname "${_real}")
+  if(EXISTS "${_soname}")
+    set(${out} "${_soname}" PARENT_SCOPE)
+  else()
+    set(${out} "${_real}" PARENT_SCOPE)
+  endif()
+endfunction()
+set(_om_fmilib_libs "")
+if(OM_USE_SYSTEM_EXPAT AND TARGET EXPAT::EXPAT)
+  # FindEXPAT keeps the path in a per-configuration variable; the target has it either way.
+  get_target_property(_om_fmilib_expat EXPAT::EXPAT IMPORTED_LOCATION_RELEASE)
+  if(NOT _om_fmilib_expat)
+    get_target_property(_om_fmilib_expat EXPAT::EXPAT IMPORTED_LOCATION)
+  endif()
+  if(_om_fmilib_expat)
+    om_fmilib_soname_path("${_om_fmilib_expat}" _om_fmilib_expat)
+    list(APPEND _om_fmilib_libs "${_om_fmilib_expat}")
+  endif()
+endif()
+if(OM_USE_SYSTEM_MINIZIP AND OM_MINIZIP_LIBRARY)
+  om_fmilib_soname_path("${OM_MINIZIP_LIBRARY}" _om_fmilib_minizip)
+  list(APPEND _om_fmilib_libs "${_om_fmilib_minizip}")
+endif()
+string(REPLACE ";" " " _om_fmilib_libs "${_om_fmilib_libs}")
+set(OMC_FMILIB_LDFLAGS "${_om_fmilib_libs}" CACHE INTERNAL
+    "Libraries a link line naming fmilib needs besides it, space-separated.")
 
 
 # These flags are set after 3rdParty is added so they do not affect 3rdParty libraries.
@@ -142,9 +242,9 @@ else()
   # The runtime angle-includes omc_config.unix.h, generated under Compiler/.
   include(${CMAKE_CURRENT_SOURCE_DIR}/Compiler/runtime/omc_config_unix.cmake)
 endif()
-# libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links instead of
-# libSimulationRuntimeC. After Compiler, which is where the Rust working copy and
-# cargo target directory are set up (rust_omc.cmake) when omc is the Rust port.
+# libSimulationRuntimeRust, what `--simCodeTarget=C` links. After Compiler,
+# which is where the Rust working copy and cargo target directory are set up
+# (rust_omc.cmake) when omc is the Rust port.
 # Skipped where the rest of the simulation runtime is: the wasm bundle does not
 # use it, and the GUI-only stage builds against a prebuilt cdylib.
 if(NOT OM_OMC_WASM AND NOT RUST_OMC_PREBUILT_CDYLIB)

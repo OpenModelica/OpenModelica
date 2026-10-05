@@ -37,7 +37,7 @@
 #include "meta/meta_modelica.h"
 
 static void errmsg() {
-  fputs("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.", stderr);
+  fputs("CORBA support has been removed from OpenModelica. Use the ZeroMQ interface instead: omc --interactive=zmq.", stderr);
 }
 
 extern int Corba_haveCorba()

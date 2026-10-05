@@ -44,7 +44,7 @@ fn print_buffer(stream: omclog::Stream, buf: &VecDeque<Row>) {
     }
     omclog::info(stream, true, "Printing ring buffer:");
     for &(t, v) in buf {
-        omclog::info(stream, false, &alloc::format!("({},{})", format_e(t), format_e(v)));
+        omclog::info!(stream, false, "({},{})", format_e(t), format_e(v));
     }
     omclog::close(stream);
 }
@@ -59,21 +59,28 @@ pub struct DelayState {
 }
 
 /// Greatest row index whose time is `<= time` (C `findTime`). Caller guarantees a
-/// non-empty buffer.
+/// non-empty buffer, whose times [`DelayState::store`] keeps nondecreasing.
 fn find_time(time: f64, buf: &VecDeque<Row>) -> usize {
     let end = buf.len();
-    let mut pos = 0;
     if time < buf[0].0 {
         return 0;
     }
-    while pos < end - 1 {
-        pos += 1;
-        if buf[pos].0 > time {
-            pos -= 1;
-            break;
+    // The row is usually near the front: gallop, then bisect `(lo, hi]`.
+    let (mut lo, mut step) = (0, 1);
+    while lo + step < end && buf[lo + step].0 <= time {
+        lo += step;
+        step *= 2;
+    }
+    let mut hi = (lo + step).min(end);
+    while hi - lo > 1 {
+        let mid = lo + (hi - lo) / 2;
+        if buf[mid].0 <= time {
+            lo = mid;
+        } else {
+            hi = mid;
         }
     }
-    pos
+    lo
 }
 
 /// Whether the buffer holds an event (two adjacent rows with equal time) at or
@@ -116,6 +123,35 @@ impl DelayState {
         DelayState { buffers, start_time }
     }
 
+    /// The buffers as flat words, for an FMU state.
+    pub fn to_words(&self, out: &mut Vec<f64>) {
+        out.push(self.start_time);
+        out.push(self.buffers.len() as f64);
+        for b in &self.buffers {
+            out.push(b.len() as f64);
+            for &(t, v) in b {
+                out.push(t);
+                out.push(v);
+            }
+        }
+    }
+
+    /// [`DelayState::to_words`]'s inverse.
+    pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
+        let start_time = w.next()?;
+        let n = w.next()? as usize;
+        let mut buffers = Vec::with_capacity(n);
+        for _ in 0..n {
+            let len = w.next()? as usize;
+            let mut b = VecDeque::with_capacity(len);
+            for _ in 0..len {
+                b.push_back((w.next()?, w.next()?));
+            }
+            buffers.push(b);
+        }
+        Some(DelayState { buffers, start_time })
+    }
+
     /// C `storeDelayedExpression`: append `(time, value)`, dropping stale tail rows
     /// and dequeuing rows older than `time - delay_time` (unless an event sits on
     /// that boundary).
@@ -143,17 +179,17 @@ impl DelayState {
                 buf.pop_front();
             }
         }
-        omclog::info(
-            omclog::DELAY,
-            false,
-            &alloc::format!(
+        if omclog::active(omclog::DELAY) {
+            omclog::info!(
+                omclog::DELAY,
+                false,
                 "storeDelayed[{idx}] ({},{}) position={}",
                 format_g(time, 6),
                 format_g(value, 6),
-                buf.len()
-            ),
-        );
-        print_buffer(omclog::DELAY, buf);
+                buf.len(),
+            );
+            print_buffer(omclog::DELAY, buf);
+        }
     }
 
     /// C `delayImpl`: `expr(time - delay_time)` by linear interpolation, with the
@@ -161,16 +197,16 @@ impl DelayState {
     pub fn eval(&self, idx: usize, time: f64, value: f64, delay_time: f64, delay_max: f64) -> f64 {
         let buf = &self.buffers[idx];
         let length = buf.len();
-        omclog::info(
-            omclog::DELAY,
-            false,
-            &alloc::format!(
+        if omclog::active(omclog::DELAY) {
+            omclog::info!(
+                omclog::DELAY,
+                false,
                 "delayImpl: exprNumber = {idx}, exprValue = {}, time = {}, delayTime = {}",
                 format_g(value, 6),
                 format_g(time, 6),
-                format_g(delay_time, 6)
-            ),
-        );
+                format_g(delay_time, 6),
+            );
+        }
         // C's `assertStreamPrint` guards, `DASSL_STEP_EPS` being 1e-13. Each one
         // throws in C, so at most one is reported and the caller's value stands in
         // for the interpolation the jump skipped.
@@ -199,13 +235,11 @@ impl DelayState {
             return value;
         }
         if length == 0 {
-            omclog::info(
+            omclog::info!(
                 omclog::EVENTS,
                 false,
-                &alloc::format!(
-                    "delayImpl: Missing initial value, using argument value {} instead.",
-                    format_g(value, 6)
-                ),
+                "delayImpl: Missing initial value, using argument value {} instead.",
+                format_g(value, 6),
             );
             return value;
         }

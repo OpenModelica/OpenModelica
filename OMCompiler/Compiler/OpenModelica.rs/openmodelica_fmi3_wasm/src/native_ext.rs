@@ -46,6 +46,9 @@ impl Guest for Memory {
     fn array_data(&self, handle: u32) -> u32 {
         rt::rt_array_data(handle)
     }
+    fn array_dims(&self, handle: u32) -> Vec<u32> {
+        (0..rt::rt_array_ndims(handle)).map(|k| rt::rt_array_dim(handle, k as i32 + 1)).collect()
+    }
     fn alloc(&mut self, len: u32) -> u32 {
         rt::rt_alloc(len)
     }

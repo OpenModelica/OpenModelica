@@ -1,20 +1,35 @@
 encapsulated package RuntimeSources
   constant String fmu_sources_dir = "/@SOURCE_FMU_SOURCES_DIR@";
 
+  // The Rust crates a --simCodeTarget=C source FMU carries, in the checkout's
+  // own layout: the manifests reach openmodelica_lapack by a relative path.
+  // Installed by SimulationRuntime/rust/CMakeLists.txt.
+  constant String fmu_rust_sources_dir = "/@SOURCE_FMU_RUST_SOURCES_DIR@";
+  constant String fmu_rust_manifest = "SimulationRuntime/rust/Cargo.toml";
+
   constant list<String> simrt_c_sources={@SOURCE_FMU_COMMON_FILES@};
+
+  // The libOpenModelicaRuntimeC half of simrt_c_sources: what a
+  // --simCodeTarget=C FMU still compiles from C, because the Rust runtime
+  // replaces only what libSimulationRuntimeC covers.
+  constant list<String> simrt_c_runtime_sources={@SOURCE_FMU_RUNTIME_C_FILES@};
 
   constant list<String> simrt_c_headers={@SOURCE_FMU_COMMON_HEADERS@};
 
   constant list<String> fmi1Files={"fmi-export/fmu1_model_interface.c.inc",
                                    "fmi-export/fmu1_model_interface.h"};
+  constant list<String> fmi1_rust_headers={"fmi-export/fmu1_model_interface.h",
+                                           "fmi-export/fmu1_rust_interface.c.inc"};
   constant list<String> fmi2_headers={"fmi-export/fmu2_model_interface.h",
+                                      "fmi-export/fmu2_rust_interface.c.inc",
                                       "fmi-export/fmu_read_flags.h"};
   constant list<String> fmi2_sources={"fmi-export/fmu2_model_interface.c",
                                       "fmi-export/fmu_read_flags.c"};
   // FMI 3.0 export reuses the FMI 2.0 ModelInstance (fmu2_model_interface.h) and
   // the generated per-base-type get/set helpers, so the FMI 2.0 header is also
   // required when building an FMI 3.0 FMU.
-  constant list<String> fmi3_headers={"fmi-export/fmu3_model_interface.h"};
+  constant list<String> fmi3_headers={"fmi-export/fmu3_model_interface.h",
+                                      "fmi-export/fmu3_rust_interface.c.inc"};
   constant list<String> fmi3_sources={"fmi-export/fmu3_model_interface.c"};
 
   constant list<String> defaultFileSuffixes={".c",

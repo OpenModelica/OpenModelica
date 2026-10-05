@@ -1,4 +1,6 @@
 use openmodelica_ast::parser::parse;
+mod mutfix;
+mod overrides;
 use openmodelica_ast::parser::Grammar;
 use openmodelica_ast::Absyn;
 use metamodelica::nil;
@@ -7,6 +9,7 @@ mod MM;
 mod hierarchy;
 mod typedexp;
 mod codegen;
+mod borrow_params;
 mod external_c_calls;
 mod fallibility;
 mod fix;
@@ -15,11 +18,12 @@ mod validate;
 mod dep_analysis;
 mod unused_functions;
 mod const_patterns;
+mod mc_disjoint;
 mod mutable_cycles;
 mod scripting_api_qt;
 use rayon::prelude::*;
 
-fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
+fn start_compilation(results: Vec<Absyn::Program>, fix: bool, mc_report_path: Option<String>) {
     let mut failures = 0;
     let t0 = std::time::Instant::now();
     let mut all_classes: Vec<MM::Class> = Vec::new();
@@ -36,7 +40,10 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
     }
     println!("MM conversion: {} files, {} failures {:.2}s", results.len(), failures, t0.elapsed().as_secs_f64());
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -75,6 +82,13 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
     let t0 = std::time::Instant::now();
     let info = fallibility::analyze(&hier);
     hier.fallible_functions = info.fallible_functions.clone();
+    let susan_pkgs = codegen::susan_packages(&hier.top_level);
+    if !susan_pkgs.is_empty() {
+        let mut fns = Vec::new();
+        codegen::collect_all_function_nodes(&hier.top_level, "", &mut fns);
+        let susan_fns: Vec<String> = fns.iter().filter(|(q, _)| q.split('.').next().is_some_and(|t| susan_pkgs.contains(t))).map(|(q, _)| q.clone()).collect();
+        hier.fallible_functions.extend(susan_fns);
+    }
     let infallible_count = info.total_functions.saturating_sub(info.fallible_functions.len());
     println!(
         "Fallibility analysis: {} functions ({} fallible, {} infallible), {} externals; {} ext registry entries; {:.2}s",
@@ -91,6 +105,15 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
     for w in &info.matchcontinue_as_match {
         eprintln!("{w}");
     }
+    // `--mc-report <file>`: dump one line per matchcontinue the lint could not
+    // clear, with the arm that blocks it and why (see `fallibility::mc_report`).
+    if let Some(path) = mc_report_path {
+        match std::fs::write(&path, info.mc_report.join("\n") + "\n") {
+            Ok(()) => println!("--mc-report: wrote {} line(s) to {path}", info.mc_report.len()),
+            Err(e) => eprintln!("--mc-report: {path}: {e}"),
+        }
+        if !fix { return; }
+    }
     if !info.matchcontinue_as_match.is_empty() {
         println!(
             "Fallibility analysis: {} matchcontinue expression(s) could be rewritten as `match`",
@@ -102,7 +125,7 @@ fn start_compilation(results: Vec<Absyn::Program>, fix: bool) {
     // the MetaModelica sources and stop (no code generation). The user then
     // verifies the rewrites by rebuilding the boot compiler / running tests.
     if fix {
-        match fix::apply_match_fixes(&info.matchcontinue_as_match_locs) {
+        match fix::apply_match_fixes(&info.matchcontinue_as_match_locs, &info.matchcontinue_guard_hoists) {
             Ok(s) => println!(
                 "--fix: rewrote {} matchcontinue → match across {} file(s); {} skipped",
                 s.rewritten, s.files_changed, s.skipped,
@@ -305,7 +328,10 @@ fn run_unused_functions(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -345,7 +371,10 @@ fn run_const_patterns(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -385,7 +414,10 @@ fn run_mutable_cycles(programs: Vec<Absyn::Program>) {
     );
 
     let t0 = std::time::Instant::now();
+    let retired = MM::strip_retired(&mut all_classes);
+    MM::set_retired(retired.clone());
     let mut hier = hierarchy::InstanceHierarchy::from_program(&all_classes);
+    hier.retired = retired;
     hierarchy::flatten_extends(&mut hier);
     let mut warnings = std::collections::BTreeSet::new();
     while hierarchy::resolve_pass(&mut hier, &mut warnings) {}
@@ -414,6 +446,10 @@ fn main() {
     // `--fix` rewrites provably-safe `matchcontinue`s to `match` in the sources
     // (see `crate::fix`) instead of generating code.
     let fix = args.iter().any(|a| a == "--fix");
+    let mc_report_path: Option<String> = args.iter()
+        .position(|a| a == "--mc-report")
+        .and_then(|i| args.get(i + 1))
+        .cloned();
     // `--sources <file>` reads the list of MetaModelica files to transpile from
     // `<file>` instead of the default `compilerSources.txt`. This is how the
     // build transpiles only the subset needed to build the Susan binary
@@ -482,12 +518,36 @@ fn main() {
     }
 
     println!("OpenModelica: {} files, {} failures, {:.2}s", results.len(), failures, elapsed.as_secs_f64());
-    let parsed: Vec<Absyn::Program> = programs.iter().map(|p| p.lock().unwrap().clone()).collect();
+    let mut parsed: Vec<Absyn::Program> = programs.iter().map(|p| p.lock().unwrap().clone()).collect();
+
+    // Per-target declarations: `X.rust.mo` next to `X.mo` replaces the items
+    // the Rust port represents differently. Spliced here, before any analysis
+    // runs, so fallibility, recursion, traced types and the generated code all
+    // see the Rust view -- the C compiler only ever reads `X.mo`.
+    for ((path, ix), _) in files.iter().zip(0..) {
+        let ovr_path = match path.strip_suffix(".mo") {
+            Some(stem) => format!("{stem}.rust.mo"),
+            None => continue,
+        };
+        let code = match std::fs::read_to_string(&ovr_path) {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(e) => panic!("could not read override {ovr_path:?}: {e}"),
+        };
+        let ovr = parse(&code, &ovr_path, &ovr_path, grammar, false, 0.0)
+            .unwrap_or_else(|e| panic!("could not parse override {ovr_path:?}: {e}"));
+        let applied = overrides::apply(&mut parsed[*ix], &ovr);
+        if applied.is_empty() {
+            panic!("{ovr_path} overrode nothing: every item must name one in {path}");
+        }
+        eprintln!("mmtorust: {ovr_path} overrides {}", applied.join(" "));
+    }
+    let parsed = parsed;
     match subcommand {
         Some("dep-analysis") => run_dep_analysis(parsed),
         Some("unused-functions") => run_unused_functions(parsed),
         Some("const-patterns") => run_const_patterns(parsed),
         Some("mutable-cycles") => run_mutable_cycles(parsed),
-        _ => start_compilation(parsed, fix),
+        _ => start_compilation(parsed, fix, mc_report_path),
     }
 }

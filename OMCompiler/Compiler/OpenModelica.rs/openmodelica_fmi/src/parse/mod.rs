@@ -36,19 +36,21 @@ pub fn model_description(xml: &str) -> Result<ModelDescription> {
     Ok(md)
 }
 
-/// `<Annotations><Tool name=…>` / FMI 1.0's `<VendorAnnotations>`, kept as the
-/// raw XML the tool wrote: nothing here interprets a vendor's extension, but the
-/// OpenModelica `<Figures>` annotation is what the plotter reads.
+/// `<Annotations>`, kept as the raw XML the tool wrote: nothing here interprets a
+/// vendor's extension, but the OpenModelica `<Figures>` annotation is what the
+/// plotter reads. FMI 3.0 names the entries `<Annotation type=…>`, 1.0 and 2.0
+/// `<Tool name=…>`; both are read.
 fn tool_annotations(root: Node, xml: &str) -> Vec<ToolAnnotation> {
     root.children()
         .filter(|n| matches!(n.tag_name().name(), "Annotations" | "VendorAnnotations"))
         .flat_map(|a| a.children())
-        .filter(|n| n.tag_name().name() == "Tool")
         .filter_map(|t| {
-            Some(ToolAnnotation {
-                name: attr(t, "name")?.to_string(),
-                xml: xml.get(t.range())?.to_string(),
-            })
+            let name = match t.tag_name().name() {
+                "Tool" => attr(t, "name")?,
+                "Annotation" => attr(t, "type")?,
+                _ => return None,
+            };
+            Some(ToolAnnotation { name: name.to_string(), xml: xml.get(t.range())?.to_string() })
         })
         .collect()
 }

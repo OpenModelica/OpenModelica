@@ -25,6 +25,7 @@
  *
  */
 
+#include "meta_modelica_string.h"
 #include "meta_modelica_builtin.h"
 #include "meta_modelica.h"
 #include <float.h>
@@ -173,6 +174,22 @@ modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_in
 {
   const char* str = MMC_STRINGDATA(s);
   return djb2_hash_continue((const unsigned char*)str, (uint32_t)hash) & MMC_HASH_MASK;
+}
+
+/* Same result as stringHashDjb2Continue(intString(i), hash), without building
+ * the string. Cannot live in MetaModelica: MMC_HASH_MASK is not a legal
+ * Integer literal where modelica_integer holds 31 bits. */
+modelica_integer intHashDjb2Continue(modelica_integer i, modelica_integer hash)
+{
+  unsigned char buf[24];
+  int n = sizeof(buf) - 1;
+  mmc_uint_t v = i < 0 ? -(mmc_uint_t) i : (mmc_uint_t) i;
+
+  buf[n] = '\0';
+  do { buf[--n] = '0' + (unsigned char) (v % 10); v /= 10; } while (v);
+  if (i < 0) buf[--n] = '-';
+
+  return djb2_hash_continue(buf + n, (uint32_t) hash) & MMC_HASH_MASK;
 }
 
 /* adrpo: see the comment above about djb2 hash */
@@ -697,16 +714,6 @@ void boxptr_setGlobalRoot(threadData_t *threadData, modelica_metatype i, modelic
   } else {
     threadData->localRoots[ix] = val;
   }
-}
-
-modelica_real realMaxLit(void)
-{
-  return DBL_MAX / 2048; /* in case some non-linear or ODE solver tries to add eps to this value */
-}
-
-modelica_integer intMaxLit(void)
-{
-  return LONG_MAX / 2;
 }
 
 modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)

@@ -6,7 +6,7 @@
 //! the slots directly, so only the two symbolic Jacobians (`F` and `H`) need code
 //! — built exactly like `-l`'s `linearJac*`, each filling one column-major matrix.
 
-use std::collections::HashMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::sync::Arc;
 
 use metamodelica::{List, Result};
@@ -23,7 +23,7 @@ pub(crate) const JAC_FNS: [&str; 2] = ["reconJacF", "reconJacH"];
 /// The `F`/`H` matrices the backend produced, with the shape C's `initJacobian`
 /// would report.
 pub(crate) struct ReconPlan {
-    pub(crate) jacs: [Option<(Arc<SimCode::JacobianMatrix>, u32, u32)>; 2],
+    pub(crate) jacs: [Option<(metamodelica::Ref<SimCode::JacobianMatrix>, u32, u32)>; 2],
     /// Whether the model carries data-reconciliation variables at all.
     pub(crate) present: bool,
 }
@@ -76,11 +76,11 @@ pub(crate) fn build_plan(sim_code: &SimCode::SimCode, vars: &SimCodeVar::SimVars
 
 /// C's `sizeRows`, as `linearize::matrix_rows`: one past the last row a `JAC_VAR`
 /// result or the sparsity pattern names.
-fn matrix_rows(jm: &SimCode::JacobianMatrix) -> u32 {
+fn matrix_rows(jm: &Arc<SimCode::JacobianMatrix>) -> u32 {
     let results = jac_column_vars(jm)
         .iter()
         .filter(|v| matches!(v.varKind, BackendDAE::VarKind::JAC_VAR))
-        .filter_map(jac_result_row)
+        .filter_map(|v| jac_result_row(v))
         .map(|r| r as u32 + 1)
         .max()
         .unwrap_or(0);
@@ -122,7 +122,7 @@ pub(crate) fn build_jac_infos(
             cursor += 8;
         }
         let mut result_offs = vec![None; rows];
-        for sv in &jac_column_vars(jm) {
+        for sv in jac_column_vars(jm).iter() {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
                 SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },
@@ -154,7 +154,7 @@ pub(crate) fn build_jac_fns(
     plan: &mut ReconPlan,
     infos: &mut [Option<ReconJacInfo>],
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<Vec<wasm_encoder::Function>> {
@@ -188,18 +188,18 @@ fn build_jac_fn(
     jm: &SimCode::JacobianMatrix,
     info: &ReconJacInfo,
     var_map: &SimVarMap,
-    eq_index: &HashMap<i32, Arc<SimCode::SimEqSystem>>,
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<wasm_encoder::Function> {
     use crate::CodegenWasmJit::{lower_equation, sim_ctx};
     let col = lst(&jm.columns).next();
-    let constant_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+    let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.constantEqns).cloned().collect()).unwrap_or_default();
-    let column_eqns: Vec<Arc<SimCode::SimEqSystem>> =
+    let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> =
         col.map(|c| lst(&c.columnEqns).cloned().collect()).unwrap_or_default();
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let lower = |c: &mut FnCtx, eqs: &[Arc<SimCode::SimEqSystem>]| -> Result<()> {
+    let lower = |c: &mut FnCtx, eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]| -> Result<()> {
         for eq in eqs {
             lower_equation(c, eq, eq_index)?;
         }
@@ -234,7 +234,7 @@ pub(crate) fn build_recon_info(
     if !plan.present {
         return Ok(None);
     }
-    let list = |l: &Arc<List<SimCodeVar::SimVar>>| -> Result<Vec<ReconVar>> {
+    let list = |l: &List<metamodelica::Ref<SimCodeVar::SimVar>>| -> Result<Vec<ReconVar>> {
         let mut out = Vec::new();
         for sv in lst(l) {
             let key = sim_cref_key(&sv.name)?;

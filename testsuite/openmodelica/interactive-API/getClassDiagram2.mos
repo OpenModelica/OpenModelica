@@ -1,0 +1,183 @@
+// name: getClassDiagram2
+// keywords: UML, class diagram, PlantUML, #16938
+// status: correct
+//
+// Tests getClassDiagram with a chain of class extends, a redeclared class
+// that doesn't extend the class it replaces, a replaceable component with a
+// constraining class, component arrays, protected elements, a class-level
+// redeclare, imports and the exclude argument, which doesn't apply to the
+// class itself.
+
+loadString("package P
+  package Icons
+    partial model Icon end Icon;
+  end Icons;
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  partial model Base
+    extends Icons.Icon;
+    replaceable partial model Law
+      input Real u;
+      output Real y;
+    end Law;
+    replaceable model Law2 = Law;
+    Pin pins[2];
+  protected
+    parameter Real k = 1;
+  end Base;
+  model Linear
+    extends Base(k = 2);
+    redeclare model extends Law
+    equation
+      y = k*u;
+    end Law;
+  end Linear;
+  model Linear2
+    extends Linear;
+    redeclare model extends Law
+    end Law;
+    redeclare model Law2
+      input Real u;
+      output Real y = u;
+    end Law2;
+  end Linear2;
+  model Law3
+    extends Base.Law;
+  equation
+    y = u;
+  end Law3;
+  partial model Holder
+    replaceable model Other = Base.Law;
+  end Holder;
+  model User
+    import P.Linear2;
+    extends Holder;
+    replaceable Linear2 l constrainedby Base;
+    redeclare model Other = Law3;
+  end User;
+end P;
+", "getClassDiagram2.mo"); getErrorString();
+
+getClassDiagram(P.User, depth = 2); getErrorString();
+getClassDiagram(P.User, depth = 2, exclude = {"P.Icons", "P.Pin"}); getErrorString();
+// The class itself is shown even if it's excluded.
+getClassDiagram(P.Icons.Icon, exclude = {"P.Icons"}); getErrorString();
+
+// Result:
+// true
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"P.User\" as P_User <<model>> {
+//   {field} + replaceable Linear2 l constrainedby Base
+//   {field} + redeclare model Other = Law3
+// }
+// abstract class \"P.Holder\" as P_Holder <<model>> {
+//   {field} + replaceable model Other = Base.Law
+// }
+// class \"P.Linear2\" as P_Linear2 <<model>>
+// abstract class \"P.Base\" as P_Base <<model>> {
+//   {field} + replaceable model Law2 = Law
+//   {field} + Pin pins[2]
+//   {field} - parameter Real k = 1
+// }
+// class \"P.Law3\" as P_Law3 <<model>>
+// abstract class \"P.Base.Law\" as P_Base_Law <<replaceable model>> {
+//   {field} + input Real u
+//   {field} + output Real y
+// }
+// class \"P.Linear\" as P_Linear <<model>>
+// class \"P.Linear2.Law\" as P_Linear2_Law <<redeclare model extends>>
+// class \"P.Linear2.Law2\" as P_Linear2_Law2 <<redeclare model>> {
+//   {field} + input Real u
+//   {field} + output Real y = u
+// }
+// abstract class \"P.Icons.Icon\" as P_Icons_Icon <<model>>
+// class \"P.Pin\" as P_Pin <<connector>> {
+//   {field} + Real v
+//   {field} + flow Real i
+// }
+// class \"P.Linear.Law\" as P_Linear_Law <<redeclare model extends>>
+// class \"P.Base.Law2\" as P_Base_Law2 <<replaceable model>>
+// P_Holder <|-- P_User
+// P_User *-- P_Linear2 : l
+// P_User ..> P_Base : l constrainedby
+// P_User ..> P_Law3 : redeclare model Other
+// P_Holder ..> P_Base_Law : replaceable model Other
+// P_Linear <|-- P_Linear2
+// P_Linear2 +-- P_Linear2_Law
+// P_Linear2 +-- P_Linear2_Law2
+// P_Icons_Icon <|-- P_Base
+// P_Base +-- P_Base_Law
+// P_Base +-- P_Base_Law2
+// P_Base *-- \"[2]\" P_Pin : pins
+// P_Base_Law <|-- P_Law3
+// P_Base <|-- P_Linear : (k = 2)
+// P_Linear +-- P_Linear_Law
+// P_Linear_Law <|-- P_Linear2_Law
+// P_Linear2_Law2 ..> P_Base_Law2 : redeclares
+// P_Base_Law <|-- P_Linear_Law
+// P_Base_Law <|-- P_Base_Law2
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"P.User\" as P_User <<model>> {
+//   {field} + replaceable Linear2 l constrainedby Base
+//   {field} + redeclare model Other = Law3
+// }
+// abstract class \"P.Holder\" as P_Holder <<model>> {
+//   {field} + replaceable model Other = Base.Law
+// }
+// class \"P.Linear2\" as P_Linear2 <<model>>
+// abstract class \"P.Base\" as P_Base <<model>> {
+//   {field} + replaceable model Law2 = Law
+//   {field} + Pin pins[2]
+//   {field} - parameter Real k = 1
+// }
+// class \"P.Law3\" as P_Law3 <<model>>
+// abstract class \"P.Base.Law\" as P_Base_Law <<replaceable model>> {
+//   {field} + input Real u
+//   {field} + output Real y
+// }
+// class \"P.Linear\" as P_Linear <<model>>
+// class \"P.Linear2.Law\" as P_Linear2_Law <<redeclare model extends>>
+// class \"P.Linear2.Law2\" as P_Linear2_Law2 <<redeclare model>> {
+//   {field} + input Real u
+//   {field} + output Real y = u
+// }
+// class \"P.Linear.Law\" as P_Linear_Law <<redeclare model extends>>
+// class \"P.Base.Law2\" as P_Base_Law2 <<replaceable model>>
+// P_Holder <|-- P_User
+// P_User *-- P_Linear2 : l
+// P_User ..> P_Base : l constrainedby
+// P_User ..> P_Law3 : redeclare model Other
+// P_Holder ..> P_Base_Law : replaceable model Other
+// P_Linear <|-- P_Linear2
+// P_Linear2 +-- P_Linear2_Law
+// P_Linear2 +-- P_Linear2_Law2
+// P_Base +-- P_Base_Law
+// P_Base +-- P_Base_Law2
+// P_Base_Law <|-- P_Law3
+// P_Base <|-- P_Linear : (k = 2)
+// P_Linear +-- P_Linear_Law
+// P_Linear_Law <|-- P_Linear2_Law
+// P_Linear2_Law2 ..> P_Base_Law2 : redeclares
+// P_Base_Law <|-- P_Linear_Law
+// P_Base_Law <|-- P_Base_Law2
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// abstract class \"P.Icons.Icon\" as P_Icons_Icon <<model>>
+// @enduml
+// "
+// ""
+// endResult

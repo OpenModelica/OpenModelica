@@ -111,7 +111,7 @@ fn with<R>(f: impl FnOnce(&mut SysState) -> R) -> R {
 /// Build a `List` (MetaModelica cons-list) from a `Vec`, preserving order
 /// — the rightmost element ends up at the tail. Mirrors `list![..]` for
 /// the dynamic case.
-fn list_from_vec<T: Clone>(xs: Vec<T>) -> Arc<List<T>> {
+fn list_from_vec<T: Clone>(xs: Vec<T>) -> List<T> {
     let mut acc = metamodelica::nil::<T>();
     for x in xs.into_iter().rev() {
         acc = metamodelica::cons(x, acc);
@@ -164,7 +164,11 @@ pub fn strcmp_offset(string1: ArcStr, offset1: i32, length1: i32, string2: ArcSt
 }
 
 pub fn stringFind(r#str: ArcStr, searchStr: ArcStr) -> Result<i32> {
-    Ok(r#str.find(searchStr.as_str()).map(|i| i as i32).unwrap_or(-1))
+    let found = match searchStr.as_bytes() {
+        [c] if c.is_ascii() => r#str.find(*c as char),
+        _ => r#str.find(searchStr.as_str()),
+    };
+    Ok(found.map(|i| i as i32).unwrap_or(-1))
 }
 
 pub fn stringFindString(r#str: ArcStr, searchStr: ArcStr) -> ArcStr {
@@ -192,8 +196,8 @@ pub fn regex(
     maxMatches: i32,
     extended: bool,
     ignoreCase: bool,
-) -> (i32, Arc<List<ArcStr>>) {
-    fn list_forward(items: Vec<ArcStr>) -> Arc<List<ArcStr>> {
+) -> (i32, List<ArcStr>) {
+    fn list_forward(items: Vec<ArcStr>) -> List<ArcStr> {
         let mut res = metamodelica::nil();
         for it in items.into_iter().rev() {
             res = metamodelica::cons(it, res);
@@ -297,7 +301,7 @@ pub fn tolower(inString: ArcStr) -> ArcStr {
     ArcStr::from(inString.to_lowercase())
 }
 
-pub fn strtok(string: ArcStr, token: ArcStr) -> Arc<List<ArcStr>> {
+pub fn strtok(string: ArcStr, token: ArcStr) -> List<ArcStr> {
     // C strtok semantics: each char of `token` is a delimiter; empty
     // segments are dropped. Returned as a MetaModelica list.
     let delims: Vec<char> = token.chars().collect();
@@ -309,7 +313,7 @@ pub fn strtok(string: ArcStr, token: ArcStr) -> Arc<List<ArcStr>> {
     list_from_vec(parts)
 }
 
-pub fn strtokIncludingDelimiters(string: ArcStr, token: ArcStr) -> Arc<List<ArcStr>> {
+pub fn strtokIncludingDelimiters(string: ArcStr, token: ArcStr) -> List<ArcStr> {
     // Splits on the *substring* `token` and re-emits the delimiter between
     // the surrounding segments (mirrors `SystemImpl__strtokIncludingDelimiters`).
     if token.is_empty() {
@@ -330,7 +334,7 @@ pub fn strtokIncludingDelimiters(string: ArcStr, token: ArcStr) -> Arc<List<ArcS
     list_from_vec(out)
 }
 
-pub fn splitOnNewline(r#str: ArcStr, includeDelimiter: bool) -> Result<Arc<List<ArcStr>>> {
+pub fn splitOnNewline(r#str: ArcStr, includeDelimiter: bool) -> Result<List<ArcStr>> {
     // Split on '\n' and '\r\n', mirroring `System_splitOnNewline` in
     // `runtime/System_omc.c`. When `includeDelimiter` is true the newline
     // delimiters are emitted as their OWN tokens, not re-attached to the
@@ -392,13 +396,28 @@ const DEFAULT_LINKER: &str = if cfg!(windows) {
 // DEFAULT_CFLAGS = "-DOM_HAVE_PTHREADS @RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
 // on Unix; the MinGW section adds -mstackrealign and drops -fPIC (meaningless
 // on Windows, gcc ignores it / clang warns).
+/// x86-only tuning for the generated simulation code. Passing it anywhere else
+/// fails the build: clang answers `-mfpmath=sse` with "unknown FP unit 'sse'",
+/// which is every C-target simulation on Apple Silicon and on aarch64 Linux.
+const X86_CFLAGS: &str = if cfg!(target_arch = "x86_64") { " -mfpmath=sse" } else { "" };
+const X86_CFLAGS_WINDOWS: &str =
+    if cfg!(target_arch = "x86_64") { " -mstackrealign -msse2 -mfpmath=sse" } else { "" };
+
 const DEFAULT_CFLAGS: &str = if cfg!(windows) {
-    "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+    const_str::concat!(
+        "-DOM_HAVE_PTHREADS -Wno-parentheses-equality -falign-functions",
+        X86_CFLAGS_WINDOWS,
+        " ${MODELICAUSERCFLAGS}"
+    )
 } else {
-    "-DOM_HAVE_PTHREADS -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -Wno-parentheses-equality ${MODELICAUSERCFLAGS}"
+    const_str::concat!(
+        "-DOM_HAVE_PTHREADS -fPIC -falign-functions",
+        X86_CFLAGS,
+        " -fno-dollars-in-identifiers -Wno-parentheses-equality ${MODELICAUSERCFLAGS}"
+    )
 };
 const DEFAULT_LDFLAGS: &str = if cfg!(windows) {
-    "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
+    "-fopenmp -lpthread -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
 } else {
     ""
 };
@@ -508,9 +527,9 @@ pub fn winGetSystemDirectory() -> ArcStr {
 }
 
 pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
-    // Spawn /bin/sh -c <command>; if outFile is non-empty, redirect both
-    // stdout and stderr there. Returns the child's exit code, or -1 on
-    // spawn failure.
+    // Spawn the command through the platform shell; if outFile is non-empty,
+    // redirect both stdout and stderr there. Returns the child's exit code, or
+    // -1 on spawn failure.
     use std::io::Write;
     use std::process::{Command, Stdio};
     // C's `fflush(NULL)` around the call: the child writes to the same fd 1, so
@@ -519,10 +538,31 @@ pub fn systemCall(command: ArcStr, outFile: ArcStr) -> i32 {
         let _ = std::io::stdout().flush();
     };
     flush();
-    let mut cmd = Command::new("/bin/sh");
-    cmd.arg("-c").arg(command.as_str());
+    #[cfg(windows)]
+    let mut cmd = {
+        use std::os::windows::process::CommandExt;
+        // `SystemImpl__runProcess`. The command is a cmd.exe line
+        // (`set X=Y&& prog args`), so it must reach cmd unquoted.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let mut cmd = Command::new("cmd.exe");
+        cmd.raw_arg(format!("/c \"{}\"", command.as_str()));
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        cmd
+    };
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut cmd = Command::new("/bin/sh");
+        cmd.arg("-c").arg(command.as_str());
+        cmd
+    };
     if !outFile.is_empty() {
-        match fs::File::create(outFile.as_str()) {
+        // C appends on both; unix here has always truncated, so only the new
+        // path follows the C runtime.
+        #[cfg(windows)]
+        let opened = fs::OpenOptions::new().append(true).create(true).open(outFile.as_str());
+        #[cfg(not(windows))]
+        let opened = fs::File::create(outFile.as_str());
+        match opened {
             Ok(f) => {
                 let f2 = match f.try_clone() {
                     Ok(c) => c,
@@ -562,10 +602,45 @@ pub fn popen(command: ArcStr) -> (ArcStr, i32) {
     }
 }
 
-pub fn systemCallParallel(_inStrings: Arc<List<ArcStr>>, _numThreads: i32) -> Arc<List<i32>> {
-    // Fan-out N shell commands across a thread pool and collect the exit
-    // codes. Not used by code paths exercised today; defer until needed.
-    todo!("System.systemCallParallel: parallel shell-out not yet ported")
+/// `numThreads` workers pulling off a shared index, exit codes collected in
+/// input order (C's `systemCallWorkerThread`).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn systemCallParallel(inStrings: List<ArcStr>, numThreads: i32) -> List<i32> {
+    use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
+
+    let calls: Vec<ArcStr> = (&*inStrings).into_iter().cloned().collect();
+    if calls.is_empty() {
+        return metamodelica::nil();
+    }
+    if calls.len() == 1 {
+        return list_from_vec(vec![systemCall(calls[0].clone(), literal!(""))]);
+    }
+    let threads = (numThreads.max(1) as usize).min(calls.len());
+    let next = AtomicUsize::new(0);
+    let results: Vec<AtomicI32> = calls.iter().map(|_| AtomicI32::new(-1)).collect();
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| loop {
+                let i = next.fetch_add(1, Ordering::Relaxed);
+                if i >= calls.len() {
+                    break;
+                }
+                results[i].store(systemCall(calls[i].clone(), literal!("")), Ordering::Relaxed);
+            });
+        }
+    });
+    list_from_vec(results.into_iter().map(AtomicI32::into_inner).collect())
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn systemCallParallel(inStrings: List<ArcStr>, _numThreads: i32) -> List<i32> {
+    // No OS threads and no subprocesses in the browser; keep the shape.
+    list_from_vec(
+        (&*inStrings)
+            .into_iter()
+            .map(|c| systemCall(c.clone(), literal!("")))
+            .collect(),
+    )
 }
 
 pub fn spawnCall(_path: ArcStr, _str: ArcStr) -> i32 {
@@ -785,7 +860,7 @@ pub fn setEnv(varName: ArcStr, value: ArcStr, overwrite: bool) -> i32 {
     }
 }
 
-pub fn subDirectories(inString: ArcStr) -> Arc<List<ArcStr>> {
+pub fn subDirectories(inString: ArcStr) -> List<ArcStr> {
     let out: Vec<ArcStr> = openmodelica_wasi::fs::read_dir(inString.as_str())
         .unwrap_or_default()
         .into_iter()
@@ -812,10 +887,10 @@ fn files_with_ext(dir: &str, ext: &str) -> Vec<ArcStr> {
         .collect()
 }
 
-pub fn moFiles(inString: ArcStr) -> Arc<List<ArcStr>> {
+pub fn moFiles(inString: ArcStr) -> List<ArcStr> {
     list_from_vec(files_with_ext(&inString, "mo"))
 }
-pub fn mocFiles(inString: ArcStr) -> Arc<List<ArcStr>> {
+pub fn mocFiles(inString: ArcStr) -> List<ArcStr> {
     list_from_vec(files_with_ext(&inString, "moc"))
 }
 
@@ -877,7 +952,7 @@ fn split_version(version: &str) -> ([i64; MODELICAPATH_LEVELS], String, bool) {
 /// entries whose name is `name`, `name.<ext>` or `name <version>[.<ext>]`,
 /// either as a library directory (containing `package.mo`/`package.moc`)
 /// or as a plain `.mo`/`.moc` file.
-fn get_all_modelica_paths(name: &str, mps: &Arc<List<ArcStr>>) -> Vec<ModelicaPathEntry> {
+fn get_all_modelica_paths(name: &str, mps: &List<ArcStr>) -> Vec<ModelicaPathEntry> {
     let mut res = Vec::new();
     for mp in &**mps {
         for (file, _) in dir_entries(mp.as_str()) {
@@ -1033,8 +1108,8 @@ fn load_model_path_default_target(entries: &[ModelicaPathEntry]) -> Option<&Mode
 /// best available version); fails (MMC_THROW in C) when nothing matches.
 pub fn getLoadModelPath(
     className: ArcStr,
-    prios: Arc<List<ArcStr>>,
-    mps: Arc<List<ArcStr>>,
+    prios: List<ArcStr>,
+    mps: List<ArcStr>,
     requireExactVersion: bool,
 ) -> Result<(ArcStr, ArcStr, bool)> {
     let entries = get_all_modelica_paths(&className, &mps);
@@ -1082,6 +1157,21 @@ pub fn directoryExists(inString: ArcStr) -> bool {
 
 pub fn copyFile(source: ArcStr, destination: ArcStr) -> bool {
     openmodelica_wasi::fs::copy(source.as_str(), destination.as_str()).is_ok()
+}
+
+pub fn copyPath(source: ArcStr, destination: ArcStr) -> bool {
+    fn copy(from: &str, to: &str) -> std::io::Result<()> {
+        use openmodelica_wasi::fs;
+        if !fs::is_dir(from) {
+            return fs::copy(from, to).map(|_| ());
+        }
+        fs::create_dir_all(to)?;
+        for e in fs::read_dir(from)? {
+            copy(&format!("{from}/{}", e.name), &format!("{to}/{}", e.name))?;
+        }
+        Ok(())
+    }
+    copy(source.as_str(), destination.as_str()).is_ok()
 }
 
 pub fn removeDirectory(inString: ArcStr) -> bool {
@@ -1198,8 +1288,8 @@ pub fn setClassnamesForSimulation(inString: ArcStr) {
 
 pub fn getVariableValue(
     _timeStamp: metamodelica::Real,
-    _timeValues: Arc<List<metamodelica::Real>>,
-    _varValues: Arc<List<metamodelica::Real>>,
+    _timeValues: List<metamodelica::Real>,
+    _varValues: List<metamodelica::Real>,
 ) -> Result<metamodelica::Real> {
     // Linear interpolation of a varValues sample at timeStamp; the C
     // runtime walks the parallel `timeValues` list looking for the
@@ -1540,8 +1630,10 @@ pub fn escapedString(unescapedString: ArcStr, unescapeNewline: bool) -> ArcStr {
 }
 
 pub fn unescapedString(escapedString: ArcStr) -> ArcStr {
+    let Some(first) = escapedString.find('\\') else { return escapedString };
     let mut out = String::with_capacity(escapedString.len());
-    let mut chars = escapedString.chars();
+    out.push_str(&escapedString[..first]);
+    let mut chars = escapedString[first..].chars();
     while let Some(c) = chars.next() {
         if c != '\\' { out.push(c); continue; }
         match chars.next() {
@@ -1692,46 +1784,85 @@ pub fn uriToClassAndPath(uri: ArcStr) -> Result<(ArcStr, ArcStr, ArcStr)> {
     return Err("Unknown uri: {uri}")
 }
 
+/// `@MODELICA_SPEC_PLATFORM@`: the Modelica spec's `<os><bitness>`. macOS is
+/// darwin64 on aarch64 too, since its libraries are universal binaries.
+const MODELICA_SPEC_PLATFORM: &str = if Autoconf::isWasm {
+    // The spec names no wasm platform; a wasm library is installed under the
+    // triple it was built for, as `SimCodeFunctionUtil.wasmLibraryTriple` says.
+    "wasm32-wasip1"
+} else if Autoconf::isWindows {
+    if Autoconf::is64Bit { "win64" } else { "win32" }
+} else if cfg!(target_os = "macos") {
+    if Autoconf::is64Bit { "darwin64" } else { "darwin32" }
+} else if Autoconf::is64Bit {
+    "linux64"
+} else {
+    "linux32"
+};
+
+/// `@OPENMODELICA_SPEC_PLATFORM@`: `$host_cpu-$host_os`, except on Windows where
+/// it names the toolchain, as the table in OMCompiler/omc_config.h does. The
+/// MinGW distribution is MSYS2's UCRT64.
+const OPENMODELICA_SPEC_PLATFORM: &str = if Autoconf::isWasm {
+    // The second spelling, for a library with no OS dependency at all: such a
+    // module is built for bare `wasm32` and runs under either ABI.
+    "wasm32"
+} else if cfg!(all(windows, target_env = "gnu")) {
+    if Autoconf::is64Bit { "ucrt64" } else { "mingw32" }
+} else if Autoconf::isWindows {
+    if Autoconf::is64Bit { "msvc64" } else { "msvc32" }
+} else {
+    const_str::concat!(Autoconf::target_arch_str, "-", Autoconf::os)
+};
+
 pub fn modelicaPlatform() -> ArcStr {
-    // Standardised platform name per the Modelica spec
-    // (linux32 / linux64 / win32 / win64 / darwin64).
-    let s = match (Autoconf::os, Autoconf::is64Bit) {
-        ("linux",  true)  => "linux64",
-        ("linux",  false) => "linux32",
-        ("Windows_NT", true)  => "win64",
-        ("Windows_NT", false) => "win32",
-        ("OSX", _)  => "darwin64",
-        _ => Autoconf::os,
-    };
-    ArcStr::from(s)
+    ArcStr::from(MODELICA_SPEC_PLATFORM)
 }
 
 pub fn openModelicaPlatform() -> ArcStr {
-    // OMC's preferred platform identifier — same as modelicaPlatform for
-    // now since we have no separate notion.
-    modelicaPlatform()
+    ArcStr::from(OPENMODELICA_SPEC_PLATFORM)
 }
+
+/// `@OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE@`: a second spelling to search,
+/// for Windows' ucrt64/mingw64 and for CMake's arm64 vs config.guess' aarch64.
+const OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE: &str = if cfg!(all(windows, target_env = "gnu")) {
+    if Autoconf::is64Bit { "mingw64" } else { "" }
+} else if Autoconf::isWindows {
+    ""
+} else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+    "arm64-darwin"
+} else {
+    ""
+};
 
 pub fn openModelicaPlatformAlternative() -> ArcStr {
-    literal!("")
+    ArcStr::from(OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE)
 }
 
+/// `CONFIG_GCC_DUMPMACHINE`: only MinGW builds set it.
+const GCC_DUMPMACHINE: &str = if !cfg!(all(windows, target_env = "gnu")) {
+    ""
+} else if Autoconf::is64Bit {
+    "x86_64-w64-mingw32"
+} else {
+    "i686-w64-mingw32"
+};
+
 pub fn gccDumpMachine() -> ArcStr {
-    // Output of `<CC> -dumpmachine`. Requires invoking the compiler;
-    // defer until a code path actually consumes it.
-    todo!("System.gccDumpMachine: needs to shell out to the configured CC")
+    ArcStr::from(GCC_DUMPMACHINE)
 }
 
 pub fn gccVersion() -> ArcStr {
-    todo!("System.gccVersion: needs to shell out to the configured CC")
+    let version = option_env!("OMC_GCC_VERSION").unwrap_or("");
+    ArcStr::from(if cfg!(all(windows, target_env = "gnu")) { version } else { "" })
 }
 
 // ───────────────────────────────── LAPACK / iconv / printf ───────────────────
 
 pub fn dgesv(
-    A: Arc<List<Arc<List<metamodelica::Real>>>>,
-    B: Arc<List<metamodelica::Real>>,
-) -> Result<(Arc<List<metamodelica::Real>>, i32)> {
+    A: List<List<metamodelica::Real>>,
+    B: List<metamodelica::Real>,
+) -> Result<(List<metamodelica::Real>, i32)> {
     // Port of SystemImpl__dgesv (systemimpl.c), which calls LAPACK `dgesv` to
     // solve the dense linear system A*X = B for a single right-hand side.
     // LAPACK's dgesv is an LU factorization with partial pivoting (dgetrf)
@@ -1754,7 +1885,7 @@ pub fn dgesv(
         return Ok((B.clone(), -1));
     }
     if n == 0 {
-        return Ok((Arc::new(List::Nil), 0));
+        return Ok((metamodelica::nil(), 0));
     }
 
     // Working copy of the matrix: a[i][j] = row i, column j (as in the C code,
@@ -1808,7 +1939,7 @@ pub fn dgesv(
     }
 
     let out = List::from_iter(x.into_iter().map(metamodelica::OrderedFloat));
-    Ok((Arc::new(out), 0))
+    Ok((out, 0))
 }
 
 pub fn reopenStandardStream(_stream: i32, _filename: ArcStr) -> bool {
@@ -2100,10 +2231,53 @@ pub fn realpath(path: ArcStr) -> Result<ArcStr> {
     return Ok(ArcStr::from(lexical_normalize(path.as_str())));
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let canon = fs::canonicalize(path.as_str())
-            .map_err(|_| "System.realpath: cannot resolve {path}")?;
+        #[cfg(unix)]
+        let canon = canonicalize_in_known_dir(Path::new(path.as_str()));
+        #[cfg(not(unix))]
+        let canon = fs::canonicalize(path.as_str());
+        let canon = canon.map_err(|_| "System.realpath: cannot resolve {path}")?;
         Ok(ArcStr::from(canon.to_string_lossy().as_ref()))
     }
+}
+
+/// `fs::canonicalize` with the parent directory's result reused while the
+/// directory is the same (device, inode): loading a library resolves every
+/// file of it, and resolving each path component costs a syscall.
+#[cfg(all(unix, not(target_arch = "wasm32")))]
+fn canonicalize_in_known_dir(path: &Path) -> std::io::Result<std::path::PathBuf> {
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::MetadataExt;
+    use std::path::Component;
+    use std::sync::Mutex;
+    static DIRS: Mutex<Option<HashMap<std::path::PathBuf, (u64, u64, std::path::PathBuf)>>> = Mutex::new(None);
+
+    // `lstat` on `dir/` or `dir/.` follows a symlinked `dir`.
+    let raw = path.as_os_str().as_bytes();
+    let (Some(Component::Normal(name)), Some(parent)) = (path.components().next_back(), path.parent()) else {
+        return fs::canonicalize(path);
+    };
+    if raw.ends_with(b"/") || raw.ends_with(b"/.") {
+        return fs::canonicalize(path);
+    }
+    let parent = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
+    let dir_meta = fs::metadata(parent)?;
+    let key = (dir_meta.dev(), dir_meta.ino());
+    let cached = DIRS.lock().unwrap().as_ref().and_then(|m| m.get(parent))
+        .filter(|(dev, ino, _)| (*dev, *ino) == key)
+        .map(|(_, _, canon)| canon.clone());
+    let canon_dir = match cached {
+        Some(c) => c,
+        None => {
+            let c = fs::canonicalize(parent)?;
+            DIRS.lock().unwrap().get_or_insert_with(HashMap::new)
+                .insert(parent.to_path_buf(), (key.0, key.1, c.clone()));
+            c
+        }
+    };
+    if fs::symlink_metadata(path)?.file_type().is_symlink() {
+        return fs::canonicalize(path);
+    }
+    Ok(canon_dir.join(name))
 }
 
 /// Collapse `.` and `..` components in a forward-slash path without touching a
@@ -2172,9 +2346,9 @@ pub fn numProcessors() -> i32 {
 
 pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static>(
     _numThreads: i32,
-    inData: Arc<List<AnyInput>>,
+    inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
-) -> Result<Arc<List<AnyOutput>>> {
+) -> Result<List<AnyOutput>> {
     // The C runtime (System_omc.c) spawns `numThreads` worker pthreads pulling
     // tasks off a shared queue, but collects the results back in INPUT ORDER
     // (`commands[i] = fn(task[i])`) and itself falls back to a plain serial map
@@ -2192,7 +2366,7 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
     // `collect`).
     let results: Result<Vec<AnyOutput>> =
         (&*inData).into_iter().map(|x| func(x.clone())).collect();
-    Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
+    Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
 // A process-wide pool, sized on first use to the requested thread count and
@@ -2202,8 +2376,15 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
 fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
     use std::sync::OnceLock;
     static POOL: OnceLock<Option<rayon::ThreadPool>> = OnceLock::new();
-    POOL.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(n).build().ok())
-        .as_ref()
+    POOL.get_or_init(|| {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .stack_size(metamodelica::thread_stack_size())
+            .thread_name(|i| format!("omc-parallel-{i}"))
+            .build()
+            .ok()
+    })
+    .as_ref()
 }
 
 // Real-threaded map, opted into per call site. The `Send` bounds reject the
@@ -2211,15 +2392,15 @@ fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
     numThreads: i32,
-    inData: Arc<List<AnyInput>>,
+    inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
-) -> Result<Arc<List<AnyOutput>>> {
+) -> Result<List<AnyOutput>> {
     use rayon::prelude::*;
 
     let items: Vec<AnyInput> = (&*inData).into_iter().cloned().collect();
     if numThreads <= 1 || items.len() < 2 {
         let results: Result<Vec<AnyOutput>> = items.into_iter().map(|x| func(x)).collect();
-        return Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()));
+        return Ok(results?.into_iter().collect::<List<AnyOutput>>());
     }
 
     struct SendSync<T>(T);
@@ -2252,22 +2433,32 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
     for r in results {
         out.push(r?);
     }
-    Ok(Arc::new(out.into_iter().collect::<List<AnyOutput>>()))
+    Ok(out.into_iter().collect::<List<AnyOutput>>())
 }
 
 #[cfg(target_arch = "wasm32")]
 pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: Clone + Send + 'static>(
     _numThreads: i32,
-    inData: Arc<List<AnyInput>>,
+    inData: List<AnyInput>,
     func: Arc<dyn Fn(AnyInput) -> Result<AnyOutput> + 'static>,
-) -> Result<Arc<List<AnyOutput>>> {
+) -> Result<List<AnyOutput>> {
     // wasm32-unknown-unknown has no OS threads; run serially.
     let results: Result<Vec<AnyOutput>> =
         (&*inData).into_iter().map(|x| func(x.clone())).collect();
-    Ok(Arc::new(results?.into_iter().collect::<List<AnyOutput>>()))
+    Ok(results?.into_iter().collect::<List<AnyOutput>>())
+}
+
+static EXIT_HOOK: std::sync::OnceLock<fn()> = std::sync::OnceLock::new();
+
+/// Runs `hook` before the scripting `exit(n)` ends the process.
+pub fn set_exit_hook(hook: fn()) {
+    let _ = EXIT_HOOK.set(hook);
 }
 
 pub fn exit(status: i32) -> Result<()> {
+    if let Some(hook) = EXIT_HOOK.get() {
+        hook();
+    }
     std::process::exit(status);
 }
 
@@ -2386,6 +2577,22 @@ pub fn alarm(seconds: i32) -> i32 {
     use std::sync::atomic::{AtomicBool, Ordering};
     static HANDLER_INSTALLED: AtomicBool = AtomicBool::new(false);
 
+    // libc binds neither of these for Apple: SI_USER is only in the Linux
+    // modules, and its siginfo_t there is opaque with accessors while Apple's
+    // has plain fields.
+    #[cfg(target_vendor = "apple")]
+    const SI_USER: core::ffi::c_int = 0x10001; // <sys/signal.h>
+    #[cfg(not(target_vendor = "apple"))]
+    const SI_USER: core::ffi::c_int = libc::SI_USER;
+    #[cfg(target_vendor = "apple")]
+    unsafe fn si_pid(si: *const libc::siginfo_t) -> libc::pid_t {
+        unsafe { (*si).si_pid }
+    }
+    #[cfg(not(target_vendor = "apple"))]
+    unsafe fn si_pid(si: *const libc::siginfo_t) -> libc::pid_t {
+        unsafe { (*si).si_pid() }
+    }
+
     extern "C" fn alarm_handler(
         signo: core::ffi::c_int,
         si: *mut libc::siginfo_t,
@@ -2394,7 +2601,7 @@ pub fn alarm(seconds: i32) -> i32 {
         use std::sync::atomic::Ordering::{Relaxed, SeqCst};
         unsafe {
             // Our own group broadcast coming back, not a second deadline.
-            if !si.is_null() && (*si).si_code == libc::SI_USER && (*si).si_pid() == libc::getpid() {
+            if !si.is_null() && (*si).si_code == SI_USER && si_pid(si) == libc::getpid() {
                 return;
             }
             if !ALARM_EXPIRED.swap(true, SeqCst) {
@@ -2513,11 +2720,11 @@ pub fn covertTextFileToCLiteral(textFile: ArcStr, outFile: ArcStr, target: ArcSt
     true
 }
 
-pub fn dladdr<T: Clone + 'static>(_symbol: T) -> (ArcStr, ArcStr, ArcStr) {
+pub fn dladdr<T: ?Sized>(_symbol: &T) -> (ArcStr, ArcStr, ArcStr) {
     // C: dladdr(3) on the MM closure's entry pointer, used purely as
     // best-effort diagnostics for Error.TEMPLATE_ERROR_FUNC ("Template
     // error: <file>: <symbol>"); platforms without dladdr return dummy
-    // strings ("dladdr failed"). A Rust `Arc<dyn Fn>` value carries no
+    // strings ("dladdr failed"). A Rust callback carries no
     // resolvable exported symbol, so this port always takes the
     // dummy-string path. The callback's static type name is the best
     // information available without symbolication machinery.
@@ -2620,7 +2827,7 @@ pub fn stringAllocatorResult<T: Clone + 'static>(sa: StringAllocator, _dummy: T)
     }
 }
 
-pub fn relocateFunctions(_fileName: ArcStr, _names: Arc<List<(ArcStr, ArcStr)>>) -> bool {
+pub fn relocateFunctions(_fileName: ArcStr, _names: List<(ArcStr, ArcStr)>) -> bool {
     // Hot-swap runtime symbols from a fresh .so — needs dlopen + relocation
     // walking. Not used by the Rust-side compile path.
     todo!("System.relocateFunctions: symbol relocation not yet ported")
@@ -2682,6 +2889,14 @@ pub fn waitForInput() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unescaped_string() {
+        let u = |s: &str| unescapedString(ArcStr::from(s)).to_string();
+        assert_eq!(u("plain"), "plain");
+        assert_eq!(u("a\\nb\\\"c\\"), "a\nb\"c\\");
+        assert_eq!(u("x\\qy"), "x\\qy");
+    }
 
     #[test]
     fn sprintff_g_uses_significant_digits() {

@@ -2,12 +2,12 @@ within ;
 package Pendulum
   model NPendulum
     constant Integer N = 10;
-    parameter Modelica.SIunits.RotationalDampingConstant d = 0.1 annotation(Evaluate=true);
-    parameter Modelica.SIunits.Length l = 1
+    parameter Modelica.Units.SI.RotationalDampingConstant d = 0.1 annotation(Evaluate=true);
+    parameter Modelica.Units.SI.Length l = 1
      annotation(Evaluate=true);
 
-    Modelica.SIunits.Angle phi[N] = revolute.phi;
-    Modelica.SIunits.Angle w[N] = revolute.w;
+    Modelica.Units.SI.Angle phi[N] = revolute.phi;
+    Modelica.Units.SI.Angle w[N] = revolute.w;
 
   protected
     Modelica.Mechanics.MultiBody.Joints.Revolute revolute[N](
@@ -44,12 +44,12 @@ package Pendulum
 
   model Pendulum2
     constant Integer N = 2;
-    parameter Modelica.SIunits.RotationalDampingConstant d = 0.1 annotation(Evaluate=true);
-    parameter Modelica.SIunits.Length l = 1
+    parameter Modelica.Units.SI.RotationalDampingConstant d = 0.1 annotation(Evaluate=true);
+    parameter Modelica.Units.SI.Length l = 1
      annotation(Evaluate=true);
 
-    Modelica.SIunits.Angle phi[N] = revolute.phi;
-    Modelica.SIunits.Angle w[N] = revolute.w;
+    Modelica.Units.SI.Angle phi[N] = revolute.phi;
+    Modelica.Units.SI.Angle w[N] = revolute.w;
 
   protected
     Modelica.Mechanics.MultiBody.Joints.Revolute revolute[N](
@@ -86,12 +86,12 @@ package Pendulum
 
   model Pendulum3
     constant Integer N = 3;
-    parameter Modelica.SIunits.RotationalDampingConstant d = 0.1 annotation(Evaluate=true);
-    parameter Modelica.SIunits.Length l = 1
+    parameter Modelica.Units.SI.RotationalDampingConstant d = 0.1 annotation(Evaluate=true);
+    parameter Modelica.Units.SI.Length l = 1
      annotation(Evaluate=true);
 
-    Modelica.SIunits.Angle phi[N] = revolute.phi;
-    Modelica.SIunits.Angle w[N] = revolute.w;
+    Modelica.Units.SI.Angle phi[N] = revolute.phi;
+    Modelica.Units.SI.Angle w[N] = revolute.w;
 
   protected
     Modelica.Mechanics.MultiBody.Joints.Revolute revolute[N](

@@ -7,7 +7,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 
 runScript("ModelTestingDefaults.mos");getErrorString();
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
@@ -16,22 +16,11 @@ timeout := 600;
 
 compareVars :=
 {
-   "R4.Capacitor1.v",
-   "R5.Capacitor1.v",
-   "R8.Capacitor1.v",
-   "R9.Capacitor1.v",
-   "R1.Capacitor1.v",
-   "R2.Capacitor1.v",
-   "R3.Capacitor1.v",
-   "Rp1.Capacitor1.v",
-   "R7.Capacitor1.v",
-   "R10.Capacitor1.v",
-   "R11.Capacitor1.v",
-   "C3.v",
-   "C7.v",
    "C1.v",
+   "C2.v",
+   "C3.v",
    "C4.v",
-   "C8.v"
+   "C7.v"
 };
 
 setCommandLineOptions("+profiling=all +simCodeTarget=Cpp"); getErrorString();

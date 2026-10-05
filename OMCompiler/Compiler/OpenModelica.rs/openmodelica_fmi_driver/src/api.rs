@@ -74,6 +74,9 @@ pub struct DoStep {
     pub early_return: bool,
     /// How far it actually got.
     pub last_successful_time: f64,
+    /// `fmi3Discard`: the FMU could not reach the communication point and stands
+    /// at `last_successful_time`, which is where the master resumes from.
+    pub discarded: bool,
 }
 
 /// What every FMI 3.0 instance can do, whichever interface it serves.

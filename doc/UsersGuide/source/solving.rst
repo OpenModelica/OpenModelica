@@ -401,7 +401,7 @@ when the simulation is started.
 
 To avoid this problem, make sure you also save protected and hidden variables in the simulation result file, by setting the
 corresponding checkboxes in the *Simulation Setup | Output* tab of OMEdit, or by setting the simulation flags
-:ref:`-emit_protected <simflag-emit-protected>` and :ref:`-ignoreHideResult <simflag-ignorehideresult>`.
+:ref:`-emit_protected <simflag-emit_protected>` and :ref:`-ignoreHideResult <simflag-ignorehideresult>`.
 
 Example of use
 **************
@@ -640,7 +640,6 @@ Enable logging:
 References
 ~~~~~~~~~~
 .. bibliography:: openmodelica.bib extrarefs.bib
-  :cited:
   :filter: docname in docnames
 
 .. rubric:: Footnotes

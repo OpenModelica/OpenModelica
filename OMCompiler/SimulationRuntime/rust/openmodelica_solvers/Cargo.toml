@@ -25,6 +25,7 @@ sundials_extern = []
 # LINPACK's `dgefa`/`dgesl` for gbode's Newton matrix.
 daskr = { path = "../daskr", default-features = false }
 # no_std `sqrt`/`pow`/`log` for the solver math; unused under `std`.
+# `no_std` builds only (`fmath`); `std` uses the platform libm.
 libm = "0.2"
 # Sparse LU with AMD ordering (CSparse port), for `sparse` above.
 rsparse = { version = "1.2", optional = true }

@@ -31,11 +31,17 @@ extern "C"
 #endif
 
 #include "read_write.h"
+#include "omc_strdup.h"
+/* The MetaModelica build also converts type_descriptions to MMC values. */
+#if defined(OMC_METAMODELICA_RUNTIME)
+#include "../meta/meta_modelica.h"
+#else
+#include "omc_string.h"
+#endif
 #include "real_array.h"
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "string_array.h"
-#include "../meta/meta_modelica.h"
 #include <string.h>
 
 int getMyBool(const type_description *desc)
@@ -65,7 +71,7 @@ void puttype(const type_description *desc)
     fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
     break;
   case TYPE_DESC_STRING:
-    fprintf(stderr, "STR: '%s'\n", MMC_STRINGDATA(desc->data.string));
+    fprintf(stderr, "STR: '%s'\n", desc->data.string);
     break;
   case TYPE_DESC_TUPLE: {
       size_t e;
@@ -140,8 +146,7 @@ void puttype(const type_description *desc)
         int e;
         fprintf(stderr, "\t[");
         for(e = 0; e < desc->data.str_array.dim_size[0]; ++e) {
-          fprintf(stderr, "%s, ",
-                MMC_STRINGDATA(((modelica_string *) desc->data.str_array.data)[e]));
+          fprintf(stderr, "%s, ", desc->data.str_array.data[e]);
         }
         fprintf(stderr, "]\n");
       }
@@ -168,7 +173,11 @@ void puttype(const type_description *desc)
     }
     break;
   case TYPE_DESC_MMC:
+#if defined(OMC_METAMODELICA_RUNTIME)
     fprintf(stderr, "%s\n", anyString(desc->data.mmc));
+#else
+    fprintf(stderr, "<metatype>\n");
+#endif
     break;
   default:
     fprintf(stderr, "UNKNOWN: Values.Value!\n");
@@ -202,6 +211,9 @@ void free_type_description(type_description *desc)
   case TYPE_DESC_BOOL:
     break;
   case TYPE_DESC_STRING:
+    if(desc->retval) {
+      free((void*) desc->data.string);
+    }
     break;
   case TYPE_DESC_REAL_ARRAY:
     if(desc->retval) {
@@ -223,6 +235,10 @@ void free_type_description(type_description *desc)
     break;
   case TYPE_DESC_STRING_ARRAY:
     if(desc->retval) {
+      size_t i, n = str_array_nr_of_elements(desc->data.str_array);
+      for(i = 0; i < n; ++i) {
+        free((void*) desc->data.str_array.data[i]);
+      }
       free(desc->data.str_array.dim_size);
       free(desc->data.str_array.data);
     }
@@ -387,23 +403,38 @@ int read_boolean_array(type_description **descptr, boolean_array *arr)
   return -1;
 }
 
+static void alloc_desc_string_array(string_array *arr, int ndims, const _index_t *dim_size)
+{
+  int i;
+  arr->ndims = ndims;
+  arr->dim_size = size_alloc(ndims);
+  for(i = 0; i < ndims; ++i) {
+    arr->dim_size[i] = dim_size[i];
+  }
+  arr->flexible = 0;
+  arr->owns_data = 1;
+  alloc_string_array_data(arr);
+}
+
 int read_string_array(type_description **descptr, string_array *arr)
 {
   type_description *desc = (*descptr)++;
   switch (desc->type) {
-  case TYPE_DESC_STRING_ARRAY:
-    *arr = desc->data.str_array;
+  case TYPE_DESC_STRING_ARRAY: {
+    size_t i, n;
+    modelica_string *dst;
+    alloc_desc_string_array(arr, desc->data.str_array.ndims, desc->data.str_array.dim_size);
+    n = base_array_nr_of_elements(*arr);
+    dst = (modelica_string*) arr->data;
+    for(i = 0; i < n; ++i) {
+      dst[i] = omc_string_new(desc->data.str_array.data[i]);
+    }
     return 0;
+  }
   case TYPE_DESC_REAL_ARRAY:
     /* Empty arrays automaticly get to be real arrays */
     if(desc->data.r_array.dim_size[desc->data.r_array.ndims - 1] == 0) {
-      int dims = desc->data.r_array.ndims;
-      _index_t *dim_size = desc->data.r_array.dim_size;
-      desc->type = TYPE_DESC_STRING_ARRAY;
-      desc->data.str_array.ndims = dims;
-      desc->data.str_array.dim_size = dim_size;
-      alloc_string_array_data(&(desc->data.str_array));
-      *arr = desc->data.str_array;
+      alloc_desc_string_array(arr, desc->data.r_array.ndims, desc->data.r_array.dim_size);
       return 0;
     }
     break;
@@ -518,24 +549,22 @@ void write_string_array(type_description *desc, const string_array *arr)
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_STRING_ARRAY;
-  if(desc->retval) {
-    size_t i;
-    size_t nr_elements;
-    modelica_string *dst = NULL, *src = NULL;
+  {
+    size_t i, nr_elements;
+    const char **dst;
+    const modelica_string *src;
     desc->data.str_array.ndims = arr->ndims;
     desc->data.str_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.str_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = base_array_nr_of_elements(*arr);
-    desc->data.str_array.data = malloc(sizeof(modelica_string)* nr_elements);
-    dst = (modelica_string*)desc->data.str_array.data;
-    src = (modelica_string*)arr->data;
+    desc->data.str_array.data = (const char**) malloc(sizeof(const char*) * nr_elements);
+    dst = desc->data.str_array.data;
+    src = (const modelica_string*) arr->data;
+    /* As write_modelica_string: the caller reads this after the callee's
+       frame, and its releases, are gone. */
     for(i = 0; i < nr_elements; ++i) {
-      *dst = *src;
-      ++src;
-      ++dst;
+      dst[i] = omc_strdup(omc_string_data(src[i]));
     }
-  } else {
-    copy_string_array(*arr, &(desc->data.str_array));
   }
 }
 
@@ -544,7 +573,7 @@ int read_modelica_string(type_description **descptr, modelica_string *str)
   type_description *desc = (*descptr)++;
   switch (desc->type) {
   case TYPE_DESC_STRING:
-    *str = desc->data.string;
+    *str = omc_string_new(desc->data.string);
     return 0;
   default:
     break;
@@ -561,10 +590,11 @@ void write_modelica_string(type_description *desc, modelica_string *str)
   }
   desc->type = TYPE_DESC_STRING;
   if(desc->retval) {
-    /* Can't use memory pool */
-    desc->data.string = *str;
+    /* The caller reads this after the callee's frame, and its releases, are
+       gone; free_type_description gives it back. */
+    desc->data.string = omc_strdup(omc_string_data(*str));
   } else {
-    *str = desc->data.string;
+    *str = omc_string_new(desc->data.string);
   }
 }
 
@@ -618,6 +648,9 @@ void write_modelica_fnptr(type_description *desc, const modelica_fnptr *fn)
   desc->data.function = *fn;
 }
 
+#if defined(OMC_METAMODELICA_RUNTIME)
+/* Converting a type_description to a MetaModelica value: only the compiler
+   does this, and only its build links the boxing primitives. */
 int read_modelica_metatype(type_description **descptr, modelica_metatype *ut)
 {
   type_description *desc = (*descptr)++;
@@ -629,7 +662,7 @@ int read_modelica_metatype(type_description **descptr, modelica_metatype *ut)
     *ut = mmc_mk_rcon(desc->data.real);
     return 0;
   case TYPE_DESC_STRING:
-    *ut = desc->data.string;
+    *ut = mmc_mk_scon(desc->data.string);
     return 0;
   case TYPE_DESC_BOOL:
     *ut = mmc_mk_icon((desc->data.boolean == 0) ? 0 : 1);
@@ -644,6 +677,7 @@ int read_modelica_metatype(type_description **descptr, modelica_metatype *ut)
   in_report("MMC type");
   return -1;
 }
+#endif /* OMC_METAMODELICA_RUNTIME */
 
 void write_modelica_metatype(type_description *desc, const modelica_metatype *ut)
 {
@@ -697,7 +731,9 @@ static int read_modelica_record_helper(type_description **descptr, va_list *arg)
         read_modelica_complex(&elem, va_arg(*arg, modelica_complex *));
         break;
       case TYPE_DESC_MMC:
+#if defined(OMC_METAMODELICA_RUNTIME)
         read_modelica_metatype(&elem, va_arg(*arg, void **));
+#endif
         break;
       case TYPE_DESC_RECORD:
         read_modelica_record_helper(&elem, arg);

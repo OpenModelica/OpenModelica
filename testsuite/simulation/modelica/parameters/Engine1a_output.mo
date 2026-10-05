@@ -169,5 +169,5 @@ An animation of this example is shown in the figure below.
 
 <IMG src=\"modelica://Modelica/Resources/Images/Mechanics/MultiBody/Examples/Loops/Engine.png\" ALT=\"model Examples.Loops.Engine\">
 </html>"),
-    uses(Modelica(version="3.2.1")));
+    uses(Modelica(version="4.1.0")));
 end Engine1a_output;

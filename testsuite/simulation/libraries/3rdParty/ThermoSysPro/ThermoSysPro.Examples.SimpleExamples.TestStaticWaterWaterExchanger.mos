@@ -3,12 +3,12 @@
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.* ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger_* ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.exe ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.cpp ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.makefile ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.libs ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.log ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.c ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadModel(ThermoSysPro); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestStaticWaterWaterExchanger, stopTime=1000); getErrorString();
 
@@ -33,15 +33,15 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:85:3-87:42:writable] Warning: Connector Ec is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:88:3-90:38:writable] Warning: Connector Ef is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:91:3-93:37:writable] Warning: Connector Sf is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:94:3-96:37:writable] Warning: Connector Sc is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/BoundaryConditions/SourceP.mo:30:3-31:45:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSteam/BoundaryConditions/SinkP.mo:33:3-34:47:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// "[ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:54:3-55:80:writable] Warning: Connector Ec is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:56:3-57:80:writable] Warning: Connector Ef is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:58:3-59:78:writable] Warning: Connector Sf is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/HeatExchangers/StaticWaterWaterExchanger.mo:60:3-61:77:writable] Warning: Connector Sc is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/BoundaryConditions/SourceP.mo:19:3-20:78:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/BoundaryConditions/SinkP.mo:19:3-20:80:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}

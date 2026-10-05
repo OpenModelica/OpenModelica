@@ -67,7 +67,7 @@ void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3, const char* f
 
 #include "systemimpl.h"
 #include "errorext.h"
-#include "util/modelica_string.h"
+#include "util/omc_str_utils.h"
 #include "util/omc_strdup.h"
 
 #define FMILIB_BUILDING_LIBRARY

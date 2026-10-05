@@ -11,6 +11,7 @@
 //
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
 const readline = require('node:readline');
 const { execFileSync } = require('node:child_process');
@@ -59,6 +60,16 @@ if (!omc.omc_init()) {
   // complete; simple, self-contained commands can still work.
   console.error('warning: omc_init() reported failure (no filesystem/OPENMODELICAHOME in this wasm build)');
 }
+
+// wasm/wasm-blobs.js reads these over HTTP; here they are files next to the script.
+globalThis.__omcWasmBlob = (file) => {
+  try {
+    return new Uint8Array(fs.readFileSync(path.join(__dirname, 'wasm-blobs', file)));
+  } catch {
+    return null;
+  }
+};
+omc.omc_enable_wasm_blobs();
 
 const oneShot = process.argv.slice(2).join(' ').trim();
 if (oneShot) {

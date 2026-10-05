@@ -127,7 +127,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = VARINFO(__))) then
   let description = ''
   let author = ''
   let version= ''
-  let generationDateAndTime = xsdateTimeXml(getCurrentDateTime())
+  let generationDateAndTime = xsdateTimeXml(Util.getCurrentDateTime())
   let variableNamingConvention= 'structured'
   let numberOfContinuousStates =modelInfo.varInfo.numStateVars
   let numberOfEventIndicators =modelInfo.varInfo.numZeroCrossings
@@ -245,7 +245,7 @@ match c
   //TODO causality = independent (usually it should be "time")
 end getCausalityXml;
 
-template getVariablityXml(VarKind varKind)
+template getVariablityXml(BackendDAE.VarKind varKind)
  "Returns the variablity Attribute of ScalarVariable."
 ::=
 match varKind
@@ -265,7 +265,7 @@ match aliasvar
   else ""
 end getAliasVarXml;
 
-template variableCategoryXml(VarKind varKind)
+template variableCategoryXml(BackendDAE.VarKind varKind)
  "Returns the variable category of ScalarVariable."
 ::=
   match varKind
@@ -400,7 +400,7 @@ template qualifiedNamePartXml(ComponentRef cr)
 
 end qualifiedNamePartXml;
 
-template arraysubscriptsStrXml(list<Subscript> subscripts)
+template arraysubscriptsStrXml(list<DAE.Subscript> subscripts)
  "Generares XML code for subscript part of the name."
 ::=
   if subscripts then
@@ -413,7 +413,7 @@ template arraysubscriptsStrXml(list<Subscript> subscripts)
   <<>>
 end arraysubscriptsStrXml;
 
-template arraysubscriptStrXml(Subscript subscript)
+template arraysubscriptStrXml(DAE.Subscript subscript)
  "Generates a single subscript XML code.
   Only works for constant integer indicies."
 
@@ -516,14 +516,14 @@ template arrayCrefStrXml(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStrXml;
 
-template subscriptsStrXml(list<Subscript> subscripts)
+template subscriptsStrXml(list<DAE.Subscript> subscripts)
  "Generares subscript part of the name."
 ::=
   if subscripts then
     '[<%subscripts |> s => subscriptStrXml(s) ;separator=","%>]'
 end subscriptsStrXml;
 
-template subscriptStrXml(Subscript subscript)
+template subscriptStrXml(DAE.Subscript subscript)
  "Generates a single subscript.
   Only works for constant integer indicies."
 
@@ -557,7 +557,7 @@ template crefFunctionNameXml(ComponentRef cr)
     '<%System.stringReplace(unquoteIdentifier(ident), "_", "__")%>_<%crefFunctionNameXml(componentRef)%>'
 end crefFunctionNameXml;
 
-template dotPathXml(Path path)
+template dotPathXml(Absyn.Path path)
  "Generates paths with components separated by dots."
 ::=
   match path
@@ -576,7 +576,7 @@ template replaceDotAndUnderscoreXml(String str)
     System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscoreXml;
 
-template underscorePathXml(Path path)
+template underscorePathXml(Absyn.Path path)
  "Generate XML code for paths"
 ::=
   match path
@@ -1095,7 +1095,7 @@ end  recordBodyXml;
  * SECTION: GENERATE All USER DEFINED FUNCTIONS INCLUDING EXTERNAL FUNCTIONS IN SIMULATION FILE
  **********************************************************************************************/
 
-template functionsXml(list<Function> functions)
+template functionsXml(list<SimCodeFunction.Function> functions)
  "Generates the body for a set of functions."
 ::=
   <<
@@ -1105,7 +1105,7 @@ template functionsXml(list<Function> functions)
   >>
 end functionsXml;
 
-template functionXml(Function fn)
+template functionXml(SimCodeFunction.Function fn)
  "Generates the body for a function."
 ::=
   match fn
@@ -1114,7 +1114,7 @@ template functionXml(Function fn)
   case fn as RECORD_CONSTRUCTOR(__) then ''
 end functionXml;
 
-template regularFunctionXml(Function fn)
+template regularFunctionXml(SimCodeFunction.Function fn)
  "Generates XML code   for a Modelica function."
 ::=
 match fn
@@ -1139,7 +1139,7 @@ case FUNCTION(__) then
   >>
 end regularFunctionXml;
 
-template externalFunctionXml(Function fn)
+template externalFunctionXml(SimCodeFunction.Function fn)
  "Generates the body for an external function (just a wrapper)."
 ::=
 match fn
@@ -1288,7 +1288,7 @@ template extTypeF77Xml(Type type, Boolean isReference)
   match type case T_ARRAY(__) then s else if isReference then '<%s%>*' else s
 end extTypeF77Xml;
 
-template functionNameXml(Function fn, Boolean dotPath)
+template functionNameXml(SimCodeFunction.Function fn, Boolean dotPath)
 ::=
   match fn
   case FUNCTION(__)
@@ -1303,7 +1303,7 @@ template extVarNameXml(ComponentRef cr)
   >>
 end extVarNameXml;
 
-template extFunCallXml(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template extFunCallXml(SimCodeFunction.Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates the call to an external function."
 ::=
 match fun
@@ -1313,7 +1313,7 @@ case EXTERNAL_FUNCTION(__) then
   case "FORTRAN 77" then extFunCallF77Xml(fun, &preExp /*BUFC*/, &varDecls /*BUFD*/)
 end extFunCallXml;
 
-template extFunCallCXml(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template extFunCallCXml(SimCodeFunction.Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates the call to an external C function."
 ::=
 match fun
@@ -1342,7 +1342,7 @@ case EXTERNAL_FUNCTION(__) then
   >>
 end extFunCallCXml;
 
-template extFunCallF77Xml(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template extFunCallF77Xml(SimCodeFunction.Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates the call to an external Fortran 77 function."
 ::=
 match fun
@@ -2273,7 +2273,7 @@ template daeExpCrefRhs2Xml(Exp ecr, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhs2Xml;
 
-template threadDimSubListXml(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls)
+template threadDimSubListXml(list<Dimension> dims, list<DAE.Subscript> subs, Context context, Text &preExp, Text &varDecls)
   "Do direct indexing since sizes are known during compile-time"
 ::=
   match subs
@@ -2295,7 +2295,7 @@ template threadDimSubListXml(list<Dimension> dims, list<Subscript> subs, Context
   else error(sourceInfo(),"Non-index subscript in indexing cref? That's odd!")
 end threadDimSubListXml;
 
-template daeExpCrefRhsIndexSpecXml(list<Subscript> subs, Context context,
+template daeExpCrefRhsIndexSpecXml(list<DAE.Subscript> subs, Context context,
                                 Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Helper to daeExpCrefRhs."
 ::=
@@ -2458,7 +2458,7 @@ template daeExpCrefLhs2Xml(Exp ecr, Context context, Text &afterExp /*BUFP*/,
     >>
 end daeExpCrefLhs2Xml;
 
-template daeExpCrefLhsIndexSpecXml(list<Subscript> subs, Context context,
+template daeExpCrefLhsIndexSpecXml(list<DAE.Subscript> subs, Context context,
                                 Text &afterExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Helper to daeExpCrefLhs."
 ::=
@@ -3176,7 +3176,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
 
     //sqrt
   case CALL(path=IDENT(name="sqrt"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
-    let retPre = assertCommonXml(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo)
+    let retPre = assertCommonXml(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, Absyn.dummyInfo)
     let argStr = daeExpXml(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let &preExp += '<%retPre%>'
       <<
@@ -3406,7 +3406,7 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
         >>
 end daeExpCallXml;
 
-template builtinFunctionNameXml(Path path)
+template builtinFunctionNameXml(Absyn.Path path)
 ::=
   match path
   case IDENT(name="DIVISION") then 'Div'
@@ -3573,7 +3573,7 @@ case CAST(__) then
     '<%expVar%> /* could not cast, using the variable as it is */'
 end daeExpCastXml;
 
-template daeSubscriptXML(Subscript sub, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template daeSubscriptXML(DAE.Subscript sub, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
 ::=
   match sub
   case sub as INDEX() then daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -3711,15 +3711,14 @@ case exp as UNBOX(__) then
 end daeExpUnboxXml;
 
 template daeExpSharedLiteralXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
- "Generates code for a match expression."
 ::=
-match exp case exp as SHARED_LITERAL(__) then ''
+match exp case exp as SHARED_LITERAL(__) then daeExpXml(exp.exp, context, &preExp, &varDecls)
 end daeExpSharedLiteralXml;
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
-template arrayScalarRhsXml(Type ty, list<Subscript> subs, String arrName, Context context,
+template arrayScalarRhsXml(Type ty, list<DAE.Subscript> subs, String arrName, Context context,
                Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Helper to daeExpAsub."
 ::=

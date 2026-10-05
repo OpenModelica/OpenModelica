@@ -613,9 +613,14 @@ pub unsafe extern "C" fn fmi2NewDiscreteStates(c: *mut c_void, event_info: *mut 
             info.next_event_time = u.next_event_time;
             OK
         }
-        Ok(Err(s)) => st(s),
+        // C reports the failure from `internalEventUpdate`'s catch, whether the
+        // assertion unwound inside the FMU or trapped.
+        Ok(Err(s)) => {
+            store.data_mut().log_fmi2_call(ERROR, "internalEventUpdate: terminated by an assertion.");
+            st(s)
+        }
         Err(_) => {
-            store.data_mut().log_fmi2_call(ERROR, "fmi2NewDiscreteStates: terminated by an assertion.");
+            store.data_mut().log_fmi2_call(ERROR, "internalEventUpdate: terminated by an assertion.");
             ERROR
         }
    })
@@ -748,16 +753,27 @@ pub unsafe extern "C" fn fmi2GetStringStatus(_c: *mut c_void, kind: i32, value: 
     OK
 }
 
-/// The component's Co-Simulation driver takes no derivative information.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn fmi2SetRealInputDerivatives(
-    _c: *mut c_void,
-    _value_references: *const u32,
-    _n_value_references: usize,
-    _orders: *const i32,
-    _values: *const f64,
+    c: *mut c_void,
+    value_references: *const u32,
+    n_value_references: usize,
+    orders: *const i32,
+    values: *const f64,
 ) -> i32 {
-    ERROR
+    let Some(inst) = inst_mut(c) else { return ERROR };
+    let Some(refs) = (unsafe { shift(inst, value_references, n_value_references, Base::Real) }) else { return ERROR };
+    if (values.is_null() || orders.is_null()) && n_value_references != 0 {
+        return ERROR;
+    }
+    let requests: Vec<(u32, u32)> =
+        refs.iter().enumerate().map(|(i, vr)| unsafe { (*vr, (*orders.add(i)).max(0) as u32) }).collect();
+    let v: Vec<f64> = (0..n_value_references).map(|i| unsafe { *values.add(i) }).collect();
+    let Some((store, g, h)) = inst.cs() else { return ERROR };
+    match g.call_set_input_derivatives(store, h, &requests, &v) {
+        Ok(s) => crate::st_cs(s),
+        Err(_) => ERROR,
+    }
 }
 
 /// The derivative of each named output.

@@ -46,6 +46,7 @@ import Absyn;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import Binding = NFBinding;
 import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;
@@ -938,7 +939,7 @@ algorithm
   if mk == MatchKind.EXACT then
     fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}),
       scope, NFInstContext.NO_CONTEXT, paramInfo2);
-    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
+    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, InstNode.scopeRef(scope)));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2);
 
@@ -1763,7 +1764,7 @@ algorithm
     // not alone on the rhs of an equation is "tuple subscripted" by Typing.typeExp.
     case (Type.TUPLE(types = compatibleType :: _), _)
       algorithm
-        exp1 := Expression.tupleElement(exp1, compatibleType, 1);
+        exp1 := Expression.tupleElement(exp1, 1);
         (exp1, compatibleType, matchKind) :=
           matchTypes(compatibleType, type2, exp1, options);
 
@@ -1842,8 +1843,8 @@ protected
   MatchOptions opt = options;
   list<Dimension> dims;
 algorithm
-  Type.COMPLEX(cls = anode) := actualType;
-  Type.COMPLEX(cls = enode) := expectedType;
+  anode := Type.complexNode(actualType);
+  enode := Type.complexNode(expectedType);
 
   if InstNode.isSame(anode, enode) then
     matchKind := MatchKind.EXACT;
@@ -2037,20 +2038,23 @@ algorithm
 end typeCastRecord;
 
 function matchComponentList
-  input list<InstNode> comps1;
-  input list<InstNode> comps2;
+  input list<NFInstNode.ScopeRef> comps1;
+  input list<NFInstNode.ScopeRef> comps2;
   input MatchOptions options;
   output MatchKind matchKind;
 protected
-  InstNode c2;
-  list<InstNode> rest_c2 = comps2;
+  InstNode c1, c2;
+  NFInstNode.ScopeRef c2_ref;
+  list<NFInstNode.ScopeRef> rest_c2 = comps2;
   Expression dummy = Expression.INTEGER(0);
 algorithm
   if listLength(comps1) <> listLength(comps2) then
     matchKind := MatchKind.NOT_COMPATIBLE;
   else
-    for c1 in comps1 loop
-      c2 :: rest_c2 := rest_c2;
+    for c1_ref in comps1 loop
+      c2_ref :: rest_c2 := rest_c2;
+      c1 := InstNode.borrow(c1_ref);
+      c2 := InstNode.borrow(c2_ref);
 
       if InstNode.name(c1) <> InstNode.name(c2) then
         matchKind := MatchKind.NOT_COMPATIBLE;
@@ -2076,7 +2080,8 @@ function matchFunctionTypes
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
-  list<InstNode> inputs1, inputs2, outputs1, outputs2;
+  list<InstNode> inputs1, inputs2;
+  list<NFInstNode.NodeHandle> outputs1, outputs2;
   list<Slot> slots1, slots2;
   Slot slot1, slot2;
 algorithm
@@ -2091,7 +2096,8 @@ algorithm
     return;
   end if;
 
-  if not matchFunctionParameters(outputs1, outputs2, options) then
+  if not matchFunctionParameters(list(InstNode.fromHandle(o) for o in outputs1),
+                                 list(InstNode.fromHandle(o) for o in outputs2), options) then
     matchKind := MatchKind.NOT_COMPATIBLE;
     return;
   end if;
@@ -2192,6 +2198,11 @@ algorithm
 
   // If the element types are compatible, check the dimensions too.
   (compatibleType, matchKind) := matchArrayDims(dims1, dims2, compatibleType, matchKind, options);
+
+  if isCompatibleMatch(matchKind) then
+    exp1 := setRangeSize(exp1, compatibleType);
+    exp2 := setRangeSize(exp2, compatibleType);
+  end if;
 end matchArrayExpressions;
 
 function matchArrayTypes
@@ -2214,7 +2225,42 @@ algorithm
 
   // If the element types are compatible, check the dimensions too.
   (compatibleType, matchKind) := matchArrayDims(dims1, dims2, compatibleType, matchKind, options);
+
+  if isCompatibleMatch(matchKind) then
+    expression := setRangeSize(expression, compatibleType);
+  end if;
 end matchArrayTypes;
+
+function keepRangeSize
+  "Recomputing a range's type from its bounds cannot find a size that
+   setRangeSize gave it, so keep the old one rather than fall back to the
+   symbolic size."
+  input output Type ty;
+  input Type oldTy;
+algorithm
+  if Type.isArray(oldTy) and Type.hasKnownSize(oldTy) and not Type.hasKnownSize(ty) then
+    ty := Type.setArrayElementType(oldTy, Type.arrayElementType(ty));
+  end if;
+end keepRangeSize;
+
+function setRangeSize
+  "A range whose bounds are not literals, like x:dx:x+4*dx, is sized by an
+   expression that cannot be evaluated. Giving it the size it was matched
+   against lets it be expanded when the equation is scalarized."
+  input output Expression exp;
+  input Type ty;
+algorithm
+  exp := match exp
+    case Expression.RANGE()
+      guard Type.hasKnownSize(ty) and not Type.hasKnownSize(exp.ty)
+      algorithm
+        exp.ty := Type.setArrayElementType(ty, Type.arrayElementType(exp.ty));
+      then
+        exp;
+
+    else exp;
+  end match;
+end setRangeSize;
 
 function matchArrayDims
   input list<Dimension> dims1;
@@ -2385,6 +2431,7 @@ algorithm
       // Only the second branch matches, mark it as the correct branch.
       case (_, true)
         algorithm
+          comp_ty1 := Type.setArrayElementType(comp_ty1, Type.arrayElementType(comp_ty2));
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, comp_ty2, NFType.Branch.FALSE);
           condExp := Expression.typeCast(e1_2, cond_ty);
         then
@@ -2400,6 +2447,7 @@ algorithm
     else
       (condExp, otherExp, compatibleType, matchKind) :=
         matchExpressions(condExp, false_ty, otherExp, otherType, options);
+      true_ty := Type.setArrayElementType(true_ty, Type.arrayElementType(compatibleType));
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
     end if;
 
@@ -2489,9 +2537,11 @@ algorithm
         then
           (comp_ty1, mk1);
 
-      // Only the second branch matches, mark it as the correct branch.
+      // Only the second branch matches, mark it as the correct branch. The cast
+      // takes the element type from the true branch, so it gets the matched one.
       case (_, true)
         algorithm
+          true_ty := Type.setArrayElementType(true_ty, Type.arrayElementType(comp_ty2));
           cond_ty := Type.CONDITIONAL_ARRAY(true_ty, comp_ty2, NFType.Branch.FALSE);
           exp := Expression.typeCast(e2, cond_ty);
         then
@@ -2505,6 +2555,7 @@ algorithm
       cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, branch);
     else
       (exp, compatibleType, matchKind) := matchTypes(false_ty, expectedType, exp, options);
+      true_ty := Type.setArrayElementType(true_ty, Type.arrayElementType(compatibleType));
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
     end if;
 
@@ -2999,13 +3050,13 @@ protected
     output Boolean res;
   protected
     InstNode n = InstNode.getDerivedNode(node);
-    InstNode p;
+    NFInstNode.ScopeRef p;
   algorithm
     res := match n
       case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = p))
-        then InstNode.refEqual(parent, n) or isParent(parent, p);
+        then InstNode.refEqual(parent, n) or isParent(parent, InstNode.borrow(p));
       case InstNode.COMPONENT_NODE()
-        then InstNode.refEqual(parent, n) or isParent(parent, n.parent);
+        then InstNode.refEqual(parent, n) or isParent(parent, InstNode.parent(n));
       else false;
     end match;
   end isParent;
@@ -3021,8 +3072,8 @@ algorithm
           dims := match s
             case Subscript.SPLIT_INDEX()
               algorithm
-                if isParent(s.node, component) then
-                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                if isParent(InstNode.borrow(s.node), component) then
+                  dims := Type.nthDimension(InstNode.getType(InstNode.borrow(s.node)), s.dimIndex) :: dims;
                 end if;
               then
                 dims;
@@ -3045,8 +3096,8 @@ algorithm
           dims := match s
             case Subscript.SPLIT_INDEX()
               algorithm
-                if isParent(s.node, component) then
-                  dims := Type.nthDimension(InstNode.getType(s.node), s.dimIndex) :: dims;
+                if isParent(InstNode.borrow(s.node), component) then
+                  dims := Type.nthDimension(InstNode.getType(InstNode.borrow(s.node)), s.dimIndex) :: dims;
                 end if;
               then
                 dims;
@@ -3187,7 +3238,7 @@ protected
   InstNode cls_node;
   Class cls;
 algorithm
-  Type.COMPLEX(cls = cls_node) := ty;
+  cls_node := Type.complexNode(ty);
   cls := InstNode.getClass(cls_node);
 
   for op in {"'+'", "'0'"} loop

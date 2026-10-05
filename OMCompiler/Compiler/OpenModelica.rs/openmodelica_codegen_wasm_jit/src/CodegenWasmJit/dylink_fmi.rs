@@ -16,7 +16,8 @@ use openmodelica_fmi_driver::api::{
 use openmodelica_fmi_driver::{Error, Result};
 use openmodelica_fmi::VarType;
 use openmodelica_wasm_jit::sim_runtime::{ArtifactLib, DylinkFmu};
-use wasmtime::Val;
+use std::collections::HashMap;
+use wasmtime::{TypedFunc, Val};
 
 /// What the artifact's own simulation runtime returned (`om_sim_run`).
 pub struct SimRun {
@@ -34,6 +35,35 @@ pub struct DylinkInstance {
     fmu: DylinkFmu,
     /// Scratch big enough for the widest array a call passes, grown as needed.
     scratch: (u32, u32),
+    hot: Hot,
+    /// The `om_fmi3Get*`/`Set*` entry points, by name, as they are first used.
+    numeric: HashMap<&'static str, TypedFunc<(u32, u32, u32, u32), i32>>,
+}
+
+/// The entry points a master calls per step or per evaluation.
+struct Hot {
+    set_time: TypedFunc<f64, i32>,
+    set_states: TypedFunc<(u32, u32), i32>,
+    get_states: TypedFunc<(u32, u32), i32>,
+    get_derivatives: TypedFunc<(u32, u32), i32>,
+    get_indicators: TypedFunc<(u32, u32), i32>,
+    completed_step: TypedFunc<(i32, u32), i32>,
+    do_step: TypedFunc<(f64, f64, i32, u32), i32>,
+}
+
+impl Hot {
+    fn resolve(fmu: &mut DylinkFmu) -> Result<Hot> {
+        let e = |e| err("artifact", e);
+        Ok(Hot {
+            set_time: fmu.typed("om_fmi3SetTime").map_err(e)?,
+            set_states: fmu.typed("om_fmi3SetContinuousStates").map_err(e)?,
+            get_states: fmu.typed("om_fmi3GetContinuousStates").map_err(e)?,
+            get_derivatives: fmu.typed("om_fmi3GetContinuousStateDerivatives").map_err(e)?,
+            get_indicators: fmu.typed("om_fmi3GetEventIndicators").map_err(e)?,
+            completed_step: fmu.typed("om_fmi3CompletedIntegratorStep").map_err(e)?,
+            do_step: fmu.typed("om_fmi3DoStep").map_err(e)?,
+        })
+    }
 }
 
 fn err(call: &'static str, e: String) -> Error {
@@ -47,6 +77,7 @@ fn status(call: &'static str, raw: i32) -> Result<()> {
 impl DylinkInstance {
     pub fn load(
         model: &[u8],
+        compiled: Option<wasmtime::Module>,
         ext: &[ArtifactLib],
         external_c: bool,
         lapack: bool,
@@ -56,12 +87,12 @@ impl DylinkInstance {
         // model and the driver share one runtime copy. `OMC_WASM_FUSED_ARTIFACT=0`
         // falls back to the dylink adapter.
         let fused = std::env::var("OMC_WASM_FUSED_ARTIFACT").as_deref() != Ok("0")
-            && !openmodelica_wasm_jit::FMI3_FUSED_WASIP1.is_empty();
-        let fmu = if fused {
-            DylinkFmu::load_fused(model, ext, external_c, lapack, resources).map_err(Error::Load)?
+            && !openmodelica_wasm_jit::FMI3_FUSED_WASIP1().is_empty();
+        let mut fmu = if fused {
+            DylinkFmu::load_fused(model, compiled, ext, external_c, lapack, resources).map_err(Error::Load)?
         } else {
             DylinkFmu::load(
-                openmodelica_wasm_jit::FMI3_MECS_CAPI_ADAPTER,
+                openmodelica_wasm_jit::FMI3_MECS_CAPI_ADAPTER(),
                 model,
                 ext,
                 external_c,
@@ -70,7 +101,8 @@ impl DylinkInstance {
             )
             .map_err(Error::Load)?
         };
-        Ok(DylinkInstance { fmu, scratch: (0, 0) })
+        let hot = Hot::resolve(&mut fmu)?;
+        Ok(DylinkInstance { fmu, scratch: (0, 0), hot, numeric: HashMap::new() })
     }
 
     /// Scratch of at least `bytes`, reused between calls.
@@ -86,12 +118,17 @@ impl DylinkInstance {
     fn vrs_and_values(&mut self, vrs: &[u32], value_bytes: usize) -> Result<(u32, u32)> {
         let vr_bytes = vrs.len() * 4;
         let base = self.scratch((vr_bytes + value_bytes) as u32 + 16)?;
-        let mut buf = Vec::with_capacity(vr_bytes);
-        for v in vrs {
-            buf.extend_from_slice(&v.to_le_bytes());
-        }
-        self.fmu.write(base, &buf).map_err(|e| err("artifact", e))?;
+        self.fmu.write_u32s(base, vrs).map_err(|e| err("artifact", e))?;
         Ok((base, base + vr_bytes as u32))
+    }
+
+    /// Call one of the `om_fmi3Get*`/`Set*` entry points.
+    fn call_numeric(&mut self, call: &'static str, args: (u32, u32, u32, u32)) -> Result<i32> {
+        if !self.numeric.contains_key(call) {
+            let f = self.fmu.typed(call).map_err(|e| err(call, e))?;
+            self.numeric.insert(call, f);
+        }
+        self.fmu.call_typed(&self.numeric[call], args).map_err(|e| err(call, e))
     }
 
     /// Drop the FMI instance, so the next `instantiate` starts from a clean model
@@ -280,17 +317,16 @@ fn encode(ty: VarType, width: usize, values: &[f64], raw: &mut Vec<u8>) {
 }
 
 /// An array of `f64` out of one of the Model Exchange getters.
-fn get_vector(inst: &mut DylinkInstance, call: &'static str, out: &mut [f64]) -> Result<()> {
+fn get_vector(
+    inst: &mut DylinkInstance,
+    call: &'static str,
+    f: impl FnOnce(&Hot) -> &TypedFunc<(u32, u32), i32>,
+    out: &mut [f64],
+) -> Result<()> {
     let p = inst.scratch(out.len() as u32 * 8 + 16)?;
-    let raw = inst
-        .fmu
-        .call(call, &[Val::I32(p as i32), Val::I32(out.len() as i32)])
-        .map_err(|e| err(call, e))?;
+    let raw = inst.fmu.call_typed(f(&inst.hot), (p, out.len() as u32)).map_err(|e| err(call, e))?;
     status(call, raw)?;
-    for (i, o) in out.iter_mut().enumerate() {
-        *o = inst.fmu.read_f64(p + i as u32 * 8).map_err(|e| err(call, e))?;
-    }
-    Ok(())
+    inst.fmu.read_f64s(p, out).map_err(|e| err(call, e))
 }
 
 impl Fmi3 for DylinkInstance {
@@ -381,11 +417,11 @@ impl Fmi3 for DylinkInstance {
         let (call, width) = numeric_call(ty.wire(), true)
             .ok_or_else(|| Error::Unsupported(format!("reading a {} as a number", ty.as_str())))?;
         let (vp, valp) = self.vrs_and_values(vrs, values.len() * width)?;
-        let raw = self
-            .fmu
-            .call(call, &[Val::I32(vp as i32), Val::I32(vrs.len() as i32), Val::I32(valp as i32), Val::I32(values.len() as i32)])
-            .map_err(|e| err(call, e))?;
+        let raw = self.call_numeric(call, (vp, vrs.len() as u32, valp, values.len() as u32))?;
         status(call, raw)?;
+        if ty.wire() == VarType::Float64 {
+            return self.fmu.read_f64s(valp, values).map_err(|e| err(call, e));
+        }
         let mut buf = vec![0u8; values.len() * width];
         self.fmu.read(valp, &mut buf).map_err(|e| err(call, e))?;
         decode(ty.wire(), width, &buf, values);
@@ -399,10 +435,7 @@ impl Fmi3 for DylinkInstance {
         let mut buf = Vec::with_capacity(values.len() * width);
         encode(ty.wire(), width, values, &mut buf);
         self.fmu.write(valp, &buf).map_err(|e| err(call, e))?;
-        let raw = self
-            .fmu
-            .call(call, &[Val::I32(vp as i32), Val::I32(vrs.len() as i32), Val::I32(valp as i32), Val::I32(values.len() as i32)])
-            .map_err(|e| err(call, e))?;
+        let raw = self.call_numeric(call, (vp, vrs.len() as u32, valp, values.len() as u32))?;
         status(call, raw)
     }
 }
@@ -415,45 +448,48 @@ impl Fmi3ModelExchange for DylinkInstance {
     }
 
     fn set_time(&mut self, time: f64) -> Result<()> {
-        let raw = self.fmu.call("om_fmi3SetTime", &[Val::F64(time.to_bits())]).map_err(|e| err("fmi3SetTime", e))?;
+        let raw = self.fmu.call_typed(&self.hot.set_time, time).map_err(|e| err("fmi3SetTime", e))?;
         status("fmi3SetTime", raw)
     }
 
     fn set_continuous_states(&mut self, states: &[f64]) -> Result<()> {
         let p = self.scratch(states.len() as u32 * 8 + 16)?;
-        let mut buf = Vec::with_capacity(states.len() * 8);
-        for v in states {
-            buf.extend_from_slice(&v.to_le_bytes());
-        }
-        self.fmu.write(p, &buf).map_err(|e| err("fmi3SetContinuousStates", e))?;
+        self.fmu.write_f64s(p, states).map_err(|e| err("fmi3SetContinuousStates", e))?;
         let raw = self
             .fmu
-            .call("om_fmi3SetContinuousStates", &[Val::I32(p as i32), Val::I32(states.len() as i32)])
+            .call_typed(&self.hot.set_states, (p, states.len() as u32))
             .map_err(|e| err("fmi3SetContinuousStates", e))?;
         status("fmi3SetContinuousStates", raw)
     }
 
     fn get_continuous_states(&mut self, states: &mut [f64]) -> Result<()> {
-        get_vector(self, "om_fmi3GetContinuousStates", states)
+        get_vector(self, "fmi3GetContinuousStates", |h| &h.get_states, states)
     }
 
     fn get_continuous_state_derivatives(&mut self, ders: &mut [f64]) -> Result<()> {
-        get_vector(self, "om_fmi3GetContinuousStateDerivatives", ders)
+        get_vector(self, "fmi3GetContinuousStateDerivatives", |h| &h.get_derivatives, ders)
     }
 
     fn get_event_indicators(&mut self, indicators: &mut [f64]) -> Result<()> {
-        get_vector(self, "om_fmi3GetEventIndicators", indicators)
+        get_vector(self, "fmi3GetEventIndicators", |h| &h.get_indicators, indicators)
     }
 
     fn get_nominals_of_continuous_states(&mut self, nominals: &mut [f64]) -> Result<()> {
-        get_vector(self, "om_fmi3GetNominalsOfContinuousStates", nominals)
+        let call = "fmi3GetNominalsOfContinuousStates";
+        let p = self.scratch(nominals.len() as u32 * 8 + 16)?;
+        let raw = self
+            .fmu
+            .call("om_fmi3GetNominalsOfContinuousStates", &[Val::I32(p as i32), Val::I32(nominals.len() as i32)])
+            .map_err(|e| err(call, e))?;
+        status(call, raw)?;
+        self.fmu.read_f64s(p, nominals).map_err(|e| err(call, e))
     }
 
     fn completed_integrator_step(&mut self, no_set_state_prior: bool) -> Result<CompletedStep> {
         let p = self.scratch(16)?;
         let raw = self
             .fmu
-            .call("om_fmi3CompletedIntegratorStep", &[Val::I32(no_set_state_prior as i32), Val::I32(p as i32)])
+            .call_typed(&self.hot.completed_step, (no_set_state_prior as i32, p))
             .map_err(|e| err("fmi3CompletedIntegratorStep", e))?;
         status("fmi3CompletedIntegratorStep", raw)?;
         let enter = self.fmu.read_u32(p).map_err(|e| err("fmi3CompletedIntegratorStep", e))? != 0;
@@ -502,10 +538,7 @@ impl Fmi3ModelExchange for DylinkInstance {
             )
             .map_err(|e| err(call, e))?;
         status(call, raw)?;
-        for (i, o) in sensitivity.iter_mut().enumerate() {
-            *o = self.fmu.read_f64(op + i as u32 * 8).map_err(|e| err(call, e))?;
-        }
-        Ok(())
+        self.fmu.read_f64s(op, sensitivity).map_err(|e| err(call, e))
     }
 
     fn get_number_of_continuous_states(&mut self) -> Result<usize> {
@@ -539,17 +572,15 @@ impl Fmi3CoSimulation for DylinkInstance {
         let p = self.scratch(32)?;
         let raw = self
             .fmu
-            .call(
-                "om_fmi3DoStep",
-                &[Val::F64(point.to_bits()), Val::F64(size.to_bits()), Val::I32(no_set_state_prior as i32), Val::I32(p as i32)],
-            )
+            .call_typed(&self.hot.do_step, (point, size, no_set_state_prior as i32, p))
             .map_err(|e| err("fmi3DoStep", e))?;
         status("fmi3DoStep", raw)?;
         let f = |s: &mut Self, i: u32| s.fmu.read_u32(p + i * 4).map_err(|e| err("fmi3DoStep", e));
         let event = f(self, 0)? != 0;
         let terminate = f(self, 1)? != 0;
         let early = f(self, 2)? != 0;
+        let discarded = f(self, 3)? != 0;
         let last = self.fmu.read_f64(p + 16).map_err(|e| err("fmi3DoStep", e))?;
-        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last })
+        Ok(DoStep { event_handling_needed: event, terminate, early_return: early, last_successful_time: last, discarded })
     }
 }

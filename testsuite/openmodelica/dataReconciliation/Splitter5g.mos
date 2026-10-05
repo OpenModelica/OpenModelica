@@ -3,6 +3,7 @@
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Outputs.csv
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Reconciled_Sx.csv
+// teardown_command: rm -rf NewDataReconciliationSimpleTests.Splitter5g NewDataReconciliationSimpleTests.Splitter5g.* NewDataReconciliationSimpleTests.Splitter5g_* Reconciled_NewDataReconciliationSimpleTests_Splitter5g.mo
 
 
 // set command line options to compute boundaryConditions
@@ -15,15 +16,18 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.Splitter5g, simflags="-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Reconciled_Sx.csv -lv=LOG_JAC");
 getErrorString();
 
+readFile("NewDataReconciliationSimpleTests.Splitter5g_BoundaryConditions_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from NewDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation from NewDataReconciliationSimpleTests.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from NewDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from NewDataReconciliationSimpleTests.
 // "
 //
 // ModelInfo: NewDataReconciliationSimpleTests.Splitter5g
@@ -879,5 +883,12 @@ getErrorString();
 // LOG_STDOUT        | info    | Reconcile Boundary Conditions Completed!
 // "
 // end SimulationResult;
+// ""
+// "Boundary conditions ,Values ,Reconciled Half-width Confidence Intervals,
+// P01,10.3102,6.97901,
+// h01,99986,563156,
+// Q03,0.993204,1.11569,
+// Q02,1.0805,1.48605,
+// "
 // ""
 // endResult

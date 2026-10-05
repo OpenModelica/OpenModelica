@@ -13,5 +13,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 openmodelica_animation.workspace = true
-wasm-bindgen = "=0.2.125"
-js-sys = "0.3.102"
+wasm-bindgen = "=0.2.128"
+js-sys = "0.3.105"

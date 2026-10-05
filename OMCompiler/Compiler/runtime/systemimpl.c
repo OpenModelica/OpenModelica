@@ -46,9 +46,10 @@ extern "C" {
 #if !defined(_MSC_VER)
 #include <libgen.h>
 #include <unistd.h>
-#endif
-
 #include <dirent.h>
+#else
+#include "toni_ronnko_dirent.h"
+#endif
 
 #include "meta/meta_modelica.h"
 #include <limits.h>
@@ -61,8 +62,10 @@ extern "C" {
 #include <math.h>
 
 #include "util/rtclock.h"
+#include "util/ModelicaUtilitiesExtra.h"
 #include "omc_config.h"
 #include "errorext.h"
+#include "omc_lapack.h"
 #include "settingsimpl.h"
 #include "printimpl.h"
 
@@ -1390,6 +1393,29 @@ static const char* SystemImpl__getUUIDStr(void)
   return uuidStr;
 }
 
+/* A function library links its own copy of the simulation runtime, so its
+   ModelicaError and its asserts would report to that copy rather than to omc. */
+static void installModelicaErrorHandlers(void *sym)
+{
+  typedef void (*omc_set_handlers_t)(void (*)(const char*), void (*)(const char*,va_list));
+  omc_set_handlers_t set = (omc_set_handlers_t) sym;
+
+  if (set) {
+    set(OpenModelica_ModelicaError, OpenModelica_ModelicaVFormatError);
+  }
+}
+
+static void installAssertReporters(void *sym)
+{
+  typedef void (*omc_set_reporters_t)(void (*)(threadData_t*, FILE_INFO, const char*, va_list),
+                                      void (*)(FILE_INFO, const char*, va_list));
+  omc_set_reporters_t set = (omc_set_reporters_t) sym;
+
+  if (set) {
+    set(Error_assertReport, Error_assertWarningReport);
+  }
+}
+
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -1451,6 +1477,9 @@ static int loadLibraryWithBinding(const char *str, int relativePath, int printDe
     return -1;
   }
 
+  installModelicaErrorHandlers((void*) GetProcAddress(h, "omc_set_modelica_error_handlers"));
+  installAssertReporters((void*) GetProcAddress(h, "omc_set_assert_reporters"));
+
   libIndex = alloc_ptr();
   if (libIndex < 0) {
     //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
@@ -1499,6 +1528,9 @@ static int loadLibraryWithBinding(const char *str, int relativePath, int printDe
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
+
+  installModelicaErrorHandlers(dlsym(h, "omc_set_modelica_error_handlers"));
+  installAssertReporters(dlsym(h, "omc_set_assert_reporters"));
 
   libIndex = alloc_ptr();
   if (libIndex < 0) {
@@ -2046,14 +2078,12 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
 }
 
 /* adrpo 2011-06-23
- * extern definition to dgesv_ from -llapack
- * as we do not link with -lsim and the one
- * in matrix.h got renamed to _omc_dgesv_ to
- * avoid name clashes!
+ * dgesv_ comes from -llapack, since we do not link with -lsim and the one in
+ * matrix.h got renamed to _omc_dgesv_ to avoid name clashes. It is declared by
+ * omc_lapack.h and reached through OMC_LAPACK() so that this call shares the
+ * Windows on-demand loading with the rest of the compiler.
  */
 #ifdef HAVE_LAPACK
-
-extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 int SystemImpl__dgesv(void *lA, void *lB, void **res)
 {
@@ -2085,7 +2115,7 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   assert(ipiv != 0);
   lda = sz;
   ldb = sz;
-  dgesv_(&sz,&nrhs,A,&lda,ipiv,B,&ldb,&info);
+  OMC_LAPACK(dgesv_)(&sz,&nrhs,A,&lda,ipiv,B,&ldb,&info);
 
   tmp = mmc_mk_nil();
   while (sz--) {
@@ -3015,6 +3045,37 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 int SystemImpl__rename(const char *source, const char *dest)
 {
    return (0 == omc_rename(source, dest));
+}
+
+int SystemImpl__copyPath(const char *source, const char *destination)
+{
+  DIR *dir;
+  struct dirent *ent;
+  int rv = 1;
+  if (!SystemImpl__directoryExists(source)) {
+    return SystemImpl__copyFile(source, destination);
+  }
+  if (!SystemImpl__createDirectory(destination) || !(dir = opendir(source))) {
+    return 0;
+  }
+  while (rv && (ent = readdir(dir))) {
+    size_t lenFrom, lenTo;
+    char *from, *to;
+    if (0 == strcmp(ent->d_name, ".") || 0 == strcmp(ent->d_name, "..")) {
+      continue;
+    }
+    lenFrom = strlen(source) + strlen(ent->d_name) + 2;
+    lenTo = strlen(destination) + strlen(ent->d_name) + 2;
+    from = (char*) malloc(lenFrom);
+    to = (char*) malloc(lenTo);
+    snprintf(from, lenFrom, "%s/%s", source, ent->d_name);
+    snprintf(to, lenTo, "%s/%s", destination, ent->d_name);
+    rv = SystemImpl__copyPath(from, to);
+    free(from);
+    free(to);
+  }
+  closedir(dir);
+  return rv;
 }
 
 /**

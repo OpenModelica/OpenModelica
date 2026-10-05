@@ -1,0 +1,45 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance);
+compareVars :=
+{
+   "resistor_e.i[1]",
+   "resistor_e.i[2]",
+   "resistor_s.i[1]",
+   "resistor_s.i[2]",
+   "resistor_m.i[1]",
+   "resistor_m.i[2]"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance
+// {"resistor_e.i[1]", "resistor_e.i[2]", "resistor_s.i[1]", "resistor_s.i[2]", "resistor_m.i[1]", "resistor_m.i[2]"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 100.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance', options = '', outputFormat = 'mat', variableFilter = 'time|resistor_e.i.1.|resistor_e.i.2.|resistor_s.i.1.|resistor_s.i.2.|resistor_m.i.1.|resistor_m.i.2.', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.Components.PolyphaseInductance_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

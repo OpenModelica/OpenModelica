@@ -41,14 +41,11 @@
 #include <QVector3D>
 
 /*
- * Backend-neutral math types for the animation data model, replacing the
- * osg math types it used to carry (osg::Vec3f / osg::Matrix3 / osg::Matrix).
- * Conventions match the previous osg behavior exactly so the OSG renderer is
- * numerically unchanged: Vec3 == QVector3D; Mat3 is a row-major flat 3x3 whose
- * default is the zero matrix (as osg::Matrix3()); Mat4 is a 4x4 in osg's
- * row-vector convention (v' = v * M, translation in row 3) whose default is the
- * identity (as osg::Matrixd()). The renderer reconstructs its native matrix
- * type from Mat4::ptr() (row-major), so no rotation decomposition lives here.
+ * Backend-neutral math types for the animation data model. Vec3 == QVector3D;
+ * Mat3 is a row-major flat 3x3 defaulting to the zero matrix; Mat4 is a 4x4 in
+ * row-vector convention (v' = v * M, translation in row 3) defaulting to the
+ * identity. The renderer reconstructs its native matrix type from Mat4::ptr()
+ * (row-major), so no rotation decomposition lives here.
  */
 
 using Vec3 = QVector3D;

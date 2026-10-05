@@ -11,9 +11,9 @@
 //! parsing in OMEdit, which for large models takes seconds.
 //!
 //! ## Memory & lifetime
-//! Each occupied slot holds an owning `Arc<JSON>`, so the stored tree stays
-//! alive (independent of the cycle collector — JSON trees are acyclic and an
-//! `Arc` in this process-global table is a root) until the handle is released.
+//! Each occupied slot holds an owning `Ref<JSON>`, so the stored tree stays
+//! alive (independent of the cycle collector — JSON trees are acyclic and a
+//! handle in this process-global table is a root) until it is released.
 //! The raw `*const JSON` returned by [`ModelInstanceReference_get`] and the
 //! `*const JSON` element pointers handed out by the walker therefore remain
 //! valid until the corresponding [`ModelInstanceReference_release`]. The values
@@ -28,7 +28,6 @@
 use std::cell::RefCell;
 use std::ffi::{c_char, c_double, c_int};
 use std::ptr;
-use std::sync::Arc;
 
 use metamodelica::List;
 use crate::JSON::JSON;
@@ -46,17 +45,17 @@ const MAX: usize = 256;
 // OMEdit-side `get`/walk/`release` to run on the *same* thread (see `capi`). A
 // handle reaching a different thread simply finds an empty table and yields a
 // null pointer, letting OMEdit fall back to the JSON-string path. Each occupied
-// slot owns its tree, keeping it alive (the `Arc` is a root, independent of the
-// cycle collector) until released.
+// slot owns its tree, keeping it alive (the handle is a root, independent of
+// the cycle collector) until released.
 thread_local! {
-    static TABLE: RefCell<[Option<Arc<JSON>>; MAX]> = RefCell::new([const { None }; MAX]);
+    static TABLE: RefCell<[Option<metamodelica::Ref<JSON>>; MAX]> = RefCell::new([const { None }; MAX]);
 }
 
 /// Store a boxed JSON value and return a 1-based handle, or 0 if no slot is
 /// free. Called from MetaModelica (`NFApi.storeModelInstanceReference`) via
 /// [`crate::external_c_calls::external_c_impl_path`]; signature mirrors the
 /// MetaModelica wrapper (`input JSON; output Integer`).
-pub fn store(json: Arc<JSON>) -> i32 {
+pub fn store(json: metamodelica::Ref<JSON>) -> i32 {
     TABLE.with_borrow_mut(|tbl| {
         for (i, slot) in tbl.iter_mut().enumerate() {
             if slot.is_none() {
@@ -70,7 +69,7 @@ pub fn store(json: Arc<JSON>) -> i32 {
 
 /// The stored value, or `None` for an invalid handle. Used by `OMGraphics`,
 /// which takes a handle just like the C runtime's entry points do.
-pub fn get(handle: i32) -> Option<Arc<JSON>> {
+pub fn get(handle: i32) -> Option<metamodelica::Ref<JSON>> {
     let i = handle - 1;
     if i < 0 || i as usize >= MAX {
         return None;
@@ -108,9 +107,9 @@ pub extern "C" fn ModelInstanceReference_get(handle: c_int) -> *const JSON {
         return ptr::null();
     }
     TABLE.with_borrow(|tbl| match &tbl[i as usize] {
-        // The slot keeps the `Arc` alive after this borrow ends, so the pointee
-        // outlives it (until the matching release).
-        Some(arc) => Arc::as_ptr(arc),
+        // The slot keeps the handle alive after this borrow ends, so the
+        // pointee outlives it (until the matching release).
+        Some(json) => &**json as *const JSON,
         None => ptr::null(),
     })
 }
@@ -206,10 +205,10 @@ pub extern "C" fn omc_json_number(node: *const JSON) -> c_double {
 // `MMC_CAR`/`MMC_CDR` loop.
 
 enum Cursor {
-    /// Position in a `JSON::LIST` (`List<Arc<JSON>>`).
-    List(*const List<Arc<JSON>>),
+    /// Position in a `JSON::LIST` (`List<metamodelica::Ref<JSON>>`).
+    List(*const List<metamodelica::Ref<JSON>>),
     /// Position in a `JSON::LIST_OBJECT` (`List<(key, value)>`).
-    Object(*const List<(arcstr::ArcStr, Arc<JSON>)>),
+    Object(*const List<(arcstr::ArcStr, metamodelica::Ref<JSON>)>),
 }
 
 /// Opaque list cursor handed to OMEdit. Created by [`omc_json_iter_new`] and
@@ -226,8 +225,8 @@ pub struct OmcJsonIter {
 pub extern "C" fn omc_json_iter_new(node: *const JSON) -> *mut OmcJsonIter {
     // SAFETY: `node` points into a live, immutable JSON tree.
     let cur = match unsafe { &*node } {
-        JSON::LIST { values } => Cursor::List(Arc::as_ptr(values)),
-        JSON::LIST_OBJECT { values } => Cursor::Object(Arc::as_ptr(values)),
+        JSON::LIST { values } => Cursor::List(values as *const _),
+        JSON::LIST_OBJECT { values } => Cursor::Object(values as *const _),
         _ => return ptr::null_mut(),
     };
     Box::into_raw(Box::new(OmcJsonIter { cur }))
@@ -238,8 +237,8 @@ pub extern "C" fn omc_json_iter_new(node: *const JSON) -> *mut OmcJsonIter {
 pub extern "C" fn omc_json_iter_at_end(it: *const OmcJsonIter) -> c_int {
     let it = unsafe { &*it };
     let at_end = match it.cur {
-        Cursor::List(p) => matches!(unsafe { &*p }, List::Nil),
-        Cursor::Object(p) => matches!(unsafe { &*p }, List::Nil),
+        Cursor::List(p) => unsafe { &*p }.is_empty(),
+        Cursor::Object(p) => unsafe { &*p }.is_empty(),
     };
     if at_end { 1 } else { 0 }
 }
@@ -250,13 +249,13 @@ pub extern "C" fn omc_json_iter_at_end(it: *const OmcJsonIter) -> c_int {
 pub extern "C" fn omc_json_iter_value(it: *const OmcJsonIter) -> *const JSON {
     let it = unsafe { &*it };
     match it.cur {
-        Cursor::List(p) => match unsafe { &*p } {
-            List::Cons { head, .. } => Arc::as_ptr(head),
-            List::Nil => ptr::null(),
+        Cursor::List(p) => match &**unsafe { &*p } {
+            metamodelica::ListNode::Cons { head, .. } => &**head as *const JSON,
+            metamodelica::ListNode::Nil => ptr::null(),
         },
-        Cursor::Object(p) => match unsafe { &*p } {
-            List::Cons { head, .. } => Arc::as_ptr(&head.1),
-            List::Nil => ptr::null(),
+        Cursor::Object(p) => match &**unsafe { &*p } {
+            metamodelica::ListNode::Cons { head, .. } => &*head.1 as *const JSON,
+            metamodelica::ListNode::Nil => ptr::null(),
         },
     }
 }
@@ -268,12 +267,12 @@ pub extern "C" fn omc_json_iter_value(it: *const OmcJsonIter) -> *const JSON {
 pub extern "C" fn omc_json_iter_key(it: *const OmcJsonIter, len: *mut usize) -> *const c_char {
     let it = unsafe { &*it };
     match it.cur {
-        Cursor::Object(p) => match unsafe { &*p } {
-            List::Cons { head, .. } => {
+        Cursor::Object(p) => match &**unsafe { &*p } {
+            metamodelica::ListNode::Cons { head, .. } => {
                 unsafe { *len = head.0.len() };
                 head.0.as_ptr() as *const c_char
             }
-            List::Nil => {
+            metamodelica::ListNode::Nil => {
                 unsafe { *len = 0 };
                 ptr::null()
             }
@@ -291,13 +290,13 @@ pub extern "C" fn omc_json_iter_advance(it: *mut OmcJsonIter) {
     let it = unsafe { &mut *it };
     match &mut it.cur {
         Cursor::List(p) => {
-            if let List::Cons { tail, .. } = unsafe { &**p } {
-                *p = Arc::as_ptr(tail);
+            if let metamodelica::ListNode::Cons { tail, .. } = unsafe { &***p } {
+                *p = tail as *const _;
             }
         }
         Cursor::Object(p) => {
-            if let List::Cons { tail, .. } = unsafe { &**p } {
-                *p = Arc::as_ptr(tail);
+            if let metamodelica::ListNode::Cons { tail, .. } = unsafe { &***p } {
+                *p = tail as *const _;
             }
         }
     }

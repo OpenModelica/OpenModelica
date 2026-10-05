@@ -41,27 +41,27 @@ fn to_str(s: ArcStr) -> Result<ArcStr> {
 // ---------------------------------------------------------------------------
 
 fn collect_diff(
-    result: Arc<metamodelica::List<(Diff, Arc<metamodelica::List<ArcStr>>)>>,
+    result: metamodelica::List<(Diff, metamodelica::List<ArcStr>)>,
 ) -> Vec<(Diff, Vec<String>)> {
     let mut out = Vec::new();
     let mut node = result;
     loop {
         match node.as_ref() {
-            metamodelica::List::Nil => break,
-            metamodelica::List::Cons { head: (d, ts), tail } => {
+            metamodelica::ListNode::Nil => break,
+            metamodelica::ListNode::Cons { head: (d, ts), tail } => {
                 let mut tokens = Vec::new();
-                let mut t = Arc::clone(ts);
+                let mut t = ts.clone();
                 loop {
                     match t.as_ref() {
-                        metamodelica::List::Nil => break,
-                        metamodelica::List::Cons { head, tail: t2 } => {
+                        metamodelica::ListNode::Nil => break,
+                        metamodelica::ListNode::Cons { head, tail: t2 } => {
                             tokens.push(head.to_string());
-                            t = Arc::clone(t2);
+                            t = t2.clone();
                         }
                     }
                 }
                 out.push((*d, tokens));
-                node = Arc::clone(tail);
+                node = tail.clone();
             }
         }
     }
@@ -69,11 +69,11 @@ fn collect_diff(
 }
 
 fn run_diff(seq1: &[&str], seq2: &[&str]) -> Result<Vec<(Diff, Vec<String>)>> {
-    let list1: Arc<metamodelica::List<ArcStr>> = seq1
+    let list1: metamodelica::List<ArcStr> = seq1
         .iter()
         .rev()
         .fold(metamodelica::nil(), |acc, &s| cons(arcstr::format!("{}", s), acc));
-    let list2: Arc<metamodelica::List<ArcStr>> = seq2
+    let list2: metamodelica::List<ArcStr> = seq2
         .iter()
         .rev()
         .fold(metamodelica::nil(), |acc, &s| cons(arcstr::format!("{}", s), acc));
@@ -81,10 +81,10 @@ fn run_diff(seq1: &[&str], seq2: &[&str]) -> Result<Vec<(Diff, Vec<String>)>> {
     let result = DiffAlgorithm::diff(
         list1,
         list2,
-        Arc::new(str_equals),
-        Arc::new(not_whitespace),
-        Arc::new(not_whitespace),
-        Arc::new(to_str),
+        &str_equals,
+        &not_whitespace,
+        &not_whitespace,
+        &to_str,
     )?;
     Ok(collect_diff(result))
 }
@@ -282,7 +282,7 @@ fn diff_enum_ordinals_match_metamodelica_source() {
 // ---------------------------------------------------------------------------
 
 /// One diff chunk `(tag, [tokens...])`.
-fn chunk(tag: Diff, tokens: &[&str]) -> (Diff, Arc<metamodelica::List<ArcStr>>) {
+fn chunk(tag: Diff, tokens: &[&str]) -> (Diff, metamodelica::List<ArcStr>) {
     let toks = tokens
         .iter()
         .rev()
@@ -291,7 +291,7 @@ fn chunk(tag: Diff, tokens: &[&str]) -> (Diff, Arc<metamodelica::List<ArcStr>>) 
 }
 
 /// A sequence with one equal, one added and one deleted chunk.
-fn sample_seq() -> Arc<metamodelica::List<(Diff, Arc<metamodelica::List<ArcStr>>)>> {
+fn sample_seq() -> metamodelica::List<(Diff, metamodelica::List<ArcStr>)> {
     [
         chunk(Diff::Equal, &["a"]),
         chunk(Diff::Add, &["b"]),

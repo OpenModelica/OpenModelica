@@ -242,7 +242,7 @@ fn finish(mut lc: LayeredChart, a: &PlotArgs, xlabel: &str, ylabel: &str) -> Res
 /// Read full trajectories for `vars` (variable-major) from the result file as
 /// plain `f64` columns.
 fn read_columns(filename: &ArcStr, vars: &[&str]) -> Result<Vec<Vec<f64>>, String> {
-    let mut lst: Arc<List<ArcStr>> = metamodelica::nil();
+    let mut lst: List<ArcStr> = metamodelica::nil();
     for v in vars.iter().rev() {
         lst = metamodelica::cons(ArcStr::from(*v), lst);
     }
@@ -276,7 +276,7 @@ fn real_vec(v: &Values::Value) -> Result<Vec<f64>, String> {
     Ok(out)
 }
 
-fn list_to_vec(l: &Arc<List<ArcStr>>) -> Vec<ArcStr> {
+fn list_to_vec(l: &List<ArcStr>) -> Vec<ArcStr> {
     let mut out = Vec::new();
     for x in l.as_ref() {
         out.push(x.clone());

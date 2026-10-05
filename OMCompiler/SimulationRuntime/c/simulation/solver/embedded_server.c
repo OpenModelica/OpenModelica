@@ -25,6 +25,7 @@
  *
  */
 
+#include "../../util/omc_init.h"
 #include "embedded_server.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -77,7 +78,7 @@ void* embedded_server_load_functions(const char *server_name)
     server_name = "libomopcda" DLL_EXT;
 #else
     errorStreamPrint(OMC_LOG_DEBUG, 0, "OPC DA interface is not available on this platform (requires WIN32)");
-    MMC_THROW();
+    OMC_THROW();
 #endif
   }
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Try to load embedded server %s", server_name);
@@ -85,28 +86,28 @@ void* embedded_server_load_functions(const char *server_name)
 
   if (dll == NULL) {
     errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load shared object %s: %s\n", server_name, dlerror());
-    MMC_THROW();
+    OMC_THROW();
   }
 
   funcInit = dlsym(dll, "omc_embedded_server_init");
   if (!funcInit) {
     errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_init: %s\n", dlerror());
-    MMC_THROW();
+    OMC_THROW();
   }
   funcWaitForStep = dlsym(dll, "omc_wait_for_step");
   if (!funcWaitForStep) {
     errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_wait_for_step: %s\n", dlerror());
-    MMC_THROW();
+    OMC_THROW();
   }
   funcDeinit = dlsym(dll, "omc_embedded_server_deinit");
   if (!funcDeinit) {
     errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_deinit: %s\n", dlerror());
-    MMC_THROW();
+    OMC_THROW();
   }
   funcUpdate = dlsym(dll, "omc_embedded_server_update");
   if (!funcUpdate) {
     errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_update: %s\n", dlerror());
-    MMC_THROW();
+    OMC_THROW();
   }
 
   // ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]

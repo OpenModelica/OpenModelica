@@ -30,8 +30,8 @@ end CevalRecordArray10;
 //   final parameter Boolean roo.surBou[2].isFloor = true;
 //   final parameter Real roo.surBou[3].til = 1.57075;
 //   final parameter Boolean roo.surBou[3].isFloor = false;
-//   final parameter Boolean roo.isFloorSurBou[1] = false;
-//   final parameter Boolean roo.isFloorSurBou[2] = true;
-//   final parameter Boolean roo.isFloorSurBou[3] = false;
+//   parameter Boolean roo.isFloorSurBou[1] = false;
+//   parameter Boolean roo.isFloorSurBou[2] = true;
+//   parameter Boolean roo.isFloorSurBou[3] = false;
 // end CevalRecordArray10;
 // endResult

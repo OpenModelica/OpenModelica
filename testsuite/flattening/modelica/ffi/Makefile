@@ -4,6 +4,7 @@ TESTFILES=\
 ArrayResult1.mos \
 Boolean1.mos \
 Boolean2.mos \
+CMakeBuildProject.mos \
 Enum1.mos \
 Enum2.mos \
 Enum3.mos \
@@ -40,6 +41,7 @@ Crash1.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+BuildProjectTest \
 FFITest \
 Makefile \
 matrix.mat

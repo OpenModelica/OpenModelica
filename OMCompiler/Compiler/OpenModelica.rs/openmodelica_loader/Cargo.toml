@@ -1,0 +1,26 @@
+[package]
+name = "openmodelica_loader"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+metamodelica.workspace = true
+openmodelica_ast.workspace = true
+openmodelica_ast_collections.workspace = true
+openmodelica_error.workspace = true
+# AbsynUtil, which ClassLoader and Parser both use.
+openmodelica_frontend_dump.workspace = true
+openmodelica_util.workspace = true
+openmodelica_util_datatypes_basic.workspace = true
+# PackageManagement, for the version a `uses` annotation asks for. Declared by
+# path rather than `workspace = true` so the `curl` feature can be forwarded
+# instead of being always on: omgendoc turns it off.
+openmodelica_script_util = { path = "../openmodelica_script_util", default-features = false }
+arcstr.workspace = true
+const-str.workspace = true
+loop_unwrap.workspace = true
+match_deref.workspace = true
+
+[features]
+default = ["curl"]
+curl = ["openmodelica_script_util/curl"]

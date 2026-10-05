@@ -1,0 +1,46 @@
+// name:     Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4.1.0: at the very end of the interval s1 reaches s_max, and whether
+// u_min/u_max still bracket the root of solveOneNonlinearEquation depends on the
+// last bits of the arithmetic, so it simulates on some machines and asserts on
+// others. Only test that it builds.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+ignoreSimulation := true;
+modelName := $TypeName(Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T);
+compareVars :=
+{
+   "Ts",
+   "s2",
+   "s1",
+   "Th",
+   "h2",
+   "h1"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.Compilation
+// true
+// Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T
+// {"Ts", "s2", "s1", "Th", "h2", "h1"}
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

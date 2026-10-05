@@ -127,7 +127,7 @@ public function ContinueMatching "
 protected
   Integer i, j;
   array<Integer> eMarkIx, vMarkIx;
-  Integer eMarkN=0, vMarkN=0;
+  Integer eMarkN=0, vMarkN=0, eDead=0, vDead=0;
   Boolean success;
 algorithm
   vMark := arrayCreate(nVars, false);
@@ -139,11 +139,16 @@ algorithm
   while i <= nEqns loop
     j := ass2[i];
     if not (j>0 and ass1[j] == i) then
-      clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
-      clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
-      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
-      if not success then
+      // What a failed search visited is closed under alternating paths, so it
+      // stays marked and later searches skip it.
+      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, eDead, vDead);
+      if success then
+        clearMarks(eMark, eMarkIx, eDead, eMarkN);
+        clearMarks(vMark, vMarkIx, vDead, vMarkN);
+      else
         perfectMatching := false;
+        eDead := eMarkN;
+        vDead := vMarkN;
         if stopAtSingularity then
           return;
         end if;
@@ -152,6 +157,16 @@ algorithm
     i := i+1;
   end while;
 end ContinueMatching;
+
+protected function clearMarks "Sets arr[arrIx[from+1:to]] to false"
+  input array<Boolean> arr;
+  input array<Integer> arrIx;
+  input Integer from, to;
+algorithm
+  for i in from+1:to loop
+    arrayUpdate(arr, arrIx[i], false);
+  end for;
+end clearMarks;
 
 public function BBMatching
   input BackendDAE.EqSystem inSys;
@@ -4318,19 +4333,10 @@ protected function PR_Global_Relabel_init_l_label
   input Integer max;
   input array<Integer> l_label;
 algorithm
-  () := matchcontinue l_label
-    case _
-      algorithm
-        true := intGt(i,ne);
-      then
-        ();
-    else
-      algorithm
-        arrayUpdate(l_label,i,max);
-        PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
-      then
-        ();
-  end matchcontinue;
+  if not intGt(i,ne) then
+    arrayUpdate(l_label,i,max);
+    PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
+  end if;
 end PR_Global_Relabel_init_l_label;
 
 protected function PR_Global_Relabel_init_r_label
@@ -4820,27 +4826,18 @@ protected function ks_rand_cheapmatching1
   input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
+protected
+  list<Integer> onecolums1,onerows1;
+  Integer c;
+  Boolean b;
 algorithm
-  () := matchcontinue ass2
-    local
-      list<Integer> onecolums1,onerows1;
-      Integer c;
-      Boolean b;
-      case _
-        algorithm
-          false := intLe(i,ne);
-        then
-          ();
-      case _
-        algorithm
-          ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
-          c := randarr[i];
-          b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
-          (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
-          ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
-        then
-          ();
-    end matchcontinue;
+  if intLe(i,ne) then
+    ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
+    c := randarr[i];
+    b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
+    (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+    ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+  end if;
 end ks_rand_cheapmatching1;
 
 protected function ks_rand_cheapmatching2
@@ -5703,13 +5700,17 @@ algorithm
           Check if Index Reduction is necessary
           -------------------------------------
         */
-        // remove some edges which do not have to be traversed when finding the MSSS
-        m1 := arrayCopy(m);
-        m1t := arrayCopy(mt);
-        (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,syst,ishared);
-        (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,syst,ishared);
+        if listEmpty(unmatched_eqs) then
+          meqns1 := {};
+        else
+          // remove some edges which do not have to be traversed when finding the MSSS
+          m1 := arrayCopy(m);
+          m1t := arrayCopy(mt);
+          (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,syst,ishared);
+          (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,syst,ishared);
 
-        meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m1,m1t,ass1_1,ass2_1,inArg);
+          meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m1,m1t,ass1_1,ass2_1,inArg);
+        end if;
         /*
           -----------------------------------------
           remove artificial states which cause
@@ -5777,8 +5778,14 @@ protected function sanityCheckArtificialStates
   input Integer clearMatching;
   input BackendDAE.StructurallySingularSystemHandlerArg arg;
 protected
-  list<list<Integer>> eqns_1, unassignedStates;
-  list<Integer> flat_unassignedStates, flat_eqns, unmatched1;
+  list<list<Integer>> eqns_1, unassignedStates, unassignedEqns;
+  list<Integer> flat_unassignedStates, flat_eqns, unmatched1, unassigned, preferStates;
+  UnorderedSet<Integer> excessStates = UnorderedSet.new(Util.id, intEq);
+  list<BackendDAE.Var> reverted = {};
+  Option<UnorderedSet<DAE.ComponentRef>> derCrefs = NONE();
+  UnorderedSet<DAE.ComponentRef> dcrs;
+  BackendDAE.ConstraintEquations constraintEqns;
+  Integer otherStates;
   array<Integer> scalarToArrayMap;
   list<BackendDAE.Var> artificialStates = {}, undiffable_artificial = {};
   list<BackendDAE.Equation> equations = {};
@@ -5801,24 +5808,60 @@ protected
 algorithm
   try
     // Get the information about MSSS from index reduction
-    (eqns_1, unassignedStates, _, _) := IndexReduction.minimalStructurallySingularSystem(eqns, syst, shared, ass2, ass1, arg);
+    (eqns_1, unassignedStates, unassignedEqns, _) := IndexReduction.minimalStructurallySingularSystem(eqns, syst, shared, ass2, ass1, arg);
   else
     if Flags.isSet(Flags.BLT_DUMP) then
       singularSystemError(eqns, 0, syst, shared, ass1, ass2, arg);
     end if;
     fail();
   end try;
+  // A subset with more unassigned equations than states other than the
+  // artificial prefer states turns some of those into dummy states anyway.
+  // Before anything is differentiated, leave them algebraic instead.
+  (_, constraintEqns, _, _, _) := arg;
+  for states in if Array.all(constraintEqns, listEmpty) then unassignedStates else {} loop
+    unassigned :: unassignedEqns := unassignedEqns;
+    otherStates := 0;
+    preferStates := {};
+    for state in states loop
+      var := BackendVariable.getVarAt(syst.orderedVars, state);
+      if BackendVariable.isArtificialState(var) and BackendVariable.varStateSelectPrefer(var) then
+        if isNone(derCrefs) then
+          derCrefs := SOME(derivedCrefs(syst, shared));
+        end if;
+        SOME(dcrs) := derCrefs;
+        if UnorderedSet.contains(var.varName, dcrs) then
+          otherStates := otherStates + 1;
+        else
+          preferStates := state :: preferStates;
+        end if;
+      else
+        otherStates := otherStates + 1;
+      end if;
+    end for;
+    if listLength(unassigned) > otherStates then
+      for state in preferStates loop
+        if UnorderedSet.add(state, excessStates) then
+          var := BackendVariable.getVarAt(syst.orderedVars, state);
+          reverted := BackendVariable.setVarKind(var, BackendDAE.VARIABLE()) :: reverted;
+        end if;
+      end for;
+    end if;
+  end for;
+  if Flags.isSet(Flags.BLT_DUMP) and not listEmpty(reverted) then
+    print(BackendDump.varListStringShort(reverted, "Artificial states that cannot all be states, treated as algebraic"));
+  end if;
   flat_unassignedStates := List.flatten(unassignedStates);
   // Collect artificial states
   for state in flat_unassignedStates loop
-    if UnorderedSet.add(state, visited_states) then
+    if not UnorderedSet.contains(state, excessStates) and UnorderedSet.add(state, visited_states) then
       var := BackendVariable.getVarAt(syst.orderedVars, state);
       if BackendVariable.isArtificialState(var) then
         artificialStates := var :: artificialStates;
       end if;
     end if;
   end for;
-  if listEmpty(artificialStates) then
+  if listEmpty(artificialStates) and listEmpty(reverted) then
     return;
   end if;
   flat_eqns := List.flatten(eqns_1); // use eqns_1 (without discrete)
@@ -5906,8 +5949,8 @@ algorithm
     end if;
   end for;
 
-  if not listEmpty(undiffable_artificial) then
-    syst.orderedVars := BackendVariable.addVars(undiffable_artificial, syst.orderedVars);
+  if not (listEmpty(undiffable_artificial) and listEmpty(reverted)) then
+    syst.orderedVars := BackendVariable.addVars(listAppend(reverted, undiffable_artificial), syst.orderedVars);
     (syst, _, _, _, _) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(shared.functionTree), BackendDAEUtil.isInitializationDAE(shared));
 
     if isSome(syst.m) and isSome(syst.mT) then
@@ -5927,7 +5970,7 @@ algorithm
       eqns := getEqnsforIndexReduction(unmatched1, ne, m1, m1t, ass1, ass2, arg);
     end if;
 
-    if Flags.isSet(Flags.BLT_DUMP) then
+    if Flags.isSet(Flags.BLT_DUMP) and not listEmpty(undiffable_artificial) then
       print("----------------------------- INFO -----------------------------\n" +
             " Artificial states are those which do not naturally appear\n" +
             " differentiated in the system of DAEs, but have been forced\n" +
@@ -5937,11 +5980,50 @@ algorithm
             "----------------------------------------------------------------\n\n");
     end if;
 
-    msg := BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
-    "Please use -d=bltdump for more information.\n";
-    Error.addMessage(Error.STATE_STATESELECT_PREFER_REVERT, {msg});
+    if not listEmpty(undiffable_artificial) then
+      msg := BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
+      "Please use -d=bltdump for more information.\n";
+      Error.addMessage(Error.STATE_STATESELECT_PREFER_REVERT, {msg});
+    end if;
   end if;
 end sanityCheckArtificialStates;
+
+protected function derivedCrefs
+  "Returns the crefs that occur differentiated in the equations or the initial
+   equations, and the crefs that are the derivative of a state."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output UnorderedSet<DAE.ComponentRef> crefs = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+algorithm
+  BackendDAEUtil.traverseBackendDAEExpsEqns(syst.orderedEqs, Expression.traverseSubexpressionsHelper, (collectDerCref, crefs));
+  BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.getInitialEqnsFromShared(shared), Expression.traverseSubexpressionsHelper, (collectDerCref, crefs));
+  for var in BackendVariable.varList(syst.orderedVars) loop
+    () := match var.varKind
+      local
+        DAE.ComponentRef cr;
+      case BackendDAE.STATE(derName = SOME(cr))
+        algorithm
+          UnorderedSet.add(cr, crefs);
+        then ();
+      else ();
+    end match;
+  end for;
+end derivedCrefs;
+
+protected function collectDerCref
+  input output DAE.Exp exp;
+  input output UnorderedSet<DAE.ComponentRef> crefs;
+algorithm
+  () := match exp
+    local
+      DAE.ComponentRef cr;
+    case DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)})
+      algorithm
+        UnorderedSet.add(cr, crefs);
+      then ();
+    else ();
+  end match;
+end collectDerCref;
 
 protected function collectArtificialStates
   "Collects the indices of the artificial states occurring in the expression.
@@ -5979,11 +6061,12 @@ protected function removeEdgesToDiscreteEquations""
 protected
   Boolean isDiscrete;
   Integer idx, idx2, size, varIdx;
-  list<Integer> varIdxs, row, eqIdxs;
+  list<Integer> varIdxs, eqIdxs;
   BackendDAE.EquationArray eqs;
   BackendDAE.Variables vars;
   list<BackendDAE.Var> varLst;
   array<list<Integer>> eqIdxArray;
+  UnorderedSet<Integer> idxSet;
 algorithm
   vars := sys.orderedVars;
   eqs := sys.orderedEqs;
@@ -6010,16 +6093,14 @@ algorithm
       eqIdxs := eqIdxArray[idx];
       //print("remove edges between eqs: "+stringDelimitList(List.map(eqIdxs,intString),", ")+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
+      idxSet := UnorderedSet.fromList(varIdxs, Util.id, intEq);
       for e in eqIdxs loop
-        row := m[e];
-        row := UnorderedSet.difference_list(row, varIdxs, Util.id, intEq);
-        arrayUpdate(m,e,row);
+        arrayUpdate(m, e, UnorderedSet.difference_list_set(m[e], varIdxs, idxSet));
       end for;
       //update mt
+      idxSet := UnorderedSet.fromList(eqIdxs, Util.id, intEq);
       for varIdx in varIdxs loop
-        row := mt[varIdx];
-        row := UnorderedSet.difference_list(row, eqIdxs, Util.id, intEq);
-        arrayUpdate(mt,varIdx,row);
+        arrayUpdate(mt, varIdx, UnorderedSet.difference_list_set(mt[varIdx], eqIdxs, idxSet));
       end for;
     end if;
     idx := idx+1;
@@ -6580,23 +6661,15 @@ protected function checkAssignment
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> inUnassigned;
   output list<Integer> outUnassigned;
+protected
+  list<Integer> unassigned;
 algorithm
-  outUnassigned := matchcontinue inUnassigned
-    local
-      Integer r;
-      list<Integer> unassigned;
-    case _
-      algorithm
-        true := intGt(indx,ne);
-      then
-        inUnassigned;
-    case _
-      algorithm
-        r := ass1[indx];
-        unassigned := List.consOnTrue(intLt(r,0), indx, inUnassigned);
-      then
-        checkAssignment(indx+1,ne,ass1,ass2,unassigned);
-  end matchcontinue;
+  if intGt(indx,ne) then
+    outUnassigned := inUnassigned;
+  else
+    unassigned := List.consOnTrue(intLt(ass1[indx],0), indx, inUnassigned);
+    outUnassigned := checkAssignment(indx+1,ne,ass1,ass2,unassigned);
+  end if;
 end checkAssignment;
 
 protected function getAssignment
@@ -6607,11 +6680,8 @@ protected function getAssignment
   output array<Integer> ass1 "ass[eqnindx]=varindx";
   output array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
-  (ass1,ass2) := matchcontinue(clearMatching, iSyst)
-    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
-      algorithm
-        true := intGe(nVars,arrayLength(ass1));
-        true := intGe(nEqns,arrayLength(ass2));
+  (ass1,ass2) := match(clearMatching, iSyst)
+    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))) guard intGe(nVars,arrayLength(ass1)) and intGe(nEqns,arrayLength(ass2))
       then
         (ass2,ass1);
     else
@@ -6620,7 +6690,7 @@ algorithm
         ass1 := arrayCreate(nVars,-1);
       then
         (ass2,ass1);
-  end matchcontinue;
+  end match;
 end getAssignment;
 
 // =============================================================================

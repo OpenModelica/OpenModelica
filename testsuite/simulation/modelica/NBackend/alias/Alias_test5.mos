@@ -77,7 +77,7 @@ simulate(Test5); getErrorString();
 // 	Nominal map after replacements (conflicting array index = 1):
 // 	(x, 2.0)
 // 	(z, 2e7)
-// Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected.
+// Warning: NBAlias.selectStartByConfidence: Alias set with conflicting unfixed start values of equal confidence detected.
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
 // 	[SCAL] (1) z = $FUN_1; ($RES_SIM_0)

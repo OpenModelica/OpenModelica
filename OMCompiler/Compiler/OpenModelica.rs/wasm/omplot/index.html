@@ -32,6 +32,7 @@
   .var input { width:auto; margin:0; }
   .var .nm { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .var .p { color:var(--muted); font-size:11px; }
+  .var .u { color:var(--muted); font-size:11px; flex:0 0 auto; }
   .var .diff { width:8px; height:8px; border-radius:50%; background:var(--err); flex:0 0 auto; }
   .vars-note { color:var(--muted); font-size:12px; padding:4px 12px; }
 
@@ -57,9 +58,9 @@
   <span class="title">OMPlot</span>
   <span class="status" id="status">Loading…</span>
   <button class="ghost" id="open" disabled>Open…</button>
-  <input type="file" id="file" accept=".mat,.csv,.plt" multiple hidden />
+  <input type="file" id="file" accept=".mat,.arrow,.csv,.plt" multiple hidden />
   <button class="ghost" id="compareBtn" disabled title="Run diffSimulationResults on two of the loaded files">Compare…</button>
-  <button class="ghost icon-only" id="saveBtn" hidden title="Save the selected file as .mat or .csv" aria-label="Save">
+  <button class="ghost icon-only" id="saveBtn" hidden title="Save the selected file as .mat, .arrow or .csv" aria-label="Save">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M3 20h18"/></svg>
   </button>
 </header>
@@ -68,7 +69,7 @@
   <div class="left">
     <div class="section-label">Result files</div>
     <div class="files" id="files"></div>
-    <div class="empty" id="filesEmpty">Open .mat, .csv or .plt files, or drop them here.</div>
+    <div class="empty" id="filesEmpty">Open .mat, .arrow, .csv or .plt files, or drop them here.</div>
 
     <div class="mode" id="mode" hidden>
       <button class="ghost" id="modePlot">Plot</button>
@@ -102,6 +103,15 @@
       <p class="hint">y tolerance based on the difference between the signal's maximum and minimum</p>
       <label for="rangeDelta">rangeDelta</label><input type="number" id="rangeDelta" step="any" min="0" />
       <p class="hint">x tolerance</p>
+      <label for="algorithm">algorithm</label>
+      <select id="algorithm">
+        <option value="ellipse2014">ellipse2014 (diffSimulationResults)</option>
+        <option value="rectangle">rectangle (csv-compare)</option>
+        <option value="ellipse">ellipse (csv-compare)</option>
+      </select>
+      <p class="hint">how the tube is built; relTol and relTolDiffMinMax apply to ellipse2014 only</p>
+      <label for="nominalValue">nominalValue</label><input type="number" id="nominalValue" step="any" min="0" />
+      <p class="hint">rectangle and ellipse only: floor on the tube height, for near-zero signals</p>
     </div>
     <div class="modal-foot"><button class="ghost" data-close>Cancel</button><button id="compareRun">Compare</button></div>
   </div>
@@ -113,7 +123,7 @@
     <div class="modal-head"><span id="saveTitle">Save result file</span><button class="icon-btn" data-close aria-label="Close">✕</button></div>
     <div class="modal-body fields">
       <label for="saveFormat">Format</label>
-      <select id="saveFormat"><option value="mat">MATLAB v4 (.mat)</option><option value="csv">CSV (.csv)</option></select>
+      <select id="saveFormat"><option value="mat">MATLAB v4 (.mat)</option><option value="arrow">Arrow IPC (.arrow)</option><option value="csv">CSV (.csv)</option></select>
       <label for="saveVars">Variables</label>
       <select id="saveVars"><option value="all">All</option><option value="selected">Selected only</option></select>
       <label for="saveIntervals">Intervals</label><input type="number" id="saveIntervals" min="0" step="1" value="0" />
@@ -125,7 +135,8 @@
 
 <script type="module">
 import init, { ResultFile, diff_all, diff_variable } from './openmodelica_result_web.js';
-import { COLORS, createCharts } from '../plot.js';
+import { COLORS, createCharts, unitHTML, unitLabel } from '../plot.js';
+import { scale, relative } from '../units.js';
 import { bindModal, downloadBlob } from '../ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -136,14 +147,15 @@ const cmpSummary = $('cmpSummary');
 const charts = createCharts(chartsEl);
 
 // The scripting API's diffSimulationResults defaults.
-const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002 };
+const DEFAULTS = { relTol: 1e-3, relTolDiffMinMax: 1e-4, rangeDelta: 0.002, algorithm: 'ellipse2014', nominalValue: 0.001 };
 
 // --- state -----------------------------------------------------------------
-const files = [];       // { id, name, rf, vars, params:Set, nrows, selected:Set }
+const files = [];       // { id, name, rf, vars, params:Set, units, nrows, selected:Set }
 let active = null;      // the file whose variables are listed
 let mode = 'plot';      // 'plot' | 'compare'
 let cmp = null;         // { actual, reference, opts, diffVars:Set, compared, current }
 let nextId = 1;
+const unitPick = new Map();  // unit -> the display unit the reader chose for that axis
 
 function setStatus(text, cls = '') { statusEl.textContent = text; statusEl.className = 'status ' + cls; }
 function fail(e) { console.error(e); setStatus(String(e && e.message || e), 'err'); }
@@ -154,7 +166,11 @@ function addFile(name, bytes) {
   const vars = rf.variables();
   const timeName = rf.time_name();
   const params = new Set(vars.filter((v) => rf.is_parameter(v)));
-  const f = { id: nextId++, name, rf, vars, params, timeName, nrows: rf.nrows(), selected: new Set() };
+  // The file's own display units, keyed by unit name — `.arrow` carries them,
+  // the other formats define none and leave every unit alone.
+  let units = {};
+  try { units = JSON.parse(rf.unit_defs_json()); } catch (e) { console.warn('unit table', e); }
+  const f = { id: nextId++, name, rf, vars, params, units, timeName, nrows: rf.nrows(), selected: new Set() };
   files.push(f);
   active = f;
   return f;
@@ -251,7 +267,7 @@ function renderVars() {
   for (const v of shown) {
     const row = document.createElement('label');
     row.className = 'var' + (mode === 'compare' && cmp.current === v ? ' current' : '');
-    const d = f.rf.description(v); if (d) row.title = d;
+    const d = f.rf.description(v), u = f.rf.unit(v); if (d || u) row.title = u ? d + ' [' + u + ']' : d;
     if (mode === 'compare') {
       if (cmp.diffVars.has(v)) row.innerHTML = '<span class="diff" title="Differs from the reference"></span>';
       row.onclick = () => { showDiff(v); };
@@ -261,6 +277,13 @@ function renderVars() {
       row.appendChild(cb);
     }
     const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = v; row.appendChild(nm);
+    if (u) {
+      const us = document.createElement('span'); us.className = 'u';
+      const du = f.rf.display_unit(v);
+      us.innerHTML = unitHTML(du || u);
+      us.title = du && du !== u ? 'displayUnit ' + unitLabel(du) + ', unit ' + unitLabel(u) : 'unit ' + unitLabel(u);
+      row.appendChild(us);
+    }
     if (f.params.has(v)) { const p = document.createElement('span'); p.className = 'p'; p.textContent = 'param'; row.appendChild(p); }
     varsEl.appendChild(row);
   }
@@ -274,6 +297,18 @@ filterEl.oninput = renderVars;
 
 function showEmpty(text) { chartsEl.appendChild(chartsEmpty); chartsEmpty.textContent = text; }
 
+// The display unit named `to`, or null for the unit itself. A relative quantity
+// is a difference, so its conversion keeps the factor and drops the offset.
+function displayUnitDef(f, base, to, rel) {
+  if (!base || !to || to === base) return null;
+  const d = ((f.units && f.units[base]) || []).find((u) => u.name === to) || null;
+  return rel ? relative(d) : d;
+}
+
+function unitAlternatives(f, base) {
+  return base ? [base, ...((f.units && f.units[base]) || []).map((d) => d.name)] : [];
+}
+
 function renderCharts() {
   charts.clear();
   if (mode === 'compare') { renderDiffChart(); return; }
@@ -286,18 +321,47 @@ function renderCharts() {
       const ys = f.rf.trajectory(v); if (!ys) continue;
       const n = Math.min(time.length, ys.length);
       curves.push({ label: multi ? v + ' @ ' + f.name : v, color: COLORS[curves.length % COLORS.length],
-        xs: time.subarray(0, n), ys: ys.subarray(0, n) });
+        xs: time.subarray(0, n), ys: ys.subarray(0, n),
+        file: f, unit: f.rf.unit(v), displayUnit: f.rf.display_unit(v), relative: f.rf.relative_quantity(v) });
     }
   }
   if (!curves.length) { showEmpty(files.length ? 'Tick variables to plot them.' : 'Open a result file to plot it.'); return; }
-  charts.add({ curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true }, 'plot');
+  const spec = { curves, xText: 'time', xUnit: 's', solo: true, xIsTime: true };
+  // One unit across the plotted curves makes the y-axis a unit the reader can
+  // switch; mixed units leave the axis unlabelled.
+  const bases = [...new Set(curves.map((c) => c.unit).filter(Boolean))];
+  if (bases.length === 1 && curves.every((c) => c.unit)) applyUnit(spec, bases[0]);
+  charts.add(spec, 'plot');
+}
+
+// Draw the curves in `unitPick`'s unit (else the declared displayUnit), and let
+// the axis switch between the alternatives the files define. Two files can
+// define different display units for one unit, so the choices are their union.
+function applyUnit(spec, base) {
+  const alternatives = [base];
+  for (const f of new Set(spec.curves.map((c) => c.file))) {
+    for (const u of unitAlternatives(f, base)) if (!alternatives.includes(u)) alternatives.push(u);
+  }
+  const declared = spec.curves[0].displayUnit;
+  const shown = unitPick.has(base) ? unitPick.get(base)
+              : (declared && alternatives.includes(declared) ? declared : base);
+  for (const c of spec.curves) {
+    const d = displayUnitDef(c.file, base, shown, c.relative);
+    if (!d) continue;
+    const fn = scale(d), out = new Float64Array(c.ys.length);
+    for (let i = 0; i < c.ys.length; i++) out[i] = fn(c.ys[i]);
+    c.ys = out; c.unit = shown;
+  }
+  spec.yUnit = shown;
+  spec.unitChoices = alternatives;
+  spec.onUnit = (u) => { unitPick.set(base, u); renderCharts(); };
 }
 
 // --- comparison ------------------------------------------------------------
 function runCompare(actual, reference, opts) {
   setStatus('Comparing…', 'busy');
   const vars = reference.rf.compared_variables();
-  const diff = diff_all(actual.rf, reference.rf, [], opts.relTol, opts.relTolDiffMinMax, opts.rangeDelta);
+  const diff = diff_all(actual.rf, reference.rf, [], opts.relTol, opts.relTolDiffMinMax, opts.rangeDelta, opts.algorithm, opts.nominalValue);
   cmp = { actual, reference, opts, vars, compared: vars.length, diffVars: new Set(diff), current: null };
   mode = 'compare';
   const wanted = new URLSearchParams(location.search).get('var');
@@ -314,7 +378,7 @@ function renderDiffChart() {
   const v = cmp.current;
   if (!v) { showEmpty(cmp.diffVars.size ? 'Pick a variable to see its comparison.' : 'Every compared variable stays inside the reference tube.'); return; }
   let d;
-  try { d = diff_variable(cmp.actual.rf, cmp.reference.rf, v, cmp.opts.relTol, cmp.opts.relTolDiffMinMax, cmp.opts.rangeDelta); }
+  try { d = diff_variable(cmp.actual.rf, cmp.reference.rf, v, cmp.opts.relTol, cmp.opts.relTolDiffMinMax, cmp.opts.rangeDelta, cmp.opts.algorithm, cmp.opts.nominalValue); }
   catch (e) { showEmpty(String(e && e.message || e)); return; }
   const t = d.time, at = d.actual_time;
   const curves = [
@@ -332,8 +396,11 @@ function renderDiffChart() {
   }
   const cap = document.createElement('div'); cap.className = 'caption';
   cap.textContent = 'Reference time ' + fmt(t[0]) + ' to ' + fmt(t[t.length - 1]) + ', actual time ' + fmt(at[0]) + ' to '
-    + fmt(at[at.length - 1]) + '. Relative tolerance ' + o.relTol + ', absolute tolerance ' + d.abstol.toPrecision(2)
-    + ' (' + o.relTolDiffMinMax + ' relative), range delta ' + o.rangeDelta + '.';
+    + fmt(at[at.length - 1]) + '. Algorithm ' + o.algorithm + ', range delta ' + o.rangeDelta
+    + (o.algorithm === 'ellipse2014'
+        ? ', relative tolerance ' + o.relTol + ', absolute tolerance ' + d.abstol.toPrecision(2)
+          + ' (' + o.relTolDiffMinMax + ' relative).'
+        : ', tube half-height ' + d.abstol.toPrecision(2) + '.');
   chartsEl.appendChild(cap);
   d.free();
 }
@@ -349,11 +416,13 @@ const compareModal = bindModal($('compareBackdrop'), { onOpen: () => {
   }
   const o = cmp ? cmp.opts : optsFromUrl();
   $('relTol').value = o.relTol; $('relTolDiffMinMax').value = o.relTolDiffMinMax; $('rangeDelta').value = o.rangeDelta;
+  $('algorithm').value = o.algorithm; $('nominalValue').value = o.nominalValue;
 } });
 $('compareBtn').onclick = compareModal.open;
 $('compareRun').onclick = () => {
   const byId = (id) => files.find((f) => f.id === +id);
-  const opts = { relTol: +$('relTol').value, relTolDiffMinMax: +$('relTolDiffMinMax').value, rangeDelta: +$('rangeDelta').value };
+  const opts = { relTol: +$('relTol').value, relTolDiffMinMax: +$('relTolDiffMinMax').value, rangeDelta: +$('rangeDelta').value,
+                 algorithm: $('algorithm').value, nominalValue: +$('nominalValue').value };
   const actual = byId($('cmpActual').value), reference = byId($('cmpRef').value);
   if (actual === reference) { setStatus('Pick two different files to compare.', 'err'); return; }
   compareModal.close();
@@ -371,8 +440,9 @@ $('saveRun').onclick = () => {
   const vars = $('saveVars').value === 'selected' ? [...f.selected] : [];
   saveModal.close();
   try {
-    const base = f.name.replace(/\.(mat|csv|plt)$/i, '');
-    const bytes = format === 'mat' ? f.rf.write_mat(vars, intervals) : new TextEncoder().encode(f.rf.write_csv(vars, intervals));
+    const base = f.name.replace(/\.(mat|arrow|csv|plt)$/i, '');
+    const bytes = format === 'mat' ? f.rf.write_mat(vars, intervals) : format === 'arrow' ? f.rf.write_arrow(vars, intervals)
+      : new TextEncoder().encode(f.rf.write_csv(vars, intervals));
     downloadBlob(base + '.' + format, bytes);
   } catch (e) { fail(e); }
 };
@@ -391,10 +461,14 @@ document.addEventListener('dragover', (e) => e.preventDefault());
 document.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; document.body.classList.remove('drop'); openFiles([...e.dataTransfer.files]); });
 window.addEventListener('resize', () => charts.redraw());
 
-// --- URL: ?result=<url>&reference=<url>[&var=<name>][&relTol=&relTolDiffMinMax=&rangeDelta=] or ?file=<url>… ---
+// --- URL: ?result=<url>&reference=<url>[&var=<name>][&relTol=&relTolDiffMinMax=&rangeDelta=&algorithm=] or ?file=<url>… ---
 function optsFromUrl() {
   const p = new URLSearchParams(location.search), o = { ...DEFAULTS };
-  for (const k of Object.keys(o)) if (p.has(k) && isFinite(+p.get(k))) o[k] = +p.get(k);
+  for (const k of Object.keys(o)) {
+    if (!p.has(k)) continue;
+    if (k === 'algorithm') o[k] = p.get(k);
+    else if (isFinite(+p.get(k))) o[k] = +p.get(k);
+  }
   return o;
 }
 

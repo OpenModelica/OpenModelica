@@ -2,18 +2,18 @@ within NewDataReconciliationSimpleTests;
 model VolumeATh "Mixing volume with 2 inlets and 2 outlets and thermal input"
   parameter Boolean specific_enthalpy_as_state_variable=true "true: specific enthalpy is state variable for the state equation - false: temperature is state variable for the state equation";
   parameter Integer fluid=1 "1: water/steam - 2: C3H3F5";
-  parameter Modelica.SIunits.Density p_rho=0 "If > 0, fixed fluid density";
+  parameter Modelica.Units.SI.Density p_rho=0 "If > 0, fixed fluid density";
   parameter Integer mode=0
     "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic";
 
 
-  Modelica.SIunits.Temperature T "Fluid temperature";
-  Modelica.SIunits.AbsolutePressure P(start=1.e5) "Fluid pressure";
-  Modelica.SIunits.SpecificEnthalpy h(start=100000) "Fluid specific enthalpy";
-  Modelica.SIunits.Density rho(start=998) "Fluid density";
-  Modelica.SIunits.MassFlowRate BQ
+  Modelica.Units.SI.Temperature T "Fluid temperature";
+  Modelica.Units.SI.AbsolutePressure P(start=1.e5) "Fluid pressure";
+  Modelica.Units.SI.SpecificEnthalpy h(start=100000) "Fluid specific enthalpy";
+  Modelica.Units.SI.Density rho(start=998) "Fluid density";
+  Modelica.Units.SI.MassFlowRate BQ
     "Right hand side of the mass balance equation";
-  Modelica.SIunits.Power BH "Right hand side of the energybalance equation";
+  Modelica.Units.SI.Power BH "Right hand side of the energybalance equation";
   ThermoSysPro.Thermal.Connectors.ThermalPort Cth
                                      annotation (Placement(transformation(
           extent={{-10,-10},{10,10}}, rotation=0)));

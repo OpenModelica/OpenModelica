@@ -62,13 +62,13 @@ fn unmangle(mut inSymbol: ArcStr) -> Result<ArcStr> {
 fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
     let mut outSymbol: ArcStr = arcstr::literal!("");
     let mut n: i32 = 0;
-    let mut strs: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+    let mut strs: metamodelica::List<ArcStr> = metamodelica::nil();
     let mut so: ArcStr = arcstr::literal!("");
     let mut fun: ArcStr = arcstr::literal!("");
     (n, strs) = System::regex((inSymbol.clone()).clone(), (literal!("^([^(]*)[(]([^+]*[^+]*)[+][^)]*[)] *[[]0x[0-9a-fA-F]*[]]$")).clone(), 3, true, false);
     if n.clone() == 3 {
         let (__pa0, __pa1) = ::match_deref::match_deref! { match &(strs.clone()) {
-            Deref @ metamodelica::List::Cons { head: _, tail: Deref @ metamodelica::List::Cons { head: __pa0, tail: Deref @ metamodelica::List::Cons { head: __pa1, tail: Deref @ metamodelica::List::Nil } } } => (__pa0.clone(), __pa1.clone()),
+            Deref @ metamodelica::ListNode::Cons { head: _, tail: Deref @ metamodelica::ListNode::Cons { head: __pa0, tail: Deref @ metamodelica::ListNode::Cons { head: __pa1, tail: Deref @ metamodelica::ListNode::Nil } } } => (__pa0.clone(), __pa1.clone()),
             _ => return Err("pattern mismatch"),
         } };
         so = __pa0.clone();
@@ -78,7 +78,7 @@ fn stripAddresses(mut inSymbol: ArcStr) -> Result<ArcStr> {
         (n, strs) = System::regex((inSymbol.clone()).clone(), (literal!("^[0-9 ]*([A-Za-z0-9.]*) *0x[0-9a-fA-F]* ([A-Za-z0-9_]*) *[+] *[0-9]*$")).clone(), 3, true, false);
         if n.clone() == 3 {
             let (__pa3, __pa4) = ::match_deref::match_deref! { match &(strs.clone()) {
-                Deref @ metamodelica::List::Cons { head: _, tail: Deref @ metamodelica::List::Cons { head: __pa3, tail: Deref @ metamodelica::List::Cons { head: __pa4, tail: Deref @ metamodelica::List::Nil } } } => (__pa3.clone(), __pa4.clone()),
+                Deref @ metamodelica::ListNode::Cons { head: _, tail: Deref @ metamodelica::ListNode::Cons { head: __pa3, tail: Deref @ metamodelica::ListNode::Cons { head: __pa4, tail: Deref @ metamodelica::ListNode::Nil } } } => (__pa3.clone(), __pa4.clone()),
                 _ => return Err("pattern mismatch"),
             } };
             so = __pa3.clone();
@@ -109,8 +109,8 @@ pub fn getReadableMessage(mut delimiter: ArcStr) -> Result<ArcStr> {
     Ok(r#str)
 }
 
-pub fn readableStacktraceMessages() -> Result<Arc<metamodelica::List<ArcStr>>> {
-    let mut symbols: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+pub fn readableStacktraceMessages() -> Result<metamodelica::List<ArcStr>> {
+    let mut symbols: metamodelica::List<ArcStr> = metamodelica::nil();
     let mut prev: ArcStr = literal!("");
     let mut n: i32 = 1;
     let mut prevN: i32 = 1;
@@ -119,7 +119,7 @@ pub fn readableStacktraceMessages() -> Result<Arc<metamodelica::List<ArcStr>>> {
         return Ok(symbols.clone());
     }
     for mut symbol in &*({
-        let mut __acc: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+        let mut __acc: metamodelica::List<ArcStr> = metamodelica::nil();
         for mut s in (getStacktraceMessages()).into_iter().cloned() {
             let __x = stripAddresses((s.clone()).clone())?;
             __acc = cons(__x, __acc);
@@ -142,20 +142,61 @@ pub fn readableStacktraceMessages() -> Result<Arc<metamodelica::List<ArcStr>>> {
     Ok(symbols)
 }
 
-pub fn getStacktraceMessages() -> Arc<metamodelica::List<ArcStr>> {
-    let mut symbols: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
+pub fn getStacktraceMessages() -> metamodelica::List<ArcStr> {
+    let frames = metamodelica::heap_limit::trace_frames();
+    // Drop the capture machinery: everything up to the trip or the capture call.
+    let start = frames
+        .iter()
+        .take(16)
+        .rposition(|f| f.contains("heap_limit::") || f.contains("setStacktraceMessages") || f.starts_with("__rust") || f.starts_with("backtrace::"))
+        .map_or(0, |i| i + 1);
+    let skip = SKIP.load(std::sync::atomic::Ordering::Relaxed);
+    let take = match FRAMES.load(std::sync::atomic::Ordering::Relaxed) {
+        0 => usize::MAX,
+        n => n,
+    };
+    let mut symbols = metamodelica::nil();
+    for f in frames.into_iter().skip(start + skip).take(take).collect::<Vec<_>>().into_iter().rev() {
+        symbols = metamodelica::cons(ArcStr::from(f), symbols);
+    }
     symbols
 }
 
+static SKIP: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static FRAMES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 pub fn setStacktraceMessages(mut numSkip: i32, mut numFrames: i32) -> () {
-    ()
+    SKIP.store(numSkip.max(0) as usize, std::sync::atomic::Ordering::Relaxed);
+    FRAMES.store(numFrames.max(0) as usize, std::sync::atomic::Ordering::Relaxed);
+    metamodelica::heap_limit::capture_trace();
 }
 
 pub fn hasStacktraceMessages() -> bool {
-    let mut b: bool = false;
-    b
+    metamodelica::heap_limit::has_trace()
 }
 
 pub fn clearStacktraceMessages() -> () {
-    ()
+    *OUT_OF_MEMORY.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    SKIP.store(0, std::sync::atomic::Ordering::Relaxed);
+    FRAMES.store(0, std::sync::atomic::Ordering::Relaxed);
+    metamodelica::heap_limit::clear_trace();
+}
+
+static OUT_OF_MEMORY: std::sync::Mutex<Option<metamodelica::heap_limit::OutOfMemory>> = std::sync::Mutex::new(None);
+
+/// Records a checkpoint's out-of-memory trip for [`outOfMemoryMessage`].
+pub fn reportOutOfMemory(oom: &metamodelica::heap_limit::OutOfMemory) {
+    SKIP.store(0, std::sync::atomic::Ordering::Relaxed);
+    FRAMES.store(0, std::sync::atomic::Ordering::Relaxed);
+    *OUT_OF_MEMORY.lock().unwrap_or_else(|e| e.into_inner()) = Some(*oom);
+}
+
+pub fn outOfMemoryMessage() -> ArcStr {
+    let oom = *OUT_OF_MEMORY.lock().unwrap_or_else(|e| e.into_inner());
+    oom.map_or(literal!(""), |o| ArcStr::from(o.detail()))
+}
+
+pub fn errorPrefix() -> ArcStr {
+    let oom = outOfMemoryMessage();
+    if oom.is_empty() { literal!("Stack overflow") } else { format!("Out of memory ({oom})") }
 }

@@ -40,15 +40,15 @@
 extern "C" {
 #endif
 
+#include "meta_modelica_string.h"
 #include "meta_modelica_builtin_boxptr.h"
-#include "../util/modelica_string_lit.h"
+#include "meta_modelica_string_lit.h"
 
-typedef modelica_metatype metamodelica_string;
 typedef const modelica_metatype metamodelica_string_const;
 
-extern modelica_string intString(modelica_integer);
+extern metamodelica_string intString(modelica_integer);
 extern modelica_string realString(modelica_real);
-static inline modelica_string boolString(modelica_integer i)
+static inline metamodelica_string boolString(modelica_integer i)
 {
   return mmc_strings_boolString[i];
 }
@@ -80,6 +80,7 @@ extern modelica_metatype boxptr_stringUpdateStringChar(threadData_t *,metamodeli
 extern modelica_integer stringHash(metamodelica_string_const);
 extern modelica_integer stringHashDjb2(metamodelica_string_const s);
 extern modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_integer hash);
+extern modelica_integer intHashDjb2Continue(modelica_integer i, modelica_integer hash);
 extern modelica_integer stringHashDjb2Mod(metamodelica_string_const s,modelica_integer mod);
 extern modelica_integer stringHashSdbm(metamodelica_string_const str);
 #define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z))
@@ -207,16 +208,13 @@ extern void boxptr_setGlobalRoot(threadData_t*,modelica_metatype, modelica_metat
 extern modelica_metatype boxptr_valueConstructor(threadData_t*,modelica_metatype);
 #define referenceEq(X,Y) ((X) == (Y))
 
-extern modelica_real realMaxLit(void);
-extern modelica_integer intMaxLit(void);
-
 extern modelica_boolean setStackOverflowSignal(modelica_boolean);
 extern metamodelica_string referenceDebugString(modelica_metatype fnptr);
 extern metamodelica_string referencePointerString(modelica_metatype ptr);
 
 #include "meta_modelica_builtin_boxvar.h"
 
-extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLDataDirection extern struct record_description SourceInfo_SOURCEINFO__desc;
 #define SourceInfo__SOURCEINFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification) (mmc_mk_box8(3,&SourceInfo_SOURCEINFO__desc,fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification))
 
 #if defined(__cplusplus)

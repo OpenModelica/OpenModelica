@@ -65,9 +65,9 @@
 //! conservative no-op.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::{Arc, Weak};
+use std::collections::{HashMap, HashSet};
+use std::rc::{Rc, Weak};
+use std::sync::Arc;
 
 use arcstr::ArcStr;
 
@@ -236,30 +236,26 @@ impl<T: MMTrace + ?Sized> MMTrace for RefCell<T> {
 /// Iterative, not recursive: lists are routinely tens of thousands of
 /// elements long and a recursive traversal would overflow the stack. Every
 /// spine cell is itself a shared allocation (tail sharing is pervasive), so
-/// each tail handle is reported like any other `Arc`.
+/// each cell is reported like any other `Arc`.
 impl<T: MMTrace + Clone> MMTrace for List<T> {
     fn mm_accept(&self, visitor: &mut dyn MMVisitor) -> Result<(), ()> {
         let mut depth = 0usize;
         let mut cur = self;
         let r = loop {
-            match cur {
-                List::Cons { head, tail } => {
-                    if let e @ Err(()) = head.mm_accept(visitor) {
-                        break e;
-                    }
-                    if visitor.visit_shared(
-                        Arc::as_ptr(tail) as *const (),
-                        Arc::strong_count(tail),
-                        std::any::type_name::<List<T>>(),
-                    ) {
-                        depth += 1;
-                        cur = tail;
-                    } else {
-                        break Ok(());
-                    }
-                }
-                List::Nil => break Ok(()),
+            let Some(cell) = &cur.0 else { break Ok(()) };
+            if !visitor.visit_shared(
+                Arc::as_ptr(cell) as *const (),
+                Arc::strong_count(cell),
+                std::any::type_name::<crate::ListNode<T>>(),
+            ) {
+                break Ok(());
             }
+            depth += 1;
+            let crate::ListNode::Cons { head, tail } = &**cell else { break Ok(()) };
+            if let e @ Err(()) = head.mm_accept(visitor) {
+                break e;
+            }
+            cur = tail;
         };
         for _ in 0..depth {
             visitor.leave_shared();
@@ -466,6 +462,27 @@ impl MMVisitor for CountVisitor {
     }
 }
 
+thread_local! {
+    /// Set by [`log_cycles`]: counts, per type, the allocations a collection
+    /// proved unreachable. The oracle for "is anything still cyclic?".
+    static CYCLE_LOG: RefCell<Option<HashMap<&'static str, usize>>> =
+        const { RefCell::new(None) };
+}
+
+/// Start recording what the next [`collect`] reclaims.
+pub fn log_cycles() {
+    CYCLE_LOG.with(|c| *c.borrow_mut() = Some(HashMap::new()));
+}
+
+/// Stop recording and return what was reclaimed, most frequent first.
+pub fn take_cycle_log() -> Vec<(&'static str, usize)> {
+    CYCLE_LOG.with(|c| {
+        let mut v: Vec<_> = c.borrow_mut().take().unwrap_or_default().into_iter().collect();
+        v.sort_by(|a, b| b.1.cmp(&a.1));
+        v
+    })
+}
+
 /// Run one cycle collection over the cells created on the current thread.
 ///
 /// Call this only from quiescent points — no MetaModelica value borrows on
@@ -473,7 +490,7 @@ impl MMVisitor for CountVisitor {
 /// `GCExt.gcollect` sites satisfy this). Collections are never triggered
 /// implicitly; without explicit calls, cycles simply leak as before.
 pub fn collect() -> CollectStats {
-    collect_impl(false)
+    collect_impl(false, false)
 }
 
 /// [`collect`] with diagnostics on stderr: root/allocation counts and, for a
@@ -483,19 +500,26 @@ pub fn collect() -> CollectStats {
 /// exactly which untraced handles (globals, stack, closure captures) keep
 /// the subgraph alive.
 pub fn collect_with_diagnostics() -> CollectStats {
-    collect_impl(true)
+    collect_impl(true, false)
 }
 
-fn collect_impl(diagnose: bool) -> CollectStats {
+/// Tally what a collection would reclaim without reclaiming it. For verifying
+/// "is anything still cyclic?" on a heap that should have no cycles at all,
+/// where a collector bug would otherwise free live data unnoticed.
+pub fn report_only() -> CollectStats {
+    collect_impl(false, true)
+}
+
+fn collect_impl(diagnose: bool, report_only: bool) -> CollectStats {
     let mut stats = CollectStats::default();
 
     // Snapshot the live cells, purging dead weak handles in the same pass.
     // Holding strong handles for the duration of the collection keeps every
     // candidate alive until we are done with it: each snapshot handle adds
     // exactly 1 to its cell's strong count, accounted for below.
-    let snapshot: Vec<Arc<dyn TraceableCell>> = CELL_REGISTRY.with(|r| {
+    let snapshot: Vec<Rc<dyn TraceableCell>> = CELL_REGISTRY.with(|r| {
         let mut reg = r.borrow_mut();
-        let alive: Vec<Arc<dyn TraceableCell>> =
+        let alive: Vec<Rc<dyn TraceableCell>> =
             reg.iter().filter_map(Weak::upgrade).collect();
         reg.retain(|w| w.strong_count() > 0);
         alive
@@ -503,9 +527,9 @@ fn collect_impl(diagnose: bool) -> CollectStats {
     stats.candidate_cells = snapshot.len();
 
     // The data address of a cell, as its own `MMTrace` impl reports it via
-    // `visit_shared` (the `Arc<CellInner<T>>` payload address). Casting the
+    // `visit_shared` (the `Rc<CellInner<T>>` payload address). Casting the
     // fat trait-object pointer to `*const ()` keeps exactly that address.
-    let addr = |cell: &Arc<dyn TraceableCell>| Arc::as_ptr(cell) as *const ();
+    let addr = |cell: &Rc<dyn TraceableCell>| Rc::as_ptr(cell) as *const ();
 
     // Counting pass: traverse each cell's interior once, building the
     // allocation graph. Cells reached as handle slots first (from another
@@ -523,7 +547,7 @@ fn collect_impl(diagnose: bool) -> CollectStats {
         count.nodes.insert(
             a,
             AllocNode {
-                strong: Arc::strong_count(cell),
+                strong: Rc::strong_count(cell),
                 slots: 0,
                 type_name: "<registered cell>",
                 edges: Vec::new(),
@@ -545,7 +569,6 @@ fn collect_impl(diagnose: bool) -> CollectStats {
     // present in the snapshot must not be traversed again — handled by the
     // `contains_key` check above. Either way the snapshot handle we hold
     // contributes 1 to the strong count that no slot accounts for.
-    use std::collections::HashSet;
     let snapshot_addrs: HashSet<*const ()> = snapshot.iter().map(&addr).collect();
 
     // Root determination: any allocation with handles the traversal did not
@@ -583,6 +606,53 @@ fn collect_impl(diagnose: bool) -> CollectStats {
         }
     }
 
+    // `OPENMODELICA_GC_CYCLE_PATHS`: for a few unreachable allocations, walk the
+    // recorded edges back to the allocation itself and print the type chain.
+    // "Is this a real cycle, or is the collector wrong?" is otherwise a guess.
+    if std::env::var_os("OPENMODELICA_GC_CYCLE_PATHS").is_some() {
+        let mut shown = 0;
+        for (start, _) in count.nodes.iter() {
+            if shown >= 5 || reachable.contains(start) {
+                continue;
+            }
+            // depth-first search for a path *start -> ... -> start*
+            let mut stack = vec![(*start, vec![*start])];
+            let mut seen: HashSet<*const ()> = HashSet::new();
+            while let Some((p, path)) = stack.pop() {
+                if path.len() > 40 {
+                    continue;
+                }
+                let Some(node) = count.nodes.get(&p) else { continue };
+                for &e in &node.edges {
+                    if e == *start {
+                        shown += 1;
+                        eprintln!("[gc] cycle of {} allocations:", path.len());
+                        for q in &path {
+                            eprintln!("[gc]   {}", count.nodes[q].type_name);
+                        }
+                        stack.clear();
+                        break;
+                    }
+                    if !reachable.contains(&e) && seen.insert(e) {
+                        let mut next = path.clone();
+                        next.push(e);
+                        stack.push((e, next));
+                    }
+                }
+            }
+        }
+    }
+
+    CYCLE_LOG.with(|c| {
+        if let Some(log) = c.borrow_mut().as_mut() {
+            for (p, n) in &count.nodes {
+                if !reachable.contains(p) {
+                    *log.entry(n.type_name).or_insert(0) += 1;
+                }
+            }
+        }
+    });
+
     // Everything else is only referenced from within the traced graph.
     // Poisoning the unreachable cells drops their contents; ordinary
     // refcounted drops cascade and free the cycles.
@@ -590,7 +660,9 @@ fn collect_impl(diagnose: bool) -> CollectStats {
     for cell in &snapshot {
         let a = addr(cell);
         if !reachable.contains(&a) {
-            cell.poison();
+            if !report_only {
+                cell.poison();
+            }
             stats.collected_cells += 1;
         } else if diagnose && !root_set.contains(&a) && printed < 3 {
             // A kept, non-root cell: show what pins it. The path walks the
@@ -643,7 +715,7 @@ mod tests {
     #[test]
     fn representative_shapes_are_traceable() {
         assert_mm_trace::<crate::Array<i32>>();
-        assert_mm_trace::<Arc<List<(ArcStr, i32)>>>();
+        assert_mm_trace::<List<(ArcStr, i32)>>();
         assert_mm_trace::<Option<Box<(String, Vec<f64>)>>>();
     }
 }

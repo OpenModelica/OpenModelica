@@ -47,6 +47,7 @@
 #include "Modeling/ItemDelegate.h"
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
+#include "Cloud/CloudMount.h"
 #endif
 
 #include <QApplication>
@@ -88,7 +89,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
   // try to automatically select if user has something in the text box.
   if (!mpLineEdit->text().isEmpty()) {
-    findAndSelectLibraryTreeItem(QRegExp(mpLineEdit->text()));
+    findAndSelectLibraryTreeItem(QRegularExpression(mpLineEdit->text()));
   }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -115,25 +116,6 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
  * Finds the LibraryTreeItem and selects it.
  * \param regExp
  */
-void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegExp &regExp)
-{
-  QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
-  if (proxyIndex.isValid()) {
-    QModelIndex modelIndex = mpLibraryTreeProxyModel->mapToSource(proxyIndex);
-    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
-    if (pLibraryTreeItem) {
-      modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
-      proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
-      mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
-      while (proxyIndex.parent().isValid()) {
-        proxyIndex = proxyIndex.parent();
-        mpLibraryTreeView->expand(proxyIndex);
-      }
-    }
-  }
-}
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression &regExp)
 {
   QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
@@ -151,7 +133,6 @@ void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegularExpression 
     }
   }
 }
-#endif
 
 /*!
  * \brief LibraryBrowseDialog::searchClasses
@@ -163,13 +144,8 @@ void LibraryBrowseDialog::searchClasses()
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax);
   mpLibraryTreeProxyModel->setFilterRegularExpression(regExp);
-#else
-  QRegExp regExp = TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax);
-  mpLibraryTreeProxyModel->setFilterRegExp(regExp);
-#endif
   // if we have really searched something
   if (!searchText.isEmpty()) {
     findAndSelectLibraryTreeItem(regExp);
@@ -528,11 +504,7 @@ void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
     if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
     {
       QTextStream out(&file);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       out.setEncoding(QStringConverter::Utf8);
-#else
-      out.setCodec(Helper::utf8.toUtf8().constData());
-#endif
       out.setGenerateByteOrderMark(false);
       out << fileData;
       file.close();
@@ -884,11 +856,7 @@ DuplicateClassDialog::FileType DuplicateClassDialog::selectFileType(LibraryTreeI
     // set signal mapping
     signalMapper.setMapping(pDirectoriesForAllButton, 2);
     signalMapper.setMapping(pKeepStructureButton, 3);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     connect(&signalMapper, &QSignalMapper::mappedInt, pSelectFileTypeDialog, &QDialog::done);
-#else
-    connect(&signalMapper, SIGNAL(mapped(int)), pSelectFileTypeDialog, SLOT(done(int)));
-#endif
     // layout the buttons
     QDialogButtonBox *pButtonBox = new QDialogButtonBox;
     pButtonBox->addButton(pKeepStructureButton, QDialogButtonBox::ActionRole);
@@ -1365,7 +1333,10 @@ void SaveTotalFileDialog::saveTotalModel()
       mpObfuscateOutputCheckBox->isChecked(),
       mpUseSimplifiedHeuristic->isChecked());
 #if defined(__EMSCRIPTEN__)
-    WasmLocalFiles::download(fileName);
+    // Uploaded by the sync engine when it is inside a cloud mount.
+    if (!isInsideCloudMount(fileName)) {
+      WasmLocalFiles::download(fileName);
+    }
 #endif
     accept();
   }

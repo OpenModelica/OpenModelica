@@ -4,8 +4,7 @@
 // suite: disabled
 
 // Test3
-loadModel(Modelica, {"3.2.1"}); getErrorString();
-loadFile("ClosedLoop.mo"); getErrorString();
+loadModel(ThermoPower); getErrorString();
 translateModel(ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop); getErrorString();
 
 // Result:

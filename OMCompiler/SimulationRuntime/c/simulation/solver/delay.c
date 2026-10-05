@@ -396,3 +396,72 @@ void printDelayBuffer(void* data, int stream, void* elemPointer)
 }
 
 #endif
+
+/**
+ * @brief The delay buffers as flat words, for an FMU state.
+ *
+ * Per delay expression its length n, then n (time, value) pairs.
+ *
+ * @param data    Runtime data struct.
+ * @param out     Receives the words, or NULL to only count them.
+ * @return        Number of words.
+ */
+size_t delayStateWords(DATA* data, double* out)
+{
+  size_t k = 0;
+  long i;
+  int j, n;
+
+  if (!data->simulationInfo->delayStructure) {
+    return 0;
+  }
+  for (i = 0; i < data->modelData->nDelayExpressions; i++) {
+    RINGBUFFER* rb = data->simulationInfo->delayStructure[i];
+    n = ringBufferLength(rb);
+    if (out) out[k] = n;
+    k++;
+    for (j = 0; j < n; j++) {
+      TIME_AND_VALUE* e = (TIME_AND_VALUE*) getRingData(rb, j);
+      if (out) {
+        out[k] = e->t;
+        out[k+1] = e->value;
+      }
+      k += 2;
+    }
+  }
+  return k;
+}
+
+/**
+ * @brief Inverse of delayStateWords.
+ *
+ * @param data    Runtime data struct.
+ * @param w       Words delayStateWords wrote.
+ * @param len     Number of words available.
+ * @return        Number of words read, or -1 if they are not what delayStateWords wrote.
+ */
+long setDelayStateWords(DATA* data, const double* w, size_t len)
+{
+  size_t k = 0;
+  long i;
+  int j, n;
+
+  if (!data->simulationInfo->delayStructure) {
+    return 0;
+  }
+  for (i = 0; i < data->modelData->nDelayExpressions; i++) {
+    RINGBUFFER* rb = data->simulationInfo->delayStructure[i];
+    if (k >= len) return -1;
+    n = (int) w[k++];
+    if (n < 0 || k + 2 * (size_t) n > len) return -1;
+    removeLastRingData(rb, ringBufferLength(rb));
+    for (j = 0; j < n; j++) {
+      TIME_AND_VALUE e;
+      e.t = w[k];
+      e.value = w[k+1];
+      k += 2;
+      appendRingData(rb, &e);
+    }
+  }
+  return (long) k;
+}

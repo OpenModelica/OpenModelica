@@ -31,9 +31,9 @@ fn report_assert(info: &AssertInfo) {
         lastModification: metamodelica::OrderedFloat(0.0),
     };
     let _ = openmodelica_util::Error::addSourceMessage(
-        openmodelica_util::Error::COMPILER_ERROR.clone(),
+        &openmodelica_util::Error::COMPILER_ERROR,
         metamodelica::cons(arcstr::ArcStr::from(info.msg.as_str()), metamodelica::nil()),
-        src,
+        &src,
     );
 }
 
@@ -94,7 +94,7 @@ pub fn init_host_hooks() {
     openmodelica_sim_meta::driver::set_uri_resolver(uri_to_filename);
     openmodelica_sim_meta::driver::set_log_sink(log_to_stdout);
     set_assert_reporter(report_assert);
-    // The host driver shares this process with `rt_assert`, so it sets the flag
+    // The host driver shares this process with `rt_assert`, so it sets the mode
     // directly; the in-wasm driver relays it over a host import.
-    openmodelica_sim_meta::driver::set_no_throw_hook(crate::host::set_no_throw_asserts);
+    openmodelica_sim_meta::driver::set_assert_hold_hook(crate::host::set_assert_hold);
 }

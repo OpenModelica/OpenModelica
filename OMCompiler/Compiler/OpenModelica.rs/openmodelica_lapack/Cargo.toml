@@ -31,7 +31,6 @@ reference-lapack = []
 faer-backend = ["dep:faer"]
 
 [dependencies]
-libm = "0.2"
 # `~0.24.4`, not `0.24`: `src/faer_real_schur.rs` is a vendored copy of faer's
 # own `real_schur.rs` (faer keeps it `pub(crate)`), so it is tied to internals a
 # minor bump may move. A patch bump is fine; a minor one means re-running

@@ -49,7 +49,7 @@ import BackendDAEUtil;
 import Ceval;
 import DAE;
 import FCore;
-import HashTableExpToIndex;
+import UnorderedMap;
 import Tpl;
 import Values;
 import SimCode;
@@ -70,17 +70,15 @@ import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
 import CodegenEmbeddedC;
+import CodegenESP32;
 import CodegenFMU;
 import CodegenFMU2;
 import CodegenFMU3;
 import CodegenFMUCommon;
 import CodegenFMUCpp;
-import CodegenOMSICpp;
 import CodegenFMUCppHpcom;
 import CodegenCpp;
 import CodegenCppHpcom;
-import CodegenOMSIC;
-import CodegenOMSI_common;
 import CodegenXML;
 import CodegenJS;
 import CodegenWasmJit;
@@ -127,6 +125,7 @@ import Testsuite;
 import Util;
 import SerializeTaskSystemInfo;
 import File;
+import SimCodeCodegenUtil;
 
 public
 uniontype FmuTranslation
@@ -207,16 +206,11 @@ protected
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
   list<String> libPaths;
-  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  tuple<Integer,UnorderedMap<DAE.Exp, Integer>,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
-  /*Temporary disabled omsicpp*/
-  if ((Config.simCodeTarget() ==  "omsic") /*or (Config.simCodeTarget() == "omsicpp")*/) then
-    fileDir := listHead(AbsynUtil.pathToStringList(className))+".tmp";
-  else
-    fileDir := ProgramUtil.getFileDir(a_cref, p);
-  end if;
+  fileDir := ProgramUtil.getFileDir(a_cref, p);
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
@@ -228,12 +222,7 @@ algorithm
   ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/
-  if Config.simCodeTarget() == "omsicpp" then
-     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType, p, translateOnly);
-  else
-    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p, translateOnly);
-  end if;
+  callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p, translateOnly);
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
 
@@ -260,7 +249,7 @@ protected
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   list<String> libPaths;
   Absyn.ComponentRef a_cref;
-  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  tuple<Integer,UnorderedMap<DAE.Exp, Integer>,list<DAE.Exp>> literals;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
@@ -301,7 +290,7 @@ protected
   SimCode.SimCode simCode;
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
-  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   Integer numCheckpoints;
 
 algorithm
@@ -317,14 +306,7 @@ algorithm
   fileDir := ProgramUtil.getFileDir(a_cref, p);
 
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
-   /*Temporary disabled omsicpp
-   if Config.simCodeTarget() ==  "omsicpp" then
-     fmuVersion:="2.0";
-     simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,isFMU=true, FMUVersion=fmuVersion,
-    fmuTargetName=listHead(AbsynUtil.pathToStringList(className)), inFMIDer=inFMIDer);
-   else*/
-    simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
-   /*end if;*/
+  simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -341,7 +323,7 @@ algorithm
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
   ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-  Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  Error.addInternalError(StackOverflow.errorPrefix() + " in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
   /* Do not fail or we can loop too much */
   StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
@@ -366,7 +348,7 @@ protected function createSimCode "
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCodeFunction.RecordDeclaration> recordDecls;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   input Boolean isFMU=false;
   input String FMUVersion="";
@@ -478,7 +460,7 @@ algorithm
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-    Error.addInternalError("Stack overflow in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    Error.addInternalError(StackOverflow.errorPrefix() + " in " + getInstanceName() + "...\n" + stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     /* Do not fail or we can loop too much */
     StackOverflow.clearStacktraceMessages();
     fail();
@@ -504,7 +486,7 @@ protected
 algorithm
   res := (false,{});
   try
-    SimCodeUtil.resetFunctionIndex();
+    SimCodeCodegenUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
     if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
       Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
@@ -524,7 +506,7 @@ function runTpl
 algorithm
   res := (false,{});
   try
-    SimCodeUtil.resetFunctionIndex();
+    SimCodeCodegenUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
     Tpl.tplCallWithFailErrorNoArg(func);
     res := (true,SimCodeUtil.getFunctionIndex());
@@ -564,7 +546,7 @@ protected
   algorithm
     res := (false,{});
     try
-      SimCodeUtil.resetFunctionIndex();
+      SimCodeCodegenUtil.resetFunctionIndex();
       SimCodeFunctionUtil.codegenResetTryThrowIndex();
       func();
       res := (true,SimCodeUtil.getFunctionIndex());
@@ -602,6 +584,7 @@ protected
   AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
+  SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   () := match target
     local
       String str, guid;
@@ -609,6 +592,7 @@ algorithm
       Integer numThreads, n;
       list<tuple<Boolean,list<String>>> res = {};
       list<String> strs, tmp, matches;
+      String esp32Dir;
 
     case "Cpp"
       algorithm
@@ -730,6 +714,32 @@ algorithm
         // write the makefile last!
       then ();
 
+    case "ESP32"
+      algorithm
+        System.realtimeTick(ClockIndexes.RT_PROFILER0);
+        // The generated project is an ESP-IDF one, which has to be laid out as
+        // a project directory holding a main component.
+        esp32Dir := simCode.fileNamePrefix + "_esp32";
+        if not Util.createDirectoryTree(esp32Dir + "/main") then
+          Error.addInternalError("Failed to create directory " + esp32Dir + "/main", sourceInfo());
+          fail();
+        end if;
+        runTplWriteFile(func = function CodegenESP32.projectCMakeFile(a_simCode=simCode),
+                        file = esp32Dir + "/CMakeLists.txt");
+        runTplWriteFile(func = function CodegenESP32.componentCMakeFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/CMakeLists.txt");
+        runTplWriteFile(func = function CodegenESP32.sdkconfigFile(a_simCode=simCode),
+                        file = esp32Dir + "/sdkconfig.defaults");
+        runTplWriteFile(func = function CodegenESP32.modelHeaderFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/" + simCode.fileNamePrefix + "_model.h");
+        runTplWriteFile(func = function CodegenESP32.modelSourceFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/" + simCode.fileNamePrefix + "_model.c");
+        runTplWriteFile(func = function CodegenESP32.appMainFile(a_simCode=simCode),
+                        file = esp32Dir + "/main/main.c");
+        runTplWriteFile(func = function CodegenESP32.readmeFile(a_simCode=simCode),
+                        file = esp32Dir + "/README.md");
+      then ();
+
     case "JavaScript" algorithm
       guid := System.getUUIDStr();
       Tpl.tplNoret(CodegenC.translateModel, simCode);
@@ -790,20 +800,6 @@ algorithm
     Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
   end if;
 end callTargetTemplatesCPP;
-
-protected function callTargetTemplatesOMSICpp
-  input SimCode.SimCode iSimCode;
-  input Absyn.Program program;
-  protected
-  String fmuVersion;
-  String fmuType;
-
-algorithm
-    fmuVersion:="2.0";
-    fmuType:="me";
-   Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
-   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType,program);
-end callTargetTemplatesOMSICpp;
 
 protected function visualizationCadFiles
   "Absolute paths of the CAD files referenced as shape types in the visxml, so the
@@ -985,6 +981,7 @@ algorithm
   // The templates look the SimCode up through getSimCode(); an export off a kept
   // translation has no callTargetTemplatesFMU around it to have set it.
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
+  SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   guid := System.getUUIDStr();
   if not bareExport then
     // The C export's scratch directory, which terminalsAndIcons/ and documentation/
@@ -998,6 +995,7 @@ algorithm
   // The same templates the C target uses, so the XML is byte-identical to it. No
   // sourceFiles: a wasm FMU carries no C. The XML declaration comes from
   // fmuModelDescriptionFile, which the C target reaches these through.
+  System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_TEMPLATES);
   if FMI.isFMIVersion20(FMUVersion) then
     modelDescriptionStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
       CodegenFMU2.fmiModelDescription(Tpl.emptyTxt, simCode, guid, FMUType, {}));
@@ -1008,13 +1006,15 @@ algorithm
     if isSome(simCode.daeModeData) and FMI.isFMIMEType(FMUType) then
       lsDaeManifestStr := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + Tpl.textString(
         CodegenFMU3.fmiLsDaeManifest(Tpl.emptyTxt, simCode));
+      Error.addMessage(Error.FMU_EXPORT_FMI_LS_DAE_DRAFT,
+        {SimCodeCodegenUtil.FMI_LS_DAE_VERSION, SimCodeUtil.FMI_LS_DAE_DRAFT_DATE, SimCodeUtil.FMI_LS_DAE_DRAFT_COMMIT});
       ExecStat.execStat("FMU fmi-ls-manifest.xml");
     end if;
     // terminalsAndIcons/ by the C target's route: SimCode writes the XML, then the
     // OMGraphics renderer adds the <GraphicalRepresentation> and the icons beside it.
     if not bareExport then
       terminalsDir := fmutmp + "/terminalsAndIcons/";
-      terminals := SimCodeUtil.getFMI3Terminals(simCode);
+      terminals := SimCodeCodegenUtil.getFMI3Terminals(simCode);
       if not listEmpty(terminals) then
         Util.createDirectoryTree(terminalsDir);
         System.writeFile(terminalsDir + "terminalsAndIcons.xml",
@@ -1032,6 +1032,7 @@ algorithm
     documentationDir := fmutmp + "/documentation/";
     ExecStat.execStat("FMU documentation");
   end if;
+  System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_TEMPLATES);
   simulationFlagsJson := wasmFMUSimulationFlagsJson(simCode);
   if FMI.isFMIMEType(FMUType) and FMI.isFMICSType(FMUType) then
     CodegenWasmJit.emitMeCsFmu(simCode, simCode.fmuTargetName + ".fmu", guid, modelDescriptionStr, lsDaeManifestStr, documentationDir, terminalsDir, simulationFlagsJson);
@@ -1045,22 +1046,24 @@ end emitWasmFMU;
 
 protected function callTargetTemplatesFMU
 "Generate target code by passing the SimCode data structure to templates."
-  input SimCode.SimCode simCode;
+  input SimCode.SimCode inSimCode;
   input String target;
   input String FMUVersion;
   input String FMUType;
   input Absyn.Program program;
   input Boolean translateOnly = false "keep the translation in memory instead of writing the FMU";
 protected
+  SimCode.SimCode simCode = SimCodeUtil.addFMI3Figures(inSimCode, FMUVersion);
   // "wasm" is the standalone simulation target and has no FMU export of its own;
   // an FMU built under it is the same fmi-ls-wasm component "wasm-jit" emits.
   String fmuTarget = if target == "wasm" then "wasm-jit" else target;
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
+  SimCodeFunctionUtil.setTrivialRecords(simCode.recordDecls);
   () := match (simCode,fmuTarget)
     local
-      String str, newdir, newpath, resourcesDir, dirname;
+      String str, newdir, newpath, resourcesDir, dirname, fileName;
       String fmutmp;
       String guid;
       list<SimCode.FmiTerminal> terminals;
@@ -1075,6 +1078,9 @@ algorithm
       list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
+      list<String> rust_crate_roots;
+      list<String> simrt_c_sources;
+      Boolean rustRuntime, rustFmi;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"wasm-jit")
       algorithm
@@ -1104,19 +1110,21 @@ algorithm
         Util.createDirectoryTree(resourcesDir);
         for path in simCode.modelInfo.resourcePaths loop
           dirname := System.dirname(path);
+          newpath := path;
           // on windows, remove ":" from the path!
           if Autoconf.os == "Windows_NT" then
             dirname := System.stringReplace(dirname, ":", "");
+            newpath := System.stringReplace(newpath, ":", "");
           end if;
           newdir := resourcesDir + dirname;
-          newpath := resourcesDir + path;
+          newpath := resourcesDir + newpath;
           if System.regularFileExists(newpath) or System.directoryExists(newpath) then
             /* Already copied. Maybe one resource loaded a library and this one only a file in the directory */
             continue;
           end if;
           Util.createDirectoryTree(newdir);
           // copy the file or directory
-          if 0 <> System.systemCall("cp -rf \"" + path + "\" \"" + newdir + "/\"") then
+          if not System.copyPath(path, newpath) then
             Error.addInternalError("Failed to copy path " + path + " to " + resourcesDir + dirname, sourceInfo());
           end if;
         end for;
@@ -1128,7 +1136,7 @@ algorithm
           case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
             algorithm
             needSundials := true;
-            if 0 <> System.systemCall("cp -rf \"" + pathToFlagsJson + "\" \"" + resourcesDir + simCode.fileNamePrefix+"_flags.json\"") then
+            if not System.copyFile(pathToFlagsJson, resourcesDir + simCode.fileNamePrefix + "_flags.json") then
               Error.addInternalError("Failed to copy " + pathToFlagsJson + " to " + resourcesDir + simCode.fileNamePrefix + "_flags.json", sourceInfo());
             end if;
             then();
@@ -1140,12 +1148,12 @@ algorithm
         // annotation, plus the CAD files it references (a portable FMU cannot rely
         // on the importer having the libraries the modelica:// URIs point at).
         if Flags.isSet(Flags.VISUAL_XML) and System.regularFileExists(simCode.fileNamePrefix + "_visual.xml") then
-          if 0 <> System.systemCall("cp -f \"" + simCode.fileNamePrefix + "_visual.xml\" \"" + resourcesDir + simCode.fileNamePrefix + "_visual.xml\"") then
+          if not System.copyFile(simCode.fileNamePrefix + "_visual.xml", resourcesDir + simCode.fileNamePrefix + "_visual.xml") then
             Error.addInternalError("Failed to copy " + simCode.fileNamePrefix + "_visual.xml to " + resourcesDir, sourceInfo());
           end if;
           for cad in visualizationCadFiles(simCode.fileNamePrefix + "_visual.xml") loop
             if System.regularFileExists(cad) and
-               0 <> System.systemCall("cp -f \"" + cad + "\" \"" + resourcesDir + System.basename(cad) + "\"") then
+               not System.copyFile(cad, resourcesDir + System.basename(cad)) then
               Error.addInternalError("Failed to copy CAD file " + cad + " to " + resourcesDir, sourceInfo());
             end if;
           end for;
@@ -1154,7 +1162,8 @@ algorithm
         SerializeSparsityPattern.serialize(simCode);
         for jac in simCode.jacobianMatrices loop
           if not listEmpty(jac.sparsity) then
-            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin" + "' '" + resourcesDir + "'") then
+            fileName := simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
+            if not System.rename(fileName, resourcesDir + fileName) then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_Jac" + jac.matrixName + ".bin file", sourceInfo());
             end if;
           end if;
@@ -1171,13 +1180,14 @@ algorithm
         else
           // Add _info.json file to resources/ directory if neither --fmiFilter=blackBox nor --fmiFilter=protected are used
           if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_PROTECTED then
-            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_info.json" + "' '" + resourcesDir + "'") then
+            fileName := simCode.fileNamePrefix + "_info.json";
+            if not System.rename(fileName, resourcesDir + fileName) then
               Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
             end if;
           end if;
         end if;
 
-        SimCodeUtil.resetFunctionIndex();
+        SimCodeCodegenUtil.resetFunctionIndex();
         varInfo := simCode.modelInfo.varInfo;
 
 
@@ -1187,24 +1197,51 @@ algorithm
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
 
+        // --simCodeTarget=C: libSimulationRuntimeRust replaces everything
+        // libSimulationRuntimeC provided, the solvers included, so the FMU only
+        // compiles the libOpenModelicaRuntimeC half from C. The headers are the
+        // same either way -- the generated code and the FMI interface include
+        // them whichever runtime is behind them.
+        rustRuntime := Config.simCodeRustRuntime();
+        // libSimulationRuntimeRust also serves the FMI 2.0 and 3.0 C API, with its
+        // own Co-Simulation solvers, in place of fmi-export/*.c and cvode_solver.c.
+        rustFmi := rustRuntime;
+        simrt_c_sources := if rustRuntime then RuntimeSources.simrt_c_runtime_sources else RuntimeSources.simrt_c_sources;
+        // Only worth carrying if the sources survive into the archive; this build
+        // links the installed archive either way.
+        if rustRuntime and Flags.getConfigEnum(Flags.FMI_SOURCES) <> Flags.FMI_SOURCES_NONE
+           and Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX then
+          copyFmuRustSources(fmutmp);
+          rust_crate_roots := fmuRustCrateRoots(fmutmp + "/sources/", "rust");
+        else
+          rust_crate_roots := {};
+        end if;
+
         // The simrt c headers are in the include/omc/c directory.
         copyFiles(RuntimeSources.simrt_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
-        copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
         /*
         * fix issue https://github.com/OpenModelica/OpenModelica/issues/13719
         * copy the fmu runtime external solver sources to support source code cross compilation
         */
-        // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
-        copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        dgesv_sources := RuntimeSources.dgesv_sources;
+        if rustRuntime then
+          // dgesv and CMinpack are the Rust runtime's own openmodelica_lapack and
+          // minpack crates there.
+          dgesv_sources := {};
+          cminpack_sources := {};
+        else
+          // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
+          copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          dgesv_sources := RuntimeSources.dgesv_sources;
 
-        // Add CMinpack sources to FMU
-        copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-        cminpack_sources := RuntimeSources.cminpack_sources;
+          // Add CMinpack sources to FMU
+          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          cminpack_sources := RuntimeSources.cminpack_sources;
+        end if;
 
         // Check if the sundials files are needed.
         // The in-FMU CVODE integrator (s:cvode) is a Co-Simulation feature: cvode_solver_fmi_step()
@@ -1222,7 +1259,7 @@ algorithm
             Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
           end if;
           simrt_c_sundials_sources := {};
-        elseif SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
+        elseif not rustFmi and SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
           // The sundials headers are in the include directory.
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
@@ -1232,28 +1269,36 @@ algorithm
         end if;
 
 
-        simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 then RuntimeSources.simrt_linear_solver_sources else {};
+        simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 and not rustRuntime then RuntimeSources.simrt_linear_solver_sources else {};
         copyFiles(simrt_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        simrt_non_linear_solver_sources := if varInfo.numNonLinearSystems > 0 then RuntimeSources.simrt_non_linear_solver_sources else {};
+        simrt_non_linear_solver_sources := if varInfo.numNonLinearSystems > 0 and not rustRuntime then RuntimeSources.simrt_non_linear_solver_sources else {};
         copyFiles(simrt_non_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        simrt_mixed_solver_sources := if varInfo.numMixedSystems > 0 then RuntimeSources.simrt_mixed_solver_sources else {};
+        simrt_mixed_solver_sources := if varInfo.numMixedSystems > 0 and not rustRuntime then RuntimeSources.simrt_mixed_solver_sources else {};
         copyFiles(simrt_mixed_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
         // This fmu export files of OMC are located in a very unexpected place. Right now they are in SimulationRuntime/fmi/export/openmodelica
         // and then then they are installed to include/omc/c/fmi-export for some reason. The source, install, and source fmu location
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
-        if FMUVersion == "1.0" then
+        if FMUVersion == "1.0" and rustFmi then
+          copyFiles(RuntimeSources.fmi1_rust_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := {};
+        elseif FMUVersion == "1.0" then
           copyFiles(RuntimeSources.fmi1Files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           fmi_export_files := RuntimeSources.fmi1Files;
         elseif FMUVersion == "3.0" then
           // FMI 3.0 export. fmu3_model_interface.c is built on top of the FMI 2.0
           // ModelInstance and the generated per-base-type get/set helpers, so the
           // FMI 2.0 header (but not the FMI 2.0 interface .c) is required as well.
-          copyFiles(RuntimeSources.fmi3_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          if not rustFmi then
+            copyFiles(RuntimeSources.fmi3_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          end if;
           copyFiles(RuntimeSources.fmi3_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          fmi_export_files := RuntimeSources.fmi3_sources;
+          fmi_export_files := if rustFmi then {} else RuntimeSources.fmi3_sources;
+        elseif rustFmi then
+          copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := {};
         else
           copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
@@ -1273,7 +1318,7 @@ algorithm
           // FMI 3.0 Terminals: create the terminalsAndIcons/ directory (the
           // CodegenFMU3 template writes terminalsAndIcons.xml into it) when the
           // model has connector-derived terminals.
-          if not listEmpty(SimCodeUtil.getFMI3Terminals(simCode)) then
+          if not listEmpty(SimCodeCodegenUtil.getFMI3Terminals(simCode)) then
             Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
           end if;
         end if;
@@ -1293,14 +1338,14 @@ algorithm
 
         // I need to see some tests failing or something not working to make sense of what to add here
         shared_source_files := List.flatten({fmi_export_files,
-                                             RuntimeSources.simrt_c_sources,
+                                             simrt_c_sources,
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
                                             });
 
-        // check for fmiSource=false or --fmiFilter=blackBox
-        if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+        // check for fmiSources=false or --fmiFilter=blackBox
+        if Flags.getConfigEnum(Flags.FMI_SOURCES) == Flags.FMI_SOURCES_NONE or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
           model_desc_src_files := List.flatten({List.sort(model_gen_files, Util.strcmpNoCaseBool),      //  order matters
@@ -1308,7 +1353,8 @@ algorithm
                                                 List.sort(dgesv_sources, Util.strcmpNoCaseBool),
                                                 List.sort(cminpack_sources, Util.strcmpNoCaseBool),
                                                 List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
-                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool)
+                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool),
+                                                rust_crate_roots
                                     });
         end if;
 
@@ -1387,13 +1433,21 @@ algorithm
         // FMI 1.0 (Model Exchange only) never links CVODE into the FMU (see note above where the
         // sundials sources are skipped for FMI 1.0); keep NEED_CVODE=OFF so cvode_solver.c and
         // sundials_error.c are not compiled. See issue #15838.
-        if FMUVersion == "1.0" then
+        if FMUVersion == "1.0" or rustFmi then
           (needCvode, cvodeDirectory) := ("OFF", "\"\"");
         else
           (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
         end if;
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
+        // --simCodeTarget=C: name the installed archive, which is what this
+        // installation builds the FMU against. Rebuilding the FMU elsewhere finds
+        // no such file and falls back to the crates under sources/rust.
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@OMC_RUST_SIMULATION_RUNTIME@", if rustRuntime then "ON" else "OFF");
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUST_SIM_RUNTIME_LIBRARY@",
+          if rustRuntime
+          then "\"${DOCKER_VOL_DIR}" + Settings.getInstallationDirectoryPath() + "/lib/${OM_LIBRARY_ARCH}/omc/libSimulationRuntimeRust.a\""
+          else "\"\"");
         (needModelicaExternalC, cmakeCode) := SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@COMPILE_MODELICA_EXTERNAL_C@", needModelicaExternalC);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", cmakeCode);
@@ -1415,7 +1469,7 @@ algorithm
         // Only for FMI 2.0+. FMI 1.0 includes fmu1_model_interface.c.inc directly into
         // the generated <model>_FMU.c (which already has the model defines), so there is
         // no standalone fmu2_model_interface.c to patch. See issue #15838.
-        if FMUVersion <> "1.0" then
+        if FMUVersion <> "1.0" and not rustFmi then
           fmu_dummy_include_defines := (if FMUVersion == "2.0" then "fmu2" else "fmu3") + "_dummy_model_defines.h";
           for fmuModelInterfaceFile in (
               if FMUVersion == "3.0"
@@ -1427,54 +1481,10 @@ algorithm
           end for;
         end if;
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
-          function CodegenFMU.fmuMakefile(
-            a_target=Config.simulationCodeTarget(),
-            a_simCode=simCode,
-            a_FMUVersion=FMUVersion,
-            a_sourceFiles=model_all_gen_files,
-            a_runtimeObjectFiles=objectFilesOf(shared_source_files),
-            a_dgesvObjectFiles=objectFilesOf(dgesv_sources),
-            a_cminpackObjectFiles=objectFilesOf(cminpack_sources),
-            a_sundialsObjectFiles=objectFilesOf(simrt_c_sundials_sources)),
-          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(
           CodegenFMU.settingsfile,
           simCode,
           txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
-        /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
-        if Config.simCodeTarget() ==  "omsicpp" then
-         runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
-         end if;
-      then ();
-    case (_,"omsic")
-       algorithm
-        guid := System.getUUIDStr();
-        fileprefix := simCode.fileNamePrefix;
-
-        // create tmp directory for generated files, but first remove the old one!
-        if System.directoryExists(simCode.fullPathPrefix) then
-          if not System.removeDirectory(simCode.fullPathPrefix) then
-            Error.addInternalError("Failed to remove directory: " + simCode.fullPathPrefix, sourceInfo());
-            fail();
-          end if;
-        end if;
-        if not System.createDirectory(simCode.fullPathPrefix) then
-          Error.addInternalError("Failed to create tmp folder "+simCode.fullPathPrefix, sourceInfo());
-          System.fflush();
-          fail();
-        end if;
-
-        SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid);
-        SerializeSparsityPattern.serialize(simCode);
-        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-
-        runTpl(func = function CodegenOMSI_common.generateFMUModelDescriptionFile(a_simCode=simCode, a_guid=guid, a_FMUVersion=FMUVersion, a_FMUType=FMUType, a_sourceFiles={}, a_fileName=simCode.fullPathPrefix+"/"+"modelDescription.xml"));
-        runTplWriteFile(func = function CodegenOMSIC.createMakefile(a_simCode=simCode, a_target=Config.simulationCodeTarget(), a_makeflieName=fileprefix+"_FMU.makefile"), file=simCode.fullPathPrefix+"/"+fileprefix+"_FMU.makefile");
-
-        runTplWriteFile(func = function CodegenOMSIC.generateOMSIC(a_simCode=simCode), file=simCode.fullPathPrefix+"/"+fileprefix+"_omsic.c");
-
-        runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
       then ();
     case (_,"Cpp")
       algorithm
@@ -1672,7 +1682,8 @@ algorithm
   // a failing translation would otherwise read an earlier command's tick.
   List.map_0({ClockIndexes.RT_CLOCK_FRONTEND,ClockIndexes.RT_CLOCK_BACKEND,
               ClockIndexes.RT_CLOCK_SIMCODE,ClockIndexes.RT_CLOCK_TEMPLATES,
-              ClockIndexes.RT_CLOCK_BUILD_MODEL},System.realtimeClear);
+              ClockIndexes.RT_CLOCK_BUILD_MODEL,ClockIndexes.RT_CLOCK_FMU_BACKEND,
+              ClockIndexes.RT_CLOCK_FMU_SIMCODE,ClockIndexes.RT_CLOCK_FMU_TEMPLATES},System.realtimeClear);
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
 
   outLibs := {};
@@ -1771,8 +1782,23 @@ algorithm
     print(flatString);
   end if;
 
+  // The simCode clock ticks on every FMU export and on nothing else.
+  if Flags.isSet(Flags.EXEC_STAT) and System.realtimeNtick(ClockIndexes.RT_CLOCK_FMU_SIMCODE) > 0 then
+    Error.addCompilerNotification("FMU-only work: backend " + fmuOverheadTime(ClockIndexes.RT_CLOCK_FMU_BACKEND)
+      + ", simCode " + fmuOverheadTime(ClockIndexes.RT_CLOCK_FMU_SIMCODE)
+      + ", templates " + fmuOverheadTime(ClockIndexes.RT_CLOCK_FMU_TEMPLATES));
+  end if;
+
   success := true;
 end translateModel;
+
+protected function fmuOverheadTime
+  "Seconds accumulated on one of the RT_CLOCK_FMU_* clocks, 0 if it never ran."
+  input Integer clockIndex;
+  output String str;
+algorithm
+  str := System.snprintff("%.4g", 20, if System.realtimeNtick(clockIndex) > 0 then System.realtimeAccumulated(clockIndex) else 0.0);
+end fmuOverheadTime;
 
 public function translateModelCallBackend
   input FlatModel flatModel;
@@ -1917,8 +1943,10 @@ algorithm
       if (isFMI2) and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_BACKEND);
         (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow);
         dlow := BackendDAEUtil.setFunctionTree(dlow, funcs);
+        System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_BACKEND);
       else
         fmiDer := {};
       end if;
@@ -2130,7 +2158,7 @@ protected
   SimCode.SimCode simCode;
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
-  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   list<DAE.Exp> lits;
   Integer numCheckpoints;
   list<SimCodeVar.SimVar> tempVars = {};
@@ -2309,14 +2337,14 @@ algorithm
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
       //create hash table
-      crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+      crefToSimVarHT := SimCodeCodegenUtil.createCrefToSimVarHT(modelInfo);
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
       symJacs := listReverse(Util.getOption(daeModeSP) :: symJacs);
     else
       tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
       modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
-      crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+      crefToSimVarHT := SimCodeCodegenUtil.createCrefToSimVarHT(modelInfo);
 
       if isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
@@ -2364,7 +2392,7 @@ algorithm
     (_, resVars) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
     (residualVars, _) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     residualVars := SimCodeUtil.rewriteIndex(residualVars, 0);
-    (residualVars, _) := SimCodeUtil.setVariableIndexHelper(residualVars, 0, 0);
+    (residualVars, _) := SimCodeCodegenUtil.setVariableIndexHelper(residualVars, 0, 0);
     crefToSimVarHT:= List.fold(residualVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create auxiliary variables, set index and push them SimCode Hash Table
@@ -2372,7 +2400,7 @@ algorithm
     (auxiliaryVars, _) :=  BackendVariable.traverseBackendDAEVars(auxVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     auxiliaryVars := List.sort(auxiliaryVars, SimCodeUtil.simVarCompareByCrefSubsAtEndlLexical);
     auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 0);
-    (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0, 0);
+    (auxiliaryVars, _) := SimCodeCodegenUtil.setVariableIndexHelper(auxiliaryVars, 0, 0);
     crefToSimVarHT:= List.fold(auxiliaryVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create SimCodeVars for algebraic states
@@ -2406,11 +2434,13 @@ algorithm
     // DAE-mode model has none of. The specification lets an importer assume a
     // dependency on every known instead.
     if isFMU then
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
       if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
         (_, modelStructure, modelInfo, _, uniqueEqIndex, _) :=
           SimCodeUtil.createFMIModelStructure({}, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       end if;
       fmiSimulationFlags := SimCodeUtil.createFMISimulationFlags();
+      System.realtimeAccumulate(ClockIndexes.RT_CLOCK_FMU_SIMCODE);
     end if;
 
     // update hash table
@@ -2478,12 +2508,12 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       inlineEquations             = {},
-      omsiData                    = NONE(),
-      scalarized                  = true
+      scalarized                  = true,
+      fmiFigures                  = {}
     );
 
-    (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
-    simCode.literals := listReverse(lits);
+    (simCode, lits) := SimCodeUtil.findSimCodeLiterals(simCode, literals);
+    simCode.literals := lits;
 
     timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
     ExecStat.execStat("SimCode");
@@ -2541,6 +2571,121 @@ algorithm
     Error.assertion(System.copyFile(source + "/" + f, f2), "Failed to copy file " + f + " from " + source + " to " + destination, sourceInfo());
   end for;
 end copyFiles;
+
+public function copyFmuRustSources
+  "The Rust half of a `--simCodeTarget=C` source FMU: the crates
+   libSimulationRuntimeRust is built from, so the FMU rebuilds where OpenModelica
+   is not installed.
+
+   `--fmiSources=full` additionally vendors the crates.io dependencies beside them,
+   which makes the rebuild work without network access. The vendored tree is ~90 MB
+   and the same for every FMU, so it is built once into the user's cache and copied
+   from there. It is deliberately not part of the OpenModelica installation."
+  input String fmutmp;
+protected
+  String rust_sources_dir, dest, manifest, vendor, cache, lock;
+algorithm
+  rust_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_rust_sources_dir;
+  if not System.directoryExists(rust_sources_dir) then
+    Error.addCompilerWarning("--fmiSources asked for the sources of a --simCodeTarget=C FMU, but "
+      + rust_sources_dir + " does not exist. The FMU carries its C sources only and cannot be rebuilt.");
+    return;
+  end if;
+  dest := fmutmp + "/sources/rust";
+  Error.assertion(Util.createDirectoryTree(dest), "Failed to create directory " + dest, sourceInfo());
+  if not System.copyPath(rust_sources_dir, dest) then
+    Error.addInternalError("Failed to copy the Rust runtime sources into " + dest, sourceInfo());
+    return;
+  end if;
+
+  manifest := dest + "/" + RuntimeSources.fmu_rust_manifest;
+  writeFmuRustWorkspace(manifest);
+
+  if Flags.getConfigEnum(Flags.FMI_SOURCES) <> Flags.FMI_SOURCES_FULL then
+    return;
+  end if;
+
+  lock := System.dirname(manifest) + "/Cargo.lock";
+  // Keyed by the lock file: a different dependency set is a different vendor tree.
+  cache := Settings.getHomeDir(runningTestsuite=Testsuite.isRunning()) + "/.openmodelica/fmu-rust-vendor/"
+           + intString(stringHashDjb2(if System.regularFileExists(lock) then System.readFile(lock) else ""));
+  if not System.directoryExists(cache) then
+    Error.assertion(Util.createDirectoryTree(cache), "Failed to create directory " + cache, sourceInfo());
+    if 0 <> System.systemCall("cargo vendor --versioned-dirs --manifest-path \"" + manifest + "\" \"" + cache + "\"",
+                              outFile=fmutmp + "/resources/cargo-vendor.log") then
+      System.removeDirectory(cache);
+      Error.addCompilerError("--fmiSources=full needs `cargo vendor` to collect the Rust dependencies, and it failed. "
+        + "See " + fmutmp + "/resources/cargo-vendor.log. Use --fmiSources=slim for an FMU whose rebuild fetches them instead.");
+      return;
+    end if;
+  end if;
+
+  vendor := dest + "/vendor";
+  if not System.copyPath(cache, vendor) then
+    Error.addInternalError("Failed to copy the vendored Rust dependencies into " + vendor, sourceInfo());
+    return;
+  end if;
+  // Cargo finds this by walking up from its working directory, which the FMU's
+  // CMakeLists sets to `sources/rust`; the path in it is relative to that same
+  // directory, so the FMU stays movable.
+  Error.assertion(Util.createDirectoryTree(dest + "/.cargo"), "Failed to create directory " + dest + "/.cargo", sourceInfo());
+  System.writeFile(dest + "/.cargo/config.toml",
+    "[source.crates-io]\nreplace-with = \"vendored-sources\"\n\n[source.vendored-sources]\ndirectory = \"vendor\"\n");
+end copyFmuRustSources;
+
+protected function fmuRustCrateRoots
+  "The Rust half of a source FMU's <SourceFiles>: the root of every crate under
+   `dir` (relative to `sources`), the unit rustc compiles, as a .c file is for C.
+   The vendored dependencies are left out, as a library a C FMU links would be."
+  input String sources;
+  input String dir;
+  output list<String> roots = {};
+algorithm
+  for d in listReverse(List.sort(System.subDirectories(sources + dir), Util.strcmpBool)) loop
+    if not listMember(d, {"vendor", "target", "src", ".cargo"}) then
+      roots := listAppend(fmuRustCrateRoots(sources, dir + "/" + d), roots);
+    end if;
+  end for;
+  if System.regularFileExists(sources + dir + "/Cargo.toml") and System.regularFileExists(sources + dir + "/src/lib.rs") then
+    roots := (dir + "/src/lib.rs") :: roots;
+  end if;
+end fmuRustCrateRoots;
+
+protected function writeFmuRustWorkspace
+  "The FMU's own cargo workspace root, in place of the one the checkout uses.
+
+   That one reaches the result-file library and the browser module too, and those
+   pull in crates an FMU has no use for and does not carry -- `cargo vendor` stops
+   at the first one it cannot find. This root names `openmodelica_simulation_runtime`
+   and nothing else, and excludes every crate beside it so cargo does not claim
+   them as members of it."
+  input String manifest;
+protected
+  String dir, excludes;
+  list<String> subdirs;
+algorithm
+  dir := System.dirname(manifest);
+  subdirs := List.sort(list(d for d guard System.regularFileExists(dir + "/" + d + "/Cargo.toml")
+                            in System.subDirectories(dir)), Util.strcmpBool);
+  excludes := stringDelimitList(list("  \"" + d + "\"," for d in subdirs), "\n");
+  System.writeFile(manifest,
+    "# Generated by OpenModelica: the workspace a source-code FMU builds its Rust\n"
+    + "# simulation runtime from.\n"
+    + "[package]\n"
+    + "name = \"openmodelica_fmu_runtime\"\n"
+    + "version = \"0.1.0\"\n"
+    + "edition = \"2024\"\n"
+    + "\n"
+    + "[dependencies]\n"
+    + "# default-features = false drops `standalone`, which an FMU has no use for:\n"
+    + "# the executable entry points, the result file, --variableFilter and -iif.\n"
+    + "openmodelica_simulation_runtime = { path = \"openmodelica_simulation_runtime\", default-features = false, features = [\"fmu-lapack\", \"fmu-runtime\"] }\n"
+    + "\n"
+    + "# Reached as plain path dependencies; a member would have to belong to this\n"
+    + "# workspace, and each of them names another root.\n"
+    + "[workspace]\n"
+    + "exclude = [\n" + excludes + "\n]\n");
+end writeFmuRustWorkspace;
 
 protected function objectFilesOf
   "The object files a list of runtime sources compiles to, for the makefile of a

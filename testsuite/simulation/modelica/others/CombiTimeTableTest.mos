@@ -1,14 +1,13 @@
-// name:     Tables [version 2.2]
+// name:     CombiTimeTableTest
 // keywords: Simulation, CombiTimeTable
 // status:   correct
-// teardown_command: rm -rf CombiTimeTableTest.makefile CombiTimeTableTest.cpp CombiTimeTableTest.exe CombiTimeTableTest.libs CombiTimeTableTest.log CombiTimeTableTest_functions.cpp CombiTimeTableTest_init.xml CombiTimeTableTest_res.mat
+// teardown_command: rm -rf CombiTimeTableTest_* CombiTimeTableTest CombiTimeTableTest.exe CombiTimeTableTest.c CombiTimeTableTest.o CombiTimeTableTest.libs CombiTimeTableTest.log CombiTimeTableTest.makefile
+// depends: testTables2.txt
 // Simulate models and read in data.
 //
 
 loadFile("CombiTimeTableTestAll.mo"); getErrorString();
-loadModel(Modelica,{"2.2"}); getErrorString();
-setCommandLineOptions({"+std=2.x"}); getErrorString();
-instantiateModel(CombiTimeTableTest); getErrorString();
+loadModel(Modelica); getErrorString();
 simulate(CombiTimeTableTest, stopTime=4.0, tolerance=1e-5, numberOfIntervals=100); getErrorString();
 
 val(combiTimeTable1.y[1],0.0);
@@ -29,18 +28,19 @@ val(combiTimeTable2.y[1],4.0);
 // Result:
 // true
 // ""
-// {true}
-// ""
-// {true}
+// true
 // ""
 // record SimulationResult
 //     resultFile = "CombiTimeTableTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 100, tolerance = 1e-005, method = 'dassl', fileNamePrefix = 'CombiTimeTableTest', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 100, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'CombiTimeTableTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | info    | ... loading \"A\" from \"testTables2.txt\"
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 0.0
-// 0.999999999999995
+// 0.0
 // 2.5
 // 4.0
 // 12.5

@@ -47,7 +47,6 @@
 
 use std::cell::RefCell;
 use std::collections::BTreeSet;
-use std::sync::Arc;
 use metamodelica::Result;
 use metamodelica::Array;
 
@@ -88,7 +87,7 @@ fn with_state<R>(f: impl FnOnce(&mut State) -> R) -> R {
 // Build a `list<Integer>` from a set, mirroring the C
 // `for it in set: res = cons(*it, res)` (ascending iteration, prepend → the
 // returned list is in descending order).
-fn set_to_list(set: &BTreeSet<i32>) -> Arc<metamodelica::List<i32>> {
+fn set_to_list(set: &BTreeSet<i32>) -> metamodelica::List<i32> {
     let mut res = metamodelica::nil();
     for &x in set.iter() {
         res = metamodelica::cons(x, res);
@@ -118,11 +117,11 @@ pub fn getVMark(inInteger: i32) -> bool {
     with_state(|s| s.v_mark.contains(&inInteger))
 }
 
-pub fn getMarkedEqns() -> Arc<metamodelica::List<i32>> {
+pub fn getMarkedEqns() -> metamodelica::List<i32> {
     with_state(|s| set_to_list(&s.e_mark))
 }
 
-pub fn getDifferentiatedEqns() -> Arc<metamodelica::List<i32>> {
+pub fn getDifferentiatedEqns() -> metamodelica::List<i32> {
     with_state(|s| set_to_list(&s.differentiated_mark))
 }
 
@@ -134,7 +133,7 @@ pub fn markDifferentiated(inInteger: i32) {
     with_state(|s| { s.differentiated_mark.insert(inInteger); });
 }
 
-pub fn getMarkedVariables() -> Arc<metamodelica::List<i32>> {
+pub fn getMarkedVariables() -> metamodelica::List<i32> {
     with_state(|s| set_to_list(&s.v_mark))
 }
 
@@ -180,7 +179,7 @@ pub fn getNumber(inInteger: i32) -> i32 {
 
 // ── Matching: adjacency + assignment plumbing ──────────────────────────────────
 
-pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<Arc<metamodelica::List<i32>>>) {
+pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<metamodelica::List<i32>>) {
     with_state(|s| {
         s.col_ptrs = vec![0i32; (ne + 1) as usize];
         s.col_ptrs[ne as usize] = nz;
@@ -193,6 +192,39 @@ pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<Arc<metamodelica:
             // Each list entry is a 1-based incident variable; the C drops
             // non-positive entries (used as "no variable" placeholders).
             for &i1 in &*arr[i] {
+                if i1 > 0 {
+                    s.col_ids[j as usize] = i1 - 1;
+                    j += 1;
+                }
+            }
+        }
+    });
+}
+
+pub fn setAdjacencyMatrixFlat(
+    _nv: i32,
+    ne: i32,
+    nz: i32,
+    start: Array<i32>,
+    len: Array<i32>,
+    data: Array<i32>,
+) {
+    with_state(|s| {
+        s.col_ptrs = vec![0i32; (ne + 1) as usize];
+        s.col_ptrs[ne as usize] = nz;
+        s.col_ids = vec![0i32; nz.max(0) as usize];
+
+        let start = start.borrow();
+        let len = len.borrow();
+        let data = data.borrow();
+        let mut j = 0i32;
+        for i in 0..ne as usize {
+            s.col_ptrs[i] = j;
+            let first = start[i] as usize;
+            // Each entry is a 1-based incident variable; the C drops
+            // non-positive entries (used as "no variable" placeholders).
+            for k in first..first + len[i] as usize {
+                let i1 = data[k - 1];
                 if i1 > 0 {
                     s.col_ids[j as usize] = i1 - 1;
                     j += 1;

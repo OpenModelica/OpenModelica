@@ -64,13 +64,8 @@
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::path
 #define QT_LIBRRY_INFO_QMLIP QLibraryInfo::QmlImportsPath
-#else
-#define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::location
-#define QT_LIBRRY_INFO_QMLIP QLibraryInfo::ImportsPath
-#endif
 
 void dumpQtPaths()
 {
@@ -184,6 +179,22 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QString localesPath = QDir::cleanPath(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales");
   qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 #endif // #ifdef Q_OS_WIN
+#ifdef Q_OS_LINUX
+  // WSL (/dev/dxg): Qt 6.11 reads the GPU vendor from a Vulkan probe, which here
+  // is dzn naming the NVIDIA adapter behind D3D12, so QtWebEngine drops GBM and
+  // renders through dzn, which cannot create a GrContext. GBM needs a render
+  // node; without one the D3D12 EGL has no dma_buf import either and the
+  // Documentation view stays blank, so only --disable-gpu paints.
+  if (QFile::exists("/dev/dxg")) {
+    if (!QDir("/dev/dri").entryList(QStringList("renderD*"), QDir::System).isEmpty()) {
+      if (!qEnvironmentVariableIsSet("QTWEBENGINE_FORCE_USE_GBM")) {
+        qputenv("QTWEBENGINE_FORCE_USE_GBM", "1");
+      }
+    } else if (!qEnvironmentVariableIsSet("QTWEBENGINE_CHROMIUM_FLAGS")) {
+      qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu --disable-gpu-compositing");
+    }
+  }
+#endif // #ifdef Q_OS_LINUX
 
 /* We need a better handling of ligth and dark themes.
  * For now just force light theme for Qt 6.8
@@ -249,8 +260,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
       }
       // install application translations
       QString translationsLocation = installationDirectoryPath + QString("/share/omedit/nls");
-      // skip loading OMEdit translation file if locale language is QLocale::English. We don't have any OMEdit_en*.qm file.
-      if (settingsLocale.language() != QLocale::English) {
+      // skip loading OMEdit translation file if locale is en_US. We don't have any OMEdit_en*.qm file.
+      if (locale != "en_US") {
         if (mTranslator.load("OMEdit_" + locale, translationsLocation)) {
           installTranslator(&mTranslator);
         } else {
@@ -376,17 +387,26 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 
 #if !defined(__EMSCRIPTEN__)
   if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
+    QString hostAddress = "localhost";
     int port = 3000;
     bool enableAdminTools = false;
+    if (pSettings->contains("modelContextProtocol/hostAddress")) {
+      hostAddress = pSettings->value("modelContextProtocol/hostAddress").toString();
+    }
     if (pSettings->contains("modelContextProtocol/port")) {
       port = pSettings->value("modelContextProtocol/port").toInt();
     }
     if (pSettings->contains("modelContextProtocol/enableAdminTools")) {
       enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
     }
-    new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
+    new MCPServer(pMainwindow->getOMCProxy(), hostAddress, port, enableAdminTools, pMainwindow);
   }
 #endif
+
+  // On unless the user has turned it off; the same default the options page reads.
+  if (!testsuiteRunning && pSettings->value("languageServer/enabled", true).toBool()) {
+    pMainwindow->startLanguageServer();
+  }
 
   if (!testsuiteRunning) {
     // finally show the main window

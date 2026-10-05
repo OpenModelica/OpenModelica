@@ -1,0 +1,51 @@
+// name: unknownSizeInputDerivative
+// keywords: NewBackend, differentiation, function
+// status: correct
+// suite: cSources
+//
+// The input a[:] of the function has no derivative. Its zero derivative has the unknown
+// size of a, the function is still differentiated for the Jacobian of the loop.
+
+loadString("
+package P
+function polynomial
+  input Real x;
+  input Real a[:];
+  output Real y;
+protected
+  parameter Integer n = size(a, 1)-1;
+  Real xp[n+1];
+algorithm
+  xp := {1, x, x*x};
+  y := a*xp;
+  annotation(smoothOrder=999);
+end polynomial;
+model M
+  Real x(start = 1);
+equation
+  polynomial(x, {1, 2, 3}) = time + 5 + 0.1 * sin(x);
+end M;
+end P;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(P.M); getErrorString();
+abs(val(x, 1.0) - 1.010547318) < 1e-6;
+// the derivative function exists
+system("grep -q omc__omcQ_24fDER0_P_polynomial P.M_functions.c");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// 0
+// endResult

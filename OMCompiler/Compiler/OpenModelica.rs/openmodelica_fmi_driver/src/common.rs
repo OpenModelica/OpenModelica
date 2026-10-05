@@ -12,7 +12,6 @@ const MAX_EVENT_ITERATIONS: usize = 100;
 /// expressions are separated out: FMI only wants them set once.
 pub struct Inputs {
     groups: Vec<(VarType, Vec<u32>, Vec<usize>)>,
-    values: Vec<f64>,
     time_varying: bool,
 }
 
@@ -30,8 +29,7 @@ impl Inputs {
             }
         }
         Inputs {
-            time_varying: opts.inputs.iter().any(|i| !i.value.is_constant()),
-            values: vec![0.0; opts.inputs.len()],
+            time_varying: opts.inputs.iter().any(|i| i.values.iter().any(|e| !e.is_constant())),
             groups,
         }
     }
@@ -43,11 +41,11 @@ impl Inputs {
 
     /// Evaluate every input at `time` and set it.
     pub fn apply(&mut self, inst: &mut dyn Fmi3, opts: &Options<'_>, time: f64) -> Result<()> {
-        for (i, input) in opts.inputs.iter().enumerate() {
-            self.values[i] = input.value.eval(time);
-        }
         for (ty, vrs, indices) in &self.groups {
-            let values: Vec<f64> = indices.iter().map(|&i| self.values[i]).collect();
+            let values: Vec<f64> = indices
+                .iter()
+                .flat_map(|&i| opts.inputs[i].values.iter().map(|e| e.eval(time)))
+                .collect();
             inst.set_numeric(*ty, vrs, &values)?;
         }
         Ok(())
@@ -78,7 +76,7 @@ pub fn initialize(
     }
     inst.enter_initialization_mode(opts.tolerance, opts.start_time, Some(opts.stop_time))?;
     for p in &opts.parameters {
-        inst.set_numeric(p.ty.wire(), &[p.value_reference], &[p.value])?;
+        inst.set_numeric(p.ty.wire(), &[p.value_reference], &p.values)?;
     }
     inputs.apply(inst, opts, opts.start_time)?;
     inst.exit_initialization_mode()

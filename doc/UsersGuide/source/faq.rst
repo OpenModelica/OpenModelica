@@ -58,7 +58,7 @@ OMNotebook
        application into OMNotebook, but the graphic does not appear.
        What is wrong?
 
--  A: OMNotebook supports the graphic picture formats supported by Qt 4,
+-  A: OMNotebook supports the graphic picture formats supported by Qt,
        including the .png, .bmp (bitmap) formats, but not for example
        the gif format. Try to convert your picture into one of the
        supported formats, (e.g. in Word, first do paste as bitmap

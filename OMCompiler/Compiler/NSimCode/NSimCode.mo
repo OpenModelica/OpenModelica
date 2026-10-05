@@ -47,6 +47,7 @@ import Flags;
 import HashTableCrefSimVar;
 import List;
 import Pointer;
+import PointerWeak;
 import UnorderedMap;
 import Util;
 import ProgramUtil;
@@ -84,6 +85,7 @@ protected
   import NBVariable.{VariablePointers, VarData};
   import BVariable = NBVariable;
   import Partition = NBPartition;
+  import NBResizable;
 
   // SimCode imports
   import SimCodeUtil = NSimCodeUtil;
@@ -91,7 +93,7 @@ protected
   import SimGenericCall = NSimGenericCall;
   import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
-  import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
+  import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo, ConvertMemo};
 
   // Old SimCode imports
   import HashTableCrIListArray;
@@ -237,7 +239,6 @@ public
       EventInfo eventInfo;
       Option<DaeModeData> daeModeData                   "Simulation system in case of DAEMode";
       list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
-      //Option<OMSIData> omsiData "used for OMSI to generate equations code";
     end SIM_CODE;
 
     function toString
@@ -285,7 +286,7 @@ public
     end toString;
 
     function create
-      input BackendDAE bdae;
+      input BackendDAE bdae_in;
       input Absyn.Path name;
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
@@ -296,7 +297,20 @@ public
       partial function mapExp
         input output Expression exp;
       end mapExp;
+      BackendDAE bdae = bdae_in;
     algorithm
+      // derived dimensions of resizable arrays (N-1) get a size parameter each
+      if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and not Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+        bdae := match bdae
+          local
+            BackendDAE b;
+          case b as BackendDAE.MAIN() algorithm
+            b.varData := NBResizable.addDimensionParameters(b.varData);
+          then b;
+          else bdae;
+        end match;
+      end if;
+
       simCode := match bdae
         local
           // auxillaries
@@ -316,7 +330,7 @@ public
           SimCodeIndices simCodeIndices;
           UnorderedMap<Expression, Integer> literals_map = UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
           list<SimPartition> clockedPartitions;
-          Pointer<Integer> literals_idx = Pointer.create(0);
+          Pointer<Integer> literals_idx;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimGenericCall> generic_loop_calls;
@@ -341,6 +355,11 @@ public
             funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
+            // Not a default on the declaration above: the bootstrap compiler
+            // does not record a package dependency for a call that only appears
+            // in a local's default, and this is NSimCode's sole use of Pointer,
+            // so the generated C would lose its #include.
+            literals_idx := Pointer.create(0);
             collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
             UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
@@ -357,8 +376,6 @@ public
             nominal := {};
             min := {};
             max := {};
-            // all non constant parameter equations will be added to the initial system.
-            // There is no actual need for parameter equations block
             param := {};
             algorithms := {};
 
@@ -423,6 +440,15 @@ public
             (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := SimCodeUtilShared.createFunctions(program, oldFunctionTree);
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
+
+            // min, max and nominal attributes that have to be evaluated after the parameters, they come
+            // before the parameters in the info file, so they need indices in that order
+            (min, max, nominal, simCodeIndices) := SimStrongComponent.Block.createAttributeBlocks(
+              {varData.states, varData.algebraics, varData.discretes, varData.discrete_states}, simCodeIndices, simcode_map, bdae.parameters);
+
+            // the bindings of the primary parameters are solved before the initialization, they come after the
+            // equations and before the Jacobians in the info file, so they need indices in that order
+            (param, simCodeIndices) := SimStrongComponent.Block.createParameterBlocks(bdae.parameters, simCodeIndices, simcode_map, equation_map);
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
@@ -523,12 +549,14 @@ public
       OldSimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
       list<SimVar> residualVars;
+      ConvertMemo memo;
     algorithm
-      modelInfo := ModelInfo.convert(simCode.modelInfo);
+      memo := SimVar.newConvertMemo(UnorderedMap.size(simCode.simcode_map));
+      modelInfo := ModelInfo.convert(simCode.modelInfo, memo);
       (zeroCrossings, relations, timeEvents, spatialInfo) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
       (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
-      crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
+      crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map, memo);
       // do we still need the following for DAE mode?
       if isSome(simCode.daeModeData) then
         SOME(DAE_MODE_DATA(residualVars = residualVars)) := simCode.daeModeData;
@@ -590,8 +618,8 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},
-        omsiData                      = NONE(),
-        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
+        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
+        fmiFigures                    = {});
     end convert;
 
     function getDirectoryAndLibs
@@ -725,6 +753,7 @@ public
 
     function convert
       input ModelInfo modelInfo;
+      input ConvertMemo memo;
       output OldSimCode.ModelInfo oldModelInfo;
     protected
       OldSimCode.VarInfo varInfo;
@@ -740,7 +769,7 @@ public
         directory                       = modelInfo.directory,
         fileName                        = modelInfo.fileName,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
-        vars                            = SimVar.SimVars.convert(modelInfo.vars),
+        vars                            = SimVar.SimVars.convert(modelInfo.vars, memo),
         functions                       = modelInfo.functions,
         labels                          = modelInfo.labels,
         resourcePaths                   = modelInfo.resourcePaths,
@@ -891,7 +920,7 @@ public
     protected
       ComponentRef seedCref, cref;
     algorithm
-      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", PointerWeak.downgrade(Pointer.createImmutable(NBVariable.DUMMY_VARIABLE))), Type.UNKNOWN());
       for var in listReverse(simulationAlgVars) loop
         cref := ComponentRef.append(var.name, seedCref);
         print("Searching for: " + ComponentRef.toString(cref) + "\n");

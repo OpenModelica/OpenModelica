@@ -12,7 +12,7 @@
 // `rt_record_release` frees the captured values.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use crate::CodegenWasmJitFunctions::HashMap;
 use std::sync::Arc;
 
 use arcstr::ArcStr;
@@ -23,8 +23,9 @@ use openmodelica_simcode_types::SimCodeFunction;
 use wasm_encoder as we;
 
 use super::{
-    FnCtx, FnSig, SigTy, WTy, WTyVal, coerce, compile_exp, emit_record_alloc,
-    emit_record_construction, mangle, mem_arg, record_layout, rt_index, sig_ty, var_sigtys,
+    FnCtx, FnSig, SigTy, WTy, WTyVal, coerce, compile_call_args, compile_exp, emit_record_alloc,
+    emit_record_construction, mangle, mem_arg, record_layout, release_record_temps, rt_index, sig_ty,
+    var_sigtys,
 };
 
 /// The closure object's own fields: the thunk's table index and the `env` handle.
@@ -61,7 +62,7 @@ struct ClosurePool {
 
 thread_local! {
     static POOL: RefCell<ClosurePool> = RefCell::new(ClosurePool {
-        thunks: Vec::new(), by_key: HashMap::new(), types: Vec::new(), type_base: 0, base_global: 0,
+        thunks: Vec::new(), by_key: HashMap::default(), types: Vec::new(), type_base: 0, base_global: 0,
     });
 }
 
@@ -78,7 +79,7 @@ pub(crate) fn begin(type_base: u32, base_global: u32) {
     POOL.with(|p| {
         *p.borrow_mut() = ClosurePool {
             thunks: Vec::new(),
-            by_key: HashMap::new(),
+            by_key: HashMap::default(),
             types: Vec::new(),
             type_base,
             base_global,
@@ -113,8 +114,8 @@ fn intern_type(params: &[SigTy], results: &[SigTy]) -> u32 {
 
 /// The `SigTy` of a `FUNCTION_PTR` function argument — what its holder may call.
 pub(crate) fn function_ptr_sigty(
-    tys: &Arc<List<Arc<DAE::Type>>>,
-    args: &Arc<List<Arc<SimCodeFunction::Variable::Variable>>>,
+    tys: &List<metamodelica::Ref<DAE::Type>>,
+    args: &List<metamodelica::Ref<SimCodeFunction::Variable::Variable>>,
 ) -> Result<SigTy> {
     let results: Result<Vec<SigTy>> = (&**tys).into_iter().map(|t| sig_ty(t)).collect();
     Ok(SigTy::Func { params: Arc::new(var_sigtys(args)?), results: Arc::new(results?) })
@@ -159,7 +160,7 @@ pub(crate) fn compile_parteval(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<()> {
     let DAE::Exp::PARTEVALFUNCTION { path, expList, ty, origType } = exp else {
         return Err("CodegenWasmJit: not a PARTEVALFUNCTION");
     };
-    let exps: Vec<&Arc<DAE::Exp>> = (&**expList).into_iter().collect();
+    let exps: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expList).into_iter().collect();
     emit_reference(ctx, &mangle(path)?, &exps, ty, origType)
 }
 
@@ -170,14 +171,14 @@ pub(crate) fn compile_fnref_cref(
     cref: &DAE::ComponentRef,
     ty: &DAE::Type,
 ) -> Result<()> {
-    let path = ComponentReference::crefToPath(Arc::new(cref.clone()))?;
+    let path = ComponentReference::crefToPath(&metamodelica::Ref::new(cref.clone()))?;
     emit_reference(ctx, &mangle(&path)?, &[], ty, ty)
 }
 
 fn emit_reference(
     ctx: &mut FnCtx,
     target: &str,
-    exps: &[&Arc<DAE::Exp>],
+    exps: &[&metamodelica::Ref<DAE::Exp>],
     ty: &DAE::Type,
     origType: &DAE::Type,
 ) -> Result<()> {
@@ -268,11 +269,12 @@ fn intern_thunk(
     for i in 0..all_names.len() {
         match applied.iter().position(|a| *a == i) {
             // An applied argument: read it out of the environment, retained —
-            // the target consumes its heap parameters, the closure keeps its own.
+            // the target consumes its heap parameters (records it only borrows),
+            // the closure keeps its own.
             Some(k) => {
                 let off = env_layout.data_off + env_layout.field_off[k];
                 load_env_field(&mut f, env_off, off, applied_tys[k].wty());
-                if applied_tys[k].is_heap() {
+                if applied_tys[k].is_heap() && !matches!(applied_tys[k], SigTy::Record { .. }) {
                     load_env_field(&mut f, env_off, off, WTy::I32);
                     f.instruction(&I::Call(rt_index("rt_retain")?));
                 }
@@ -303,25 +305,23 @@ fn intern_thunk(
 pub(crate) fn compile_fnptr_call(
     ctx: &mut FnCtx,
     name: &str,
-    args: &Arc<List<Arc<DAE::Exp>>>,
+    args: &List<metamodelica::Ref<DAE::Exp>>,
 ) -> Result<Vec<SigTy>> {
     let Some((local, SigTy::Func { params, results })) = ctx.locals.get(name).cloned() else {
         return Err("CodegenWasmJit: function-pointer calls are only supported through a local variable");
     };
-    let argv: Vec<&Arc<DAE::Exp>> = (&**args).into_iter().collect();
+    let argv: Vec<&metamodelica::Ref<DAE::Exp>> = (&**args).into_iter().collect();
     if argv.len() != params.len() {
         return Err("CodegenWasmJit: function-pointer call argument count mismatch");
     }
     let (fn_off, _) = closure_offsets();
     ctx.emit(we::Instruction::LocalGet(local)); // the closure, borrowed as `env`
-    for (a, p) in argv.iter().zip(params.iter()) {
-        let w = compile_exp(ctx, a)?;
-        coerce(ctx, w, p.wty());
-    }
+    let temps = compile_call_args(ctx, &argv, &params)?;
     ctx.emit(we::Instruction::LocalGet(local));
     ctx.emit(we::Instruction::I32Load(mem_arg(fn_off, 2)));
     let type_index = intern_type(&params, &results);
     ctx.emit(we::Instruction::CallIndirect { type_index, table_index: 0 });
+    release_record_temps(ctx, &temps)?;
     Ok((*results).clone())
 }
 

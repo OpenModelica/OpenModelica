@@ -57,8 +57,8 @@
 
 // =============================================================================
 // In order to compile the XMLDump module (XMLDump.mo package)
-// XMLDump.mo text in the Compiler/Makefile.common file (SRCMO
-// variable) has been added.
+// XMLDump.mo has been added to the MetaModelica source list in
+// Compiler/.cmake/meta_modelica_source_list.cmake.
 // =============================================================================
 
 
@@ -2463,18 +2463,9 @@ protected function dumpMatching1
   input Integer voffset;
   input Integer eoffset;
 algorithm
-   ():=
-  matchcontinue eoffset
-  case _
-    algorithm
-      false := intGt(arrayLength(v),0);
-    then();
-  case _
-    algorithm
-      true := intGt(arrayLength(v),0);
-      Array.fold(v,dumpMatching2,(1,voffset,eoffset));
-  then();
-    end matchcontinue;
+  if intGt(arrayLength(v),0) then
+    Array.fold(v,dumpMatching2,(1,voffset,eoffset));
+  end if;
 end dumpMatching1;
 
 

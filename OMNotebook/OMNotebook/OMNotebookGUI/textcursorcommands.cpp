@@ -536,4 +536,48 @@ namespace IAEX
     }
   }
 
+  /*!
+   * \class TextCursorInsertWebLink
+   *
+   * \brief Command for inserting or changing a link to a web page.
+   *
+   * The link is stored as a normal anchor (<a href="http...">), the href is
+   * not a file path and is left untouched by UpdateLinkVisitor.
+   * If text is empty or equal to the selected text the selection keeps its
+   * formatting and only gets the link. Otherwise the selection is replaced
+   * by the given text (or by the url, if there is no text).
+   */
+  void TextCursorInsertWebLink::execute()
+  {
+    if( cursor.isNull() )
+      return;
+
+    QTextCharFormat linkFormat;
+    linkFormat.setAnchor( true );
+    linkFormat.setAnchorHref( url_ );
+    linkFormat.setForeground( QBrush( Qt::blue ) );
+    linkFormat.setFontUnderline( true );
+
+    QString selected = cursor.selectedText();
+    selected.replace( QChar::ParagraphSeparator, QLatin1Char(' ') );
+    selected.replace( QChar::LineSeparator, QLatin1Char(' ') );
+
+    if( cursor.hasSelection() && ( text_.isEmpty() || text_ == selected ) )
+    {
+      cursor.mergeCharFormat( linkFormat );
+    }
+    else
+    {
+      QTextCharFormat format = cursor.charFormat();
+      format.merge( linkFormat );
+      cursor.insertText( text_.isEmpty() ? url_ : text_, format );
+    }
+
+    // set the cursor, so there is no selection
+    cursor.clearSelection();
+    QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+    if( editor )
+      editor->setTextCursor( cursor );
+  }
+
 }

@@ -48,6 +48,7 @@ public import UnorderedMap;
 public import UnorderedSet;
 
 protected import Absyn;
+protected import AbsynUtil;
 protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import BackendEquation;
@@ -487,9 +488,21 @@ protected function addExtendReplacement
   output CrefSet outExtendrepl = extendrepl;
 protected
   list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>>> worklist = {(cr, preCr)};
-  DAE.ComponentRef wcr;
+  DAE.ComponentRef wcr, pk;
   Option<DAE.ComponentRef> wpre;
 algorithm
+  // A walk adds the prefixes top-down, so when the deepest one is present
+  // already only the last identifier is left to handle.
+  if isNone(preCr) then
+    try
+      DAE.CREF_QUAL() := cr;
+      pk := ComponentReference.crefStripLastIdent(cr);
+      if UnorderedSet.contains(ComponentReferenceBasics.crefStripLastSubs(pk), extendrepl) then
+        worklist := {(ComponentReferenceBasics.crefLastCref(cr), SOME(pk))};
+      end if;
+    else
+    end try;
+  end if;
   // The replacement set is mutated in-place, so visiting order does not matter
   while not listEmpty(worklist) loop
     (wcr, wpre) := listHead(worklist);
@@ -723,7 +736,7 @@ public function replaceExp "Takes a set of replacement rules and an expression a
   output Boolean replacementPerformed;
 algorithm
   (outExp,replacementPerformed) :=
-  matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  match (inExp,inFuncTypeExpExpToBooleanOption)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3, solverMethod, resolution, startInterval;
@@ -750,241 +763,282 @@ algorithm
 
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
-    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident=ident)),repl,_)
+    case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident=ident)),_)
       guard
-        isIterationVar(repl, ident)
+        isIterationVar(inVariableReplacements, ident)
       then
-        (e,false);
-    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (inExp,false);
+    case (DAE.CREF(componentRef = cr,ty = t),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (cr,_) := replaceCrefSubs(cr,repl,cond);
-        e1 := getReplacement(repl, cr);
-        e2 := avoidDoubleHashLookup(e1,t);
-      then
-        (e2,true);
-    case ((e as DAE.CREF(componentRef = cr, ty = t)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        // only expand cref if dimensions are fixed
-        (_, dims) := TypesDump.flattenArrayType(t);
-        true := List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
-
-        (cr,_) := replaceCrefSubs(cr,repl,cond);
-        true := hasExtendReplacement(repl, cr);
-        (e2,true) := Expression.extendArrExp(e,false);
-        (e3,_) := replaceExp(e2,repl,cond);
-      then
-        (e3,true);
-    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        (cr,true) := replaceCrefSubs(cr,repl,cond);
-      then (DAE.CREF(cr,t),true);
-    case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        true := c1 or c2;
-      then
-        (DAE.BINARY(e1_1,op,e2_1),true);
-    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        true := c1 or c2;
-      then
-        (DAE.LBINARY(e1_1,op,e2_1),true);
-    case ((e as DAE.UNARY(operator = op,exp = e1)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        (e1_1,true) := replaceExp(e1, repl, cond);
-      then
-        (DAE.UNARY(op,e1_1),true);
-    case ((e as DAE.LUNARY(operator = op,exp = e1)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        (e1_1,true) := replaceExp(e1, repl, cond);
-      then
-        (DAE.LUNARY(op,e1_1),true);
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),repl,cond)
-      algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        true := c1 or c2;
-      then
-        (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),true);
-    case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        (e3_1,c3) := replaceExp(e3, repl, cond);
-        true := c1 or c2 or c3;
-      then
-        (DAE.IFEXP(e1_1,e2_1,e3_1),true);
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
-      algorithm
-        SOME(e) := UnorderedMap.getOrFail(cr, derConst);
-        (e,_) := replaceExp(e, inVariableReplacements, cond);
-      then
-        (e,true);
-    case ((e as DAE.CALL(path = path,expLst = expl,attr = attr)),repl,cond)
-        guard replaceExpCond(cond, e)
-      algorithm
-        cr := ComponentReference.toExpCref(AbsynUtil.pathToCref(path));
-        if hasReplacement(repl,cr) then
-          e1_1 := getReplacement(repl,cr);
-          DAE.PARTEVALFUNCTION(path=path,expList = expl_1) := e1_1;
-          expl := listAppend(expl_1,expl);
+        if ComponentReferenceBasics.crefHasNoSubscripts(cr) then
+          c := false;
+        else
+          (cr,c) := replaceCrefSubs(cr,inVariableReplacements,cond);
         end if;
-        (expl_1,true) := replaceExpList(expl, repl, cond);
+        try
+          e1 := getReplacement(inVariableReplacements, cr);
+          e := avoidDoubleHashLookup(e1,t);
+          c := true;
+        else
+          try
+            // only expand cref if dimensions are fixed
+            (_, dims) := TypesDump.flattenArrayType(t);
+            true := List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
+
+            true := hasExtendReplacement(inVariableReplacements, cr);
+            (e2,true) := Expression.extendArrExp(inExp,false);
+            (e,_) := replaceExp(e2,inVariableReplacements,cond);
+            c := true;
+          else
+            e := if c then DAE.CREF(cr,t) else inExp;
+          end try;
+        end try;
       then
-        (DAE.CALL(path,expl_1,attr),true);
-    case (DAE.RECORD(path, expl, fields, t), repl, cond)
+        (e,c);
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        // add all constant attribute bindings to the replacements
-        // partially fixes ticket #9036
-        repl := addConstantRecordReplacements(t, expl, repl, inFuncTypeExpExpToBooleanOption);
-        (expl, true) := replaceExpList(expl, repl, cond);
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
       then
-        (DAE.RECORD(path, expl, fields, t), true);
+        (if c1 or c2 then DAE.BINARY(e1_1,op,e2_1) else inExp, c1 or c2);
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),cond)
+        guard replaceExpCond(cond, inExp)
+      algorithm
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
+      then
+        (if c1 or c2 then DAE.LBINARY(e1_1,op,e2_1) else inExp, c1 or c2);
+    case (DAE.UNARY(operator = op,exp = e1),cond)
+        guard replaceExpCond(cond, inExp)
+      algorithm
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+      then
+        (if c1 then DAE.UNARY(op,e1_1) else inExp, c1);
+    case (DAE.LUNARY(operator = op,exp = e1),cond)
+        guard replaceExpCond(cond, inExp)
+      algorithm
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+      then
+        (if c1 then DAE.LUNARY(op,e1_1) else inExp, c1);
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),cond)
+      algorithm
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
+      then
+        (if c1 or c2 then DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB) else inExp, c1 or c2);
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),cond)
+        guard replaceExpCond(cond, inExp)
+      algorithm
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
+        (e3_1,c3) := replaceExp(e3, inVariableReplacements, cond);
+      then
+        (if c1 or c2 or c3 then DAE.IFEXP(e1_1,e2_1,e3_1) else inExp, c1 or c2 or c3);
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),cond)
+      algorithm
+        try
+          SOME(derConst) := inVariableReplacements.derConst;
+          SOME(e) := UnorderedMap.getOrFail(cr, derConst);
+          (e,_) := replaceExp(e, inVariableReplacements, cond);
+          c := true;
+        else
+          if replaceExpCond(cond, inExp) then
+            (e,c) := replaceCallExp(inExp, inVariableReplacements, cond);
+          else
+            (e,c) := (inExp,false);
+          end if;
+        end try;
+      then
+        (e,c);
+    case (DAE.CALL(),cond)
+        guard replaceExpCond(cond, inExp)
+      algorithm
+        (e,c) := replaceCallExp(inExp, inVariableReplacements, cond);
+      then
+        (e,c);
+    case (DAE.RECORD(path, expl, fields, t), cond)
+      algorithm
+        try
+          // add all constant attribute bindings to the replacements
+          // partially fixes ticket #9036
+          repl := addConstantRecordReplacements(t, expl, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
+          (expl, c) := replaceExpList(expl, repl, cond);
+        else
+          c := false;
+        end try;
+      then
+        (if c then DAE.RECORD(path, expl, fields, t) else inExp, c);
     // RATIONAL_CLOCK
-    case (DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter=e, resolution=resolution)), repl, cond)
+    case (DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter=e, resolution=resolution)), cond)
       algorithm
-        (e, c1) := replaceExp(e, repl, cond);
-        (resolution, c2) := replaceExp(resolution, repl, cond);
+        (e, c1) := replaceExp(e, inVariableReplacements, cond);
+        (resolution, c2) := replaceExp(resolution, inVariableReplacements, cond);
         c3 := c1 or c2;
       then
         (if c3 then DAE.CLKCONST(DAE.RATIONAL_CLOCK(e, resolution)) else inExp, c3);
     // REAL_CLOCK
-    case (DAE.CLKCONST(DAE.REAL_CLOCK(interval=e)), repl, cond)
+    case (DAE.CLKCONST(DAE.REAL_CLOCK(interval=e)), cond)
       algorithm
-        (e, c1) := replaceExp(e, repl, cond);
+        (e, c1) := replaceExp(e, inVariableReplacements, cond);
       then
         (if c1 then DAE.CLKCONST(DAE.REAL_CLOCK(e)) else inExp, c1);
     // EVENT_CLOCK
-    case (DAE.CLKCONST(DAE.EVENT_CLOCK(condition=e, startInterval=startInterval)), repl, cond)
+    case (DAE.CLKCONST(DAE.EVENT_CLOCK(condition=e, startInterval=startInterval)), cond)
       algorithm
-        (e, c1) := replaceExp(e, repl, cond);
-        (startInterval, c2) := replaceExp(startInterval, repl, cond);
+        (e, c1) := replaceExp(e, inVariableReplacements, cond);
+        (startInterval, c2) := replaceExp(startInterval, inVariableReplacements, cond);
         c3 := c1 or c2;
       then
         (if c3 then DAE.CLKCONST(DAE.EVENT_CLOCK(e, startInterval)) else inExp, c3);
     // SOLVER_CLOCK
-    case (DAE.CLKCONST(DAE.SOLVER_CLOCK(c=e, solverMethod=solverMethod)), repl, cond)
+    case (DAE.CLKCONST(DAE.SOLVER_CLOCK(c=e, solverMethod=solverMethod)), cond)
       algorithm
-        (e, c1) := replaceExp(e, repl, cond);
-        (solverMethod, c2) := replaceExp(solverMethod, repl, cond);
+        (e, c1) := replaceExp(e, inVariableReplacements, cond);
+        (solverMethod, c2) := replaceExp(solverMethod, inVariableReplacements, cond);
         c3 := c1 or c2;
       then
         (if c3 then DAE.CLKCONST(DAE.SOLVER_CLOCK(e, solverMethod)) else inExp, c3);
 
-    case ((e as DAE.PARTEVALFUNCTION(path,expl,tp,t)),repl,cond)
-        guard replaceExpCond(cond, e)
+    case (DAE.PARTEVALFUNCTION(path,expl,tp,t),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (expl_1,true) := replaceExpList(expl, repl, cond);
+        (expl_1,c1) := replaceExpList(expl, inVariableReplacements, cond);
       then
-        (DAE.PARTEVALFUNCTION(path,expl_1,tp,t),true);
-    case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.PARTEVALFUNCTION(path,expl_1,tp,t) else inExp, c1);
+    case (DAE.ARRAY(ty = tp,scalar = c,array = expl),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (expl_1,true) := replaceExpList(expl, repl, cond);
+        (expl_1,c1) := replaceExpList(expl, inVariableReplacements, cond);
       then
-        (DAE.ARRAY(tp,c,expl_1),true);
-    case ((e as DAE.MATRIX(ty = t,integer = b,matrix = bexpl)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.ARRAY(tp,c,expl_1) else inExp, c1);
+    case (DAE.MATRIX(ty = t,integer = b,matrix = bexpl),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (bexpl_1,true) := replaceExpMatrix(bexpl, repl, cond);
+        (bexpl_1,c1) := replaceExpMatrix(bexpl, inVariableReplacements, cond);
       then
-        (DAE.MATRIX(t,b,bexpl_1),true);
-    case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.MATRIX(t,b,bexpl_1) else inExp, c1);
+    case (DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        true := c1 or c2;
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
       then
-        (DAE.RANGE(tp,e1_1,NONE(),e2_1),true);
-    case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e3),stop = e2)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 or c2 then DAE.RANGE(tp,e1_1,NONE(),e2_1) else inExp, c1 or c2);
+    case (DAE.RANGE(ty = tp,start = e1,step = SOME(e3),stop = e2),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        (e3_1,c3) := replaceExp(e3, repl, cond);
-        true := c1 or c2 or c3;
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
+        (e3_1,c3) := replaceExp(e3, inVariableReplacements, cond);
       then
-        (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),true);
-    case ((e as DAE.TUPLE(PR = expl)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 or c2 or c3 then DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1) else inExp, c1 or c2 or c3);
+    case (DAE.TUPLE(PR = expl),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (expl_1,true) := replaceExpList(expl, repl, cond);
+        (expl_1,c1) := replaceExpList(expl, inVariableReplacements, cond);
       then
-        (DAE.TUPLE(expl_1),true);
-    case ((e as DAE.CAST(ty = tp,exp = e1)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.TUPLE(expl_1) else inExp, c1);
+    case (DAE.CAST(ty = tp,exp = e1),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,true) := replaceExp(e1, repl, cond);
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
       then
-        (DAE.CAST(tp,e1_1),true);
-    case ((e as DAE.ASUB(exp = e1,sub = subs)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.CAST(tp,e1_1) else inExp, c1);
+    case (DAE.ASUB(exp = e1,sub = subs),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        expl := List.map(subs, Expression.getSubscriptExp);
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (expl,c2) := replaceExpList(expl, repl, cond);
-        true := c1 or c2;
+        try
+          expl := List.map(subs, Expression.getSubscriptExp);
+          (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+          (expl,c2) := replaceExpList(expl, inVariableReplacements, cond);
+          true := c1 or c2;
+          e := Expression.makeASUB(e1_1,expl);
+          c := true;
+        else
+          (e,c) := (inExp,false);
+        end try;
       then
-        (Expression.makeASUB(e1_1,expl),true);
-    case ((DAE.TSUB(exp = e1,ix = i, ty = tp)),repl,cond)
+        (e,c);
+    case ((DAE.TSUB(exp = e1,ix = i, ty = tp)),cond)
+        guard replaceExpCond(cond, e1)
       algorithm
-        true := replaceExpCond(cond, e1);
-        (e1_1,true) := replaceExp(e1, repl, cond);
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
       then
-        (DAE.TSUB(e1_1,i,tp),true);
-    case ((DAE.RSUB(exp = e1,ix = i, fieldName = ident, ty = tp)),repl,cond)
+        (if c1 then DAE.TSUB(e1_1,i,tp) else inExp, c1);
+    case ((DAE.RSUB(exp = e1,ix = i, fieldName = ident, ty = tp)),cond)
+        guard replaceExpCond(cond, e1)
       algorithm
-        true := replaceExpCond(cond, e1);
-        (e1_1,true) := replaceExp(e1, repl, cond);
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
       then
-        (DAE.RSUB(e1_1,i,ident,tp),true);
-    case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.RSUB(e1_1,i,ident,tp) else inExp, c1);
+    case (DAE.SIZE(exp = e1,sz = SOME(e2)),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,c1) := replaceExp(e1, repl, cond);
-        (e2_1,c2) := replaceExp(e2, repl, cond);
-        true := c1 or c2;
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
+        (e2_1,c2) := replaceExp(e2, inVariableReplacements, cond);
       then
-        (DAE.SIZE(e1_1,SOME(e2_1)),true);
-    case (DAE.CODE(code = a,ty = tp),_,_)
+        (if c1 or c2 then DAE.SIZE(e1_1,SOME(e2_1)) else inExp, c1 or c2);
+    case (DAE.CODE(code = a,ty = tp),_)
       algorithm
         print("replace_exp on CODE not impl.\n");
       then
         (DAE.CODE(a,tp),false);
-    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
-        guard replaceExpCond(cond, e)
+    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,_) := replaceExp(e1, repl, cond);
-        (iters,true) := replaceExpIters(iters, repl, cond);
-      then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);
-    case ((e as DAE.BOX(exp = e1)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (e1_1,_) := replaceExp(e1, inVariableReplacements, cond);
+        (iters,c1) := replaceExpIters(iters, inVariableReplacements, cond);
+      then (if c1 then DAE.REDUCTION(reductionInfo,e1_1,iters) else inExp, c1);
+    case (DAE.BOX(exp = e1),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,true) := replaceExp(e1, repl, cond);
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
       then
-        (DAE.BOX(e1_1),true);
-    case ((e as DAE.UNBOX(ty=tp, exp = e1)),repl,cond)
-        guard replaceExpCond(cond, e)
+        (if c1 then DAE.BOX(e1_1) else inExp, c1);
+    case (DAE.UNBOX(ty=tp, exp = e1),cond)
+        guard replaceExpCond(cond, inExp)
       algorithm
-        (e1_1,true) := replaceExp(e1, repl, cond);
+        (e1_1,c1) := replaceExp(e1, inVariableReplacements, cond);
       then
-        (DAE.UNBOX(e1_1,tp),true);
+        (if c1 then DAE.UNBOX(e1_1,tp) else inExp, c1);
     else
       then (inExp,false);
-  end matchcontinue;
+  end match;
 end replaceExp;
+
+protected function replaceCallExp
+  "The call case of replaceExp: a partially applied function replaced for
+  the called name contributes its bound arguments."
+  input DAE.Exp inExp;
+  input VariableReplacements inVariableReplacements;
+  input Option<FuncTypeExp_ExpToBoolean> cond;
+  output DAE.Exp outExp;
+  output Boolean replacementPerformed;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp e1;
+  Absyn.Path path;
+  list<DAE.Exp> expl, expl_1;
+  DAE.CallAttributes attr;
+algorithm
+  try
+    DAE.CALL(path = path, expLst = expl, attr = attr) := inExp;
+    cr := ComponentReference.toExpCref(AbsynUtil.pathToCref(path));
+    if hasReplacement(inVariableReplacements,cr) then
+      e1 := getReplacement(inVariableReplacements,cr);
+      DAE.PARTEVALFUNCTION(path=path,expList = expl_1) := e1;
+      expl := listAppend(expl_1,expl);
+    end if;
+    (expl_1,true) := replaceExpList(expl, inVariableReplacements, cond);
+    outExp := DAE.CALL(path,expl_1,attr);
+    replacementPerformed := true;
+  else
+    outExp := inExp;
+    replacementPerformed := false;
+  end try;
+end replaceCallExp;
 
 function addConstantRecordReplacements
   "adds replacements regarding constant elements of records.
@@ -999,13 +1053,14 @@ algorithm
   repl := match ty
     local
       DAE.Exp bind;
+      Absyn.Path path;
 
-    case DAE.T_COMPLEX() algorithm
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path)) algorithm
       for var in ty.varLst loop
         // only do something if there is a binding
         if DAEUtil.isBound(var.binding) then
           SOME(bind) := DAEUtil.bindingExp(var.binding);
-          cref := getRecordElement(var.name, expl);
+          cref := getRecordElement(var.name, expl, path);
           // only replace if the expression is const and the name was found
           // if replacement already happened the name might not be found -> no error!
           if Expression.isConst(bind) and not ComponentReference.isWild(cref) then
@@ -1020,14 +1075,20 @@ end addConstantRecordReplacements;
 
 function getRecordElement
   "takes an attribute name and the list of full attribute names.
-  returns the cref of which the last ident matches the required name."
+  returns the cref of which the last ident matches the required name, and which
+  is an element of a record of the given type. A record expression may also be
+  built from the elements of a different record, and those are unrelated to this
+  record's bindings even when a name matches."
   input DAE.Ident name;
   input list<DAE.Exp> expl;
+  input Absyn.Path recordPath;
   output DAE.ComponentRef cref = DAE.WILD();
 algorithm
   for e in expl loop
     () := match e
-      case DAE.CREF() guard(ComponentReferenceBasics.crefLastIdent(e.componentRef) == name)
+      case DAE.CREF()
+        guard ComponentReferenceBasics.crefLastIdent(e.componentRef) == name and
+              isElementOfRecord(e.componentRef, recordPath)
         algorithm
           cref := e.componentRef;
           return;
@@ -1036,6 +1097,29 @@ algorithm
     end match;
   end for;
 end getRecordElement;
+
+function isElementOfRecord
+  "Whether the cref names an element of a record of the given type."
+  input DAE.ComponentRef cref;
+  input Absyn.Path recordPath;
+  output Boolean res;
+protected
+  Absyn.Path path;
+algorithm
+  res := match cref
+    case DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT())
+      algorithm
+        res := match Types.arrayElementType(cref.identType)
+          case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path))
+            then AbsynUtil.pathEqual(path, recordPath);
+          else false;
+        end match;
+      then res;
+
+    case DAE.CREF_QUAL() then isElementOfRecord(cref.componentRef, recordPath);
+    else false;
+  end match;
+end isElementOfRecord;
 
 public function replaceCref"replaces a cref.
 author: Waurich TUD 2014-06"
@@ -2229,7 +2313,7 @@ algorithm
     Option<DAE.Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
-    Option<DAE.Exp> startOrigin;
+    Option<DAE.StartOrigin> startOrigin;
   case DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin)
     algorithm
@@ -2242,7 +2326,6 @@ algorithm
     fixed := replaceOptionExp(fixed,repl);
     nominal := replaceOptionExp(nominal,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
@@ -2255,7 +2338,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
@@ -2265,7 +2347,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin)
@@ -2274,7 +2355,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin)
@@ -2285,7 +2365,6 @@ algorithm
     start := replaceOptionExp(start,repl);
     fixed := replaceOptionExp(fixed,repl);
     equationBound := replaceOptionExp(equationBound,repl);
-    startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   else

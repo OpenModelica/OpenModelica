@@ -59,6 +59,13 @@ algorithm
   assert(false, getInstanceName());
 end getSimCode;
 
+function isSimulationCodegen
+  "This compiler is built to compile functions; it generates no simulation."
+  output Boolean simulation;
+algorithm
+  simulation := false;
+end isSimulationCodegen;
+
 function cref2simvar<A,B>
   input A inCref;
   input B inCrefToSimVarHT;
@@ -66,6 +73,29 @@ function cref2simvar<A,B>
 algorithm
   assert(false, getInstanceName());
 end cref2simvar;
+
+function isJacobianColumnCref<A>
+  input A cr;
+  output Boolean b;
+algorithm
+  assert(false, getInstanceName());
+end isJacobianColumnCref;
+
+function isContiguousArrayCref<A,B>
+  input A inCref;
+  input B context;
+  output Boolean outContiguous;
+algorithm
+  assert(false, getInstanceName());
+end isContiguousArrayCref;
+
+function simVarExactFromHT<A,B>
+  input A inCref;
+  input B simCode;
+  output Option<SimCodeVar.SimVar> outSimVar;
+algorithm
+  assert(false, getInstanceName());
+end simVarExactFromHT;
 
 function simVarFromHT<A,B>
   input A inCref;
@@ -75,28 +105,18 @@ algorithm
   assert(false, getInstanceName());
 end simVarFromHT;
 
-function localCref2SimVar<A,B>
-  input A inCref;
-  input B inCrefToSimVarHT;
-  output SimCodeVar.SimVar outSimVar;
-algorithm
-  assert(false, getInstanceName());
-end localCref2SimVar;
-
-function localCref2Index<A,B>
-  input A inCref;
-  input B inOMSIFunction;
-  output String outIndex;
-algorithm
-  assert(false, getInstanceName());
-end localCref2Index;
-
 function codegenExpSanityCheck
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
 algorithm
   /* Do nothing */
 end codegenExpSanityCheck;
+
+function unboxFunctionReferenceCall
+  input output DAE.Exp exp;
+algorithm
+  /* Do nothing */
+end unboxFunctionReferenceCall;
 
 function getExpNominal
   input output DAE.Exp e;
@@ -112,16 +132,6 @@ function getValueReference
 algorithm
   /* Do nothing */
 end getValueReference;
-
-function getLocalValueReference<A>
-  input SimCodeVar.SimVar inSimVar;
-  input SimCode.SimCode inSimCode;
-  input A inCrefToSimVarHT;
-  input Boolean inElimNegAliases "=false to keep negative alias references";
-  output String outValueReference;
-algorithm
-  /* Do nothing */
-end getLocalValueReference;
 
 public function hashEqSystemMod
   input SimCode.SimEqSystem eq;

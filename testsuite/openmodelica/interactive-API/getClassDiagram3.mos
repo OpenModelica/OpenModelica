@@ -1,0 +1,71 @@
+// name: getClassDiagram3
+// keywords: UML, class diagram, draw.io, #16938
+// status: correct
+//
+// Tests getClassDiagram with the draw.io format, where the text is escaped
+// twice (HTML in XML), the links of the classes and of the lines in them to
+// the lines of the elements in the file, with the names of the components,
+// and writing to a file.
+
+loadString("package D
+  partial model Base
+    parameter Real k = 1 \"Gain\";
+    parameter Boolean b = k < 2 and k > 0 \"Escaped\";
+    Real x;
+  end Base;
+  model Part
+    Real y;
+  end Part;
+  model M
+    extends Base(k = 2);
+    Part parts[3](each y = 1);
+  end M;
+end D;
+", "getClassDiagram3.mo"); getErrorString();
+
+getClassDiagram(D.M, format = "drawio"); getErrorString();
+getClassDiagram(D.M, "getClassDiagram3.puml"); getErrorString();
+readFile("getClassDiagram3.puml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "<mxfile host=\"OpenModelica\">
+//   <diagram id=\"D.M\" name=\"D.M\">
+//    <mxGraphModel>
+//     <root>
+//       <mxCell id=\"0\"/>
+//       <mxCell id=\"1\" parent=\"0\"/>
+//       <UserObject id=\"D_Base\" label=\"&lt;p style=&quot;margin:4px;text-align:center&quot;&gt;&lt;i&gt;&amp;#171;model&amp;#187;&lt;/i&gt;&lt;br/&gt;&lt;b&gt;&lt;i&gt;D.Base&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 4px&quot;&gt;&lt;a href=&quot;modelica://D.Base?lineNumber=3&amp;amp;element=k&quot; style=&quot;color:inherit;text-decoration:none&quot;&gt;+ parameter Real k = 1&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;modelica://D.Base?lineNumber=4&amp;amp;element=b&quot; style=&quot;color:inherit;text-decoration:none&quot;&gt;+ parameter Boolean b = k &amp;lt; 2 and k &amp;gt; 0&lt;/a&gt;&lt;br/&gt;&lt;a href=&quot;modelica://D.Base?lineNumber=5&amp;amp;element=x&quot; style=&quot;color:inherit;text-decoration:none&quot;&gt;+ Real x&lt;/a&gt;&lt;/p&gt;\" link=\"modelica://D.Base\"><mxCell style=\"verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=nowrap;\" vertex=\"1\" parent=\"1\"><mxGeometry x=\"20\" y=\"20\" width=\"293\" height=\"100\" as=\"geometry\"/></mxCell></UserObject>
+//       <UserObject id=\"D_Part\" label=\"&lt;p style=&quot;margin:4px;text-align:center&quot;&gt;&lt;i&gt;&amp;#171;model&amp;#187;&lt;/i&gt;&lt;br/&gt;&lt;b&gt;D.Part&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 4px&quot;&gt;&lt;a href=&quot;modelica://D.Part?lineNumber=8&amp;amp;element=y&quot; style=&quot;color:inherit;text-decoration:none&quot;&gt;+ Real y&lt;/a&gt;&lt;/p&gt;\" link=\"modelica://D.Part\"><mxCell style=\"verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=nowrap;\" vertex=\"1\" parent=\"1\"><mxGeometry x=\"353\" y=\"20\" width=\"76\" height=\"68\" as=\"geometry\"/></mxCell></UserObject>
+//       <UserObject id=\"D_M\" label=\"&lt;p style=&quot;margin:4px;text-align:center&quot;&gt;&lt;i&gt;&amp;#171;model&amp;#187;&lt;/i&gt;&lt;br/&gt;&lt;b&gt;D.M&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 4px&quot;&gt;&lt;a href=&quot;modelica://D.M?lineNumber=12&amp;amp;element=parts&quot; style=&quot;color:inherit;text-decoration:none&quot;&gt;+ Part parts[3](each y = 1)&lt;/a&gt;&lt;/p&gt;\" link=\"modelica://D.M\"><mxCell style=\"verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=nowrap;\" vertex=\"1\" parent=\"1\"><mxGeometry x=\"20\" y=\"200\" width=\"209\" height=\"68\" as=\"geometry\"/></mxCell></UserObject>
+//       <mxCell id=\"e1\" value=\"(k = 2)\" style=\"endArrow=block;endFill=0;endSize=12;html=1;\" edge=\"1\" parent=\"1\" source=\"D_M\" target=\"D_Base\"><mxGeometry relative=\"1\" as=\"geometry\"/></mxCell>
+//       <mxCell id=\"e2\" value=\"parts [3]\" style=\"startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;html=1;\" edge=\"1\" parent=\"1\" source=\"D_M\" target=\"D_Part\"><mxGeometry relative=\"1\" as=\"geometry\"/></mxCell>
+//     </root>
+//    </mxGraphModel>
+//   </diagram>
+// </mxfile>
+// "
+// ""
+// "getClassDiagram3.puml"
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"D.M\" as D_M <<model>> {
+//   {field} + Part parts[3](each y = 1)
+// }
+// abstract class \"D.Base\" as D_Base <<model>> {
+//   {field} + parameter Real k = 1
+//   {field} + parameter Boolean b = k < 2 and k > 0
+//   {field} + Real x
+// }
+// class \"D.Part\" as D_Part <<model>> {
+//   {field} + Real y
+// }
+// D_Base <|-- D_M : (k = 2)
+// D_M *-- \"[3]\" D_Part : parts
+// @enduml
+// "
+// ""
+// endResult

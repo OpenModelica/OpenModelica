@@ -52,9 +52,23 @@ fn abi_matches_the_c_headers() {
     assert!(checks.len() > 300, "the generator found almost nothing to check ({})", checks.len());
     let mut c = String::from(
         "#include <stddef.h>\n#include <stdio.h>\n#include \"simulation_data.h\"\n\
-         #include \"simulation/options.h\"\n\
-         int main(void){\n",
+         #include \"simulation/options.h\"\n",
     );
+    // `OMC_MINIMAL_RUNTIME` renames the solvers it does not ship, keeping the
+    // enumerators in place so the numbering is the same. Spell them the way the
+    // mirror does, which checks exactly that.
+    if cfg!(omc_fmi_runtime) {
+        c.push_str(
+            "#define LS_LIS LS_LIS_NOT_AVAILABLE\n\
+             #define LSS_LIS LSS_LIS_NOT_AVAILABLE\n\
+             #define NLS_HYBRID NLS_HYBRID_DOESNT_EXIST\n\
+             #define NLS_KINSOL NLS_KINSOL_DOESNT_EXIST\n\
+             #define NLS_KINSOL_B NLS_KINSOL_B_DOESNT_EXIST\n\
+             #define NLS_NEWTON NLS_NEWTON_DOESNT_EXIST\n\
+             #define NLS_MIXED NLS_MIXED_DOESNT_EXIST\n",
+        );
+    }
+    c.push_str("int main(void){\n");
     for (expr, _) in &checks {
         c.push_str(&format!("  printf(\"%zu\\n\", (size_t)({expr}));\n"));
     }
@@ -70,6 +84,11 @@ fn abi_matches_the_c_headers() {
     let mut cmd = Command::new(&cc);
     for inc in &includes {
         cmd.arg("-I").arg(inc);
+    }
+    // The FMU flavour mirrors the headers an FMU compiles, which are not the same
+    // layout: `OMC_MINIMAL_RUNTIME` shrinks `rtclock_t` and ends `DATA` early.
+    if cfg!(omc_fmi_runtime) {
+        cmd.arg("-DOMC_MINIMAL_RUNTIME=1").arg("-DOMC_FMI_RUNTIME=1");
     }
     cmd.arg(&src).arg("-o").arg(&exe);
     let out = cmd.output().expect("run the C compiler");

@@ -27,11 +27,11 @@ jit = ["wasmtime/cranelift", "wasmtime/parallel-compilation"]
 # `runtime` without `cranelift`: this side only deserializes what the exporter
 # precompiled. `gc` is not optional — a model with a torn nonlinear system uses
 # a funcref table, which needs the function-references/gc proposals.
-wasmtime = { version = "45", default-features = false, features = [
+wasmtime = { version = "48", default-features = false, features = [
   "std", "runtime", "component-model", "anyhow", "gc", "gc-null", "gc-drc",
 ] }
 # An FMU whose model has `external "C"` reaches libc, and libc imports WASI.
-wasmtime-wasi = { version = "45", default-features = false, features = ["p2"] }
+wasmtime-wasi = { version = "48", default-features = false, features = ["p2"] }
 # `external "C"` functions the FMU ships as platform libraries (`om:ext/native`).
 openmodelica_ext_native = { path = "../openmodelica_ext_native", features = ["utilities"] }
 

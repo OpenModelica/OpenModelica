@@ -27,8 +27,11 @@
 
 #ifndef __META_MODELICA_STRING_LIT__H
 #define __META_MODELICA_STRING_LIT__H
-extern void *mmc_emptystring;
-extern void *mmc_strings_len1[256];
-extern void *mmc_string_uninitialized;
-extern void *mmc_strings_boolString[2];
+#include "../omc_dll.h"
+#include "omc_string.h"
+/* meta/meta_modelica_string.h has MetaModelica's. */
+#if !defined(OMC_METAMODELICA_RUNTIME)
+DLLDataDirection extern modelica_string omc_string_uninitialized;
+DLLDataDirection extern modelica_string omc_strings_boolString[2];
+#endif /* !OMC_METAMODELICA_RUNTIME */
 #endif

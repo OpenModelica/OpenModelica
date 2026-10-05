@@ -78,7 +78,7 @@ try {
     if (!again.rows) throw new Error('the FMU was lost when the run was cancelled');
   }
 
-  const mat = await session.mat('/selftest_res.mat');
+  const mat = await session.result('/selftest_res.mat');
   say(`result file: ${mat ? mat.length + ' bytes' : 'not written'}`);
   if (!result.rows) throw new Error('the run produced no samples');
   if (!mat || mat.length < 100) throw new Error('the result file is missing or too small');

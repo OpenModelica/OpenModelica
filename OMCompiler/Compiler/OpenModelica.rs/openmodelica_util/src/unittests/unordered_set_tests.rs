@@ -26,7 +26,7 @@ fn eq_str(a: ArcStr, b: ArcStr) -> Result<bool> {
 
 // ── construction helpers ──────────────────────────────────────────────────────
 
-fn empty_set() -> Arc<US::UnorderedSet<ArcStr>> {
+fn empty_set() -> metamodelica::Ref<US::UnorderedSet<ArcStr>> {
     // Callbacks are now `Arc<dyn Fn(...) + 'static>` aliases (see
     // `fmt_param_ty` in mmtorust); wrap each fn-item in `Arc::new` so
     // the unsized coercion to the trait object happens at the call
@@ -34,7 +34,7 @@ fn empty_set() -> Arc<US::UnorderedSet<ArcStr>> {
     US::new(Arc::new(hash_str), Arc::new(eq_str), 13)
 }
 
-fn set_of(keys: &[&str]) -> Result<Arc<US::UnorderedSet<ArcStr>>> {
+fn set_of(keys: &[&str]) -> Result<metamodelica::Ref<US::UnorderedSet<ArcStr>>> {
     let s = empty_set();
     for k in keys {
         US::add(arcstr::format!("{}", k), s.clone())?;
@@ -43,7 +43,7 @@ fn set_of(keys: &[&str]) -> Result<Arc<US::UnorderedSet<ArcStr>>> {
 }
 
 /// toList as a sorted Vec<String>.
-fn to_sorted_vec(s: Arc<US::UnorderedSet<ArcStr>>) -> Vec<String> {
+fn to_sorted_vec(s: metamodelica::Ref<US::UnorderedSet<ArcStr>>) -> Vec<String> {
     let lst = US::toList(s);
     let mut v: Vec<String> = vec![];
     for k in &*lst { v.push(k.to_string()); }
@@ -248,7 +248,7 @@ fn test_copy_contains_same_elements() -> Result<()> {
 #[test]
 fn test_from_list_basic() -> Result<()> {
     let lst = list![literal!("p"), literal!("q"), literal!("r")];
-    let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
+    let s = US::fromList(&lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert_eq!(to_sorted_vec(s), vec!["p", "q", "r"]);
     Ok(())
 }
@@ -256,7 +256,7 @@ fn test_from_list_basic() -> Result<()> {
 #[test]
 fn test_from_list_deduplicates() -> Result<()> {
     let lst = list![literal!("x"), literal!("x"), literal!("y")];
-    let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
+    let s = US::fromList(&lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert_eq!(US::size(s.clone()), 2);
     assert_eq!(to_sorted_vec(s), vec!["x", "y"]);
     Ok(())
@@ -264,8 +264,8 @@ fn test_from_list_deduplicates() -> Result<()> {
 
 #[test]
 fn test_from_list_empty() -> Result<()> {
-    let lst: Arc<metamodelica::List<ArcStr>> = metamodelica::nil();
-    let s = US::fromList(lst, Arc::new(hash_str), Arc::new(eq_str))?;
+    let lst: metamodelica::List<ArcStr> = metamodelica::nil();
+    let s = US::fromList(&lst, Arc::new(hash_str), Arc::new(eq_str))?;
     assert!(US::isEmpty(s));
     Ok(())
 }
@@ -363,7 +363,7 @@ fn test_rehash_preserves_all_keys() -> Result<()> {
 fn test_all_true_when_all_match() -> Result<()> {
     // All keys start with "aa" – pred is always true.
     let s = set_of(&["aaa", "aab", "aac"])?;
-    let result = US::all(s, Arc::new(|k: ArcStr| Ok(k.starts_with("aa")))).unwrap();
+    let result = US::all(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("aa")) }).unwrap();
     assert!(result);
     Ok(())
 }
@@ -371,7 +371,7 @@ fn test_all_true_when_all_match() -> Result<()> {
 #[test]
 fn test_all_false_when_one_does_not_match() -> Result<()> {
     let s = set_of(&["aaa", "bbb"])?;
-    let result = US::all(s, Arc::new(|k: ArcStr| Ok(k.starts_with("aa")))).unwrap();
+    let result = US::all(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("aa")) }).unwrap();
     assert!(!result);
     Ok(())
 }
@@ -379,14 +379,14 @@ fn test_all_false_when_one_does_not_match() -> Result<()> {
 #[test]
 fn test_all_empty_set_returns_true() {
     let s = empty_set();
-    let result = US::all(s, Arc::new(|_: ArcStr| Ok(false))).unwrap();
+    let result = US::all(s, &|__b0: &_| { let _: ArcStr = ::std::clone::Clone::clone(__b0); Ok(false) }).unwrap();
     assert!(result);
 }
 
 #[test]
 fn test_any_true_when_one_matches() -> Result<()> {
     let s = set_of(&["no_match", "yes_match"])?;
-    let result = US::any(s, Arc::new(|k: ArcStr| Ok(k.starts_with("yes")))).unwrap();
+    let result = US::any(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("yes")) }).unwrap();
     assert!(result);
     Ok(())
 }
@@ -394,7 +394,7 @@ fn test_any_true_when_one_matches() -> Result<()> {
 #[test]
 fn test_any_false_when_none_match() -> Result<()> {
     let s = set_of(&["a", "b"])?;
-    let result = US::any(s, Arc::new(|k: ArcStr| Ok(k.starts_with("z")))).unwrap();
+    let result = US::any(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("z")) }).unwrap();
     assert!(!result);
     Ok(())
 }
@@ -402,14 +402,14 @@ fn test_any_false_when_none_match() -> Result<()> {
 #[test]
 fn test_any_empty_set_returns_false() {
     let s = empty_set();
-    let result = US::any(s, Arc::new(|_: ArcStr| Ok(true))).unwrap();
+    let result = US::any(s, &|__b0: &_| { let _: ArcStr = ::std::clone::Clone::clone(__b0); Ok(true) }).unwrap();
     assert!(!result);
 }
 
 #[test]
 fn test_none_when_no_element_matches() -> Result<()> {
     let s = set_of(&["a", "b"])?;
-    let result = US::none(s, Arc::new(|k: ArcStr| Ok(k.starts_with("z")))).unwrap();
+    let result = US::none(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("z")) }).unwrap();
     assert!(result);
     Ok(())
 }
@@ -417,7 +417,7 @@ fn test_none_when_no_element_matches() -> Result<()> {
 #[test]
 fn test_none_false_when_one_matches() -> Result<()> {
     let s = set_of(&["a", "z_key"])?;
-    let result = US::none(s, Arc::new(|k: ArcStr| Ok(k.starts_with("z")))).unwrap();
+    let result = US::none(s, &|__b0: &_| { let k: ArcStr = ::std::clone::Clone::clone(__b0); Ok(k.starts_with("z")) }).unwrap();
     assert!(!result);
     Ok(())
 }

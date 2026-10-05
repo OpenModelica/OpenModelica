@@ -46,7 +46,9 @@ specifications.
    * - `FMI-LS-REF <https://github.com/modelica/fmi-ls-ref>`_
      - Planned
    * - `FMI-LS-DAE <https://github.com/modelica/fmi-ls-dae>`_
-     - Planned (demonstrator in progress)
+     - Planned (demonstrator in progress). Export and import follow the
+       ``1.0.0-alpha.1`` draft as of its commit ``78313f4`` (2026-09-02); the
+       revision is also reported as a notification when an FMU is exported.
 
 Supported Capability Flags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,12 +234,8 @@ The BouncingBall_flags.json for this example is displayed in
 Compilation Process
 ~~~~~~~~~~~~~~~~~~~
 
-OpenModelica can export FMUs that are compiled with CMake (default) or Makefiles. CMake
-version v3.21 or newer is recommended, minimum CMake version is v3.5.
-
-The Makefile FMU export will be removed in a future version of OpenModelica.
-Set compiler flag :ref:`--fmuCMakeBuild=false<omcflag-fmuCMakeBuild>` to use the
-Makefiles export.
+OpenModelica exports source-code FMUs built with CMake. CMake version v3.21 or
+newer is recommended, minimum CMake version is v3.5.
 
 The FMU contains a CMakeLists.txt file in the sources directory that can be used to
 re-compile the FMU for a different host and is also used to cross compile for different
@@ -324,10 +322,10 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
   Windows OS using MINGW.
 
-* ``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0``
+* ``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0``
   Host triple with Docker image provided by OpenModelica:
   OpenModelica will use Docker image
-  `ghcr.io/openmodelica/crossbuild:v1.27.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+  `ghcr.io/openmodelica/crossbuild:v1.28.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
   to cross compile. The image provides compiler toolchain files to
   cross compile with CMake for the following host triples:
 
@@ -364,7 +362,7 @@ Cross Compilation
 ~~~~~~~~~~~~~~~~~
 
 Cross compilation can be done by using platform
-``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0``
+``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0``
 or done manually. Both can be difficult at times.
 
 To `cross compile with CMake <https://cmake.org/cmake/help/book/mastering-cmake/chapter/Cross%20Compiling%20With%20CMake.html>`_
@@ -372,7 +370,7 @@ provide a toolchain file specifying the target system and where to find the
 compiler toolchain for the target system.
 
 For example the Docker image
-`ghcr.io/openmodelica/crossbuild:v1.27.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+`ghcr.io/openmodelica/crossbuild:v1.28.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
 provided by OpenModelica is based on Linux (Ubuntu 24.04 at the time of writing)
 and has toolchains installed to cross compile together with matching
 `toolchain files <https://github.com/OpenModelica/openmodelica-crossbuild/tree/main/toolchain>`_.
@@ -398,12 +396,13 @@ If you already have an existing FMU unzip it into some directory
 Then cross compile the sources with a suitable toolchain file.
 
 .. code-block:: bash
+
   # Optional: Work inside interactive Docker container
   docker run --rm -it \
     -v $PWD:/fmu \
-    -v /home/andreas/workdir/OM/OpenModelica/build_cmake/install_cmake/include/omc/FMI2:/fmiInclude \
+    -v $OPENMODELICAHOME/include/omc/FMI2:/fmiInclude \
     -w/fmu \
-    ghcr.io/openmodelica/crossbuild:v1.27.0 bash
+    ghcr.io/openmodelica/crossbuild:v1.28.0 bash
 
   cd <Model>.fmutmp/sources
   cmake -S . -B build \
@@ -417,6 +416,7 @@ Now the FMU should contain ``binaries/win64/BouncingBall.dll``.
 Compile additional binaries in the same way and when done zip the FMU by running
 
 .. code-block:: bash
+
   cmake --build build --parallel --target create_fmu
 
 Now there should be a FMU with ``win64`` binaries ``BouncingBall-fmu``.

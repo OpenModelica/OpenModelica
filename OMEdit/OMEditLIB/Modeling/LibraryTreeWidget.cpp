@@ -55,6 +55,7 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 #include "Search/FindUsageWidget.h"
+#include "Cloud/CloudMount.h"
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
 #endif
@@ -964,11 +965,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (hide) {
       return false;
     } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return pLibraryTreeItem->getNameStructure().contains(filterRegularExpression());
-#else
-      return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
-#endif
     }
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
@@ -1183,26 +1180,6 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
  * \param pLibraryTreeItem
  * \return
  */
-LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *pLibraryTreeItem) const
-{
-  if (!pLibraryTreeItem) {
-    pLibraryTreeItem = mpRootLibraryTreeItem;
-  }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  if (regExp.indexIn(pLibraryTreeItem->getNameStructure()) > 0) {
-#else
-  if (pLibraryTreeItem->getNameStructure().contains(regExp)) {
-#endif
-    return pLibraryTreeItem;
-  }
-  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
-    if (LibraryTreeItem *item = findLibraryTreeItem(regExp, pLibraryTreeItem->childAt(i))) {
-      return item;
-    }
-  }
-  return 0;
-}
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem) const
 {
   if (!pLibraryTreeItem) {
@@ -1218,7 +1195,6 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegularExpression 
   }
   return 0;
 }
-#endif
 
 /*!
  * \brief LibraryTreeModel::findLibraryTreeItemOneLevel
@@ -2855,7 +2831,7 @@ void LibraryTreeView::createActions()
   mpSimulateWithAlgorithmicDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-debug.svg"), Helper::simulateWithAlgorithmicDebugger, this);
   mpSimulateWithAlgorithmicDebuggerAction->setStatusTip(Helper::simulateWithAlgorithmicDebuggerTip);
   connect(mpSimulateWithAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(simulateWithAlgorithmicDebugger()));
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   // simulate with animation Action
   mpSimulateWithAnimationAction = new QAction(QIcon(":/Resources/icons/simulate-animation.svg"), Helper::simulateWithAnimation, this);
   mpSimulateWithAnimationAction->setStatusTip(Helper::simulateWithAnimationTip);
@@ -3136,7 +3112,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSimulateAction);
             menu.addAction(mpSimulateWithTransformationalDebuggerAction);
             menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  #if !defined(WITHOUT_OSG)
+  #if !defined(WITHOUT_ANIMATION)
             menu.addAction(mpSimulateWithAnimationAction);
   #endif
             menu.addAction(mpSimulationSetupAction);
@@ -3514,7 +3490,7 @@ void LibraryTreeView::simulateWithAlgorithmicDebugger()
  */
 void LibraryTreeView::simulateWithAnimation()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->simulateWithAnimation(pLibraryTreeItem);
@@ -4452,11 +4428,7 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
   if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
     // set to UTF-8
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     textStream.setEncoding(QStringConverter::Utf8);
-#else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
-#endif
     textStream.setGenerateByteOrderMark(bom);
     textStream << newContents;
     file.close();
@@ -4518,6 +4490,12 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool 
         (pTopLevelLibraryTreeItem && pLibraryTreeItem->getFileName().compare(pTopLevelLibraryTreeItem->getFileName()) == 0)) {
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
       MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+    }
+    // Saving into a mounted cloud folder has only written the working copy; what
+    // makes it saved is the push.
+    const CloudMount mount = CloudMountManager::instance()->mountForPath(pLibraryTreeItem->getFileName());
+    if (mount.isValid() && mount.autoPush) {
+      MainWindow::instance()->pushMountInBackground(mount.mountId);
     }
   }
   MainWindow::instance()->getStatusBar()->clearMessage();
@@ -4792,7 +4770,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
 #if defined(__EMSCRIPTEN__)
-      WasmLocalFiles::download(fileName);
+      // A file inside a cloud mount is uploaded by the sync engine; handing the
+      // user a download of it as well would be wrong.
+      if (!isInsideCloudMount(fileName)) {
+        WasmLocalFiles::download(fileName);
+      }
 #endif
       /* Save the traceabiliy information and send to Daemon. */
 #if !defined(__EMSCRIPTEN__)
@@ -4895,7 +4877,11 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
 #if defined(__EMSCRIPTEN__)
       // One download per file; the folder structure itself stays in the omc
       // filesystem for the session.
-      WasmLocalFiles::download(fileName);
+      // A file inside a cloud mount is uploaded by the sync engine; handing the
+      // user a download of it as well would be wrong.
+      if (!isInsideCloudMount(fileName)) {
+        WasmLocalFiles::download(fileName);
+      }
 #endif
     } else {
       return false;
@@ -5000,7 +4986,11 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
       }
       mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
 #if defined(__EMSCRIPTEN__)
-      WasmLocalFiles::download(fileName);
+      // A file inside a cloud mount is uploaded by the sync engine; handing the
+      // user a download of it as well would be wrong.
+      if (!isInsideCloudMount(fileName)) {
+        WasmLocalFiles::download(fileName);
+      }
 #endif
     } else {
       return false;
@@ -5284,9 +5274,5 @@ void LibraryWidget::searchClasses()
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpLibraryTreeProxyModel->setFilterRegularExpression(TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax));
-#else
-  mpLibraryTreeProxyModel->setFilterRegExp(TreeSearchFilters::getFilterRegExp(searchText, caseSensitivity, syntax));
-#endif
 }

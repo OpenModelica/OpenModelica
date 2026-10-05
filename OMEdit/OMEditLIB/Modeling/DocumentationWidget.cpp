@@ -672,11 +672,7 @@ void DocumentationWidget::writeDocumentationFile(QString documentation)
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
   if (mDocumentationFile.open(QIODevice::WriteOnly)) {
     QTextStream out(&mDocumentationFile);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     out.setEncoding(QStringConverter::Utf8);
-#else
-    out.setCodec(Helper::utf8.toUtf8().constData());
-#endif
     out << documentation;
     mDocumentationFile.close();
   }
@@ -774,13 +770,8 @@ void DocumentationWidget::updateActionsHelper()
   mpStyleComboBox->blockSignals(state);
   state = mpFontComboBox->blockSignals(true);
   QString fontName = queryCommandValue("fontName");
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   // Remove quotes around the font name.
   fontName = StringHandler::removeFirstLastQuotes(fontName);
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // Remove single quote around the font name.
-  fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
   if (currentIndex > -1) {
     mpFontComboBox->setCurrentIndex(currentIndex);
@@ -1060,9 +1051,7 @@ void DocumentationWidget::toggleEditor(int tabIndex)
       if (mpHTMLSourceEditor->getPlainTextEdit()->document()->isModified()) {
         writeDocumentationFile(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText());
         mpHTMLEditor->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         updateActions();
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       }
       mpHTMLSourceEditor->hide();
       mpHTMLEditorWidget->show();
@@ -1078,7 +1067,6 @@ void DocumentationWidget::toggleEditor(int tabIndex)
  */
 void DocumentationWidget::updateActions()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (!mpHTMLEditor->page()->hasSelection()) {
     mpStyleComboBox->setEnabled(false);
     mpFontComboBox->setEnabled(false);
@@ -1139,9 +1127,6 @@ void DocumentationWidget::updateActions()
     mpUnLinkAction->setEnabled(true);
     updateActionsHelper();
   }
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  updateActionsHelper();
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 }
 
 /*!
@@ -1623,20 +1608,12 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
  */
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().y() != 0 && event->modifiers().testFlag(Qt::ControlModifier)) {
-#else // QT_VERSION_CHECK
-  if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
-#endif // QT_VERSION_CHECK
     qreal zf = zoomFactor();
     /* ticket:4349 Take smaller steps for zooming.
      * Also set the minimum zoom to readable size.
      */
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().y() > 0) {
-#else // QT_VERSION_CHECK
-  if (event->delta() > 0) {
-#endif // QT_VERSION_CHECK
       zf += 0.1;
       zf = zf > 5 ? 5 : zf;
     } else {

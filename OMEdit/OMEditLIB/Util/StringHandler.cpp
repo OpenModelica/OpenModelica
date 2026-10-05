@@ -1560,11 +1560,7 @@ QStringList StringHandler::makeVariableParts(QString variable)
    * See https://github.com/OpenModelica/OpenModelica/issues/10599#issuecomment-2077331404
    */
   static const QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   return variable.split(re, Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-  return variable.split(re, QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
 }
 
 #include <iostream>
@@ -1644,8 +1640,9 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
 {
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
-  QString OMHOMEBin = OMHOME + "\\bin;" + OMHOME + "\\lib\\omc\\msvc;" + OMHOME + "\\lib\\omc\\cpp;" + OMHOME + "\\lib\\omc\\cpp\\msvc";
-  environment.insert("PATH", OMHOMEBin + ";" + environment.value("PATH"));
+  // Only bin/; modelicaSimulationProcessEnvironment() takes the runtime's
+  // lib/<triple>/omc from the generated <model>.bat, which knows the target.
+  environment.insert("PATH", OMHOME + "\\bin;" + environment.value("PATH"));
   return environment;
 }
 
@@ -1663,19 +1660,31 @@ QProcessEnvironment StringHandler::modelicaSimulationProcessEnvironment(const QS
   // Return errorMsg if fails to parse the file as expected.
   QFile batFile(pathsFileName);
   if (batFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QString line;
-    // first line is supposed to be '@echo off'
-    line = batFile.readLine();
-    // Second line is where the PATH is set. We want that.
-    line = batFile.readLine();
+    static const QRegularExpression expression("^set path=(.*)", QRegularExpression::CaseInsensitiveOption);
+    bool found = false;
+    while (!batFile.atEnd()) {
+      const QString line = batFile.readLine();
+      const QRegularExpressionMatch match = expression.match(line);
+      if (match.hasMatch()) {
+        // Strip the 'set PATH=' and everything from %PATH% onwards (e.g. %PATH%)
+        QString path = match.captured(1);
+        int index = path.indexOf('%');
+        if (index >= 0) {
+          path = path.left(index);
+        }
+        // Remove any leading/trailing semicolons
+        path = path.trimmed();
+        path = path.startsWith(';') ? path.mid(1) : path;
+        path = path.endsWith(';') ? path.left(path.size() - 1) : path;
+        environment.insert("PATH", path + ";" + environment.value("PATH"));
+        found = true;
+        break;
+      }
+    }
 
-    if (!line.toLower().startsWith("set path=")) {
-      *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
+    if (!found) {
+      *errorMsg = "Failed to read the necessary PATH values from '" + pathsFileName + "'\n"
                   + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
-    } else {
-      // Strip the 'set PATH='
-      line.remove(0, 9);
-      environment.insert("PATH", line + ";" + environment.value("PATH"));
     }
     batFile.close();
   }

@@ -30,6 +30,7 @@
 
 #ifndef _GBODE_CONF_H_
 #define _GBODE_CONF_H_
+#include "../../omc_dll.h"
 
 #include "../../util/simulation_options.h"
 
@@ -38,8 +39,8 @@ extern "C" {
 #endif
 
 // Declaration only
-extern modelica_boolean use_fhr;
-extern double use_filter;
+DLLDataDirection extern modelica_boolean use_fhr;
+DLLDataDirection extern double use_filter;
 
 enum GB_METHOD getGB_method(enum _FLAG flag);
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);

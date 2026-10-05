@@ -24,6 +24,7 @@
 //! - `wasm-merge runtime.wasm rt model.wasm model` connects both directions,
 //!   leaving only the WASI imports (satisfied by `wasmtime`/the worker shim).
 
+
 use openmodelica_mat_writer::Precision;
 use openmodelica_sim_meta::driver::{self, SimEngine};
 use openmodelica_sim_meta::simflags;
@@ -41,6 +42,8 @@ unsafe extern "C" {
     fn functionInitialEquations_lambda0(sim_data: u32);
     fn functionODE(sim_data: u32);
     fn functionAlgebraics(sim_data: u32);
+    fn functionOutputs(sim_data: u32);
+    fn functionAttrDefaults(sim_data: u32);
     fn functionStateSetJacobians(sim_data: u32);
     fn functionZeroCrossings(sim_data: u32, gout: u32);
     fn functionZeroCrossingsEquations(sim_data: u32);
@@ -55,6 +58,12 @@ unsafe extern "C" {
     fn functionRemovedInitialEquations(sim_data: u32);
     fn functionJacA_constantEqns(sim_data: u32);
     fn functionJacA_column(sim_data: u32);
+    fn functionJacADJ_constantEqns(sim_data: u32);
+    fn functionJacADJ_column(sim_data: u32);
+    fn functionInitSynchronous(sim_data: u32);
+    fn functionUpdateSynchronous(sim_data: u32, clock: u32);
+    fn functionEquationsSynchronous(sim_data: u32, clock: u32);
+    fn evaluateDAEResiduals(sim_data: u32, stage: u32);
     fn initSample(sim_data: u32);
     fn callExternalObjectDestructors(sim_data: u32);
     fn symbolicInlineSystem(sim_data: u32);
@@ -113,6 +122,8 @@ impl SimEngine for StandaloneEngine {
                 "functionInitialEquations_lambda0" => functionInitialEquations_lambda0(arg),
                 "functionODE" => functionODE(arg),
                 "functionAlgebraics" => functionAlgebraics(arg),
+                "functionOutputs" => functionOutputs(arg),
+                "functionAttrDefaults" => functionAttrDefaults(arg),
                 "functionStateSetJacobians" => functionStateSetJacobians(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations(arg),
                 "functionUpdateRelations" => functionUpdateRelations(arg),
@@ -126,6 +137,9 @@ impl SimEngine for StandaloneEngine {
                 "functionRemovedInitialEquations" => functionRemovedInitialEquations(arg),
                 "functionJacA_constantEqns" => functionJacA_constantEqns(arg),
                 "functionJacA_column" => functionJacA_column(arg),
+                "functionJacADJ_constantEqns" => functionJacADJ_constantEqns(arg),
+                "functionJacADJ_column" => functionJacADJ_column(arg),
+                "functionInitSynchronous" => functionInitSynchronous(arg),
                 "initSample" => initSample(arg),
                 "callExternalObjectDestructors" => callExternalObjectDestructors(arg),
                 "symbolicInlineSystem" => symbolicInlineSystem(arg),
@@ -134,31 +148,31 @@ impl SimEngine for StandaloneEngine {
                 "linearJacB" => linearJacB(arg),
                 "linearJacC" => linearJacC(arg),
                 "linearJacD" => linearJacD(arg),
-                "functionInitSynchronous" => return Err(SYNC_UNSUPPORTED),
-                _ => return Err("wasm-jit standalone: unknown model function"),
+                _ => return Err(UNKNOWN_FN),
             }
         }
         Ok(())
     }
     fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> driver::Result<()> {
-        // Every entry point is always exported (empty stub if unused), so a plain
-        // call is a no-op when the feature is absent.
-        self.call1_raw(name, arg)
+        // What is imported is always exported (an empty stub if unused); the rest
+        // (parmod, data reconciliation) is exported only by models this command
+        // does not serve.
+        match self.call1_raw(name, arg) {
+            Err(UNKNOWN_FN) => Ok(()),
+            r => r,
+        }
     }
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> driver::Result<()> {
-        if name == driver::MODEL_FN_ZC {
-            unsafe { functionZeroCrossings(a, b) };
-            return Ok(());
-        }
-        // Importing `evaluateDAEResiduals` (or the two synchronous dispatchers) would
-        // leave every model without that feature with an unresolved `model.*` import,
-        // so the standalone export supports neither.
-        Err(match name {
-            driver::MODEL_FN_DAE => {
-                "wasm-jit standalone: --daeMode models are not supported by the standalone export"
+        unsafe {
+            match name {
+                driver::MODEL_FN_ZC => functionZeroCrossings(a, b),
+                driver::MODEL_FN_DAE => evaluateDAEResiduals(a, b),
+                driver::MODEL_FN_UPDATE_SYNC => functionUpdateSynchronous(a, b),
+                driver::MODEL_FN_EQS_SYNC => functionEquationsSynchronous(a, b),
+                _ => return Err(UNKNOWN_FN),
             }
-            _ => SYNC_UNSUPPORTED,
-        })
+        }
+        Ok(())
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> driver::Result<u32> {
         Ok(unsafe { simulate(sim_data, start, stop, n_steps) })
@@ -199,8 +213,7 @@ impl SimEngine for StandaloneEngine {
     }
 }
 
-const SYNC_UNSUPPORTED: &str =
-    "wasm-jit standalone: synchronous (clocked) models are not supported by the standalone export";
+const UNKNOWN_FN: &str = "wasm-jit standalone: unknown model function";
 
 /// Run the prepared model with the shared driver and write its result file.
 /// A failure traps (the command then exits nonzero).
@@ -211,7 +224,7 @@ fn run() {
         simflags::print_notices(f);
         m.apply_flags(f);
     });
-    let sim_data = crate::rt_alloc(m.layout.total);
+    let sim_data = crate::rt_sim_data_new(m.layout.total);
     let mut engine = StandaloneEngine;
     crate::nls::rt_set_step_size(m.step_size());
     crate::files::set_prefix(&m.prefix);
@@ -222,6 +235,7 @@ fn run() {
     // See `session::rt_sim_start`.
     #[cfg(sundials)]
     crate::model_ctx::set_context(&m, sim_data);
+    arm_result(&m);
     let (result, _label) = match driver::drive(&mut engine, &m, sim_data, m.method.as_str(), false, false) {
         Ok(v) => v,
         Err(e) => {
@@ -243,32 +257,24 @@ fn run() {
         }
     }
 
-    if m.output_format != "mat" && m.output_format != "plt" {
+    openmodelica_sim_meta::result::file::finish();
+    if !openmodelica_sim_meta::result::known(&m.output_format) || m.output_format == "empty" {
         return; // "empty": run only (benchmarking), no file
     }
+    let path = m.result_file();
+    let size = std::fs::metadata(&path).map(|md| md.len() as i64).unwrap_or(-1);
+    // C's `printModelInfo`, which the executable runs after closing the result.
+    openmodelica_sim_meta::profiling::finish(&m, &path, size);
+}
 
-    // A run-time `-variableFilter` was refused at the flag check (no regex engine);
-    // the model's own filter is the codegen's verdict.
-    let keep = m.output_keep(None);
+/// Route the run's rows to `<prefix>_res.<format>`, written as they arrive. A
+/// run-time `-variableFilter` was refused at the flag check (no regex engine);
+/// the model's own filter is the codegen's verdict.
+fn arm_result(m: &SimMeta) {
     // `-single` narrows the real data to 4-byte float (C's `FLAG_SINGLE_PRECISION`).
     let precision =
         simflags::with_flags(|f| if f.single_precision { Precision::Single } else { Precision::Double });
-    let Some(bytes) = openmodelica_sim_meta::result::write(
-        &m,
-        &m.output_format,
-        &result.rows,
-        result.n_reals,
-        &result.params,
-        &keep,
-        precision,
-    ) else {
-        return;
-    };
-    let path = m.result_file();
-    let size = bytes.len() as i64;
-    std::fs::write(&path, bytes).expect("wasm-jit standalone: cannot write result file");
-    // C's `printModelInfo`, which the executable runs after closing the result.
-    openmodelica_sim_meta::profiling::finish(&m, &path, size);
+    openmodelica_sim_meta::result::file::arm(m.output_keep(None), precision, m.result_file());
 }
 
 /// C's `linearize`: `linearized_model.<ext>` under `-outputPath`.

@@ -119,11 +119,7 @@ void CRMLTranslatorOutputWidget::translateModel()
   connect(mpTranslationProcess, SIGNAL(started()), SLOT(translationProcessStarted()));
   connect(mpTranslationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readTranslationStandardOutput()));
   connect(mpTranslationProcess, SIGNAL(readyReadStandardError()), SLOT(readTranslationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
   connect(mpTranslationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
-#else
-  connect(mpTranslationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
-#endif
   connect(mpTranslationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(translationProcessFinished(int,QProcess::ExitStatus)));
   QStringList args = {"-jar",
                       mCRMLTranslatorOptions.getCompilerJar(),

@@ -10,7 +10,6 @@
 #![allow(non_snake_case, non_upper_case_globals, clippy::type_complexity)]
 
 use std::cell::RefCell;
-use std::sync::Arc;
 use arcstr::ArcStr;
 
 // ── Thread-local roots (process-global by MetaModelica semantics) ─────────────
@@ -26,11 +25,11 @@ thread_local! {
     // third element, `Interactive.GraphicEnvCache`, is defined in this crate
     // (Script/Interactive.mo); `openmodelica_backend` does not depend on
     // `openmodelica_backend_main`.
-    pub static interactiveCache: RefCell<Option<Arc<metamodelica::List<(
+    pub static interactiveCache: RefCell<Option<metamodelica::List<(
         openmodelica_ast::Absyn::Program,
-        Arc<openmodelica_ast::Absyn::Path>,
+        metamodelica::Ref<openmodelica_ast::Absyn::Path>,
         crate::Interactive::GraphicEnvCache,
-    )>>>> = const { RefCell::new(None) };
+    )>>> = const { RefCell::new(None) };
 
     // Index 35 — fmuTranslation
     //
@@ -49,24 +48,25 @@ thread_local! {
     // of these three NF caches is `Script/NFApi.mo` (this crate); their value
     // type uses `NFInstNode.InstNode` from `openmodelica_nf_frontend`, on which
     // this crate already depends.
-    pub static instNFInstCacheIndex: RefCell<Arc<metamodelica::List<(
-        (openmodelica_ast::Absyn::Program, Arc<openmodelica_ast::Absyn::Path>),
-        (Arc<metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>>, ArcStr, Arc<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
-    )>>> = RefCell::new(metamodelica::nil());
-
-    // Index 11 — instNFNodeCacheIndex
-    //
-    // NF node cache (program → SCode elements, InstNode).
-    pub static instNFNodeCacheIndex: RefCell<Arc<metamodelica::List<(
-        openmodelica_ast::Absyn::Program,
-        (Arc<metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>>, Arc<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
-    )>>> = RefCell::new(metamodelica::nil());
+    pub static instNFInstCacheIndex: RefCell<metamodelica::List<(
+        (openmodelica_ast::Absyn::Program, metamodelica::Ref<openmodelica_ast::Absyn::Path>),
+        (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, ArcStr, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
+    )>> = RefCell::new(metamodelica::nil());
 
     // Index 12 — instNFLookupCacheIndex
     //
     // NF lookup cache. Same type as instNFInstCacheIndex (index 10).
-    pub static instNFLookupCacheIndex: RefCell<Arc<metamodelica::List<(
-        (openmodelica_ast::Absyn::Program, Arc<openmodelica_ast::Absyn::Path>),
-        (Arc<metamodelica::List<Arc<openmodelica_frontend_types::SCode::Element>>>, ArcStr, Arc<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
-    )>>> = RefCell::new(metamodelica::nil());
+    pub static instNFLookupCacheIndex: RefCell<metamodelica::List<(
+        (openmodelica_ast::Absyn::Program, metamodelica::Ref<openmodelica_ast::Absyn::Path>),
+        (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, ArcStr, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
+    )>> = RefCell::new(metamodelica::nil());
+}
+
+/// Leaks the loaded program and the caches built from it, for a process about
+/// to exit: glibc's `exit` runs the exiting thread's thread-local destructors,
+/// which would otherwise free them node by node.
+pub fn leak_program_for_exit() {
+    openmodelica_backend::Globals::symbolTable.with(|t| std::mem::forget(t.borrow().clone()));
+    interactiveCache.with(|c| std::mem::forget(c.borrow().clone()));
+    fmuTranslation.with(|c| std::mem::forget(c.borrow().clone()));
 }

@@ -81,6 +81,7 @@ FunctionReturn.mo \
 FunctionSimple.mo \
 FunctionSimplex.mo \
 FunctionVariability.mo \
+GenStringArrayOutput.mos \
 IfExpression1.mo \
 InvalidFunctionBinding.mo \
 JoinThreeVectors2.mo \

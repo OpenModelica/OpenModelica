@@ -122,12 +122,12 @@ algorithm
     case Expression.LUNARY()            then simplifyLogicUnary(exp);
     case Expression.RELATION()          then simplifyRelation(exp);
     case Expression.IF()                then simplifyIf(exp);
-    case Expression.CAST()              then simplifyCast(simplify(exp.exp), exp.ty);
-    case Expression.UNBOX()             then Expression.UNBOX(simplify(exp.exp), exp.ty);
+    case Expression.CAST()              then Expression.typeCast(simplify(exp.exp), exp.ty);
+    case Expression.UNBOX()             then Expression.unbox(simplify(exp.exp));
     case Expression.SUBSCRIPTED_EXP()   then simplifySubscriptedExp(exp);
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
-    case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
+    case Expression.BOX()               then Expression.box(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
@@ -163,8 +163,9 @@ algorithm
     exp := range;
   else
     if not Type.isResizable(ty) then
-      ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), Absyn.dummyInfo);
+      ty := TypeCheck.keepRangeSize(
+        TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+          Type.arrayElementType(ty), Absyn.dummyInfo), ty);
     else
       ty := ty2;
     end if;
@@ -464,29 +465,35 @@ function simplifySumProduct
 protected
   Boolean expanded;
   list<Expression> args;
-  Type ty;
+  Type ty, ety;
   Operator op;
 algorithm
-  if expand then
+  ty := Expression.typeOf(arg);
+
+  if Type.isEmptyArray(ty) then
+    ety := Type.arrayElementType(ty);
+    exp := if isSum then Expression.makeZero(ety) else Expression.makeOne(ety);
+  elseif expand then
     (exp, expanded) := ExpandExp.expand(arg);
 
     if expanded then
       args := Expression.arrayScalarElements(exp);
-      ty := Type.arrayElementType(Expression.typeOf(arg));
+      ety := Type.arrayElementType(ty);
 
       if listEmpty(args) then
-        exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
+        exp := if isSum then Expression.makeZero(ety) else Expression.makeOne(ety);
       else
-        op := if isSum then Operator.makeAdd(ty) else
-                            Operator.makeMul(ty);
+        op := if isSum then Operator.makeAdd(ety) else
+                            Operator.makeMul(ety);
         exp := Expression.MULTARY(args, {}, op);
+        exp := simplify(exp);
       end if;
-
-      return;
+    else
+      exp := simplifyReducedArrayConstructor(arg, call);
     end if;
+  else
+    exp := simplifyReducedArrayConstructor(arg, call);
   end if;
-
-  exp := simplifyReducedArrayConstructor(arg, call);
 end simplifySumProduct;
 
 function simplifyReducedArrayConstructor
@@ -850,8 +857,8 @@ algorithm
       (arguments, inv_arguments, isNegative) := simplifyMultarySigns(arguments, inv_arguments, mcl);
 
       // split them into constant and non constant arguments
-      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isLiteral);
-      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral);
+      (const_args, arguments) := List.splitOnTrue(arguments, isEvaluableLiteral);
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, isEvaluableLiteral);
 
       // combine the constants
       if mcl == NFOperator.MathClassification.ADDITION then
@@ -868,6 +875,12 @@ algorithm
 
       // remove expressions that are in both arguments and inv_arguments
       (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
+
+      // a neutral constant can not be removed if it is the only source of the dimensions, e.g. s * {1.0}
+      if neutralConst and not listEmpty(arguments) and Type.dimensionCount(Expression.typeOf(new_const)) >
+          List.fold(listAppend(arguments, inv_arguments), maxDimensionCount, 0) then
+        neutralConst := false;
+      end if;
 
       result := match (mcl, arguments, inv_arguments)
         // const + {} - {} = const
@@ -887,7 +900,9 @@ algorithm
         then Expression.negate(tmp);
 
         // 0 * {...} / {...} = 0
-        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const) and not Type.isArray(Operator.typeOf(operator))) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const) and Type.hasKnownSize(Operator.typeOf(operator)))
+        then Expression.makeZero(Operator.typeOf(operator));
 
         else Expression.MULTARY(
             arguments     = if neutralConst then arguments else new_const :: arguments,
@@ -1005,6 +1020,8 @@ algorithm
       case Op.MUL then simplifyBinaryMul(exp1, op, exp2);
       case Op.DIV then simplifyBinaryDiv(exp1, op, exp2);
       case Op.POW then simplifyBinaryPow(exp1, op, exp2);
+      case Op.POW_SCALAR_ARRAY then simplifyBinaryPow(exp1, op, exp2);
+      case Op.POW_ARRAY_SCALAR then simplifyBinaryPow(exp1, op, exp2);
       case Op.SCALAR_PRODUCT guard(Expression.isZero(exp1) or Expression.isZero(exp2)) then Expression.makeZero(op.ty);
       else Expression.BINARY(exp1, op, exp2);
     end match;
@@ -1078,9 +1095,11 @@ function simplifyBinaryMul
   output Expression outExp;
 algorithm
   outExp := match exp1
-    // 0 * e = 0
-    case Expression.INTEGER(value = 0) then exp1;
-    case Expression.REAL(value = 0.0) then exp1;
+    // 0 * e = 0, the zero has to keep the dimensions if e is an array
+    case Expression.INTEGER(value = 0) guard(not Type.isArray(Operator.typeOf(op))) then exp1;
+    case Expression.REAL(value = 0.0) guard(not Type.isArray(Operator.typeOf(op))) then exp1;
+    case Expression.INTEGER(value = 0) guard(Type.hasKnownSize(Operator.typeOf(op))) then Expression.makeZero(Operator.typeOf(op));
+    case Expression.REAL(value = 0.0) guard(Type.hasKnownSize(Operator.typeOf(op))) then Expression.makeZero(Operator.typeOf(op));
 
     // 1 * e = e
     case Expression.INTEGER(value = 1) then exp2;
@@ -1130,7 +1149,11 @@ algorithm
   if Expression.isZero(exp2) then
     outExp := Expression.makeOne(Operator.typeOf(op));
   elseif Expression.isOne(exp2) then
-    outExp := exp1;
+    outExp := exp1; // FIXME cast to type of `op`
+  elseif Expression.isZero(exp1) and Expression.isPositive(exp2) then
+    outExp := Expression.makeZero(Operator.typeOf(op));
+  elseif Expression.isOne(exp1) then
+    outExp := Expression.makeOne(Operator.typeOf(op));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -1354,29 +1377,18 @@ algorithm
   end match;
 end simplifyIf;
 
-function simplifyCast
+function isEvaluableLiteral
+  "literals that can be combined by constant evaluation, records need their operator functions"
   input Expression exp;
-  input Type ty;
-  output Expression castExp;
+  output Boolean b = Expression.isLiteral(exp) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)));
+end isEvaluableLiteral;
+
+function maxDimensionCount
+  input Expression exp;
+  input output Integer count;
 algorithm
-  castExp := match (ty, exp)
-    local
-      Type ety;
-
-    case (Type.REAL(), Expression.INTEGER())
-      then Expression.REAL(intReal(exp.value));
-
-    case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
-      algorithm
-        ety := Type.unliftArray(ty);
-        exp.elements := Array.map(exp.elements, function simplifyCast(ty = ety));
-        exp.ty := Type.setArrayElementType(exp.ty, Type.arrayElementType(ty));
-      then
-        exp;
-
-    else Expression.CAST(ty, exp);
-  end match;
-end simplifyCast;
+  count := max(count, Type.dimensionCount(Expression.typeOf(exp)));
+end maxDimensionCount;
 
 function simplifySubscriptedExp
   input output Expression subscriptedExp;
@@ -1418,11 +1430,10 @@ function simplifyTupleElement
 protected
   Expression e;
   Integer index;
-  Type ty;
 algorithm
-  Expression.TUPLE_ELEMENT(e, index, ty) := tupleExp;
+  Expression.TUPLE_ELEMENT(tupleExp = e, index = index) := tupleExp;
   e := simplify(e);
-  tupleExp := Expression.tupleElement(e, ty, index);
+  tupleExp := Expression.tupleElement(e, index);
 end simplifyTupleElement;
 
 function simplifyRecordElement

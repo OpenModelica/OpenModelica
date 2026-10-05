@@ -6,7 +6,7 @@
 //  test issues with GC
 //
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("gc.mo"); getErrorString();
 
 // use DLL loading!
@@ -23,7 +23,21 @@ simulate(gctest, numberOfIntervals=2); getErrorString();
 // ""
 // true
 // ""
-// "class gctest
+// "impure function Modelica.Utilities.Streams.countLines \"Return the number of lines in a file\"
+//   input String fileName \"Name of the file that shall be read\";
+//   output Integer numberOfLines \"Number of lines in file\";
+//
+//   external \"C\" numberOfLines = ModelicaInternal_countLines(fileName);
+// end Modelica.Utilities.Streams.countLines;
+//
+// impure function Modelica.Utilities.Streams.readFile \"Read content of a file and return it in a vector of strings\"
+//   input String fileName \"Name of the file that shall be read\";
+//   output String[Modelica.Utilities.Streams.countLines(fileName)] stringVector \"Content of file\";
+//
+//   external \"C\" ModelicaInternal_readFile(fileName, stringVector, size(stringVector, 1));
+// end Modelica.Utilities.Streams.readFile;
+//
+// class gctest
 //   String str[1];
 //   String str[2];
 //   String str[3];
@@ -41,7 +55,7 @@ simulate(gctest, numberOfIntervals=2); getErrorString();
 //   String str[15];
 //   String s;
 // equation
-//   str = {\"model gctest\", \"  String str[:] = Modelica.Utilities.Streams.readFile(\\\"gc.mo\\\"); // Reads itself\", \"  String s;\", \"algorithm\", \"  for i in 1:1000 loop\", \"    // print(String(i) + \\\"\\\\n\\\");\", \"    s := String(i) + \\\"\\\\n\\\";\", \"    if noEvent(i == 1000) then print(s); end if;\", \"    for j in 1:size(str, 1) loop\", \"      // print(str[j] + \\\"\\\\n\\\");\", \"     s := str[j] + \\\"\\\\n\\\";\", \"     if  noEvent(i == 1000) then print(s); end if;\", \"    end for;\", \"  end for;\", \"end gctest;\"};
+//   str = Modelica.Utilities.Streams.readFile(\"gc.mo\");
 // algorithm
 //   for i in 1:1000 loop
 //     s := String(i, 0, true) + \"
@@ -62,7 +76,7 @@ simulate(gctest, numberOfIntervals=2); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "gctest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'gctest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'gctest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "1000
 // model gctest
 //   String str[:] = Modelica.Utilities.Streams.readFile(\"gc.mo\"); // Reads itself

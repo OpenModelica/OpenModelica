@@ -68,6 +68,7 @@ import SimCodeUtil;
 import SimCodeVar;
 import System;
 import Util;
+import HpcOmCodegenUtil;
 
 
 //----------------------------
@@ -3433,20 +3434,11 @@ protected function nextGreaterPowerOf2_impl
   input Real n;
   input Integer pow;
   output Integer powOf2;
+protected
+  Real p;
 algorithm
-  powOf2 := matchcontinue pow
-  local
-    Integer n2;
-  case _
-    algorithm
-      true := n <=. realPow(2.0,intReal(pow));
-    then realInt(realPow(2.0,intReal(pow)));
-  case _
-    algorithm
-      true := n >. realPow(2.0,intReal(pow));
-      n2 := nextGreaterPowerOf2_impl(n,pow+1);
-    then n2;
-  end matchcontinue;
+  p := realPow(2.0,intReal(pow));
+  powOf2 := if n <= p then realInt(p) else nextGreaterPowerOf2_impl(n,pow+1);
 end nextGreaterPowerOf2_impl;
 
 public function mergeSimpleNodes "author: Waurich TUD 2013-07
@@ -3687,17 +3679,13 @@ protected
   tuple<Integer, Real> head;
   list<tuple<Integer, Real>> rest;
 algorithm
-  oHighestTuple := matchcontinue(iExecCosts, iHighestTuple)
-    case((head as (_,currentCost))::rest, (_,highestCost))
-      algorithm
-        true := realGt(currentCost, highestCost);
+  oHighestTuple := match(iExecCosts, iHighestTuple)
+    case((head as (_,currentCost))::rest, (_,highestCost)) guard realGt(currentCost, highestCost)
       then getHighestExecCost(rest, head);
-    case((head as (_,currentCost))::rest, (_,highestCost))
-      algorithm
-        true := realGt(currentCost, highestCost);
+    case(_::rest, _)
       then getHighestExecCost(rest, iHighestTuple);
     else iHighestTuple;
-  end matchcontinue;
+  end match;
 end getHighestExecCost;
 
 public function contractNodesInGraph "author: marcusw
@@ -4062,14 +4050,7 @@ protected function compareListLengthOnTrue "author: Waurich TUD 2013-07
   input list<Integer> inLst;
   output Boolean equalLength;
 algorithm
-  equalLength := matchcontinue inLst
-    case _
-      algorithm
-        true := intEq(inValue,listLength(inLst));
-      then
-        true;
-    else false;
-  end matchcontinue;
+  equalLength := intEq(inValue,listLength(inLst));
 end compareListLengthOnTrue;
 
 protected function getMergedSystemData "author: Waurich TUD 2013-07
@@ -5127,23 +5108,14 @@ protected
   BackendDAE.StrongComponents comps;
   list<tuple<BackendDAE.EqSystem,Integer>> eqSysts;
 algorithm
-  oNodeComps_Mapping := matchcontinue iNodeComps_Mapping
-    case (nodeIdx,(comps,eqSysts))
-      algorithm
-        true := intGe(nodeMark,0);
-      then ((nodeIdx+1,(comps,eqSysts)));
-    case (nodeIdx,(comps,eqSysts))
-      algorithm
-        true := intEq(nodeMark,-2);
-      then ((nodeIdx+1,(comps,eqSysts)));
-    case (nodeIdx,(comps,eqSysts))
-      algorithm
-        comp := arrayGet(systComps,nodeIdx);
-        eqSyst := arrayGet(iCompEqSysMapping,nodeIdx);
-        comps := comp :: comps;
-        eqSysts := eqSyst :: eqSysts;
-      then ((nodeIdx+1,(comps,eqSysts)));
-  end matchcontinue;
+  (nodeIdx,(comps,eqSysts)) := iNodeComps_Mapping;
+  if not (intGe(nodeMark,0) or intEq(nodeMark,-2)) then
+    comp := arrayGet(systComps,nodeIdx);
+    eqSyst := arrayGet(iCompEqSysMapping,nodeIdx);
+    comps := comp :: comps;
+    eqSysts := eqSyst :: eqSysts;
+  end if;
+  oNodeComps_Mapping := ((nodeIdx+1,(comps,eqSysts)));
 end getGraphComponents2;
 
 protected function componentsEqual "author: marcusw
@@ -5328,15 +5300,13 @@ protected
   list<Integer> criticalPath;
   list<tuple<Real,list<Integer>>> rest;
 algorithm
-  oLongestPathIndex := matchcontinue iCriticalPaths
-    case (cpCost, criticalPath)::rest
-      algorithm
-        true := realGt(cpCost, iLongestPath);
+  oLongestPathIndex := match iCriticalPaths
+    case (cpCost, criticalPath)::rest guard realGt(cpCost, iLongestPath)
       then getCriticalPath2(rest, iListIdx+1, cpCost, iListIdx);
     case (cpCost, criticalPath)::rest
       then getCriticalPath2(rest, iListIdx+1, iLongestPath, iLongestPathIndex);
     else iLongestPathIndex;
-  end matchcontinue;
+  end match;
 end getCriticalPath2;
 
 protected function addUpExeCostsForNode "author: marcusw
@@ -5789,15 +5759,13 @@ protected
   Communication head;
   Communications rest;
 algorithm
-  oHighestTuple := matchcontinue(iCommCosts, iHighestTuple)
-    case((head as COMMUNICATION(requiredTime=currentCost))::rest, COMMUNICATION(requiredTime=highestCost))
-      algorithm
-        true := realGt(currentCost, highestCost);
+  oHighestTuple := match(iCommCosts, iHighestTuple)
+    case((head as COMMUNICATION(requiredTime=currentCost))::rest, COMMUNICATION(requiredTime=highestCost)) guard realGt(currentCost, highestCost)
       then getHighestCommCost(rest, head);
     case(head::rest,_)
       then getHighestCommCost(rest, iHighestTuple);
     else iHighestTuple;
-  end matchcontinue;
+  end match;
 end getHighestCommCost;
 
 public function sumUpExeCosts "author: Waurich TUD 2014-07
@@ -6578,15 +6546,13 @@ protected
   Integer eqIdx, sccIdx;
   list<tuple<Integer,Integer>> rest;
 algorithm
-  oIndex := matchcontinue iEquationSccMapping
-    case (eqIdx,sccIdx)::rest
-      algorithm
-        true := intGt(sccIdx,iHighestIndex);
+  oIndex := match iEquationSccMapping
+    case (eqIdx,sccIdx)::rest guard intGt(sccIdx,iHighestIndex)
       then findHighestSccIdxInMapping(rest,sccIdx);
     case (eqIdx,sccIdx)::rest
       then findHighestSccIdxInMapping(rest,iHighestIndex);
     else iHighestIndex;
-  end matchcontinue;
+  end match;
 end findHighestSccIdxInMapping;
 
 protected function removeDummyStateFromMapping "author: marcusw
@@ -6606,10 +6572,8 @@ protected
   Integer eqIdx,sccIdx;
   tuple<Integer,Integer> newElem;
 algorithm
-  oNewList := matchcontinue iTuple
-    case (eqIdx,sccIdx)
-      algorithm
-        true := intEq(sccIdx,1);
+  oNewList := match iTuple
+    case (eqIdx,sccIdx) guard intEq(sccIdx,1)
       then iNewList;
     case (eqIdx,sccIdx)
       algorithm
@@ -6619,7 +6583,7 @@ algorithm
       algorithm
         print("removeDummyStateFromMapping1 failed\n");
     then iNewList;
-  end matchcontinue;
+  end match;
 end removeDummyStateFromMapping1;
 
 protected function convertToSccSimEqMapping "author: marcusw
@@ -6701,12 +6665,12 @@ algorithm
   oMapping := matchcontinue iMapping
     case _
       algorithm
-        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
+        (simEqIdx,_) := HpcOmCodegenUtil.getIndexBySimCodeEq(iEquation);
         tmpMapping := arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
       then tmpMapping;
     else
       algorithm
-        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
+        (simEqIdx,_) := HpcOmCodegenUtil.getIndexBySimCodeEq(iEquation);
         //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
       then iMapping;
   end matchcontinue;
@@ -6742,63 +6706,6 @@ algorithm
       then fail();
   end match;
 end getSimCodeEqByIndexAndMapping1;
-
-public function getSimCodeEqByIndex "author: marcusw
-  Returns the SimEqSystem which has the given Index. This method is called from susan."
-  input list<SimCode.SimEqSystem> iEqs; //All SimEqSystems
-  input Integer iIdx; //The index of the required system
-  output SimCode.SimEqSystem oEq;
-protected
-  list<SimCode.SimEqSystem> rest;
-  SimCode.SimEqSystem head;
-  Integer headIdx,headIdx2;
-algorithm
-  oEq := matchcontinue iEqs
-    case head::rest
-      algorithm
-        (headIdx,headIdx2) := getIndexBySimCodeEq(head);
-        //print("getSimCodeEqByIndex listLength: " + intString(listLength(iEqs)) + " head idx: " + intString(headIdx) + "\n");
-        true := intEq(headIdx,iIdx) or intEq(headIdx2,iIdx);
-      then head;
-    case head::rest then getSimCodeEqByIndex(rest,iIdx);
-    else
-      algorithm
-        print("getSimCodeEqByIndex failed. Looking for Index " + intString(iIdx) + "\n");
-        //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
-      then fail();
-  end matchcontinue;
-end getSimCodeEqByIndex;
-
-protected function getIndexBySimCodeEq "author: marcusw
-  Just a small helper function to get the index of a SimEqSystem."
-  input SimCode.SimEqSystem iEq;
-  output Integer oIdx;
-  output Integer oIdx2;
-protected
-  Integer index,index2;
-algorithm
-  (oIdx,oIdx2) := match iEq
-    case SimCode.SES_RESIDUAL(index=index) then (index,0);
-    case SimCode.SES_SIMPLE_ASSIGN(index=index) then (index,0);
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index) then (index,0);
-    case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then (index,0);
-    case SimCode.SES_IFEQUATION(index=index) then (index,0);
-    case SimCode.SES_ALGORITHM(index=index) then (index,0);
-    // no dynamic tearing
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), NONE()) then (index,0);
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), NONE()) then (index,0);
-    // dynamic tearing
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=index), SOME(SimCode.LINEARSYSTEM(index=index2))) then (index,index2);
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2))) then (index,index2);
-    case SimCode.SES_MIXED(index=index) then (index,0);
-    case SimCode.SES_WHEN(index=index) then (index,0);
-    case SimCode.SES_ALIAS(aliasOf=index) then (index,0);
-    else
-      algorithm
-        Error.addInternalError(getInstanceName()+" failed", sourceInfo());
-      then fail();
-  end match;
-end getIndexBySimCodeEq;
 
 protected function getSimCodeEqsByTaskList "author: marcusw
   Get the simCode.SimEqSystem - objects references by the given tasks."

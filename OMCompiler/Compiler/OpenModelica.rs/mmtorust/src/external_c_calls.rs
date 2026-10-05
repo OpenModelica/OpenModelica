@@ -108,6 +108,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("BackendDAEEXT_setF", Infallible);
         m.insert("BackendDAEEXT_getF", Infallible);
         m.insert("BackendDAEEXT_setAdjacencyMatrix", Infallible);
+        m.insert("BackendDAEEXT_setAdjacencyMatrixFlat", Infallible);
         m.insert("BackendDAEEXT_cheapmatching", Infallible);
         m.insert("BackendDAEEXT_matching", Infallible);
         m.insert("BackendDAEEXT_setAssignment", Infallible);
@@ -117,17 +118,6 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         // Star bicoloring wrapper: builds arrays and calls ColPack. No
         // MMC_THROW / c_add_message / status return to MetaModelica.
         m.insert("ColPackBicoloring_starBicolor", Infallible);
-
-        // ── Corba_omc.cpp / corbaimpl_stub_omc.c ──────────────────────────
-        // In the stub build every Corba_* throws; in the corba build only
-        // initialize can throw. We choose the safe upper bound: Fallible.
-        m.insert("Corba_haveCorba", Infallible); // pure flag query
-        m.insert("Corba_setObjectReferenceFilePath", Fallible);
-        m.insert("Corba_setSessionName", Fallible);
-        m.insert("Corba_waitForCommand", Fallible);
-        m.insert("Corba_initialize", Fallible);
-        m.insert("Corba_close", Fallible);
-        m.insert("Corba_sendreply", Fallible);
 
         // ── Dynload_omc.cpp ────────────────────────────────────────────────
         m.insert("DynLoad_executeFunction", Fallible); // throws on lookup/call failure
@@ -400,6 +390,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("SystemImpl__alarm", Infallible);
         m.insert("SystemImpl__chdir", Infallible);             // returns int status
         m.insert("SystemImpl__copyFile", Infallible);          // returns int status
+        m.insert("SystemImpl__copyPath", Infallible);          // returns int status
         m.insert("SystemImpl__covertTextFileToCLiteral", Infallible);
         m.insert("SystemImpl__createDirectory", Infallible);
         m.insert("SystemImpl__createTemporaryDirectory", Fallible); // mkdtemp failure throws
@@ -594,6 +585,14 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
 
         // ── Mutable.mo / Pointer.mo inline helpers ─────────────────────────
         m.insert("mutableCreate", Infallible);
+        m.insert("mutableWeakDowngrade", Infallible);
+        m.insert("mutableWeakOfValue", Infallible);
+        m.insert("mutableWeakValue", Infallible);
+        // Root bookkeeping: a no-op in C, a Vec push/clear in the Rust port.
+        // Fails when the referent is already gone. Identity in the C runtime,
+        // where Boehm keeps the cell alive and it can never fail.
+        m.insert("mutableWeakUpgrade", Fallible);
+        m.insert("pointerWeakUpgrade", Fallible);
         m.insert("mutableUpdate", Infallible);
         m.insert("mutableAccess", Infallible);
         m.insert("pointerCreate", Infallible);
@@ -605,15 +604,14 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("om_unzip", Infallible);
 
         // ── omc_file_ext.h inline file API ─────────────────────────────────
-        // The om_file_* family of helpers are static inline; none of them
-        // call MMC_THROW or report failure beyond their integer status.
+        // open/write* fail through ModelicaFormatError.
         m.insert("om_file_new", Infallible);
         m.insert("om_file_free", Infallible);
-        m.insert("om_file_open", Infallible);
-        m.insert("om_file_write", Infallible);
-        m.insert("om_file_write_int", Infallible);
-        m.insert("om_file_write_real", Infallible);
-        m.insert("om_file_write_escape", Infallible);
+        m.insert("om_file_open", Fallible);
+        m.insert("om_file_write", Fallible);
+        m.insert("om_file_write_int", Fallible);
+        m.insert("om_file_write_real", Fallible);
+        m.insert("om_file_write_escape", Fallible);
         m.insert("om_file_seek", Infallible);
         m.insert("om_file_tell", Infallible);
         m.insert("om_file_get_filename", Infallible);
@@ -659,6 +657,10 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
 
         m.insert("intMaxLit", Infallible);
         m.insert("realMaxLit", Infallible);
+
+        // JSON.rust.mo: serde_json in openmodelica_util/src/JSONExt.rs.
+        m.insert("JSON_parseFile", Fallible);
+        m.insert("JSON_parse", Fallible);
 
         // NFApi.mo
         m.insert("ModelInstanceReference_store", Infallible);
@@ -793,6 +795,8 @@ pub fn external_c_impl_path(c_name: &str) -> Option<&'static str> {
         // `openmodelica_util/src/ModelInstanceReference.rs`.
         "ModelInstanceReference_store" => Some("openmodelica_util::ModelInstanceReference::store"),
         "ModelInstanceReference_release" => Some("openmodelica_util::ModelInstanceReference::release"),
+        "JSON_parseFile" => Some("crate::JSONExt::parseFile"),
+        "JSON_parse" => Some("crate::JSONExt::parse"),
         _ => None,
     }
 }

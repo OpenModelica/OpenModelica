@@ -1,0 +1,161 @@
+// name: saveTotalModel5
+// keywords: saveTotalModel #5248
+// status: correct
+// teardown_command: rm -f SaveTotalModel5_total.mo
+//
+// saveTotalModel finds the used classes by looking up the names in them, so
+// the functions used without being named are kept whenever their class is:
+// the equalityConstraint of an overconstrained record and all operators of an
+// operator record ('0' is needed for the sum of an empty array).
+//
+
+loadString("
+  package SaveTotalModel5
+    operator record R
+      Real x;
+      encapsulated operator '+'
+        function add
+          import SaveTotalModel5.R;
+          input R a;
+          input R b;
+          output R c;
+        algorithm
+          c := R(a.x + b.x);
+        end add;
+      end '+';
+      encapsulated function '0'
+        import SaveTotalModel5.R;
+        output R z;
+      algorithm
+        z := R(0);
+      end '0';
+    end R;
+
+    record O
+      Real v[2];
+      function equalityConstraint
+        input O o1;
+        input O o2;
+        output Real residue[1];
+      algorithm
+        residue := {o1.v[1] - o2.v[1]};
+      end equalityConstraint;
+    end O;
+
+    connector C
+      O o;
+      flow Real f[1];
+    end C;
+
+    model Source
+      C c;
+    equation
+      Connections.root(c.o);
+      c.o.v = {time, 0};
+    end Source;
+
+    model Sink
+      C c;
+    equation
+      c.f = {0};
+    end Sink;
+
+    model M
+      Source source;
+      Sink sink;
+      parameter Integer n = 0;
+      R r[n] = fill(R(1), n);
+      R s = sum(r);
+    equation
+      connect(source.c, sink.c);
+    end M;
+  end SaveTotalModel5;
+"); getErrorString();
+saveTotalModel("SaveTotalModel5_total.mo", SaveTotalModel5.M); getErrorString();
+readFile("SaveTotalModel5_total.mo");
+clear(); getErrorString();
+loadFile("SaveTotalModel5_total.mo"); getErrorString();
+checkModel(M_total); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "package SaveTotalModel5
+//   operator record R
+//     Real x;
+//
+//     encapsulated operator '+'
+//       function add
+//         import SaveTotalModel5.R;
+//         input R a;
+//         input R b;
+//         output R c;
+//       algorithm
+//         c := R(a.x + b.x);
+//       end add;
+//     end '+';
+//
+//     encapsulated function '0'
+//       import SaveTotalModel5.R;
+//       output R z;
+//     algorithm
+//       z := R(0);
+//     end '0';
+//   end R;
+//
+//   record O
+//     Real v[2];
+//
+//     function equalityConstraint
+//       input O o1;
+//       input O o2;
+//       output Real residue[1];
+//     algorithm
+//       residue := {o1.v[1] - o2.v[1]};
+//     end equalityConstraint;
+//   end O;
+//
+//   connector C
+//     O o;
+//     flow Real f[1];
+//   end C;
+//
+//   model Source
+//     C c;
+//   equation
+//     Connections.root(c.o);
+//     c.o.v = {time, 0};
+//   end Source;
+//
+//   model Sink
+//     C c;
+//   equation
+//     c.f = {0};
+//   end Sink;
+//
+//   model M
+//     Source source;
+//     Sink sink;
+//     parameter Integer n = 0;
+//     R r[n] = fill(R(1), n);
+//     R s = sum(r);
+//   equation
+//     connect(source.c, sink.c);
+//   end M;
+// end SaveTotalModel5;
+//
+// model M_total
+//   extends SaveTotalModel5.M;
+// end M_total;
+// "
+// true
+// ""
+// true
+// ""
+// "Check of M_total completed successfully.
+// Class M_total has 7 equation(s) and 7 variable(s).
+// 7 of these are trivial equation(s)."
+// ""
+// endResult

@@ -1,7 +1,9 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+inactiveWhenBranch.mos \
 arrayCascade.mos \
+enumWithIntegerConstants.mos \
 arrayReadElements.mos \
 detectStates.mos \
 emptyModel.mos \

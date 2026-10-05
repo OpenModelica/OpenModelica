@@ -10,7 +10,10 @@
 //! Strings cross as JSON in one buffer ([`om_fmi_out_ptr`]/[`om_fmi_out_len`]);
 //! sample values are read straight out of the recorder's buffer.
 
-use openmodelica_fmi::{Causality, Fmu, Initial, InterfaceKind, ModelDescription, VarType, Variability};
+use openmodelica_fmi::{
+    Causality, Dimension, FmiVersion, Fmu, Initial, InterfaceKind, ModelDescription, VarType,
+    Variability, Variable,
+};
 use openmodelica_fmi_driver::api::{Fmi3CoSimulation, Fmi3ModelExchange};
 use openmodelica_fmi_driver::record::Recorder;
 use openmodelica_fmi_driver::wasm_host::{HostFmu, KIND_CO_SIMULATION, KIND_MODEL_EXCHANGE};
@@ -215,8 +218,10 @@ pub extern "C" fn om_fmi_info() -> i32 {
 /// `{"interface":"me"|"cs", "startTime":…, "stopTime":…, "stepSize":…,
 ///   "tolerance":…, "solver": one of the `solvers` [`om_fmi_info`] lists,
 ///   "eventMode":bool,
-///   "loggingOn":bool, "parameters":[{"vr":…,"value":…}],
+///   "loggingOn":bool, "parameters":[{"vr":…,"values":[…]}],
 ///   "inputs":[{"vr":…,"expr":"sin(t)"}], "resultFile":"…"}`.
+/// An array variable is one value reference: `values` holds one entry per
+/// element, and its input expression is a comma-separated list of them.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn om_fmi_run(ptr: *const u8, len: usize) -> i32 {
     let text = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
@@ -275,17 +280,19 @@ pub extern "C" fn om_fmi_rows_len() -> usize {
 }
 
 /// Write the result file, through WASI like every other file a simulation
-/// writes.
+/// writes. The name's suffix picks the format (`.arrow` or `.mat`).
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn om_fmi_write_mat(ptr: *const u8, len: usize) -> i32 {
+pub unsafe extern "C" fn om_fmi_write_result(ptr: *const u8, len: usize) -> i32 {
     let path = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(ptr, len) }).into_owned();
     with(|s| {
+        let Some(fmu) = s.fmu.as_ref() else { return fail("no FMU is loaded") };
+        let units = fmu.model_description.units.clone();
         let Some(run) = s.run.as_ref() else { return fail("nothing has been simulated") };
         let (start, stop) = (
             run.summary["startTime"].as_f64().unwrap_or(0.0),
             run.summary["stopTime"].as_f64().unwrap_or(0.0),
         );
-        match run.recorder.write_mat(std::path::Path::new(&path), start, stop) {
+        match run.recorder.write(std::path::Path::new(&path), start, stop, &units) {
             Ok(()) => 1,
             Err(e) => fail(e),
         }
@@ -324,6 +331,22 @@ fn causality_name(c: Causality) -> &'static str {
     }
 }
 
+/// How many values a variable takes: the product of its extents, a structural
+/// parameter's start value standing in for the dimension it gives.
+fn n_values(md: &ModelDescription, v: &Variable) -> usize {
+    v.dimensions
+        .iter()
+        .map(|d| match d {
+            Dimension::Fixed(k) => *k as usize,
+            Dimension::ValueReference(vr) => md
+                .variable_by_vr(*vr)
+                .and_then(|s| s.start.as_ref())
+                .and_then(|s| s.first_f64())
+                .unwrap_or(1.0) as usize,
+        })
+        .product()
+}
+
 /// Everything the page shows about an FMU before it is run.
 fn describe(fmu: &Fmu) -> Value {
     let md = &fmu.model_description;
@@ -359,7 +382,9 @@ fn describe(fmu: &Fmu) -> Value {
                     Variability::Continuous => "continuous",
                 },
                 "unit": v.unit,
-                "start": v.start.as_ref().and_then(|s| s.first_f64()),
+                "displayUnit": v.display_unit,
+                "start": v.start.as_ref().and_then(|s| s.f64s()),
+                "nValues": n_values(md, v),
                 "numeric": v.ty.is_numeric(),
                 "settable": v.is_settable(),
                 // Together these name an editable start value: `derivative` the
@@ -379,6 +404,25 @@ fn describe(fmu: &Fmu) -> Value {
         .variables
         .iter()
         .flat_map(|v| v.aliases.iter().map(move |a| (a.name.clone(), Value::from(v.name.clone()))))
+        .collect::<serde_json::Map<String, Value>>()
+        .into();
+    // What each unit converts into, for the page's display-unit switch.
+    let units: Value = md
+        .units
+        .iter()
+        .map(|u| {
+            let displays: Vec<Value> = u
+                .display_units
+                .iter()
+                .map(|d| json!({
+                    "name": d.name,
+                    "factor": d.factor,
+                    "offset": d.offset,
+                    "inverse": d.inverse,
+                }))
+                .collect();
+            (u.name.clone(), Value::from(displays))
+        })
         .collect::<serde_json::Map<String, Value>>()
         .into();
     json!({
@@ -401,6 +445,10 @@ fn describe(fmu: &Fmu) -> Value {
         "numberOfEventIndicators": md.number_of_event_indicators,
         "variables": variables,
         "aliases": aliases,
+        "units": units,
+        // Whether the FMU declares fmi-ls-dae, so Model Exchange can be run over
+        // its residuals instead of the ODE face the same FMU also serves.
+        "lsDae": fmu.ls_dae_manifest().is_some(),
         "figures": md.figures().iter().map(figure_json).collect::<Vec<_>>(),
         "visualization": md.visualization().map(|v| json!({"file": v.file})),
         // Not the FMU's: what a run of it can be given, for the page's chooser.
@@ -437,6 +485,15 @@ fn figure_json(f: &openmodelica_fmi::Figure) -> Value {
 }
 
 fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Error> {
+    // An FMI 1.0/2.0 FMU numbers its value references per base type, which only
+    // its own loader translates; driving one here would reach other variables.
+    if md.fmi_version != FmiVersion::Fmi3 {
+        return Err(Error::Unsupported(format!(
+            "this FMU is FMI {}; the simulator drives FMI 3.0. Export it with version=\"3.0\" \
+             to simulate it here",
+            md.fmi_version_string
+        )));
+    }
     let mut opts = Options::from_model_description(md);
     let num = |key: &str| o.get(key).and_then(Value::as_f64);
     opts.start_time = num("startTime").unwrap_or(opts.start_time);
@@ -458,16 +515,27 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
     let variable_type = |vr: u64| -> VarType {
         md.variable_by_vr(vr as u32).map(|v| v.ty).unwrap_or(VarType::Float64)
     };
+    // FMI sets an array whole: what the page sends must be as long as the variable.
+    let check = |vr: u64, n: usize| -> Result<(), Error> {
+        let Some(v) = md.variable_by_vr(vr as u32) else { return Ok(()) };
+        let len = n_values(md, v);
+        if n != len {
+            return Err(Error::Unsupported(format!("`{}` takes {len} value(s), not {n}", v.name)));
+        }
+        Ok(())
+    };
     for p in o.get("parameters").and_then(Value::as_array).into_iter().flatten() {
-        let (Some(vr), Some(value)) =
-            (p.get("vr").and_then(Value::as_u64), p.get("value").and_then(Value::as_f64))
+        let (Some(vr), Some(values)) =
+            (p.get("vr").and_then(Value::as_u64), p.get("values").and_then(Value::as_array))
         else {
             continue;
         };
+        let values: Vec<f64> = values.iter().filter_map(Value::as_f64).collect();
+        check(vr, values.len())?;
         opts.parameters.push(Parameter {
             value_reference: vr as u32,
             ty: variable_type(vr),
-            value,
+            values,
         });
     }
     for i in o.get("inputs").and_then(Value::as_array).into_iter().flatten() {
@@ -476,9 +544,10 @@ fn options_from(md: &ModelDescription, o: &Value) -> Result<Options<'static>, Er
         else {
             continue;
         };
-        let value = expr::Expr::parse(text)
+        let values = expr::Expr::parse_list(text)
             .map_err(|e| Error::Unsupported(format!("the input expression `{text}`: {e}")))?;
-        opts.inputs.push(Input { value_reference: vr as u32, ty: variable_type(vr), value });
+        check(vr, values.len())?;
+        opts.inputs.push(Input { value_reference: vr as u32, ty: variable_type(vr), values });
     }
     Ok(opts)
 }
@@ -524,7 +593,7 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
         _ => None,
     };
     let kind = openmodelica_fmi_driver::choose_interface(md, wanted)?;
-    let opts = options_from(md, o)?;
+    let mut opts = options_from(md, o)?;
 
     match kind {
         InterfaceKind::CoSimulation => {
@@ -553,6 +622,19 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
             })
         }
         InterfaceKind::ModelExchange => {
+            // fmi-ls-dae: the FMU stays an ODE FMU until the master enables DAE
+            // mode, after which the master sets the states, their derivatives and
+            // the algebraic variables and reads the residuals back. Only IDA takes
+            // that form, so the driver rejects any other solver itself.
+            if o.get("daeMode").and_then(Value::as_bool).unwrap_or(false) {
+                opts.dae = Some(match fmu.ls_dae_manifest() {
+                    Some(Ok(m)) => m,
+                    Some(Err(e)) => return Err(Error::Unsupported(format!("fmi-ls-dae manifest: {e}"))),
+                    None => return Err(Error::Unsupported(
+                        "DAE mode asks for fmi-ls-dae, which this FMU does not declare".to_string(),
+                    )),
+                });
+            }
             let mut inst =
                 HostFmu::instantiate(KIND_MODEL_EXCHANGE, false, false, opts.logging_on)?;
             let r = me::simulate(&mut inst as &mut dyn Fmi3ModelExchange, md, &opts)?;
@@ -566,10 +648,11 @@ fn run(fmu: &Fmu, o: &Value) -> Result<Run, Error> {
                     "jacobians": r.jacobians,
                     "stateEvents": r.state_events,
                     "timeEvents": r.time_events,
-                    "eventTimes": r.event_times,
+                    "eventTimes": r.event_times.iter().map(|e| e.time).collect::<Vec<_>>(),
                     "terminatedAt": r.terminated_at,
                     "cancelled": r.cancelled,
                     "solver": opts.solver.as_str(),
+                    "daeMode": opts.dae.is_some(),
                 }),
                 recorder: r.recorder,
             })

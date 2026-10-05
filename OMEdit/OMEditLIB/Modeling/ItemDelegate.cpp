@@ -38,8 +38,6 @@
  */
 
 #include "ItemDelegate.h"
-#include "Modeling/ModelWidgetContainer.h"
-#include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "OMPlot.h"
@@ -58,11 +56,7 @@ ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
 QString ItemDelegate::formatDisplayText(QVariant variant) const
 {
   QString text;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (variant.typeId() == QMetaType::Double) {
-#else
-  if (variant.type() == QVariant::Double) {
-#endif
     text = QLocale().toString(variant.toDouble());
   } else {
     text = variant.toString();
@@ -117,11 +111,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QRect decorationRect;
   value = index.data(Qt::DecorationRole);
   if (value.isValid()) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     if (value.typeId() == QMetaType::QIcon) {
-#else
-    if (value.type() == QVariant::Icon) {
-#endif
       icon = qvariant_cast<QIcon>(value);
       decorationRect = QRect(QPoint(0, 0), icon.actualSize(opt.decorationSize, iconMode, iconState));
     } else {
@@ -342,7 +332,19 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       foreach (QString unit, pVariablesTreeItem->getDisplayUnits()) {
         pComboBox->addItem(OMPlot::Plot::convertUnitToSymbol(unit), unit);
       }
-      connect(pComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
+      /* When a QComboBox is used as an item view delegate editor its popup is a child of the
+       * viewport. On some styles/platforms the popup list view is not painted with an opaque
+       * background, so the tree view's content shows through the drop down. Enable auto fill
+       * background and force the popup view to paint opaquely to prevent this. */
+      pComboBox->setAutoFillBackground(true);
+      pComboBox->view()->setAutoFillBackground(true);
+      /* Use the activated signal instead of currentIndexChanged.
+       * activated(int) is only emitted when the user actually selects an item in the dropdown,
+       * whereas currentIndexChanged(int) also fires during editor setup (e.g. when items are added
+       * in createEditor or when setEditorData sets the current index). Emitting commitData in that
+       * case calls QAbstractItemView::commitData before the editor belongs to the view, which
+       * results in "QAbstractItemView::commitData called with an editor that does not belong to this view". */
+      connect(pComboBox, qOverload<int>(&QComboBox::activated), this, &ItemDelegate::unitComboBoxChanged);
       return pComboBox;
     }
   }

@@ -59,6 +59,7 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
+  import NFOperator.Op;
   import Variable = NFVariable;
 
   // NB imports
@@ -78,6 +79,7 @@ protected
   import BuiltinSystem = System;
   import Slice = NBSlice;
   import StringUtil;
+  import Vector;
 
 public
   type MatrixStrictness  = enumeration(LINEAR, MATCHING, SORTING, FULL);
@@ -336,47 +338,398 @@ public
       output Mode oMode = MODE(mode1.eqn_name, listAppend(mode1.crefs, mode2.crefs), mode1.scalarize or mode2.scalarize);
     end merge;
 
-    function mergeCreate
-      input Option<Mode> omode;
-      input output Mode mode;
-    algorithm
-      mode := Util.applyOptionOrDefault(omode, function merge(mode1 = mode), mode);
-    end mergeCreate;
-
-    type Key = tuple<Integer, Integer>;
-
-    function keyString
-      input Key key;
-      output String str;
-    protected
-      Integer e,v;
-    algorithm
-      (e,v) := key;
-      str := intString(e) + "," + intString(v);
-    end keyString;
-
-    function keyHash
-      input Key key;
-      output Integer hash;
-    protected
-      Integer e,v;
-    algorithm
-      (e,v) := key;
-      hash := e * 31 + v;
-    end keyHash;
-
-    function keyEqual
-      input Key key1;
-      input Key key2;
-      output Boolean b;
-    protected
-      Integer e1,e2,v1,v2;
-    algorithm
-      (e1,v1) := key1;
-      (e2,v2) := key2;
-      b := e1 == e2 and v1 == v2;
-    end keyEqual;
   end Mode;
+
+  type ModeTable = Vector<Mode>
+    "the distinct causalization modes. a matrix entry refers to one by its index
+    in here (0 for none), kept in the matrix payload instead of in a map keyed
+    on the (equation, variable) pair.";
+
+  package Modes
+    function new
+      output ModeTable modes = Vector.new<Mode>(0);
+    end new;
+
+    function add
+      input ModeTable modes;
+      input Mode mode;
+      output Integer id;
+    algorithm
+      Vector.push(modes, mode);
+      id := Vector.size(modes);
+    end add;
+
+    function get
+      "the mode of the (eqn, var) entry. duplicate entries are merged the way
+      UnorderedMap.addMerge did, newest first, which is the row order."
+      input ModeTable modes;
+      input IntMatrix m;
+      input array<Integer> data;
+      input array<Integer> ids;
+      input Integer eqn;
+      input Integer var;
+      output Option<Mode> res = NONE();
+    protected
+      Integer first = m.start[eqn];
+      Mode mode;
+    algorithm
+      for k in first:first + m.len[eqn] - 1 loop
+        if data[k] == var and ids[k] > 0 then
+          mode := Vector.getNoBounds(modes, ids[k]);
+          res := match res
+            local Mode acc;
+            case SOME(acc) then SOME(Mode.merge(acc, mode));
+            else SOME(mode);
+          end match;
+        end if;
+      end for;
+    end get;
+  end Modes;
+
+  uniontype IntMatrix
+    "Adjacency rows stored flat: every row is a slice of one append-only integer
+    buffer. Nothing in here is a pointer, so the collector does not have to walk
+    the nonzeros. aux carries one extra integer per entry (the causalization
+    mode id of the normal matrix), and is empty where it is not used."
+
+    record INT_MATRIX
+      array<Integer> start  "row -> 1-based index of its first entry in data";
+      array<Integer> len    "row -> number of entries";
+      Vector<Integer> data  "entry buffer, only appended to";
+      Vector<Integer> aux   "payload parallel to data, empty if unused";
+    end INT_MATRIX;
+
+    uniontype Builder
+      "The matrix is filled by collecting (row, entry) pairs in any order;
+      fromBuilder() then groups them by row in one counting sort."
+      record BUILDER
+        Vector<Integer> pairs;
+        Vector<Integer> aux;
+        Boolean hasAux;
+      end BUILDER;
+    end Builder;
+
+    function new
+      input Integer rows;
+      output IntMatrix m = INT_MATRIX(arrayCreate(rows, 1), arrayCreate(rows, 0), Vector.new<Integer>(0), Vector.new<Integer>(0));
+    end new;
+
+    function rows
+      input IntMatrix m;
+      output Integer n = arrayLength(m.start);
+    end rows;
+
+    function nonZeroCount
+      input IntMatrix m;
+      output Integer count = sum(l for l in m.len);
+    end nonZeroCount;
+
+    function entries
+      "the raw entry buffer, indexed by start[row] .. start[row]+len[row]-1.
+      invalidated by anything that adds entries"
+      input IntMatrix m;
+      output array<Integer> data = Vector.rawArray(m.data);
+    end entries;
+
+    function payload
+      input IntMatrix m;
+      output array<Integer> aux = Vector.rawArray(m.aux);
+    end payload;
+
+    function toList
+      input IntMatrix m;
+      input Integer row;
+      output list<Integer> lst = {};
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      Integer first = m.start[row];
+    algorithm
+      for k in first + m.len[row] - 1:-1:first loop
+        lst := data[k] :: lst;
+      end for;
+    end toList;
+
+    function setRow
+      "replaces a row by appending its new entries to the buffer. the payload,
+      if any, is not maintained"
+      input IntMatrix m;
+      input Integer row;
+      input list<Integer> values;
+    algorithm
+      arrayUpdate(m.start, row, Vector.size(m.data) + 1);
+      arrayUpdate(m.len, row, listLength(values));
+      for v in values loop
+        Vector.push(m.data, v);
+      end for;
+    end setRow;
+
+    function setRowFromArray
+      "setRow with the first n entries of values"
+      input IntMatrix m;
+      input Integer row;
+      input array<Integer> values;
+      input Integer n;
+    algorithm
+      arrayUpdate(m.start, row, Vector.size(m.data) + 1);
+      arrayUpdate(m.len, row, n);
+      for i in 1:n loop
+        Vector.push(m.data, values[i]);
+      end for;
+    end setRowFromArray;
+
+    function reserveData
+      "makes room for extra more entries so that adding them does not grow the buffer"
+      input IntMatrix m;
+      input Integer extra;
+      input Boolean withAux = false;
+    algorithm
+      Vector.reserve(m.data, Vector.size(m.data) + extra);
+      if withAux then
+        Vector.reserve(m.aux, Vector.size(m.aux) + extra);
+      end if;
+    end reserveData;
+
+    function clearRow
+      input IntMatrix m;
+      input Integer row;
+    algorithm
+      arrayUpdate(m.len, row, 0);
+    end clearRow;
+
+    function copyRow
+      "appends row src of `from` (whose buffer must be given) as row dst of m"
+      input IntMatrix from;
+      input Integer src;
+      input array<Integer> from_data;
+      input array<Integer> from_aux;
+      input IntMatrix m;
+      input Integer dst;
+    protected
+      Integer first = from.start[src], n = from.len[src];
+      Boolean aux = arrayLength(from_aux) > 0;
+    algorithm
+      arrayUpdate(m.start, dst, Vector.size(m.data) + 1);
+      arrayUpdate(m.len, dst, n);
+      for k in first:first + n - 1 loop
+        Vector.push(m.data, from_data[k]);
+        if aux then
+          Vector.push(m.aux, from_aux[k]);
+        end if;
+      end for;
+    end copyRow;
+
+    function expandRows
+      input output IntMatrix m;
+      input Integer shift;
+    algorithm
+      if shift > 0 then
+        m := INT_MATRIX(Array.expandToSize(arrayLength(m.start) + shift, m.start, 1),
+                        Array.expandToSize(arrayLength(m.len) + shift, m.len, 0), m.data, m.aux);
+      end if;
+    end expandRows;
+
+    function transpose
+      "transposes the matrix, dropping any payload. a negative entry -v means
+      that row occurs negated in column v. each result row comes out descending,
+      matching what List.sort(.., intLt) produced before.
+      slack reserves buffer space for rows that are merged in afterwards."
+      input IntMatrix m;
+      input Integer size "number of rows of the result (does not have to be square!)";
+      input Integer slack = 0;
+      output IntMatrix mT;
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      array<Integer> start, len, out;
+      Integer n = arrayLength(m.start), nnz = 0, idx, pos, first;
+      Boolean negated = false;
+    algorithm
+      start := arrayCreate(size, 1);
+      len   := arrayCreate(size, 0);
+
+      for r in 1:n loop
+        first := m.start[r];
+        for k in first:first + m.len[r] - 1 loop
+          idx := intAbs(data[k]);
+          if idx > 0 and idx <= size then
+            arrayUpdate(len, idx, len[idx] + 1);
+            nnz := nnz + 1;
+            negated := negated or data[k] < 0;
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(data[k]) + ".
+              The variables have to be dense (without empty spaces) for this to work!"});
+          end if;
+        end for;
+      end for;
+
+      pos := 1;
+      for c in 1:size loop
+        arrayUpdate(start, c, pos);
+        pos := pos + len[c];
+      end for;
+
+      out := arrayCreate(nnz + slack, 0);
+
+      // scatter, using start as the cursor and winding it back afterwards.
+      // positive entries first, rows descending
+      for r in n:-1:1 loop
+        first := m.start[r];
+        for k in first:first + m.len[r] - 1 loop
+          idx := data[k];
+          if idx > 0 and idx <= size then
+            arrayUpdate(out, start[idx], r);
+            arrayUpdate(start, idx, start[idx] + 1);
+          end if;
+        end for;
+      end for;
+
+      // then the negated ones, rows ascending so that -row descends
+      if negated then
+        for r in 1:n loop
+          first := m.start[r];
+          for k in first:first + m.len[r] - 1 loop
+            idx := data[k];
+            if idx < 0 and -idx <= size then
+              arrayUpdate(out, start[-idx], -r);
+              arrayUpdate(start, -idx, start[-idx] + 1);
+            end if;
+          end for;
+        end for;
+      end if;
+
+      for c in 1:size loop
+        arrayUpdate(start, c, start[c] - len[c]);
+      end for;
+
+      mT := INT_MATRIX(start, len, Vector.fromArrayNoCopy(out, nnz), Vector.new<Integer>(0));
+    end transpose;
+
+    function newBuilder
+      input Integer capacity = 0;
+      input Boolean withAux = false;
+      output Builder b = Builder.BUILDER(Vector.new<Integer>(2 * capacity),
+                                         Vector.new<Integer>(if withAux then capacity else 0), withAux);
+    end newBuilder;
+
+    function builderAdd
+      input Builder b;
+      input Integer row;
+      input Integer value;
+    algorithm
+      Vector.push(b.pairs, row);
+      Vector.push(b.pairs, value);
+    end builderAdd;
+
+    function builderAddAux
+      input Builder b;
+      input Integer row;
+      input Integer value;
+      input Integer aux;
+    algorithm
+      Vector.push(b.pairs, row);
+      Vector.push(b.pairs, value);
+      Vector.push(b.aux, aux);
+    end builderAddAux;
+
+    function builderAddList
+      "adds a whole row front, keeping the order of the list"
+      input Builder b;
+      input Integer row;
+      input list<Integer> values;
+      input Integer aux = 0;
+    algorithm
+      for v in listReverse(values) loop
+        Vector.push(b.pairs, row);
+        Vector.push(b.pairs, v);
+        if b.hasAux then
+          Vector.push(b.aux, aux);
+        end if;
+      end for;
+    end builderAddList;
+
+    function toBuilder
+      "seeds a builder with the entries of an existing matrix, oldest first, so that
+      fromBuilder puts them back in the same order"
+      input IntMatrix m;
+      input Integer capacity = 0;
+      input Boolean withAux = false;
+      output Builder b;
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      array<Integer> aux = Vector.rawArray(m.aux);
+      Integer nnz = nonZeroCount(m), first;
+    algorithm
+      b := newBuilder(intMax(nnz, capacity), withAux);
+      for r in 1:arrayLength(m.start) loop
+        first := m.start[r];
+        for k in first + m.len[r] - 1:-1:first loop
+          Vector.push(b.pairs, r);
+          Vector.push(b.pairs, data[k]);
+          if withAux then
+            Vector.push(b.aux, aux[k]);
+          end if;
+        end for;
+      end for;
+    end toBuilder;
+
+    function fromBuilder
+      "groups the collected pairs by row. entries were prepended to their row
+      before, so the pairs are distributed back to front."
+      input Builder b;
+      input Integer rows;
+      output IntMatrix m;
+    protected
+      array<Integer> raw = Vector.rawArray(b.pairs);
+      array<Integer> raux = Vector.rawArray(b.aux);
+      array<Integer> start, len, out, aout;
+      Integer n = intDiv(Vector.size(b.pairs), 2), r, pos = 1, p;
+    algorithm
+      start := arrayCreate(rows, 1);
+      len   := arrayCreate(rows, 0);
+
+      for i in 1:n loop
+        r := raw[2*i - 1];
+        arrayUpdate(len, r, len[r] + 1);
+      end for;
+
+      for i in 1:rows loop
+        arrayUpdate(start, i, pos);
+        pos := pos + len[i];
+      end for;
+
+      out  := arrayCreate(n, 0);
+      aout := arrayCreate(if b.hasAux then n else 0, 0);
+
+      // scatter, using start as the cursor and winding it back afterwards
+      for i in n:-1:1 loop
+        r := raw[2*i - 1];
+        p := start[r];
+        arrayUpdate(out, p, raw[2*i]);
+        if b.hasAux then
+          arrayUpdate(aout, p, raux[i]);
+        end if;
+        arrayUpdate(start, r, p + 1);
+      end for;
+
+      for i in 1:rows loop
+        arrayUpdate(start, i, start[i] - len[i]);
+      end for;
+
+      m := INT_MATRIX(start, len, Vector.fromArrayNoCopy(out, n), Vector.fromArrayNoCopy(aout, arrayLength(aout)));
+    end fromBuilder;
+
+    function toString
+      input IntMatrix m;
+      output String str = "";
+    protected
+      Integer skip = stringLength(intString(arrayLength(m.start))) + 1;
+      String tmp;
+    algorithm
+      for row in 1:arrayLength(m.start) loop
+        tmp := intString(row);
+        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(toList(m, row), intString) + "\n";
+      end for;
+    end toString;
+  end IntMatrix;
 
   uniontype Matrix
     "used to store adjacency information for the bipartite graph representing the system of equations and variables
@@ -397,10 +750,10 @@ public
     end FULL;
 
     record FINAL "specific final matrix, defined by its strictness"
-      array<list<Integer>> m              "eqn -> list<var>";
-      array<list<Integer>> mT             "var -> list<eqn>";
+      IntMatrix m                         "eqn -> vars";
+      IntMatrix mT                        "var -> eqns";
       Mapping mapping                     "index mapping scalar <-> array";
-      UnorderedMap<Mode.Key, Mode> modes  "array reconstruction information";
+      ModeTable modes                     "array reconstruction information";
       MatrixStrictness st                 "strictness with which it was created";
     end FINAL;
 
@@ -467,6 +820,42 @@ public
       end if;
     end createFull;
 
+    function subFull
+      "creates the full matrix of a subset of equations and variables from an
+      existing one, sharing its per-equation maps. eqn_indices are the indices
+      of eqns in full, in the order of eqns."
+      input Matrix full;
+      input list<Integer> eqn_indices;
+      input EquationPointers eqns;
+      input VariablePointers vars;
+      output Matrix sub;
+    protected
+      Integer size = listLength(eqn_indices), j = 1;
+      array<ComponentRef> equation_names;
+      array<UnorderedSet<ComponentRef>> occurrences, repetitions;
+      array<UnorderedMap<ComponentRef, Dependency>> dependencies;
+      array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
+    algorithm
+      sub := match full
+        case FULL() guard(size > 0) algorithm
+          equation_names  := arrayCreate(size, ComponentRef.EMPTY());
+          occurrences     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
+          solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
+          repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          for i in eqn_indices loop
+            equation_names[j] := full.equation_names[i];
+            occurrences[j]    := full.occurrences[i];
+            dependencies[j]   := full.dependencies[i];
+            solvabilities[j]  := full.solvabilities[i];
+            repetitions[j]    := full.repetitions[i];
+            j := j + 1;
+          end for;
+        then FULL(equation_names, occurrences, dependencies, solvabilities, repetitions, Mapping.create(eqns, vars));
+        else EMPTY(MatrixStrictness.FULL);
+      end match;
+    end subFull;
+
     function fullToFinal
       input Matrix full;
       input UnorderedMap<ComponentRef, Integer> vars_map;
@@ -493,6 +882,26 @@ public
         output Boolean b = UnorderedSet.contains(cref, set) or
                            UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set);
       end filterSet;
+
+      function expandSlice
+        "a slice (e.g. i[1:2]) whose elements are seeds depends on each of the elements"
+        input ComponentRef cref;
+        input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+        output list<ComponentRef> crefs;
+      protected
+        Type ty;
+      algorithm
+        crefs := {cref};
+        if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
+          ty := ComponentRef.getSubscriptedType(cref);
+          if Type.isArray(ty) and Type.sizeOf(ty) <= 256 then
+            crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarizeAll(cref, false));
+            if listEmpty(crefs) then
+              crefs := {cref};
+            end if;
+          end if;
+        end if;
+      end expandSlice;
     algorithm
       sparsity := match full
         local
@@ -518,11 +927,27 @@ public
           list<UnorderedMap<ComponentRef, Dependency>> deps = {};
           list<UnorderedSet<ComponentRef>> reps = {};
           list<list<ComponentRef>> solved_crefs = {};
+          list<ComponentRef> iter_names;
+          UnorderedSet<ComponentRef> own_iters;
+          UnorderedMap<ComponentRef, Dependencies> seed_elements = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedSet<ComponentRef> no_iters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, SliceAliases> slice_map = UnorderedMap.new<SliceAliases>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, InnerTemplates> template_map = UnorderedMap.new<InnerTemplates>(ComponentRef.hash, ComponentRef.isEqual);
+          Boolean handled;
+          list<ComponentRef> alias_deps, template_deps;
 
         case FULL() algorithm
           // create the equation name -> index map
           for i in 1:arrayLength(full.equation_names) loop
             UnorderedMap.add(full.equation_names[i], i, index_map);
+          end for;
+
+          // element seeds by variable name, for dependencies with iterators that can not be resolved
+          for key in UnorderedMap.keyList(diff_map) loop
+            if ComponentRef.hasSubscripts(key) and List.all(ComponentRef.subscriptsAllFlat(key), Subscript.isLiteral)
+               and not UnorderedMap.contains(ComponentRef.stripSubscriptsAll(key), diff_map) then
+              UnorderedMap.add(ComponentRef.stripSubscriptsAll(key), key :: UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(key), seed_elements, {}), seed_elements);
+            end if;
           end for;
 
           // get only relevant equations
@@ -551,10 +976,25 @@ public
                     // Guard prevents outer seed elements (which strip to the same base key
                     // that may be in inner_map) from being misclassified as inner deps.
                     inner_deps := {dep_cref};
+                    alias_deps := if filterSet(dep_cref, seed_set) then {} else sparsitySliceAliasDeps(dep_cref, slice_map);
+                    handled := false;
+                    template_deps := {};
                     if not filterSet(dep_cref, seed_set) then
+                      (handled, template_deps) := sparsityTemplateDeps(dep_cref, template_map);
+                    end if;
+                    if not listEmpty(alias_deps) then
+                      inner_deps := dep_cref :: alias_deps;
+                      changed := true;
+                    elseif handled then
+                      inner_deps := dep_cref :: template_deps;
+                      changed := true;
+                    elseif not filterSet(dep_cref, seed_set) then
                       inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
                       if isSome(inner_opt) then
-                        inner_deps := Util.getOption(inner_opt);
+                        // keep the cref itself, other elements of the same array might be seeds.
+                        // iterators of the found dependencies belong to another equation and can not be
+                        // matched with the ones of this equation (e.g. x[i+1] = y[i]), use all elements
+                        inner_deps := dep_cref :: List.flatten(list(sparsityExpandForeignIterators(c, no_iters, seed_elements) for c in Util.getOption(inner_opt)));
                         changed := true;
                       end if;
                     end if;
@@ -570,12 +1010,15 @@ public
                // create a new dependency map for this row and get all relevant seeds
                 dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
                 rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+                (iter_names, _, _) := Iterator.getFrames(Equation.getForIterator(Pointer.access(eqn)));
+                own_iters := UnorderedSet.fromList(iter_names, ComponentRef.hash, ComponentRef.isEqual);
                 for tpl in local_deps loop
                   // this might lead to duplicate occurrences. can and should not be optimized here
                   // as dependency information might not be combinable. optimize afterwards!
                   // ToDo: combine dependencies
                   (inner_deps, dep, repeated) := tpl;
-                  for dep_cref in inner_deps loop
+                  inner_deps := List.flatten(list(sparsityExpandForeignIterators(c, own_iters, seed_elements) for c in inner_deps));
+                  for dep_cref in List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)) loop
                     if filterSet(dep_cref, seed_set) then
                       // Try subscripted key first (NLS with per-element scalar seeds), then
                       // base key with subscript copy (ODE/DAE with full-array base seeds).
@@ -611,9 +1054,10 @@ public
                 else
                   inner_deps := UnorderedMap.keyList(full.dependencies[eqn_index]);
                 end if;
-                inner_deps := List.filterOnTrue(inner_deps, function filterSet(set = seed_set));
+                inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
                 for cref in pder_crefs loop
-                  UnorderedMap.add(cref, inner_deps, inner_map);
+                  sparsityAddInner(cref, inner_deps, inner_map);
+                  sparsityAddTemplate(cref, inner_deps, template_map);
                 end for;
 
                 if isAdjoint then
@@ -660,10 +1104,12 @@ public
                 end if;
 
                 // filter inner dependencies for relevant seeds and add
-                inner_deps := List.filterOnTrue(inner_deps, function filterSet(set = seed_set));
+                inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
                 for cref in tmp_crefs loop
-                  UnorderedMap.add(cref, inner_deps, inner_map);
+                  sparsityAddInner(cref, inner_deps, inner_map);
+                  sparsityAddTemplate(cref, inner_deps, template_map);
                 end for;
+                sparsityAddSliceAlias(Pointer.access(eqn), tmp_crefs, seed_set, slice_map);
               end if;
             end for;
           end for;
@@ -692,6 +1138,431 @@ public
       end if;
     end fullToSparsity;
 
+    type InnerTemplate = tuple<ComponentRef, list<ComponentRef>> "solved cref with the subscripts of its equation, its dependencies";
+    type InnerTemplates = list<InnerTemplate>;
+
+    function sparsityAddTemplate
+      input ComponentRef cref;
+      input list<ComponentRef> deps;
+      input UnorderedMap<ComponentRef, InnerTemplates> template_map;
+    protected
+      ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+    algorithm
+      UnorderedMap.add(stripped, (cref, deps) :: UnorderedMap.getOrDefault(stripped, template_map, {}), template_map);
+    end sparsityAddTemplate;
+
+    function sparsityTemplateDeps
+      "x[e] from the inner equations solving x[f(i)] with dependencies y[g(i)]: y[g(f^-1(e))].
+      Not handled if a subscript can not be matched this way."
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, InnerTemplates> template_map;
+      output Boolean handled = false;
+      output list<ComponentRef> deps = {};
+    protected
+      InnerTemplates templates = UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), template_map, {});
+      list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref);
+      Integer status;
+      UnorderedMap<ComponentRef, Expression> bindings;
+      ComponentRef key, dep;
+      list<ComponentRef> key_deps;
+      Boolean matched = false;
+    algorithm
+      for template in templates loop
+        (key, key_deps) := template;
+        (status, bindings) := sparsityUnify(ComponentRef.subscriptsAllWithWholeFlat(key), subs);
+        if status == 2 then
+          return;
+        elseif status == 1 then
+          matched := true;
+          for d in key_deps loop
+            if sparsityHasUnbound(d, bindings) then
+              // an iterator of the inner equation that does not occur in the solved cref
+              deps := ComponentRef.stripSubscriptsAll(d) :: deps;
+            else
+              dep := ComponentRef.mapExp(ComponentRef.mapExp(d, function sparsityBind(bindings = bindings)), sparsitySimplify);
+              if sparsityInBounds(dep) then
+                deps := dep :: deps;
+              end if;
+            end if;
+          end for;
+        end if;
+      end for;
+      handled := matched;
+    end sparsityTemplateDeps;
+
+    function sparsityUnify
+      "0: the subscripts address different elements, 1: they match with the bindings, 2: unknown"
+      input list<Subscript> key_subs;
+      input list<Subscript> subs;
+      output Integer status = 1;
+      output UnorderedMap<ComponentRef, Expression> bindings = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    protected
+      Expression key_exp, exp, value;
+      Boolean ok, negated;
+      ComponentRef iter;
+      Integer offset;
+    algorithm
+      if listLength(key_subs) <> listLength(subs) then
+        status := 2;
+        return;
+      end if;
+      for tpl in List.zip(key_subs, subs) loop
+        () := match tpl
+          case (Subscript.WHOLE(), _) then ();
+          case (Subscript.INDEX(index = key_exp), _) guard(Expression.isInteger(key_exp)) algorithm
+            () := match Util.tuple22(tpl)
+              case Subscript.INDEX(index = exp) guard(Expression.isInteger(exp)) algorithm
+                if Expression.integerValue(exp) <> Expression.integerValue(key_exp) then
+                  status := 0;
+                end if;
+              then ();
+              else ();
+            end match;
+          then ();
+          case (Subscript.INDEX(index = key_exp), Subscript.INDEX(index = exp)) algorithm
+            (ok, iter, offset, negated) := sparsityIteratorOffset(key_exp);
+            if ok then
+              value := if negated
+                then SimplifyExp.simplify(Expression.BINARY(Expression.INTEGER(offset), Operator.makeSub(Type.INTEGER()), exp))
+                else SimplifyExp.simplify(Expression.BINARY(exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(offset)));
+              if UnorderedMap.contains(iter, bindings) and not Expression.isEqual(value, UnorderedMap.getSafe(iter, bindings, sourceInfo())) then
+                status := 2;
+              else
+                UnorderedMap.add(iter, value, bindings);
+              end if;
+            else
+              status := 2;
+            end if;
+          then ();
+          else algorithm
+            status := 2;
+          then ();
+        end match;
+        if status <> 1 then
+          return;
+        end if;
+      end for;
+    end sparsityUnify;
+
+    function sparsityIteratorOffset
+      "i + c, c + i, i - c and i as (i, c, false), c - i as (i, c, true)"
+      input Expression exp;
+      output Boolean ok = true;
+      output ComponentRef iter = ComponentRef.EMPTY();
+      output Integer offset = 0;
+      output Boolean negated = false;
+    algorithm
+      () := match exp
+        case Expression.CREF() guard(ComponentRef.isIterator(exp.cref)) algorithm
+          iter := exp.cref;
+        then ();
+        case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.ADD), exp2 = Expression.INTEGER(offset))
+          guard(ComponentRef.isIterator(iter)) then ();
+        case Expression.BINARY(exp1 = Expression.INTEGER(offset), operator = Operator.OPERATOR(op = Op.ADD), exp2 = Expression.CREF(cref = iter))
+          guard(ComponentRef.isIterator(iter)) then ();
+        case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.INTEGER(offset))
+          guard(ComponentRef.isIterator(iter)) algorithm
+          offset := -offset;
+        then ();
+        case Expression.BINARY(exp1 = Expression.INTEGER(offset), operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.CREF(cref = iter))
+          guard(ComponentRef.isIterator(iter)) algorithm
+          negated := true;
+        then ();
+        case Expression.MULTARY(operator = Operator.OPERATOR(op = Op.ADD)) algorithm
+          (ok, iter, offset, negated) := sparsityMultaryOffset(exp.arguments, exp.inv_arguments);
+        then ();
+        else algorithm
+          ok := false;
+        then ();
+      end match;
+    end sparsityIteratorOffset;
+
+    function sparsitySimplify
+      input output Expression exp;
+    algorithm
+      exp := SimplifyExp.simplify(exp);
+    end sparsitySimplify;
+
+    function sparsityHasUnbound
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+      output Boolean b = false;
+    algorithm
+      // whole dimension subscripts (:) have no expression to check
+      for sub in list(s for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)) loop
+        for c in UnorderedSet.toList(Expression.extractCrefs(Subscript.toExp(sub))) loop
+          if ComponentRef.isIterator(c) and not UnorderedMap.contains(c, bindings) then
+            b := true;
+            return;
+          end if;
+        end for;
+      end for;
+    end sparsityHasUnbound;
+
+    function sparsityMultaryOffset
+      "a sum of integers and one iterator, which may be subtracted"
+      input list<Expression> arguments;
+      input list<Expression> inv_arguments;
+      output Boolean ok = true;
+      output ComponentRef iter = ComponentRef.EMPTY();
+      output Integer offset = 0;
+      output Boolean negated = false;
+    algorithm
+      for e in arguments loop
+        (ok, iter, offset, negated) := sparsityMultaryArgument(e, false, ok, iter, offset, negated);
+      end for;
+      for e in inv_arguments loop
+        (ok, iter, offset, negated) := sparsityMultaryArgument(e, true, ok, iter, offset, negated);
+      end for;
+      ok := ok and not ComponentRef.isEmpty(iter);
+    end sparsityMultaryOffset;
+
+    function sparsityMultaryArgument
+      input Expression e;
+      input Boolean inv;
+      input output Boolean ok;
+      input output ComponentRef iter;
+      input output Integer offset;
+      input output Boolean negated;
+    algorithm
+      () := match e
+        case Expression.INTEGER() algorithm
+          offset := if inv then offset - e.value else offset + e.value;
+        then ();
+        case Expression.CREF() guard(ComponentRef.isIterator(e.cref)) algorithm
+          ok := ok and ComponentRef.isEmpty(iter);
+          iter := e.cref;
+          negated := inv;
+        then ();
+        else algorithm
+          ok := false;
+        then ();
+      end match;
+    end sparsityMultaryArgument;
+
+    function sparsityBind
+      input output Expression exp;
+      input UnorderedMap<ComponentRef, Expression> bindings;
+    algorithm
+      exp := match exp
+        case Expression.CREF() guard(UnorderedMap.contains(exp.cref, bindings))
+        then UnorderedMap.getSafe(exp.cref, bindings, sourceInfo());
+        else exp;
+      end match;
+    end sparsityBind;
+
+    function sparsityInBounds
+      "false if a literal subscript is outside of its dimension"
+      input ComponentRef cref;
+      output Boolean b = true;
+    algorithm
+      b := match cref
+        local
+          list<Dimension> dims;
+        case ComponentRef.CREF() algorithm
+          dims := Type.arrayDims(cref.ty);
+          if listLength(dims) == listLength(cref.subscripts) then
+            for tpl in List.zip(cref.subscripts, dims) loop
+              () := match tpl
+                local
+                  Expression e;
+                  Dimension d;
+                case (Subscript.INDEX(index = e), d) guard(Expression.isInteger(e) and Dimension.isKnown(d)) algorithm
+                  if Expression.integerValue(e) < 1 or Expression.integerValue(e) > Dimension.size(d) then
+                    b := false;
+                  end if;
+                then ();
+                else ();
+              end match;
+            end for;
+          end if;
+        then b and sparsityInBounds(cref.restCref);
+        else true;
+      end match;
+    end sparsityInBounds;
+
+    type SliceAlias = tuple<Integer, Integer, ComponentRef, Integer> "solved start, solved stop, seed, seed start";
+    type SliceAliases = list<SliceAlias>;
+
+    function sparsityAddSliceAlias
+      "remembers x[a:b] = y[c:d] (or whole arrays) of an inner equation solved for x,
+      so that x[e] can be resolved to y[e - a + c] instead of all of y"
+      input Equation eqn;
+      input list<ComponentRef> tmp_crefs;
+      input UnorderedSet<ComponentRef> seed_set;
+      input UnorderedMap<ComponentRef, SliceAliases> slice_map;
+    protected
+      ComponentRef lhs, rhs;
+    algorithm
+      () := match eqn
+        case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = lhs), rhs = Expression.CREF(cref = rhs)) algorithm
+          sparsityAddSliceAlias2(lhs, rhs, tmp_crefs, seed_set, slice_map);
+          sparsityAddSliceAlias2(rhs, lhs, tmp_crefs, seed_set, slice_map);
+        then ();
+        else ();
+      end match;
+    end sparsityAddSliceAlias;
+
+    function sparsityAddSliceAlias2
+      input ComponentRef solved;
+      input ComponentRef seed;
+      input list<ComponentRef> tmp_crefs;
+      input UnorderedSet<ComponentRef> seed_set;
+      input UnorderedMap<ComponentRef, SliceAliases> slice_map;
+    protected
+      ComponentRef solved_base = ComponentRef.stripSubscriptsAll(solved);
+      ComponentRef seed_base = ComponentRef.stripSubscriptsAll(seed);
+      Boolean ok1, ok2;
+      Integer start1, stop1, start2, stop2;
+    algorithm
+      if not List.any(tmp_crefs, function sparsitySameBase(base = solved_base)) or not UnorderedSet.contains(seed_base, seed_set) then
+        return;
+      end if;
+      (ok1, start1, stop1) := sparsitySliceBounds(solved);
+      (ok2, start2, stop2) := sparsitySliceBounds(seed);
+      if ok1 and ok2 and stop1 - start1 == stop2 - start2 then
+        UnorderedMap.add(solved_base, (start1, stop1, seed_base, start2) :: UnorderedMap.getOrDefault(solved_base, slice_map, {}), slice_map);
+      end if;
+    end sparsityAddSliceAlias2;
+
+    function sparsitySameBase
+      input ComponentRef cref;
+      input ComponentRef base;
+      output Boolean b = ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), base);
+    end sparsitySameBase;
+
+    function sparsitySliceBounds
+      "bounds of a one-dimensional variable or a unit step slice of it"
+      input ComponentRef cref;
+      output Boolean ok = false;
+      output Integer start = 0;
+      output Integer stop = 0;
+    protected
+      Type ty = ComponentRef.getSubscriptedType(ComponentRef.stripSubscriptsAll(cref));
+      list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
+      Integer step;
+    algorithm
+      if Type.dimensionCount(ty) <> 1 or not Type.hasKnownSize(ty)
+         or listLength(subs) <> listLength(ComponentRef.getSubscripts(cref)) then
+        return;
+      end if;
+      (ok, start, stop) := match subs
+        local
+          Expression range;
+          list<Subscript> indices;
+        case {} then (true, 1, Type.sizeOf(ty));
+        case {Subscript.WHOLE()} then (true, 1, Type.sizeOf(ty));
+        case {Subscript.SLICE(slice = range as Expression.RANGE())} guard(Expression.isLiteral(range)) algorithm
+          (start, step, stop) := Expression.getIntegerRange(range, false);
+        then (step == 1, start, stop);
+        case {Subscript.SLICE(slice = range as Expression.ARRAY())}
+        then sparsityConsecutive(Expression.arrayElementList(range));
+        case {Subscript.EXPANDED_SLICE(indices = indices)}
+        then sparsityConsecutive(list(Subscript.toExp(sub) for sub in indices));
+        else (false, 0, 0);
+      end match;
+    end sparsitySliceBounds;
+
+    function sparsityConsecutive
+      input list<Expression> indices;
+      output Boolean ok = true;
+      output Integer start = 0;
+      output Integer stop = 0;
+    algorithm
+      for index in indices loop
+        if not Expression.isInteger(index) then
+          ok := false;
+          return;
+        end if;
+        if stop == 0 then
+          start := Expression.integerValue(index);
+        elseif Expression.integerValue(index) <> stop + 1 then
+          ok := false;
+          return;
+        end if;
+        stop := Expression.integerValue(index);
+      end for;
+      ok := stop > 0;
+    end sparsityConsecutive;
+
+    function sparsitySliceAliasDeps
+      "x[e] with a slice alias x[a:b] = y[c:d] -> y[e - a + c]"
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, SliceAliases> slice_map;
+      output list<ComponentRef> deps = {};
+    protected
+      list<SliceAlias> aliases;
+      Integer start1, stop1, start2, value;
+      ComponentRef seed;
+      Expression index;
+    algorithm
+      aliases := UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), slice_map, {});
+      if listEmpty(aliases) or listLength(ComponentRef.subscriptsAllFlat(cref)) <> listLength(ComponentRef.getSubscripts(cref)) then
+        return;
+      end if;
+      _ := match ComponentRef.getSubscripts(cref)
+        case {Subscript.INDEX(index = index)} algorithm
+          for alias in aliases loop
+            (start1, stop1, seed, start2) := alias;
+            if Expression.isInteger(index) then
+              value := Expression.integerValue(index);
+              if value >= start1 and value <= stop1 then
+                deps := ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(value - start1 + start2))}, seed) :: deps;
+              end if;
+            else
+              deps := ComponentRef.setSubscripts({Subscript.INDEX(SimplifyExp.simplify(Expression.BINARY(index,
+                Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(start2 - start1))))}, seed) :: deps;
+            end if;
+          end for;
+        then ();
+        else ();
+      end match;
+    end sparsitySliceAliasDeps;
+
+    function sparsityExpandForeignIterators
+      "a dependency with iterators of another (inner) equation depends on all its seed elements"
+      input ComponentRef cref;
+      input UnorderedSet<ComponentRef> own_iters;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> seed_elements "base name -> element seeds";
+      output list<ComponentRef> crefs = {cref};
+    protected
+      ComponentRef base;
+      Type ty;
+    algorithm
+      if not List.all(ComponentRef.subscriptsAllFlat(cref), function sparsityIsOwnSubscript(own_iters = own_iters)) then
+        base := ComponentRef.stripSubscriptsAll(cref);
+        if UnorderedMap.contains(base, seed_elements) then
+          crefs := UnorderedMap.getSafe(base, seed_elements, sourceInfo());
+        else
+          ty := ComponentRef.getSubscriptedType(base);
+          crefs := if Type.isArray(ty) and Type.sizeOf(ty) <= 1024 then ComponentRef.scalarizeAll(base, false) else {base};
+        end if;
+      end if;
+    end sparsityExpandForeignIterators;
+
+    function sparsityIsOwnSubscript
+      input Subscript sub;
+      input UnorderedSet<ComponentRef> own_iters;
+      output Boolean b = Subscript.isLiteral(sub) or Subscript.isWhole(sub) or Subscript.isSliced(sub)
+        or UnorderedSet.all(Expression.extractCrefs(Subscript.toExp(sub)), function UnorderedSet.contains(set = own_iters));
+    end sparsityIsOwnSubscript;
+
+    function sparsityAddInner
+      "sliced inner variables are also added by their name, later equations might use other slices of them.
+      entries are merged, several components can solve parts of the same variable"
+      input ComponentRef cref;
+      input list<ComponentRef> deps;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> inner_map;
+    protected
+      ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref);
+    algorithm
+      // several components can solve slices of the same variable with the same cref (e.g. x[$i1])
+      UnorderedMap.add(cref, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(cref, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
+      if not ComponentRef.isEqual(stripped, cref) then
+        UnorderedMap.add(stripped, UnorderedSet.unique_list(listAppend(deps, UnorderedMap.getOrDefault(stripped, inner_map, {})), ComponentRef.hash, ComponentRef.isEqual), inner_map);
+      end if;
+    end sparsityAddInner;
+
     function upgrade
       "upgrades a matrix using the information provided by the full matrix"
       input output Matrix adj;
@@ -709,13 +1580,16 @@ public
       adj := match full
         local
           Integer min, max;
+          IntMatrix.Builder builder;
+          list<Integer> indices;
 
         case EMPTY() then EMPTY(st);
 
         case FULL() algorithm
           // empty matrices can have a strictness if we want to expand them, in this case ignore and overwrite
+          // min is the rank the matrix already contains, -1 for an empty one
           if isEmpty(adj) then
-            min := 0;
+            min := -1;
             adj := initialize(full.mapping, st);
           else
             min := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
@@ -738,12 +1612,15 @@ public
                 result := adj;
               elseif max > min then
                 (occ, dep, sol, rep) := (full.occurrences, full.dependencies, full.solvabilities, full.repetitions);
-                for index in UnorderedMap.valueList(eqns_map) loop
-                  filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
+                indices := UnorderedMap.valueList(eqns_map);
+                builder := IntMatrix.toBuilder(adj.m, estimateEntries(occ, adj.mapping, indices), true);
+                for index in indices loop
+                  filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min + 1, max);
                   // upgrade the row and all meta data
-                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes, iter);
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, builder, adj.mapping, adj.modes, iter);
                 end for;
-                adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
+                adj.m  := IntMatrix.fromBuilder(builder, IntMatrix.rows(adj.m));
+                adj.mT := IntMatrix.transpose(adj.m, arrayLength(adj.mapping.var_StA));
                 result := adj;
               else
                 if Flags.isSet(Flags.FAILTRACE) then
@@ -778,6 +1655,135 @@ public
       end if;
     end upgrade;
 
+    function equalRows
+      "equation index -> index of the equal equation in seed_eqns, 0 if none.
+      Its rows in a final matrix over (seed_eqns, seed_vars) are its rows in one
+      over (eqns, vars), so nothing is shared unless the variables are the same
+      in the same order."
+      input EquationPointers seed_eqns;
+      input VariablePointers seed_vars;
+      input EquationPointers eqns;
+      input VariablePointers vars;
+      output array<Integer> seed_index = arrayCreate(EquationPointers.lastUsedIndex(eqns), 0);
+    protected
+      Integer n = VariablePointers.size(vars), i;
+      Pointer<Equation> seed_eqn;
+    algorithm
+      if n <> VariablePointers.size(seed_vars) or n <> VariablePointers.lastUsedIndex(vars) or n <> VariablePointers.lastUsedIndex(seed_vars) then return; end if;
+      for j in 1:n loop
+        if not referenceEq(VariablePointers.getVarAt(vars, j), VariablePointers.getVarAt(seed_vars, j)) then return; end if;
+      end for;
+      for eqn in EquationPointers.toList(eqns) loop
+        i := EquationPointers.getEqnIndex(seed_eqns, Equation.getEqnName(eqn));
+        if i > 0 then
+          seed_eqn := EquationPointers.getEqnAt(seed_eqns, i);
+          if Equation.isEqual(Pointer.access(eqn), Pointer.access(seed_eqn)) then
+            seed_index[EquationPointers.getEqnIndex(eqns, Equation.getEqnName(eqn))] := i;
+          end if;
+        end if;
+      end for;
+    end equalRows;
+
+    function upgradeFrom
+      "upgrade, taking the rows of equations with a seed_index (see equalRows)
+      from seed, a final matrix of strictness st that shares its variables"
+      input output Matrix adj;
+      input Matrix full;
+      input UnorderedMap<ComponentRef, Integer> vars_map;
+      input UnorderedMap<ComponentRef, Integer> eqns_map;
+      input EquationPointers eqns;
+      input MatrixStrictness st;
+      input Matrix seed;
+      input array<Integer> seed_index;
+    protected
+      Integer min, max, rows, eqn_start, eqn_size, seed_start, own_entries = 0, shared_entries = 0;
+      Boolean fresh = isEmpty(adj);
+      IntMatrix m, own_m;
+      IntMatrix.Builder builder;
+      list<Integer> own = {};
+      list<ComponentRef> filtered;
+      array<Integer> data, aux, seed_data, seed_aux;
+    algorithm
+      max := Solvability.rank(Solvability.fromStrictness(st));
+      min := if fresh then -1 else Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
+      adj := match (adj, full, seed)
+        case (_, FULL(), FINAL()) guard(min < max) algorithm
+          if fresh then
+            adj := initialize(full.mapping, st);
+          end if;
+          adj := match adj
+            case FINAL() algorithm
+              if fresh then
+                adj.modes := Vector.copy(seed.modes);
+              end if;
+              rows := IntMatrix.rows(adj.m);
+              for index in UnorderedMap.valueList(eqns_map) loop
+                (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
+                if seed_index[index] > 0 then
+                  (seed_start, _) := seed.mapping.eqn_AtS[seed_index[index]];
+                  for k in 0:eqn_size - 1 loop
+                    shared_entries := shared_entries + seed.m.len[seed_start + k];
+                  end for;
+                else
+                  own := index :: own;
+                  for k in 0:eqn_size - 1 loop
+                    own_entries := own_entries + adj.m.len[eqn_start + k];
+                  end for;
+                  own_entries := own_entries + UnorderedSet.size(full.occurrences[index]) * eqn_size;
+                end if;
+              end for;
+              own := listReverse(own);
+
+              // the own rows are built the way upgrade builds all rows
+              builder := IntMatrix.newBuilder(own_entries, true);
+              data := IntMatrix.entries(adj.m);
+              aux := IntMatrix.payload(adj.m);
+              for index in own loop
+                (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
+                for k in eqn_size - 1:-1:0 loop
+                  for p in adj.m.start[eqn_start + k] + adj.m.len[eqn_start + k] - 1:-1:adj.m.start[eqn_start + k] loop
+                    IntMatrix.builderAddAux(builder, eqn_start + k, data[p], if arrayLength(aux) > 0 then aux[p] else 0);
+                  end for;
+                end for;
+              end for;
+              for index in own loop
+                filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[index]), full.solvabilities[index], vars_map, min + 1, max);
+                upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, full.dependencies[index], full.repetitions[index], vars_map, vars_map, builder, adj.mapping, adj.modes);
+              end for;
+              own_m := IntMatrix.fromBuilder(builder, rows);
+
+              m := IntMatrix.new(rows);
+              IntMatrix.reserveData(m, shared_entries + IntMatrix.nonZeroCount(own_m), true);
+              data := IntMatrix.entries(own_m);
+              aux := IntMatrix.payload(own_m);
+              seed_data := IntMatrix.entries(seed.m);
+              seed_aux := IntMatrix.payload(seed.m);
+              if arrayLength(seed_aux) == 0 then
+                seed_aux := arrayCreate(arrayLength(seed_data), 0);
+              end if;
+              for index in UnorderedMap.valueList(eqns_map) loop
+                (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
+                if seed_index[index] > 0 then
+                  (seed_start, _) := seed.mapping.eqn_AtS[seed_index[index]];
+                  for k in 0:eqn_size - 1 loop
+                    IntMatrix.copyRow(seed.m, seed_start + k, seed_data, seed_aux, m, eqn_start + k);
+                  end for;
+                else
+                  for k in 0:eqn_size - 1 loop
+                    IntMatrix.copyRow(own_m, eqn_start + k, data, aux, m, eqn_start + k);
+                  end for;
+                end if;
+              end for;
+              adj.m  := m;
+              adj.mT := IntMatrix.transpose(m, arrayLength(adj.mapping.var_StA));
+            then adj;
+            else adj;
+          end match;
+        then adj;
+        else upgrade(adj, full, vars_map, eqns_map, eqns, st);
+      end match;
+    end upgradeFrom;
+
     function expand
       "expands the adjacency matrix adj with new information provided by vn and en.
       If necessary it also expands the full matrix."
@@ -809,8 +1815,10 @@ public
       adj := match (adj, full)
         local
           Matrix new;
-          Integer rank, max_index_eq, max_index_var;
+          Integer rank, max_index_eq, max_index_var, eqn_scalar_size;
           list<ComponentRef> filtered;
+          list<Integer> eo_lst, en_lst;
+          IntMatrix.Builder builder;
           UnorderedMap<ComponentRef, Integer> v = vo;
 
         // if the matrix is empty, initialize it first
@@ -824,8 +1832,13 @@ public
         // default case
         case (FINAL(), FULL()) algorithm
           // 0. expand the integer matrix
-          adj.m := expandMatrix(adj.m, EquationPointers.scalarSize(eqns, true) - arrayLength(adj.m));
+          eqn_scalar_size := EquationPointers.scalarSize(eqns, true);
           adj.mapping := full.mapping;
+          eo_lst := UnorderedMap.valueList(eo);
+          en_lst := UnorderedMap.valueList(en);
+          builder := IntMatrix.toBuilder(adj.m,
+            estimateEntries(full.occurrences, adj.mapping, eo_lst) + estimateEntries(full.occurrences, adj.mapping, en_lst), true);
+
 
           // get the strictness ranking
           rank := Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
@@ -836,17 +1849,17 @@ public
 
           // I. update all old equations with the new variables
           if not UnorderedMap.isEmpty(vn) then
-            for e in UnorderedMap.valueList(eo) loop
+            for e in eo_lst loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[e]), full.solvabilities[e], vn, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, builder, adj.mapping, adj.modes);
             end for;
           end if;
 
           // II. update new equations with all variables
           if not UnorderedMap.isEmpty(en) then
-            for e in UnorderedMap.valueList(en) loop
+            for e in en_lst loop
               filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[e]), full.solvabilities[e], v, 0, rank);
-              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, adj.m, adj.mapping, adj.modes);
+              upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, builder, adj.mapping, adj.modes);
             end for;
           end if;
 
@@ -856,7 +1869,8 @@ public
           else
             max_index_var := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
           end if;
-          adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars, true));
+          adj.m  := IntMatrix.fromBuilder(builder, eqn_scalar_size);
+          adj.mT := IntMatrix.transpose(adj.m, VariablePointers.scalarSize(vars, true));
         then adj;
 
         // fail cases
@@ -938,6 +1952,25 @@ public
       end if;
     end expandFull;
 
+    function containsLoopCref
+      "true if the expression contains a cref of the set, also as an element of an array in the set"
+      input Expression exp;
+      input UnorderedSet<ComponentRef> set;
+      output Boolean b = Expression.fold(exp, function isLoopCref(set = set), false);
+    end containsLoopCref;
+
+    function isLoopCref
+      input Expression exp;
+      input output Boolean b;
+      input UnorderedSet<ComponentRef> set;
+    algorithm
+      b := match (b, exp)
+        case (false, Expression.CREF())
+          then UnorderedSet.contains(exp.cref, set) or UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), set);
+        else b;
+      end match;
+    end isLoopCref;
+
     function refine
       "refines the solvability kind using differentiation
       Note: only updates the solvabilites of the variables and equations from the maps v and e"
@@ -958,15 +1991,28 @@ public
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
-          Boolean eqnIsDiscrete, eqnIsIf;
+          Boolean eqnIsDiscrete, eqnIsIf, eqnHasNoResidual, diffOk;
+          Option<Expression> residual_opt;
 
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
             eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
-            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
+            // ALGORITHM equations have no simple scalar residual for getResidualExp --
+            // treat them like discrete equations (solveSimple fallback below) instead of
+            // crashing, now that NBTearing.mo's initialize can pass them in here.
+            eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr) or Equation.isAlgorithm(eqn_ptr);
             eqnIsIf := Equation.isIfEquation(eqn_ptr);
+            eqnHasNoResidual := false;
             if not (eqnIsDiscrete or eqnIsIf) then
-              residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
+              // e.g. a RECORD_EQUATION whose type has no '+'/'-'/'0' operators (a plain
+              // Medium ThermodynamicState, for example) can't have a residual built at
+              // all -- fall back to IMPLICIT below instead of crashing.
+              residual_opt := Equation.tryGetResidualExp(eqn_ptr);
+              if isSome(residual_opt) then
+                SOME(residual) := residual_opt;
+              else
+                eqnHasNoResidual := true;
+              end if;
             end if;
             for var in UnorderedSet.toArray(full.occurrences[eqn_idx]) loop
               // only do something if var is to be refined
@@ -980,20 +2026,29 @@ public
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
                     sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
-                  elseif eqnIsIf then
+                  elseif eqnIsIf or eqnHasNoResidual then
                     // TODO more thorough analysis
                     sol := Solvability.IMPLICIT();
                   else
                     // get the residual expression, differentiate and simplify it
                     diffArgs.diffCref := var;
-                    (exp, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-                    exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
-                    if Expression.isZero(exp) then
+                    try
+                      (exp, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+                      exp             := SimplifyExp.simplifyDump(exp, true, getInstanceName());
+                      diffOk          := true;
+                    else
+                      // not everything can be differentiated, e.g. functions with function inputs
+                      exp             := residual;
+                      diffOk          := false;
+                    end try;
+                    if not diffOk then
+                      sol := Solvability.IMPLICIT();
+                    elseif Expression.isZero(exp) then
                       sol := Solvability.UNSOLVABLE();
-                    elseif Expression.containsCrefSet(exp, vars_set) then
+                    elseif containsLoopCref(exp, vars_set) then
                       // nonlinear -> unique solution if does not contain the variable itself
                       // TODO: might still be unique in some cases, even if contains the variable, e.g. `exp(x)`
-                      sol := Solvability.EXPLICIT_NONLINEAR(Expression.containsCref(exp, var));
+                      sol := Solvability.EXPLICIT_NONLINEAR(not Expression.containsCref(exp, var));
                     else
                       // linear -> find all contained crefs and split them by kind. remove constants and save params / variables
                       linear_set  := Expression.extractCrefs(exp);
@@ -1036,7 +2091,8 @@ public
       array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
       array<UnorderedSet<ComponentRef>> repetitions;
       Mapping mapping;
-      array<list<Integer>> m;
+      IntMatrix m;
+      array<Integer> m_data, m_aux;
       Integer old_start, old_size, new_start, new_size;
     algorithm
       (adj, full) := match (adj, full)
@@ -1047,7 +2103,9 @@ public
           mapping := Mapping.create(eqns, vars);
 
           // create empty arrays for the structures
-          m               := arrayCreate(arrayLength(mapping.eqn_StA), {});
+          m               := IntMatrix.new(arrayLength(mapping.eqn_StA));
+          m_data          := IntMatrix.entries(adj.m);
+          m_aux           := IntMatrix.payload(adj.m);
           equation_names  := arrayCreate(size, ComponentRef.EMPTY());
           occurrences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
           dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
@@ -1063,7 +2121,7 @@ public
             (new_start, new_size)     := mapping.eqn_AtS[index_new];
             if old_size == new_size then
               for i in 0:old_size-1 loop
-                m[new_start+i] := adj.m[old_start+i];
+                IntMatrix.copyRow(adj.m, old_start+i, m_data, m_aux, m, new_start+i);
               end for;
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " sizes (old: " + intString(old_size) + ", new: "
@@ -1078,7 +2136,7 @@ public
             repetitions[index_new]    := full.repetitions[index_old];
           end for;
 
-          new_adj  := FINAL(m, transposeScalar(m, VariablePointers.scalarSize(vars, true)), mapping, adj.modes, adj.st);
+          new_adj  := FINAL(m, IntMatrix.transpose(m, VariablePointers.scalarSize(vars, true)), mapping, adj.modes, adj.st);
           new_full := FULL(equation_names, occurrences, dependencies, solvabilities, repetitions, mapping);
         then (new_adj, new_full);
 
@@ -1162,14 +2220,14 @@ public
 
         case FINAL() algorithm
           str := StringUtil.headline_2(str + "FINAL Adjacency Matrix") + "\n";
-          if arrayLength(adj.m) > 0 then
+          if IntMatrix.rows(adj.m) > 0 then
             str := str + StringUtil.headline_4("Normal Adjacency Matrix (row = equation)");
-            str := str + toStringSingle(adj.m);
+            str := str + IntMatrix.toString(adj.m);
           end if;
           str := str + "\n";
-          if arrayLength(adj.mT) > 0 then
+          if IntMatrix.rows(adj.mT) > 0 then
             str := str + StringUtil.headline_4("Transposed Adjacency Matrix (row = variable)");
-            str := str + toStringSingle(adj.mT);
+            str := str + IntMatrix.toString(adj.mT);
           end if;
           str := str + "\n" + Mapping.toString(adj.mapping);
         then str;
@@ -1355,63 +2413,13 @@ public
       output Integer count;
     algorithm
       count := match adj
-        case FINAL()  then BackendUtil.countElem(adj.m);
+        case FINAL()  then IntMatrix.nonZeroCount(adj.m);
         case EMPTY()         then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown matrix type."});
         then fail();
       end match;
     end nonZeroCount;
-
-    function expandMatrix
-      input output array<list<Integer>> m;
-      input Integer shift;
-    algorithm
-      if shift > 0 then
-        m := Array.expandToSize(arrayLength(m) + shift, m, {});
-      end if;
-    end expandMatrix;
-
-    function transposeScalar
-      input array<list<Integer>> m      "original matrix";
-      input Integer size                "size of the transposed matrix (does not have to be square!)";
-      output array<list<Integer>> mT    "transposed matrix";
-    algorithm
-      mT := arrayCreate(size, {});
-      // loop over all elements and store them in reverse
-      for row in 1:arrayLength(m) loop
-        for idx in m[row] loop
-          try
-            if idx > 0 then
-              mT[idx] := row :: mT[idx];
-            else
-              mT[intAbs(idx)] := -row :: mT[intAbs(idx)];
-            end if;
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(idx) + ".
-              The variables have to be dense (without empty spaces) for this to work!"});
-          end try;
-        end for;
-      end for;
-      // sort the transposed matrix
-      // bigger to lower such that negative entries are at the and
-      for row in 1:arrayLength(mT) loop
-        mT[row] := List.sort(mT[row], intLt);
-      end for;
-    end transposeScalar;
-
-    function toStringSingle
-      input array<list<Integer>> m;
-      output String str = "";
-    protected
-      Integer skip = stringLength(intString(arrayLength(m))) + 1;
-      String tmp;
-    algorithm
-      for row in 1:arrayLength(m) loop
-        tmp := intString(row);
-        str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(m[row], intString) + "\n";
-      end for;
-    end toStringSingle;
 
   protected
     function fullString
@@ -1453,22 +2461,31 @@ public
       input MatrixStrictness st;
       output Matrix adj;
     protected
-      array<list<Integer>> m, mT;
       Integer eqn_scalar_size, var_scalar_size;
     algorithm
       eqn_scalar_size := arrayLength(mapping.eqn_StA);
       var_scalar_size := arrayLength(mapping.var_StA);
       if eqn_scalar_size > 0 or var_scalar_size > 0 then
-        // create empty for-loop reconstruction information
-        // create empty matrix and transposed matrix
-        m := arrayCreate(eqn_scalar_size, {});
-        mT := transposeScalar(m, var_scalar_size);
-        // create record
-        adj := FINAL(m, mT, mapping, UnorderedMap.new<Mode>(Mode.keyHash, Mode.keyEqual), st);
+        adj := FINAL(IntMatrix.new(eqn_scalar_size), IntMatrix.new(var_scalar_size), mapping, Modes.new(), st);
       else
         adj := EMPTY(st);
       end if;
     end initialize;
+
+    function estimateEntries
+      "estimates how many entries the given equations contribute, to size the builder"
+      input array<UnorderedSet<ComponentRef>> occ;
+      input Mapping mapping;
+      input list<Integer> indices;
+      output Integer n = 0;
+    protected
+      Integer sz;
+    algorithm
+      for i in indices loop
+        (_, sz) := mapping.eqn_AtS[i];
+        n := n + UnorderedSet.size(occ[i]) * sz;
+      end for;
+    end estimateEntries;
 
     function upgradeRow
       input Pointer<Equation> eqn_ptr;
@@ -1478,9 +2495,9 @@ public
       input UnorderedSet<ComponentRef> rep              "repetition set";
       input UnorderedMap<ComponentRef, Integer> map     "unordered map to check for relevance";
       input UnorderedMap<ComponentRef, Integer> fullmap "unordered map to check for general relevance";
-      input array<list<Integer>> m;
+      input IntMatrix.Builder m;
       input Mapping mapping;
-      input UnorderedMap<Mode.Key, Mode> modes;
+      input ModeTable modes;
       input Iterator iter_ = Iterator.EMPTY();
     protected
       Integer eqn_scal_idx, eqn_size;
@@ -1499,7 +2516,7 @@ public
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
           row := Slice.upgradeRowFull(dependencies, map, mapping);
           for i in 0:eqn_size-1 loop
-            updateIntegerRow(m, eqn_scal_idx+i, row);
+            IntMatrix.builderAddList(m, eqn_scal_idx+i, row);
           end for;
         else
           // todo: if, when single equation (needs to be updated for if)
@@ -1518,16 +2535,6 @@ public
       end try;
     end upgradeRow;
 
-    function updateIntegerRow
-      input array<list<Integer>> m;
-      input Integer idx;
-      input list<Integer> row;
-    algorithm
-      arrayUpdate(m, idx, listAppend(row, m[idx]));
-      /*if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print("Adding to row " + intString(idx) + " " + List.toString(row, intString) + "\n");
-      end if;*/
-    end updateIntegerRow;
   end Matrix;
 
   uniontype Dependency
@@ -2105,6 +3112,11 @@ public
         if reduce then
           Dependency.updateList(UnorderedSet.toList(set1), 1, true, dep_map);
           Dependency.updateList(UnorderedSet.toList(set2), 1, false, dep_map);
+          // a scalar result has no elements to skip to, e.g. {1, 2} * {x, y}
+          if not Type.isArray(Expression.typeOf(exp)) then
+            Dependency.removeSkipsList(UnorderedSet.toList(set1), dep_map);
+            Dependency.removeSkipsList(UnorderedSet.toList(set2), dep_map);
+          end if;
         end if;
       then UnorderedSet.union(set1, set2);
 
@@ -2206,7 +3218,12 @@ public
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
-        Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
+        // discrete arguments cannot be iterated on and no argument can be solved from a
+        // discrete result (e.g. integer(x)), so they are unsolvable
+        for cref in UnorderedSet.toList(set) loop
+          Solvability.update(cref, if not Type.isDiscrete(call.ty) and BVariable.checkCref(cref, function BVariable.isContinuous(staticAsContinuous = true), sourceInfo())
+            then Solvability.IMPLICIT() else Solvability.UNSOLVABLE(), sol_map);
+        end for;
         addRepetitions(set, rep_set);
         // if the return type has to be skipped - add empty skip
         if isTuple then
@@ -2251,31 +3268,73 @@ public
     Pointer<Variable> var;
     Integer sk = 1;
     list<Subscript> subs;
+    list<ComponentRef> scalar_matches;
+    Boolean hasSetSub = false;
   algorithm
-    if UnorderedMap.contains(cref, map) then
+    for s in ComponentRef.subscriptsAllFlat(cref) loop
+      // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
+      // that the exact-match check below already handles correctly -- only a
+      // literal/array-valued INDEX subscript (e.g. the "{1, 2}" in i_s[{1, 2}])
+      // is the set-subscript case this function needs to special-case.
+      if not Subscript.isScalar(s) and not Subscript.isSliced(s) then
+        hasSetSub := true;
+      end if;
+    end for;
+
+    // a cref with a set/array-valued subscript (e.g. i_s[{1, 2}], produced when a torn
+    // slice's residual equation keeps its original vector-valued RHS subexpression --
+    // see NBTearing.scalarSlices) must not go through the ordinary exact-match check
+    // below: "map" here can use stripped (subscript-ignoring) cref equality
+    // (VariablePointers' non-scalarized mode), under which i_s[{1, 2}] can spuriously
+    // "contain"-match some unrelated whole-array entry for the same base variable,
+    // recording that wrong, un-scalarized cref as the dependency and silently breaking
+    // the seed/column mapping in fullToSparsity downstream (whose seed set is matched by
+    // strict, non-stripped equality). Resolve those via their individual scalar elements
+    // instead, matched strictly against map.
+    if not hasSetSub and UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
       end if;
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
-    else
-      var := BVariable.getVarPointer(cref, sourceInfo());
-      if BVariable.isRecord(var) then
-        subs := ComponentRef.subscriptsAllFlat(cref);
-        // get all Record children that are relevant for current context
-        crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
-        crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
-        // add original subscripts
-        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
-        // collect dependencies
-        crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
-        for cref in crefs loop
-          Dependency.skip(cref, depth + 1, sk, dep_map);
-          sk := sk + 1;
+      return;
+    end if;
+
+    // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+      hasSetSub := true;
+    end if;
+
+    if hasSetSub then
+      scalar_matches := list(c for c guard(UnorderedMap.contains(c, map)) in ComponentRef.scalarize(cref, false));
+      if not listEmpty(scalar_matches) then
+        for c in scalar_matches loop
+          if not UnorderedMap.contains(c, dep_map) then
+            UnorderedMap.add(c, Dependency.create(ComponentRef.getSubscriptedType(c), depth), dep_map);
+          end if;
+          Solvability.update(c, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
         end for;
-      else
-        crefs := {};
+        crefs := scalar_matches;
+        return;
       end if;
+    end if;
+
+    var := BVariable.getVarPointer(cref, sourceInfo());
+    if BVariable.isRecord(var) then
+      subs := ComponentRef.subscriptsAllFlat(cref);
+      // get all Record children that are relevant for current context
+      crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
+      crefs := list(child for child guard(UnorderedMap.contains(child, map)) in crefs);
+      // add original subscripts
+      crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
+      // collect dependencies
+      crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
+      for cref in crefs loop
+        Dependency.skip(cref, depth + 1, sk, dep_map);
+        sk := sk + 1;
+      end for;
+    else
+      crefs := {};
     end if;
   end collectDependenciesCref;
 
@@ -2524,7 +3583,7 @@ public
 
           // only save the x -> x.start dependency not the other way around
           case SOME(start) guard(BVariable.isStart(start)) algorithm
-            start_cref := BVariable.getVarName(start);
+            start_cref := ComponentRef.copySubscripts(cref, BVariable.getVarName(start));
             // add the start cref dependency in the same way the original variable occured
             // but with UNSOLVABLE as it is only relevant for sorting and cannot be solved
             UnorderedSet.add(start_cref, occs);

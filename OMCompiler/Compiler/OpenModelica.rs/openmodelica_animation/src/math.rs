@@ -1,5 +1,5 @@
 //! Vec3/Mat3 helpers, a faithful f32 port of OMEdit's Animation math so the web
-//! renderer matches the desktop OSG one. Matrices are row-major `[f32; 9]`.
+//! renderer matches the desktop one. Matrices are row-major `[f32; 9]`.
 
 pub type Vec3 = [f32; 3];
 pub type Mat3 = [f32; 9];

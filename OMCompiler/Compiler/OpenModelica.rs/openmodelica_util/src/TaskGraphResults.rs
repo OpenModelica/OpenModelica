@@ -37,7 +37,6 @@
 #![allow(non_snake_case)]
 
 use std::fmt::Write as _;
-use std::sync::Arc;
 
 use metamodelica::Result;
 use arcstr::ArcStr;
@@ -474,7 +473,7 @@ fn fill_edges_with_node_names(graph: &mut Graph) -> bool {
 /// Build the result list `{[errorMsg,] verdict}` the way the C++ entry
 /// points do: the verdict string first (cons last), the accumulated
 /// diagnostics prepended when non-empty.
-fn result_list(error_msg: String, verdict: &'static str) -> Arc<List<ArcStr>> {
+fn result_list(error_msg: String, verdict: &'static str) -> List<ArcStr> {
     let mut res = metamodelica::cons(ArcStr::from(verdict), metamodelica::nil());
     if !error_msg.is_empty() {
         res = metamodelica::cons(ArcStr::from(error_msg), res);
@@ -485,7 +484,7 @@ fn result_list(error_msg: String, verdict: &'static str) -> Arc<List<ArcStr>> {
 /// `TaskGraphResults_checkTaskGraph(filename, reffilename)`: compare the
 /// dumped task graph against a reference GraphML file by node names, with
 /// calc/comm-time presence checks.
-pub fn checkTaskGraph(filename: ArcStr, reffilename: ArcStr) -> Result<Arc<List<ArcStr>>> {
+pub fn checkTaskGraph(filename: ArcStr, reffilename: ArcStr) -> Result<List<ArcStr>> {
     for f in [&filename, &reffilename] {
         if !std::path::Path::new(f.as_str()).exists() {
             return Ok(metamodelica::cons(
@@ -504,7 +503,7 @@ pub fn checkTaskGraph(filename: ArcStr, reffilename: ArcStr) -> Result<Arc<List<
 /// `TaskGraphResults_checkCodeGraph(graphfile, codefile)`: compare the dumped
 /// task graph against the TG_NODE/TG_DEPENDENCY comments in generated code,
 /// by node ids and without time checks.
-pub fn checkCodeGraph(graphfile: ArcStr, codefile: ArcStr) -> Result<Arc<List<ArcStr>>> {
+pub fn checkCodeGraph(graphfile: ArcStr, codefile: ArcStr) -> Result<List<ArcStr>> {
     for f in [&graphfile, &codefile] {
         if !std::path::Path::new(f.as_str()).exists() {
             return Ok(metamodelica::cons(
@@ -555,7 +554,7 @@ mod tests {
         path.to_str().unwrap().to_string()
     }
 
-    fn to_vec(lst: Arc<List<ArcStr>>) -> Vec<String> {
+    fn to_vec(lst: List<ArcStr>) -> Vec<String> {
         (&*lst).into_iter().map(|s| s.to_string()).collect()
     }
 

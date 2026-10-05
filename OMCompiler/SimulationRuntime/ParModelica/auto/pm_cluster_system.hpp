@@ -36,14 +36,10 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <queue>
+#include <tuple>
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/copy.hpp>
-
-#include <boost/graph/breadth_first_search.hpp>
-#include <boost/graph/graph_utility.hpp>
-#include <boost/graph/graphml.hpp>
-
+#include "pm_graph.hpp"
 #include "pm_timer.hpp"
 #include "pm_utility.hpp"
 
@@ -188,16 +184,12 @@ class TaskSystem_v2 {
     typedef T                     TaskType;
     typedef TaskCluster<TaskType> ClusterType;
 
-    typedef typename boost::adjacency_list<boost::setS, boost::listS, boost::bidirectionalS, ClusterType> GraphType;
+    typedef DiGraph<ClusterType> GraphType;
 
     typedef typename GraphType::vertex_descriptor      ClusterIdType;
     typedef typename GraphType::vertex_iterator        vertex_iterator;
     typedef typename GraphType::adjacency_iterator     adjacency_iterator;
     typedef typename GraphType::inv_adjacency_iterator inv_adjacency_iterator;
-
-    typedef typename GraphType::edge_descriptor   EdgeIdType;
-    typedef typename GraphType::in_edge_iterator  in_edge_iterator;
-    typedef typename GraphType::out_edge_iterator out_edge_iterator;
 
     typedef std::vector<SameLevelClusterIds<ClusterIdType>> ClusterLevels;
 
@@ -224,7 +216,7 @@ class TaskSystem_v2 {
         total_cost = 0;
 
         // add a new cluster for root node.
-        root_node_id = boost::add_vertex(sys_graph);
+        root_node_id = add_vertex(sys_graph);
         // add an empty task to the root node.
         TaskType& root_node = sys_graph[root_node_id].add_task(TaskType());
         root_node.task_id = -1;
@@ -241,22 +233,8 @@ class TaskSystem_v2 {
         this->total_cost = other.total_cost;
 
         this->sys_graph = other.sys_graph;
-        // typedef std::map<ClusterIdType, size_t> IndexMap;
-        // IndexMap mapIndex;
-        // boost::associative_property_map<IndexMap> propmapIndex(mapIndex);
-
-        // int i=0;
-        // BGL_FORALL_VERTICES_T(v, other.sys_graph, GraphType)
-        // {
-        // boost::put(propmapIndex, v, i++);
-        // }
-        // boost::copy_graph(other.sys_graph,this->sys_graph, boost::vertex_index_map( propmapIndex ));
-        // for (typename IndexMap::iterator p = mapIndex.begin(); p != mapIndex.end(); ++p) {
-        // std::cout << p->first << " -> " << p->second << std::endl;
-        // }
-
         vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(this->sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(this->sys_graph);
         this->root_node_id = *vert_iter;
     }
 
@@ -274,14 +252,14 @@ class TaskSystem_v2 {
         this->sys_graph = other.sys_graph;
 
         vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(this->sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(this->sys_graph);
         this->root_node_id = *vert_iter;
 
         return *this;
     }
 
     TaskType& add_node(const TaskType& task) {
-        ClusterIdType new_clust_id = boost::add_vertex(sys_graph);
+        ClusterIdType new_clust_id = add_vertex(sys_graph);
 
         ClusterType& new_clust = sys_graph[new_clust_id];
 
@@ -291,7 +269,7 @@ class TaskSystem_v2 {
 
         int             parent_count = 0;
         vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         /*! stop just before the new node. */
@@ -302,13 +280,13 @@ class TaskSystem_v2 {
 
             bool found_dep = new_clust.depends_on(prev_clust);
             if (found_dep) {
-                boost::add_edge(prev_clust_id, new_clust_id, sys_graph);
+                add_edge(prev_clust_id, new_clust_id, sys_graph);
                 ++parent_count;
             }
         }
 
         if (parent_count == 0) {
-            boost::add_edge(root_node_id, new_clust_id, sys_graph);
+            add_edge(root_node_id, new_clust_id, sys_graph);
         }
 
         total_cost += new_task.cost;
@@ -327,7 +305,7 @@ class TaskSystem_v2 {
         }
 
         adjacency_iterator src_child_iter, src_child_end, curr_src_child_iter;
-        boost::tie(src_child_iter, src_child_end) = adjacent_vertices(src_id, sys_graph);
+        std::tie(src_child_iter, src_child_end) = adjacent_vertices(src_id, sys_graph);
         while (src_child_iter != src_child_end) {
             /*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
               something is going on inside boost that I don't know yet. Or VS is just being VS as ususal.
@@ -336,17 +314,17 @@ class TaskSystem_v2 {
             curr_src_child_iter = src_child_iter;
             ++src_child_iter;
 
-            boost::add_edge(dest_id, *curr_src_child_iter, sys_graph);
-            boost::remove_edge(src_id, *curr_src_child_iter, sys_graph);
+            add_edge(dest_id, *curr_src_child_iter, sys_graph);
+            remove_edge(src_id, *curr_src_child_iter, sys_graph);
         }
 
         /*for (; src_child_iter != src_child_end; ++src_child_iter) {
-            boost::add_edge(dest_id, *src_child_iter, sys_graph);
-            boost::remove_edge(src_id, *src_child_iter, sys_graph);
+            add_edge(dest_id, *src_child_iter, sys_graph);
+            remove_edge(src_id, *src_child_iter, sys_graph);
         }*/
 
         inv_adjacency_iterator src_parent_iter, src_parent_end, curr_src_parent_iter;
-        boost::tie(src_parent_iter, src_parent_end) = inv_adjacent_vertices(src_id, sys_graph);
+        std::tie(src_parent_iter, src_parent_end) = inv_adjacent_vertices(src_id, sys_graph);
 
         while (src_parent_iter != src_parent_end) {
             /*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
@@ -356,17 +334,17 @@ class TaskSystem_v2 {
             curr_src_parent_iter = src_parent_iter;
             ++src_parent_iter;
 
-            boost::add_edge(*curr_src_parent_iter, dest_id, sys_graph);
-            boost::remove_edge(*curr_src_parent_iter, src_id, sys_graph);
+            add_edge(*curr_src_parent_iter, dest_id, sys_graph);
+            remove_edge(*curr_src_parent_iter, src_id, sys_graph);
         }
 
         /*for (; src_parent_iter != src_parent_end; ++src_parent_iter) {
-            boost::add_edge(*src_parent_iter, dest_id, sys_graph);
-            boost::remove_edge(*src_parent_iter, src_id, sys_graph);
+            add_edge(*src_parent_iter, dest_id, sys_graph);
+            remove_edge(*src_parent_iter, src_id, sys_graph);
         }*/
 
-        // boost::clear_vertex(src_id, sys_graph);
-        boost::remove_vertex(src_id, sys_graph);
+        // clear_vertex(src_id, sys_graph);
+        remove_vertex(src_id, sys_graph);
     }
 
     void concat_with_parent(const ClusterIdType& parent_id, const ClusterIdType& child_id) {
@@ -379,7 +357,7 @@ class TaskSystem_v2 {
         }
 
         adjacency_iterator grand_child_iter, grand_child_end, curr_grand_child_iter;
-        boost::tie(grand_child_iter, grand_child_end) = adjacent_vertices(child_id, sys_graph);
+        std::tie(grand_child_iter, grand_child_end) = adjacent_vertices(child_id, sys_graph);
         while (grand_child_iter != grand_child_end) {
 
             /*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
@@ -389,13 +367,13 @@ class TaskSystem_v2 {
             curr_grand_child_iter = grand_child_iter;
             ++grand_child_iter;
 
-            boost::add_edge(parent_id, *curr_grand_child_iter, sys_graph);
-            boost::remove_edge(child_id, *curr_grand_child_iter, sys_graph);
+            add_edge(parent_id, *curr_grand_child_iter, sys_graph);
+            remove_edge(child_id, *curr_grand_child_iter, sys_graph);
         }
 
-        boost::remove_edge(parent_id, child_id, sys_graph);
-        // boost::clear_vertex(child_id, sys_graph);
-        boost::remove_vertex(child_id, sys_graph);
+        remove_edge(parent_id, child_id, sys_graph);
+        // clear_vertex(child_id, sys_graph);
+        remove_vertex(child_id, sys_graph);
     }
 
   public:
@@ -417,16 +395,23 @@ class TaskSystem_v2 {
         }
     }
 
-    struct level_update_visitor : public boost::default_bfs_visitor {
-        template <typename Vertex, typename Graph>
-        void discover_vertex(Vertex u, const Graph& g) const {
-            std::cout << g[u].index_list << std::endl;
-        }
-    };
-
+    /*! Print the clusters in breadth-first order. */
     void update_node_levels2() {
-        level_update_visitor vis;
-        boost::breadth_first_search(sys_graph, root_node_id, boost::visitor(vis));
+        std::set<ClusterIdType>   discovered;
+        std::queue<ClusterIdType> queue;
+        discovered.insert(root_node_id);
+        queue.push(root_node_id);
+        while (!queue.empty()) {
+            ClusterIdType curr_clust_id = queue.front();
+            queue.pop();
+            std::cout << sys_graph[curr_clust_id].index_list << std::endl;
+            adjacency_iterator child_iter, child_end;
+            for (std::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph); child_iter != child_end;
+                 ++child_iter) {
+                if (discovered.insert(*child_iter).second)
+                    queue.push(*child_iter);
+            }
+        }
     }
 
     void update_node_levels() {
@@ -434,7 +419,7 @@ class TaskSystem_v2 {
         /* compute the level of each node*/
         long            critical_path = 0;
         vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
@@ -444,7 +429,7 @@ class TaskSystem_v2 {
             long max_parent_level = 0;
 
             inv_adjacency_iterator parent_iter, parent_end;
-            boost::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+            std::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
             for (; parent_iter != parent_end; ++parent_iter) {
                 const ClusterIdType& curr_parent_id = *parent_iter;
                 ClusterType&         curr_parent = sys_graph[curr_parent_id];
@@ -456,7 +441,7 @@ class TaskSystem_v2 {
         }
 
         // Check the levels are correct. Paranoia!
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
@@ -466,7 +451,7 @@ class TaskSystem_v2 {
             long max_parent_level = 0;
 
             inv_adjacency_iterator parent_iter, parent_end;
-            boost::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+            std::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
             for (; parent_iter != parent_end; ++parent_iter) {
                 const ClusterIdType& curr_parent_id = *parent_iter;
                 ClusterType&         curr_parent = sys_graph[curr_parent_id];
@@ -489,7 +474,7 @@ class TaskSystem_v2 {
         typedef typename ClusterLevels::value_type SameLevelClusterIdsType;
 
         typename ClusterLevels::iterator level_iter;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         for (; vert_iter != vert_end; ++vert_iter) {
             const ClusterIdType& curr_clust_id = *vert_iter;
             ClusterType&         curr_clust = sys_graph[curr_clust_id];
@@ -511,25 +496,46 @@ class TaskSystem_v2 {
         if (levels_valid == false)
             update_node_levels();
 
-        std::string               out_filename = this->name + "_" + suffix + ".graphml";
-        std::ofstream             outfileml(out_filename.c_str());
-        boost::dynamic_properties dp;
-        dp.property("index", boost::get(&ClusterType::index_list, sys_graph));
-        dp.property("level", boost::get(&ClusterType::level, sys_graph));
-        dp.property("cost", boost::get(&ClusterType::cost, sys_graph));
+        std::string   out_filename = this->name + "_" + suffix + ".graphml";
+        std::ofstream outfileml(out_filename.c_str());
 
-        /*! Now we have listS as vertex container. listS doesn't have VertexIndexMap
-           created by default. So we create one for it here. */
-        typedef std::map<ClusterIdType, size_t>        ClustIndexMap;
-        ClustIndexMap                                  clust_map_index;
-        boost::associative_property_map<ClustIndexMap> clust_prop_map_index(clust_map_index);
-
-        size_t node_count = 0;
-        BGL_FORALL_VERTICES_T(clust_id, sys_graph, GraphType) {
-            boost::put(clust_prop_map_index, clust_id, node_count++);
+        std::map<ClusterIdType, size_t> clust_index;
+        vertex_iterator                 vert_iter, vert_end;
+        for (std::tie(vert_iter, vert_end) = vertices(sys_graph); vert_iter != vert_end; ++vert_iter) {
+            size_t index = clust_index.size();
+            clust_index[*vert_iter] = index;
         }
 
-        write_graphml(outfileml, sys_graph, clust_prop_map_index, dp, true);
+        outfileml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                  << "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\""
+                  << " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+                  << " xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns"
+                  << " http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">\n"
+                  << "  <key id=\"key0\" for=\"node\" attr.name=\"cost\" attr.type=\"double\" />\n"
+                  << "  <key id=\"key1\" for=\"node\" attr.name=\"index\" attr.type=\"string\" />\n"
+                  << "  <key id=\"key2\" for=\"node\" attr.name=\"level\" attr.type=\"long\" />\n"
+                  << "  <graph id=\"G\" edgedefault=\"directed\" parse.nodeids=\"canonical\""
+                  << " parse.edgeids=\"canonical\" parse.order=\"nodesfirst\">\n";
+        for (std::tie(vert_iter, vert_end) = vertices(sys_graph); vert_iter != vert_end; ++vert_iter) {
+            const ClusterType& clust = sys_graph[*vert_iter];
+            outfileml << "    <node id=\"n" << clust_index[*vert_iter] << "\">\n"
+                      << "      <data key=\"key0\">" << clust.cost << "</data>\n"
+                      << "      <data key=\"key1\">" << clust.index_list << "</data>\n"
+                      << "      <data key=\"key2\">" << clust.level << "</data>\n"
+                      << "    </node>\n";
+        }
+        size_t edge_count = 0;
+        for (std::tie(vert_iter, vert_end) = vertices(sys_graph); vert_iter != vert_end; ++vert_iter) {
+            adjacency_iterator child_iter, child_end;
+            for (std::tie(child_iter, child_end) = adjacent_vertices(*vert_iter, sys_graph); child_iter != child_end;
+                 ++child_iter) {
+                outfileml << "    <edge id=\"e" << edge_count++ << "\" source=\"n" << clust_index[*vert_iter]
+                          << "\" target=\"n" << clust_index[*child_iter] << "\">\n"
+                          << "    </edge>\n";
+            }
+        }
+        outfileml << "  </graph>\n"
+                  << "</graphml>\n";
     }
 };
 

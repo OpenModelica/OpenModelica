@@ -36,19 +36,17 @@ pub fn resolve(meta: &SimMeta, result_file: &str) -> bool {
     let Some(file) = file else { return true };
     let time = time.unwrap_or(meta.start_time);
     if file == result_file {
-        omclog::error(
+        omclog::error!(
             omclog::INIT,
             false,
-            &format!(
-                "Cannot import a result file for initialization that is also the current output file <{file}>.\nConsider redirecting the output result file (-r=<new_res.mat>) or renaming the result file that is used for initialization import."
-            ),
+            "Cannot import a result file for initialization that is also the current output file <{file}>.\nConsider redirecting the output result file (-r=<new_res.mat>) or renaming the result file that is used for initialization import.",
         );
         return false;
     }
     let mut reader = match MatReader::open(&file) {
         Ok(r) => r,
         Err(why) => {
-            omclog::debug(omclog::ASSERT, false, &format!("unable to read input-file <{file}> [{why}]"));
+            omclog::debug!(omclog::ASSERT, false, "unable to read input-file <{file}> [{why}]");
             return false;
         }
     };

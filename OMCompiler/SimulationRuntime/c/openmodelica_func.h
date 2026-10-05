@@ -395,6 +395,26 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   initialAnalyticalJacobian_func_ptr initialPartialFMIDERINIT;
   jacobianColumn_func_ptr functionJacFMIDERINIT_column;
   const int INDEX_JAC_FMIDERINIT;
+
+  /*
+  * FMI alias tables, one per base type. A value reference is laid out per base
+  * type as [variables][parameters][aliases], so entry
+  * `vr - (nVariables<T> + nParameters<T>)` describes that alias: a non-negative
+  * entry is the value reference it aliases, a negative one means it is the
+  * negation of value reference -(entry+1). NULL when the type has no aliases.
+  */
+  const int *fmiRealAliasIndexes;
+  const int *fmiIntegerAliasIndexes;
+  const int *fmiBooleanAliasIndexes;
+  const int *fmiStringAliasIndexes;
+
+  /*
+  * The size parameters of derived dimensions of resizable arrays (N-1), computed
+  * from the start values of the parameters (possibly changed with -override).
+  * Called after the start values are read and before the sizes of the arrays are
+  * computed (calculateAllScalarLength). NULL when the model has none.
+  */
+  void (*updateStructuralParameters)(DATA* data, threadData_t* threadData);
 };
 
 

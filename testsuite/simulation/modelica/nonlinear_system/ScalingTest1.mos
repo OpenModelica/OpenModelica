@@ -4,7 +4,7 @@
 //
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadString("
 model ScalingTest1
   parameter Real nom1 =  1e30;

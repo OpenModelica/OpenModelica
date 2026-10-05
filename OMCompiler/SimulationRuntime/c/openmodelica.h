@@ -46,20 +46,7 @@ extern "C" {
 #include <assert.h>
 #include <float.h>
 
-/* adrpo: extreme windows crap! */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define DLLImport   __declspec( dllimport )
-#define DLLExport   __declspec( dllexport )
-#else
-#define DLLImport /* extern */
-#define DLLExport /* nothing */
-#endif
-
-#if defined(IMPORT_INTO)
-#define DLLDirection DLLImport
-#else /* we export from the dll */
-#define DLLDirection DLLExport
-#endif
+#include "omc_dll.h"
 
 #if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L
 #define HAVE_VA_MACROS 1
@@ -78,6 +65,15 @@ extern "C" {
 /* BEFORE: compat.h */
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(__AVR__)
 #define EXIT(code) exit(code)
+#elif defined(OMC_GCOV_COVERAGE)
+/* Same _exit() as below, but gcov writes its counters from an atexit handler,
+ * which _exit() skips - omc and every simulation would record nothing at all.
+ * Dump them explicitly first rather than switching to exit(), so a coverage
+ * build keeps the exit-code behaviour the comment below describes.
+ * Defined by -DOM_ENABLE_COVERAGE=ON; see cmake/modules/OpenModelicaCoverage.cmake. */
+#include <unistd.h>
+extern void __gcov_dump(void);
+#define EXIT(code) {fflush(NULL); __gcov_dump(); _exit(code);}
 #else
 /* We need to patch exit() on Unix systems
  * It does not change the exit code of simulations for some reason! */
@@ -119,6 +115,22 @@ enum type_desc_e {
   TYPE_DESC_NORETCALL
 };
 
+/* As type_desc_s.data.string: elements cross as char*, not modelica_string. */
+struct _str_array {
+  int ndims;
+  _index_t *dim_size;
+  const char **data;
+};
+
+static inline size_t str_array_nr_of_elements(struct _str_array a)
+{
+  size_t i, n = 1;
+  for (i = 0; i < (size_t) a.ndims; ++i) {
+    n *= (size_t) a.dim_size[i];
+  }
+  return n;
+}
+
 struct type_desc_s {
   enum type_desc_e type;
   int retval : 1;
@@ -129,8 +141,8 @@ struct type_desc_s {
     integer_array int_array;
     modelica_boolean boolean;
     boolean_array bool_array;
-    modelica_string string;
-    string_array str_array;
+    const char *string;   /* neutral: omc and a dlopened library differ */
+    struct _str_array str_array;
     struct _tuple {
       size_t elements;
       struct type_desc_s *element;
@@ -187,6 +199,14 @@ static inline int sign(double v)
 #elif defined(_MSC_VER)
 #define OMC_DISABLE_OPT /* nothing */
 #endif
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define OMC_LIKELY(x) __builtin_expect(!!(x), 1)
+#define OMC_COLD __attribute__((cold, noinline))
+#else
+#define OMC_LIKELY(x) (x)
+#define OMC_COLD
 #endif
 
 #if defined(__cplusplus)

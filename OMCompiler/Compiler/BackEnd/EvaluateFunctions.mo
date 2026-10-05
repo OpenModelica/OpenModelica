@@ -983,21 +983,7 @@ author:Waurich TUD 2014-05"
   input DAE.Element e;
   output list<DAE.ComponentRef> eLst;
 algorithm
-  eLst := matchcontinue e
-    local
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> lst;
-    case _
-      algorithm
-        false := isNotComplexVar(e);
-        lst := getScalarsForComplexVar(e);
-      then
-        lst;
-    else
-      algorithm
-        cref := DAEUtil.varCref(e);
-      then {cref};
-  end matchcontinue;
+  eLst := if isNotComplexVar(e) then {DAEUtil.varCref(e)} else getScalarsForComplexVar(e);
 end expandComplexElementsToCrefs;
 
 protected function hasAssertFold "fold function to check if a list of stmts has an assert.
@@ -2144,7 +2130,9 @@ algorithm
             print("-->try to predict the outputs \n");
           end if;
           if not isEval then
-            ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) := predictIfOutput(stmt,FUNCINFO(repl,funcTree,idx),recursionLimit);
+            // Every branch is evaluated, so a speculation doubles what is used of the
+            // limit; nested speculation runs out of it after a few levels.
+            ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) := predictIfOutput(stmt,FUNCINFO(repl,funcTree,idx),max(0, 2*recursionLimit - Flags.getConfigInt(Flags.EVAL_RECURSION_LIMIT) - 1));
           else
             stmtsNew := stmts1;
             addStmts := {};

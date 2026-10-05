@@ -139,6 +139,8 @@ SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistrib
     spatialDistributionData[i].transportedQuantity = allocDoubleEndedList(sizeof(TRANSPORTED_QUANTITY_DATA)); /* empty double ended list */
     spatialDistributionData[i].storedEvents = allocDoubleEndedList(sizeof(TRANSPORTED_EVENT_DATA));           /* empty double ended list */
     spatialDistributionData[i].lastStoredEventValue = 0;
+    spatialDistributionData[i].nWarningsRemovedEvents = 0;
+    spatialDistributionData[i].nWarningsOutputEvents = 0;
   }
 
   return spatialDistributionData;
@@ -287,6 +289,20 @@ static double shiftToStartPosX(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, d
   return posX - spatialDistribution->startPosX;
 }
 
+static void warnStepSizeTooBig(DATA* data, unsigned long* nDisplayed, const char* what, unsigned int index, int nEvents) {
+  unsigned long maxWarnDisplays = data->simulationInfo->maxWarnDisplays;
+
+  if (++*nDisplayed > maxWarnDisplays || !OMC_ACTIVE_WARNING_STREAM(OMC_LOG_STDOUT)) {
+    return;
+  }
+  warningStreamPrint(OMC_LOG_STDOUT, 1, "%s more then one event from spatialDistribution. Step size to big!", what);
+  warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, nEvents);
+  messageCloseWarning(OMC_LOG_STDOUT);
+  if (*nDisplayed == maxWarnDisplays) {
+    warningStreamPrintLimitReached(OMC_LOG_STDOUT, 0, maxWarnDisplays);
+  }
+}
+
 
 /**
  * @brief Store spatial distribution data for an accepted step.
@@ -370,9 +386,7 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   /* Remove nodes that droppen of spatial distribution */
   walkedOverEvents = pruneSpatialDistribution(threadData, spatialDistribution, isPositiveVelocity);
   if (walkedOverEvents > 1) {
-    warningStreamPrint(OMC_LOG_STDOUT, 1, "Removed more then one event from spatialDistribution. Step size to big!");
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageCloseWarning(OMC_LOG_STDOUT);
+    warnStepSizeTooBig(data, &spatialDistribution->nWarningsRemovedEvents, "Removed", index, walkedOverEvents);
   }
 
   /* Update oldPosX */
@@ -473,9 +487,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
 
   /* Handle events that would come out of spatialDistribution */
   if (walkedOverEvents > 1) {
-    warningStreamPrint(OMC_LOG_STDOUT, 1, "Need to output more then one event from spatialDistribution. Step size to big!");
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageCloseWarning(OMC_LOG_STDOUT);
+    warnStepSizeTooBig(data, &spatialDistribution->nWarningsOutputEvents, "Need to output", index, walkedOverEvents);
   }
   if (walkedOverEvents>0 && !data->simulationInfo->discreteCall && !isnan(eventPreValue)) {
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
@@ -1087,3 +1099,109 @@ void printTransportedQuantity(void* data, int stream, void* nodePointer) {
 
 
 //#endif
+
+/**
+ * @brief The spatialDistribution operators as flat words, for an FMU state.
+ *
+ * Per operator its scalar fields, then the transported quantity and the stored
+ * events, each led by its length.
+ *
+ * @param data    Runtime data struct.
+ * @param out     Receives the words, or NULL to only count them.
+ * @return        Number of words.
+ */
+size_t spatialDistributionStateWords(DATA* data, double* out)
+{
+  size_t k = 0;
+  unsigned int i;
+  DOUBLE_ENDED_LIST_NODE* node;
+
+  if (!data->simulationInfo->spatialDistributionData) {
+    return 0;
+  }
+  for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
+    SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
+    if (out) {
+      out[k] = s->isInitialized;
+      out[k+1] = s->oldPosX;
+      out[k+2] = s->startPosXSet;
+      out[k+3] = s->startPosX;
+      out[k+4] = s->lastStoredEventValue;
+      out[k+5] = (double) s->nWarningsRemovedEvents;
+      out[k+6] = (double) s->nWarningsOutputEvents;
+      out[k+7] = doubleEndedListLen(s->transportedQuantity);
+    }
+    k += 8;
+    for (node = getFirstNodeDoubleEndedList(s->transportedQuantity); node; node = getNextNodeDoubleEndedList(node)) {
+      TRANSPORTED_QUANTITY_DATA* q = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(node);
+      if (out) {
+        out[k] = q->position;
+        out[k+1] = q->value;
+      }
+      k += 2;
+    }
+    if (out) out[k] = doubleEndedListLen(s->storedEvents);
+    k++;
+    for (node = getFirstNodeDoubleEndedList(s->storedEvents); node; node = getNextNodeDoubleEndedList(node)) {
+      TRANSPORTED_EVENT_DATA* e = (TRANSPORTED_EVENT_DATA*) dataDoubleEndedList(node);
+      if (out) {
+        out[k] = e->position;
+        out[k+1] = e->zeroCrossValue;
+      }
+      k += 2;
+    }
+  }
+  return k;
+}
+
+/**
+ * @brief Inverse of spatialDistributionStateWords.
+ *
+ * @param data    Runtime data struct.
+ * @param w       Words spatialDistributionStateWords wrote.
+ * @param len     Number of words available.
+ * @return        Number of words read, or -1 if they are not what it wrote.
+ */
+long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len)
+{
+  size_t k = 0;
+  unsigned int i;
+  int j, n;
+
+  if (!data->simulationInfo->spatialDistributionData) {
+    return 0;
+  }
+  for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
+    SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
+    if (k + 8 > len) return -1;
+    s->isInitialized = w[k] != 0;
+    s->oldPosX = w[k+1];
+    s->startPosXSet = w[k+2] != 0;
+    s->startPosX = w[k+3];
+    s->lastStoredEventValue = (int) w[k+4];
+    s->nWarningsRemovedEvents = (unsigned long) w[k+5];
+    s->nWarningsOutputEvents = (unsigned long) w[k+6];
+    n = (int) w[k+7];
+    k += 8;
+    if (n < 0 || k + 2 * (size_t) n + 1 > len) return -1;
+    clearDoubleEndedList(s->transportedQuantity);
+    for (j = 0; j < n; j++) {
+      TRANSPORTED_QUANTITY_DATA q;
+      q.position = w[k];
+      q.value = w[k+1];
+      k += 2;
+      pushBackDoubleEndedList(s->transportedQuantity, &q);
+    }
+    n = (int) w[k++];
+    if (n < 0 || k + 2 * (size_t) n > len) return -1;
+    clearDoubleEndedList(s->storedEvents);
+    for (j = 0; j < n; j++) {
+      TRANSPORTED_EVENT_DATA e;
+      e.position = w[k];
+      e.zeroCrossValue = w[k+1];
+      k += 2;
+      pushBackDoubleEndedList(s->storedEvents, &e);
+    }
+  }
+  return (long) k;
+}

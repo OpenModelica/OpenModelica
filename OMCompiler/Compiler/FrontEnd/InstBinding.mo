@@ -276,9 +276,9 @@ protected function instStartOrigin
   input DAE.Mod inMod;
   input list<DAE.Var> inVarLst;
   input String inString;
-  output Option<DAE.Exp> outExpExpOption;
+  output Option<DAE.StartOrigin> outStartOrigin;
 algorithm
-  outExpExpOption := matchcontinue (inMod,inVarLst,inString)
+  outStartOrigin := matchcontinue (inMod,inVarLst,inString)
     local
       DAE.Mod mod2,mod;
       String bind_name;
@@ -290,13 +290,13 @@ algorithm
         mod2 := Mod.lookupCompModification(mod, bind_name);
         SOME(_) := Mod.modEquation(mod2);
       then
-        SOME(DAE.SCONST("binding"));
+        SOME(DAE.StartOrigin.BINDING_ORIGIN());
 
     case (_,DAE.TYPES_VAR(name=name)::_,bind_name)
       algorithm
         true := stringEq(name, bind_name);
       then
-        SOME(DAE.SCONST("type"));
+        SOME(DAE.StartOrigin.TYPE_ORIGIN());
 
     case (mod,_::varLst,bind_name)
       then instStartOrigin(mod,varLst,bind_name);
@@ -321,7 +321,8 @@ algorithm
   (outCache,outDAEVariableAttributesOption) :=
   matchcontinue (inCache, inMod, inType, inIntegerLst)
     local
-      Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val,startOrigin;
+      Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val;
+      Option<DAE.StartOrigin> startOrigin;
       Option<DAE.StateSelect> stateSelect_value;
       Option<DAE.Uncertainty> uncertainty_value;
       Option<DAE.Distribution> distribution_value;

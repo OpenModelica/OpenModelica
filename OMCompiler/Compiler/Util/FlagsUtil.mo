@@ -44,7 +44,6 @@ import Flags;
 
 protected
 
-import Corba;
 import Error;
 import ErrorExt;
 import Global;
@@ -96,7 +95,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.TRANSFORMS_BEFORE_DUMP,
   Flags.DAE_DUMP_GRAPHV,
   Flags.INTERACTIVE_TCP,
-  Flags.INTERACTIVE_CORBA,
   Flags.INTERACTIVE_DUMP,
   Flags.RELIDX,
   Flags.DUMP_REPL,
@@ -293,7 +291,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.KEEP_ARRAYS,
   Flags.MODELICA_OUTPUT,
   Flags.SILENT,
-  Flags.CORBA_SESSION,
   Flags.NUM_PROC,
   Flags.INST_CLASS,
   Flags.VECTORIZATION_LIMIT,
@@ -316,7 +313,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.SCALARIZE_MINMAX,
   Flags.STRICT,
   Flags.SCALARIZE_BINDINGS,
-  Flags.CORBA_OBJECT_REFERENCE_FILE_PATH,
   Flags.HPCOM_SCHEDULER,
   Flags.HPCOM_CODE,
   Flags.REWRITE_RULES_FILE,
@@ -443,7 +439,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.TEARING_COST_MARGIN,
   Flags.FMU_NATIVE_PLATFORMS,
   Flags.TPL_OUTPUT_DIR,
-  Flags.FMU_DIRECTORY
+  Flags.FMU_DIRECTORY,
+  Flags.TPL_INTERFACE_DIR
 };
 
 public function new
@@ -488,6 +485,11 @@ algorithm
       checkConfigFlags();
       flags := Flags.FLAGS(createDebugFlags(), createConfigFlags());
       saveFlags(flags);
+      // Not in Flags.TARGET itself: a constant's initialiser cannot reach
+      // another package. new() calls readArgs() after this, so --target wins.
+      if StringUtil.startsWith(System.openModelicaPlatform(), "msvc") then
+        setConfigString(Flags.TARGET, "msvc");
+      end if;
     else
       print("Flag loading failed!\n");
       flags := Flags.NO_FLAGS();
@@ -1062,6 +1064,14 @@ algorithm
     // A multiple-string value.
     case (_, Flags.STRING_LIST_FLAG(), _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
 
+    // No value, and an enumeration that spells one of its values "true": the flag
+    // used to be a boolean one, so keep --flag meaning --flag=true.
+    case ("", Flags.ENUM_FLAG(validValues = enums), _)
+      algorithm
+        i := Util.assoc("true", enums);
+      then
+        Flags.ENUM_FLAG(i, enums);
+
     // An enumeration value.
     case (_, Flags.ENUM_FLAG(validValues = enums), _)
       algorithm
@@ -1181,13 +1191,6 @@ algorithm
     // The error message might get lost, so also print it directly here.
     print("The flag -d=interactive is depreciated. Please use --interactive=tcp instead.\n");
   end if;
-  if Flags.isSet(Flags.INTERACTIVE_CORBA) then
-    disableDebug(Flags.INTERACTIVE_CORBA);
-    setConfigString(Flags.INTERACTIVE, "corba");
-    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactiveCorba", "--interactive=corba"});
-    // The error message might get lost, so also print it directly here.
-    print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba instead.\n");
-  end if;
   // add other deprecated flags here...
 
   // CONFIG_FLAGS
@@ -1230,7 +1233,6 @@ algorithm
   () := matchcontinue inValue
     local
       Boolean value;
-      String corba_name, corba_objid_path;
 
     // +showErrorMessages needs to be sent to the C runtime.
     case _
@@ -1238,24 +1240,6 @@ algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
         Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
-      then
-        ();
-
-    // The corba object reference file path needs to be sent to the C runtime.
-    case _
-      algorithm
-        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
-        Flags.STRING_FLAG(data = corba_objid_path) := inValue;
-        Corba.setObjectReferenceFilePath(corba_objid_path);
-      then
-        ();
-
-    // The corba session name needs to be sent to the C runtime.
-    case _
-      algorithm
-        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
-        Flags.STRING_FLAG(data = corba_name) := inValue;
-        Corba.setSessionName(corba_name);
       then
         ();
 
@@ -2054,6 +2038,20 @@ function wrapToTerminal
   input String str;
   output String outStr = stringAppendList(StringUtil.wordWrap(str, System.getTerminalWidth(), "\n"));
 end wrapToTerminal;
+
+public function applyNumProcEnvironment
+  "Bound OpenBLAS's thread pool, which it sizes from the environment when it
+   loads and which costs 128 MiB of address space per thread. An OpenMP build
+   (the MSYS2 package used on Windows) ignores OPENBLAS_NUM_THREADS and reads
+   only OMP_NUM_THREADS, so both are set. Called wherever -n is applied rather
+   than from Main.init alone: a setCommandLineOptions is still ahead of whatever
+   first loads the library."
+algorithm
+  if Flags.getConfigInt(Flags.NUM_PROC) == 1 then
+    System.setEnv("OPENBLAS_NUM_THREADS", "1", false);
+    System.setEnv("OMP_NUM_THREADS", "1", false);
+  end if;
+end applyNumProcEnvironment;
 
 annotation(__OpenModelica_Interface="util");
 end FlagsUtil;

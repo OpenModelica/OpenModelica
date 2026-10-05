@@ -1,0 +1,48 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_LoadDump
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_LoadDump);
+compareVars :=
+{
+   "smee.is[1]",
+   "smee.idq_dr[1]",
+   "smee.idq_sr[2]",
+   "smee.lesigma.i",
+   "speed.phi",
+   "voltageController.I.y",
+   "smee.idq_sr[1]",
+   "smee.is[2]",
+   "speed.w",
+   "smee.idq_rr[2]"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_LoadDump
+// {"smee.is[1]", "smee.idq_dr[1]", "smee.idq_sr[2]", "smee.lesigma.i", "speed.phi", "voltageController.I.y", "smee.idq_sr[1]", "smee.is[2]", "speed.w", "smee.idq_rr[2]"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 100000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_LoadDump', options = '', outputFormat = 'mat', variableFilter = 'time|smee.is.1.|smee.idq_dr.1.|smee.idq_sr.2.|smee.lesigma.i|speed.phi|voltageController.I.y|smee.idq_sr.1.|smee.is.2.|speed.w|smee.idq_rr.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousMachines.SMEE_LoadDump_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

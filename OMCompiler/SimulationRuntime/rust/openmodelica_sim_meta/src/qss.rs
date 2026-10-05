@@ -7,7 +7,7 @@
 //! Jacobian's sparsity says depend on it. There is no output grid: one result row
 //! is emitted per accepted quantum change, at that change's own time.
 
-use alloc::format;
+use openmodelica_solvers::fmath;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -21,8 +21,8 @@ use crate::{JacAInfo, Layout as SimLayout, REAL_OFF, SimMeta as SimModel, SolveS
 
 /// C's `enum error_msg` as this runtime's error strings. `OO_MEMORY` has no
 /// counterpart: allocation failure aborts here.
-const ISNAN: &str = "CodegenWasmJit: qss: the time of next change is NaN";
-const UNKNOWN: &str = "CodegenWasmJit: qss: no ODE Jacobian sparse pattern";
+const ISNAN: &str = "qss: the time of next change is NaN";
+const UNKNOWN: &str = "qss: no ODE Jacobian sparse pattern";
 
 const EPS: f64 = 1e-15;
 
@@ -164,6 +164,7 @@ impl Driver for Qss {
             }
             did_step = true;
             self.curr_step_no += 1;
+            crate::driver::publish_steps(|| self.curr_step_no);
 
             let ind = min_step(&self.tqp);
 
@@ -173,13 +174,11 @@ impl Driver for Qss {
             if self.tqp[ind].is_infinite() {
                 // If all derivatives are zero, the states stay constant and only
                 // the time propagates till stop->time.
-                omclog::warning(
+                omclog::warning!(
                     omclog::STDOUT,
                     false,
-                    &format!(
-                        "All derivatives are zero at time {}!.",
-                        format_f(read_f64(e, sim_data + TIME_OFF)?)
-                    ),
+                    "All derivatives are zero at time {}!.",
+                    format_f(read_f64(e, sim_data + TIME_OFF)?),
                 );
                 self.current_time = self.stop_time;
                 write_f64(e, sim_data + TIME_OFF, self.current_time)?;
@@ -322,19 +321,19 @@ fn delta_q(
     let mut next_q;
     if state_der >= 0.0 {
         // quantity of the state will increase
-        next_q = (libm::floor(x / dq) + 1.0) * dq;
+        next_q = (fmath::floor(x / dq) + 1.0) * dq;
         if next_q <= x + EPS {
             next_q += dq;
         }
     } else {
-        next_q = libm::floor(x / dq) * dq;
+        next_q = fmath::floor(x / dq) * dq;
         if next_q >= x - EPS {
             next_q -= dq;
         }
     }
 
-    let diff_q = libm::fabs(next_q - x);
-    let d_tnext_q = libm::fabs(diff_q / state_der);
+    let diff_q = fmath::fabs(next_q - x);
+    let d_tnext_q = fmath::fabs(diff_q / state_der);
 
     Ok((d_tnext_q, next_q, diff_q))
 }
@@ -361,8 +360,8 @@ fn print_sparse_structure(jac: &JacAInfo, stream: omclog::Stream, name: &str) {
         return;
     }
     let nnz: usize = jac.rows_by_col.iter().map(|r| r.len()).sum();
-    omclog::info(stream, true, &format!("Sparse structure of {name} [size: {0}x{0}]", jac.n));
-    omclog::info(stream, false, &format!("{nnz} non-zero elements"));
+    omclog::info!(stream, true, "Sparse structure of {name} [size: {0}x{0}]", jac.n);
+    omclog::info!(stream, false, "{nnz} non-zero elements");
 
     omclog::info(stream, true, "Transposed sparse structure (rows: states)");
     for rows in &jac.rows_by_col {

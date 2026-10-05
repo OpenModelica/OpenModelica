@@ -6,19 +6,24 @@ ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \
 ExternalRHSFlag.mos \
+ExternalUncaughtException.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
+GetExternalFunctions.mos \
 ImplicitArray.mos \
 LapackInverse.mos \
 Matrix.mos \
 MDD_test.mos \
 ModelicaIOMatrix.mos \
+ModelicaIOMatrix73.mos \
 ModelicaUtilities.mos \
+PrebuiltWasmExternals.mos \
 QualifiedCrefArg.mos \
 RecordMemberArguments.mos \
 TestRoots.mos \
-ts.mos
+ts.mos \
+UserDllModelicaError.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -41,6 +46,7 @@ ExternalFunc2.c \
 ExternalFunc2.h \
 ExternalNlsRecovery-f.c \
 ExternalRHSFlag.c \
+ExternalUncaughtException.c \
 ExtObj.c \
 ExtObj.h \
 ExtObjOrder.h \
@@ -51,8 +57,10 @@ Func.h \
 InOutStrings_fkn1.cc \
 InOutStrings_fkn2.cc \
 ModelicaUtilities.myExtFunction.c \
+PrebuiltWasmExternals \
 QualifiedCrefArg-f.c \
 testTables.txt \
+UserDllModelicaError-lib.c \
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

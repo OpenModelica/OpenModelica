@@ -45,8 +45,10 @@ encapsulated package Config
 public import Flags;
 protected
 
+import Autoconf;
 import Error;
 import FlagsUtil;
+import StringUtil;
 import System;
 
 public
@@ -401,20 +403,36 @@ algorithm
 end setTearingHeuristic;
 
 public function simCodeTarget "Default is set by +simCodeTarget=C.
-  \"C+Rust\" generates the same sources as \"C\" and differs only in what the
+  \"C.old\" generates the same sources as \"C\" and differs only in what the
   makefile links and defines, so every code generator sees \"C\"."
   output String target;
 algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
-  if target == "C+Rust" then
+  if target == "C.old" then
     target := "C";
   end if;
 end simCodeTarget;
 
-public function simCodeRustRuntime "+simCodeTarget=C+Rust: link libSimulationRuntimeRust instead of libSimulationRuntimeC."
+public function targetTriple
+  "The lib/<triple>/omc holding the runtime --target builds against. Autoconf.triple
+   is omc's own build, which is the same only while one toolchain is shipped."
+  output String triple;
+protected
+  String target;
+algorithm
+  if Autoconf.os <> "Windows_NT" then
+    triple := Autoconf.triple;
+    return;
+  end if;
+  target := Flags.getConfigString(Flags.TARGET);
+  triple := listHead(System.strtok(Autoconf.triple, "-")) +
+    (if StringUtil.startsWith(target, "msvc") or target == "debugrt" then "-windows-msvc" else "-windows-gnu");
+end targetTriple;
+
+public function simCodeRustRuntime "+simCodeTarget=C links libSimulationRuntimeRust, +simCodeTarget=C.old libSimulationRuntimeC."
   output Boolean rust;
 algorithm
-  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C+Rust";
+  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C";
 end simCodeRustRuntime;
 
 public function setsimCodeTarget

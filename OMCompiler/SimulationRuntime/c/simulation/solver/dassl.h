@@ -41,13 +41,14 @@ typedef struct DASSL_DATA{
   unsigned int dasslStepsFreq;  /* value specifies the output frequency regarding to time steps. Used in dasslSteps mode. */
   double dasslStepsTime;        /* value specifies the time increment when output happens. Used in dasslSteps mode. */
   int dasslRootFinding;         /* if TRUE then the internal root finding is used */
-  int dasslJacobian;            /* specifies the method to calculate the jacobian matrix */
+  JACOBIAN_METHOD dasslJacobian;/* specifies the method to calculate the jacobian matrix */
   int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
 
   long N;
   int* info;
 
   int idid;
+  int tinySteps;                /* consecutive steps too short to move time */
   int* ipar;
   double** rpar;
   /* size of work arrays for DASSL */

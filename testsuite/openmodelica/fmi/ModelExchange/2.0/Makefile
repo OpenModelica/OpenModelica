@@ -54,6 +54,7 @@ ModelWithAlias.mos \
 QuotedIdentifierExport.mos \
 RealFFT1.mos \
 testAssert.mos \
+testAssertEvent.mos \
 testBug2764.mos \
 testBug2765.mos \
 testBug3034.mos \
@@ -80,8 +81,6 @@ testExperimentalFMU.mos \
 FAILING_FMI_IMPORT = \
 BooleanNetwork1.mos \
 BouncingBall.mos \
-FMIExercise.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

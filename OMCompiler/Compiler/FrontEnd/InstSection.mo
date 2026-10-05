@@ -3950,29 +3950,14 @@ protected function checkConnectTypesDirection
   input DAE.ComponentRef inRhsCref;
   input SourceInfo inInfo;
 algorithm
-  () := matchcontinue inInfo
-    local
-      String cref_str1, cref_str2;
-
-    // Two connectors with the same directions but different faces or different
-    // directions may be connected.
-    case _
-      algorithm
-        false := isSignalSource(inLhsDirection, inLhsFace, inLhsVisibility) and
-                isSignalSource(inRhsDirection, inRhsFace, inRhsVisibility);
-      then
-        ();
-
-    else
-      algorithm
-        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
-        Error.addSourceMessage(Error.CONNECT_TWO_SOURCES,
-          {cref_str1, cref_str2}, inInfo);
-      then
-        ();
-
-  end matchcontinue;
+  // Two connectors with the same directions but different faces or different
+  // directions may be connected.
+  if isSignalSource(inLhsDirection, inLhsFace, inLhsVisibility) and
+     isSignalSource(inRhsDirection, inRhsFace, inRhsVisibility) then
+    Error.addSourceMessage(Error.CONNECT_TWO_SOURCES,
+      {ComponentReferenceBasics.printComponentRefStr(inLhsCref),
+       ComponentReferenceBasics.printComponentRefStr(inRhsCref)}, inInfo);
+  end if;
 end checkConnectTypesDirection;
 
 protected function isSignalSource

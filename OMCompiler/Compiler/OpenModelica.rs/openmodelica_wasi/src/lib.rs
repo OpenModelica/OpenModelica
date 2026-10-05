@@ -175,6 +175,28 @@ pub fn write(path: &str, bytes: Vec<u8>) {
     store().lock().unwrap().insert(normalize(path), Entry { data: bytes, mtime });
 }
 
+/// Overwrite `bytes` at byte offset `pos` of `path`, extending it if short.
+pub fn write_at(path: &str, pos: usize, bytes: &[u8]) {
+    let mtime = now_since_epoch();
+    let mut s = store().lock().unwrap();
+    let e = s.entry(normalize(path)).or_default();
+    let end = pos + bytes.len();
+    if e.data.len() < end {
+        e.data.resize(end, 0);
+    }
+    e.data[pos..end].copy_from_slice(bytes);
+    e.mtime = mtime;
+}
+
+/// Run `f` over the stored bytes of `path` without copying them; `None` if absent.
+pub fn with_bytes<R>(path: &str, f: impl FnOnce(&[u8]) -> R) -> Option<R> {
+    let s = store().lock().unwrap();
+    match s.get(&normalize(path)) {
+        Some(e) => Some(f(&e.data)),
+        None => builtin_by_basename(basename(path)).map(|b| f(b.as_bytes())),
+    }
+}
+
 /// Append `bytes` to `path`, creating it if absent.
 pub fn append(path: &str, bytes: &[u8]) {
     let mtime = now_since_epoch();

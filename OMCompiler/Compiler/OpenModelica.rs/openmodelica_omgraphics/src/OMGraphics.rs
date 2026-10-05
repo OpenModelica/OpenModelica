@@ -6,8 +6,6 @@
 // The entry points keep their MetaModelica names, which mmtorust calls.
 #![allow(non_snake_case)]
 
-use std::sync::Arc;
-
 use arcstr::ArcStr;
 use openmodelica_util::JSON::JSON;
 use openmodelica_util::ModelInstanceReference;
@@ -200,6 +198,7 @@ impl TextStyle {
 }
 
 /// One graphic primitive; only the fields relevant to `kind` are meaningful.
+#[derive(Clone)]
 struct Shape {
     kind: ShapeKind,
 
@@ -462,21 +461,42 @@ fn emit_ellipse(svg: &mut String, s: &Shape) {
 }
 
 fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
-    let cx = (s.extent.p1.x + s.extent.p2.x) / 2.0;
+    let (x0, x1) = (
+        s.extent.p1.x.min(s.extent.p2.x),
+        s.extent.p1.x.max(s.extent.p2.x),
+    );
+    // The anchor belongs at the edge the text is aligned to, not at the centre
+    // of the extent: anchoring "start" in the middle of the box indents the
+    // text by half its width.
+    let cx = match s.horizontal_alignment {
+        TextAlignment::Left => x0,
+        TextAlignment::Right => x1,
+        TextAlignment::Center => (x0 + x1) / 2.0,
+    };
     let cy = (s.extent.p1.y + s.extent.p2.y) / 2.0;
     let h = (s.extent.p2.y - s.extent.p1.y).abs();
-    let size = if s.font_size > 0.0 {
-        s.font_size
-    } else if h > 0.0 {
-        h * 0.8
-    } else {
-        10.0
-    };
 
     let txt = if name_text.is_empty() {
         s.text_string.to_string()
     } else {
         s.text_string.replace("%name", name_text)
+    };
+
+    // "If the fontSize attribute is 0 the text is scaled to fit its extent"
+    // (Modelica specification 18.6.5.5), which means both ways: fitting only
+    // the height overflows a box narrower than the text is long, and much of
+    // OpenIPSL puts a sentence in a 200-unit box.
+    let size = if s.font_size > 0.0 {
+        s.font_size
+    } else {
+        let by_height = if h > 0.0 { h * 0.8 } else { 10.0 };
+        let width = x1 - x0;
+        let advance = text_advance(&txt);
+        if width > 0.0 && advance > 0.0 && by_height * advance > width {
+            width / advance
+        } else {
+            by_height
+        }
     };
 
     let col = if s.text_color.is_set() { s.text_color } else { s.line_color };
@@ -517,6 +537,25 @@ fn emit_text(svg: &mut String, s: &Shape, name_text: &str) {
         style,
         escape_xml(&txt)
     ));
+}
+
+/// Width of a string at font size 1, estimated from per-character advances for
+/// a Helvetica-like face. Enough to decide how far to shrink text that does
+/// not fit; there is no font engine here to measure it properly.
+fn text_advance(text: &str) -> f64 {
+    text.chars()
+        .map(|c| match c {
+            'i' | 'j' | 'l' | '.' | ',' | ':' | ';' | '\'' | '|' | '!' => 0.26,
+            ' ' | '(' | ')' | '[' | ']' | '/' | '\\' | '-' | 'f' | 't' | 'r' => 0.33,
+            'm' | 'w' => 0.83,
+            'M' | 'W' => 0.89,
+            'I' | 'J' => 0.33,
+            c if c.is_ascii_uppercase() => 0.70,
+            c if c.is_ascii_digit() => 0.56,
+            c if c.is_ascii_lowercase() => 0.55,
+            _ => 0.55,
+        })
+        .sum()
 }
 
 fn emit_bitmap(svg: &mut String, s: &Shape) {
@@ -590,18 +629,33 @@ struct ViewBox {
 
 fn view_box(icon: &Icon) -> ViewBox {
     let e = &icon.extent;
-    let xmin = e.p1.x.min(e.p2.x);
-    let xmax = e.p1.x.max(e.p2.x);
-    let ymin = e.p1.y.min(e.p2.y);
-    let ymax = e.p1.y.max(e.p2.y);
-    let mut w = xmax - xmin;
-    let mut h = ymax - ymin;
-    if w <= 0.0 {
-        w = 200.0;
+    let mut xmin = e.p1.x.min(e.p2.x);
+    let mut xmax = e.p1.x.max(e.p2.x);
+    let mut ymin = e.p1.y.min(e.p2.y);
+    let mut ymax = e.p1.y.max(e.p2.y);
+    if xmax <= xmin {
+        xmin = -100.0;
+        xmax = 100.0;
     }
-    if h <= 0.0 {
-        h = 200.0;
+    if ymax <= ymin {
+        ymin = -100.0;
+        ymax = 100.0;
     }
+    // A shape may be drawn outside the coordinate system, and commonly is: the
+    // `%name` label sits at {{-100,140},{100,100}} above a {{-100,-100},
+    // {100,100}} icon in most of OpenIPSL and much of MSL. Clipping to the
+    // coordinate system alone loses it.
+    for s in &icon.graphics {
+        let Some((x0, y0, x1, y1)) = shape_bounds(s) else {
+            continue;
+        };
+        xmin = xmin.min(x0);
+        xmax = xmax.max(x1);
+        ymin = ymin.min(y0);
+        ymax = ymax.max(y1);
+    }
+    let w = xmax - xmin;
+    let h = ymax - ymin;
     let mut max_stroke: f64 = 0.0;
     for s in &icon.graphics {
         let tw = if s.kind == ShapeKind::Line { s.thickness } else { s.line_thickness };
@@ -613,12 +667,75 @@ fn view_box(icon: &Icon) -> ViewBox {
         y: ymin - margin,
         w: w + 2.0 * margin,
         h: h + 2.0 * margin,
-        ymin,
-        ymax,
+        ymin: ymin - margin,
+        ymax: ymax + margin,
     }
 }
 
-fn render_icon_svg(icon: &Icon, name_text: &str) -> String {
+/// A visible shape's axis-aligned bounds in the icon's coordinates, its own
+/// origin and rotation applied. `None` for a shape that draws nothing.
+fn shape_bounds(s: &Shape) -> Option<(f64, f64, f64, f64)> {
+    if !s.visible {
+        return None;
+    }
+    let corners: Vec<Point> = match s.kind {
+        ShapeKind::Line | ShapeKind::Polygon => s.points.clone(),
+        _ => {
+            let (x0, x1) = (s.extent.p1.x.min(s.extent.p2.x), s.extent.p1.x.max(s.extent.p2.x));
+            let (y0, y1) = (s.extent.p1.y.min(s.extent.p2.y), s.extent.p1.y.max(s.extent.p2.y));
+            vec![
+                Point { x: x0, y: y0 },
+                Point { x: x1, y: y0 },
+                Point { x: x1, y: y1 },
+                Point { x: x0, y: y1 },
+            ]
+        }
+    };
+    let mut bounds: Option<(f64, f64, f64, f64)> = None;
+    for p in corners {
+        let p = apply_shape_transform(s, p);
+        bounds = Some(match bounds {
+            None => (p.x, p.y, p.x, p.y),
+            Some((x0, y0, x1, y1)) => (x0.min(p.x), y0.min(p.y), x1.max(p.x), y1.max(p.y)),
+        });
+    }
+    bounds
+}
+
+/// Stroke widths as OMEdit draws them into a library pixmap: `lineThickness +
+/// 3.0` (ShapeAnnotation.cpp). An icon is shown a couple of centimetres wide,
+/// where the default 0.25 in a 200-unit coordinate system is a line too faint
+/// to see — several OpenIPSL icons are all but blank without this. A diagram is
+/// viewed at its own scale and keeps the widths it asks for.
+fn thumbnail_strokes(icon: &Icon) -> Icon {
+    const BIAS: f64 = 3.0;
+    Icon {
+        extent: icon.extent,
+        graphics: icon
+            .graphics
+            .iter()
+            .map(|s| {
+                let mut s = s.clone();
+                s.line_thickness = stroke_width(s.line_thickness) + BIAS;
+                s.thickness = stroke_width(s.thickness) + BIAS;
+                s
+            })
+            .collect(),
+    }
+}
+
+/// `None` when nothing is drawn. An icon layer can hold shapes that all draw
+/// nothing — every one invisible, or of a kind this renderer has no output for
+/// — and an empty frame on the page is worse than no icon at all.
+fn render_icon_svg(icon: &Icon, name_text: &str) -> Option<String> {
+    let icon = &thumbnail_strokes(icon);
+    let mut body = String::new();
+    for s in &icon.graphics {
+        emit_shape(&mut body, s, name_text);
+    }
+    if body.trim().is_empty() {
+        return None;
+    }
     let vb = view_box(icon);
     let mut svg = String::new();
     svg.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
@@ -636,11 +753,9 @@ fn render_icon_svg(icon: &Icon, name_text: &str) -> String {
         "  <g transform=\"matrix(1 0 0 -1 0 {})\">\n",
         num(vb.ymin + vb.ymax)
     ));
-    for s in &icon.graphics {
-        emit_shape(&mut svg, s, name_text);
-    }
+    svg.push_str(&body);
     svg.push_str("  </g>\n</svg>\n");
-    svg
+    Some(svg)
 }
 
 // PNG rasteriser. FMI 3.0 requires the icons referenced from
@@ -973,12 +1088,12 @@ fn render_icon_png(icon: &Icon) -> Vec<u8> {
 // JSON accessors. `None` plays the role of the C++ renderer's null Json
 // sentinel, so lookups chain without intermediate checks.
 
-type J = Option<Arc<JSON>>;
+type J = Option<metamodelica::Ref<JSON>>;
 
 trait JsonExt {
     fn get(&self, key: &str) -> J;
     fn at(&self, index: usize) -> J;
-    fn items(&self) -> Vec<Arc<JSON>>;
+    fn items(&self) -> Vec<metamodelica::Ref<JSON>>;
     fn len(&self) -> usize;
     fn is_object(&self) -> bool;
     fn is_array(&self) -> bool;
@@ -1012,7 +1127,7 @@ impl JsonExt for J {
         }
     }
 
-    fn items(&self) -> Vec<Arc<JSON>> {
+    fn items(&self) -> Vec<metamodelica::Ref<JSON>> {
         match self.as_deref() {
             Some(JSON::LIST { values }) => (&**values).into_iter().cloned().collect(),
             Some(JSON::ARRAY { values }) => (1..=Vector::size(values.clone()))
@@ -1198,14 +1313,14 @@ fn parse_shape(name: &str, elements: &J) -> Option<Shape> {
 
 /// Accepts the model-instance/annotation root, a bare `{Icon:{...}}`, or the
 /// Icon object itself.
-fn find_icon_object(root: &J) -> J {
-    let icon = root.get("annotation").get("Icon");
-    if icon.is_object() {
-        return icon;
+fn find_layer_object(root: &J, layer: &str) -> J {
+    let found = root.get("annotation").get(layer);
+    if found.is_object() {
+        return found;
     }
-    let icon = root.get("Icon");
-    if icon.is_object() {
-        return icon;
+    let found = root.get(layer);
+    if found.is_object() {
+        return found;
     }
     if root.get("graphics").is_array() || root.get("coordinateSystem").is_object() {
         return root.clone();
@@ -1216,16 +1331,20 @@ fn find_icon_object(root: &J) -> J {
 /// A class's Icon layer is its base classes' unioned with its own, the base
 /// classes' drawn first (behind); most of MSL draws its icon that way.
 fn collect_icon(root: &J, icon: &mut Icon, depth: u32) {
+    collect_layer(root, "Icon", icon, depth);
+}
+
+fn collect_layer(root: &J, layer: &str, icon: &mut Icon, depth: u32) {
     if depth > 32 {
         return; // a malformed instance must not recurse forever
     }
     for e in root.get("elements").items() {
         let e = Some(e);
         if e.get("$kind").as_str() == "extends" {
-            collect_icon(&e.get("baseClass"), icon, depth + 1);
+            collect_layer(&e.get("baseClass"), layer, icon, depth + 1);
         }
     }
-    let Some(icon_obj) = find_icon_object(root) else {
+    let Some(icon_obj) = find_layer_object(root, layer) else {
         return;
     };
     let icon_obj = Some(icon_obj);
@@ -1356,6 +1475,176 @@ fn write_binary_file(path: &str, data: &[u8]) -> bool {
     !data.is_empty() && openmodelica_wasi::fs::write(path, data).is_ok()
 }
 
+/// A `Line` annotation as the diagram dump writes it: named fields, not the
+/// positional record form the `graphics` list uses.
+fn parse_line_annotation(line: &J) -> Option<Shape> {
+    let points = parse_points(&line.get("points"));
+    if points.len() < 2 {
+        return None;
+    }
+    let mut shape = Shape {
+        kind: ShapeKind::Line,
+        points,
+        ..Shape::default()
+    };
+    let color = line.get("color");
+    if color.len() >= 3 {
+        shape.color = parse_color(&color);
+    }
+    let thickness = line.get("thickness");
+    if thickness.is_some() {
+        shape.thickness = thickness.as_num();
+    }
+    shape.line_pattern = LinePattern::from_index(enum_index(&line.get("pattern"), 2));
+    Some(shape)
+}
+
+/// Where a component sits on the diagram: `Placement.transformation`, whose
+/// extent is relative to `origin` and whose rotation turns about it.
+struct Placement {
+    x1: f64,
+    y1: f64,
+    x2: f64,
+    y2: f64,
+    origin: Point,
+    rotation: f64,
+}
+
+fn parse_placement(component: &J) -> Option<Placement> {
+    let t = component
+        .get("annotation")
+        .get("Placement")
+        .get("transformation");
+    let b = placement_box(&t.get("extent"))?;
+    let origin_json = t.get("origin");
+    let origin = if origin_json.len() >= 2 {
+        parse_point(&origin_json)
+    } else {
+        Point { x: 0.0, y: 0.0 }
+    };
+    // The extent is given relative to `origin`, and the rotation turns about
+    // it. With the default origin of {0,0} the two are the same thing, which is
+    // why only the rotated components looked misplaced.
+    Some(Placement {
+        x1: b[0] + origin.x,
+        y1: b[1] + origin.y,
+        x2: b[2] + origin.x,
+        y2: b[3] + origin.y,
+        origin,
+        rotation: t.get("rotation").as_num(),
+    })
+}
+
+/// The class' Diagram layer, its components drawn at their placements, and its
+/// connection lines. A component is emitted as its own icon inside a transform
+/// that maps the icon's coordinate system onto the placement box, which is what
+/// makes an icon drawn for a 200x200 grid land correctly in a 20x20 slot.
+pub fn diagram_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -> Option<String> {
+    let root = Some(json.clone());
+    let mut diagram = Icon::default();
+    collect_layer(&root, "Diagram", &mut diagram, 0);
+
+    let components: Vec<metamodelica::Ref<JSON>> = root.get("components").items();
+    let connections: Vec<metamodelica::Ref<JSON>> = root.get("connections").items();
+
+    // The shapes go into `body` first. A diagram can have components and still
+    // draw nothing — a record whose components carry no placement or no icon of
+    // their own — and an empty frame on the page is worse than no diagram.
+    let mut body = String::new();
+    let mut svg = &mut body;
+
+    for s in &diagram.graphics {
+        emit_shape(&mut svg, s, model_name);
+    }
+
+    for component in &components {
+        let component = Some(component.clone());
+        let Some(placement) = parse_placement(&component) else {
+            continue; // no placement: the component is not shown
+        };
+        let icon = icon_from_json(&component.get("type"));
+        if icon.graphics.is_empty() {
+            continue;
+        }
+        let e = &icon.extent;
+        let (ex1, ex2) = (e.p1.x.min(e.p2.x), e.p1.x.max(e.p2.x));
+        let (ey1, ey2) = (e.p1.y.min(e.p2.y), e.p1.y.max(e.p2.y));
+        if ex2 - ex1 == 0.0 || ey2 - ey1 == 0.0 {
+            continue;
+        }
+        let sx = (placement.x2 - placement.x1) / (ex2 - ex1);
+        let sy = (placement.y2 - placement.y1) / (ey2 - ey1);
+        svg.push_str("    <g");
+        svg.push_str(&format!(
+            " data-component=\"{}\"",
+            escape_xml(&component.get("name").as_str())
+        ));
+        if placement.rotation != 0.0 {
+            svg.push_str(&format!(
+                " transform=\"rotate({} {} {})\"",
+                num(placement.rotation),
+                num(placement.origin.x),
+                num(placement.origin.y)
+            ));
+        }
+        svg.push_str(">\n");
+        svg.push_str(&format!(
+            "    <g transform=\"translate({} {}) scale({} {})\">\n",
+            num(placement.x1 - ex1 * sx),
+            num(placement.y1 - ey1 * sy),
+            num(sx),
+            num(sy)
+        ));
+        for s in &icon.graphics {
+            emit_shape(&mut svg, s, &component.get("name").as_str());
+        }
+        svg.push_str("    </g>\n    </g>\n");
+    }
+
+    for connection in &connections {
+        let connection = Some(connection.clone());
+        if let Some(shape) = parse_line_annotation(&connection.get("annotation").get("Line")) {
+            emit_shape(&mut svg, &shape, "");
+        }
+    }
+
+    if body.trim().is_empty() {
+        return None;
+    }
+
+    let vb = view_box(&diagram);
+    let mut svg = String::new();
+    svg.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+    svg.push_str(&format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"{}\" height=\"{}\" viewBox=\"{} {} {} {}\">\n",
+        num(vb.w), num(vb.h), num(vb.x), num(vb.y), num(vb.w), num(vb.h)
+    ));
+    svg.push_str(&format!(
+        "  <g transform=\"matrix(1 0 0 -1 0 {})\">\n",
+        num(vb.ymin + vb.ymax)
+    ));
+    svg.push_str(&body);
+    svg.push_str("  </g>\n</svg>\n");
+    Some(svg)
+}
+
+/// Render a class' icon straight from its instance JSON, for a caller that
+/// already holds it. The handle entry points below exist because MetaModelica
+/// cannot pass a JSON value across the `external "C"` boundary; Rust callers
+/// need neither the reference table nor its 256 slots.
+pub fn icon_svg_from_json(json: &metamodelica::Ref<JSON>, model_name: &str) -> Option<String> {
+    render_icon_svg(&icon_from_json(&Some(json.clone())), model_name)
+}
+
+/// The same icon as a PNG, for hosts that cannot render SVG.
+pub fn icon_png_from_json(json: &metamodelica::Ref<JSON>) -> Option<Vec<u8>> {
+    let icon = icon_from_json(&Some(json.clone()));
+    if icon.graphics.is_empty() {
+        return None;
+    }
+    Some(render_icon_png(&icon))
+}
+
 // The bodies of Compiler/Util/OMGraphics.mo. `handle` is an in-memory
 // model-instance reference (issue #15219) holding list-form JSON.
 
@@ -1366,7 +1655,7 @@ fn model_icon(handle: i32) -> Option<Icon> {
 
 pub fn iconSVGFromHandle(handle: i32, modelName: ArcStr) -> ArcStr {
     match model_icon(handle) {
-        Some(icon) => ArcStr::from(render_icon_svg(&icon, &modelName)),
+        Some(icon) => render_icon_svg(&icon, &modelName).map_or_else(ArcStr::new, ArcStr::from),
         None => ArcStr::new(),
     }
 }
@@ -1410,7 +1699,7 @@ pub fn placedConnectorInfo(handle: i32, index: i32) -> ArcStr {
 
 pub fn placedConnectorIconSVG(handle: i32, index: i32) -> ArcStr {
     match connector_icon(handle, index) {
-        Some(icon) => ArcStr::from(render_icon_svg(&icon, "")),
+        Some(icon) => render_icon_svg(&icon, "").map_or_else(ArcStr::new, ArcStr::from),
         None => ArcStr::new(),
     }
 }

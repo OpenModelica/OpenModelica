@@ -32,11 +32,16 @@ pub const UNAVAILABLE: &str = "Ipopt is needed but not available.";
 /// Whether this build can run `method="optimization"`.
 pub const AVAILABLE: bool = cfg!(all(ipopt, feature = "std"));
 
+/// What C's generated goal functions throw for a model translated without Optimica.
+pub const NOT_COMPILED: &str = "The model was not compiled with -g=Optimica and the corresponding goal \
+                                function. The optimization solver cannot be used.";
+
 #[cfg(all(ipopt, feature = "std"))]
 pub use run::run_optimizer;
 
 #[cfg(all(ipopt, feature = "std"))]
 mod run {
+    use openmodelica_solvers::fmath;
     use alloc::format;
     use alloc::string::String;
     use alloc::vec;
@@ -268,9 +273,7 @@ mod run {
         sim_data: u32,
     ) -> Result<Vec<f64>> {
         let Some(opt) = meta.opt.clone() else {
-            // C's generated stubs when the model was translated without Optimica.
-            return Err("The model was not compiled with -g=Optimica and the corresponding goal \
-                        function. The optimization solver cannot be used.");
+            return Err(super::NOT_COMPILED);
         };
         // C sets `noThrowDivZero` for the whole optimization: a division by zero at a
         // trial point must not abort the solve.
@@ -408,11 +411,7 @@ mod run {
                 nlp.str_option("hessian_constant", "yes");
             }
             Some("num") | Some("NUM") | None => {}
-            Some(other) => omclog::warning(
-                omclog::STDOUT,
-                false,
-                &format!("not support ipopt_hesse={other}"),
-            ),
+            Some(other) => omclog::warning!(omclog::STDOUT, false, "not support ipopt_hesse={other}"),
         }
 
         if let Some(ls) = flags.ls_ipopt.as_deref() {
@@ -437,7 +436,7 @@ mod run {
                     }
                     Some((m, x)) => {
                         let (m, x): (i32, i32) = (m.parse().unwrap_or(0), x.parse().unwrap_or(0));
-                        let scaled = (m as f64) * libm::pow(10.0, x as f64);
+                        let scaled = (m as f64) * fmath::pow(10.0, x as f64);
                         max_iter = scaled as i32;
                         if max_iter >= 0 {
                             nlp.int_option("max_iter", max_iter);
@@ -459,7 +458,7 @@ mod run {
         // multipliers toward the given decade.
         let ws: i32 = flags.ipopt_warm_start.as_deref().and_then(|v| v.parse().ok()).unwrap_or(0);
         if ws > 0 {
-            let shift = libm::pow(10.0, -(ws as f64));
+            let shift = fmath::pow(10.0, -(ws as f64));
             nlp.num_option("mu_init", shift);
             nlp.num_option("bound_mult_init_val", shift);
             nlp.str_option("mu_strategy", "monotone");

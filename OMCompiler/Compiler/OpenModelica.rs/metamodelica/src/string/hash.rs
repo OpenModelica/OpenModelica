@@ -1,14 +1,12 @@
 //! String hashing builtins (djb2 / sdbm).
 
-use arcstr::ArcStr;
-
 /// Returns a hash of the string using Rust's built-in hash.
-pub fn stringHash(str: ArcStr) -> i32 {
+pub fn stringHash(str: impl AsRef<str>) -> i32 {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::Hash;
     use std::hash::Hasher;
     let mut hasher = DefaultHasher::new();
-    str.hash(&mut hasher);
+    str.as_ref().hash(&mut hasher);
     hasher.finish() as i32
 }
 
@@ -39,28 +37,62 @@ fn djb2_wide(bytes: &[u8]) -> u64 {
 
 /// Returns a DJB2 hash of the string.
 /// DJB2 algorithm: hash = hash * 33 + byte
-pub fn stringHashDjb2(str: ArcStr) -> i32 {
-    (djb2(str.as_bytes(), 5381) & HASH_MASK) as i32
+#[inline]
+pub fn stringHashDjb2(str: impl AsRef<str>) -> i32 {
+    (djb2(str.as_ref().as_bytes(), 5381) & HASH_MASK) as i32
 }
 
 /// Continues computing a DJB2 hash by adding another string to it.
-pub fn stringHashDjb2Continue(str: ArcStr, hash: i32) -> i32 {
-    (djb2(str.as_bytes(), hash as u32) & HASH_MASK) as i32
+#[inline]
+pub fn stringHashDjb2Continue(str: impl AsRef<str>, hash: i32) -> i32 {
+    (djb2(str.as_ref().as_bytes(), hash as u32) & HASH_MASK) as i32
+}
+
+/// Same result as `stringHashDjb2Continue(intString(i), hash)`, without
+/// building the string.
+#[inline]
+pub fn intHashDjb2Continue(i: i32, hash: i32) -> i32 {
+    if (0..100).contains(&i) {
+        let mut h = hash as u32;
+        if i >= 10 {
+            h = h.wrapping_mul(33).wrapping_add(b'0' as u32 + (i / 10) as u32);
+        }
+        h = h.wrapping_mul(33).wrapping_add(b'0' as u32 + (i % 10) as u32);
+        return (h & HASH_MASK) as i32;
+    }
+    let mut buf = [0u8; 11];
+    let mut n = buf.len();
+    let mut v = i.unsigned_abs();
+
+    loop {
+        n -= 1;
+        buf[n] = b'0' + (v % 10) as u8;
+        v /= 10;
+        if v == 0 {
+            break;
+        }
+    }
+    if i < 0 {
+        n -= 1;
+        buf[n] = b'-';
+    }
+
+    (djb2(&buf[n..], hash as u32) & HASH_MASK) as i32
 }
 
 /// Computes a DJB2 hash and applies modulo, giving a result in `[0, mod_val)`.
-pub fn stringHashDjb2Mod(str: ArcStr, mod_val: i32) -> i32 {
+pub fn stringHashDjb2Mod(str: impl AsRef<str>, mod_val: i32) -> i32 {
     if mod_val == 0 {
         return 0;
     }
-    (djb2_wide(str.as_bytes()) % (mod_val as u32 as u64)) as i32
+    (djb2_wide(str.as_ref().as_bytes()) % (mod_val as u32 as u64)) as i32
 }
 
 /// Returns an SDBM hash of the string.
 /// SDBM algorithm: hash = byte + (hash << 6) + (hash << 16) - hash
-pub fn stringHashSdbm(str: ArcStr) -> i32 {
+pub fn stringHashSdbm(str: impl AsRef<str>) -> i32 {
     let mut hash: u32 = 0;
-    for &byte in str.as_bytes() {
+    for &byte in str.as_ref().as_bytes() {
         hash = (byte as u32)
             .wrapping_add(hash << 6)
             .wrapping_add(hash << 16)
@@ -101,6 +133,17 @@ mod tests {
             // A string long enough to overflow the 32-bit accumulator.
             assert_eq!(stringHashDjb2(literal!("$SEED_ODE_JAC_ADJ.$DER.b")), 1541592153);
             assert_eq!(stringHashDjb2Mod(literal!("$RES_SIM_1"), 13), 4);
+        }
+
+        #[test]
+        fn test_int_hash_djb2_continue() {
+            for i in (-120..=120).chain([1234567890, i32::MAX, i32::MIN]) {
+                assert_eq!(
+                    intHashDjb2Continue(i, 5381),
+                    stringHashDjb2Continue(ArcStr::from(i.to_string()), 5381),
+                    "i = {i}"
+                );
+            }
         }
 
         #[test]

@@ -429,6 +429,16 @@ class FastFmu {
     return this.status('enter-event-mode');
   }
 
+  // Where a structural parameter may be set — fmi-ls-dae's `_D_daeMode`, which
+  // turns the ODE face of a `--daeMode` FMU into its residual one.
+  enterConfigurationMode() {
+    return this.status('enter-configuration-mode');
+  }
+
+  exitConfigurationMode() {
+    return this.status('exit-configuration-mode');
+  }
+
   enterContinuousTimeMode() {
     return this.status('enter-continuous-time-mode');
   }

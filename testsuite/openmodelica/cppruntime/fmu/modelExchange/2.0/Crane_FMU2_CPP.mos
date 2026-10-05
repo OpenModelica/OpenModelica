@@ -6,7 +6,7 @@
 // suite: disabled
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 
 // disable directional derivatives as long as it fails
@@ -14,7 +14,7 @@ setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 setCommandLineOptions("+d=disableDirectionalDerivatives"); getErrorString();
 
 loadFile("../1.0/cranes.mo"); getErrorString();
-buildModelFMU(cranes.crane, version="2.0"); getErrorString();
+buildModelFMU(cranes.crane, version="2.0", fileNamePrefix="cranes.crane"); getErrorString();
 
 //importFMU("cranes.crane.fmu", "<default>", 6, false, true); getErrorString();
 importFMU("cranes.crane.fmu", "<default>"); getErrorString();
@@ -40,11 +40,13 @@ val(prismatic_v, 1);
 // true
 // ""
 // record SimulationResult
-//     resultFile = "cranes_crane_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'cranes_crane_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 150, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'cranes_crane_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: cranes_crane_me_FMU
+// Segmentation fault
+// "
 // end SimulationResult;
 // ""
-// 0.9493545671702082
-// 0.394824265705273
+//
+//
 // endResult

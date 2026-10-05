@@ -820,5 +820,5 @@ algorithm
   end match;
 end getProgramFromStrategy;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="loader");
 end ClassLoader;

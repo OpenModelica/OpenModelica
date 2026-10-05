@@ -43,11 +43,11 @@ class QString;
 /*
  * Procedural meshes for the shapes Qt Quick 3D has no built-in primitive for
  * (hollow pipe, coil spring, arrow) — public QQuick3DGeometry only, no private
- * headers. Geometry is emitted in the Modelica/OSG convention: along local +Z
- * from 0 to length, in real units, so the body transform alone places it (no
- * extra scale/rotate, unlike the centred Y-axis built-in primitives). Mirrors
- * the OSG builders in ExtraShapes.cpp (Pipecylinder/Spring). Lit with per-vertex
- * normals; the caller renders these double-sided so triangle winding is moot.
+ * headers. Geometry is emitted in the Modelica convention: along local +Z from 0
+ * to length, in real units, so the body transform alone places it (no extra
+ * scale/rotate, unlike the centred Y-axis built-in primitives). Lit with
+ * per-vertex normals; the caller renders these double-sided so triangle winding
+ * is moot.
  */
 class Quick3DGeometry : public QQuick3DGeometry
 {
@@ -61,8 +61,7 @@ public:
   // Load a CAD mesh (type is "STL", "DXF", "OBJ" or "3DS"; the data parser is
   // chosen accordingly) in its native coordinates. Returns false if the file is
   // missing/unparsable so the caller can fall back to a placeholder. Scaling to
-  // length/width/height is the caller's job (via the model's scale property),
-  // mirroring the OSG CADFile::scaleVertices convention.
+  // length/width/height is the caller's job (via the model's scale property).
   bool buildFromCadFile(const QString& type, const QString& fileName);
 };
 

@@ -7,6 +7,7 @@
 //! [`LinInfo::frame`] the code generator baked the dump language into. The file is
 //! handed back for whichever entry point owns the file system.
 
+use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec;
@@ -26,7 +27,7 @@ pub struct LinFile {
 
 /// C's `numericalDifferentiationDeltaXlinearize` default.
 fn default_delta_x() -> f64 {
-    libm::sqrt(f64::EPSILON * 2e1)
+    fmath::sqrt(f64::EPSILON * 2e1)
 }
 
 /// The four symbolic matrices, in `MODEL_FNS`/[`LinInfo::jac_rows`] order.
@@ -115,12 +116,12 @@ fn jac_ac_num(
     for i in 0..n_x as u32 {
         let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
         let x = read_f64(e, sim_data + REAL_OFF + i * 8)?;
-        scaling.push(libm::fmax(nominal, libm::fabs(x)));
+        scaling.push(fmath::fmax(nominal, fmath::fabs(x)));
     }
     for i in 0..n_x {
         let addr = sim_data + REAL_OFF + (i as u32) * 8;
         let xsave = read_f64(e, addr)?;
-        let mut delta_hh = delta_h * (libm::fabs(xsave) + 1.0);
+        let mut delta_hh = delta_h * (fmath::fabs(xsave) + 1.0);
         if xsave + delta_hh >= read_f64(e, sim_data + layout.state_max_off + (i as u32) * 8)? {
             delta_hh = -delta_hh;
         }
@@ -171,7 +172,7 @@ fn jac_bd_num(
     ode_residual(e, model, lin, sim_data, &u, &mut x0, &mut y0, do_z.then_some(&mut z0[..]))?;
     for i in 0..n_u {
         let usave = u[i];
-        let mut delta_hh = delta_h * (libm::fabs(usave) + 1.0);
+        let mut delta_hh = delta_h * (fmath::fabs(usave) + 1.0);
         u[i] = usave + delta_hh;
         delta_hh = 1.0 / delta_hh;
 
@@ -350,6 +351,16 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
     let mut d = vec![0.0; n_y * n_u];
     let mut cz = vec![0.0; n_z * n_x];
     let mut dz = vec![0.0; n_z * n_u];
+
+    // `-csvInput` writes the variables, not the C host's `inputVars` mirror.
+    if model.inputs.len() == n_u {
+        for (v, inp) in lin.input_vars.iter().zip(&model.inputs) {
+            if v.off != inp.off && inp.wty == crate::WTy::F64 {
+                let live = read_f64(e, sim_data + inp.off)?;
+                write_lin_var(e, sim_data, v, live)?;
+            }
+        }
+    }
 
     let x0 = read_states(e, sim_data, layout.n_states)?;
     let u0: Vec<f64> =

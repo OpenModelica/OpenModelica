@@ -38,6 +38,7 @@
  */
 
 #include "OMSProxy.h"
+#include "omedit_config.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Util/Utilities.h"
@@ -266,8 +267,9 @@ void OMSProxy::startGuiServer()
   process = QString("python");
   QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
   QString OMHOME = QString(Helper::OpenModelicaHome);
-  processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib/omc;" + processEnvironment.value("PYTHONPATH"));
-  processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
+  const QString omsLib = OMHOME + "/lib/" + HOST_SHORT + "/omc";
+  processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + omsLib + ";" + processEnvironment.value("PYTHONPATH"));
+  processEnvironment.insert("PATH",  OMHOME + "/bin;" + omsLib + ";" + processEnvironment.value("PATH"));
   mpGuiProcess->setProcessEnvironment(processEnvironment);
 #else
   process = QString("%1/bin/OMSimulator").arg(Helper::OpenModelicaHome);

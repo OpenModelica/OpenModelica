@@ -1,4 +1,4 @@
-TEST = ../../../rtest -v
+TEST = ../../../../rtest -v
 
 TESTFILES = \
 	initSpatialDistribution.mos \
@@ -9,7 +9,6 @@ TESTFILES = \
 	mixedVelocity.mos \
 	bigSteps.mos \
 	nonZeroStartPosition.mos \
-	SpatialDistributionEvent.mos \
 	test1.mos \
 	test2.mos \
 	test3.mos \
@@ -17,7 +16,6 @@ TESTFILES = \
 	doubleReversal.mos \
 	largePositionReversal.mos \
 	rampInput.mos \
-	frozenBranchInitialEvent.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

@@ -19,7 +19,6 @@ pub type ModelCompileJob = Result<crate::sim_runtime::Module, String>;
 pub struct SimModel {
     pub wasm: Vec<u8>,
     pub layout: SimLayout,
-    pub result_vars: Vec<ResultVar>,
     /// The `ext.<extName>` host imports (external "C" functions) with the full
     /// C-call shape, so the host trampoline can marshal strings/arrays/pointers.
     pub ext_imports: Vec<ExtCallSig>,
@@ -38,15 +37,26 @@ pub struct SimModel {
     /// library defines: a native host dlopens them and calls in through libffi.
     /// Empty in the browser.
     pub ext_native_libs: Vec<String>,
-    /// The system libraries among `ext_native_libs`: an export declares these
-    /// rather than shipping them.
+    /// The platform LAPACK/BLAS, searched after the process image.
+    pub ext_native_fallback: Vec<String>,
+    /// The system libraries among `ext_native_libs`/`ext_native_fallback`: an
+    /// export declares these rather than shipping them.
     pub ext_native_system: Vec<String>,
+    /// An `external "C"` of this model is defined by a file this process loaded,
+    /// not by wasm and not by the omc image. Decided by the compile phase; such a
+    /// run is isolated in a child process ([`crate::isolate`]).
+    pub ext_outside_process: std::sync::atomic::AtomicBool,
     /// The archives and object files among them ([`ExtArchives`]).
     pub ext_archives: Option<ExtArchives>,
     pub ext_includes: Option<ExtIncludes>,
     /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
     /// symbol then turns out to be missing.
     pub ext_lib_notes: Vec<String>,
+    /// `NAME=value` variables the `ext_libs` need in the guest's environment.
+    pub ext_env: Vec<String>,
+    /// The libc the generation of prebuilt modules among `ext_libs` was built
+    /// against, loaded in place of the one omc carries.
+    pub ext_libc: Option<ExtLibrary>,
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
@@ -64,20 +74,40 @@ pub struct SimModel {
     pub state_sets: Vec<StateSetInfo>,
     /// ODE state Jacobian ∂f/∂x sparsity + coloring; `None` ⇒ daskr's numerical Jacobian.
     pub jac_a: Option<JacAInfo>,
+    /// Some nonlinear system takes the density rule's sparse default, decided at
+    /// codegen: kinsol+KLU, which an FMU export has to link for.
+    pub sparse_nls: bool,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
-    /// Result-variable display name -> unit, for a host to label plotted signals.
-    pub var_units: HashMap<String, String>,
-    /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
-    pub meta: SimMeta,
+    /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`),
+    /// as the codegen built it: an array's result variables are one entry
+    /// ([`SimMeta::var_arrays`]). [`SimModel::meta`] has them expanded.
+    pub meta_compact: SimMeta,
+    pub meta_expanded: std::sync::OnceLock<SimMeta>,
 }
 
 impl SimModel {
+    /// The metadata with every result variable its own entry, built at the first use.
+    pub fn meta(&self) -> &SimMeta {
+        if self.meta_compact.var_arrays.is_empty() && self.meta_compact.soti.real_arrays.is_empty() {
+            return &self.meta_compact;
+        }
+        self.meta_expanded.get_or_init(|| {
+            let mut m = self.meta_compact.clone();
+            m.expand_arrays();
+            m
+        })
+    }
+
+    pub fn result_vars(&self) -> &[ResultVar] {
+        &self.meta().vars
+    }
+
     /// C's `read_experiment`: this run's scalars, i.e. the model's metadata with the
     /// flags installed for the run applied. The model is shared between runs, so the
     /// run works off a copy.
     pub fn run_meta(&self) -> SimMeta {
-        openmodelica_sim_meta::simflags::with_flags(|f| self.meta.with_flags(f))
+        openmodelica_sim_meta::simflags::with_flags(|f| self.meta().with_flags(f))
     }
 }
 
@@ -172,7 +202,7 @@ impl ExtArchives {
     pub fn link(&self) -> std::result::Result<String, String> {
         Err("the implementation comes from a static library, which has to be linked — the browser \
              omc has no linker. Provide it as a `Library` built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`"
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string())
     }
 }
@@ -186,6 +216,14 @@ pub struct ExtIncludes {
     pub sources: Vec<String>,
     /// `IncludeDirectory` annotations, already `-I"…"` strings.
     pub include_dirs: Vec<String>,
+    /// The platform libraries the wrappers call into: a path or a bare soname.
+    pub libs: Vec<String>,
+    /// The model's static archives, in link order: this source is what references
+    /// their members, so linking them anywhere else pulls in nothing.
+    pub archives: Vec<String>,
+    /// The `external "C"` functions, forced undefined so an archive member only they
+    /// define is pulled in too.
+    pub symbols: Vec<String>,
     pub ccompiler: String,
     pub cflags: String,
     pub dllext: String,
@@ -211,10 +249,11 @@ impl ExtIncludes {
         static COMPILED: LazyLock<Mutex<HashMap<String, std::result::Result<Built, String>>>> =
             LazyLock::new(|| Mutex::new(HashMap::new()));
         let key = format!(
-            "{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}",
             self.prefix,
             self.cflags,
             self.include_dirs.join(" "),
+            self.archives.join(" "),
             self.sources.join("\n"),
             missing.iter().map(|s| &*s.name).collect::<Vec<_>>().join(" ")
         );
@@ -232,27 +271,40 @@ impl ExtIncludes {
     #[cfg(not(target_arch = "wasm32"))]
     fn compile_uncached(&self, missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         let wrappers = ext_wrappers(missing);
-        match self.compile_tu(&wrappers) {
+        match self.build(&wrappers) {
             // Keep why they did not compile: it explains a symbol still missing.
             Err(e) if !wrappers.is_empty() => {
-                self.compile_tu("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
+                self.build("").map(|path| Built { path, note: Some(e.clone()) }).map_err(|_| e)
             }
             r => r.map(|path| Built { path, note: None }),
         }
     }
 
+    /// Retry without the archives: a non-PIC member cannot go into a shared object,
+    /// and the unit is then short only the archive's symbols.
     #[cfg(not(target_arch = "wasm32"))]
-    fn compile_tu(&self, wrappers: &str) -> std::result::Result<String, String> {
+    fn build(&self, wrappers: &str) -> std::result::Result<String, String> {
+        match self.compile_tu(wrappers, true) {
+            Err(e) if !self.archives.is_empty() => self.compile_tu(wrappers, false).map_err(|_| e),
+            r => r,
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn compile_tu(&self, wrappers: &str, archives: bool) -> std::result::Result<String, String> {
         use std::process::Command;
         let dir = std::env::temp_dir().join(format!("om-extc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
         // The fallback build must not be handed the path it just failed to load.
-        let stem = if wrappers.is_empty() { "includes_exports" } else { "includes" };
+        let stem = match (wrappers.is_empty(), archives) {
+            (false, true) => "includes",
+            (true, true) => "includes_exports",
+            (false, false) => "includes_nolibs",
+            (true, false) => "includes_exports_nolibs",
+        };
         let tu = dir.join(format!("{}_{stem}.c", self.prefix));
         let out = dir.join(format!("{}_{stem}{}", self.prefix, self.dllext));
-        // No prologue: external C source includes what it uses. A source that needs
-        // more gets it from `--cflags`, as `-include`.
-        std::fs::write(&tu, self.sources.join("\n") + "\n" + wrappers)
+        std::fs::write(&tu, [INCLUDE_PREAMBLE, &self.sources.join("\n"), "\n", wrappers].concat())
             .map_err(|e| format!("cannot write {}: {e}", tu.display()))?;
 
         let mut cmd = Command::new(&self.ccompiler);
@@ -268,7 +320,27 @@ impl ExtIncludes {
         for inc in &self.include_dirs {
             cmd.arg(inc.trim_matches('"'));
         }
+        if archives {
+            for sym in &self.symbols {
+                cmd.arg(format!("-Wl,-u,{sym}"));
+            }
+        }
         cmd.arg("-o").arg(&out).arg(&tu);
+        if archives {
+            cmd.args(&self.archives);
+        }
+        // A system soname goes back to `-l<name>`: the linker then also accepts a
+        // `lib<name>.a`, which is all glibc 2.34+ has for `pthread`.
+        let (prefix, suffix) = (std::env::consts::DLL_PREFIX, std::env::consts::DLL_SUFFIX);
+        for lib in &self.libs {
+            if lib.contains(['/', '\\']) {
+                cmd.arg(lib);
+            } else if let Some(name) = lib.strip_prefix(prefix).and_then(|l| l.strip_suffix(suffix)) {
+                cmd.arg(format!("-l{name}"));
+            } else {
+                cmd.arg(format!("-l:{lib}"));
+            }
+        }
         let output = cmd
             .output()
             .map_err(|e| format!("`{}` could not be run to compile the `Include` C sources: {e}", self.ccompiler))?;
@@ -287,7 +359,7 @@ impl ExtIncludes {
     pub fn compile(&self, _missing: &[ExtCallSig]) -> std::result::Result<Built, String> {
         Err("the implementation comes from an `Include` annotation with C source, which has to be \
              compiled — the browser omc has no compiler. Provide it as a `Library` built with \
-             `clang --target=wasm32-wasip1 -fPIC -shared`"
+             `clang --target=wasm32-wasip1 -fPIC -shared -Wl,--export-all`"
             .to_string())
     }
 }
@@ -301,6 +373,14 @@ pub const EXT_ADDR_PREFIX: &str = "omc_ext_addr_";
 /// (`ExternalMedia`'s `setState_ph` declares a `double` for a Modelica `Integer`).
 pub const EXT_CALL_PREFIX: &str = "omc_ext_call_";
 
+/// Prologue of a translation unit built from `Include` C sources. `size_t` is the
+/// specification's array-dimension type (CodegenC's `SIMEXTARGSIZE`), so the
+/// sources cannot spell their own prototypes without it. Nothing else belongs
+/// here — a source needing more gets it from `--cflags` as `-include`. Not
+/// `openmodelica.h`: the C target adds it, but it reaches `setjmp.h`, which does
+/// not compile for wasm32-wasip1.
+pub const INCLUDE_PREAMBLE: &str = "#include <stddef.h> /* the spec's array-dimension type */\n";
+
 /// One wrapper per function still to be found. Taking the address of a function
 /// the sources never declare does not compile, so the caller falls back to the
 /// unit without these.
@@ -308,6 +388,12 @@ pub fn ext_wrappers(sigs: &[ExtCallSig]) -> String {
     let mut out = String::new();
     for sig in sigs {
         let name = &sig.name;
+        // C's `extFunDef`.
+        if sig.declare {
+            if let Some(decl) = ext_prototype(sig) {
+                out.push_str(&decl);
+            }
+        }
         match ext_call_wrapper(sig) {
             // A macro has no address to hand back.
             Some(call) => out.push_str(&format!("{call}#ifndef {name}\n{}#endif\n", ext_addr_wrapper(name))),
@@ -321,20 +407,38 @@ fn ext_addr_wrapper(name: &str) -> String {
     format!("void (*{EXT_ADDR_PREFIX}{name}(void))(void) {{ return (void (*)(void)) {name}; }}\n")
 }
 
+/// `extern T f(A, …);` in the types [`ext_call_wrapper`] hands the call.
+fn ext_prototype(sig: &ExtCallSig) -> Option<String> {
+    let params = ext_param_types(sig)?.join(", ");
+    let ret = match &sig.ret {
+        Some(ty) => ext_c_type(ty)?.to_owned(),
+        None => "void".to_owned(),
+    };
+    Some(format!("extern {ret} {}({});\n", sig.name, if params.is_empty() { "void".to_owned() } else { params }))
+}
+
+/// Fortran passes everything by reference, and so does an `_Out_` scalar; an array
+/// or record is a pointer either way.
+fn ext_param_types(sig: &ExtCallSig) -> Option<Vec<String>> {
+    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
+    sig.args
+        .iter()
+        .map(|(ty, is_out)| {
+            let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
+            Some(format!("{}{}", ext_c_arg_type(ty)?, if ptr { "*" } else { "" }))
+        })
+        .collect()
+}
+
 /// `T omc_ext_call_f(A a0, …) { return f(a0, …); }`. `None` when the result has no
 /// C spelling the declaration alone fixes (a record returned by value).
 fn ext_call_wrapper(sig: &ExtCallSig) -> Option<String> {
-    let byref = sig.lang == crate::sig::ExtLang::Fortran77;
-    let mut params = String::new();
-    for (i, (ty, is_out)) in sig.args.iter().enumerate() {
-        let ptr = *is_out || byref || matches!(ty, crate::sig::SigTy::Array { .. } | crate::sig::SigTy::Record { .. });
-        params.push_str(&format!(
-            "{}{}{} a{i}",
-            if i == 0 { "" } else { ", " },
-            ext_c_arg_type(ty)?,
-            if ptr { "*" } else { "" }
-        ));
-    }
+    let params = ext_param_types(sig)?
+        .into_iter()
+        .enumerate()
+        .map(|(i, ty)| format!("{ty} a{i}"))
+        .collect::<Vec<_>>()
+        .join(", ");
     let args: Vec<String> = (0..sig.args.len()).map(|i| format!("a{i}")).collect();
     let (ret, call) = match &sig.ret {
         Some(ty) => (ext_c_type(ty)?.to_owned(), "return "),
@@ -485,6 +589,11 @@ pub struct EditableParam {
     pub name: String,
     pub comment: String,
     pub unit: String,
+    /// The unit it is preferably shown and typed in, a display unit of `unit`.
+    pub display_unit: String,
+    /// FMI's `relativeQuantity`: a difference in the unit, so a conversion to a
+    /// display unit scales it but adds no offset.
+    pub relative_quantity: bool,
     pub off: u32,
     pub wty: WTy,
     /// A state's start value (vs. a plain parameter): overridden after `functionInitStartValues`.
@@ -539,6 +648,49 @@ pub fn set_sim_bench(on: bool) {
 pub fn sim_bench_enabled() -> bool {
     SIM_BENCH_FORCE.load(std::sync::atomic::Ordering::Relaxed)
         || std::env::var("OMC_WASM_SIM_BENCH").is_ok()
+}
+
+/// The largest function body in a wasm module; see `sim_runtime::select_engine_for`.
+/// Walks the code section's length prefixes only. An unparsable module reports 0 and
+/// leaves the compiler to report the real problem.
+pub fn max_function_body(wasm: &[u8]) -> usize {
+    fn uleb(b: &[u8], i: &mut usize) -> Option<usize> {
+        let (mut v, mut shift) = (0usize, 0u32);
+        loop {
+            let byte = *b.get(*i)?;
+            *i += 1;
+            v |= ((byte & 0x7f) as usize) << shift;
+            if byte & 0x80 == 0 {
+                return Some(v);
+            }
+            shift += 7;
+            if shift > 63 {
+                return None;
+            }
+        }
+    }
+    fn scan(wasm: &[u8]) -> Option<usize> {
+        let mut i = 8; // magic + version
+        while i < wasm.len() {
+            let id = *wasm.get(i)?;
+            i += 1;
+            let size = uleb(wasm, &mut i)?;
+            if id != 10 {
+                i = i.checked_add(size)?;
+                continue;
+            }
+            let mut max = 0;
+            let n = uleb(wasm, &mut i)?;
+            for _ in 0..n {
+                let body = uleb(wasm, &mut i)?;
+                max = max.max(body);
+                i = i.checked_add(body)?;
+            }
+            return Some(max);
+        }
+        Some(0)
+    }
+    scan(wasm).unwrap_or(0)
 }
 
 /// Set from `-n`: one processor means no background precompile and no parallel

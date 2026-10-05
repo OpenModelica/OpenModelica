@@ -8,7 +8,7 @@ model crane
     annotation (Placement(transformation(extent={{-30,40},{-10,60}})));
   Modelica.Mechanics.Translational.Sources.Position position(useSupport=true)
     annotation (Placement(transformation(extent={{-34,68},{-14,88}})));
-  Modelica.Blocks.Sources.Sine sine(amplitude=1, freqHz=0.2)
+  Modelica.Blocks.Sources.Sine sine(amplitude=1, f=0.2)
     annotation (Placement(transformation(extent={{-94,68},{-74,88}})));
   Modelica.Mechanics.MultiBody.Joints.Revolute revolute(cylinderLength=0.2)
     annotation (Placement(transformation(
@@ -63,6 +63,6 @@ equation
       color={95,95,95},
       thickness=0.5,
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end crane;

@@ -15,6 +15,6 @@ end FuncBuiltinSign;
 // class FuncBuiltinSign
 //   Integer r1 = -1;
 //   Integer r2 = 1;
-//   Integer r3 = sign(/*Real*/(r1 + r2));
+//   Integer r3 = sign(/*Real*/(r1) + /*Real*/(r2));
 // end FuncBuiltinSign;
 // endResult

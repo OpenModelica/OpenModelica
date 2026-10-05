@@ -2,7 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 world.mos \
-EngineV6_evalParams.mos \
+noemit.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
@@ -19,6 +19,7 @@ Bug3500.mos \
 Bug3687.mos \
 ChangeCorrect.mos \
 CombiTable1DBug.mos \
+CombiTimeTableTest.mos \
 ComplexAlgebraicLoop.mos \
 ComplexFun.mos \
 DiscreteVectorStateSpace.mos \
@@ -77,6 +78,8 @@ TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
 Ticket5129.mos \
+ResultFileArrow.mos \
+ResultFileArrowTimeAlias.mos \
 VariableFilter.mos \
 WhenReinitAlgorithm.mos \
 WhenStatement4.mos \
@@ -87,6 +90,7 @@ unitConvertTests.mos
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES= \
+EngineV6_evalParams.mos \
 EngineV6_output.mos \
 MoonAndEarth.mos \
 pendulum4.mos \

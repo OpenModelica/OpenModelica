@@ -7,7 +7,7 @@
 // Tests that < is escaped in Xml dumps
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("SimpleTriggeredTrapezoid.mo"); getErrorString();
 instantiateModel(SimpleTriggeredTrapezoid); getErrorString();
 dumpXMLDAE(SimpleTriggeredTrapezoid, addMathMLCode = true); getErrorString();
@@ -109,7 +109,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </orderedVariables>
 // <knownVariables dimension=\"4\">
 // <variablesList>
-// <variable id=\"1\" name=\"tt.amplitude\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Amplitude of trapezoid\">
+// <variable id=\"1\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
 // <bindExpression string=\"1.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -119,7 +119,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </MathML>
 // </bindExpression>
 // </variable>
-// <variable id=\"2\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
+// <variable id=\"2\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
 // <bindExpression string=\"0.5\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -155,7 +155,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"tt.falling\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Falling duration of trapezoid\">
+// <variable id=\"3\" name=\"tt.rising\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Rising duration of trapezoid\">
 // <bindExpression string=\"0.5\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -191,7 +191,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"4\" name=\"tt.offset\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Offset of output signal\">
+// <variable id=\"4\" name=\"tt.amplitude\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Amplitude of trapezoid\">
 // <bindExpression string=\"1.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">

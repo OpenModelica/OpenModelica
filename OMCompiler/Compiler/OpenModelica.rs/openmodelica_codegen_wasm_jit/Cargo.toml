@@ -9,20 +9,21 @@ openmodelica_wasi.workspace = true
 openmodelica_modelica_utilities.workspace = true
 # Host-side wasm execution engine (drivers, sim runtime, model, wasm artifacts).
 openmodelica_wasm_jit.workspace = true
-# External-"C" wasm-FMU artifacts, consumed by the FMU linker.
-openmodelica_wasi_libc.workspace = true
 openmodelica_mat_writer.workspace = true
 openmodelica_plt_writer.workspace = true
 # `-iif=<file>`: C's `importStartValues` reads the initialization file with the
 # MATLAB v4 reader.
 openmodelica_mat_reader.workspace = true
+# Reading a finished run's result file back by variable name, whatever format it
+# was written in (the web simulator's plot data).
+openmodelica_result_files.workspace = true
 openmodelica_sim_meta.workspace = true
 metamodelica.workspace = true
 openmodelica_ast.workspace = true
 openmodelica_simcode_types.workspace = true
 # SimCodeUtil::getFMI3ValueReference: the FMU export's value references must be
 # the ones CodegenFMU3 puts in modelDescription.xml.
-openmodelica_backend.workspace = true
+openmodelica_codegen_util.workspace=true
 openmodelica_backend_types.workspace = true
 openmodelica_error.workspace = true
 openmodelica_frontend_types.workspace = true
@@ -31,6 +32,7 @@ openmodelica_frontend_base.workspace = true
 openmodelica_tpl.workspace = true
 openmodelica_util.workspace = true
 arcstr.workspace = true
+foldhash.workspace = true
 ordered-float.workspace = true
 # `wasmparser` feature enables wasm-encoder's `reencode` (model→dylink transform).
 wasm-encoder = { workspace = true, features = ["wasmparser"] }
@@ -39,11 +41,13 @@ wasm-encoder = { workspace = true, features = ["wasmparser"] }
 # component via wit_component::Linker. Pure Rust → works in the browser omc too
 # (no external wasm-merge). wasmparser reads the model for the reencode. Pinned to
 # the same 0.252 wasm-tools release as wasm-encoder to avoid type skew.
-wit-component = "0.252"
-wasmparser = "0.252"
+wit-component = "0.259"
+wasmparser = "0.259"
 # Deflate for the in-process FMU ZIP writer. Pure Rust, so the browser omc
 # compresses the same way the native one does.
-miniz_oxide = "0.8"
+miniz_oxide = "0.9"
+# The prebuilt-module manifests and `getExternalFunctions`.
+serde_json.workspace = true
 
 [features]
 # The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit

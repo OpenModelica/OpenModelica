@@ -1,138 +1,173 @@
 .\" --------------------------------------------------------------------
-.\" Title 
+.\" Title
 .\" --------------------------------------------------------------------
 .
-.TH OMPlot 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
-.
+.TH OMPlot 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
 .
 .\" --------------------------------------------------------------------
-.SH "NAME"
+.SH NAME
 .\" --------------------------------------------------------------------
 .
 OMPlot \- OpenModelica plot viewer
 .
-.
 .\" --------------------------------------------------------------------
-.SH "SYNOPSIS"
+.SH SYNOPSIS
 .\" --------------------------------------------------------------------
 .
 .B OMPlot
-[\fIOPTION\fR] [\fIfilename\fR] [\fIvariable-names\fR]
-.
+.RI [ options ]
+.RI [ variable ...]
 .
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 .\" --------------------------------------------------------------------
 .
 .B OMPlot
-is a plot viewer that handles the file formats used by the OpenModelica
-Compiler:
-.P
-.RS 3
-.IP \(bu 3
-.B MATLAB4
-(binary format with .mat extension)
-.IP \(bu 3
-.B CSV
-(.csv)
-.IP \(bu 3
-.B PLT
-(.csv)
-.RE
+plots the given variables from a simulation result file. It reads the formats
+written by OpenModelica simulations:
+.BR .mat ,
+.BR .csv ,
+.B .arrow
+and
+.BR .plt .
+.PP
+Without
+.BR \-\-filename ,
+it uses the
+.B .mat
+or
+.B .csv
+file in the current directory, and asks which one if there are several.
+.PP
+If an
+.B OMPlot
+window is already open, the plot is sent to it rather than to a new window.
+.B omc
+starts
+.B OMPlot
+for the
+.B plot()
+scripting commands.
 .
 .\" --------------------------------------------------------------------
 .SH OPTIONS
 .\" --------------------------------------------------------------------
 .
-.PP
-.PD 0
 .TP
-.B \-\-title=TITLE
-Sets the TITLE of the plot window
-.PP
-.PD 0
-.TP
-.B \-\-filename=NAME
-Sets the NAME of the file to plot
-.PP
-.PD 0
-.TP
-.B \-\-legend=[true|false]
-Display a variable legend in the window
-.PP
-.PD 0
-.TP
-.B \-\-grid=[true|false]
-Enable a grid in the window
-.PP
-.PD 0
-.TP
-.B \-\-logx=[true|false]
-Use log scale for the x-axis
-.PP
-.PD 0
-.TP
-.B \-\-logy=[true|false]
-Use log scale for the y-axis
-.PP
-.PD 0
-.TP
-.B \-\-xlabel=LABEL
-Use LABEL as the label of the x-axis
-.PP
-.PD 0
-.TP
-.B \-\-ylabel=LABEL
-Use LABEL as the label of the y-axis
-.PP
-.PD 0
+.BI \-\-filename= name
+The result file to plot.
 .TP
 .B \-\-plot
-Creates a normal plot with the variables given on the command-line
-.PP
-.PD 0
+Create a normal plot of the given variables over time. This is the default.
 .TP
 .B \-\-plotAll
-Create a normal plot containing every variable in the result-file
-.PP
-.PD 0
+Create a normal plot containing every variable in the result file.
 .TP
 .B \-\-plotParametric
-Create a parametric plot (plot variables as functions of each other)
-.PP
-.PD 0
+Create a parametric plot, plotting the variables as functions of each other.
 .TP
-.B \-\-xrange=LEFT:RIGHT
-Sets the initial range of the x-axis to LEFT:RIGHT
-.PP
-.PD 0
+.BI \-\-title= title
+The title of the plot window.
 .TP
-.B \-\-yrange=LEFT:RIGHT
-Sets the initial range of the y-axis to LEFT:RIGHT
-.PP
-.PD 0
+.BI \-\-footer= footer
+The footer of the plot window.
 .TP
-.B \-\-new-window=[true|false]
-Create a MDI dialog in the plot-window
-
+.BI \-\-grid= grid
+The grid of the plot:
+.BR simple ,
+.B detailed
+(the default) or
+.BR none .
+.TP
+.BI \-\-legend\-position= position
+The position of the legend:
+.BR left ,
+.BR right ,
+.B top
+(the default),
+.B bottom
+or
+.BR none .
+.TP
+.BR \-\-logx= [ true | false ]
+.TQ
+.BR \-\-logy= [ true | false ]
+Use a logarithmic scale for the x\-axis or the y\-axis.
+.TP
+.BI \-\-xlabel= label
+The label of the x\-axis. The default is
+.BR time .
+.TP
+.BI \-\-ylabel= label
+.TQ
+.BI \-\-ylabel\-right= label
+The label of the left or the right y\-axis.
+.TP
+.BI \-\-xrange= left : right
+.TQ
+.BI \-\-yrange= left : right
+.TQ
+.BI \-\-yrange\-right= left : right
+The initial range of the x\-axis, the left y\-axis or the right y\-axis.
+.TP
+.BI \-\-yaxis= axes
+The y\-axis of each variable,
+.B L
+for left or
+.B R
+for right, separated by commas, for example
+.BR L,R,L,L .
+.TP
+.BR \-\-auto\-scale= [ true | false ]
+Scale the axes automatically. On by default.
+.TP
+.BI \-\-curve\-width= width
+The width of the curves.
+.TP
+.BI \-\-curve\-style= style
+The style of the curves: 1 SolidLine (the default), 2 DashLine, 3 DotLine,
+4 DashDotLine, 5 DashDotDotLine, 6 Sticks, 7 Steps.
+.TP
+.BR \-\-new\-window= [ true | false ]
+Open the plot in a new window of the running
+.BR OMPlot .
+.TP
+.B \-\-help
+Print a usage summary and exit.
+.
 .\" --------------------------------------------------------------------
-.SH AUTHOR
+.SH EXAMPLES
 .\" --------------------------------------------------------------------
 .
-See OpenModelicaUsersGuide.pdf for a full list of contributors to the
-\%OpenModelica project.
-.
-.\" --------------------------------------------------------------------
-.SH BUGS
-.\" --------------------------------------------------------------------
-.
-If you find a bug, please report it at:
-.P
-<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
+.TP
+.B OMPlot \-\-filename=Model_res.mat x y
+Plot
+.B x
+and
+.B y
+over time.
+.TP
+.B OMPlot \-\-filename=Model_res.mat \-\-plotParametric x y
+Plot
+.B y
+as a function of
+.BR x .
 .
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
 .\" --------------------------------------------------------------------
 .
-.BR omc (1)
-
+.BR omc (1),
+.BR OMEdit (1)
+.
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+Report bugs at <https://github.com/OpenModelica/OpenModelica/issues>.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+Open Source Modelica Consortium (OSMC), <https://www.openmodelica.org>

@@ -11,7 +11,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
-use libm::{fabs, fmax, fmin, sqrt};
+use crate::fmath::{self, fabs, fmax, fmin, sqrt};
 
 use crate::events::{Bracket, StepEnd};
 use crate::{Ode, Result, format_e, omclog};
@@ -152,14 +152,16 @@ impl SymSolver {
         } else {
             self.plain_step(ode, t_left, y, yp, target)?;
         }
-        let end = self.br.close(ode, t_left, target, &self.y_new)?;
+        let (end, accepted) = self.br.close(ode, t_left, target, &self.y_new, yp)?;
         let reached = end.unwrap_or(target);
         *t = reached;
         y[..self.n].copy_from_slice(self.br.right());
         // C's `updateContinuousSystem` right after the step. Both solvers also
         // difference a derivative into `localData[1]`, but the ring buffer rotates
         // this one over that before anything reads it.
-        ode.eval(reached, &y[..self.n], yp)?;
+        if !accepted {
+            ode.eval(reached, &y[..self.n], yp)?;
+        }
         Ok(match end {
             Some(troot) => StepEnd::Root(troot),
             None => StepEnd::Reached,
@@ -231,7 +233,7 @@ impl SymSolver {
                     log(|| {
                         alloc::format!(
                             "min(facmax, max(facmin, fac*sqrt(1/err))) = {}",
-                            format_e(fmin(FACMAX, fmax(FACMIN, FAC * libm::pow(1.0 / err, 4.0))))
+                            format_e(fmin(FACMAX, fmax(FACMIN, FAC * fmath::pow(1.0 / err, 4.0))))
                         )
                     });
                 }

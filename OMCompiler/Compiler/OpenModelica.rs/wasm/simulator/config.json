@@ -13,6 +13,12 @@
       "library": "Modelica.Blocks.Examples.PID_Controller"
     },
     {
+      "id": "districtheating",
+      "label": "District heating (DAE mode)",
+      "sourceFile": "examples/DistrictHeating.mo",
+      "daeMode": true
+    },
+    {
       "id": "doublependulum",
       "label": "Double pendulum (3D, MSL)",
       "library": "Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum",
