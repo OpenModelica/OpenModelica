@@ -3529,13 +3529,13 @@ match system
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
       /* iteration variables */
       for (i=0; i<<%nlsSize%>; i++) {
-        if (isinf(xloc[i]) || isnan(xloc[i])) {
+        if (!isfinite(xloc[i])) {
           <%if resizable then
-          'errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable %d is inf or nan.", i);'
+          'errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable %d is %g.", i, xloc[i]);'
           else
           <<
-          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
-            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i]);
+          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is %g.",
+            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i], xloc[i]);
           >>%>
           for (j=0; j<<%nlsSize%>; j++) {
             res[j] = NAN;

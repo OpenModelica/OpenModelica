@@ -793,7 +793,7 @@ algorithm
         end if;
       outEqns := BackendEquation.setAtIndex(outEqns, eqIdx, eqDiff);
       //collect original equations
-      outOrgEqns := addOrgEqn(eqIdx, eqOrig, outOrgEqns);
+      outOrgEqns := addOrgEqn(eqIdx, BackendEquation.removeDiscreteTupleElements(eqOrig), outOrgEqns);
     end if;
   end for;
 end replaceDifferentiatedEqns;
