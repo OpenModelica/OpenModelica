@@ -18,7 +18,22 @@ pub fn realString(r: Real) -> ArcStr {
     if v.is_nan() {
         return arcstr::literal!("NaN");
     }
-    ArcStr::from(ryu_to_hr(&std::format!("{:e}", v), true))
+    // The latest string for each slot; the same few values recur.
+    thread_local! {
+        static RECENT: std::cell::RefCell<[(u64, Option<ArcStr>); 256]> =
+            std::cell::RefCell::new(std::array::from_fn(|_| (0, None)));
+    }
+    let bits = v.to_bits();
+    let slot = ((bits ^ (bits >> 32)).wrapping_mul(0x9e37_79b9_7f4a_7c15) >> 56) as usize;
+    RECENT.with_borrow_mut(|recent| {
+        let (key, s) = &mut recent[slot];
+        if *key == bits && let Some(s) = s {
+            return s.clone();
+        }
+        let out = ArcStr::from(ryu_to_hr(&std::format!("{:e}", v), true));
+        (*key, *s) = (bits, Some(out.clone()));
+        out
+    })
 }
 
 /// Port of the C runtime's `ryu_hr_tdzp` (`3rdParty/ryu/ryu/om_format.c`): the
@@ -148,6 +163,17 @@ mod tests {
             assert_eq!(&*realString(r(f64::INFINITY)), "inf");
             assert_eq!(&*realString(r(f64::NEG_INFINITY)), "-inf");
             assert_eq!(&*realString(r(f64::NAN)), "NaN");
+            assert_eq!(&*realString(r(-0.0)), "-0.0");
+        }
+
+        #[test]
+        fn test_real_string_repeated() {
+            let values: Vec<f64> = (0..2000).map(|i| i as f64 * 0.25 - 100.0).collect();
+            for _ in 0..2 {
+                for &v in &values {
+                    assert_eq!(&*realString(r(v)), ryu_to_hr(&std::format!("{v:e}"), true));
+                }
+            }
         }
 
         /// The `real_output=1` vectors from om_format.c's TEST_RYU_TO_HR main.
