@@ -3,14 +3,12 @@
 
 use super::*;
 
-/// Does `$PRE.<x>` have pre-storage — its own scalar slot, or a subscripted
-/// element of a `$PRE` array group? A whole-array `pre(x)` deliberately does not
-/// count: C's `daeExpCrefRhsSimContext` wraps the live `<type>Vars` region for it,
-/// never `<type>VarsPre`.
+/// Does `$PRE.<x>` have pre-storage: its own scalar slot, a `$PRE` array group
+/// (whole array), or an element of one?
 pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
     let sim = ctx.sim()?;
     if let Ok(key) = sim_cref_key(cref) {
-        if sim.vars.contains_key(&key) {
+        if sim.vars.contains_key(&key) || sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key) {
             return Ok(true);
         }
     }
@@ -24,20 +22,6 @@ pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result
             Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
         }
         None => Ok(false),
-    }
-}
-
-/// [`sim_pre_is_stored`] for an assignment *target*: a whole-array `$PRE.x := …`
-/// keeps the prefix in C where its right-hand side drops it, so the write must
-/// land on the pre-value mirror and not on the live array.
-pub(super) fn sim_pre_is_stored_lhs(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
-    if sim_pre_is_stored(ctx, cref)? {
-        return Ok(true);
-    }
-    let sim = ctx.sim()?;
-    match sim_cref_key(cref) {
-        Ok(key) => Ok(sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key)),
-        Err(_) => Ok(false),
     }
 }
 

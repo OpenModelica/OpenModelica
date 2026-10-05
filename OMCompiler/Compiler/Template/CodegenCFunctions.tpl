@@ -6299,13 +6299,18 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
           'NULL'
         else if Flags.getConfigBool(Flags.NEW_BACKEND) then
           let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
-          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+          let nosubname = if isPre then
+              contextCref(crefPrefixPre(crefStripSubs(cr)), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+            else
+              contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
           '((modelica_<%type%>*)&(<%nosubname%>))'
         else
           let &sub = buffer ""
-          let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+          let nosubname = if isPre then
+              contextCref(crefPrefixPre(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+            else
+              contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
           '((modelica_<%type%>*)&(<%nosubname%>))'
-      let nosubname = contextCrefIsPre(crefStripSubs(cr),context, &auxFunction, isPre)
       let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
