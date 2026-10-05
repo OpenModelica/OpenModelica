@@ -9,6 +9,7 @@ jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 arrayConnectOutside.mos \
+mixedDependencyFrames.mos \
 resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableConnectArrays.mos \
