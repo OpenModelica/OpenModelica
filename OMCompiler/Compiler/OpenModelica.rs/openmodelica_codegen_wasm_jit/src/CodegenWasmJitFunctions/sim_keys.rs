@@ -109,6 +109,53 @@ fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
     Ok(())
 }
 
+/// The key of `cr` in a slot table: as spelled, or, when `contains` has no such
+/// key, [`flat_sim_key`]'s.
+pub(crate) fn resolve_sim_key(cr: &DAE::ComponentRef, contains: impl Fn(&str) -> bool) -> Result<String> {
+    let key = sim_cref_key(cr)?;
+    if contains(&key) {
+        return Ok(key);
+    }
+    Ok(flat_sim_key(cr).filter(|k| contains(k)).unwrap_or(key))
+}
+
+pub(super) fn sim_var_key(sim: &SimCtx, cr: &DAE::ComponentRef) -> Result<String> {
+    resolve_sim_key(cr, |k| sim.vars.contains_key(k))
+}
+
+/// NBackend names element `[1]` of the array `a[:].b.c` as `a.b.c[1]`, while an
+/// equation may spell it `a[1].b.c`: the subscripts moved to the last component.
+/// `None` unless an outer component has subscripts, all constant.
+pub(crate) fn flat_sim_key(cr: &DAE::ComponentRef) -> Option<String> {
+    use DAE::ComponentRef as C;
+    let mut key = String::new();
+    let mut subs = String::new();
+    let mut outer_subs = false;
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                outer_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return None,
+        };
+        key.push_str(ident);
+        if !push_qual_subs(subscriptLst, &mut subs) {
+            return None;
+        }
+        match next {
+            Some(n) => {
+                key.push('.');
+                node = n;
+            }
+            None => break,
+        }
+    }
+    outer_subs.then(|| key + &subs)
+}
+
 /// [`sim_cref_key`] for the call sites with no fallback left: it names the cref in
 /// a recorded message. The callers that recover must not record one.
 pub(super) fn sim_cref_key_fatal(cr: &DAE::ComponentRef) -> Result<String> {

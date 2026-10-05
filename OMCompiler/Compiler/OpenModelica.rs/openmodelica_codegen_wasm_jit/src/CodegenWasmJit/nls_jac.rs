@@ -296,12 +296,12 @@ pub(super) fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
 /// read. `Ok(None)` leaves naming the system to the caller.
 pub(crate) fn iteration_var_slot(
     vars: &SlotMap,
-    start_slots: &HashMap<String, u32>,
+    start_slots: &KeyTable<StartSlot>,
     cr: &metamodelica::Ref<DAE::ComponentRef>,
 ) -> Result<Option<IterSlot>> {
-    let key = sim_cref_key(cr)?;
+    let key = resolve_sim_key(cr, |k| vars.contains_key(k))?;
     if let Some(off) = key.strip_prefix("$START.").and_then(|k| start_slots.get(k)) {
-        return Ok(Some(IterSlot { off: *off, wty: WTy::F64 }));
+        return Ok(Some(IterSlot { off, wty: WTy::F64 }));
     }
     match vars.get(&key) {
         None => Ok(None),

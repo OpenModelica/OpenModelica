@@ -115,20 +115,23 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
     };
     for row in lst(rows) {
         let iters: Vec<&BackendDAE::SimIterator> = lst(&row.equation_iterators).collect();
-        for (flat, bindings) in iterator_expansion(&iters).ok()?.into_iter().enumerate() {
-            for sc in lst(&row.solved_crefs) {
-                let sc = BoundCref::new(sc, &bindings)?;
+        let solved: Vec<CrefShape> = lst(&row.solved_crefs).map(CrefShape::new).collect::<Option<_>>()?;
+        let deps: Vec<(CrefShape, _, _)> =
+            lst(&row.dependencies).map(|(seed, dep, rep)| Some((CrefShape::new(seed)?, dep, rep))).collect::<Option<_>>()?;
+        for_each_iteration(&iters, |flat, bindings| {
+            for sc in &solved {
+                let sc = sc.bind(bindings)?;
                 // A trailing whole dimension of a looped residual is the loop itself.
-                let iter_row = !bindings.is_empty() && sc.whole.last() == Some(&true);
+                let iter_row = !bindings.is_empty() && sc.dims.last().is_some_and(|(_, p)| p.is_all());
                 let sc_offs = match iter_row {
                     true => vec![slots.base(&sc.cref)? + flat],
                     false => slots.offsets(&sc)?,
                 };
-                let whole_2d = sc.dims.len() == 2 && sc.whole.iter().all(|w| *w);
+                let whole_2d = sc.dims.len() == 2 && sc.dims.iter().all(|(_, p)| p.is_all());
                 let pairs_regular = sc.whole_1d() || (iter_row && !whole_2d);
-                for (seed, dep, rep) in lst(&row.dependencies) {
-                    let seed = BoundCref::new(seed, &bindings)?;
-                    let regular = !*rep && lst(&dep.kinds).next() == Some(&false) && seed.whole_1d() && pairs_regular;
+                for (seed, dep, rep) in &deps {
+                    let seed = seed.bind(bindings)?;
+                    let regular = !**rep && lst(&dep.kinds).next() == Some(&false) && seed.whole_1d() && pairs_regular;
                     if regular {
                         let (rb, cb) = (slots.base(&sc.cref)?, slots.base(&seed.cref)?);
                         match bindings.is_empty() {
@@ -144,7 +147,8 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
                     }
                 }
             }
-        }
+            Some(())
+        })?;
     }
     Some(cols)
 }
@@ -154,7 +158,10 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
 /// (the C template's `simVarExactFromHT`).
 struct JacArraySlots {
     base: HashMap<String, usize>,
-    exact: HashMap<(String, Vec<usize>), usize>,
+    exact: HashMap<String, HashMap<Vec<usize>, usize>>,
+    /// A cref's subscript-stripped key, by the cref's address: the expansion asks
+    /// for the same few crefs once per iteration.
+    keys: std::cell::RefCell<HashMap<usize, Option<String>>>,
 }
 
 impl JacArraySlots {
@@ -166,32 +173,42 @@ impl JacArraySlots {
             let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&sv.name).ok()?;
             let key = sim_cref_key(&stripped).ok()?;
             if let Some(positions) = BoundCref::new(&sv.name, &[]).and_then(|b| b.single_positions()) {
-                exact.entry((key.clone(), positions)).or_insert(index);
+                exact.entry(key.clone()).or_insert_with(HashMap::default).entry(positions).or_insert(index);
             }
             base.entry(key).or_insert(index);
         }
-        Some(JacArraySlots { base, exact })
+        Some(JacArraySlots { base, exact, keys: Default::default() })
+    }
+
+    fn with_key<R>(&self, cr: &metamodelica::Ref<DAE::ComponentRef>, f: impl FnOnce(&str) -> Option<R>) -> Option<R> {
+        let addr = &**cr as *const DAE::ComponentRef as usize;
+        let mut keys = self.keys.borrow_mut();
+        let key = keys.entry(addr).or_insert_with(|| {
+            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(cr).ok()?;
+            sim_cref_key(&stripped).ok()
+        });
+        f(key.as_deref()?)
     }
 
     fn base(&self, cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<usize> {
-        let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&cr).ok()?;
-        self.base.get(&sim_cref_key(&stripped).ok()?).copied()
+        self.with_key(cr, |k| self.base.get(k).copied())
     }
 
     fn offsets(&self, cr: &BoundCref) -> Option<Vec<usize>> {
         if let Some(positions) = cr.single_positions() {
-            let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&cr.cref).ok()?;
-            if let Some(&index) = self.exact.get(&(sim_cref_key(&stripped).ok()?, positions)) {
+            if let Some(index) = self.with_key(&cr.cref, |k| self.exact.get(k)?.get(&positions).copied()) {
                 return Some(vec![index]);
             }
         }
         let base = self.base(&cr.cref)?;
         let mut offs = vec![0usize];
         for (dim, positions) in &cr.dims {
-            let mut next = Vec::with_capacity(offs.len() * positions.len());
+            let mut next = Vec::with_capacity(offs.len() * positions.len(*dim));
             for o in &offs {
-                for p in positions {
-                    next.push(o * dim + p);
+                match positions {
+                    Positions::All => next.extend((0..*dim).map(|p| o * dim + p)),
+                    Positions::One(p) => next.push(o * dim + p),
+                    Positions::Many(ps) => next.extend(ps.iter().map(|p| o * dim + p)),
                 }
             }
             offs = next;
@@ -200,18 +217,72 @@ impl JacArraySlots {
     }
 }
 
+/// The 0-based positions a subscript selects in its dimension.
+enum Positions {
+    /// A whole dimension.
+    All,
+    One(usize),
+    Many(Vec<usize>),
+}
+
+impl Positions {
+    fn is_all(&self) -> bool {
+        matches!(self, Positions::All)
+    }
+
+    fn len(&self, dim: usize) -> usize {
+        match self {
+            Positions::All => dim,
+            Positions::One(_) => 1,
+            Positions::Many(ps) => ps.len(),
+        }
+    }
+}
+
 /// A sparsity cref with its iterators bound: per dimension, size and selected
-/// 0-based positions.
+/// positions.
 struct BoundCref {
     cref: metamodelica::Ref<DAE::ComponentRef>,
-    dims: Vec<(usize, Vec<usize>)>,
-    whole: Vec<bool>,
+    dims: Vec<(usize, Positions)>,
 }
 
 impl BoundCref {
-    fn new(cr: &metamodelica::Ref<DAE::ComponentRef>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<BoundCref> {
-        let mut dims = Vec::new();
-        let mut whole = Vec::new();
+    fn new(cr: &metamodelica::Ref<DAE::ComponentRef>, bindings: &Bindings) -> Option<BoundCref> {
+        CrefShape::new(cr)?.bind(bindings)
+    }
+
+    /// The element positions if the cref is a single element of an array.
+    fn single_positions(&self) -> Option<Vec<usize>> {
+        if self.dims.is_empty() {
+            return None;
+        }
+        self.dims.iter().map(|(_, p)| match p {
+            Positions::One(p) => Some(*p),
+            Positions::Many(ps) if ps.len() == 1 => Some(ps[0]),
+            _ => None,
+        }).collect()
+    }
+
+    /// C's `crefSubs(cr) == {WHOLEDIM()}`.
+    fn whole_1d(&self) -> bool {
+        self.dims.len() == 1 && self.dims[0].1.is_all()
+    }
+
+    fn first_dim(&self) -> Option<usize> {
+        self.dims.first().map(|(d, _)| *d)
+    }
+}
+
+/// A sparsity cref's dimension sizes and subscripts (`None`: the whole dimension),
+/// read once for every iteration to bind.
+struct CrefShape<'a> {
+    cref: &'a metamodelica::Ref<DAE::ComponentRef>,
+    subs: Vec<(usize, Option<&'a DAE::Subscript>)>,
+}
+
+impl<'a> CrefShape<'a> {
+    fn new(cr: &'a metamodelica::Ref<DAE::ComponentRef>) -> Option<CrefShape<'a>> {
+        let mut subs_out = Vec::new();
         let mut part = cr;
         loop {
             let (ty, subs, next) = match &**part {
@@ -222,50 +293,42 @@ impl BoundCref {
                 _ => return None,
             };
             let part_dims = type_dims(ty)?;
-            let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = lst(subs).collect();
+            let subs: Vec<&DAE::Subscript> = lst(subs).map(|s| &**s).collect();
             if subs.len() > part_dims.len() {
                 return None;
             }
             for (k, &dim) in part_dims.iter().enumerate() {
-                let (positions, is_whole) = match subs.get(k).map(|s| &***s) {
-                    None | Some(DAE::Subscript::WHOLEDIM) | Some(DAE::Subscript::WHOLE_NONEXP { .. }) => {
-                        ((0..dim).collect(), true)
-                    }
-                    Some(DAE::Subscript::INDEX { exp }) => {
-                        let v = bound_int(exp, bindings)?;
-                        (usize::try_from(v - 1).ok().into_iter().collect(), false)
-                    }
-                    Some(DAE::Subscript::SLICE { exp }) => {
-                        let vs = bound_ints(exp, bindings)?;
-                        (vs.into_iter().filter_map(|v| usize::try_from(v - 1).ok()).collect(), false)
-                    }
+                let sub = match subs.get(k) {
+                    None | Some(DAE::Subscript::WHOLEDIM) | Some(DAE::Subscript::WHOLE_NONEXP { .. }) => None,
+                    Some(s) => Some(*s),
                 };
-                dims.push((dim, positions));
-                whole.push(is_whole);
+                subs_out.push((dim, sub));
             }
             match next {
                 Some(n) => part = n,
                 None => break,
             }
         }
-        Some(BoundCref { cref: cr.clone(), dims, whole })
+        Some(CrefShape { cref: cr, subs: subs_out })
     }
 
-    /// The element positions if the cref is a single element of an array.
-    fn single_positions(&self) -> Option<Vec<usize>> {
-        if self.dims.is_empty() || self.whole.iter().any(|w| *w) {
-            return None;
+    fn bind(&self, bindings: &Bindings) -> Option<BoundCref> {
+        let mut dims = Vec::with_capacity(self.subs.len());
+        for &(dim, sub) in &self.subs {
+            let positions = match sub {
+                None => Positions::All,
+                Some(DAE::Subscript::INDEX { exp }) => match usize::try_from(bound_int(exp, bindings)? - 1) {
+                    Ok(p) => Positions::One(p),
+                    Err(_) => Positions::Many(Vec::new()),
+                },
+                Some(DAE::Subscript::SLICE { exp }) => Positions::Many(
+                    bound_ints(exp, bindings)?.into_iter().filter_map(|v| usize::try_from(v - 1).ok()).collect(),
+                ),
+                Some(_) => Positions::All,
+            };
+            dims.push((dim, positions));
         }
-        self.dims.iter().map(|(_, p)| if p.len() == 1 { Some(p[0]) } else { None }).collect()
-    }
-
-    /// C's `crefSubs(cr) == {WHOLEDIM()}`.
-    fn whole_1d(&self) -> bool {
-        self.dims.len() == 1 && self.whole[0]
-    }
-
-    fn first_dim(&self) -> Option<usize> {
-        self.dims.first().map(|(d, _)| *d)
+        Some(BoundCref { cref: self.cref.clone(), dims })
     }
 }
 
@@ -284,11 +347,36 @@ pub(super) fn type_dims(ty: &DAE::Type) -> Option<Vec<usize>> {
     Some(out)
 }
 
-fn bound_int(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<i32> {
-    const_int_exp(&*bound_exp(exp, bindings)?)
+fn bound_int(exp: &metamodelica::Ref<DAE::Exp>, bindings: &Bindings) -> Option<i32> {
+    affine_int(exp, bindings).or_else(|| const_int_exp(&*bound_exp(exp, bindings)?))
 }
 
-fn bound_ints(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<Vec<i32>> {
+/// `exp` evaluated without substituting into it, when it is integer arithmetic
+/// on literals and iterators.
+fn affine_int(exp: &DAE::Exp, bindings: &Bindings) -> Option<i32> {
+    use DAE::Operator as O;
+    match exp {
+        DAE::Exp::ICONST { integer } => Some(*integer),
+        DAE::Exp::CREF { componentRef, .. } => match &**componentRef {
+            DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } if subscriptLst.is_empty() => {
+                const_int_exp(&bindings.iter().find(|(n, _)| *n == ident.as_str())?.1)
+            }
+            _ => None,
+        },
+        DAE::Exp::BINARY { exp1, operator, exp2 } => {
+            let (a, b) = (affine_int(exp1, bindings)?, affine_int(exp2, bindings)?);
+            match operator {
+                O::ADD { .. } => a.checked_add(b),
+                O::SUB { .. } => a.checked_sub(b),
+                O::MUL { .. } => a.checked_mul(b),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
+fn bound_ints(exp: &metamodelica::Ref<DAE::Exp>, bindings: &Bindings) -> Option<Vec<i32>> {
     match &*bound_exp(exp, bindings)? {
         DAE::Exp::ARRAY { array, .. } => lst(array).map(|e| const_int_exp(e)).collect(),
         DAE::Exp::RANGE { start, step, stop, .. } => {
@@ -312,7 +400,7 @@ fn bound_ints(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodeli
     }
 }
 
-fn bound_exp(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelica::Ref<DAE::Exp>)]) -> Option<metamodelica::Ref<DAE::Exp>> {
+fn bound_exp(exp: &metamodelica::Ref<DAE::Exp>, bindings: &Bindings) -> Option<metamodelica::Ref<DAE::Exp>> {
     let mut e = exp.clone();
     for (name, value) in bindings {
         e = subst_iterator(&e, name, value).ok()?;
@@ -320,26 +408,34 @@ fn bound_exp(exp: &metamodelica::Ref<DAE::Exp>, bindings: &[(String, metamodelic
     openmodelica_frontend_base::ExpressionSimplify::simplify1(e).ok().map(|(e, _)| e)
 }
 
-/// Every iterator combination, first iterator least significant (C's `forIteratorBody`).
-fn iterator_expansion(iters: &[&BackendDAE::SimIterator]) -> Result<Vec<Vec<(String, metamodelica::Ref<DAE::Exp>)>>> {
-    let mut out: Vec<Vec<(String, metamodelica::Ref<DAE::Exp>)>> = vec![Vec::new()];
-    for iter in iters {
-        let (name, values, sub_iters) = iterator_bindings(iter)?;
-        let mut next = Vec::with_capacity(out.len() * values.len());
-        for (pos, value) in values.iter().enumerate() {
-            for prev in &out {
-                let mut b = prev.clone();
-                b.push((name.clone(), value.clone()));
-                for (sub_name, table) in &sub_iters {
-                    let v = table.get(pos).ok_or("CodegenWasmJit: dependent iterator range is too short")?;
-                    b.push((sub_name.clone(), v.clone()));
-                }
-                next.push(b);
+/// Iterator name -> value.
+type Bindings<'a> = [(&'a str, metamodelica::Ref<DAE::Exp>)];
+
+/// `f` for every iterator combination with its flat index, first iterator least
+/// significant (C's `forIteratorBody`).
+fn for_each_iteration(iters: &[&BackendDAE::SimIterator], mut f: impl FnMut(usize, &Bindings) -> Option<()>) -> Option<()> {
+    let tables: Vec<_> = iters.iter().map(|i| iterator_bindings(i)).collect::<Result<_>>().ok()?;
+    let total: usize = tables.iter().map(|(_, values, _)| values.len()).product();
+    let mut pos = vec![0usize; tables.len()];
+    let mut bindings: Vec<(&str, metamodelica::Ref<DAE::Exp>)> = Vec::new();
+    for flat in 0..total {
+        bindings.clear();
+        for ((name, values, subs), &p) in tables.iter().zip(&pos) {
+            bindings.push((name, values[p].clone()));
+            for (sub_name, table) in subs {
+                bindings.push((sub_name, table.get(p)?.clone()));
             }
         }
-        out = next;
+        f(flat, &bindings)?;
+        for (p, (_, values, _)) in pos.iter_mut().zip(&tables) {
+            *p += 1;
+            if *p < values.len() {
+                break;
+            }
+            *p = 0;
+        }
     }
-    Ok(out)
+    Some(())
 }
 
 /// Built at C's size (`numScalarElems(seedVars)` columns, rows unguarded) so the
@@ -471,33 +567,4 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
         return None;
     }
     Some(JacAInfo { n: n as u32, colors, rows_by_col, sym: None })
-}
-
-/// Map each result variable's display name to its unit (`h` -> `m`, `der(h)` ->
-/// the derivative var's unit), for a host to label plotted signals. Empty units
-/// are skipped. Names match [`build_var_map`]'s result-variable names.
-pub(super) fn collect_var_units(vars: &SimCodeVar::SimVars) -> Result<std::collections::HashMap<String, String>> {
-    let mut units = std::collections::HashMap::new();
-    let mut add = |name: String, sv: &SimCodeVar::SimVar| {
-        if !sv.unit.is_empty() {
-            units.insert(name, sv.unit.to_string());
-        }
-    };
-    for sv in lst(&vars.stateVars).chain(lst(&vars.derivativeVars)) {
-        add(cref_display(&sv.name)?, sv);
-    }
-    for sv in lst(&vars.algVars)
-        .chain(lst(&vars.discreteAlgVars))
-        .chain(lst(&vars.paramVars))
-        .chain(lst(&vars.intAlgVars))
-        .chain(lst(&vars.intParamVars))
-        .chain(lst(&vars.boolAlgVars))
-        .chain(lst(&vars.boolParamVars))
-    {
-        add(cref_display(&sv.name)?, sv);
-    }
-    for av in lst(&vars.aliasVars).chain(lst(&vars.intAliasVars)).chain(lst(&vars.boolAliasVars)) {
-        add(cref_display(&av.name)?, av);
-    }
-    Ok(units)
 }

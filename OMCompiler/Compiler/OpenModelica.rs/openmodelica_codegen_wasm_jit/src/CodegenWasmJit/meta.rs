@@ -50,7 +50,7 @@ pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVa
 #[allow(clippy::too_many_arguments)]
 pub(super) fn build_sim_meta(
     layout: &SimLayout,
-    result_vars: &[ResultVar],
+    results: &ResultList,
     units: Vec<UnitDef>,
     settings: &SimCode::SimulationSettings,
     cs_method: &str,
@@ -93,7 +93,8 @@ pub(super) fn build_sim_meta(
         output_format: settings.outputFormat.to_string(),
         prefix: prefix.to_string(),
         model_name: model_name.to_string(),
-        vars: result_vars.to_vec(),
+        vars: results.vars.clone(),
+        var_arrays: results.arrays.clone(),
         units,
         jac_a,
         state_sets: state_sets.to_vec(),
@@ -126,11 +127,27 @@ pub(super) fn build_sim_meta(
 /// triggered chattering. A math-event crossing has no relation string.
 /// C's `modelData` variable arrays: the same lists, in the same order, as the
 /// `SimData` variable regions.
-pub(super) fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_meta::SotiVars> {
+pub(super) fn soti_vars(vars: &SimCodeVar::SimVars, runs: &ArrayRuns) -> Result<openmodelica_sim_meta::SotiVars> {
     let named = |sv: &SimCodeVar::SimVar| cref_display(&sv.name);
+    let brackets = !openmodelica_util::Config::modelicaOutput()?;
     let mut reals = Vec::new();
+    let mut real_arrays = Vec::new();
+    let mut skip = 0usize;
     for sv in svs(&vars.stateVars).chain(svs(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
-        reals.push(named(sv)?);
+        if skip > 0 {
+            skip -= 1;
+            continue;
+        }
+        let name = named(sv)?;
+        if let Some(run) = runs.get(&run_key(sv)) {
+            if let Some((template, at)) = array_name_template(&name, run.dims.len(), brackets) {
+                real_arrays.push(VarArray { var: reals.len() as u32, dims: run.dims.clone(), at, brackets });
+                reals.push(template);
+                skip = run.len - 1;
+                continue;
+            }
+        }
+        reals.push(name);
     }
     let mut ints = Vec::new();
     for sv in lst(&vars.intAlgVars) {
@@ -145,7 +162,7 @@ pub(super) fn soti_vars(vars: &SimCodeVar::SimVars) -> Result<openmodelica_sim_m
         strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
     }
     let n_discrete_real = lst(&vars.discreteAlgVars).count() as u32;
-    Ok(openmodelica_sim_meta::SotiVars { reals, ints, bools, strings, n_discrete_real })
+    Ok(openmodelica_sim_meta::SotiVars { reals, real_arrays, ints, bools, strings, n_discrete_real })
 }
 
 /// C's `modelData` parameter arrays: the same lists, in the same order, as the

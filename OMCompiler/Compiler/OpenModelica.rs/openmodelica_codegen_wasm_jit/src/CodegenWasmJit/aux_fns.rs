@@ -224,9 +224,8 @@ pub(super) fn literal_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option
 pub(super) fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
-    defaults: &[(u32, f64)],
-    int_defaults: &[(u32, i32)],
-    attr_targets: &HashMap<String, AttrTargets>,
+    defaults: &[(u32, ConstSlot)],
+    attr_targets: &AttrTargetMap,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
@@ -236,14 +235,14 @@ pub(super) fn build_update_bound_attrs_fn(
         let key = sim_cref_key(cref).ok().map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string());
         let targets = key.as_deref().and_then(|k| attr_targets.get(k)).cloned().unwrap_or_default();
         let var = match attr {
-            Attr::Start => key.as_deref().and_then(|k| var_map.vars.get(k)).copied(),
+            Attr::Start => key.as_deref().and_then(|k| var_map.vars.get(k)),
             _ => None,
         };
         attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8, var));
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, int_defaults, &attrs)?;
+    ctx.emit_update_bound_attrs(defaults, &attrs)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -255,13 +254,13 @@ pub(super) fn build_update_bound_attrs_fn(
 /// Build `functionAttrDefaults(SimData*)`: the constant attribute defaults only, for
 /// a solver built before initialization.
 pub(super) fn build_attr_defaults_fn(
-    defaults: &[(u32, f64)],
+    defaults: &[(u32, ConstSlot)],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, &[], &[])?;
+    ctx.emit_update_bound_attrs(defaults, &[])?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {

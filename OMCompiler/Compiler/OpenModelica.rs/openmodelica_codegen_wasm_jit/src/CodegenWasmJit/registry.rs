@@ -149,7 +149,9 @@ pub(super) fn capture_last_sim(
     result_file: &str,
 ) {
     let Written { n_rows, first_row } = written;
-    let unit_of = |name: &str| model.var_units.get(name).cloned().unwrap_or_default();
+    let units: HashMap<&str, &str> =
+        model.result_vars().iter().filter(|v| !v.unit.is_empty()).map(|v| (v.name.as_str(), v.unit.as_str())).collect();
+    let unit_of = |name: &str| units.get(name).map(|u| u.to_string()).unwrap_or_default();
     let mut series = Vec::new();
     let mut param_idx = 0usize;
     // A signal aliases an earlier one when it reads the same underlying data: the
@@ -162,7 +164,7 @@ pub(super) fn capture_last_sim(
     let mut param_value_by_off: HashMap<u32, f64> = HashMap::default();
     // Row 0 of every signal, for the start values of the editable parameters.
     let mut row0_by_name: HashMap<&str, f64> = HashMap::default();
-    for (v, &kept) in model.result_vars.iter().zip(keep) {
+    for (v, &kept) in model.result_vars().iter().zip(keep) {
         let (alias, row0, data) = match &v.kind {
             ResultKind::Time => continue,
             ResultKind::Column { col, negate } => {
@@ -226,7 +228,7 @@ pub(super) fn capture_last_sim(
         params,
         // Only what the model declares: a reader merges in the predefined
         // display units of the same name.
-        units: model.meta.units.clone(),
+        units: model.meta().units.clone(),
         stats: stats.clone(),
     });
 }

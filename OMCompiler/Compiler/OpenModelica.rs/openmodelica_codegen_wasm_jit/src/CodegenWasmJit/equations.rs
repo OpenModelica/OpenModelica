@@ -238,6 +238,9 @@ pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]
         if let Ok(k) = sim_cref_key(cr) {
             set.insert(k);
         }
+        if let Some(k) = flat_sim_key(cr) {
+            set.insert(k);
+        }
     };
     for eq in eqs {
         match &**eq {

@@ -1269,8 +1269,8 @@ pub(crate) fn compile_linear_system_analytic(
     }
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
-        let key = sim_cref_key(cr)?;
-        let slot = ctx.sim()?.vars.get(&key).copied()
+        let key = sim_var_key(ctx.sim()?, cr)?;
+        let slot = ctx.sim()?.vars.get(&key)
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1578,8 +1578,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
     let ncolors = color_ptr.len() - 1;
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
-        let key = sim_cref_key(cr)?;
-        let slot = ctx.sim()?.vars.get(&key).copied()
+        let key = sim_var_key(ctx.sim()?, cr)?;
+        let slot = ctx.sim()?.vars.get(&key)
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1910,12 +1910,11 @@ pub(crate) fn compile_linear_system_symbolic(
     }
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in vars {
-        let key = sim_cref_key(cr)?;
+        let key = sim_var_key(ctx.sim()?, cr)?;
         let slot = ctx
             .sim()?
             .vars
             .get(&key)
-            .copied()
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");

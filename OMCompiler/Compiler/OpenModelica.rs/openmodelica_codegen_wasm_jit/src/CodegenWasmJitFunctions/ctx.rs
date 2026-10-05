@@ -148,12 +148,12 @@ pub(crate) struct SimCtx {
     /// `None` when the variable has no explicit start (defaults to the type's
     /// zero). Stored separately from `vars` because `$START` reads the start
     /// attribute, not the live value.
-    pub(crate) starts: Arc<HashMap<String, Option<metamodelica::Ref<DAE::Exp>>>>,
+    pub(crate) starts: Arc<KeyTable<StartExps>>,
     /// State cref key -> its start-value slot; `$START.<key>` reads the slot when
     /// present, else the inline expression. Empty while building the fill function.
-    pub(crate) start_slots: Arc<HashMap<String, u32>>,
+    pub(crate) start_slots: Arc<KeyTable<StartSlot>>,
     /// Alias cref key -> (target cref key, negation) for `$START.<alias>`.
-    pub(crate) start_aliases: Arc<HashMap<String, (String, Neg)>>,
+    pub(crate) start_aliases: Arc<KeyTable<AliasTarget>>,
     /// Canonical cref key of an *array-valued* model variable (the base name with
     /// no final subscript, e.g. `body.R_start.T`) -> the contiguous slot range its
     /// scalarized elements occupy. A whole-array reference reads/writes the range
@@ -351,6 +351,31 @@ pub(crate) struct AttrTargets {
     pub(crate) start_offs: Vec<u32>,
 }
 
+/// The [`AttrTargets`] of the variables an attribute equation assigns, the only
+/// ones read.
+pub(crate) struct AttrTargetMap(HashMap<String, AttrTargets>);
+
+impl AttrTargetMap {
+    pub(crate) fn new(keys: impl IntoIterator<Item = String>) -> Self {
+        AttrTargetMap(keys.into_iter().map(|k| (k, AttrTargets::default())).collect())
+    }
+
+    pub(crate) fn of(&mut self, cr: &DAE::ComponentRef) -> Option<&mut AttrTargets> {
+        if self.0.is_empty() {
+            return None;
+        }
+        self.0.get_mut(&sim_cref_key(cr).ok()?)
+    }
+
+    pub(crate) fn of_key(&mut self, key: &str) -> Option<&mut AttrTargets> {
+        self.0.get_mut(key)
+    }
+
+    pub(crate) fn get(&self, key: &str) -> Option<&AttrTargets> {
+        self.0.get(key)
+    }
+}
+
 /// The contiguous `SimData` slot range backing one scalarized array model
 /// variable. The backend lays an array's scalar elements out consecutively in
 /// row-major order; this records the start offset and shape so a whole-array
@@ -413,12 +438,12 @@ pub(crate) struct ConstGroup {
 /// to its own seed and column slots.
 #[derive(Clone)]
 pub(crate) struct SlotMap {
-    model: Arc<HashMap<String, SimSlot>>,
+    model: Arc<VarTable>,
     overlay: Option<Arc<HashMap<String, SimSlot>>>,
 }
 
 impl SlotMap {
-    pub(crate) fn new(model: Arc<HashMap<String, SimSlot>>) -> Self {
+    pub(crate) fn new(model: Arc<VarTable>) -> Self {
         SlotMap { model, overlay: None }
     }
 
@@ -426,12 +451,154 @@ impl SlotMap {
         SlotMap { model: self.model.clone(), overlay: Some(overlay) }
     }
 
-    pub(crate) fn get(&self, key: &str) -> Option<&SimSlot> {
-        self.overlay.as_ref().and_then(|o| o.get(key)).or_else(|| self.model.get(key))
+    pub(crate) fn get(&self, key: &str) -> Option<SimSlot> {
+        self.overlay.as_ref().and_then(|o| o.get(key).copied()).or_else(|| self.model.get(key))
     }
 
     pub(crate) fn contains_key(&self, key: &str) -> bool {
         self.get(key).is_some()
+    }
+}
+
+/// Split an element key `base[i][j]` into `base` and its 1-based indices.
+pub(crate) fn split_elem_key(key: &str) -> Option<(&str, Vec<i32>)> {
+    let mut rest = key;
+    let mut idx = Vec::new();
+    while let Some(stem) = rest.strip_suffix(']') {
+        let open = stem.rfind('[')?;
+        idx.push(stem[open + 1..].parse().ok()?);
+        rest = &stem[..open];
+    }
+    if idx.is_empty() {
+        return None;
+    }
+    idx.reverse();
+    Some((rest, idx))
+}
+
+/// The row-major position of `idx` in an array shaped `dims`, if in range.
+pub(crate) fn row_major_pos(dims: &[u32], idx: &[i32]) -> Option<u32> {
+    if dims.len() != idx.len() {
+        return None;
+    }
+    let mut lin = 0u32;
+    for (&d, &i) in dims.iter().zip(idx) {
+        if i < 1 || i as u32 > d {
+            return None;
+        }
+        lin = lin * d + (i as u32 - 1);
+    }
+    Some(lin)
+}
+
+/// An array entry of a [`KeyTable`]: the value of its element at row-major `pos`.
+/// `suffix` is the element key's subscript part (`[2][1]`).
+pub(crate) trait ArrayEntry: Clone {
+    type Value: Clone;
+    fn element(&self, pos: u32, suffix: &str) -> Option<Self::Value>;
+}
+
+/// A cref-key table whose array variables are one entry each instead of one per
+/// element: `x[3]` resolves through the entry of `x`.
+#[derive(Clone)]
+pub(crate) struct KeyTable<A: ArrayEntry> {
+    scalars: HashMap<String, A::Value>,
+    arrays: HashMap<String, (A, Vec<u32>)>,
+}
+
+impl<A: ArrayEntry> Default for KeyTable<A> {
+    fn default() -> Self {
+        KeyTable { scalars: HashMap::default(), arrays: HashMap::default() }
+    }
+}
+
+impl<A: ArrayEntry> KeyTable<A> {
+    pub(crate) fn get(&self, key: &str) -> Option<A::Value> {
+        if let Some(v) = self.scalars.get(key) {
+            return Some(v.clone());
+        }
+        let (base, idx) = split_elem_key(key)?;
+        let (entry, dims) = self.arrays.get(base)?;
+        entry.element(row_major_pos(dims, &idx)?, &key[base.len()..])
+    }
+
+    pub(crate) fn insert(&mut self, key: String, value: A::Value) {
+        self.scalars.insert(key, value);
+    }
+
+    pub(crate) fn insert_array(&mut self, base: String, entry: A, dims: Vec<u32>) {
+        self.arrays.insert(base, (entry, dims));
+    }
+
+    /// The entry of the whole array `base`.
+    pub(crate) fn array(&self, base: &str) -> Option<&(A, Vec<u32>)> {
+        self.arrays.get(base)
+    }
+}
+
+impl ArrayEntry for SimSlot {
+    type Value = SimSlot;
+    fn element(&self, pos: u32, _: &str) -> Option<SimSlot> {
+        let stride = match self.wty {
+            WTy::F64 => 8,
+            WTy::I32 => 4,
+        };
+        Some(SimSlot { off: self.off + pos * stride, ..*self })
+    }
+}
+
+/// A start-value slot (the realVars `start` attribute region).
+#[derive(Clone, Copy)]
+pub(crate) struct StartSlot(pub(crate) u32);
+
+impl ArrayEntry for StartSlot {
+    type Value = u32;
+    fn element(&self, pos: u32, _: &str) -> Option<u32> {
+        Some(self.0 + pos * 8)
+    }
+}
+
+/// The elements' start expressions, row-major.
+#[derive(Clone)]
+pub(crate) struct StartExps(pub(crate) Arc<[Option<metamodelica::Ref<DAE::Exp>>]>);
+
+impl ArrayEntry for StartExps {
+    type Value = Option<metamodelica::Ref<DAE::Exp>>;
+    fn element(&self, pos: u32, _: &str) -> Option<Self::Value> {
+        self.0.get(pos as usize).cloned()
+    }
+}
+
+/// An alias array's target array key and negation.
+#[derive(Clone)]
+pub(crate) struct AliasTarget(pub(crate) String, pub(crate) Neg);
+
+impl ArrayEntry for AliasTarget {
+    type Value = (String, Neg);
+    fn element(&self, _: u32, suffix: &str) -> Option<(String, Neg)> {
+        Some((format!("{}{suffix}", self.0), self.1))
+    }
+}
+
+/// The model's variable slots. `$PRE.<key>` is the slot mirroring `<key>`'s in a
+/// region that carries pre-values.
+#[derive(Clone, Default)]
+pub(crate) struct VarTable {
+    pub(crate) slots: KeyTable<SimSlot>,
+    pub(crate) pre: Option<openmodelica_sim_meta::Layout>,
+}
+
+impl VarTable {
+    pub(crate) fn get(&self, key: &str) -> Option<SimSlot> {
+        if let Some(s) = self.slots.get(key) {
+            return Some(s);
+        }
+        let live = self.get(key.strip_prefix("$PRE.")?)?;
+        Some(SimSlot { off: self.pre.as_ref()?.pre_slot_off(live.off)?, ..live })
+    }
+
+    pub(crate) fn insert(&mut self, key: String, slot: SimSlot) {
+        self.slots.insert(key, slot);
     }
 }
 
@@ -818,24 +985,17 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
-    /// Emit `functionUpdateBoundVariableAttributes`: the constant per-state
-    /// `nominal`, then each attribute equation, into the slots the solvers read
-    /// (C's `updateBoundVariableAttributes` + `updateStaticDataOfNonlinearSystems`).
+    /// Emit `functionUpdateBoundVariableAttributes`: the constant `defaults`
+    /// (ascending by offset), then each attribute equation, into the slots the
+    /// solvers read (C's `updateBoundVariableAttributes` +
+    /// `updateStaticDataOfNonlinearSystems`).
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
-        defaults: &[(u32, f64)],
-        int_defaults: &[(u32, i32)],
+        defaults: &[(u32, ConstSlot)],
         attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
-        let mut stores: std::collections::BTreeMap<u32, Vec<u8>> = std::collections::BTreeMap::new();
-        for (off, value) in defaults {
-            stores.insert(*off, value.to_le_bytes().to_vec());
-        }
-        for (off, value) in int_defaults {
-            stores.insert(*off, value.to_le_bytes().to_vec());
-        }
-        emit_sim_const_stores(self, &stores)?;
+        emit_const_slots(self, defaults)?;
         if attrs.is_empty() {
             return Ok(());
         }
@@ -929,8 +1089,9 @@ impl<'a> FnCtx<'a> {
     /// Store each real variable's declared `start` value in its start attribute
     /// slot at `off`.
     pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)]) -> Result<()> {
-        let stores = starts.iter().map(|(value, off)| (*off, value.to_le_bytes().to_vec())).collect();
-        emit_sim_const_stores(self, &stores)
+        let mut stores: Vec<(u32, ConstSlot)> = starts.iter().map(|&(v, off)| (off, ConstSlot::f64(v))).collect();
+        stores.sort_by_key(|&(off, _)| off);
+        emit_const_slots(self, &stores)
     }
 
     /// Emit `functionZeroCrossings`: store each crossing `k`'s g-value as f64 at
