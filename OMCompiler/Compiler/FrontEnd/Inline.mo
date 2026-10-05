@@ -955,12 +955,14 @@ algorithm
       list<DAE.Type> types;
       DAE.Exp call;
       DAE.CallAttributes attr;
+      Option<list<String>> names;
 
     // (f(..)[1], ..., f(..)[n]) with all outputs of f in order -> f(..)
-    case (DAE.TUPLE(PR=expLst as DAE.TSUB(exp=call as DAE.CALL(attr=attr as DAE.CALL_ATTR(ty=DAE.T_TUPLE())))::_), DAE.T_TUPLE())
+    // keeps the output names of f, but uses the evaluated types of the call
+    case (DAE.TUPLE(PR=expLst as DAE.TSUB(exp=call as DAE.CALL(attr=attr as DAE.CALL_ATTR(ty=DAE.T_TUPLE(names=names))))::_), DAE.T_TUPLE(types=types))
       guard isTsubTupleOfCall(expLst, call)
       algorithm
-        attr.ty := inCallType;
+        attr.ty := DAE.T_TUPLE(types, names);
         call.attr := attr;
       then call;
 
