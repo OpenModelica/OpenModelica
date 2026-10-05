@@ -1702,6 +1702,16 @@ package SimCodeCodegenUtil
     output Boolean simulation;
   end isSimulationCodegen;
 
+  function timeEventTrigger
+    input DAE.Exp rel;
+    output Option<DAE.Exp> trigger;
+  end timeEventTrigger;
+
+  function isTimeEventRelation
+    input DAE.Exp rel;
+    output Boolean b;
+  end isTimeEventRelation;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;

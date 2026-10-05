@@ -6832,7 +6832,7 @@ case rel as RELATION(__) then
         let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
         res
       else
-        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        let isReal = if isTimeEventRelation(exp) then '' else if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
         match rel.optionExpisASUB
         case NONE() then
           if isReal then
@@ -6873,10 +6873,13 @@ case rel as RELATION(__) then
         let &preExp += '<%res%> = <%rel_f%>(<%e1%>,<%e2%>);<%\n%>'
         res
       else
-        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        let isReal = if isTimeEventRelation(exp) then '' else if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
         match rel.optionExpisASUB
         case NONE() then
-          if isReal then
+          if isTimeEventRelation(exp) then
+            let &preExp += '<%res%> = data->simulationInfo->storedRelations[<%rel.index%>];<%\n%>'
+            res
+          else if isReal then
             let tmp1 = tempDecl("modelica_real", &varDecls, &varFrees)
             let tmp2 = tempDecl("modelica_real", &varDecls, &varFrees)
             let nominalTmp = daeExpNominalTmp(tmp1, tmp2, rel.exp1, rel.exp2, context, &preExp, &varDecls, &varFrees, &auxFunction)

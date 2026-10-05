@@ -423,6 +423,7 @@ algorithm
       print(NSimCode.SimCode.toString(simCode));
     end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
+    setGlobalRoot(Global.timeIndependentVars, NONE());
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       SimCodeUtil.dumpSimCodeDebug(oldSimCode);
@@ -2457,6 +2458,7 @@ algorithm
       crefToClockIndexHT := HashTable.emptyHashTable();
     end if;
 
+    setGlobalRoot(Global.timeIndependentVars, NONE());
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {},               // Set by the traversal below...

@@ -307,6 +307,23 @@ pub(super) fn build_update_relations_fn(
     Ok(func)
 }
 
+/// Build `functionNextTimeEvent(SimData*)` (C's `function_nextTimeEvent`).
+pub(super) fn build_next_time_event_fn(
+    triggers: &[metamodelica::Ref<DAE::Exp>],
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    ctx.emit_next_time_event(triggers)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
 /// Build `functionStoreDelayed(SimData*)` (C's `function_storeDelayed`): append
 /// each `delay(...)` expression's current value to its ring buffer.
 pub(super) fn build_store_delayed_fn(

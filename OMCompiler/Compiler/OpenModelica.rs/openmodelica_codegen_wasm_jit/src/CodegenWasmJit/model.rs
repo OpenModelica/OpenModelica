@@ -1032,13 +1032,21 @@ pub(super) fn build_sim_model(
         .enumerate()
         .map(|(i, sv)| Ok((sim_cref_key(&sv.name)?, layout.eobj_off + (i as u32) * 4)))
         .collect::<Result<_>>()?;
+    // An alias shares its target's handle (`extObjInfo.aliases`), so only the
+    // target is destructed.
+    let aliases: HashSet<String> = sim_code
+        .extObjInfo
+        .aliases
+        .iter()
+        .map(|(alias, _)| sim_cref_key(alias))
+        .collect::<Result<_>>()?;
     let mut destruct_order: Vec<&SimCodeVar::SimVar> = svs(&sim_code.extObjInfo.vars).collect();
-    if destruct_order.len() != extobj_vars.len()
-        || destruct_order.iter().any(|sv| {
-            sim_cref_key(&sv.name).is_ok_and(|k| !extobj_slot.contains_key(&k))
-        })
-    {
-        destruct_order = extobj_vars.clone();
+    if destruct_order.iter().any(|sv| sim_cref_key(&sv.name).is_ok_and(|k| !extobj_slot.contains_key(&k))) {
+        destruct_order = extobj_vars
+            .iter()
+            .copied()
+            .filter(|sv| sim_cref_key(&sv.name).is_ok_and(|k| !aliases.contains(&k)))
+            .collect();
     }
     destruct_order.reverse();
     // `(destructor index, SimData slot)` per object, in that order.
@@ -1211,6 +1219,24 @@ pub(super) fn build_sim_model(
             empty_eqfn()
         } else {
             build_update_relations_fn(&relations, &var_map, &by_name, &mut literals)?
+        });
+        idx
+    };
+    let next_time_event_idx = {
+        let idx = import_base + bodies.len() as u32;
+        let triggers: Vec<metamodelica::Ref<DAE::Exp>> = lst(&sim_code.relations)
+            .filter(|zc| zc.iter.is_none())
+            .filter_map(|zc| match &*zc.relation_ {
+                DAE::Exp::RELATION { exp1, operator, exp2, index, optionExpisASUB } => {
+                    crate::CodegenWasmJitFunctions::time_event_trigger(exp1, operator, exp2, *index, optionExpisASUB)
+                }
+                _ => None,
+            })
+            .collect();
+        bodies.push(if triggers.is_empty() {
+            empty_eqfn()
+        } else {
+            build_next_time_event_fn(&triggers, &var_map, &by_name, &mut literals)?
         });
         idx
     };
@@ -1463,6 +1489,7 @@ pub(super) fn build_sim_model(
     functions.function(eqfn_type); // functionZeroCrossingsEquations: (i32) -> ()
     functions.function(eqfn_type); // functionOutputs: (i32) -> ()
     functions.function(eqfn_type); // functionUpdateRelations: (i32) -> ()
+    functions.function(eqfn_type); // functionNextTimeEvent: (i32) -> ()
     functions.function(eqfn_type); // functionStoreDelayed: (i32) -> ()
     functions.function(eqfn_type); // functionInitDelay: (i32) -> ()
     functions.function(eqfn_type); // functionStoreSpatialDistribution: (i32) -> ()
@@ -1583,6 +1610,7 @@ pub(super) fn build_sim_model(
         ("functionInitialEquations_lambda0", init_lambda0_idx),
         ("functionCheckAsserts", check_asserts_idx),
         ("functionUpdateRelations", update_relations_idx),
+        ("functionNextTimeEvent", next_time_event_idx),
         ("functionStoreDelayed", store_delayed_idx),
         ("functionInitDelay", init_delay_idx),
         ("functionStoreSpatialDistribution", store_spatial_idx),
@@ -1647,6 +1675,7 @@ pub(super) fn build_sim_model(
     exports.export("functionInitialEquations_lambda0", we::ExportKind::Func, init_lambda0_idx);
     exports.export("functionCheckAsserts", we::ExportKind::Func, check_asserts_idx);
     exports.export("functionUpdateRelations", we::ExportKind::Func, update_relations_idx);
+    exports.export("functionNextTimeEvent", we::ExportKind::Func, next_time_event_idx);
     exports.export("functionStoreDelayed", we::ExportKind::Func, store_delayed_idx);
     exports.export("functionInitDelay", we::ExportKind::Func, init_delay_idx);
     exports.export("functionStoreSpatialDistribution", we::ExportKind::Func, store_spatial_idx);
@@ -1722,6 +1751,7 @@ pub(super) fn build_sim_model(
         ("functionInitialEquations_lambda0", init_lambda0_idx),
         ("functionCheckAsserts", check_asserts_idx),
         ("functionUpdateRelations", update_relations_idx),
+        ("functionNextTimeEvent", next_time_event_idx),
         ("functionStoreDelayed", store_delayed_idx),
         ("functionInitDelay", init_delay_idx),
         ("functionStoreSpatialDistribution", store_spatial_idx),

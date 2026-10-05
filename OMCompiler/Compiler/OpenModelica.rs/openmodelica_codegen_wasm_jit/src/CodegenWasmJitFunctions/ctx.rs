@@ -1156,6 +1156,41 @@ impl<'a> FnCtx<'a> {
         Ok(())
     }
 
+    /// Emit `functionNextTimeEvent`: replace the time in `SimData` by the earliest
+    /// later `trigger`, or `f64::MAX`.
+    pub(crate) fn emit_next_time_event(&mut self, triggers: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+        use we::Instruction as I;
+        let data = self.sim()?.data_local;
+        let now = self.alloc_temp(WTy::F64);
+        let next = self.alloc_temp(WTy::F64);
+        let te = self.alloc_temp(WTy::F64);
+        self.emit(I::LocalGet(data));
+        self.emit(I::F64Load(mem_arg(0, 3)));
+        self.emit(I::LocalSet(now));
+        self.emit(I::F64Const(f64::MAX.into()));
+        self.emit(I::LocalSet(next));
+        for e in triggers {
+            let w = compile_exp(self, e)?;
+            coerce(self, w, WTy::F64);
+            self.emit(I::LocalSet(te));
+            self.emit(I::LocalGet(te));
+            self.emit(I::LocalGet(now));
+            self.emit(I::F64Gt);
+            self.emit(I::LocalGet(te));
+            self.emit(I::LocalGet(next));
+            self.emit(I::F64Lt);
+            self.emit(I::I32And);
+            self.emit(I::If(we::BlockType::Empty));
+            self.emit(I::LocalGet(te));
+            self.emit(I::LocalSet(next));
+            self.emit(I::End);
+        }
+        self.emit(I::LocalGet(data));
+        self.emit(I::LocalGet(next));
+        self.emit(I::F64Store(mem_arg(0, 3)));
+        Ok(())
+    }
+
     /// Emit `functionStoreDelayed`: `rt_delay_store(idx, time, e, d, dmax)` per
     /// `delay(...)` expression (C's `function_storeDelayed`).
     pub(crate) fn emit_store_delayed(
