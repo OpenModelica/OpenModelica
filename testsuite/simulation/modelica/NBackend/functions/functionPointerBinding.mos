@@ -2,8 +2,9 @@
 // keywords: NewBackend
 // status: correct
 //
-// A function pointer in a parameter binding must not be treated as a
-// variable or iterator, e.g. f in solveOneNonlinearEquation(function f(), ...).
+// Function pointers, e.g. f in solveOneNonlinearEquation(function f(), ...),
+// must not be treated as variables or iterators: in a parameter binding,
+// an algebraic equation and a state equation.
 
 loadString("
 model functionPointerBinding
@@ -29,12 +30,17 @@ model functionPointerBinding
 
   parameter Real p = apply(function f(), 5);
   Real x = p * time;
+  Real y;
+  Real z(start = 1, fixed = true);
+equation
+  y = apply(function f(), time);
+  der(z) = apply(function f(), -z);
 end functionPointerBinding;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend"); getErrorString();
 simulate(functionPointerBinding); getErrorString();
-val(x, 1.0);
+val(x, 1.0); val(y, 1.0); val(z, 1.0);
 
 // Result:
 // true
@@ -50,4 +56,6 @@ val(x, 1.0);
 // end SimulationResult;
 // ""
 // 3.0
+// -1.0
+// -0.8963613266362818
 // endResult

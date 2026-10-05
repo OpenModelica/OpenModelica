@@ -3100,8 +3100,8 @@ public
         Integer ind, new_depth;
         Boolean isTuple;
 
-      // add a cref dependency (function pointers are no dependencies)
-      case Expression.CREF() guard(not Expression.isFunctionPointer(exp)) then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
+      // add a cref dependency
+      case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
