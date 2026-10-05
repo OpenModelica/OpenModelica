@@ -1630,8 +1630,10 @@ pub fn escapedString(unescapedString: ArcStr, unescapeNewline: bool) -> ArcStr {
 }
 
 pub fn unescapedString(escapedString: ArcStr) -> ArcStr {
+    let Some(first) = escapedString.find('\\') else { return escapedString };
     let mut out = String::with_capacity(escapedString.len());
-    let mut chars = escapedString.chars();
+    out.push_str(&escapedString[..first]);
+    let mut chars = escapedString[first..].chars();
     while let Some(c) = chars.next() {
         if c != '\\' { out.push(c); continue; }
         match chars.next() {
@@ -2887,6 +2889,14 @@ pub fn waitForInput() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unescaped_string() {
+        let u = |s: &str| unescapedString(ArcStr::from(s)).to_string();
+        assert_eq!(u("plain"), "plain");
+        assert_eq!(u("a\\nb\\\"c\\"), "a\nb\"c\\");
+        assert_eq!(u("x\\qy"), "x\\qy");
+    }
 
     #[test]
     fn sprintff_g_uses_significant_digits() {
