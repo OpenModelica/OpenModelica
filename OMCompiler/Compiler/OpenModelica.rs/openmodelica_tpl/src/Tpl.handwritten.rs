@@ -15,8 +15,8 @@
 // in place, appending to any other handle copies its prefix first, so clones
 // are O(1) and the persistent semantics of Tpl.mo's cons list hold.
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 use metamodelica::gc::{MMTrace, MMVisitor};
 use super::*;
 use metamodelica::List;
@@ -90,19 +90,16 @@ impl MMTrace for Tok {
 const MIN_CAP: usize = 8;
 
 /// Append-only token storage: a fixed allocation plus the count of tokens
-/// written into it, so a reader can borrow a token without taking a lock.
-/// That is the point — rendering walks every token of every block, and a mutex
-/// plus a `Tok` clone per token was ~1.5 % of an `omc` run.
+/// written into it, so a reader can borrow a token in place.
 ///
 /// The allocation is only ever reallocated through `&mut self`, i.e. while the
-/// `Arc` is unshared and the borrow checker guarantees no `&Tok` is outstanding.
+/// `Rc` is unshared and the borrow checker guarantees no `&Tok` is outstanding.
 /// A shared buffer that runs out of room is forked instead (`Toks::push`), which
 /// is the same thing that already happens when two views race for the tip.
 struct Buf {
     data: *mut Tok,
     cap: usize,
-    len: AtomicUsize,
-    tail: Mutex<()>,
+    len: Cell<usize>,
 }
 
 impl Buf {
@@ -113,23 +110,22 @@ impl Buf {
         if data.is_null() {
             std::alloc::handle_alloc_error(layout);
         }
-        Buf { data, cap, len: AtomicUsize::new(0), tail: Mutex::new(()) }
+        Buf { data, cap, len: Cell::new(0) }
     }
 
     /// Appends iff the caller's view owns the tip and there is room; hands the
     /// token back otherwise, for the caller to grow or fork.
     fn push_at(&self, len: usize, tok: Tok) -> std::result::Result<(), Tok> {
-        let _g = self.tail.lock().unwrap();
-        if len == self.cap || self.len.load(Ordering::Relaxed) != len {
+        if len == self.cap || self.len.get() != len {
             return Err(tok);
         }
         unsafe { self.data.add(len).write(tok) };
-        self.len.store(len + 1, Ordering::Release);
+        self.len.set(len + 1);
         Ok(())
     }
 
-    /// Appends to a buffer no one else can reach yet, so without the lock. The
-    /// caller guarantees the room.
+    /// Appends to a buffer no one else can reach yet. The caller guarantees the
+    /// room.
     fn push_unshared(&mut self, tok: Tok) {
         let len = *self.len.get_mut();
         debug_assert!(len < self.cap);
@@ -160,7 +156,7 @@ impl Buf {
     /// view's `len` is, because a view copies the length the buffer had when the
     /// view was taken and a *shared* buffer only ever grows its length.
     unsafe fn get(&self, i: usize) -> &Tok {
-        debug_assert!(i < self.len.load(Ordering::Relaxed));
+        debug_assert!(i < self.len.get());
         unsafe { &*self.data.add(i) }
     }
 }
@@ -179,7 +175,7 @@ impl Drop for Buf {
 /// The tokens of a text in output order: a prefix view of a shared buffer.
 #[derive(Clone, Default)]
 struct Toks {
-    buf: Option<Arc<Buf>>,
+    buf: Option<Rc<Buf>>,
     len: usize,
 }
 
@@ -200,14 +196,14 @@ impl Toks {
     fn push(&mut self, tok: Tok) {
         let tok = match &mut self.buf {
             None => tok,
-            Some(arc) => match arc.push_at(self.len, tok) {
+            Some(rc) => match rc.push_at(self.len, tok) {
                 Ok(()) => {
                     self.len += 1;
                     return;
                 }
-                Err(tok) => match Arc::get_mut(arc) {
+                Err(tok) => match Rc::get_mut(rc) {
                     // Sole owner of a full buffer: grow it in place.
-                    Some(buf) if buf.len.load(Ordering::Relaxed) == self.len => {
+                    Some(buf) if buf.len.get() == self.len => {
                         buf.grow();
                         buf.push_unshared(tok);
                         self.len += 1;
@@ -224,12 +220,12 @@ impl Toks {
             fresh.push_unshared(self.get(i).clone());
         }
         fresh.push_unshared(tok);
-        self.buf = Some(Arc::new(fresh));
+        self.buf = Some(Rc::new(fresh));
         self.len += 1;
     }
 
     fn same_buf(&self, other: &Toks) -> bool {
-        matches!((&self.buf, &other.buf), (Some(a), Some(b)) if Arc::ptr_eq(a, b))
+        matches!((&self.buf, &other.buf), (Some(a), Some(b)) if Rc::ptr_eq(a, b))
     }
 
     fn snapshot(&self) -> Toks {
@@ -240,7 +236,7 @@ impl Toks {
         for i in 0..self.len {
             fresh.push_unshared(self.get(i).clone());
         }
-        Toks { buf: Some(Arc::new(fresh)), len: self.len }
+        Toks { buf: Some(Rc::new(fresh)), len: self.len }
     }
 
     /// `Tpl.Tokens` keeps the tokens reversed.
@@ -256,7 +252,7 @@ impl Toks {
 impl MMTrace for Toks {
     fn mm_accept(&self, v: &mut dyn MMVisitor) -> std::result::Result<(), ()> {
         let Some(buf) = &self.buf else { return Ok(()) };
-        if !v.visit_shared(Arc::as_ptr(buf) as *const (), Arc::strong_count(buf), "Tpl::Toks") {
+        if !v.visit_shared(Rc::as_ptr(buf) as *const (), Rc::strong_count(buf), "Tpl::Toks") {
             return Ok(());
         }
         let r = (0..self.len).try_for_each(|i| self.get(i).mm_accept(v));
@@ -295,13 +291,13 @@ struct FileState {
 
 pub struct FileText {
     file: File::File,
-    state: Mutex<FileState>,
+    state: RefCell<FileState>,
 }
 
 #[derive(Clone)]
 pub enum Text {
     Mem(MemText),
-    File(Arc<FileText>),
+    File(Rc<FileText>),
 }
 
 impl Default for Text {
@@ -327,10 +323,10 @@ impl MMTrace for Text {
                 m.stack.mm_accept(v)
             }
             Text::File(t) => {
-                if !v.visit_shared(Arc::as_ptr(t) as *const (), Arc::strong_count(t), "Tpl::FileText") {
+                if !v.visit_shared(Rc::as_ptr(t) as *const (), Rc::strong_count(t), "Tpl::FileText") {
                     return Ok(());
                 }
-                let r = match t.state.try_lock() {
+                let r = match t.state.try_borrow() {
                     Ok(g) => g.blocks.iter().try_for_each(|b| {
                         b.bt.mm_accept(v)?;
                         b.septok.mm_accept(v)
@@ -375,7 +371,7 @@ pub fn writeStr(mut inText: Text, inStr: ArcStr) -> Result<Text> {
     if !inStr.as_bytes().contains(&b'\n') {
         match &mut inText {
             Text::Mem(m) => m.toks.push(Tok::Str(inStr)),
-            Text::File(f) => stringFile(&f.file, &mut f.state.lock().unwrap(), &inStr, false)?,
+            Text::File(f) => stringFile(&f.file, &mut f.state.borrow_mut(), &inStr, false)?,
         }
         return Ok(inText);
     }
@@ -420,7 +416,7 @@ fn writeLineOrStr(txt: &mut Text, s: ArcStr, is_line: bool) -> Result<()> {
     }
     match txt {
         Text::Mem(m) => m.toks.push(if is_line { Tok::Line(s) } else { Tok::Str(s) }),
-        Text::File(f) => stringFile(&f.file, &mut f.state.lock().unwrap(), &s, is_line)?,
+        Text::File(f) => stringFile(&f.file, &mut f.state.borrow_mut(), &s, is_line)?,
     }
     Ok(())
 }
@@ -434,7 +430,7 @@ pub fn writeTok(mut inText: Text, inToken: metamodelica::Ref<StringToken>) -> Re
     match &mut inText {
         Text::Mem(m) => m.toks.push(Tok::from_mm(&inToken)),
         Text::File(f) => {
-            let st = &mut *f.state.lock().unwrap();
+            let st = &mut *f.state.borrow_mut();
             tokFileText(&f.file, st, &Tok::from_mm(&inToken), true)?;
         }
     }
@@ -458,7 +454,7 @@ pub fn writeText(mut inText: Text, inTextToWrite: Text) -> Result<Text> {
             m.toks.push(Tok::Block(toks, interned_BT_TEXT()));
         }
         Text::File(f) => {
-            let st = &mut *f.state.lock().unwrap();
+            let st = &mut *f.state.borrow_mut();
             for i in 0..other.toks.len {
                 tokFileText(&f.file, st, other.toks.get(i), true)?;
             }
@@ -475,7 +471,7 @@ pub fn softNewLine(mut inText: Text) -> Result<Text> {
             }
         }
         Text::File(f) => {
-            let st = &mut *f.state.lock().unwrap();
+            let st = &mut *f.state.borrow_mut();
             if !st.isstart {
                 newlineFile(&f.file, st)?;
             }
@@ -492,7 +488,7 @@ pub fn newLine(mut inText: Text) -> Result<Text> {
 fn newLine_inplace(txt: &mut Text) -> Result<()> {
     match txt {
         Text::Mem(m) => m.toks.push(Tok::NewLine),
-        Text::File(f) => newlineFile(&f.file, &mut f.state.lock().unwrap())?,
+        Text::File(f) => newlineFile(&f.file, &mut f.state.borrow_mut())?,
     }
     Ok(())
 }
@@ -503,7 +499,7 @@ pub fn pushBlock(mut txt: Text, inBlockType: metamodelica::Ref<BlockType>) -> Re
             let toks = std::mem::take(&mut m.toks);
             m.stack = cons((toks, inBlockType), std::mem::take(&mut m.stack));
         }
-        Text::File(f) => pushBlockFile(&mut f.state.lock().unwrap(), inBlockType),
+        Text::File(f) => pushBlockFile(&mut f.state.borrow_mut(), inBlockType),
     }
     Ok(txt)
 }
@@ -543,7 +539,7 @@ pub fn popBlock(mut txt: Text) -> Result<Text> {
             m.stack = listRest(std::mem::take(&mut m.stack))?;
         }
         Text::File(f) => {
-            let st = &mut *f.state.lock().unwrap();
+            let st = &mut *f.state.borrow_mut();
             let Some(blk) = st.blocks.pop() else {
                 return Err(trace_fail("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n"));
             };
@@ -584,7 +580,7 @@ pub fn pushIter(mut txt: Text, inIterOptions: metamodelica::Ref<IterOptions>) ->
                 return Err("fail");
             }
             let iter = metamodelica::Ref::new(BlockType::BT_ITER { options: inIterOptions, index0: Mutable::create(i0) });
-            pushBlockFile(&mut f.state.lock().unwrap(), iter);
+            pushBlockFile(&mut f.state.borrow_mut(), iter);
         }
     }
     Ok(txt)
@@ -611,7 +607,7 @@ pub fn popIter(mut txt: Text) -> Result<Text> {
             m.stack = rest;
         }
         Text::File(f) => {
-            if f.state.lock().unwrap().blocks.pop().is_none() {
+            if f.state.borrow_mut().blocks.pop().is_none() {
                 return Err(trace_fail(MSG));
             }
         }
@@ -646,7 +642,7 @@ pub fn nextIter(mut txt: Text) -> Result<Text> {
             }
         }
         Text::File(f) => {
-            let st = &mut *f.state.lock().unwrap();
+            let st = &mut *f.state.borrow_mut();
             let Some(blk) = st.blocks.last() else { return Err(non_iteration()) };
             let (bt, blk_tell) = (blk.bt.clone(), blk.tell);
             let BlockType::BT_ITER { options, index0 } = &*bt else { return Err(non_iteration()) };
@@ -685,7 +681,7 @@ pub fn getIteri_i0(inText: Text) -> Result<i32> {
             ListNode::Nil => Err(trace_fail(MSG)),
         },
         Text::File(f) => {
-            let st = f.state.lock().unwrap();
+            let st = f.state.borrow_mut();
             match st.blocks.last().map(|b| &*b.bt) {
                 Some(BlockType::BT_ITER { index0, .. }) => Ok(Mutable::access(index0.clone())),
                 _ => Err(trace_fail(MSG)),
@@ -973,9 +969,9 @@ pub fn redirectToFile(text: Text, fileName: ArcStr) -> Result<Text> {
     File::open(file.clone(), fileName, File::Mode::Write)?;
     // The registry reference keeps the file flushed at exit like the C runtime's refcount.
     File::getReference(file.clone());
-    let out = Text::File(Arc::new(FileText {
+    let out = Text::File(Rc::new(FileText {
         file,
-        state: Mutex::new(FileState { nchars: 0, aind: 0, isstart: true, written: 0, blocks: Vec::new() }),
+        state: RefCell::new(FileState { nchars: 0, aind: 0, isstart: true, written: 0, blocks: Vec::new() }),
     }));
     writeText(out, text)
 }
