@@ -455,7 +455,7 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.
-        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
             return compile_sim_cref_assign(ctx, componentRef, rhs);
         }
     }
@@ -671,7 +671,7 @@ pub(crate) fn sim_const_store(
         if ident.as_str() == "$START" {
             return sim_const_store(ctx, componentRef, exp);
         }
-        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
             return sim_const_store(ctx, componentRef, exp);
         }
     }
