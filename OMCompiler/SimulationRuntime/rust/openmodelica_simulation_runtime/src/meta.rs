@@ -474,6 +474,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         prefix: prefix.to_string(),
         model_name: cstr(md.modelName),
         vars,
+        var_arrays: Vec::new(),
         // `_init.xml` names each variable's unit but defines none.
         units: Vec::new(),
         jac_a: jac_a_info(data, layout),

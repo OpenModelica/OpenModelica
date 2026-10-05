@@ -102,7 +102,7 @@ pub(super) fn is_homotopy_lambda(cr: Option<&metamodelica::Ref<DAE::ComponentRef
 pub(super) fn collect_nls_jobs(
     eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, (f64, f64, f64)>,
-    attr_targets: &mut HashMap<String, AttrTargets>,
+    attr_targets: &mut AttrTargetMap,
 ) -> (Vec<metamodelica::Ref<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<metamodelica::Ref<SimCode::NonlinearSystem>> = Vec::new();
@@ -195,13 +195,13 @@ pub(super) fn collect_nls_jobs(
                 hist_off += crate::CodegenWasmJitFunctions::nls_hist_bytes(n);
                 nominal_off += 8 * n;
                 for cr in lst(&nlSystem.crefs) {
-                    let key = sim_cref_key(cr).ok();
+                    let key = resolve_sim_key(cr, |k| nominal_of.contains_key(k)).ok();
                     let (nom, lo, hi) = key
                         .as_ref()
                         .and_then(|k| nominal_of.get(k).copied())
                         .unwrap_or((1.0, -f64::MAX, f64::MAX));
-                    if let Some(k) = key {
-                        attr_targets.entry(k).or_default().nls.push(nominals.len() as u32);
+                    if let Some(t) = key.and_then(|k| attr_targets.of_key(&k)) {
+                        t.nls.push(nominals.len() as u32);
                     }
                     nominals.push(nom);
                     bounds.push(lo);
@@ -235,10 +235,28 @@ pub(super) fn real_alg_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::SimV
         .collect()
 }
 
+/// The keys the nonlinear systems' iteration variables may be spelled with.
+pub(super) fn nls_iteration_keys(eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]]) -> HashSet<String> {
+    let mut keys = HashSet::default();
+    for e in eq_lists.iter().flat_map(|l| l.iter()) {
+        let SimCode::SimEqSystem::SES_NONLINEAR { nlSystem, alternativeTearing, .. } = &**e else { continue };
+        for sys in std::iter::once(nlSystem).chain(alternativeTearing.as_ref()) {
+            for cr in lst(&sys.crefs) {
+                keys.extend(sim_cref_key(cr).ok());
+                keys.extend(flat_sim_key(cr));
+            }
+        }
+    }
+    keys
+}
+
 /// Map each scalar Real (and Integer) variable's cref key to its `(nominal, min, max)` attributes,
 /// defaulting to `(1.0, -inf, +inf)` where unset or non-constant.
-pub(super) fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<String, (f64, f64, f64)> {
+pub(super) fn build_nls_nominal_map(vars: &SimCodeVar::SimVars, wanted: &HashSet<String>) -> HashMap<String, (f64, f64, f64)> {
     let mut map = HashMap::default();
+    if wanted.is_empty() {
+        return map;
+    }
     // `derivativeVars`: a `$DER.x` iteration variable otherwise scales at nominal 1.
     let all = lst(&vars.stateVars)
         .chain(lst(&vars.derivativeVars))
@@ -248,7 +266,7 @@ pub(super) fn build_nls_nominal_map(vars: &SimCodeVar::SimVars) -> HashMap<Strin
         .chain(lst(&vars.paramVars))
         .chain(lst(&vars.aliasVars));
     for sv in all {
-        if let Ok(key) = sim_cref_key(&sv.name) {
+        if let Some(key) = sim_cref_key(&sv.name).ok().filter(|k| wanted.contains(k)) {
             let nom = const_value(&sv.nominalValue).map(|v| v.abs()).filter(|v| *v > 0.0).unwrap_or(1.0);
             let lo = const_value(&sv.minValue).unwrap_or(-f64::MAX);
             let hi = const_value(&sv.maxValue).unwrap_or(f64::MAX);

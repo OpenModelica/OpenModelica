@@ -53,7 +53,7 @@ pub(crate) struct AttrDefaults {
 pub(crate) fn attr_defaults(
     reals: &[&SimCodeVar::SimVar],
     layout: &openmodelica_sim_meta::Layout,
-    attr_targets: &mut HashMap<String, crate::CodegenWasmJitFunctions::AttrTargets>,
+    attr_targets: &mut crate::CodegenWasmJitFunctions::AttrTargetMap,
 ) -> AttrDefaults {
     let mut out = AttrDefaults { reals: Vec::new(), ints: Vec::new() };
     for (i, sv) in reals.iter().enumerate() {
@@ -66,8 +66,7 @@ pub(crate) fn attr_defaults(
         ] {
             let off = base + i * 8;
             out.reals.push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
-            if let Ok(k) = crate::CodegenWasmJit::sim_cref_key(&sv.name) {
-                let t = attr_targets.entry(k).or_default();
+            if let Some(t) = attr_targets.of(&sv.name) {
                 if base == layout.opt_min_off {
                     t.raw_min_offs.push(off);
                 } else if base == layout.opt_max_off {

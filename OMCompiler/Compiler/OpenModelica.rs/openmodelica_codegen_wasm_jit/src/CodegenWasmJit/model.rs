@@ -77,7 +77,7 @@ pub(super) fn build_sim_model(
     let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
-    let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
+    let (scalarized_vars, array_runs) = scalarize_sim_vars(&mi.vars)?;
     let vars = &scalarized_vars;
     let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
@@ -174,7 +174,7 @@ pub(super) fn build_sim_model(
         has_method1_linear(sim_code),
     );
 
-    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &array_runs, &layout)?;
     let (prof_plan, prof_info) = prof_plan(sim_code, mi)?;
     var_map.prof = prof_plan;
     // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
@@ -214,8 +214,7 @@ pub(super) fn build_sim_model(
             );
         }
     }
-    let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
-    let var_units = collect_var_units(vars)?;
+    let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars.vars)?;
     var_map.n_samples = samples.len() as u32;
     var_map.sample_active_off = layout.sample_active_off;
     // Delay-buffer count (0 when the model has no `delay(...)`).
@@ -489,8 +488,9 @@ pub(super) fn build_sim_model(
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
-    let nls_nominal_map = build_nls_nominal_map(vars);
-    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::default();
+    let mut attr_targets = AttrTargetMap::new(bound_attr_equations(sim_code).into_iter().filter_map(|(_, cr, _)| {
+        sim_cref_key(cr).ok().map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string())
+    }));
     let dae_only_eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let removed_init_eqs = flatten_eqs(&sim_code.removedInitialEquations);
     let clocked = clocked_eqs(sim_code);
@@ -501,6 +501,8 @@ pub(super) fn build_sim_model(
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
     .collect();
+    let nls_nominal_map =
+        build_nls_nominal_map(vars, &nls_iteration_keys(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>()));
     let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns, nls_warnings) = collect_nls_jobs(
         &nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>(),
         &nls_nominal_map,
@@ -518,26 +520,25 @@ pub(super) fn build_sim_model(
         for (i, sv) in list.iter().enumerate() {
             let off = base + (i as u32) * 8;
             nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
-            if let Ok(k) = sim_cref_key(&sv.name) {
-                attr_targets.entry(k).or_default().nom_offs.push(off);
+            if let Some(t) = attr_targets.of(&sv.name) {
+                t.nom_offs.push(off);
             }
         }
     }
     // C's `functionJacAC_num` reads each state's `max` to sign its step.
     let mut max_defaults: Vec<(u32, f64)> = Vec::new();
+    // gbode's KINSOL keeps the sign a state's `min` asks for.
+    let mut min_defaults: Vec<(u32, f64)> = Vec::new();
     for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
-        let off = layout.state_max_off + (i as u32) * 8;
-        max_defaults.push((off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            attr_targets.entry(k).or_default().max_offs.push(off);
-        }
-        // gbode's KINSOL keeps the sign a state's `min` asks for.
-        let off = layout.state_min_off + (i as u32) * 8;
-        max_defaults.push((off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            attr_targets.entry(k).or_default().raw_min_offs.push(off);
+        let (max_off, min_off) = (layout.state_max_off + (i as u32) * 8, layout.state_min_off + (i as u32) * 8);
+        max_defaults.push((max_off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
+        min_defaults.push((min_off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
+        if let Some(t) = attr_targets.of(&sv.name) {
+            t.max_offs.push(max_off);
+            t.raw_min_offs.push(min_off);
         }
     }
+    max_defaults.append(&mut min_defaults);
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
@@ -787,8 +788,7 @@ pub(super) fn build_sim_model(
     for (i, sv) in all_reals.iter().enumerate() {
         let nom_off = layout.real_nominal_off(i as u32);
         nominal_defaults.push((nom_off, literal_value(&sv.nominalValue).unwrap_or(1.0)));
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            let t = attr_targets.entry(k).or_default();
+        if let Some(t) = attr_targets.of(&sv.name) {
             t.start_offs.push(layout.real_start_off(i as u32));
             t.raw_nom_offs.push(nom_off);
         }
@@ -977,13 +977,13 @@ pub(super) fn build_sim_model(
         }
     }
     let meta = build_sim_meta(
-        &layout, &result_vars, collect_unit_defs(mi, &result_vars), settings, cs_method, fmi_solver_flags, &model_name,
+        &layout, &result_vars, collect_unit_defs(mi, &result_vars.vars), settings, cs_method, fmi_solver_flags, &model_name,
         &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         nls_warnings.clone(),
-        samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars,
+        samples.iter().map(|s| s.index).collect(), soti_vars(vars, &array_runs)?, sens_params, nls_vars,
         mi.varInfo.numLinearSystems.max(0) as u32, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
@@ -1277,27 +1277,29 @@ pub(super) fn build_sim_model(
             optimization::attr_defaults(&reals, &layout, &mut attr_targets)
         }
     };
+    let mut attr_slots: Vec<(u32, ConstSlot)> =
+        nominal_defaults.iter().chain(max_defaults.iter()).map(|&(off, v)| (off, ConstSlot::f64(v))).collect();
+    attr_slots.sort_by_key(|&(off, _)| off);
     let update_bound_attrs_idx = {
         let idx = import_base + bodies.len() as u32;
-        let defaults: Vec<(u32, f64)> = nominal_defaults
-            .iter()
-            .chain(max_defaults.iter())
-            .chain(opt_attrs.reals.iter())
-            .copied()
-            .collect();
-        bodies.push(build_update_bound_attrs_fn(
-            sim_code, &layout, &defaults, &opt_attrs.ints, &attr_targets, &var_map, &by_name,
-            &mut literals,
-        )?);
+        let mut with_opt: Vec<(u32, ConstSlot)> = Vec::new();
+        let slots = if opt_attrs.reals.is_empty() && opt_attrs.ints.is_empty() {
+            &attr_slots
+        } else {
+            with_opt.extend(attr_slots.iter().copied());
+            with_opt.extend(opt_attrs.reals.iter().map(|&(off, v)| (off, ConstSlot::f64(v))));
+            with_opt.extend(opt_attrs.ints.iter().map(|&(off, v)| (off, ConstSlot::I32(v))));
+            with_opt.sort_by_key(|&(off, _)| off);
+            &with_opt
+        };
+        bodies.push(build_update_bound_attrs_fn(sim_code, &layout, slots, &attr_targets, &var_map, &by_name, &mut literals)?);
         idx
     };
     // C's `setupDataStruc` half: the constant defaults, written before the solver is
     // allocated. The expression-bound ones stay in the update function.
     let attr_defaults_idx = {
         let idx = import_base + bodies.len() as u32;
-        let defaults: Vec<(u32, f64)> =
-            nominal_defaults.iter().chain(max_defaults.iter()).copied().collect();
-        bodies.push(build_attr_defaults_fn(&defaults, &var_map, &by_name, &mut literals)?);
+        bodies.push(build_attr_defaults_fn(&attr_slots, &var_map, &by_name, &mut literals)?);
         idx
     };
     // Always exported (empty when the backend generated none) so the standalone
@@ -1876,7 +1878,6 @@ pub(super) fn build_sim_model(
         compiled,
         prepared: Mutex::new(None),
         layout,
-        result_vars,
         ext_libs: ext_libs.wasm,
         ext_native,
         ext_builtin,
@@ -1902,8 +1903,8 @@ pub(super) fn build_sim_model(
         jac_a,
         sparse_nls: var_map.nls_jobs.values().any(|j| j.sparse_default),
         editable_params,
-        var_units,
-        meta,
+        meta_compact: meta,
+        meta_expanded: Default::default(),
     })
 }
 

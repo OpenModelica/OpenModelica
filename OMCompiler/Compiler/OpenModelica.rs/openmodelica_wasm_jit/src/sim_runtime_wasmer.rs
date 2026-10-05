@@ -596,7 +596,7 @@ fn run_inwasm(
     // result file the run reports on has been written.
     let prof = sess.take_prof()?;
     if !prof.is_empty() {
-        openmodelica_sim_meta::profiling::adopt(&model.meta, &prof);
+        openmodelica_sim_meta::profiling::adopt(model.meta(), &prof);
     }
     if bench {
         eprintln!(
@@ -1064,7 +1064,7 @@ pub fn build_inwasm_session(
     result: Option<&crate::result_sink::ResultTarget>,
 ) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, model.meta())?;
 
     // Append N contiguous table slots and set each to the model's export funcref
     // (null + cleared mask bit if the model doesn't export it).
@@ -1081,7 +1081,7 @@ pub fn build_inwasm_session(
     }
 
     // Write the metadata blob into linear memory for the runtime to decode.
-    let blob = openmodelica_sim_meta::encode(&model.meta);
+    let blob = openmodelica_sim_meta::encode(&model.meta_compact);
     let meta_ptr = wts(rt_alloc.call(&mut store, blob.len() as u32))?;
     wts(memory.view(&store).write(meta_ptr as u64, &blob))?;
 
