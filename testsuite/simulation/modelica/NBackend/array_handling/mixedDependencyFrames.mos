@@ -1,0 +1,35 @@
+// name: mixedDependencyFrames
+// keywords: NewBackend slice mixed dependency for-equation
+// status: correct
+//
+// T is used with a mixed dependency (a row of T per row of y) in a
+// for-equation over the components s[$i1]. The scalar subscript $i1 has no
+// dimension in the subscripted type and each iteration has its own rows.
+
+loadString("
+model Sub
+  parameter Real k = 1;
+  Real x[2,2](each start = 1, each fixed = true);
+  Real T[2,2];
+  Real y[2,2];
+equation
+  der(x) = -k*x;
+  T = x + [time, 1; 2, time];
+  y = T*x;
+end Sub;
+
+model mixedDependencyFrames
+  Sub s[2](k = {1, 2});
+end mixedDependencyFrames;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeTarget=None"); getErrorString();
+translateModel(mixedDependencyFrames); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// endResult

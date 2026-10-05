@@ -1485,7 +1485,7 @@ protected
           resolveAllRegular(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes, Type.sizeOf(ty, true));
         elseif List.any(regulars, Util.id) then
           // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
-          resolveMixed(cref, original_cref, eqn_name, skip_idx, ty, frames, regulars, map, m, mapping, modes);
+          resolveMixed(cref, original_cref, eqn_name, skip_idx, ty, frames, iter_size, regulars, map, m, mapping, modes);
         else
           // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
           resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
@@ -1561,6 +1561,7 @@ protected
     input Integer skip_idx;
     input Type ty;
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
+    input Integer iter_size;
     input list<Boolean> regulars;
     input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
     input IntMatrix.Builder m;
@@ -1572,31 +1573,49 @@ protected
     list<Dimension> dims, eq_dims;
     array<Integer> key;
     UnorderedMap<Key, Val1> map1;
-    UnorderedMap<Key, Val2> map2;
-    list<ComponentRef> scalarized;
-    list<Integer> scal_lst;
-    Integer size_comp;
-    list<Boolean> eq_reg;
+    array<UnorderedMap<Key, Val2>> frame_maps;
+    list<array<Integer>> frame_indices;
+    list<Integer> all_indices;
+    Integer size_comp, frame_count = max(iter_size, 1), mode;
+    Boolean per_frame;
+    Pointer<Integer> eqn_idx_ptr;
+    list<Boolean> eq_reg, scalars;
     list<tuple<Dimension, Boolean>> lst;
+    list<tuple<Subscript, Dimension, Boolean>> var_lst;
+    Boolean aligned;
   algorithm
     // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
     subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
     dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
     eq_dims := Type.arrayDims(ty);
+    (var_lst, scalars, aligned) := zipSubscripts(subs, dims, regulars);
 
-    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 then
+    if aligned then
       // 2. create a map that maps a configuration key to the corresponding scalar crefs
       stripped  := ComponentRef.stripSubscriptsAll(cref);
       key       := arrayCreate(listLength(subs), 0);
       map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
-      resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
+      resolveReductions(var_lst, map1, key, stripped);
 
-      // 3. create a map that maps a configuration key to the final variable indices
-      map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
+      // 3. create maps that map a configuration key to the final variable indices, one map per
+      //    frame since each frame (iteration of a for-equation) has its own rows
+      frame_maps := listArray(list(UnorderedMap.new<Val2>(keyHash, keyEqual) for i in 1:frame_count));
       for k in UnorderedMap.keyList(map1) loop
-        scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
-        scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map, true) for scal in scalarized));
-        UnorderedMap.add(k, scal_lst, map2);
+        frame_indices := list(listArray(getCrefInFrameIndices(scal, frames, mapping, map, true))
+          for scal in UnorderedMap.getSafe(k, map1, sourceInfo()));
+        per_frame := List.all(list(arrayLength(a) == frame_count for a in frame_indices), Util.id);
+
+        if per_frame then
+          for i in 1:frame_count loop
+            UnorderedMap.add(k, list(a[i] for a in frame_indices), frame_maps[i]);
+          end for;
+        else
+          // indices that cannot be attributed to a frame (e.g. some frames are out of bounds) belong to all of them
+          all_indices := List.flatten(list(arrayList(a) for a in frame_indices));
+          for i in 1:frame_count loop
+            UnorderedMap.add(k, all_indices, frame_maps[i]);
+          end for;
+        end if;
       end for;
 
       // 4. check if equation and variable are of same length, if not: fixup the lists to be of equal length
@@ -1611,10 +1630,16 @@ protected
       else
         lst := List.zip(eq_dims, regulars);
       end if;
+      lst := insertScalarDimensions(lst, scalars);
 
-      // 5. iterate over all equation dimensions and use the map to get the correct dependencies
-      key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(lst, map2, key, m, Modes.add(modes, Mode.create(eqn_name, {original_cref}, false)), Pointer.create(skip_idx));
+      // 5. iterate over all equation dimensions and use the map to get the correct dependencies,
+      //    the rows of the frames follow each other
+      mode := Modes.add(modes, Mode.create(eqn_name, {original_cref}, false));
+      eqn_idx_ptr := Pointer.create(skip_idx);
+      for i in 1:frame_count loop
+        key := arrayCreate(listLength(subs), 0);
+        resolveEquationDimensions(lst, frame_maps[i], key, m, mode, eqn_idx_ptr);
+      end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1624,6 +1649,65 @@ protected
       fail();
     end if;
   end resolveMixed;
+
+  function zipSubscripts
+    "Zips the subscripts of a cref with the dimensions and dependencies of its
+     subscripted type. A scalar subscript (e.g. a[1].b[:]) has neither and gets
+     a reduced dimension of size one, so that the key positions of the variable
+     and the equation stay aligned (see insertScalarDimensions)."
+    input list<Subscript> subs;
+    input list<Dimension> dims;
+    input list<Boolean> regulars;
+    output list<tuple<Subscript, Dimension, Boolean>> lst = {};
+    output list<Boolean> scalars = {};
+    output Boolean aligned = true;
+  protected
+    list<Dimension> rest_dims = dims;
+    list<Boolean> rest_regs = regulars;
+    Dimension dim;
+    Boolean reg;
+  algorithm
+    for sub in subs loop
+      if Subscript.isScalar(sub) then
+        lst := (sub, Dimension.fromInteger(1), false) :: lst;
+        scalars := true :: scalars;
+      elseif listEmpty(rest_dims) or listEmpty(rest_regs) then
+        aligned := false;
+        return;
+      else
+        dim :: rest_dims := rest_dims;
+        reg :: rest_regs := rest_regs;
+        lst := (sub, dim, reg) :: lst;
+        scalars := false :: scalars;
+      end if;
+    end for;
+
+    aligned := listEmpty(rest_dims) and listEmpty(rest_regs);
+    lst := listReverse(lst);
+    scalars := listReverse(scalars);
+  end zipSubscripts;
+
+  function insertScalarDimensions
+    "Inserts a reduced dimension of size one into the equation dimensions for
+     each scalar subscript of the variable."
+    input list<tuple<Dimension, Boolean>> lst;
+    input list<Boolean> scalars;
+    output list<tuple<Dimension, Boolean>> outLst = {};
+  protected
+    list<tuple<Dimension, Boolean>> rest = lst;
+    tuple<Dimension, Boolean> t;
+  algorithm
+    for scalar in scalars loop
+      if scalar then
+        outLst := (Dimension.fromInteger(1), false) :: outLst;
+      elseif not listEmpty(rest) then
+        t :: rest := rest;
+        outLst := t :: outLst;
+      end if;
+    end for;
+
+    outLst := List.append_reverse(outLst, rest);
+  end insertScalarDimensions;
 
   function resolveMixedDimensions
     "fills the list with dimensions of size one at the proper place even if they are skipped.
