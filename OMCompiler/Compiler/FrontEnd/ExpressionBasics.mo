@@ -855,6 +855,7 @@ algorithm
     local
       list<DAE.Subscript> xs1,xs2;
       DAE.Exp e1,e2;
+      Integer i1,i2;
 
     // both lists are empty
     case ({},{}) then true;
@@ -866,6 +867,9 @@ algorithm
     // slices as heads, compare the slice exps and then compare the rest
     case ((DAE.SLICE(exp = e1) :: xs1),(DAE.SLICE(exp = e2) :: xs2))
       then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
+
+    case ((DAE.INDEX(exp = DAE.ICONST(i1)) :: xs1),(DAE.INDEX(exp = DAE.ICONST(i2)) :: xs2))
+      then if i1 == i2 then subscriptEqual(xs1, xs2) else false;
 
     // indexes as heads, compare the index exps and then compare the rest
     case ((DAE.INDEX(exp = e1) :: xs1),(DAE.INDEX(exp = e2) :: xs2))
