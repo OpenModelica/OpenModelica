@@ -62,6 +62,7 @@
 #define updateStaticDataOfNonlinearSystems(X,Y)
 #else
 #include "../nonlinearSystem.h"
+#include "../nonlinearValuesList.h"
 #endif
 
 #include "../delay.h"
@@ -286,6 +287,77 @@ void log_homotopy_lambda_vars(DATA *data, threadData_t *threadData, const char* 
   return;
 }
 
+typedef struct {
+  modelica_real *real, *realPre;
+  modelica_integer *integer, *integerPre;
+  modelica_boolean *boolean, *booleanPre;
+} HOMOTOPY_POINT;
+
+static void homotopy_point_alloc(DATA *data, HOMOTOPY_POINT *p)
+{
+  MODEL_DATA *m = data->modelData;
+  p->real = (modelica_real*) malloc(m->nVariablesReal * sizeof(modelica_real));
+  p->realPre = (modelica_real*) malloc(m->nVariablesReal * sizeof(modelica_real));
+  p->integer = (modelica_integer*) malloc(m->nVariablesInteger * sizeof(modelica_integer));
+  p->integerPre = (modelica_integer*) malloc(m->nVariablesInteger * sizeof(modelica_integer));
+  p->boolean = (modelica_boolean*) malloc(m->nVariablesBoolean * sizeof(modelica_boolean));
+  p->booleanPre = (modelica_boolean*) malloc(m->nVariablesBoolean * sizeof(modelica_boolean));
+}
+
+static void homotopy_point_free(HOMOTOPY_POINT *p)
+{
+  free(p->real); free(p->realPre);
+  free(p->integer); free(p->integerPre);
+  free(p->boolean); free(p->booleanPre);
+}
+
+static void homotopy_point_save(DATA *data, HOMOTOPY_POINT *p)
+{
+  MODEL_DATA *m = data->modelData;
+  SIMULATION_INFO *s = data->simulationInfo;
+  memcpy(p->real, data->localData[0]->realVars, m->nVariablesReal * sizeof(modelica_real));
+  memcpy(p->realPre, s->realVarsPre, m->nVariablesReal * sizeof(modelica_real));
+  memcpy(p->integer, data->localData[0]->integerVars, m->nVariablesInteger * sizeof(modelica_integer));
+  memcpy(p->integerPre, s->integerVarsPre, m->nVariablesInteger * sizeof(modelica_integer));
+  memcpy(p->boolean, data->localData[0]->booleanVars, m->nVariablesBoolean * sizeof(modelica_boolean));
+  memcpy(p->booleanPre, s->booleanVarsPre, m->nVariablesBoolean * sizeof(modelica_boolean));
+}
+
+static void homotopy_point_restore(DATA *data, const HOMOTOPY_POINT *p)
+{
+  MODEL_DATA *m = data->modelData;
+  SIMULATION_INFO *s = data->simulationInfo;
+  memcpy(data->localData[0]->realVars, p->real, m->nVariablesReal * sizeof(modelica_real));
+  memcpy(s->realVarsPre, p->realPre, m->nVariablesReal * sizeof(modelica_real));
+  memcpy(data->localData[0]->integerVars, p->integer, m->nVariablesInteger * sizeof(modelica_integer));
+  memcpy(s->integerVarsPre, p->integerPre, m->nVariablesInteger * sizeof(modelica_integer));
+  memcpy(data->localData[0]->booleanVars, p->boolean, m->nVariablesBoolean * sizeof(modelica_boolean));
+  memcpy(s->booleanVarsPre, p->booleanPre, m->nVariablesBoolean * sizeof(modelica_boolean));
+}
+
+/* Solves the initial system at the given lambda; returns 1 on success. */
+static int homotopy_solve_at(DATA *data, threadData_t *threadData, double lambda)
+{
+  int success = 0;
+  data->simulationInfo->lambda = lambda;
+#ifndef OMC_EMCC
+  OMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+  if (lambda == 0.0 && data->callback->functionInitialEquations_lambda0 != NULL) {
+    data->callback->functionInitialEquations_lambda0(data, threadData);
+  } else {
+    if (lambda == 0.0) {
+      warningStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
+    }
+    data->callback->functionInitialEquations(data, threadData);
+  }
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
+#ifndef OMC_EMCC
+  OMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+  return success;
+}
+
 /*! \fn static int symbolic_initialization(DATA *data, threadData_t *threadData)
  *
  *  \param [ref] [data]
@@ -401,53 +473,74 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #endif
 
     infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
-    /* try */
-#ifndef OMC_EMCC
-  OMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-    for(step=0; step<=init_lambda_steps; ++step)
     {
-      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps);
-      lambda = data->simulationInfo->lambda;
+      const double maxStep = 1.0 / init_lambda_steps;
+      const double minStep = maxStep / 32;
+      double stepSize = maxStep, lambdaPrev = 0.0, lambdaPrev2 = 0.0;
+      int ok, prevOk = 0, havePrev2;
+      HOMOTOPY_POINT prev, prev2;
+      homotopy_point_alloc(data, &prev);
+      homotopy_point_alloc(data, &prev2);
+
+      lambda = 0.0;
+      step = 0;
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", lambda);
-
-      if(data->simulationInfo->lambda > 1.0)
+      ok = homotopy_solve_at(data, threadData, lambda);
+      for (;;)
       {
-        data->simulationInfo->lambda = 1.0;
-        lambda = 1.0;
-      }
-
-      if(0 == step)
-      {
-        if(data->callback->functionInitialEquations_lambda0 != NULL)
-        {
-          data->callback->functionInitialEquations_lambda0(data, threadData);
-        }
-        else
-        {
-          warningStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
-          data->callback->functionInitialEquations(data, threadData);
-        }
-      }
-      else
-      {
-        data->callback->functionInitialEquations(data, threadData);
-      }
-
-      infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
-
+        infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
 #if !defined(OMC_NO_FILESYSTEM)
-      if(OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
-      {
-        log_homotopy_lambda_vars(data, threadData, fileName, sep, lambda, 0 /*FALSE*/);
+        if(OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
+        {
+          log_homotopy_lambda_vars(data, threadData, fileName, sep, lambda, 0 /*FALSE*/);
+        }
+#endif
+        if (lambda >= 1.0) {
+          success = ok;
+          break;
+        }
+        havePrev2 = ok && prevOk && lambdaPrev > 0.0;
+        if (havePrev2) {
+          HOMOTOPY_POINT tmp = prev; prev = prev2; prev2 = tmp;
+          lambdaPrev2 = lambdaPrev;
+        }
+        homotopy_point_save(data, &prev);
+        lambdaPrev = lambda;
+        prevOk = ok;
+        step++;
+
+        for (;;) {
+          lambda = fmin(1.0, lambdaPrev + stepSize);
+          if (havePrev2) {
+            double f = (lambda - lambdaPrev) / (lambdaPrev - lambdaPrev2);
+            for (i = 0; i < data->modelData->nVariablesReal; ++i) {
+              data->localData[0]->realVars[i] = prev.real[i] + f * (prev.real[i] - prev2.real[i]);
+            }
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+            /* start the systems from the prediction rather than their last solution */
+            for (i = 0; i < data->modelData->nNonLinearSystems; ++i) {
+              cleanValueList(data->simulationInfo->nonlinearSystemData[i].oldValueList->valueList, NULL);
+            }
+#endif
+          }
+          infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", lambda);
+          ok = homotopy_solve_at(data, threadData, lambda);
+          if (ok) {
+            break;
+          }
+          if (!prevOk || stepSize / 2 < minStep) {
+            /* continue from the unconverged point, as without step halving */
+            stepSize = maxStep;
+            break;
+          }
+          homotopy_point_restore(data, &prev);
+          stepSize /= 2;
+          infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g failed, retrying with step size %g", lambda, stepSize);
+        }
       }
-#endif
+      homotopy_point_free(&prev);
+      homotopy_point_free(&prev2);
     }
-    /* catch */
-  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
-#ifndef OMC_EMCC
-  OMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
 
     messageClose(OMC_LOG_INIT_HOMOTOPY);
 
@@ -458,7 +551,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       throwStreamPrint(threadData, "Unable to solve initialization problem.");
     }
 
-    data->simulationInfo->homotopySteps += init_lambda_steps;
+    data->simulationInfo->homotopySteps += step;
   }
 
   /* If there is homotopy in the model and the adaptive global homotopy approach is activated
