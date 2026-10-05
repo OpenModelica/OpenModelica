@@ -320,18 +320,6 @@ public
     end match;
   end isNameNode;
 
-  function isFunction
-    "Returns true if the cref refers to a function, i.e. it is a function
-     pointer such as f in solveOneNonlinearEquation(f, ...)."
-    input ComponentRef cref;
-    output Boolean res;
-  algorithm
-    res := match cref
-      case CREF() then InstNode.isClass(cref.node) and InstNode.isFunction(cref.node);
-      else false;
-    end match;
-  end isFunction;
-
   function isEqualRecordChild
     "R.x and R can be considered equal in certain cases if x is the only attribute of R"
     input ComponentRef child;

@@ -1625,7 +1625,7 @@ protected
       local
         Call call;
 
-      case Expression.CREF() guard(not (ComponentRef.isNameNode(exp.cref) or ComponentRef.isFunction(exp.cref)))
+      case Expression.CREF() guard(not (ComponentRef.isNameNode(exp.cref) or Expression.isFunctionPointer(exp)))
       then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables, complete));
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
@@ -1694,7 +1694,7 @@ protected
       // function references (e.g. f in solveOneNonlinearEquation(f, ...)) are not iterators
       case Expression.CREF() guard(not (VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(exp.cref), variables)
         or ComponentRef.isNameNode(exp.cref) or ComponentRef.isWild(exp.cref)
-        or ComponentRef.isFunction(exp.cref))) algorithm
+        or Expression.isFunctionPointer(exp))) algorithm
         UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
 

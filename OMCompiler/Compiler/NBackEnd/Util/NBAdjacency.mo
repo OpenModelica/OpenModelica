@@ -3100,8 +3100,8 @@ public
         Integer ind, new_depth;
         Boolean isTuple;
 
-      // add a cref dependency
-      case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
+      // add a cref dependency (function pointers are no dependencies)
+      case Expression.CREF() guard(not Expression.isFunctionPointer(exp)) then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
@@ -3317,12 +3317,6 @@ public
     list<ComponentRef> scalar_matches;
     Boolean hasSetSub = false;
   algorithm
-    // function references (e.g. f in solveOneNonlinearEquation(f, ...)) are no dependencies
-    if ComponentRef.isFunction(cref) then
-      crefs := {};
-      return;
-    end if;
-
     for s in ComponentRef.subscriptsAllFlat(cref) loop
       // WHOLE (":") and SLICE (e.g. "1:3") are ordinary, common range subscripts
       // that the exact-match check below already handles correctly -- only a
