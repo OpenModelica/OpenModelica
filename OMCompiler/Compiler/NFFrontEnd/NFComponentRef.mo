@@ -1390,9 +1390,8 @@ public
     isPrefix := match (cref1, cref2)
       case (CREF(), CREF())
         then
-          if InstNode.name(node(cref1)) == InstNode.name(node(cref2)) then
-             isEqual(cref1.restCref, cref2.restCref)
-          else isEqual(cref1, cref2.restCref);
+          InstNode.name(node(cref1)) == InstNode.name(node(cref2)) and isEqual(cref1.restCref, cref2.restCref) or
+          isEqual(cref1, cref2.restCref);
       else false;
     end match;
   end isPrefix;
