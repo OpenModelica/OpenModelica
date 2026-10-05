@@ -8357,7 +8357,7 @@ algorithm
   comps := Sorting.Tarjan(m, ass1);
   flatComps := list(Initialization.flattenParamComp(comp, globalKnownVars) for comp in comps);
 
-  globalKnownVars_sorted := BackendVariable.emptyVars();
+  globalKnownVars_sorted := BackendVariable.emptyVarsSized(BackendVariable.varsSize(globalKnownVars));
   for i in flatComps loop
       var := BackendVariable.getVarAt(globalKnownVars, i);
       globalKnownVars_sorted := BackendVariable.addVar(var, globalKnownVars_sorted);
