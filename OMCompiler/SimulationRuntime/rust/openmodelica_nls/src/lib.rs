@@ -4111,7 +4111,7 @@ pub fn solve_nls(
                     false,
                     "residualFunc{eq_index}: Iteration variable `{}` is {}.",
                     var_names(eq_index).get(i).map_or("", |s| s.as_str()),
-                    xs.get(i).map_or("".to_string(), |v| fmt_g6(*v))
+                    xs.get(i).map_or(String::from(""), |v| fmt_g6(*v))
                 );
             }
             note_eval_hit(true, false);
