@@ -905,6 +905,19 @@ end printComponentRefListStr;
 
 public constant Integer crefHashSeed = 5381;
 
+public function crefHasNoSubscripts
+  "A chain of qualifiers and an identifier none of which has subscripts, so a
+   traversal of the expressions in it has nothing to visit."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_QUAL(subscriptLst = {}) then crefHasNoSubscripts(cr.componentRef);
+    case DAE.CREF_IDENT(subscriptLst = {}) then true;
+    else false;
+  end match;
+end crefHasNoSubscripts;
+
 public function hashComponentRef
   "djb2 continued over the qualifiers and subscripts in order."
   input DAE.ComponentRef cr;
