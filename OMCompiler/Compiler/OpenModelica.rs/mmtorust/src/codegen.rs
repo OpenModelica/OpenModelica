@@ -19274,14 +19274,15 @@ fn is_static_const_emittable(exp: &TypedExp, ctx: &GenCtx, top_level: &BTreeMap<
 }
 
 /// True if the lowered Rust type for `ty` implements `Sync` for the purposes of
-/// `pub static` storage. The only non-`Sync` MetaModelica primitive we generate
-/// today is `Array<T> = Rc<RefCell<Vec<T>>>` (see `metamodelica::Array`); every
-/// other built-in maps to a `Sync` Rust type (`List<T>`, `ArcStr`,
-/// `Mutable<T> = Arc<Mutex<T>>`, primitives, function pointers, etc.).
+/// `pub static` storage. The non-`Sync` MetaModelica primitives are
+/// `Array<T> = Rc<RefCell<Vec<T>>>` (see `metamodelica::Array`) and the cells
+/// (`Mutable`, `Pointer` and their weak forms, an `Rc` around a `RefCell`);
+/// the other built-ins map to `Sync` Rust types (`List<T>`, `ArcStr`,
+/// primitives, etc.).
 ///
-/// User-defined struct/enum types are checked against
+/// User-defined struct/enum types and the cells are checked against
 /// [`GenCtx::types_containing_array`], which is the closure of "transitively
-/// embeds an `Array<T>` field" computed once in
+/// embeds an `Array<T>` or a cell" computed once in
 /// [`crate::hierarchy::detect_types_containing_array`].
 ///
 /// Type variables (`Ty::TypeVar`) are conservatively treated as `Sync` here —
@@ -19304,6 +19305,7 @@ fn ty_is_sync(ty: &Ty, ctx: &GenCtx) -> bool {
         Ty::Tuple(ts) => ts.iter().all(|t| ty_is_sync(t, ctx)),
         Ty::Generic(name, args) => {
             let dotted = name.replace("::", ".");
+            if crate::hierarchy::is_rc_cell(&dotted) { return false; }
             if ctx.types_containing_array.contains(&dotted) { return false; }
             if ctx.types_containing_dyn_fn.contains(&dotted) { return false; }
             args.iter().all(|a| ty_is_sync(a, ctx))

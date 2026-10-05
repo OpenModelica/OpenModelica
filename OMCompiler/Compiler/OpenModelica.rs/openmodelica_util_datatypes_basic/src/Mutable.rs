@@ -1,34 +1,31 @@
 // Manually written
 #![allow(non_snake_case)]
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use metamodelica::gc::{MMTrace, MMVisitor, TraceableCell};
 
 /// The shared allocation behind both [`Mutable`] and `Pointer::Mutable`
 /// cells. The content lives in an `Option` so the cycle collector can
 /// *poison* a cell proven unreachable — dropping the content (which breaks
-/// the cycle and lets ordinary `Arc` drops cascade) while leaving the
+/// the cycle and lets ordinary `Rc` drops cascade) while leaving the
 /// allocation itself intact for any in-cycle handles still being torn down.
 /// `None` is only ever observed by a collector bug; accessors panic on it
 /// rather than inventing a value.
 pub struct CellInner<T> {
-    content: Mutex<Option<T>>,
+    content: RefCell<Option<T>>,
 }
 
 impl<T: MMTrace> TraceableCell for CellInner<T> {
     fn trace_content(&self, visitor: &mut dyn MMVisitor) -> Result<(), ()> {
-        match self.content.try_lock().map_err(|_| ())?.as_ref() {
+        match self.content.try_borrow().map_err(|_| ())?.as_ref() {
             Some(x) => x.mm_accept(visitor),
             None => Ok(()), // already poisoned: nothing to trace
         }
     }
 
     fn poison(&self) {
-        let mut guard = self
-            .content
-            .lock()
-            .expect("Mutable cell poisoned (a thread panicked while updating it)");
-        *guard = None;
+        drop(self.content.replace(None));
     }
 }
 
@@ -36,11 +33,11 @@ impl<T: MMTrace> TraceableCell for CellInner<T> {
 /// Every cell — `Mutable` or `Pointer::Mutable`, explicit or
 /// `Default`-synthesized — must go through here: an unregistered cell is never
 /// a collection candidate, so cycles through it would silently leak.
-pub(crate) fn new_cell<T: Clone + MMTrace + 'static>(data: T) -> Arc<CellInner<T>> {
-    let inner = Arc::new(CellInner { content: Mutex::new(Some(data)) });
+pub(crate) fn new_cell<T: Clone + MMTrace + 'static>(data: T) -> Rc<CellInner<T>> {
+    let inner = Rc::new(CellInner { content: RefCell::new(Some(data)) });
     #[cfg(any(test, feature = "cycle-collect"))]
     {
-        let weak: std::sync::Weak<dyn TraceableCell> = Arc::downgrade(&inner) as _;
+        let weak: std::rc::Weak<dyn TraceableCell> = Rc::downgrade(&inner) as _;
         metamodelica::gc::register_cell(weak);
     }
     inner
@@ -52,37 +49,34 @@ pub(crate) fn new_cell<T: Clone + MMTrace + 'static>(data: T) -> Arc<CellInner<T
 /// in the collector, not in the caller.
 pub(crate) fn cell_get<T: Clone>(cell: &CellInner<T>) -> T {
     cell.content
-        .lock()
-        .expect("Mutable cell poisoned (a thread panicked while updating it)")
+        .borrow()
         .as_ref()
         .expect("accessed a cycle-collected mutable cell")
         .clone()
 }
 
+/// The old content is dropped after the cell is released, so a drop that
+/// reaches this cell again finds it readable.
 pub(crate) fn cell_set<T>(cell: &CellInner<T>, data: T) {
-    let mut guard = cell
-        .content
-        .lock()
-        .expect("Mutable cell poisoned (a thread panicked while updating it)");
-    *guard = Some(data);
+    drop(cell.content.replace(Some(data)));
 }
 
-pub struct Mutable<T: Clone>(pub(crate) Arc<CellInner<T>>);
+pub struct Mutable<T: Clone>(pub(crate) Rc<CellInner<T>>);
 
 impl<T: Clone> Clone for Mutable<T> {
     fn clone(&self) -> Self {
-        Mutable(Arc::clone(&self.0))
+        Mutable(Rc::clone(&self.0))
     }
 }
 
 impl<T: Clone + std::fmt::Debug> std::fmt::Debug for Mutable<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0.content.try_lock() {
+        match self.0.content.try_borrow() {
             Ok(guard) => match guard.as_ref() {
                 Some(v) => write!(f, "Mutable({v:?})"),
                 None => write!(f, "Mutable(<collected>)"),
             },
-            Err(_) => write!(f, "Mutable(<locked>)"),
+            Err(_) => write!(f, "Mutable(<being updated>)"),
         }
     }
 }
@@ -94,13 +88,11 @@ impl<T: Clone + std::fmt::Debug> std::fmt::Debug for Mutable<T> {
 // is comparable.
 impl<T: Clone + PartialEq> PartialEq for Mutable<T> {
     fn eq(&self, other: &Self) -> bool {
-        // Identity first: also keeps a self-comparison from deadlocking on
-        // the second lock below.
-        if Arc::ptr_eq(&self.0, &other.0) {
+        if Rc::ptr_eq(&self.0, &other.0) {
             return true;
         }
-        let self_guard = self.0.content.lock().unwrap();
-        let other_guard = other.0.content.lock().unwrap();
+        let self_guard = self.0.content.borrow();
+        let other_guard = other.0.content.borrow();
         *self_guard == *other_guard
     }
 }
@@ -110,31 +102,25 @@ impl<T: Clone + PartialEq> PartialEq for Mutable<T> {
 /// compile; only callers that demand `Eq` on the wrapper pay the bound.
 impl<T: Clone + Eq> Eq for Mutable<T> {}
 
-/// Content-based ordering. Mirrors `PartialEq`'s "lock both, compare
-/// inner values" pattern (with the same identity short-circuit so a
-/// self-comparison cannot self-deadlock). Locks are always acquired
-/// self-then-other in declaration order so the routine is deadlock-free
-/// against itself (cross-thread Mutable comparisons assume no concurrent
-/// reordering of the same pair of cells in opposite order, which the
-/// codegen never generates).
+/// Content-based ordering, like `PartialEq`.
 impl<T: Clone + PartialOrd> PartialOrd for Mutable<T> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if Arc::ptr_eq(&self.0, &other.0) {
+        if Rc::ptr_eq(&self.0, &other.0) {
             return Some(std::cmp::Ordering::Equal);
         }
-        let self_guard = self.0.content.lock().unwrap();
-        let other_guard = other.0.content.lock().unwrap();
+        let self_guard = self.0.content.borrow();
+        let other_guard = other.0.content.borrow();
         (*self_guard).partial_cmp(&*other_guard)
     }
 }
 
 impl<T: Clone + Ord> Ord for Mutable<T> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        if Arc::ptr_eq(&self.0, &other.0) {
+        if Rc::ptr_eq(&self.0, &other.0) {
             return std::cmp::Ordering::Equal;
         }
-        let self_guard = self.0.content.lock().unwrap();
-        let other_guard = other.0.content.lock().unwrap();
+        let self_guard = self.0.content.borrow();
+        let other_guard = other.0.content.borrow();
         (*self_guard).cmp(&*other_guard)
     }
 }
@@ -296,13 +282,13 @@ pub fn access<T: Clone>(mutable: Mutable<T>) -> T {
 }
 
 /// MetaModelica `referenceEq` on mutable cells: true iff both handles
-/// designate the same cell (same `Arc` allocation). Contents are irrelevant —
+/// designate the same cell (same `Rc` allocation). Contents are irrelevant —
 /// two distinct cells holding equal values are not reference-equal. Called
 /// from generated code (the builtin `referenceEq` lowering dispatches here
-/// because the `Arc` field is private). Takes references: the call site only
+/// because the `Rc` field is private). Takes references: the call site only
 /// needs identity, never ownership.
 pub fn referenceEq<T: Clone>(a: &Mutable<T>, b: &Mutable<T>) -> bool {
-    Arc::ptr_eq(&a.0, &b.0)
+    Rc::ptr_eq(&a.0, &b.0)
 }
 
 /// Identity of the underlying cell, same as the free [`referenceEq`] the
@@ -314,12 +300,12 @@ impl<T: Clone> metamodelica::ReferenceEq for Mutable<T> {
 }
 
 /// The cell is a shared allocation: report it, then trace the content once.
-/// A cell locked by another thread aborts the collection (`Err`).
+/// A cell being updated aborts the collection (`Err`).
 impl<T: Clone + MMTrace> MMTrace for Mutable<T> {
     fn mm_accept(&self, visitor: &mut dyn MMVisitor) -> Result<(), ()> {
         if visitor.visit_shared(
-            Arc::as_ptr(&self.0) as *const (),
-            Arc::strong_count(&self.0),
+            Rc::as_ptr(&self.0) as *const (),
+            Rc::strong_count(&self.0),
             std::any::type_name::<CellInner<T>>(),
         ) {
             let r = self.0.trace_content(visitor);
