@@ -16,9 +16,12 @@ if(OM_ENABLE_HDF5)
     message(STATUS "HDF5 not found; MAT v7.3 support (HAVE_HDF5) is off.")
   else()
     # Cached for Autoconf.mo.in, which is configured in another directory scope.
-    # The library alone, by full path: -lhdf5 misses Debian's serial build, and
-    # find_package's dependency closure would put its libz ahead of
-    # OpenModelica's zlib.
+    # The library alone: -lhdf5 misses Debian's serial build, and find_package's
+    # dependency closure would put its libz ahead of OpenModelica's zlib.
+    # By soname (-l:libhdf5_serial.so.103), not by path: the generated code is
+    # linked on the user's machine, which need not have this host's -dev
+    # package. ld finds it in lib/<triple>/omc, where linux-deploy.sh bundles
+    # it, or in its default directories.
     foreach(_lib IN LISTS HDF5_C_LIBRARIES)
       # Config mode (hdf5-config.cmake) names imported targets, not paths.
       # Arch's import is per-configuration, so IMPORTED_LOCATION is empty.
@@ -38,7 +41,18 @@ if(OM_ENABLE_HDF5)
         endif()
       endif()
       if(_path MATCHES "hdf5")
-        list(APPEND _om_hdf5_link ${_path})
+        file(REAL_PATH "${_path}" _real)
+        get_filename_component(_dir "${_real}" DIRECTORY)
+        get_filename_component(_name "${_real}" NAME)
+        set(_soname "")
+        if(_name MATCHES "^(.*\\.so\\.[0-9]+)")
+          set(_soname "${CMAKE_MATCH_1}")
+        endif()
+        if(_soname AND EXISTS "${_dir}/${_soname}")
+          list(APPEND _om_hdf5_link "-l:${_soname}")
+        else()
+          list(APPEND _om_hdf5_link ${_path})
+        endif()
       endif()
     endforeach()
     string(REPLACE ";" " " _om_hdf5_link "${_om_hdf5_link}")
