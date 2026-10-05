@@ -1,0 +1,40 @@
+// name:     fmi1_cs_import_setters
+// keywords: fmi import co-simulation
+// status:   correct
+// teardown_command: rm -rf vanDerPol_cs_st_FMU.mo binaries sources documentation resources model.png modelDescription.xml vanDerPol.log vanDerPol_info.json output.log
+// cflags:   -d=-newInst
+//
+// The four setters of an imported FMI 1.0 Co-Simulation FMU used to be called with the
+// function's own out_Values output as an extra argument, so the runtime's fmiType parameter
+// received it instead of the literal 2, matched neither branch and the setter silently did
+// nothing. fmi1SetInteger also declared output Real while the wrapper assigns its result to
+// Integer variables. Matching the exact call keeps the arity pinned: a regression returns 0
+// matches instead of 1.
+//
+// OpenModelica cannot export FMI 1.0 Co-Simulation FMUs, so this imports one of the FMUs
+// that ship with the testsuite. Only the generated wrapper is inspected, never simulated,
+// so the win32-only binaries inside the FMU do not matter.
+//
+
+importFMU("testedFMU/fmusdk1.0.2/vanDerPol.fmu"); getErrorString();
+
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "fmi1SetReal_OMC\\(fmi1cs, size\\(realValuesReferences, 1\\), realValuesReferences, realValues, 2\\)", 1, true, false);
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "fmi1SetInteger_OMC\\(fmi1cs, size\\(integerValuesReferences, 1\\), integerValuesReferences, integerValues, 2\\)", 1, true, false);
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "fmi1SetBoolean_OMC\\(fmi1cs, size\\(booleanValuesReferences, 1\\), booleanValuesReferences, booleanValues, 2\\)", 1, true, false);
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "fmi1SetString_OMC\\(fmi1cs, size\\(stringValuesReferences, 1\\), stringValuesReferences, stringValues, 2\\)", 1, true, false);
+
+// fmi1SetInteger returns Integer, which is what the wrapper assigns it to
+regex(readFile("vanDerPol_cs_st_FMU.mo"), "output Integer out_Values\\[size\\(integerValuesReferences, 1\\)\\] = integerValues;", 1, true, false);
+
+// Result:
+// "vanDerPol_cs_st_FMU.mo"
+// "Warning: module = fmi1_xml_get_default_experiment_start: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// Warning: module = fmi1_xml_get_default_experiment_stop: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// Warning: module = fmi1_xml_get_default_experiment_tolerance: returning default value, since no attribute was defined in modelDescription, log level = WARNING: FMI1XML
+// "
+// (1, {"fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, 2)"})
+// (1, {"fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 2)"})
+// (1, {"fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, 2)"})
+// (1, {"fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, 2)"})
+// (1, {"output Integer out_Values[size(integerValuesReferences, 1)] = integerValues;"})
+// endResult

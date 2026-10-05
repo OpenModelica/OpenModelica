@@ -1,3 +1,0 @@
-within TSP_DataReconciliationSimpleTests.Components;
-package BoundaryConditions
-end BoundaryConditions;

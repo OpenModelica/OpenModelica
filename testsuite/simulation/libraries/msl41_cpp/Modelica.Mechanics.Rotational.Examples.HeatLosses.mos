@@ -1,0 +1,64 @@
+// name:     Modelica.Mechanics.Rotational.Examples.HeatLosses
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4.1.0 with the Cpp runtime: DASSL does not converge and the simulation stops
+// before the stop time, so the result is not verified against the reference file.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.HeatLosses);
+compareVars :=
+{
+   "inertia1.w",
+   "inertia1.phi",
+   "inertia2.w",
+   "inertia2.phi",
+   "inertia3.w",
+   "inertia3.phi",
+   "inertia4.w",
+   "inertia4.phi",
+   "inertia5.w",
+   "inertia5.phi",
+   "inertia6.w",
+   "inertia6.phi",
+   "bearingFriction.mode",
+   "lossyGear.mode"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.SimpleSimulation
+// Modelica.Mechanics.Rotational.Examples.HeatLosses
+// {"inertia1.w", "inertia1.phi", "inertia2.w", "inertia2.phi", "inertia3.w", "inertia3.phi", "inertia4.w", "inertia4.phi", "inertia5.w", "inertia5.phi", "inertia6.w", "inertia6.phi", "bearingFriction.mode", "lossyGear.mode"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = 'time|inertia1.w|inertia1.phi|inertia2.w|inertia2.phi|inertia3.w|inertia3.phi|inertia4.w|inertia4.phi|inertia5.w|inertia5.phi|inertia6.w|inertia6.phi|bearingFriction.mode|lossyGear.mode', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Mechanics.Rotational.Examples.HeatLosses_res.mat
+// Messages: DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE
+//       In above,  R1 =   2.3058421708678E-06   R2 =   2.1990232555520E-12
+// DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE
+// DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE
+// ERROR  : solver: SimManager: Simulation stopped with errors before t = 1.000000
+// ERROR  : solver: SimManager: DASSL: solve failed with idid = -10
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
+// ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
+//
+// "true
+// "
+// ""
+// endResult

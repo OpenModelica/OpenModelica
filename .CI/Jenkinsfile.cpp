@@ -13,7 +13,13 @@ pipeline {
   stages {
     stage('Environment') {
       agent {
-        label 'linux'
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
+      }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
       }
       steps {
         script {
@@ -28,23 +34,34 @@ pipeline {
     }
     stage('cpp-test') {
       agent {
-         dockerfile {
-          additionalBuildArgs '--pull'
-          dir '.CI/cache'
+        node {
           label 'linux'
-          args "--mount type=volume,source=runtest-cpp-test-cache,target=/cache/runtest " +
-               "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+          customWorkspace 'ws/OpenModelica'
         }
       }
       environment {
         RUNTESTDB = "/cache/runtest/"
         LIBRARIES = "/cache/omlibrary"
       }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
       steps {
         script {
-          common.buildOMC('clang', 'clang++', '--without-hwloc')
-          common.makeLibsAndCache()
-          common.partest(true, '-cppruntime')
+          common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+                                 "--mount type=volume,source=runtest-cpp-test-cache,target=/cache/runtest " +
+                                 "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
+            common.buildOMC([
+              '-DCMAKE_BUILD_TYPE=Release',
+              '-DOM_USE_CCACHE=OFF',
+              '-DCMAKE_INSTALL_PREFIX=build',
+              '-DCMAKE_C_COMPILER=clang',
+              '-DCMAKE_CXX_COMPILER=clang++',
+              '-DOM_ENABLE_GUI_CLIENTS=OFF',
+              '-DOM_OMC_ENABLE_CPP_RUNTIME=ON'], 'cmake', false)
+            common.makeLibsAndCache()
+            common.partest(1, 1, true, '-cppruntime')
+          }
         }
       }
     }

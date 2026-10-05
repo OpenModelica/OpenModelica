@@ -263,7 +263,9 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
 
     /* new generated function getInputVarIndices, just fills the index list of all optimizable inputs */
     info.u_indices_real_vars = FixedVector<int>(info.u_size);
-    data->callback->getInputVarIndicesInOptimization(data, info.u_indices_real_vars.raw());
+    /* The loop-input table is the classic optimizer's; MOO does not use it. */
+    FixedVector<int> loopInputs(info.u_size);
+    data->callback->getInputVarIndicesInOptimization(data, info.u_indices_real_vars.raw(), loopInputs.raw());
     for (int u = 0; u < info.u_size; u++) {
         int u_index = info.u_indices_real_vars[u];
         u_bounds[u].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, u_index);

@@ -1,0 +1,43 @@
+// name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// DASSL's first step only converges after a restart, and the messages it
+// leaves differ per runtime. The results still match, so verify them but
+// suppress the messages.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair);
+compareVars :=
+{
+   "Q1.vbc",
+   "Q1.vbe",
+   "Q2.vbc",
+   "Q2.vbe"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
+// Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
+// {"Q1.vbc", "Q1.vbe", "Q2.vbc", "Q2.vbe"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = 'time|Q1.vbc|Q1.vbe|Q2.vbc|Q2.vbe', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

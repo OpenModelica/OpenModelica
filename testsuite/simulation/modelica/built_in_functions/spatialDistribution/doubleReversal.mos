@@ -1,0 +1,81 @@
+// name:                doubleReversal.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f doubleReversalSpatialDistribution*
+//
+// Velocity reverses twice (+2 -> -2 -> +2). The old one-sided direction
+// correction only caught the first reversal; the second left the node list
+// non-monotone.
+
+loadModel(Modelica); getErrorString();
+loadString("model doubleReversalSpatialDistribution
+  \"Single conveyor belt transporting with velocity reversing twice
+   (positive -> negative -> positive) and input from the left or right side.\"
+  Real leftInput;
+  Real rightInput;
+  Real leftOutput;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {0.0, 0.0};
+  Real v;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+equation
+  if posV then
+    leftInput = 1;
+    rightInput = 0;
+  else
+    leftInput = 0;
+    rightInput = -1;
+  end if;
+  if time < 1 then
+    v = 2;
+  elseif time < 2 then
+    v = -2;
+  else
+    v = 2;
+  end if;
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+end doubleReversalSpatialDistribution;"); getErrorString();
+
+// Simulate over 3 segments of 1s each: v=+2, v=-2, v=+2.
+simulate(doubleReversalSpatialDistribution, stopTime=3.0); getErrorString();
+
+// Phase 1: v=+2, in0=1
+val(leftOutput, 0.25);  val(rightOutput, 0.25);
+val(leftOutput, 0.75);  val(rightOutput, 0.75);
+// Phase 2: v=-2, in1=-1
+val(leftOutput, 1.25);  val(rightOutput, 1.25);
+val(leftOutput, 1.75);  val(rightOutput, 1.75);
+// Phase 3: v=+2, in0=1
+val(leftOutput, 2.25);  val(rightOutput, 2.25);
+val(leftOutput, 2.75);  val(rightOutput, 2.75);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "doubleReversalSpatialDistribution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'doubleReversalSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// -1.0
+// -1.0
+// -1.0
+// 1.0
+// -1.0
+// 1.0
+// 1.0
+// endResult

@@ -1,6 +1,7 @@
 // name:     DimSize
 // keywords: array
 // status:   correct
+// suite: disabled
 //
 // ??Error - not yet implemented
 // Drmodelica: 7.7 Built-in Functions (p. 225)

@@ -35,6 +35,7 @@
 
 encapsulated uniontype NFComplexType
   import NFInstNode.InstNode;
+  import NFInstNode;
   import Record = NFRecord;
   import UnorderedMap;
 
@@ -49,29 +50,31 @@ public
        type SomeType
          extends Real;
        end SomeType;"
-    InstNode baseClass;
+    NFInstNode.ScopeRef baseClass "Weakly: the class tree owns it.";
   end EXTENDS_TYPE;
 
   record CONNECTOR
-    list<InstNode> potentials;
-    list<InstNode> flows;
-    list<InstNode> streams;
+    list<NFInstNode.ScopeRef> potentials "Weakly: the class tree owns them.";
+    list<NFInstNode.ScopeRef> flows;
+    list<NFInstNode.ScopeRef> streams;
   end CONNECTOR;
 
   record EXPANDABLE_CONNECTOR
-    list<InstNode> potentiallyPresents;
-    list<InstNode> expandableConnectors;
+    list<NFInstNode.ScopeRef> potentiallyPresents "Weakly: the class tree owns them.";
+    list<NFInstNode.ScopeRef> expandableConnectors;
   end EXPANDABLE_CONNECTOR;
 
   record RECORD
-    InstNode constructor;
+    NFInstNode.ScopeRef constructor "Weakly: the class tree owns it.";
     array<Record.Field> fields;
     UnorderedMap<String, Integer> indexMap;
   end RECORD;
 
   record EXTERNAL_OBJECT
-    InstNode constructor;
-    InstNode destructor;
+    "Strong: a structor is stored here instead of in the class tree, so this
+     field is its only owner."
+    NFInstNode.ScopeRef constructor "Weakly: the class tree owns them.";
+    NFInstNode.ScopeRef destructor;
   end EXTERNAL_OBJECT;
 
 annotation(__OpenModelica_Interface="nf_frontend");

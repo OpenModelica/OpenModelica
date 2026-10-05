@@ -1,5 +1,6 @@
 // status: correct
 // cflags: -d=-newInst
+// suite: stackoverflow
 
 loadString("model StackOverflowTest
   function f

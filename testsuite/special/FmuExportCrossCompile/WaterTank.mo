@@ -1,7 +1,7 @@
 package WaterTank
   model SingleWaterTank
     import Modelica.Constants.pi;
-    import SI = Modelica.SIunits;
+    import SI = Modelica.Units.SI;
     // Tank
     parameter SI.Area area = 1.0 "Area of tank";
     parameter Real gravity = 9.81;
@@ -58,7 +58,7 @@ equation
  drain_p_e = valve_powerOut_e;
  valve_powerOut_f = drain_p_f;
   
-  annotation(defaultComponentName = "tank", Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, initialScale = 0.2), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.VerticalCylinder), Rectangle(extent = DynamicSelect({{-100, -100}, {100, 10}}, {{-100, -100}, {100, (-100) + 200 * level / height}}), lineColor = {0, 0, 0}, fillColor = {85, 170, 255}, fillPattern = FillPattern.VerticalCylinder), Line(points = {{-100, 100}, {-100, -100}, {100, -100}, {100, 100}}, color = {0, 0, 0}), Text(extent = {{-95, 60}, {95, 40}}, lineColor = {0, 0, 0}, textString = "level ="), Text(extent = {{-95, -24}, {95, -44}}, lineColor = {0, 0, 0}, textString = DynamicSelect("%level_start", String(level_start, minimumLength = 1, significantDigits = 2)))}), uses(Modelica(version = "3.2.2")));
+  annotation(defaultComponentName = "tank", Icon(coordinateSystem(preserveAspectRatio = true, extent = {{-100, -100}, {100, 100}}, initialScale = 0.2), graphics = {Rectangle(extent = {{-100, 100}, {100, -100}}, lineColor = {255, 255, 255}, fillColor = {255, 255, 255}, fillPattern = FillPattern.VerticalCylinder), Rectangle(extent = DynamicSelect({{-100, -100}, {100, 10}}, {{-100, -100}, {100, (-100) + 200 * level / height}}), lineColor = {0, 0, 0}, fillColor = {85, 170, 255}, fillPattern = FillPattern.VerticalCylinder), Line(points = {{-100, 100}, {-100, -100}, {100, -100}, {100, 100}}, color = {0, 0, 0}), Text(extent = {{-95, 60}, {95, 40}}, lineColor = {0, 0, 0}, textString = "level ="), Text(extent = {{-95, -24}, {95, -44}}, lineColor = {0, 0, 0}, textString = DynamicSelect("%level_start", String(level_start, minimumLength = 1, significantDigits = 2)))}), uses(Modelica(version = "4.1.0")));
   end SingleWaterTank;
   
   model Control
@@ -72,7 +72,7 @@ equation
     elsewhen level <= minlevel then
       valve = 0.0;
     end when;
-    annotation(uses(Modelica(version = "3.2.2")));
+    annotation(uses(Modelica(version = "4.1.0")));
   end Control;
 
   model TestSingleWaterTank

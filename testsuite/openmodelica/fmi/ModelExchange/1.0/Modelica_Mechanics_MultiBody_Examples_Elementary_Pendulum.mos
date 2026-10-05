@@ -3,11 +3,12 @@
 // status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.lib Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.makefile Modelica_from_nxy_*
 // cflags: -d=-newInst
+// suite: disabled
 // Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.2"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="1.0"); getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu", loglevel=0); getErrorString();
 loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();

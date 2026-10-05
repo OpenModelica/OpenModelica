@@ -3,6 +3,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp -d=-newInst
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library
@@ -14,19 +15,9 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings);
 timeout := 120;
 
-referenceFile := "../../../ReferenceFiles/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat";
+referenceFile := "../../../ReferenceFiles/msl41/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat";
 compareVars :=
-{
-   "body1.frame_a.r_0[1]",
-   "body1.frame_a.r_0[2]",
-   "body1.frame_a.r_0[3]",
-   "body1.v_0[1]",
-   "body1.v_0[2]",
-   "body1.v_0[3]",
-   "body1.w_a[1]",
-   "body1.w_a[2]",
-   "body1.w_a[3]"
-};
+{"body1.frame_a.r_0[1]", "body1.frame_a.r_0[2]", "body1.frame_a.r_0[3]", "body1.v_0[1]", "body1.v_0[2]", "body1.v_0[3]", "body1.w_a[1]", "body1.w_a[2]", "body1.w_a[3]"};
 
 setDebugFlags("hpcom"); getErrorString();
 setCommandLineOptions("+n=2 +hpcomScheduler=list"); getErrorString();

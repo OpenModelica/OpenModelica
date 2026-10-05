@@ -1,0 +1,59 @@
+// name: arrayLayoutNewBackend
+// keywords: array column major new backend
+// status: correct
+// teardown_command: rm -f *CppArrayLayout*
+
+// The new backend keeps arrays non-scalarized. The arrays of the Cpp runtime are stored
+// column major, so the elements of an asymmetric 2x3 array must end up under the right name
+// in the result and get the right start value.
+
+setCommandLineOptions("--newBackend --simCodeTarget=Cpp --simCodeScalarize=false");
+getErrorString();
+
+loadString("
+model CppArrayLayout
+  parameter Real p[2,3] = {{1, 2, 3}, {4, 5, 6}};
+  Real z[2,3](start = {{1, 2, 3}, {4, 5, 6}}, each fixed = true);
+  Real y[2,3];
+equation
+  for i in 1:2 loop
+    for j in 1:3 loop
+      der(z[i,j]) = 0;
+      y[i,j] = 100 * i + 10 * j + time;
+    end for;
+  end for;
+  annotation(experiment(StopTime = 1));
+end CppArrayLayout;
+");
+getErrorString();
+
+simulate(CppArrayLayout);
+getErrorString();
+
+val(p[2,1], 0);
+val(p[1,3], 0);
+val(z[2,1], 1);
+val(z[1,3], 1);
+val(y[1,2], 1);
+val(y[2,1], 1);
+val(y[2,3], 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CppArrayLayout_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CppArrayLayout', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 4.0
+// 3.0
+// 4.0
+// 3.0
+// 121.0
+// 211.0
+// 231.0
+// endResult

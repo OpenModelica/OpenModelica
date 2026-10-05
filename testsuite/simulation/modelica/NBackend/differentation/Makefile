@@ -4,6 +4,9 @@ TESTFILES = \
 adjoint_jacobian1.mos \
 adjoint_jacobian2.mos \
 adjoint_jacobian3.mos \
+adjoint_jacobian4.mos \
+adjoint_jacobian5.mos \
+symbolicJacobianEvaluation.mos \
 allTheBuildins.mos \
 diff_subs.mos \
 arrayDiff.mos \
@@ -11,6 +14,11 @@ arrayScalar.mos \
 algebraicLoop.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
+derSeedJacobian.mos \
+tupleAssignmentDerivative.mos \
+functionInputDerivative.mos \
+iteratorElementDerivative.mos \
+recordArgumentDerivative.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -56,4 +64,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

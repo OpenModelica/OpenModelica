@@ -1,6 +1,7 @@
 // name: multiRate_02
 // status: correct
 // teardown_command: rm -rf SlowFastDynamics_* *.log SlowFastDynamics.bat
+// suite: disabled
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 

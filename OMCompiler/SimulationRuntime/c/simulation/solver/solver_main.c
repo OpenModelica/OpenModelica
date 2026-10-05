@@ -41,11 +41,9 @@
 #include "ida_solver.h"
 #include "delay.h"
 #include "events.h"
-#include "util/parallel_helper.h"
 #include "util/varinfo.h"
 #include "util/omc_strdup.h"
 #include "model_help.h"
-#include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 #include "simulation/solver/external_input.h"
 #include "synchronous.h"
@@ -282,6 +280,43 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   return retValue;
 }
 
+/*! \fn updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [solverInfo]
+ *
+ *  Re-read the states' nominal (and, for gbode, min and max) attributes. A
+ *  nominal that is a parameter expression is only computed by
+ *  updateBoundVariableAttributes, inside initializeModel, which runs after
+ *  initializeSolverData because DAE mode needs the solver during initialization;
+ *  until then the solver holds the modelDescription default of 1.0.
+ */
+int updateSolverNominals(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  switch (solverInfo->solverMethod)
+  {
+  case S_GBODE:
+    gbode_setVarAttributes(data, solverInfo->solverData);
+    break;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case S_DASSL:
+    dassl_setNominals(data, solverInfo->solverData);
+    break;
+#endif
+#ifdef WITH_SUNDIALS
+  case S_IDA:
+    return ida_solver_setNominals(data, threadData, solverInfo->solverData);
+  case S_CVODE:
+    return cvode_solver_setNominals(data, threadData, solverInfo->solverData);
+#endif
+  default:
+    break;
+  }
+
+  return 0;
+}
+
 /*! \fn freeSolver(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  \param [ref] [data]
@@ -385,15 +420,16 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
   {
     int success = 0;
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    if(initialization(data, threadData, init_initMethod, init_file, init_time))
+    /* A raised error is reported by the catch below. */
+    if (initialization(data, threadData, init_initMethod, init_file, init_time) && !OMC_ERROR_RAISED())
     {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }
-    if (!retValue)
+    if (!retValue && !OMC_ERROR_RAISED())
     {
       if (data->simulationInfo->homotopySteps == 0) {
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
@@ -404,9 +440,9 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
       }
     }
 
-    success = 1;
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
     if (!success)
@@ -519,13 +555,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenceTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
-#ifdef USE_PARJAC
-      infoStreamPrint(OMC_LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
-      int chunk_size;
-      omp_sched_t kind;
-      omp_get_schedule(&kind, &chunk_size);
-      infoStreamPrint(OMC_LOG_STATS, 0, "Schedule: %i Chunk Size: %i", kind, chunk_size);
-#endif
 
       messageClose(OMC_LOG_STATS);
     }
@@ -600,7 +629,9 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 int solver_main(DATA* data, threadData_t *threadData, const char* init_initMethod, const char* init_file,
     double init_time, int solverID, const char* outputVariablesAtEnd, const char *argv_0)
 {
-  int i, retVal = 1, initSolverInfo = 0;
+  int i;
+  /* Read after a longjmp into the catch below. */
+  volatile int retVal = 1, initSolverInfo = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = data->simulationInfo;
@@ -641,7 +672,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
     messageCloseWarning(OMC_LOG_STDOUT);
   }
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
   /*  initialize external input structure */
@@ -661,6 +692,11 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (0 == retVal){
     retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
     omc_alloc_interface.collect_a_little();
+  }
+
+  /* the nominal values are only final now */
+  if (0 == retVal){
+    retVal = updateSolverNominals(data, threadData, &solverInfo);
   }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -748,9 +784,10 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   embedded_server_deinit(data->embeddedServerState);
   embedded_server_unload_functions(dllHandle);
 #endif
+  if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
   /*  free external input data */
@@ -951,7 +988,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
     for(i = 0; i < data->modelData->nVariablesString; i++)
       if(!strcmp(p, data->modelData->stringVarsData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
+        fprintf(stdout, ",%s=\"%s\"", p, omc_string_data((data->localData[0])->stringVars[i]));
 
     for(i = 0; i < data->modelData->nAliasReal; i++)
       if(!strcmp(p, data->modelData->realAlias[i].info.name))
@@ -979,7 +1016,7 @@ static void writeOutputVars(char* names, DATA* data)
       }
     for(i = 0; i < data->modelData->nAliasString; i++)
       if(!strcmp(p, data->modelData->stringAlias[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
+        fprintf(stdout, ",%s=\"%s\"", p, omc_string_data((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
 
     /* parameters */
     for(i = 0; i < data->modelData->nParametersReal; i++)
@@ -996,7 +1033,7 @@ static void writeOutputVars(char* names, DATA* data)
 
     for(i = 0; i < data->modelData->nParametersString; i++)
       if(!strcmp(p, data->modelData->stringParameterData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo->stringParameter[i]));
+        fprintf(stdout, ",%s=\"%s\"", p, omc_string_data(data->simulationInfo->stringParameter[i]));
 
     /* move to next */
     p = strtok(NULL, "!");

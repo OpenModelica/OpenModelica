@@ -1,6 +1,7 @@
 // name: TryExtends
 // status: correct
 // cflags: -d=-newInst
+// suite: metamodelica
 //
 // Checks that the compiler handles try in inherited functions correctly.
 //

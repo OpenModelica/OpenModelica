@@ -1,6 +1,7 @@
 // name: OperatorFunction2
 // keywords: operator
 // status: correct
+// suite: disabled
 //
 // tests the shorthand operator function keyword, extension should be illegal
 //

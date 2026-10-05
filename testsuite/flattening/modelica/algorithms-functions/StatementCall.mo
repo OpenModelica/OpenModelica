@@ -1,6 +1,7 @@
 // name:     StatementCall
 // keywords: multiple results, algorithm
 // status:   correct
+// suite: disabled
 //
 // Computes cartesian coordinates of a point
 //

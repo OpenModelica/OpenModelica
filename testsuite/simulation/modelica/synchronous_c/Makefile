@@ -19,6 +19,7 @@ subSample.mos \
 subSuperSample1.mos \
 subSuperSample2.mos \
 firstTick.mos \
+clockToBoolean.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -63,4 +64,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

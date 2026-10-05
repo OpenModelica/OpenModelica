@@ -1,0 +1,60 @@
+// name: ResultFileArrowTimeAlias
+// keywords: result file arrow alias time
+// status: correct
+// suite: arrow
+// teardown_command: rm -f ResultFileArrowTimeAlias_* ResultFileArrowTimeAlias ResultFileArrowTimeAlias.c ResultFileArrowTimeAlias.exe ResultFileArrowTimeAlias.libs ResultFileArrowTimeAlias.log ResultFileArrowTimeAlias.makefile ResultFileArrowTimeAlias.o output.log
+// cflags: --newBackend
+//
+// Aliases of time (the new backend produces them): the .arrow file shares
+// column 0, a negated alias with scale -1, like the .mat's negative dataInfo
+// index.
+
+loadString("
+model ResultFileArrowTimeAlias
+  Real x(start=1, fixed=true);
+  Real t \"alias of time\";
+  Real negTime \"negated alias of time\";
+equation
+  der(x) = -x;
+  t = time;
+  negTime = -time;
+end ResultFileArrowTimeAlias;
+"); getErrorString();
+
+simulate(ResultFileArrowTimeAlias, stopTime=1.0, numberOfIntervals=10, outputFormat="arrow", fileNamePrefix="ResultFileArrowTimeAlias_a"); getErrorString();
+simulate(ResultFileArrowTimeAlias, stopTime=1.0, numberOfIntervals=10, outputFormat="mat", fileNamePrefix="ResultFileArrowTimeAlias_m"); getErrorString();
+readSimulationResultVars("ResultFileArrowTimeAlias_a_res.arrow");
+{val(t, 0.55, "ResultFileArrowTimeAlias_a_res.arrow"), val(t, 0.55, "ResultFileArrowTimeAlias_m_res.mat")};
+{val(negTime, 0.55, "ResultFileArrowTimeAlias_a_res.arrow"), val(negTime, 0.55, "ResultFileArrowTimeAlias_m_res.mat")};
+diffSimulationResults("ResultFileArrowTimeAlias_a_res.arrow", "ResultFileArrowTimeAlias_m_res.mat", "ResultFileArrowTimeAlias_diff", relTol=1e-12); getErrorString();
+filterSimulationResults("ResultFileArrowTimeAlias_a_res.arrow", "ResultFileArrowTimeAlias_f.mat", {"negTime", "t"}); getErrorString();
+{val(t, 0.55, "ResultFileArrowTimeAlias_f.mat"), val(negTime, 0.55, "ResultFileArrowTimeAlias_f.mat")};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileArrowTimeAlias_a_res.arrow",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrowTimeAlias_a', options = '', outputFormat = 'arrow', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "ResultFileArrowTimeAlias_m_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ResultFileArrowTimeAlias_m', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"der(x)", "negTime", "t", "time", "x"}
+// {0.55, 0.55}
+// {-0.55, -0.55}
+// (true, {})
+// ""
+// true
+// ""
+// {0.55, -0.55}
+// endResult

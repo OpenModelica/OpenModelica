@@ -1,0 +1,43 @@
+// name: zeroSizeRecordField
+// keywords: NewBackend record zero size array
+// status: correct
+// suite: cSources
+//
+// A record equation with a zero size array field must not fail when resolving its skips.
+
+loadString("
+model ZeroSizeRecordField
+  record R
+    Real a;
+    Real x[0];
+    Real b;
+  end R;
+  parameter R p(a = 1, x = zeros(0), b = 2);
+  R r1;
+  R r2;
+equation
+  r1 = p;
+  r2.a = time * r1.b;
+  r2.x = r1.x;
+  r2.b = r2.a + r1.a;
+end ZeroSizeRecordField;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ZeroSizeRecordField); getErrorString();
+val(r2.b, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ZeroSizeRecordField_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroSizeRecordField', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// endResult

@@ -111,6 +111,7 @@ protected
   Integer size, newsize;
   list<list<Integer>> eqns_1, unassignedStates, unassignedEqns;
 algorithm
+  Error.checkCancel();
   if listEmpty(inEqns) then
     Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction called with empty list of equations!"});
     if Flags.isSet(Flags.OPT_DAE_DUMP) then
@@ -386,31 +387,25 @@ protected function minimalStructurallySingularSystemMSS
   input list<list<Integer>> inStateIndxsAcc;
   input list<list<Integer>> inUnassEqnsAcc;
   input list<Integer> inDiscEqnsAcc;
-  output list<list<Integer>> outEqnsLst;
-  output list<list<Integer>> outStateIndxs;
-  output list<list<Integer>> outUnassEqnsAcc;
-  output list<Integer> outDiscEqns;
+  output list<list<Integer>> outEqnsLst = inEqnsLstAcc;
+  output list<list<Integer>> outStateIndxs = inStateIndxsAcc;
+  output list<list<Integer>> outUnassEqnsAcc = inUnassEqnsAcc;
+  output list<Integer> outDiscEqns = inDiscEqnsAcc;
+protected
+  Integer markIdx = mark;
+  list<Integer> unassignedEqns, eqnsLst, stateIndxs;
+  Boolean b;
 algorithm
-  (outEqnsLst, outStateIndxs, outUnassEqnsAcc, outDiscEqns) := match inEqnsLst
-    local
-      list<Integer> ilst, unassignedEqns, eqnsLst, discEqns, stateIndxs;
-      list<list<Integer>> rest;
-      Boolean b;
-
-    case {}
-    then (inEqnsLstAcc, inStateIndxsAcc, inUnassEqnsAcc, inDiscEqnsAcc);
-
-    case ilst::rest algorithm
-      // print("Eqns " + stringDelimitList(List.map(ilst, intString), ", ") + "\n");
-      (unassignedEqns, eqnsLst, discEqns) := List.fold3(ilst, unassignedContinuesEqns, vars, inAssignments2, m, ({}, {}, inDiscEqnsAcc));
-      // print("unassignedEqns " + stringDelimitList(List.map(unassignedEqns, intString), ", ") + "\n");
-      stateIndxs := List.fold2(ilst, statesInEquations, (m, statemark, mark), inAssignments1, {});
-      // print("stateIndxs " + stringDelimitList(List.map(stateIndxs, intString), ", ") + "\n");
-      b := intGe(listLength(stateIndxs), listLength(unassignedEqns));
-      singularSystemError(b, stateIndxs, unassignedEqns, eqnsLst, inSystem, inShared, inAssignments1, inAssignments2, inArg);
-      (outEqnsLst, outStateIndxs, outUnassEqnsAcc, outDiscEqns) := minimalStructurallySingularSystemMSS(rest, inSystem, inShared, inAssignments1, inAssignments2, inArg, statemark, mark+1, m, vars, eqnsLst::inEqnsLstAcc, stateIndxs::inStateIndxsAcc, unassignedEqns::inUnassEqnsAcc, discEqns);
-    then (outEqnsLst, outStateIndxs, outUnassEqnsAcc, outDiscEqns);
-  end match;
+  for ilst in inEqnsLst loop
+    (unassignedEqns, eqnsLst, outDiscEqns) := List.fold3(ilst, unassignedContinuesEqns, vars, inAssignments2, m, ({}, {}, outDiscEqns));
+    stateIndxs := List.fold2(ilst, statesInEquations, (m, statemark, markIdx), inAssignments1, {});
+    b := intGe(listLength(stateIndxs), listLength(unassignedEqns));
+    singularSystemError(b, stateIndxs, unassignedEqns, eqnsLst, inSystem, inShared, inAssignments1, inAssignments2, inArg);
+    outEqnsLst := eqnsLst::outEqnsLst;
+    outStateIndxs := stateIndxs::outStateIndxs;
+    outUnassEqnsAcc := unassignedEqns::outUnassEqnsAcc;
+    markIdx := markIdx + 1;
+  end for;
 end minimalStructurallySingularSystemMSS;
 
 protected function singularSystemError "author: Frenkel TUD 2012-04
@@ -1266,7 +1261,11 @@ algorithm
   ht := HashTableCrIntToExp.emptyHashTable();
   (systs, shared, ht) := dynamicStateSelection_mapEqsystem(systs, shared, inArgs, 1, ht);
   if intGt(BaseHashTable.hashTableCurrentSize(ht), 0) then
-    (systs, shared) :=  List.map1Fold(systs, replaceDummyDerivatives, ht, shared);
+    for syst in systs loop
+      BackendDAEUtil.traverseBackendDAEExpsEqns(syst.removedEqs, Expression.traverseSubexpressionsHelper,
+                                                (replaceDummyDerivativesExp, ht));
+    end for;
+    replaceDummyDerivativesShared(shared, ht);
   end if;
   outDAE := BackendDAE.DAE(systs, shared);
 end dynamicStateSelection;
@@ -2504,41 +2503,33 @@ protected function getAdjacencyMatrixLevelEquations
   input array<Integer> stateindexs;
   input AvlTreePathFunction.Tree functionTree;
   input Boolean isInitial;
+protected
+  list<Integer> row, rowindxs, negrow;
+  Integer i1, rowSize, size, idx = index, sidx = sindex;
 algorithm
-  () := match iEqns
-    local
-      list<BackendDAE.Equation> rest;
-      AvlSetInt.Tree rowTree;
-      list<Integer> row,rowindxs,negrow;
-      BackendDAE.Equation e;
-      Integer i1,rowSize,size;
-
-    case {} then ();
-
-    // i < n
-    case e::rest algorithm
-        // compute the row
-        (rowTree,size) := BackendDAEUtil.adjacencyRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY(), isInitial);
-        row := AvlSetInt.listKeys(rowTree);
-        rowSize := sindex + size;
-        i1 := index+1;
-        rowindxs := List.intRange2(sindex+1, rowSize);
-        List.fold1r(rowindxs,arrayUpdate,i1,mapIncRowEqn);
-        arrayUpdate(mapEqnIncRow,i1,rowindxs);
-        // replace state indexes
-        row := List.map1(row,replaceStateIndex,stateindexs);
-        // update m
-        List.fold1r(rowindxs,arrayUpdate,row,m);
-        // update mT
-        (row,negrow) := List.split1OnTrue(row, intGt, 0);
-        List.fold1(row,Array.appendToElement,rowindxs,mT);
-        row := List.map(negrow,intAbs);
-        rowindxs := List.map(rowindxs,intNeg);
-        List.fold1(row,Array.appendToElement,rowindxs,mT);
-        // next equation
-        getAdjacencyMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree, isInitial);
-      then ();
-  end match;
+  for e in iEqns loop
+    // compute the row
+    (row, size) := BackendDAEUtil.adjacencyRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), {}, isInitial);
+    row := BackendDAEUtil.uniqueRow(row);
+    rowSize := sidx + size;
+    i1 := idx+1;
+    rowindxs := List.intRange2(sidx+1, rowSize);
+    List.fold1r(rowindxs,arrayUpdate,i1,mapIncRowEqn);
+    arrayUpdate(mapEqnIncRow,i1,rowindxs);
+    // replace state indexes
+    row := List.map1(row,replaceStateIndex,stateindexs);
+    // update m
+    List.fold1r(rowindxs,arrayUpdate,row,m);
+    // update mT
+    (row,negrow) := List.split1OnTrue(row, intGt, 0);
+    List.fold1(row,Array.appendToElement,rowindxs,mT);
+    row := List.map(negrow,intAbs);
+    rowindxs := List.map(rowindxs,intNeg);
+    List.fold1(row,Array.appendToElement,rowindxs,mT);
+    // next equation
+    idx := i1;
+    sidx := rowSize;
+  end for;
 end getAdjacencyMatrixLevelEquations;
 
 protected function partitionSystem
@@ -2569,26 +2560,19 @@ protected function partitionSystem1
   input array<Integer> rowmarkarr;
   input array<Integer> collmarkarr;
   input Integer iNSystems;
-  output Integer oNSystems;
+  output Integer oNSystems = iNSystems;
+protected
+  list<Integer> rows;
 algorithm
-  oNSystems := match index
-    local
-      list<Integer> rows;
-      Integer nsystems;
-    case 0 then iNSystems-1;
-    case _
-      guard not intGt(rowmarkarr[index],0)
-      algorithm
-        // if unmarked then increse nsystems
-        arrayUpdate(rowmarkarr,index,iNSystems);
-        rows := List.select(m[index], Util.intPositive);
-        nsystems := partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
-      then
-        partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,nsystems);
-    else algorithm
-      // if marked skip it
-    then partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,iNSystems);
-  end match;
+  for i in index:-1:1 loop
+    if not intGt(rowmarkarr[i],0) then
+      // if unmarked then increse nsystems
+      arrayUpdate(rowmarkarr,i,oNSystems);
+      rows := List.select(m[i], Util.intPositive);
+      oNSystems := partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,oNSystems);
+    end if;
+  end for;
+  oNSystems := oNSystems-1;
 end partitionSystem1;
 
 protected function partitionSystemstraverseRows
@@ -2600,53 +2584,41 @@ protected function partitionSystemstraverseRows
   input array<Integer> collmarkarr;
   input Integer iNSystems;
   output Integer oNSystems;
+protected
+  list<Integer> rows = iRows, queue = iQueue, colls;
+  Integer r;
 algorithm
-  oNSystems := match(iRows,iQueue)
-    local
-      list<Integer> rest,colls,rows;
-      Integer r;
-    case ({},{}) then iNSystems+1;
-    case ({},_)
-      then
-        partitionSystemstraverseRows(iQueue,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
-    case (r::rest,_)
-      guard not intGt(collmarkarr[r],0)
-      algorithm
+  while true loop
+    if listEmpty(rows) then
+      if listEmpty(queue) then
+        oNSystems := iNSystems+1;
+        return;
+      end if;
+      rows := queue;
+      queue := {};
+    else
+      r::rows := rows;
+      if not intGt(collmarkarr[r],0) then
         // if unmarked then add
         arrayUpdate(collmarkarr,r,iNSystems);
         colls := List.select(mT[r], Util.intPositive);
         colls := List.select1r(colls,Matching.isUnAssigned, rowmarkarr);
         List.fold1(colls, markTrue, iNSystems, rowmarkarr);
-        rows := List.flatten(List.map1r(colls,arrayGet,m));
-        rows := listAppend(List.select1r(rows,Matching.isUnAssigned, collmarkarr), iQueue);
-      then
-        partitionSystemstraverseRows(rest,rows,m,mT,rowmarkarr,collmarkarr,iNSystems);
-    case (_::rest,_)
-      algorithm
-        // if marked skipp it
-      then
-        partitionSystemstraverseRows(rest,iQueue,m,mT,rowmarkarr,collmarkarr,iNSystems);
-  end match;
+        queue := listAppend(List.select1r(List.flatten(List.map1r(colls,arrayGet,m)),Matching.isUnAssigned, collmarkarr), queue);
+      end if;
+    end if;
+  end while;
 end partitionSystemstraverseRows;
 
 protected function partitionSystemSplitt
   input Integer index;
   input array<Integer> rowmarkarr;
   input array<list<Integer>> systsarr;
-  output array<list<Integer>> osystsarr;
+  output array<list<Integer>> osystsarr = systsarr;
 algorithm
-  osystsarr := match index
-    local
-      Integer i;
-      array<list<Integer>> arr;
-    case 0 then systsarr;
-    case _
-      algorithm
-        i := rowmarkarr[index];
-        arr := Array.consToElement(i, index, systsarr);
-      then
-        partitionSystemSplitt(index-1,rowmarkarr,arr);
-  end match;
+  for i in index:-1:1 loop
+    osystsarr := Array.consToElement(rowmarkarr[i], i, osystsarr);
+  end for;
 end partitionSystemSplitt;
 
 protected function processComps4New
@@ -4021,80 +3993,80 @@ algorithm
 end replaceFirstOrderDerivativesExp;
 
 protected function replaceDummyDerivativesExp "author: Frenkel TUD 2012-08"
-  input DAE.Exp inExp;
-  input HashTableCrIntToExp.HashTable iht;
-  output DAE.Exp outExp;
-  output HashTableCrIntToExp.HashTable ht;
+  input output DAE.Exp exp;
+  input output HashTableCrIntToExp.HashTable ht;
+protected
+  DAE.ComponentRef cr;
+  Integer i;
+  DAE.Exp e;
 algorithm
-  (outExp,ht) := matchcontinue(inExp,iht)
-    local
-      DAE.Exp e;
-      DAE.ComponentRef cr;
-      Integer i;
-      String msg;
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr),DAE.ICONST(i)}),ht)
+  exp := match exp
+    case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr),DAE.ICONST(i)})
       algorithm
-        e := BaseHashTable.get((cr,i),ht);
-      then (e,ht);
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),ht)
+        try
+          e := BaseHashTable.get((cr,i),ht);
+        else
+          warnDummyDerivativeFailed(exp);
+          e := exp;
+        end try;
+      then e;
+    case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)})
       algorithm
-        e := BaseHashTable.get((cr,1),ht);
-      then (e,ht);
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht)
+        try
+          e := BaseHashTable.get((cr,1),ht);
+        else
+          e := exp;
+        end try;
+      then e;
+    case DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_)
       algorithm
-        msg := "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(e) + "!";
-        Error.addMessage(Error.COMPILER_WARNING, {msg});
-      then (e,ht);
-    else (inExp,iht);
-  end matchcontinue;
+        warnDummyDerivativeFailed(exp);
+      then exp;
+    else exp;
+  end match;
 end replaceDummyDerivativesExp;
 
-protected function replaceDummyDerivatives
-"author Frenkel TUD 2012-08"
-  input BackendDAE.EqSystem inSyst;
-  input HashTableCrIntToExp.HashTable ht;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSyst = inSyst;
-  output BackendDAE.Shared outShared = inShared;
+protected function warnDummyDerivativeFailed
+  input DAE.Exp exp;
 algorithm
-  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.aliasVars, replaceDummyDerivativesVar, ht);
-  BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, replaceDummyDerivativesVar, ht);
-  BackendDAEUtil.traverseBackendDAEExpsEqns( outShared.initialEqs, Expression.traverseSubexpressionsHelper,
+  Error.addMessage(Error.COMPILER_WARNING, {"IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(exp) + "!"});
+end warnDummyDerivativeFailed;
+
+protected function replaceDummyDerivativesShared
+"author Frenkel TUD 2012-08"
+  input BackendDAE.Shared shared;
+  input HashTableCrIntToExp.HashTable ht;
+algorithm
+  BackendVariable.traverseBackendDAEVarsWithUpdate(shared.aliasVars, replaceDummyDerivativesVar, ht);
+  BackendVariable.traverseBackendDAEVarsWithUpdate(shared.globalKnownVars, replaceDummyDerivativesVar, ht);
+  BackendDAEUtil.traverseBackendDAEExpsEqns( shared.initialEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-  BackendDAEUtil.traverseBackendDAEExpsEqns( outSyst.removedEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( shared.removedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-  BackendDAEUtil.traverseBackendDAEExpsEqns( outShared.removedEqs, Expression.traverseSubexpressionsHelper,
-                                                       (replaceDummyDerivativesExp, ht) );
-end replaceDummyDerivatives;
+end replaceDummyDerivativesShared;
 
 protected function replaceDummyDerivativesVar
 "author: Frenkel TUD 2012-08"
- input BackendDAE.Var inVar;
- input HashTableCrIntToExp.HashTable inHt;
- output BackendDAE.Var outVar;
- output HashTableCrIntToExp.HashTable outHt;
+  input output BackendDAE.Var var;
+  input output HashTableCrIntToExp.HashTable ht;
+protected
+  DAE.Exp e, e1;
+  Option<DAE.VariableAttributes> attr;
 algorithm
-  (outVar,outHt) := matchcontinue (inVar,inHt)
-    local
-      BackendDAE.Var v,v1;
-      HashTableCrIntToExp.HashTable ht;
-      DAE.Exp e,e1;
-      Option<DAE.VariableAttributes> attr;
-
-    case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht)
+  () := match var.bindExp
+    case SOME(e)
       algorithm
         (e1, _) := Expression.traverseExpBottomUp(e, replaceDummyDerivativesExp, ht);
-        v1 := BackendVariable.setBindExp(v, SOME(e1));
-        (attr,_) := BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
-        v1 := BackendVariable.setVarAttributes(v1,attr);
-      then (v1,ht);
-
-    case  (v as BackendDAE.VAR(values=attr),ht)
-      algorithm
-        (attr,_) := BackendDAEUtil.traverseBackendDAEVarAttr(attr,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
-        v1 := BackendVariable.setVarAttributes(v,attr);
-      then (v1,ht);
-  end matchcontinue;
+        if not referenceEq(e, e1) then
+          var := BackendVariable.setBindExp(var, SOME(e1));
+        end if;
+      then ();
+    else ();
+  end match;
+  (attr, _) := BackendDAEUtil.traverseBackendDAEVarAttr(var.values, replaceDummyDerivativesExp, ht);
+  if not referenceEq(attr, var.values) then
+    var := BackendVariable.setVarAttributes(var, attr);
+  end if;
 end replaceDummyDerivativesVar;
 
 public function splitEqnsinConstraintAndOther "author: Frenkel TUD 2013-01

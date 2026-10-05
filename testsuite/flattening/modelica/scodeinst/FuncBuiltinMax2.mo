@@ -1,6 +1,7 @@
 // name: FuncBuiltinMax2
 // keywords: max
 // status: correct
+// suite: 63bit
 //
 // Tests the builtin max operator.
 //

@@ -4,7 +4,7 @@
 // teardown_command: rm -rf testSteamPipeLin* output.log
 //
 
-loadModel(Modelica, {"3.2.3"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadFile("./SteamPipe.mo");
 loadString("
 model testSteamPipeLin
@@ -42,7 +42,7 @@ list(linearized_model);
 //   parameter Integer p = 0 \"number of outputs\";
 //   parameter Real x0[n] = {3100000, 3100000, 1000000, 1000000};
 //   parameter Real u0[m] = zeros(0);
-//   parameter Real A[n, n] = [0, 0, -7.506579624472663, 7.506579624472661; 0, 0, 7.506579624472663, -15.01315924894532; 0, 0, -27.8910278969507, 27.8910278969507; 0, 0, 27.8910278969507, -55.78205579390141];
+//   parameter Real A[n, n] = [0, 0, -7.506579624472666, 7.506579624472671; 0, 0, 7.506579624472666, -15.01315924894533; 0, 0, -27.8910278969507, 27.8910278969507; 0, 0, 27.8910278969507, -55.78205579390141];
 //   parameter Real B[n, m] = zeros(n, m);
 //   parameter Real C[p, n] = zeros(p, n);
 //   parameter Real D[p, m] = zeros(p, m);

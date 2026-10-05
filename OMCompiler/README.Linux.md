@@ -1,18 +1,16 @@
-# Linux/WSL/OSX Instructions
+# Linux/WSL Instructions
 
 ## Table of content
 
 - [1 Build dependencies](#1-build-dependencies)
   - [1.1 Debian/Ubuntu](#11-debianubuntu)
-  - [1.2 Linux/BSD](#12-linuxbsd)
+  - [1.2 Other Linux/BSD](#12-other-linuxbsd)
+  - [1.3 Rust toolchain](#13-rust-toolchain)
 - [2 Compile OpenModelica](#2-compile-openmodelica)
-  - [2.1 CMake build](#21-cmake-build)
-  - [2.2 Make build](#22-make-build)
-  - [2.3 CORBA support](#23-corba-support)
 - [3 Test Suite](#3-test-suite)
 - [4 General Notes](#4-general-notes)
 
-## 1. Build dependencies
+## 1 Build dependencies
 
 Find out what Linux distribution you have via:
 
@@ -72,47 +70,55 @@ sudo apt-get update
 sudo apt-get build-dep openmodelica
 ```
 
-### 1.2 Linux/BSD
+### 1.2 Other Linux/BSD
 
-First you need to install the dependencies:
+Install the following dependencies with your package manager:
 
-- autoconf, autoreconf, automake, libtool, pkgconfig, g++, gfortran (pretty
-  standard compilers)
-- boost (optional, used with configure --with-cppruntime)
-- [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*;
-  if you use gcc instead, use gcc 4.4 or 4.9+, not 4.5-4.8 as they are very
-  slow)
-- [cmake](http://www.cmake.org)
-- hwloc (optional; queries the number of hardware CPU cores instead of logical
-  CPU cores)
-- Java JRE (JDK is option; compiles the Java CORBA interface)
+- [cmake](https://cmake.org), g++ or [clang](https://clang.llvm.org/)/clang++, pkg-config
+- gfortran (optional, see `OM_OMC_ENABLE_FORTRAN` in
+  [README.cmake.md](../README.cmake.md#412-openmodelicaomcompiler-options))
+- ccache (optional, but _highly recommended_) and flex (for `omc-diff`, used by the test
+  suite)
+- Java Development Kit (for the parser generator)
 - Lapack/BLAS
-- libhdf5 (optional part of the [MSL](https://github.com/modelica/Modelica)
-  tables library supported by few other Modelica tools, so it does not do much)
-- libexpat (it's actually included in the FMIL sources which are included... but
-  we do not compile those and it's better to use the OS-provided dynamically
-  linked version)
-- omniORB or mico (optional; CORBA is used by OMOptim, OMShell, and OMPython)
-- libcurl (libcurl4-gnutls-dev)
+- libcurl (libcurl4-gnutls-dev), libuuid, gettext
+- libhdf5 (optional, MAT v7.3 result files, see `OM_ENABLE_HDF5`)
 - ncurses, readline (optional, used by OMShell-terminal)
-- OpenSceneGraph (optional, used by OMEdit)
-- Qt6 or Qt5, Webkit, QtOpenGL (optional, used by OMEdit)
+- Qt6 with QtWebEngine, Qt5Compat, QtQuick3D (optional, used by OMEdit) and QtSvg (optional, used by the graphical clients)
+- rustc and cargo (see [1.3 Rust toolchain](#13-rust-toolchain))
+
+### 1.3 Rust toolchain
+
+Parts of OpenModelica are written in Rust, so `cargo` and `rustc` are needed to
+build it: result files are read and written through `libomc_result`, and
+`--simCodeTarget=C` links the Rust simulation runtime.
+
+Any reasonably recent stable toolchain will do. The crates use the 2024 edition,
+so `rustc`/`cargo` 1.85 or newer:
+
+```bash
+sudo apt-get install rustc cargo
+cargo --version
+```
+
+If your distribution packages something older (Ubuntu 24.04 for instance),
+install [rustup](https://rustup.rs) and let it manage the toolchain instead:
+
+```bash
+sudo apt-get install rustup
+# Or, if there is no rustup package:
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup default stable
+```
+
+`-DOM_OMC_ENABLE_RUST=ON` builds the compiler itself as the Rust port, which
+needs the pinned nightly toolchain described in
+[Compiler/OpenModelica.rs/README.md](Compiler/OpenModelica.rs/README.md).
 
 ## 2 Compile OpenModelica
 
-There are two options to build OpenModelica:
-
-  1. Use new CMake build.
-  2. Use legacy Makefiles build.
-
-If you are new or unsure what to pick, choose the new CMake build. On OSX only
-the CMake build is supported. But most of our CI is still using the old
-Makefiles build, so use those if you need to reproduce some issue showing in the
-CI.
-
-### 2.1 CMake build
-
-Check [README.cmake.md](../README.cmake.md) for details, but in a nutshell run:
+OpenModelica is built with CMake. Check [README.cmake.md](../README.cmake.md) for the
+configuration options, but in a nutshell run:
 
 ```bash
 # (Optional) Install ccache for faster re-compilation and flex for omc-diff
@@ -122,83 +128,20 @@ sudo apt-get install ccache flex
 ```bash
 cd OpenModelica
 # Configure CMake, create Makefiles in build_cmake
-cmake -S . -B build_cmake -DCMAKE_INSTALL_PREFIX=build
-# Compile with generated Makefiles
+cmake -S . -B build_cmake
+# Compile and install into build_cmake/install_cmake
 cmake --build build_cmake --parallel <Nr. of cores> --target install
+./build_cmake/install_cmake/bin/omc --help
 ```
 
-### 2.2 Make build
-
-Build OpenModelica compiler `omc` with C++ runtime, but without using (possibly)
-existing `omc` executable:
-
-```bash
-cd OpenModelica
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-./configure --with-cppruntime --without-omc
-make -j<Nr. of cores>
-```
-
-If you want to install OpenModelica for all users you need to run `make install`
-with root privileges:
-
-```bash
-cd OpenModelica
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-# Skip some pieces of software to ease installation and only compile the base omc executable
-# If you have a working and compatible omc that is not on the PATH, you can use
-# --with-omc=path/to/omc to speed up compilation
-./configure --prefix=/usr/local --disable-modelica3d
-make
-sudo make install
-```
-
-### 2.3 CORBA support
-
-If you plan to use mico corba with OMC you need to:
-
-- set the `PATH` to `path/to/mico/bin` (for the idl compiler and mico-cpp)
-- set the `LD_LIBRARY_PATH` to `path/to/installed/mico/lib` (for mico libs)
-- set the `PATH` (for executables: idl, mico-cpp and mico-config):
-
-  ```bash
-  export PATH=${PATH}:/path/to/installed/mico/bin
-  ```
-
-```bash
-autoreconf --install # Or autoconf if you have autoconf <=2.69
-# One of the following configure lines
-./configure --with-omniORB=/path/to/omniORB (if you want omc to use omniORB corba)
-./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
-./configure --without-CORBA            (if you want omc to use sockets)
-```
-
-## 3 Test suite
+## 3 Test Suite
 
 If you compiled the OpenModelica compiler successfully you can run the test
 suite to check if everything is working. Some tests are a bit fragile and depend
 on the OS and versions of used 3rd-party tools. So a few failing tests don't
 have to be a major concern.
 
-### 3.1 CMake
-
-It's complicated and not yet working out of the box, see
-[README.cmake.md](../README.cmake.md).
-
-### 3.2 Make
-
-You'll need OMSimulator in your path and a few additional dependencies:
-
-```bash
-apt install flex zip
-make omsimulator
-```
-
-And then start the test suite:
-
-```bash
-make test
-```
+See [6. Running Tests](../README.cmake.md#6-running-tests) in README.cmake.md.
 
 ## 4 General Notes
 
@@ -206,9 +149,5 @@ If you run into problems open a
 [discussion](https://github.com/OpenModelica/OpenModelica/discussions)
 or subscribe to the
 [OpenModelicaInterest list](https://www.openmodelica.org/index.php/home/mailing-list)
-and then sent us an email at
+and then send us an email at
 [OpenModelicaInterest@ida.liu.se](mailto:OpenModelicaInterest@ida.liu.se).
-
---------------
-
-Last updated 2026-02-16.

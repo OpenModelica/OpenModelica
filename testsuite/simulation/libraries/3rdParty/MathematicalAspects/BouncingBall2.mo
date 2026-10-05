@@ -1,12 +1,12 @@
 model BouncingBall2
-  import Modelica.SIunits;
+  import Modelica.Units.SI;
   parameter Real e=0.7 "coefficient of restitution";
-  parameter SIunits.Acceleration g=9.81 "gravity acceleration";
-  SIunits.Position h(start=1) "height of ball";
-  SIunits.Velocity v "velocity of ball";
+  parameter SI.Acceleration g=9.81 "gravity acceleration";
+  SI.Position h(start=1) "height of ball";
+  SI.Velocity v "velocity of ball";
   Boolean flying(start=true) "true, if ball is flying";
   Boolean impact;
-  SIunits.Velocity v_new;
+  SI.Velocity v_new;
 equation
   der(h) = v;
   der(v) = if flying then -g else 0;

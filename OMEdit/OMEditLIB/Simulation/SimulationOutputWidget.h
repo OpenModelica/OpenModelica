@@ -93,10 +93,12 @@ public:
   SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
   void start();
+  void runWasmJitSimulation(const QString &simulationParameters);
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
   bool isOutputStructured() {return mIsOutputStructured;}
+  bool isLogFileWrittenByOmc() {return mIsLogFileWrittenByOmc;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
   QTcpServer* getTcpServer() {return mpTcpServer;}
   QProcess* getCompilationProcess() {return mpCompilationProcess;}
@@ -150,14 +152,22 @@ private:
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
+  // wasm-jit in-process run (no QProcess): whether a cancellable simulate() is in
+  // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
+  bool mIsWasmJitSimulationRunning = false;
+  bool mWasmJitCancelled = false;
+  // simulate() writes <prefix>.log itself; OMEdit must not truncate it or hold it open.
+  bool mIsLogFileWrittenByOmc = false;
   QDateTime mResultFileLastModifiedDateTime;
 
   void compileModel();
   void runPostCompilation();
-  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void runSimulationExecutable();
   void writeCompilationOutput(QString output, QColor color);
+#if QT_CONFIG(process)
+  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
   void deleteIntermediateCompilationFiles();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
@@ -167,6 +177,7 @@ private slots:
   void createSimulationProgressSocket();
   void readSimulationProgress();
   void socketDisconnected();
+#if QT_CONFIG(process)
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();
@@ -182,6 +193,7 @@ private slots:
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+#endif
 public slots:
   void cancelCompilationOrSimulation();
   void openTransformationBrowser(QUrl url);

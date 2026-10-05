@@ -44,6 +44,7 @@ encapsulated package Graph
   records that we don't yet support in MetaModelica."
 
 protected import Error;
+protected import Array;
 protected import List;
 
 public replaceable type NodeType subtypeof Any;
@@ -940,77 +941,69 @@ for each vertex w such that (ui , w) in E do
 for each colored vertex x such that (w, x) in E do
 forbiddenColors[color[x]] <- ui
 color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
-"
-  input list<tuple<Integer, list<Integer>>> inGraphT;
-  input array<Integer> inforbiddenColor;
-  input list<Integer> inColors;
-  input array<tuple<Integer, list<Integer>>> inGraph;
-  input array<Integer> inColored;
-protected
-  Integer node, color;
-  list<Integer>  nodes;
-algorithm
-  try
-    for tpl in inGraphT loop
-      (node,nodes) := tpl;
-      addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
-      color := arrayFindMinColorIndexInt(inforbiddenColor, node);
-      arrayUpdate(inColored, node, color);
-    end for;
-  else
-    Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."}, sourceInfo());
-  end try;
-end partialDistance2colorInt;
 
-protected function addForbiddenColorsInt
-  input Integer inNode;
-  input list<Integer> nodes;
-  input array<Integer> inColored;
-  input array<Integer> forbiddenColor;
-  input array<tuple<Integer, list<Integer>>> inGraph;
+The colors of each w's colored vertices are kept as a bit set, so the inner
+loop is a union of bit sets rather than a walk over every x of w for every
+ui of w, which is quadratic in the degree of w."
+  input list<tuple<Integer, list<Integer>>> inGraphT "each vertex of V2 with its neighbours in V1";
+  input Integer numNodes "size of V1";
+  input array<Integer> inColored "color per vertex of V2, 0 while uncolored";
 protected
-  list<Integer> indexes;
+  constant Integer wordBits = 30;
+  constant Integer fullWord = 1073741823;
+  Integer node, color, words = 1, usedWords = 1, k, w, bit;
+  list<Integer> nodes;
+  array<array<Integer>> nodeColors = arrayCreate(numNodes, arrayCreate(0, 0));
+  array<Integer> forbidden = arrayCreate(1, 0), colors;
 algorithm
-  try
-    for node in nodes loop
-      (_,indexes) := arrayGet(inGraph,node);
-      updateForbiddenColorArrayInt(indexes, inColored, forbiddenColor, inNode);
-    end for;
-  else
-    Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColorsInt failed."}, sourceInfo());
-    fail();
-  end try;
-end addForbiddenColorsInt;
-
-protected function updateForbiddenColorArrayInt
-  input list<Integer> inIndexes;
-  input array<Integer> inColored;
-  input array<Integer> inForbiddenColor;
-  input Integer inNode;
-protected
-  Integer colorIndex;
-algorithm
-  for index in inIndexes loop
-    colorIndex := arrayGet(inColored, index);
-    if colorIndex > 0 then
-      arrayUpdate(inForbiddenColor, colorIndex, inNode);
-    end if;
+  for i in 1:numNodes loop
+    arrayUpdate(nodeColors, i, arrayCreate(words, 0));
   end for;
-end updateForbiddenColorArrayInt;
-
-protected function arrayFindMinColorIndexInt
-  input array<Integer> inForbiddenColor;
-  input Integer inNode;
-  output Integer outColor = 1;
-algorithm
-  while true loop
-    if arrayGet(inForbiddenColor, outColor) <> inNode then
-      return;
-    else
-      outColor := outColor + 1;
+  for tpl in inGraphT loop
+    (node, nodes) := tpl;
+    for j in 1:usedWords loop
+      arrayUpdate(forbidden, j, 0);
+    end for;
+    for n in nodes loop
+      colors := arrayGet(nodeColors, n);
+      for j in 1:usedWords loop
+        arrayUpdate(forbidden, j, intBitOr(arrayGet(forbidden, j), arrayGet(colors, j)));
+      end for;
+    end for;
+    color := 0;
+    k := 1;
+    while color == 0 loop
+      if k > usedWords then
+        color := (k - 1) * wordBits + 1;
+      else
+        w := arrayGet(forbidden, k);
+        if w <> fullWord then
+          bit := 0;
+          while intBitAnd(w, intBitLShift(1, bit)) <> 0 loop
+            bit := bit + 1;
+          end while;
+          color := (k - 1) * wordBits + bit + 1;
+        end if;
+        k := k + 1;
+      end if;
+    end while;
+    arrayUpdate(inColored, node, color);
+    k := intDiv(color - 1, wordBits) + 1;
+    if k > words then
+      words := 2 * words;
+      forbidden := Array.expandToSize(words, forbidden, 0);
+      for i in 1:numNodes loop
+        arrayUpdate(nodeColors, i, Array.expandToSize(words, arrayGet(nodeColors, i), 0));
+      end for;
     end if;
-  end while;
-end arrayFindMinColorIndexInt;
+    usedWords := intMax(usedWords, k);
+    bit := intBitLShift(1, intMod(color - 1, wordBits));
+    for n in nodes loop
+      colors := arrayGet(nodeColors, n);
+      arrayUpdate(colors, k, intBitOr(arrayGet(colors, k), bit));
+    end for;
+  end for;
+end partialDistance2colorInt;
 
 public function filterGraph
   "Removes any node for which the given function evaluates to false, as well as

@@ -3,6 +3,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // cflags: 	 +simCodeTarget=Cpp -d=-newInst
+// suite: disabled
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -15,9 +16,9 @@ timeout := 120;
 
 compareVars :=
 {
-   "evaporator.p",
+   "controller.x",
    "evaporator.V_l",
-   "controller.x"
+   "evaporator.p"
 };
 
 setDebugFlags("hpcom"); getErrorString();

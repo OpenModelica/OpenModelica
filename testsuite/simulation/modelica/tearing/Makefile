@@ -119,8 +119,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 *.sh \
-Makefile \
-msl32-models.txt
+Makefile
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
@@ -155,4 +154,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

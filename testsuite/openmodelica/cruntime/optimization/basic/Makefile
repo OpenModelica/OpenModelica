@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 
 TESTFILES = \
+arrayVariables.mos \
 BR.mos \
 BReqcon.mos \
 BRinitialGuess.mos\
@@ -107,4 +108,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

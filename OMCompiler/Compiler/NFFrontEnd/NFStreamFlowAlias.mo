@@ -108,7 +108,7 @@ public
     list<tuple<FlowAlias, list<FlowAlias>>> aliases;
   algorithm
     (flatModel, sets) := fromModel(flatModel);
-    (flatModel, aliases) := createAliases(sets, flatModel);
+    (flatModel, aliases) := createAliases(sets, vars, flatModel);
     replacements := buildReplacements(aliases);
     flatModel := applyReplacements(replacements, flatModel);
     findConstantBindings(flatModel, vars);
@@ -316,9 +316,7 @@ public
     input Expression otherExp;
     input output list<FlowAlias> aliases;
   protected
-    Expression e;
-    list<FlowAlias> aliases1, aliases2;
-    FlowAlias alias1, alias2;
+    Expression e, e1, e2;
   algorithm
     aliases := match exp
       // a
@@ -334,22 +332,46 @@ public
       // a + b = 0 => a = -b;
       case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.ADD))
         guard Expression.isZero(otherExp)
-        algorithm
-          aliases1 := getAliasVarsFromExp(exp.exp1, exp.exp2, {});
-          aliases2 := getAliasVarsFromExp(exp.exp2, exp.exp1, {});
+        then getAliasVarsFromSum(exp.exp1, false, exp.exp2, false, aliases);
 
-          if listLength(aliases1) == 1 and listLength(aliases2) == 1 then
-            {alias1} := aliases1;
-            {alias2} := aliases2;
-            alias2.negative := not alias2.negative;
-            aliases := alias1 :: alias2 :: aliases;
-          end if;
-        then
-          aliases;
+      // the same sum as an n-ary node, with the subtracted terms in inv_arguments
+      case Expression.MULTARY()
+        guard Expression.isZero(otherExp) and
+              Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION
+        then match (exp.arguments, exp.inv_arguments)
+          case ({e1, e2}, {}) then getAliasVarsFromSum(e1, false, e2, false, aliases);
+          case ({e1}, {e2})   then getAliasVarsFromSum(e1, false, e2, true, aliases);
+          case ({}, {e1, e2}) then getAliasVarsFromSum(e1, true, e2, true, aliases);
+          else aliases;
+        end match;
 
       else aliases;
     end match;
   end getAliasVarsFromExp;
+
+  function getAliasVarsFromSum
+    "Returns the alias variables for a two-term sum that is equated to zero.
+     inv1/inv2 tell whether the respective term is subtracted rather than added."
+    input Expression exp1;
+    input Boolean inv1;
+    input Expression exp2;
+    input Boolean inv2;
+    input output list<FlowAlias> aliases;
+  protected
+    list<FlowAlias> aliases1, aliases2;
+    FlowAlias alias1, alias2;
+  algorithm
+    aliases1 := getAliasVarsFromExp(exp1, exp2, {});
+    aliases2 := getAliasVarsFromExp(exp2, exp1, {});
+
+    if listLength(aliases1) == 1 and listLength(aliases2) == 1 then
+      {alias1} := aliases1;
+      {alias2} := aliases2;
+      alias1.negative := alias1.negative <> inv1;
+      alias2.negative := not (alias2.negative <> inv2);
+      aliases := alias1 :: alias2 :: aliases;
+    end if;
+  end getAliasVarsFromSum;
 
   function isStreamConnectorFlow
     "Checks if the given flow alias refers to a flow variable inside a stream connector."
@@ -417,6 +439,7 @@ public
   function createAliases
     "Extracts the alias sets and defines the representatives and their aliases."
     input Sets sets;
+    input UnorderedMap<ComponentRef, Variable> vars;
     input output FlatModel flatModel;
           output list<tuple<FlowAlias, list<FlowAlias>>> aliases = {};
   protected
@@ -436,6 +459,7 @@ public
       (representative, rest_aliases) := defineRepresentative(set);
       SOME(repr_var) := representative.variable;
       alias_vars := repr_var :: alias_vars;
+      true := UnorderedMap.tryUpdate(repr_var.name, repr_var, vars);
 
       // Create a '= representative' binding for the aliases, to show which
       // variable they're aliases of.
@@ -525,7 +549,7 @@ public
     output FlowAlias representative;
     output list<FlowAlias> restAliases;
   protected
-    list<tuple<ComponentRef, Binding>> start_values = {}, nominal_values = {};
+    list<tuple<ComponentRef, Binding>> start_values = {}, fixed_start_values = {}, nominal_values = {};
     list<Expression> min_values = {}, max_values = {};
     list<FlowAlias> accum_aliases = {};
     Binding start_binding, nominal_binding, min_binding, max_binding;
@@ -542,15 +566,22 @@ public
     // Evaluate the start/nominal/min/max attributes of the aliases and sort them into lists.
     for alias in representative :: restAliases loop
       negated := representative.negative <> alias.negative;
-      (alias, start_values, nominal_values, min_values, max_values) :=
-        evalAliasAttributes(alias, negated, start_values, nominal_values, min_values, max_values);
+      (alias, start_values, fixed_start_values, nominal_values, min_values, max_values) :=
+        evalAliasAttributes(alias, negated, start_values, fixed_start_values, nominal_values, min_values, max_values);
       accum_aliases := alias :: accum_aliases;
     end for;
 
     // Compute start/nominal/min/max attributes for the representative.
     // start/nominal is chosen according to 8.6.2
-    start_binding := selectValue(start_values);
+    if listEmpty(fixed_start_values) then
+      start_binding := selectValue(start_values);
+    else
+      // Prefer fixed start values over non-fixed.
+      start_binding := selectFixedStartValue(fixed_start_values);
+    end if;
+
     nominal_binding := selectValue(nominal_values);
+
     // min/max is max(min_values) and min(max_values) respectively.
     min_binding := computeLimit(min_values, Ceval.evalBuiltinMax2);
     max_binding := computeLimit(max_values, Ceval.evalBuiltinMin2);
@@ -614,6 +645,40 @@ public
     end for;
   end selectValue;
 
+  function selectFixedStartValue
+    "Selects a start value from a list of fixed start values.
+     The start values have to be equal, otherwise it's an error."
+    input list<tuple<ComponentRef, Binding>> fixedBindings;
+    output Binding value = NFBinding.EMPTY_BINDING;
+  protected
+    list<Binding> bindings;
+    String str;
+    ComponentRef cref;
+    Binding binding;
+  algorithm
+    bindings := list(Util.tuple22(b) for b in fixedBindings);
+
+    if List.allEqual(bindings, Binding.isEqual) then
+      // If all bindings are equal, then select any of them.
+      value := listHead(bindings);
+    else
+      // Otherwise print an error and fail.
+      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        str := "Conflicting start values for fixed states:\n";
+        for b in fixedBindings loop
+          (cref, binding) := b;
+          str := str + " * Candidate: " + ComponentRef.toString(cref) +
+            "(start = " + Binding.toString(binding) +
+            ", confidence number = " + String(Binding.actualConfidence(binding)) + ")\n";
+        end for;
+        Error.addCompilerError(str);
+      else
+        Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+      end if;
+      fail();
+    end if;
+  end selectFixedStartValue;
+
   function defineAlias
     input output FlowAlias alias;
     input Binding binding;
@@ -636,7 +701,7 @@ public
     end if;
 
     if negated then
-      b := Binding.mapExp(binding, Expression.negate);
+      b := Binding.mapExpShallow(binding, Expression.negate);
     else
       b := binding;
     end if;
@@ -657,6 +722,7 @@ public
     input output FlowAlias alias;
     input Boolean negated;
     input output list<tuple<ComponentRef, Binding>> startValues;
+    input output list<tuple<ComponentRef, Binding>> fixedStartValues;
     input output list<tuple<ComponentRef, Binding>> nominalValues;
     input output list<Expression> minValues;
     input output list<Expression> maxValues;
@@ -680,10 +746,14 @@ public
               attr_binding := evalAliasAttribute(attr_binding);
 
               if negated then
-                attr_binding := Binding.mapExp(attr_binding, Expression.negate);
+                attr_binding := Binding.mapExpShallow(attr_binding, Expression.negate);
               end if;
 
-              startValues := (var.name, attr_binding) :: startValues;
+              if Variable.isFixed(var) then
+                fixedStartValues := (var.name, attr_binding) :: fixedStartValues;
+              else
+                startValues := (var.name, attr_binding) :: startValues;
+              end if;
             then
               (attr_name, attr_binding);
 
@@ -692,7 +762,7 @@ public
               attr_binding := evalAliasAttribute(attr_binding);
 
               if negated then
-                attr_binding := Binding.mapExp(attr_binding, Expression.negate);
+                attr_binding := Binding.mapExpShallow(attr_binding, Expression.negate);
               end if;
 
               nominalValues := (var.name, attr_binding) :: nominalValues;

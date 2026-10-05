@@ -36,9 +36,7 @@ ParseElementReplaceable.mo \
 ParseError1.mo \
 ParseError2.mo \
 ParseError3.mo \
-ParseFullModelica2.2.2.mos \
-ParseFullModelica3.1.mos \
-ParseFullModelica3.2.1.mos \
+ParseFullModelica.mos \
 ParseString.mos \
 PureImpure.mo \
 PureImpure2.mo \
@@ -87,4 +85,4 @@ getdeps:
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
 
 failingtest :
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

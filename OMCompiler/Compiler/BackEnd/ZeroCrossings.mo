@@ -122,6 +122,33 @@ algorithm
   end for;
 end add_list;
 
+function push "Appends without checking for duplicates; the lookup tree keeps the first occurrence."
+  input ZeroCrossingSet zc_set;
+  input ZeroCrossing zc;
+protected
+  list<ZeroCrossing> addedCell;
+algorithm
+  DoubleEnded.push_back(zc_set.zc, zc);
+  addedCell := DoubleEnded.currentBackCell(zc_set.zc);
+  arrayUpdate(zc_set.tree, 1, ZeroCrossingTree.add(arrayGet(zc_set.tree, 1), zc, addedCell, ZeroCrossingTree.addConflictKeep));
+end push;
+
+function push_list
+  input ZeroCrossingSet zc_set;
+  input list<ZeroCrossing> zc_lst;
+algorithm
+  for zc in zc_lst loop
+    push(zc_set, zc);
+  end for;
+end push_list;
+
+function count "Number of stored zero crossings; unlike length() this does not expand iterators."
+  input ZeroCrossingSet zc_set;
+  output Integer i;
+algorithm
+  i := DoubleEnded.length(zc_set.zc);
+end count;
+
 function toList
   input ZeroCrossingSet zc;
   output list<ZeroCrossing> lst = {};

@@ -12,13 +12,13 @@ simulate(whenInAlgorithm, tolerance=1e-6,startTime=0, stopTime=2,numberOfInterva
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from whenInAlgorithm.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from whenInAlgorithm.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // record SimulationResult
 //     resultFile = "whenInAlgorithm_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'whenInAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'whenInAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_STDOUT        | info    |
 // |                 | |       | This is some debug output that needs testing.

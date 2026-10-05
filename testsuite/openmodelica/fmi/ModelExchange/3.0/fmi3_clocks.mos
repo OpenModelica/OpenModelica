@@ -1,7 +1,7 @@
 // name: fmi3_clocks.mos
 // keywords: FMI 3.0 export clocks synchronous
 // status: correct
-// teardown_command: rm -rf Mclk.fmu Mclk.fmutmp/ Mclk_md.xml Mclk.log Mclk_info.json index.html
+// teardown_command: rm -rf Mclk.fmu Mclk.fmutmp/ Mclk_md.xml Mclk.log Mclk_info.json index.html Mclk_FMU.libs Mclk_FMU.makefile Mclk_external_functions.json resources
 //
 // FMI 3.0 Clocks: a model clock (here a periodic Clock(0.1) driving sample())
 // is exported as an output <Clock> variable in modelDescription.xml with its
@@ -28,6 +28,8 @@ system("unzip -cqq Mclk.fmu modelDescription.xml | grep -oE \"<Clock[^>]*/>\" | 
 // ""
 // "Mclk.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // <Clock name="_D_clock1" causality="output" intervalVariability="constant" intervalDecimal="0.1"/>
 // 0

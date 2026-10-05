@@ -3,6 +3,7 @@
 // status:   correct
 // teardown_command: rm -rf Enumeration8_*  Enumeration8 Enumeration8.exe Enumeration8.cpp Enumeration8.makefile Enumeration8.libs Enumeration8.log output.log
 // cflags: -d=-newInst
+// suite: disabled
 //
 // String(Enum.e1)
 //

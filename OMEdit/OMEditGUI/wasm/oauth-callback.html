@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing in to OMEdit</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 2.5rem 2rem;
+         display: flex; min-height: 100vh; box-sizing: border-box;
+         flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 .5rem; }
+  p { margin: 0; max-width: 28rem; line-height: 1.5; opacity: .8; }
+  .error { color: #b3261e; }
+</style>
+</head>
+<body>
+<h1 id="title">Finishing sign-in…</h1>
+<p id="detail">You can close this window.</p>
+<script>
+// The OAuth redirect target for the OMEdit web application.
+//
+// This page exists because the application is served cross-origin isolated
+// (COOP: same-origin, required for the SharedArrayBuffer the omc worker bridge
+// uses). Under that policy a popup's window.opener is severed in both
+// directions, so the code cannot be posted back to the opener. It is
+// republished on a BroadcastChannel instead, which only needs the two pages to
+// share an origin - which they do, this page being served next to the
+// application. localStorage carries the same payload for browsers without
+// BroadcastChannel, and to cover the case where the application had not yet
+// attached its listener.
+(function () {
+  "use strict";
+  var KEY = "omedit-oauth-result";
+  // The authorization code arrives in the query string; an implicit-style
+  // response would use the fragment, so read both rather than assume.
+  var query = new URLSearchParams(location.search);
+  var fragment = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  var get = function (name) { return query.get(name) || fragment.get(name) || ""; };
+
+  var result = {
+    code: get("code"),
+    state: get("state"),
+    error: get("error_description") || get("error")
+  };
+  if (!result.code && !result.error) {
+    result.error = "The sign-in response contained no authorization code.";
+  }
+
+  try {
+    localStorage.setItem(KEY, JSON.stringify(result));
+  } catch (e) {
+    // Private windows and blocked site data; the channel below still works.
+  }
+  try {
+    var channel = new BroadcastChannel("omedit-oauth");
+    channel.postMessage(result);
+    channel.close();
+  } catch (e) {
+    // Left to the localStorage path.
+  }
+
+  if (result.error) {
+    document.getElementById("title").textContent = "Sign-in failed";
+    document.getElementById("title").className = "error";
+    document.getElementById("detail").textContent = result.error;
+    return;
+  }
+  document.getElementById("title").textContent = "Signed in";
+  document.getElementById("detail").textContent = "You can close this window and go back to OMEdit.";
+  // A window whose opener has been severed is often not allowed to close itself,
+  // so this is an attempt, not the plan - hence the message above.
+  setTimeout(function () { try { window.close(); } catch (e) {} }, 400);
+})();
+</script>
+</body>
+</html>

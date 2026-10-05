@@ -1,12 +1,11 @@
 // name: testDAE10
 // status: correct
 // teardown_command: rm -f testDAE.p9* output.log
-// cflags: -d=-newInst
 // tests case for no states in the models
 
 loadString("
 model Test10
-  Real x,y; 
+  Real x,y;
 equation
   -time = 10000*x*y-1;
   time = exp(-x) + exp(-y) - 1.0001;
@@ -16,12 +15,12 @@ end Test10;
 getErrorString();
 
 setCommandLineOptions("--daeMode");
-simulate(Test10);
+simulate(Test10, stopTime=0.9);
 getErrorString();
 
 
 val(x,0.0);
-val(x,1.0);
+val(x,0.9);
 
 
 // Result:
@@ -30,13 +29,13 @@ val(x,1.0);
 // true
 // record SimulationResult
 //     resultFile = "Test10_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Test10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.9, numberOfIntervals = 500, tolerance = 1e-6, method = 'ida', fileNamePrefix = 'Test10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | warning | Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// 9.10614673541745
-// -9.999500137448521e-05
+// 9.106146739865915
+// 0.10514375764211055
 // endResult

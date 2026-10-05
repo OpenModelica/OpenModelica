@@ -1,6 +1,7 @@
 // name: ErrorMatchInOut1.mo
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 package ErrorMatchInOut1
 
 function fn
@@ -17,7 +18,7 @@ constant String str = fn("");
 end ErrorMatchInOut1;
 // Result:
 // Error processing file: ErrorMatchInOut1.mo
-// [metamodelica/meta/ErrorMatchInOut1.mo:10:3-12:12:writable] Error: Variable strx not found in scope ErrorMatchInOut1.fn.
+// [metamodelica/meta/ErrorMatchInOut1.mo:11:3-13:12:writable] Error: Variable strx not found in scope ErrorMatchInOut1.fn.
 // Error: Error occurred while flattening model ErrorMatchInOut1
 //
 // # Error encountered! Exiting...

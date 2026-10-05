@@ -1,6 +1,7 @@
 // name: AssignMatchVar
 // cflags: -g=MetaModelica -d=gen -d=-newInst
 // status: correct
+// suite: metamodelica
 //
 // Checks that it's allowed to assign to a non-input variable that's used in a
 // match expression.

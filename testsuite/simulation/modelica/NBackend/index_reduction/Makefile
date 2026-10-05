@@ -1,10 +1,14 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+derivativeDummyState.mos \
 basic_IR.mos\
+overdeterminedIndexReduction.mos\
 static_IR.mos\
 static_index_3.mos\
 aux_states.mos\
+stateOrderDummySelection.mos\
+numericDummySelection.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -49,4 +53,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

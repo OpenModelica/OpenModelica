@@ -20,6 +20,7 @@ Generated on |date| at |time|
   introduction
   packagemanager
   omedit
+  languageserver
   plotting
   compiler
   solving

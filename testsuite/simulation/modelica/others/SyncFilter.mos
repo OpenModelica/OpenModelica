@@ -5,7 +5,7 @@
 // tests: bug reported here: https://www.openmodelica.org/index.php/forum/topic?id=74
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 loadFile("SyncFilter.mo"); getErrorString();
 instantiateModel(SyncFilterTest); getErrorString();
 simulate(SyncFilterTest, stopTime=0.0005);
@@ -20,12 +20,12 @@ val(syncFilter.y, 6.2*10e-6);
 // "class SyncFilterTest
 //   parameter Real syncFilter.UpdateRate = 25000.0;
 //   final parameter Integer syncFilter.n = 5;
-//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 1e-13, start = 0.1) = 1.0 / (5.0 * syncFilter.UpdateRate) \"Sample period of component\";
+//   parameter Real syncFilter.samplePeriod(quantity = \"Time\", unit = \"s\", min = 2.220446049250313e-14, start = 0.1) = 1.0 / (5.0 * syncFilter.UpdateRate) \"Sample period of component\";
 //   parameter Real syncFilter.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"First sample time instant\";
 //   protected Boolean syncFilter.sampleTrigger \"True, if sample time instant\";
-//   protected Boolean syncFilter.firstTrigger \"Rising edge signals first sample instant\";
-//   Real syncFilter.u \"Continuous input signal\";
-//   Real syncFilter.y \"Continuous output signal\";
+//   protected Boolean syncFilter.firstTrigger(start = false, fixed = true) \"Rising edge signals first sample instant\";
+//   Real syncFilter.u \"Connector of Real input signal\";
+//   Real syncFilter.y \"Connector of Real output signal\";
 //   Real syncFilter.x[1] \"State of transfer function from controller canonical form\";
 //   Real syncFilter.x[2] \"State of transfer function from controller canonical form\";
 //   Real syncFilter.x[3] \"State of transfer function from controller canonical form\";
@@ -41,9 +41,9 @@ val(syncFilter.y, 6.2*10e-6);
 //   Real syncFilter.xext[4];
 //   Real syncFilter.xext[5];
 //   Real syncFilter.x1;
-//   parameter Real clock.offset(quantity = \"Time\", unit = \"s\") = 0.0 \"Offset of output signal\";
-//   parameter Real clock.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Output = offset for time < startTime\";
 //   Real clock.y \"Connector of Real output signal\";
+//   parameter Real clock.offset = 0.0 \"Offset of output signal y\";
+//   parameter Real clock.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Output y = offset for time < startTime\";
 // equation
 //   clock.y = syncFilter.u;
 //   syncFilter.b = {0.2, 0.2, 0.2, 0.2, 0.2};
@@ -64,7 +64,7 @@ val(syncFilter.y, 6.2*10e-6);
 //   when syncFilter.sampleTrigger then
 //     syncFilter.firstTrigger = time <= syncFilter.startTime + syncFilter.samplePeriod / 2.0;
 //   end when;
-//   clock.y = clock.offset + (if time < clock.startTime then 0.0 else time - clock.startTime);
+//   clock.y = clock.offset + smooth(0, if time < clock.startTime then 0.0 else time - clock.startTime);
 // end SyncFilterTest;
 // "
 // ""

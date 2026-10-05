@@ -1,0 +1,424 @@
+// Nightly Windows, macOS and Linux builds of the Rust omc, all from Linux.
+//
+// The Windows and macOS stages cross-compile in the same ubuntu-26.04-rust image
+// the Rust stages of the main pipeline use: it carries cargo-xwin (clang-cl + a
+// cached MSVC CRT/SDK) and cargo-zigbuild + zig, and the agents bind-mount the
+// macOS SDK. No Windows and no macOS agent takes part. Both Linux targets build
+// on ubuntu-22.04 instead -- x86-64 natively, aarch64 with a GNU cross toolchain
+// -- because a Linux distribution's glibc floor is its build host's and Qt's own
+// binaries need 2.34. aarch64 ships CLI-only; see nightlyTarget().
+//
+//   1. 'shared artifacts'  everything that does not depend on the target
+//                          platform, built once: the mmtorust/susan-generated
+//                          Rust, the Qt scripting-API sources, every wasm blob
+//                          omc embeds (plus the wasi sysroot and the SUNDIALS /
+//                          HDF5 wasm archives) and the FMU loader libraries.
+//   2. 'omc'               one omc + simulation runtime per target, in parallel.
+//                          macOS x86-64 and arm64 are separate stages: the two
+//                          share nothing to compile, so running them side by
+//                          side halves the wall clock for the same CPU-seconds.
+//   3. 'GUI clients'       the Qt clients per target, off stage 2's cdylib
+//                          (RUST_OMC_PREBUILT_CDYLIB), so no cargo build of the
+//                          compiler runs a second time. These are the only
+//                          stages needing a cross Qt kit, so each runs on its
+//                          target's build-deps:*-rust-qt-* image rather than
+//                          the plain -rust one.
+//   4. 'package'           the Windows zip, the Linux tar.gz, and `lipo` over
+//                          the two macOS trees into one universal distribution.
+//                          The command-line tools ship on their own as
+//                          OpenModelica-CLI-* whether or not the GUI clients
+//                          were built.
+//
+// The stage bodies are in .CI/common.groovy (buildRustNightly*).
+def common
+
+pipeline {
+  agent none
+  options {
+    newContainerPerStage()
+    // No parallelsAlwaysFailFast: a nightly should report every platform, not
+    // abort the others as soon as one goes red.
+    buildDiscarder(logRotator(daysToKeepStr: "30", artifactNumToKeepStr: "5"))
+    jobGroup jobGroupName: 'OpenModelica', useJobGroup: true
+  }
+  environment {
+    LC_ALL = 'C.UTF-8'
+  }
+  triggers {
+    // Nightly on master; every other branch builds only when asked.
+    cron(env.BRANCH_NAME == 'master' ? 'H H(1-4) * * *' : '')
+  }
+  parameters {
+    booleanParam(name: 'BUILD_WINDOWS', defaultValue: true, description: 'Build the Windows x86-64 distribution')
+    booleanParam(name: 'BUILD_MACOS', defaultValue: true, description: 'Build the macOS universal (x86-64 + arm64) distribution')
+    booleanParam(name: 'BUILD_LINUX', defaultValue: true, description: 'Build the Linux x86-64 distribution')
+    booleanParam(name: 'BUILD_LINUX_AARCH64', defaultValue: true, description: 'Build the Linux AArch64 distribution (command-line tools only)')
+    booleanParam(name: 'BUILD_GUI_CLIENTS', defaultValue: true, description: 'Build the Qt GUI clients (OMEdit, OMShell, OMNotebook, OMPlot)')
+    // Read at queue time by the jobGroup option above. A nightly yields to
+    // everything a person is waiting for.
+    string(name: 'BUILD_PRIORITY', defaultValue: '5',
+           description: 'Queue priority, 1 (scheduled first) to 5 (last).')
+  }
+  stages {
+    stage('Environment') {
+      agent {
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
+      }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
+      }
+      steps {
+        script {
+          common = load("${env.workspace}/.CI/common.groovy")
+        }
+      }
+    }
+
+    // Stage 1. One container, one pass: the transpile, the Qt API sources, the
+    // wasm artifacts and the FMU loaders. Nothing platform-specific is built.
+    stage('shared artifacts') {
+      agent {
+        docker {
+          alwaysPull true
+          image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+          label 'linux'
+          args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+               "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+               "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+               "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+               "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+          customWorkspace 'ws/OpenModelica'
+        }
+      }
+      steps {
+        script { common.buildRustNightlyShared() }
+      }
+    }
+
+    // Stage 2. One agent per target: each is a full cargo build of the compiler
+    // for a different triple, sharing nothing but the stash from stage 1.
+    stage('omc') {
+      parallel {
+        stage('win64') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_WINDOWS }
+          }
+          steps {
+            script { common.buildRustNightlyOMC('win64') }
+          }
+        }
+        stage('mac-x86_64') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_MACOS }
+          }
+          steps {
+            script { common.buildRustNightlyOMC('mac-x86_64') }
+          }
+        }
+        stage('mac-aarch64') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_MACOS }
+          }
+          steps {
+            script { common.buildRustNightlyOMC('mac-aarch64') }
+          }
+        }
+        stage('linux64') {
+          agent {
+            docker {
+              alwaysPull true
+              // 22.04, not the 26.04 image every other stage uses: this target
+              // is native, so the distribution's glibc floor is the agent's.
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-newer-qt'
+              label 'linux'
+              // CARGO_HOME is /usr/local/cargo in this image, not /opt/rust/cargo:
+              // it carries `full`'s stable rustup, not the `rust` add-on's.
+              args "--mount type=volume,source=rust-cargo-registry,target=/usr/local/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX }
+          }
+          steps {
+            script { common.buildRustNightlyOMC('linux64') }
+          }
+        }
+        stage('linux-aarch64') {
+          agent {
+            docker {
+              alwaysPull true
+              // The 22.04 add-on with the aarch64 cross toolchain and the arm64
+              // multiarch libraries, so both Linux targets share one floor.
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-qt-aarch64-linux'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/usr/local/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX_AARCH64 }
+          }
+          steps {
+            script { common.buildRustNightlyOMC('linux-aarch64') }
+          }
+        }
+      }
+    }
+
+    // Stage 3. The Qt clients, one stage per target, each linking the cdylib its
+    // stage-2 sibling produced. They install into the same prefix, which the
+    // packaging stage merges by unstashing both.
+    stage('GUI clients') {
+      parallel {
+        stage('win64 gui') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-win-x86_64'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_WINDOWS && params.BUILD_GUI_CLIENTS }
+          }
+          steps {
+            script { common.buildRustNightlyGUI('win64') }
+          }
+        }
+        stage('mac-x86_64 gui') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_MACOS && params.BUILD_GUI_CLIENTS }
+          }
+          steps {
+            script { common.buildRustNightlyGUI('mac-x86_64') }
+          }
+        }
+        stage('mac-aarch64 gui') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
+              label 'linux'
+              args "--mount type=volume,source=rust-cargo-registry,target=/opt/rust/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/MacOSX.sdk:/mnt/MacOSX.sdk:ro " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_MACOS && params.BUILD_GUI_CLIENTS }
+          }
+          steps {
+            script { common.buildRustNightlyGUI('mac-aarch64') }
+          }
+        }
+        stage('linux64 gui') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-newer-qt'
+              label 'linux'
+              // CARGO_HOME is /usr/local/cargo in this image, not /opt/rust/cargo:
+              // it carries `full`'s stable rustup, not the `rust` add-on's.
+              args "--mount type=volume,source=rust-cargo-registry,target=/usr/local/cargo/registry " +
+                   "--mount type=volume,source=rust-sccache,target=/cache/sccache " +
+                   "--mount type=volume,source=om-thirdparty-downloads,target=/cache/thirdparty " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX && params.BUILD_GUI_CLIENTS }
+          }
+          steps {
+            script { common.buildRustNightlyGUI('linux64') }
+          }
+        }
+      }
+    }
+
+    stage('package') {
+      parallel {
+        stage('windows zip') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust'
+              label 'linux'
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_WINDOWS }
+          }
+          steps {
+            script {
+              common.packageRustNightlyWindows(['nightly-omc-win64'],
+                params.BUILD_GUI_CLIENTS ? ['nightly-gui-win64'] : [])
+            }
+          }
+        }
+        stage('macos universal') {
+          agent {
+            docker {
+              alwaysPull true
+              // -rust-qt-mac, not plain -rust: this stage builds the app bundle,
+              // which deploys Qt out of the macOS kit, and the .dmg, whose
+              // xorriso + libdmg-hfsplus live on that image too.
+              image 'docker.openmodelica.org/build-deps:ubuntu-26.04-rust-qt-mac'
+              label 'linux'
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_MACOS }
+          }
+          steps {
+            script {
+              common.packageRustNightlyMacUniversal(
+                ['nightly-omc-mac-x86_64', 'nightly-omc-mac-aarch64'],
+                params.BUILD_GUI_CLIENTS
+                  ? ['nightly-gui-mac-x86_64', 'nightly-gui-mac-aarch64'] : [])
+            }
+          }
+        }
+        stage('linux tarball') {
+          agent {
+            docker {
+              alwaysPull true
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-newer-qt'
+              label 'linux'
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX }
+          }
+          steps {
+            script {
+              common.packageRustNightlyLinux('linux64', ['nightly-omc-linux64'],
+                params.BUILD_GUI_CLIENTS ? ['nightly-gui-linux64'] : [])
+            }
+          }
+        }
+        stage('linux aarch64 tarball') {
+          agent {
+            docker {
+              alwaysPull true
+              // The cross image again: the deploy resolves the tree's ELF closure
+              // out of the agent's arm64 multiarch directories.
+              image 'docker.openmodelica.org/build-deps:ubuntu-22.04-qt-aarch64-linux'
+              label 'linux'
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { params.BUILD_LINUX_AARCH64 }
+          }
+          steps {
+            script {
+              // No GUI stashes: no Qt kit, so only the CLI distribution.
+              common.packageRustNightlyLinux('linux-aarch64', ['nightly-omc-linux-aarch64'], [])
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        if (common) {
+          common.notifyOnFailure()
+        }
+      }
+    }
+  }
+}

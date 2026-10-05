@@ -413,7 +413,7 @@ public
       UnorderedSet.add(fn, funcs);
 
       for fn_der in fn.derivatives loop
-        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+        for der_fn in Function.getCachedFuncs(InstNode.borrow(fn_der.derivativeFn)) loop
           UnorderedSet.add(der_fn, funcs);
         end for;
       end for;
@@ -475,19 +475,19 @@ public
 
       case Type.COMPLEX(complexTy = ComplexType.RECORD())
         algorithm
-          UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
+          UnorderedMap.tryAdd(InstNode.scopePath(Type.complexNode(ty)), ty, types);
         then
           ();
 
       case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
         algorithm
-          UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
+          UnorderedMap.tryAdd(InstNode.scopePath(Type.complexNode(ty)), ty, types);
         then
           ();
 
       case Type.FUNCTION(fnType = NFType.FunctionType.FUNCTIONAL_PARAMETER)
         algorithm
-          UnorderedMap.tryAdd(InstNode.scopePath(ty.fn.node), ty, types);
+          UnorderedMap.tryAdd(InstNode.scopePath(InstNode.fromHandle(ty.fn.node)), ty, types);
         then
           ();
 
@@ -697,7 +697,7 @@ public
     input Function fn;
     input TypeMap types;
   algorithm
-    ClassTree.applyComponents(Class.classTree(InstNode.getClass(fn.node)),
+    ClassTree.applyComponents(Class.classTree(InstNode.getClass(InstNode.fromHandle(fn.node))),
       function collectComponentFlatTypes(types = types));
 
     if not Function.isExternal(fn) then
@@ -796,7 +796,7 @@ public
     () := match ty
       case Type.COMPLEX(complexTy = ComplexType.RECORD())
         algorithm
-          Typing.typeBindings(ty.cls, NFInstContext.CLASS);
+          Typing.typeBindings(Type.complexNode(ty), NFInstContext.CLASS);
         then
           ();
 
@@ -871,14 +871,15 @@ public
           // record field names need to be kept to keep them consistent with the
           // record constructors.
           if not insideRecord then
-            name := UnorderedMap.get(cref.node, obfuscationMap);
+            name := UnorderedMap.get(ComponentRef.node(cref), obfuscationMap);
 
             if isSome(name) then
-              cref.node := InstNode.rename(Util.getOption(name), cref.node);
+              cref.node := ComponentRef.storeNode(
+                InstNode.rename(Util.getOption(name), ComponentRef.node(cref)));
             end if;
           end if;
 
-          insideRecord := InstNode.isRecord(cref.node);
+          insideRecord := InstNode.isRecord(ComponentRef.node(cref));
 
           cref.subscripts := list(Subscript.mapShallowExp(s,
             function obfuscateExp(obfuscationMap = obfuscationMap)) for s in cref.subscripts);
@@ -932,11 +933,11 @@ public
     input output Algorithm alg;
     input ObfuscationMap obfuscationMap;
   algorithm
-    alg.source := obfuscateSource(alg.source, alg.scope, obfuscationMap);
+    alg.source := obfuscateSource(alg.source, InstNode.fromCell(alg.scope), obfuscationMap);
     alg.inputs := list(obfuscateCref(e, obfuscationMap) for e in alg.inputs);
     alg.outputs := list(obfuscateCref(e, obfuscationMap) for e in alg.outputs);
     alg.statements := list(Statement.map(s,
-      function obfuscateStatement(scope = alg.scope, obfuscationMap = obfuscationMap)) for s in alg.statements);
+      function obfuscateStatement(scope = InstNode.fromCell(alg.scope), obfuscationMap = obfuscationMap)) for s in alg.statements);
   end obfuscateAlgorithm;
 
   function obfuscateStatement

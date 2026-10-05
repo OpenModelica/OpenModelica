@@ -17,7 +17,6 @@ Issue13292.mos \
 Issue15901.mos \
 NPendulum2.mos \
 NPendulum3.mos
-#AmplifierWithOpAmpDetailed.mos \
 			
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -63,4 +62,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

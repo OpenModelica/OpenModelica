@@ -1,0 +1,39 @@
+// name: FlowAliasFixedStart2
+// status: correct
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+    stream Real s;
+  end C;
+
+  model A
+    C c;
+  end A;
+
+  model FlowAliasFixedStart2
+    A a1(c(f(fixed = true, start = -1.0)));
+    A a2(c(f(fixed = true, start = 2.0)));
+  equation
+    connect(a1.c, a2.c);
+    a1.c.e = 1.0;
+    a2.c.s = 1.0;
+    a1.c.f = 1.0;
+    a1.c.s = 2.0;
+  end FlowAliasFixedStart2;
+");
+
+setCommandLineOptions("-f -d=flowAliasElimination,aliasConflicts"); getErrorString();
+instantiateModel(FlowAliasFixedStart2); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// ""
+// "Error: Conflicting start values for fixed states:
+//  * Candidate: a1.c.f(start = 1.0, confidence number = 1)
+//  * Candidate: a2.c.f(start = 2.0, confidence number = 1)
+// "
+// endResult

@@ -33,7 +33,7 @@
     clustering/optimization can be developed in external tools.
 
     Everything is keyed by the equation index (Equation::index), which is stable
-    across runs and independent of the internal boost vertex ordering.
+    across runs and independent of the internal vertex ordering.
 
     Export (one object):
       { "name": ..., "num_threads": K,
@@ -94,7 +94,7 @@ void collect_task_graph_json(TaskSystemType& task_system, nlohmann::json& out) {
     nlohmann::json deps = nlohmann::json::array();
 
     vertex_iterator vi, ve;
-    for (boost::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
+    for (std::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
         if (*vi == root_id)
             continue;
         ClusterType& clust = sys_graph[*vi];
@@ -108,7 +108,7 @@ void collect_task_graph_json(TaskSystemType& task_system, nlohmann::json& out) {
         tasks.push_back(t);
 
         adjacency_iterator ci, ce;
-        for (boost::tie(ci, ce) = adjacent_vertices(*vi, sys_graph); ci != ce; ++ci) {
+        for (std::tie(ci, ce) = adjacent_vertices(*vi, sys_graph); ci != ce; ++ci) {
             if (*ci == root_id)
                 continue;
             deps.push_back(nlohmann::json::array({eq, sys_graph[*ci].front().index}));
@@ -134,7 +134,7 @@ void collect_clusters_json(TaskSystemType& task_system, nlohmann::json& out) {
     nlohmann::json clusters = nlohmann::json::array();
 
     vertex_iterator vi, ve;
-    for (boost::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
+    for (std::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
         if (*vi == root_id)
             continue;
         ClusterType&   clust = sys_graph[*vi];
@@ -264,7 +264,7 @@ void import_clustering_json(TaskSystemType& task_system, const std::string& path
     /* eq index -> vertex (the graph is still single-task at this point) */
     std::map<long, ClusterIdType> eq_to_vid;
     vertex_iterator               vi, ve;
-    for (boost::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
+    for (std::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
         if (*vi == root_id)
             continue;
         eq_to_vid[sys_graph[*vi].front().index] = *vi;
@@ -301,12 +301,12 @@ void import_clustering_json(TaskSystemType& task_system, const std::string& path
 
     /* build the induced cluster graph and check it is acyclic (Kahn) */
     std::vector<std::set<int> > succ(num_clusters);
-    for (boost::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
+    for (std::tie(vi, ve) = vertices(sys_graph); vi != ve; ++vi) {
         if (*vi == root_id)
             continue;
         const int          ca = eq_to_cluster[sys_graph[*vi].front().index];
         adjacency_iterator ci, ce;
-        for (boost::tie(ci, ce) = adjacent_vertices(*vi, sys_graph); ci != ce; ++ci) {
+        for (std::tie(ci, ce) = adjacent_vertices(*vi, sys_graph); ci != ce; ++ci) {
             if (*ci == root_id)
                 continue;
             const int cb = eq_to_cluster[sys_graph[*ci].front().index];

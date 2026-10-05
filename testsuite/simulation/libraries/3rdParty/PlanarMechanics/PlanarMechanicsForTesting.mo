@@ -2,7 +2,7 @@ within ;
 package PlanarMechanicsForTesting
   "A planar mechanical library for didactical purposes"
 
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
   import MB = Modelica.Mechanics.MultiBody;
 
   model World
@@ -3742,7 +3742,7 @@ package PlanarMechanicsForTesting
     end AbsoluteRotation;
   end Sensors;
   annotation (uses(
-        Modelica(version="3.1" /* Originally 3.2 */)), Documentation(revisions="<html>
+        Modelica(version="4.1.0")), Documentation(revisions="<html>
 <p>(c) Copyright by Dirk Zimmer</p>
 <p>The library was creates and is owned by Dr. Dirk Zimmer. </p>
 <p>dirk.zimmer@dlr.de</p>

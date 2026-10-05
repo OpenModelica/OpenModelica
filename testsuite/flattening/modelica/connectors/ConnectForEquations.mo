@@ -1,6 +1,7 @@
 // name:     ConnectForEquations
 // keywords: <insert keywords here>
 // status:   correct
+// suite: disabled
 //
 // Drmodelica: 8.2  connect equations (p. 244)
 //

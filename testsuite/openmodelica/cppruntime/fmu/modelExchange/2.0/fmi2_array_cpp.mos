@@ -1,0 +1,46 @@
+// name: fmi2_array_cpp
+// keywords: FMI 2.0 export array Cpp
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml fmi2_array_cpp.fmu fmi2_array_cpp.fmutmp fmi2_array_cpp.log fmi2_array_cpp_info.json output.log index.html
+// cflags: -d=-newInst
+//
+// #15926, FMI 2.0 export with the C++ (Cpp) simulation runtime and an array
+// variable carrying a parameter-bound nominal/min attribute. The FMU must build
+// and the array elements appear scalarized in the modelDescription.
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+
+loadString("
+model fmi2_array_cpp
+  parameter Real x_nom[3] = {10.0, 20.0, 30.0};
+  Real x[3](nominal = x_nom, start = {1.0, 2.0, 3.0}, each fixed = true);
+  output Real y = sum(x);
+equation
+  der(x) = -x;
+end fmi2_array_cpp;
+"); getErrorString();
+
+buildModelFMU(fmi2_array_cpp, version="2.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi2_array_cpp.fmu modelDescription.xml | grep -E 'name=\"(x\\[|der\\(x|y\")' > modelDescription.tmp.xml"); getErrorString();
+readFile("modelDescription.tmp.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_array_cpp.fmu"
+// ""
+// 0
+// ""
+// " name=\"x[1]\"
+// name=\"x[2]\"
+// name=\"x[3]\"
+// name=\"der(x[1])\"
+// name=\"der(x[2])\"
+// name=\"der(x[3])\"
+// name=\"y\"
+// "
+// ""
+// endResult

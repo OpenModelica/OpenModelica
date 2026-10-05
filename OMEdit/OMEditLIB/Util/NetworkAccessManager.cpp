@@ -48,7 +48,7 @@
 
 
 NetworkAccessManager::NetworkAccessManager(QObject *parent)
-  : QNetworkAccessManager(parent), mProxyAuthenticationAlreadyCalled(false)
+  : QNetworkAccessManager(parent), mProxyAuthenticationAlreadyCalled(false), mIgnoreSslErrors(true)
 {
 
 }
@@ -95,7 +95,9 @@ QNetworkReply* NetworkAccessManager::createRequest(QNetworkAccessManager::Operat
   connect(this, SIGNAL(finished(QNetworkReply*)), SLOT(requestFinished(QNetworkReply*)), Qt::UniqueConnection);
 
   QNetworkReply *pNetworkReply = QNetworkAccessManager::createRequest(operation, request, outgoingData);
-  pNetworkReply->ignoreSslErrors();
+  if (mIgnoreSslErrors) {
+    pNetworkReply->ignoreSslErrors();
+  }
   return pNetworkReply;
 }
 

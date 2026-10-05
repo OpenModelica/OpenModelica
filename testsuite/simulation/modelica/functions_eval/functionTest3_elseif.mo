@@ -14,5 +14,5 @@ b = func2(-3.0,a);
 c = b+a;
 d = der(c);
 
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="4.1.0")));
 end functionTest3_elseif;

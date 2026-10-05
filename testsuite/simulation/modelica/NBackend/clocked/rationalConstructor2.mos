@@ -2,6 +2,7 @@
 // keywords: synchronous features, rationalClock, c
 // status: correct
 // cflags: --newBackend
+// suite: disabled
 //
 // Rational clock with ticks 0, 3/10, 7/10, 12/10
 

@@ -1941,6 +1941,16 @@ algorithm
 end strTokText;
 
 
+public function isEmpty
+  input Text txt;
+  output Boolean b;
+algorithm
+  b := match txt
+    case MEM_TEXT(tokens = {}) then true;
+    else false;
+  end match;
+end isEmpty;
+
 public function textStrTok
   input Text inText;
   output StringToken outStringToken;
@@ -2015,7 +2025,7 @@ algorithm
   end try;
   else
     if StackOverflow.hasStacktraceMessages() then
-       Error.addInternalError("Stack overflow when evaluating function:\n"+ stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+       Error.addInternalError(StackOverflow.errorPrefix() + " when evaluating function:\n"+ stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     end if;
     addTemplateErrorFunc(inFun);
     fail();

@@ -1,52 +1,87 @@
 .\" --------------------------------------------------------------------
-.\" Title 
+.\" Title
 .\" --------------------------------------------------------------------
 .
-.TH OMEdit 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
+.TH OMEdit 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
 .
-.
-.\" -------------------------------------------------------------------- 
+.\" --------------------------------------------------------------------
 .SH NAME
 .\" --------------------------------------------------------------------
 .
-OMEdit \- A Modelica connection editor for OpenModelica
-.
+OMEdit \- OpenModelica Connection Editor
 .
 .\" --------------------------------------------------------------------
-.SH "SYNOPSIS"
+.SH SYNOPSIS
 .\" --------------------------------------------------------------------
 .
 .B OMEdit
-[\fIFILE\fR]...
-.
+.RI [ options ]
+.RI [ file ...]
 .
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 .\" --------------------------------------------------------------------
 .
 .B OMEdit
-is a graphical connection editor for Modelica 3.1 libraries. It uses the
-OpenModelica Compiler, \fBomc\fP, for communication.
+is the graphical modeling and simulation environment of OpenModelica. It edits
+Modelica models as diagrams and as text, and simulates them and plots their
+results. It links the OpenModelica compiler in rather than starting
+.BR omc .
+.PP
+Each
+.I file
+is opened on start: Modelica files
+.RB ( .mo ,
+.BR .bmo ),
+encrypted libraries
+.RB ( .mol )
+and SSP files
+.RB ( .ssp ).
+.PP
+The OpenModelica User's Guide describes
+.B OMEdit
+in detail.
 .
 .\" --------------------------------------------------------------------
-.SH AUTHOR
+.SH OPTIONS
 .\" --------------------------------------------------------------------
 .
-See OpenModelicaUsersGuide.pdf for a full list of contributors to the
-\%OpenModelica project.
-.
-.\" --------------------------------------------------------------------
-.SH BUGS
-.\" --------------------------------------------------------------------
-.
-If you find a bug, please report it at:
-.P
-<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
+.TP
+.BR \-\-Debug= [ true | false ]
+Enable debugging features such as QUndoView and diffModelicaFileListings.
+Off by default.
+.TP
+.BR \-\-NAPIProfiling= [ true | false ]
+Enable profiling for the new JSON\-based API. Off by default.
+.TP
+.BI \-\-StyleSheet= file
+Load an additional Qt stylesheet after OMEdit's default stylesheet.
+.TP
+.B \-\-paths
+Print the Qt paths.
+.TP
+.B \-\-help
+Print a usage summary and exit.
 .
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
 .\" --------------------------------------------------------------------
 .
 .BR omc (1),
-.BR omlibrary-msl31 (1)
+.BR OMSimulator (1),
+.BR OMPlot (1)
+.PP
+The OpenModelica User's Guide at
+<https://openmodelica.org/doc/OpenModelicaUsersGuide/@OM_MANPAGE_DOC_VERSION@/omedit.html>.
 .
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+Report bugs at <https://github.com/OpenModelica/OpenModelica/issues>.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+Open Source Modelica Consortium (OSMC), <https://www.openmodelica.org>

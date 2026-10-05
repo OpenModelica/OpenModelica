@@ -45,6 +45,7 @@
 
 // STD Headers
 #include <map>
+#include <memory>
 
 // Qt headers
 #include <QtCore/QHash>
@@ -76,7 +77,7 @@ class NotebookWindow : public DocumentView
   Q_OBJECT
 
 public:
-  NotebookWindow(Document *subject, const QString filename=0, int isDrModelica=0,
+  NotebookWindow(std::unique_ptr<Document> subject, const QString filename=0, int isDrModelica=0,
                  QWidget *parent=0);
   virtual ~NotebookWindow();
 
@@ -153,6 +154,7 @@ private slots:
 
   void insertImage();
   void insertLink();
+  void insertWebLink();
   void openOldFile();
   void pureText();
 
@@ -198,6 +200,11 @@ private:
   bool cellEditable();
   void evalCells();
   //void createSavingTimer();
+#ifdef __EMSCRIPTEN__
+  // Build a menubar menu mirroring a staged example-notebook tree in MEMFS.
+  void addExampleMenu(const QString &root);
+  void populateExampleMenu(QMenu *menu, const QString &path);
+#endif
 
   QVector<Cell*> cells; //Added by jhansi
 
@@ -251,6 +258,7 @@ private:
 
   QAction *insertImageAction;
   QAction *insertLinkAction;
+  QAction *insertWebLinkAction;
 
 #if USE_OMSKETCH
   Tools *window;
@@ -271,7 +279,7 @@ private:
 
   //Change to Document.
   CellApplication *app_;
-  Document *subject_;
+  std::unique_ptr<Document> subject_;
 
   //list<Document *> opendocs_;
   QString filename_;

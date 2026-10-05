@@ -8,7 +8,6 @@ InnerOuter2.mo \
 InnerOuterArray.mo \
 InnerOuterArray2.mo \
 InnerOuterSystem.mo \
-InnerOuterSamePrefix.mo \
 InnerOuterWithExtends.mo \
 Lookup1.mo \
 Lookup2.mo \
@@ -83,7 +82,7 @@ failingtest :
 	@echo
 	@echo Running failing tests:
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)
 
 keywords :
 	$(TEST) -l $(TESTFILES)

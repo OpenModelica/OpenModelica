@@ -42,7 +42,7 @@ encapsulated package Socket
   This is the socket connection module of the compiler
   Used in interactive mode if omc is started with -d=interactive
   Implemented in ./runtime/soecketimpl.c
-  Not implemented in Win32 builds use -d=interactiveCorba instead."
+  Not implemented in Win32 builds use --interactive=zmq instead."
 
 public function waitforconnect
   input Integer inInteger;

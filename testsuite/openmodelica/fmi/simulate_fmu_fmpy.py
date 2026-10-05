@@ -20,8 +20,27 @@ recorder only captures output variables, not continuous states such as 'x'.
 """
 import sys
 
-from fmpy import simulate_fmu
+import numpy as np
+from fmpy import read_model_description, simulate_fmu
 from fmpy.util import write_csv
+
+
+def flatten_arrays(result, dims):
+    """One column per scalar element of an FMI 3.0 array variable, named as
+    OpenModelica names the element (row major, 1-based: x[2], A[1,3]), so
+    that arrays and scalarized variables compare alike."""
+    names, columns = [], []
+    for name in result.dtype.names:
+        col = result[name]
+        if name in dims and col.ndim == 2:
+            for k in range(col.shape[1]):
+                index = ",".join(str(i + 1) for i in np.unravel_index(k, dims[name]))
+                names.append("%s[%s]" % (name, index))
+                columns.append(col[:, k])
+        else:
+            names.append(name)
+            columns.append(col)
+    return np.rec.fromarrays(columns, names=names)
 
 
 def main(argv):
@@ -36,7 +55,19 @@ def main(argv):
     stop_time = float(argv[3])
     variables = argv[4:]
 
-    result = simulate_fmu(fmu, stop_time=stop_time, output=variables)
+    # An element of an array variable is recorded through the array.
+    dims = {}
+    for v in read_model_description(fmu).modelVariables:
+        if getattr(v, "dimensions", None):
+            dims[v.name] = [int(d.start) for d in v.dimensions]
+    outputs = []
+    for name in variables:
+        base = name.split("[")[0]
+        recorded = base if base in dims else name
+        if recorded not in outputs:
+            outputs.append(recorded)
+
+    result = flatten_arrays(simulate_fmu(fmu, stop_time=stop_time, output=outputs), dims)
     write_csv(output_csv, result)
     return 0
 

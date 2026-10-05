@@ -51,26 +51,35 @@ typedef struct _FILE_INFO
 } FILE_INFO;
 
 #define omc_dummyFileInfo_val {"",0,0,0,0,0}
-extern const FILE_INFO omc_dummyFileInfo;
+DLLDataDirection extern const FILE_INFO omc_dummyFileInfo;
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
 // Defined in omc_error.c
-DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
-DLLExport extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
-DLLExport extern void (*omc_terminate)(FILE_INFO, const char*, ...);
-DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
+DLLDataDirection extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...);
+DLLDataDirection extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
+DLLDataDirection extern void (*omc_terminate)(FILE_INFO, const char*, ...);
+DLLDataDirection extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 
 // Defined in simulation_omc_assert.c
-DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
-DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
+DLLDataDirection extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...);
+DLLDataDirection extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
 
 void initDumpSystem(void);
 void deactivateLogging(void);
 void reactivateLogging(void);
-void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
+/* omc reads its own copy of the message buffer, so an assert in a function
+   library dlopened into it reports through these instead of to stderr. The
+   raise still belongs to this runtime: the frame owes its releases. */
+void omc_set_assert_reporters(void (*err)(threadData_t*, FILE_INFO, const char*, va_list),
+                              void (*warn)(FILE_INFO, const char*, va_list));
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
+/* threadData, else the calling thread's from mmc_thread_data_key. If there is
+   none, print pendingMessage (or the formatted message) and why, then exit. */
+threadData_t* omc_thread_data(threadData_t *threadData, const char *pendingMessage);
+threadData_t* omc_thread_data_va(threadData_t *threadData, const char *format, va_list args);
 
 enum OMC_LOG_STREAM
 {
@@ -147,20 +156,20 @@ enum OMC_LOG_TYPE
   OMC_LOG_TYPE_MAX
 };
 
-extern const int firstOMCErrorStream;
-extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
-extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
+DLLDataDirection extern const int firstOMCErrorStream;
+DLLDataDirection extern const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_STREAM_DETAILED_DESC[OMC_SIM_LOG_MAX];
+DLLDataDirection extern const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX];
 
-extern int omc_useStream[OMC_SIM_LOG_MAX];
-extern int omc_showAllWarnings;
+DLLDataDirection extern int omc_useStream[OMC_SIM_LOG_MAX];
+DLLDataDirection extern int omc_showAllWarnings;
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
 
 extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
-extern void (*messageClose)(int stream);
+DLLDataDirection extern void (*messageClose)(int stream);
 extern void (*messageCloseWarning)(int stream);
 
 #if !defined(OMC_MINIMAL_LOGGING)
@@ -172,6 +181,7 @@ extern void va_warningStreamPrint(int stream, int indentNext, const char *format
 extern void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
 extern void va_warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap);
 extern void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, unsigned long maxWarnDisplays, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
+extern void warningStreamPrintLimitReached(int stream, int indentNext, unsigned long maxWarnDisplays);
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap);
 extern void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap);
@@ -184,6 +194,7 @@ static inline void va_warningStreamPrint(int stream, int indentNext, const char 
 static inline void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...) {}
 static inline void va_warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap) {}
 static inline void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, unsigned long maxWarnDisplays, const char *format, ...) {}
+static inline void warningStreamPrintLimitReached(int stream, int indentNext, unsigned long maxWarnDisplays) {}
 static inline void errorStreamPrint(int stream, int indentNext, const char *format, ...) {}
 static inline void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap) {}
 static inline void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format,va_list ap) {}
@@ -192,6 +203,21 @@ static inline void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO 
 extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
 extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5), noreturn));
+
+/* Raise instead of throw: generated code checks the flag and leaves through its
+   own _return:, so no frame is skipped. */
+extern void raiseStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+/* The last model error a nonlinear solver swallowed without printing it. */
+extern void omc_note_suppressed_error(threadData_t *threadData, const char *format, va_list args);
+extern const char* omc_last_suppressed_error(void);
+extern void omc_clear_last_suppressed_error(void);
+/* OMC_ERROR_RAISED and OMC_ERROR_CLEAR in one, for a caller that cannot see the
+   field: the Rust simulation runtime mirrors threadData_t only as far as
+   `parent`, because what follows depends on build options. */
+extern void omc_error_raise(threadData_t *threadData);
+extern int omc_error_take(threadData_t *threadData);
+extern jmp_buf *omc_external_jump_buffer(threadData_t *threadData);
 #ifdef HAVE_VA_MACROS
 #define assertStreamPrint(threadData, cond, ...) if (!(cond)) {throwStreamPrint((threadData), __VA_ARGS__); assert(0);}
 #else

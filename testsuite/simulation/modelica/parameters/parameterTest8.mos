@@ -21,7 +21,7 @@ end parameterTest8;
 
 setCommandLineOptions("-d=evalParameterDump");
 simulate(parameterTest8, simflags="-output=state,v,r"); getErrorString();
-system("./parameterTest8 -override state=false -output=state,v,r"); getErrorString();
+simulate(parameterTest8, simflags="-override state=false -output=state,v,r", resimulateExecutable="parameterTest8"); getErrorString();
 
 
 // Result:
@@ -202,11 +202,15 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// LOG_STDOUT        | warning | It is not possible to override the following quantity: state
+// record SimulationResult
+//     resultFile = "parameterTest8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override state=false -output=state,v,r'",
+//     messages = "LOG_STDOUT        | warning | It is not possible to override the following quantity: state
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,state=1,v=1,r=2
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
+// "
+// end SimulationResult;
 // ""
 // endResult

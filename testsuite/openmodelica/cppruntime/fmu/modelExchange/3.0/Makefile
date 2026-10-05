@@ -1,7 +1,8 @@
 TEST = ../../../../../rtest -v
 
 TESTFILES = \
-testCppFMI3.mos
+testCppFMI3.mos \
+fmi3_array_cpp.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -42,4 +43,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

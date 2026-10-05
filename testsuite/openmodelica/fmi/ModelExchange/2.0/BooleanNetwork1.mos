@@ -2,6 +2,7 @@
 // keywords: BooleanNetwork1 FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf Modelica.Blocks.Examples.BooleanNetwork1.fmu Modelica_Blocks_Examples_BooleanNetwork1.log Modelica_Blocks_Examples_BooleanNetwork1_me_FMU.mo binaries/ modelDescription.xml resources/ sources/
+// suite: disabled
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();
 simulate(Modelica.Blocks.Examples.BooleanNetwork1, stopTime=10, numberOfIntervals=150); getErrorString();

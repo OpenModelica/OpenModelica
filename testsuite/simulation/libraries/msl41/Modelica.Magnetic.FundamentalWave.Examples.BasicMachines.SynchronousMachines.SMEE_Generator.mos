@@ -1,0 +1,40 @@
+// name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator);
+compareVars :=
+{
+   "smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im",
+   "smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator
+// {"smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im", "smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re"}
+// Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 30000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator', options = '', outputFormat = 'mat', variableFilter = 'time|smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SynchronousMachines.SMEE_Generator_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

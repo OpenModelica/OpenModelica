@@ -42,7 +42,7 @@ instantiateModel(TestAliasStream.Test6); getErrorString();
 //   equation
 //     'pump2.outlet.p' = 'tank.port.p';
 //     'pump2.outlet.p' = 'pump1.outlet.p';
-//     'tank.port.w' - 'pump2.w' - 'pump1.w' = 0.0;
+//     'tank.port.w' - ('pump2.w' + 'pump1.w') = 0.0;
 //     'pump1.outlet.h' = 4200.0 * 'pump1.T';
 //     'pump1.P' = if 'pump1.w' > 0.0 then 'pump1.w' * ('pump1.outlet.p' - 1e5) / 1000.0 else 0.0;
 //     'pump2.outlet.h' = 4200.0 * 'pump2.T';

@@ -519,11 +519,17 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 {
   // check for file exists, as --fmiFilter=blackBox or protected will not export the _info.json file
   int fileExists;
+  /* An FMI 1.0 FMU compiles the info JSON in and leaves fileName NULL, so there is
+     no file to look for. */
+  if (!xml->fileName) {
+    return;
+  }
   if (omc_flag[FLAG_INPUT_PATH])
   {
     const char *jsonFile;
     GC_asprintf(&jsonFile, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName);
     fileExists = omc_file_exists(jsonFile);
+    omc_rc_release((void*) jsonFile);
   }
   else
   {
@@ -532,6 +538,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 
   if (!fileExists)
   {
+    omc_rc_release((void*) xml->fileName);
     xml->fileName = NULL;
     return;
   }
@@ -548,6 +555,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
         throwStreamPrint(NULL, "simulation_info_json.c: Error: can not allocate memory.");
       }
       mmap_reader = omc_mmap_open_read(filename);
+      omc_rc_release((void*) filename);
     } else {
       mmap_reader = omc_mmap_open_read(xml->fileName);
     }
@@ -610,6 +618,9 @@ void modelInfoDeinit(MODEL_DATA_XML* xml)
     }
     free(xml->equationInfo); xml->equationInfo = NULL;
   }
+
+  /* Built by the generated setupDataStruc. */
+  omc_rc_release((void*) xml->fileName); xml->fileName = NULL;
 }
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)

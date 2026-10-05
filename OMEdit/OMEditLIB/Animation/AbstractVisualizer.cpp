@@ -139,7 +139,7 @@ AbstractVisualizerObject::AbstractVisualizerObject(const VisualizerType type)
       mStateSetAction(StateSetAction::update),
       mTransformNode(nullptr),
       _id(""),
-      _mat(osg::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)),
+      _mat(),
       _specCoeff(VisualizerAttribute(0.7))
 {
   _T[0] = VisualizerAttribute(0.0);

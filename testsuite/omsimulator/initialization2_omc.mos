@@ -1,7 +1,7 @@
 // name : initialization2_omc.mos
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2/
+// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2
 
 setCommandLineOptions("-g=MetaModelica");
 
@@ -60,7 +60,9 @@ unloadOMSimulator();
 // true
 // ""
 // "initialization2.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // true
 // ""
 // info:    maximum step size for 'test.root': 0.001000

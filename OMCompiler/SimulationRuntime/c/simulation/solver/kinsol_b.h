@@ -97,6 +97,9 @@ typedef struct B_NLS_KINSOL_DATA {
   long countResCalls;                  /* case of sparse function not avaiable */
 
   /* ### kinsol internal data */
+  SUNContext sunctx;                   /* SUNDIALS simulation context. Owned by
+                                          this struct, one per solver instance so that solvers
+                                          running in different threads stay independent. */
   void *kinsolMemory;                  /* Internal memroy block for KINSOL */
   NLS_USERDATA* userData;        /* User data provided to KINSOL */
 

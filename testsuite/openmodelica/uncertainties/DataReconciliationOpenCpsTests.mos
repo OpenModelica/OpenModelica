@@ -4,7 +4,6 @@
 // depends: Splitter1_Sx.csv
 // cflags: -d=-newInst
 
-//loadModel(Modelica,{"3.1"}); getErrorString();
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

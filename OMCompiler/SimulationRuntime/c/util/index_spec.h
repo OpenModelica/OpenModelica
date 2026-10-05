@@ -34,6 +34,7 @@ extern int index_spec_ok(const index_spec_t* s);
 extern void alloc_index_spec(index_spec_t* s);
 extern void create_index_spec(index_spec_t* dest, int nridx, ...);
 extern _index_t* make_index_array(int nridx,...);
+extern void omc_index_spec_release(index_spec_t* s);
 static inline int imax(int i, int j)
 { return ((i < j) ? j : i); }
 extern int next_index(int ndims, _index_t* idx, const _index_t* size);

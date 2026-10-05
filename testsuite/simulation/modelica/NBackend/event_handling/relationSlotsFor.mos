@@ -1,0 +1,67 @@
+// name: relationSlotsFor
+// keywords: NewBackend events relation hysteresis
+// status: correct
+// suite: cSources
+//
+// The relations of event conditions in for-equations and for-statements have one
+// storedRelations slot per iteration. The generated code has to use the slot of the
+// current iteration instead of the first one for all iterations.
+
+loadString("
+  model P
+    input Real m;
+    Real v;
+    discrete Real d;
+  initial equation
+    d = sign(v);
+  algorithm
+    v := m/2;
+  algorithm
+    when abs(v) > 1e-5 and sign(v)*pre(d) <= 0 then
+      d := sign(v);
+    end when;
+  end P;
+
+  model relationSlotsFor
+    parameter Integer n = 3;
+    Real x[n](each start = 0, each fixed = true);
+    Real y[n];
+    P p[2](m = {time, -time});
+  equation
+    for i in 1:n loop
+      der(x[i]) = 1;
+      y[i] = if x[i] > 0.3*i then 1 else 0;
+    end for;
+  end relationSlotsFor;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(relationSlotsFor); getErrorString();
+// for-equation
+regexBool(readFile("relationSlotsFor_functions.c"), "relationhysteresis\\(.*, 0 \\+ \\(_omcQ_24i1 - 1\\)/1, Greater, GreaterZC\\)");
+// for-statement of the component array p
+regexBool(readFile("relationSlotsFor.c"), "relationhysteresis\\(.*, [0-9]+ \\+ \\(_omcQ_24i1 - 1\\)/1, LessEq, LessEqZC\\)");
+val(y[1], 0.5);
+val(y[2], 0.5);
+val(p[1].d, 0.5);
+val(p[2].d, 0.5);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "relationSlotsFor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'relationSlotsFor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// 1.0
+// 0.0
+// 1.0
+// -1.0
+// endResult

@@ -21,7 +21,7 @@ end MatrixIOTest;
 "); getErrorString();
 
 buildModelFMU(MatrixIOTest, version = "2.0"); getErrorString();
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 importFMU("MatrixIOTest.fmu"); getErrorString();
 loadFile("MatrixIOTest_me_FMU.mo"); getErrorString();
 
@@ -47,7 +47,7 @@ val(ync12, 0);
 // ""
 // record SimulationResult
 //     resultFile = "MatrixIOTest_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MatrixIOTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MatrixIOTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""

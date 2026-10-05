@@ -76,11 +76,15 @@ protected
   import BackendExtension = NFBackendExtension;
   import NFBackendExtension.{StateSelect, TearingSelect};
   import NFBackendExtension.VariableKind;
+  import NFBinding.Binding;
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import ExpressionIterator = NFExpressionIterator;
+  import Dimension = NFDimension;
+  import Subscript = NFSubscript;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -102,9 +106,11 @@ protected
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
+  import ASSC = NBASSC;
 
   // Util imports
   import MetaModelica.Dangerous;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;
@@ -235,7 +241,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -245,8 +251,16 @@ protected
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
           alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
+          // update record variability and flatten to record children
+          for var in alias_vars loop
+            BVariable.setRecordVariability(var, NFPrefixes.Variability.PARAMETER);
+          end for;
+          alias_vars := List.flatten(list(BVariable.getRecordChildrenOrSelf(var) for var in alias_vars));
+
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
+          // aliases between slices of arrays are kept as equations, use their start values anyway
+          propagateSliceAliasStarts(eqData.simulation);
           eqData.equations  := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
           eqData.discretes  := EquationPointers.compress(eqData.discretes);
@@ -276,7 +290,7 @@ protected
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
 
-          // add only the actual 1/-1 alias vars to alias vars
+          // add only the actual 1/-1 alias vars to alias vars.
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
           varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
@@ -291,6 +305,166 @@ protected
       then fail();
     end match;
   end aliasDefault;
+
+  type ElementStarts = UnorderedMap<Integer, Expression> "start values of array elements by flat index";
+
+  function propagateSliceAliasStarts
+    "Alias for-equations between slices of arrays (e.g. a[i].x = b[i].y[1]) can not be
+    removed, since only full arrays are replaced. Like for removed aliases, a variable without
+    start value gets the literal start values of its alias elements, the other elements keep
+    the default start value zero."
+    input EquationPointers equations;
+  protected
+    UnorderedMap<ComponentRef, UnorderedMap<Integer, Expression>> starts;
+    Pointer<Variable> var_ptr;
+    Variable var;
+    Type ty;
+    list<Integer> sizes;
+    array<Expression> elements;
+  algorithm
+    starts := UnorderedMap.new<ElementStarts>(ComponentRef.hash, ComponentRef.isEqual);
+    EquationPointers.map(equations, function collectSliceAliasStarts(starts = starts));
+    for tpl in UnorderedMap.toList(starts) loop
+      var_ptr := BVariable.getVarPointer(Util.tuple21(tpl), sourceInfo());
+      var := Pointer.access(var_ptr);
+      ty := Variable.typeOf(var);
+      sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+      elements := arrayCreate(List.fold(sizes, intMul, 1), Expression.makeZero(Type.arrayElementType(ty)));
+      for elem in UnorderedMap.toList(Util.tuple22(tpl)) loop
+        arrayUpdate(elements, Util.tuple21(elem) + 1, Util.tuple22(elem));
+      end for;
+      Pointer.update(var_ptr, BVariable.setStartAttribute(var, reshapeStart(elements, sizes, Type.arrayElementType(ty), 0), true));
+      if Flags.isSet(Flags.DUMP_REPL) then
+        print("[propagateSliceAliasStarts] start of " + ComponentRef.toString(Util.tuple21(tpl)) + ": "
+          + Expression.toString(Util.getOption(BVariable.getStartAttribute(var_ptr))) + "\n");
+      end if;
+    end for;
+  end propagateSliceAliasStarts;
+
+  function collectSliceAliasStarts
+    input output Equation eqn;
+    input UnorderedMap<ComponentRef, UnorderedMap<Integer, Expression>> starts;
+  protected
+    constant Integer max_size = 100000;
+    ComponentRef cref1, cref2, target, source;
+    Pointer<Variable> var1, var2;
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Option<Iterator>> maps;
+    list<list<Integer>> values = {{}};
+    Integer start, step, stop;
+    UnorderedMap<ComponentRef, Expression> repl;
+    UnorderedMap<Integer, Expression> elem_starts;
+    Expression start_exp, elem_exp;
+    Option<Integer> index;
+    list<tuple<Integer, Expression>> elems = {};
+  algorithm
+    () := match eqn
+      case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref1), rhs = Expression.CREF(cref = cref2))}) algorithm
+        var1 := BVariable.getVarPointer(cref1, sourceInfo());
+        var2 := BVariable.getVarPointer(cref2, sourceInfo());
+        if BVariable.isParamOrConst(var1) or BVariable.isParamOrConst(var2)
+          or not Type.isReal(Type.arrayElementType(Variable.typeOf(Pointer.access(var1))))
+          or not Type.isReal(Type.arrayElementType(Variable.typeOf(Pointer.access(var2)))) then
+          return;
+        end if;
+        // exactly one of them has a start value
+        (target, source) := match (BVariable.getStartAttribute(var1), BVariable.getStartAttribute(var2))
+          case (NONE(), SOME(_)) then (cref1, cref2);
+          case (SOME(_), NONE()) then (cref2, cref1);
+          else algorithm return; then (cref1, cref2);
+        end match;
+        SOME(start_exp) := BVariable.getStartAttribute(BVariable.getVarPointer(source, sourceInfo()));
+
+        // all combinations of the iterator values (only literal ranges)
+        (names, ranges, maps) := Iterator.getFrames(eqn.iter);
+        for tpl in List.zip3(names, ranges, maps) loop
+          () := match tpl
+            case (_, Expression.RANGE(), NONE()) guard(Expression.isLiteral(Util.tuple32(tpl))) algorithm
+              (start, step, stop) := Expression.getIntegerRange(Util.tuple32(tpl), false);
+              values := List.flatten(list(list(v :: vs for v in List.intRange3(start, step, stop)) for vs in values));
+            then ();
+            else algorithm return; then ();
+          end match;
+        end for;
+        if listLength(values) > max_size then return; end if;
+
+        for vs in values loop
+          repl := UnorderedMap.fromLists(names, list(Expression.INTEGER(v) for v in listReverse(vs)), ComponentRef.hash, ComponentRef.isEqual);
+          // start value of the source element
+          elem_exp := SimplifyExp.simplify(Expression.map(Expression.fromCref(source), function Replacements.applySimpleExp(replacements = repl)));
+          // the start value can have less dimensions than the variable, e.g. {1.0 for i in 1:2}
+          // for each start = 1.0 of x[2, 3]
+          elem_exp := match elem_exp
+            case Expression.CREF() guard(listLength(ComponentRef.subscriptsAllFlat(elem_exp.cref)) <= Type.dimensionCount(Expression.typeOf(start_exp)))
+              then SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(elem_exp.cref), start_exp, true));
+            else Expression.EMPTY(Type.UNKNOWN());
+          end match;
+          if not Expression.isLiteral(elem_exp) then return; end if;
+          // flat index of the target element
+          index := flatIndex(SimplifyExp.simplify(Expression.map(Expression.fromCref(target), function Replacements.applySimpleExp(replacements = repl))));
+          if isNone(index) then return; end if;
+          elems := (Util.getOption(index), elem_exp) :: elems;
+        end for;
+
+        target := ComponentRef.stripSubscriptsAll(target);
+        elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
+        for elem in elems loop
+          UnorderedMap.add(Util.tuple21(elem), Util.tuple22(elem), elem_starts);
+        end for;
+        UnorderedMap.add(target, elem_starts, starts);
+      then ();
+      else ();
+    end match;
+  end collectSliceAliasStarts;
+
+  function flatIndex
+    "zero based flat index of a cref with literal subscripts in its variable"
+    input Expression exp;
+    output Option<Integer> index = NONE();
+  protected
+    list<Subscript> subs;
+    list<Integer> sizes;
+    Integer idx = 0;
+  algorithm
+    () := match exp
+      case Expression.CREF() algorithm
+        subs := ComponentRef.subscriptsAllFlat(exp.cref);
+        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(Variable.typeOf(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo())))));
+        if listLength(subs) <> listLength(sizes) then return; end if;
+        for tpl in List.zip(subs, sizes) loop
+          () := match tpl
+            case (Subscript.INDEX(index = Expression.INTEGER()), _) algorithm
+              idx := idx * Util.tuple22(tpl) + Expression.integerValue(Subscript.toExp(Util.tuple21(tpl))) - 1;
+            then ();
+            else algorithm return; then ();
+          end match;
+        end for;
+        index := SOME(idx);
+      then ();
+      else ();
+    end match;
+  end flatIndex;
+
+  function reshapeStart
+    "nested array of the flat elements for the dimension sizes"
+    input array<Expression> elements;
+    input list<Integer> sizes;
+    input Type elemTy;
+    input Integer offset;
+    output Expression exp;
+  protected
+    Integer n, stride;
+    list<Integer> rest;
+  algorithm
+    exp := match sizes
+      case {} then elements[offset + 1];
+      case n :: rest algorithm
+        stride := List.fold(rest, intMul, 1);
+      then Expression.makeArray(Type.liftArrayLeftList(elemTy, list(Dimension.fromInteger(s) for s in sizes)),
+        listArray(list(reshapeStart(elements, rest, elemTy, offset + (i - 1) * stride) for i in 1:n)), true);
+    end match;
+  end reshapeStart;
 
   function checkReplacements
     "Checks validity of all replacements, returns all valid replacements and auxiliary equations"
@@ -433,7 +607,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -466,6 +640,7 @@ protected
     input VariablePointers variables;
     input EquationPointers equations;
     input Partition.Kind kind;
+    input Pointer<Integer> index;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -501,7 +676,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements, kind);
+      replacements := createReplacementRules(set, index, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -515,17 +690,25 @@ protected
     Equation eq;
     CrefTpl crefTpl = EMPTY_CREF_TPL;
   algorithm
-    eq := Pointer.access(eq_ptr);
+    eq := forToFullArrayEquation(Pointer.access(eq_ptr));
     crefTpl := match eq
       case BEquation.SCALAR_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
-      // ToDo: ARRAY_EQUATION RECORD_EQUATION (AUX_EQUATION?)
-      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+
+      // an array variable and a scalar are not aliases, even if the array has only one element:
+      // replacing the array by the scalar breaks the array expressions it is used in
+      case BEquation.ARRAY_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs) and sameArrayness(eq.lhs, eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;
+
+      case BEquation.RECORD_EQUATION() guard(isSimpleExp(eq.lhs) and isSimpleExp(eq.rhs)) algorithm
+        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+      then crefTpl;
+
       else crefTpl;
     end match;
 
@@ -534,6 +717,7 @@ protected
         SetPtr set_ptr, set1_ptr, set2_ptr;
         AliasSet set, set1, set2;
         ComponentRef cr1, cr2;
+        Pointer<Equation> new_eq_ptr;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
@@ -566,48 +750,58 @@ protected
           set1_ptr := UnorderedMap.getOrFail(cr1, map);
           set2_ptr := UnorderedMap.getOrFail(cr2, map);
           set1 := Pointer.access(set1_ptr);
-          set2 := Pointer.access(set2_ptr);
-          set := EMPTY_ALIAS_SET;
 
           if referenceEq(set1_ptr, set2_ptr) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because they would create a loop. This would create an underdetermined Set!:\n\n" +
+            // check if there is a constant binding
+            if isSome(set1.const_opt) then
+              set2 := Pointer.access(set2_ptr);
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because they would create a loop and both have a constant binding. This would create an underdetermined Set!:\n\n" +
                 "Trying to merge: " + Equation.toString(eq) + "\n\n" +
                 AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
-                AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif isSome(set1.const_opt) then
-            set.const_opt := set1.const_opt;
-          elseif isSome(set2.const_opt) then
-            set.const_opt := set2.const_opt;
-          end if;
+            end if;
+            // add eq to set1
+            new_eq_ptr := Pointer.create(eq);
+            set1.simple_equations := new_eq_ptr :: set1.simple_equations;
+            // update pointer of set1 -> set1
+            Pointer.update(set1_ptr, set1);
 
-          // try to append the shorter to the longer lists
-          if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
           else
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
-          end if;
+            set2 := Pointer.access(set2_ptr);
+            set := EMPTY_ALIAS_SET;
+            if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                  "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
+                  AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
+              fail();
+            elseif isSome(set1.const_opt) then
+              set.const_opt := set1.const_opt;
+            elseif isSome(set2.const_opt) then
+              set.const_opt := set2.const_opt;
+            end if;
 
-          // try to change as few pointer entries as possible
-          if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set1_ptr, set);
-            for cr in set2.simple_variables loop
-              UnorderedMap.add(cr, set1_ptr, map);
-            end for;
-          else
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set2_ptr, set);
-            for cr in set1.simple_variables loop
-              UnorderedMap.add(cr, set2_ptr, map);
-            end for;
-          end if;
+            // try to append the shorter to the longer lists
+            if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
+            else
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
+            end if;
 
+            // try to change as few pointer entries as possible
+            if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set1_ptr, set);
+              for cr in set2.simple_variables loop
+                UnorderedMap.add(cr, set1_ptr, map);
+              end for;
+            else
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set2_ptr, set);
+              for cr in set1.simple_variables loop
+                UnorderedMap.add(cr, set2_ptr, map);
+              end for;
+            end if;
+          end if;
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
           set_ptr := UnorderedMap.getOrFail(cr1, map);
@@ -646,6 +840,156 @@ protected
     end match;
   end findSimpleEquation;
 
+  function forToFullArrayEquation
+    "Converts a for equation into the array equation of the full variables if it is
+    equivalent to it, e.g. for i in 1:n loop a[i].x = b[i].y; end for; -> a.x = b.y;
+    All array crefs need the same subscripts, consisting of each iterator exactly once
+    (and whole dimensions) and each iterator has to cover its full dimension.
+    Otherwise the equation is returned unchanged."
+    input output Equation eq;
+  protected
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Option<Iterator>> maps;
+    UnorderedMap<ComponentRef, Integer> iter_sizes = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    Pointer<Option<list<Subscript>>> subs_ptr = Pointer.create(NONE());
+    Pointer<Boolean> ok_ptr = Pointer.create(true);
+    Pointer<Option<Type>> ty_ptr = Pointer.create(NONE());
+    Expression lhs, rhs;
+    Integer start, step, stop;
+  algorithm
+    (lhs, rhs) := match eq
+      case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = lhs, rhs = rhs)}) then (lhs, rhs);
+      case Equation.FOR_EQUATION(body = {Equation.ARRAY_EQUATION(lhs = lhs, rhs = rhs)}) then (lhs, rhs);
+      else algorithm return; then (Expression.EMPTY(Type.UNKNOWN()), Expression.EMPTY(Type.UNKNOWN()));
+    end match;
+
+    // all iterators have to be plain ranges starting at one with step one
+    (names, ranges, maps) := Iterator.getFrames(Equation.getForIterator(eq));
+    for tpl in List.zip3(names, ranges, maps) loop
+      _ := match tpl
+        local
+          ComponentRef name;
+          Expression range;
+        case (name, range as Expression.RANGE(), NONE()) guard(Expression.isLiteral(range)) algorithm
+          (start, step, stop) := Expression.getIntegerRange(range, false);
+          if start <> 1 or step <> 1 then return; end if;
+          UnorderedMap.add(name, stop, iter_sizes);
+        then ();
+        else algorithm return; then ();
+      end match;
+    end for;
+
+    // check all crefs and replace them by the full variables
+    lhs := Expression.map(lhs, function fullVariableCref(iter_sizes = iter_sizes, subs_ptr = subs_ptr, ok_ptr = ok_ptr, ty_ptr = ty_ptr));
+    rhs := Expression.map(rhs, function fullVariableCref(iter_sizes = iter_sizes, subs_ptr = subs_ptr, ok_ptr = ok_ptr, ty_ptr = ty_ptr));
+    if not Pointer.access(ok_ptr) or isNone(Pointer.access(subs_ptr)) then return; end if;
+    // iterators must not be used outside of the subscripts
+    if Expression.contains(lhs, function isIteratorCref(iter_sizes = iter_sizes))
+      or Expression.contains(rhs, function isIteratorCref(iter_sizes = iter_sizes)) then return; end if;
+    lhs := Expression.map(lhs, Expression.repairOperator);
+    rhs := Expression.map(rhs, Expression.repairOperator);
+    // every iterator has to be used
+    if listLength(List.filterOnTrue(Util.getOption(Pointer.access(subs_ptr)), Subscript.isIndex)) <> UnorderedMap.size(iter_sizes) then return; end if;
+
+    eq := Equation.ARRAY_EQUATION(Util.getOption(Pointer.access(ty_ptr)), lhs, rhs, Equation.getSource(eq), Equation.getAttributes(eq), NONE());
+  end forToFullArrayEquation;
+
+  function isIteratorCref
+    input Expression exp;
+    input UnorderedMap<ComponentRef, Integer> iter_sizes;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then UnorderedMap.contains(exp.cref, iter_sizes);
+      else false;
+    end match;
+  end isIteratorCref;
+
+  function isFullIteratorSubscript
+    "true if the subscript is whole or an iterator that covers the full dimension"
+    input Subscript sub;
+    input Dimension dim;
+    input UnorderedMap<ComponentRef, Integer> iter_sizes;
+    output Boolean b;
+  algorithm
+    b := match sub
+      local
+        ComponentRef iter;
+        Expression range;
+        Integer start, step, stop;
+      case Subscript.WHOLE() then true;
+      case Subscript.SLICE(slice = range as Expression.RANGE()) guard(Expression.isLiteral(range) and Dimension.isKnown(dim)) algorithm
+        (start, step, stop) := Expression.getIntegerRange(range, false);
+      then start == 1 and step == 1 and stop == Dimension.size(dim);
+      case Subscript.INDEX(index = Expression.CREF(cref = iter))
+        guard(UnorderedMap.contains(iter, iter_sizes) and Dimension.isKnown(dim))
+      then Dimension.size(dim) == UnorderedMap.getSafe(iter, iter_sizes, sourceInfo());
+      else false;
+    end match;
+  end isFullIteratorSubscript;
+
+  function fullVariableCref
+    "helper for forToFullArrayEquation. Replaces subscripted crefs by the full variable
+    and checks that all of them are subscripted the same way and that no iterator is used otherwise."
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, Integer> iter_sizes;
+    input Pointer<Option<list<Subscript>>> subs_ptr;
+    input Pointer<Boolean> ok_ptr;
+    input Pointer<Option<Type>> ty_ptr;
+  protected
+    list<Subscript> subs;
+    list<Dimension> dims;
+    Pointer<Variable> var_ptr;
+    ComponentRef name;
+    Type ty;
+    Boolean ok;
+  algorithm
+    if not Pointer.access(ok_ptr) then return; end if;
+    exp := match exp
+      // iterators are checked after all crefs are replaced (they are also mapped inside of subscripts)
+      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, iter_sizes)) then exp;
+
+      case Expression.CREF() guard(ComponentRef.isTime(exp.cref) or not ComponentRef.hasSubscripts(exp.cref)) algorithm
+        // unsubscripted crefs have to be scalar, array variables have to be subscripted by the iterators
+        if Type.isArray(exp.ty) then
+          Pointer.update(ok_ptr, false);
+        end if;
+      then exp;
+
+      case Expression.CREF() algorithm
+        var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+        name    := BVariable.getVarName(var_ptr);
+        ty      := ComponentRef.getSubscriptedType(name);
+        dims    := Type.arrayDims(ty);
+        subs    := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
+        ok      := listLength(subs) == listLength(dims);
+        // each subscript is either whole or an iterator of the full dimension size
+        if ok then
+          ok := List.all(list(isFullIteratorSubscript(sub, dim, iter_sizes) threaded for sub in subs, dim in dims), Util.id);
+        end if;
+        // all array crefs have the same subscripts and types
+        if ok then
+          ok := match Pointer.access(subs_ptr)
+            local
+              list<Subscript> subs2;
+            case SOME(subs2) then List.isEqualOnTrue(subs, subs2, Subscript.isEqual)
+                                  and Type.isEqual(ty, Util.getOption(Pointer.access(ty_ptr)));
+            else algorithm
+              // each iterator only once
+              ok := listLength(List.uniqueOnTrue(List.filterOnTrue(subs, Subscript.isIndex), Subscript.isEqual)) == listLength(List.filterOnTrue(subs, Subscript.isIndex));
+              Pointer.update(subs_ptr, SOME(subs));
+              Pointer.update(ty_ptr, SOME(ty));
+            then ok;
+          end match;
+        end if;
+        Pointer.update(ok_ptr, ok);
+      then Expression.fromCref(name);
+
+      else exp;
+    end match;
+  end fullVariableCref;
+
   function findCrefs "BB, kabdelhak
   looks for variable crefs in Expressions, if more than 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
@@ -665,6 +1009,11 @@ protected
       // fail for record elements for now
       case Expression.CREF()
         guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+      then FAILED_CREF_TPL;
+
+      // fail for top level inputs
+      case Expression.CREF()
+        guard(Variable.isTopLevelInput(Pointer.access(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -703,6 +1052,13 @@ protected
                                   else false;
     end match;
   end findCrefsFail;
+
+  function sameArrayness
+    "true if both expressions are arrays or both are scalars"
+    input Expression exp1;
+    input Expression exp2;
+    output Boolean same = Type.isArray(Expression.typeOf(exp1)) == Type.isArray(Expression.typeOf(exp2));
+  end sameArrayness;
 
   function isSimpleExp
     "checks if an expression can be considered simple."
@@ -821,11 +1177,10 @@ protected
   function createReplacementRules
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
+    input Pointer<Integer> index;
     input output UnorderedMap<ComponentRef, Expression> replacements;
     input Partition.Kind kind;
   algorithm
-    // ToDo: fix variable attributes to keep
-    // report errors/warnings
     replacements := match set.const_opt
       local
         Expression rhs;
@@ -835,9 +1190,17 @@ protected
         VariablePointers vars;
         list<Pointer<Variable>> var_lst;
         EquationPointers eqs;
+        list<Pointer<Equation>> eqns;
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
+        Status status;
+        Expression res, expr;
+        DifferentiationArguments args;
+        array<Real> lhs;
+        Integer idx_i = 1;
+        list<Integer>  lst_enum;
+        UnorderedMap<ComponentRef, Integer>  int_to_cref;
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
@@ -849,28 +1212,44 @@ protected
         Replacements.simple(comps, replacements);
       then replacements;
 
+      case NONE() guard(listLength(set.simple_variables) == listLength(set.simple_equations)) algorithm
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
+        // solve the equation system by performing analytical-to-structural singularity conversion
+        eqns := ASSC.main(set.simple_equations, set.simple_variables, index);
+        eqs := EquationPointers.fromList(eqns);
+        // causalize the system
+        (_, comps) := Causalize.simple(vars, eqs, kind);
+        // create replacements from strong components
+        Replacements.simple(comps, replacements);
+      then replacements;
+
       else algorithm
         // there is no constant binding -> all others will be replaced by one variable
         (alias_vars, collector) := chooseVariableToKeep(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), var_to_keep);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
+
         // causalize the system
         (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
         end if;
+
         // create replacements from strong components
         Replacements.simple(comps, replacements);
         var_lst := VariablePointers.toList(vars);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (before replacements): ") + collector.toString(collector) + "\n");
         end if;
+
+        // solve equations for vars to have attribute conversion rules
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq,_, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)));
+          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
+
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_4("Attribute collector (after replacements): ") + collector.toString(collector) + "\n");
         end if;
@@ -910,7 +1289,16 @@ protected
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_max), attrcollector.max_val_map); // update attribute collector
     end if;
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
-    if UnorderedMap.size(fixed_start_map) == 1 then
+    if UnorderedMap.isEmpty(fixed_start_map) and not UnorderedMap.isEmpty(attrcollector.start_map) then
+      // no fixed variable in the set: select the start value with the
+      // strongest confidence as computed by the frontend (MLS 8.6.2)
+      new_cref := selectStartByConfidence(attrcollector.start_map, attrcollector.start_binding_map, set);
+      if isSome(new_cref) then
+        new_start := SOME(UnorderedMap.getSafe(Util.getOption(new_cref), attrcollector.start_map, sourceInfo()));
+        Pointer.update(var_to_keep, BVariable.setStartAttribute(Pointer.access(var_to_keep), Util.getOption(new_start), true));
+        UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
+      end if;
+    elseif UnorderedMap.size(fixed_start_map) == 1 then
       new_start := SOME(listHead(UnorderedMap.valueList(fixed_start_map)));
       fixed_var := BVariable.getVarPointer(UnorderedMap.firstKey(fixed_start_map), sourceInfo());
       BVariable.setFixed(fixed_var, false, true); // avoid having two fixed variables
@@ -947,6 +1335,7 @@ protected
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
+      UnorderedMap.new<Binding>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual),
       UnorderedMap.new<StateSelect>(ComponentRef.hash, ComponentRef.isEqual),
@@ -980,7 +1369,6 @@ protected
     output Option<Expression> max_exp;
   protected
     list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
-    Expression max_exp_val;
     Real max_val;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
@@ -988,18 +1376,13 @@ protected
       max_val := List.maxElement(list(Expression.realValue(val) for val in constants), realLt);
       rest := Expression.REAL(max_val) :: rest;
     end if;
+    rest := List.uniqueOnTrue(rest, Expression.isEqual);
     if listEmpty(rest) then // constants and rest are empty
       max_exp := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
       max_exp := SOME(listHead(rest));
     else
-      max_exp_val :=  Expression.CALL(Call.makeTypedCall(
-        fn          = NFBuiltinFuncs.MAX_REAL,
-        args        = rest,
-        variability = NFPrefixes.Variability.PARAMETER,
-        purity      = NFPrefixes.Purity.PURE
-      ));
-      max_exp := SOME(max_exp_val);
+      max_exp := SOME(makeBoundCall(NFBuiltinFuncs.MAX_REAL, rest));
     end if;
   end getMaximum;
 
@@ -1009,7 +1392,6 @@ protected
     output Option<Expression> min_exp;
   protected
     list<Expression> constants, rest, lst_values = UnorderedMap.valueList(map);
-    Expression min_exp_val;
     Real min_val;
   algorithm
     (constants, rest) := List.splitOnTrue(lst_values, Expression.isConstNumber);
@@ -1017,20 +1399,52 @@ protected
       min_val := List.minElement(list(Expression.realValue(val) for val in constants), realLt);
       rest := Expression.REAL(min_val) :: rest;
     end if;
+    rest := List.uniqueOnTrue(rest, Expression.isEqual);
     if listEmpty(rest) then // constants and rest are empty
       min_exp := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
       min_exp := SOME(listHead(rest));
     else
-      min_exp_val :=  Expression.CALL(Call.makeTypedCall(
-        fn          = NFBuiltinFuncs.MAX_REAL,
-        args        = rest,
-        variability = NFPrefixes.Variability.PARAMETER,
-        purity      = NFPrefixes.Purity.PURE
-      ));
-      min_exp := SOME(min_exp_val);
+      min_exp := SOME(makeBoundCall(NFBuiltinFuncs.MIN_REAL, rest));
     end if;
   end getMinimum;
+
+  function makeBoundCall
+    "Calls the scalar min or max function, element-wise for array bounds."
+    input Function fn;
+    input list<Expression> args;
+    output Expression exp;
+  protected
+    list<Expression> call_args = args;
+    list<Dimension> dims = {};
+    list<tuple<InstNode, Expression>> iters = {};
+    InstNode iter;
+    Subscript sub;
+  algorithm
+    for arg in args loop
+      if Expression.hasArrayType(arg) then
+        dims := Type.arrayDims(Expression.typeOf(arg));
+        break;
+      end if;
+    end for;
+
+    for dim in dims loop
+      iter := InstNode.newUniqueIterator(sourceInfo());
+      iters := (iter, Expression.RANGE(Type.ARRAY(Type.INTEGER(), {dim}), Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim))) :: iters;
+      sub := Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())));
+      call_args := list(if Expression.hasArrayType(a) then Expression.applySubscript(sub, a) else a for a in call_args);
+    end for;
+
+    // the scalar min and max take two arguments, nest them for more
+    exp :: call_args := listReverse(call_args);
+    for arg in call_args loop
+      exp := Expression.CALL(Call.makeTypedCall(fn, {arg, exp}, Variability.PARAMETER, NFPrefixes.Purity.PURE));
+    end for;
+    if not listEmpty(dims) then
+      exp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.liftArrayLeftList(Expression.typeOf(exp), dims),
+        Variability.PARAMETER, NFPrefixes.Purity.PURE, exp, iters));
+    end if;
+  end makeBoundCall;
 
   function setStartFixed
     "Analyses start and fixed values." // case 1: 1 or 0 fixed ; case 2: more than 1 fixed
@@ -1040,7 +1454,6 @@ protected
     output UnorderedMap<ComponentRef, Expression> fixed_start_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
   protected
     list<tuple<ComponentRef, Expression>> fixed_lst = UnorderedMap.toList(fixed_map);
-    list<Expression> start_lst = UnorderedMap.valueList(start_map);
     list<Expression> fixed_start_lst;
     Integer count_fixed = 0;
     ComponentRef cref;
@@ -1054,25 +1467,25 @@ protected
         UnorderedMap.add(cref, sval, fixed_start_map);
       end if;
     end for;
-    if count_fixed == 0 then
-      if not List.allEqual(start_lst, Expression.isEqual) then
-        if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addCompilerWarning(getInstanceName() + ": Alias set with conflicting unfixed start values detected.\n"
-                                  + AliasSet.toString(set) + "\n\tStart map after replacements:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
-        else
-          Error.addCompilerWarning(getInstanceName() + ": Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.\n");
-        end if;
-      end if;
-    elseif count_fixed > 1 then
+    if count_fixed > 1 then
       fixed_start_lst := UnorderedMap.valueList(fixed_start_map);
       if not List.allEqual(fixed_start_lst, Expression.isEqual) then
-        if Flags.isSet(Flags.DUMP_REPL) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values!\n" + AliasSet.toString(set)
-                           + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
-          fail();
+        // isEqual is syntactic: `true` vs. a parameter cref bound to `true` only looks different.
+        // Fail only for a provable conflict (all literals), otherwise warn and pick one.
+        if List.all(fixed_start_lst, Expression.isLiteral) then
+          if Flags.isSet(Flags.DUMP_REPL) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values!\n" + AliasSet.toString(set)
+                             + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t")});
+            fail();
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values! Use -d=dumprepl for more information.\n"});
+            fail();
+          end if;
+        elseif Flags.isSet(Flags.DUMP_REPL) then
+          Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed with start values that could not be proven equal; picking one arbitrarily.\n"
+                                  + AliasSet.toString(set) + "\n\tFixed start map after replacements:\n\t" + UnorderedMap.toString(fixed_start_map, ComponentRef.toString, Expression.toString,"\n\t"));
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because multiple variables are fixed with different start values! Use -d=dumprepl for more information.\n"});
-          fail();
+          Error.addCompilerWarning(getInstanceName() + ": Multiple variables are fixed with start values that could not be proven equal; picking one arbitrarily. Use -d=dumprepl for more information.\n");
         end if;
       elseif List.allEqual(fixed_start_lst, Expression.isEqual) then
         if Flags.isSet(Flags.DUMP_REPL) then
@@ -1084,6 +1497,43 @@ protected
       end if;
     end if;
   end setStartFixed;
+
+  function selectStartByConfidence
+    "Selects the start value with the strongest (lowest) confidence
+     as computed by the frontend, per MLS 8.6.2. Warns if the choice
+     is ambiguous (equal confidence, conflicting values)."
+    input UnorderedMap<ComponentRef, Expression> start_map;
+    input UnorderedMap<ComponentRef, Binding> binding_map;
+    input AliasSet set;
+    output Option<ComponentRef> best = NONE();
+  protected
+    ComponentRef cref;
+    Expression val;
+    Expression best_val = Expression.INTEGER(0);
+    Binding b, best_b = NFBinding.EMPTY_BINDING;
+    Integer cmp;
+    Boolean tie = false;
+  algorithm
+    for tpl in UnorderedMap.toList(start_map) loop
+      (cref, val) := tpl;
+      b := UnorderedMap.getSafe(cref, binding_map, sourceInfo());
+      cmp := if isNone(best) then -1 else Binding.compareStartConfidence(b, best_b);
+      if cmp < 0 then
+        (best, best_val, best_b) := (SOME(cref), val, b);
+        tie := false;
+      elseif cmp == 0 and not Expression.isEqual(val, best_val) then
+        tie := true;
+      end if;
+    end for;
+    if tie then
+      if Flags.isSet(Flags.DUMP_REPL) then
+        Error.addCompilerWarning(getInstanceName() + ": Alias set with conflicting unfixed start values of equal confidence detected.\n"
+                                + AliasSet.toString(set) + "\n\tStart map after replacements:\n\t" + UnorderedMap.toString(start_map, ComponentRef.toString, Expression.toString,"\n\t"));
+      else
+        Error.addCompilerWarning(getInstanceName() + ": Alias set with conflicting unfixed start values of equal confidence detected. Use -d=dumprepl for more information.\n");
+      end if;
+    end if;
+  end selectStartByConfidence;
 
   function checkNominalThreshold
     "Calculates quotient of greatest and lowest nominal value and checks if quotient is above the constant NOMINAL_THRESHOLD."
@@ -1165,17 +1615,16 @@ protected
       end if;
     end if;
 
-    // zero valued nominal values are not allowed
+    // zero valued nominal values are invalid, but the models still work, so they are only reported
     if not listEmpty(zeroes) then
-      str := getInstanceName() + " failed because zero values are not allowed.";
+      str := getInstanceName() + ": Zero valued nominal values are not allowed.";
       if Flags.isSet(Flags.DUMP_REPL) then
         str := str + "\n\tNominal map after replacements (violating array index = " + intString(index) + "):\n\t"
           + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
       else
         str := str + " Use -d=dumprepl for more information.\n";
       end if;
-      Error.addCompilerError(str);
-      fail();
+      Error.addCompilerWarning(str);
     end if;
   end checkNominalThresholdSingle;
 
@@ -1302,36 +1751,55 @@ protected
   function optionMinMax
     "Collects min and max attributes if available."
     input Pointer<Variable> var_ptr;
-    input Option<Expression> attr_min, attr_max;
+    input Option<Binding> attr_min, attr_max;
     input output AttributeCollector attrcollector;
   protected
-    Expression min_val, max_val;
+    Binding min_b, max_b;
   algorithm
     if isSome(attr_min) then
-      min_val := Util.getOption(attr_min);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
+      SOME(min_b) := attr_min;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(min_b), attrcollector.min_val_map);
     end if;
     if isSome(attr_max) then
-      max_val := Util.getOption(attr_max);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
+      SOME(max_b) := attr_max;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(max_b), attrcollector.max_val_map);
     end if;
   end optionMinMax;
+
+  function isAuxStart
+    "true if the start value is the call of a function alias variable"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CALL()            then true;
+      case Expression.RECORD_ELEMENT()  then Expression.isCall(exp.recordExp);
+      case Expression.TUPLE_ELEMENT()   then Expression.isCall(exp.tupleExp);
+      // the start value of a call in a for equation with an array result
+      case Expression.ARRAY()           then Array.all(exp.elements, isAuxStart);
+      else false;
+    end match;
+  end isAuxStart;
 
   function optionStartFixed
     "Collects start and fixed attributes if available."
     input Pointer<Variable> var_ptr;
-    input Option<Expression> attr_start, attr_fixed;
+    input Option<Binding> attr_start, attr_fixed;
     input output AttributeCollector attrcollector;
   protected
-    Expression start_val, fixed_val;
+    Binding start_b, fixed_b;
   algorithm
     if isSome(attr_start) then
-      start_val := Util.getOption(attr_start);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
+      SOME(start_b) := attr_start;
+      // the generated start values of function alias variables (see NBFunctionAlias) are only guesses
+      if not (BVariable.isFunctionAlias(var_ptr) and Binding.source(start_b) == NFBinding.Source.GENERATED and isAuxStart(Binding.getTypedExp(start_b))) then
+        UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(start_b), attrcollector.start_map);
+        UnorderedMap.add(BVariable.getVarName(var_ptr), start_b, attrcollector.start_binding_map);
+      end if;
     end if;
     if isSome(attr_fixed) then
-      fixed_val := Util.getOption(attr_fixed);
-      UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
+      SOME(fixed_b) := attr_fixed;
+      UnorderedMap.add(BVariable.getVarName(var_ptr), Binding.getTypedExp(fixed_b), attrcollector.fixed_map);
     end if;
   end optionStartFixed;
 
@@ -1361,13 +1829,15 @@ protected
         attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
         attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
         if isSome(attr.nominal) then
-          nominal_val := Util.getOption(attr.nominal);
+          nominal_val := Binding.getTypedExp(Util.getOption(attr.nominal));
           UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
         end if;
         if isSome(attr.stateSelect) then
           stateSelect_val := Util.getOption(attr.stateSelect);
           if stateSelect_val == StateSelect.ALWAYS then
             rating := rating + 100;
+          elseif stateSelect_val == StateSelect.PREFER then
+            rating := rating + 50;
           end if;
           UnorderedMap.add(BVariable.getVarName(var_ptr), stateSelect_val, attrcollector.stateSelect_map);
         end if;
@@ -1395,6 +1865,7 @@ protected
       UnorderedMap<ComponentRef,Expression> min_val_map             "set containing all minimum values";
       UnorderedMap<ComponentRef,Expression> max_val_map             "set containing all maximum values";
       UnorderedMap<ComponentRef,Expression> start_map               "set containing all start values";
+      UnorderedMap<ComponentRef,Binding> start_binding_map         "start bindings, for their confidence";
       UnorderedMap<ComponentRef,Expression> fixed_map               "set containing all fixed values";
       UnorderedMap<ComponentRef,Expression> nominal_map             "set containing all nominal values";
       UnorderedMap<ComponentRef,StateSelect> stateSelect_map        "set containing all stateSelect values";
@@ -1459,16 +1930,16 @@ protected
         max_val_opt := UnorderedMap.get(var_cref, attrcollector.max_val_map);
       end if;
 
-      // if linear factor is negative => swap min and max
+      // if linear factor is negative => swap min and max. skip discontinuous and record types
       ty := Expression.typeOf(rhs);
-      if Type.isContinuous(ty) or Type.isInteger(Type.elementType(ty)) then
+      if not Type.isContinuous(ty) or not Type.isInteger(Type.elementType(ty)) or Type.isRecord(ty) then
+        swap_min_max := false;
+      else
         args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
         args.diffCref := var_cref;
         diff_rhs := Differentiate.differentiateExpression(rhs, args);
         diff_rhs := SimplifyExp.simplify(diff_rhs);
         swap_min_max := Expression.isNegative(diff_rhs);
-      else
-        swap_min_max := false;
       end if;
       if swap_min_max and isSome(min_val_opt) and isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);

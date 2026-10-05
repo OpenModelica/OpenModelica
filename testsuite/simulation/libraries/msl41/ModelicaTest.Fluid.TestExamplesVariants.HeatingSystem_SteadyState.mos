@@ -1,0 +1,51 @@
+// name:     ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+// The model builds, but the dynamic state selection over the pressures
+// becomes singular during the simulation; the only real state is tank.m.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageName := $TypeName(ModelicaTest);
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState);
+compareVars :=
+{
+   "tank.m",
+   "tankLevel",
+   "m_flow",
+   "T_forward",
+   "T_return",
+   "tank.ports[2].p"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// ModelicaTest
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.Compilation
+// ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState
+// {"tank.m", "tankLevel", "m_flow", "T_forward", "T_return", "tank.ports[2].p"}
+// Compilation succeeded
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.
+// "true
+// "
+// ""
+// endResult

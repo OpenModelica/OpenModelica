@@ -58,10 +58,10 @@ namespace IAEX
    CellParserFactory::CellParserFactory(){}
    CellParserFactory::~CellParserFactory(){}
 
-   NBParser *CellParserFactory::createParser(QString filename, Factory *f, Document *document, int readmode)
+   std::unique_ptr<NBParser> CellParserFactory::createParser(QString filename, Factory *f, Document *document, int readmode)
    {
      // PORT >>filename = filename.stripWhiteSpace();
      QString fileName = filename.trimmed();
-     return new XMLParser(fileName, f, document, readmode);
+     return std::make_unique<XMLParser>(fileName, f, document, readmode);
    }
 };

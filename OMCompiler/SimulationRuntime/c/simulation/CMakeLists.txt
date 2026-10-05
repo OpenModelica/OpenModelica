@@ -5,15 +5,13 @@ find_package(LAPACK REQUIRED)
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
   "eval_dep.c"
+  "jacobian_colpack.cpp"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
   "options.c"
-  "results/MatVer4.cpp"
-  "results/simulation_result_csv.cpp"
   "results/simulation_result_ia.cpp"
-  "results/simulation_result_mat4.cpp"
-  "results/simulation_result_plt.cpp"
+  "results/simulation_result_rust.cpp"
   "results/simulation_result.cpp"
   "simulation_info_json.c"
   "simulation_input_xml.c"
@@ -30,6 +28,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/discrete_changes.c"
   "solver/gbode_conf.c"
   "solver/gbode_ctrl.c"
+  "solver/gbode_err.c"
   "solver/gbode_events.c"
   "solver/gbode_main.c"
   "solver/gbode_nls.c"
@@ -41,7 +40,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/ida_solver.c"
   "solver/initialization/initialization.c"
   "solver/jacobian_analysis.c"
-  "solver/jacobianSymbolical.c"
   "solver/kinsol_b.c"
   "solver/kinsolSolver.c"
   "solver/linearSolverKlu.c"
@@ -79,15 +77,13 @@ set(OMC_SIMRT_SIMULATION_CINC
 set(OMC_SIMRT_SIMULATION_HEADERS
   "arrayIndex.h"
   "eval_dep.h"
+  "jacobian_colpack.h"
   "jacobian_util.h"
   "modelinfo.h"
   "omc_simulation_util.h"
   "options.h"
-  "results/MatVer4.h"
-  "results/simulation_result_csv.h"
   "results/simulation_result_ia.h"
-  "results/simulation_result_mat4.h"
-  "results/simulation_result_plt.h"
+  "results/simulation_result_rust.h"
   "results/simulation_result.h"
   "simulation_info_json.h"
   "simulation_input_xml.h"
@@ -105,6 +101,7 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/discrete_changes.h"
   "solver/gbode_conf.h"
   "solver/gbode_ctrl.h"
+  "solver/gbode_err.h"
   "solver/gbode_events.h"
   "solver/gbode_main.h"
   "solver/gbode_nls.h"
@@ -115,7 +112,6 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/ida_solver.h"
   "solver/initialization/initialization.h"
   "solver/jacobian_analysis.h"
-  "solver/jacobianSymbolical.h"
   "solver/kinsol_b.h"
   "solver/kinsolSolver.h"
   "solver/linearSolverKlu.h"
@@ -145,8 +141,27 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/synchronous.h"
 )
 
+# Install the header files.
+# This installs the whole directory structure of simulation/ folder which means
+# all headers will be installed keeping the directory structure intact. It might
+# install some unneeded headers but it suffices for now.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.c.inc"
+)
+
+if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+  return()
+endif()
+
 add_library(OpenModelicaRuntimeCSimulation OBJECT ${OMC_SIMRT_SIMULATION_SOURCES})
 add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulation)
+
+# The result files (.mat/.arrow/.csv/.plt) are written by libomc_result
+# (results/simulation_result_rust.cpp).
+target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::result)
 
 target_include_directories(OpenModelicaRuntimeCSimulation
   PUBLIC
@@ -184,6 +199,16 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     ${LAPACK_LIBRARIES}
 )
 
+if(OM_OMC_ENABLE_PRIMME)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_HAVE_PRIMME)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::primme)
+endif()
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(OpenModelicaRuntimeCSimulation PRIVATE OMC_HAVE_COLPACK)
+  target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::colpack)
+endif()
+
 if(OM_OMC_ENABLE_OPTIMIZATION)
   target_link_libraries(OpenModelicaRuntimeCSimulation
     PUBLIC
@@ -201,14 +226,3 @@ if(MINGW)
 elseif(MSVC)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::regex)
 endif()
-
-# Install the header files.
-# This installs the whole directory structure of simulation/ folder which means
-# all headers will be installed keeping the directory structure intact. It might
-# install some unneeded headers but it suffices for now.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
-  FILES_MATCHING
-    PATTERN "*.h"
-    PATTERN "*.c.inc"
-)

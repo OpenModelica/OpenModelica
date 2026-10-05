@@ -2,6 +2,7 @@
 // keywords: Differentiate, Expression
 // status:   correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 //  testing differentiate in exp
 //

@@ -1,7 +1,7 @@
 // name:     ChuaCircuit
 // keywords: simulation MSL Examples
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml ChuaCircuit.fmu ChuaCircuit_* ChuaCircuit_me_FMU.mo ChuaCircuit.libs ChuaCircuit.lib ChuaCircuit.so ChuaCircuit.dll ChuaCircuit.c ChuaCircuit.makefile
+// teardown_command: rm -rf binaries sources modelDescription.xml ChuaCircuit.fmu ChuaCircuit_* ChuaCircuit_me_FMU.mo ChuaCircuit.libs ChuaCircuit.lib ChuaCircuit.so ChuaCircuit.dll ChuaCircuit.c ChuaCircuit.makefile documentation resources ChuaCircuit.log
 // cflags: -d=-newInst
 // Simulation Results
 // Modelica Standard Library
@@ -33,7 +33,9 @@ val(C2_v, 3);
 // Result:
 // true
 // "ChuaCircuit.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "ChuaCircuit_me_FMU.mo"
 // ""
 // true
@@ -48,15 +50,15 @@ val(C2_v, 3);
 // "
 // end SimulationResult;
 // 0.0
-// 6.245340115970231e-4
-// 0.0024876865481463636
-// 0.005573487283910849
+// 6.245340115941756e-4
+// 0.0024876865481129294
+// 0.005573487283862499
 // 4.0
 // 3.9733295653530183
 // 3.94832206647875
 // 3.9249376363039423
 // 0.0
-// 0.022458161758796426
-// 0.04463179078826605
-// 0.0665195335691923
+// 0.022458161758796422
+// 0.04463179078826621
+// 0.06651953356919285
 // endResult

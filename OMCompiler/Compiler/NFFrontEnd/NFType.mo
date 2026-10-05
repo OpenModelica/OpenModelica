@@ -50,6 +50,7 @@ public
   import BaseModelica;
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
+  import NFInstNode;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
   import NFFunction.Function;
@@ -110,7 +111,9 @@ public
   end UNKNOWN;
 
   record COMPLEX
-    InstNode cls;
+    NFInstNode.ScopeRef cls "The class this type names, weakly:
+      a class's own type names it back, and that is a cycle. Owned by whatever
+      the class hangs off -- a component's `classInst`, a `Function`, a cref.";
     ComplexType complexTy;
   end COMPLEX;
 
@@ -427,6 +430,19 @@ public
     end if;
   end isMatchedBranch;
 
+  function matchedConditionalArrayType
+    input Type ty;
+    output Type outType;
+  algorithm
+    outType := match ty
+      case CONDITIONAL_ARRAY()
+        then match ty.matchedBranch
+          case Branch.TRUE then ty.trueType;
+          case Branch.FALSE then ty.falseType;
+        end match;
+    end match;
+  end matchedConditionalArrayType;
+
   function simplifyConditionalArray
     input Type ty;
     output Type outType;
@@ -442,6 +458,32 @@ public
       else ty;
     end match;
   end simplifyConditionalArray;
+
+  function unifyArrays
+    "Unifies two array types into a single type, with unknown dimensions where
+     the dimensions of the two types disagree. The types are assumed to be
+     array types with the same number of dimensions."
+    input Type ty1;
+    input Type ty2;
+    output Type outType;
+  protected
+    list<Dimension> dims;
+
+    function unify_dims
+      input Dimension dim1;
+      input Dimension dim2;
+      output Dimension dim;
+    algorithm
+      if Dimension.isSame(dim1, dim2) then
+        dim := dim1;
+      else
+        dim := Dimension.UNKNOWN();
+      end if;
+    end unify_dims;
+  algorithm
+    dims := list(unify_dims(d1, d2) threaded for d1 in arrayDims(ty1), d2 in arrayDims(ty2));
+    outType := ARRAY(elementType(ty1), dims);
+  end unifyArrays;
 
   function isVector
     "Return whether the type is a vector type or not, i.e. a 1-dimensional array."
@@ -567,8 +609,11 @@ public
   function complexNode
     input Type ty;
     output InstNode node;
+  protected
+    NFInstNode.ScopeRef cell;
   algorithm
-    COMPLEX(cls = node) := ty;
+    COMPLEX(cls = cell) := ty;
+    node := InstNode.borrow(cell);
   end complexNode;
 
   function complexComponents
@@ -874,6 +919,7 @@ public
   algorithm
     dim := match ty
       case ARRAY() then listGet(ty.dimensions, index);
+      case CONDITIONAL_ARRAY() then nthDimension(matchedConditionalArrayType(ty), index);
       case FUNCTION() then nthDimension(Function.returnType(ty.fn), index);
       case METABOXED() then nthDimension(ty.ty, index);
     end match;
@@ -1011,11 +1057,11 @@ public
       case Type.CLOCK() then "Clock";
       case Type.ENUMERATION() then if listEmpty(ty.literals) then "enumeration(:)" else "enumeration " + AbsynUtil.pathString(ty.typePath) +
         "(" + stringDelimitList(ty.literals, ", ") + ")";
-      case Type.ARRAY() then List.toString(ty.dimensions, Dimension.toString, toString(ty.elementType), "[", ", ", "]", false);
+      case Type.ARRAY() then List.toStringCustom(ty.dimensions, Dimension.toString, toString(ty.elementType), "[", ", ", "]", false);
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
-      case Type.COMPLEX() then AbsynUtil.pathString(InstNode.scopePath(ty.cls));
+      case Type.COMPLEX() then AbsynUtil.pathString(InstNode.scopePath(complexNode(ty)));
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then toString(ty.ty);
       case Type.POLYMORPHIC()
@@ -1052,8 +1098,8 @@ public
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, function toFlatString(format = format)), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
-      case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.cls)));
-      case Type.FUNCTION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.fn.node)));
+      case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(complexNode(ty))));
+      case Type.FUNCTION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(InstNode.fromHandle(ty.fn.node))));
       case Type.METABOXED() then toFlatString(ty.ty, format);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
@@ -1107,20 +1153,20 @@ public
           s;
 
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then Record.toFlatDeclarationStream(ty.cls, format, indent, s);
+        then Record.toFlatDeclarationStream(complexNode(ty), format, indent, s);
 
       case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
         algorithm
-          path := InstNode.scopePath(ty.cls);
+          path := InstNode.scopePath(complexNode(ty));
           name := Util.makeQuotedIdentifier(AbsynUtil.pathString(path));
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "class ");
           s := IOStream.append(s, name);
           s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
-          {f} := Function.typeNodeCache(complexTy.constructor);
+          {f} := Function.typeNodeCache(InstNode.borrow(complexTy.constructor));
           s := Function.toFlatStream(f, format, indent + "  ", s, overrideName="constructor");
           s := IOStream.append(s, ";\n\n");
-          {f} := Function.typeNodeCache(complexTy.destructor);
+          {f} := Function.typeNodeCache(InstNode.borrow(complexTy.destructor));
           s := Function.toFlatStream(f, format, indent + "  ", s, overrideName="destructor");
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);
@@ -1128,7 +1174,7 @@ public
 
       case FUNCTION()
         then Function.toFlatStream(ty.fn, format, indent, s,
-          overrideName = Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.fn.node))));
+          overrideName = Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(InstNode.fromHandle(ty.fn.node)))));
 
       else s;
     end match;
@@ -1173,7 +1219,7 @@ public
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX()
-        then if makeTypeVars then InstNode.toFullDAEType(ty.cls) else InstNode.toPartialDAEType(ty.cls);
+        then if makeTypeVars then InstNode.toFullDAEType(complexNode(ty)) else InstNode.toPartialDAEType(complexNode(ty));
       case Type.METABOXED() then DAE.T_METABOXED(toDAE(ty.ty));
       case Type.POLYMORPHIC() then DAE.T_METAPOLYMORPHIC(ty.name);
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
@@ -1285,7 +1331,7 @@ public
         then List.isEqualOnTrue(ty1.types, ty2.types, isEqual);
 
       case (TUPLE(), TUPLE()) then false;
-      case (COMPLEX(), COMPLEX()) then InstNode.isSame(ty1.cls, ty2.cls);
+      case (COMPLEX(), COMPLEX()) then InstNode.isSame(complexNode(ty1), complexNode(ty2));
 
       case (UNTYPED(), UNTYPED())
         then InstNode.isSame(ty1.typeNode, ty2.typeNode) and
@@ -1345,7 +1391,7 @@ public
 
       case Type.NORETCALL() then stringHashDjb2Continue("()", hash);
       case Type.UNKNOWN() then stringHashDjb2Continue("unknown()", hash);
-      case Type.COMPLEX() then AbsynUtil.pathHashContinue(InstNode.scopePath(ty.cls), hash);
+      case Type.COMPLEX() then AbsynUtil.pathHashContinue(InstNode.scopePath(complexNode(ty)), hash);
       case Type.FUNCTION() then stringHashDjb2Continue(Function.typeString(ty.fn), hash); // TODO use Functino.hashContinue
       case Type.METABOXED() then hashContinue(ty.ty, hash);
       case Type.POLYMORPHIC() then stringHashDjb2Continue(ty.name, hash);
@@ -1395,7 +1441,7 @@ public
   algorithm
     fieldType := match recordType
       case COMPLEX()
-        then InstNode.getType(Class.lookupElement(name, InstNode.getClass(recordType.cls)));
+        then InstNode.getType(Class.lookupElement(name, InstNode.getClass(complexNode(recordType))));
       case ARRAY()
         then liftArrayLeftList(lookupRecordFieldType(name, recordType.elementType), recordType.dimensions);
       case CONDITIONAL_ARRAY()
@@ -1435,7 +1481,7 @@ public
   algorithm
     recordType := match recordType
       local
-        InstNode rec_node;
+        NFInstNode.ScopeRef rec_node;
         UnorderedMap<String, Integer> indexMap;
         array<Record.Field> fields = listArray(field_lst);
 
@@ -1569,7 +1615,7 @@ public
       case TUPLE() then sum(sizeOf(t) for t in ty.types);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX(complexTy = ComplexType.RECORD())
-        then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
+        then ClassTree.foldComponents(Class.classTree(InstNode.getClass(complexNode(ty))), fold_comp_size, 0);
       case COMPLEX() then 1;
       else 0;
     end match;

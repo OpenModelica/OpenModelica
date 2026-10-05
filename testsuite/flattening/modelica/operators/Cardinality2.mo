@@ -1,6 +1,7 @@
 // name:     Cardinality2
 // keywords: cardinality vectorization
 // status:   correct
+// suite: disabled
 //
 // Testing vectorization of the cardinality operator.
 //

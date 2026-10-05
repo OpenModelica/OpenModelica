@@ -106,7 +106,7 @@ namespace IAEX
       virtual ~CompositeCommand(){}
       void add(Command *c){commands_.push_back(c);}
 
-      virtual void execute()
+      virtual void execute() override
       {
    std::vector<Command*>::iterator i = commands_.begin();
    for(;i != commands_.end(); ++i)

@@ -1,0 +1,47 @@
+// name:     Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD);
+compareVars :=
+{
+   "aimc.is[1]",
+   "aimc.is[2]",
+   "aimc.idq_rr[1]",
+   "aimc.idq_rr[2]",
+   "aimc.idq_sr[1]",
+   "aimc.idq_sr[2]",
+   "loadInertia.phi",
+   "loadInertia.w"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD
+// {"aimc.is[1]", "aimc.is[2]", "aimc.idq_rr[1]", "aimc.idq_rr[2]", "aimc.idq_sr[1]", "aimc.idq_sr[2]", "loadInertia.phi", "loadInertia.w"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2.5, numberOfIntervals = 25000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD', options = '', outputFormat = 'mat', variableFilter = 'time|aimc.is.1.|aimc.is.2.|aimc.idq_rr.1.|aimc.idq_rr.2.|aimc.idq_sr.1.|aimc.idq_sr.2.|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.InductionMachines.IMC_YD_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -41,12 +41,9 @@ OMCompiler/omc_config.unix.h.in
 # [3rd-party]
 OMCompiler/tools/
 !OMCompiler/tools/debugging
-!OMCompiler/tools/xml
 
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc
-OMCompiler/Compiler/boot/bootstrap-sources
-OMCompiler/Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h
 OMCompiler/Compiler/Lexers/LexerJSON.mo
 OMCompiler/Compiler/Lexers/LexerModelicaDiff.mo
 OMCompiler/Compiler/OpenModelicaBootstrappingHeader.h
@@ -83,9 +80,6 @@ OMCompiler/Compiler/Util/Autoconf.mo
 OMCompiler/Compiler/*.mos
 OMCompiler/Parser/*.mos
 OMCompiler/toJulia/*.mos
-
-# Martin Sjölund - Part of a Modelica library we don't have OSMC-PL for
-OMCompiler/Compiler/boot/include/msgpack-modelica.h
 
 # Dave Gamble - cJSON
 OMCompiler/Compiler/runtime/cJSON.*
@@ -136,7 +130,6 @@ OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
 
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
-OMCompiler/SimulationRuntime/c/RuntimeSources.mo.tpl
 
 # =============================================================================
 # SimulationRuntime/fmi/
@@ -162,80 +155,16 @@ OMCompiler/SimulationRuntime/cpp/FMU3/fmi3FunctionTypes.h
 OMCompiler/SimulationRuntime/cpp/FMU3/fmi3Functions.h
 OMCompiler/SimulationRuntime/cpp/FMU3/fmi3PlatformTypes.h
 
-# [3rd-party] Si-Lab / Toon Knapen — Boost numeric bindings (BLAS/LAPACK)
-OMCompiler/SimulationRuntime/cpp/Core/Utils/numeric/bindings/
-
 # [3rd-party] Various Boost contributors — Boost Software License
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/adaptable_factory.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/common.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/convenience.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/extension.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/factory_map.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/factory.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/filesystem.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/parameter_map.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/parameter.hpp
-OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/registry.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/shared_library.hpp
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/type_map.hpp
 
 OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/impl/
-
-# [3rd-party] Linda R. Petzold, Peter N. Brown, Alan C. Hindmarsh / LLNL — DDASKR (f2c-translated Fortran DAE solver)
-OMCompiler/SimulationRuntime/cpp/Solver/CppDASSL/ddaskr.cpp
-OMCompiler/SimulationRuntime/cpp/Solver/CppDASSL/dasslaux.h
-
-# =============================================================================
-# SimulationRuntime/OMSI/
-# =============================================================================
-
-# [3rd-party] MODELISAR consortium — FMI 2 standard headers
-OMCompiler/SimulationRuntime/OMSI/include/fmi2/fmi2Functions.h
-OMCompiler/SimulationRuntime/OMSI/include/fmi2/fmi2FunctionTypes.h
-OMCompiler/SimulationRuntime/OMSI/include/fmi2/fmi2TypesPlatform.h
-
-# [3rd-party] Troy D. Hanson — uthash
-OMCompiler/SimulationRuntime/OMSI/base/include/uthash.h
-
-
-# =============================================================================
-# SimulationRuntime/OMSICpp/
-# =============================================================================
-
-# [3rd-party] MODELISAR consortium — FMI 1 standard headers
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU/fmiModelTypes.h
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU/fmiModelFunctions.h
-
-# [3rd-party] MODELISAR consortium — FMI 2 standard headers
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU2/fmi2FunctionTypes.h
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU2/fmi2Functions.h
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU2/fmi2TypesPlatform.h
-
-# [3rd-party] Si-Lab / Toon Knapen — Boost numeric bindings (BLAS/LAPACK)
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/numeric/bindings/
-
-# [3rd-party] Various Boost contributors — Boost Software License
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/adaptable_factory.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/common.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/convenience.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/extension.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/factory_map.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/factory.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/filesystem.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/parameter_map.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/parameter.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/registry.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/shared_library.hpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/type_map.hpp
-
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/impl/
-
-# [3rd-party] Linda R. Petzold, Peter N. Brown, Alan C. Hindmarsh / LLNL — DDASKR (f2c-translated Fortran DAE solver)
-OMCompiler/SimulationRuntime/OMSICpp/runtime/src/Solver/CppDASSL/ddaskr.cpp
-OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Solver/CppDASSL/dasslaux.h
-
-# [3rd-party] Pieter Hintjens / iMatix — ZeroMQ guide helper (zhelpers.hpp, MIT License)
-OMCompiler/SimulationRuntime/OMSICpp/omcWrapper/omcZeroMQ/include/zhelpers.hpp
 
 # =============================================================================
 # SimulationRuntime/ModelicaExternalC/
@@ -272,6 +201,8 @@ testsuite/
 
 doc/
 OMCompiler/Examples/
+OMCompiler/Compiler/OpenModelica.rs/wasm/simulator/examples/
+OMCompiler/Compiler/OpenModelica.rs/openmodelica_codegen_wasm_jit/testmodels/
 !OMCompiler/Examples/GenerateDoc.mos
 
 # =============================================================================
@@ -294,7 +225,6 @@ OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 # OMNotebook
 # =============================================================================
 
-OMNotebook/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro
 
 # =============================================================================
 # OMParser
@@ -331,6 +261,14 @@ OMOptim/OMOptim/GUI/Scene/diagramtextitem.h
 OMPlot/qwt/
 
 # =============================================================================
+# OMSimulator
+# =============================================================================
+
+OMSimulator/3rdParty/
+OMSimulator/doc/
+OMSimulator/testsuite/
+
+# =============================================================================
 # Submodules
 # TODO: Check which submodules need a check
 # =============================================================================
@@ -338,7 +276,6 @@ OMPlot/qwt/
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMSimulator/
 
 # =============================================================================
 # Build files

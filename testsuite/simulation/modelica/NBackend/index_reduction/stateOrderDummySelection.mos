@@ -1,0 +1,67 @@
+// name: stateOrderDummySelection
+// keywords: NewBackend
+// status: correct
+// Candidates with an explicit derivative der(x) = y stay states. Taking dp and
+// mA as dummy states makes the constraints singular for them, since the
+// remaining states mSpl = mS are dependent (DLR DistrictHeating TwoStreams).
+
+loadString("
+  model stateOrderDummySelection
+    parameter Real c = 1/3;
+    Real mA, mS, mSpl, dp;
+    Real bA, bS;
+  equation
+    der(mA) = bA;
+    der(mS) = bS;
+    mSpl = mA - c*dp;
+    c*dp = mA - mS;
+    der(mSpl) + mSpl = 1;
+    der(dp) + dp = sin(time);
+  end stateOrderDummySelection;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=stateselection");
+simulate(stateOrderDummySelection); getErrorString();
+val(mA, 1.0);
+val(mS, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
+// [stateselection] (4) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real mA
+// 	[STAT] (1) Real mS
+// 	[STAT] (1) Real mSpl
+// 	[STAT] (1) Real dp
+//
+// [stateselection] State Order:
+// *******************************
+// 	(mS --d/dt--> bS)
+// 	(mA --d/dt--> bA)
+//
+// [stateselection] (0) State Derivatives Created by Differentiation
+// *******************************************************************
+//
+//
+// [stateselection] (2) Selected Dummy States
+// ********************************************
+// [DSTA] (1) Real dp
+// [DSTA] (1) Real mSpl
+//
+// record SimulationResult
+//     resultFile = "stateOrderDummySelection_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'stateOrderDummySelection', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.743629518569813
+// 0.6321211915565151
+// endResult

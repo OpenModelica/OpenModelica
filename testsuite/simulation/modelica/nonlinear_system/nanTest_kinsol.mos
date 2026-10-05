@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -f nonlinear_system.nanTest* _nonlinear_system.nanTest* output.log
 // cflags: -d=-newInst
+// suite: disabled
 //
 
 loadFile("nanTest.mo"); getErrorString();

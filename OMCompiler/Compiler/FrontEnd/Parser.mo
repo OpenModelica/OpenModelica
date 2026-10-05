@@ -240,7 +240,7 @@ algorithm
     partialResults := list(loadFileThread(t) for t in workList);
   else
     // GCExt.disable(); // Seems to sometimes break building nightly omc
-    partialResults := System.launchParallelTasks(min(8, numThreads) /* Boehm GC does not scale to infinity */, workList, loadFileThread);
+    partialResults := System.launchParallelTasksThreaded(min(8, numThreads) /* Boehm GC does not scale to infinity */, workList, loadFileThread);
     // GCExt.enable();
   end if;
 end parallelParseFilesWork;
@@ -482,5 +482,5 @@ algorithm
   end match;
 end expToString;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="loader");
 end Parser;

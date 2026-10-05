@@ -9,7 +9,7 @@
 //
 
 
-loadModel(Modelica,{"3.1"});
+loadModel(Modelica);
 loadFile("Model1.mo"); getErrorString();
 checkModel(Model1); getErrorString();
 
@@ -19,7 +19,7 @@ checkModel(Model1); getErrorString();
 // true
 // ""
 // "Check of Model1 completed successfully.
-// Class Model1 has 2278 equation(s) and 2278 variable(s).
-// 1310 of these are trivial equation(s)."
+// Class Model1 has 1732 equation(s) and 1732 variable(s).
+// 1204 of these are trivial equation(s)."
 // ""
 // endResult

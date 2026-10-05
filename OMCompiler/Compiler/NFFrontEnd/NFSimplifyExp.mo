@@ -62,6 +62,9 @@ import Array;
 import MetaModelica.Dangerous.listReverseInPlace;
 import UnorderedMap;
 
+constant Integer MAX_CHAIN_TERMS = 32
+  "Same limit as Expression.MAX_SUM_CHAIN, for the n-ary node.";
+
 public
 
 function simplifyDump
@@ -119,12 +122,12 @@ algorithm
     case Expression.LUNARY()            then simplifyLogicUnary(exp);
     case Expression.RELATION()          then simplifyRelation(exp);
     case Expression.IF()                then simplifyIf(exp);
-    case Expression.CAST()              then simplifyCast(simplify(exp.exp), exp.ty);
-    case Expression.UNBOX()             then Expression.UNBOX(simplify(exp.exp), exp.ty);
+    case Expression.CAST()              then Expression.typeCast(simplify(exp.exp), exp.ty);
+    case Expression.UNBOX()             then Expression.unbox(simplify(exp.exp));
     case Expression.SUBSCRIPTED_EXP()   then simplifySubscriptedExp(exp);
     case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
-    case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
+    case Expression.BOX()               then Expression.box(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
@@ -160,8 +163,9 @@ algorithm
     exp := range;
   else
     if not Type.isResizable(ty) then
-      ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), Absyn.dummyInfo);
+      ty := TypeCheck.keepRangeSize(
+        TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+          Type.arrayElementType(ty), Absyn.dummyInfo), ty);
     else
       ty := ty2;
     end if;
@@ -461,33 +465,35 @@ function simplifySumProduct
 protected
   Boolean expanded;
   list<Expression> args;
-  Type ty;
+  Type ty, ety;
   Operator op;
 algorithm
-  if expand then
+  ty := Expression.typeOf(arg);
+
+  if Type.isEmptyArray(ty) then
+    ety := Type.arrayElementType(ty);
+    exp := if isSum then Expression.makeZero(ety) else Expression.makeOne(ety);
+  elseif expand then
     (exp, expanded) := ExpandExp.expand(arg);
 
     if expanded then
       args := Expression.arrayScalarElements(exp);
-      ty := Type.arrayElementType(Expression.typeOf(arg));
+      ety := Type.arrayElementType(ty);
 
       if listEmpty(args) then
-        exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
+        exp := if isSum then Expression.makeZero(ety) else Expression.makeOne(ety);
       else
-        exp :: args := args;
-        op := if isSum then Operator.makeAdd(ty) else
-                            Operator.makeMul(ty);
-
-        for e in args loop
-          exp := Expression.BINARY(exp, op, e);
-        end for;
+        op := if isSum then Operator.makeAdd(ety) else
+                            Operator.makeMul(ety);
+        exp := Expression.MULTARY(args, {}, op);
+        exp := simplify(exp);
       end if;
-
-      return;
+    else
+      exp := simplifyReducedArrayConstructor(arg, call);
     end if;
+  else
+    exp := simplifyReducedArrayConstructor(arg, call);
   end if;
-
-  exp := simplifyReducedArrayConstructor(arg, call);
 end simplifySumProduct;
 
 function simplifyReducedArrayConstructor
@@ -851,8 +857,8 @@ algorithm
       (arguments, inv_arguments, isNegative) := simplifyMultarySigns(arguments, inv_arguments, mcl);
 
       // split them into constant and non constant arguments
-      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isLiteral);
-      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral);
+      (const_args, arguments) := List.splitOnTrue(arguments, isEvaluableLiteral);
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, isEvaluableLiteral);
 
       // combine the constants
       if mcl == NFOperator.MathClassification.ADDITION then
@@ -869,6 +875,12 @@ algorithm
 
       // remove expressions that are in both arguments and inv_arguments
       (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
+
+      // a neutral constant can not be removed if it is the only source of the dimensions, e.g. s * {1.0}
+      if neutralConst and not listEmpty(arguments) and Type.dimensionCount(Expression.typeOf(new_const)) >
+          List.fold(listAppend(arguments, inv_arguments), maxDimensionCount, 0) then
+        neutralConst := false;
+      end if;
 
       result := match (mcl, arguments, inv_arguments)
         // const + {} - {} = const
@@ -888,7 +900,9 @@ algorithm
         then Expression.negate(tmp);
 
         // 0 * {...} / {...} = 0
-        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const) and not Type.isArray(Operator.typeOf(operator))) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const) and Type.hasKnownSize(Operator.typeOf(operator)))
+        then Expression.makeZero(Operator.typeOf(operator));
 
         else Expression.MULTARY(
             arguments     = if neutralConst then arguments else new_const :: arguments,
@@ -1006,6 +1020,8 @@ algorithm
       case Op.MUL then simplifyBinaryMul(exp1, op, exp2);
       case Op.DIV then simplifyBinaryDiv(exp1, op, exp2);
       case Op.POW then simplifyBinaryPow(exp1, op, exp2);
+      case Op.POW_SCALAR_ARRAY then simplifyBinaryPow(exp1, op, exp2);
+      case Op.POW_ARRAY_SCALAR then simplifyBinaryPow(exp1, op, exp2);
       case Op.SCALAR_PRODUCT guard(Expression.isZero(exp1) or Expression.isZero(exp2)) then Expression.makeZero(op.ty);
       else Expression.BINARY(exp1, op, exp2);
     end match;
@@ -1079,9 +1095,11 @@ function simplifyBinaryMul
   output Expression outExp;
 algorithm
   outExp := match exp1
-    // 0 * e = 0
-    case Expression.INTEGER(value = 0) then exp1;
-    case Expression.REAL(value = 0.0) then exp1;
+    // 0 * e = 0, the zero has to keep the dimensions if e is an array
+    case Expression.INTEGER(value = 0) guard(not Type.isArray(Operator.typeOf(op))) then exp1;
+    case Expression.REAL(value = 0.0) guard(not Type.isArray(Operator.typeOf(op))) then exp1;
+    case Expression.INTEGER(value = 0) guard(Type.hasKnownSize(Operator.typeOf(op))) then Expression.makeZero(Operator.typeOf(op));
+    case Expression.REAL(value = 0.0) guard(Type.hasKnownSize(Operator.typeOf(op))) then Expression.makeZero(Operator.typeOf(op));
 
     // 1 * e = e
     case Expression.INTEGER(value = 1) then exp2;
@@ -1131,7 +1149,11 @@ algorithm
   if Expression.isZero(exp2) then
     outExp := Expression.makeOne(Operator.typeOf(op));
   elseif Expression.isOne(exp2) then
-    outExp := exp1;
+    outExp := exp1; // FIXME cast to type of `op`
+  elseif Expression.isZero(exp1) and Expression.isPositive(exp2) then
+    outExp := Expression.makeZero(Operator.typeOf(op));
+  elseif Expression.isOne(exp1) then
+    outExp := Expression.makeOne(Operator.typeOf(op));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -1344,6 +1366,9 @@ algorithm
           Expression.BOOLEAN(value = tb_val) := tb;
           ifExp := if tb_val then cond else Expression.logicNegate(cond);
         else
+          ty := if Type.isConditionalArray(ty) then
+            Type.setConditionalArrayTypes(ty, Expression.typeOf(tb), Expression.typeOf(fb)) else
+            Expression.typeOf(tb);
           ifExp := Expression.IF(ty, cond, tb, fb);
         end if;
       then
@@ -1352,29 +1377,18 @@ algorithm
   end match;
 end simplifyIf;
 
-function simplifyCast
+function isEvaluableLiteral
+  "literals that can be combined by constant evaluation, records need their operator functions"
   input Expression exp;
-  input Type ty;
-  output Expression castExp;
+  output Boolean b = Expression.isLiteral(exp) and not Type.isComplex(Type.arrayElementType(Expression.typeOf(exp)));
+end isEvaluableLiteral;
+
+function maxDimensionCount
+  input Expression exp;
+  input output Integer count;
 algorithm
-  castExp := match (ty, exp)
-    local
-      Type ety;
-
-    case (Type.REAL(), Expression.INTEGER())
-      then Expression.REAL(intReal(exp.value));
-
-    case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
-      algorithm
-        ety := Type.unliftArray(ty);
-        exp.elements := Array.map(exp.elements, function simplifyCast(ty = ety));
-        exp.ty := Type.setArrayElementType(exp.ty, Type.arrayElementType(ty));
-      then
-        exp;
-
-    else Expression.CAST(ty, exp);
-  end match;
-end simplifyCast;
+  count := max(count, Type.dimensionCount(Expression.typeOf(exp)));
+end maxDimensionCount;
 
 function simplifySubscriptedExp
   input output Expression subscriptedExp;
@@ -1416,11 +1430,10 @@ function simplifyTupleElement
 protected
   Expression e;
   Integer index;
-  Type ty;
 algorithm
-  Expression.TUPLE_ELEMENT(e, index, ty) := tupleExp;
+  Expression.TUPLE_ELEMENT(tupleExp = e, index = index) := tupleExp;
   e := simplify(e);
-  tupleExp := Expression.tupleElement(e, ty, index);
+  tupleExp := Expression.tupleElement(e, index);
 end simplifyTupleElement;
 
 function simplifyRecordElement
@@ -1576,60 +1589,94 @@ end combineBinaries;
 
 public function splitMultary
   "inverse functionality to combineBinaries.
-  returns a multary to its original binary representation."
+  returns a multary to its binary representation, as a balanced tree."
   input output Expression exp;
 algorithm
   exp := match exp
     local
-      Expression new_exp;
+      Expression new_exp, rhs;
       list<Expression> args, inv_args;
-      Operator inv_op, fixed_op;
+      Operator inv_op;
+      Boolean is_add;
 
     case Expression.MULTARY() algorithm
-      if not listEmpty(exp.arguments) then
-        // it has arguments, take the first one and start with it
-        new_exp :: args := exp.arguments;
-        inv_args    := exp.inv_arguments;
-      elseif not listEmpty(exp.inv_arguments) then
-        // it has no arguments but inverse arguments
-        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
-          // take the first one out and negate it
-          new_exp :: inv_args := exp.inv_arguments;
-          args      := exp.arguments;
-          new_exp   := Expression.negate(new_exp);
+      args := exp.arguments;
+      inv_args := exp.inv_arguments;
+      inv_op := Operator.invert(exp.operator);
+      is_add := Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION;
+
+      if listEmpty(args) then
+        if listEmpty(inv_args) then
+          new_exp := if is_add then Expression.makeZero(Operator.typeOf(exp.operator))
+                               else Expression.makeOne(Operator.typeOf(exp.operator));
+        elseif is_add then
+          // -a - b becomes -(a + b)
+          new_exp := Expression.negate(chainBinaries(inv_args, exp.operator));
+          inv_args := {};
         else
           // create an artificial 1 to divide by the inverse arguments
-          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
-          args      := exp.arguments;
-          inv_args  := exp.inv_arguments;
+          new_exp := Expression.makeOne(Operator.typeOf(exp.operator));
         end if;
       else
-        // empty, make either 0 or 1 depending on math classification
-        if Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.ADDITION then
-          new_exp   := Expression.makeZero(Operator.typeOf(exp.operator));
-        else
-          new_exp   := Expression.makeOne(Operator.typeOf(exp.operator));
-        end if;
-        args        := exp.arguments;
-        inv_args    := exp.inv_arguments;
+        new_exp := chainBinaries(args, exp.operator);
       end if;
 
-      inv_op := Operator.invert(exp.operator);
-      // chain all arguments
-      for arg in args loop
-        fixed_op := Operator.repairBinary(exp.operator, Expression.typeOf(new_exp), Expression.typeOf(arg));
-        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
-      end for;
-      // chain all inverse arguments
-      for arg in inv_args loop
-        fixed_op := Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg));
-        new_exp   := Expression.BINARY(new_exp, fixed_op, arg);
-      end for;
+      if listLength(inv_args) > MAX_CHAIN_TERMS then
+        // a - b - c becomes a - (b + c): one level, not one per term
+        rhs := chainBinaries(inv_args, exp.operator);
+        new_exp := Expression.BINARY(new_exp,
+          Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(rhs)), rhs);
+      else
+        for arg in inv_args loop
+          new_exp := Expression.BINARY(new_exp,
+            Operator.repairBinary(inv_op, Expression.typeOf(new_exp), Expression.typeOf(arg)), arg);
+        end for;
+      end if;
     then new_exp;
 
     else exp;
   end match;
 end splitMultary;
+
+public function chainBinaries
+  "Chains the expressions with the given operator. A chain of more than
+  MAX_CHAIN_TERMS is instead paired up level by level, keeping their order, so
+  that the result is log2(N) deep instead of N."
+  input list<Expression> args;
+  input Operator op;
+  output Expression exp;
+protected
+  list<Expression> level = args, next;
+  Expression e1, e2;
+  Operator fixed_op;
+algorithm
+  if listLength(args) <= MAX_CHAIN_TERMS then
+    exp :: level := args;
+
+    for e in level loop
+      exp := Expression.BINARY(exp,
+        Operator.repairBinary(op, Expression.typeOf(exp), Expression.typeOf(e)), e);
+    end for;
+
+    return;
+  end if;
+
+  while not listEmpty(level) and not listEmpty(listRest(level)) loop
+    next := {};
+    while not listEmpty(level) loop
+      e1 :: level := level;
+      if listEmpty(level) then
+        next := e1 :: next;
+      else
+        e2 :: level := level;
+        fixed_op := Operator.repairBinary(op, Expression.typeOf(e1), Expression.typeOf(e2));
+        next := Expression.BINARY(e1, fixed_op, e2) :: next;
+      end if;
+    end while;
+    level := listReverseInPlace(next);
+  end while;
+  exp := listHead(level);
+end chainBinaries;
 
 protected function combineBinariesExp
   "author: kabdelhak 09-2020

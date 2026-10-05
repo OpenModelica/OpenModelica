@@ -1,4 +1,4 @@
-find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Test REQUIRED)
+find_package(Qt6 COMPONENTS Test REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -13,7 +13,7 @@ enable_testing()
 add_library(OMEditTestSuiteUtil STATIC Util/Util.cpp)
 add_library(omedit::testsuite::util ALIAS OMEditTestSuiteUtil)
 
-target_link_libraries(OMEditTestSuiteUtil PUBLIC Qt${OM_QT_MAJOR_VERSION}::Test)
+target_link_libraries(OMEditTestSuiteUtil PUBLIC Qt6::Test)
 target_link_libraries(OMEditTestSuiteUtil PUBLIC OMEditLib)
 
 target_include_directories(OMEditTestSuiteUtil PUBLIC Util/)
@@ -46,6 +46,14 @@ set(OMEDIT_TEST_BROWSEMSL_SOURCES BrowseMSL/BrowseMSL.cpp
                                   BrowseMSL/BrowseMSL.h)
 add_omedit_test(BrowseMSL "${OMEDIT_TEST_BROWSEMSL_SOURCES}")
 
+# Pure: the three-way sync planner and the manifest, with no network or provider.
+set(OMEDIT_TEST_CLOUD_SOURCES Cloud/CloudSyncPlanTest.cpp)
+add_omedit_test(CloudSyncPlan "${OMEDIT_TEST_CLOUD_SOURCES}")
+
+# The sync engine end to end, against an in-memory provider.
+set(OMEDIT_TEST_CLOUD_ENGINE_SOURCES Cloud/CloudSyncEngineTest.cpp)
+add_omedit_test(CloudSyncEngine "${OMEDIT_TEST_CLOUD_ENGINE_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")
@@ -65,17 +73,41 @@ add_omedit_test(Homotopy "${OMEDIT_TEST_HOMOTOPY_SOURCES}")
 # to figure out why it takes so long in the first place.
 # set_tests_properties(Homotopy PROPERTIES TIMEOUT 300)
 
+set(OMEDIT_TEST_LANGUAGESERVER_SOURCES LanguageServer/LanguageServerTest.cpp
+                                       LanguageServer/LanguageServerTest.h)
+add_omedit_test(LanguageServer "${OMEDIT_TEST_LANGUAGESERVER_SOURCES}")
+
+set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
+                                              MergeExtendsModifiers/MergeExtendsModifiersTest.h)
+add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")
+
 set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
+
+set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
+                                     RecentModels/RecentModelsTest.h)
+add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")
+
+set(OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES OuterParameterDialog/OuterParameterDialogTest.cpp
+                                            OuterParameterDialog/OuterParameterDialogTest.h)
+add_omedit_test(OuterParameterDialog "${OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES}")
 
 set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
                                        StringHandler/StringHandlerTest.h)
 add_omedit_test(StringHandler "${OMEDIT_TEST_STRINGHANDLER_SOURCES}")
 
+set(OMEDIT_TEST_TABBEDVIEW_SOURCES TabbedView/TabbedViewTest.cpp
+                                   TabbedView/TabbedViewTest.h)
+add_omedit_test(TabbedView "${OMEDIT_TEST_TABBEDVIEW_SOURCES}")
+
 set(OMEDIT_TEST_TRANSFORMATION_SOURCES Transformation/TransformationTest.cpp
                                        Transformation/TransformationTest.h)
 add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
+
+set(OMEDIT_TEST_VARIABLESBROWSER_SOURCES VariablesBrowser/VariablesBrowserTest.cpp
+                                         VariablesBrowser/VariablesBrowserTest.h)
+add_omedit_test(VariablesBrowser "${OMEDIT_TEST_VARIABLESBROWSER_SOURCES}")
 
 set(OMEDIT_TEST_UTILITIES_SOURCES Utilities/UtilitiesTest.cpp
                                   Utilities/UtilitiesTest.h)

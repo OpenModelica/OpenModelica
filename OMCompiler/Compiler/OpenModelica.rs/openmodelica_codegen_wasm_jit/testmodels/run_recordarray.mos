@@ -1,0 +1,6 @@
+// An ancestor subscript used to disqualify the array-group base key, so the
+// whole-array reference failed with `simulation reference to unknown variable`.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("TestRecordArrayParam.mo"); getErrorString();
+simulate(TestRecordArrayParam, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 21 (der(x) = 3*2 + 3*5)

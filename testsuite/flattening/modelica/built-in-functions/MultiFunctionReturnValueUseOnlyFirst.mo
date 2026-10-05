@@ -1,8 +1,9 @@
-// name: MultiFunctionReturnValueUseOnlyFirst [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1969]
+// name: MultiFunctionReturnValueUseOnlyFirst
 // keywords: abs
 // status: correct
 //
 // Testing the built-in abs function that gets a tuple input from another function call
+// Bug #1969
 //
 
 package Modelica

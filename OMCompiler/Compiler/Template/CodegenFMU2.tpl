@@ -152,7 +152,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let copyright = modelInfo.copyright
   let license = modelInfo.license
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let generationDateAndTime = xsdateTime(Util.getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfEventIndicators = getNumberOfEventIndicators(simCode)
   <<
@@ -184,11 +184,11 @@ case SIMCODE(__) then
     canHandleVariableCommunicationStepSize="true"
     canInterpolateInputs="true"
     maxOutputDerivativeOrder="1"
-    canRunAsynchronuously = "false"
+    canRunAsynchronuously="false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUstate="true"' else 'canSerializeFMUstate="false"'%>
+    canGetAndSetFMUstate="true"
+    canSerializeFMUstate="true"
     <% if Flags.isSet(FMU_EXPERIMENTAL) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </CoSimulation>

@@ -63,7 +63,7 @@ Legend::Legend(Plot *pParent)
   mpToggleAxisAction = new QAction(tr("Right Y-Axis"), this);
   mpToggleAxisAction->setCheckable(true);
   connect(mpToggleAxisAction, SIGNAL(triggered(bool)), SLOT(switchAxis(bool)));
-    
+
   mpSetupAction = new QAction(tr("Setup"), this);
   connect(mpSetupAction, SIGNAL(triggered()), SLOT(showSetupDialog()));
 
@@ -99,11 +99,7 @@ bool Legend::eventFilter(QObject *object, QEvent *event)
 #endif
     if (pPlotCurve) {
       QString toolTip = tr("Name: <b>%1</b><br />Filename: <b>%2</b>").arg(pPlotCurve->title().text()).arg(pPlotCurve->getFileName());
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
       QToolTip::showText(pMouseEvent->globalPosition().toPoint(), toolTip, this);
-#else
-      QToolTip::showText(pMouseEvent->globalPos(), toolTip, this);
-#endif
     } else {
       QToolTip::hideText();
     }
@@ -244,7 +240,6 @@ void Legend::mouseDoubleClickEvent(QMouseEvent *event)
       } else {
         pPlotCurve->toggleVisibility(false);
       }
-
     }
   }
 }

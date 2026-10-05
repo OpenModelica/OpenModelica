@@ -40,7 +40,11 @@
 #include <sstream>
 #include <iostream>
 
+#ifdef OMC_RUST_ABI
+#include "omc_rust_embedding.h"
+#else
 #include "meta/meta_modelica.h"
+#endif
 
 
 class OmcInteractiveEnvironment

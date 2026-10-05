@@ -46,8 +46,8 @@ simulate(CSE.wrapFunctionCalls14); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (2)
 // ========================================
-// 1: p1:PARAM(fixed = false )  type: Real 
-// 2: p2:PARAM(fixed = false )  = 2.0 * p1  type: Real 
+// 1: p2:PARAM(fixed = false )  = 2.0 * p1  type: Real
+// 2: p1:PARAM(fixed = false )  type: Real
 //
 //
 // ########### CSE Replacements (1/43)

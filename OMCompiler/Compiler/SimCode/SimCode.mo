@@ -74,6 +74,35 @@ type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type SparsityPattern = list< tuple<Integer, list<Integer>> >;
 type NonlinearPattern = SparsityPattern; // same structure but different name for the sake of maintenance
 
+
+uniontype Dependency
+  "the dependency kind to show how a component reference occurs in an equation.
+  for each dimension there has to be one dependency kind."
+  record DEPENDENCY
+    array<list<Integer>> skips;
+    list<Boolean> kinds "true = reduced, false = regular"; // Fixme: enumerations don't seem to work for codegen
+  end DEPENDENCY;
+end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name "only for debugging";
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean /*true=repeated*/>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+uniontype Sparsity
+  "the new resizable sparsity pattern for the NB"
+  record SPARSITY
+    list<SparsityRow> rows;
+  end SPARSITY;
+
+  record EMPTY
+  end EMPTY;
+end Sparsity;
+
 uniontype JacobianColumn
   record JAC_COLUMN
     list<SimEqSystem> columnEqns;       // column equations equals in size to column vars
@@ -88,6 +117,7 @@ uniontype JacobianMatrix
     list<JacobianColumn> columns;       // columns equations and variables
     list<SimCodeVar.SimVar> seedVars;   // corresponds to the number of columns
     String matrixName;                  // unique matrix name
+    Sparsity sparsityMatrix;            // new backend sparsity
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
     NonlinearPattern nonlinear;
@@ -100,10 +130,14 @@ uniontype JacobianMatrix
     list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
     Boolean isAdjoint; // true if this jacobian is for adjoint calculation
+    Boolean isBidirectional; // true if part of a bidirectional pair
+    Integer adjointJacobianIndex; // index of adjoint jacobian for bidirectional (-1 if none)
+    String adjointMatrixName; // matrix name of adjoint jacobian for bidirectional
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false);
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", Sparsity.EMPTY(),
+  {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false, false, -1, "");
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 
@@ -166,8 +200,8 @@ uniontype SimCode
     PartitionData partitionData;
     Option<DaeModeData> daeModeData;
     list<SimEqSystem> inlineEquations;
-    Option<OMSIData> omsiData "used for OMSI to generate equations code";
     Boolean scalarized;
+    list<FmiFigure> fmiFigures "set by SimCodeUtil.addFMI3Figures for an FMI 3.0 export";
   end SIMCODE;
 end SimCode;
 
@@ -238,6 +272,7 @@ uniontype SpatialDistribution
     DAE.Exp initPnts      "initial grid points";
     DAE.Exp initVals      "initial grid values";
     Integer initSize      "number of initial points";
+    Option<DAE.Exp> condition "guard condition of the enclosing if-branch, if any";
   end SPATIAL_DISTRIBUTION;
 end SpatialDistribution;
 
@@ -364,37 +399,6 @@ uniontype DaeModeData
   end DAEMODEDATA;
 end DaeModeData;
 
-uniontype OMSIData
-  "contains data for code generation for OMSI"
-  record OMSI_DATA
-    OMSIFunction initialization "contains equations and variables for initialization problem";
-    OMSIFunction simulation "contains equations and variables for simulation problem";
-  end OMSI_DATA;
-end OMSIData;
-
-uniontype OMSIFunction
-  "contains equations and variables for initialization or simulation problem"
-  record OMSI_FUNCTION
-    list<SimEqSystem>       equations   "causalized list of single equations and systems of equations";
-    list<SimCodeVar.SimVar> inputVars   "list of simcode variables determining input variables for equation(s)";
-    list<SimCodeVar.SimVar> outputVars  "list of simcode variables determining output variables for equation(s)";
-    list<SimCodeVar.SimVar> innerVars   "list of simcode variables determining inner variables for equation(s), e.g $DER(x)";
-    Integer nAllVars                    "number of input, inner and output vars";
-    SimCodeFunction.Context context     "contains crefToSimVar hash table for lookup function in templates";
-    Integer nAlgebraicSystems           "number of linear and non-linear algebraic systems in OMSI_FUNCTION.equations";
-  end OMSI_FUNCTION;
-end OMSIFunction;
-
-public constant
-OMSIFunction emptyOMSIFunction = OMSI_FUNCTION(equations = {},
-                                               inputVars = {},
-                                               outputVars = {},
-                                               innerVars = {},
-                                               nAllVars = 0,
-                                               context = SimCodeFunction.contextOMSI,
-                                               nAlgebraicSystems = 0);
-
-
 uniontype SimEqSystem
   "Represents a single equation or a system of equations that must be solved together."
   record SES_RESIDUAL
@@ -408,7 +412,7 @@ uniontype SimEqSystem
   record SES_FOR_RESIDUAL
     Integer index;
     Integer res_index;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    list<BackendDAE.SimIterator> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -419,7 +423,7 @@ uniontype SimEqSystem
     Integer index;
     Integer res_index;
     list<Integer> scal_indices;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> iterators;
+    list<BackendDAE.SimIterator> iterators;
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.EquationAttributes eqAttr;
@@ -557,31 +561,6 @@ uniontype SimEqSystem
     Integer aliasOf;
   end SES_ALIAS;
 
-  record SES_ALGEBRAIC_SYSTEM
-    Integer index "equation index";
-    Integer algSysIndex "index of algebraic system";
-
-    Integer dim_n "dimension of algebraic loop (after tearing)";
-
-    Boolean partOfMixed;
-    Boolean tornSystem;
-    Boolean linearSystem;
-
-    // residual.inputVars = dependentVars
-    // residual.innerVars = otherTearingVars
-    // residual.outputVars = iterationsVars
-    OMSIFunction residual; // linear: A*x-b = res
-                           // non-linear: f(x) = res
-
-    Option<DerivativeMatrix> matrix;  // linear => A
-                                      // non-linear => f'(x)
-
-    list<Integer> zeroCrossingConditions;
-
-    list<DAE.ElementSource> sources;
-    BackendDAE.EquationAttributes eqAttr;
-  end SES_ALGEBRAIC_SYSTEM;
-
 end SimEqSystem;
 
 public uniontype SimGenericCall
@@ -619,23 +598,6 @@ public uniontype SimBranch
     list<DAE.Statement> body;
   end SIM_BRANCH_STMT;
 end SimBranch;
-
-public
-uniontype DerivativeMatrix
-  "represents directional derivatives with sparsity and coloring"
-  record DERIVATIVE_MATRIX
-    list<OMSIFunction> columns;         // column(s) equations and variables
-                                        // inputVars:  seedVars
-                                        // innerVars:  inner column vars
-                                        // outputVars: result vars of the column
-
-    String matrixName "unique matrix name";
-    SparsityPattern sparsity;
-    SparsityPattern sparsityT;
-    list<list<Integer>> coloredCols;
-    Integer maxColorCols;
-  end DERIVATIVE_MATRIX;
-end DerivativeMatrix;
 
 public
 uniontype LinearSystem
@@ -749,6 +711,14 @@ public uniontype FmiInitialUnknowns
   end FMIINITIALUNKNOWNS;
 end FmiInitialUnknowns;
 
+public uniontype FmiArray "An array the FMI 3.0 modelDescription.xml lists as one variable"
+  record FMIARRAY
+    DAE.ComponentRef first "the SimVar of the first scalar element";
+    Integer fmiIndex "of that element";
+    Integer numElements;
+  end FMIARRAY;
+end FmiArray;
+
 public uniontype FmiModelStructure
   record FMIMODELSTRUCTURE
     FmiOutputs fmiOutputs;
@@ -757,6 +727,7 @@ public uniontype FmiModelStructure
     Option<JacobianMatrix> initialPartialDerivatives;
     FmiDiscreteStates fmiDiscreteStates;
     FmiInitialUnknowns fmiInitialUnknowns;
+    list<FmiArray> fmiArrays;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 
@@ -777,6 +748,47 @@ public uniontype FmiTerminalMember
     String variableKind     "role of the member, derived from causality (input/output/...)";
   end FMI_TERMINAL_MEMBER;
 end FmiTerminalMember;
+
+/* The Documentation(figures=...) annotation resolved against the exported
+   variables; emitted by CodegenFMU3 as the OpenModelica <Figures> vendor
+   annotation. See SimCodeUtil.getFMI3Figures. */
+public uniontype FmiFigure
+  record FMI_FIGURE
+    String title;
+    String group            "plot-group name, \"\" if none";
+    Boolean preferred       "display automatically after simulation";
+    String caption          "\"\" if none";
+    list<FmiPlot> plots;
+  end FMI_FIGURE;
+end FmiFigure;
+
+public uniontype FmiPlot
+  record FMI_PLOT
+    String title;
+    list<FmiCurve> curves;
+    FmiFigureAxis xAxis;
+    FmiFigureAxis yAxis;
+    Option<String> terminal "set when every curve's y variable is a member of this one terminal";
+  end FMI_PLOT;
+end FmiPlot;
+
+public uniontype FmiCurve
+  record FMI_CURVE
+    Option<DAE.ComponentRef> xVariable "NONE() means simulation time; a cref is formatted like a modelDescription variable";
+    DAE.ComponentRef yVariable         "resolved exported variable; formatted like a modelDescription variable";
+    String legend                      "\"\" if none";
+  end FMI_CURVE;
+end FmiCurve;
+
+public uniontype FmiFigureAxis
+  record FMI_FIGURE_AXIS
+    String label            "\"\" if none";
+    String unit             "\"\" if none";
+    Option<Real> min        "only when explicitly set";
+    Option<Real> max        "only when explicitly set";
+    Boolean logScale        "true for a logarithmic axis";
+  end FMI_FIGURE_AXIS;
+end FmiFigureAxis;
 
 /* FMI 3.0 Clocks (output clocks from the model's clocked partitions) */
 public uniontype FmiClock

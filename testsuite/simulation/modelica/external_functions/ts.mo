@@ -131,6 +131,8 @@ package ExternalMedia
           output MolarMass MM "molar mass";
           external "C" MM = TwoPhaseMedium_getMolarMass_C_impl(mediumName, libraryName, substanceName)
         annotation(Include = "
+#include <assert.h>
+#include <stdio.h>
 double TwoPhaseMedium_getMolarMass_C_impl(const char* mediumName, const char* libraryName, const char* substanceName)
 {
   assert(mediumName[0] != 0); assert(libraryName[0] != 0); assert(substanceName[0] != 0);
@@ -143,6 +145,7 @@ double TwoPhaseMedium_getMolarMass_C_impl(const char* mediumName, const char* li
           output Temperature Tc "Critical temperature";
           external "C" Tc = TwoPhaseMedium_getCriticalTemperature_C_impl(mediumName, libraryName, substanceName)
         annotation(Include = "
+#include <assert.h>
 double TwoPhaseMedium_getCriticalTemperature_C_impl(const char* mediumName, const char* libraryName, const char* substanceName)
 {
   assert(mediumName[0] != 0); assert(libraryName[0] != 0); assert(substanceName[0] != 0);
@@ -154,6 +157,7 @@ double TwoPhaseMedium_getCriticalTemperature_C_impl(const char* mediumName, cons
           output AbsolutePressure pc "Critical temperature";
           external "C" pc = TwoPhaseMedium_getCriticalPressure_C_impl(mediumName, libraryName, substanceName)
         annotation(Include = "
+#include <assert.h>
 double TwoPhaseMedium_getCriticalPressure_C_impl(const char* mediumName, const char* libraryName, const char* substanceName)
 {
   assert(mediumName[0] != 0); assert(libraryName[0] != 0); assert(substanceName[0] != 0);
@@ -165,6 +169,7 @@ double TwoPhaseMedium_getCriticalPressure_C_impl(const char* mediumName, const c
           output MolarVolume vc "Critical molar volume";
           external "C" vc = TwoPhaseMedium_getCriticalMolarVolume_C_impl(mediumName, libraryName, substanceName)
         annotation(Include = "
+#include <assert.h>
 double TwoPhaseMedium_getCriticalMolarVolume_C_impl(const char* mediumName, const char* libraryName, const char* substanceName)
 {
   assert(mediumName[0] != 0); assert(libraryName[0] != 0); assert(substanceName[0] != 0);
@@ -179,7 +184,8 @@ double TwoPhaseMedium_getCriticalMolarVolume_C_impl(const char* mediumName, cons
           input FixedPhase phase = 0 "2 for two-phase, 1 for one-phase, 0 if not known";
           output ThermodynamicState state;
           external "C" TwoPhaseMedium_setState_ph_C_impl(p, h, phase, state, mediumName, libraryName, substanceName)
-        annotation(Include = "typedef struct {
+        annotation(Include = "#include <assert.h>
+typedef struct {
   //! Temperature
   double T;
   //! Velocity of sound

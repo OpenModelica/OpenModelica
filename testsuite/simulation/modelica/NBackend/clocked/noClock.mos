@@ -2,6 +2,7 @@
 // keywords: synchronous features, noClock, sample, hold, c
 // status: correct
 // cflags: --newBackend
+// suite: disabled
 //
 // Difference between noClock() and sample(hold()).
 

@@ -40,7 +40,7 @@
 #define CRMLEDITOR_H
 
 #include "Editors/BaseEditor.h"
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSyntaxHighlighter>
 
 class CRMLEditorPage;
@@ -75,7 +75,7 @@ private:
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
-    QRegExp mPattern;
+    QRegularExpression mPattern;
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;

@@ -37,6 +37,19 @@
 #include "simulation/options.h"
 
 
+/* See the note in perform_simulation.c.inc: the Rust simulation runtime has its
+ * own loop, so this one is compiled away under `--simCodeTarget=C`.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performQSSSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
+
 /*! enum error_msg
  * \brief  Returnvalues of the functions in this file
  */
@@ -220,7 +233,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
 
 #if !defined(OMC_EMCC)
     /* try */
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
     {
 #endif
 
@@ -399,11 +412,13 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
       infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       break;
     }
-    success = 1;
 #if !defined(OMC_EMCC)
     }
+#endif
     /* catch */
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
+#if !defined(OMC_EMCC)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (!success)
     {
@@ -577,3 +592,5 @@ static uinteger minStep(const modelica_real* tqp, const uinteger size )
   }
   return ind;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

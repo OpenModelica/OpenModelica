@@ -53,7 +53,6 @@
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
-#include "OMSimulator/OMSimulator.h"
 
 #include <QOpenGLContext>
 #include <QGraphicsView>
@@ -61,9 +60,6 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QtWebKit>
-#endif // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>
@@ -483,8 +479,10 @@ class WelcomePageWidget : public QWidget
 public:
   WelcomePageWidget(QWidget *pParent = 0);
   void addRecentFilesListItems();
+  void addRecentModelsListItems();
   QFrame* getLatestNewsFrame();
   QSplitter* getSplitter();
+  QSplitter* getRecentSplitter();
 
   // QWidget interface
   /* This tells QMainWindow: "I'm happy with very little height",
@@ -496,16 +494,20 @@ public:
 private:
   Label *mpNoRecentFileLabel;
   QListWidget *mpRecentItemsListWidget;
+  Label *mpNoRecentModelLabel;
+  QListWidget *mpRecentModelItemsListWidget;
   QFrame *mpLatestNewsFrame;
   Label *mpNoLatestNewsLabel;
   QListWidget *mpLatestNewsListWidget;
   NetworkAccessManager *mpLatestNewsNetworkAccessManager;
   QSplitter *mpSplitter;
+  QSplitter *mpRecentSplitter;
 public slots:
   void addLatestNewsListItems();
 private slots:
   void readLatestNewsXML(QNetworkReply *pNetworkReply);
   void openRecentFileItem(QListWidgetItem *pItem);
+  void openRecentModelItem(QListWidgetItem *pItem);
   void openLatestNewsItem(QListWidgetItem *pItem);
 };
 
@@ -593,7 +595,6 @@ public:
   void beginMacro(const QString &text);
   void endMacro();
   void updateViewButtonsBasedOnAccess();
-  void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
   void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true, const bool switchToEdited = true,
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
@@ -658,7 +659,6 @@ private:
   void drawOMSModelDiagramElements();
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
   void drawOMSModelConnections();
-  void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
   bool dependsOnModel(const QString &modelName, bool unload);
   void updateElementModeButtons();
   void reDrawModelWidgetHelper();
@@ -723,7 +723,6 @@ public slots:
   void addOrEditIcon();
   void deleteIcon();
   void addConnector();
-  void addBus();
   void addSubModel();
 };
 

@@ -1,0 +1,47 @@
+// name:     Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4.1.0 with the Cpp runtime: the generated code does not declare the
+// ComplexOutput record type of the sensor and fails to compile, so only test
+// that the model translates.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier);
+compareVars :=
+{
+   "iAC.mean1.y",
+   "iAC.mean2.y",
+   "iDC2.mean.y",
+   "voltageQS.pin_p.reference.gamma"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier
+// {"iAC.mean1.y", "iAC.mean2.y", "iDC2.mean.y", "voltageQS.pin_p.reference.gamma"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|iAC.mean1.y|iAC.mean2.y|iDC2.mean.y|voltageQS.pin_p.reference.gamma', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.QuasiStatic.SinglePhase.Examples.Rectifier_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

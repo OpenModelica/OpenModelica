@@ -35,20 +35,28 @@
 
 encapsulated package GCExt
 
+constant Boolean cellsNeedOwners = false
+  "True where a weak cell needs an explicit owner to stay alive, so `InstNode`
+   copies a record to set and clear one. A constant, so the C compiler folds
+   it and drops both the branch and the rooting call inside it: Boehm keeps
+   the cell alive by tracing, and an owner there would only build the cycle
+   the collector then has to reclaim. The Rust port sets it true -- `GCExt`
+   is hand-written there.";
+
 function gcollect
-external "C" GC_gcollect() annotation(Library = {"omcgc"});
+external "C" GC_gcollect() annotation(Include="#include <gc.h>", Library = {"omcgc"});
 end gcollect;
 
 function gcollectAndUnmap
-external "C" GC_gcollect_and_unmap() annotation(Library = {"omcgc"});
+external "C" GC_gcollect_and_unmap() annotation(Include="#include <gc.h>", Library = {"omcgc"});
 end gcollectAndUnmap;
 
 function enable
-external "C" GC_enable() annotation(Library = {"omcgc"});
+external "C" GC_enable() annotation(Include="#include <gc.h>", Library = {"omcgc"});
 end enable;
 
 function disable
-external "C" GC_disable() annotation(Library = {"omcgc"});
+external "C" GC_disable() annotation(Include="#include <gc.h>", Library = {"omcgc"});
 end disable;
 
 function free<T>
@@ -86,12 +94,12 @@ end setFreeSpaceDivisor;
 
 function getForceUnmapOnGcollect
   output Boolean res;
-  external "C" res=GC_get_force_unmap_on_gcollect() annotation(Library = {"omcgc"});
+  external "C" res=GC_get_force_unmap_on_gcollect() annotation(Include="#include <gc.h>", Library = {"omcgc"});
 end getForceUnmapOnGcollect;
 
 function setForceUnmapOnGcollect
   input Boolean forceUnmap;
-  external "C" GC_set_force_unmap_on_gcollect(forceUnmap) annotation(Library = {"omcgc"});
+  external "C" GC_set_force_unmap_on_gcollect(forceUnmap) annotation(Include="#include <gc.h>", Library = {"omcgc"});
 end setForceUnmapOnGcollect;
 
 function setMaxHeapSize

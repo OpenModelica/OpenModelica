@@ -336,7 +336,6 @@ or online http://opensource.org/licenses/LGPL-2.1.
 [BSD-2-Clause] Copyright (C) 2008-2011 MODELISAR consortium,
                2012-2022 Modelica Association Project "FMI"
                FMI 2 Standard Headers
-[BSL 1.0] Copyright (c) 2009 Rutger ter Borg, Boost.Numeric.Bindings (BLAS/LAPACK bindings)
 [BSL 1.0] Copyright (C) 2008 Jeremy Pack, Boost.Extension
 [BSD] Copyright (c) 2002, The Regents of the University of California,
               DASKR (f2c-translated Fortran DAE solver, UCRL-CODE-2002-058)
@@ -350,7 +349,6 @@ or online http://opensource.org/licenses/LGPL-2.1.
 [CeCILL-B] Copyright CNRS, Inria, ENS Lyon, Kamer Kaya, Johannes Langguth, Bora Ucar (2019),
             matchmaker (cheap matching algorithm)
 [MIT] Copyright (c) Pieter Hintjens / iMatix, zhelpers.hpp (ZeroMQ guide helper)
-[BSD-2-Clause] Copyright (c) 2014, Martin Sjölund, msgpack-modelica.h
 [GPL 2] Copyright (C) 2014 Rakhi R Warriar, FOSSEE, IIT Bombay, NgspicetoModelica.py
 
 Dynamically links against (not exhaustive):

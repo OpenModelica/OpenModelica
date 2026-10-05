@@ -1,0 +1,36 @@
+[package]
+name = "openmodelica_nf_api"
+version = "0.1.0"
+edition = "2024"
+
+# NFFrontEnd/NFInstanceAPI.mo — instantiate a class and dump the model instance
+# as JSON. Its own tier because it needs both the new frontend (InstNode) and
+# the old one (Parser, FBuiltin), which openmodelica_nf_frontend deliberately
+# does not depend on.
+[dependencies]
+openmodelica_loader = { path = "../openmodelica_loader", default-features = false }
+# Declared by path, not `workspace = true`: cargo forbids overriding the
+# workspace dep's default-features when inheriting, and both features have to
+# be forwarded rather than always on (see [features]).
+openmodelica_nf_frontend = { path = "../openmodelica_nf_frontend", default-features = false }
+openmodelica_frontend = { path = "../openmodelica_frontend", default-features = false }
+openmodelica_frontend_dump.workspace = true
+openmodelica_frontend_types.workspace = true
+openmodelica_ast.workspace = true
+openmodelica_ast_collections.workspace = true
+openmodelica_error.workspace = true
+openmodelica_util.workspace = true
+openmodelica_util_datatypes_basic.workspace = true
+metamodelica.workspace = true
+const-str.workspace = true
+arcstr.workspace = true
+loop_unwrap.workspace = true
+match_deref.workspace = true
+
+[features]
+# Forwarded rather than always on, so a host that neither downloads nor
+# evaluates `external "C"` at compile time — omgendoc — links neither libcurl
+# nor libffi. The compiler enables both through its own default chain.
+default = ["curl", "ffi"]
+curl = ["openmodelica_frontend/curl", "openmodelica_loader/curl"]
+ffi = ["openmodelica_nf_frontend/ffi"]

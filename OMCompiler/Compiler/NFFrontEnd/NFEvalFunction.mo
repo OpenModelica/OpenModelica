@@ -122,7 +122,7 @@ algorithm
   if call_count > limit then
     Pointer.update(call_counter, 0);
     Error.addSourceMessage(Error.EVAL_RECURSION_LIMIT_REACHED,
-      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(fn.node));
+      {String(limit), AbsynUtil.pathString(Function.name(fn))}, InstNode.info(InstNode.fromHandle(fn.node)));
     fail();
   end if;
 
@@ -174,7 +174,7 @@ protected
   list<Expression> ext_args;
 algorithm
   Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
-    Class.getSections(InstNode.getClass(fn.node));
+    Class.getSections(InstNode.getClass(InstNode.fromHandle(fn.node)));
 
   result := matchcontinue lang
     case "builtin"
@@ -229,7 +229,7 @@ algorithm
 
   // Use the node of the return type to determine the order of the variables,
   // since they might be reordered in the record constructor.
-  Type.COMPLEX(cls = out_ty) := fn.returnType;
+  out_ty := Type.complexNode(fn.returnType);
 
   // Fetch the new binding expressions for all the variables, both inputs and locals.
   for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(out_ty))) loop
@@ -249,7 +249,7 @@ protected
 
 function createArgumentMap
   input list<InstNode> inputs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   input list<InstNode> locals;
   input list<Expression> args;
   input Boolean mutableParams;
@@ -271,7 +271,7 @@ algorithm
     // node to the map so we can replace calls to it with the correct function.
     if Expression.isFunctionPointer(arg) then
       for fn in Function.getCachedFuncs(i) loop
-        UnorderedMap.add(fn.node, arg, map);
+        UnorderedMap.add(InstNode.fromHandle(fn.node), arg, map);
       end for;
     end if;
   end for;
@@ -279,10 +279,14 @@ algorithm
   // Add outputs and local variables to the argument map.
   // They sometimes need to be mutable and sometimes not.
   if mutableParams then
-    List.fold(outputs, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addMutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
   else
-    List.fold(outputs, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
+    for o in outputs loop
+      map := addImmutableArgument(InstNode.fromHandle(o), map, buildArrayBinding);
+    end for;
     List.fold(locals, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
   end if;
 
@@ -330,8 +334,7 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isBound(binding) then
-    bindingExp := Binding.getExp(binding);
-    bindingExp := Expression.map(bindingExp, Expression.clone);
+    bindingExp := Expression.clone(Binding.getExp(binding));
   else
     bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
@@ -355,7 +358,7 @@ algorithm
         if Type.hasKnownSize(ty) then
           Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)))
         else
-          Expression.makeEmptyArray(ty);
+          Expression.ARRAY(ty, listArray({}), true);
 
     case Type.COMPLEX() then buildRecordBinding(node, map, mutableParams);
     else Expression.EMPTY(ty);
@@ -526,7 +529,7 @@ algorithm
   outExp := match call
     case Call.TYPED_CALL()
       algorithm
-        repl_oexp := UnorderedMap.get(call.fn.node, map);
+        repl_oexp := UnorderedMap.get(InstNode.fromHandle(call.fn.node), map);
 
         if isSome(repl_oexp) then
           SOME(repl_exp) := repl_oexp;
@@ -672,23 +675,26 @@ end optimizeStatement;
 
 function createResult
   input ArgumentMap map;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression exp;
 protected
   list<Expression> expl;
   list<Type> types;
   Expression e;
+  InstNode node;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(UnorderedMap.getOrFail(listHead(outputs), map));
-    assertAssignedOutput(listHead(outputs), exp);
+    node := InstNode.fromHandle(listHead(outputs));
+    exp := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
+    exp := assertAssignedOutput({InstNode.name(node)}, exp, InstNode.info(node));
   else
     expl := {};
     types := {};
 
-    for o in outputs loop
-      e := Ceval.evalExp(UnorderedMap.getOrFail(o, map));
-      assertAssignedOutput(o, e);
+    for h in outputs loop
+      node := InstNode.fromHandle(h);
+      e := Ceval.evalExp(UnorderedMap.getOrFail(node, map));
+      e := assertAssignedOutput({InstNode.name(node)}, e, InstNode.info(node));
       expl := e :: expl;
     end for;
 
@@ -699,20 +705,90 @@ algorithm
 end createResult;
 
 function assertAssignedOutput
-  input InstNode outputNode;
-  input Expression value;
+  input list<String> name;
+  input output Expression value;
+  input SourceInfo info;
+  input Boolean error = true;
+protected
+  list<Record.Field> fields;
+  list<Expression> expl;
+  String name_str;
+  Option<String> opt_indices;
 algorithm
-  () := match value
-    case Expression.EMPTY()
+  value := match value
+    case Expression.RECORD()
       algorithm
-        Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
-          {InstNode.name(outputNode)}, InstNode.info(outputNode));
-      then
-        fail();
+        fields := Type.recordFields(value.ty);
+        expl := {};
 
-    else ();
+        for e in value.elements loop
+          e := assertAssignedOutput(Record.Field.name(listHead(fields)) :: name, e, info, error = false);
+          expl := e :: expl;
+          fields := listRest(fields);
+        end for;
+
+        value.elements := listReverseInPlace(expl);
+      then
+        value;
+
+    case _
+      algorithm
+        // Check if the value is uninitialized or contains an uninitialized array element.
+        opt_indices := findUnassignedElement(value);
+
+        if isNone(opt_indices) then
+          return;
+        end if;
+
+        name_str := stringDelimitList(listReverse(name), ".");
+        name_str := name_str + Util.getOption(opt_indices);
+
+        if error then
+          Error.addSourceMessageAsError(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {name_str}, info);
+          fail();
+        else
+          Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+            {name_str}, info);
+        end if;
+      then
+        // This will fail if the type is one that makeZero doesn't handle,
+        // but this should really be an error anyway so that's fine.
+        Expression.makeZero(Expression.typeOf(value));
+
+    else value;
   end match;
 end assertAssignedOutput;
+
+function findUnassignedElement
+  "Checks if an expression contains uninitialized values and returns a string
+   option with either the position of the uninitialized value or an empty
+   string if the expression is a scalar."
+  input Expression value;
+  input list<Integer> indices = {};
+  output Option<String> indicesStr;
+algorithm
+  indicesStr := match value
+    case Expression.EMPTY()
+      then SOME(List.toStringCustom(listReverse(indices), intString, "", "[", ", ", "]", inPrintEmpty = false));
+
+    case Expression.ARRAY()
+      algorithm
+        indicesStr := NONE();
+
+        for i in 1:arrayLength(value.elements) loop
+          indicesStr := findUnassignedElement(arrayGetNoBoundsChecking(value.elements, i), i :: indices);
+
+          if isSome(indicesStr) then
+            break;
+          end if;
+        end for;
+      then
+        indicesStr;
+
+    else NONE();
+  end match;
+end findUnassignedElement;
 
 function evaluateStatements
   input list<Statement> stmts;
@@ -1181,10 +1257,10 @@ protected
   list<Expression> output_vals;
   Integer fn_handle;
 algorithm
-  info := InstNode.info(fn.node);
+  info := InstNode.info(InstNode.fromHandle(fn.node));
   checkExtReturnValue(outputRef, info);
 
-  pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
+  pkg_name := InstNode.name(InstNode.libraryScope(InstNode.fromHandle(fn.node)));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
   try
@@ -1266,9 +1342,8 @@ function loadLibraryFunction
   input SourceInfo info;
   output Integer fnHandle = -1;
 protected
-  Integer lib_handle;
   SCode.Annotation ann;
-  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {};
+  list<String> libs = {}, dirs = {}, paths = {}, libs2 = {}, failures = {};
   Boolean found = false;
   String installLibDir;
 algorithm
@@ -1303,9 +1378,12 @@ algorithm
   // This is where we put the ModelicaExternal libs right now. So that their shared
   // versions are not in the lib/omc dir complicating normal linking.
   // ( remembering we append to the front of the list as we process things )
-  for lib in libs loop
-    paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
-  end for;
+  // A wasm build ships no such directory; its side modules serve that purpose.
+  if not Autoconf.isWasm then
+    for lib in libs loop
+      paths := (installLibDir + "/ffi/" + lib + Autoconf.dllExt) :: paths;
+    end for;
+  end if;
 
   // Create paths for any combination of library and library directory.
   for lib in libs loop
@@ -1323,9 +1401,14 @@ algorithm
       paths := (dir + "/" + lib) :: paths;
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
 
-      if Autoconf.os == "Windows_NT" then
-        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) ::
-                 (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
+      // Windows and macOS also install under the openModelicaPlatform name; a
+      // wasm build searches wasm32-wasip1 and, for a module needing nothing of
+      // the system, wasm32.
+      if Autoconf.os == "Windows_NT" or Autoconf.os == "darwin" or Autoconf.isWasm then
+        if not stringEmpty(System.openModelicaPlatformAlternative()) then
+          paths := (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
+        end if;
+        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) :: paths;
       end if;
 
     end for;
@@ -1334,47 +1417,118 @@ algorithm
   end for;
 
   // If no Library annotation was given, append an empty string to search for
-  // functions linked into the compiler itself.
-  if listEmpty(libs) then
+  // functions linked into the compiler itself. A wasm build always searches it:
+  // the shared libraries it carries are what it has in place of those.
+  if listEmpty(libs) or Autoconf.isWasm then
     paths := "" :: paths;
   end if;
 
-  // Disable error messages, we don't care if some paths can't be found.
+  // The messages the search produces are about paths the user never asked for,
+  // so keep them out of the way; what went wrong is collected separately and
+  // reported below if nothing worked.
   ErrorExt.setCheckpoint(getInstanceName());
 
-  // Go through each path and try to find the function.
-  for path in paths loop
-    try
-      if not stringEmpty(path) then
-        path := uriToFilename(path);
-      end if;
+  // First ask for every symbol in the library to be resolved, which is what
+  // calling through it will need.
+  (fnHandle, found, failures) := searchLibraryPaths(paths, fnName, lazy = false, debug = debug);
 
-      lib_handle := lookupLibraryInCache(path);
-
-      if lib_handle == -1 then
-        lib_handle := System.loadLibrary(path, relativePath = false, printDebug = debug);
-        cacheLibrary(path, lib_handle);
-      end if;
-
-      fnHandle := System.lookupFunction(lib_handle, fnName);
-      found := true;
-    else
-    end try;
-
-    if found then
-      break;
-    end if;
-  end for;
+  if not found then
+    // Nothing. Try again binding lazily: a library that has an unresolvable
+    // symbol somewhere else in it can still provide this function.
+    (fnHandle, found, failures) := searchLibraryPaths(paths, fnName, lazy = true, debug = debug);
+  end if;
 
   ErrorExt.rollBack(getInstanceName());
 
   if not found then
-    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p guard not stringEmpty(p) in paths);
     Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
-      {fnName, stringDelimitList(paths, "\n")}, info);
+      {fnName, stringDelimitList(failures, "\n")}, info);
     fail();
   end if;
 end loadLibraryFunction;
+
+function searchLibraryPaths
+  "Tries each candidate path in turn, and says of each one why it did not
+   provide the function: there is nothing there, it would not load, or it
+   loaded and does not define it."
+  input list<String> paths;
+  input String fnName;
+  input Boolean lazy;
+  input Boolean debug;
+  output Integer fnHandle = -1;
+  output Boolean found = false;
+  output list<String> failures = {};
+protected
+  Integer lib_handle;
+  String file, reason;
+  Boolean resolved;
+algorithm
+  for path in paths loop
+    reason := "";
+    resolved := true;
+
+    try
+      file := if stringEmpty(path) then "" else uriToFilename(path);
+    else
+      file := path;
+      resolved := false;
+      reason := "not a usable file name";
+    end try;
+
+    if resolved then
+      lib_handle := lookupLibraryInCache(file);
+
+      if lib_handle == -1 then
+        try
+          lib_handle := if lazy then
+            System.loadLibraryLazy(file, relativePath = false, printDebug = debug) else
+            System.loadLibrary(file, relativePath = false, printDebug = debug);
+          cacheLibrary(file, lib_handle);
+        else
+          lib_handle := -1;
+          reason := System.getLoadLibraryError();
+          reason := if stringEmpty(reason) then "cannot be loaded" else
+                    "cannot be loaded: " + reason;
+        end try;
+      end if;
+
+      if lib_handle <> -1 then
+        try
+          fnHandle := System.lookupFunction(lib_handle, fnName);
+          found := true;
+        else
+          reason := "loaded, but does not define it";
+        end try;
+      end if;
+    end if;
+
+    if found then
+      break;
+    end if;
+
+    // The empty path means the compiler's own image, which is not a path worth
+    // listing back to the user.
+    if not stringEmpty(file) then
+      failures := describeLibraryFailure(file, reason) :: failures;
+    end if;
+  end for;
+
+  failures := listReverse(failures);
+end searchLibraryPaths;
+
+function describeLibraryFailure
+  input String file;
+  input String reason;
+  output String str;
+algorithm
+  str := "  " + Testsuite.friendly(file);
+
+  if not System.regularFileExists(file) then
+    str := str + " (no such file)";
+  elseif not stringEmpty(reason) then
+    str := str + " (" + Testsuite.friendly(reason) + ")";
+  end if;
+end describeLibraryFailure;
 
 function parseExternalAnnotation
   input String name;
@@ -1496,7 +1650,7 @@ function makeExternalResult
   input list<Expression> values;
   input ComponentRef outputRef;
   input list<Expression> extArgs;
-  input list<InstNode> outputs;
+  input list<NFInstNode.NodeHandle> outputs;
   output Expression outExp;
 protected
   ArgumentMap arg_map;
@@ -1525,7 +1679,7 @@ algorithm
     end match;
   end for;
 
-  ret_vals := list(getExternalOutputResult(o, arg_map) for o in outputs);
+  ret_vals := list(getExternalOutputResult(InstNode.fromHandle(o), arg_map) for o in outputs);
   outExp := Expression.makeTuple(ret_vals);
 end makeExternalResult;
 

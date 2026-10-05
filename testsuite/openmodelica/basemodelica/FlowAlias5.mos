@@ -39,7 +39,7 @@ instantiateModel(TestAliasStream.Test5); getErrorString();
 //     'wrapper.port.p' = 'wrapper.sensor.port.p';
 //     'wrapper.port.p' = 'tank.port.p';
 //     'wrapper.port.p' = 'pump.outlet.p';
-//     'wrapper.sensor.port.w' + 'tank.port.w' - 'pump.w' = 0.0;
+//     ('wrapper.sensor.port.w' + 'tank.port.w') - 'pump.w' = 0.0;
 //     'pump.outlet.h' = 4200.0 * 'pump.T';
 //     'pump.P' = if 'pump.w' > 0.0 then 'pump.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
 //     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';

@@ -20,7 +20,7 @@ end SyncFilter;
 
 model SyncFilterTest
   SyncFilter syncFilter;
-  Modelica.Blocks.Sources.Clock clock;
+  Modelica.Blocks.Sources.ContinuousClock clock;
 equation
   connect(clock.y, syncFilter.u);
 end SyncFilterTest;

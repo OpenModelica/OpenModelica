@@ -2,6 +2,7 @@
 // keywords: synchronous features, sample, hold, event clock, c
 // status: correct
 // cflags: --newBackend
+// suite: disabled
 //
 // Simulate even-clock where condition becomes true during initialization and that needs to fire at t=0.
 

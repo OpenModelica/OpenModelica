@@ -48,6 +48,8 @@
 #include <stdexcept>
 #include <fstream>
 #include <algorithm>
+#include <array>
+
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
@@ -102,14 +104,14 @@ QString NotebookWindow::linkDir_ = QString();
   * 2006-01-16 AF, Added an icon to the window
   * Also made som other updates /AF
   */
-NotebookWindow::NotebookWindow(Document *subject,
+NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
                                const QString filename, int isDrModelica, QWidget *parent)
   : DocumentView(parent),
-    subject_(subject),
+    app_( subject->application() ),
+    subject_(std::move(subject)),
     filename_(filename),
-    closing_(false),
-    app_( subject->application() ), //AF
-    findForm_( 0 )          //AF
+    findForm_( 0 ),
+    closing_(false)
 {
   if(!isDrModelica && !filename_.isNull() ) {
     saveDir_ = openDir_ = QFileInfo( filename_ ).absolutePath();
@@ -164,19 +166,19 @@ NotebookWindow::NotebookWindow(Document *subject,
 
   connect( subject_->getCursor(), SIGNAL( changedPosition() ),
            this, SLOT( updateMenus() ));
-  connect( subject_, SIGNAL( contentChanged() ),
+  connect( subject_.get(), SIGNAL( contentChanged() ),
            this, SLOT( updateWindowTitle() ));
-  connect( subject_, SIGNAL( hoverOverFile(QString) ),
+  connect( subject_.get(), SIGNAL( hoverOverFile(QString) ),
            this, SLOT( setStatusMessage(QString) ));
   // 2006-04-27 AF
-  connect( subject_, SIGNAL( forwardAction(int) ),
+  connect( subject_.get(), SIGNAL( forwardAction(int) ),
            this, SLOT( forwardedAction(int) ));
 
-  connect( subject_, SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
+  connect( subject_.get(), SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
 
-  connect( subject_, SIGNAL(newState(QString)), this, SLOT(setState(QString)));
+  connect( subject_.get(), SIGNAL(newState(QString)), this, SLOT(setState(QString)));
 
-  connect( subject_, SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
+  connect( subject_.get(), SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
 
   updateWindowTitle();//
   updateChapterCounters();
@@ -218,7 +220,7 @@ NotebookWindow::NotebookWindow(Document *subject,
   */
 NotebookWindow::~NotebookWindow()
 {
-  //2006-01-27 AF, remove document view from application lsit
+  //2006-01-27 AF, remove document view from application list
   application()->removeDocumentView( this );
 
   //2006-01-05 AF, add all inputcell to removelist on highlighter
@@ -226,8 +228,6 @@ NotebookWindow::~NotebookWindow()
   subject_->runVisitor( visitor );
 
   subject_->detach(this);
-  delete subject_;
-  //subject_ = 0;
 }
 
 /*!
@@ -249,11 +249,11 @@ void NotebookWindow::update()
   * \author Anders Fernström
   * \date 2005-11-30
   *
-  * \brief Return the notebook windons document
+  * \brief Return the notebook windows document
   */
 Document* NotebookWindow::document()
 {
-  return subject_;
+  return subject_.get();
 }
 
 /*!
@@ -439,40 +439,45 @@ void NotebookWindow::createEditMenu()
 
   toolBar->addSeparator();
 
+  // CUT/COPY/PASTE. On wasm the menu/toolbar entries and shortcuts are omitted
+  // (the programmatic QClipboard path doesn't work there; the cell widgets handle
+  // Ctrl+C/X/V directly). The QActions are still created so the enable/disable
+  // wiring stays valid.
   // CUT
   cutAction = new QAction( tr("Cu&t"), this);
-  cutAction->setShortcut( QKeySequence("Ctrl+X") );
   cutAction->setStatusTip( tr("Cut selected text") );
   connect( cutAction, SIGNAL( triggered() ),
            this, SLOT( cutEdit() ));
 
   cutAction->setEnabled(false);
   cutAction->setIcon(QIcon(":/Resources/toolbarIcons/editcut.png"));
-  toolBar->addAction(cutAction);
 
   // COPY
   copyAction = new QAction( tr("&Copy"), this);
-  copyAction->setShortcut( QKeySequence("Ctrl+C") );
   copyAction->setStatusTip( tr("Copy selected text") );
   connect( copyAction, SIGNAL( triggered() ),
            this, SLOT( copyEdit() ));
 
   copyAction->setEnabled(false);
   copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
-  toolBar->addAction(copyAction);
 
   // PASTE
   pasteAction = new QAction( tr("&Paste"), this);
-  pasteAction->setShortcut( QKeySequence("Ctrl+V") );
   pasteAction->setStatusTip( tr("Paste text from clipboard") );
   connect( pasteAction, SIGNAL( triggered() ),
            this, SLOT( pasteEdit() ));
 
-
   pasteAction->setIcon(QIcon(":/Resources/toolbarIcons/editpaste.png"));
-  toolBar->addAction(pasteAction);
 
+#ifndef __EMSCRIPTEN__
+  cutAction->setShortcut( QKeySequence("Ctrl+X") );
+  copyAction->setShortcut( QKeySequence("Ctrl+C") );
+  pasteAction->setShortcut( QKeySequence("Ctrl+V") );
+  toolBar->addAction(cutAction);
+  toolBar->addAction(copyAction);
+  toolBar->addAction(pasteAction);
   toolBar->addSeparator();
+#endif
 
 
   // FIND
@@ -498,7 +503,7 @@ void NotebookWindow::createEditMenu()
   showExprAction->setStatusTip( tr("View the raw text in the cell") );
   showExprAction->setCheckable(true);
   showExprAction->setChecked(false);
-  connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
+  connect(showExprAction, SIGNAL(toggled(bool)), subject_.get(), SLOT(showHTML(bool)));
 
 
 #if USE_OMSKETCH
@@ -516,10 +521,13 @@ void NotebookWindow::createEditMenu()
   auto editMenu = menuBar()->addMenu( tr("&Edit") );
   editMenu->addAction( undoAction );
   editMenu->addAction( redoAction );
+#ifndef __EMSCRIPTEN__
+  // Omitted on wasm; see the cut/copy/paste action setup above.
   editMenu->addSeparator();
   editMenu->addAction( cutAction );
   editMenu->addAction( copyAction );
   editMenu->addAction( pasteAction );
+#endif
   editMenu->addSeparator();
   editMenu->addAction( findAction );
   editMenu->addAction( replaceAction );
@@ -677,12 +685,7 @@ void NotebookWindow::createFormatMenu()
   auto fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  QFontDatabase fontDatabase;
-  QStringList fonts = fontDatabase.families( QFontDatabase::Latin );
-#else
   QStringList fonts = QFontDatabase::families( QFontDatabase::Latin );
-#endif
 
   for( int index = 0; index < fonts.count(); ++index )
   {
@@ -1152,14 +1155,14 @@ void NotebookWindow::createFormatMenu()
   borderMenu = formatMenu->addMenu( tr("&Border") );
   auto bordersgroup = new QActionGroup( this );
 
-  int borderSizes[] = { 0,1,2,3,4,5,6,7,8,9,10 };
-  for( int i = 0; i < sizeof(borderSizes)/sizeof(int); i++ )
+  auto borderSizes = std::array{ 0,1,2,3,4,5,6,7,8,9,10 };
+  for (auto sz: borderSizes)
   {
     QString name;
-    name.setNum( borderSizes[i] );
+    name.setNum( sz );
     QAction *tmp = new QAction( name, this );
     tmp->setCheckable( true );
-    borders_.insert( borderSizes[i], tmp );
+    borders_.insert( sz, tmp );
     borderMenu->addAction( tmp );
     bordersgroup->addAction( tmp );
   }
@@ -1187,14 +1190,14 @@ void NotebookWindow::createFormatMenu()
   marginMenu = formatMenu->addMenu( tr("&Margin") );
   auto marginsgroup = new QActionGroup( this );
 
-  int marginSizes[] = { 0,1,2,3,4,5,6,7,8,9,10,15,20,25,30 };
-  for( int i = 0; i < sizeof(marginSizes)/sizeof(int); i++ )
+  auto marginSizes = std::array{ 0,1,2,3,4,5,6,7,8,9,10,15,20,25,30 };
+  for (auto sz: marginSizes)
   {
     QString name;
-    name.setNum( marginSizes[i] );
+    name.setNum( sz );
     QAction *tmp = new QAction( name, this );
     tmp->setCheckable( true );
-    margins_.insert( marginSizes[i], tmp );
+    margins_.insert( sz, tmp );
     marginMenu->addAction( tmp );
     marginsgroup->addAction( tmp );
   }
@@ -1222,14 +1225,14 @@ void NotebookWindow::createFormatMenu()
   paddingMenu = formatMenu->addMenu( tr("&Padding") );
   auto paddingsgroup = new QActionGroup( this );
 
-  int paddingSizes[] = { 0,2,4,6,8,10,15 };
-  for( int i = 0; i < sizeof(paddingSizes)/sizeof(int); i++ )
+  auto paddingSizes = std::array{ 0,2,4,6,8,10,15 };
+  for (auto sz: paddingSizes)
   {
     QString name;
-    name.setNum( paddingSizes[i] );
+    name.setNum( sz );
     QAction *tmp = new QAction( name, this );
     tmp->setCheckable( true );
-    paddings_.insert( paddingSizes[i], tmp );
+    paddings_.insert( sz, tmp );
     paddingMenu->addAction( tmp );
     paddingsgroup->addAction( tmp );
   }
@@ -1285,6 +1288,13 @@ void NotebookWindow::createInsertMenu()
            this, SLOT( insertLink() ));
   insertLinkAction->setIcon(QIcon(":/Resources/toolbarIcons/text_under.png"));
   toolBar->addAction(insertLinkAction);
+
+  // WEB LINK
+  insertWebLinkAction = new QAction( tr("&Web link..."), this );
+  insertWebLinkAction->setShortcut( QKeySequence("Ctrl+Shift+K") );
+  insertWebLinkAction->setStatusTip( tr("Insert or change a link to a web page (http/https)") );
+  connect( insertWebLinkAction, SIGNAL( triggered() ),
+           this, SLOT( insertWebLink() ));
 
   toolBar->addSeparator();
 
@@ -1365,6 +1375,7 @@ void NotebookWindow::createInsertMenu()
   auto insertMenu = menuBar()->addMenu( tr("&Insert") );
   insertMenu->addAction( insertImageAction );
   insertMenu->addAction( insertLinkAction );
+  insertMenu->addAction( insertWebLinkAction );
 
   connect( insertMenu, SIGNAL( aboutToShow() ),
            this, SLOT( updateMenus() ));
@@ -1415,6 +1426,13 @@ void NotebookWindow::createAboutMenu()
   connect( aboutQtAction, SIGNAL( triggered() ),
            this, SLOT( aboutQT() ));
 
+#ifdef __EMSCRIPTEN__
+  // Web build: the example notebooks are staged into MEMFS at startup (see
+  // CellApplication). Expose each tree as a menu mirroring its directory layout.
+  addExampleMenu("/DrModelica");
+  addExampleMenu("/DrControl");
+#endif
+
   // 2005-10-07 AF, Porting, new code for creating menu
   auto aboutMenu = menuBar()->addMenu( tr("&Help") );
   aboutMenu->addAction( aboutAction );
@@ -1422,6 +1440,32 @@ void NotebookWindow::createAboutMenu()
   aboutMenu->addSeparator();
   aboutMenu->addAction( helpAction );
 }
+
+#ifdef __EMSCRIPTEN__
+void NotebookWindow::addExampleMenu(const QString &root)
+{
+  QDir dir(root);
+  if (!dir.exists())
+    return;
+  QMenu *menu = menuBar()->addMenu(dir.dirName());
+  populateExampleMenu(menu, root);
+}
+
+void NotebookWindow::populateExampleMenu(QMenu *menu, const QString &path)
+{
+  QDir dir(path);
+  const auto subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+  for (const QFileInfo &fi : subdirs)
+    populateExampleMenu(menu->addMenu(fi.fileName()), fi.absoluteFilePath());
+
+  const auto files = dir.entryInfoList(QStringList() << "*.onb" << "*.onbz", QDir::Files, QDir::Name);
+  for (const QFileInfo &fi : files) {
+    const QString p = fi.absoluteFilePath();
+    QAction *a = menu->addAction(fi.completeBaseName());
+    connect(a, &QAction::triggered, this, [this, p]() { emit openFile(p); });
+  }
+}
+#endif
 
 /*!
   * \author Anders Fernström
@@ -1442,8 +1486,8 @@ bool NotebookWindow::cellEditable()
   */
 void NotebookWindow::evalCells()
 {
-  application()->commandCenter()->executeCommand(
-        new EvalSelectedCells( subject_ ));
+  application()->commandCenter().executeCommand(
+        std::make_unique<EvalSelectedCells>( subject_.get() ));
 }
 
 /*!
@@ -1501,6 +1545,7 @@ void NotebookWindow::updateMenus()
   chooseFont->setEnabled( editable );
   insertImageAction->setEnabled( editable );
   insertLinkAction->setEnabled( editable );
+  insertWebLinkAction->setEnabled( editable );
 }
 
 /*!
@@ -1698,9 +1743,7 @@ void NotebookWindow::updateFontMenu()
   QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
   if( !cursor.isNull() )
   {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    const QStringList families = {cursor.charFormat().fontFamily()};
-#elif (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
+#if (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
     const QStringList families = cursor.charFormat().fontFamilies().toStringList();
 #else
     const QStringList families = cursor.charFormat().fontFamilies();
@@ -2018,12 +2061,10 @@ void NotebookWindow::updateWindowMenu()
   windowMenu->clear();
 
   // add new menu items
-  std::vector<DocumentView *> windowViews = application()->documentViewList();
-  std::vector<DocumentView *>::iterator v_iter = windowViews.begin();
   int k = 1;
-  while( v_iter != windowViews.end() )
+  for (auto v: application()->documentViewList())
   {
-    QString title = (*v_iter)->windowTitle();
+    QString title = v->windowTitle();
     title.remove( "OMNotebook: " );
 
     QAction *action = new QAction( title, windowMenu );
@@ -2031,9 +2072,8 @@ void NotebookWindow::updateWindowMenu()
       action->setShortcut( QKeySequence::fromString("Ctrl+"+QString::number(k)) );
       k++;
     }
-    windows_[action] = (*v_iter);
+    windows_[action] = v;
     windowMenu->addAction( action );
-    ++v_iter;
   }
 }
 
@@ -2041,7 +2081,7 @@ void NotebookWindow::updateWindowMenu()
   * \author Anders Fernström
   * \date 2006-01-17
   *
-  * \brief Method for updateing the window title
+  * \brief Method for updating the window title
   */
 void NotebookWindow::updateWindowTitle()
 {
@@ -2066,12 +2106,12 @@ void NotebookWindow::updateWindowTitle()
   * \author Anders Fernström
   * \date 2006-03-02
   *
-  * \brief Method for updateing the chapter counters
+  * \brief Method for updating the chapter counters
   */
 void NotebookWindow::updateChapterCounters()
 {
-  application()->commandCenter()->executeCommand(
-        new UpdateChapterCounters( subject_ ));
+  application()->commandCenter().executeCommand(
+        std::make_unique<UpdateChapterCounters>( subject_.get() ));
 }
 
 /*!
@@ -2220,7 +2260,7 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
 void NotebookWindow::newFile()
 {
   /*
-  application()->commandCenter()->executeCommand(new NewFileCommand());
+  application()->commandCenter().executeCommand(new NewFileCommand());
 
   closeFile();
 
@@ -2240,7 +2280,7 @@ void NotebookWindow::newFile()
   if( subject_->isOpen() )
   {
     // a file is open, open a new window with the new file //AF
-    application()->commandCenter()->executeCommand(new OpenFileCommand(QString()));
+    application()->commandCenter().executeCommand(std::make_unique<OpenFileCommand>(QString()));
   }
   else
   {
@@ -2257,9 +2297,9 @@ void NotebookWindow::newFile()
         return;
     }
 
-    subject_ = new CellDocument(app_, QString());
-    dynamic_cast<CellDocument*>(subject_)->autoIndent = autoIndentAction->isChecked();
-    subject_->executeCommand(new NewFileCommand());
+    subject_ = std::make_unique<CellDocument>(app_, QString());
+    dynamic_cast<CellDocument*>(subject_.get())->autoIndent = autoIndentAction->isChecked();
+    subject_->executeCommand(std::make_unique<NewFileCommand>());
     subject_->attach(this);
 
     update();
@@ -2299,6 +2339,31 @@ void NotebookWindow::openFile(const QString filename)
 {
   try
   {
+#ifdef __EMSCRIPTEN__
+    // Web build: File->Open uploads a file from the user's computer through the
+    // browser. The bytes arrive in a callback; stage them into MEMFS and open
+    // from there. Opening a known path (menu entry or link) falls through below.
+    if(filename.isEmpty())
+    {
+      QFileDialog::getOpenFileContent(
+        "Notebooks (*.onb *.onbz *.nb)",
+        [this](const QString &name, const QByteArray &content) {
+          if(name.isEmpty())
+            return;
+          QString path = "/uploads/" + QFileInfo(name).fileName();
+          QDir().mkpath("/uploads");
+          QFile f(path);
+          if(f.open(QIODevice::WriteOnly)) {
+            f.write(content);
+            f.close();
+          }
+          updateRecentFiles(path);
+          application()->commandCenter().executeCommand(std::make_unique<OpenFileCommand>(path));
+        });
+      return;
+    }
+    filename_ = filename;
+#else
     //Open a new document
     if(filename.isEmpty())
     {
@@ -2313,6 +2378,7 @@ void NotebookWindow::openFile(const QString filename)
     {
       filename_ = filename;
     }
+#endif
 
     if(!filename_.isEmpty())
     {
@@ -2321,14 +2387,14 @@ void NotebookWindow::openFile(const QString filename)
 
       updateRecentFiles(filename_);
 
-      application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
+      application()->commandCenter().executeCommand(std::make_unique<OpenFileCommand>(filename_));
     }
     else
     {
       //Cancel pushed. Do nothing
     }
   }
-  catch(std::exception &e)
+  catch(const std::exception &e)
   {
     QMessageBox::warning(nullptr, tr("Warning"), tr("In OpenFile(), Exception: \n") + e.what());
     openFile();
@@ -2429,7 +2495,7 @@ public:
        "<b>%3</b><br />"
        "<b>Connected to %4</b><br /><br />"
        "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-       "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
+       "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
        "Initially developed by <b>Ingemar Axelsson</b>, <b>Anders Fernstr&ouml;m</b> and <b>Henrik Eriksson</b> as part of their final theses.<br>"
        "<br /><br /><b>Contributors:</b>"
        "<ul>"
@@ -2503,15 +2569,15 @@ void NotebookWindow::helpText()
 
     if( dir.exists( helpFile ) )
     {
-      application()->commandCenter()->executeCommand(
-            new OpenFileCommand( helpFile ));
+      application()->commandCenter().executeCommand(
+            std::make_unique<OpenFileCommand>( helpFile ));
     }
     else
     {
       QMessageBox::warning(nullptr, tr("Warning"), tr("Could not find the help document OMNotebookHelp.onb"));
     }
   }
-  catch(std::exception &e)
+  catch(const std::exception &e)
   {
     QString msg = tr("In HelpText(), Exception: \n") + e.what();
     QMessageBox::warning(nullptr, tr("Warning"), msg);
@@ -2534,6 +2600,32 @@ void NotebookWindow::helpText()
   */
 void NotebookWindow::saveas()
 {
+#ifdef __EMSCRIPTEN__
+  // Web build: there is no writable disk. Serialize to a MEMFS temp file, then
+  // hand the bytes to the browser as a download.
+  {
+    QString name = QFileInfo(subject_->getFilename()).fileName();
+    if(name.isEmpty())
+      name = "untitled.onb";
+    bool ok = false;
+    name = QInputDialog::getText(this, tr("Save As"), tr("File name:"),
+                                 QLineEdit::Normal, name, &ok);
+    if(!ok || name.isEmpty())
+      return;
+    if(!name.endsWith(".onb", Qt::CaseInsensitive) && !name.endsWith(".onbz", Qt::CaseInsensitive))
+      name += ".onb";
+    QString tmp = "/tmp/" + name;
+    QDir().mkpath("/tmp");
+    application()->commandCenter().executeCommand(std::make_unique<SaveDocumentCommand>(subject_.get(), tmp));
+    QFile f(tmp);
+    if(f.open(QIODevice::ReadOnly)) {
+      QByteArray bytes = f.readAll();
+      f.close();
+      QFileDialog::saveFileContent(bytes, name);
+    }
+    return;
+  }
+#endif
   // if a filename exists, use that filename as default
   QString filename;
   /*    don't work correctly.
@@ -2573,7 +2665,7 @@ void NotebookWindow::saveas()
     //QMessageBox::about(this,"entered ","image witten ");
 
     statusBar()->showMessage(tr("Saving file"));
-    application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_, filename));
+    application()->commandCenter().executeCommand(std::make_unique<SaveDocumentCommand>(subject_.get(), filename));
 
     filename_ = filename;
     statusBar()->showMessage(tr("Ready"));
@@ -2597,6 +2689,11 @@ void NotebookWindow::saveas()
   */
 void NotebookWindow::save()
 {
+#ifdef __EMSCRIPTEN__
+  // No persistent disk on the web; every save is a download via saveas().
+  saveas();
+  return;
+#endif
   // Added a check to see if the document has been saved before,
   // if the document havn't been saved before - call saveas() instead.
   if( !subject_->isSaved() )
@@ -2606,7 +2703,7 @@ void NotebookWindow::save()
   else
   {
     statusBar()->showMessage(tr("Saving file"));
-    application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_));
+    application()->commandCenter().executeCommand(std::make_unique<SaveDocumentCommand>(subject_.get()));
     statusBar()->showMessage(tr("Ready"));
 
     updateWindowTitle();
@@ -2640,14 +2737,14 @@ void NotebookWindow::print()
   //printer.setFullPage( true );
   //printer.setColorMode( QPrinter::GrayScale );
 
-  QPrintDialog *dlg = new QPrintDialog(&printer, this);
-  if( dlg->exec() == QDialog::Accepted )
+  QPrintDialog dlg(&printer, this);
+  if( dlg.exec() == QDialog::Accepted )
   {
     // 2006-03-03 AF, make sure that chapter numbers are updated
     updateChapterCounters();
 
-    application()->commandCenter()->executeCommand(
-          new PrintDocumentCommand(subject_, &printer));
+    application()->commandCenter().executeCommand(
+          std::make_unique<PrintDocumentCommand>(subject_.get(), &printer));
 
     //currentEditor->document()->print(&printer);
 
@@ -2657,10 +2754,12 @@ void NotebookWindow::print()
     if( title.isEmpty() )
       title = "(untitled)";
 
-    QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()));
+    if( printer.outputFormat() == QPrinter::NativeFormat ) {
+      QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()));
+    } else {
+      QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed to %2." ).arg(title, printer.outputFileName()));
+    }
   }
-
-  delete dlg;
 }
 
 /*!
@@ -2711,8 +2810,8 @@ void NotebookWindow::pdf()
     // make sure that chapter numbers are updated
     updateChapterCounters();
 
-    application()->commandCenter()->executeCommand(
-          new PrintDocumentCommand(subject_, &printer));
+    application()->commandCenter().executeCommand(
+          std::make_unique<PrintDocumentCommand>(subject_.get(), &printer));
 
     //currentEditor->document()->print(&printer);
 
@@ -3270,9 +3369,9 @@ void NotebookWindow::findEdit()
   {
     // initiate findform, check if it is already visible, or set the current document
     if( !findForm_ )
-      findForm_ = new SearchForm( this, subject_ );
+      findForm_ = new SearchForm( this, subject_.get() );
     else
-      findForm_->setDocument( subject_ );
+      findForm_->setDocument( subject_.get() );
 
     // show/start find form
     if( !findForm_->isVisible() )
@@ -3292,9 +3391,9 @@ void NotebookWindow::replaceEdit()
   {
     // initiate findform(replace), check if it is already visible, or set the current document
     if( !findForm_ )
-      findForm_ = new SearchForm( this, subject_, true );
+      findForm_ = new SearchForm( this, subject_.get(), true );
     else
-      findForm_->setDocument( subject_ );
+      findForm_->setDocument( subject_.get() );
 
     // show/start find form
     if( !findForm_->isVisible() )
@@ -3381,6 +3480,136 @@ void NotebookWindow::insertLink()
         tr("A text that should make up the link, must be selected"));
     }
   }
+}
+
+/*!
+  * \brief Method for inserting a link to a web page (http/https).
+  *
+  * If text is selected it becomes the link text. If the cursor is placed in
+  * an existing web link, that link is edited.
+  */
+void NotebookWindow::insertWebLink()
+{
+  if( !cellEditable() )
+    return;
+
+  QTextCursor cursor = subject_->getCursor()->currentCell()->textCursor();
+  if( cursor.isNull() )
+    return;
+
+  QString url;
+
+  bool editing = false;
+
+  // If the cursor is in (or at the border of) a web link, or the selection
+  // lies inside one, select the whole link to change its text and/or url.
+  {
+    const int selStart = cursor.selectionStart();
+    const int selEnd = cursor.selectionEnd();
+    QString runHref;
+    int runStart = -1, runEnd = -1;
+    bool found = false;
+
+    auto isWeb = []( const QString &href )
+    {
+      const QString scheme = QUrl( href ).scheme().toLower();
+      return scheme == QLatin1String("http") || scheme == QLatin1String("https");
+    };
+    auto runContains = [&]()
+    {
+      return runStart >= 0 && runStart <= selStart && selEnd <= runEnd;
+    };
+
+    const QTextBlock block = cursor.document()->findBlock( selStart );
+    for( QTextBlock::iterator it = block.begin(); !it.atEnd(); ++it )
+    {
+      const QTextFragment f = it.fragment();
+      const QTextCharFormat fmt = f.charFormat();
+      const bool web = fmt.isAnchor() && isWeb( fmt.anchorHref() );
+
+      if( web && runStart >= 0 && fmt.anchorHref() == runHref )
+      {
+        // same link continues (e.g. partly bold text)
+        runEnd = f.position() + f.length();
+      }
+      else
+      {
+        if( runContains() )
+        {
+          found = true;
+          break;
+        }
+        if( web )
+        {
+          runStart = f.position();
+          runEnd = f.position() + f.length();
+          runHref = fmt.anchorHref();
+        }
+        else
+          runStart = -1;
+      }
+    }
+    if( !found && runContains() )
+      found = true;
+
+    if( found )
+    {
+      cursor.setPosition( runStart );
+      cursor.setPosition( runEnd, QTextCursor::KeepAnchor );
+      url = runHref;
+      editing = true;
+    }
+  }
+
+  QString text = cursor.selectedText();
+  text.replace( QChar::ParagraphSeparator, QLatin1Char(' ') );
+  text.replace( QChar::LineSeparator, QLatin1Char(' ') );
+
+  QDialog dialog( this );
+  dialog.setWindowTitle( editing ? tr("Edit Web Link") : tr("Insert Web Link") );
+  QFormLayout *form = new QFormLayout( &dialog );
+  // let the input fields use the full width of the dialog (some styles
+  // keep them at their small size hint otherwise)
+  form->setFieldGrowthPolicy( QFormLayout::AllNonFixedFieldsGrow );
+  QLineEdit *textEdit = new QLineEdit( text, &dialog );
+  QLineEdit *urlEdit = new QLineEdit( url, &dialog );
+  urlEdit->setPlaceholderText( "https://www.openmodelica.org" );
+  textEdit->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Fixed );
+  urlEdit->setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Fixed );
+  form->addRow( tr("Text:"), textEdit );
+  form->addRow( tr("URL:"), urlEdit );
+  QDialogButtonBox *buttons = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog );
+  form->addRow( buttons );
+  dialog.setMinimumWidth( 500 );
+
+  QString validUrl;
+  connect( buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject );
+  connect( buttons, &QDialogButtonBox::accepted, &dialog, [&]()
+  {
+    QString u = urlEdit->text().trimmed();
+    if( !u.contains( "://" ) )
+      u = "https://" + u;
+    const QUrl parsed( u, QUrl::StrictMode );
+    const QString scheme = parsed.scheme().toLower();
+    if( !parsed.isValid() || parsed.host().isEmpty() ||
+        ( scheme != QLatin1String("http") && scheme != QLatin1String("https") ) )
+    {
+      QMessageBox::warning( &dialog, tr("Error"),
+        tr("Please enter a valid web address starting with http:// or https://") );
+      return;
+    }
+    validUrl = u;
+    dialog.accept();
+  });
+
+  ( url.isEmpty() ? urlEdit : textEdit )->setFocus();
+  // resizable in width only: fix the height to what the layout needs
+  dialog.setFixedHeight( dialog.sizeHint().height() );
+  if( dialog.exec() != QDialog::Accepted )
+    return;
+
+  subject_->textcursorInsertWebLink( validUrl, textEdit->text().trimmed(), cursor );
 }
 
 void NotebookWindow::indent()
@@ -3505,11 +3734,11 @@ void NotebookWindow::openOldFile()
       // 2006-03-01 AF, Update openDir_
       openDir_ = QFileInfo( filename ).absolutePath();
 
-      application()->commandCenter()->executeCommand(
-            new OpenOldFileCommand( filename, READMODE_OLD ));
+      application()->commandCenter().executeCommand(
+            std::make_unique<OpenOldFileCommand>( filename, READMODE_OLD ));
     }
   }
-  catch(std::exception &e )
+  catch(const std::exception &e )
   {
     QString msg = QString("In NotebookWindow(), Exception:\r\n") + e.what();
     QMessageBox::warning(nullptr, tr("Warning"), msg);
@@ -3550,8 +3779,8 @@ void NotebookWindow::pureText()
     // 2006-03-03 AF, make sure that chapter numbers are updated
     updateChapterCounters();
 
-    application()->commandCenter()->executeCommand(
-          new ExportToPureText(subject_, filename) );
+    application()->commandCenter().executeCommand(
+          std::make_unique<ExportToPureText>(subject_.get(), filename) );
 
     // 2006-03-24 AF, added message box - so user know when
     // export is done
@@ -3677,7 +3906,7 @@ void NotebookWindow::groupCellsAction()
     }
     else
     {
-      subject_->executeCommand(new MakeGroupCellCommand());
+      subject_->executeCommand(std::make_unique<MakeGroupCellCommand>());
       subject_->updateScrollArea();
     }
   }
@@ -3692,21 +3921,21 @@ void NotebookWindow::groupCellsAction()
   */
 void NotebookWindow::inputCellsAction()
 {
-  subject_->executeCommand(new CreateNewCellCommand("Graph"));
+  subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
 
 void NotebookWindow::latexCellsAction()
 {
-  subject_->executeCommand(new CreateNewCellCommand("Latex"));
+  subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
 
 void NotebookWindow::textCellsAction()
 {
-  subject_->executeCommand(new CreateNewCellCommand("Text"));
+  subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Text"));
   subject_->updateScrollArea();
   updateChapterCounters();
 }
@@ -3848,7 +4077,7 @@ void NotebookWindow::shiftcellsUp()
             QString currentoutput=g->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             GraphCell *newcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
             newcell->setEvaluated(true);
             newcell->setClosed(false);
@@ -3860,7 +4089,7 @@ void NotebookWindow::shiftcellsUp()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -3875,7 +4104,7 @@ void NotebookWindow::shiftcellsUp()
             QString latexoutput=l->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             LatexCell *newcell = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
             //newcell->setEvaluated(true);
             //newcell->setClosed(false);
@@ -3887,7 +4116,7 @@ void NotebookWindow::shiftcellsUp()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -3901,7 +4130,7 @@ void NotebookWindow::shiftcellsUp()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepUp();
-            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>(style));
             subject_->getCursor()->currentCell()->setTextHtml(textoutput);
           }
         }
@@ -3956,7 +4185,7 @@ void NotebookWindow::shiftcellsDown()
             QString currentoutput=d->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             GraphCell *gcell = dynamic_cast<GraphCell *>(subject_->getCursor()->currentCell());
             gcell->setEvaluated(true);
             gcell->setClosed(false);
@@ -3967,7 +4196,7 @@ void NotebookWindow::shiftcellsDown()
           {
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Graph"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Graph"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -3982,7 +4211,7 @@ void NotebookWindow::shiftcellsDown()
             QString latexoutput_d=ld->textOutputHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             LatexCell *newcell_d = dynamic_cast<LatexCell *>(subject_->getCursor()->currentCell());
             //newcell_d->setEvaluated(true);
             //newcell_d->setClosed(false);
@@ -3994,7 +4223,7 @@ void NotebookWindow::shiftcellsDown()
             subject_->cursorDeleteCell();
             //subject_->getCursor()->moveUp();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand("Latex"));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Latex"));
             subject_->getCursor()->currentCell()->setText(currenttext);
           }
         }
@@ -4007,7 +4236,7 @@ void NotebookWindow::shiftcellsDown()
             QString textoutput=current->textHtml();
             subject_->cursorDeleteCell();
             subject_->cursorStepDown();
-            subject_->executeCommand(new CreateNewCellCommand(style));
+            subject_->executeCommand(std::make_unique<CreateNewCellCommand>(style));
             subject_->getCursor()->currentCell()->setTextHtml(textoutput);
           }
         }

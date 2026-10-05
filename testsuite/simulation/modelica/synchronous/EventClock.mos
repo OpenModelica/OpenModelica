@@ -3,7 +3,7 @@
 // status: correct
 // cflags: -d=-newInst --std=3.3
 
-loadModel(Modelica, {"3.2.2"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadFile("EventClock.mo");getErrorString();
 
 simulate(EventClock);getErrorString();

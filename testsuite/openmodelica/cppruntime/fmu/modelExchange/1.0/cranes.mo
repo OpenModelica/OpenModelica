@@ -13,7 +13,7 @@ package cranes
       annotation (Placement(transformation(extent={{-30,40},{-10,60}})));
     Modelica.Mechanics.Translational.Sources.Position position(useSupport=true)
       annotation (Placement(transformation(extent={{-34,68},{-14,88}})));
-    Modelica.Blocks.Sources.Sine sine(amplitude=1, freqHz=0.2)
+    Modelica.Blocks.Sources.Sine sine(amplitude=1, f=0.2)
       annotation (Placement(transformation(extent={{-94,68},{-74,88}})));
     Modelica.Mechanics.MultiBody.Joints.Revolute revolute(cylinderLength=0.2,
       phi(fixed=true, start=0),

@@ -1,6 +1,7 @@
 // name: DuplicateElements6
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 // Checks that duplicate elements are detected and reported.
 //

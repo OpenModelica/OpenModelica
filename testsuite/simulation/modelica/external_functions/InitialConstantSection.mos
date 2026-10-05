@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -rf InitialConstantSection.M*
 // cflags: -d=-newInst
+// suite: disabled
 
 loadString("
 package InitialConstantSection

@@ -1,0 +1,7 @@
+// A parameter array of rank >= 2 is computed by `functionUpdateBoundParameters`;
+// its binding must not also run in `functionParameters`, where the parameters it
+// reads are still 0.
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("TestArrayParamBinding.mo"); getErrorString();
+simulate(TestArrayParamBinding, stopTime = 1.0, numberOfIntervals = 1); getErrorString();
+val(y, 0.0); // 0.5 + 6.0 = 6.5

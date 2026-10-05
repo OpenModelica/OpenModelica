@@ -1,0 +1,19 @@
+// Run the external-"C" scalar wasm-jit models and print the checked values.
+// Usage (from this directory): omc run.mos
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+
+loadFile("TestExtGamma.mo"); getErrorString();
+simulate(TestExtGamma, stopTime = 2.0, numberOfIntervals = 10); getErrorString();
+val(x, 2.0); // expect ~3.392
+
+loadFile("TestExtHypot.mo"); getErrorString();
+simulate(TestExtHypot, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 5.0
+
+loadFile("TestExtIntAbs.mo"); getErrorString();
+simulate(TestExtIntAbs, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 6.0
+
+loadFile("TestExtMixed.mo"); getErrorString();
+simulate(TestExtMixed, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 3.0

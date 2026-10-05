@@ -1,0 +1,84 @@
+// name:     Issue16192
+// keywords: Function Annotations, derivative, zeroDerivative, record
+// status:   correct
+// teardown_command: rm -rf Issue16192.M Issue16192.M.* Issue16192.M_* output.log
+//
+// Symbolic time differentiation of function calls that have a record input:
+//  - a derivative annotation with zeroDerivative on a record input has to be used
+//  - the partial derivatives of the remaining inputs must not be dropped when a
+//    record input is present
+//
+
+loadString("
+package Issue16192
+  record Material
+    parameter String name = \"m\";
+    parameter Integer n = 2;
+    parameter Real a = 3.0;
+  end Material;
+
+  function f \"the derivative is given by the annotation, not by differentiating the body\"
+    input Real x;
+    input Material m;
+    output Real y;
+  algorithm
+    y := x^2*m.a;
+    annotation(derivative(zeroDerivative = m) = df);
+  end f;
+
+  function df \"deliberately different from the derivative of f, so that we see it is used\"
+    input Real x;
+    input Material m;
+    input Real dx;
+    output Real dy;
+  algorithm
+    dy := 999*dx;
+  end df;
+
+  function g \"no derivative annotation and not inlinable, is differentiated symbolically\"
+    input Real x;
+    input Material m;
+    output Real y;
+  algorithm
+    y := 0;
+    for i in 1:m.n loop
+      y := y + x^2*m.a;
+    end for;
+  end g;
+
+  model M
+    parameter Material m;
+    Real x = 2*time;
+    Real y1 = f(x, Material(\"m\", 2, 3.0));
+    Real dy1 = der(y1) \"df is used: 999*der(x) = 1998\";
+    Real y2 = g(x, m);
+    Real dy2 = der(y2) \"symbolic derivative: 2*m.n*m.a*x*der(x) = 24*x\";
+  end M;
+end Issue16192;
+"); getErrorString();
+
+simulate(Issue16192.M, stopTime=1.0, numberOfIntervals=2); getErrorString();
+
+val(dy1, 0.0);
+val(dy1, 0.5);
+val(dy2, 0.0);
+val(dy2, 0.5);
+val(dy2, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue16192.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue16192.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1998.0
+// 1998.0
+// 0.0
+// 24.0
+// 48.0
+// endResult

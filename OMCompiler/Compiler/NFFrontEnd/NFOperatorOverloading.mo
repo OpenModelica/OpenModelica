@@ -140,12 +140,15 @@ public
     output list<Function> functions;
   protected
     InstNode node;
+    Type elem_ty;
     ComponentRef fn_ref = ComponentRef.EMPTY();
     Boolean is_defined;
   algorithm
     functions := match Type.arrayElementType(ty)
-      case Type.COMPLEX(cls = node)
+      case elem_ty as Type.COMPLEX()
         algorithm
+          node := Type.complexNode(elem_ty);
+
           try
             fn_ref := Function.lookupFunctionSimple(operatorName, node, NFInstContext.NO_CONTEXT);
             is_defined := true;
@@ -187,7 +190,7 @@ public
       return;
     end if;
 
-    output_node := listHead(fn.outputs);
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
     output_comp := InstNode.component(output_node);
     output_binding := Component.getBinding(output_comp);
 
@@ -216,7 +219,7 @@ protected
       fail();
     end if;
 
-    output_node := listHead(fn.outputs);
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
     output_ty := InstNode.classScope(output_node);
     if not InstNode.isSame(output_ty, recordNode) then
       Error.addSourceMessage(Error.OPERATOR_OVERLOADING_INVALID_OUTPUT_TYPE,
@@ -237,7 +240,7 @@ protected
   algorithm
     outExp := match exp
       case Expression.CALL(call = Call.TYPED_CALL(fn = fn, ty = ty, arguments = args))
-        guard referenceEq(constructorFn.node, fn.node)
+        guard referenceEq(InstNode.fromHandle(constructorFn.node), InstNode.fromHandle(fn.node))
         then Expression.makeRecord(Function.name(constructorFn), ty, args);
 
       else exp;

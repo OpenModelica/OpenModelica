@@ -88,6 +88,7 @@ typedef struct NLS_KINSOL_DATA {
   N_Vector initialGuess;
   N_Vector xScale;                      /* x scaling vector */
   N_Vector fScale;                      /* f(x) scaling vector */
+  N_Vector constraints;                 /* sign constraints from min/max attributes */
   N_Vector fRes;
   N_Vector fTmp;
 
@@ -95,6 +96,9 @@ typedef struct NLS_KINSOL_DATA {
   long countResCalls;                  /* case of sparse function not avaiable */
 
   /* ### kinsol internal data */
+  SUNContext sunctx;                   /* SUNDIALS simulation context. Owned by
+                                          this struct, one per solver instance so that solvers
+                                          running in different threads stay independent. */
   void *kinsolMemory;                  /* Internal memroy block for KINSOL */
   NLS_USERDATA* userData;        /* User data provided to KINSOL */
 

@@ -3,6 +3,7 @@
 // cflags:   -g=MetaModelica -d=gen -d=-newInst
 // status:   correct
 // teardown_command: rm -rf PartialFn14_*
+// suite: metamodelica
 //
 // Partial Function Testing
 //

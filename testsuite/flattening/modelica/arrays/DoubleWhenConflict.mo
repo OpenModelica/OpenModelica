@@ -1,6 +1,7 @@
 // name:     DoubleWhenConflict
 // keywords: equations when
 // status:   incorrect
+// suite: disabled
 //
 // Close defined by two equations
 // Drmodelica: 9.1 When-Statements (p. 293)

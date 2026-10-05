@@ -2,6 +2,7 @@
 // keywords: match noretcall #3633
 // status:   correct
 // cflags:   +g=MetaModelica -d=-newInst
+// suite: metamodelica
 //
 // Checks that using a match as a non-returning call works.
 //

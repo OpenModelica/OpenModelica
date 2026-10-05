@@ -46,7 +46,6 @@
 #include "../../util/omc_file.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
-#include "../../meta/meta_modelica.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "../../util/write_csv.h"
 #endif
@@ -167,6 +166,21 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   DATA_HOMOTOPY* homotopyData = (DATA_HOMOTOPY*) malloc(sizeof(DATA_HOMOTOPY));
   assertStreamPrint(NULL, NULL != homotopyData, "allocationHomotopyData() failed!");
 
+  /* fJac/fJacx0/debug_fJac receive evalJacobian's dense output, which is
+   * strided by the analytic Jacobian's OWN sizeCols -- this can exceed the
+   * NLS's genuine unknown count `size` for a partial-slice Jacobian that
+   * needs extra addressable (but not genuinely-unknown) seed columns for
+   * symbolic subscript correctness (see NBJacobian.mo's
+   * partialSliceSeedCandidates whole-array fallback). Size those three
+   * buffers off the larger of the two so evalJacobian never writes past the
+   * allocation; every other field below stays sized to the genuine `size`
+   * (the Newton/homotopy iteration itself must never see phantom unknowns). */
+  size_t jacCols = size + 1;
+  if (userData != NULL && userData->analyticJacobian != NULL &&
+      (size_t)userData->analyticJacobian->sizeCols > jacCols) {
+    jacCols = (size_t)userData->analyticJacobian->sizeCols;
+  }
+
   homotopyData->initialized = FALSE;
   homotopyData->n = size;
   homotopyData->m = size + 1;
@@ -184,7 +198,8 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->hvecScaled = (double*) calloc(size,sizeof(double));
   homotopyData->dxScaled = (double*) calloc(size,sizeof(double));
 
-  homotopyData->xScaling = (double*) calloc((size+1),sizeof(double));
+  /* indexed up to jacobian->sizeCols in getAnalyticalJacobianHomotopy's column-scaling loop */
+  homotopyData->xScaling = (double*) calloc(jacCols,sizeof(double));
 
   homotopyData->f1 = (double*) calloc(size,sizeof(double));
   homotopyData->f2 = (double*) calloc(size,sizeof(double));
@@ -197,12 +212,12 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->x1 = (double*) calloc((size+1),sizeof(double));
   homotopyData->finit = (double*) calloc(size,sizeof(double));
   homotopyData->fx0 = (double*) calloc(size,sizeof(double));
-  homotopyData->fJac = (double*) calloc((size*(size+1)),sizeof(double));
-  homotopyData->fJacx0 = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->fJac = (double*) calloc((size*jacCols),sizeof(double));
+  homotopyData->fJacx0 = (double*) calloc((size*jacCols),sizeof(double));
 
   /* debug arrays */
   homotopyData->debug_dx = (double*) calloc(size,sizeof(double));
-  homotopyData->debug_fJac = (double*) calloc((size*(size+1)),sizeof(double));
+  homotopyData->debug_fJac = (double*) calloc((size*jacCols),sizeof(double));
 
    /* homotopy */
   homotopyData->y0 = (double*) calloc((size+1),sizeof(double));
@@ -213,9 +228,9 @@ DATA_HOMOTOPY* allocateHomotopyData(size_t size, NLS_USERDATA* userData)
   homotopyData->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
   homotopyData->dy2 = (double*) calloc((size+1),sizeof(double));
   homotopyData->hvec = (double*) calloc(size,sizeof(double));
-  homotopyData->hJac = (double*) calloc(size*(size+1),sizeof(double));
-  homotopyData->hJac2 = (double*) calloc((size+1)*(size+2),sizeof(double));
-  homotopyData->hJacInit = (double*) calloc(size*(size+1),sizeof(double));
+  homotopyData->hJac = (double*) calloc(size*jacCols,sizeof(double));
+  homotopyData->hJac2 = (double*) calloc((size+1)*(jacCols+1),sizeof(double));
+  homotopyData->hJacInit = (double*) calloc(size*jacCols,sizeof(double));
   homotopyData->ones = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
@@ -409,19 +424,19 @@ void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, in
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[indRow[i] + indCol[j]*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %16.8g", buffer, matrix[indRow[i] + indCol[j]*(m-1)]);
+          p += sprintf(p, " %16.8g", matrix[indRow[i] + indCol[j]*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -442,19 +457,19 @@ void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int
     infoStreamPrint(logName, 1, "%s [%dx%d-dim]", matrixName, n, m);
     for(i=0; i<n;i++)
     {
-      buffer[0] = 0;
+      char *p = buffer;
       for(j=0; j<m; j++)
       {
         if (sparsity)
         {
           if (fabs(matrix[i + j*(m-1)])<1e-12)
-            sprintf(buffer, "%s 0", buffer);
+            p += sprintf(p, " 0");
           else
-            sprintf(buffer, "%s *", buffer);
+            p += sprintf(p, " *");
         }
         else
         {
-          sprintf(buffer, "%s %16.8g", buffer, matrix[i + j*(m-1)]);
+          p += sprintf(p, " %16.8g", matrix[i + j*(m-1)]);
         }
       }
       infoStreamPrint(logName, 0, "%s", buffer);
@@ -472,21 +487,23 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%16.8g", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %16.8g", buffer, vector[i]);
+        p += sprintf(p, "%16.8g", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %16.8g", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -502,21 +519,23 @@ void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, in
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%d", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %d", buffer, vector[i]);
+        p += sprintf(p, "%d", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %d", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -532,21 +551,23 @@ void debugVectorInt(int logName, char* vectorName, int* vector, int n)
     char *buffer = (char*)malloc(sizeof(char)*n*20);
 
     infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
-    buffer[0] = 0;
-    if (vector[0]<-1e+300)
-      sprintf(buffer, "%s-INF", buffer);
-    else if (vector[0]>1e+300)
-      sprintf(buffer, "%s+INF", buffer);
-    else
-      sprintf(buffer, "%s%d", buffer, vector[0]);
-    for(i=1; i<n;i++)
     {
-      if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF", buffer);
-      else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF", buffer);
+      char *p = buffer;
+      if (vector[0]<-1e+300)
+        p += sprintf(p, "-INF");
+      else if (vector[0]>1e+300)
+        p += sprintf(p, "+INF");
       else
-        sprintf(buffer, "%s %d", buffer, vector[i]);
+        p += sprintf(p, "%d", vector[0]);
+      for(i=1; i<n;i++)
+      {
+        if (vector[i]<-1e+300)
+          p += sprintf(p, " -INF");
+        else if (vector[i]>1e+300)
+          p += sprintf(p, " +INF");
+        else
+          p += sprintf(p, " %d", vector[i]);
+      }
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -842,12 +863,24 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
   /* call generic dense Jacobian */
   evalJacobian(data, threadData, jacobian, NULL, jac, TRUE);
 
-  /* apply scaling to each column */
-  for (j = 0; j < jacobian->sizeCols; j++) {
-    for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
-      l = sp->index[ii];
-      k = j*jacobian->sizeRows + l;
-      jac[k] *= solverData->xScaling[j];
+  if (!sp) return 0; /* pattern removed; jac is zeroed, solver will fail numerically */
+
+  /* apply scaling to each column; must use the same row stride evalJacobian
+   * used to fill jac (min(sizeRows, sizeCols), not always sizeCols -- see
+   * jacobian_util.c:evalJacobian). Using sizeCols unconditionally here
+   * misaligns every scaling write whenever sizeCols > sizeRows (a genuinely
+   * rectangular Jacobian, not just NLS's "auxiliary rows beyond sizeCols"
+   * case), corrupting entries evalJacobian never touched while leaving the
+   * real ones unscaled. */
+  {
+    const int denseRows = jacobian->sizeRows < jacobian->sizeCols ? jacobian->sizeRows : jacobian->sizeCols;
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
+        l = sp->index[ii];
+        if (l >= denseRows) continue; /* skip auxiliary rows */
+        k = j*denseRows + l;
+        jac[k] *= solverData->xScaling[j];
+      }
     }
   }
 
@@ -1298,6 +1331,24 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
 }
 
 
+/* Pushes e onto hist; true if e moved away from the last residual and back to
+ * one from 2-4 iterations ago (a limit cycle). */
+static int newtonLimitCycleStep(double *hist, int *nHist, double e)
+{
+  int k, cycle = 0;
+  if (*nHist >= 4 && fabs(e - hist[0]) > 1e-2 * e) {
+    for (k = 1; k < 4; k++) {
+      cycle |= fabs(e - hist[k]) <= 1e-2 * e;
+    }
+  }
+  for (k = 3; k > 0; k--) {
+    hist[k] = hist[k-1];
+  }
+  hist[0] = e;
+  (*nHist)++;
+  return cycle;
+}
+
 /*! \fn solve system with damped Newton-Raphson
  *
  *  \author bbachmann
@@ -1309,9 +1360,12 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int  pos = solverData->n, rank;
   double error_f_sqrd, error_f1_sqrd, error_f2_sqrd, error_f_sqrd_scaled, error_f1_sqrd_scaled;
   double delta_x_sqrd, delta_x_sqrd_scaled, grad_f, grad_f_scaled;
-  int numberOfSmallSteps = 0;
-  double error_f_old = 1e100;
+  int numberOfSmallSteps = 0, smallStepsAtHover = 0, lessAccurate, atCycleBottom;
+  double error_f_old = 1e100, error_f_old_scaled = 1e100;
   int countNegativeSteps = 0;
+  int countCycles = 0, nHist = 0, countStalls = 0, countHovers = 0, countCreeps = 0;
+  double error_f_best = 1e100, error_f_hover = 1e100, stepLambda;
+  double errorHist[4];
   double lambda;
   double lambda1, lambda2;
   double lambdaMin = 1e-4;
@@ -1382,7 +1436,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           assert = 1;
         }
 #ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         if (solverData->casualTearingSet){
           constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
@@ -1394,9 +1448,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         else
           solverData->f(solverData, solverData->x1, solverData->f1);
 
-        assert = 0;
+        if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         firstrun = 0;
         if (assert) {
@@ -1423,16 +1477,18 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda1 = ", lambda1);
       debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
       debugDouble(OMC_LOG_NLS_V, "Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
+      stepLambda = lambda1;
       if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f)
         && (error_f1_sqrd_scaled > error_f_sqrd_scaled + alpha*lambda1*grad_f_scaled)
         && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
       {
         lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1_sqrd-error_f_sqrd-lambda1*grad_f)),lambdaMin);
+        stepLambda = lambda2;
         debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda2 = ", lambda2);
         vecAddScal(solverData->n, x, solverData->dy0, lambda2, solverData->x1);
         assert= 1;
 #ifndef OMC_EMCC
-        MMC_TRY_INTERNAL(simulationJumpBuffer)
+        OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         if (solverData->casualTearingSet){
           constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
@@ -1446,9 +1502,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
         error_f2_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
         debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
-        assert = 0;
+        if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-        MMC_CATCH_INTERNAL(simulationJumpBuffer)
+        OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         if (assert)
         {
@@ -1476,11 +1532,12 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                 lambda = -grad_f/(a2+sqrt(D));
           }
           lambda = fmax(lambda, lambdaMin);
+          stepLambda = lambda;
           debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda = ", lambda);
           vecAddScal(solverData->n, x, solverData->dy0, lambda, solverData->x1);
           assert= 1;
 #ifndef OMC_EMCC
-          MMC_TRY_INTERNAL(simulationJumpBuffer)
+          OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
           if (solverData->casualTearingSet){
             constraintViolated = solverData->f_con(solverData, solverData->x1, solverData->f1);
@@ -1494,9 +1551,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
           error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
           debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
-          assert = 0;
+          if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-          MMC_CATCH_INTERNAL(simulationJumpBuffer)
+          OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
           if (assert)
           {
@@ -1521,10 +1578,29 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     delta_x_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->dxScaled);
 
     error_f_old = error_f_sqrd;
+    error_f_old_scaled = error_f_sqrd_scaled;
     error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
     error_f_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->fvecScaled);
 
     countNegativeSteps += (error_f_sqrd > 10*error_f_old);
+    /* a cycle within the less accuracy band is left to the other exits */
+    countCycles = newtonLimitCycleStep(errorHist, &nHist, error_f_sqrd)
+      && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6 ? countCycles + 1 : 0;
+    if (error_f_sqrd < 0.99*error_f_best) {
+      error_f_best = error_f_sqrd;
+      countStalls = 0;
+      countHovers = 0;
+    } else if (error_f_sqrd < 10*error_f_hover) {
+      countStalls++;
+      countHovers++;
+    } else {
+      countStalls++;
+      countHovers = 0;
+    }
+    if (countHovers == 0 || error_f_sqrd < error_f_hover) {
+      error_f_hover = error_f_sqrd;
+    }
+    countCreeps = stepLambda < 1e-3 ? countCreeps + 1 : 0;
     lastWasGood = error_f_sqrd >= error_f_old;
 
 
@@ -1555,7 +1631,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       );
     }
 #endif
-    if (countNegativeSteps > 20)
+    /* away from any solution: no 1% improvement for long, or only heavily damped steps */
+    if (countNegativeSteps > 20 || countCycles > 20 || ((countStalls > 400 || countCreeps > 400) && error_f_sqrd >= solverData->ftol_sqrd*1e6 && error_f_sqrd_scaled >= solverData->ftol_sqrd*1e6))
     {
       debugInt(OMC_LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
@@ -1588,6 +1665,15 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       debugString(OMC_LOG_DT, "It is not the solution.");
       break;
     }
+    /* the residual stopped decreasing at an x that meets the tolerance: further steps are round-off */
+    else if (lastWasGood && ((error_f_old < solverData->ftol_sqrd) || (error_f_old_scaled < solverData->ftol_sqrd)))
+    {
+      solverData->info = 1;
+      debugString(OMC_LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
+      solverData->numberOfIterations += numberOfIterations;
+      solverData->error_f_sqrd = error_f_old;
+      break;
+    }
 
     /* check if maximum iteration is reached */
     if (numberOfIterations > solverData->maxNumberOfIterations)
@@ -1608,12 +1694,23 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     }
 
     numberOfSmallSteps += (delta_x_sqrd < solverData->xtol_sqrd*1e4) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd*1e4);
+    if (countHovers == 0) {
+      smallStepsAtHover = numberOfSmallSteps;
+    }
+    /* the bottom of a stationary cycle without small steps, which are left to their own exit */
+    atCycleBottom = countHovers > 20 && numberOfSmallSteps == smallStepsAtHover
+      && error_f_sqrd <= errorHist[1] && error_f_sqrd <= errorHist[2] && error_f_sqrd <= errorHist[3];
     /* check changes in unknown vector */
-    if ((delta_x_sqrd < solverData->xtol_sqrd) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd) || (numberOfSmallSteps > 20))
+    lessAccurate = (error_f_sqrd < solverData->ftol_sqrd*1e6) || (error_f_sqrd_scaled < solverData->ftol_sqrd*1e6);
+    /* a stationary residual within the less accuracy band is round-off, like small steps */
+    if ((delta_x_sqrd < solverData->xtol_sqrd) ||  (delta_x_sqrd_scaled < solverData->xtol_sqrd) || (numberOfSmallSteps > 20) || (lessAccurate && atCycleBottom))
     {
-      if ((error_f_sqrd < solverData->ftol_sqrd*1e6) || (error_f_sqrd_scaled < solverData->ftol_sqrd*1e6))
+      if (lessAccurate)
       {
         solverData->info = 1;
+        if (atCycleBottom) {
+          vecCopy(solverData->n, solverData->x1, x);
+        }
 
         /* debug information */
         debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!");
@@ -1635,16 +1732,16 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     }
     assert = 1;
 #ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     /* updating x */
     vecCopy(solverData->n, solverData->x1, x);
 
     /* calculate jacobian and function values (both stored in fJac, last column is fvec) */
     solverData->fJac_f(solverData, x, solverData->fJac);
-    assert = 0;
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (assert)
     {
@@ -1733,12 +1830,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   printHomotopyUnknowns(OMC_LOG_NLS_V, solverData);
   assert = 1;
 #ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     solverData->h_function(solverData, solverData->y0, solverData->hvec);
-    assert = 0;
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
   /* start iteration; stop, if lambda = solverData->y0[solverData->n] == 1 */
   while (solverData->y0[solverData->n]<1)
@@ -1791,7 +1888,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     /* Handle asserts of function calls, mainly necessary for fluid stuff */
       assert = 1;
 #ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       solverData->hJac_dh(solverData, solverData->y0, solverData->hJac);
       debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
@@ -1799,8 +1896,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac after scaling:",solverData->hJac, solverData->n, solverData->n+1);
       assert = 0;
       pos = -1; /* stable solution algorithm for solving a generalized over-determined linear system */
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 
       if (assert || (solveSystemWithTotalPivotSearch(data, solverData->n, solverData->dy0, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1))
@@ -1860,14 +1958,14 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
       /* update function value */
 #ifndef OMC_EMCC
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"y1 (predictor step):",solverData->y1, m);
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
       debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"hvec (predictor step):",solverData->hvec, n);
-      assert = 0;
+      if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+      OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (assert){
         debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, when calculating function value!");
@@ -1932,7 +2030,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       }
       assert = 1;
 #ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       /* calculate homotopy jacobian */
       solverData->hJac_dh(solverData, solverData->y1, solverData->hJac);
@@ -1945,9 +2043,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         debugMatrixDouble(OMC_LOG_NLS_JAC,"Enhanced Jacobian hJac2 (orthogonal backtrace strategy):",solverData->hJac2, solverData->n+1, solverData->m+1);
       }
 
-      assert = 0;
+      if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (assert)
       {
@@ -1993,13 +2091,13 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "new y in newton:", solverData->y1, solverData->m);
       assert = 1;
 #ifndef OMC_EMCC
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       /* calculate homotopy function */
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
-      assert = 0;
+      if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { assert = 0; }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (assert)
       {
@@ -2223,7 +2321,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       }
       /* evaluate with discontinuities */
 #ifndef OMC_EMCC
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       if (mixedSystem)
         memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
@@ -2238,6 +2336,9 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       else
         homotopyData->f(homotopyData, homotopyData->x0, homotopyData->f1);
 
+      /* A raised residual is not a value: skip everything that reads f1, and
+         leave `assert` set for the retry. */
+      if (!OMC_ERROR_RAISED()) {
       /* Try to get out of here!!! */
       error_f_sqrd        = vec2NormSqrd(homotopyData->n, homotopyData->f1);
       vecDivScaling(homotopyData->n, homotopyData->f1, homotopyData->resScaling, homotopyData->fvecScaled);
@@ -2268,9 +2369,11 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       }
       if (!assert)
         debugString(OMC_LOG_NLS_V, "regular initial point!!!");
+      }
       giveUp = 0;
+      if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); }
 #ifndef OMC_EMCC
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+      OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (assert && homotopyData->casualTearingSet)
       {
@@ -2289,13 +2392,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       {
         debugString(OMC_LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.01;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.01;
       }
       if (tries == 2)
       {
         debugString(OMC_LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
         for(i = 0; i < homotopyData->n; i++)
-          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
+          homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*(double)i/homotopyData->n*0.1;
       }
     }
     if (success != NLS_SOLVED) {
@@ -2465,7 +2568,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
     else {
       assert = 1;
 #ifndef OMC_EMCC
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       if (homotopyData->casualTearingSet){
         constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
@@ -2488,8 +2591,10 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
         debugString(OMC_LOG_NLS_V, "regular initial point!!!");
+    /* As above: a raised residual leaves the retry armed. */
+    if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); assert = 1; }
 #ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
  #endif
       if (assert)
       {

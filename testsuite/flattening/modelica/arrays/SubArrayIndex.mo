@@ -1,6 +1,7 @@
 // name:     SubArrayIndex
 // keywords: <insert keywords here>
 // status:   correct
+// suite: disabled
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 //

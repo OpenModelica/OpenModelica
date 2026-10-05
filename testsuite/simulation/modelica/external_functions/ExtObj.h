@@ -1,3 +1,5 @@
+#include <stddef.h> /* size_t */
+
 typedef struct { /* User-defined datastructure of the table */
 double* array; /* nrow*ncolumn vector */
 int nrow; /* number of rows */

@@ -26,6 +26,7 @@
  */
 
 #include "meta_modelica.h"
+#include "meta_modelica_string.h"
 #include "om_format.h"
 #include <ctype.h>
 

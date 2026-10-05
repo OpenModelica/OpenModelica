@@ -71,7 +71,9 @@ extern void write_modelica_complex(type_description *desc, const modelica_comple
 extern int read_modelica_fnptr(type_description **descptr, modelica_fnptr *fn);
 extern void write_modelica_fnptr(type_description *desc, const modelica_fnptr *fn);
 
+#if defined(OMC_METAMODELICA_RUNTIME)
 extern int read_modelica_metatype(type_description **descptr, modelica_metatype*ut);
+#endif
 extern void write_modelica_metatype(type_description *desc, const modelica_metatype*ut);
 
 extern int read_modelica_record(type_description **descptr, ...);

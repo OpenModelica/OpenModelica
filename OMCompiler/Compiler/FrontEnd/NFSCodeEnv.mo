@@ -1277,7 +1277,7 @@ public function envPrefixOf2
   input Env inEnv;
   output Boolean outIsPrefix;
 algorithm
-  outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
+  outIsPrefix := match(inPrefixEnv, inEnv)
     local
       String n1, n2;
       Env rest1, rest2;
@@ -1287,14 +1287,12 @@ algorithm
     case (FRAME(name = NONE()) :: rest1, FRAME(name = NONE()) :: rest2)
       then envPrefixOf2(rest1, rest2);
 
-    case (FRAME(name = SOME(n1)) :: rest1, FRAME(name = SOME(n2)) :: rest2)
-      algorithm
-        true := stringEqual(n1, n2);
+    case (FRAME(name = SOME(n1)) :: rest1, FRAME(name = SOME(n2)) :: rest2) guard stringEqual(n1, n2)
       then
         envPrefixOf2(rest1, rest2);
 
     else false;
-  end matchcontinue;
+  end match;
 end envPrefixOf2;
 
 public function envScopeNames
@@ -1343,15 +1341,14 @@ public function envEqualPrefix2
   input Env inAccumEnv;
   output Env outPrefix;
 algorithm
-  outPrefix := matchcontinue(inEnv1, inEnv2)
+  outPrefix := match(inEnv1, inEnv2)
     local
       String name1, name2;
       Env env, rest_env1, rest_env2;
       Frame frame;
 
-    case ((frame as FRAME(name = SOME(name1))) :: rest_env1, FRAME(name = SOME(name2)) :: rest_env2)
+    case ((frame as FRAME(name = SOME(name1))) :: rest_env1, FRAME(name = SOME(name2)) :: rest_env2) guard stringEq(name1, name2)
       algorithm
-        true := stringEq(name1, name2);
         env := envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
       then
         env;
@@ -1361,7 +1358,7 @@ algorithm
 
     else inAccumEnv;
 
-  end matchcontinue;
+  end match;
 end envEqualPrefix2;
 
 public function getItemInfo

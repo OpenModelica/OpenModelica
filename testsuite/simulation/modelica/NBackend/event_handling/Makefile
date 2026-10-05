@@ -2,10 +2,20 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 compositeEvent.mos \
+spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
+whenConditionAssertSplit.mos \
+whenTimeEvents.mos \
 algorithmWhen.mos\
+algorithmWhenPreCondition.mos\
 AssertNoEvent.mos\
+integerIteratorNoEvent.mos\
+algorithmWhenForLoop.mos\
+mathEvents.mos\
+mathEventsFor.mos\
+relationSlotsFor.mos\
+compositeRelationEvents.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -50,4 +60,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

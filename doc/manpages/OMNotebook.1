@@ -1,82 +1,79 @@
 .\" --------------------------------------------------------------------
-.\" Title 
+.\" Title
 .\" --------------------------------------------------------------------
 .
-.TH OMNotebook 1 "The Open Source Modelica Consortium" "1.7.0" "The OpenModelica Project" -*- nroff -*-
+.TH OMNotebook 1 "" "OpenModelica @OM_MANPAGE_VERSION@" "OpenModelica User Commands"
 .
-.
-.\" -------------------------------------------------------------------- 
+.\" --------------------------------------------------------------------
 .SH NAME
 .\" --------------------------------------------------------------------
 .
-OMNotebook \- A Mathematica-style Notebook for OpenModelica
-.
+OMNotebook \- interactive electronic notebook for Modelica
 .
 .\" --------------------------------------------------------------------
-.SH "SYNOPSIS"
+.SH SYNOPSIS
 .\" --------------------------------------------------------------------
 .
 .B OMNotebook
-[\fIFILE\fR]...
-.
+.RI [ file ]
 .
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
 .\" --------------------------------------------------------------------
 .
 .B OMNotebook
-is a Mathematica\-style Notebook for Modelica. It provides
-an integrated environment for providing text and interactive examples,
-including plot viewers to further investigate the results of simulations.
-The purpose of \fBOMNotebook\fP is to provide an advanced \%Modelica teaching
-tool. This release includes two courses:
-.
-.IP \(bu 3
-.
+edits and evaluates notebooks: documents that mix text, Modelica code and
+OpenModelica scripting commands with their results, including plots. It is
+used for teaching and experimentation, and ships with two tutoring systems
+built from notebooks:
+.TP
 .B DrModelica
-is a course in Modelica 2.1 that uses all examples from Peter Fritzson's book
-\*[lq]Principles of Object-Oriented Modeling and Simulation with Modelica 2.1\*[rq].
-.
-.IP \(bu 3
-.
+for teaching Modelica.
+.TP
 .B DrControl
-is a course in basic control theory using Modelica 3.1.
-.
-.P
-The default working directory is /tmp/OpenModelica/.
-This is to avoid \fBomc\fP producing its C++ source code and auxiliary
-files in the working directory.
-.P
-The files recognized by \fBOMNotebook\fP have the extension \fB.onb\fP.
+for teaching control theory with Modelica.
+.PP
+.I file
+is the notebook to open, an
+.BR .onb ,
+.B .onbz
+or Mathematica
+.B .nb
+file. Without one,
+.B OMNotebook
+opens DrModelica.
+.PP
+It links the OpenModelica compiler in rather than starting
+.BR omc .
+The working directory is
+.I OpenModelica
+in the temporary directory, usually
+.IR /tmp/OpenModelica ,
+so that generated code and result files do not clutter the directory it was
+started from.
 .
 .\" --------------------------------------------------------------------
 .SH ENVIRONMENT
 .\" --------------------------------------------------------------------
 .
 .TP
-.B DRMODELICAHOME
-This variable contains the absolute path towards the \%DrModelica
-package which provides all the examples from Peter Fritzson's book the
-\*[lq]Principles of Object-Oriented Modeling and Simulation with
-Modelica 2.1\*[rq].
-.RS
-.IP "Default directory:" 19
-.I /usr/share/omnotebook/drmodelica/
+.B TMPDIR
+The temporary directory the working directory is created in. The default is
+.IR /tmp .
 .
 .\" --------------------------------------------------------------------
-.SH AUTHOR
+.SH FILES
 .\" --------------------------------------------------------------------
 .
-See OpenModelicaUsersGuide.pdf for a full list of contributors to the
-\%OpenModelica project.
-.
-.\" --------------------------------------------------------------------
-.SH BUGS
-.\" --------------------------------------------------------------------
-.
-If you find a bug, please report it at:
-.P
-<\fBhttp://openmodelica.org:8080/cb/project/1\fR>
+.TP
+.I /usr/share/omnotebook/drmodelica/DrModelica.onb
+.TQ
+.I /usr/share/omnotebook/drcontrol/
+The DrModelica and DrControl notebooks, for an installation in
+.IR /usr .
+Other installations keep them under
+.I share/omnotebook/
+in their installation directory.
 .
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
@@ -85,4 +82,18 @@ If you find a bug, please report it at:
 .BR omc (1),
 .BR OMShell (1),
 .BR OMShell\-terminal (1)
+.PP
+The OpenModelica User's Guide at
+<https://openmodelica.org/doc/OpenModelicaUsersGuide/@OM_MANPAGE_DOC_VERSION@/omnotebook.html>.
 .
+.\" --------------------------------------------------------------------
+.SH BUGS
+.\" --------------------------------------------------------------------
+.
+Report bugs at <https://github.com/OpenModelica/OpenModelica/issues>.
+.
+.\" --------------------------------------------------------------------
+.SH AUTHOR
+.\" --------------------------------------------------------------------
+.
+Open Source Modelica Consortium (OSMC), <https://www.openmodelica.org>

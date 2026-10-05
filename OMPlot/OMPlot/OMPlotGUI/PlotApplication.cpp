@@ -45,9 +45,6 @@ PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKe
     : QApplication(argc, argv)
 {
     setAttribute(Qt::AA_DontShowIconsInMenus, false);
-#if QT_VERSION < 0x060000
-    setAttribute(Qt::AA_UseHighDpiPixmaps);
-#endif
     mSharedMemory.setKey(uniqueKey);
 
     if (mSharedMemory.attach())

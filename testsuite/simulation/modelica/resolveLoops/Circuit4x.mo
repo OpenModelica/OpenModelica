@@ -18,5 +18,5 @@ equation
   connect(R_Load.p, Cds.n) annotation(Line(points = {{34, 10}, {34, 42}}, color = {0, 0, 255}));
   connect(Voltage_Source.p, R_Source.n) annotation(Line(points = {{-56, 16}, {-56, 32}}, color = {0, 0, 255}));
   connect(Ground.p, Voltage_Source.n) annotation(Line(points = {{-56, -20}, {-56, -20}, {-56, -4}, {-56, -4}}, color = {0, 0, 255}));
-  annotation(Icon, Diagram, experiment(StartTime = 0, StopTime = 10, Tolerance = 1e-06, Interval = 0.001), uses(Modelica(version = "3.2.1")));
+  annotation(Icon, Diagram, experiment(StartTime = 0, StopTime = 10, Tolerance = 1e-06, Interval = 0.001), uses(Modelica(version = "4.1.0")));
 end Circuit4x;

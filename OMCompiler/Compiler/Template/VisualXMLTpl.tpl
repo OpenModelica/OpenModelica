@@ -230,7 +230,7 @@ template dumpExp (DAE.Exp expIn)
         case expIn as CALL(__) then
             let elist = expLst |> e => <<<%dumpExp(e)%>>> ; separator="\n"
             <<<call>
-                <path><%pathString(path)%></path>
+                <path><%AbsynUtil.pathString(path, ".", true, false)%></path>
                 <expLst><%elist%></expLst>
             </call>
             >>

@@ -69,7 +69,6 @@ import DAEDump;
 import DAEDumpTypes;
 import DAEUtil;
 import Debug;
-import DoubleEnded;
 import DumpHTML;
 import ElementSource;
 import Error;
@@ -268,7 +267,7 @@ algorithm
   dumpEquationArray(inShared.removedEqs, "Simple Shared Equations");
   dumpEquationArray(inShared.initialEqs, "Initial Equations");
   dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.zeroCrossings), "Zero Crossings");
-  dumpZeroCrossingList(DoubleEnded.toListNoCopyNoClear(inShared.eventInfo.relations), "Relations");
+  dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.relations), "Relations");
   if stringEqual(Config.simCodeTarget(), "Cpp") then
     dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.samples), "Samples");
   else
@@ -1796,16 +1795,6 @@ algorithm
   end match;
 end timeEventString;
 
-public function simIteratorString
-  input BackendDAE.SimIterator iter;
-  output String str;
-algorithm
-  str := match iter
-    case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReferenceBasics.printComponentRefStr(iter.name) + " in " + ExpressionBasics.printExpStr(iter.start) + ":" + ExpressionBasics.printExpStr(iter.step) + ":" + ExpressionBasics.printExpStr(iter.stop);
-    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReferenceBasics.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10);
-  end match;
-end simIteratorString;
-
 // =============================================================================
 // section for all debug* functions
 //
@@ -2279,7 +2268,7 @@ algorithm
     case {} then ();
     case elem::rest
       algorithm
-      sparsepatternStr := List.toString(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
+      sparsepatternStr := List.toStringCustom(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
       print(sparsepatternStr + "\n");
       dumpSparsePattern2(rest,inInteger+1);
     then ();
@@ -3732,29 +3721,26 @@ protected function traversingisStateTopInputVarFinder
   output BackendDAE.Var outVar;
   output tuple<Integer,Integer,list<DAE.ComponentRef>,Integer,list<DAE.ComponentRef>> outTpl;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
+  (outVar,outTpl) := match (inVar,inTpl)
     local
       BackendDAE.Var v;
       Integer inp,st,dvar;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> states,discvars;
 
-    case (v,(inp,st,states,dvar,discvars)) algorithm
-      true := BackendVariable.isStateVar(v);
+    case (v,(inp,st,states,dvar,discvars)) guard BackendVariable.isStateVar(v) algorithm
       cr := BackendVariable.varCref(v);
     then (v,(inp,st+1,cr::states,dvar,discvars));
 
-    case (v,(inp,st,states,dvar,discvars)) algorithm
-      true := BackendVariable.isVarDiscrete(v);
+    case (v,(inp,st,states,dvar,discvars)) guard BackendVariable.isVarDiscrete(v) algorithm
       cr := BackendVariable.varCref(v);
     then (v,(inp,st,states,dvar+1,cr::discvars));
 
-    case (v,(inp,st,states,dvar,discvars)) algorithm
-      true := BackendVariable.isVarOnTopLevelAndInput(v);
+    case (v,(inp,st,states,dvar,discvars)) guard BackendVariable.isVarOnTopLevelAndInput(v)
     then (v,(inp+1,st,states,dvar,discvars));
 
     else (inVar,inTpl);
-  end matchcontinue;
+  end match;
 end traversingisStateTopInputVarFinder;
 
 protected function dumpCompShort2

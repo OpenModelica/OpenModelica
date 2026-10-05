@@ -1,0 +1,73 @@
+// name: arrayResultFile
+// keywords: NewBackend
+// status: correct
+//
+// Without sim code scalarization array variables are stored whole and are
+// expanded into their scalar elements when the result file is written. Check
+// that mat and csv result files use the Modelica structured names "m[i,j]" and
+// that the csv writer emits one column per scalar element, for array variables
+// as well as for array aliases.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+  model arrayResultFile
+    Real[2,2] m;
+    Real[2,2] mAlias;
+    Integer[2] k;
+    Boolean[2] b;
+    Real tr;
+  equation
+    m = {{time, 2*time},{3*time, 4*time}};
+    mAlias = m;
+    k = {1, 2};
+    b = {true, false};
+    tr = m[1,1] + m[2,2];
+  end arrayResultFile;
+"); getErrorString();
+
+simulate(arrayResultFile, stopTime=1.0); getErrorString();
+val(m[1,1], 1.0);
+val(m[1,2], 1.0);
+val(m[2,1], 1.0);
+val(m[2,2], 1.0);
+val(mAlias[2,1], 1.0);
+val(tr, 1.0);
+
+simulate(arrayResultFile, stopTime=1.0, numberOfIntervals=2, outputFormat="csv"); getErrorString();
+readFile("arrayResultFile_res.csv");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "arrayResultFile_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayResultFile', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 3.0
+// 5.0
+// record SimulationResult
+//     resultFile = "arrayResultFile_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayResultFile', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "\"time\",\"mAlias[1,1]\",\"mAlias[1,2]\",\"mAlias[2,1]\",\"mAlias[2,2]\",\"tr\",\"k[1]\",\"k[2]\",\"b[1]\",\"b[2]\",\"m[1,1]\",\"m[1,2]\",\"m[2,1]\",\"m[2,2]\"
+// 0,0,0,0,0,0,1,2,1,0,0,0,0,0
+// 0.5,0.5,1,1.5,2,2.5,1,2,1,0,0.5,1,1.5,2
+// 1,1,2,3,4,5,1,2,1,0,1,2,3,4
+// 1,1,2,3,4,5,1,2,1,0,1,2,3,4
+// "
+// endResult

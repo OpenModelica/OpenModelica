@@ -127,7 +127,7 @@ void killProcessTreeWindows(DWORD myprocID)
 
 static DWORD WINAPI killProcess (LPVOID arg)
 {
-  Sleep (1000 * ((unsigned int)arg));
+  Sleep (1000 * ((unsigned int)(size_t)arg));
   fprintf(stdout, "Alarm clock"); fflush(NULL);
   killProcessTreeWindows(GetCurrentProcessId());
 
@@ -153,7 +153,7 @@ unsigned int alarm (unsigned int seconds)
   if (seconds) {
       DWORD threadId;
       time (&t0);   // keep track of when count down started
-      thread = CreateThread (0, 0, killProcess, (void*)seconds, 0, &threadId);
+      thread = CreateThread (0, 0, killProcess, (void*)(size_t)seconds, 0, &threadId);
   }
 
   return (unsigned int)(unslept);
@@ -227,7 +227,7 @@ void* omc_dlopen(const char *filename, int flag)
 #include <winsock2.h>
 #include <imagehlp.h>
 
-static const char* GetLastErrorAsString()
+static const char* GetLastErrorAsString(void)
 {
   static char *str = NULL;
   LPSTR messageBuffer = NULL;
@@ -255,7 +255,7 @@ static const char* GetLastErrorAsString()
   return str;
 }
 
-const char* omc_dlerror()
+const char* omc_dlerror(void)
 {
   return (char*)GetLastErrorAsString();
 }
@@ -281,7 +281,7 @@ void* dlopen(const char *filename, int flag) {
   return omc_dlopen(filename, flag);
 }
 
-const char* dlerror() {
+const char* dlerror(void) {
   return omc_dlerror();
 }
 
@@ -316,7 +316,7 @@ int omc_dladdr(void *addr, Dl_info *info)
 int omc_dladdr(void *addr, Dl_info *info)
 {
   HANDLE hProcess;
-  DWORD dwModuleBase;
+  DWORD64 dwModuleBase;
   DWORD64 displacement;
   char sModuleName[MAX_PATH + 1];
   sModuleName[MAX_PATH] = '\0';
@@ -330,9 +330,9 @@ int omc_dladdr(void *addr, Dl_info *info)
   info->dli_saddr = NULL;
   info->dli_salloc = 0;
 
-  dwModuleBase = SymGetModuleBase(hProcess, (DWORD)addr);
-  info->dli_fbase = (void*)dwModuleBase;
-  if(! GetModuleFileNameA((HMODULE)dwModuleBase, sModuleName, MAX_PATH)) return 0;
+  dwModuleBase = SymGetModuleBase64(hProcess, (DWORD64)(size_t)addr);
+  info->dli_fbase = (void*)(size_t)dwModuleBase;
+  if(! GetModuleFileNameA((HMODULE)(size_t)dwModuleBase, sModuleName, MAX_PATH)) return 0;
 
   info->dli_fname = (const char*) calloc(MAX_PATH + 1, sizeof(char));
   memcpy((char*)info->dli_fname, sModuleName, MAX_PATH);
@@ -344,15 +344,15 @@ int omc_dladdr(void *addr, Dl_info *info)
   if(!(info->dli_sname)){
 
     displacement = 0;
-    char symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 255];
-    symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 254] = '\0';
+    char symbol_buffer[sizeof(IMAGEHLP_SYMBOL64) + 255];
+    symbol_buffer[sizeof(IMAGEHLP_SYMBOL64) + 254] = '\0';
 
-    IMAGEHLP_SYMBOL* pSymbol = (IMAGEHLP_SYMBOL*)symbol_buffer;
+    IMAGEHLP_SYMBOL64* pSymbol = (IMAGEHLP_SYMBOL64*)symbol_buffer;
 
-    pSymbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL) + 255;
+    pSymbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64) + 255;
     pSymbol->MaxNameLength = 254;
 
-    if(SymGetSymFromAddr(hProcess, (DWORD)addr, &displacement, pSymbol)) {
+    if(SymGetSymFromAddr64(hProcess, (DWORD64)(size_t)addr, &displacement, pSymbol)) {
       info->dli_sname = (const char*) calloc(pSymbol->MaxNameLength + 1, 1);
       memcpy((char*)info->dli_sname, pSymbol->Name, pSymbol->MaxNameLength);
       info->dli_salloc = 1;

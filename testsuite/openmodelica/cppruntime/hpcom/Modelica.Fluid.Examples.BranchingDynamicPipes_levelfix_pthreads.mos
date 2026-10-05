@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library
@@ -12,7 +13,14 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.BranchingDynamicPipes);
 timeout := 600;
 compareVars :=
-{  "pipe1.mediums[1].p",
+{
+   "pipe1.flowModel.m_flows[1]",
+   "pipe1.flowModel.m_flows[2]",
+   "pipe1.flowModel.m_flows[3]",
+   "pipe1.flowModel.m_flows[4]",
+   "pipe1.flowModel.m_flows[5]",
+   "pipe1.flowModel.m_flows[6]",
+   "pipe1.mediums[1].p",
    "pipe1.mediums[1].Xi[1]",
    "pipe1.mediums[1].T",
    "pipe1.mediums[2].p",
@@ -27,11 +35,10 @@ compareVars :=
    "pipe1.mediums[5].p",
    "pipe1.mediums[5].Xi[1]",
    "pipe1.mediums[5].T",
-   "pipe1.flowModel.m_flows[1]",
-   "pipe1.flowModel.m_flows[2]",
-   "pipe1.flowModel.m_flows[3]",
-   "pipe1.flowModel.m_flows[4]",
-   "pipe1.flowModel.m_flows[5]",
+   "pipe2.flowModel.m_flows[1]",
+   "pipe2.flowModel.m_flows[2]",
+   "pipe2.flowModel.m_flows[3]",
+   "pipe2.flowModel.m_flows[4]",
    "pipe2.mediums[1].p",
    "pipe2.mediums[1].Xi[1]",
    "pipe2.mediums[1].T",
@@ -44,12 +51,15 @@ compareVars :=
    "pipe2.mediums[4].p",
    "pipe2.mediums[4].Xi[1]",
    "pipe2.mediums[4].T",
+   "pipe2.mediums[5].p",
    "pipe2.mediums[5].Xi[1]",
    "pipe2.mediums[5].T",
-   "pipe2.flowModel.m_flows[1]",
-   "pipe2.flowModel.m_flows[2]",
-   "pipe2.flowModel.m_flows[3]",
-   "pipe2.flowModel.m_flows[4]",
+   "pipe3.flowModel.m_flows[1]",
+   "pipe3.flowModel.m_flows[2]",
+   "pipe3.flowModel.m_flows[3]",
+   "pipe3.flowModel.m_flows[4]",
+   "pipe3.flowModel.m_flows[5]",
+   "pipe3.flowModel.m_flows[6]",
    "pipe3.mediums[1].p",
    "pipe3.mediums[1].Xi[1]",
    "pipe3.mediums[1].T",
@@ -62,13 +72,15 @@ compareVars :=
    "pipe3.mediums[4].p",
    "pipe3.mediums[4].Xi[1]",
    "pipe3.mediums[4].T",
+   "pipe3.mediums[5].p",
    "pipe3.mediums[5].Xi[1]",
    "pipe3.mediums[5].T",
-   "pipe3.flowModel.m_flows[1]",
-   "pipe3.flowModel.m_flows[2]",
-   "pipe3.flowModel.m_flows[3]",
-   "pipe3.flowModel.m_flows[4]",
-   "pipe3.flowModel.m_flows[5]",
+   "pipe4.flowModel.m_flows[1]",
+   "pipe4.flowModel.m_flows[2]",
+   "pipe4.flowModel.m_flows[3]",
+   "pipe4.flowModel.m_flows[4]",
+   "pipe4.flowModel.m_flows[5]",
+   "pipe4.flowModel.m_flows[6]",
    "pipe4.mediums[1].p",
    "pipe4.mediums[1].Xi[1]",
    "pipe4.mediums[1].T",
@@ -83,12 +95,7 @@ compareVars :=
    "pipe4.mediums[4].T",
    "pipe4.mediums[5].p",
    "pipe4.mediums[5].Xi[1]",
-   "pipe4.mediums[5].T",
-   "pipe4.flowModel.m_flows[1]",
-   "pipe4.flowModel.m_flows[2]",
-   "pipe4.flowModel.m_flows[3]",
-   "pipe4.flowModel.m_flows[4]",
-   "pipe4.flowModel.m_flows[5]"
+   "pipe4.mediums[5].T"
 };
 
 

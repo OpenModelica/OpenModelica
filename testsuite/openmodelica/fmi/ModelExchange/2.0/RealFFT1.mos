@@ -17,5 +17,7 @@ getErrorString();
 // "RealFFT1.fmu"
 // "[Modelica 4.1.0+maint.om/Math/FastFourierTransform.mo:538:3-629:25:writable] Warning: Pure function 'Modelica.Math.FastFourierTransform.realFFTwriteToFile' contains a call to impure function 'Modelica.Utilities.Files.removeFile'.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // endResult

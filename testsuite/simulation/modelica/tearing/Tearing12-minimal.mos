@@ -4,7 +4,7 @@
 // teardown_command:  rm -f Tearing12
 // cflags: -d=-newInst
 
-loadModel(Modelica,{"3.2.2"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 loadFile("Tearing12.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
@@ -26,29 +26,23 @@ simulate(Tearing12); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Tearing12_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | info    | Using sparse solver for linear system 0,
-// |                 | |       | because density of 0.004 remains under threshold of 0.200.
-// LOG_STDOUT        | info    | Using sparse solver for linear system 1,
-// |                 | |       | because density of 0.004 remains under threshold of 0.200.
-// LOG_STDOUT        | info    | The maximum density for using sparse solvers can be specified
-// |                 | |       | using the runtime flag '<-lssMaxDensity=value>'.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Tearing12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
-//  * Number of equations: 9901
-//  * Number of variables: 9901
+//  * Number of equations: 9904
+//  * Number of variables: 9904
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1968
+//  * Number of independent subsystems: 1971
 //  * Number of states: 0 ('-d=stateselection' for list of states)
-//  * Number of discrete variables: 288 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 291 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3795):
-//  * Single equations (assignments): 3791
+// Notification: Strong component statistics for initialization (3798):
+//  * Single equations (assignments): 3794
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0

@@ -17,7 +17,7 @@ ExternalProject_Add(OMSimulator_external
                                                 BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 CERES=OFF
                                                 OMTLM=OFF
-                                                host_short=${CMAKE_LIBRARY_ARCHITECTURE}
+                                                host_short=${OM_LIBRARY_ARCH}
                                                 CMAKE="${CMAKE_COMMAND}"
                       COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_CURRENT_SOURCE_DIR}/OMSimulator
                                                 -j${NUM_PROCESSPRS}
@@ -26,7 +26,7 @@ ExternalProject_Add(OMSimulator_external
                                                 BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 OMSYSIDENT=OFF
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
-                                                host_short=${CMAKE_LIBRARY_ARCHITECTURE}
+                                                host_short=${OM_LIBRARY_ARCH}
                                                 CMAKE="${CMAKE_COMMAND}"
     #--Build step-----------------
     BUILD_ALWAYS 1
@@ -36,7 +36,7 @@ ExternalProject_Add(OMSimulator_external
                                                 OMTLM=OFF
                                                 BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                                 OMBUILDDIR=${CMAKE_CURRENT_BINARY_DIR}/OMSimulator
-                                                host_short=${CMAKE_LIBRARY_ARCHITECTURE}
+                                                host_short=${OM_LIBRARY_ARCH}
                                                 CMAKE="${CMAKE_COMMAND}"
     #--Install step---------------
     INSTALL_COMMAND ""
@@ -80,13 +80,9 @@ elseif(MSVC)
   message(FATAL_ERROR "Importing of OMSimulator is not implemented correctly for MSVC. Adjust the MINGW implementation to where the dll and lib files are expected.")
 else()
 
-  # if host_short (= CMAKE_LIBRARY_ARCHITECTURE) is empty (e.g on Arch Linux systems or macOS), OMSimulator does not
-  # add the omc/ part to the library location. (See OMSimulator/Makefile:88-93)
-  if(CMAKE_LIBRARY_ARCHITECTURE)
-    set(OMSIMULATORLIB_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
-  else()
-    set(OMSIMULATORLIB_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/)
-  endif()
+  # OMSimulator adds the omc/ part only for a non-empty host_short
+  # (See OMSimulator/Makefile:88-93), and OM_LIBRARY_ARCH is never empty.
+  set(OMSIMULATORLIB_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/OMSimulator/lib/${OM_LIBRARY_ARCH}/omc/)
 
   set(LIB_OMSIMULATOR_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}OMSimulator${CMAKE_SHARED_LIBRARY_SUFFIX})
 

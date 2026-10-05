@@ -5,7 +5,7 @@
 // setGrammarParModelica();
 setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
 
-setDefaultOpenCLDevice(1);
+setDefaultOpenCLDevice(0); // 0 = auto-select a device with double precision support
 getErrorString();
 
 loadFile("bug_3334.mo");

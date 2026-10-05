@@ -13,12 +13,6 @@
 #ifndef BOOST_EXTENSION_COMMON_HPP
 #define BOOST_EXTENSION_COMMON_HPP
 
-#include <boost/preprocessor/arithmetic/inc.hpp>
-#include <boost/preprocessor/if.hpp>
-#include <boost/preprocessor/punctuation/comma_if.hpp>
-#include <boost/preprocessor/repetition.hpp>
-#include <boost/preprocessor/iteration/iterate.hpp>
-#include <boost/concept_check.hpp>
 /** This determines the maximum number of parameters that a constructor
   * or exported shared library function can have. 10 is the same default
   * as Boost.Function.

@@ -4,7 +4,7 @@
 // provided by Francesco Casella
 //
 
-loadModel(Modelica,{"3.2.3"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 loadFile("TestMedia.mo"); getErrorString();
 
 instantiateModel(TestMedia.TestModels.TestSteam); getErrorString();
@@ -16,10 +16,24 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // ""
 // true
 // ""
-// "function Modelica.Media.Common.GibbsDerivs \"Automatically generated record constructor for Modelica.Media.Common.GibbsDerivs\"
+// "function Modelica.Math.acos \"Inverse cosine (-1 <= u <= 1)\"
+//   input Real u \"Independent variable\";
+//   output Real y(quantity = \"Angle\", unit = \"rad\", displayUnit = \"deg\") \"Dependent variable y=acos(u)\";
+// algorithm
+//   y := acos(u);
+// end Modelica.Math.acos;
+//
+// function Modelica.Math.log \"Natural (base e) logarithm (u shall be > 0)\"
+//   input Real u \"Independent variable\";
+//   output Real y \"Dependent variable y=ln(u)\";
+// algorithm
+//   y := log(u);
+// end Modelica.Math.log;
+//
+// function Modelica.Media.Common.GibbsDerivs \"Automatically generated record constructor for Modelica.Media.Common.GibbsDerivs\"
 //   input Real p;
 //   input Real T;
-//   input Real R;
+//   input Real R_s;
 //   input Real pi;
 //   input Real tau;
 //   input Real g;
@@ -34,7 +48,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // function Modelica.Media.Common.HelmholtzDerivs \"Automatically generated record constructor for Modelica.Media.Common.HelmholtzDerivs\"
 //   input Real d;
 //   input Real T;
-//   input Real R;
+//   input Real R_s;
 //   input Real delta;
 //   input Real tau;
 //   input Real f;
@@ -51,11 +65,11 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   output Modelica.Media.Common.NewtonDerivatives_ph nderivs \"Derivatives for Newton iteration to calculate d and t from p and h\";
 //   protected Real cv(quantity = \"SpecificHeatCapacity\", unit = \"J/(kg.K)\") \"Isochoric heat capacity\";
 // algorithm
-//   cv := -f.R * f.tau * f.tau * f.ftautau;
-//   nderivs.p := f.d * f.R * f.T * f.delta * f.fdelta;
-//   nderivs.h := f.R * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
-//   nderivs.pd := f.R * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
-//   nderivs.pt := f.R * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//   cv := -f.R_s * f.tau * f.tau * f.ftautau;
+//   nderivs.p := f.d * f.R_s * f.T * f.delta * f.fdelta;
+//   nderivs.h := f.R_s * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
+//   nderivs.pd := f.R_s * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//   nderivs.pt := f.R_s * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
 //   nderivs.ht := cv + nderivs.pt / f.d;
 //   nderivs.hd := (nderivs.pd - f.T * nderivs.pt / f.d) / f.d;
 // end Modelica.Media.Common.Helmholtz_ph;
@@ -66,7 +80,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   input Real p;
 //   input Real T;
 //   input Real h;
-//   input Real R;
+//   input Real R_s;
 //   input Real cp;
 //   input Real cv;
 //   input Real rho;
@@ -82,7 +96,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //
 // function Modelica.Media.Common.IF97PhaseBoundaryProperties \"Automatically generated record constructor for Modelica.Media.Common.IF97PhaseBoundaryProperties\"
 //   input Boolean region3boundary;
-//   input Real R;
+//   input Real R_s;
 //   input Real T;
 //   input Real d;
 //   input Real h;
@@ -150,16 +164,16 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real vt \"Derivative of specific volume w.r.t. temperature\";
 //   protected Real vp \"Derivative of specific volume w.r.t. pressure\";
 // algorithm
-//   sat.d := g.p / (g.R * g.T * g.pi * g.gpi);
-//   sat.h := g.R * g.T * g.tau * g.gtau;
-//   sat.u := g.T * g.R * (g.tau * g.gtau - g.pi * g.gpi);
-//   sat.s := g.R * (g.tau * g.gtau - g.g);
-//   sat.cp := -g.R * g.tau * g.tau * g.gtautau;
-//   sat.cv := g.R * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
-//   vt := g.R / g.p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
-//   vp := g.R * g.T / (g.p * g.p) * g.pi * g.pi * g.gpipi;
+//   sat.d := g.p / (g.R_s * g.T * g.pi * g.gpi);
+//   sat.h := g.R_s * g.T * g.tau * g.gtau;
+//   sat.u := g.T * g.R_s * (g.tau * g.gtau - g.pi * g.gpi);
+//   sat.s := g.R_s * (g.tau * g.gtau - g.g);
+//   sat.cp := -g.R_s * g.tau * g.tau * g.gtautau;
+//   sat.cv := g.R_s * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
+//   vt := g.R_s / g.p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
+//   vp := g.R_s * g.T / (g.p * g.p) * g.pi * g.pi * g.gpipi;
 //   sat.pt := -g.p / g.T * (g.gpi - g.tau * g.gtaupi) / (g.gpipi * g.pi);
-//   sat.pd := -g.R * g.T * g.gpi * g.gpi / g.gpipi;
+//   sat.pd := -g.R_s * g.T * g.gpi * g.gpi / g.gpipi;
 // end Modelica.Media.Common.gibbsToBoundaryProps;
 //
 // function Modelica.Media.Common.helmholtzToBoundaryProps \"Calculate phase boundary property record from dimensionless Helmholtz function\"
@@ -167,15 +181,15 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   output Modelica.Media.Common.PhaseBoundaryProperties sat \"Phase boundary property record\";
 //   protected Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pressure\";
 // algorithm
-//   p := f.R * f.d * f.T * f.delta * f.fdelta;
+//   p := f.R_s * f.d * f.T * f.delta * f.fdelta;
 //   sat.d := f.d;
-//   sat.h := f.R * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
-//   sat.s := f.R * (f.tau * f.ftau - f.f);
-//   sat.u := f.R * f.T * f.tau * f.ftau;
-//   sat.cp := f.R * ((f.delta * f.fdelta - f.delta * f.tau * f.fdeltatau) ^ 2.0 / (2.0 * f.delta * f.fdelta + f.delta * f.delta * f.fdeltadelta) - f.tau * f.tau * f.ftautau);
-//   sat.cv := f.R * (-f.tau * f.tau * f.ftautau);
-//   sat.pt := f.R * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
-//   sat.pd := f.R * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//   sat.h := f.R_s * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
+//   sat.s := f.R_s * (f.tau * f.ftau - f.f);
+//   sat.u := f.R_s * f.T * f.tau * f.ftau;
+//   sat.cp := f.R_s * ((f.delta * f.fdelta - f.delta * f.tau * f.fdeltatau) ^ 2.0 / (2.0 * f.delta * f.fdelta + f.delta * f.delta * f.fdeltadelta) - f.tau * f.tau * f.ftautau);
+//   sat.cv := f.R_s * (-f.tau * f.tau * f.ftautau);
+//   sat.pt := f.R_s * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//   sat.pd := f.R_s * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
 // end Modelica.Media.Common.helmholtzToBoundaryProps;
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.T3a_ph \"Region 3 a: inverse function T(p,h)\"
@@ -257,7 +271,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real pi \"Dimensionless pressure\";
 //   protected Real[49] o \"Vector of auxiliary variables\";
 // algorithm
-//   pi := max(1e-60, p * 1e-6);
+//   pi := max(2.2250738585072014e-308, p * 1e-6);
 //   o[1] := pi ^ 0.75;
 //   o[2] := 1.0 / o[1];
 //   o[3] := -4.268461735023 * o[2];
@@ -318,9 +332,9 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   f.T := T;
 //   f.d := d;
-//   f.R := 461.526;
+//   f.R_s := 461.526;
 //   f.tau := 647.096 / T;
-//   f.delta := if d == 322.0 and T == 647.096 then 0.999999999999999 else abs(d / 322.0);
+//   f.delta := if d == 322.0 and T == 647.096 then 0.9999999999999998 else abs(d / 322.0);
 //   o[1] := f.tau * f.tau;
 //   o[2] := o[1] * o[1];
 //   o[3] := o[2] * f.tau;
@@ -361,7 +375,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[38] := o[37] - 2.5308630955428;
 //   o[39] := o[38] * f.tau;
 //   o[40] := o[18] * o[5] * f.tau;
-//   f.f := f.tau * (20.944396974307 + (o[3] * (2.6185947787954 + o[4] * (o[1] * (1.2053369696517 - 0.0084566812812502 * o[6]) - 2.808078114862)) - 7.6867707878716) * f.tau) - 15.732845290239 + f.delta * (o[14] + f.delta * (0.38493460186671 + o[1] * (o[2] * (4.8972281541877 + (o[15] * (0.039420536879154 + 0.12558408424308 * o[2]) - 3.0502617256965) * f.tau) - 0.85214708824206) + f.delta * (o[1] * (1.389979956946 + o[1] * (o[16] * (-(0.0082147637173963 + 0.47596035734923 * o[17])) - 2.018991502357)) - 0.2799932969871 + f.delta * (0.0439840744735 + o[1] * (o[1] * (0.90572070719733 + 0.70522450087967 * o[19]) - 0.44476435428739) + f.delta * (f.delta * (o[1] * (0.094260751665092 + 0.16436278447961 * o[21]) - 0.022175400873096 + f.delta * (f.delta * (f.delta * (o[1] * (5.7922953628084e-4 + 0.0032308904703711 * o[21]) + f.delta * (8.0964802996215e-5 - 4.4923899061815e-5 * f.delta * o[22] - 1.6557679795037e-4 * f.tau)) - 0.014834345352472 * o[22]) - 0.013503372241348 * o[1])) + (0.10770512626332 + o[1] * (-(0.32913623258954 + 0.50871062041158 * o[20]))) * f.tau))))) + 1.0658070028513 * log(f.delta);
+//   f.f := f.tau * (20.944396974307 + (o[3] * (2.6185947787954 + o[4] * (o[1] * (1.2053369696517 - 0.0084566812812502 * o[6]) - 2.808078114862)) - 7.6867707878716) * f.tau) - 15.732845290239 + f.delta * (o[14] + f.delta * (0.38493460186671 + o[1] * (o[2] * (4.8972281541877 + (o[15] * (0.039420536879154 + 0.12558408424308 * o[2]) - 3.0502617256965) * f.tau) - 0.85214708824206) + f.delta * (o[1] * (1.389979956946 + o[1] * (o[16] * (-(0.0082147637173963 + 0.47596035734923 * o[17])) - 2.018991502357)) - 0.2799932969871 + f.delta * (0.0439840744735 + o[1] * (o[1] * (0.90572070719733 + 0.70522450087967 * o[19]) - 0.44476435428739) + f.delta * (f.delta * (o[1] * (0.094260751665092 + 0.16436278447961 * o[21]) - 0.022175400873096 + f.delta * (f.delta * (f.delta * (o[1] * (5.7922953628084e-4 + 0.0032308904703711 * o[21]) + f.delta * (8.0964802996215e-5 - 4.4923899061815e-5 * f.delta * o[22] - 1.6557679795037e-4 * f.tau)) - 0.014834345352472 * o[22]) - 0.013503372241348 * o[1])) + (0.10770512626332 + o[1] * (-(0.32913623258954 + 0.50871062041158 * o[20]))) * f.tau))))) + 1.0658070028513 * Modelica.Math.log(f.delta);
 //   f.fdelta := (1.0658070028513 + f.delta * (o[14] + f.delta * (0.76986920373342 + o[31] + f.delta * (o[1] * (4.169939870838 + o[1] * (o[16] * (-(0.0246442911521889 + 1.42788107204769 * o[17])) - 6.056974507071)) - 0.8399798909613 + f.delta * (0.175936297894 + o[1] * (o[1] * (3.6228828287893 + 2.82089800351868 * o[19]) - 1.77905741714956) + f.delta * (f.delta * (o[1] * (0.56556450999055 + 0.98617670687766 * o[21]) - 0.133052405238576 + f.delta * (f.delta * (f.delta * (o[1] * (0.0052130658265276 + 0.0290780142333399 * o[21]) + f.delta * (8.0964802996215e-4 - 4.9416288967996e-4 * f.delta * o[22] - 0.0016557679795037 * f.tau)) - 0.118674762819776 * o[22]) - 0.094523605689436 * o[1])) + (0.5385256313166 + o[1] * (-(1.6456811629477 + 2.5435531020579 * o[20]))) * f.tau)))))) / f.delta;
 //   f.fdeltadelta := (o[32] * (0.76986920373342 + o[31] + f.delta * (o[1] * (8.339879741676 + o[1] * (o[16] * (-(0.049288582304378 + 2.85576214409538 * o[17])) - 12.113949014142)) - 1.6799597819226 + f.delta * (0.527808893682 + o[1] * (o[1] * (10.868648486368 + 8.462694010556 * o[19]) - 5.3371722514487) + f.delta * (f.delta * (o[1] * (2.82782254995276 + 4.9308835343883 * o[21]) - 0.66526202619288 + f.delta * (f.delta * (f.delta * (o[1] * (0.04170452661222 + 0.232624113866719 * o[21]) + f.delta * (0.0072868322696594 - 0.0049416288967996 * f.delta * o[22] - 0.0149019118155333 * f.tau)) - 0.83072333973843 * o[22]) - 0.56714163413662 * o[1])) + (2.1541025252664 + o[1] * (-(6.5827246517908 + 10.1742124082316 * o[20]))) * f.tau)))) - 1.0658070028513) / o[32];
 //   f.ftau := 20.944396974307 + (o[3] * (18.3301634515678 + o[4] * (o[1] * (14.4640436358204 - 0.194503669468755 * o[6]) - 28.08078114862)) - 15.3735415757432) * f.tau + f.delta * (o[39] + f.delta * (f.tau * (o[2] * (29.3833689251262 + (o[15] * (0.86725181134139 + 3.2651861903201 * o[2]) - 21.3518320798755) * f.tau) - 1.70429417648412) + f.delta * ((2.779959913892 + o[1] * (o[16] * (-(0.131436219478341 + 12.37496929108 * o[17])) - 8.075966009428)) * f.tau + f.delta * ((o[1] * (3.6228828287893 + 18.3358370228714 * o[19]) - 0.88952870857478) * f.tau + f.delta * (0.10770512626332 + o[1] * (-(0.98740869776862 + 13.2264761307011 * o[20])) + f.delta * ((0.188521503330184 + 4.2734323964699 * o[21]) * f.tau + f.delta * (f.delta * (f.delta * (f.delta * (-(1.6557679795037e-4 + 0.00116802137560719 * f.delta * o[40])) + (0.00115845907256168 + 0.084003152229649 * o[21]) * f.tau) - 0.38569297916427 * o[40]) - 0.027006744482696 * f.tau)))))));
@@ -381,11 +395,11 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   pl := min(p, 2.2063999e7);
 //   assert(p > 611.657, \"IF97 medium function g1 called with too low pressure
 //   p = \" + String(p, 6, 0, true) + \" Pa <= \" + \"611.657\" + \" Pa (triple point pressure)\");
-//   assert(p <= 1e8, \"IF97 medium function g1: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 Mpa\");
+//   assert(p <= 1e8, \"IF97 medium function g1: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 MPa\");
 //   assert(T >= 273.15, \"IF97 medium function g1: the temperature (= \" + String(T, 6, 0, true) + \" K) is lower than 273.15 K!\");
 //   g.p := p;
 //   g.T := T;
-//   g.R := 461.526;
+//   g.R_s := 461.526;
 //   g.pi := p / 1.653e7;
 //   g.tau := 1386.0 / T;
 //   pi1 := 7.1 - g.pi;
@@ -446,18 +460,21 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2 \"Gibbs function for region 2: g(p,T)\"
 //   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pressure\";
 //   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature (K)\";
+//   input Boolean checkLimits = true \"Check if inputs p,T are in region of validity\";
 //   output Modelica.Media.Common.GibbsDerivs g \"Dimensionless Gibbs function and derivatives w.r.t. pi and tau\";
 //   protected Real tau2 \"Dimensionless temperature\";
 //   protected Real[55] o \"Vector of auxiliary variables\";
 // algorithm
 //   g.p := p;
 //   g.T := T;
-//   g.R := 461.526;
-//   assert(p > 0.0, \"IF97 medium function g2 called with too low pressure
-//   p = \" + String(p, 6, 0, true) + \" Pa <=  0.0 Pa\");
-//   assert(p <= 1e8, \"IF97 medium function g2: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 Mpa\");
-//   assert(T >= 273.15, \"IF97 medium function g2: the temperature (= \" + String(T, 6, 0, true) + \" K) is lower than 273.15 K!\");
-//   assert(T <= 1073.15, \"IF97 medium function g2: the input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than the limit of 1073.15 K\");
+//   g.R_s := 461.526;
+//   if checkLimits then
+//     assert(p > 0.0, \"IF97 medium function g2 called with too low pressure
+//     p = \" + String(p, 6, 0, true) + \" Pa <= 0.0 Pa\");
+//     assert(p <= 1e8, \"IF97 medium function g2: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 MPa\");
+//     assert(T >= 273.15, \"IF97 medium function g2: the temperature (= \" + String(T, 6, 0, true) + \" K) is lower than 273.15 K!\");
+//     assert(T <= 1073.15, \"IF97 medium function g2: the input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than the limit of 1073.15 K\");
+//   end if;
 //   g.pi := p / 1e6;
 //   g.tau := 540.0 / T;
 //   tau2 := g.tau - 0.5;
@@ -516,7 +533,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[53] := o[10] * o[12] * o[25];
 //   o[54] := o[1] * o[10] * o[25];
 //   o[55] := o[11] * o[12] * tau2;
-//   g.g := g.pi * (o[9] - 0.0017731742473213 + g.pi * (tau2 * ((o[1] * ((-(0.043797295650573 + 2.6674547914087e-5 * o[13])) * o[2] - 0.0039392777243355) - 1.8948987516315e-4) * tau2 - 3.3032641670203e-5) + g.pi * (2.0481737692309e-8 + (4.3870667284435e-7 + o[1] * ((-(0.0015033924542148 + 0.040668253562649 * o[13])) * o[2] - 3.227767723857e-5)) * tau2 + g.pi * (g.pi * (2.2922076337661e-6 * o[14] + g.pi * ((o[15] * (-(0.0021171472321355 + 23.895741934104 * o[16])) - 1.6714766451061e-11) * o[2] + g.pi * (o[17] * (-(1.2621808899101e-6 + 0.038946842435739 * o[18])) - 5.905956432427e-18 + g.pi * (o[11] * (1.1256211360459e-11 - 8.2311340897998 * o[19]) + g.pi * (1.9809712802088e-8 * o[15] + g.pi * (o[10] * (1.0406965210174e-19 + (-(1.0234747095929e-13 + 1.0018179379511e-9 * o[10])) * o[20]) + o[23] * (o[13] * (0.10693031879409 * o[24] - 8.0882908646985e-11) + o[21] * (o[21] * (o[27] * (8.9185845355421e-25 + (3.0629316876232e-13 - 4.2002467698208e-6 * o[15]) * o[28]) + g.pi * (g.pi * (3.7826947613457e-6 * o[29] + g.pi * (o[31] * (7.3087610595061e-29 + o[18] * (5.5414715350778e-17 - 9.436970724121e-7 * o[32])) * g.pi - 1.2768608934681e-15 * o[30])) - 5.9056029685639e-26 * o[24])) - 0.33662250574171 * o[26])))))))) + tau2 * ((1.2790717852285e-8 + 4.8225372718507e-7 * tau2) * tau2 - 7.8847309559367e-10))))) + (g.tau * (0.07145273881455 + g.tau * (g.tau * (1.424081971444 + g.tau * (g.tau * (g.tau * (10.08665568018 + (0.02126846353307 * g.tau - 0.2840863260772) * g.tau) - 9.692768600217 + log(g.pi)) - 4.38395111945)) - 0.4071049823928)) - 0.00560879118302) / (o[34] * g.tau);
+//   g.g := g.pi * (o[9] - 0.0017731742473213 + g.pi * (tau2 * ((o[1] * ((-(0.043797295650573 + 2.6674547914087e-5 * o[13])) * o[2] - 0.0039392777243355) - 1.8948987516315e-4) * tau2 - 3.3032641670203e-5) + g.pi * (2.0481737692309e-8 + (4.3870667284435e-7 + o[1] * ((-(0.0015033924542148 + 0.040668253562649 * o[13])) * o[2] - 3.227767723857e-5)) * tau2 + g.pi * (g.pi * (2.2922076337661e-6 * o[14] + g.pi * ((o[15] * (-(0.0021171472321355 + 23.895741934104 * o[16])) - 1.6714766451061e-11) * o[2] + g.pi * (o[17] * (-(1.2621808899101e-6 + 0.038946842435739 * o[18])) - 5.905956432427e-18 + g.pi * (o[11] * (1.1256211360459e-11 - 8.2311340897998 * o[19]) + g.pi * (1.9809712802088e-8 * o[15] + g.pi * (o[10] * (1.0406965210174e-19 + (-(1.0234747095929e-13 + 1.0018179379511e-9 * o[10])) * o[20]) + o[23] * (o[13] * (0.10693031879409 * o[24] - 8.0882908646985e-11) + o[21] * (o[21] * (o[27] * (8.9185845355421e-25 + (3.0629316876232e-13 - 4.2002467698208e-6 * o[15]) * o[28]) + g.pi * (g.pi * (3.7826947613457e-6 * o[29] + g.pi * (o[31] * (7.3087610595061e-29 + o[18] * (5.5414715350778e-17 - 9.436970724121e-7 * o[32])) * g.pi - 1.2768608934681e-15 * o[30])) - 5.9056029685639e-26 * o[24])) - 0.33662250574171 * o[26])))))))) + tau2 * ((1.2790717852285e-8 + 4.8225372718507e-7 * tau2) * tau2 - 7.8847309559367e-10))))) + (g.tau * (0.07145273881455 + g.tau * (g.tau * (1.424081971444 + g.tau * (g.tau * (g.tau * (10.08665568018 + (0.02126846353307 * g.tau - 0.2840863260772) * g.tau) - 9.692768600217 + Modelica.Math.log(g.pi)) - 4.38395111945)) - 0.4071049823928)) - 0.00560879118302) / (o[34] * g.tau);
 //   g.gpi := (1.0 + g.pi * (o[9] - 0.0017731742473213 + g.pi * (o[43] + g.pi * (6.1445213076927e-8 + (1.31612001853305e-6 + o[1] * ((-(0.0045101773626444 + 0.122004760687947 * o[13])) * o[2] - 9.683303171571e-5)) * tau2 + g.pi * (g.pi * (1.14610381688305e-5 * o[14] + g.pi * ((o[15] * (-(0.012702883392813 + 143.374451604624 * o[16])) - 1.00288598706366e-10) * o[2] + g.pi * (o[17] * (-(8.8352662293707e-6 + 0.272627897050173 * o[18])) - 4.1341695026989e-17 + g.pi * (o[11] * (9.0049690883672e-11 - 65.849072718398 * o[19]) + g.pi * (1.78287415218792e-7 * o[15] + g.pi * (o[10] * (1.0406965210174e-18 + (-(1.0234747095929e-12 + 1.0018179379511e-8 * o[10])) * o[20]) + o[23] * (o[13] * (1.71088510070544 * o[24] - 1.29412653835176e-9) + o[21] * (o[21] * (o[27] * (1.78371690710842e-23 + (6.1258633752464e-12 - 8.4004935396416e-5 * o[15]) * o[28]) + g.pi * (g.pi * (8.3219284749605e-5 * o[29] + g.pi * (o[31] * (1.75410265428146e-27 + o[18] * (1.32995316841867e-15 - 2.26487297378904e-5 * o[32])) * g.pi - 2.93678005497663e-14 * o[30])) - 1.24017662339842e-24 * o[24])) - 6.0592051033508 * o[26])))))))) + tau2 * ((5.116287140914e-8 + 1.92901490874028e-6 * tau2) * tau2 - 3.15389238237468e-9)))))) / g.pi;
 //   g.gpipi := (o[21] * (o[43] + g.pi * (1.22890426153854e-7 + (2.6322400370661e-6 + o[1] * ((-(0.0090203547252888 + 0.244009521375894 * o[13])) * o[2] - 1.9366606343142e-4)) * tau2 + g.pi * (g.pi * (4.5844152675322e-5 * o[14] + g.pi * ((o[15] * (-(0.063514416964065 + 716.87225802312 * o[16])) - 5.0144299353183e-10) * o[2] + g.pi * (o[17] * (-(5.3011597376224e-5 + 1.63576738230104 * o[18])) - 2.48050170161934e-16 + g.pi * (o[11] * (6.303478361857e-10 - 460.94350902879 * o[19]) + g.pi * (1.42629932175034e-6 * o[15] + g.pi * (o[10] * (9.3662686891566e-18 + (-(9.2112723863361e-12 + 9.0163614415599e-8 * o[10])) * o[20]) + o[23] * (o[13] * (25.6632765105816 * o[24] - 1.94118980752764e-8) + o[21] * (o[21] * (o[27] * (3.389062123506e-22 + (1.16391404129682e-10 - 0.0015960937725319 * o[15]) * o[28]) + g.pi * (g.pi * (0.00174760497974171 * o[29] + g.pi * (o[31] * (4.0344361048474e-26 + o[18] * (3.05889228736295e-14 - 5.2092078397148e-4 * o[32])) * g.pi - 6.4609161209486e-13 * o[30])) - 2.48035324679684e-23 * o[24])) - 103.006486756963 * o[26])))))))) + tau2 * ((1.5348861422742e-7 + o[44]) * tau2 - 9.461677147124e-9)))) - 1.0) / o[21];
 //   g.gtau := (0.0280439559151 + g.tau * (g.tau * (1.2213149471784 + g.tau * (g.tau * (4.38395111945 + o[33] * (10.08665568018 + (0.06380539059921 * g.tau - 0.5681726521544) * g.tau)) - 2.848163942888)) - 0.2858109552582)) / (o[33] * o[34]) + g.pi * (o[49] - 0.017834862292358 + g.pi * ((o[1] * ((-(0.306581069554011 + 9.6028372490713e-4 * o[13])) * o[2] - 0.015757110897342) - 3.789797503263e-4) * tau2 - 3.3032641670203e-5 + g.pi * (4.3870667284435e-7 + o[1] * ((-(0.0090203547252888 + 1.42338887469272 * o[13])) * o[2] - 9.683303171571e-5) + g.pi * (g.pi * (1.60454534363627e-5 * o[20] + g.pi * (o[1] * (o[15] * (-(0.033874355714168 + 836.35096769364 * o[16])) - 5.0144299353183e-11) + g.pi * ((-(1.38839897890111e-5 + 0.97367106089347 * o[18])) * o[50] + g.pi * (o[14] * (9.0049690883672e-11 - 296.320827232793 * o[19]) + g.pi * (2.57526266427144e-7 * o[51] + g.pi * (o[2] * (4.1627860840696e-19 + (-(1.0234747095929e-12 + 1.40254511313154e-8 * o[10])) * o[20]) + o[23] * (o[19] * (5.3465159397045 * o[24] - 2.34560435076256e-9) + o[21] * (o[21] * (o[16] * (1.78371690710842e-23 + (1.07202609066812e-11 - 2.01611844951398e-4 * o[15]) * o[28]) + g.pi * (g.pi * (2.00482822351322e-4 * o[53] + g.pi * ((1.90027787547159e-27 + o[18] * (2.21658861403112e-15 - 5.4734430199902e-5 * o[32])) * o[55] * g.pi - 4.9797574845256e-14 * o[54])) - 1.24017662339842e-24 * o[27])) - 19.1874828272775 * o[52])))))))) - 7.8847309559367e-10 + (2.558143570457e-8 + 1.44676118155521e-6 * tau2) * tau2))));
@@ -532,11 +549,11 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   assert(p > 0.0, \"IF97 medium function g5 called with too low pressure
 //   p = \" + String(p, 6, 0, true) + \" Pa <=  0.0 Pa\");
-//   assert(p <= 1e7, \"IF97 medium function g5: input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 10 Mpa in region 5\");
+//   assert(p <= 1e7, \"IF97 medium function g5: input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 10 MPa in region 5\");
 //   assert(T <= 2273.15, \"IF97 medium function g5: input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than limit of 2273.15K in region 5\");
 //   g.p := p;
 //   g.T := T;
-//   g.R := 461.526;
+//   g.R_s := 461.526;
 //   g.pi := p / 1e6;
 //   g.tau := 1000.0 / T;
 //   o[1] := g.tau * g.tau;
@@ -550,7 +567,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[9] := -7.9449656719138e-6 * o[8];
 //   o[10] := g.pi * g.pi;
 //   o[11] := -0.013782846269973 * o[1];
-//   g.g := g.pi * (o[4] - 1.2563183589592e-4 + g.pi * (1.2919228289784e-7 * o[5] * g.pi - 3.9724828359569e-6 * o[8])) + (g.tau * (0.36901534980333 + g.tau * (g.tau * ((6.8540841634434 - 0.32961626538917 * g.tau) * g.tau - 13.179983674201 + log(g.pi)) - 3.1161318213925)) - 0.024805148933466) / o[5];
+//   g.g := g.pi * (o[4] - 1.2563183589592e-4 + g.pi * (1.2919228289784e-7 * o[5] * g.pi - 3.9724828359569e-6 * o[8])) + (g.tau * (0.36901534980333 + g.tau * (g.tau * ((6.8540841634434 - 0.32961626538917 * g.tau) * g.tau - 13.179983674201 + Modelica.Math.log(g.pi)) - 3.1161318213925)) - 0.024805148933466) / o[5];
 //   g.gpi := (1.0 + g.pi * (o[4] - 1.2563183589592e-4 + g.pi * (o[9] + 3.8757684869352e-7 * o[5] * g.pi))) / g.pi;
 //   g.gpipi := (o[10] * (o[9] + 7.7515369738704e-7 * o[5] * g.pi) - 1.0) / o[10];
 //   g.gtau := g.pi * (0.0021774678714571 + o[11] + g.pi * (3.8757684869352e-7 * o[1] * g.pi - 3.5752345523612e-5 * o[7])) + (0.074415446800398 + g.tau * ((3.1161318213925 + o[1] * (6.8540841634434 - 0.65923253077834 * g.tau)) * g.tau - 0.73803069960666)) / o[6];
@@ -585,13 +602,13 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[6] := o[4] * o[4];
 //   o[7] := 14.91510861353 * o[6];
 //   o[8] := 405113.40542057 + o[5] + o[7];
-//   p_sat := 1.6e7 * o[8] * o[8] * o[8] * o[8] / (3.2325550322333e6 - 12020.82470247 * o[4] + 17.073846940092 * o[6] + ((12020.82470247 * o[4] - 3.2325550322333e6 - 17.073846940092 * o[6]) ^ 2.0 - 4.0 * (1167.0521452767 * o[4] - 724213.16703206 + o[6]) * o[8]) ^ 0.5) ^ 4.0;
+//   p_sat := 1.6e7 * o[8] * o[8] * o[8] * o[8] / (3.2325550322333e6 - 12020.82470247 * o[4] + 17.073846940092 * o[6] + sqrt((12020.82470247 * o[4] - 3.2325550322333e6 - 17.073846940092 * o[6]) ^ 2.0 - 4.0 * (1167.0521452767 * o[4] - 724213.16703206 + o[6]) * o[8])) ^ 4.0;
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat;
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat_der \"Derivative function for psat\"
 //   input Real T(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature (K)\";
-//   input Real der_T(unit = \"K/s\") \"Temperature derivative\";
-//   output Real der_psat(unit = \"Pa/s\") \"Pressure\";
+//   input Real der_T(quantity = \"TemperatureSlope\", unit = \"K/s\") \"Temperature derivative\";
+//   output Real der_psat(quantity = \"PressureSlope\", unit = \"Pa/s\", displayUnit = \"bar/s\") \"Pressure derivative\";
 //   protected Real dpt;
 // algorithm
 //   dpt := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(T);
@@ -701,8 +718,8 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat_der \"Derivative function for tsat\"
 //   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") \"Pressure\";
-//   input Real der_p(unit = \"Pa/s\") \"Pressure derivative\";
-//   output Real der_tsat(unit = \"K/s\") \"Temperature derivative\";
+//   input Real der_p(quantity = \"PressureSlope\", unit = \"Pa/s\", displayUnit = \"bar/s\") \"Pressure derivative\";
+//   output Real der_tsat(quantity = \"TemperatureSlope\", unit = \"K/s\") \"Temperature derivative\";
 //   protected Real dtp;
 // algorithm
 //   dtp := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dtsatofp(p);
@@ -937,28 +954,28 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Modelica.Media.Common.HelmholtzDerivs f \"Dimensionless Helmholtz function and derivatives\";
 //   protected Real plim(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") = min(p, 2.20639999999999e7) \"Pressure limited to critical pressure - epsilon\";
 // algorithm
-//   bpro.R := 461.526;
+//   bpro.R_s := 461.526;
 //   bpro.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(plim);
 //   bpro.dpT := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(bpro.T);
 //   bpro.region3boundary := bpro.T > 623.15;
 //   if not bpro.region3boundary then
 //     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1(p, bpro.T);
-//     bpro.d := p / (bpro.R * bpro.T * g.pi * g.gpi);
-//     bpro.h := if p > plim then 2.08754684511715e6 else bpro.R * bpro.T * g.tau * g.gtau;
-//     bpro.s := g.R * (g.tau * g.gtau - g.g);
-//     bpro.cp := -bpro.R * g.tau * g.tau * g.gtautau;
-//     bpro.vt := bpro.R / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
-//     bpro.vp := bpro.R * bpro.T / (p * p) * g.pi * g.pi * g.gpipi;
+//     bpro.d := p / (bpro.R_s * bpro.T * g.pi * g.gpi);
+//     bpro.h := if p > plim then 2.08754684511715e6 else bpro.R_s * bpro.T * g.tau * g.gtau;
+//     bpro.s := g.R_s * (g.tau * g.gtau - g.g);
+//     bpro.cp := -bpro.R_s * g.tau * g.tau * g.gtautau;
+//     bpro.vt := bpro.R_s / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
+//     bpro.vp := bpro.R_s * bpro.T / (p * p) * g.pi * g.pi * g.gpipi;
 //     bpro.pt := -p / bpro.T * (g.gpi - g.tau * g.gtaupi) / (g.gpipi * g.pi);
-//     bpro.pd := -bpro.R * bpro.T * g.gpi * g.gpi / g.gpipi;
+//     bpro.pd := -bpro.R_s * bpro.T * g.gpi * g.gpi / g.gpipi;
 //   else
 //     bpro.d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhol_p_R4b(plim);
 //     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(bpro.d, bpro.T);
 //     bpro.h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p_R4b(plim);
-//     bpro.s := f.R * (f.tau * f.ftau - f.f);
-//     bpro.cv := bpro.R * (-f.tau * f.tau * f.ftautau);
-//     bpro.pt := bpro.R * bpro.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
-//     bpro.pd := bpro.R * bpro.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//     bpro.s := f.R_s * (f.tau * f.ftau - f.f);
+//     bpro.cv := bpro.R_s * (-f.tau * f.tau * f.ftautau);
+//     bpro.pt := bpro.R_s * bpro.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//     bpro.pd := bpro.R_s * bpro.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
 //   end if;
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.boilingcurve_p;
 //
@@ -1028,28 +1045,28 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Modelica.Media.Common.HelmholtzDerivs f \"Dimensionless Helmholtz function and derivatives\";
 //   protected Real plim(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") = min(p, 2.20639999999999e7) \"Pressure limited to critical pressure - epsilon\";
 // algorithm
-//   bpro.R := 461.526;
+//   bpro.R_s := 461.526;
 //   bpro.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tsat(plim);
 //   bpro.dpT := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dptofT(bpro.T);
 //   bpro.region3boundary := bpro.T > 623.15;
 //   if not bpro.region3boundary then
-//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(p, bpro.T);
-//     bpro.d := p / (bpro.R * bpro.T * g.pi * g.gpi);
-//     bpro.h := if p > plim then 2.08754684511715e6 else bpro.R * bpro.T * g.tau * g.gtau;
-//     bpro.s := g.R * (g.tau * g.gtau - g.g);
-//     bpro.cp := -bpro.R * g.tau * g.tau * g.gtautau;
-//     bpro.vt := bpro.R / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
-//     bpro.vp := bpro.R * bpro.T / (p * p) * g.pi * g.pi * g.gpipi;
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(p, bpro.T, true);
+//     bpro.d := p / (bpro.R_s * bpro.T * g.pi * g.gpi);
+//     bpro.h := if p > plim then 2.08754684511715e6 else bpro.R_s * bpro.T * g.tau * g.gtau;
+//     bpro.s := g.R_s * (g.tau * g.gtau - g.g);
+//     bpro.cp := -bpro.R_s * g.tau * g.tau * g.gtautau;
+//     bpro.vt := bpro.R_s / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
+//     bpro.vp := bpro.R_s * bpro.T / (p * p) * g.pi * g.pi * g.gpipi;
 //     bpro.pt := -p / bpro.T * (g.gpi - g.tau * g.gtaupi) / (g.gpipi * g.pi);
-//     bpro.pd := -bpro.R * bpro.T * g.gpi * g.gpi / g.gpipi;
+//     bpro.pd := -bpro.R_s * bpro.T * g.gpi * g.gpi / g.gpipi;
 //   else
 //     bpro.d := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.rhov_p_R4b(plim);
 //     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(bpro.d, bpro.T);
 //     bpro.h := Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b(plim);
-//     bpro.s := f.R * (f.tau * f.ftau - f.f);
-//     bpro.cv := bpro.R * (-f.tau * f.tau * f.ftautau);
-//     bpro.pt := bpro.R * bpro.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
-//     bpro.pd := bpro.R * bpro.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//     bpro.s := f.R_s * (f.tau * f.ftau - f.f);
+//     bpro.cv := bpro.R_s * (-f.tau * f.tau * f.ftautau);
+//     bpro.pt := bpro.R_s * bpro.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//     bpro.pd := bpro.R_s * bpro.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
 //   end if;
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.dewcurve_p;
 //
@@ -1065,7 +1082,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\") \"Specific enthalpy\";
 //   protected Real x \"Auxiliary variable\";
 // algorithm
-//   x := acos(p / 2.2064e7);
+//   x := Modelica.Math.acos(p / 2.2064e7);
 //   h := (1.0 + x * (x * (1.346800016564904 + x * (x * (6.679385472887931 + x * (x * (3.558919744656498 + (-(0.717981855497894 + 1.152032945617821e-4 * x)) * x) - 6.75820241066552)) - 3.889388153209752)) - 0.4945586958175176)) * 2.08754684511715e6;
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hl_p_R4b;
 //
@@ -1095,7 +1112,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   pi := p / 1e6;
 //   assert(p > 611.657, \"IF97 medium function hlowerofp2 called with too low pressure
 //   p = \" + String(p, 6, 0, true) + \" Pa <= \" + \"611.657\" + \" Pa (triple point pressure)\");
-//   q1 := 572.54459862746 + 31.3220101646784 * (pi - 13.91883977887) ^ 0.5;
+//   q1 := 572.54459862746 + 31.3220101646784 * sqrt(pi - 13.91883977887);
 //   q2 := 540.0 / q1 - 0.5;
 //   o[1] := q1 * q1;
 //   o[2] := o[1] * o[1];
@@ -1181,7 +1198,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\") \"Specific enthalpy\";
 //   protected Real x \"Auxiliary variable\";
 // algorithm
-//   x := acos(p / 2.2064e7);
+//   x := Modelica.Math.acos(p / 2.2064e7);
 //   h := (1.0 + x * (0.4880153718655694 + x * (0.2079670746250689 + x * (x * (25.08887602293532 + x * (x * (45.66489164833212 + (6.616936460057692e-4 * x - 16.98555442961553) * x) - 48.38215180269516)) - 6.084122698421623)))) * 2.08754684511715e6;
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b;
 //
@@ -1294,7 +1311,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real x \"Auxiliary variable\";
 // algorithm
 //   if p < 2.2064e7 then
-//     x := acos(p / 2.2064e7);
+//     x := Modelica.Math.acos(p / 2.2064e7);
 //     dl := (1.0 + x * (1.903224079094824 + x * (x * (x * (94.34196116778385 + x * (x * (796.6627910598293 + x * (x * (673.2581177021598 + (5.2536560808895e-4 * x - 191.43077336405156) * x) - 994.5385383600702)) - 369.3676833623383)) - 8.191449323843552) - 2.5314861802401123))) * 322.0;
 //   else
 //     dl := 322.0;
@@ -1307,7 +1324,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real x \"Auxiliary variable\";
 // algorithm
 //   if p < 2.2064e7 then
-//     x := acos(p / 2.2064e7);
+//     x := Modelica.Math.acos(p / 2.2064e7);
 //     dv := (1.0 + x * (x * (x * (59.18702203076563 + x * (x * (1437.2007245332388 + x * (x * (3740.5790348670057 + x * ((725.8761975803782 - 0.0011151111658332337 * x) * x - 2537.375817253895)) - 3015.853540307519)) - 403.5391431811611)) - 1.1447872718878493) - 1.8463850803362596)) * 322.0;
 //   else
 //     dv := 322.0;
@@ -1456,43 +1473,43 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   aux.phase := if phase <> 0 then phase else if aux.region == 4 then 2 else 1;
 //   aux.p := max(p, 611.657);
 //   aux.h := max(h, 1000.0);
-//   aux.R := 461.526;
-//   aux.vt := 0.0 \"initialized in case it is not needed\";
-//   aux.vp := 0.0 \"initialized in case it is not needed\";
+//   aux.R_s := 461.526;
+//   aux.vt := 0.0 \"Initialized in case it is not needed\";
+//   aux.vp := 0.0 \"Initialized in case it is not needed\";
 //   if aux.region == 1 then
 //     aux.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph1(aux.p, aux.h);
 //     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1(p, aux.T);
-//     aux.s := aux.R * (g.tau * g.gtau - g.g);
-//     aux.rho := p / (aux.R * aux.T * g.pi * g.gpi);
-//     aux.vt := aux.R / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
+//     aux.s := aux.R_s * (g.tau * g.gtau - g.g);
+//     aux.rho := p / (aux.R_s * aux.T * g.pi * g.gpi);
+//     aux.vt := aux.R_s / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
 //     aux.pt := -g.p / g.T * (g.gpi - g.tau * g.gtaupi) / (g.gpipi * g.pi);
-//     aux.pd := -g.R * g.T * g.gpi * g.gpi / g.gpipi;
-//     aux.vp := aux.R * aux.T / (p * p) * g.pi * g.pi * g.gpipi;
-//     aux.cp := -aux.R * g.tau * g.tau * g.gtautau;
-//     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
+//     aux.pd := -g.R_s * g.T * g.gpi * g.gpi / g.gpipi;
+//     aux.vp := aux.R_s * aux.T / (p * p) * g.pi * g.pi * g.gpipi;
+//     aux.cp := -aux.R_s * g.tau * g.tau * g.gtautau;
+//     aux.cv := aux.R_s * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
 //     aux.x := 0.0;
 //     aux.dpT := -aux.vt / aux.vp;
 //   elseif aux.region == 2 then
 //     aux.T := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph2(aux.p, aux.h);
-//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(p, aux.T);
-//     aux.s := aux.R * (g.tau * g.gtau - g.g);
-//     aux.rho := p / (aux.R * aux.T * g.pi * g.gpi);
-//     aux.vt := aux.R / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
-//     aux.vp := aux.R * aux.T / (p * p) * g.pi * g.pi * g.gpipi;
+//     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(p, aux.T, true);
+//     aux.s := aux.R_s * (g.tau * g.gtau - g.g);
+//     aux.rho := p / (aux.R_s * aux.T * g.pi * g.gpi);
+//     aux.vt := aux.R_s / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
+//     aux.vp := aux.R_s * aux.T / (p * p) * g.pi * g.pi * g.gpipi;
 //     aux.pt := -g.p / g.T * (g.gpi - g.tau * g.gtaupi) / (g.gpipi * g.pi);
-//     aux.pd := -g.R * g.T * g.gpi * g.gpi / g.gpipi;
-//     aux.cp := -aux.R * g.tau * g.tau * g.gtautau;
-//     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
+//     aux.pd := -g.R_s * g.T * g.gpi * g.gpi / g.gpipi;
+//     aux.cp := -aux.R_s * g.tau * g.tau * g.gtautau;
+//     aux.cv := aux.R_s * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
 //     aux.x := 1.0;
 //     aux.dpT := -aux.vt / aux.vp;
 //   elseif aux.region == 3 then
 //     (aux.rho, aux.T, error) := Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.dtofph3(aux.p, aux.h, 1e-7, 1e-6);
 //     f := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3(aux.rho, aux.T);
-//     aux.h := aux.R * aux.T * (f.tau * f.ftau + f.delta * f.fdelta);
-//     aux.s := aux.R * (f.tau * f.ftau - f.f);
-//     aux.pd := aux.R * aux.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
-//     aux.pt := aux.R * aux.rho * f.delta * (f.fdelta - f.tau * f.fdeltatau);
-//     aux.cv := abs(aux.R * (-f.tau * f.tau * f.ftautau)) \"Can be close to neg. infinity near critical point\";
+//     aux.h := aux.R_s * aux.T * (f.tau * f.ftau + f.delta * f.fdelta);
+//     aux.s := aux.R_s * (f.tau * f.ftau - f.f);
+//     aux.pd := aux.R_s * aux.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
+//     aux.pt := aux.R_s * aux.rho * f.delta * (f.fdelta - f.tau * f.fdeltatau);
+//     aux.cv := abs(aux.R_s * (-f.tau * f.tau * f.ftautau)) \"Can be close to neg. infinity near critical point\";
 //     aux.cp := (aux.rho * aux.rho * aux.pd * aux.cv + aux.T * aux.pt * aux.pt) / (aux.rho * aux.rho * aux.pd);
 //     aux.x := 0.0;
 //     aux.dpT := aux.pt;
@@ -1504,7 +1521,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //       t1 := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph1(aux.p, h_liq);
 //       t2 := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.tph2(aux.p, h_vap);
 //       gl := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g1(aux.p, t1);
-//       gv := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(aux.p, t2);
+//       gv := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g2(aux.p, t2, true);
 //       liq := Modelica.Media.Common.gibbsToBoundaryProps(gl);
 //       vap := Modelica.Media.Common.gibbsToBoundaryProps(gv);
 //       aux.T := t1 + aux.x * (t2 - t1);
@@ -1528,14 +1545,14 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //     (aux.T, error) := Modelica.Media.Water.IF97_Utilities.BaseIF97.Inverses.tofph5(aux.p, aux.h, 1e-7);
 //     assert(error == 0, \"Error in inverse iteration of steam tables\");
 //     g := Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.g5(aux.p, aux.T);
-//     aux.s := aux.R * (g.tau * g.gtau - g.g);
-//     aux.rho := p / (aux.R * aux.T * g.pi * g.gpi);
-//     aux.vt := aux.R / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
-//     aux.vp := aux.R * aux.T / (p * p) * g.pi * g.pi * g.gpipi;
+//     aux.s := aux.R_s * (g.tau * g.gtau - g.g);
+//     aux.rho := p / (aux.R_s * aux.T * g.pi * g.gpi);
+//     aux.vt := aux.R_s / p * (g.pi * g.gpi - g.tau * g.pi * g.gtaupi);
+//     aux.vp := aux.R_s * aux.T / (p * p) * g.pi * g.pi * g.gpipi;
 //     aux.pt := -g.p / g.T * (g.gpi - g.tau * g.gtaupi) / (g.gpipi * g.pi);
-//     aux.pd := -g.R * g.T * g.gpi * g.gpi / g.gpipi;
-//     aux.cp := -aux.R * g.tau * g.tau * g.gtautau;
-//     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
+//     aux.pd := -g.R_s * g.T * g.gpi * g.gpi / g.gpipi;
+//     aux.cp := -aux.R_s * g.tau * g.tau * g.gtautau;
+//     aux.cv := aux.R_s * ((g.gpi - g.tau * g.gtaupi) * (g.gpi - g.tau * g.gtaupi) / g.gpipi - g.tau * g.tau * g.gtautau);
 //     aux.dpT := -aux.vt / aux.vp;
 //   else
 //     assert(false, \"Error in region computation of IF97 steam tables(p = \" + String(p, 6, 0, true) + \", h = \" + String(h, 6, 0, true) + \")\");

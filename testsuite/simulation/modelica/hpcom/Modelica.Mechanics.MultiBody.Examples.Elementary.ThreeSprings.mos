@@ -7,7 +7,7 @@
 // Simulation Results 
 // Modelica Standard Library
 //
-loadModel(Modelica,{"3.2.1"});
+loadModel(Modelica,{"4.1.0"});
 
 setMatchingAlgorithm("PFPlusExt"); getErrorString();
 setIndexReductionMethod("dynamicStateSelection"); getErrorString();
@@ -16,18 +16,9 @@ setCommandLineOptions("+n=4 +hpcomScheduler=list"); getErrorString();
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl41/Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings.mat",
   "Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_diff.csv",0.13,0.0005,
-{  "body1.frame_a.r_0[1]",
-   "body1.frame_a.r_0[2]",
-   "body1.frame_a.r_0[3]",
-   "body1.v_0[1]",
-   "body1.v_0[2]",
-   "body1.v_0[3]",
-   "body1.w_a[1]",
-   "body1.w_a[2]",
-   "body1.w_a[3]"
-});
+{"body1.frame_a.r_0[1]", "body1.frame_a.r_0[2]", "body1.frame_a.r_0[3]", "body1.v_0[1]", "body1.v_0[2]", "body1.v_0[3]", "body1.w_a[1]", "body1.w_a[2]", "body1.w_a[3]"});
 
 // Result:
 // true
@@ -48,12 +39,11 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 // HpcOm is still under construction.
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[BackEnd/HpcOmTaskGraph.mo:0:0-0:0:writable] Error: Internal error HpcOmTaskGraph.getNodeForVarIdx failed (there is a loop somewhere)
-// "
+// ""
 // {"Files Equal!"}
 // endResult

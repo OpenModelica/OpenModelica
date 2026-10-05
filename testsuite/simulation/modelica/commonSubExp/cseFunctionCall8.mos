@@ -95,11 +95,11 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (5)
 // ========================================
-// 1: C:PARAM()  = 1.0  type: Real
-// 2: $res_LSJac0_1:VARIABLE()  type: Real
+// 1: input $DER.u1.SeedLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: i:VARIABLE()  type: Real
 // 3: $DER.u2:DUMMY_DER(fixed = false )  type: Real
-// 4: i:VARIABLE()  type: Real
-// 5: input $DER.u1.SeedLSJac0:STATE_DER()  type: Real unreplaceable
+// 4: $res_LSJac0_1:VARIABLE()  type: Real
+// 5: C:PARAM()  = 1.0  type: Real
 //
 //
 // ########### CSE Replacements (2/45)
@@ -137,8 +137,8 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (2)
 // ========================================
-// 1: u:VARIABLE(fixed = true final = true )  = 10.0  type: Real
-// 2: C:PARAM()  = 1.0  type: Real
+// 1: C:PARAM()  = 1.0  type: Real
+// 2: u:VARIABLE(fixed = true final = true )  = 10.0  type: Real
 //
 //
 // ########### CSE Replacements (3/46)

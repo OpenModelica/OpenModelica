@@ -1,7 +1,10 @@
 #!/bin/bash
-# usage: fix-tests.sh /path/to/file/containing/broken/tests.txt
+# usage: fix-tests.sh /path/to/file/containing/broken/tests.txt [extra runtests.pl flags]
 # should be run from trunk/testsuite
 # created by Martin Sjölund
+#
+# Tests marked '// suite: disabled' are skipped, pass -suites=+disabled to
+# baseline those as well.
 
 FILE=`realpath $1`
 CD=`pwd`

@@ -157,9 +157,9 @@ double rt_total(int ix) {
 static enum omc_rt_clock_t selectedClock = OMC_CLOCK_REALTIME;
 
 #if !defined(_MSC_VER)
-static long long RDTSC() {
-   register long long TSC asm("eax");
-   asm volatile (".byte 15, 49" : : : "eax", "edx");
+static long long RDTSC(void) {
+   register long long TSC __asm__("eax");
+   __asm__ volatile (".byte 15, 49" : : : "eax", "edx");
    return TSC;
 //    unsigned int hi, lo;
 //    asm volatile("rdtscp" : "=a"(lo), "=d"(hi));

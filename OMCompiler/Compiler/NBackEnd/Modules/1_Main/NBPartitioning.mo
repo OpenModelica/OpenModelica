@@ -54,6 +54,7 @@ protected
   import Variable = NFVariable;
 
   // Backend
+  import Adjacency = NBAdjacency;
   import BackendDAE = NBackendDAE;
   import Causalize = NBCausalize;
   import BEquation = NBEquation;
@@ -70,6 +71,7 @@ protected
   import DoubleEnded;
   import Rational;
   import NBBackendUtil;
+  import PointerWeak;
   import UnorderedMap;
   import UnorderedSet;
 
@@ -1041,7 +1043,7 @@ protected
 
 
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), "", "", "\n", "\n"));
+      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), List.Style.NEWLINE) + "\n");
       print(ClockedInfo.toString(info));
     end if;
   end partitioningClocked;
@@ -1123,7 +1125,7 @@ protected
   protected
     Integer n = listLength(unsorted);
     array<Partition.Partition> partitions = listArray(listReverse(unsorted));
-    array<list<Integer>> m = arrayCreate(n, {});
+    Adjacency.IntMatrix.Builder m = Adjacency.IntMatrix.newBuilder(n);
     // create a trivial matching for an artificially matched bipartite graph (tarjan implementation needs it)
     Matching matching = Matching.trivial(n);
     UnorderedMap<BClock, Integer> index_map = UnorderedMap.new<Integer>(BClock.hash, BClock.isEqual);
@@ -1139,12 +1141,12 @@ protected
     for i in 1:n loop
       for clock in UnorderedSet.toList(Partition.Partition.getClockDependencies(partitions[i])) loop
         j := UnorderedMap.getSafe(clock, index_map, sourceInfo());
-        m[i] := j :: m[i];
+        Adjacency.IntMatrix.builderAdd(m, i, j);
       end for;
     end for;
 
     // use tarjan to sort the artificial bipartite graph
-    partition_order := Sorting.tarjanScalar(m, matching);
+    partition_order := Sorting.tarjanScalar(Adjacency.IntMatrix.fromBuilder(m, n), matching);
 
     // use the strong components to sort partitions. no algebraic loops allowed
     for comp in listReverse(partition_order) loop
@@ -1286,9 +1288,9 @@ protected
         // extract potential record children
         children := match BVariable.getVar(exp.cref, sourceInfo())
           local
-            list<Pointer<Variable>> children_vars;
+            list<PointerWeak<Variable>> children_vars;
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
-          then list(BVariable.getVarName(var) for var in children_vars);
+          then list(BVariable.getVarName(PointerWeak.upgrade(var)) for var in children_vars);
           else {exp.cref};
         end match;
 

@@ -1,8 +1,11 @@
 // name:     EngineV6_evalParams
 // keywords: simulation evalAllParams
 // status: correct
+// suite: disabled
+// With MSL 4.1 -d=evaluateAllParameters fails: "Component 'cylinderInclination' may not
+// have a binding equation due to class specialization 'model'" in Loops.Utilities.Cylinder.
 //
-loadModel(Modelica,{"3.2.1"});
+loadModel(Modelica,{"4.1.0"});
 loadFile("EngineV6_output.mo");getErrorString();
 setCommandLineOptions("-d=evaluateAllParameters --maxSizeLineartearing=4000"); getErrorString();
 simulate(EngineV6_output); getErrorString();

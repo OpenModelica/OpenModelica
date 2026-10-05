@@ -16,6 +16,15 @@ set(OMC_SIMRT_OPTIMIZATION_HEADERS
   "OptimizerLocalFunction.h"
 )
 
+# Install headers
+install(
+  FILES ${OMC_SIMRT_OPTIMIZATION_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/optimization)
+
+if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+  return()
+endif()
+
 add_library(OpenModelicaRuntimeCOptimization OBJECT ${OMC_SIMRT_OPTIMIZATION_SOURCES})
 add_library(omc::simrt::simruntime::optimization ALIAS OpenModelicaRuntimeCOptimization)
 
@@ -30,11 +39,7 @@ target_link_libraries(OpenModelicaRuntimeCOptimization
     omc::config
     omc::simrt::runtime::headers
     omc::3rd::ipopt
+    omc::3rd::ryu
 )
 
 target_compile_definitions(OpenModelicaRuntimeCOptimization PUBLIC OMC_HAVE_IPOPT)
-
-# Install headers
-install(
-  FILES ${OMC_SIMRT_OPTIMIZATION_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/optimization)

@@ -64,6 +64,20 @@ void TimeManager::updateTick()
   _realTime = rt_ext_tp_tock(&_visualTimer) * 1e9;
 }
 
+double TimeManager::getPlaybackDelta()
+{
+  if (!_playbackTimer.isValid()) {
+    _playbackTimer.start();
+    return 0.0;
+  }
+  return _playbackTimer.restart() / 1000.0;
+}
+
+void TimeManager::resetPlaybackClock()
+{
+  _playbackTimer.start();
+}
+
 int TimeManager::getTimeFraction()
 {
   return int((_visTime - _startTime) / (_endTime - _startTime) * mTimeDiscretization);
@@ -145,6 +159,7 @@ void TimeManager::setPause(const bool status)
   if (status) {
     mpUpdateSceneTimer->stop();
   } else {
+    resetPlaybackClock(); // don't count paused time as elapsed on resume
     mpUpdateSceneTimer->start();
   }
 }

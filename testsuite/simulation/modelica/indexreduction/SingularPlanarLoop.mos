@@ -7,7 +7,7 @@
 //
 //
 
-loadModel(Modelica,{"3.2.1"});
+loadModel(Modelica,{"4.1.0"});
 loadFile("SingularPlanarLoop.mo");
 simulate(SingularPlanarLoop);
 getErrorString();

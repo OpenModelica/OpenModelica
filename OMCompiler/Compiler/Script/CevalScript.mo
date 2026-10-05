@@ -80,7 +80,6 @@ import CodegenMidToC;
 import CodegenWasmJitFunctions;
 import ComponentReference;
 import Config;
-import Corba;
 import DAEUtil;
 import Debug;
 import Dump;
@@ -106,6 +105,7 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
+import NFApi;
 import PackageManagement;
 import Parser;
 import Print;
@@ -120,6 +120,7 @@ import DAEToMid;
 import MidCode;
 import StackOverflow;
 import Static;
+import JSON;
 import StringUtil;
 import SymbolTable;
 import System;
@@ -453,7 +454,7 @@ algorithm
 end checkUsesAndUpdateProgram;
 
 public function loadModel
-  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
+  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the OPENMODELICALIBRARY (MODELICAPATH in the language specification) */>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
@@ -711,7 +712,7 @@ algorithm
       list<Values.Value> vals, cvars;
       Absyn.Path path,classpath,className,parentClass;
       SCode.Program sp;
-      Absyn.Program p,newp;
+      Absyn.Program p,newp,parsed;
       list<Absyn.Program> newps;
       DAE.Type ty;
       list<DAE.Type> tys;
@@ -812,6 +813,12 @@ algorithm
     case ("GC_expand_hp",{Values.INTEGER(i)})
       then Values.BOOL(GCExt.expandHeap(i));
 
+    case ("GC_set_max_heap_size",{Values.REAL(r)})
+      algorithm
+        GCExt.setMaxHeapSize(r);
+      then
+        Values.BOOL(true);
+
     case ("GC_set_max_heap_size",{Values.INTEGER(i)})
       algorithm
         GCExt.setMaxHeapSize(i);
@@ -854,12 +861,14 @@ algorithm
     case ("clear",{})
       algorithm
         SymbolTable.reset();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
     case ("clearProgram",{})
       algorithm
         SymbolTable.clearProgram();
+        NFApi.clearCache();
       then
         Values.BOOL(true);
 
@@ -990,6 +999,7 @@ algorithm
         b := Flags.isSet(Flags.SCODE_INST);
         strs := System.strtok(str, " ");
         {} := FlagsUtil.readArgs(strs);
+        FlagsUtil.applyNumProcEnvironment();
         outCache := FCore.emptyCache();
 
         if b <> Flags.isSet(Flags.SCODE_INST) then
@@ -1141,6 +1151,15 @@ algorithm
     case ("timerTock",_)
       then Values.REAL(-1.0);
 
+    case ("timerAccumulated",{Values.INTEGER(i)})
+      algorithm
+        true := System.realtimeNtick(i) > 0;
+      then
+        Values.REAL(System.realtimeAccumulated(i));
+
+    case ("timerAccumulated",_)
+      then Values.REAL(-1.0);
+
     case ("readFile",{Values.STRING(str)})
       then Values.STRING(System.readFile(str));
 
@@ -1246,6 +1265,15 @@ algorithm
     case ("generateCode",_)
       then Values.BOOL(false);
 
+    case ("getExternalFunctions",{Values.CODE(Absyn.C_TYPENAME(path))})
+      algorithm
+        (outCache, str) := getExternalFunctions(outCache, env, path);
+      then
+        Values.STRING(str);
+
+    case ("getExternalFunctions",_)
+      then Values.STRING("");
+
     case ("generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className)), Values.STRING(name)})
       algorithm
         sp := SymbolTable.getSCode();
@@ -1348,6 +1376,7 @@ algorithm
         end if;
         Print.clearBuf();
         SymbolTable.setAbsyn(p);
+        CodegenWasmJitFunctions.precompilePrebuiltModules(PackageManagement.installMissingWasmOfLoaded(list(AbsynUtil.classFilename(c) for c in p.classes), CodegenWasmJitFunctions.prebuiltExternalsABI()));
         execStat("loadModel("+AbsynUtil.pathString(path)+")");
         outCache := FCore.emptyCache();
       then
@@ -1478,10 +1507,10 @@ algorithm
     case ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
-        newp := Parser.parsestring(str,name);
-        newp := checkUsesAndUpdateProgram(newp, SymbolTable.getAbsyn(), b,
+        parsed := Parser.parsestring(str,name);
+        newp := checkUsesAndUpdateProgram(parsed, SymbolTable.getAbsyn(), b,
           Settings.getModelicaPath(Testsuite.isRunning()), b1, requireExactVersion, mergeAST);
-        SymbolTable.setAbsyn(newp);
+        SymbolTable.setAbsynLoaded(newp, parsed);
         outCache := FCore.emptyCache();
       then
         Values.BOOL(true);
@@ -1873,6 +1902,395 @@ algorithm
   end matchcontinue;
 end cevalGenerateFunction;
 
+protected function getExternalFunctions
+  "Describes every external \"C\" function in a library as JSON, for the
+   package manager that builds wasm modules for them."
+  input FCore.Cache inCache;
+  input FCore.Graph env;
+  input Absyn.Path className;
+  output FCore.Cache cache = inCache;
+  output String json = "";
+protected
+  Absyn.Program program = SymbolTable.getAbsyn();
+  list<Absyn.Path> paths, fnPaths;
+  list<SimCodeFunction.FunctionCode> fnCodes = {};
+  SimCodeFunction.FunctionCode fnCode;
+  SCode.Element cl;
+  FCore.Graph cenv;
+algorithm
+  try
+    paths := externalCFunctionPaths(className, ProgramUtil.getPathedClassInProgram(className, program), {});
+  else
+    Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
+    return;
+  end try;
+  setGlobalRoot(Global.optionSimCode, NONE());
+  for path in listReverse(paths) loop
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      (cache, cl, cenv) := Lookup.lookupClass(cache, env, path);
+      if SCodeUtil.classIsExternalObject(cl) then
+        // As instantiating a component of the class does: the constructor and
+        // destructor only instantiate inside its scope.
+        cenv := FGraph.openScope(cenv, SCode.NOT_ENCAPSULATED(), SCodeUtil.className(cl), FGraph.restrictionToScopeType(SCodeUtil.getClassRestriction(cl)));
+        (cache) := InstFunction.instantiateExternalObject(cache, cenv, InnerOuter.emptyInstHierarchy, SCodeUtil.getClassElements(cl), DAE.NOMOD(), false, SCode.noComment, SCodeUtil.elementInfo(cl));
+        fnPaths := {AbsynUtil.suffixPath(path, "constructor"), AbsynUtil.suffixPath(path, "destructor")};
+      else
+        (cache, Util.SUCCESS()) := Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);
+        fnPaths := {path};
+      end if;
+      for fnPath in fnPaths loop
+        (cache, fnCode) := elaborateFunctionCode(cache, env, program, fnPath);
+        fnCodes := fnCode :: fnCodes;
+      end for;
+      ErrorExt.delCheckpoint(getInstanceName());
+    else
+      ErrorExt.rollBack(getInstanceName());
+      Error.addCompilerWarning("getExternalFunctions: skipping " + AbsynUtil.pathString(path) + ", which does not instantiate on its own.");
+    end try;
+  end for;
+  json := describeExternalFunctions(listReverse(fnCodes));
+end getExternalFunctions;
+
+constant Integer prebuiltExternalsABI = 2
+  "The interface of the call wrappers built from what getExternalFunctions
+   describes: the index keys the modules by it.";
+
+protected function describeExternalFunctions
+  "The external \"C\" functions of `fnCodes` as JSON: each one's C name and the C
+   types of its call in the specification's mapping, as the wasm-jit target
+   declares the call, its Include annotations and include directories. One the
+   wasm-jit target cannot call carries why instead."
+  input list<SimCodeFunction.FunctionCode> fnCodes;
+  output String json;
+protected
+  list<JSON> functions = {};
+  list<tuple<String, JSON>> entry;
+  JSON dirsJSON, includesJSON, pathJSON;
+  list<String> params, includes, dirs;
+  String ret, extName, language;
+  Absyn.Path name;
+  SimCodeFunction.Function f;
+algorithm
+  for fc in fnCodes loop
+    _ := match fc
+      case SimCodeFunction.FUNCTIONCODE(mainFunction = SOME(f as SimCodeFunction.EXTERNAL_FUNCTION(
+          name = name, extName = extName, includes = includes, language = language)),
+          makefileParams = SimCodeFunction.MAKEFILE_PARAMS(includes = dirs))
+        guard not externalServedByOmc(f)
+        algorithm
+          dirsJSON := JSON.makeList(list(JSON.makeString(includeDirectory(d)) for d in dirs));
+          includesJSON := JSON.makeList(list(JSON.makeString(i) for i in includes));
+          pathJSON := JSON.makeString(AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(name)));
+          try
+            (params, ret) := externalCSignature(f);
+            entry := {
+              ("declare", JSON.makeBoolean(listEmpty(includes))),
+              ("includeDirectories", dirsJSON),
+              ("includes", includesJSON),
+              ("name", JSON.makeString(if language == "FORTRAN 77" then extName + "_" else extName)),
+              ("parameters", JSON.makeList(list(JSON.makeString(p) for p in params))),
+              ("path", pathJSON),
+              ("returns", if ret == "record" then JSON.makeNull() else JSON.makeString(ret))};
+          else
+            entry := {
+              ("includeDirectories", dirsJSON),
+              ("includes", includesJSON),
+              ("path", pathJSON),
+              ("unsupported", JSON.makeString(externalUnsupported(f)))};
+          end try;
+          // toString writes the pairs last to first.
+          functions := JSON.LIST_OBJECT(listReverse(entry)) :: functions;
+        then ();
+      else ();
+    end match;
+  end for;
+  json := JSON.toString(JSON.LIST_OBJECT({("functions", JSON.makeList(listReverse(functions))),
+                                         ("abi", JSON.makeInteger(prebuiltExternalsABI))}));
+end describeExternalFunctions;
+
+protected function includeDirectory
+  "A directory from the -I flags of a function's makefile parameters."
+  input String flag;
+  output String dir;
+algorithm
+  dir := System.trim(flag, "\"");
+  if StringUtil.startsWith(dir, "-I") then
+    dir := System.trim(substring(dir, 3, stringLength(dir)), "\"");
+  end if;
+end includeDirectory;
+
+protected function externalScalarType
+  "The C type a Modelica type maps to in an external call, as the wasm-jit
+   target declares it: \"record\" for a record, which passes by pointer, and an
+   array's element type. Fails for a type it cannot pass."
+  input DAE.Type ty;
+  output String cty;
+  output Boolean isArray;
+algorithm
+  (cty, isArray) := match ty
+    case DAE.T_INTEGER() then ("int", false);
+    case DAE.T_BOOL() then ("int", false);
+    case DAE.T_ENUMERATION() then ("int", false);
+    case DAE.T_REAL() then ("double", false);
+    case DAE.T_STRING() then ("const char*", false);
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) then ("void*", false);
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
+      guard List.all(ty.varLst, recordFieldPasses)
+      then ("record", false);
+    case DAE.T_ARRAY()
+      algorithm
+        (cty, _) := externalScalarType(ty.ty);
+        if cty == "record" then
+          fail();
+        end if;
+      then (cty, true);
+  end match;
+end externalScalarType;
+
+protected function recordFieldPasses
+  "Whether the host can convert a record field: a scalar, a String, an array or
+   a record of those."
+  input DAE.Var field;
+  output Boolean b;
+protected
+  String cty;
+  Boolean isArray;
+algorithm
+  try
+    (cty, isArray) := externalScalarType(field.ty);
+    b := isArray or cty <> "void*";
+  else
+    b := match field.ty case DAE.T_ARRAY() then true; else false; end match;
+  end try;
+end recordFieldPasses;
+
+protected function variablePasses
+  input SimCodeFunction.Variable v;
+  output Boolean b;
+protected
+  DAE.Type ty;
+algorithm
+  b := match v
+    case SimCodeFunction.VARIABLE(ty = ty)
+      algorithm
+        try
+          (_, _) := externalScalarType(ty);
+          b := true;
+        else
+          b := match ty case DAE.T_ARRAY() then true; else false; end match;
+        end try;
+      then b;
+    else false;
+  end match;
+end variablePasses;
+
+protected function externalServedByOmc
+  "Whether the wasm-jit target calls this in its own runtime: the string length
+   and substring functions and scalar math, called with inputs only and
+   returning the one output."
+  input SimCodeFunction.Function f;
+  output Boolean b = false;
+protected
+  list<String> ins, outs;
+  list<SimCodeFunction.Variable> funArgs, outVars;
+  list<SimCodeFunction.SimExtArg> extArgs;
+  String extName;
+algorithm
+  _ := match f
+    case SimCodeFunction.EXTERNAL_FUNCTION(extName = extName, funArgs = funArgs, extArgs = extArgs,
+        outVars = outVars as {_}, extReturn = SimCodeFunction.SIMEXTARG())
+      guard List.all(extArgs, externalArgIsInput)
+      algorithm
+        try
+          ins := list(variableCType(v) for v in funArgs);
+          outs := list(variableCType(v) for v in outVars);
+        else
+          return;
+        end try;
+        b := match (extName, ins, outs)
+          case ("ModelicaStrings_length", {"const char*"}, {"int"}) then true;
+          case ("ModelicaStrings_substring", {"const char*", "int", "int"}, {"const char*"}) then true;
+          else listMember(extName, {"pow", "atan2", "sin", "cos", "tan", "asin", "acos", "atan", "sinh",
+            "cosh", "tanh", "exp", "log", "log10", "cbrt", "expm1", "log1p", "exp2", "log2", "asinh", "acosh",
+            "atanh", "hypot", "fmod", "sqrt", "fabs", "floor", "ceil", "abs", "div", "mod"}) and
+            List.all(listAppend(ins, outs), isScalarCType);
+        end match;
+      then ();
+    else ();
+  end match;
+end externalServedByOmc;
+
+protected function isScalarCType
+  input String cty;
+  output Boolean b = cty == "int" or cty == "double";
+end isScalarCType;
+
+protected function variableCType
+  "A scalar variable's C type; fails for an array or anything else."
+  input SimCodeFunction.Variable v;
+  output String cty;
+protected
+  DAE.Type ty;
+algorithm
+  SimCodeFunction.VARIABLE(ty = ty, instDims = {}) := v;
+  (cty, false) := externalScalarType(ty);
+end variableCType;
+
+protected function externalArgIsInput
+  input SimCodeFunction.SimExtArg arg;
+  output Boolean b;
+algorithm
+  b := match arg
+    case SimCodeFunction.SIMEXTARG() then arg.isInput;
+    case SimCodeFunction.SIMEXTARGEXP() then true;
+    else false;
+  end match;
+end externalArgIsInput;
+
+protected function externalCSignature
+  "The C parameter and return types of an external call, as the wasm-jit target
+   declares them: an array, a record or an output passes by pointer, and FORTRAN
+   77 passes everything by reference. Fails for a call it cannot make."
+  input SimCodeFunction.Function f;
+  output list<String> params = {};
+  output String ret = "void";
+protected
+  Boolean fortran, isArray;
+  String cty, language;
+  Integer outputIndex;
+  list<Integer> written = {};
+  list<SimCodeFunction.Variable> funArgs, outVars, biVars;
+  list<SimCodeFunction.SimExtArg> extArgs;
+  SimCodeFunction.SimExtArg extReturn;
+  DAE.Type ty;
+algorithm
+  SimCodeFunction.EXTERNAL_FUNCTION(funArgs = funArgs, outVars = outVars, biVars = biVars, extArgs = extArgs,
+    extReturn = extReturn, language = language) := f;
+  true := listMember(language, {"C", "BUILTIN", "FORTRAN 77"});
+  true := List.all(funArgs, variablePasses) and List.all(outVars, variablePasses) and
+          List.all(biVars, variablePasses);
+  fortran := language == "FORTRAN 77";
+  for arg in extArgs loop
+    (cty, isArray, outputIndex) := match arg
+      case SimCodeFunction.SIMEXTARGSIZE(outputIndex = outputIndex) then ("int", false, outputIndex);
+      case SimCodeFunction.SIMEXTARG(type_ = ty, outputIndex = outputIndex)
+        algorithm
+          (cty, isArray) := externalScalarType(ty);
+        then (cty, isArray, outputIndex);
+      case SimCodeFunction.SIMEXTARGEXP(type_ = ty)
+        algorithm
+          (cty, isArray) := externalScalarType(ty);
+        then (cty, isArray, 0);
+    end match;
+    // Each output is written by one argument at most.
+    if outputIndex > 0 then
+      false := listMember(outputIndex, written);
+      written := outputIndex :: written;
+    end if;
+    params := (if cty == "record" then "void" else cty) +
+              (if outputIndex > 0 or fortran or isArray or cty == "record" then "*" else "") :: params;
+  end for;
+  params := listReverse(params);
+  ret := match extReturn
+    case SimCodeFunction.SIMNOEXTARG() then "void";
+    case SimCodeFunction.SIMEXTARG(type_ = ty)
+      algorithm
+        (cty, false) := externalScalarType(ty);
+      then cty;
+  end match;
+end externalCSignature;
+
+protected function externalUnsupported
+  "Why the wasm-jit target cannot call an external function."
+  input SimCodeFunction.Function f;
+  output String why;
+protected
+  String language;
+  list<SimCodeFunction.Variable> funArgs, outVars, biVars;
+algorithm
+  SimCodeFunction.EXTERNAL_FUNCTION(funArgs = funArgs, outVars = outVars, biVars = biVars, language = language) := f;
+  if not listMember(language, {"C", "BUILTIN", "FORTRAN 77"}) then
+    why := "external language \"" + language + "\" is not supported";
+  elseif not (List.all(funArgs, variablePasses) and List.all(outVars, variablePasses) and
+              List.all(biVars, variablePasses)) then
+    why := "a variable of the function has a type that cannot be marshalled";
+  else
+    why := "an argument or the result of the call cannot be marshalled";
+  end if;
+end externalUnsupported;
+
+protected function elaborateFunctionCode
+  "The SimCode of an instantiated function, as translateFunctions builds it."
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Program program;
+  input Absyn.Path path;
+  output SimCodeFunction.FunctionCode fnCode;
+protected
+  DAE.Function daeMainFunction;
+  list<DAE.Function> dependencies, daeElements;
+  list<DAE.Type> metarecordTypes;
+  list<DAE.Exp> literals;
+  SimCodeFunction.Function mainFunction;
+  list<SimCodeFunction.Function> fns;
+  list<SimCodeFunction.RecordDeclaration> extraRecordDecls;
+  list<String> includes, includeDirs, libs, libPaths;
+algorithm
+  (cache, daeMainFunction, dependencies, metarecordTypes) := collectDependencies(cache, env, path);
+  (daeElements, literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::dependencies);
+  (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, {});
+  fnCode := SimCodeFunction.FUNCTIONCODE(generateFunctionFileName(path), SOME(mainFunction), fns, literals, includes,
+    SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true), extraRecordDecls);
+end elaborateFunctionCode;
+
+protected function externalCFunctionPaths
+  "The external \"C\" functions and the external object classes in a class."
+  input Absyn.Path path;
+  input Absyn.Class cls;
+  input output list<Absyn.Path> paths;
+protected
+  Option<String> lang;
+  list<Absyn.ElementItem> elts;
+algorithm
+  if AbsynUtil.isFunctionRestriction(cls.restriction) then
+    if not cls.partialPrefix then
+      try
+        Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(lang = lang)) := AbsynUtil.getExternalDecl(cls);
+        if Util.getOptionOrDefault(lang, "C") == "C" then
+          paths := path :: paths;
+        end if;
+      else
+      end try;
+    end if;
+    return;
+  end if;
+  elts := AbsynUtil.getElementItemsInClass(cls);
+  if List.any(elts, isExternalObjectExtends) then
+    paths := path :: paths;
+    return;
+  end if;
+  for e in elts loop
+    paths := match e
+      local
+        Absyn.Class c;
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = c)))
+        then externalCFunctionPaths(AbsynUtil.suffixPath(path, c.name), c, paths);
+      else paths;
+    end match;
+  end for;
+end externalCFunctionPaths;
+
+protected function isExternalObjectExtends
+  input Absyn.ElementItem e;
+  output Boolean b;
+algorithm
+  b := match e
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = Absyn.IDENT("ExternalObject")))) then true;
+    else false;
+  end match;
+end isExternalObjectExtends;
+
 protected function matchQualifiedCalls
 "Collects the packages used by the functions"
   input DAE.Exp inExp;
@@ -2252,7 +2670,7 @@ algorithm
     else
       setGlobalRoot(Global.stackoverFlowIndex, NONE());
       ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionBasics.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
+      Error.addInternalError(StackOverflow.errorPrefix() + " when evaluating function call: "+ExpressionBasics.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
       /* Do not fail or we can loop too much */
       StackOverflow.clearStacktraceMessages();
       outCache := inCache;
@@ -2348,6 +2766,20 @@ algorithm
           libHandle := System.loadLibrary(fileName + Autoconf.dllExt, relativePath = true, printDebug = print_debug);
           funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
           newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
+          // lookupFunction takes a reference on the library, so freeing the
+          // library alone only drops the count from two to one and the shared
+          // object is never unloaded. On Windows that keeps the file locked, and
+          // the next call to the same function cannot relink its .dll: the code
+          // generation fails and the call silently evaluates to nothing.
+          //
+          // Only Windows needs the unload. Unix can relink a loaded .so, since
+          // that just replaces the inode, and unloading there would change
+          // behaviour: a generated function's shared object carries static state
+          // that currently survives between calls in a session, e.g. the seed
+          // behind System.realRand (openmodelica/bootstrapping/System.mos).
+          if Autoconf.os == "Windows_NT" then
+            System.freeFunction(funcHandle, print_debug);
+          end if;
           System.freeLibrary(libHandle, print_debug);
         end if;
         execStat("executeFunction("+AbsynUtil.pathString(funcpath)+")");
@@ -2841,18 +3273,16 @@ protected function getChangedClass
   input String suffix;
   output String name;
 algorithm
-  name := matchcontinue elt
+  name := match elt
     local
       String fileName;
-    case SCode.CLASS(name=name,info=SOURCEINFO())
-      algorithm
-        false := System.regularFileExists(name + suffix);
+    case SCode.CLASS(name=name,info=SOURCEINFO()) guard not System.regularFileExists(name + suffix)
       then name;
     case SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName))
       algorithm
         true := System.fileIsNewerThan(fileName, name + suffix);
       then name;
-  end matchcontinue;
+  end match;
 end getChangedClass;
 
 protected function isChanged
@@ -2912,6 +3342,7 @@ algorithm
         SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
         makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         fnCode := SimCodeFunction.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
+        SimCodeFunctionUtil.setTrivialRecords(extraRecordDecls);
 
         if Config.simCodeTarget() == "wasm-jit" then
           CodegenWasmJitFunctions.translateFunctions(fnCode);
@@ -2935,6 +3366,7 @@ algorithm
         fns := removeThreadDataFunction(fns, {});
         extraRecordDecls := removeThreadDataRecord(extraRecordDecls, {});
         fnCode := SimCodeFunction.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
+        SimCodeFunctionUtil.setTrivialRecords(extraRecordDecls);
 
         if Config.simCodeTarget() == "MidC" then
           Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
@@ -3242,7 +3674,7 @@ protected
   list<String> vars;
   String omhome, omlib, omcpath, systemPath, omdev, os, touch_file, usercflags;
   String workdir, uname, senddata, gcc, gccVersion, confcmd;
-  Boolean omcfound, touch_res, rm_res, have_corba, gcc_res;
+  Boolean omcfound, touch_res, rm_res, gcc_res;
   list<Values.Value> vals;
 algorithm
   vars := {"OPENMODELICAHOME",
@@ -3261,7 +3693,6 @@ algorithm
            "C_COMPILER",
            "C_COMPILER_VERSION",
            "C_COMPILER_RESPONDING",
-           "HAVE_CORBA",
            "CONFIGURE_CMDLINE"};
   omhome := Settings.getInstallationDirectoryPath();
   omlib := Settings.getModelicaPath(Testsuite.isRunning());
@@ -3280,7 +3711,6 @@ algorithm
   // _ = System.platform();
   senddata := Autoconf.ldflags_runtime;
   gcc := System.getCCompiler();
-  have_corba := Corba.haveCorba();
   System.systemCall("rm -f " + touch_file, "");
   gcc_res := 0 == System.systemCall(gcc + " --version", touch_file);
   gccVersion := System.readFile(touch_file);
@@ -3302,7 +3732,6 @@ algorithm
            Values.STRING(gcc),
            Values.STRING(gccVersion),
            Values.BOOL(gcc_res),
-           Values.BOOL(have_corba),
            Values.STRING(confcmd)};
 
   res := Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"), vals, vars, -1);

@@ -1,0 +1,24 @@
+// name: getSimulationOptions4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// An Interval longer than the experiment is one step to StopTime, which is
+// what simulate() runs.
+
+loadString("
+  model M
+    annotation(experiment(StopTime = 3.0, Interval = 300.0));
+  end M;
+");
+getErrorString();
+
+getSimulationOptions(M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// (0.0, 3.0, 1e-6, 1, 3.0)
+// ""
+// endResult

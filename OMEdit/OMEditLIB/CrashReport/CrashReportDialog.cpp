@@ -78,13 +78,7 @@ CrashReportDialog::CrashReportDialog(QString stacktrace, bool reportIssue)
   mpBugDescriptionLabel = new Label(tr("Describe the issue in few words:"));
   mpBugDescriptionTextBox = new QPlainTextEdit(
     QString("Connected to %1%4.\nThe running OS is %2 on %3.\n").arg(Helper::OpenModelicaVersion,
-#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
   QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture(),
-#elif defined(__APPLE__)
-  "OSX", "unknown (probably amd64)",
-#else
-  "unknown", "unknown",
-#endif
 #if defined(LSB_RELEASE)
   " built for " LSB_RELEASE
 #else
@@ -220,11 +214,7 @@ void CrashReportDialog::createGDBBacktrace()
     stackTraceFile.setFileName(OMStackTraceFilePath);
     if (stackTraceFile.open(QIODevice::WriteOnly)) {
       QTextStream out(&stackTraceFile);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       out.setEncoding(QStringConverter::Utf8);
-#else
-      out.setCodec(Helper::utf8.toUtf8().constData());
-#endif
       out.setGenerateByteOrderMark(false);
       out << mStackTrace;
       out.flush();
@@ -280,9 +270,10 @@ void CrashReportDialog::sendReport()
     OMEditCommunicationLogFileHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMEditCommunicationLogFileHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"omeditcommunication.log\"; filename=\"omeditcommunication.log\""));
     QFile *pOMEditCommunicationLogFileFile = new QFile(mpOMEditCommunicationLogFileCheckBox->text());
-    pOMEditCommunicationLogFileFile->open(QIODevice::ReadOnly);
-    OMEditCommunicationLogFileHttpPart.setBodyDevice(pOMEditCommunicationLogFileFile);
-    pOMEditCommunicationLogFileFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    if (pOMEditCommunicationLogFileFile->open(QIODevice::ReadOnly)) {
+      OMEditCommunicationLogFileHttpPart.setBodyDevice(pOMEditCommunicationLogFileFile);
+      pOMEditCommunicationLogFileFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    }
     pHttpMultiPart->append(OMEditCommunicationLogFileHttpPart);
   }
   // OMEditCommandsMosFile
@@ -291,9 +282,10 @@ void CrashReportDialog::sendReport()
     OMEditCommandsMosFileHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMEditCommandsMosFileHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"omeditcommands.mos\"; filename=\"omeditcommands.mos\""));
     QFile *pOMEditCommandsMosFile = new QFile(mpOMEditCommandsMosFileCheckBox->text());
-    pOMEditCommandsMosFile->open(QIODevice::ReadOnly);
-    OMEditCommandsMosFileHttpPart.setBodyDevice(pOMEditCommandsMosFile);
-    pOMEditCommandsMosFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    if (pOMEditCommandsMosFile->open(QIODevice::ReadOnly)) {
+      OMEditCommandsMosFileHttpPart.setBodyDevice(pOMEditCommandsMosFile);
+      pOMEditCommandsMosFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    }
     pHttpMultiPart->append(OMEditCommandsMosFileHttpPart);
   }
   // OMStackTraceFile
@@ -302,9 +294,10 @@ void CrashReportDialog::sendReport()
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
     OMStackTraceFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"openmodelica.stacktrace.OMEdit\"; filename=\"openmodelica.stacktrace.OMEdit\""));
     QFile *pOMStackTraceFile = new QFile(mpOMStackTraceFileCheckBox->text());
-    pOMStackTraceFile->open(QIODevice::ReadOnly);
-    OMStackTraceFileCheckBoxHttpPart.setBodyDevice(pOMStackTraceFile);
-    pOMStackTraceFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    if (pOMStackTraceFile->open(QIODevice::ReadOnly)) {
+      OMStackTraceFileCheckBoxHttpPart.setBodyDevice(pOMStackTraceFile);
+      pOMStackTraceFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
+    }
     pHttpMultiPart->append(OMStackTraceFileCheckBoxHttpPart);
   }
   // create the request

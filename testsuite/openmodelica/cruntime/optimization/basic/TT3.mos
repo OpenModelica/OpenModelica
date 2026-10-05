@@ -1,8 +1,9 @@
 // name: CombiTimeTablePeriodic
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 
-loadModel(Modelica, {"3.2.1"});
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 
 setCommandLineOptions("+g=Optimica");

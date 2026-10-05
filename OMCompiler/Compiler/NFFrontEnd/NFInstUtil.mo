@@ -190,7 +190,7 @@ public
               ty := exp.ty;
             end if;
 
-            outExp := Expression.makeDefaultValue(ty);
+            outExp := Expression.makeEmptyArray(ty);
 
             if not listEmpty(subs) then
               outExp := Expression.SUBSCRIPTED_EXP(outExp, subs, exp.ty, false);
@@ -1154,7 +1154,7 @@ public
       Expression.CALL(Call.makeTypedCall(indexed_fn, args, Variability.CONTINUOUS, Purity.PURE)),
       Type.REAL(),
       src,
-      fn.node
+      InstNode.fromHandle(fn.node)
     );
 
     funcs := FunctionTree.add(funcs, fn_name, indexed_fn);

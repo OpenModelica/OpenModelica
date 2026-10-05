@@ -1,6 +1,7 @@
 // name:     ConstrainingType3
 // keywords: replaceable
 // status:   incorrect
+// suite: disabled
 //
 // Modifiers are applied to the constraining type,
 // and thus it is illegal to set parameters

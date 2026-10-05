@@ -27,6 +27,11 @@ TESTFILES = \
 	FlowAlias8.mos \
 	FlowAlias9.mos \
 	FlowAlias10.mos \
+	FlowAlias11.mos \
+	FlowAlias12.mos \
+	FlowAlias13.mos \
+	FlowAliasFixedStart1.mos \
+	FlowAliasFixedStart2.mos \
 	Functional1.mo \
 	If1.mo \
 	If2.mo \
@@ -107,4 +112,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

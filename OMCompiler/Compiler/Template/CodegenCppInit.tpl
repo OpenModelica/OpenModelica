@@ -99,7 +99,7 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
       let author = ''
       let version= ''
       let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-      let generationDateAndTime = CodegenFMUCommon.xsdateTime(getCurrentDateTime())
+      let generationDateAndTime = CodegenFMUCommon.xsdateTime(Util.getCurrentDateTime())
       let variableNamingConvention = 'structured'
       let numberOfContinuousStates = vi.numStateVars
       let numberOfEventIndicators = CodegenFMUCommon.getNumberOfEventIndicators(simCode)
@@ -186,7 +186,7 @@ template scalarVariableAttributeXML(SimVar simVar, SimCode simCode, String index
 ::=
   match simVar
     case SIMVAR(source = SOURCE(info = info)) then
-      let valueReference = SimCodeUtil.getValueReference(simVar, simCode, true)
+      let valueReference = SimCodeCodegenUtil.getValueReference(simVar, simCode, true)
       let alias = getAliasAttribute(aliasvar)
       let causalityAtt = CodegenFMUCommon.getCausality(causality)
       let variability = getVariablity(varKind)
@@ -315,7 +315,7 @@ template algLoopXML(SimEqSystem eqs, SimCode simCode, HashTableCrIListArray.Hash
       <<
       <Linear eqIdx="<%ls.index%>" sparse="true" size="<%listLength(ls.vars)%>">
         <Vars>
-          <%ls.vars |> v as SIMVAR(__) => '<Var type="double" index="<%SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,v.name,true,indexForUndefinedReferences)%>" />' ;separator="\n"%>
+          <%ls.vars |> v as SIMVAR(__) => '<Var type="double" index="<%SimCodeCodegenUtil.getVarIndexListByMapping(varToArrayIndexMapping,v.name,true,indexForUndefinedReferences)%>" />' ;separator="\n"%>
         </Vars>
       </Linear>
       >>
@@ -323,7 +323,7 @@ template algLoopXML(SimEqSystem eqs, SimCode simCode, HashTableCrIListArray.Hash
       <<
       <NonLinear eqIdx="<%nls.index%>" size="<%listLength(nls.crefs)%>">
         <Vars>
-          <%nls.crefs |> name => '<Var type="double" index="<%SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)%>" />' ;separator="\n"%>
+          <%nls.crefs |> name => '<Var type="double" index="<%SimCodeCodegenUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)%>" />' ;separator="\n"%>
         </Vars>
         <NominalVars>
         <!-- Maybe Expressions here -->

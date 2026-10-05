@@ -6,6 +6,7 @@
 // 
 
 // cflags: -d=-newInst
+// suite: disabled
 // TODO: change this model to test the dump +d=interactivedump
 loadString("
 model testInteractivedump

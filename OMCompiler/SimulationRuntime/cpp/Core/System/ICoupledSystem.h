@@ -35,6 +35,7 @@
 class ICoupledSystem
 {
 public:
+  virtual ~ICoupledSystem() {}
   virtual void addAcross(IObject&) = 0;
   virtual void addThrough(IObject&) = 0;
 };

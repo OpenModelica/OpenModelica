@@ -5,7 +5,7 @@
 // Simulate models and read in data.
 
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
 loadFile("CombiTable1DBug.mo"); getErrorString();
 simulate(CombiTable1DBug); getErrorString();
 val(y, 0);
@@ -18,7 +18,7 @@ val(y, 0);
 // ""
 // record SimulationResult
 //     resultFile = "CombiTable1DBug_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CombiTable1DBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CombiTable1DBug', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

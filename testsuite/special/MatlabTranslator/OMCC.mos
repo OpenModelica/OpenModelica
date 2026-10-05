@@ -13,7 +13,6 @@ loadFile("../../../Compiler/Util/Debug.mo");
 loadFile("../../../Compiler/Util/ErrorExt.mo");
 loadFile("../../../Compiler/Util/Error.mo");
 loadFile("../../../Compiler/Util/Print.mo");
-loadFile("../../../Compiler/Util/Corba.mo");
 loadFile("../../../Compiler/Util/Settings.mo");
 loadFile("../../../Compiler/Util/Flags.mo");
 loadFile("../../../Compiler/Util/Util.mo");
@@ -39,7 +38,6 @@ files := {
   "../../../OMCompiler/Compiler/Util/ErrorExt.mo",
   "../../../OMCompiler/Compiler/Util/Error.mo",
   "../../../OMCompiler/Compiler/Util/Print.mo",
-  "../../../OMCompiler/Compiler/Util/Corba.mo",
   "../../../OMCompiler/Compiler/Util/Settings.mo",
   "../../../OMCompiler/Compiler/Util/StringUtil.mo",
   "../../../OMCompiler/Compiler/Util/Flags.mo",

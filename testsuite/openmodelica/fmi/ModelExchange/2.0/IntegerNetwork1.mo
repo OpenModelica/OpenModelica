@@ -3,7 +3,7 @@ connector IntegerStep = input Integer;
 model IntegerNetwork1 "Demonstrates the usage of blocks from Modelica.Blocks.MathInteger"
   extends Modelica.Icons.Example;
   Modelica.Blocks.MathInteger.Sum sum(nu = 3) annotation(Placement(transformation(extent = {{-14, 64}, {-2, 76}})));
-  Modelica.Blocks.Sources.Sine sine(amplitude = 3, freqHz = 0.1) annotation(Placement(transformation(extent = {{-100, 60}, {-80, 80}})));
+  Modelica.Blocks.Sources.Sine sine(amplitude = 3, f = 0.1) annotation(Placement(transformation(extent = {{-100, 60}, {-80, 80}})));
   Modelica.Blocks.Math.RealToInteger realToInteger annotation(Placement(transformation(extent = {{-60, 60}, {-40, 80}})));
   IntegerStep integerStep;
   Modelica.Blocks.Sources.IntegerConstant integerConstant(k = 1) annotation(Placement(transformation(extent = {{-60, -10}, {-40, 10}})));

@@ -1,0 +1,56 @@
+// name: nonlinearContinuousLoop
+// keywords: tearing, linearity, checkLinearity, LINEARSYSTEM
+// status: correct
+// teardown_command: rm -rf nonlinearContinuousLoopTest* output.log
+// cflags: --newBackend
+//
+// A purely continuous 2-variable algebraic loop with a genuinely nonlinear
+// (self-product) residual in both equations, re-solved at every time step against a
+// time-varying forcing so a wrong classification produces a visibly wrong trajectory
+// (not just a wrong-but-coincidentally-right single init-time solve).
+//
+// Regression test for a bug where NBTearing.mo's checkLinearity examined solvability
+// data that Adjacency.Matrix.refine never actually computed for a purely continuous
+// loop (refine was only called with the tearing method's discontinuity-filtered --
+// here empty -- variable/equation set), leaving every occurrence at its
+// collectDependenciesCref blanket-linear default and silently misclassifying this
+// loop as linear. Combined with PR #16463 (which wires comp.linear directly into
+// LINEARSYSTEM vs NONLINEARSYSTEM codegen selection), this used to route the loop
+// through a single direct A*x=b solve instead of Newton iteration: at t=1.0 this gave
+// y=0.801105 instead of the true nonlinear solution y=0.793670 (checked below;
+// verified against both an independent numeric solve and the old backend).
+// (Model name deliberately differs from the file name so teardown_command's wildcard
+// cleanup can't match and delete this .mos file itself.)
+
+loadString("
+  model nonlinearContinuousLoopTest
+    Real x(start=1.5);
+    Real y(start=1.5);
+    Real z(start=0);
+  equation
+    der(z) = 1;
+    x*x + y = 3 + 0.8*sin(z);
+    x + y*y = 3 - 0.8*sin(z);
+  end nonlinearContinuousLoopTest;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(nonlinearContinuousLoopTest, stopTime=1.0, numberOfIntervals=2, tolerance=1e-8); getErrorString();
+val(x, 1.0);
+val(y, 1.0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "nonlinearContinuousLoopTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'nonlinearContinuousLoopTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.6969109116003254
+// 0.79367014593807
+// endResult
