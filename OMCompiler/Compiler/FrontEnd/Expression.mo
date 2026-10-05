@@ -4951,9 +4951,13 @@ algorithm
     then (e, ext_arg);
 
     case DAE.CREF(cr, tp) algorithm
-      (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
-      e := if referenceEq(cr, cr_1) then inExp else DAE.CREF(cr_1, tp);
-      (e, ext_arg) := inFunc(e, ext_arg);
+      if crefHasNoSubscripts(cr) then
+        (e, ext_arg) := inFunc(inExp, inExtArg);
+      else
+        (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
+        e := if referenceEq(cr, cr_1) then inExp else DAE.CREF(cr_1, tp);
+        (e, ext_arg) := inFunc(e, ext_arg);
+      end if;
     then (e, ext_arg);
 
     // unary
@@ -5547,6 +5551,9 @@ algorithm
         e := if referenceEq(clk1,clk) then inExp else DAE.CLKCONST(clk1);
       then (e, ext_arg);
     case (_,DAE.ENUM_LITERAL(),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.CREF(componentRef = cr),ext_arg)
+      guard crefHasNoSubscripts(cr)
+      then (inExp,ext_arg);
     case (_,DAE.CREF(cr,tp),ext_arg)
       algorithm
         (cr_1,ext_arg_1) := traverseExpTopDownCrefHelper(cr,func,ext_arg);
@@ -7334,6 +7341,19 @@ algorithm
 
   end match;
 end traverseExpSubs;
+
+protected function crefHasNoSubscripts
+  "A cref of plain qualifiers and identifiers, which the traversals have
+   nothing to visit in."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_QUAL(subscriptLst = {}) then crefHasNoSubscripts(cr.componentRef);
+    case DAE.CREF_IDENT(subscriptLst = {}) then true;
+    else false;
+  end match;
+end crefHasNoSubscripts;
 
 public function traverseExpTopDownCrefHelper
   input DAE.ComponentRef inCref;
