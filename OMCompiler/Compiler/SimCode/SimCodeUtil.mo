@@ -14196,7 +14196,9 @@ protected
     output String ostring = "\"${DOCKER_VOL_DIR}"+istring+"\"";
   end addDockerVol;
 algorithm
-  (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
+  // HDF5 is there for ModelicaMatIO, which the FMU compiles from source without it.
+  (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(
+    List.removeOnTrue(Autoconf.hdf5Libs, stringEqual, libs));
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc"}, locations); // zlib
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
