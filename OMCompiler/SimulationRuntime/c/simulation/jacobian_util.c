@@ -1107,33 +1107,9 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABIL
   }
 
   /* Log Jacobian method */
-  switch (jacobianMethod)
-  {
-  case INTERNALNUMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Internal numerical Jacobian.");
-    break;
-  case NUMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Numerical Jacobian.");
-    break;
-  case COLOREDNUMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored numerical Jacobian.");
-    break;
-  case SYMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Symbolical Jacobian.");
-    break;
-  case COLOREDSYMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored symbolical Jacobian.");
-    break;
-  case COLOREDSYMJACADJ:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored symbolical adjoint Jacobian.");
-    break;
-  case BICOLOREDSYMJAC:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Bicolored symbolical bidirectional Jacobian.");
-    break;
-  default:
-    throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
-    break;
-  }
+  assertStreamPrint(threadData, jacobianMethod > JAC_UNKNOWN && jacobianMethod < JAC_MAX, "Unhandled case in setJacobianMethod");
+  infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: %s.", JACOBIAN_METHOD_NAME[jacobianMethod]);
+
   return jacobianMethod;
 }
 
