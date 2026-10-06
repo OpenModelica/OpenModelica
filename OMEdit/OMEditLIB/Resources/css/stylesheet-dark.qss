@@ -55,3 +55,48 @@ QLabel#LabelWithBorder {
   background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2b2d31, stop: 1 #202124);
   border: 1px solid #4b5563;
 }
+
+/*
+ * Fusion derives the outline of check and radio indicators from the Window
+ * color and fills them with Base, so on a dark palette an unchecked box is
+ * invisible before Qt 6.9.2 (newer Fusion brightens the outline in a dark
+ * scheme). Draw the indicators here; the images replace the check mark and
+ * dot that the style would otherwise paint. Menus are left to the style: a
+ * QMenu::indicator rule makes the stylesheet style draw every menu item
+ * through the Windows style.
+ */
+QCheckBox::indicator, QGroupBox::indicator, QAbstractItemView::indicator {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #6b7280;
+  border-radius: 2px;
+  background-color: #1f2937;
+}
+QCheckBox::indicator:checked, QGroupBox::indicator:checked, QAbstractItemView::indicator:checked {
+  image: url(:/Resources/icons/dark-check.svg);
+}
+QCheckBox::indicator:checked:disabled, QGroupBox::indicator:checked:disabled, QAbstractItemView::indicator:checked:disabled {
+  image: url(:/Resources/icons/dark-check-disabled.svg);
+}
+QCheckBox::indicator:indeterminate, QAbstractItemView::indicator:indeterminate {
+  image: url(:/Resources/icons/dark-check-partial.svg);
+}
+QCheckBox::indicator:disabled, QGroupBox::indicator:disabled, QAbstractItemView::indicator:disabled {
+  border-color: #4b5563;
+}
+QRadioButton::indicator {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #6b7280;
+  border-radius: 7px;
+  background-color: #1f2937;
+}
+QRadioButton::indicator:checked {
+  image: url(:/Resources/icons/dark-radio.svg);
+}
+QRadioButton::indicator:checked:disabled {
+  image: url(:/Resources/icons/dark-radio-disabled.svg);
+}
+QRadioButton::indicator:disabled {
+  border-color: #4b5563;
+}

@@ -757,7 +757,7 @@ bool PlainTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)
     QPainter painter (pCompleterToolTipWidget);
     if (qApp->property("omeditDarkMode").toBool()) {
       painter.setPen(QColor(107, 114, 128));
-      painter.setBrush(QColor(17, 24, 39));
+      painter.setBrush(QColor(31, 41, 55));
     } else {
       painter.setPen(Qt::black);
       painter.setBrush(Qt::white);

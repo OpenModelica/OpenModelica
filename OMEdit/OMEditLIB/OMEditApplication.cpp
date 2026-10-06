@@ -160,8 +160,11 @@ namespace {
   {
     QPalette palette;
     const QColor window(32, 33, 36);
-    const QColor base(17, 24, 39);
-    const QColor alternateBase(31, 41, 55);
+    /* Base sits visibly above Window: Fusion draws check box and radio
+     * indicators with the Base color, and before Qt 6.9.2 their outline is
+     * derived from Window, so the two must not share one brightness. */
+    const QColor base(31, 41, 55);
+    const QColor alternateBase(55, 65, 81);
     const QColor text(243, 244, 246);
     const QColor button(55, 65, 81);
     const QColor disabledText(156, 163, 175);

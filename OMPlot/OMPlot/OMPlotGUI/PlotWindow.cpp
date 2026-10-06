@@ -74,6 +74,7 @@
 #include <QStack>
 #include <QLineEdit>
 #include <QColorDialog>
+#include <QApplication>
 
 using namespace OMPlot;
 
@@ -151,11 +152,14 @@ static QList<double> readArrayAt(const omc::ResultFile &result, const QString &v
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, int toolbarIconSize)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
 {
-  /* set the widget background white. so that the plot is more useable in books and publications. */
-  QPalette p(palette());
-  p.setColor(QPalette::Window, Qt::white);
-  setAutoFillBackground(true);
-  setPalette(p);
+  /* set the widget background white. so that the plot is more useable in books and publications.
+   * In OMEdit's dark mode the application palette already carries the dark color. */
+  if (!OMPlot::isDarkMode()) {
+    QPalette p(palette());
+    p.setColor(QPalette::Window, Qt::white);
+    setAutoFillBackground(true);
+    setPalette(p);
+  }
   // setup the main window widget
   setUpWidget(toolbarIconSize);
   // Keep default legend font since greek-mu for micro is not displayed correctly with monospaced font.
@@ -2168,7 +2172,8 @@ void PlotWindow::exportDocument()
       QwtPlotRenderer plotRenderer;
       plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);  /* removes the gray widget background when OMPlot is used as library. */
       QPixmap pixmap(mpPlot->size());
-      pixmap.fill(Qt::white);
+      /* dark mode draws the axis and legend text in the palette text color, so the export keeps the screen background */
+      pixmap.fill(OMPlot::isDarkMode() ? mpPlot->canvasBackground().color() : QColor(Qt::white));
       QPainter painter(&pixmap);
       QRect rect = mpPlot->geometry();
       painter.setWindow(rect);
