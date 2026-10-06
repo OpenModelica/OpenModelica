@@ -10,6 +10,7 @@ def shouldWeRunTests
 pipeline {
   agent none
   options {
+    skipDefaultCheckout()
     newContainerPerStage()
     // Abort the sibling branches as soon as one of them fails: the build is
     // going to be red anyway and the stages that are still running would keep
@@ -53,6 +54,15 @@ pipeline {
             if (buildNumber > 1) milestone(buildNumber - 1)
             milestone(buildNumber)
           }
+          // common.checkoutSCM(), which is not loaded yet
+          echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+          int attempt = 0
+          retry(2) {
+            if (attempt++ > 0) {
+              sh script: 'git submodule absorbgitdirs && git submodule deinit --all -f', returnStatus: true
+            }
+            checkout scm
+          }
           common = load("${env.workspace}/.CI/common.groovy")
           def buildFlags = common.evaluateBuildFlags()
           isPR = buildFlags.isPR
@@ -85,6 +95,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildClangOMC() }
           }
         }
@@ -105,6 +116,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildGccOMC() }
           }
         }
@@ -129,6 +141,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
@@ -160,6 +173,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.withSccache {
                 common.buildOMC([
@@ -194,6 +208,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.withSccache {
                 common.buildOMC([
@@ -223,6 +238,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildOMC([
                 "-DCMAKE_BUILD_TYPE=Release",
@@ -253,6 +269,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildOMC([
                 '-DCMAKE_BUILD_TYPE=Release',
@@ -279,6 +296,7 @@ pipeline {
             }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildRustOMC()
             }
@@ -303,6 +321,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.checks() }
           }
         }
@@ -332,6 +351,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
@@ -360,6 +380,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
@@ -394,6 +415,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildRustWeb()
             }
@@ -422,6 +444,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildRustWebQt()
             }
@@ -447,6 +470,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.buildRustGUI()
             }
@@ -472,6 +496,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.ctestRust()
             }
@@ -498,6 +523,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.crossBuildFMU() }
           }
         }
@@ -532,6 +558,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.compliance() }
           }
         }
@@ -558,6 +585,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildUsersGuide() }
           }
         }
@@ -568,7 +596,8 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
             }
           }
@@ -583,6 +612,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildGUIAndRunOMEditTestsuite() }
           }
         }
@@ -614,6 +644,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                      common.testCacheMounts('runtest-clang-icon-generator')) {
@@ -652,6 +683,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-26.04-rust',
                                      common.testCacheMounts('runtest-rust-cache')) {
@@ -680,6 +712,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.testWindowsSmoke()
             }
@@ -706,6 +739,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.crossBuildOMCWindows()
             }
@@ -728,9 +762,6 @@ pipeline {
             beforeAgent true
             expression { shouldWeRunTests }
           }
-          options {
-            skipDefaultCheckout true
-          }
           steps {
             script { common.fmpyLinux() }
           }
@@ -750,6 +781,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               // Enters the build image itself: which mounts it needs depends
               // on where the instrumented build ran, which it only learns
@@ -764,6 +796,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
             }
           }
@@ -775,6 +808,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.uploadCompliance() }
           }
         }
@@ -784,6 +818,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
             }
           }
@@ -795,6 +830,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.uploadDoc() }
           }
         }
@@ -804,6 +840,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
               label 'linux'
               alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               customWorkspace 'ws/OpenModelica'
             }
           }
@@ -813,6 +850,7 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.uploadWeb() }
           }
         }
@@ -836,6 +874,7 @@ pipeline {
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.pushToMaster() }
           }
         }
@@ -852,7 +891,6 @@ pipeline {
             expression { return currentBuild.currentResult == 'SUCCESS' }
           }
           options {
-            skipDefaultCheckout true
             retry(count: 2, conditions: [nonresumable()])
           }
           steps {
