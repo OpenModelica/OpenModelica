@@ -47,7 +47,33 @@
 #include <QJsonDocument>
 #include <QUrl>
 #ifdef OMUQ_LIVE_VIEW_IN_OMEDIT
+#include <QWebEnginePage>
 #include <QWebEngineView>
+
+namespace {
+/*!
+ * \brief The live view's page.
+ * QWebEnginePage writes the page's console messages to standard error, which OMEdit shows as errors
+ * in the Messages Browser. Write the warnings and errors to the run's output instead, drop the rest.
+ */
+class OMUQLiveViewPage : public QWebEnginePage
+{
+public:
+  OMUQLiveViewPage(OMUQOutputWidget *pOutputWidget, QObject *pParent)
+    : QWebEnginePage(pParent), mpOutputWidget(pOutputWidget) {}
+protected:
+  void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level, const QString &message, int lineNumber, const QString &sourceID) override
+  {
+    Q_UNUSED(lineNumber);
+    Q_UNUSED(sourceID);
+    if (mpOutputWidget && level != QWebEnginePage::InfoMessageLevel) {
+      mpOutputWidget->writeLiveViewConsoleMessage(message, level == QWebEnginePage::ErrorMessageLevel);
+    }
+  }
+private:
+  QPointer<OMUQOutputWidget> mpOutputWidget;
+};
+}
 #endif
 
 /*!
@@ -156,6 +182,17 @@ void OMUQOutputWidget::writeOutput(const QString &output, const QColor &color)
 }
 
 /*!
+ * \brief OMUQOutputWidget::writeLiveViewConsoleMessage
+ * Writes a console message of the live view's page to the output.
+ * \param message
+ * \param error
+ */
+void OMUQOutputWidget::writeLiveViewConsoleMessage(const QString &message, bool error)
+{
+  writeOutput(tr("Live view: %1\n").arg(message), error ? QColor(Qt::red) : QColor(Qt::darkGray));
+}
+
+/*!
  * \brief OMUQOutputWidget::setProgressText
  * Sets the progress label and updates the corresponding message tab.
  * \param text
@@ -242,6 +279,7 @@ void OMUQOutputWidget::showLiveView(const QString &url)
     static int liveViewNumber = 0;
     MainWindow *pMainWindow = MainWindow::instance();
     QWebEngineView *pLiveWebView = new QWebEngineView;
+    pLiveWebView->setPage(new OMUQLiveViewPage(this, pLiveWebView));
     pLiveWebView->load(QUrl(url));
     mpLiveViewDockWidget = new QDockWidget(tr("%1 - %2 - Live View").arg(mOptions.mModelName, mOptions.mActivityLabel), pMainWindow);
     mpLiveViewDockWidget->setObjectName(QString("OMUQLiveView%1").arg(++liveViewNumber));
