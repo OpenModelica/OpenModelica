@@ -574,15 +574,11 @@ public
 
       // Without outMap two vertices can map onto each other.
       new_res := minMap(minMap(rmap1, rmap2), outMap);
+      outMap := mapInf(new_res);
 
       last_im := new_im;
-      new_im := SBPWLinearMap.image(new_res, vss);
+      new_im := SBPWLinearMap.image(outMap, vss);
       diff_im := SBSet.complement(last_im, new_im);
-
-      if not SBSet.isEmpty(diff_im) then
-        outMap := mapInf(new_res);
-        new_im := SBPWLinearMap.image(outMap, vss);
-      end if;
     end while;
   end connectedComponents;
 
