@@ -1,0 +1,80 @@
+// name: wrapFunctionCalls15
+// keywords: cse, wrapFunctionCalls, lateInlineFunction, #14185
+// status: correct
+//
+// A late-inlined tuple call (a, _, c) = (core(..)[1], core(..)[2], core(..)[3])
+// with a zero-sized array output must not get $cse variables for the wildcard.
+
+loadString("
+package CSE
+  model wrapFunctionCalls15
+    function core
+      input Real x;
+      input Real xi[:];
+      output Real a;
+      output Real b[size(xi, 1)];
+      output Real c;
+    algorithm
+      a := x;
+      b := xi;
+      c := 2*x;
+      annotation(Inline=false);
+    end core;
+
+    function wrapper
+      input Real x;
+      input Real xi[:];
+      output Real a;
+      output Real b[size(xi, 1)];
+      output Real c;
+    algorithm
+      (a, b, c) := core(x, xi);
+      annotation(Inline=false, LateInline=true);
+    end wrapper;
+
+    Real a, c;
+    Real b[0];
+  equation
+    (a, b, c) = wrapper(time, fill(0.5, 0));
+  end wrapFunctionCalls15;
+end CSE;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpCSE"); getErrorString();
+simulate(CSE.wrapFunctionCalls15); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (simulation) (2)
+// ========================================
+// 1: c:VARIABLE()  type: Real
+// 2: a:VARIABLE()  type: Real
+//
+//
+// ########### Updated Equation List (simulation) (1, 2)
+// ========================================
+// 1/1 (2): (a, _, c) = CSE.wrapFunctionCalls15.core(time, {})   [unknown |0|0|0|0|]
+//
+//
+// ########### CSE Replacements (1/44)
+// ========================================
+// 1: (a, _, c) - CSE.wrapFunctionCalls15.core(time, {}) - {}
+// record SimulationResult
+//     resultFile = "CSE.wrapFunctionCalls15_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls15', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
