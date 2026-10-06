@@ -1423,7 +1423,7 @@ void NotebookWindow::createViewMenu()
 }
 
 namespace {
-  const int zoomSteps[] = { 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400 };
+  const std::array zoomSteps = { 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400 };
 }
 
 void NotebookWindow::zoomTextIn()
@@ -1440,7 +1440,7 @@ void NotebookWindow::zoomTextIn()
 
 void NotebookWindow::zoomTextOut()
 {
-  for( int i = static_cast<int>( sizeof( zoomSteps ) / sizeof( zoomSteps[0] ) ) - 1; i >= 0; --i )
+  for( int i = zoomSteps.size() - 1; i >= 0; --i )
   {
     if( zoomSteps[i] < textZoom_ )
     {
