@@ -78,6 +78,8 @@ getDefUseChains2.mos \
 getDefUseChains3.mos \
 getDefUseChains4.mos \
 getDefUseChains5.mos \
+getDefUseChains6.mos \
+getDefUseChains7.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
 getElements1.mos \

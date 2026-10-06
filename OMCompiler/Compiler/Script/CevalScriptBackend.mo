@@ -8471,6 +8471,7 @@ protected function collectDefUse
 protected
   SCode.Program builtin_p, annotation_p;
   Boolean nf_inst;
+  list<String> lookup_differences = {};
 algorithm
   // Only the uses are wanted from the lookups, not their messages.
   ErrorExt.setCheckpoint(getInstanceName());
@@ -8481,13 +8482,18 @@ algorithm
     (_, builtin_p) := FBuiltin.getInitialFunctions();
     annotation_p := AbsynToSCode.translateAbsyn2SCode(
       InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion()));
-    (defs, uses, unresolved) := NFUsedElements.collectUses(listReverse(paths),
+    (defs, uses, unresolved, lookup_differences) := NFUsedElements.collectUses(listReverse(paths),
       listAppend(builtin_p, program), annotation_p);
   else
   end try;
 
   FlagsUtil.set(Flags.SCODE_INST, nf_inst);
   ErrorExt.rollBack(getInstanceName());
+
+  // -d=checkUsedElementsLookup, after the rollback so that they're kept.
+  for d in lookup_differences loop
+    Error.addCompilerWarning("checkUsedElementsLookup: " + d);
+  end for;
 end collectDefUse;
 
 protected function getNestedClassPaths
