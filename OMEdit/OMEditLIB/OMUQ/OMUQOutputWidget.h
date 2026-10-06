@@ -86,6 +86,7 @@ public:
   ~OMUQOutputWidget();
   void start();
   bool isProcessRunning() const {return mIsProcessRunning;}
+  void writeLiveViewConsoleMessage(const QString &message, bool error);
 private:
   OMUQRunOptions mOptions;
   Label *mpProgressLabel;
