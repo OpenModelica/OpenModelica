@@ -53,7 +53,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration(_1_x, _2_x, _3_0, _3_1, _3_2, _3_3, _3_4, _3_5, _3_6, latest, experimental)
+type LanguageStandard = enumeration(_1_x, _2_x, _3_0, _3_1, _3_2, _3_3, _3_4, _3_5, _3_6, _3_7, latest, experimental)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -477,7 +477,7 @@ protected function languageStandardInt
   input LanguageStandard inStandard;
   output Integer outValue;
 protected
-  constant array<Integer> lookup = MetaModelica.Dangerous.listArrayLiteral({10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999});
+  constant array<Integer> lookup = MetaModelica.Dangerous.listArrayLiteral({10, 20, 30, 31, 32, 33, 34, 35, 36, 37, 1000, 9999});
 algorithm
   outValue := arrayGet(lookup, Integer(inStandard));
 end languageStandardInt;
@@ -496,6 +496,7 @@ algorithm
     case 34 then LanguageStandard._3_4;
     case 35 then LanguageStandard._3_5;
     case 36 then LanguageStandard._3_6;
+    case 37 then LanguageStandard._3_7;
     case 1000 then LanguageStandard.latest;
     case 9999 then LanguageStandard.experimental;
   end match;
@@ -505,7 +506,7 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant array<String> lookup = MetaModelica.Dangerous.listArrayLiteral({"1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.6","experimental" /*Change this to latest version if you add more versions!*/});
+  constant array<String> lookup = MetaModelica.Dangerous.listArrayLiteral({"1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.7","3.7","experimental" /*Change this to latest version if you add more versions!*/});
 algorithm
   outString := arrayGet(lookup, Integer(inStandard));
 end languageStandardString;

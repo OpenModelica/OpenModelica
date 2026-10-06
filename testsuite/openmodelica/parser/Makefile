@@ -12,6 +12,7 @@ Assign1.mo \
 Assign2.mo \
 Assign3.mo \
 Assign4.mo \
+AssignModifier.mo \
 Class3.mo \
 Class4.mo \
 Code.mo \
@@ -30,6 +31,7 @@ MetaModelicaMatchElse.mo \
 MetaModelicaStringOpModelicaLexer.mo \
 MissingEquation.mo \
 MissingSemicolon.mo \
+Modelica37Grammar.mos \
 ModifyConstant3.mo \
 OptionalOutput.mos \
 ParseElementReplaceable.mo \
@@ -46,6 +48,8 @@ RealOpLexerModelica.mo \
 Redeclare.mos \
 ReloadClass.mos \
 SimpleIntegrator4.mo \
+TimeKeyword.mo \
+TimeKeyword2.mo \
 WildLexerModelica.mo \
 WildLexerMetaModelica.mo \
 ParseModel.mos \

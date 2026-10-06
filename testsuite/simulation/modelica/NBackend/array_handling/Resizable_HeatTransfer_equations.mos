@@ -9,8 +9,7 @@ simulate(HeatTransfer1D_TestCase.Test1_equations); getErrorString();
 
 // Result:
 // true
-// "[simulation/modelica/NBackend/array_handling/HeatTransfer1D_testCase.mo:94:7-94:49:writable] Warning: der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from HeatTransfer1D_TestCase.
+// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from HeatTransfer1D_TestCase.
 // Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
 // Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
 // "

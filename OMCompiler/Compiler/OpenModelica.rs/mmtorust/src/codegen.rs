@@ -7460,7 +7460,7 @@ fn subst_exp(e: &metamodelica::Ref<Absyn::Exp>, map: &HashMap<String, metamodeli
         }),
         // Leaves with no sub-expressions.
         E::INTEGER { .. } | E::REAL { .. } | E::STRING { .. } | E::BOOL { .. }
-        | E::END | E::CODE { .. } | E::BREAK => e.clone(),
+        | E::END | E::CODE { .. } | E::BREAK | E::UNITFUL_LITERAL { .. } => e.clone(),
     }
 }
 

@@ -1100,6 +1100,8 @@ public constant ErrorTypes.Message STACK_OVERFLOW_DETAILED = ErrorTypes.MESSAGE(
   "Stack overflow occurred while evaluating %s:\n%s");
 public constant ErrorTypes.Message OUT_OF_MEMORY_DETAILED = ErrorTypes.MESSAGE(628, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Out of memory while evaluating %s: %s.\n%s");
+public constant ErrorTypes.Message RECORD_ELEMENT_NOT_FOUND = ErrorTypes.MESSAGE(629, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Expression %s of type %s has no record element named %s.");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

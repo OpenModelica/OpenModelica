@@ -3058,6 +3058,7 @@ algorithm
       list<list<Expression>> expll;
       Absyn.Exp absynExp1;
       array<Expression> arr;
+      String name;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
     case Absyn.Exp.REAL() then Expression.REAL(stringReal(absynExp.value));
@@ -3165,6 +3166,11 @@ algorithm
         Type.UNKNOWN(),
         false
       );
+
+    case Absyn.Exp.DOT(index = Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {})))
+      then Expression.RECORD_ELEMENT(instExp(absynExp.exp, scope, context, info), 0, name, Type.UNKNOWN());
+
+    case Absyn.Exp.UNITFUL_LITERAL() then instExp(absynExp.value, scope, context, info);
 
     else
       algorithm
