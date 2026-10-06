@@ -1019,7 +1019,7 @@ algorithm
       outExp.expr := e;
     then (outExp, false, ((zeroCrossings, relations, samples, numMathFunctions), tp1, NONE()));
 
-    // delay() can trigger events which are are handled individually via the function delayZeroCrossing() > 0
+    // delay() can trigger events which are handled individually via the function delayZeroCrossing() > 0
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={index, e, delay, delayMax}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _), iters), true)
       algorithm
         // traverse relevant arguments
@@ -1028,7 +1028,7 @@ algorithm
 
         // create zero crossing function
         eres1 := DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {index, DAE.ICONST(ZeroCrossings.count(relations)), delay}, attr);
-        e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT) ,DAE.RCONST(0.0), ZeroCrossings.count(relations), NONE());
+        e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), ZeroCrossings.count(relations), NONE());
         zc := createZeroCrossing(eres1, {eq_count}, iters);
         (eres, relations, _) := zcIndex(e_1, relations, ZeroCrossings.count(relations), zc);
         zc := createZeroCrossing(eres, {eq_count}, iters);

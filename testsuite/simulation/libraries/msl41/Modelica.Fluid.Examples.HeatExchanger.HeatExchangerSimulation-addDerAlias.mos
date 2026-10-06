@@ -7,7 +7,7 @@
 //
 // This test tests and demontrates the preOptModules introduceDerAlias
 // which fail in some other cases. This test can removed as far as
-// Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation 
+// Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation
 // works out of the box.
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();

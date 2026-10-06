@@ -714,14 +714,14 @@ The script generates more than 1 page.</source>
         <location filename="../../notebook.cpp" line="2399"/>
         <source>In OpenFile(), Exception: 
 </source>
-        <translation>In OpenFile(), Ausnahme: 
+        <translation>In OpenFile(), Ausnahme:
 </translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2582"/>
         <source>In HelpText(), Exception: 
 </source>
-        <translation>In HelpText(), Ausnahme: 
+        <translation>In HelpText(), Ausnahme:
 </translation>
     </message>
     <message>

@@ -5,11 +5,11 @@
 
 loadModel(Modelica, {"4.1.0"});
 loadString("model TestFromNxz
-  import Modelica.Mechanics.MultiBody.Frames; 
-  
-  Frames.Orientation o; 
-algorithm 
-  o := Frames.from_nxz({1,0,0}, {0,0,1}); 
+  import Modelica.Mechanics.MultiBody.Frames;
+
+  Frames.Orientation o;
+algorithm
+  o := Frames.from_nxz({1,0,0}, {0,0,1});
 end TestFromNxz;",filename="TestFromNxz.mo");
 simulate(TestFromNxz);
 
