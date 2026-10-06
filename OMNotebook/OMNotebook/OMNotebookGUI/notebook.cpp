@@ -1397,19 +1397,17 @@ void NotebookWindow::createViewMenu()
 
   // Ctrl++ and Ctrl+- are already used by Format->Size (font size of the selection)
   zoomInAction = new QAction( tr("Zoom &In"), this );
-  zoomInAction->setShortcut( QKeySequence("Ctrl+Alt++") );
   zoomInAction->setStatusTip( tr("Enlarge the displayed text of the cells (the notebook is not changed)") );
   connect( zoomInAction, SIGNAL( triggered() ), this, SLOT( zoomTextIn() ));
   viewMenu->addAction( zoomInAction );
 
   zoomOutAction = new QAction( tr("Zoom &Out"), this );
-  zoomOutAction->setShortcut( QKeySequence("Ctrl+Alt+-") );
   zoomOutAction->setStatusTip( tr("Reduce the displayed text of the cells (the notebook is not changed)") );
   connect( zoomOutAction, SIGNAL( triggered() ), this, SLOT( zoomTextOut() ));
   viewMenu->addAction( zoomOutAction );
 
   zoomResetAction = new QAction( tr("&Reset Zoom"), this );
-  zoomResetAction->setShortcut( QKeySequence("Ctrl+Alt+0") );
+  zoomResetAction->setShortcut( QKeySequence("Ctrl+0") );
   zoomResetAction->setStatusTip( tr("Display the text of the cells in its original size") );
   connect( zoomResetAction, SIGNAL( triggered() ), this, SLOT( zoomTextReset() ));
   viewMenu->addAction( zoomResetAction );
