@@ -1732,8 +1732,9 @@ namespace {
     {
       if( Cell *cell = dynamic_cast<Cell*>( w ) )
       {
-        QMetaObject::invokeMethod( cell, "contentChanged",
+        bool success = QMetaObject::invokeMethod( cell, &Cell::contentChanged,
                                    immediate ? Qt::DirectConnection : Qt::QueuedConnection );
+        Q_ASSERT(success);
         return;
       }
     }

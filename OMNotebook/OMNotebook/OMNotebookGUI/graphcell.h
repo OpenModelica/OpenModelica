@@ -119,7 +119,7 @@ public slots:
     void             nextField();
     void             clickEvent();
     void             clickEventOutput();
-    void             contentChanged();
+    void             contentChanged() override;
     void             addToHighlighter();
     void             setState(int state);
 
