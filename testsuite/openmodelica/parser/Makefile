@@ -50,6 +50,7 @@ ReloadClass.mos \
 SimpleIntegrator4.mo \
 TimeKeyword.mo \
 TimeKeyword2.mo \
+UnitfulLiterals.mos \
 WildLexerModelica.mo \
 WildLexerMetaModelica.mo \
 ParseModel.mos \
