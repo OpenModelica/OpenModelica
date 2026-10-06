@@ -3378,7 +3378,7 @@ protected
                   Error.addSourceMessage(Error.GENERATED_FUNCTION_USE_BEFORE_ASSIGN,
                     {InstNode.name(node), fn_name}, info);
                 then
-                  ();
+                  fail();
 
               else
                 algorithm
@@ -3436,6 +3436,7 @@ protected
         else
           Error.addSourceMessage(Error.GENERATED_FUNCTION_UNASSIGNED_OUTPUT,
             {InstNode.name(var), fn_name}, InstNode.info(var));
+          fail();
         end if;
       end if;
     end for;

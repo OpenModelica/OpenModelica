@@ -27,6 +27,6 @@ end FunctionUnitialized4;
 //   Real x = FunctionUnitialized4.f(time);
 // end FunctionUnitialized4;
 // [flattening/modelica/scodeinst/FunctionUnitialized4.mo:13:3-15:8:writable] Notification: From here:
-// [flattening/modelica/scodeinst/FunctionUnitialized4.mo:10:5-10:18:writable] Warning: Output parameter y was not assigned a value
+// [flattening/modelica/scodeinst/FunctionUnitialized4.mo:10:5-10:18:writable] Warning: Output parameter y was not assigned a value. This is deprecated and will become an error in future releases.
 //
 // endResult
