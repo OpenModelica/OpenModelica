@@ -81,6 +81,10 @@ static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadDat
     {
       va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     }
+    else
+    {
+      omc_note_suppressed_error(threadData, msg, args);
+    }
     OMC_ERROR_RAISE();
     return;
   case ERROR_INTEGRATOR:

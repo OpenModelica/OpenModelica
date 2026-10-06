@@ -52,7 +52,11 @@ pub fn run(
 }
 
 /// No engine here, so nothing to precompile.
-pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+pub fn precompile_fixed_blobs(_dir: &std::path::Path, _prune: bool) -> std::result::Result<Vec<String>, String> {
+    Ok(Vec::new())
+}
+
+pub fn precompile_libraries(_dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
     Ok(Vec::new())
 }
 

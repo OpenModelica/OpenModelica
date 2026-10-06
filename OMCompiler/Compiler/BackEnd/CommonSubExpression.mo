@@ -2015,6 +2015,7 @@ protected
   list<BackendDAE.Var> varLst;
   list<CommonSubExp> cseLst2, cseLst3, shortenPathsCSE;
   AvlSetInt.Tree varIdcsSet;
+  array<Integer> eqMap, varMap;
 algorithm
   try
     range := List.intRange(arrayLength(mIn));
@@ -2040,9 +2041,11 @@ algorithm
     partitions := ResolveLoops.partitionBipartiteGraph(m, mT);
     partitions := List.filterOnFalse(partitions,listEmpty);
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
-    cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
+    eqMap := listArray(eqIdcs);
+    varMap := listArray(varIdcs);
+    cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqMap, varMap=varMap), {});
 
-    shortenPathsCSE := shortenPaths(partitions, m, mT, vars, eqs, listArray(eqIdcs), listArray(varIdcs), {}, isInitial);
+    shortenPathsCSE := shortenPaths(partitions, m, mT, vars, eqs, eqMap, varMap, {}, isInitial);
 
     // check for CSE of length 2
       //print("CHECK FOR CSE 3\n");
@@ -2066,7 +2069,7 @@ algorithm
         //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE3_"+intString(arrayLength(mIn)));
     partitions := ResolveLoops.partitionBipartiteGraph(m, mT);
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
-    cseLst3 := List.fold(partitions, function getCSE3(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
+    cseLst3 := List.fold(partitions, function getCSE3(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=listArray(eqIdcs), varMap=listArray(varIdcs)), {});
     cseOut := listAppend(cseLst2, listAppend(cseLst3,shortenPathsCSE));
         //print("the cses : \n"+stringDelimitList(List.map(cseOut, printCSE), "\n")+"\n");
   else
@@ -2089,14 +2092,11 @@ author:Waurich TUD 2016-05"
   input Boolean isInitial;
   output list<CommonSubExp> cseOut;
 protected
-  BackendDAE.AdjacencyMatrix m, mT;
-  BackendDAE.EqSystem eqSys;
+  BackendDAE.AdjacencyMatrix mT;
   BackendDAE.Variables pathVars;
-  list<BackendDAE.Equation> eqLst;
-  BackendDAE.EquationArray eqs;
-  Integer numVars, varIdx;
-  array<Integer> pathVarIdxMap;
-  list<Integer> partition, adjEqs, pathVarIdcs;
+  Integer numVars, varIdx, absV;
+  array<Integer> pathVarIdxMap, partArr;
+  list<Integer> adjEqs, pathVarIdcs, row, touched;
   list<CommonSubExp> cses;
 algorithm
   try
@@ -2107,37 +2107,35 @@ algorithm
     pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
     cses := cseIn;
     if BackendVariable.varsSize(pathVars) > 0 then
+      mT := arrayCreate(BackendVariable.varsSize(pathVars), {});
       for partition in allPartitions loop
-        //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
-        //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
+        // The transposed adjacency matrix of the partition's equations, filled
+        // like BackendDAEUtil.adjacencyMatrixDispatch but only for the
+        // variables they touch.
+        partArr := listArray(partition);
+        touched := {};
+        for eqIdx in 1:arrayLength(partArr) loop
+          (row, _) := BackendDAEUtil.adjacencyRow(BackendEquation.get(allEqs, partArr[eqIdx]), pathVars, BackendDAE.SOLVABLE(), NONE(), {}, isInitial);
+          for v in BackendDAEUtil.uniqueRow(row) loop
+            absV := intAbs(v);
+            adjEqs := arrayGet(mT, absV);
+            if listEmpty(adjEqs) then
+              touched := absV :: touched;
+            end if;
+            arrayUpdate(mT, absV, (if v < 0 then -eqIdx else eqIdx) :: adjEqs);
+          end for;
+        end for;
 
-        //get only the partition equations
-        eqLst := list(BackendEquation.get(allEqs, i) for i in partition);
-        eqs := BackendEquation.listEquation(eqLst);
-
-        eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
-        (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(eqSys, BackendDAE.SOLVABLE(), NONE(), isInitial);
-
-          //BackendDump.dumpAdjacencyMatrix(m);
-          //BackendDump.dumpAdjacencyMatrixT(mT);
-          //varAtts := List.threadMap(List.fill(false, arrayLength(mT)), List.fill("", arrayLength(mT)), Util.makeTuple);
-          //eqAtts := List.threadMap(List.fill(false, arrayLength(m)), List.fill("", arrayLength(m)), Util.makeTuple);
-          //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
-
-       for idx in 1:arrayLength(mT) loop
-         adjEqs := MetaModelica.Dangerous.arrayGetNoBoundsChecking(mT,idx);
-
-         if listLength(adjEqs)==2 then
-         //print("varIdx1 "+intString(varIdx)+"\n");
-         //print("adjEqs "+stringDelimitList(List.map(adjEqs,intString),",")+"\n");
-           adjEqs := list(arrayGet(eqMap,listGet(partition,eq)) for eq in adjEqs);
-           varIdx := arrayGet(pathVarIdxMap,idx);
-           cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
-         end if;
-       end for; //end the variables
-       GCExt.free(m);
-       GCExt.free(mT);
-     end for;  //end all partitions
+        for idx in List.sort(touched, intGt) loop
+          adjEqs := arrayGet(mT, idx);
+          if listLength(adjEqs) == 2 then
+            adjEqs := list(arrayGet(eqMap, partArr[eq]) for eq in adjEqs);
+            varIdx := arrayGet(pathVarIdxMap, idx);
+            cses := SHORTCUT_CSE(adjEqs, varIdx) :: cses;
+          end if;
+          arrayUpdate(mT, idx, {});
+        end for;
+      end for;
       //print("the SHORTPATH cses : \n"+stringDelimitList(List.map(cses, printCSE), "\n")+"\n");
     end if;
     cseOut := cses;
@@ -2153,8 +2151,8 @@ author:Waurich TUD 2014-11"
   input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.Variables vars;  // for partition
   input BackendDAE.EquationArray eqs;  // for partition
-  input list<Integer> eqMap;
-  input list<Integer> varMap;
+  input array<Integer> eqMap;
+  input array<Integer> varMap;
   input list<CommonSubExp> cseIn;
   output list<CommonSubExp> cseOut;
 algorithm
@@ -2193,10 +2191,10 @@ algorithm
          //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
          //print("is equal\n");
       // build CSE
-      sharedVarIdcs := List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
+      sharedVarIdcs := List.map1(sharedVarIdcs, Array.getIndexFirst, varMap);
       varIdcs2 := listAppend(varIdcs1, varIdcs2);
-      varIdcs2 := List.map1(varIdcs2, List.getIndexFirst, varMap);
-      eqIdcs := List.map1(partition, List.getIndexFirst, eqMap);
+      varIdcs2 := List.map1(varIdcs2, Array.getIndexFirst, varMap);
+      eqIdcs := List.map1(partition, Array.getIndexFirst, eqMap);
     then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseIn;
   else cseIn;
   end matchcontinue;
@@ -2209,8 +2207,8 @@ author:Waurich TUD 2014-11"
   input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.Variables vars;  // for partition
   input BackendDAE.EquationArray eqs;  // for partition
-  input list<Integer> eqMap;
-  input list<Integer> varMap;
+  input array<Integer> eqMap;
+  input array<Integer> varMap;
   input list<CommonSubExp> cseIn;
   output list<CommonSubExp> cseOut;
 algorithm
@@ -2223,7 +2221,6 @@ algorithm
     BackendDAE.Equation eq1, eq2;
     BackendDAE.Var var1, var2;
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
-    array<Integer> varMapArr, eqMapArr;
     list<CommonSubExp> cseLst;
   case _
     algorithm
@@ -2258,14 +2255,10 @@ algorithm
                //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
                //print("is equal\n");
             // build CSE
-            eqMapArr := listArray(eqMap);
-            varMapArr := listArray(varMap);
-            sharedVarIdcs := list(arrayGet(varMapArr, i) for i in sharedVarIdcs);
+            sharedVarIdcs := list(arrayGet(varMap, i) for i in sharedVarIdcs);
             varIdcs2 := listAppend(varIdcs1, varIdcs2);
-            varIdcs2 := list(arrayGet(varMapArr, i) for i in varIdcs2);
-            eqIdcs := list(arrayGet(eqMapArr,i) for i in loop1);
-            GCExt.free(eqMapArr);
-            GCExt.free(varMapArr);
+            varIdcs2 := list(arrayGet(varMap, i) for i in varIdcs2);
+            eqIdcs := list(arrayGet(eqMap,i) for i in loop1);
             cseLst := ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseLst;
           end if;
       end for;

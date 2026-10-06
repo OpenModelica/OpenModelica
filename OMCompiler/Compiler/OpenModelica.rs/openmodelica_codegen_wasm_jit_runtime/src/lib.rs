@@ -209,6 +209,15 @@ mod rust_heap {
     #[global_allocator]
     static RUST_HEAP: RustHeap = RustHeap(core::cell::UnsafeCell::new([core::ptr::null_mut(); CLASSES]));
 
+    /// Rust's own handler would print a bare "memory allocation failed".
+    #[inline]
+    fn checked(p: *mut u8, size: usize) -> *mut u8 {
+        if p.is_null() {
+            super::out_of_memory(size);
+        }
+        p
+    }
+
     #[inline]
     fn class(l: Layout) -> Option<usize> {
         (l.size() <= CACHE_MAX && l.align() <= ALIGN).then(|| (l.size().max(1) - 1) / ALIGN)
@@ -217,11 +226,12 @@ mod rust_heap {
     unsafe impl GlobalAlloc for RustHeap {
         #[inline]
         unsafe fn alloc(&self, l: Layout) -> *mut u8 {
-            let Some(c) = class(l) else { return unsafe { GLOBAL.alloc(l) } };
+            let Some(c) = class(l) else { return checked(unsafe { GLOBAL.alloc(l) }, l.size()) };
             let lists = unsafe { &mut *self.0.get() };
             let head = lists[c];
             if head.is_null() {
-                return unsafe { GLOBAL.alloc(Layout::from_size_align_unchecked((c + 1) * ALIGN, ALIGN)) };
+                let p = unsafe { GLOBAL.alloc(Layout::from_size_align_unchecked((c + 1) * ALIGN, ALIGN)) };
+                return checked(p, l.size());
             }
             lists[c] = unsafe { *(head as *mut *mut u8) };
             head
@@ -238,7 +248,7 @@ mod rust_heap {
         unsafe fn realloc(&self, p: *mut u8, l: Layout, new_size: usize) -> *mut u8 {
             let new = unsafe { Layout::from_size_align_unchecked(new_size, l.align()) };
             match (class(l), class(new)) {
-                (None, None) => unsafe { GLOBAL.realloc(p, l, new_size) },
+                (None, None) => checked(unsafe { GLOBAL.realloc(p, l, new_size) }, new_size),
                 (Some(a), Some(b)) if a == b => p,
                 _ => {
                     let q = unsafe { self.alloc(new) };
@@ -691,6 +701,17 @@ fn release_reserve() {
     }
 }
 
+/// `memory.grow` refused. Say so: the bare trap reads as a codegen fault.
+#[cold]
+#[inline(never)]
+fn out_of_memory(size: usize) -> ! {
+    release_reserve();
+    note_runtime_error(&alloc::format!(
+        "wasm-jit: out of memory. The simulation asked for {size} more bytes and its wasm linear memory cannot grow.",
+    ));
+    trap();
+}
+
 /// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
 /// one array/record per array/record-typed function local on every call (an IF97
 /// property evaluation does hundreds), so a same-size block is nearly always
@@ -746,12 +767,7 @@ fn alloc_fresh(total: usize, size: u32) -> u32 {
     arm_reserve();
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
-        // `memory.grow` refused. Say so: the bare trap reads as a codegen fault.
-        release_reserve();
-        note_runtime_error(&alloc::format!(
-            "wasm-jit: out of memory. The simulation asked for {size} more bytes and its wasm linear memory cannot grow.",
-        ));
-        trap();
+        out_of_memory(size as usize);
     }
     unsafe { store_u32(raw, total as u32) };
     #[cfg(feature = "heap_stats")]

@@ -68,6 +68,7 @@ Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature.mos \
 Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses.mos \
 Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase.mos \
 Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start.mos \
+Modelica.Electrical.Machines.Examples.InductionMachines.IMC_DCBraking.mos \
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_DOL.mos \
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize.mos \
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter.mos \
@@ -261,6 +262,7 @@ Modelica.Thermal.HeatTransfer.Examples.ControlledTemperature.mos \
 Modelica.Thermal.HeatTransfer.Examples.Motor.mos \
 Modelica.Thermal.HeatTransfer.Examples.TwoMasses.mos \
 Modelica.Utilities.Examples.readRealParameterModel.mos \
+ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState.mos \
 
 
 # Run make failingtest

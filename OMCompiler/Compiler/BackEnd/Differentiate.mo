@@ -367,6 +367,10 @@ algorithm
         (e2_1, funcs) := differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs, defaultMaxIter);
         (e2_1, _) := ExpressionSimplify.simplify(e2_1);
 
+        if valueEq(inDiffType, BackendDAE.DIFFERENTIATION_TIME()) then
+          (e1_1, e2_1) := keepDiscreteTupleElements(e1, e2, e1_1, e2_1);
+        end if;
+
         op1 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e1, e1_1);
         op2 := DAE.OP_DIFFERENTIATE(inDiffwrtCref, e2, e2_1);
         source := List.foldr({op1, op2}, ElementSource.addSymbolicTransformation, source);
@@ -429,6 +433,34 @@ algorithm
   end if;
 end differentiateEquationFragile;
 
+
+protected function keepDiscreteTupleElements
+  "Discrete elements of a tuple equation keep their undifferentiated equation,
+  so the derivative still solves for them and keeps the size of the original."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Exp dlhs;
+  input DAE.Exp drhs;
+  output DAE.Exp outLhs = dlhs;
+  output DAE.Exp outRhs = drhs;
+protected
+  list<DAE.Exp> lhsLst, dlhsLst, rhsLst, drhsLst;
+  list<Boolean> isDiscrete;
+algorithm
+  (lhsLst, dlhsLst) := match (lhs, dlhs)
+    case (DAE.TUPLE(PR = lhsLst), DAE.TUPLE(PR = dlhsLst)) then (lhsLst, dlhsLst);
+    else ({}, {});
+  end match;
+  isDiscrete := list(BackendEquation.isDiscreteTupleElement(e) for e in lhsLst);
+  if not listMember(true, isDiscrete) then
+    return;
+  end if;
+
+  rhsLst := BackendEquation.tupleElements(rhs, lhsLst);
+  drhsLst := BackendEquation.tupleElements(drhs, dlhsLst);
+  outLhs := DAE.TUPLE(list(if d then l else dl threaded for d in isDiscrete, l in lhsLst, dl in dlhsLst));
+  outRhs := DAE.TUPLE(list(if d then r else dr threaded for d in isDiscrete, r in rhsLst, dr in drhsLst));
+end keepDiscreteTupleElements;
 
 protected function differentiateEquations
   "Differentiates an equation with respect to a cref."
@@ -1462,6 +1494,13 @@ algorithm
       then
         (zero, inFunctionTree);
 
+    case (e as DAE.CALL(attr=DAE.CALL_ATTR(ty=tp,builtin=false)), _, _, BackendDAE.DIFF_FULL_JACOBIAN())
+      guard not (Expression.isRecordCall(e, inFunctionTree) or expHasRelatedCref(e, inDiffwrtCref))
+      algorithm
+        (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        (zero, inFunctionTree);
+
     // differentiate builtin calls with 1 argument
     case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={e}), _, _, _)
       algorithm
@@ -1505,6 +1544,34 @@ algorithm
   end match;
   if debug then print("Differentiate-ExpCall-result: " + ExpressionBasics.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateCalls;
+
+protected function expHasRelatedCref
+  "Returns true if the expression contains a cref that is cr, an array or
+   record containing cr, or a part of cr, ignoring subscripts."
+  input DAE.Exp exp;
+  input DAE.ComponentRef cr;
+  output Boolean hasCref;
+algorithm
+  (_, hasCref) := Expression.traverseExpTopDown(exp, function expHasRelatedCrefWork(cr = cr), false);
+end expHasRelatedCref;
+
+protected function expHasRelatedCrefWork
+  input output DAE.Exp exp;
+  output Boolean cont;
+  input output Boolean hasCref;
+  input DAE.ComponentRef cr;
+algorithm
+  if not hasCref then
+    hasCref := match exp
+      case DAE.CREF() then ComponentReferenceBasics.crefEqualWithoutSubs(exp.componentRef, cr) or
+                           ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(cr, exp.componentRef) or
+                           (Types.isArray(exp.ty) or Types.isComplexType(exp.ty)) and
+                           ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(exp.componentRef, cr);
+      else false;
+    end match;
+  end if;
+  cont := not hasCref;
+end expHasRelatedCrefWork;
 
 protected function differentiateCallExp1Arg
   "This function differentiates built-in call expressions with 1 argument

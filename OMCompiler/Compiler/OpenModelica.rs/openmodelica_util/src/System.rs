@@ -1630,8 +1630,10 @@ pub fn escapedString(unescapedString: ArcStr, unescapeNewline: bool) -> ArcStr {
 }
 
 pub fn unescapedString(escapedString: ArcStr) -> ArcStr {
+    let Some(first) = escapedString.find('\\') else { return escapedString };
     let mut out = String::with_capacity(escapedString.len());
-    let mut chars = escapedString.chars();
+    out.push_str(&escapedString[..first]);
+    let mut chars = escapedString[first..].chars();
     while let Some(c) = chars.next() {
         if c != '\\' { out.push(c); continue; }
         match chars.next() {
@@ -2229,10 +2231,53 @@ pub fn realpath(path: ArcStr) -> Result<ArcStr> {
     return Ok(ArcStr::from(lexical_normalize(path.as_str())));
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let canon = fs::canonicalize(path.as_str())
-            .map_err(|_| "System.realpath: cannot resolve {path}")?;
+        #[cfg(unix)]
+        let canon = canonicalize_in_known_dir(Path::new(path.as_str()));
+        #[cfg(not(unix))]
+        let canon = fs::canonicalize(path.as_str());
+        let canon = canon.map_err(|_| "System.realpath: cannot resolve {path}")?;
         Ok(ArcStr::from(canon.to_string_lossy().as_ref()))
     }
+}
+
+/// `fs::canonicalize` with the parent directory's result reused while the
+/// directory is the same (device, inode): loading a library resolves every
+/// file of it, and resolving each path component costs a syscall.
+#[cfg(all(unix, not(target_arch = "wasm32")))]
+fn canonicalize_in_known_dir(path: &Path) -> std::io::Result<std::path::PathBuf> {
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::MetadataExt;
+    use std::path::Component;
+    use std::sync::Mutex;
+    static DIRS: Mutex<Option<HashMap<std::path::PathBuf, (u64, u64, std::path::PathBuf)>>> = Mutex::new(None);
+
+    // `lstat` on `dir/` or `dir/.` follows a symlinked `dir`.
+    let raw = path.as_os_str().as_bytes();
+    let (Some(Component::Normal(name)), Some(parent)) = (path.components().next_back(), path.parent()) else {
+        return fs::canonicalize(path);
+    };
+    if raw.ends_with(b"/") || raw.ends_with(b"/.") {
+        return fs::canonicalize(path);
+    }
+    let parent = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
+    let dir_meta = fs::metadata(parent)?;
+    let key = (dir_meta.dev(), dir_meta.ino());
+    let cached = DIRS.lock().unwrap().as_ref().and_then(|m| m.get(parent))
+        .filter(|(dev, ino, _)| (*dev, *ino) == key)
+        .map(|(_, _, canon)| canon.clone());
+    let canon_dir = match cached {
+        Some(c) => c,
+        None => {
+            let c = fs::canonicalize(parent)?;
+            DIRS.lock().unwrap().get_or_insert_with(HashMap::new)
+                .insert(parent.to_path_buf(), (key.0, key.1, c.clone()));
+            c
+        }
+    };
+    if fs::symlink_metadata(path)?.file_type().is_symlink() {
+        return fs::canonicalize(path);
+    }
+    Ok(canon_dir.join(name))
 }
 
 /// Collapse `.` and `..` components in a forward-slash path without touching a
@@ -2331,8 +2376,15 @@ pub fn launchParallelTasks<AnyInput: Clone + 'static, AnyOutput: Clone + 'static
 fn parallel_pool(n: usize) -> Option<&'static rayon::ThreadPool> {
     use std::sync::OnceLock;
     static POOL: OnceLock<Option<rayon::ThreadPool>> = OnceLock::new();
-    POOL.get_or_init(|| rayon::ThreadPoolBuilder::new().num_threads(n).build().ok())
-        .as_ref()
+    POOL.get_or_init(|| {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .stack_size(metamodelica::thread_stack_size())
+            .thread_name(|i| format!("omc-parallel-{i}"))
+            .build()
+            .ok()
+    })
+    .as_ref()
 }
 
 // Real-threaded map, opted into per call site. The `Send` bounds reject the
@@ -2396,7 +2448,17 @@ pub fn launchParallelTasksThreaded<AnyInput: Clone + Send + 'static, AnyOutput: 
     Ok(results?.into_iter().collect::<List<AnyOutput>>())
 }
 
+static EXIT_HOOK: std::sync::OnceLock<fn()> = std::sync::OnceLock::new();
+
+/// Runs `hook` before the scripting `exit(n)` ends the process.
+pub fn set_exit_hook(hook: fn()) {
+    let _ = EXIT_HOOK.set(hook);
+}
+
 pub fn exit(status: i32) -> Result<()> {
+    if let Some(hook) = EXIT_HOOK.get() {
+        hook();
+    }
     std::process::exit(status);
 }
 
@@ -2827,6 +2889,14 @@ pub fn waitForInput() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unescaped_string() {
+        let u = |s: &str| unescapedString(ArcStr::from(s)).to_string();
+        assert_eq!(u("plain"), "plain");
+        assert_eq!(u("a\\nb\\\"c\\"), "a\nb\"c\\");
+        assert_eq!(u("x\\qy"), "x\\qy");
+    }
 
     #[test]
     fn sprintff_g_uses_significant_digits() {

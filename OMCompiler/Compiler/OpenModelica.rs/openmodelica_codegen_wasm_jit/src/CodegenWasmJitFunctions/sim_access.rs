@@ -261,7 +261,10 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
     if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
         match ident.as_str() {
             "$START" => {
-                let key = sim_cref_key_fatal(componentRef)?;
+                let key = match sim_var_key(ctx.sim()?, componentRef) {
+                    Ok(key) => key,
+                    Err(_) => sim_cref_key_fatal(componentRef)?,
+                };
                 if let Some(wty) = emit_sim_start_scalar(ctx, &key)? {
                     return Ok(Some(wty));
                 }
@@ -332,7 +335,7 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
 
 /// The rest of [`compile_sim_cref_read`] once no array element or slice form applies.
 fn compile_sim_scalar_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<Option<WTy>> {
-    let key = match sim_cref_key(cref) {
+    let key = match sim_var_key(ctx.sim()?, cref) {
         Ok(key) => key,
         Err(_) => {
             if let Some(wty) = try_emit_sim_array_box(ctx, cref)? {
@@ -342,7 +345,7 @@ fn compile_sim_scalar_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -> Result<
         }
     };
     let slot = match ctx.sim()?.vars.get(&key) {
-        Some(s) => *s,
+        Some(s) => s,
         None => {
             // Not a scalar slot: it may be a whole array-valued model variable,
             // whose scalarized elements occupy a contiguous slot range. Gather the
@@ -434,9 +437,9 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
     // solver reads for its initial guess and what `LOG_SOTI` prints.
     if let DAE::ComponentRef::CREF_QUAL { ident, componentRef, .. } = cref {
         if ident.as_str() == "$START" {
-            let start_off = sim_cref_key(componentRef)
+            let start_off = sim_var_key(ctx.sim()?, componentRef)
                 .ok()
-                .and_then(|k| ctx.sim().ok()?.start_slots.get(&k).copied());
+                .and_then(|k| ctx.sim().ok()?.start_slots.get(&k));
             let Some(off) = start_off else {
                 return compile_sim_cref_assign(ctx, componentRef, rhs);
             };
@@ -452,7 +455,7 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
         }
         // `$PRE.x := e` targets x's pre-slot when one is registered; otherwise
         // (no pre-slot, e.g. a parameter) fall back to the live slot.
-        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
             return compile_sim_cref_assign(ctx, componentRef, rhs);
         }
     }
@@ -512,15 +515,28 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
             }
         }
     }
-    let key = sim_cref_key_fatal(cref)?;
+    let key = match sim_var_key(ctx.sim()?, cref) {
+        Ok(key) => key,
+        Err(_) => sim_cref_key_fatal(cref)?,
+    };
     let slot = match ctx.sim()?.vars.get(&key) {
-        Some(s) => *s,
+        Some(s) => s,
         None => {
             // A whole array-valued model variable: evaluate the rhs to a runtime
             // array and scatter its elements into the contiguous slot range.
             if let Some(group) = ctx.sim()?.array_groups.get(&key).cloned() {
                 emit_sim_array_scatter(ctx, &group, rhs)?;
                 return Ok(true);
+            }
+            // A zero-sized array has no variables (e.g. a `$cse` for an empty output).
+            if let DAE::ComponentRef::CREF_IDENT { identType, subscriptLst, .. } = cref {
+                if subscriptLst.is_empty() && static_dims(identType).is_some_and(|d| d.contains(&0)) {
+                    if rhs.push(ctx)? != WTy::I32 {
+                        return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
+                    }
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+                    return Ok(true);
+                }
             }
             // A whole record model variable: evaluate the rhs to a runtime record
             // and store each field into its own scalar slot.
@@ -665,7 +681,7 @@ pub(crate) fn sim_const_store(
         if ident.as_str() == "$START" {
             return sim_const_store(ctx, componentRef, exp);
         }
-        if ident.as_str() == "$PRE" && !sim_pre_is_stored_lhs(ctx, cref)? {
+        if ident.as_str() == "$PRE" && !sim_pre_is_stored(ctx, cref)? {
             return sim_const_store(ctx, componentRef, exp);
         }
     }
@@ -689,7 +705,7 @@ pub(crate) fn sim_const_store(
             }
         }
     }
-    let Some(slot) = sim.vars.get(&sim_cref_key(cref)?) else { return Ok(None) };
+    let Some(slot) = sim.vars.get(&sim_var_key(sim, cref)?) else { return Ok(None) };
     if slot.negate != Neg::None || slot.heap {
         return Ok(None);
     }
@@ -703,56 +719,152 @@ pub(crate) fn sim_const_store(
 }
 
 /// Store the constant values collected by [`sim_const_store`] into their
-/// `SimData` slots. Adjacent slots — an evaluated parameter array is one
-/// contiguous block — are copied from a passive data segment with `memory.init`;
-/// short groups stay individual stores. All groups of one call share a single
-/// segment (each `memory.init` reads it at its own source offset).
+/// `SimData` slots ([`emit_const_slots`]).
 pub(crate) fn emit_sim_const_stores(
     ctx: &mut FnCtx,
     stores: &std::collections::BTreeMap<u32, Vec<u8>>,
 ) -> Result<()> {
-    use we::Instruction as I;
-    if stores.is_empty() {
-        return Ok(());
+    let sorted: Vec<(u32, ConstSlot)> = stores
+        .iter()
+        .map(|(&off, bytes)| Ok((off, ConstSlot::from_le_bytes(bytes)?)))
+        .collect::<Result<_>>()?;
+    emit_const_slots(ctx, &sorted)
+}
+
+/// A constant stored into one `SimData` slot.
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) enum ConstSlot {
+    F64(u64),
+    I32(i32),
+}
+
+impl ConstSlot {
+    pub(crate) fn f64(v: f64) -> Self {
+        ConstSlot::F64(v.to_bits())
     }
-    // Split into maximal adjacent groups.
-    let mut groups: Vec<Vec<(u32, &Vec<u8>)>> = Vec::new();
-    for (&off, bytes) in stores {
-        match groups.last_mut() {
-            Some(g) if g.last().is_some_and(|(o, b)| o + b.len() as u32 == off) => g.push((off, bytes)),
-            _ => groups.push(vec![(off, bytes)]),
+
+    fn from_le_bytes(bytes: &[u8]) -> Result<Self> {
+        match bytes.len() {
+            8 => Ok(ConstSlot::F64(u64::from_le_bytes(bytes.try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?))),
+            4 => Ok(ConstSlot::I32(i32::from_le_bytes(bytes.try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?))),
+            _ => Err("CodegenWasmJit: constant slot value of unexpected width"),
         }
     }
-    // A group of fewer than four values costs less as stores than as a segment
-    // copy; the rest go into the shared blob as (dest, src, len).
+
+    fn width(self) -> u32 {
+        match self {
+            ConstSlot::F64(_) => 8,
+            ConstSlot::I32(_) => 4,
+        }
+    }
+
+    fn emit_store(self, ctx: &mut FnCtx, off: u32) {
+        use we::Instruction as I;
+        match self {
+            ConstSlot::F64(bits) => {
+                ctx.emit(I::F64Const(f64::from_bits(bits).into()));
+                ctx.emit(I::F64Store(mem_arg(off, 3)));
+            }
+            ConstSlot::I32(v) => {
+                ctx.emit(I::I32Const(v));
+                ctx.emit(I::I32Store(mem_arg(off, 2)));
+            }
+        }
+    }
+}
+
+/// Store `stores` (ascending by offset; a repeated offset keeps its last value).
+/// Adjacent slots — an evaluated parameter array is one contiguous block — are
+/// copied from a passive data segment with `memory.init`, a run of one repeated
+/// value is filled by a loop, and short groups stay individual stores. All copies
+/// of one call share a single segment.
+pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> Result<()> {
+    use we::Instruction as I;
+    const FILL_MIN: usize = 16;
+    let mut deduped: Vec<(u32, ConstSlot)> = Vec::new();
+    let slots = if stores.windows(2).all(|w| w[0].0 < w[1].0) {
+        stores
+    } else {
+        for &(off, v) in stores {
+            match deduped.last_mut() {
+                Some(last) if last.0 == off => last.1 = v,
+                _ => deduped.push((off, v)),
+            }
+        }
+        &deduped[..]
+    };
+    let data = ctx.sim()?.data_local;
     let mut blob: Vec<u8> = Vec::new();
     let mut copies: Vec<(u32, u32, u32)> = Vec::new();
-    let data = ctx.sim()?.data_local;
-    for g in &groups {
-        if g.len() < 4 {
-            for (off, bytes) in g {
+    let mut counter = None;
+    let mut i = 0;
+    while i < slots.len() {
+        // Maximal adjacent group from `i`.
+        let mut end = i + 1;
+        while end < slots.len() && slots[end - 1].0 + slots[end - 1].1.width() == slots[end].0 {
+            end += 1;
+        }
+        // Fewer than four values cost less as stores than as a segment copy.
+        if end - i < 4 {
+            for &(off, v) in &slots[i..end] {
                 ctx.emit(I::LocalGet(data));
-                match bytes.len() {
-                    8 => {
-                        let v = f64::from_le_bytes((&bytes[..]).try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?);
-                        ctx.emit(I::F64Const(v.into()));
-                        ctx.emit(I::F64Store(mem_arg(*off, 3)));
-                    }
-                    4 => {
-                        let v = i32::from_le_bytes((&bytes[..]).try_into().map_err(|_| "CodegenWasmJit: bad constant slot value")?);
-                        ctx.emit(I::I32Const(v));
-                        ctx.emit(I::I32Store(mem_arg(*off, 2)));
-                    }
-                    _ => return Err("CodegenWasmJit: constant slot value of unexpected width"),
-                }
+                v.emit_store(ctx, off);
             }
+            i = end;
             continue;
         }
-        let src = blob.len() as u32;
-        for (_, bytes) in g {
-            blob.extend_from_slice(bytes);
+        let mut j = i;
+        while j < end {
+            let mut run = j + 1;
+            while run < end && slots[run].1 == slots[j].1 {
+                run += 1;
+            }
+            if run - j >= FILL_MIN {
+                let (first, v) = slots[j];
+                let width = v.width();
+                let k = *counter.get_or_insert_with(|| ctx.alloc_temp(WTy::I32));
+                // k = first; do { data[k] = v; k += width } while k < end
+                ctx.emit(I::I32Const(first as i32));
+                ctx.emit(I::LocalSet(k));
+                ctx.emit(I::Loop(we::BlockType::Empty));
+                ctx.emit(I::LocalGet(data));
+                ctx.emit(I::LocalGet(k));
+                ctx.emit(I::I32Add);
+                v.emit_store(ctx, 0);
+                ctx.emit(I::LocalGet(k));
+                ctx.emit(I::I32Const(width as i32));
+                ctx.emit(I::I32Add);
+                ctx.emit(I::LocalTee(k));
+                ctx.emit(I::I32Const((first + (run - j) as u32 * width) as i32));
+                ctx.emit(I::I32LtU);
+                ctx.emit(I::BrIf(0));
+                ctx.emit(I::End);
+                j = run;
+                continue;
+            }
+            // Up to the next fill run.
+            let mut stop = run;
+            while stop < end {
+                let mut r = stop + 1;
+                while r < end && slots[r].1 == slots[stop].1 {
+                    r += 1;
+                }
+                if r - stop >= FILL_MIN {
+                    break;
+                }
+                stop = r;
+            }
+            let src = blob.len() as u32;
+            for &(_, v) in &slots[j..stop] {
+                match v {
+                    ConstSlot::F64(bits) => blob.extend_from_slice(&bits.to_le_bytes()),
+                    ConstSlot::I32(x) => blob.extend_from_slice(&x.to_le_bytes()),
+                }
+            }
+            copies.push((slots[j].0, src, blob.len() as u32 - src));
+            j = stop;
         }
-        copies.push((g[0].0, src, blob.len() as u32 - src));
+        i = end;
     }
     if copies.is_empty() {
         return Ok(());
@@ -1219,13 +1331,13 @@ fn emit_slot_range_refcount(ctx: &mut FnCtx, group: &ArrayGroup, f: &str) -> Res
 /// Push a scalar variable's `$START` value: its overridable start slot, else its
 /// start expression, else `0.0`. `None` (nothing emitted) if `key` has no start.
 fn emit_sim_start_scalar(ctx: &mut FnCtx, key: &str) -> Result<Option<WTy>> {
-    if let Some(&off) = ctx.sim()?.start_slots.get(key) {
+    if let Some(off) = ctx.sim()?.start_slots.get(key) {
         let data = ctx.sim()?.data_local;
         ctx.emit(we::Instruction::LocalGet(data));
         ctx.emit(we::Instruction::F64Load(mem_arg(off, 3)));
         return Ok(Some(WTy::F64));
     }
-    match ctx.sim()?.starts.get(key).cloned() {
+    match ctx.sim()?.starts.get(key) {
         Some(Some(exp)) => Ok(Some(compile_exp(ctx, &exp)?)),
         Some(None) => {
             ctx.emit(we::Instruction::F64Const(0.0.into()));
@@ -1233,7 +1345,7 @@ fn emit_sim_start_scalar(ctx: &mut FnCtx, key: &str) -> Result<Option<WTy>> {
         }
         None => {
             // `$START` of an alias reads the start of its target, as C does.
-            let Some((target, neg)) = ctx.sim()?.start_aliases.get(key).cloned() else {
+            let Some((target, neg)) = ctx.sim()?.start_aliases.get(key) else {
                 return Ok(None);
             };
             let wty = emit_sim_start_scalar(ctx, &target)?;

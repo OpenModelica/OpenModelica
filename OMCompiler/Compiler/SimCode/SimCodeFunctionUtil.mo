@@ -43,7 +43,6 @@ import Types;
 import Util;
 import Global;
 import ProgramUtil;
-import HashTableExpToIndex;
 import HashTableStringToPath;
 import SimCodeFunction;
 import SimCodeVar;
@@ -1313,17 +1312,21 @@ public function findLiterals
 algorithm
   (ofns, (_, _, literals)) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper,
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
+    (0, newExpIndexMap(), {}));
   literals := listReverse(literals);
 end findLiterals;
 
 public
 
+function newExpIndexMap
+  output UnorderedMap<DAE.Exp, Integer> map = UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual, BaseHashTable.bigBucketSize);
+end newExpIndexMap;
+
 function findLiteralsHelper
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp exp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> tpl;
 algorithm
   exp := inExp;
   tpl := inTpl;
@@ -1337,10 +1340,10 @@ function findLiteralsHelperKeepSingle
   "findLiteralsHelper, except that a string used once (per uses) that is not
    a literal yet stays in place."
   input DAE.Exp inExp;
-  input HashTableExpToIndex.HashTable uses;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input UnorderedMap<DAE.Exp, Integer> uses;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp exp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> tpl;
 algorithm
   (exp, tpl) := Expression.traverseExpBottomUp(inExp,
     function Patternm.traverseConstantPatternsHelper(func=function replaceLiteralExpKeepSingle(uses=uses)),
@@ -1350,9 +1353,9 @@ end findLiteralsHelperKeepSingle;
 
 function countStringUses
   input DAE.Exp inExp;
-  input HashTableExpToIndex.HashTable inUses;
+  input UnorderedMap<DAE.Exp, Integer> inUses;
   output DAE.Exp exp = inExp;
-  output HashTableExpToIndex.HashTable uses;
+  output UnorderedMap<DAE.Exp, Integer> uses;
 algorithm
   (_, uses) := Expression.traverseExpBottomUp(inExp, countStringUse, inUses);
 end countStringUses;
@@ -1368,9 +1371,9 @@ end isSconst;
 
 function countStringUse
   input DAE.Exp inExp;
-  input HashTableExpToIndex.HashTable inUses;
+  input UnorderedMap<DAE.Exp, Integer> inUses;
   output DAE.Exp exp = inExp;
-  output HashTableExpToIndex.HashTable uses = inUses;
+  output UnorderedMap<DAE.Exp, Integer> uses = inUses;
 algorithm
   if isSconst(inExp) then
     uses := addStringUse(inExp, uses);
@@ -1386,9 +1389,9 @@ end countStringUse;
 
 function addStringUse
   input DAE.Exp e;
-  input output HashTableExpToIndex.HashTable uses;
+  input output UnorderedMap<DAE.Exp, Integer> uses;
 algorithm
-  uses := BaseHashTable.add((e, if BaseHashTable.hasKey(e, uses) then BaseHashTable.get(e, uses) + 1 else 1), uses);
+  UnorderedMap.add(e, UnorderedMap.getOrDefault(e, uses, 0) + 1, uses);
 end addStringUse;
 
 function literalElements
@@ -1413,15 +1416,15 @@ end literalElements;
 
 function replaceLiteralExpKeepSingle
   input DAE.Exp inExp;
-  input HashTableExpToIndex.HashTable uses;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input UnorderedMap<DAE.Exp, Integer> uses;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 protected
-  HashTableExpToIndex.HashTable ht;
+  UnorderedMap<DAE.Exp, Integer> ht;
 algorithm
   (_, ht, _) := inTpl;
-  if isSconst(inExp) and BaseHashTable.hasKey(inExp, uses) and BaseHashTable.get(inExp, uses) == 1 and not BaseHashTable.hasKey(inExp, ht) then
+  if isSconst(inExp) and UnorderedMap.getOrDefault(inExp, uses, 0) == 1 and not UnorderedMap.contains(inExp, ht) then
     outExp := inExp;
     outTpl := inTpl;
   else
@@ -1440,15 +1443,15 @@ function replaceLiteralArrayExp
   Handles only array expressions (needs to be performed in a top-down fashion)
   "
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont=true;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 algorithm
   (outExp,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp2;
-      tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> tpl;
+      tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> tpl;
     case (DAE.ARRAY(), tpl)
       algorithm
         try
@@ -1481,15 +1484,15 @@ function replaceLiteralExp
   * The list of literals
   "
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp;
       String msg;
-      tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> t;
+      tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> t;
       list<DAE.Exp> es;
     case (exp, t)
       algorithm
@@ -1530,24 +1533,24 @@ function replaceLiteralExp2
   * The list of literals
   "
   input DAE.Exp inExp;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> inTpl;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> inTpl;
   output DAE.Exp outExp;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outTpl;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outTpl;
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp, nexp;
       Integer i, ix;
       list<DAE.Exp> l;
-      HashTableExpToIndex.HashTable ht;
+      UnorderedMap<DAE.Exp, Integer> ht;
     case (exp, (_, ht, _))
       algorithm
-        ix := BaseHashTable.get(exp, ht);
+        ix := UnorderedMap.getOrFail(exp, ht);
         nexp := DAE.SHARED_LITERAL(ix, exp);
       then (nexp, inTpl);
     case (exp, (i, ht, l))
       algorithm
-        ht := BaseHashTable.add((exp, i), ht);
+        UnorderedMap.add(exp, i, ht);
         nexp := DAE.SHARED_LITERAL(i, exp);
       then (nexp, (i+1, ht, exp::l));
   end matchcontinue;
@@ -2116,17 +2119,22 @@ algorithm
         if isWasm then
           dirs := List.union(dirs, paths);
         end if;
-        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) then libNames else {} loop
-          if getGerneralTarget(target)=="msvc" or Autoconf.os=="Windows_NT" then
-            fullLibNames := {name + Autoconf.dllExt, "lib" + name + ".a", "lib" + name + ".lib"};
-          else
-            fullLibNames := {"lib" + name + ".a", "lib" + name + Autoconf.dllExt};
-          end if;
-          lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info, false);
-          // A wasm run uses either form, so both are looked for and built.
-          if isWasm then
-            lookForExtFunctionLibrary({name + ".wasm", "lib" + name + ".wasm"},
-                                      dirs, name, resources, path, info, true);
+        // A bundle installPackage put there covers the `Library` names, some of
+        // which it links in privately.
+        for name in if Flags.isSet(Flags.CHECK_EXT_LIBS) and not (isWasm and hasWasmBundle(dirs)) then libNames else {} loop
+          // A wasm run uses either form, so both are looked for and built, unless
+          // the module it loads is there already.
+          if not (isWasm and max(System.regularFileExists(d + n) for d in "" :: list(d + "/" for d in dirs), n in {name + ".wasm", "lib" + name + ".wasm"})) then
+            if getGerneralTarget(target)=="msvc" or Autoconf.os=="Windows_NT" then
+              fullLibNames := {name + Autoconf.dllExt, "lib" + name + ".a", "lib" + name + ".lib"};
+            else
+              fullLibNames := {"lib" + name + ".a", "lib" + name + Autoconf.dllExt};
+            end if;
+            lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info, false);
+            if isWasm then
+              lookForExtFunctionLibrary({name + ".wasm", "lib" + name + ".wasm"},
+                                        dirs, name, resources, path, info, true);
+            end if;
           end if;
         end for;
         if isWasm then
@@ -2139,6 +2147,22 @@ algorithm
     case NONE() then ({}, {}, {},{}, false);
   end match;
 end generateExtFunctionIncludes;
+
+protected function hasWasmBundle
+  "Whether installPackage put prebuilt wasm modules (an `omc-<generation>`
+   directory) in one of `dirs`."
+  input list<String> dirs;
+  output Boolean b = false;
+algorithm
+  for d in dirs loop
+    if (StringUtil.endsWith(d, "wasm32-wasip1") or StringUtil.endsWith(d, "wasm32-wasip1/")) and System.directoryExists(d) then
+      if List.any(System.subDirectories(d), function StringUtil.startsWith(prefix = "omc-")) then
+        b := true;
+        return;
+      end if;
+    end if;
+  end for;
+end hasWasmBundle;
 
 protected function lookForExtFunctionLibrary
   "`forWasm` looks for the wasm module a simulation loads rather than the platform
@@ -2666,9 +2690,7 @@ algorithm
 end getLibraryStringInGccFormat;
 
 protected function isWasmSimCodeTarget
-"An FMU export falls back to C in the testsuite (SimCodeMain.callTargetTemplatesFMU)."
-  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm")
-                          and not (Flags.getConfigBool(Flags.BUILDING_FMU) and Testsuite.isRunning());
+  output Boolean isWasm = StringUtil.startsWith(Config.simCodeTarget(), "wasm");
 end isWasmSimCodeTarget;
 
 protected function stripLibraryExtension
@@ -2701,16 +2723,18 @@ algorithm
       String str;
       list<String> host;
 
-    // In the runtime already: LAPACK/BLAS are in-wasm, and ModelicaExternalC is
-    // the side module omc carries.
+    // In the runtime already: LAPACK/BLAS are in-wasm, and zlib is inside the
+    // modules that use it.
     case Absyn.STRING("lapack") then ({},{});
     case Absyn.STRING("Lapack") then ({},{});
     case Absyn.STRING("blas") then ({},{});
-    case Absyn.STRING("ModelicaExternalC") then ({},{});
-    case Absyn.STRING("ModelicaStandardTables") then ({},{});
-    case Absyn.STRING("ModelicaIO") then ({},{});
-    case Absyn.STRING("ModelicaMatIO") then ({},{});
     case Absyn.STRING("zlib") then ({},{});
+    // The MSL's: the modules installed with it when there are, else the side
+    // modules omc carries, never a platform library.
+    case Absyn.STRING("ModelicaExternalC") then ({"ModelicaExternalC.wasm"},{});
+    case Absyn.STRING("ModelicaStandardTables") then ({"ModelicaStandardTables.wasm"},{});
+    case Absyn.STRING("ModelicaIO") then ({"ModelicaIO.wasm"},{});
+    case Absyn.STRING("ModelicaMatIO") then ({"ModelicaMatIO.wasm"},{});
 
     case Absyn.STRING(str)
       algorithm

@@ -473,6 +473,10 @@ typedef struct NONLINEAR_SYSTEM_DATA
   double jacobianTime;                 /* save the time to calculate jacobians */
   rtclock_t jacobianTimeClock;         /* time clock for the jacobianTime */
   void* csvData;                       /* information to save csv data */
+
+  /* resizable arrays: computes the size of the system from the size parameters,
+   * called before the system is allocated; NULL if the size is fixed */
+  int (*updateSize)(struct DATA*, threadData_t*);
 } NONLINEAR_SYSTEM_DATA;
 #else
 typedef void* NONLINEAR_SYSTEM_DATA;

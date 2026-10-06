@@ -91,7 +91,7 @@ pub(super) fn resolve_overrides(
     // C's `singleOverride` walks the `_init.xml` quantities in class order. The String
     // parameters are not result signals, so they follow, as `_init.xml` has them.
     let string_names = model.editable_params.iter().filter(|p| p.is_string).map(|p| p.name.as_str());
-    for name in model.result_vars.iter().map(|v| v.name.as_str()).chain(string_names) {
+    for name in model.result_vars().iter().map(|v| v.name.as_str()).chain(string_names) {
         let Some(&(name, val)) = map.iter().find(|(n, _)| *n == name) else { continue };
         used.push(name);
         let Some(p) = model.editable_params.iter().find(|p| p.name == name) else {

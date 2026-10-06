@@ -173,7 +173,7 @@ fn fmu_component_links_without_a_host() {
             continue; // omc built without the wasm32 toolchain
         }
         assert!(
-            link_fmu_component(&build_stub_model(), adapter, solvers, &[], None).is_ok(),
+            link_fmu_component(&build_stub_model(), adapter, solvers, &[], None, None).is_ok(),
             "{label} does not link into a component: {}",
             openmodelica_util::Error::printMessagesStr(false)
         );
@@ -189,21 +189,19 @@ fn fmu_component_links_the_carried_libraries() {
     if adapter.is_empty()
         || LIBC_PIC().is_empty()
         || USERTAB_DYLINK().is_empty()
-        || openmodelica_wasm_jit::ext_library("ModelicaExternalC.wasm").is_none()
+        || openmodelica_wasm_jit::ext_library("ModelicaUtilities.wasm").is_none()
     {
         return; // omc built without the wasm32 toolchain
     }
     // The stubs, where the adapter imports the solvers at all.
     let solvers: Option<&[&str]> = sundials_available().then_some(&[]);
     for (sym, params) in [
-        // Pulls the whole table chain: ModelicaIO, ModelicaMatIO, zlib, hdf5.
-        ("ModelicaStandardTables_CombiTable1D_close", 1),
         // Pulls LAPACK, which needs nothing — only `usertab` still wants a library.
         ("dgesv_", 8),
     ] {
         let model = build_stub_model_calling(Some((sym, params)));
         assert!(
-            link_fmu_component(&model, adapter, solvers, &[], None).is_ok(),
+            link_fmu_component(&model, adapter, solvers, &[], None, None).is_ok(),
             "a model calling {sym} does not link into a component: {}",
             openmodelica_util::Error::printMessagesStr(false)
         );

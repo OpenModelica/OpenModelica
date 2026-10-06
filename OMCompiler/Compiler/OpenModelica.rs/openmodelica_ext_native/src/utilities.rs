@@ -80,6 +80,19 @@ pub extern "C" fn ModelicaAllocateStringWithErrorReturn(len: usize) -> *mut c_ch
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn ModelicaDuplicateString(s: *const c_char) -> *mut c_char {
+    let bytes = unsafe { CStr::from_ptr(s) }.to_bytes();
+    let p = ModelicaAllocateString(bytes.len());
+    unsafe { std::ptr::copy_nonoverlapping(bytes.as_ptr(), p as *mut u8, bytes.len()) };
+    p
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn ModelicaDuplicateStringWithErrorReturn(s: *const c_char) -> *mut c_char {
+    ModelicaDuplicateString(s)
+}
+
+#[unsafe(no_mangle)]
 pub extern "C-unwind" fn ModelicaError(s: *const c_char) -> ! {
     super::error::raise(cstr(s))
 }

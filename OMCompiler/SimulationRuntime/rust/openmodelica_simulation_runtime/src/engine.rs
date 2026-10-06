@@ -36,6 +36,11 @@ unsafe extern "C" {
     ) -> c_int;
 }
 
+unsafe extern "C" {
+    fn omc_last_suppressed_error() -> *const c_char;
+    fn omc_clear_last_suppressed_error();
+}
+
 /// `util/rtclock.c`, which `+profiling` reports from. An FMU has none: under
 /// `OMC_MINIMAL_RUNTIME` `rtclock.h` is no-op `static inline`s and the .c does not
 /// compile, so the FMU flavour answers with an unarmed clock's zeros.
@@ -733,6 +738,15 @@ impl SimEngine for CEngine {
 
     fn set_rhs_final(&mut self, final_eval: bool) {
         unsafe { crate::support::RHSFinalFlag = final_eval as c_int };
+    }
+
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        let p = unsafe { omc_last_suppressed_error() };
+        (!p.is_null()).then(|| unsafe { core::ffi::CStr::from_ptr(p) }.to_string_lossy().into_owned())
+    }
+
+    fn clear_suppressed_error(&mut self) {
+        unsafe { omc_clear_last_suppressed_error() };
     }
 
     fn take_pending_assert(&mut self) -> Option<[i32; 9]> {

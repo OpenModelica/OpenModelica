@@ -520,97 +520,98 @@ public function inlineEq "
   output BackendDAE.Equation outEquation;
   output Boolean inlined;
 algorithm
-  (outEquation,inlined) := matchcontinue inEquation
-    local
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      Integer size;
-      Option<Integer> recordSize;
-      list<DAE.Exp> explst;
-      DAE.ComponentRef cref;
-      BackendDAE.WhenEquation weq,weq_1;
-      DAE.ElementSource source;
-      list<Integer> dimSize;
-      DAE.Algorithm alg;
-      list<DAE.Statement> stmts,stmts1;
-      list<BackendDAE.Equation> eqns;
-      list<list<BackendDAE.Equation>> eqnslst;
-      Boolean b1,b2,b3;
-      DAE.Expand crefExpand;
-      BackendDAE.EquationAttributes attr;
-      BackendDAE.Equation eqn;
+  try
+    (outEquation,inlined) := match inEquation
+      local
+        DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+        Integer size;
+        Option<Integer> recordSize;
+        list<DAE.Exp> explst;
+        DAE.ComponentRef cref;
+        BackendDAE.WhenEquation weq,weq_1;
+        DAE.ElementSource source;
+        list<Integer> dimSize;
+        list<DAE.Statement> stmts,stmts1;
+        list<BackendDAE.Equation> eqns;
+        list<list<BackendDAE.Equation>> eqnslst;
+        Boolean b,b1,b2,b3;
+        DAE.Expand crefExpand;
+        BackendDAE.EquationAttributes attr;
+        BackendDAE.Equation eqn;
 
-    case BackendDAE.EQUATION(e1,e2,source,attr)
-      algorithm
-        (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
-        (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
-        true := b1 or b2;
-      then
-       (BackendDAE.EQUATION(e1_1,e2_1,source,attr),true);
+      case BackendDAE.EQUATION(e1,e2,source,attr)
+        algorithm
+          (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
+          (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
+          b := b1 or b2;
+        then
+          (if b then BackendDAE.EQUATION(e1_1,e2_1,source,attr) else inEquation, b);
 
-    case BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize)
-      algorithm
-        (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
-        (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
-        true := b1 or b2;
-        eqn := match (e1_1, e2_1)
-          case (DAE.ARRAY(array = {e1}), DAE.ARRAY(array = {e2}))
-          then BackendDAE.EQUATION(e1,e2,source,attr); // flatten if size==1
-          else BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr,recordSize);
-        end match;
-      then
-        (eqn, true);
+      case BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize)
+        algorithm
+          (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
+          (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
+          b := b1 or b2;
+          eqn := if not b then inEquation else match (e1_1, e2_1)
+            case (DAE.ARRAY(array = {e1}), DAE.ARRAY(array = {e2}))
+            then BackendDAE.EQUATION(e1,e2,source,attr); // flatten if size==1
+            else BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr,recordSize);
+          end match;
+        then
+          (eqn, b);
 
-    case BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr)
-      algorithm
-        (eqn, true) := inlineEq(eqn, fns);
-      then
-        (BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), true);
+      case BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr)
+        algorithm
+          (eqn, b) := inlineEq(eqn, fns);
+        then
+          (if b then BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr) else inEquation, b);
 
-    case BackendDAE.SOLVED_EQUATION(cref,e,source,attr)
-      algorithm
-        (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
-      then
-        (BackendDAE.SOLVED_EQUATION(cref,e_1,source,attr),true);
+      case BackendDAE.SOLVED_EQUATION(cref,e,source,attr)
+        algorithm
+          (e_1,source,b,_) := Inline.inlineExp(e,fns,source);
+        then
+          (if b then BackendDAE.SOLVED_EQUATION(cref,e_1,source,attr) else inEquation, b);
 
-    case BackendDAE.RESIDUAL_EQUATION(e,source,attr)
-      algorithm
-        (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
-      then
-        (BackendDAE.RESIDUAL_EQUATION(e_1,source,attr),true);
+      case BackendDAE.RESIDUAL_EQUATION(e,source,attr)
+        algorithm
+          (e_1,source,b,_) := Inline.inlineExp(e,fns,source);
+        then
+          (if b then BackendDAE.RESIDUAL_EQUATION(e_1,source,attr) else inEquation, b);
 
-    case BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr)
-      algorithm
-        (stmts1,true) := Inline.inlineStatements(stmts,fns,{},false);
-        alg := DAE.ALGORITHM_STMTS(stmts1);
-      then
-        (BackendDAE.ALGORITHM(size,alg,source,crefExpand,attr),true);
+      case BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr)
+        algorithm
+          (stmts1,b) := Inline.inlineStatements(stmts,fns,{},false);
+        then
+          (if b then BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts1),source,crefExpand,attr) else inEquation, b);
 
-    case BackendDAE.WHEN_EQUATION(size,weq,source,attr)
-      algorithm
-        (weq_1,source,true) := inlineWhenEq(weq,fns,source);
-      then
-        (BackendDAE.WHEN_EQUATION(size,weq_1,source,attr),true);
+      case BackendDAE.WHEN_EQUATION(size,weq,source,attr)
+        algorithm
+          (weq_1,source,b) := inlineWhenEq(weq,fns,source);
+        then
+          (if b then BackendDAE.WHEN_EQUATION(size,weq_1,source,attr) else inEquation, b);
 
-    case BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr)
-      algorithm
-        (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
-        (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
-        true := b1 or b2;
-      then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,attr),true);
+      case BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr)
+        algorithm
+          (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
+          (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
+          b := b1 or b2;
+        then
+          (if b then BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,attr) else inEquation, b);
 
-    case BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr)
-      algorithm
-        (explst,source,b1) := Inline.inlineExps(explst,fns,source);
-        (eqnslst,b2) := inlineEqsLst(eqnslst,fns,{},false);
-        (eqns,b3) := inlineEqs(eqns,fns,{},false);
-        true := b1 or b2 or b3;
-      then
-        (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr),true);
-    else
-      then
-        (inEquation,false);
-  end matchcontinue;
+      case BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr)
+        algorithm
+          (explst,source,b1) := Inline.inlineExps(explst,fns,source);
+          (eqnslst,b2) := inlineEqsLst(eqnslst,fns,{},false);
+          (eqns,b3) := inlineEqs(eqns,fns,{},false);
+          b := b1 or b2 or b3;
+        then
+          (if b then BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr) else inEquation, b);
+
+      else (inEquation,false);
+    end match;
+  else
+    (outEquation,inlined) := (inEquation,false);
+  end try;
 end inlineEq;
 
 protected function inlineEqsLst
@@ -848,7 +849,7 @@ algorithm
     case BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,tplExp,arrayDim,source,values,ts,hideResult,comment,ct,io,unreplaceable,_,e) algorithm
       (bind,source,b1) := Inline.inlineExpOpt(bind,inElementList,source);
       (values1,source,b2) := Inline.inlineStartAttribute(values,source,inElementList);
-    then (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,tplExp,arrayDim,source,values1,ts,hideResult,comment,ct,io,unreplaceable,false,e), b1 or b2);
+    then (if b1 or b2 then BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,tplExp,arrayDim,source,values1,ts,hideResult,comment,ct,io,unreplaceable,false,e) else inVar, b1 or b2);
 
     else (inVar, false);
   end match;
@@ -1434,7 +1435,7 @@ algorithm
   // replace inputs variables
   argmap := List.zip(listReverse(fnInputs), args);
   (argmap,checkcr) := Inline.extendCrefRecords(argmap, HashTableCG.emptyHashTable());
-  BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(outEqs, replaceArgs, (argmap,checkcr,true));
+  BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(outEqs, replaceArgs, (argmap,checkcr,true,Inline.newArgMemo()));
 
 
   // debug
@@ -1481,12 +1482,15 @@ end addReplacement;
 protected function replaceArgs
 "finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
   input DAE.Exp inExp;
-  input tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> inTuple;
+  input Inline.ReplaceArgsTuple inTuple;
   output DAE.Exp outExp;
-  output tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> outTuple;
+  output Inline.ReplaceArgsTuple outTuple;
+protected
+  Boolean ok;
 algorithm
   (outExp,outTuple) := Expression.traverseExpBottomUp(inExp,Inline.replaceArgs,inTuple);
-  if not Util.tuple33(outTuple) then
+  (_,_,ok,_) := outTuple;
+  if not ok then
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.traceln("BackendInline.replaceArgs failed");
     end if;

@@ -50,7 +50,41 @@ fn install_hooks() {
 /// C's `throwStreamPrint`, with this runtime's reporting installed.
 pub(crate) fn throw_stream(s: &str) {
     install_hooks();
+    if nls::error_caught() {
+        note_suppressed(s.as_bytes());
+    }
     nls::throw_stream(s)
+}
+
+const SUPPRESSED_CAP: usize = 508;
+
+/// `[len: u32][bytes]`, C's `omc_last_suppressed_error`. Fixed-size, so it needs
+/// no allocation when the heap is what failed.
+#[repr(C, align(4))]
+struct Suppressed(UnsafeCell<[u8; 4 + SUPPRESSED_CAP]>);
+unsafe impl Sync for Suppressed {}
+static SUPPRESSED: Suppressed = Suppressed(UnsafeCell::new([0; 4 + SUPPRESSED_CAP]));
+
+fn note_suppressed(msg: &[u8]) {
+    let buf = unsafe { &mut *SUPPRESSED.0.get() };
+    let n = msg.len().min(SUPPRESSED_CAP);
+    buf[4..4 + n].copy_from_slice(&msg[..n]);
+    buf[..4].copy_from_slice(&(n as u32).to_le_bytes());
+}
+
+pub fn last_suppressed_error() -> &'static [u8] {
+    let buf = unsafe { &*SUPPRESSED.0.get() };
+    let n = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+    &buf[4..4 + n.min(SUPPRESSED_CAP)]
+}
+
+pub fn clear_suppressed_error() {
+    unsafe { (&mut *SUPPRESSED.0.get())[..4].fill(0) };
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_suppressed_error_addr() -> u32 {
+    SUPPRESSED.0.get() as usize as u32
 }
 
 /// A string literal the module's pool owns, borrowed for the length of the call.
@@ -138,6 +172,9 @@ pub extern "C" fn rt_nls_assert_failed(
     // report only what C's jump would have reached -- as [`throw_stream`] does.
     let report = nls::throw_reports() && assert_logged();
     nls::note_assert();
+    if msg != 0 {
+        note_suppressed(unsafe { crate::str_bytes(msg as u32) });
+    }
     if report {
         use openmodelica_sim_meta::TIME_OFF;
         use openmodelica_sim_meta::driver::{self, AssertInfo, log_assert_block};
@@ -234,6 +271,9 @@ pub extern "C" fn rt_assert_common(msg: i32, sim_data: i32, initial: i32) -> i32
         }
     }
     if msg != 0 {
+        if caught {
+            note_suppressed(unsafe { crate::str_bytes(msg as u32) });
+        }
         crate::rt_release(msg as u32);
     }
     if caught {

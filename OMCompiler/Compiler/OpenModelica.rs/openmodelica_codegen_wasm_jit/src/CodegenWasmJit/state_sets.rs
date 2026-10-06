@@ -118,13 +118,13 @@ pub(super) fn build_stateset_jac_fn(
 /// Slot of the state-set selection-matrix entry `A[row,col]` (1-based). The backend
 /// scalarizes `$STATESET{n}.A` either 2D (key `A[row][col]`) or flat row-major (key
 /// `A[k]`, `k = (row-1)*nCandidates + col`); try the 2D key first, then the flat one.
-fn stateset_a_slot<'a>(
-    var_map: &'a SimVarMap,
+fn stateset_a_slot(
+    var_map: &SimVarMap,
     a_base: &str,
     row: u32,
     col: u32,
     n_candidates: u32,
-) -> Option<&'a SimSlot> {
+) -> Option<SimSlot> {
     var_map.vars.get(&format!("{a_base}[{row}][{col}]")).or_else(|| {
         let k = (row - 1) * n_candidates + col;
         var_map.vars.get(&format!("{a_base}[{k}]"))

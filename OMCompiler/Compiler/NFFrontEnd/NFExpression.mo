@@ -6549,6 +6549,11 @@ public
     list<Subscript> subs;
     list<Expression> sub_exps, dim_sizes;
   algorithm
+    if not containsSplitSubscriptedExp(exp) then
+      outExp := func(exp);
+      return;
+    end if;
+
     (outExp, osub_repls) := mapFold(exp, replaceSplitSubscripts, NONE());
 
     if isNone(osub_repls) then
@@ -6563,6 +6568,23 @@ public
       outExp := applySubscripts(subs, outExp);
     end if;
   end mapSplitExpressions;
+
+  function containsSplitSubscriptedExp
+    "Like contains(exp, isSplitSubscriptedExp), but also looks into iterator
+     ranges like mapFold does. Literal arrays are skipped, like in
+     Ceval.subscriptBinding2."
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true) then true;
+      case ARRAY(literal = true) then false;
+      case CALL()
+        then containsShallow(exp, containsSplitSubscriptedExp) or
+             List.any(list(Util.tuple22(i) for i in Call.iterators(exp.call)), containsSplitSubscriptedExp);
+      else containsShallow(exp, containsSplitSubscriptedExp);
+    end match;
+  end containsSplitSubscriptedExp;
 
   function replaceSplitSubscripts
     input output Expression exp;

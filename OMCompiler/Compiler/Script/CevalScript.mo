@@ -813,6 +813,12 @@ algorithm
     case ("GC_expand_hp",{Values.INTEGER(i)})
       then Values.BOOL(GCExt.expandHeap(i));
 
+    case ("GC_set_max_heap_size",{Values.REAL(r)})
+      algorithm
+        GCExt.setMaxHeapSize(r);
+      then
+        Values.BOOL(true);
+
     case ("GC_set_max_heap_size",{Values.INTEGER(i)})
       algorithm
         GCExt.setMaxHeapSize(i);
@@ -1370,6 +1376,7 @@ algorithm
         end if;
         Print.clearBuf();
         SymbolTable.setAbsyn(p);
+        CodegenWasmJitFunctions.precompilePrebuiltModules(PackageManagement.installMissingWasmOfLoaded(list(AbsynUtil.classFilename(c) for c in p.classes), CodegenWasmJitFunctions.prebuiltExternalsABI()));
         execStat("loadModel("+AbsynUtil.pathString(path)+")");
         outCache := FCore.emptyCache();
       then
@@ -2663,7 +2670,7 @@ algorithm
     else
       setGlobalRoot(Global.stackoverFlowIndex, NONE());
       ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionBasics.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
+      Error.addInternalError(StackOverflow.errorPrefix() + " when evaluating function call: "+ExpressionBasics.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
       /* Do not fail or we can loop too much */
       StackOverflow.clearStacktraceMessages();
       outCache := inCache;

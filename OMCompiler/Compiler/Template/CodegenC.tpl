@@ -1386,7 +1386,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%fmiAliasIndexTables(simCode, modelInfo, modelNamePrefixStr)%>
 
-    <%functionUpdateStructuralParameters(vars.intParamVars, modelNamePrefixStr)%>
+    <%functionUpdateStructuralParameters(vars.intParamVars, vars.inputVars, modelNamePrefixStr)%>
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
@@ -1476,7 +1476,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
       <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>,
-      <%if hasDimensionParameters(vars.intParamVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>    /* updateStructuralParameters */
+      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>    /* updateStructuralParameters */
     <%\n%>
     };
 
@@ -1788,21 +1788,29 @@ template hasDimensionParameters(list<SimVar> intParamVars)
 ::= (intParamVars |> v => if isDimensionParameter(v) then "1")
 end hasDimensionParameters;
 
-template functionUpdateStructuralParameters(list<SimVar> intParamVars, Text modelNamePrefixStr)
- "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1).
+template hasStructuralUpdate(list<SimVar> intParamVars, list<SimVar> inputVars)
+::= if hasDimensionParameters(intParamVars) then "1" else (if hasSymbolicDims(inputVars) then "1")
+end hasStructuralUpdate;
+
+template functionUpdateStructuralParameters(list<SimVar> intParamVars, list<SimVar> inputVars, Text modelNamePrefixStr)
+ "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1),
+  and the number of scalar inputs if an input is a resizable array.
   The runtime calls it after reading the init.xml, before it computes the sizes
   of the arrays and allocates them: only the start attributes of the parameters
   exist, possibly changed with -override, so they are what it reads and writes."
 ::=
-  if hasDimensionParameters(intParamVars) then
+  if hasStructuralUpdate(intParamVars, inputVars) then
   let body = (intParamVars |> v as SIMVAR(initialValue = SOME(e)) =>
     if isDimensionParameter(v) then
       '<%structuralParameterStart(v)%> = <%structuralParameterExp(e)%>; /* <%crefStrNoUnderscore(v.name)%> */'
     ;separator="\n")
+  let inputs = if hasSymbolicDims(inputVars) then
+    'data->modelData->nInputVars = <%structuralParameterExp(numScalarElemsBeforeExp(inputVars, listLength(inputVars)))%>;'
   <<
   static void <%symbolName(modelNamePrefixStr,"updateStructuralParameters")%>(DATA *data, threadData_t *threadData)
   {
     <%body%>
+    <%inputs%>
   }
   >>
 end functionUpdateStructuralParameters;
@@ -2130,11 +2138,11 @@ let &sub = buffer ""
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data, threadData_t *threadData)
     {
       <%inputVars |> var as SIMVAR(name=name) hasindex i0 =>
-        let offset = numScalarElemsBefore(inputVars, i0)
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
         case v as SIMVAR(type_=T_ARRAY()) then
           <<
-          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+          for (size_t k = 0; k < <%inputCount(v)%>; k++) {
             <%inputValue(v, 'k')%> = data->simulationInfo->inputVars[<%offset%> + k];
           }
           >>
@@ -2149,13 +2157,13 @@ let &sub = buffer ""
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data, threadData_t *threadData)
     {
       <%inputVars |> SIMVAR(name=name) hasindex i0 =>
-        let offset = numScalarElemsBefore(inputVars, i0)
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
         case v as SIMVAR(aliasvar=NOALIAS()) then
           let ty = expTypeShort(type_)
           let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+          for (size_t k = 0; k < <%inputCount(v)%>; k++) {
             data->simulationInfo->inputVars[<%offset%> + k] = <%ty%>_get(<%start%>, base_array_nr_of_elements(<%start%>) == 1 ? 0 : k);
           }
           >>
@@ -2169,14 +2177,14 @@ let &sub = buffer ""
     int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
     {
       <%inputVars |> SIMVAR(name=name) hasindex i0 =>
-        let offset = numScalarElemsBefore(inputVars, i0)
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
         case v as SIMVAR(aliasvar=NOALIAS()) then
           let ty = expTypeShort(type_)
           let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          <%ensureSizeFunction(ty)%>(&<%start%>, <%numScalarElemsVar(v)%>);
-          for (size_t k = 0; k < <%numScalarElemsVar(v)%>; k++) {
+          <%ensureSizeFunction(ty)%>(&<%start%>, <%inputCount(v)%>);
+          for (size_t k = 0; k < <%inputCount(v)%>; k++) {
             put_<%ty%>_element(data->simulationInfo->inputVars[<%offset%> + k], k, &<%start%>);
           }
           >>
@@ -2190,9 +2198,10 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"inputNames")%>(DATA *data, char ** names){
       <%inputVars |> simVar as SIMVAR(__) hasindex i0 =>
-        let offset = numScalarElemsBefore(inputVars, i0)
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
         case v as SIMVAR(aliasvar=NOALIAS(), type_=T_ARRAY()) then
+          if isSymbolicArrayVar(v) then inputNamesResizable(v, offset) else
           (arrayElementSubscripts(v) |> subscript hasindex k =>
             'names[<%intAdd(numScalarElemsBefore(inputVars, i0), k)%>] = (char *) "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>[<%subscript%>]";'
           ;separator="\n")
@@ -2207,6 +2216,45 @@ let &sub = buffer ""
     >>
   end match
 end functionInput;
+
+template inputOffset(list<SimVar> inputVars, Integer i0)
+ "The scalar offset of the i0-th input in data->simulationInfo->inputVars, an
+  expression of the size parameters if an input is a resizable array."
+::= if hasSymbolicDims(inputVars) then structuralParameterExp(numScalarElemsBeforeExp(inputVars, i0)) else numScalarElemsBefore(inputVars, i0)
+end inputOffset;
+
+template inputCount(SimVar var)
+ "The number of scalar elements of an input."
+::= if isSymbolicArrayVar(var) then structuralParameterExp(simVarSizeExp(var)) else numScalarElemsVar(var)
+end inputCount;
+
+template inputNamesResizable(SimVar var, Text offset)
+ "The names of the elements of an input that is a resizable array, built at
+  runtime in row-major order like arrayElementSubscripts, e.g. u[1,2]."
+::=
+  match var
+  case SIMVAR(__) then
+    let dims = (simVarDimExps(var) |> d => structuralParameterExp(d) ;separator=", ")
+    let ndims = listLength(simVarDimExps(var))
+    <<
+    {
+      const modelica_integer dims[<%ndims%>] = {<%dims%>};
+      size_t n = 1, k, rest;
+      int j, pos;
+      long idx[<%ndims%>];
+      char buf[1024];
+      for (j = 0; j < <%ndims%>; j++) n *= (size_t) dims[j];
+      for (k = 0; k < n; k++) {
+        rest = k;
+        for (j = <%ndims%> - 1; j >= 0; j--) { idx[j] = (long) (rest % (size_t) dims[j]) + 1; rest /= (size_t) dims[j]; }
+        pos = snprintf(buf, sizeof(buf), "%s[", "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>");
+        for (j = 0; j < <%ndims%> && pos < (int) sizeof(buf); j++) pos += snprintf(buf + pos, sizeof(buf) - pos, j ? ",%ld" : "%ld", idx[j]);
+        if (pos < (int) sizeof(buf)) snprintf(buf + pos, sizeof(buf) - pos, "]");
+        names[<%offset%> + k] = strdup(buf);
+      }
+    }
+    >>
+end inputNamesResizable;
 
 template inputData(SimVar var)
   "Static data array of an input variable."
@@ -3024,6 +3072,7 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].freeStaticNLSData = freeStaticDataNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].getIterationVars = getIterationVarsNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].checkConstraints = <%constraintsCall%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].updateSize = <%if nlsResizable(nls.crefs) then 'updateSizeNLS<%nls.index%>' else 'NULL'%>;
 
       const int tmp_eqn_indices_<%nls.indexNonLinearSystem%>[<%listLength(nls.eqs)%>] = {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>};
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = malloc(<%listLength(nls.eqs)%> * sizeof(int));
@@ -3207,6 +3256,7 @@ template getNLSPrototypes(Integer index)
   void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
   void freeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData);
   void getIterationVarsNLS<%index%>(DATA* data, double *array);
+  int updateSizeNLS<%index%>(DATA *data, threadData_t *threadData);
   >>
 end getNLSPrototypes;
 
@@ -3363,7 +3413,9 @@ match system
         /* restore previously known outputs of the algorithm */
         <%body%>
         >>
-    let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = xloc[<%i0%>];' ;separator="\n")
+    let resizable = nlsResizable(nls.crefs)
+    let xlocs = if resizable then nlsSetIterVars(nls.crefs, "xloc") else (nls.crefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = xloc[<%i0%>];' ;separator="\n")
+    let nlsSize = if resizable then 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].size' else listLength(nls.crefs)
     let prebody = (nls.eqs |> eq2 =>
       functionExtraResidualsPreBody(eq2, &innerEqns, modelNamePrefix)
     ;separator="\n")
@@ -3377,10 +3429,13 @@ match system
         >>
       else
         (nls.eqs |> eq2 hasindex i0 => match eq2
-          case SES_RESIDUAL(__) then equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
+          case SES_RESIDUAL(__) then
+            if resizable then equationResidualAt(exp, varDecls, varFrees, innerEqns, index, residualOffset(nls.eqs, i0))
+            else equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
           case SES_FOR_RESIDUAL(__) then
             let &preExp = buffer ""
             let &auxFunction = buffer ""
+            let res_off = if resizable then residualOffset(nls.eqs, i0) else res_index
             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
             let forPart = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
                   let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
@@ -3400,8 +3455,8 @@ match system
             // Flatten properly, matching how array crefs are indexed elsewhere here.
             let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
             let assignment = (if isArrayType(typeof(exp))
-              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+(<%indexShift%>));'
-              else '<%preExp%>res[<%res_index%>+(<%indexShift%>)] = <%expPart%>;')
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_off%>+(<%indexShift%>));'
+              else '<%preExp%>res[<%res_off%>+(<%indexShift%>)] = <%expPart%>;')
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
@@ -3421,9 +3476,9 @@ match system
                 let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
                 let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
                 <<
-                const int <%iter%>_size = <%stop_%> - <%start_%> / <%step_%> + 1;
+                const int <%iter%>_size = ((<%stop_%>) - (<%start_%>)) / (<%step_%>) + 1;
                 int <%iter%>_loc = tmp % <%iter%>_size;
-                int <%iter%> = <%step_%> * <%iter%>_loc + <%start_%>;
+                int <%iter%> = (<%step_%>) * <%iter%>_loc + (<%start_%>);
                 tmp /= <%iter%>_size;
                 <%sub_iter_%>
                 >>;separator="\n")
@@ -3452,6 +3507,15 @@ match system
     /* inner equations */
     <%&innerEqns%>
 
+    <%if resizable then if intEq(whichSet, 0) then
+    <<
+    /* the size of the system for the actual sizes of the resizable arrays */
+    int updateSizeNLS<%nls.index%>(DATA *data, threadData_t *threadData)
+    {
+      return <%(nls.crefs |> cr => nlsCount(cr) ;separator=" + ")%>;
+    }
+    >>%>
+
     <%residualFunctionHeader%>
     {
       DATA *data = userData->data;
@@ -3464,11 +3528,16 @@ match system
       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
       /* iteration variables */
-      for (i=0; i<<%listLength(nls.crefs)%>; i++) {
-        if (isinf(xloc[i]) || isnan(xloc[i])) {
-          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
-            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i]);
-          for (j=0; j<<%listLength(nls.crefs)%>; j++) {
+      for (i=0; i<<%nlsSize%>; i++) {
+        if (!isfinite(xloc[i])) {
+          <%if resizable then
+          'errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable %d is %g.", i, xloc[i]);'
+          else
+          <<
+          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is %g.",
+            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i], xloc[i]);
+          >>%>
+          for (j=0; j<<%nlsSize%>; j++) {
             res[j] = NAN;
           }
           raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
@@ -3696,6 +3765,16 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     let cComment = '/* static nls data for <%crefStrNoUnderscore(cr)%> */'
+    if nlsResizableCref(cr) then
+        <<
+        <%cComment%>
+        for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
+          sysData->nominal[i] = 1.0;
+          sysData->min[i]     = -DBL_MAX;
+          sysData->max[i++]   = DBL_MAX;
+        }
+        >>
+    else
     match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
       case SIMVAR(type_=T_REAL(__)) then
         let kind = match varKind
@@ -3741,7 +3820,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
   {
-    int i=0;
+    int i=0, k_=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
     if (initSparsePattern) {
@@ -3761,11 +3840,85 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   >>
 end generateStaticInitialData;
 
+template nlsResizable(list<ComponentRef> crefs)
+ "non-empty if an iteration variable of an algebraic loop is a whole resizable array"
+::= (crefs |> cr => match cref2simvar(cr, getSimCode()) case v as SIMVAR(__) then if isWholeResizableArray(cr, v) then "1" ;separator="")
+end nlsResizable;
+
+template nlsResizableCref(ComponentRef cr)
+::= match cref2simvar(cr, getSimCode()) case v as SIMVAR(__) then if isWholeResizableArray(cr, v) then "1"
+end nlsResizableCref;
+
+template nlsCount(ComponentRef cr)
+ "the number of scalar iteration variables of cr at runtime"
+::=
+  match cref2simvar(cr, getSimCode())
+  case v as SIMVAR(__) then
+    if isWholeResizableArray(cr, v) then
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let &varFrees = buffer ""
+      let &aux = buffer ""
+      '(<%daeExp(simVarSizeExp(v), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+    else "1"
+  else "1"
+end nlsCount;
+
+template nlsSetIterVars(list<ComponentRef> crefs, String src)
+ "the iteration variables from the vector src, whole resizable arrays element by element"
+::=
+  let &sub = buffer ""
+  let body = (crefs |> cr =>
+    match cref2simvar(cr, getSimCode())
+    case v as SIMVAR(__) then
+      if isWholeResizableArray(cr, v) then
+        'for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) <%inputValue(v, 'k_')%> = <%src%>[o_++];'
+      else '<%cref(cr, &sub)%> = <%src%>[o_++];'
+    else '<%cref(cr, &sub)%> = <%src%>[o_++];'
+  ;separator="\n")
+  <<
+  {
+    int o_ = 0, k_ = 0;
+    <%body%>
+  }
+  >>
+end nlsSetIterVars;
+
+template nlsGetIterVars(list<ComponentRef> crefs, String dst)
+ "the iteration variables into the vector dst, whole resizable arrays element by element"
+::=
+  let &sub = buffer ""
+  let body = (crefs |> cr =>
+    match cref2simvar(cr, getSimCode())
+    case v as SIMVAR(__) then
+      if isWholeResizableArray(cr, v) then
+        'for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) <%dst%>[o_++] = <%inputValue(v, 'k_')%>;'
+      else '<%dst%>[o_++] = <%cref(cr, &sub)%>;'
+    else '<%dst%>[o_++] = <%cref(cr, &sub)%>;'
+  ;separator="\n")
+  <<
+  {
+    int o_ = 0, k_ = 0;
+    <%body%>
+  }
+  >>
+end nlsGetIterVars;
+
+template residualOffset(list<SimEqSystem> eqs, Integer i0)
+ "the position of the i0-th equation of an algebraic loop in its residual vector at runtime"
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let &aux = buffer ""
+  '(<%daeExp(residualOffsetExp(eqs, i0), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+end residualOffset;
+
 template getIterationVars(list<ComponentRef> crefs, String indexName)
   "Generates iteration variables update."
 ::=
   let &sub = buffer ""
-  let vars = (crefs |> cr hasindex i0 =>
+  let vars = if nlsResizable(crefs) then nlsGetIterVars(crefs, "array") else (crefs |> cr hasindex i0 =>
       'array[<%i0%>] = <%cref(cr, &sub)%>;'
   ;separator="\n")
   <<
@@ -7989,8 +8142,7 @@ template equationSimpleAssignLhs(ComponentRef cref, Context context,
 ::=
   match context
   case FUNCTION_CONTEXT(__)
-  case JACOBIAN_CONTEXT(__)
-  case OMSI_CONTEXT(__) then
+  case JACOBIAN_CONTEXT(__) then
     contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
   else
     // Note: $START crefs address the (array valued) start attribute and must
@@ -8081,6 +8233,17 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
 <%endModelicaLine()%>
 >>
 end equationArrayCallAssign;
+
+template equationResidualAt(Exp exp, Text &varDecls, Text &varFrees, Text &auxFunction, Integer eq_index, Text res_index)
+ "like equationResidual with the position in the residual vector as expression"
+::=
+let &preExp = buffer ""
+let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+let assignment = (if isArrayType(typeof(exp))
+  then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>);'
+  else '<%preExp%>res[<%res_index%>] = <%expPart%>;')
+equation_withProfile(eq_index, assignment)
+end equationResidualAt;
 
 template equationResidual(Exp exp, Text &varDecls, Text &varFrees, Text &auxFunction, Integer eq_index, Integer res_index)
 ::=
@@ -9347,9 +9510,9 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     let size_ = daeExp(size, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
-    int <%iter_%>_loc = tmp % <%size_%>;
-    int <%iter_%> = <%step_%> * <%iter_%>_loc + <%start_%>;
-    tmp /= <%size_%>;
+    int <%iter_%>_loc = tmp % (<%size_%>);
+    int <%iter_%> = (<%step_%>) * <%iter_%>_loc + (<%start_%>);
+    tmp /= (<%size_%>);
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
@@ -9417,7 +9580,7 @@ template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &
     let step_ = daeExp(step, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let size_ = daeExp(size, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
-    (<%iter_%>-<%start_%>)/<%step_%>+<%size_%>*(
+    (<%iter_%>-(<%start_%>))/(<%step_%>)+(<%size_%>)*(
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)

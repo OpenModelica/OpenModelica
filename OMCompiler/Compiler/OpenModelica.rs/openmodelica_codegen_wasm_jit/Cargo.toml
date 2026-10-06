@@ -46,6 +46,8 @@ wasmparser = "0.259"
 # Deflate for the in-process FMU ZIP writer. Pure Rust, so the browser omc
 # compresses the same way the native one does.
 miniz_oxide = "0.9"
+# The prebuilt-module manifests and `getExternalFunctions`.
+serde_json.workspace = true
 
 [features]
 # The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit

@@ -188,56 +188,39 @@ blobs! {env!("OUT_DIR"),
 
 // Produced by openmodelica_wasi_libc's build.rs; its OUT_DIR reaches this one
 // through that crate's `links` metadata (see both build.rs).
-// One library per MSL library, none embedded: the browser fetches what a model
-// calls into and what that needs, for most models one small library or none.
 blobs_ondemand! {env!("OMC_WASI_BLOB_DIR"),
-    /// The base: ModelicaInternal/Strings/Random/FFT, plus the `Modelica*`
-    /// utilities and the stubs wasi-libc lacks, which the rest of the family needs.
-    EXTERNAL_C_DYLINK = "ModelicaExternalC.wasm";
-    /// ModelicaStandardTables; needs [`MODELICA_IO_DYLINK`].
-    STANDARD_TABLES_DYLINK = "ModelicaStandardTables.wasm";
-    /// ModelicaIO; needs [`MODELICA_MATIO_DYLINK`].
-    MODELICA_IO_DYLINK = "ModelicaIO.wasm";
-    /// ModelicaMatIO; needs [`ZLIB_DYLINK`] and [`HDF5_DYLINK`].
-    MODELICA_MATIO_DYLINK = "ModelicaMatIO.wasm";
-    /// The bundled zlib.
-    ZLIB_DYLINK = "zlib.wasm";
-    /// The HDF5 that gives ModelicaMatIO MAT v7.3, as separate from it as
-    /// `libhdf5.so` is natively.
-    HDF5_DYLINK = "hdf5.wasm";
-    /// A `-fPIC` wasi-libc `libc.so` dylink module (Debian's is non-PIC).
+    /// A `-fPIC` wasi-libc `libc.so` for omc's own side modules (the solvers an
+    /// exported FMU links), and for a model whose libraries bring no libc.
     LIBC_PIC = "libc_pic.wasm";
+    /// The ModelicaUtilities.h functions for a host-free FMU, whose libraries
+    /// cannot import them from a host.
+    MODELICA_UTILITIES_DYLINK = "ModelicaUtilities.wasm";
 }
 
 blobs! {env!("OMC_WASI_BLOB_DIR"),
-    /// The dummy `usertab` ModelicaExternalC imports, separate so it can be linked
+    /// The dummy `usertab` the MSL's tables import, separate so it can be linked
     /// last; 400 bytes, so embedded rather than fetched.
     USERTAB_DYLINK = "usertab_dylink.wasm";
     /// The `wasi_snapshot_preview1` -> preview2 reactor adapter.
     WASI_P1_ADAPTER = "wasi_snapshot_preview1.reactor.wasm";
 }
 
-/// The shared libraries omc carries, by the file name `dylink.0` NEEDED uses.
+/// The shared libraries omc carries, by the file name `dylink.0` NEEDED uses:
+/// LAPACK, which needs no libc, and the ModelicaUtilities.h functions. The
+/// libraries' own C code, the MSL's included, and their libc come with them.
 /// Nothing here is linked unconditionally; see `dylink::libraries_for`.
-pub const EXT_FAMILY: &[(&str, fn() -> &'static [u8])] = &[
-    ("ModelicaExternalC.wasm", EXTERNAL_C_DYLINK),
-    ("ModelicaStandardTables.wasm", STANDARD_TABLES_DYLINK),
-    ("ModelicaIO.wasm", MODELICA_IO_DYLINK),
-    ("ModelicaMatIO.wasm", MODELICA_MATIO_DYLINK),
-    ("zlib.wasm", ZLIB_DYLINK),
-    ("hdf5.wasm", HDF5_DYLINK),
-    ("liblapack.wasm", LAPACK_DYLINK),
-];
+pub const EXT_FAMILY: &[(&str, fn() -> &'static [u8])] =
+    &[("liblapack.wasm", LAPACK_DYLINK), ("ModelicaUtilities.wasm", MODELICA_UTILITIES_DYLINK)];
 
 /// The bytes of a library named by [`EXT_FAMILY`] or a NEEDED entry.
 pub fn ext_library(file: &str) -> Option<&'static [u8]> {
     EXT_FAMILY.iter().find(|(f, _)| *f == file).map(|(_, b)| b()).filter(|b| !b.is_empty())
 }
 
-/// Whether external "C" in a host-free wasm FMU is supported: the libraries are
-/// chosen per model, so what must be present is the PIC libc and the adapter.
+/// Whether external "C" in a host-free wasm FMU is supported: the libraries and
+/// their libc are chosen per model, so what must be present is the adapter.
 pub fn external_c_available() -> bool {
-    !LIBC_PIC().is_empty() && !WASI_P1_ADAPTER().is_empty()
+    !WASI_P1_ADAPTER().is_empty()
 }
 
 /// One solver library an exported FMU can be given, as a PIC dylink side module: the

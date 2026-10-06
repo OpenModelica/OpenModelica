@@ -617,6 +617,29 @@ static inline int throwPrintsMessage(threadData_t *threadData)
 }
 #endif
 
+#if defined(_MSC_VER)
+static __declspec(thread) char lastSuppressedError[SIZE_LOG_BUFFER];
+#else
+static __thread char lastSuppressedError[SIZE_LOG_BUFFER];
+#endif
+
+void omc_note_suppressed_error(threadData_t *threadData, const char *format, va_list args)
+{
+  if (threadData && threadData->currentErrorStage == ERROR_NONLINEARSOLVER) {
+    vsnprintf(lastSuppressedError, SIZE_LOG_BUFFER, format, args);
+  }
+}
+
+const char* omc_last_suppressed_error(void)
+{
+  return lastSuppressedError;
+}
+
+void omc_clear_last_suppressed_error(void)
+{
+  lastSuppressedError[0] = '\0';
+}
+
 static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 {
   if (threadData->externalJumpBuffer) {
@@ -680,6 +703,8 @@ void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list a
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
+  } else {
+    omc_note_suppressed_error(threadData, format, args);
   }
 #endif
   longjmp(*getBestJumpBuffer(threadData), 1);
@@ -749,6 +774,10 @@ void raiseStreamPrint(threadData_t *threadData, const char *format, ...)
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
+  } else {
+    va_start(args, format);
+    omc_note_suppressed_error(threadData, format, args);
+    va_end(args);
   }
 #endif
   OMC_ERROR_RAISE();
@@ -767,6 +796,10 @@ void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO inf
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  } else {
+    va_start(args, format);
+    omc_note_suppressed_error(threadData, format, args);
+    va_end(args);
   }
 #endif
   OMC_ERROR_RAISE();
@@ -794,6 +827,10 @@ void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO inf
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
     messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+  } else {
+    va_start(args, format);
+    omc_note_suppressed_error(threadData, format, args);
+    va_end(args);
   }
 #endif
   longjmp(*getBestJumpBuffer(threadData), 1);

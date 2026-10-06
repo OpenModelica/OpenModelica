@@ -405,6 +405,9 @@ pub struct NONLINEAR_SYSTEM_DATA {
     pub jacobianTime: f64,
     pub jacobianTimeClock: rtclock_t,
     pub csvData: *mut c_void,
+    /// Resizable arrays: the size of the system from the size parameters, called
+    /// before the system is allocated. `None` if the size is fixed.
+    pub updateSize: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> c_int>,
 }
 
 #[repr(C)]

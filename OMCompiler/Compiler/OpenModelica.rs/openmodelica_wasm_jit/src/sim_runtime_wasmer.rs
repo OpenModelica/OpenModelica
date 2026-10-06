@@ -58,11 +58,6 @@ fn runtime_blob() -> &'static [u8] {
     }
 }
 
-/// The ModelicaExternalC WASI side module (`build.rs`), providing the
-/// `ext.Modelica*_*` external functions (table blocks, string scanning, …) on the
-/// web target. Empty when `emcc` was unavailable at build time — these externals
-/// are then reported as unavailable at run time (see [`define_external_imports`]).
-
 thread_local! {
     /// Side-module offsets `env.ModelicaAllocateString` handed out during the
     /// current external "C" call (string outputs live in the side module's memory).
@@ -232,6 +227,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmer::Modu
         Some(handle) => match handle.join() {
             Ok(Ok(m)) => Ok(m),
             Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
+            Err(p) if p.is::<metamodelica::heap_limit::OutOfMemory>() => std::panic::resume_unwind(p),
             Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
         },
         #[cfg(target_arch = "wasm32")]
@@ -272,6 +268,20 @@ fn wts<T, E: std::fmt::Debug>(r: std::result::Result<T, E>) -> std::result::Resu
 }
 
 /// Read a NUL-terminated C string from wasm memory at `ptr` (bounded).
+/// The bytes of the NUL-terminated string at `ptr`, without the NUL.
+pub(crate) fn read_cstr_bytes(view: &wasmer::MemoryView, ptr: u64) -> Vec<u8> {
+    let mut out = Vec::new();
+    let mut at = ptr;
+    while let Ok(b) = view.read_u8(at) {
+        if b == 0 {
+            break;
+        }
+        out.push(b);
+        at += 1;
+    }
+    out
+}
+
 pub(crate) fn read_cstr(mem: &wasmer::Memory, store: &impl wasmer::AsStoreRef, ptr: u32) -> String {
     let view = mem.view(store);
     let mut bytes = Vec::new();
@@ -303,7 +313,7 @@ fn define_external_imports(
     use crate::dylink_wasmer::{self as dl, ExtRt, Library, NlsHooks};
     use wasmer::FunctionType;
 
-    if crate::LIBC_PIC().is_empty() {
+    if model.ext_libc.is_none() && crate::LIBC_PIC().is_empty() {
         crate::set_engine_error_detail(
             "  this omc carries no PIC libc, so no shared library can be loaded".to_owned(),
         );
@@ -327,9 +337,13 @@ fn define_external_imports(
     // `libc.so` first and the rest dependency-first (see `dylink::libraries_for`).
     // The model's own come before the ones omc carries, so a shared symbol is
     // theirs; `usertab` last, so a model's own overrides the erroring default.
-    let mut libs: Vec<Library> = vec![Library { name: "libc.so", bytes: crate::LIBC_PIC() }];
+    let libc = model.ext_libc.as_ref().map_or(crate::LIBC_PIC(), |l| &l.bytes[..]);
+    let mut libs: Vec<Library> = vec![Library { name: "libc.so", bytes: libc }];
     libs.extend(model.ext_libs.iter().map(|l| Library { name: &l.name, bytes: &l.bytes }));
-    let carried = crate::dylink::libraries_for(model.ext_imports.iter().map(|s| s.name.as_str()));
+    let carried = crate::dylink::carried_libraries(
+        model.ext_imports.iter().map(|s| s.name.as_str()),
+        model.ext_libs.iter().map(|l| &l.bytes[..]),
+    );
     for file in &carried {
         if let Some(bytes) = crate::ext_library(file) {
             libs.push(Library { name: file, bytes });
@@ -457,6 +471,14 @@ fn run_utilities_imports(
             .map_err(|e| RuntimeError::new(format!("{e}")))?;
         Ok(p as i32)
     });
+    let duplicate = Function::new_typed_with_env(store, &env, |mut env: FunctionEnvMut<RunEnv>, s: i32| -> std::result::Result<i32, RuntimeError> {
+        let (alloc, mem) = (env.data().alloc.clone(), env.data().memory.clone());
+        let bytes = read_cstr_bytes(&mem.view(&env), s as u64);
+        let p = alloc.call(&mut env, bytes.len() as u32 + 1)?;
+        mem.view(&env).write(p as u64, &[bytes, vec![0]].concat())
+            .map_err(|e| RuntimeError::new(format!("{e}")))?;
+        Ok(p as i32)
+    });
     // `ModelicaInternal_getTime` writes nothing (its seven int* outputs stay as
     // they are) and `getpid` is a constant; only ModelicaRandom's automatic global
     // seed uses them.
@@ -472,6 +494,7 @@ fn run_utilities_imports(
         (["ModelicaFormatWarning", "ModelicaVFormatWarning"], warning_fmt),
         (["ModelicaFormatMessage", "ModelicaVFormatMessage"], message_fmt),
         (["ModelicaAllocateString", "ModelicaAllocateStringWithErrorReturn"], allocate),
+        (["ModelicaDuplicateString", "ModelicaDuplicateStringWithErrorReturn"], duplicate),
     ] {
         for name in names {
             m.insert(name.to_owned(), f.clone());
@@ -573,7 +596,7 @@ fn run_inwasm(
     // result file the run reports on has been written.
     let prof = sess.take_prof()?;
     if !prof.is_empty() {
-        openmodelica_sim_meta::profiling::adopt(&model.meta, &prof);
+        openmodelica_sim_meta::profiling::adopt(model.meta(), &prof);
     }
     if bench {
         eprintln!(
@@ -635,6 +658,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
     // are store-bound in wasmer, so they are built here (per run) rather than
     // cached; this is just function-handle creation, negligible next to compile.
     let t_inst = Instant::now();
+    openmodelica_wasi::wasi::set_guest_env(model.ext_env.clone());
     let mut store = wasmer::Store::new(engine.clone());
     let mut imports = wasmer::Imports::new();
     let host_mem = add_host_builtins(&mut store, &mut imports)?;
@@ -1040,7 +1064,7 @@ pub fn build_inwasm_session(
     result: Option<&crate::result_sink::ResultTarget>,
 ) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, model.meta())?;
 
     // Append N contiguous table slots and set each to the model's export funcref
     // (null + cleared mask bit if the model doesn't export it).
@@ -1057,7 +1081,7 @@ pub fn build_inwasm_session(
     }
 
     // Write the metadata blob into linear memory for the runtime to decode.
-    let blob = openmodelica_sim_meta::encode(&model.meta);
+    let blob = openmodelica_sim_meta::encode(&model.meta_compact);
     let meta_ptr = wts(rt_alloc.call(&mut store, blob.len() as u32))?;
     wts(memory.view(&store).write(meta_ptr as u64, &blob))?;
 
@@ -1126,12 +1150,15 @@ pub fn build_inwasm_session(
     match started {
         Ok(rc) if rc >= 0 => Ok(sess),
         Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
-        Err(_) => Err(sim_driver::enrich_trap_init(
-            &mut sess,
-            "CodegenWasmJit: in-wasm initialization failed",
-            model.start_time,
-        )
-        .to_string()),
+        Err(e) => {
+            crate::set_engine_error_detail(format!("{e:?}"));
+            Err(sim_driver::enrich_trap_init(
+                &mut sess,
+                "CodegenWasmJit: in-wasm initialization failed",
+                model.start_time,
+            )
+            .to_string())
+        }
     }
 }
 
@@ -1176,7 +1203,11 @@ impl InWasmSession {
     pub fn advance(&mut self, budget_ms: f64) -> Result<i32> {
         match self.advance.call(&mut self.store, budget_ms) {
             Ok(rc) if rc >= 0 => Ok(rc),
-            _ => Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed")),
+            Ok(_) => Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed")),
+            Err(e) => {
+                crate::set_engine_error_detail(format!("{e:?}"));
+                Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed"))
+            }
         }
     }
 
@@ -1269,7 +1300,11 @@ impl Drop for InWasmSession {
 }
 
 /// Only the wasmtime backend keeps an on-disk artifact cache.
-pub fn precompile_fixed_blobs(_dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+pub fn precompile_fixed_blobs(_dir: &std::path::Path, _prune: bool) -> std::result::Result<Vec<String>, String> {
+    Ok(Vec::new())
+}
+
+pub fn precompile_libraries(_dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
     Ok(Vec::new())
 }
 

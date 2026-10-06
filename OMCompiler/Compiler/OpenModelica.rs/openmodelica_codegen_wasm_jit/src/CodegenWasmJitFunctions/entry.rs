@@ -24,6 +24,25 @@ pub fn translateFunctions(fnCode: SimCodeFunction::FunctionCode) {
     }
 }
 
+/// `CodegenWasmJitFunctions.prebuiltExternalsABI`: what `installPackage` fetches
+/// prebuilt modules for: for the wasm-jit target, and always in an omc that
+/// cannot compile `Include` sources.
+pub fn prebuiltExternalsABI() -> i32 {
+    let wasm_jit = openmodelica_util::Config::simCodeTarget().is_ok_and(|t| &*t == "wasm-jit");
+    if wasm_jit || !crate::CodegenWasmJit::native_externals_allowed() { crate::CodegenWasmJit::PREBUILT_ABI as i32 } else { 0 }
+}
+
+/// `CodegenWasmJitFunctions.precompilePrebuiltModules`. Best effort.
+pub fn precompilePrebuiltModules(libraryDirs: List<ArcStr>) {
+    if libraryDirs.is_empty() {
+        return;
+    }
+    let dirs: Vec<std::path::PathBuf> = libraryDirs.iter().map(|d| std::path::PathBuf::from(&**d)).collect();
+    if let Err(e) = openmodelica_wasm_jit::sim_runtime::precompile_libraries(&dirs) {
+        let _ = openmodelica_util::Error::addCompilerWarning(ArcStr::from(format!("Could not precompile the prebuilt wasm modules: {e}")));
+    }
+}
+
 fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<()> {
     let BuiltModule { bytes, in_sig, out_sig, ext_imports } = build_module(fn_code)?;
     let base = fn_code.name.to_string();
@@ -39,6 +58,9 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
         let fortran = ext_imports.iter().any(|s| s.lang == ExtLang::Fortran77);
         let resolved = crate::CodegenWasmJit::resolve_ext_libraries(&fn_code.makefileParams, fortran, &mut notes)?;
         let wasm_libs = resolved.wasm;
+        if let Some(libc) = &resolved.libc {
+            sig.push_str(&format!("libc\t{}\n", libc.name));
+        }
         for lib in &wasm_libs {
             sig.push_str(&format!("lib\t{}\n", lib.name));
         }
@@ -48,21 +70,24 @@ fn translate_functions_inner(fn_code: &SimCodeFunction::FunctionCode) -> Result<
             .chain(resolved.sources)
             .collect();
         let dirs: Vec<String> = crate::CodegenWasmJit::lst(&fn_code.makefileParams.includes).map(|s| s.to_string()).collect();
-        // A host build compiles them the way the C target does and calls them
-        // through libffi, as `build_sim_model` does: the in-wasm `Modelica*`
-        // callbacks are host imports, which cannot take C varargs, so a
-        // `ModelicaFormatMessage` there would lose its arguments. The browser has
-        // no host library to call, so there the wasm unit is all.
-        #[cfg(target_arch = "wasm32")]
-        {
-            let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
-            if let Some(l) = crate::CodegenWasmJit::compile_include_library(&base, &sources, &dirs, &fn_code.makefileParams.cflags, &missing, &mut notes)? {
-                let path = format!("{base}_includes.wasm");
-                openmodelica_wasi::fs::write(&path, &l.bytes)
-                    .map_err(|_| "CodegenWasmJitFunctions: cannot stage the compiled include library")?;
-                sig.push_str(&format!("lib\t{path}\n"));
-            }
+        // Installed prebuilt modules first, as `build_sim_model` takes them; a host
+        // build compiles the rest the way the C target does and calls them through
+        // libffi. The browser has no host library to call.
+        let missing = crate::CodegenWasmJit::missing_ext_symbols(&ext_imports, &wasm_libs);
+        let fns: Vec<&SimCodeFunction::Function::Function> =
+            fn_code.mainFunction.iter().chain(fn_code.functions.iter()).map(|f| &**f).collect();
+        let mut prebuilt_notes = Vec::new();
+        let prebuilt =
+            crate::CodegenWasmJit::prebuilt_include_libraries(&fns, &missing, false, resolved.generation, &mut prebuilt_notes);
+        if !crate::CodegenWasmJit::native_externals_allowed() {
+            notes.extend(prebuilt_notes);
         }
+        for l in &prebuilt {
+            sig.push_str(&format!("lib\t{}\n", l.name));
+        }
+        let wasm_libs: Vec<_> = wasm_libs.into_iter().chain(prebuilt).collect();
+        #[cfg(target_arch = "wasm32")]
+        let _ = (&sources, &dirs, &wasm_libs);
         // The model's own code first: it shadows a same-named symbol in a `Library`
         // shared object, as the C target's own link order does.
         #[cfg(not(target_arch = "wasm32"))]

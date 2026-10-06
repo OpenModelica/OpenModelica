@@ -58,9 +58,13 @@ import Inst;
 import Lookup;
 import List;
 import AbsynToSCode;
+import BackendInterface;
+import Config;
 import MetaUtil;
 import System;
 import SCodeUtil;
+import UnorderedMap;
+import Util;
 protected import ComponentReferenceBasics;
 
 public
@@ -76,6 +80,10 @@ record SYMBOLTABLE
      effect of translating explodedAst that the old frontend reads later. Stored
      here so getSCode can re-assert it on a cache hit, since an intervening
      translation or NFInst.resetGlobalFlags may have cleared the global flags.";
+  Option<tuple<Absyn.Program, SCode.Program, tuple<Boolean,Boolean,Boolean,Boolean>>> scodeBase
+    "the last translated program, its SCode and connector flags, set while
+     explodedAst is invalid; getSCode only translates the top-level classes
+     that changed since then";
 end SYMBOLTABLE;
 
 constant Integer AST_CACHE_MAX_SIZE = 1000;
@@ -89,7 +97,8 @@ algorithm
                  vars={},
                  cachedAsts=Vector.new<Program>(),
                  cacheIndex=0,
-                 connectorFlags=(false,false,false,false)
+                 connectorFlags=(false,false,false,false),
+                 scodeBase=NONE()
                  ));
   updateUriMapping({});
 end reset;
@@ -145,11 +154,12 @@ algorithm
   if referenceEq(table.ast, ast) then
     return;
   end if;
-  table.ast := ast;
-  updateUriMapping(ast.classes);
   if isSome(table.explodedAst) then
+    table.scodeBase := SOME((table.ast, Util.getOption(table.explodedAst), table.connectorFlags));
     table.explodedAst := NONE();
   end if;
+  table.ast := ast;
+  updateUriMapping(ast.classes);
   update(table);
 end setAbsyn;
 
@@ -351,11 +361,24 @@ function getSCode
   output SCode.Program ast;
 protected
   SymbolTable table;
+  Option<SCode.Program> updated;
+  Absyn.Program base_ast;
+  SCode.Program base_scode;
+  tuple<Boolean,Boolean,Boolean,Boolean> base_flags;
 algorithm
   table := get();
   if isNone(table.explodedAst) then
-    ast := AbsynToSCode.translateAbsyn2SCode(table.ast);
+    updated := match table.scodeBase
+      case SOME((base_ast, base_scode, base_flags))
+        then updateSCode(table.ast, base_ast, base_scode, base_flags);
+      else NONE();
+    end match;
+    ast := match updated
+      case SOME(ast) then ast;
+      else AbsynToSCode.translateAbsyn2SCode(table.ast);
+    end match;
     table.explodedAst := SOME(ast);
+    table.scodeBase := NONE();
     table.connectorFlags := currentConnectorFlags();
     update(table);
   else
@@ -364,7 +387,59 @@ algorithm
   end if;
 end getSCode;
 
-function setSCode
+protected function updateSCode
+  "Translates the top-level classes of ast that are not in baseAst and reuses
+   the SCode of the others, or returns NONE() if the classes cannot be
+   matched by name."
+  input Absyn.Program ast;
+  input Absyn.Program baseAst;
+  input SCode.Program baseSCode;
+  input tuple<Boolean,Boolean,Boolean,Boolean> baseFlags;
+  output Option<SCode.Program> outSCode = NONE();
+protected
+  UnorderedMap<String, Absyn.Class> base_classes;
+  UnorderedMap<String, SCode.Element> base_elements;
+  list<SCode.Element> elements = {};
+  Option<SCode.Element> elem;
+algorithm
+  // MetaUtil.createMetaClassesInProgram adds top-level classes.
+  if Config.acceptMetaModelicaGrammar() then
+    return;
+  end if;
+
+  base_classes := UnorderedMap.new<Absyn.Class>(stringHashDjb2, stringEq);
+  for cls in baseAst.classes loop
+    if not referenceEq(UnorderedMap.tryAdd(cls.name, cls, base_classes), cls) then
+      return;
+    end if;
+  end for;
+
+  base_elements := UnorderedMap.new<SCode.Element>(stringHashDjb2, stringEq);
+  for e in baseSCode loop
+    UnorderedMap.tryAdd(SCodeUtil.elementName(e), e, base_elements);
+  end for;
+
+  BackendInterface.initInstHashTable();
+  applyConnectorFlags(baseFlags);
+  for cls in ast.classes loop
+    elem := match UnorderedMap.get(cls.name, base_classes)
+      local
+        Absyn.Class base_cls;
+      case SOME(base_cls) guard referenceEq(base_cls, cls) then UnorderedMap.get(cls.name, base_elements);
+      else NONE();
+    end match;
+    elements := (match elem
+      local
+        SCode.Element e;
+      case SOME(e) then e;
+      else AbsynToSCode.translateClass(cls);
+    end match) :: elements;
+  end for;
+
+  outSCode := SOME(listReverse(elements));
+end updateSCode;
+
+public function setSCode
   input Option<SCode.Program> ast;
 protected
   SymbolTable table;
@@ -374,6 +449,7 @@ algorithm
     return;
   end if;
   table.explodedAst := ast;
+  table.scodeBase := NONE();
   update(table);
 end setSCode;
 
@@ -382,8 +458,9 @@ protected
   SymbolTable table;
 algorithm
   table := get();
-  if isSome(table.explodedAst) then
+  if isSome(table.explodedAst) or isSome(table.scodeBase) then
     table.explodedAst := NONE();
+    table.scodeBase := NONE();
     update(table);
   end if;
 end clearSCode;

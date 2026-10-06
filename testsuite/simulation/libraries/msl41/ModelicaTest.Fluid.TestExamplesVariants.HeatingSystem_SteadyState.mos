@@ -1,0 +1,53 @@
+// name:     ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageName := $TypeName(ModelicaTest);
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState);
+compareVars :=
+{
+   "tank.m",
+   "tankLevel",
+   "m_flow",
+   "T_forward",
+   "T_return",
+   "tank.ports[2].p"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// ModelicaTest
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState
+// {"tank.m", "tankLevel", "m_flow", "T_forward", "T_return", "tank.ports[2].p"}
+// Simulation options: startTime = 0.0, stopTime = 6000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState', options = '', outputFormat = 'mat', variableFilter = 'time|tank.m|tankLevel|m_flow|T_forward|T_return|tank.ports.2..p', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: ModelicaTest.Fluid.TestExamplesVariants.HeatingSystem_SteadyState_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Files Equal!
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:900:9-900:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// [Modelica 4.1.0+maint.om/Media/Water/IF97_Utilities.mo:937:9-937:73:writable] Warning: Output parameter bpro.cv was not assigned a value
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
+// "true
+// "
+// ""
+// endResult

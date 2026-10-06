@@ -4013,6 +4013,10 @@ algorithm
       then (exp,false,tpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "previous")),_)
       then (exp,false,tpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "smooth")),_)
+      then (exp,true,tpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "noEvent")),_)
+      then (exp,true,tpl);
     case (DAE.CALL(expLst=expLst),_)
       algorithm
         // check if vars occurs not in argument list

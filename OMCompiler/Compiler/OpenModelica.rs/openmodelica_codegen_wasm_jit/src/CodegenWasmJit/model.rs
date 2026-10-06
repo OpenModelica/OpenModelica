@@ -77,7 +77,7 @@ pub(super) fn build_sim_model(
     let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
-    let scalarized_vars = scalarize_sim_vars(&mi.vars)?;
+    let (scalarized_vars, array_runs) = scalarize_sim_vars(&mi.vars)?;
     let vars = &scalarized_vars;
     let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
@@ -174,7 +174,7 @@ pub(super) fn build_sim_model(
         has_method1_linear(sim_code),
     );
 
-    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &layout)?;
+    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &array_runs, &layout)?;
     let (prof_plan, prof_info) = prof_plan(sim_code, mi)?;
     var_map.prof = prof_plan;
     // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
@@ -214,8 +214,7 @@ pub(super) fn build_sim_model(
             );
         }
     }
-    let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars)?;
-    let var_units = collect_var_units(vars)?;
+    let sens_params = push_sensitivity_vars(&sens_vars, n_sens_par, vars, &layout, &mut result_vars.vars)?;
     var_map.n_samples = samples.len() as u32;
     var_map.sample_active_off = layout.sample_active_off;
     // Delay-buffer count (0 when the model has no `delay(...)`).
@@ -317,31 +316,63 @@ pub(super) fn build_sim_model(
             // wasm library on either host. A wasm artifact carries every
             // implementation, so there the same decision is made off the exports.
             let hook = ext_builtin && include_overrides_builtin(&sources);
-            if hook || ext_host == ExtHost::Wasm {
-                let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
-                if hook || !missing.is_empty() {
-                    if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
-                        // Sources that only wrap a platform library still compile,
-                        // and keeping the result would hide the functions from the
-                        // host fallback that can serve them.
-                        let carried = match ext_builtin {
-                            true => openmodelica_wasm_jit::dylink::libraries_for(ext_imports.iter().map(|s| s.name.as_str())),
-                            false => Vec::new(),
-                        };
-                        let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm, &carried);
-                        if unresolved.is_empty() {
-                            ext_libs.wasm.push(l);
-                        } else {
-                            ext_lib_notes.push(format!(
-                                "the `Include` C sources compiled for wasm but need `{}`, which no \
-                                 wasm library defines; serving them from the host instead",
-                                unresolved.join("`, `")
-                            ));
+            let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+            if hook || !missing.is_empty() {
+                let carried = match ext_builtin {
+                    true => openmodelica_wasm_jit::dylink::carried_libraries(
+                        ext_imports.iter().map(|s| s.name.as_str()),
+                        ext_libs.wasm.iter().map(|l| &l.bytes[..]),
+                    ),
+                    false => Vec::new(),
+                };
+                // Installed prebuilt modules first, on either host: linked into the
+                // wasm, a call does not go through the host.
+                let mut notes = Vec::new();
+                let prebuilt = prebuilt_include_libraries(&model_fns, &missing, hook, ext_libs.generation, &mut notes);
+                let used_prebuilt = !prebuilt.is_empty();
+                let others: Vec<ExtLibrary> = ext_libs.wasm.iter().chain(&prebuilt).cloned().collect();
+                for l in prebuilt {
+                    let mut unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &others, &carried);
+                    unresolved.retain(|n| !HOST_UTILITIES.contains(&n.as_str()));
+                    if unresolved.is_empty() {
+                        ext_libs.wasm.push(l);
+                    } else {
+                        notes.push(format!(
+                            "the prebuilt wasm module {} needs `{}`, which no wasm library defines",
+                            l.name,
+                            unresolved.join("`, `")
+                        ));
+                    }
+                }
+                if !native_externals_allowed() {
+                    ext_lib_notes.extend(notes);
+                } else if (hook && !used_prebuilt) || ext_host == ExtHost::Wasm {
+                    let missing = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
+                    if (hook && !used_prebuilt) || !missing.is_empty() {
+                        if let Some(l) = compile_include_library(&prefix, &sources, &dirs, &mp.cflags, &missing, &mut ext_lib_notes)? {
+                            // Sources that only wrap a platform library still compile,
+                            // and keeping the result would hide the functions from the
+                            // host fallback that can serve them.
+                            let unresolved = unresolved_dylink_needs(&dylink_needs(&l.bytes), &l, &ext_libs.wasm, &carried);
+                            if unresolved.is_empty() {
+                                if ext_libs.libc.is_none() {
+                                    ext_libs.libc = toolchain_libc();
+                                }
+                                ext_libs.wasm.push(l);
+                            } else {
+                                ext_lib_notes.push(format!(
+                                    "the `Include` C sources compiled for wasm but need `{}`, which no \
+                                     wasm library defines; serving them from the host instead",
+                                    unresolved.join("`, `")
+                                ));
+                            }
                         }
                     }
                 }
             }
         }
+        // A prebuilt module may be linked against a library omc carries.
+        ext_builtin = builtin_wasm_needed(&ext_imports, &ext_libs.wasm);
         // What no wasm library defines, a shared-memory kernel hands to the host.
         if ext_host == ExtHost::Wasm && crate::CodegenWasmJitFunctions::externals_shared() {
             ext_native = missing_ext_symbols(&ext_imports, &ext_libs.wasm);
@@ -457,8 +488,9 @@ pub(super) fn build_sim_model(
     // *before* lowering the equation functions (which call it): assign each a
     // shared-table job and thread the map through `var_map`. The systems' own
     // `residual`/`load` callbacks are emitted after the equation functions.
-    let nls_nominal_map = build_nls_nominal_map(vars);
-    let mut attr_targets: HashMap<String, AttrTargets> = HashMap::default();
+    let mut attr_targets = AttrTargetMap::new(bound_attr_equations(sim_code).into_iter().filter_map(|(_, cr, _)| {
+        sim_cref_key(cr).ok().map(|k| k.strip_prefix("$START.").unwrap_or(&k).to_string())
+    }));
     let dae_only_eqs: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = dae_eqs.iter().map(|(e, _)| e.clone()).collect();
     let removed_init_eqs = flatten_eqs(&sim_code.removedInitialEquations);
     let clocked = clocked_eqs(sim_code);
@@ -469,6 +501,8 @@ pub(super) fn build_sim_model(
     .iter()
     .map(|l| eqs_with_nested(l.as_slice()))
     .collect();
+    let nls_nominal_map =
+        build_nls_nominal_map(vars, &nls_iteration_keys(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>()));
     let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns, nls_warnings) = collect_nls_jobs(
         &nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>(),
         &nls_nominal_map,
@@ -486,26 +520,25 @@ pub(super) fn build_sim_model(
         for (i, sv) in list.iter().enumerate() {
             let off = base + (i as u32) * 8;
             nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
-            if let Ok(k) = sim_cref_key(&sv.name) {
-                attr_targets.entry(k).or_default().nom_offs.push(off);
+            if let Some(t) = attr_targets.of(&sv.name) {
+                t.nom_offs.push(off);
             }
         }
     }
     // C's `functionJacAC_num` reads each state's `max` to sign its step.
     let mut max_defaults: Vec<(u32, f64)> = Vec::new();
+    // gbode's KINSOL keeps the sign a state's `min` asks for.
+    let mut min_defaults: Vec<(u32, f64)> = Vec::new();
     for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
-        let off = layout.state_max_off + (i as u32) * 8;
-        max_defaults.push((off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            attr_targets.entry(k).or_default().max_offs.push(off);
-        }
-        // gbode's KINSOL keeps the sign a state's `min` asks for.
-        let off = layout.state_min_off + (i as u32) * 8;
-        max_defaults.push((off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            attr_targets.entry(k).or_default().raw_min_offs.push(off);
+        let (max_off, min_off) = (layout.state_max_off + (i as u32) * 8, layout.state_min_off + (i as u32) * 8);
+        max_defaults.push((max_off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
+        min_defaults.push((min_off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
+        if let Some(t) = attr_targets.of(&sv.name) {
+            t.max_offs.push(max_off);
+            t.raw_min_offs.push(min_off);
         }
     }
+    max_defaults.append(&mut min_defaults);
     // Register the analytic-Jacobian seed/result crefs before the equation
     // functions are lowered, so the column equations resolve their slots.
     let nls_jac_infos = build_nls_jac_infos(&nls_systems, &layout, &mut var_map)?;
@@ -655,6 +688,9 @@ pub(super) fn build_sim_model(
 
     // --- Compile bodies (collecting String literals into the module pool). ---
     let mut literals = Literals::default();
+    // Table 1 is parmod's when there is one.
+    let outline_table = 1 + parmod_info.is_some() as u32;
+    let outline = crate::CodegenWasmJitFunctions::OutlineScope::begin([eqfn_type, dae_fn_type], outline_table);
     let mut bodies: Vec<we::Function> = Vec::new();
     // With a tag in the module, every `ext` call is lowered under a `try_table`
     // (tag index 0: the module imports none).
@@ -752,8 +788,7 @@ pub(super) fn build_sim_model(
     for (i, sv) in all_reals.iter().enumerate() {
         let nom_off = layout.real_nominal_off(i as u32);
         nominal_defaults.push((nom_off, literal_value(&sv.nominalValue).unwrap_or(1.0)));
-        if let Ok(k) = sim_cref_key(&sv.name) {
-            let t = attr_targets.entry(k).or_default();
+        if let Some(t) = attr_targets.of(&sv.name) {
             t.start_offs.push(layout.real_start_off(i as u32));
             t.raw_nom_offs.push(nom_off);
         }
@@ -942,13 +977,13 @@ pub(super) fn build_sim_model(
         }
     }
     let meta = build_sim_meta(
-        &layout, &result_vars, collect_unit_defs(mi, &result_vars), settings, cs_method, fmi_solver_flags, &model_name,
+        &layout, &result_vars, collect_unit_defs(mi, &result_vars.vars), settings, cs_method, fmi_solver_flags, &model_name,
         &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         nls_warnings.clone(),
-        samples.iter().map(|s| s.index).collect(), soti_vars(vars)?, sens_params, nls_vars,
+        samples.iter().map(|s| s.index).collect(), soti_vars(vars, &array_runs)?, sens_params, nls_vars,
         mi.varInfo.numLinearSystems.max(0) as u32, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
@@ -1242,27 +1277,29 @@ pub(super) fn build_sim_model(
             optimization::attr_defaults(&reals, &layout, &mut attr_targets)
         }
     };
+    let mut attr_slots: Vec<(u32, ConstSlot)> =
+        nominal_defaults.iter().chain(max_defaults.iter()).map(|&(off, v)| (off, ConstSlot::f64(v))).collect();
+    attr_slots.sort_by_key(|&(off, _)| off);
     let update_bound_attrs_idx = {
         let idx = import_base + bodies.len() as u32;
-        let defaults: Vec<(u32, f64)> = nominal_defaults
-            .iter()
-            .chain(max_defaults.iter())
-            .chain(opt_attrs.reals.iter())
-            .copied()
-            .collect();
-        bodies.push(build_update_bound_attrs_fn(
-            sim_code, &layout, &defaults, &opt_attrs.ints, &attr_targets, &var_map, &by_name,
-            &mut literals,
-        )?);
+        let mut with_opt: Vec<(u32, ConstSlot)> = Vec::new();
+        let slots = if opt_attrs.reals.is_empty() && opt_attrs.ints.is_empty() {
+            &attr_slots
+        } else {
+            with_opt.extend(attr_slots.iter().copied());
+            with_opt.extend(opt_attrs.reals.iter().map(|&(off, v)| (off, ConstSlot::f64(v))));
+            with_opt.extend(opt_attrs.ints.iter().map(|&(off, v)| (off, ConstSlot::I32(v))));
+            with_opt.sort_by_key(|&(off, _)| off);
+            &with_opt
+        };
+        bodies.push(build_update_bound_attrs_fn(sim_code, &layout, slots, &attr_targets, &var_map, &by_name, &mut literals)?);
         idx
     };
     // C's `setupDataStruc` half: the constant defaults, written before the solver is
     // allocated. The expression-bound ones stay in the update function.
     let attr_defaults_idx = {
         let idx = import_base + bodies.len() as u32;
-        let defaults: Vec<(u32, f64)> =
-            nominal_defaults.iter().chain(max_defaults.iter()).copied().collect();
-        bodies.push(build_attr_defaults_fn(&defaults, &var_map, &by_name, &mut literals)?);
+        bodies.push(build_attr_defaults_fn(&attr_slots, &var_map, &by_name, &mut literals)?);
         idx
     };
     // Always exported (empty when the backend generated none) so the standalone
@@ -1360,9 +1397,16 @@ pub(super) fn build_sim_model(
         }
     };
 
+    let outline_first = pool.len();
+    for (k, (f, ty)) in outline.finish().into_iter().enumerate() {
+        pool.push(f, ty, format!("outlined${k}"));
+    }
+    let outline_range = outline_first..pool.len();
+
     // The chunks, after all fixed-index bodies; each entry point's placeholder
     // becomes a thunk calling the ones it needs.
     let chunk_base = import_base + bodies.len() as u32;
+    let outlined: Vec<u32> = outline_range.map(|c| chunk_base + c as u32).collect();
     let ChunkPool { fns: chunk_fns, meta: chunk_meta } = pool;
     bodies.extend(chunk_fns);
     for s in &splits {
@@ -1482,7 +1526,7 @@ pub(super) fn build_sim_model(
         }
         if let Some((fn_indices, _)) = &nls_wiring {
             let sizes: Vec<u32> = nls_systems.iter().map(|s| lst(&s.crefs).count() as u32).collect();
-            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns);
+            emit_nls_start(&mut f, fn_indices, nls_hist_bytes, &sizes, &nls_nominals, &nls_bounds, &nls_patterns, &mut literals);
         }
         if !thunk_indices.is_empty() {
             crate::CodegenWasmJitFunctions::closures::emit_start(&mut f, &thunk_indices, closure_global);
@@ -1511,7 +1555,7 @@ pub(super) fn build_sim_model(
         functions.function(throw_fn_type);
         bodies.push(f);
     }
-    if nls_wiring.is_some() || !thunk_indices.is_empty() || parmod_fns.is_some() {
+    if nls_wiring.is_some() || !thunk_indices.is_empty() || parmod_fns.is_some() || !outlined.is_empty() {
         imports.import("rt", "__indirect_function_table", we::EntityType::Table(we::TableType {
             element_type: we::RefType::FUNCREF,
             table64: false,
@@ -1729,15 +1773,17 @@ pub(super) fn build_sim_model(
     module.section(&types);
     module.section(&imports);
     module.section(&functions);
-    if let Some(tasks) = &parmod_tasks {
+    if parmod_tasks.is_some() || !outlined.is_empty() {
         let mut tables = we::TableSection::new();
-        tables.table(we::TableType {
-            element_type: we::RefType::FUNCREF,
-            table64: false,
-            minimum: tasks.len() as u64,
-            maximum: Some(tasks.len() as u64),
-            shared: false,
-        });
+        for fns in parmod_tasks.iter().chain((!outlined.is_empty()).then_some(&outlined)) {
+            tables.table(we::TableType {
+                element_type: we::RefType::FUNCREF,
+                table64: false,
+                minimum: fns.len() as u64,
+                maximum: Some(fns.len() as u64),
+                shared: false,
+            });
+        }
         module.section(&tables);
     }
     if let Some(ti) = error_tag_type {
@@ -1776,6 +1822,10 @@ pub(super) fn build_sim_model(
     }
     if let Some(tasks) = &parmod_tasks {
         elements.active(Some(1), &we::ConstExpr::i32_const(0), we::Elements::Functions(tasks.as_slice().into()));
+        have_elements = true;
+    }
+    if !outlined.is_empty() {
+        elements.active(Some(outline_table), &we::ConstExpr::i32_const(0), we::Elements::Functions(outlined.as_slice().into()));
         have_elements = true;
     }
     if have_elements {
@@ -1828,7 +1878,6 @@ pub(super) fn build_sim_model(
         compiled,
         prepared: Mutex::new(None),
         layout,
-        result_vars,
         ext_libs: ext_libs.wasm,
         ext_native,
         ext_builtin,
@@ -1839,6 +1888,9 @@ pub(super) fn build_sim_model(
         ext_archives,
         ext_includes,
         ext_lib_notes,
+        ext_env: ext_libs.env,
+        // Under the name the loader takes libc's own symbols by.
+        ext_libc: ext_libs.libc.map(|l| ExtLibrary { name: "libc.so".to_string(), ..l }),
         ext_imports,
         model_name,
         start_time: settings.startTime.into_inner(),
@@ -1851,8 +1903,8 @@ pub(super) fn build_sim_model(
         jac_a,
         sparse_nls: var_map.nls_jobs.values().any(|j| j.sparse_default),
         editable_params,
-        var_units,
-        meta,
+        meta_compact: meta,
+        meta_expanded: Default::default(),
     })
 }
 

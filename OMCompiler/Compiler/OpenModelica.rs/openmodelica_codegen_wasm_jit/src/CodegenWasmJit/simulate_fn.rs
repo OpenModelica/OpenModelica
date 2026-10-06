@@ -194,16 +194,16 @@ pub(super) fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: 
 /// fall back on.
 pub(super) fn output_selection(model: &SimModel) -> Vec<bool> {
     let Some(pattern) = simflags::with_flags(|f| f.variable_filter.clone()) else {
-        return model.meta.output_keep(None);
+        return model.meta().output_keep(None);
     };
     match openmodelica_util::System::Regex::new(&format!("^({pattern})$")) {
-        Ok(re) => model.meta.output_keep(Some(&|name: &str| re.is_match(name))),
+        Ok(re) => model.meta().output_keep(Some(&|name: &str| re.is_match(name))),
         Err(e) => {
             eprintln!(
                 "Failed to compile regular expression: {pattern} with error: {e}. \
                  Defaulting to outputting all variables."
             );
-            model.meta.output_keep(Some(&|_: &str| true))
+            model.meta().output_keep(Some(&|_: &str| true))
         }
     }
 }

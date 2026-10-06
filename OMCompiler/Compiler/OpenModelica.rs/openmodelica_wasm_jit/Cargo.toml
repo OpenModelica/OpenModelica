@@ -51,3 +51,5 @@ rsparse = "1.2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasmer = { workspace = true, features = ["js", "wasm-types-polyfill"], optional = true }
+js-sys = "0.3.105"
+wasm-bindgen = "=0.2.128"

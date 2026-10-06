@@ -352,11 +352,11 @@ fn lower_fmu_kernel(
 /// A CS FMU integrates itself, so an unservable method has to fail at export
 /// rather than at the importer's first do-step.
 fn check_fmu_method(model: &SimModel, kind: &str) -> Result<()> {
-    if kind != "ME" && !fmu_cs_solvers().contains(&model.meta.cs_method.as_str()) {
+    if kind != "ME" && !fmu_cs_solvers().contains(&model.meta_compact.cs_method.as_str()) {
         record_error(format!(
             "CodegenWasmJit: a Co-Simulation wasm FMU cannot integrate with method=\"{}\". \
              Available: {}.",
-            model.meta.cs_method,
+            model.meta_compact.cs_method,
             fmu_cs_solvers().join(", ")
         ));
         return Err("CodegenWasmJit: unusable Co-Simulation integration method");
@@ -392,8 +392,8 @@ fn keep_fmu_kernel(prefix: &str, model: &Arc<SimModel>) {
         prefix.to_string(),
         Arc::new(FmuKernel {
             model: model.clone(),
-            cs_method: model.meta.cs_method.clone(),
-            fmi_solver_flags: model.meta.fmi_solver_flags.clone(),
+            cs_method: model.meta_compact.cs_method.clone(),
+            fmi_solver_flags: model.meta_compact.fmi_solver_flags.clone(),
         }),
     );
 }
@@ -445,7 +445,7 @@ fn keep_translated_model(sim_code: &SimCode::SimCode, kernel: &Arc<SimModel>) ->
     let model = match kept {
         Some(m) => m,
         None if first_external_import(&kernel.wasm).is_none() => kernel.clone(),
-        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM, &kernel.meta.cs_method, &kernel.meta.fmi_solver_flags)?),
+        None => Arc::new(build_sim_model(sim_code, true, ExtHost::SIM, &kernel.meta_compact.cs_method, &kernel.meta_compact.fmi_solver_flags)?),
     };
     if model.prepared.lock().unwrap_or_else(|e| e.into_inner()).is_none()
         && let Ok(compiled) = sim_runtime::take_compiled_model(&model)
@@ -526,6 +526,7 @@ pub(super) fn emit_fmu(
                 adapter,
                 solvers.as_deref(),
                 &model.ext_libs,
+                model.ext_libc.as_ref().map(|l| &l.bytes[..]),
                 natives.as_ref().map(|n| &n.stub[..]),
             )?
         };

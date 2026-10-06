@@ -5,6 +5,7 @@ mod avl_tree_string_tests;
 mod diff_algorithm_tests;
 mod flags_util_tests;
 mod hash_set_string_tests;
+mod json_ext_tests;
 mod sb_tests;
 mod string_allocator_tests;
 mod string_util_tests;

@@ -434,12 +434,12 @@ fn zc_eps(a: f64, b: f64, a_nominal: f64, b_nominal: f64) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn LessZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {
     let eps = zc_eps(a, b, an, bn);
-    (if direction != 0 { a - b <= eps } else { a - b <= -eps }) as c_int
+    (if direction != 0 { a - b <= eps } else { a - b < -eps }) as c_int
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn GreaterZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {
     let eps = zc_eps(a, b, an, bn);
-    (if direction != 0 { a - b >= -eps } else { a - b >= eps }) as c_int
+    (if direction != 0 { a - b >= -eps } else { a - b > eps }) as c_int
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn LessEqZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {

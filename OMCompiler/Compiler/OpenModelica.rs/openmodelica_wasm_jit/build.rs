@@ -671,18 +671,8 @@ fn build_lapack_wasm(lapack_dir: &Path, out_dir: &Path) -> Result<PathBuf, Strin
 }
 
 /// What `blobs_ondemand!` in src/blobs.rs declares, and whether the file comes
-/// from `openmodelica_wasi_libc`'s OUT_DIR rather than this crate's. Only what a
-/// model's `external` declaration can name is indexed; the rest of the family is
-/// reached through `dylink.0` NEEDED.
-const ONDEMAND_BLOBS: &[(&str, bool)] = &[
-    ("liblapack.wasm", false),
-    ("ModelicaExternalC.wasm", true),
-    ("ModelicaStandardTables.wasm", true),
-    ("ModelicaIO.wasm", true),
-    // Not ModelicaMatIO, zlib or libc: nothing a model declares names a symbol of
-    // theirs — they are reached as what ModelicaIO needs — and MatIO carries the
-    // 3000 `H5*` of the HDF5 that gives it MAT v7.3.
-];
+/// from `openmodelica_wasi_libc`'s OUT_DIR rather than this crate's.
+const ONDEMAND_BLOBS: &[(&str, bool)] = &[("liblapack.wasm", false), ("ModelicaUtilities.wasm", true)];
 
 /// Read off the modules, so the index cannot drift from what they export.
 /// Whether an export is a name a model's `external` declaration could name. A PIC
@@ -785,10 +775,9 @@ fn build_fmi3_me_adapter(crate_dir: &Path, out_dir: &Path, sundials: bool) -> [P
 /// from, so it defaults to MVP and rejects the bulk-memory/sign-ext ops these carry.
 /// A failure is not fatal -- the unoptimized module is correct.
 ///
-/// Not applied to what `openmodelica_wasi_libc` hands over: `libc_pic` and
-/// `modelicaexternalc` are already optimized by wasi-libc and clang, and the vendored
-/// `wasi_snapshot_preview1` adapter is a wasmtime release artifact, not a side module
-/// of ours.
+/// Not applied to what `openmodelica_wasi_libc` hands over: its side modules are
+/// already optimized by wasi-libc and clang, and the vendored `wasi_snapshot_preview1`
+/// adapter is a wasmtime release artifact, not a side module of ours.
 fn wasm_opt(path: &Path) {
     let Some(exe) = std::env::var_os("OMC_WASM_OPT").filter(|v| !v.is_empty()) else { return };
     let tmp = path.with_extension("opt.tmp");

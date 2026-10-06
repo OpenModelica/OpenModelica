@@ -58,6 +58,7 @@ protected
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Dimension = NFDimension;
   import Variable = NFVariable;
 
   // old backend imports
@@ -807,6 +808,7 @@ public
       input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
+      input Boolean entwined = false "a slice of an entwined component, which needs its index list";
     algorithm
       (blck, index) := match comp
         local
@@ -818,6 +820,7 @@ public
           list<SimVar> linVars = {};
           Integer sysIndex;
           Boolean allLinVarsFound;
+          Integer resizable_size "the static size of whole resizable iteration arrays beyond 1 each";
           Option<SimVar> osimvar;
           Block tmp;
           Variable var;
@@ -865,6 +868,20 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
+        // a slice of a for-equation over a resizable range that contains every
+        // iteration (at the analysis sizes; the call computes the whole body of an
+        // iteration) is the whole loop for every size
+        case StrongComponent.GENERIC_COMPONENT() guard not entwined and coversAllResizableIterations(comp.eqn) algorithm
+          eqn_ptr := Slice.getT(comp.eqn);
+          eqn     := Pointer.access(eqn_ptr);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
+          iters   := SimIterator.fromIterator(Equation.getForIterator(eqn));
+          generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
+          tmp     := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, iters, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.GENERIC_COMPONENT() algorithm
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
@@ -880,7 +897,7 @@ public
           // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           for slice in comp.entwined_slices loop
-            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map);
+            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map, entwined = true);
             // position = current list length before prepend (0-based, stable after reversal below)
             UnorderedMap.add(getEntwinedEquationName(slice), listLength(single_calls), entwined_index_map);
             single_calls := single_call :: single_calls;
@@ -906,10 +923,19 @@ public
             eqns := tmp :: eqns;
           end for;
           allLinVarsFound := true;
+          resizable_size := 0;
           for slice in strict.iteration_vars loop
             var := Pointer.access(Slice.getT(slice));
-            if Type.isArray(var.ty) then
-              for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
+            if listEmpty(slice.indices) and Type.isArray(var.ty) and
+               List.any(Type.arrayDims(var.ty), Dimension.isResizable) then
+              // a whole resizable array: its elements are only known at runtime,
+              // the system is sized at runtime (no linear solver, see below)
+              crefs := var.name :: crefs;
+              allLinVarsFound := false;
+              resizable_size := resizable_size + BVariable.size(Slice.getT(slice), true) - 1;
+            elseif Type.isArray(var.ty) then
+              // the slice indices refer to the resized sizes of resizable dimensions
+              for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices, resize = true) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
                 if isSome(osimvar) then
@@ -970,7 +996,7 @@ public
               blcks         = listReverse(eqns),
               crefs         = listReverse(crefs),
               indexSystem   = simCodeIndices.nonlinearSystemIndex,
-              size          = listLength(crefs),
+              size          = listLength(crefs) + resizable_size,
               jacobian      = Pointer.create(jacobian),
               homotopy      = comp.homotopy,
               mixed         = comp.mixed,
@@ -1000,6 +1026,36 @@ public
         then fail();
       end match;
     end fromStrongComponent;
+
+    function coversAllResizableIterations
+      "true if the slice of a for-equation over a resizable range contains every
+       iteration at the analysis sizes. The generated call decodes an index as the
+       position of an iteration and computes the whole body of it."
+      input Slice<EquationPointer> slice;
+      output Boolean b = false;
+    protected
+      Equation eqn = Pointer.access(Slice.getT(slice));
+      Iterator iter;
+      Integer n;
+      array<Boolean> seen;
+    algorithm
+      if not Equation.isForEquation(Slice.getT(slice)) or listEmpty(slice.indices) then
+        return;
+      end if;
+      iter := Equation.getForIterator(eqn);
+      if not Iterator.isResizable(iter) then
+        return;
+      end if;
+      n := Iterator.size(iter, true);
+      if n <= 0 then
+        return;
+      end if;
+      seen := arrayCreate(n, false);
+      for i in slice.indices loop
+        arrayUpdate(seen, mod(i, n) + 1, true);
+      end for;
+      b := Array.all(seen, Util.id);
+    end coversAllResizableIterations;
 
     function createResidual
       input Slice<EquationPointer> slice;

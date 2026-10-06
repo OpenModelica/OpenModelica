@@ -6,15 +6,11 @@
 // Modelica Standard Library
 //
 
-// MSL 4.1.0 initializes Q1.cc.capbc, capbe and capbx to NaN, and the assertions that
-// report it spell NaN differently per platform. The results still match, so verify
-// them but suppress the messages.
-
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
-modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter);
 compareVars :=
 {
@@ -29,14 +25,15 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter
 // {"Q1.vbc", "Q1.vbe"}
 // Simulation options: startTime = 0.0, stopTime = 1e-7, numberOfIntervals = 1000, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter', options = '', outputFormat = 'mat', variableFilter = 'time|Q1.vbc|Q1.vbe', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkRtlInverter_res.mat
-// Files Equal!
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// Files Equal!
 // "true
 // "
 // ""

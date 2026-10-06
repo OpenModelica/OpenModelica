@@ -63,10 +63,12 @@ pub struct Dassl {
     pub jacobians: u64,
 }
 
-/// C's `dassl_limits`: `-maxIntegrationOrder` and `-maxStepSize`.
-fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
-    let (order, h_max, out_time) =
-        crate::simflags::with_flags(|f| (f.max_order, f.max_step_size, f.no_equidistant_time));
+/// C's `dassl_limits`: `-maxIntegrationOrder`, `-maxStepSize` (which
+/// `-noEquidistantOutputTime` also sets) and `-initialStepSize`.
+pub fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
+    let (order, h_max, out_time, h0) = crate::simflags::with_flags(|f| {
+        (f.max_order, f.max_step_size, f.no_equidistant_time, f.initial_step_size)
+    });
     if let Some(n) = order {
         info[8] = 1;
         iwork[2] = n;
@@ -75,6 +77,50 @@ fn limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
         info[6] = 1;
         rwork[1] = h;
     }
+    if let Some(h) = h0 {
+        info[7] = 1;
+        rwork[2] = h;
+    }
+}
+
+/// Restarts of a failed first step [`restart_first_step`] allows in a row.
+pub const FIRST_STEP_RESTARTS: u32 = 3;
+
+/// DASKR gives up after ten corrector failures, each quartering H, so a first
+/// step that needs a smaller H is never taken. When IDID = -7 came before any
+/// step, set DASKR up to restart from the H it reached (RWORK(3)); the caller
+/// calls it again and then [`reset_initial_step`].
+pub fn restart_first_step(
+    idid: i32,
+    info: &mut [i32; 24],
+    rwork: &[f64],
+    iwork: &[i32],
+    restarts: &mut u32,
+) -> bool {
+    use crate::omclog;
+    if idid != -7 || iwork[10] != 0 || *restarts >= FIRST_STEP_RESTARTS {
+        return false;
+    }
+    *restarts += 1;
+    if omclog::active(omclog::DASSL) {
+        omclog::info(
+            omclog::DASSL,
+            false,
+            &alloc::format!(
+                "The corrector could not converge on the first step. Restarting with initial step size {}.",
+                omclog::g(rwork[2], 0, 6)
+            ),
+        );
+    }
+    info[0] = 0;
+    info[7] = 1;
+    true
+}
+
+/// INFO(8) back to what `-initialStepSize` asked for, once a restart from
+/// [`restart_first_step`] has been made.
+pub fn reset_initial_step(info: &mut [i32; 24]) {
+    info[7] = crate::simflags::with_flags(|f| f.initial_step_size.is_some()) as i32;
 }
 
 impl Dassl {
@@ -180,6 +226,7 @@ impl Dassl {
         let rt: solver::RtFn = if self.n_zc > 0 { root } else { solver::dummy_rt };
         let jac: solver::JacFn = if coloured { jacobian } else { solver::dummy_jacd };
         let mut tout = target;
+        let mut restarts = 0;
         loop {
             unsafe {
                 solver::ddaskr(
@@ -207,6 +254,7 @@ impl Dassl {
                     self.jroot.as_mut_ptr(),
                 );
             }
+            reset_initial_step(&mut self.info);
             // The model reported a failure through the residual; its own message
             // is the one worth showing.
             if let Some(e) = ctx.failed.take() {
@@ -217,6 +265,9 @@ impl Dassl {
             if self.idid == -1 && self.quota_retries < 10_000 {
                 self.info[0] = 1;
                 self.quota_retries += 1;
+                continue;
+            }
+            if restart_first_step(self.idid, &mut self.info, &self.rwork, &self.iwork, &mut restarts) {
                 continue;
             }
             break;

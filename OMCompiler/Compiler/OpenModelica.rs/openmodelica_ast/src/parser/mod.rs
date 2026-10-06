@@ -19,7 +19,7 @@ pub use lexer::{Token as LexToken, TokenKind, LexError};
 pub use token_input::TokenInput;
 
 use lexer::{Token, TokenKind as TK};
-use token_input::{t, next_tok, skip_tok, peek_kind, try_tok, t_ident, t_path_ident, t_any_ident, t_str_token};
+use token_input::{t, eat, next_tok, skip_tok, peek_kind, try_tok, t_ident, t_path_ident, t_any_ident, t_str_token};
 use winnow::stream::Stream;
 use metamodelica::{cons, nil, SourceInfo};
 
@@ -349,26 +349,36 @@ thread_local! {
     /// applies to just that expression — nested expressions fall back to the
     /// default, exactly like the explicit rule arguments in Modelica.g.
     static ALLOW_PART_EVAL_FUNC: std::cell::Cell<Option<bool>> = const { std::cell::Cell::new(None) };
-    /// Whether `pure`/`impure` are lexed as plain identifiers rather than
-    /// keywords. Mirrors the `Modelica_3_Lexer.g` predicate
-    /// `if (ModelicaParser_langStd < 33 && ModelicaParser_strict) $type = IDENT;`
-    /// — i.e. they only became keywords in Modelica 3.3, so a `--std=3.2
-    /// --strict` parse must reject `pure function …`. Defaults to `false`
-    /// (keywords); set per-parse by [`set_pure_impure_as_ident`].
-    static PURE_IMPURE_AS_IDENT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// `ModelicaParser_langStd` and `ModelicaParser_strict`; set per-parse by
+    /// [`set_language_standard`].
+    static LANGUAGE_STANDARD: std::cell::Cell<(i32, bool)> = const { std::cell::Cell::new((1000, false)) };
 }
 
-/// Set whether `pure`/`impure` should be lexed as identifiers for subsequent
-/// parses on this thread (see [`PURE_IMPURE_AS_IDENT`]). Called from
-/// `ParserExt` with `languageStandardInt < 33 && strict`.
-pub fn set_pure_impure_as_ident(b: bool) {
-    PURE_IMPURE_AS_IDENT.with(|c| c.set(b));
+/// `--std` as an integer (36 for 3.6) and `--strict`, for later parses on this thread.
+pub fn set_language_standard(std: i32, strict: bool) {
+    LANGUAGE_STANDARD.with(|c| c.set((std, strict)));
 }
 
-/// Whether the lexer should treat `pure`/`impure` as identifiers. Read by the
-/// Modelica-3 keyword table in [`lexer`].
+fn reset_language_standard() {
+    set_language_standard(1000, false);
+}
+
+fn language_standard() -> i32 {
+    LANGUAGE_STANDARD.with(|c| c.get().0)
+}
+
+fn strict_and_at_least(std: i32) -> bool {
+    LANGUAGE_STANDARD.with(|c| { let (s, strict) = c.get(); strict && s >= std })
+}
+
+/// `pure`/`impure` became keywords in Modelica 3.3 (`Modelica_3_Lexer.g`).
 pub(crate) fn pure_impure_as_ident() -> bool {
-    PURE_IMPURE_AS_IDENT.with(|c| c.get())
+    LANGUAGE_STANDARD.with(|c| { let (s, strict) = c.get(); strict && s < 33 })
+}
+
+/// `time` is a keyword since Modelica 3.7, but only enforced under `--strict`.
+pub(crate) fn time_is_keyword() -> bool {
+    strict_and_at_least(37)
 }
 
 /// Parse a function-call argument expression, permitting a top-level partial
@@ -627,7 +637,7 @@ fn add_generic_syntax_error(tokens: &[LexToken], failed_at: usize, src: &str) {
 /// reported error matches the C parser (e.g. `M(redeclare Real A.c = 2.0)`,
 /// `extends A(break a[2])`).
 fn expect_rparen(input: &mut TokenInput) -> ModalResult<()> {
-    if opt(t(TK::RParen)).parse_next(input)?.is_some() {
+    if eat(input, TK::RParen) {
         return Ok(());
     }
     let (line, col) = match input.first() {
@@ -657,38 +667,35 @@ pub fn parse_statements(
     readonly: bool,
     timestamp: f64,
 ) -> Result<crate::GlobalScript::Statements, Box<dyn std::error::Error>> {
-    // The pure/impure language-version gating is a property of a full-file
-    // parse (set by ParserExt.parse/parsestring); interactive statements and
-    // fragments use the default (keywords), so reset any inherited value.
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, info_filename, grammar, true, readonly, timestamp, interactive_stmt)
 }
 
 /// Parse a dotted name path such as `Modelica.Blocks.Sources` (ANTLR3 rule
 /// `name_path_end`; entry point for `ParserExt.stringPath`).
 pub fn parse_path(src: &str, filename: &str, grammar: Grammar) -> Result<Path, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, name_path)
 }
 
 /// Parse a component reference such as `a.b[1].c` (ANTLR3 rule
 /// `component_reference_end`; entry point for `ParserExt.stringCref`).
 pub fn parse_cref(src: &str, filename: &str, grammar: Grammar) -> Result<Absyn::ComponentRef, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, component_reference)
 }
 
 /// Parse a single element modification such as `x(start = 1.0)` (ANTLR3 rule
 /// `element_modification_or_replaceable`; entry point for `ParserExt.stringMod`).
 pub fn parse_modification(src: &str, filename: &str, grammar: Grammar) -> Result<Absyn::ElementArg, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, element_modification_or_replaceable)
 }
 
 /// Parse a single equation such as `x = y + 1` (ANTLR3 rule `equation`;
 /// entry point for `ParserExt.stringEq`).
 pub fn parse_equation(src: &str, filename: &str, grammar: Grammar) -> Result<Absyn::EquationItem, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, equation_item)
 }
 
@@ -998,7 +1005,7 @@ fn stored_definition(input: &mut TokenInput) -> ModalResult<Program> {
     // Skip optional BOM token.
     if matches!(peek_kind(input), Some(TK::BOM)) { skip_tok(input)?; }
 
-    let within_ = if opt(t(TK::Within)).parse_next(input)?.is_some() {
+    let within_ = if eat(input, TK::Within) {
         let path = opt(name_path).parse_next(input)?;
         cut_err(t(TK::Semi))
             .context(StrContext::Label("';' after within clause"))
@@ -1029,7 +1036,7 @@ fn class_definition_list(input: &mut TokenInput) -> ModalResult<List<Class>> {
         // commentsBeforeClass per ANTLR3 `Modelica.g`.
         let (next_l, next_c) = next_pos(input);
         let before: Vec<ArcStr> = take_comments_before(next_l, next_c);
-        let _final = opt(t(TK::Final)).parse_next(input)?.is_some();
+        let _final = eat(input, TK::Final);
         if let Some(def) = opt(class_definition).parse_next(input)? {
             let def = attach_comments_before(def, before);
             defs = cons(def, defs);
@@ -1103,9 +1110,9 @@ fn attach_comments_after_end_on_head(
 /// class_definition: ENCAPSULATED? PARTIAL? FINAL? class_type class_specifier
 fn class_definition(input: &mut TokenInput) -> ModalResult<Class> {
     let start = *input;
-    let encapsulatedPrefix = opt(t(TK::Encapsulated)).parse_next(input)?.is_some();
-    let partialPrefix      = opt(t(TK::Partial)).parse_next(input)?.is_some();
-    let finalPrefix        = opt(t(TK::Final)).parse_next(input)?.is_some();
+    let encapsulatedPrefix = eat(input, TK::Encapsulated);
+    let partialPrefix      = eat(input, TK::Partial);
+    let finalPrefix        = eat(input, TK::Final);
     let restriction        = class_type(input)?;
     let specifier = cut_err(class_specifier)
         .context(StrContext::Label("class specifier"))
@@ -1170,7 +1177,7 @@ fn class_specifier(input: &mut TokenInput) -> ModalResult<ClassSpecifier> {
     // `$start` of the ANTLR class_specifier rule: the `extends` keyword or
     // the class name. Used as the span start of the name-mismatch assert.
     let (start_line, start_col) = next_pos(input);
-    if opt(t(TK::Extends)).parse_next(input)?.is_some() {
+    if eat(input, TK::Extends) {
         let name = cut_err(t_ident)
             .context(StrContext::Label("class name after 'extends'"))
             .parse_next(input)?;
@@ -1226,17 +1233,17 @@ fn class_specifier(input: &mut TokenInput) -> ModalResult<ClassSpecifier> {
 /// closing identifier against it (the `modelicaParserAssert` at
 /// `Modelica.g` `class_specifier`).
 fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32, start_col: u32) -> ModalResult<metamodelica::Ref<ClassDef>> {
-    if opt(t(TK::Subtypeof)).parse_next(input)?.is_some() {
+    if eat(input, TK::Subtypeof) {
         let ts = type_specifier(input)?;
         return Ok(metamodelica::Ref::new(ClassDef::DERIVED {
             typeSpec: metamodelica::Ref::new(TypeSpec::TCOMPLEX { path: metamodelica::Ref::new(Path::IDENT{name: "polymorphic".into()}), typeSpecs: List::new(metamodelica::Ref::new(ts)), arrayDim: None }), attributes: default_element_attrs(), arguments: metamodelica::nil(), comment: None,
         }));
     }
 
-    if opt(t(TK::Equal)).parse_next(input)?.is_some() {
-        if opt(t(TK::Enumeration)).parse_next(input)?.is_some() {
+    if eat(input, TK::Equal) {
+        if eat(input, TK::Enumeration) {
             t(TK::LParen).parse_next(input)?;
-            if opt(t(TK::Colon)).parse_next(input)?.is_some() {
+            if eat(input, TK::Colon) {
                 t(TK::RParen).parse_next(input)?;
                 // `enumeration(:)` takes a trailing comment just like the
                 // literal-list form (`enumeration(:) "Substances in Fluid"`).
@@ -1256,14 +1263,14 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
                 comment: comment.map(metamodelica::Ref::new),
             }));
         }
-        if opt(t(TK::Der)).parse_next(input)?.is_some() {
+        if eat(input, TK::Der) {
             // `pder` (Modelica.g): a partial function derivative,
             // `function df = der(f, x, ...);` — DER LPAR name_path COMMA ident_list RPAR comment.
             t(TK::LParen).parse_next(input)?;
             let functionName = name_path.parse_next(input)?;
             t(TK::Comma).parse_next(input)?;
             let mut vars = List::new(t_ident(input)?);
-            while opt(t(TK::Comma)).parse_next(input)?.is_some() {
+            while eat(input, TK::Comma) {
                 vars = cons(t_ident(input)?, vars);
             }
             t(TK::RParen).parse_next(input)?;
@@ -1274,11 +1281,11 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
                 comment: comment.map(metamodelica::Ref::new),
             }));
         }
-        if opt(t(TK::Overload)).parse_next(input)?.is_some() {
+        if eat(input, TK::Overload) {
             // function div = $overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
             t(TK::LParen).parse_next(input)?;
             let mut functionNames = List::new(name_path.parse_next(input)?);
-            while opt(t(TK::Comma)).parse_next(input)?.is_some() {
+            while eat(input, TK::Comma) {
                 functionNames = cons(name_path.parse_next(input)?, functionNames);
             };
             t(TK::RParen).parse_next(input)?;
@@ -1301,11 +1308,11 @@ fn class_specifier2(input: &mut TokenInput, start_name: &ArcStr, start_line: u32
 
     let mut typeVars: List<ArcStr> = metamodelica::nil();
     let mut classAttrs: List<metamodelica::Ref<Absyn::NamedArg>> = metamodelica::nil();
-    if opt(t(TK::Less)).parse_next(input)?.is_some() {
+    if eat(input, TK::Less) {
         loop {
             let id = t_ident(input)?;
             typeVars = cons(id, typeVars);
-            if opt(t(TK::Greater)).parse_next(input)?.is_some() { break; }
+            if eat(input, TK::Greater) { break; }
             t(TK::Comma).parse_next(input)?;
         }
         typeVars = typeVars.reverse();
@@ -1393,24 +1400,24 @@ fn composition2(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
         if let Some(ext) = opt(external_part).parse_next(input)? {
             parts = cons(ext, parts); continue;
         }
-        if opt(t(TK::Public)).parse_next(input)?.is_some() {
+        if eat(input, TK::Public) {
             let items = element_list(input)?;
             parts = cons(ClassBodyItem::Section { section: SectionKind::Public, items }, parts);
             continue;
         }
-        if opt(t(TK::Protected)).parse_next(input)?.is_some() {
+        if eat(input, TK::Protected) {
             let items = element_list(input)?;
             parts = cons(ClassBodyItem::Section { section: SectionKind::Protected, items }, parts);
             continue;
         }
-        if opt(t(TK::Initial)).parse_next(input)?.is_some() {
-            if opt(t(TK::Equation)).parse_next(input)?.is_some() {
+        if eat(input, TK::Initial) {
+            if eat(input, TK::Equation) {
                 let (items, anns) = cut_err(equation_section_items)
                     .context(StrContext::Label("initial equation section"))
                     .parse_next(input)?;
                 parts = cons(ClassBodyItem::InitialEquations(items), parts);
                 for ann in anns { parts = cons(ClassBodyItem::Annotation(ann), parts); }
-            } else if opt(t(TK::Algorithm)).parse_next(input)?.is_some() {
+            } else if eat(input, TK::Algorithm) {
                 let (items, anns) = cut_err(algorithm_section_items)
                     .context(StrContext::Label("initial algorithm section"))
                     .parse_next(input)?;
@@ -1421,7 +1428,7 @@ fn composition2(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
             }
             continue;
         }
-        if opt(t(TK::Equation)).parse_next(input)?.is_some() {
+        if eat(input, TK::Equation) {
             let (items, anns) = cut_err(equation_section_items)
                 .context(StrContext::Label("equation section"))
                 .parse_next(input)?;
@@ -1429,7 +1436,7 @@ fn composition2(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
             for ann in anns { parts = cons(ClassBodyItem::Annotation(ann), parts); }
             continue;
         }
-        if opt(t(TK::Algorithm)).parse_next(input)?.is_some() {
+        if eat(input, TK::Algorithm) {
             let (items, anns) = cut_err(algorithm_section_items)
                 .context(StrContext::Label("algorithm section"))
                 .parse_next(input)?;
@@ -1581,11 +1588,11 @@ fn element_list(input: &mut TokenInput) -> ModalResult<List<ClassBodyItem>> {
         // element prefixes: [ redeclare ] [ final ] [ inner ] [ outer ]
         //   then ( [replaceable] class_definition | [replaceable] component_clause )
         //   with optional constrainedby clause if replaceable
-        let redeclare_  = opt(t(TK::Redeclare)).parse_next(input)?.is_some();
-        let final_      = opt(t(TK::Final)).parse_next(input)?.is_some();
-        let inner_      = opt(t(TK::Inner)).parse_next(input)?.is_some();
-        let outer_      = opt(t(TK::Outer)).parse_next(input)?.is_some();
-        let replaceable_ = opt(t(TK::Replaceable)).parse_next(input)?.is_some();
+        let redeclare_  = eat(input, TK::Redeclare);
+        let final_      = eat(input, TK::Final);
+        let inner_      = eat(input, TK::Inner);
+        let outer_      = eat(input, TK::Outer);
+        let replaceable_ = eat(input, TK::Replaceable);
 
         let redeclareKeywords: Option<RedeclareKeywords> = match (redeclare_, replaceable_) {
             (true,  true)  => Some(RedeclareKeywords::REDECLARE_REPLACEABLE),
@@ -1675,11 +1682,11 @@ fn element(input: &mut TokenInput) -> ModalResult<Absyn::Element> {
     // element prefixes: [ redeclare ] [ final ] [ inner ] [ outer ]
     //   then ( [replaceable] class_definition | [replaceable] component_clause )
     //   with optional constrainedby clause if replaceable
-    let redeclare_  = opt(t(TK::Redeclare)).parse_next(input)?.is_some();
-    let final_      = opt(t(TK::Final)).parse_next(input)?.is_some();
-    let inner_      = opt(t(TK::Inner)).parse_next(input)?.is_some();
-    let outer_      = opt(t(TK::Outer)).parse_next(input)?.is_some();
-    let replaceable_ = opt(t(TK::Replaceable)).parse_next(input)?.is_some();
+    let redeclare_  = eat(input, TK::Redeclare);
+    let final_      = eat(input, TK::Final);
+    let inner_      = eat(input, TK::Inner);
+    let outer_      = eat(input, TK::Outer);
+    let replaceable_ = eat(input, TK::Replaceable);
 
     let redeclareKeywords: Option<RedeclareKeywords> = match (redeclare_, replaceable_) {
         (true,  true)  => Some(RedeclareKeywords::REDECLARE_REPLACEABLE),
@@ -1749,8 +1756,8 @@ fn type_prefix(input: &mut TokenInput) -> ModalResult<ElementAttributes> {
         _             => None,
     }).unwrap_or(Variability::VAR);
 
-    let has_input  = opt(t(TK::Input)).parse_next(input)?.is_some();
-    let has_output = opt(t(TK::Output)).parse_next(input)?.is_some();
+    let has_input  = eat(input, TK::Input);
+    let has_output = eat(input, TK::Output);
     let direction  = match (has_input, has_output) {
         (true,  true)  => Direction::INPUT_OUTPUT,
         (true,  false) => Direction::INPUT,
@@ -1795,7 +1802,7 @@ fn component_list(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref<
     let first = component_declaration(input)?;
     let mut items = List::new(metamodelica::Ref::new(first));
     loop {
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
         items = cons(metamodelica::Ref::new(component_declaration(input)?), items);
     }
     Ok(items.reverse())
@@ -1813,7 +1820,7 @@ fn component_declaration(input: &mut TokenInput) -> ModalResult<ComponentItem> {
     skip_tok(input)?; // consume the validated name token
     let arrayDim  = opt(array_subscripts).parse_next(input)?.unwrap_or_else(|| metamodelica::nil());
     let m         = opt(modification).parse_next(input)?;
-    let condition = if opt(t(TK::If)).parse_next(input)?.is_some() {
+    let condition = if eat(input, TK::If) {
         Some(expression(input)?)
     } else { None };
     let cmt = comment(input)?;
@@ -1829,10 +1836,19 @@ fn modification(input: &mut TokenInput) -> ModalResult<Modification> {
     // ANTLR anchors the EQMOD info at the `=`/`:=` token
     // (`PARSER_INFO($eq)`), not at the start of the whole modification.
     let eq_start = *input;
+    let is_assign = matches!(peek_kind(input), Some(TK::Assign));
     let eq = if opt(alt((t(TK::Assign), t(TK::Equal)))).parse_next(input)?.is_some() {
         let exp = cut_err(modification_expression)
                 .context(StrContext::Label("modification expression"))
                 .parse_next(input)?;
+        if is_assign {
+            let (l1, c1) = (eq_start[0].line, eq_start[0].col);
+            let (l2, c2) = input.first().map_or((l1, c1 + 2), |t| (t.line, t.col));
+            if strict_and_at_least(37) {
+                return Err(parser_assert_fail(":= in modifiers is not allowed since Modelica 3.7", l1, c1, l2, c2));
+            }
+            add_syntax_message(SyntaxSeverity::Warning, ":= in modifiers has been deprecated".to_owned(), l1, c1, l2, c2);
+        }
         Absyn::EqMod::EQMOD {
             exp: metamodelica::Ref::new(exp),
             info: parser_info(&eq_start, input),
@@ -1844,7 +1860,7 @@ fn modification(input: &mut TokenInput) -> ModalResult<Modification> {
 }
 
 fn modification_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
-    if opt(t(TK::Break)).parse_next(input)?.is_some() {
+    if eat(input, TK::Break) {
         return Ok(Absyn::Exp::BREAK {});
     }
     expression(input)
@@ -1900,7 +1916,7 @@ fn argument_list(input: &mut TokenInput, can_have_break: bool) -> ModalResult<Li
         Err(e) => { restore_comment_cursor(cursor); return Err(e); }
     }
     loop {
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
         push_comments_before(&mut out, input);
         out.push(metamodelica::Ref::new(argument_or_break(input, can_have_break)?));
     }
@@ -1946,10 +1962,18 @@ fn inheritance_modification(input: &mut TokenInput) -> ModalResult<ElementArg> {
 }
 
 fn argument(input: &mut TokenInput) -> ModalResult<ElementArg> {
-    if let Some(r) = opt(element_redeclaration).parse_next(input)? { return Ok(r); }
-    let eachPrefix_  = opt(t(TK::Each)).parse_next(input)?.is_some();
-    let finalPrefix_ = opt(t(TK::Final)).parse_next(input)?.is_some();
-    let mut res = alt((element_replaceable, element_modification)).parse_next(input)?;
+    if matches!(peek_kind(input), Some(TK::Redeclare))
+        && let Some(r) = opt(element_redeclaration).parse_next(input)?
+    {
+        return Ok(r);
+    }
+    let eachPrefix_  = eat(input, TK::Each);
+    let finalPrefix_ = eat(input, TK::Final);
+    let mut res = if matches!(peek_kind(input), Some(TK::Replaceable)) {
+        alt((element_replaceable, element_modification)).parse_next(input)?
+    } else {
+        element_modification(input)?
+    };
     // `element_modification_or_replaceable` (Modelica.g) applies the leading
     // `each`/`final` prefixes to whichever branch matched: `element_modification`
     // yields a MODIFICATION, the bare-`replaceable` branch a REDECLARATION.
@@ -1987,8 +2011,8 @@ fn parse_replaceable_spec(input: &mut TokenInput) -> ModalResult<(ElementSpec, O
 fn element_redeclaration(input: &mut TokenInput) -> ModalResult<ElementArg> {
     let start = *input;
     t(TK::Redeclare).parse_next(input)?;
-    let each_  = opt(t(TK::Each)).parse_next(input)?.is_some();
-    let final_ = opt(t(TK::Final)).parse_next(input)?.is_some();
+    let each_  = eat(input, TK::Each);
+    let final_ = eat(input, TK::Final);
 
     // Position at the `replaceable` keyword (after redeclare/each/final). The
     // `redeclare replaceable` form is built by `element_replaceable`, whose
@@ -1996,7 +2020,7 @@ fn element_redeclaration(input: &mut TokenInput) -> ModalResult<ElementArg> {
     // other forms use `element_redeclaration`'s own start (the `redeclare`).
     let repl_start = *input;
     let (redeclareKeywords, elementSpec, constrainClass, info) =
-        if opt(t(TK::Replaceable)).parse_next(input)?.is_some() {
+        if eat(input, TK::Replaceable) {
             let (es, cc) = parse_replaceable_spec(input)?;
             (RedeclareKeywords::REDECLARE_REPLACEABLE {}, es, cc, parser_info(&repl_start, input))
         } else if let Some(cls) = opt(class_definition).parse_next(input)? {
@@ -2024,7 +2048,7 @@ fn element_redeclaration(input: &mut TokenInput) -> ModalResult<ElementArg> {
 fn element_modification(input: &mut TokenInput) -> ModalResult<ElementArg> {
     let start = *input;
     let path = name_path(input)?;
-    if opt(t(TK::LBracket)).parse_next(input)?.is_some() {
+    if eat(input, TK::LBracket) {
         // `element_modification` in Modelica.g records this diagnostic and
         // lets ANTLR's recovery resynchronize. We abort instead — the
         // recorded message suppresses the generic fallback, so the
@@ -2087,13 +2111,13 @@ fn import_clause(input: &mut TokenInput) -> ModalResult<Import> {
                 let mut groups: List<GroupImport> = metamodelica::nil();
                 loop {
                     let first = t_any_ident(input)?;
-                    let gi = if opt(t(TK::Equal)).parse_next(input)?.is_some() {
+                    let gi = if eat(input, TK::Equal) {
                         GroupImport::GROUP_IMPORT_RENAME { rename: first, name: t_any_ident(input)? }
                     } else {
                         GroupImport::GROUP_IMPORT_NAME { name: first }
                     };
                     groups = cons(gi, groups);
-                    if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+                    if !eat(input, TK::Comma) { break; }
                 }
                 cut_err(t(TK::RBrace))
                     .context(StrContext::Label("'}' closing group import"))
@@ -2190,7 +2214,7 @@ fn external_part(input: &mut TokenInput) -> ModalResult<ClassBodyItem> {
         // Argument list. Required by the grammar once a function name is
         // present, but we accept the bare-identifier form gracefully — a few
         // MetaModelicaBuiltin entries declare e.g. `external "C" foo;`.
-        if opt(t(TK::LParen)).parse_next(input)?.is_some() {
+        if eat(input, TK::LParen) {
             let fa = function_arguments(input)?;
             t(TK::RParen).parse_next(input)?;
             // Only the positional-arg form is valid here — named arguments
@@ -2709,7 +2733,7 @@ fn assign_clause_a(input: &mut TokenInput) -> ModalResult<Algorithm> {
                     start[0].line, start[0].col, lt1_line, lt1_col.saturating_sub(1),
                 ));
             }
-            if looks_like_der_cr {
+            if looks_like_der_cr && language_standard() < 37 {
                 add_syntax_message(
                     SyntaxSeverity::Warning,
                     "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.".to_owned(),
@@ -2922,7 +2946,7 @@ fn interactive_stmt(input: &mut TokenInput) -> ModalResult<crate::GlobalScript::
     // only comments) as an empty statement list.
     if !input.is_empty() {
         stmts = cons(top_algorithm(input)?, stmts);
-        while opt(t(TK::Semi)).parse_next(input)?.is_some() {
+        while eat(input, TK::Semi) {
             if input.is_empty() {
                 // The optional final semicolon before EOF.
                 semicolon = true;
@@ -2993,8 +3017,8 @@ fn top_algorithm(input: &mut TokenInput) -> ModalResult<crate::GlobalScript::Sta
 /// `EACH? FINAL? (element_modification | element_replaceable)`.
 /// Entry point used by `ParserExt.stringMod`.
 fn element_modification_or_replaceable(input: &mut TokenInput) -> ModalResult<ElementArg> {
-    let each_  = opt(t(TK::Each)).parse_next(input)?.is_some();
-    let final_ = opt(t(TK::Final)).parse_next(input)?.is_some();
+    let each_  = eat(input, TK::Each);
+    let final_ = eat(input, TK::Final);
     let mut res = alt((element_replaceable, element_modification)).parse_next(input)?;
     // The ANTLR rule threads each/final into the sub-rules as parameters;
     // here the sub-parsers build the node with default prefixes and we patch
@@ -3170,7 +3194,7 @@ fn match_expression(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
 // ---------------------------------------------------------------------------
 
 fn name_path(input: &mut TokenInput) -> ModalResult<Path> {
-    let fq  = opt(t(TK::Dot)).parse_next(input)?.is_some();
+    let fq  = eat(input, TK::Dot);
     let res = name_path2(input)?;
     if fq { Ok(Path::FULLYQUALIFIED { path: metamodelica::Ref::new(res) }) } else { Ok(res) }
 }
@@ -3201,7 +3225,7 @@ fn name_path2(input: &mut TokenInput) -> ModalResult<Path> {
 }
 
 fn component_reference(input: &mut TokenInput) -> ModalResult<Absyn::ComponentRef> {
-    let fq = opt(t(TK::Dot)).parse_next(input)?.is_some();
+    let fq = eat(input, TK::Dot);
     let cr = component_reference2(input)?;
     if fq { Ok(Absyn::ComponentRef::CREF_FULLYQUALIFIED { componentRef: metamodelica::Ref::new(cr) }) }
     else  { Ok(cr) }
@@ -3291,9 +3315,12 @@ fn literal_expression(input: &mut TokenInput) -> Option<Absyn::Exp> {
     match *input {
         [LexToken { kind: TK::Ident(_), .. }, ..] => {
             // `a.b.c` without subscripts, as `component_reference2` builds it.
-            let n = input.iter().step_by(2).take_while(|t| matches!(t.kind, TK::Ident(_))).count();
-            let dots = input[1..].iter().step_by(2).take(n).take_while(|t| t.kind == TK::Dot).count();
-            let n = n.min(dots + 1);
+            let mut n = 1;
+            while matches!(input.get(2 * n - 1), Some(LexToken { kind: TK::Dot, .. }))
+                && matches!(input.get(2 * n), Some(LexToken { kind: TK::Ident(_), .. }))
+            {
+                n += 1;
+            }
             if !ends_expression(input.get(2 * n - 1)) {
                 return None;
             }
@@ -3745,12 +3772,41 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         Some(TK::End)   => { skip_tok(input)?; return Ok(Absyn::Exp::END {}); }
         Some(TK::True)  => { skip_tok(input)?; return Ok(Absyn::Exp::BOOL { value: true  }); }
         Some(TK::False) => { skip_tok(input)?; return Ok(Absyn::Exp::BOOL { value: false }); }
+        Some(TK::Time)  => {
+            skip_tok(input)?;
+            let cr = Absyn::ComponentRef::CREF_IDENT { name: "time".into(), subscripts: nil() };
+            return Ok(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(cr) });
+        }
         Some(TK::Str(s))=> { let value = s.clone(); skip_tok(input)?; return Ok(Absyn::Exp::STRING { value }); }
         Some(TK::Int(_)) | Some(TK::Real(..)) => { return number_literal(input); }
         Some(TK::LParen) => {
             let (paren_line, paren_col) = next_pos(input);
             skip_tok(input)?;
             let (exprs, is_tuple) = output_expression_list(input)?;
+            if input.len() >= 2 && input[0].kind == TK::Dot
+                && let TK::Ident(name) = &input[1].kind
+            {
+                let (l2, c2) = (input[1].line, input[1].col);
+                let name = name.clone();
+                skip_tok(input)?;
+                skip_tok(input)?;
+                if is_tuple {
+                    add_syntax_message(
+                        SyntaxSeverity::Error,
+                        "Tuple expression can not be used with the dot operator.".to_owned(),
+                        paren_line, paren_col, l2, c2,
+                    );
+                    return Err(ErrMode::Cut(ContextError::new()));
+                }
+                let metamodelica::ListNode::Cons { head: exp, .. } = &*exprs else {
+                    unreachable!("non-tuple output_expression_list returned no expression")
+                };
+                let cr = Absyn::ComponentRef::CREF_IDENT { name, subscripts: nil() };
+                return Ok(Absyn::Exp::DOT {
+                    exp: exp.clone(),
+                    index: metamodelica::Ref::new(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(cr) }),
+                });
+            }
             let before_subs: TokenInput = *input;
             let raw_subs = opt(array_subscripts).parse_next(input)?;
             if let Some(subs) = raw_subs {
@@ -3864,11 +3920,20 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
 }
 
 fn number_literal(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
-    match next_tok(input)? {
-        TK::Int(n)  => Ok(Absyn::Exp::INTEGER { value: n }),
-        TK::Real(_, s) => Ok(Absyn::Exp::REAL    { value: s }),
-        _           => Err(ErrMode::Backtrack(ContextError::default())),
+    let value = match next_tok(input)? {
+        TK::Int(n)  => Absyn::Exp::INTEGER { value: n },
+        TK::Real(_, s) => Absyn::Exp::REAL    { value: s },
+        _           => return Err(ErrMode::Backtrack(ContextError::default())),
+    };
+    // unit-of-measurement: a Q-IDENT directly after the number (9.8'm/s2').
+    if let Some(TK::Ident(q)) = peek_kind(input)
+        && q.starts_with('\'')
+    {
+        let unit: ArcStr = q[1..q.len() - 1].into();
+        skip_tok(input)?;
+        return Ok(Absyn::Exp::UNITFUL_LITERAL { value: metamodelica::Ref::new(value), unit });
     }
+    Ok(value)
 }
 
 fn component_reference__function_call(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
@@ -3903,7 +3968,7 @@ fn component_reference__function_call(input: &mut TokenInput) -> ModalResult<Abs
             loop {
                 if matches!(peek_kind(input), Some(TK::Greater)) { break; }
                 vars = cons(name_path(input)?, vars);
-                if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+                if !eat(input, TK::Comma) { break; }
             }
             t(TK::Greater).parse_next(input)?;
             Ok(vars.reverse())
@@ -4015,7 +4080,7 @@ fn for_or_expression_list(input: &mut TokenInput) -> ModalResult<Absyn::Function
             }
         }
         args = cons(metamodelica::Ref::new(exp), args);
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
         checkpoint = input.checkpoint();
         exp = arg_expression(input)?;
     }
@@ -4037,7 +4102,7 @@ fn named_arguments(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref
     let first = named_argument(input)?;
     let mut args: List<metamodelica::Ref<Absyn::NamedArg>> = cons(metamodelica::Ref::new(first), nil());
     loop {
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
         match named_argument(input) {
             Ok(arg) => args = cons(metamodelica::Ref::new(arg), args),
             Err(_)  => break,
@@ -4050,7 +4115,7 @@ fn for_indices(input: &mut TokenInput) -> ModalResult<Absyn::ForIterators> {
     let first = for_index(input)?;
     let mut result: List<Absyn::ForIterator> = List::new(first);
     loop {
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
         match for_index(input) {
             Ok(fi)  => result = cons(fi, result),
             Err(_)  => break,
@@ -4079,7 +4144,7 @@ fn expression_list(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref
     let e = expression(input)?;
     let mut result: List<metamodelica::Ref<Absyn::Exp>> = cons(metamodelica::Ref::new(e), nil());
     loop {
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
         match expression(input) {
             Ok(e)  => result = cons(metamodelica::Ref::new(e), result),
             Err(_) => break,
@@ -4091,17 +4156,17 @@ fn expression_list(input: &mut TokenInput) -> ModalResult<List<metamodelica::Ref
 /// Consumes up to and including ')'; returns (expressions, isTuple).
 fn output_expression_list(input: &mut TokenInput) -> ModalResult<(List<metamodelica::Ref<Absyn::Exp>>, bool)> {
     // ()
-    if opt(t(TK::RParen)).parse_next(input)?.is_some() {
+    if eat(input, TK::RParen) {
         return Ok((nil(), true));
     }
     // Leading comma: (, b) → WILD, b
-    if opt(t(TK::Comma)).parse_next(input)?.is_some() {
+    if eat(input, TK::Comma) {
         let (rest, _) = output_expression_list(input)?;
         let wild_exp = metamodelica::Ref::new(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(Absyn::ComponentRef::WILD {}) });
         return Ok((cons(wild_exp, rest), true));
     }
     let e1 = expression(input)?;
-    if opt(t(TK::Comma)).parse_next(input)?.is_some() {
+    if eat(input, TK::Comma) {
         let (mut result, _) = output_expression_list(input)?;
         if result.is_empty() {
             let wild = metamodelica::Ref::new(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(Absyn::ComponentRef::WILD {}) });
@@ -4140,7 +4205,7 @@ fn string_comment(input: &mut TokenInput) -> ModalResult<Option<ArcStr>> {
         Some(s) => s.to_string(),
         None    => return Ok(None),
     };
-    while opt(t(TK::Plus)).parse_next(input)?.is_some() {
+    while eat(input, TK::Plus) {
         res.push_str(&cut_err(t_str_token).parse_next(input)?);
     }
     Ok(Some(res.into()))
@@ -4173,12 +4238,12 @@ fn type_specifier_no_dims(input: &mut TokenInput) -> ModalResult<TypeSpec> {
 fn type_specifier_impl(input: &mut TokenInput, allow_dims: bool) -> ModalResult<TypeSpec> {
     let path = name_path(input)?;
     let mut ts: List<metamodelica::Ref<TypeSpec>> = nil();
-    if opt(t(TK::Less)).parse_next(input)?.is_some() {
+    if eat(input, TK::Less) {
         loop {
             if matches!(peek_kind(input), Some(TK::Greater)) || input.is_empty() { break; }
             let inner_ts = type_specifier(input)?;
             ts = cons(metamodelica::Ref::new(inner_ts), ts);
-            if opt(t(TK::Comma)).parse_next(input)?.is_some() { continue; }
+            if eat(input, TK::Comma) { continue; }
             break;
         }
         ts = ts.reverse();
@@ -4206,7 +4271,7 @@ fn array_subscripts(input: &mut TokenInput) -> ModalResult<ArrayDim> {
     loop {
         if matches!(peek_kind(input), Some(TK::RBracket)) || input.is_empty() { break; }
         subs = cons(subscript(input)?, subs);
-        if opt(t(TK::Comma)).parse_next(input)?.is_none() { break; }
+        if !eat(input, TK::Comma) { break; }
     }
     t(TK::RBracket).parse_next(input)?;
     Ok(to_rc_list(subs.reverse()))
@@ -4224,7 +4289,7 @@ fn enum_list(input: &mut TokenInput) -> ModalResult<List<EnumLiteral>> {
             Ok(lit) => literals = cons(lit, literals),
             Err(_)  => break,
         }
-        if opt(t(TK::Comma)).parse_next(input)?.is_some() { continue; }
+        if eat(input, TK::Comma) { continue; }
         break;
     }
     Ok(literals.reverse())
@@ -4270,6 +4335,48 @@ mod tests {
         let mut ts = tokens.as_slice();
         let exp = expression(&mut ts).unwrap();
         assert!(matches!(exp, Exp::ARRAY { arrayExp } if arrayExp.len() == 3));
+    }
+
+    fn parse_exp(src: &str) -> ModalResult<Exp> {
+        CURRENT_GRAMMAR.with(|g| g.set(Grammar::Modelica3));
+        let tokens = lexer::lex(src, Grammar::Modelica3).unwrap();
+        let mut ts = tokens.as_slice();
+        expression(&mut ts)
+    }
+
+    #[test]
+    fn unitful_literal() {
+        let Exp::UNARY { exp, .. } = parse_exp("-5'cm';").unwrap() else { panic!("expected UNARY") };
+        let Exp::UNITFUL_LITERAL { value, unit } = &*exp else { panic!("expected UNITFUL_LITERAL, got {exp:?}") };
+        assert!(matches!(&**value, Exp::INTEGER { value: 5 }));
+        assert_eq!(unit.as_str(), "cm");
+        let exp = parse_exp("9.81 'm/s2';").unwrap();
+        assert!(matches!(&exp, Exp::UNITFUL_LITERAL { value, unit }
+            if matches!(&**value, Exp::REAL { .. }) && unit.as_str() == "m/s2"), "got {exp:?}");
+    }
+
+    #[test]
+    fn parenthesized_member_access() {
+        let exp = parse_exp("(f(x)).b;").unwrap();
+        let Exp::DOT { exp, index } = &exp else { panic!("expected DOT, got {exp:?}") };
+        assert!(matches!(&**exp, Exp::CALL { .. }));
+        assert!(matches!(&**index, Exp::CREF { componentRef }
+            if matches!(&**componentRef, ComponentRef::CREF_IDENT { name, .. } if name.as_str() == "b")));
+        assert!(parse_exp("(a, b).c;").is_err());
+        let msgs = take_syntax_messages();
+        assert!(msgs.iter().any(|m| m.message.contains("dot operator")), "messages = {msgs:?}");
+    }
+
+    #[test]
+    fn time_keyword() {
+        let kind = || lexer::lex("time", Grammar::Modelica3).unwrap()[0].kind.clone();
+        set_language_standard(37, true);
+        assert_eq!(kind(), TK::Time);
+        set_language_standard(37, false);
+        assert!(matches!(kind(), TK::Ident(_)));
+        set_language_standard(36, true);
+        assert!(matches!(kind(), TK::Ident(_)));
+        reset_language_standard();
     }
 
     #[test]

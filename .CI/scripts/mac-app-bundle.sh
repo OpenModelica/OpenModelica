@@ -118,8 +118,7 @@ resolves() { # resolves <rpaths> <dep>
   return 1
 }
 
-# omsicpp/ and cpp/ hold the C++ runtimes OMCppOSUSimulation links against.
-search_dirs="$out/Contents/Frameworks $out/Contents/Resources/lib/*/omc $out/Contents/Resources/lib/*/omc/omsicpp $out/Contents/Resources/lib/*/omc/cpp"
+search_dirs="$out/Contents/Frameworks $out/Contents/Resources/lib/*/omc $out/Contents/Resources/lib/*/omc/cpp"
 [ -n "$qt" ] && search_dirs="$search_dirs $qt/lib"
 
 find_dep() {

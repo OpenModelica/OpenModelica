@@ -61,3 +61,12 @@ thread_local! {
         (metamodelica::List<metamodelica::Ref<openmodelica_frontend_types::SCode::Element>>, ArcStr, metamodelica::Ref<openmodelica_nf_frontend::NFInstNode::InstNode::InstNode>),
     )>> = RefCell::new(metamodelica::nil());
 }
+
+/// Leaks the loaded program and the caches built from it, for a process about
+/// to exit: glibc's `exit` runs the exiting thread's thread-local destructors,
+/// which would otherwise free them node by node.
+pub fn leak_program_for_exit() {
+    openmodelica_backend::Globals::symbolTable.with(|t| std::mem::forget(t.borrow().clone()));
+    interactiveCache.with(|c| std::mem::forget(c.borrow().clone()));
+    fmuTranslation.with(|c| std::mem::forget(c.borrow().clone()));
+}

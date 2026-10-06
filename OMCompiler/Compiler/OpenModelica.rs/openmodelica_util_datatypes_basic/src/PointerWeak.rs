@@ -8,7 +8,7 @@
 //! the weak edge is what stops `Var -> cref -> pointer -> Var` from being a
 //! cycle, as that record's own comment has always warned it was.
 
-use std::sync::{Arc, Weak};
+use std::rc::{Rc, Weak};
 
 use crate::Mutable::CellInner;
 use crate::Pointer::Pointer;
@@ -18,14 +18,14 @@ pub enum PointerWeak<T> {
     Mutable(Weak<CellInner<T>>),
     /// An immutable pointer is a plain value; nothing can close a cycle
     /// through it, so it stays strong and `upgrade` never fails for it.
-    Immutable(Arc<T>),
+    Immutable(Rc<T>),
 }
 
 impl<T> Clone for PointerWeak<T> {
     fn clone(&self) -> Self {
         match self {
             PointerWeak::Mutable(w) => PointerWeak::Mutable(w.clone()),
-            PointerWeak::Immutable(a) => PointerWeak::Immutable(Arc::clone(a)),
+            PointerWeak::Immutable(a) => PointerWeak::Immutable(Rc::clone(a)),
         }
     }
 }
@@ -33,7 +33,7 @@ impl<T> Clone for PointerWeak<T> {
 /// A reference that does not keep the cell alive. Never fails.
 pub fn downgrade<T>(pointer: Pointer<T>) -> PointerWeak<T> {
     match pointer {
-        Pointer::Mutable(cell) => PointerWeak::Mutable(Arc::downgrade(&cell)),
+        Pointer::Mutable(cell) => PointerWeak::Mutable(Rc::downgrade(&cell)),
         Pointer::Immutable(a) => PointerWeak::Immutable(a),
     }
 }
@@ -65,7 +65,7 @@ pub fn referenceEq<T>(a: &PointerWeak<T>, b: &PointerWeak<T>) -> bool {
         (PointerWeak::Mutable(x), PointerWeak::Mutable(y)) => {
             Weak::ptr_eq(x, y) && x.strong_count() > 0
         }
-        (PointerWeak::Immutable(x), PointerWeak::Immutable(y)) => Arc::ptr_eq(x, y),
+        (PointerWeak::Immutable(x), PointerWeak::Immutable(y)) => Rc::ptr_eq(x, y),
         _ => false,
     }
 }
@@ -99,7 +99,7 @@ impl<T: std::fmt::Debug> std::fmt::Debug for PointerWeak<T> {
 fn key<T>(w: &PointerWeak<T>) -> usize {
     match w {
         PointerWeak::Mutable(x) => x.as_ptr() as *const () as usize,
-        PointerWeak::Immutable(a) => Arc::as_ptr(a) as *const () as usize,
+        PointerWeak::Immutable(a) => Rc::as_ptr(a) as *const () as usize,
     }
 }
 

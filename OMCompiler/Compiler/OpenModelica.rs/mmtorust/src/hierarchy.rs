@@ -205,7 +205,7 @@ pub struct InstanceHierarchy<'a> {
     /// Populated by `detect_recursive_types` after resolve_pass converges.
     pub recursive_types: BTreeSet<String>,
     /// Fully-qualified names of user-defined struct/enum types that transitively
-    /// embed a `Mutable<T>` (= `Arc<Mutex<T>>`) field. `Mutex<T>` does not implement
+    /// embed a `Mutable<T>` (= `Rc<RefCell<T>>`) field. `RefCell<T>` does not implement
     /// `PartialEq` / `Eq` / `Hash`, so these types must not request those derives —
     /// the generated `#[derive(...)]` would otherwise fail to compile. Propagation
     /// also follows container types (`Option`, `List`, `Array`, `Tuple`, `Generic`)
@@ -2226,7 +2226,7 @@ fn collect_type_graph(
 /// Large records copied far more often than they are updated. Putting them
 /// behind `Ref` makes a copy a refcount bump; an update copies only when the
 /// value is shared (`Arc::make_mut`).
-const SHARED_RECORDS: &[&str] = &["BackendDAE.Var", "SimCodeVar.SimVar", "SimCode.SimCode"];
+const SHARED_RECORDS: &[&str] = &["BackendDAE.Var", "BackendDAE.Variables", "BackendVarTransform.VariableReplacements", "SimCodeVar.SimVar", "SimCode.SimCode"];
 
 /// Detect which named types form size-recursive cycles (directly or mutually).
 /// Populates `hier.recursive_types` with the fully-qualified names of all such types.
@@ -2385,7 +2385,7 @@ fn ty_contains_mutable(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
 }
 
 /// Detect which named types transitively contain a `Mutable<T>` field and
-/// therefore cannot derive `PartialEq` / `Eq` / `Hash` (because `Mutex<T>`
+/// therefore cannot derive `PartialEq` / `Eq` / `Hash` (because `RefCell<T>`
 /// implements none of those traits). Must be called after `resolve_pass` has
 /// converged so all field types are populated.
 pub fn detect_types_containing_mutable(hier: &mut InstanceHierarchy<'_>) {
@@ -2424,7 +2424,8 @@ fn ty_contains_array(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
             // whose buckets are an `Array<T>`). Normalise the `::`
             // path to dotted form to match the graph keys.
             let dotted = name.replace("::", ".");
-            tainted.contains(&dotted)
+            is_rc_cell(&dotted)
+                || tainted.contains(&dotted)
                 || args.iter().any(|a| ty_contains_array(a, tainted))
         }
         Ty::RustStruct(qname) | Ty::RustEnum(qname) | Ty::AliasTo(qname) => tainted.contains(qname),
@@ -2433,7 +2434,14 @@ fn ty_contains_array(ty: &Ty, tainted: &BTreeSet<String>) -> bool {
     }
 }
 
-/// Detect which named types transitively contain a `metamodelica::Array<T>` field.
+/// The cell types, which like `Array<T>` are an `Rc` around a `RefCell`.
+pub(crate) fn is_rc_cell(dotted: &str) -> bool {
+    matches!(dotted, "Mutable" | "Mutable.Mutable" | "MutableWeak" | "MutableWeak.MutableWeak"
+        | "Pointer" | "Pointer.Pointer" | "PointerWeak" | "PointerWeak.PointerWeak")
+}
+
+/// Detect which named types transitively contain a `metamodelica::Array<T>` field
+/// or a cell (`Mutable`, `Pointer` and their weak forms).
 /// Such types are not `Sync` (because `Rc`/`RefCell` aren't), so they cannot be
 /// stored in a `pub static`. Codegen consults the result to pick `pub const fn`
 /// getter emission instead of `pub static` for affected constants. Must be called

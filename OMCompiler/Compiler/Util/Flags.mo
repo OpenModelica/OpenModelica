@@ -606,7 +606,7 @@ constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
 constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL(),
   ENUM_FLAG(1000,
     {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33),
-     ("3.4", 34), ("3.5", 35), ("3.6", 36), ("latest",1000), ("experimental", 9999)}),
+     ("3.4", 34), ("3.5", 35), ("3.6", 36), ("3.7", 37), ("latest",1000), ("experimental", 9999)}),
   NONE(),
   "Sets the language standard that should be used.");
 constant ConfigFlag SHOW_ERROR_MESSAGES = CONFIG_FLAG(9, "showErrorMessages",
@@ -778,7 +778,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   "Sets the post optimization modules to use in the back end. See --help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "C.old", "Cpp","omsicpp", "ExperimentalEmbeddedC", "ESP32", "JavaScript", "omsic", "XML", "MidC", "wasm-jit", "wasm"})),
+  SOME(STRING_OPTION({"None", "C", "C.old", "Cpp", "ExperimentalEmbeddedC", "ESP32", "JavaScript", "XML", "MidC", "wasm-jit", "wasm"})),
   "Sets the target language for the code generation.");
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),

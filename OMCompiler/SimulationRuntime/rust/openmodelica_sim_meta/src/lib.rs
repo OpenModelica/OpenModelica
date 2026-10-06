@@ -682,6 +682,85 @@ pub struct MetaVar {
     pub enumeration: Option<Vec<String>>,
 }
 
+/// An entry of [`SimMeta::vars`] standing for the elements of an array, row-major:
+/// each is named with its subscript inserted at byte `at` of the entry's name and
+/// reads the column (or parameter slot) after the previous one.
+#[derive(Clone, PartialEq, Debug)]
+pub struct VarArray {
+    pub var: u32,
+    pub dims: Vec<u32>,
+    pub at: u32,
+    /// `[1,2]`, or `_L1,2_R` under `+modelicaOutput`.
+    pub brackets: bool,
+}
+
+impl VarArray {
+    /// The element names of the entry named `name`, row-major.
+    pub fn names<'a>(&'a self, name: &'a str) -> impl Iterator<Item = String> + 'a {
+        let total: u32 = self.dims.iter().product();
+        let (head, tail) = name.split_at((self.at as usize).min(name.len()));
+        let mut idx: Vec<u32> = alloc::vec![1; self.dims.len()];
+        (0..total).map(move |_| {
+            let mut s = String::with_capacity(name.len() + 4 * idx.len() + 2);
+            s.push_str(head);
+            s.push_str(if self.brackets { "[" } else { "_L" });
+            for (i, n) in idx.iter().enumerate() {
+                if i > 0 {
+                    s.push(',');
+                }
+                let _ = core::fmt::Write::write_fmt(&mut s, format_args!("{n}"));
+            }
+            s.push_str(if self.brackets { "]" } else { "_R" });
+            s.push_str(tail);
+            for (i, d) in self.dims.iter().enumerate().rev() {
+                if idx[i] < *d {
+                    idx[i] += 1;
+                    break;
+                }
+                idx[i] = 1;
+            }
+            s
+        })
+    }
+
+    /// The elements of `v`, which this entry describes.
+    pub fn elements<'a>(&'a self, v: &'a MetaVar) -> impl Iterator<Item = MetaVar> + 'a {
+        self.names(&v.name).enumerate().map(move |(k, name)| {
+            let k = k as u32;
+            let kind = match &v.kind {
+                MetaKind::Column { col, negate } => MetaKind::Column { col: col + k, negate: *negate },
+                MetaKind::Param { off, wty, negate } => {
+                    let stride = if matches!(wty, WTy::F64) { 8 } else { 4 };
+                    MetaKind::Param { off: off + k * stride, wty: *wty, negate: *negate }
+                }
+                other => other.clone(),
+            };
+            MetaVar { name, kind, ..v.clone() }
+        })
+    }
+}
+
+/// `vars` with each entry `arrays` describes (ascending) replaced by its elements.
+pub fn expand_var_arrays(vars: Vec<MetaVar>, arrays: &[VarArray]) -> Vec<MetaVar> {
+    expand_entries(vars, arrays, |a, v, out| out.extend(a.elements(v)))
+}
+
+fn expand_entries<T>(items: Vec<T>, arrays: &[VarArray], expand: impl Fn(&VarArray, &T, &mut Vec<T>)) -> Vec<T> {
+    if arrays.is_empty() {
+        return items;
+    }
+    let total: usize = arrays.iter().map(|a| a.dims.iter().product::<u32>() as usize).sum();
+    let mut out = Vec::with_capacity(items.len() + total);
+    let mut next = arrays.iter().peekable();
+    for (i, item) in items.into_iter().enumerate() {
+        match next.next_if(|a| a.var as usize == i) {
+            Some(a) => expand(a, &item, &mut out),
+            None => out.push(item),
+        }
+    }
+    out
+}
+
 /// The `modelData` variable arrays C's `dumpInitialSolution` walks, in print order.
 /// Values, `pre`-values and real `start`s live in `SimData`; only the names and the
 /// constant attributes it quotes are metadata.
@@ -690,6 +769,8 @@ pub struct SotiVars {
     /// Real variables in real-variable index order (states, derivatives, then the
     /// other reals). Their `start` and `nominal` attributes are `SimData` slots.
     pub reals: Vec<String>,
+    /// The entries of `reals` that stand for a whole array (see [`VarArray`]).
+    pub real_arrays: Vec<VarArray>,
     /// Integer/Boolean variables with their `start` attribute.
     pub ints: Vec<(String, i32)>,
     pub bools: Vec<(String, i32)>,
@@ -1129,6 +1210,9 @@ pub struct SimMeta {
     /// The model's name (diagnostics).
     pub model_name: String,
     pub vars: Vec<MetaVar>,
+    /// The entries of `vars` that stand for a whole array, ascending by index. Only
+    /// the codegen's own metadata has any: [`decode`] expands them.
+    pub var_arrays: Vec<VarArray>,
     /// The units [`MetaVar::unit`] and [`MetaVar::display_unit`] name, defined:
     /// the SI dimensions and the conversion to each display unit. Only the
     /// `.arrow` writer uses them; the other formats carry no unit table.
@@ -1477,6 +1561,14 @@ impl SimMeta {
         self.vars.splice(at..at, added);
     }
 
+    /// Replace each [`VarArray`] entry of `vars` and of `soti.reals` by its elements.
+    pub fn expand_arrays(&mut self) {
+        let arrays = core::mem::take(&mut self.var_arrays);
+        self.vars = expand_var_arrays(core::mem::take(&mut self.vars), &arrays);
+        let arrays = core::mem::take(&mut self.soti.real_arrays);
+        self.soti.reals = expand_entries(core::mem::take(&mut self.soti.reals), &arrays, |a, n, out| out.extend(a.names(n)));
+    }
+
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
         use crate::omclog::{self, STDOUT};
         let translated = self.translated_step_size();
@@ -1568,7 +1660,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 21;
+const VERSION: u32 = 22;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1710,6 +1802,13 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             }
         }
     }
+    put_u32(&mut o, m.var_arrays.len() as u32);
+    for a in &m.var_arrays {
+        put_u32(&mut o, a.var);
+        put_u32s(&mut o, &a.dims);
+        put_u32(&mut o, a.at);
+        o.push(a.brackets as u8);
+    }
     put_jac(&mut o, &m.jac_a);
     put_u32(&mut o, m.state_sets.len() as u32);
     for s in &m.state_sets {
@@ -1785,6 +1884,13 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     put_u32(&mut o, m.soti.reals.len() as u32);
     for n in &m.soti.reals {
         put_str(&mut o, n);
+    }
+    put_u32(&mut o, m.soti.real_arrays.len() as u32);
+    for a in &m.soti.real_arrays {
+        put_u32(&mut o, a.var);
+        put_u32s(&mut o, &a.dims);
+        put_u32(&mut o, a.at);
+        o.push(a.brackets as u8);
     }
     for list in [&m.soti.ints, &m.soti.bools] {
         put_u32(&mut o, list.len() as u32);
@@ -2243,6 +2349,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             enumeration: r.enumeration()?,
         });
     }
+    let narrays = r.u32()? as usize;
+    let mut var_arrays = Vec::with_capacity(narrays);
+    for _ in 0..narrays {
+        var_arrays.push(VarArray { var: r.u32()?, dims: r.u32s()?, at: r.u32()?, brackets: r.u8()? != 0 });
+    }
     let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
     let mut state_sets = Vec::with_capacity(nsets);
@@ -2316,6 +2427,9 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut soti = SotiVars::default();
     for _ in 0..r.u32()? {
         soti.reals.push(r.string()?);
+    }
+    for _ in 0..r.u32()? {
+        soti.real_arrays.push(VarArray { var: r.u32()?, dims: r.u32s()?, at: r.u32()?, brackets: r.u8()? != 0 });
     }
     for _ in 0..r.u32()? {
         soti.ints.push((r.string()?, r.u32()? as i32));
@@ -2576,13 +2690,15 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         units.push(UnitDef { name, base, display_units });
     }
-    Ok(SimMeta {
+    let mut meta = SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
         output_format, prefix,
-        model_name, vars, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
+        model_name, vars, var_arrays, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
         parmod,
-    })
+    };
+    meta.expand_arrays();
+    Ok(meta)
 }
 
 #[cfg(test)]
@@ -2613,6 +2729,7 @@ mod tests {
                 base: Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], factor: 1.0, offset: 0.0 }),
                 display_units: vec![DisplayUnit { name: "degC".to_string(), factor: 1.0, offset: -273.15, inverse: false }],
             }],
+            var_arrays: Vec::new(),
             vars: vec![
                 MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
                 MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::PROTECTED, unvarying: false, enumeration: None },
@@ -2768,6 +2885,38 @@ mod tests {
                 blocks: vec![1],
             }),
         }
+    }
+
+    #[test]
+    fn array_entries_decode_to_elements() {
+        let mut m = sample();
+        let at = m.vars.len() as u32;
+        m.vars.push(MetaVar {
+            name: "der(x)".to_string(),
+            comment: "c".to_string(),
+            unit: "m".to_string(),
+            display_unit: "".to_string(),
+            relative_quantity: false,
+            ty: VarTy::Real,
+            discrete: false,
+            kind: MetaKind::Column { col: 7, negate: Neg::None },
+            filter: 0,
+            unvarying: false,
+            enumeration: None,
+        });
+        m.var_arrays.push(VarArray { var: at, dims: vec![2, 3], at: 5, brackets: true });
+        let soti_at = m.soti.reals.len();
+        m.soti.reals.push("y".to_string());
+        m.soti.real_arrays.push(VarArray { var: soti_at as u32, dims: vec![2], at: 1, brackets: false });
+        let d = decode(&encode(&m)).unwrap();
+        assert_eq!(d.soti.reals[soti_at..], ["y_L1_R".to_string(), "y_L2_R".to_string()]);
+        assert!(d.var_arrays.is_empty());
+        let els = &d.vars[at as usize..];
+        assert_eq!(els.len(), 6);
+        assert_eq!(els[0].name, "der(x[1,1])");
+        assert_eq!(els[5].name, "der(x[2,3])");
+        assert_eq!(els[4].kind, MetaKind::Column { col: 11, negate: Neg::None });
+        assert_eq!(els[4].unit, "m");
     }
 
     #[test]

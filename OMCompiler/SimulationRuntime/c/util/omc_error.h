@@ -208,6 +208,10 @@ extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_I
    own _return:, so no frame is skipped. */
 extern void raiseStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
 extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+/* The last model error a nonlinear solver swallowed without printing it. */
+extern void omc_note_suppressed_error(threadData_t *threadData, const char *format, va_list args);
+extern const char* omc_last_suppressed_error(void);
+extern void omc_clear_last_suppressed_error(void);
 /* OMC_ERROR_RAISED and OMC_ERROR_CLEAR in one, for a caller that cannot see the
    field: the Rust simulation runtime mirrors threadData_t only as far as
    `parent`, because what follows depends on build options. */

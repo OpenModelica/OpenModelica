@@ -6,6 +6,7 @@ ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
 ExternalNlsRecovery.mos \
 ExternalRHSFlag.mos \
+ExternalUncaughtException.mos \
 extObj_ticket3446.mos \
 ExtObj.mos \
 ExtObjStringParam.mos \
@@ -17,6 +18,7 @@ MDD_test.mos \
 ModelicaIOMatrix.mos \
 ModelicaIOMatrix73.mos \
 ModelicaUtilities.mos \
+PrebuiltWasmExternals.mos \
 QualifiedCrefArg.mos \
 RecordMemberArguments.mos \
 TestRoots.mos \
@@ -44,6 +46,7 @@ ExternalFunc2.c \
 ExternalFunc2.h \
 ExternalNlsRecovery-f.c \
 ExternalRHSFlag.c \
+ExternalUncaughtException.c \
 ExtObj.c \
 ExtObj.h \
 ExtObjOrder.h \

@@ -67,6 +67,11 @@ pub struct TypedCase {
     pub locals: Vec<(String, Ty, Option<TypedExp>, Option<Absyn::TypeSpec>)>,
     pub stmts: Vec<TypedStmt>,
     pub result: TypedExp,
+    /// Names live at the start of the arm body, set by
+    /// [`crate::codegen::mark_last_uses`].
+    pub live_in: Option<std::collections::HashSet<String>>,
+    /// matchcontinue only: names live after the matchcontinue.
+    pub live_out: Option<std::collections::HashSet<String>>,
 }
 
 /// One segment of a structured component reference, carrying its subscripts.
@@ -2615,7 +2620,7 @@ fn infer_case<'a>(
             for (n, t) in discovered {
                 locals.push((n.clone(), t.clone(), None, None));
             }
-            TypedCase { pattern: pat, guard, locals, stmts, result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars) }
+            TypedCase { pattern: pat, guard, locals, stmts, result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars), live_in: None, live_out: None }
         }
         Absyn::Case::ELSE { localDecls, classPart, result, .. } => {
             let mut case_env = env.clone();
@@ -2649,7 +2654,7 @@ fn infer_case<'a>(
             for (n, t) in discovered {
                 locals.push((n.clone(), t.clone(), None, None));
             }
-            TypedCase { pattern: TypedPat::Wildcard, guard: None, locals, stmts, result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars) }
+            TypedCase { pattern: TypedPat::Wildcard, guard: None, locals, stmts, result: infer_exp(result, &case_env, top_level, pkg_prefix, type_vars), live_in: None, live_out: None }
         }
     }
 }

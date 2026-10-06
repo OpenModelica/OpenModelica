@@ -590,7 +590,8 @@ protected
           // for-loop starts at 1 but x is sliced from x[2], so a symbolic body term like
           // x[$i1] at $i1=1 needs a seed for x[1], which per-element scalarization of just
           // x[2..4] can never provide).
-          elem_vars := Scalarize.scalarizeBackendVariable(var_elem, var_slice.indices);
+          // the slice indices refer to the resized sizes of resizable dimensions
+          elem_vars := Scalarize.scalarizeBackendVariable(var_elem, var_slice.indices, resize = true);
           for v in elem_vars loop
             seed_candidates := Pointer.create(v) :: seed_candidates;
           end for;

@@ -371,8 +371,10 @@ pub fn library_module(
             return Ok(m.clone());
         }
     }
+    // A prebuilt library is named by its path; the key already tells blobs apart.
+    let file = std::path::Path::new(name).file_name().and_then(|f| f.to_str()).unwrap_or(name);
     let m = match fixed {
-        true => aot_module(engine, &format!("lib-{name}"), blob)?,
+        true => aot_module(engine, &format!("lib-{file}"), blob)?,
         false => wts(wasmtime::Module::new(engine, blob))?,
     };
     memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, (engine.clone(), m.clone()));
@@ -382,8 +384,9 @@ pub fn library_module(
 /// Compile every fixed blob into `dir`, for the build to install beside omc.
 ///
 /// The names are [`aot_cache_path`]'s, so [`aot_module`] finds them; a blob the
-/// build did not produce is skipped.
-pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+/// build did not produce is skipped. `prune` removes every other artifact, which
+/// only the install directory may do: the per-user cache also holds libraries'.
+pub fn precompile_fixed_blobs(dir: &std::path::Path, prune: bool) -> std::result::Result<Vec<String>, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let mut blobs: Vec<(String, &[u8])> = vec![
         ("runtime".to_string(), runtime_blob()),
@@ -398,13 +401,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         blobs.push((format!("lib-{file}"), bytes()));
     }
     blobs.retain(|(_, b)| !b.is_empty());
-    // Every engine a run can land on: the inliner is off for a model with one
-    // enormous function, and `-alarm` picks the epoch-interrupting engine, which
-    // every testsuite and library-testing run asks for.
-    let engines: Vec<&wasmtime::Engine> = [true, false]
-        .iter()
-        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
-        .collect();
+    let engines = all_engines();
     let current: Vec<String> = blobs
         .iter()
         .flat_map(|(tag, blob)| {
@@ -414,7 +411,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     // What an earlier build left for a blob that has since changed. Keyed by the
     // blob's hash, so it will never be looked up again; without this every change
     // adds another artifact to the install.
-    if let Ok(rd) = std::fs::read_dir(dir) {
+    if let Some(rd) = prune.then(|| std::fs::read_dir(dir).ok()).flatten() {
         for stale in rd.flatten().map(|e| e.path()).filter(|p| {
             p.extension().is_some_and(|e| e == "cwasm")
                 && p.file_name()
@@ -426,24 +423,81 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     }
     let mut written = Vec::new();
     for (tag, blob) in blobs {
-        for &engine in &engines {
-            let name = aot_cache_name(&tag, aot_cache_key(engine, blob));
-            // Rebuilt on every build, so skip what is already there: only a blob that
-            // actually changed is worth minutes of Cranelift.
-            if dir.join(&name).is_file() {
-                continue;
-            }
-            let path = dir.join(&name);
-            // Gigabytes of Cranelift each, and what one frees stays mapped, so
-            // drop it and hand the pages back before compiling the next.
-            {
-                let module = wts(wasmtime::Module::new(engine, blob))?;
-                let bytes = wts(module.serialize())?;
-                std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
-            }
-            metamodelica::heap_limit::release();
-            written.push(name);
+        written.extend(precompile_blob(dir, &tag, blob, &engines)?);
+    }
+    Ok(written)
+}
+
+/// Every engine a run can land on: the inliner is off for a model with one
+/// enormous function, and `-alarm` picks the epoch-interrupting engine, which
+/// every testsuite and library-testing run asks for.
+fn all_engines() -> Vec<&'static wasmtime::Engine> {
+    [true, false]
+        .iter()
+        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
+        .collect()
+}
+
+/// Compile `blob` into `dir` for each engine that has no artifact yet, here or
+/// beside omc.
+fn precompile_blob(
+    dir: &std::path::Path,
+    tag: &str,
+    blob: &[u8],
+    engines: &[&wasmtime::Engine],
+) -> std::result::Result<Vec<String>, String> {
+    let mut written = Vec::new();
+    for &engine in engines {
+        let key = aot_cache_key(engine, blob);
+        let name = aot_cache_name(tag, key);
+        let path = dir.join(&name);
+        if path.is_file() || aot_installed_path(tag, key).is_some() {
+            continue;
         }
+        // Gigabytes of Cranelift each, and what one frees stays mapped, so
+        // drop it and hand the pages back before compiling the next.
+        {
+            let module = wts(wasmtime::Module::new(engine, blob))?;
+            let bytes = wts(module.serialize())?;
+            let tmp = path.with_extension(format!("cwasm.tmp{}", std::process::id()));
+            std::fs::write(&tmp, &bytes).map_err(|e| format!("{}: {e}", tmp.display()))?;
+            std::fs::rename(&tmp, &path).map_err(|e| format!("{}: {e}", path.display()))?;
+        }
+        metamodelica::heap_limit::release();
+        written.push(name);
+    }
+    Ok(written)
+}
+
+/// Compile these libraries' prebuilt modules into the per-user cache.
+pub fn precompile_libraries(dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
+    fn collect(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        for p in rd.flatten().map(|e| e.path()) {
+            if p.is_dir() {
+                // Another omc's half-unpacked bundle (PackageManagement.unpackWasmTree).
+                if !p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.contains(".tmp")) {
+                    collect(&p, out);
+                }
+            } else if p.extension().is_some_and(|e| e == "wasm" || e == "so") {
+                out.push(p);
+            }
+        }
+    }
+    let mut files = Vec::new();
+    for d in dirs {
+        collect(&d.join("Resources").join("Library").join("wasm32-wasip1"), &mut files);
+    }
+    let cache = aot_cache_dir();
+    let engines = all_engines();
+    let mut written = Vec::new();
+    for f in files {
+        let Ok(blob) = std::fs::read(&f) else { continue };
+        if !blob.starts_with(b"\0asm") {
+            continue;
+        }
+        let file = f.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        written.extend(precompile_blob(&cache, &format!("lib-{file}"), &blob, &engines)?);
     }
     Ok(written)
 }
@@ -498,6 +552,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Mo
             match handle.join() {
                 Ok(Ok(m)) => Ok(m),
                 Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
+                Err(p) if p.is::<metamodelica::heap_limit::OutOfMemory>() => std::panic::resume_unwind(p),
                 Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
             }
         }
@@ -1548,7 +1603,7 @@ fn run_inwasm(
     // result file the run reports on has been written.
     let prof = sess.take_prof()?;
     if !prof.is_empty() {
-        openmodelica_sim_meta::profiling::adopt(&model.meta, &prof);
+        openmodelica_sim_meta::profiling::adopt(model.meta(), &prof);
     }
     if bench {
         let n = model.n_intervals;
@@ -1608,6 +1663,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
 
     // Phase 2: instantiate (sharing the runtime's linear memory).
     let t_inst = Instant::now();
+    openmodelica_wasi::wasi::set_guest_env(model.ext_env.clone());
     let mut store = wasmtime::Store::new(engine, HostState::new(WasiCtx::new("/", Vec::new())));
     if let secs @ 1.. = alarm_secs() {
         ALARM_FIRED.with(|f| f.set(false));
@@ -1756,7 +1812,7 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         funcs: Default::default(),
         funcs2: Default::default(),
         absent: Default::default(),
-        addrs: [None; 3],
+        addrs: [None; 4],
     };
     Ok((Box::new(engine), sim_data))
 }
@@ -1827,7 +1883,7 @@ struct WasmtimeEngine {
     /// Optional entry points the model does not export.
     absent: foldhash::HashSet<String>,
     /// The runtime's fixed addresses, by [`RtAddr`].
-    addrs: [Option<u32>; 3],
+    addrs: [Option<u32>; 4],
 }
 
 #[derive(Clone, Copy)]
@@ -1835,6 +1891,7 @@ enum RtAddr {
     Context,
     ErrorStage,
     NoThrowDivZero,
+    SuppressedError,
 }
 
 impl WasmtimeEngine {
@@ -1855,6 +1912,7 @@ impl WasmtimeEngine {
             RtAddr::Context => "rt_context_addr",
             RtAddr::ErrorStage => "rt_error_stage_addr",
             RtAddr::NoThrowDivZero => "rt_no_throw_div_zero_addr",
+            RtAddr::SuppressedError => "rt_suppressed_error_addr",
         };
         let a = self
             .rt_inst
@@ -1976,6 +2034,23 @@ impl sim_driver::SimEngine for WasmtimeEngine {
     fn no_throw_div_zero_addr(&mut self) -> u32 {
         self.rt_addr(RtAddr::NoThrowDivZero)
     }
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        let addr = self.rt_addr(RtAddr::SuppressedError);
+        if addr == 0 {
+            return None;
+        }
+        let mut len = [0u8; 4];
+        self.read_bytes(addr, &mut len).ok()?;
+        let mut text = vec![0u8; u32::from_le_bytes(len) as usize];
+        self.read_bytes(addr + 4, &mut text).ok()?;
+        Some(String::from_utf8_lossy(&text).into_owned())
+    }
+    fn clear_suppressed_error(&mut self) {
+        let addr = self.rt_addr(RtAddr::SuppressedError);
+        if addr != 0 {
+            let _ = self.write_bytes(addr, &[0; 4]);
+        }
+    }
     fn clean_nls_history(&mut self, time: f64) {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
             let _ = f.call(&mut self.store, time);
@@ -2036,7 +2111,7 @@ pub fn build_inwasm_session(
     result: Option<&crate::result_sink::ResultTarget>,
 ) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, model.meta())?;
 
     // Append N contiguous table slots and set each to the model's export funcref
     // (null + cleared mask bit if the model doesn't export it).
@@ -2054,7 +2129,7 @@ pub fn build_inwasm_session(
     }
 
     // Write the metadata blob into linear memory for the runtime to decode.
-    let blob = openmodelica_sim_meta::encode(&model.meta);
+    let blob = openmodelica_sim_meta::encode(&model.meta_compact);
     let meta_ptr = wts(rt_alloc.call(&mut store, blob.len() as u32))?;
     wts(memory.write(&mut store, meta_ptr as usize, &blob))?;
 
@@ -2125,12 +2200,15 @@ pub fn build_inwasm_session(
     match started {
         Ok(rc) if rc >= 0 => Ok(sess),
         Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
-        Err(_) => Err(sim_driver::enrich_trap_init(
-            &mut sess,
-            "CodegenWasmJit: in-wasm initialization failed",
-            model.start_time,
-        )
-        .to_string()),
+        Err(e) => {
+            crate::set_engine_error_detail(format!("{e:?}"));
+            Err(sim_driver::enrich_trap_init(
+                &mut sess,
+                "CodegenWasmJit: in-wasm initialization failed",
+                model.start_time,
+            )
+            .to_string())
+        }
     }
 }
 
@@ -2175,7 +2253,11 @@ impl InWasmSession {
     pub fn advance(&mut self, budget_ms: f64) -> Result<i32> {
         match self.advance.call(&mut self.store, budget_ms) {
             Ok(rc) if rc >= 0 => Ok(rc),
-            _ => Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed")),
+            Ok(_) => Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed")),
+            Err(e) => {
+                crate::set_engine_error_detail(format!("{e:?}"));
+                Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed"))
+            }
         }
     }
 

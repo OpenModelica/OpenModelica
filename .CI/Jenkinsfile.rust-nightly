@@ -27,7 +27,11 @@
 //                          the two macOS trees into one universal distribution.
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
-//                          were built.
+//                          were built. The linux64 tarballs are uploaded by
+//                          stage 5 instead, and only if it passes.
+//   5. 'linux64 on ubuntu 26.04'
+//                          the linux64 CLI tarball in a bare newer distribution:
+//                          a simulation and an FMU export must link and load.
 //
 // The stage bodies are in .CI/common.groovy (buildRustNightly*).
 def common
@@ -409,6 +413,30 @@ pipeline {
             }
           }
         }
+      }
+    }
+
+    // Stage 5. The linux64 CLI tarball in a bare image of a newer distribution:
+    // a simulation and an FMU of a model that links HDF5 through
+    // ModelicaStandardTables. Uploads both linux64 tarballs if that works.
+    stage('linux64 on ubuntu 26.04') {
+      agent {
+        docker {
+          alwaysPull true
+          image 'ubuntu:26.04'
+          label 'linux'
+          // root for apt-get. A workspace of its own, so the root-owned files a
+          // mistake would leave cannot break the other stages' git clean.
+          args '-u root'
+          customWorkspace 'ws/OpenModelica-check'
+        }
+      }
+      when {
+        beforeAgent true
+        expression { params.BUILD_LINUX }
+      }
+      steps {
+        script { common.checkRustNightlyLinux('linux64') }
       }
     }
   }

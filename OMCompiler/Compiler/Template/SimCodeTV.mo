@@ -556,7 +556,6 @@ end SparsityRow;
       PartitionData partitionData;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
-      Option<OMSIData> omsiData;
       Boolean scalarized;
       list<FmiFigure> fmiFigures;
     end SIMCODE;
@@ -637,25 +636,6 @@ end SparsityRow;
       list<ExtAlias> aliases;
     end EXTOBJINFO;
   end ExtObjInfo;
-
-  uniontype OMSIData
-    record OMSI_DATA
-      OMSIFunction initialization;
-      OMSIFunction simulation;
-    end OMSI_DATA;
-  end OMSIData;
-
-  uniontype OMSIFunction
-    record OMSI_FUNCTION
-      list<SimEqSystem> equations;
-      list<SimCodeVar.SimVar> inputVars;
-      list<SimCodeVar.SimVar> outputVars;
-      list<SimCodeVar.SimVar> innerVars;
-      Integer nAllVars;
-      SimCodeFunction.Context context;
-      Integer nAlgebraicSystems;
-    end OMSI_FUNCTION;
-  end OMSIFunction;
 
   uniontype SimEqSystem
     record SES_RESIDUAL
@@ -814,37 +794,7 @@ end SparsityRow;
     record SES_ALIAS
       Integer aliasOf;
     end SES_ALIAS;
-
-    record SES_ALGEBRAIC_SYSTEM
-      Integer index;
-      Integer algSysIndex;
-      Integer dim_n;
-      Boolean partOfMixed;
-      Boolean tornSystem;
-      Boolean linearSystem;
-      OMSIFunction residual;
-      Option<DerivativeMatrix> matrix;
-      list<Integer> zeroCrossingConditions;
-      list<DAE.ElementSource> sources;
-      BackendDAE.EquationAttributes eqAttr;
-    end SES_ALGEBRAIC_SYSTEM;
   end SimEqSystem;
-
-  uniontype DerivativeMatrix
-    "represents directional derivatives with sparsity and coloring"
-    record DERIVATIVE_MATRIX
-      list<OMSIFunction> columns;         // column(s) equations and variables
-                                          // inputVars:  seedVars
-                                          // innerVars:  inner column vars
-                                          // outputVars: result vars of the column
-
-      String matrixName;                  // unique matrix name
-      SparsityPattern sparsity;
-      SparsityPattern sparsityT;
-      list<list<Integer>> coloredCols;
-      Integer maxColorCols;
-    end DERIVATIVE_MATRIX;
-  end DerivativeMatrix;
 
   uniontype LinearSystem
     record LINEARSYSTEM
@@ -1340,9 +1290,6 @@ package SimCodeFunction
     end FMI_CONTEXT;
     record DAE_MODE_CONTEXT
     end DAE_MODE_CONTEXT;
-    record OMSI_CONTEXT
-      Option<HashTableCrefSimVar.HashTable> hashTable;
-    end OMSI_CONTEXT;
   end Context;
 
   constant Context contextSimulationNonDiscrete;
@@ -1358,7 +1305,6 @@ package SimCodeFunction
   constant Context contextOptimization;
   constant Context contextFMI;
   constant Context contextDAEmode;
-  constant Context contextOMSI;
   constant list<DAE.Exp> listExpLength1;
   constant list<SimCodeFunction.Variable> boxedRecordOutVars;
 end SimCodeFunction;
@@ -1555,6 +1501,39 @@ package SimCodeCodegenUtil
     output Boolean b;
   end hasSymbolicDims;
 
+  function isSymbolicArrayVar
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isSymbolicArrayVar;
+
+  function simVarSizeExp
+    input SimCodeVar.SimVar var;
+    output DAE.Exp exp;
+  end simVarSizeExp;
+
+  function simVarDimExps
+    input SimCodeVar.SimVar var;
+    output list<DAE.Exp> exps;
+  end simVarDimExps;
+
+  function isWholeResizableArray
+    input DAE.ComponentRef cr;
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isWholeResizableArray;
+
+  function residualOffsetExp
+    input list<SimCode.SimEqSystem> eqs;
+    input Integer n;
+    output DAE.Exp exp;
+  end residualOffsetExp;
+
+  function numScalarElemsBeforeExp
+    input list<SimCodeVar.SimVar> vars;
+    input Integer n;
+    output DAE.Exp exp;
+  end numScalarElemsBeforeExp;
+
   function numScalarElemsBefore
     input list<SimCodeVar.SimVar> vars;
     input Integer n;
@@ -1626,14 +1605,6 @@ package SimCodeCodegenUtil
   function fmiLsDaeVersion
     output String version;
   end fmiLsDaeVersion;
-
-  function getLocalValueReference
-    input SimCodeVar.SimVar inSimVar;
-    input SimCode.SimCode inSimCode;
-    input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-    input Boolean inElimNegAliases;
-    output String outValueReference;
-  end getLocalValueReference;
 
   function getVarIndexListByMapping
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
@@ -1783,18 +1754,6 @@ package SimCodeCodegenUtil
     input Option<HashTableCrefSimVar.HashTable> jacHT;
     output SimCodeFunction.Context outContext;
   end createJacContext;
-
-  function localCref2SimVar
-    input DAE.ComponentRef inCref;
-    input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-    output SimCodeVar.SimVar outSimVar;
-  end localCref2SimVar;
-
-  function localCref2Index
-    input DAE.ComponentRef inCref;
-    input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-    output String outIndex;
-  end localCref2Index;
 
   function codegenExpSanityCheck
     input DAE.Exp inExp;

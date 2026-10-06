@@ -66,10 +66,10 @@ end SD;
 //     end for;
 //
 //     's.c.f' = 's.p';
-//     'c.c.e'[2] = 'c.c.e'[1];
 //     's.c.e' = 'c.c.e'[1];
 //     'c.c.e'[3] = 'c.c.e'[1];
-//     'c.c.f'[3] + 's.c.f' + 'c.c.f'[2] + 'c.c.f'[1] = 0.0;
+//     'c.c.e'[2] = 'c.c.e'[1];
+//     's.c.f' + 'c.c.f'[1] + 'c.c.f'[3] + 'c.c.f'[2] = 0.0;
 //   end 'SD';
 // end 'SD';
 // endResult

@@ -72,6 +72,16 @@ pub fn next_tok(input: &mut &[LexToken]) -> ModalResult<TK> {
     }
 }
 
+/// Consume the next token if its kind equals `kind`, which must not carry a
+/// payload.
+#[inline]
+pub fn eat(input: &mut &[LexToken], kind: TK) -> bool {
+    match input.split_first() {
+        Some((tok, rest)) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => { *input = rest; true }
+        _ => false,
+    }
+}
+
 /// Consume the next token unconditionally.  Backtrack on EOF.
 #[inline]
 pub fn skip_tok(input: &mut &[LexToken]) -> ModalResult<()> {

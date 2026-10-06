@@ -100,6 +100,7 @@ import SCodeUtil;
 import DAE;
 import Structural = NFStructural;
 import ArrayConnections = NFArrayConnections;
+import ResizableConnections = NFResizableConnections;
 import UnorderedMap;
 import UnorderedSet;
 import Inline = NFInline;
@@ -387,7 +388,7 @@ algorithm
     end if;
 
     if settings.arrayConnect then
-      flatModel := resolveArrayConnections(flatModel);
+      flatModel := resolveArrayConnections(flatModel, deleted_vars);
     else
       flatModel := resolveConnections(flatModel, deleted_vars, settings);
     end if;
@@ -1621,7 +1622,10 @@ algorithm
         exp.cref := flattenCref(exp.cref, prefix, info);
         exp.ty := flattenType(exp.ty, prefix, info);
       then
-        exp;
+        // the same size parameter everywhere: in loop ranges and indices as in
+        // the dimensions, see resizableDimensionAlias
+        if Type.isInteger(exp.ty) and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
+        then resizableDimensionAlias(exp, prefix, info) else exp;
 
     case Expression.SUBSCRIPTED_EXP(split = true)
       then Expression.mapShallow(
@@ -1813,14 +1817,124 @@ function flattenDimension
   input output Dimension dim;
   input Prefix prefix;
   input SourceInfo info;
+protected
+  Expression exp, alias;
 algorithm
   dim := match dim
     case Dimension.EXP()
-      then Dimension.fromExp(flattenExp(dim.exp, prefix, info), dim.var);
+      algorithm
+        exp := flattenExp(dim.exp, prefix, info);
+        if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+          exp := resizableDimensionAlias(exp, prefix, info);
+        end if;
+      then Dimension.fromExp(exp, dim.var);
+
+    // a resizable dimension given by an alias of another size parameter, see
+    // resizableDimensionAlias (flattenExp replaces the alias)
+    case Dimension.RESIZABLE() guard Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
+      algorithm
+        exp := flattenExp(dim.exp, prefix, info);
+      then if sameComponent(exp, dim.exp) then dim else Dimension.fromExp(exp, dim.var);
 
     else dim;
   end match;
 end flattenDimension;
+
+function sameComponent
+  "true if both expressions are crefs of the same component"
+  input Expression exp1;
+  input Expression exp2;
+  output Boolean b;
+algorithm
+  b := match (exp1, exp2)
+    case (Expression.CREF(cref = ComponentRef.CREF()), Expression.CREF(cref = ComponentRef.CREF()))
+      then InstNode.refEqual(ComponentRef.node(exp1.cref), ComponentRef.node(exp2.cref));
+    else false;
+  end match;
+end sameComponent;
+
+function resizableDimensionAlias
+  "A dimension given by a parameter of an array of components (e.g. b[N] in
+   s[M](each N = K) is s.N, one size for each element) is an alias of the
+   binding if all elements get the same value: the dimension is K then. Without
+   scalarization all elements of an array have to have the same size anyway.
+   A dimension given by a parameter of a component bound to another parameter
+   (s.N for s(N = N)) is that parameter. Otherwise the dimension stays as it is."
+  input Expression exp;
+  input Prefix prefix;
+  input SourceInfo info;
+  output Expression outExp = exp;
+protected
+  InstNode node;
+  Binding binding;
+  Expression bexp;
+algorithm
+  () := match exp
+    // ComponentRef.node, the Rust port stores a handle in the record field
+    case Expression.CREF(cref = ComponentRef.CREF())
+      guard InstNode.isComponent(ComponentRef.node(exp.cref)) and ComponentRef.variability(exp.cref) <= Variability.NON_STRUCTURAL_PARAMETER
+      algorithm
+        node := ComponentRef.node(exp.cref);
+        try
+          binding := Component.getBinding(InstNode.component(node));
+          if Binding.isBound(binding) then
+            bexp := Binding.getTypedExp(flattenBinding(binding, prefix));
+            if isInComponentArray(exp.cref) then
+              // a parameter of an array of components, e.g. s.N or s[$s1].N for s[M]
+              bexp := uniformArrayElement(bexp);
+              if not Type.isArray(Expression.typeOf(bexp)) then
+                outExp := bexp;
+              end if;
+            elseif not ComponentRef.isEmpty(ComponentRef.rest(exp.cref)) and Expression.isCref(bexp) and
+                   not Expression.isIterator(bexp) and Type.isInteger(Expression.typeOf(bexp)) and
+                   ComponentRef.isResizable(Expression.toCref(bexp)) then
+              // a parameter of a component bound to another resizable parameter, e.g. s.N for s(N = N)
+              outExp := resizableDimensionAlias(bexp, prefix, info);
+            end if;
+          end if;
+        else
+        end try;
+      then ();
+    else ();
+  end match;
+end resizableDimensionAlias;
+
+function uniformArrayElement
+  "The value of all elements of an array expression if they are all the same:
+   the body of an array constructor that does not depend on its iterators, or
+   the expression itself if it is no array. Fails otherwise."
+  input Expression exp;
+  output Expression elem;
+algorithm
+  elem := match exp
+    local
+      Expression body;
+      list<tuple<InstNode, Expression>> iters;
+    case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
+      guard not List.any(iters, function iteratorOccursIn(exp = body))
+      then uniformArrayElement(body);
+    case Expression.CALL() guard Call.isNamed(exp.call, "fill")
+      then uniformArrayElement(listHead(Call.arguments(exp.call)));
+    case _ guard not Type.isArray(Expression.typeOf(exp)) then exp;
+  end match;
+end uniformArrayElement;
+
+function isInComponentArray
+  "true if a cref is a component of an array of components, e.g. s.N for s[M]"
+  input ComponentRef cref;
+  output Boolean b;
+protected
+  ComponentRef rest;
+algorithm
+  rest := ComponentRef.rest(cref);
+  b := not ComponentRef.isEmpty(rest) and Type.isArray(ComponentRef.nodeType(ComponentRef.stripSubscripts(rest)));
+end isInComponentArray;
+
+function iteratorOccursIn
+  input tuple<InstNode, Expression> iter;
+  input Expression exp;
+  output Boolean b = Expression.containsIterator(exp, Util.tuple21(iter));
+end iteratorOccursIn;
 
 function flattenSections
   input Sections sections;
@@ -2177,8 +2291,15 @@ algorithm
   body := flattenEquations(body, EMPTY_PREFIX, settings);
   (connects, non_connects) := splitForLoop2(body, settings);
 
+  // the size parameters in the range like in the dimensions, see resizableDimensionAlias
+  if isSome(opt_range) and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    SOME(range) := opt_range;
+    opt_range := SOME(flattenExp(range, EMPTY_PREFIX, ElementSource.getInfo(src)));
+  end if;
+
   if not listEmpty(connects) then
-    if isSome(opt_range) then
+    // with resizable arrays the connections are resolved with symbolic ranges
+    if isSome(opt_range) and not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
       SOME(range) := opt_range;
       range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
       Structural.markExp(range);
@@ -2814,10 +2935,67 @@ end evaluateEquationConnOp;
 function resolveArrayConnections
   "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
+  input DeletedVariables deletedVars;
+protected
+  Connections conns;
+  Connections.BrokenEdges broken;
+  FlatModel unrolled;
+  Boolean symbolic_oc;
 algorithm
-  flatModel := ArrayConnections.resolve(flatModel);
+  // Overconstrained connections: build the graph like resolveConnections, which
+  // evaluates the Connections.* operators (isRoot, rooted). The connect equations
+  // stay in the model for the array handler.
+  // with resizable arrays the graph is built with symbolic sizes if possible
+  symbolic_oc := false;
+  if System.getHasOverconstrainedConnectors() and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    (flatModel, symbolic_oc) := ResizableConnections.resolveOverconstrained(flatModel);
+  end if;
+  if System.getHasOverconstrainedConnectors() and not symbolic_oc then
+    // the graph needs the single connections, roots and branches: unroll the
+    // for loops of a copy of the equations for it
+    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, flatModel.source);
+    (_, conns) := Connections.collectConnections(unrolled, function isDeletedCref(deletedVars = deletedVars));
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled.equations, conns,
+      function isDeletedCref(deletedVars = deletedVars));
+    if not listEmpty(broken) then
+      Error.addInternalError(getInstanceName() + ": overconstrained connection graphs with loops (broken connections) are not supported with array connections yet.", sourceInfo());
+      fail();
+    end if;
+  end if;
+
+  if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    // sizes, ranges and indices stay symbolic in the size parameters
+    flatModel := ResizableConnections.resolve(flatModel);
+  else
+    flatModel := ArrayConnections.resolve(flatModel);
+  end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function unrollForGraph
+  "The equations with their for loops unrolled, the ranges evaluated. Only for
+   building the overconstrained connection graph, the model keeps the loops."
+  input list<Equation> equations;
+  output list<Equation> outEquations = {};
+protected
+  Expression range, val;
+  RangeIterator range_iter;
+algorithm
+  for eq in equations loop
+    outEquations := match eq
+      case Equation.FOR(range = SOME(range)) algorithm
+        range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(eq), NFInstContext.ITERATION_RANGE));
+        range_iter := RangeIterator.fromExp(range);
+        while RangeIterator.hasNext(range_iter) loop
+          (range_iter, val) := RangeIterator.next(range_iter);
+          outEquations := List.append_reverse(unrollForGraph(Equation.replaceIteratorList(eq.body, eq.iterator, val)), outEquations);
+        end while;
+      then outEquations;
+      else eq :: outEquations;
+    end match;
+  end for;
+  outEquations := listReverseInPlace(outEquations);
+end unrollForGraph;
 
 function collectComponentFuncs
   input Variable var;

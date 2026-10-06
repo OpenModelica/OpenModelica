@@ -5114,6 +5114,24 @@ annotation(
   preferredView="text");
 end updatePackageIndex;
 
+function installWasmToolchain
+  "Installs the sysroot wasm external \"C\" code is compiled against."
+  input Boolean cxx = false "Also libc++, for C++ code";
+  output String sysroot;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Downloads the WebAssembly sysroot (wasi-libc headers, <code>libc.so</code>
+and the compiler-rt builtins) that the package index's prebuilt wasm modules are
+built with, unless it is installed already, and returns its path. The wasm-jit
+target compiles <code>Include</code> sources against it with the system clang.
+With <code>cxx</code>, libc++'s headers and <code>libc++.so</code> are added,
+for C++ code compiled with <code>-fwasm-exceptions</code>.
+Returns the empty string if the index has none or the download fails.</p>
+</html>"),
+  preferredView="text");
+end installWasmToolchain;
+
 function getAvailablePackageVersions
   "Returns the versions that provide the requested version of the library."
   input TypeName pkg;
@@ -5296,7 +5314,7 @@ end GC_expand_hp;
 
 function GC_set_max_heap_size
   "Forces the GC to limit the maximum heap size."
-  input Integer size;
+  input Real size "In bytes; a Real so that sizes past 2^31 fit";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

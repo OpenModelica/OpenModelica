@@ -9,6 +9,7 @@
 //! `SimEngine` impl (memory access + function calls) plus its own module
 //! compilation and external-"C" import wiring, then hands an engine to [`drive`].
 
+use openmodelica_solvers::dassl;
 use openmodelica_solvers::fmath;
 use alloc::boxed::Box;
 use alloc::format;
@@ -634,6 +635,11 @@ pub trait SimEngine {
     /// C's `cleanUpOldValueListAfterEvent`. Default: none (an engine that never
     /// integrates).
     fn clean_nls_history(&mut self, _time: f64) {}
+    /// C's `omc_last_suppressed_error`, for the stuck-integrator report.
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        None
+    }
+    fn clear_suppressed_error(&mut self) {}
     /// C's `RHSFinalFlag` (`dassl.c`): 0 while DASKR evaluates the residual, 1
     /// while the accepted step's outputs are evaluated, for `external "C"` to read.
     fn set_rhs_final(&mut self, _final_eval: bool) {}
@@ -1242,6 +1248,12 @@ pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
     ROW_SINK.store(rows.map_or(0, |f| f as usize), Ordering::Relaxed);
     ROW_SINK_FINISH.store(finish.map_or(0, |f| f as usize), Ordering::Relaxed);
 }
+/// The output buffer, reserved for a first stretch of rows: a sink takes them as
+/// they come, and a whole long run's can exceed what wasm32 can address.
+fn rows_buffer(n_rows: u32, n_reals: u32) -> Vec<f64> {
+    Vec::with_capacity(n_rows.min(1024) as usize * n_reals as usize)
+}
+
 /// Hand `rows` to the sink and empty the buffer; nothing without a sink.
 pub fn commit_rows(rows: &mut Vec<f64>) {
     let p = ROW_SINK.load(Ordering::Relaxed);
@@ -5346,7 +5358,7 @@ impl EulerDriver {
             row: 0,
             pending_time: None,
             dss,
-            rows: Vec::with_capacity((n_rows * n_reals) as usize),
+            rows: rows_buffer(n_rows, n_reals),
             retry,
         })
     }
@@ -5695,6 +5707,47 @@ struct ResCtxGuard;
 impl Drop for ResCtxGuard {
     fn drop(&mut self) {
         RES_CTX.store(core::ptr::null_mut(), Ordering::Relaxed);
+    }
+}
+
+/// C's `dasslStuck` (`dassl.c`).
+#[derive(Default)]
+struct TinySteps(u32);
+
+const DASSL_STUCK_STEPS: u32 = 1000;
+
+impl TinySteps {
+    /// Reaches the engine through `RES_CTX`, so only while that is installed.
+    fn stuck(&mut self, h: f64, t: f64) -> bool {
+        let tiny = 1000.0 * f64::EPSILON * t.abs().max(1.0);
+        if h >= tiny {
+            self.0 = 0;
+            return false;
+        }
+        self.0 += 1;
+        let ctx = RES_CTX.load(Ordering::Relaxed);
+        let engine = (!ctx.is_null()).then(|| unsafe { &mut *(*ctx).engine });
+        if self.0 == 1 {
+            if let Some(e) = engine {
+                e.clear_suppressed_error();
+            }
+            return false;
+        }
+        if self.0 < DASSL_STUCK_STEPS {
+            return false;
+        }
+        omclog::error!(
+            omclog::STDOUT,
+            true,
+            "The integrator is stuck at time {}: its last {DASSL_STUCK_STEPS} steps were each shorter than {}, too short to move time forward. The model is probably singular or discontinuous here.",
+            format_g(t, 15),
+            format_g(tiny, 6),
+        );
+        if let Some(msg) = engine.and_then(|e| e.last_suppressed_error()).filter(|m| !m.is_empty()) {
+            omclog::info!(omclog::STDOUT, false, "The last error a nonlinear solver recovered from: {msg}");
+        }
+        omclog::close(omclog::STDOUT);
+        true
     }
 }
 
@@ -6358,22 +6411,6 @@ fn emit_post_event_row(model: &SimModel, time: f64) -> bool {
     grid == time || fmath::fabs(grid - time) / (fmath::fabs(grid) + fmath::fabs(time)) < 1e-15
 }
 
-/// `-maxIntegrationOrder` (INFO(9)/IWORK(3)) and the step-size cap
-/// (INFO(7)/RWORK(2)), which `-noEquidistantOutputTime` also sets, as `dassl.c` does.
-fn daskr_limits(info: &mut [i32; 24], rwork: &mut [f64], iwork: &mut [i32]) {
-    let (order, h_max, out_time) = crate::simflags::with_flags(|f| {
-        (f.max_order, f.max_step_size, f.no_equidistant_time)
-    });
-    if let Some(n) = order {
-        info[8] = 1;
-        iwork[2] = n;
-    }
-    if let Some(h) = h_max.or(out_time) {
-        info[6] = 1;
-        rwork[1] = h;
-    }
-}
-
 /// `dassl.c`'s `dasslStepsFreq` / `dasslStepsTime`: every n-th step, or the first
 /// step past each multiple of `t`. Neither set = every step.
 #[derive(Default)]
@@ -6552,6 +6589,9 @@ struct DasslDriver {
     /// DASKR continuations spent on the in-progress interval (persisted so the
     /// runaway cap bounds one interval across yields).
     work_retries: i32,
+    tiny_steps: TinySteps,
+    /// [`dassl::restart_first_step`]s since DASKR last succeeded.
+    first_step_restarts: u32,
     /// `-noEquidistantOutput{Frequency,Time}` over the integrator's own steps.
     step_emit: StepEmit,
     /// C's degenerate first `-noEquidistantTimeGrid` iteration has been emitted.
@@ -6607,7 +6647,7 @@ impl DasslDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         // Dynamic state selection, then row 0 at the start time. For an explicit ODE
         // the consistent initial derivative is exactly f(t0, y0), which `functionODE`
         // (called by `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
@@ -6653,7 +6693,7 @@ impl DasslDriver {
         }
         let mut rwork = vec![0.0f64; lrw];
         let mut iwork = vec![0i32; liw];
-        daskr_limits(&mut info, &mut rwork, &mut iwork);
+        dassl::limits(&mut info, &mut rwork, &mut iwork);
         Ok(DasslDriver {
             sim_data,
             n_states,
@@ -6684,6 +6724,8 @@ impl DasslDriver {
             step_emit: StepEmit::new(),
             no_grid_primed: false,
             work_retries: 0,
+            tiny_steps: TinySteps::default(),
+            first_step_restarts: 0,
             pending_terminate,
             finished: false,
             jac_a,
@@ -6892,6 +6934,7 @@ impl Driver for DasslDriver {
                 );
             }
             e.set_rhs_final(true); // ... and set for the output evaluation
+            dassl::reset_initial_step(&mut self.info);
             publish_steps(|| {
                 let mut total = self.past;
                 total.fold(&self.iwork);
@@ -6918,6 +6961,19 @@ impl Driver for DasslDriver {
                 self.retry.close(e)?;
                 continue;
             }
+            if self.idid >= 0 {
+                self.first_step_restarts = 0;
+            } else if dassl::restart_first_step(
+                self.idid,
+                &mut self.info,
+                &self.rwork,
+                &self.iwork,
+                &mut self.first_step_restarts,
+            ) {
+                self.pending_tout = Some(tout);
+                self.retry.close(e)?;
+                continue;
+            }
             if self.idid < 0 {
                 // See `SolverCore::solve`: the tail evaluates where DASKR stopped.
                 for i in 0..n_states {
@@ -6926,6 +6982,14 @@ impl Driver for DasslDriver {
                 let err = report_dassl_failure(self.idid, self.t);
                 log_solver_finished(self.t);
                 return Err(err);
+            }
+            if self.tiny_steps.stuck(self.rwork[6], self.t) {
+                for i in 0..n_states {
+                    write_f64(e, states_base + (i as u32) * 8, self.y[i])?;
+                }
+                solver_fail_store::set(self.t);
+                log_solver_finished(self.t);
+                return Err(SOLVER_FAILED_ERR);
             }
             // IDID=1: one internal step with TOUT still ahead. C's `dassl_step` loops
             // on that until the interval is covered, and breaks out per step only for
@@ -7085,6 +7149,9 @@ struct DaskrState {
     past: DaskrCounters,
     /// The in-progress target's DASKR continuation count (IDID=-1 work quota).
     ev_retries: i32,
+    tiny_steps: TinySteps,
+    /// [`dassl::restart_first_step`]s since DASKR last succeeded.
+    first_step_restarts: u32,
     /// The "A" Jacobian's sparsity, coloring and symbolic columns; `None` ⇒ daskr's
     /// own numerical Jacobian.
     jac_a: Option<JacAInfo>,
@@ -7126,7 +7193,7 @@ impl DaskrState {
         }
         let mut rwork = vec![0.0f64; lrw];
         let mut iwork = vec![0i32; liw];
-        daskr_limits(&mut info, &mut rwork, &mut iwork);
+        dassl::limits(&mut info, &mut rwork, &mut iwork);
         DaskrState {
             info,
             rtol,
@@ -7140,6 +7207,8 @@ impl DaskrState {
             idid: 0,
             past: DaskrCounters::default(),
             ev_retries: 0,
+            tiny_steps: TinySteps::default(),
+            first_step_restarts: 0,
             jac_a,
             jac_method,
         }
@@ -7154,23 +7223,38 @@ impl DaskrState {
             JacobianMethod::InternalNumJac => solver::dummy_jacd,
             _ => dassl_jac,
         };
-        let mut tt = target;
         let logging = log_dassl();
-        if logging {
-            log_dassl_step(*t);
+        loop {
+            let mut tt = target;
+            if logging {
+                log_dassl_step(*t);
+            }
+            rtclock::tick(rtclock::SOLVER);
+            unsafe {
+                solver::ddaskr(
+                    dassl_res, neq, t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
+                    self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
+                    self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
+                    self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
+                    solver::dummy_jack, solver::dummy_psol, rt_fn, self.nrt,
+                    self.jroot.as_mut_ptr(),
+                );
+            }
+            rtclock::accumulate(rtclock::SOLVER);
+            dassl::reset_initial_step(&mut self.info);
+            if self.idid >= 0 {
+                self.first_step_restarts = 0;
+            } else if dassl::restart_first_step(
+                self.idid,
+                &mut self.info,
+                &self.rwork,
+                &self.iwork,
+                &mut self.first_step_restarts,
+            ) {
+                continue;
+            }
+            break;
         }
-        rtclock::tick(rtclock::SOLVER);
-        unsafe {
-            solver::ddaskr(
-                dassl_res, neq, t, y.as_mut_ptr(), yp.as_mut_ptr(), &mut tt,
-                self.info.as_mut_ptr(), self.rtol.as_mut_ptr(), self.atol.as_mut_ptr(), &mut self.idid,
-                self.rwork.as_mut_ptr(), lrw as i32, self.iwork.as_mut_ptr(), liw as i32,
-                self.rpar.as_mut_ptr(), self.ipar.as_mut_ptr(), jacfn,
-                solver::dummy_jack, solver::dummy_psol, rt_fn, self.nrt,
-                self.jroot.as_mut_ptr(),
-            );
-        }
-        rtclock::accumulate(rtclock::SOLVER);
         if logging && self.idid != -1 {
             log_dassl_stats(self.idid, *t, &self.rwork, &self.iwork);
         }
@@ -7187,6 +7271,10 @@ impl DaskrState {
         }
         if self.idid < 0 {
             return Progress::Failed(report_dassl_failure(self.idid, *t));
+        }
+        if self.tiny_steps.stuck(self.rwork[6], *t) {
+            solver_fail_store::set(*t);
+            return Progress::Failed(SOLVER_FAILED_ERR);
         }
         // IDID=5: stopped at a zero-crossing root; IDID=1: intermediate-output step.
         match self.idid {
@@ -9700,7 +9788,7 @@ impl EventsDriver {
         let n_reals = layout.n_row_total();
 
         let samp = Samples::load(e, sim_data, layout, start)?;
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
         let dss = StateSelection::initial(e, sim_data, model)?;
@@ -10389,7 +10477,7 @@ impl CvodeDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
@@ -11354,7 +11442,7 @@ impl IdaDriver {
         let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows: Vec<f64> = Vec::with_capacity((n_rows * n_reals) as usize);
+        let mut rows = rows_buffer(n_rows, n_reals);
         // For an explicit ODE the consistent `y'` is f(t0, y0), which the initial
         // row leaves in the derivative slots.
         let dss = StateSelection::initial(e, sim_data, model)?;

@@ -116,27 +116,66 @@ fn libraries_for(sym: &str) -> std::result::Result<Vec<dylink_wasmer::Library<'s
 /// read through the VFS. Lazy loading has no meaning for a wasm module, so both
 /// spellings do the same thing.
 fn open_library(path: &str, _lazy: bool) -> std::result::Result<i32, String> {
-    let own = if path.is_empty() {
-        Vec::new()
-    } else {
-        openmodelica_wasi::fs::read(path).map_err(|e| format!("{e}"))?
+    let file = match bundled_path(path) {
+        Some(p) if !openmodelica_wasi::fs::exists(path) => p,
+        _ => std::path::PathBuf::from(path),
     };
+    // A prebuilt module's generation: the directory beside it or one up that holds
+    // its libc. Its modules are linked together, as for a simulation, once for all
+    // the `Library` names it serves.
+    let bundle = if path.is_empty() {
+        None
+    } else {
+        file.ancestors()
+            .skip(1)
+            .take(2)
+            .find(|d| openmodelica_wasi::fs::exists(&format!("{}/libc/libc.so", d.display())))
+            .map(|d| d.to_path_buf())
+    };
+    let key = bundle.as_ref().map_or_else(|| path.to_owned(), |b| b.display().to_string());
+    let mut modules: Vec<(String, Vec<u8>)> = Vec::new();
+    if !path.is_empty() {
+        let name = file.display().to_string();
+        let bytes = openmodelica_wasi::fs::read(&name).map_err(|e| format!("{e}"))?;
+        modules.push((name, bytes));
+    }
+    let mut libc = None;
+    let mut needed: Vec<(String, Vec<u8>)> = Vec::new();
+    if let Some(bundle) = &bundle {
+        libc = openmodelica_wasi::fs::read(&format!("{}/libc/libc.so", bundle.display())).ok();
+        let mut siblings: Vec<String> = openmodelica_wasi::fs::read_dir(&bundle.display().to_string())
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|e| !e.is_dir && e.name.ends_with(".wasm"))
+            .map(|e| bundle.join(&e.name).display().to_string())
+            .filter(|p| *p != modules[0].0)
+            .collect();
+        siblings.sort();
+        for p in siblings {
+            if let Ok(bytes) = openmodelica_wasi::fs::read(&p) {
+                modules.push((p, bytes));
+            }
+        }
+        for (_, bytes) in &modules {
+            bundle_needs(bundle, bytes, &mut needed);
+        }
+        needed.retain(|(p, _)| !modules.iter().any(|(m, _)| m == p));
+    }
     with_reg(|reg| {
-        if let Some(i) = reg.libs.iter().position(|l| l.as_ref().is_some_and(|l| l.key == path)) {
+        if let Some(i) = reg.libs.iter().position(|l| l.as_ref().is_some_and(|l| l.key == key)) {
             return Ok(i as i32 + 1);
         }
-        let mut entry = LibEntry { key: path.to_owned(), worlds: Vec::new() };
-        if !own.is_empty() {
-            if crate::LIBC_PIC().is_empty() {
+        let mut entry = LibEntry { key: key.clone(), worlds: Vec::new() };
+        if !modules.is_empty() {
+            if libc.is_none() && crate::LIBC_PIC().is_empty() {
                 return Err("this omc carries no PIC libc, so no shared library can be loaded".to_owned());
             }
-            // `libc.so` first, then the model's library ahead of the family's
-            // base, so its own symbols win.
-            let mut libs = vec![
-                dylink_wasmer::Library { name: "libc.so", bytes: crate::LIBC_PIC() },
-                dylink_wasmer::Library { name: path, bytes: &own },
-            ];
-            for file in ["ModelicaExternalC.wasm"] {
+            // `libc.so` first, what the modules link against next, then the one
+            // asked for ahead of the rest, so its own symbols win.
+            let mut libs =
+                vec![dylink_wasmer::Library { name: "libc.so", bytes: libc.as_deref().unwrap_or(crate::LIBC_PIC()) }];
+            libs.extend(needed.iter().chain(&modules).map(|(name, bytes)| dylink_wasmer::Library { name, bytes }));
+            for file in crate::dylink::carried_libraries(std::iter::empty::<&str>(), modules.iter().map(|(_, b)| &b[..])) {
                 if let Some(bytes) = crate::ext_library(file) {
                     libs.push(dylink_wasmer::Library { name: file, bytes });
                 }
@@ -147,6 +186,42 @@ fn open_library(path: &str, _lazy: bool) -> std::result::Result<i32, String> {
         reg.libs.push(Some(entry));
         Ok(reg.libs.len() as i32)
     })
+}
+
+/// Where the newest bundle the package manager installed has the module the
+/// frontend asks for as `<dir>/wasm32-wasip1/<name>.wasm`: as that file, or as
+/// what the manifest aliases `<name>` to.
+fn bundled_path(path: &str) -> Option<std::path::PathBuf> {
+    use crate::dylink::{generation_of, GENERATION_PREFIX};
+    let path = std::path::Path::new(path);
+    let dir = path.parent().filter(|d| d.ends_with("wasm32-wasip1"))?;
+    let generation = openmodelica_wasi::fs::read_dir(&dir.display().to_string())
+        .ok()?
+        .into_iter()
+        .filter_map(|e| generation_of(&e.name))
+        .max()?;
+    let bundle = dir.join(format!("{GENERATION_PREFIX}{generation}"));
+    let file = bundle.join(path.file_name()?);
+    if openmodelica_wasi::fs::exists(&file.display().to_string()) {
+        return Some(file);
+    }
+    crate::dylink::bundle_alias(&bundle, path.file_stem()?.to_str()?)
+}
+
+/// What `bytes` names in NEEDED that `bundle`'s manifest resolves, dependency-first,
+/// so each binds directly to what it imports from the others.
+fn bundle_needs(bundle: &std::path::Path, bytes: &[u8], out: &mut Vec<(String, Vec<u8>)>) {
+    for name in crate::dylink::parse(bytes).map(|d| d.needed).unwrap_or_default() {
+        let Some(path) = crate::dylink::bundle_alias(bundle, &name) else { continue };
+        let path = path.display().to_string();
+        if out.iter().any(|(p, _)| *p == path) {
+            continue;
+        }
+        if let Ok(dep) = openmodelica_wasi::fs::read(&path) {
+            bundle_needs(bundle, &dep, out);
+            out.push((path, dep));
+        }
+    }
 }
 
 /// `System.lookupFunction`. For the libraries omc carries this is where the set to

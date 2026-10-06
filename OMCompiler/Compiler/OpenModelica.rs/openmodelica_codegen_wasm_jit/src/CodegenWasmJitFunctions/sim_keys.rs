@@ -3,14 +3,12 @@
 
 use super::*;
 
-/// Does `$PRE.<x>` have pre-storage — its own scalar slot, or a subscripted
-/// element of a `$PRE` array group? A whole-array `pre(x)` deliberately does not
-/// count: C's `daeExpCrefRhsSimContext` wraps the live `<type>Vars` region for it,
-/// never `<type>VarsPre`.
+/// Does `$PRE.<x>` have pre-storage: its own scalar slot, a `$PRE` array group
+/// (whole array), or an element of one?
 pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
     let sim = ctx.sim()?;
     if let Ok(key) = sim_cref_key(cref) {
-        if sim.vars.contains_key(&key) {
+        if sim.vars.contains_key(&key) || sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key) {
             return Ok(true);
         }
     }
@@ -24,20 +22,6 @@ pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result
             Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
         }
         None => Ok(false),
-    }
-}
-
-/// [`sim_pre_is_stored`] for an assignment *target*: a whole-array `$PRE.x := …`
-/// keeps the prefix in C where its right-hand side drops it, so the write must
-/// land on the pre-value mirror and not on the live array.
-pub(super) fn sim_pre_is_stored_lhs(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
-    if sim_pre_is_stored(ctx, cref)? {
-        return Ok(true);
-    }
-    let sim = ctx.sim()?;
-    match sim_cref_key(cref) {
-        Ok(key) => Ok(sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key)),
-        Err(_) => Ok(false),
     }
 }
 
@@ -107,6 +91,53 @@ fn sim_cref_key_into(cr: &DAE::ComponentRef, s: &mut String) -> Result<()> {
         other => return Err("CodegenWasmJit: unsupported component reference in simulation"),
     }
     Ok(())
+}
+
+/// The key of `cr` in a slot table: as spelled, or, when `contains` has no such
+/// key, [`flat_sim_key`]'s.
+pub(crate) fn resolve_sim_key(cr: &DAE::ComponentRef, contains: impl Fn(&str) -> bool) -> Result<String> {
+    let key = sim_cref_key(cr)?;
+    if contains(&key) {
+        return Ok(key);
+    }
+    Ok(flat_sim_key(cr).filter(|k| contains(k)).unwrap_or(key))
+}
+
+pub(super) fn sim_var_key(sim: &SimCtx, cr: &DAE::ComponentRef) -> Result<String> {
+    resolve_sim_key(cr, |k| sim.vars.contains_key(k))
+}
+
+/// NBackend names element `[1]` of the array `a[:].b.c` as `a.b.c[1]`, while an
+/// equation may spell it `a[1].b.c`: the subscripts moved to the last component.
+/// `None` unless an outer component has subscripts, all constant.
+pub(crate) fn flat_sim_key(cr: &DAE::ComponentRef) -> Option<String> {
+    use DAE::ComponentRef as C;
+    let mut key = String::new();
+    let mut subs = String::new();
+    let mut outer_subs = false;
+    let mut node = cr;
+    loop {
+        let (ident, subscriptLst, next) = match node {
+            C::CREF_IDENT { ident, subscriptLst, .. } => (ident, subscriptLst, None),
+            C::CREF_QUAL { ident, subscriptLst, componentRef, .. } => {
+                outer_subs |= !subscriptLst.is_empty();
+                (ident, subscriptLst, Some(componentRef))
+            }
+            _ => return None,
+        };
+        key.push_str(ident);
+        if !push_qual_subs(subscriptLst, &mut subs) {
+            return None;
+        }
+        match next {
+            Some(n) => {
+                key.push('.');
+                node = n;
+            }
+            None => break,
+        }
+    }
+    outer_subs.then(|| key + &subs)
 }
 
 /// [`sim_cref_key`] for the call sites with no fallback left: it names the cref in

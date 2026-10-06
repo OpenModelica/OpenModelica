@@ -57,8 +57,8 @@ use openmodelica_simcode_types::SimCodeFunction;
 use openmodelica_frontend_dump::ComponentReferenceBasics;
 
 use crate::CodegenWasmJitFunctions::{
-    ArrayGroup, Attr, AttrTargets, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
-    ProfPlan, ScatterGroup, SimCtx, SimSlot, SlotMap, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
+    ArrayGroup, Attr, AttrTargets, AttrTargetMap, BUILTINS, ConstGroup, ENV_EXTRA, ExtCallSig, FnCtx, FnInfo, Literals, NLS_BASE_GLOBAL, NLS_HIST_GLOBAL, NlsJob, RT_BUILTINS,
+    ProfPlan, ScatterGroup, SimCtx, SimSlot, SlotMap, VarTable, KeyTable, StartExps, StartSlot, AliasTarget, split_elem_key, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
     IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
@@ -67,7 +67,7 @@ use crate::CodegenWasmJitFunctions::{
     emit_nls_residual_body, emit_nls_residual_prologue, emit_nls_residual_epilogue,
     emit_nls_residual_store, nls_residuals_all_scalar, emit_solve_nls_call, external_import_sig, external_known,
     external_general_why, note_declined_external, reset_declined_externals,
-    function_signature, rt_index, sim_cref_key, sim_const_store,
+    function_signature, rt_index, sim_cref_key, resolve_sim_key, flat_sim_key, sim_const_store, ConstSlot,
     emit_sim_const_stores,
 };
 
@@ -80,7 +80,7 @@ use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
     var_filter, BaseClockMeta, BaseUnit, DisplayUnit, FmiVr, JacAInfo, Layout as SimLayout,
     MetaKind as ResultKind, MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta,
-    UnitDef, VarTy,
+    UnitDef, VarArray, VarTy, expand_var_arrays,
 };
 
 // Engine selected at compile time; same module interface across all three
@@ -195,6 +195,9 @@ pub use standalone::*;
 #[path = "CodegenWasmJit/ext_libs.rs"]
 mod ext_libs;
 pub(crate) use ext_libs::*;
+#[path = "CodegenWasmJit/prebuilt.rs"]
+mod prebuilt;
+pub(crate) use prebuilt::*;
 
 // Byte-level rewrites of emitted wasm modules: `dylink.0` sections, import
 // module renames, dropping imports/exports, scanning imports and exports.

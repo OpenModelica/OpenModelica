@@ -1744,6 +1744,8 @@ void deInitializeDataStruc(DATA *data)
 /* relation functions used in zero crossing detection
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
+ * On the band edge the direction decides, so a band of width zero keeps the
+ * current value.
  */
 
 void setZCtol(double relativeTol)
@@ -1757,7 +1759,7 @@ void setZCtol(double relativeTol)
 modelica_boolean LessZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
   double eps = tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
-  return direction ? (a - b <= eps) : (a - b <= -eps);
+  return direction ? (a - b <= eps) : (a - b < -eps);
 }
 
 modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
@@ -1769,7 +1771,7 @@ modelica_boolean LessEqZC(double a, double b, double a_nominal, double b_nominal
 modelica_boolean GreaterZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)
 {
   double eps = tolZC * (fmax(fabs(a), fabs(b)) + fmax(fabs(a_nominal), fabs(b_nominal)));
-  return direction ? (a - b >= -eps ) : (a - b >= eps);
+  return direction ? (a - b >= -eps) : (a - b > eps);
 }
 
 modelica_boolean GreaterEqZC(double a, double b, double a_nominal, double b_nominal, modelica_boolean direction)

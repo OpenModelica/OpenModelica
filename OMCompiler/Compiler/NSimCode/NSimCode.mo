@@ -239,7 +239,6 @@ public
       EventInfo eventInfo;
       Option<DaeModeData> daeModeData                   "Simulation system in case of DAEMode";
       list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
-      //Option<OMSIData> omsiData "used for OMSI to generate equations code";
     end SIM_CODE;
 
     function toString
@@ -619,7 +618,6 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},
-        omsiData                      = NONE(),
         scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE),
         fmiFigures                    = {});
     end convert;

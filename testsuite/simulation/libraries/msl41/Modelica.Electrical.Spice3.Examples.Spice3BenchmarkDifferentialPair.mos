@@ -6,22 +6,22 @@
 // Modelica Standard Library
 //
 
+// DASSL's first step only converges after a restart, and the messages it
+// leaves differ per runtime. The results still match, so verify them but
+// suppress the messages.
+
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair);
 compareVars :=
 {
-   "Q1.vbe",
    "Q1.vbc",
-   "Q1.vbx",
-   "Q1.vcs",
-   "Q2.vbe",
+   "Q1.vbe",
    "Q2.vbc",
-   "Q2.vbx",
-   "Q2.vcs"
+   "Q2.vbe"
 };
 
 runScript(modelTesting);getErrorString();
@@ -31,11 +31,12 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
-// {"Q1.vbe", "Q1.vbc", "Q1.vbx", "Q1.vcs", "Q2.vbe", "Q2.vbc", "Q2.vbx", "Q2.vcs"}
-// Compilation succeeded
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+// {"Q1.vbc", "Q1.vbe", "Q2.vbc", "Q2.vbe"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = 'time|Q1.vbc|Q1.vbe|Q2.vbc|Q2.vbe', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair_res.mat
+// Files Equal!
 // "true
 // "
 // ""

@@ -2669,8 +2669,8 @@ algorithm
          inSimulation and BackendVariable.isStateVar(var) and not listMember(index, always) then
         always := index :: always;
 
-      // Also prefer variables with start value
-      elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) then
+      // Also prefer variables with start value that is not just the default of their type
+      elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) and not BackendVariable.varStartFromType(var) then
         prefer := index :: prefer;
       end if;
     end if;
@@ -3683,15 +3683,37 @@ protected function preferAvoidVariables
   input list<Integer> preferAvoidIn;
   input Real factor;
 protected
-  Integer preferAvoidVar, pos;
+  array<Integer> pointsArr, firstPos "1-based position of each variable in varsIn";
+  Integer pos, maxVar;
 algorithm
-  for preferAvoidVar in preferAvoidIn loop
-    try
-      pos := List.position(preferAvoidVar,varsIn);
-      points := List.set(points,pos,realInt(realMul(factor,intReal(listGet(points,pos)))));
-    else
-    end try;
+  if listEmpty(preferAvoidIn) then
+    return;
+  end if;
+  maxVar := List.fold(varsIn, intMax, 0);
+  firstPos := arrayCreate(maxVar, 0);
+  pos := 1;
+  for v in varsIn loop
+    if v > 0 and firstPos[v] == 0 then
+      firstPos[v] := pos;
+    end if;
+    pos := pos + 1;
   end for;
+  pointsArr := listArray(points);
+  for preferAvoidVar in preferAvoidIn loop
+    if preferAvoidVar > 0 and preferAvoidVar <= maxVar then
+      pos := firstPos[preferAvoidVar];
+    else
+      try
+        pos := List.position(preferAvoidVar, varsIn);
+      else
+        pos := 0;
+      end try;
+    end if;
+    if pos > 0 and pos <= arrayLength(pointsArr) then
+      pointsArr[pos] := realInt(realMul(factor, intReal(pointsArr[pos])));
+    end if;
+  end for;
+  points := arrayList(pointsArr);
 end preferAvoidVariables;
 
 

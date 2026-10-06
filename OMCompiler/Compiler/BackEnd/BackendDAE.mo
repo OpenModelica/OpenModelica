@@ -213,7 +213,8 @@ public
 uniontype Variables
   record VARIABLES
     array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
-    array<list<PrefixIndex>> prefixIndices "HashTB, array or record cref->indices of its elements";
+    array<array<list<PrefixIndex>>> prefixIndices "One slot: HashTB, array or record cref->indices of its
+      elements. Empty until getVar first makes a prefix query.";
     VariableArray varArr "Array of variables";
     Integer bucketSize "bucket size";
     Integer numberOfVars "no. of vars";

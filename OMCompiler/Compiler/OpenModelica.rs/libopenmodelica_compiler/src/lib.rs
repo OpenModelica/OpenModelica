@@ -190,7 +190,37 @@ fn set_revision() {
     metamodelica::heap_limit::init();
     #[cfg(not(target_arch = "wasm32"))]
     metamodelica::heap_limit::set_release_fn(release_memory);
+    metamodelica::heap_limit::set_report_fn(openmodelica_util::StackOverflow::reportOutOfMemory);
     capi::set_version(ArcStr::from(openmodelica_revision::REVISION));
+}
+
+/// Fetch the installed libraries' missing prebuilt wasm modules, then compile
+/// them all into the per-user cache.
+#[cfg(not(target_arch = "wasm32"))]
+fn precompile_installed_libraries() -> Result<Vec<String>, String> {
+    let root = std::path::Path::new(&*openmodelica_util::Settings::getHomeDir(false))
+        .join(".openmodelica")
+        .join("libraries");
+    let dirs: Vec<std::path::PathBuf> = std::fs::read_dir(&root)
+        .map(|rd| rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect())
+        .unwrap_or_default();
+    let files = dirs.iter().fold(metamodelica::nil(), |l, d| {
+        metamodelica::cons(ArcStr::from(d.join("package.mo").to_string_lossy().as_ref()), l)
+    });
+    let _ = openmodelica_script_util::PackageManagement::installMissingWasmOfLoaded(files, openmodelica_wasm_jit::dylink::PREBUILT_ABI);
+    let messages = openmodelica_util::Error::printMessagesStr(false);
+    if !messages.is_empty() {
+        eprint!("{messages}");
+    }
+    openmodelica_wasm_jit::sim_runtime::precompile_libraries(&dirs)
+}
+
+/// The process exits next: flush the buffered writers and skip freeing the
+/// loaded program.
+#[cfg(not(target_arch = "wasm32"))]
+fn prepare_exit() {
+    openmodelica_util::File::flush_all_registered();
+    openmodelica_backend_main::Globals::leak_program_for_exit();
 }
 
 /// Run the standalone `omc` command-line interface and return its process exit
@@ -214,19 +244,23 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     set_revision();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
     // and stop; empty means the per-user cache, which an installer or a test run
-    // warms. For the build and for CI; not a user-facing flag.
+    // warms, and then the installed libraries' prebuilt modules go in as well.
+    // For the build and for CI; not a user-facing flag.
     #[cfg(not(target_arch = "wasm32"))]
     if let Some(dir) = std::env::var_os("OMC_WASM_PRECOMPILE_CACHE") {
         // Bulk allocation with no translation to abandon: a genuine exhaustion
         // should come back as wasmtime's error, not an unwind from a destructor.
         metamodelica::heap_limit::set_max_heap_size(0);
         let dir = std::path::PathBuf::from(&dir);
-        let dir = if dir.as_os_str().is_empty() {
-            openmodelica_wasm_jit::sim_runtime::aot_cache_dir()
-        } else {
-            dir
-        };
-        return match openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir) {
+        let per_user = dir.as_os_str().is_empty();
+        let dir = if per_user { openmodelica_wasm_jit::sim_runtime::aot_cache_dir() } else { dir };
+        let precompiled = openmodelica_wasm_jit::sim_runtime::precompile_fixed_blobs(&dir, !per_user).and_then(|mut names| {
+            if per_user {
+                names.extend(precompile_installed_libraries()?);
+            }
+            Ok(names)
+        });
+        return match precompiled {
             Ok(names) => {
                 println!("precompiled {} wasm artifacts into {}", names.len(), dir.display());
                 0
@@ -256,9 +290,9 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
             .collect()
     };
     let arglist: metamodelica::List<_> = args.into_iter().collect();
+    openmodelica_util::System::set_exit_hook(prepare_exit);
     let status = catch_unwind(AssertUnwindSafe(|| openmodelica_backend_main::Main::main(arglist)));
-    // `process::exit` drops no thread-local, so flush the buffered writers here.
-    openmodelica_util::File::flush_all_registered();
+    prepare_exit();
     match status {
         Ok(Ok(())) => 0,
         // Mirror the launcher's old inline `run()`: flush stdout, report on

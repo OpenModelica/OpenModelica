@@ -1,0 +1,115 @@
+// name: Modelica37Grammar
+// keywords: Modelica 3.7 grammar
+// status: correct
+//
+// Parses, unparses and instantiates the syntax added in Modelica 3.7:
+// unitful literals, (exp).name and der(x) := exp.
+//
+
+loadString("
+record R
+  Real a;
+  Real b;
+end R;
+
+function f
+  input Real x;
+  output R r = R(x, 2*x);
+end f;
+
+model Modelica37Grammar
+  parameter Real g(unit = \"m/s2\") = 9.81'm/s2';
+  parameter Real l(unit = \"m\") = -2'm';
+  parameter Integer n = 3 '1';
+  R r = R(1, 2);
+  R rs[2] = {R(1, 2), R(3, 4)};
+  Real y = (f(time)).b;
+  Real z = (r).a;
+  Real w[2] = (rs).b;
+  Real v = (rs[2]).a;
+end Modelica37Grammar;
+
+model DerAssign
+  Real x(start = 1, fixed = true);
+algorithm
+  der(x) := -x;
+end DerAssign;
+"); getErrorString();
+list(Modelica37Grammar); getErrorString();
+list(DerAssign); getErrorString();
+instantiateModel(Modelica37Grammar); getErrorString();
+
+loadString("
+model TupleDot
+  Real x = (1, 2).a;
+end TupleDot;
+"); getErrorString();
+
+loadString("
+model MissingElement
+  Real x = (f(1.0)).c;
+end MissingElement;
+"); getErrorString();
+instantiateModel(MissingElement); getErrorString();
+
+// Result:
+// true
+// ""
+// "model Modelica37Grammar
+//   parameter Real g(unit = \"m/s2\") = 9.81'm/s2';
+//   parameter Real l(unit = \"m\") = -2'm';
+//   parameter Integer n = 3'1';
+//   R r = R(1, 2);
+//   R rs[2] = {R(1, 2), R(3, 4)};
+//   Real y = (f(time)).b;
+//   Real z = (r).a;
+//   Real w[2] = (rs).b;
+//   Real v = (rs[2]).a;
+// end Modelica37Grammar;"
+// ""
+// "model DerAssign
+//   Real x(start = 1, fixed = true);
+// algorithm
+//   der(x) := -x;
+// end DerAssign;"
+// ""
+// "function R \"Automatically generated record constructor for R\"
+//   input Real a;
+//   input Real b;
+//   output R res;
+// end R;
+//
+// function f
+//   input Real x;
+//   output R r = R(x, 2.0 * x);
+// end f;
+//
+// class Modelica37Grammar
+//   parameter Real g(unit = \"m/s2\") = 9.81;
+//   parameter Real l(unit = \"m\") = -2.0;
+//   parameter Integer n = 3;
+//   Real r.a = 1.0;
+//   Real r.b = 2.0;
+//   Real rs[1].a = 1.0;
+//   Real rs[1].b = 2.0;
+//   Real rs[2].a = 3.0;
+//   Real rs[2].b = 4.0;
+//   Real y = f(time).b;
+//   Real z = r.a;
+//   Real w[1];
+//   Real w[2];
+//   Real v = rs[2].a;
+// equation
+//   w = {rs[1].b, rs[2].b};
+// end Modelica37Grammar;
+// "
+// ""
+// false
+// "[<interactive>:3:12-3:19:writable] Error: Tuple expression can not be used with the dot operator.
+// "
+// true
+// ""
+// ""
+// "[<interactive>:3:3-3:22:writable] Error: Expression f(1.0) of type R has no record element named c.
+// "
+// endResult

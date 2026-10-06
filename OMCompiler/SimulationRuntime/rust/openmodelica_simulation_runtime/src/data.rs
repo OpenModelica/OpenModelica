@@ -464,6 +464,13 @@ fn string_roots(n: usize) -> *mut modelica_string {
 /// `src/fmi.rs`.
 pub fn initialize(data: *mut DATA, thread_data: *mut threadData_t) -> RtData {
     initialize_data_struc(data, thread_data);
+    // The sizes of the resizable Jacobians of the systems are the values of
+    // structural parameters (possibly changed with -override), like in build_rt.
+    {
+        let md: &mut MODEL_DATA = unsafe { &mut *(*data).modelData };
+        let si: &mut SIMULATION_INFO = unsafe { &mut *(*data).simulationInfo };
+        crate::fmi::setAllParamsToStart(si, md);
+    }
     initialize_systems(data, thread_data);
     if let Some(list) = openmodelica_sim_meta::simflags::with_flags(|f| f.lv_system.clone()) {
         set_lv_systems(data, thread_data, &list);

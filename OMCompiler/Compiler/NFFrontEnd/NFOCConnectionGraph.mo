@@ -201,7 +201,7 @@ protected
 algorithm
   // Add roots and branches from the model to the graph.
   graph := addBreakableBranches(conns.connections, isDeleted, print_trace, graph);
-  (eql, graph) := addRootsAndBranches(flatModel.equations, print_trace, graph);
+  (eql, graph) := addRootsAndBranches(List.flatten(list(expandArrayOperatorCall(eq) for eq in flatModel.equations)), print_trace, graph);
   flatModel.equations := eql;
 
   // now we have the graph, remove the broken connects and evaluate the equation operators
@@ -209,7 +209,161 @@ algorithm
   flatModel.equations := removeBrokenConnects(flatModel.equations, connected, broken, isDeleted);
 end handleOverconstrainedConnections;
 
+function handleOverconstrainedArrayConnections
+  "handleOverconstrainedConnections for the array connection handler, where the
+   connect equations and the equations of arrays of components stay for loops:
+   the graph is built from a copy of the equations with the for loops unrolled
+   (unrolledEquations, conns collected from them), the Connections.* operators
+   are evaluated inside the for loops of the model and Connections.root, branch
+   and potentialRoot are removed from them. The connect equations stay for the
+   array handler, broken connections are returned and not removed."
+  input output FlatModel flatModel;
+  input list<Equation> unrolledEquations;
+  input Connections conns;
+  input IsDeletedFn isDeleted;
+  output FlatEdges broken;
 protected
+  NFOCConnectionGraph graph = EMPTY;
+  FlatEdges connected;
+  list<ComponentRef> roots;
+  CrefIndexTable rooted;
+  Boolean print_trace = Flags.isSet(Flags.CGRAPH);
+algorithm
+  graph := addBreakableBranches(conns.connections, isDeleted, print_trace, graph);
+  (_, graph) := addRootsAndBranches(List.flatten(list(expandArrayOperatorCall(eq) for eq in unrolledEquations)), print_trace, graph);
+  flatModel.equations := removeConnectionsOperatorCalls(flatModel.equations);
+
+  (roots, connected, broken) := findResultGraph(graph, FlatModel.fullName(flatModel));
+  if print_trace then
+    print("Array connections, roots: " + stringDelimitList(List.map(roots, ComponentRef.toString), ", ") + "\n");
+    print("Branches: " + intString(listLength(getBranches(graph))) + ", connections: " + intString(listLength(getConnections(graph)))
+      + ", potential roots: " + intString(listLength(getPotentialRoots(graph))) + "\n");
+  end if;
+  rooted := buildRootedTable(roots, graph);
+  flatModel.variables := list(evalConnectionsOperatorsVar(roots, rooted, graph, v) for v in flatModel.variables);
+  flatModel.equations := list(Equation.mapExp(eq,
+      function evaluateOperators(rooted = rooted, roots = roots, graph = graph, info = Equation.info(eq)))
+    for eq in flatModel.equations);
+  flatModel.initialEquations := list(Equation.mapExp(eq,
+      function evaluateOperators(rooted = rooted, roots = roots, graph = graph, info = Equation.info(eq)))
+    for eq in flatModel.initialEquations);
+end handleOverconstrainedArrayConnections;
+
+protected
+function expandArrayOperatorCall
+  "Connections.root, potentialRoot, uniqueRoot and branch of an array of
+   components (e.g. Connections.branch(line.a.theta, line.b.theta) for line[N])
+   as one call for each component, like for scalarized equations."
+  input Equation eq;
+  output list<Equation> eqs;
+protected
+  Call call;
+  list<Expression> args, rest;
+  list<list<ComponentRef>> elems;
+  ComponentRef cref;
+  Integer n;
+algorithm
+  eqs := match eq
+    case Equation.NORETCALL(exp = Expression.CALL(call = call as Call.TYPED_CALL(arguments = args)))
+      guard isGraphOperator(eq) and List.any(args, isComponentArrayCref)
+      algorithm
+        // the crefs arguments element by element, the other ones (priority) as they are
+        elems := list(match a case Expression.CREF() then componentElements(a.cref); else {}; end match for a in args);
+        n := max(listLength(e) for e in elems);
+        eqs := {};
+        for i in n:-1:1 loop
+          call.arguments := list(match a
+            case Expression.CREF() algorithm
+              cref := listGet(e, i);
+            then Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
+            else a; end match threaded for a in args, e in elems);
+          eqs := Equation.NORETCALL(Expression.CALL(call), eq.scope, eq.source) :: eqs;
+        end for;
+      then eqs;
+    else {eq};
+  end match;
+end expandArrayOperatorCall;
+
+function isComponentArrayCref
+  "true for a cref of an array of components, e.g. line.a.theta for line[N],
+   also if the array has a single element"
+  input Expression exp;
+  output Boolean b;
+protected
+  list<ComponentRef> elems;
+algorithm
+  b := match exp
+    case Expression.CREF()
+      algorithm
+        elems := componentElements(exp.cref);
+      then listLength(elems) <> 1 or not ComponentRef.isEqual(listHead(elems), ComponentRef.stripSubscripts(exp.cref));
+    else false;
+  end match;
+end isComponentArrayCref;
+
+function componentElements
+  "The elements of the arrays of components a cref refers to, without the
+   dimensions of the variable itself (theta[2] stays one variable)."
+  input ComponentRef cref;
+  output list<ComponentRef> elems;
+algorithm
+  elems := list(ComponentRef.stripSubscripts(c) for c in listReverse(ComponentRef.scalarizeAll(cref, false)));
+  elems := uniqueInOrder(elems);
+end componentElements;
+
+function uniqueInOrder
+  "the crefs without duplicates, in their order (the elements of the arguments
+   of an operator call are paired by position)"
+  input list<ComponentRef> crefs;
+  output list<ComponentRef> unique = {};
+protected
+  UnorderedSet<ComponentRef> seen = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+algorithm
+  for cr in crefs loop
+    if not UnorderedSet.contains(cr, seen) then
+      UnorderedSet.add(cr, seen);
+      unique := cr :: unique;
+    end if;
+  end for;
+  unique := listReverse(unique);
+end uniqueInOrder;
+
+function removeConnectionsOperatorCalls
+  "Removes Connections.root, branch, potentialRoot and uniqueRoot calls, also
+   inside for loops; a for loop that has nothing else is removed."
+  input list<Equation> equations;
+  output list<Equation> outEquations = {};
+algorithm
+  for eq in equations loop
+    outEquations := match eq
+      case Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL()))
+        guard isGraphOperator(eq)
+        then outEquations;
+      case Equation.FOR() algorithm
+        eq.body := removeConnectionsOperatorCalls(eq.body);
+      then if listEmpty(eq.body) then outEquations else eq :: outEquations;
+      else eq :: outEquations;
+    end match;
+  end for;
+  outEquations := listReverseInPlace(outEquations);
+end removeConnectionsOperatorCalls;
+
+function isGraphOperator
+  input Equation eq;
+  output Boolean b;
+protected
+  Function fn;
+algorithm
+  Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL(fn = fn))) := eq;
+  b := match identifyConnectionsOperator(Function.name(fn))
+    case ConnectionsOperator.ROOT then true;
+    case ConnectionsOperator.POTENTIAL_ROOT then true;
+    case ConnectionsOperator.UNIQUE_ROOT then true;
+    case ConnectionsOperator.BRANCH then true;
+    else false;
+  end match;
+end isGraphOperator;
+
 
 function addBreakableBranches
   "Adds breakable branches, i.e. normal connections, to the graph."
@@ -1044,8 +1198,9 @@ algorithm
   outExp := match exp
     local
       Expression uroots, nodes, message, res;
-      ComponentRef cref,cref1;
+      ComponentRef cref;
       Boolean result;
+      list<Boolean> results;
       Edges branches;
       Call call;
       String str;
@@ -1074,24 +1229,23 @@ algorithm
                   cref := ComponentRef.stripIteratorSubscripts(cref);
 
                   try
-                    cref1 := getEdge(cref,branches);
-                    // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                    //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-                    if Flags.isSet(Flags.CGRAPH) then
-                      print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                        ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-                    end if;
-                    result := getRooted(cref,cref1,rooted);
-                    //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
-                    //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
-                    if Flags.isSet(Flags.CGRAPH) then
-                      print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
-                    end if;
-                  else // add an error message:
-                    str := ComponentRef.toString(cref);
-                    Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
-                    result := false;
+                    result := elementRooted(cref, branches, rooted);
+                  else
+                    // an array of components in a for-equation, e.g. rooted(joint[$i].frame_a.R):
+                    // the graph has its elements, which all have to agree
+                    try
+                      result :: results := list(elementRooted(c, branches, rooted) for c in componentElements(cref));
+                      true := List.all(results, function boolEq(b2 = result));
+                    else
+                      str := ComponentRef.toString(cref);
+                      Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
+                      result := false;
+                    end try;
                   end try;
+
+                  if Flags.isSet(Flags.CGRAPH) then
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
+                  end if;
                 then
                   Expression.BOOLEAN(result);
             end match;
@@ -1159,6 +1313,14 @@ algorithm
     else exp;
   end match;
 end evalConnectionsOperatorsHelper;
+
+protected function elementRooted
+  "Connections.rooted of a connector, fails if it is not part of a branch."
+  input ComponentRef cref;
+  input Edges branches;
+  input CrefIndexTable rooted;
+  output Boolean result = getRooted(cref, getEdge(cref, branches), rooted);
+end elementRooted;
 
 protected function getRooted
   input ComponentRef cref1;

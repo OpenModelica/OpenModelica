@@ -5966,6 +5966,7 @@ name = "metamodelica"
 version = "0.1.0"
 dependencies = [
  "arcstr",
+ "backtrace",
  "libc",
  "metamodelica_derive",
  "num-traits",
@@ -7024,6 +7025,7 @@ dependencies = [
  "arcstr",
  "const-str 1.1.0",
  "encoding_rs",
+ "libc",
  "loop_unwrap",
  "metamodelica",
  "openmodelica_error",
@@ -7096,10 +7098,8 @@ dependencies = [
  "openmodelica_codegen_cfunctions",
  "openmodelica_codegen_cpp",
  "openmodelica_codegen_cpp_ext",
- "openmodelica_codegen_cpp_omsi_ext",
  "openmodelica_codegen_fmu",
  "openmodelica_codegen_fmu_c",
- "openmodelica_codegen_fmu_omsi",
  "openmodelica_codegen_util",
  "openmodelica_codegen_wasm_jit",
  "openmodelica_codegen_xml",
@@ -7320,54 +7320,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openmodelica_codegen_cpp_omsi"
-version = "0.1.0"
-dependencies = [
- "arcstr",
- "const-str 1.1.0",
- "loop_unwrap",
- "match_deref",
- "metamodelica",
- "openmodelica_ast",
- "openmodelica_backend_types",
- "openmodelica_codegen",
- "openmodelica_codegen_cpp_common",
- "openmodelica_codegen_util",
- "openmodelica_frontend_base",
- "openmodelica_frontend_dump",
- "openmodelica_frontend_types",
- "openmodelica_simcode_types",
- "openmodelica_simcode_util",
- "openmodelica_tpl",
- "openmodelica_util",
- "openmodelica_util_datatypes_basic",
-]
-
-[[package]]
-name = "openmodelica_codegen_cpp_omsi_ext"
-version = "0.1.0"
-dependencies = [
- "arcstr",
- "const-str 1.1.0",
- "loop_unwrap",
- "match_deref",
- "metamodelica",
- "openmodelica_ast",
- "openmodelica_backend_types",
- "openmodelica_codegen_cpp_common",
- "openmodelica_codegen_cpp_omsi",
- "openmodelica_codegen_fmu",
- "openmodelica_codegen_util",
- "openmodelica_frontend_base",
- "openmodelica_frontend_dump",
- "openmodelica_frontend_types",
- "openmodelica_simcode_types",
- "openmodelica_tpl",
- "openmodelica_util",
- "openmodelica_util_datatypes_basic",
-]
-
-[[package]]
 name = "openmodelica_codegen_fmu"
 version = "0.1.0"
 dependencies = [
@@ -7407,29 +7359,6 @@ dependencies = [
  "openmodelica_codegen_util",
  "openmodelica_frontend_base",
  "openmodelica_frontend_dump",
- "openmodelica_frontend_types",
- "openmodelica_simcode_types",
- "openmodelica_tpl",
- "openmodelica_util",
- "openmodelica_util_datatypes_basic",
-]
-
-[[package]]
-name = "openmodelica_codegen_fmu_omsi"
-version = "0.1.0"
-dependencies = [
- "arcstr",
- "const-str 1.1.0",
- "loop_unwrap",
- "match_deref",
- "metamodelica",
- "openmodelica_ast",
- "openmodelica_backend_types",
- "openmodelica_codegen",
- "openmodelica_codegen_cfunctions",
- "openmodelica_codegen_fmu",
- "openmodelica_codegen_util",
- "openmodelica_frontend_base",
  "openmodelica_frontend_types",
  "openmodelica_simcode_types",
  "openmodelica_tpl",
@@ -7505,6 +7434,7 @@ dependencies = [
  "openmodelica_wasi",
  "openmodelica_wasm_jit",
  "ordered-float",
+ "serde_json",
  "wasm-encoder 0.259.0",
  "wasmer",
  "wasmparser 0.259.0",
@@ -7980,6 +7910,7 @@ dependencies = [
  "openmodelica_arrow_writer",
  "openmodelica_lapack",
  "openmodelica_mat_writer",
+ "openmodelica_nls",
  "openmodelica_plt_writer",
  "openmodelica_solvers",
 ]
@@ -8060,9 +7991,20 @@ dependencies = [
  "match_deref",
  "metamodelica",
  "openmodelica_error",
+ "openmodelica_susan_index",
  "openmodelica_tpl",
  "openmodelica_util",
  "openmodelica_util_datatypes_basic",
+ "serde_json",
+]
+
+[[package]]
+name = "openmodelica_susan_index"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "serde_json",
+ "syn 3.0.6",
 ]
 
 [[package]]
@@ -8098,6 +8040,8 @@ dependencies = [
  "openmodelica_wasi",
  "rayon",
  "roxmltree",
+ "serde",
+ "serde_json",
  "zip",
  "zmq",
 ]
@@ -8132,6 +8076,7 @@ dependencies = [
  "arcstr",
  "daskr",
  "foldhash 0.2.0",
+ "js-sys",
  "libc",
  "libffi",
  "metamodelica",
@@ -8144,6 +8089,7 @@ dependencies = [
  "openmodelica_wasi_libc",
  "rsparse",
  "serde_json",
+ "wasm-bindgen",
  "wasm-encoder 0.259.0",
  "wasmer",
  "wasmtime",

@@ -49,6 +49,7 @@ import SimCode;
 import SimCodeFunction;
 import SimCodeVar;
 import Types;
+import UnorderedSet;
 import Util;
 
 protected
@@ -1104,15 +1105,21 @@ public function jacobianIndexExp
   input HashTableCrefSimVar.HashTable ht;
   output DAE.Exp exp = DAE.ICONST(var.index);
 protected
-  list<SimCodeVar.SimVar> before = {};
-  list<Integer> seen = {};
+  list<SimCodeVar.SimVar> vars, before = {};
+  UnorderedSet<Integer> seen;
 algorithm
-  if var.index <= 0 then
+  // only non-scalarized arrays can have a size that is known at runtime
+  if var.index <= 0 or Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
     return;
   end if;
-  for v in BaseHashTable.hashTableValueList(ht) loop
-    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not List.isMemberOnTrue(v.index, seen, intEq) then
-      seen := v.index :: seen;
+  vars := BaseHashTable.hashTableValueList(ht);
+  if not List.any(vars, isSymbolicArrayVar) then
+    return;
+  end if;
+  seen := UnorderedSet.new(Util.id, intEq);
+  for v in vars loop
+    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not UnorderedSet.contains(v.index, seen) then
+      UnorderedSet.add(v.index, seen);
       before := v :: before;
     end if;
   end for;
@@ -1124,7 +1131,7 @@ algorithm
   end if;
 end jacobianIndexExp;
 
-protected function simVarSizeExp
+public function simVarSizeExp
   "The number of scalar elements of a SimVar as an expression."
   input SimCodeVar.SimVar var;
   output DAE.Exp exp = DAE.ICONST(1);
@@ -1136,6 +1143,98 @@ algorithm
     end match);
   end for;
 end simVarSizeExp;
+
+public function simVarDimExps
+  "The dimensions of a SimVar as expressions, outermost first."
+  input SimCodeVar.SimVar var;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := list(match d
+      case DAE.DIM_EXP() then d.exp;
+      else DAE.ICONST(Expression.dimensionSize(d));
+    end match for d in Expression.arrayDimension(var.type_));
+end simVarDimExps;
+
+public function isWholeResizableArray
+  "true if an iteration variable of an algebraic loop is a whole array whose
+   size is only known at runtime (resizable arrays): the loop has to be sized at
+   runtime then."
+  input DAE.ComponentRef cr;
+  input SimCodeVar.SimVar var;
+  output Boolean b = listEmpty(ComponentReference.crefLastSubs(cr)) and isSymbolicArrayVar(var);
+end isWholeResizableArray;
+
+public function residualOffsetExp
+  "The position of the n-th residual (zero-based, counting only the residual
+   equations, like the index of the residual template) of an algebraic loop in
+   its residual vector: the sum of the sizes of the residuals before it, an
+   expression of the size parameters for resizable arrays."
+  input list<SimCode.SimEqSystem> eqs;
+  input Integer n;
+  output DAE.Exp exp = DAE.ICONST(0);
+protected
+  Integer count = 0;
+  Option<DAE.Exp> osz;
+  DAE.Exp sz;
+algorithm
+  for eq in eqs loop
+    if count >= n then
+      break;
+    end if;
+    osz := match eq
+      case SimCode.SES_RESIDUAL() then SOME(typeSizeExp(Expression.typeof(eq.exp)));
+      case SimCode.SES_FOR_RESIDUAL() algorithm
+        sz := typeSizeExp(Expression.typeof(eq.exp));
+        for it in eq.iterators loop
+          sz := DAE.BINARY(sz, DAE.MUL(DAE.T_INTEGER_DEFAULT), simIteratorSizeExp(it));
+        end for;
+      then SOME(sz);
+      case SimCode.SES_GENERIC_RESIDUAL() then SOME(DAE.ICONST(listLength(eq.scal_indices)));
+      else NONE();
+    end match;
+    if isSome(osz) then
+      SOME(sz) := osz;
+      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), sz);
+      count := count + 1;
+    end if;
+  end for;
+end residualOffsetExp;
+
+protected function simIteratorSizeExp
+  input BackendDAE.SimIterator it;
+  output DAE.Exp exp;
+algorithm
+  exp := match it
+    case BackendDAE.SIM_ITERATOR_RANGE() then it.size;
+    case BackendDAE.SIM_ITERATOR_LIST() then DAE.ICONST(it.size);
+  end match;
+end simIteratorSizeExp;
+
+protected function typeSizeExp
+  "the number of scalar elements of a type as an expression"
+  input DAE.Type ty;
+  output DAE.Exp exp = DAE.ICONST(1);
+algorithm
+  for d in Expression.arrayDimension(ty) loop
+    exp := DAE.BINARY(exp, DAE.MUL(DAE.T_INTEGER_DEFAULT), match d
+      case DAE.DIM_EXP() then d.exp;
+      else DAE.ICONST(Expression.dimensionSize(d));
+    end match);
+  end for;
+end typeSizeExp;
+
+public function numScalarElemsBeforeExp
+  "Like numScalarElemsBefore as an expression: the scalar offset of the n-th
+   variable (zero-based), with the sizes of resizable arrays as expressions of
+   their size parameters."
+  input list<SimCodeVar.SimVar> vars;
+  input Integer n;
+  output DAE.Exp exp = DAE.ICONST(0);
+algorithm
+  for v in List.firstN(vars, n) loop
+    exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+  end for;
+end numScalarElemsBeforeExp;
 
 public function isDimensionParameter
   "true for a size parameter $DIM_k of a derived dimension of a resizable array,
@@ -1186,7 +1285,8 @@ public function hasSymbolicDims
   output Boolean b = List.any(vars, isSymbolicArrayVar);
 end hasSymbolicDims;
 
-protected function isSymbolicArrayVar
+public function isSymbolicArrayVar
+  "true if an array SimVar has a dimension that is no integer literal"
   input SimCodeVar.SimVar var;
   output Boolean b;
 algorithm
@@ -1418,10 +1518,7 @@ algorithm
       String valueReference;
     case (SimCodeVar.SIMVAR(aliasvar = SimCodeVar.NEGATEDALIAS(_)), false, _) then
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
-    case (_, _, _) guard(stringEqual(Config.simCodeTarget(), "Cpp")
-                        or stringEqual(Config.simCodeTarget(), "omsic")
-            /*Temporary disabled omsicpp*/
-            /*or stringEqual(Config.simCodeTarget(), "omsicpp")*/)
+    case (_, _, _) guard stringEqual(Config.simCodeTarget(), "Cpp")
     algorithm
       // resolve aliases to get multi-dimensional arrays right
       // (this should possibly be done in getVarIndexByMapping?)
@@ -1780,37 +1877,6 @@ algorithm
   end for;
   residuals := listReverse(residuals);
 end fmi3DaeResiduals;
-
-public function getLocalValueReference
- "returns the local value reference of current OMSIFuncton of a variable for
-  direct memory access considering aliases and array storage order."
-  input SimCodeVar.SimVar inSimVar;
-  input SimCode.SimCode inSimCode;
-  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-  input Boolean inElimNegAliases "=false to keep negative alias references";
-  output String outValueReference;
-algorithm
-  outValueReference := matchcontinue (inSimVar, inCrefToSimVarHT)
-    local
-      DAE.ComponentRef cref;
-      String valueReference;
-      HashTableCrefSimVar.HashTable crefToSimVarHT;
-
-    // default case
-    case (SimCodeVar.SIMVAR(name=cref), crefToSimVarHT)
-    algorithm
-      valueReference := localCref2Index(cref, crefToSimVarHT);
-      // if localy no index was found search globaly
-      if stringEqual(valueReference, "-1") then
-        valueReference := getValueReference(inSimVar, inSimCode, inElimNegAliases);
-      end if;
-      then valueReference;
-    else
-      algorithm
-      Error.addInternalError("getLocalValueReference failed.", sourceInfo());
-      then "ERROR: getLocalValueReference failed";
-  end matchcontinue;
-end getLocalValueReference;
 
 protected function getNLSysRHS
     input list<SimCode.SimEqSystem> eqs;
@@ -2263,50 +2329,6 @@ public function createJacContext
 algorithm
   outContext := SimCodeFunction.JACOBIAN_CONTEXT(name, jacHT);
 end createJacContext;
-
-public function localCref2SimVar
-"Used by templates to find SIMVAR in given hashTable for given cref
- (to gain representaion index info mainly). Does not check if variable is alias."
-  input DAE.ComponentRef inCref;
-  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-  output SimCodeVar.SimVar outSimVar;
-algorithm
-  outSimVar := matchcontinue (inCref, inCrefToSimVarHT)
-    local
-      DAE.ComponentRef cref, badcref;
-      SimCodeVar.SimVar sv;
-      SimCode.HashTableCrefSimVar.HashTable crefToSimVarHT;
-    case (cref, crefToSimVarHT)
-      algorithm
-        sv := BaseHashTable.get(cref, crefToSimVarHT);
-      then sv;
-
-    case (_,_)
-      algorithm
-        badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
-  end matchcontinue;
-end localCref2SimVar;
-
-public function localCref2Index
-"Finds local value reference for given cref and hash table"
-  input DAE.ComponentRef inCref;
-  input HashTableCrefSimVar.HashTable inCrefToSimVarHT;
-  output String outIndex;
-algorithm
-  outIndex:= matchcontinue (inCref, inCrefToSimVarHT)
-    local
-      DAE.ComponentRef cref;
-      HashTableCrefSimVar.HashTable crefToSimVarHT;
-      SimCodeVar.SimVar sv;
-    case (cref, crefToSimVarHT)
-      algorithm
-        sv := BaseHashTable.get(cref, crefToSimVarHT);
-      then String(sv.index);
-    else
-      then "-1";
-  end matchcontinue;
-end localCref2Index;
 
 public function codegenExpSanityCheck "Handle some things that Susan cannot handle:
 * Expand simulation context arrays that contain variables stored in different locations...
@@ -3307,14 +3329,18 @@ algorithm
     case DAE.ICONST() then DAE.RCONST(abs(intReal(expr.integer)));
     case DAE.RCONST() then DAE.RCONST(abs(expr.real));
 
+    // time is monotonic, a relation on it cannot chatter
+    case DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")) then DAE.RCONST(0.0);
+
     case DAE.CREF(componentRef = cr, ty = t) algorithm
       v := cref2simvar(cr, getSimCode());
     then match v.nominalValue
       case SOME(DAE.RCONST(r1)) then DAE.RCONST(abs(r1));
       case SOME(e1) then Expression.makePureBuiltinCall("abs", {e1}, t);
       case NONE() then match v.varKind
-        // for parameters use their actual value
+        // for parameters and discrete variables use their actual value
         case BackendDAE.PARAM() then Expression.makePureBuiltinCall("abs", {expr}, t);
+        case BackendDAE.DISCRETE() then Expression.makePureBuiltinCall("abs", {expr}, t);
         else DAE.RCONST(1.0);
         // TODO use min/max to deduce better nominal value than 1.
       end match;

@@ -6,6 +6,7 @@ getErrorString();
 setModelicaPath(OpenModelica.Scripting.cd() + "/.openmodelica/libraries/");
 getModelicaPath();
 echo(false);
+setCommandLineOptions("--simCodeTarget=wasm-jit");
 OpenModelica.Scripting.mkdir(".openmodelica");
 if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
   print("\nmkdir failed\n");
