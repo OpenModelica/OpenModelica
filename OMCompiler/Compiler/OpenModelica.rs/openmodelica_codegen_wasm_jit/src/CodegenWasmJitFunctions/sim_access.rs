@@ -522,6 +522,16 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
                 emit_sim_array_scatter(ctx, &group, rhs)?;
                 return Ok(true);
             }
+            // A zero-sized array has no variables (e.g. a `$cse` for an empty output).
+            if let DAE::ComponentRef::CREF_IDENT { identType, subscriptLst, .. } = cref {
+                if subscriptLst.is_empty() && static_dims(identType).is_some_and(|d| d.contains(&0)) {
+                    if rhs.push(ctx)? != WTy::I32 {
+                        return Err("CodegenWasmJit: whole-array assignment rhs is not an array handle");
+                    }
+                    ctx.emit(we::Instruction::Call(rt_index("rt_array_release")?));
+                    return Ok(true);
+                }
+            }
             // A whole record model variable: evaluate the rhs to a runtime record
             // and store each field into its own scalar slot.
             if try_emit_sim_record_scatter(ctx, cref, rhs)? {
