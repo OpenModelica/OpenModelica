@@ -3342,6 +3342,7 @@ algorithm
       BackendDAE.TearingSet strictTearingSet;
       Option<BackendDAE.TearingSet> casualTearingSet;
       Boolean partOfJac;
+      BackendDAE.InnerEquations innerEquations;
 
     // EQUATIONSYSTEM: continuous system of equations
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
@@ -3372,6 +3373,13 @@ algorithm
         tmpEqSccMapping := appendSccIdxRange(uniqueEqIndexMapping, uniqueEqIndex - 1, isccIndex, ieqSccMapping);
         tmpBackendMapping := setEqMapping(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1),eqIdcs,iBackendMapping);
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
+
+    // TORNSYSTEM without residual equations: its inner equations solve it
+    case (_, _, BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations={}, innerEquations=innerEquations)))
+      algorithm
+        (equations_, uniqueEqIndex, tempvars) := createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
+        tmpEqSccMapping := appendSccIdxRange(iuniqueEqIndex, uniqueEqIndex - 1, isccIndex, ieqSccMapping);
+      then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, iBackendMapping);
 
     // TORNSYSTEM
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.TORNSYSTEM(strictTearingSet=strictTearingSet, casualTearingSet=casualTearingSet, linear=b, mixedSystem=mixedSystem))
