@@ -2871,4 +2871,211 @@ public:
   }
 };
 
+
+/**
+ * Array that refers to memory it does not own, with sizes known at runtime only.
+ * The elements are stored in column-major order like those of StatArrayDimN and
+ * DynArrayDimN. Model variables that are resizable arrays (new backend with
+ * --resizableArrays) point into the variable memory of the model with it; their
+ * sizes depend on parameters, init sets the memory and the sizes again after the
+ * memory of the variables was allocated for them.
+ * @param T type of the array elements
+ * @param ndims number of dimensions of the array
+ */
+template<typename T, size_t ndims>
+class RefDynArray : public BaseArray<T>
+{
+ public:
+  RefDynArray()
+    :BaseArray<T>(true, false)
+    ,_data(NULL)
+    ,_nelems(0)
+    ,_dims(ndims, 0)
+  {}
+
+  virtual ~RefDynArray() {}
+
+  /**
+   * Refer to the memory data of an array with the sizes dims
+   */
+  void init(T* data, const std::vector<size_t>& dims)
+  {
+    if (dims.size() != ndims)
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong number of dimensions in RefDynArray::init");
+    _data = data;
+    _dims = dims;
+    _nelems = 1;
+    for (size_t k = 0; k < ndims; k++)
+      _nelems *= dims[k];
+  }
+
+  RefDynArray<T, ndims>& operator=(const BaseArray<T>& b)
+  {
+    assign(b);
+    return *this;
+  }
+
+  RefDynArray<T, ndims>& operator=(const RefDynArray<T, ndims>& b)
+  {
+    assign(b);
+    return *this;
+  }
+
+  virtual void assign(const T* data)
+  {
+    if (_nelems > 0)
+      std::copy(data, data + _nelems, _data);
+  }
+
+  virtual void assign(const BaseArray<T>& b)
+  {
+    if (_nelems > 0) {
+      if (b.getNumElems() != _nelems)
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong number of elements in assignment to RefDynArray");
+      b.getDataCopy(_data, _nelems);
+    }
+  }
+
+  virtual void assign(const T& value)
+  {
+    std::fill(_data, _data + _nelems, value);
+  }
+
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return _data[offset(idx)];
+  }
+
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return _data[offset(idx)];
+  }
+
+  inline T& operator()(size_t i)
+  {
+    return _data[i - 1];
+  }
+
+  inline const T& operator()(size_t i) const
+  {
+    return _data[i - 1];
+  }
+
+  inline T& operator()(size_t i, size_t j)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1)];
+  }
+
+  inline const T& operator()(size_t i, size_t j) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1)];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1))];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k, size_t l)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1)))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k, size_t l) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1)))];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1))))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1))))];
+  }
+
+  inline T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n)
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1 + _dims[4]*(n - 1)))))];
+  }
+
+  inline const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) const
+  {
+    return _data[i - 1 + _dims[0]*(j - 1 + _dims[1]*(k - 1 + _dims[2]*(l - 1 + _dims[3]*(m - 1 + _dims[4]*(n - 1)))))];
+  }
+
+  virtual std::vector<size_t> getDims() const
+  {
+    return _dims;
+  }
+
+  virtual int getDim(size_t dim) const
+  {
+    return (int)_dims[dim - 1];
+  }
+
+  virtual size_t getNumElems() const
+  {
+    return _nelems;
+  }
+
+  virtual size_t getNumDims() const
+  {
+    return ndims;
+  }
+
+  /**
+   * The sizes are those of the memory the array refers to, they can only be
+   * changed with init. Other sizes are an error.
+   */
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+    if (dims != _dims)
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Cannot resize RefDynArray");
+  }
+
+  virtual void resize(const std::vector<size_t>& dims)
+  {
+    setDims(dims);
+  }
+
+  virtual const T* getData() const
+  {
+    return _data;
+  }
+
+  virtual T* getData()
+  {
+    return _data;
+  }
+
+  virtual void getDataCopy(T data[], size_t n) const
+  {
+    if (n > 0)
+      std::copy(_data, _data + n, data);
+  }
+
+ private:
+  size_t offset(const vector<size_t>& idx) const
+  {
+    size_t off = 0, stride = 1;
+    for (size_t k = 0; k < ndims; k++) {
+      off += (idx[k] - 1)*stride;
+      stride *= _dims[k];
+    }
+    return off;
+  }
+
+  T* _data;
+  size_t _nelems;
+  std::vector<size_t> _dims;
+};
+
 /** @} */ // end of math

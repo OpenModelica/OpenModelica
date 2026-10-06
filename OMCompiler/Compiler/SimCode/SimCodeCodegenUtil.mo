@@ -1236,6 +1236,44 @@ algorithm
   end for;
 end numScalarElemsBeforeExp;
 
+public function isResizableSimVar
+  "true for an array variable with a size that depends on parameters (--resizableArrays)."
+  input SimCodeVar.SimVar var;
+  output Boolean b = SimCodeUtilShared.isResizableSimVar(var);
+end isResizableSimVar;
+
+public function hasResizableVars
+  input SimCode.ModelInfo modelInfo;
+  output Boolean b = SimCodeUtilShared.hasResizableVars(modelInfo);
+end hasResizableVars;
+
+public function resizableFixedSize
+  input SimCode.ModelInfo modelInfo;
+  input Integer varType "1 = real, 2 = int, 3 = bool, 4 = string";
+  output Integer n = SimCodeUtilShared.resizableFixedSize(modelInfo, varType);
+end resizableFixedSize;
+
+public function resizableFixedStates
+  input SimCode.ModelInfo modelInfo;
+  output Integer n = SimCodeUtilShared.resizableFixedStates(modelInfo);
+end resizableFixedStates;
+
+public function simVarDims
+  "The dimensions of the type of a variable, symbolic ones of resizable arrays included."
+  input SimCodeVar.SimVar var;
+  output list<DAE.Dimension> dims = Expression.arrayDimension(var.type_);
+end simVarDims;
+
+public function isWholeArrayCref
+  "true for a cref of an array variable without any subscripts, e.g. an
+   iteration variable of a resizable algebraic loop of the new backend, which
+   is solved for as a whole."
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := not ComponentReference.crefHaveSubs(cref) and Types.isArray(ComponentReference.crefTypeFull(cref));
+end isWholeArrayCref;
+
 public function isDimensionParameter
   "true for a size parameter $DIM_k of a derived dimension of a resizable array,
    see NBResizable.addDimensionParameters. Its start value is the expression of

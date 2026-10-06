@@ -59,6 +59,8 @@ class InitVars
 public:
   void setStartValue(T& variable,T val,bool overwriteOldValue);
   T& getGetStartValue(T& variable);
+  /// forget all start values, e.g. after the variable memory moved
+  void clear() { _start_values.clear(); }
 
 private:
   unordered_map<T*, T> _start_values;
@@ -246,6 +248,9 @@ protected:
     bool _terminate;
 
     //SValuesMap _start_values;
+    /// forget the start values of all variables, they are stored by address
+    void clearStartValues();
+
     InitVars<double> _real_start_values;
     InitVars<int> _int_start_values;
     InitVars<bool> _bool_start_values;
