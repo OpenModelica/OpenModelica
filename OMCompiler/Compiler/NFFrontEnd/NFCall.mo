@@ -298,7 +298,7 @@ public
     output Boolean res;
   algorithm
     res := match cref
-      case ComponentRef.CREF() then InstNode.isComponent(cref.node);
+      case ComponentRef.CREF() then InstNode.isComponent(ComponentRef.node(cref));
       else false;
     end match;
   end isComponentPrefix;
@@ -309,7 +309,7 @@ public
     output ComponentRef outCref;
   algorithm
     outCref := match cref
-      case ComponentRef.CREF() guard InstNode.isClass(cref.node) then ComponentRef.EMPTY();
+      case ComponentRef.CREF() guard InstNode.isClass(ComponentRef.node(cref)) then ComponentRef.EMPTY();
       case ComponentRef.CREF()
         algorithm
           cref.restCref := stripClassScope(cref.restCref);

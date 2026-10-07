@@ -1752,7 +1752,7 @@ uniontype Function
           ty := ComponentRef.nodeType(cref);
 
           if cref.origin == NFComponentRef.Origin.SCOPE and listEmpty(cref.subscripts) and
-             InstNode.isComponent(cref.node) and Type.isArray(ty) then
+             InstNode.isComponent(ComponentRef.node(cref)) and Type.isArray(ty) then
             cref.subscripts := list(Subscript.INDEX(Expression.INTEGER(1)) for i in 1:Type.dimensionCount(ty));
             cref.restCref := rest;
           elseif not referenceEq(rest, cref.restCref) then

@@ -1424,7 +1424,7 @@ public
   algorithm
     res := match cref
       case CREF(origin = Origin.SCOPE)
-        guard listEmpty(cref.subscripts) and InstNode.isComponent(cref.node) and not isInside(cref.node)
+        guard listEmpty(cref.subscripts) and InstNode.isComponent(node(cref)) and not isInside(node(cref))
         then true;
 
       case CREF() then hasScopePartOutside(cref.restCref, isInside);
@@ -1442,7 +1442,7 @@ public
     ancestor := match prefix
       case CREF()
         then
-          if InstNode.refEqual(prefix.node, node(cref)) and
+          if InstNode.refEqual(node(prefix), node(cref)) and
              isEqual(stripSubscriptsAll(prefix), stripSubscriptsAll(cref))
           then SOME(prefix) else findEqualAncestor(prefix.restCref, cref);
 
