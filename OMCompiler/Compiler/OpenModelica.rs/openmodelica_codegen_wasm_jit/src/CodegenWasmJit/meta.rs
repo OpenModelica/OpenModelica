@@ -119,6 +119,7 @@ pub(super) fn build_sim_meta(
         recon,
         prof,
         parmod,
+        resize: None,
     }
 }
 
@@ -127,27 +128,51 @@ pub(super) fn build_sim_meta(
 /// triggered chattering. A math-event crossing has no relation string.
 /// C's `modelData` variable arrays: the same lists, in the same order, as the
 /// `SimData` variable regions.
-pub(super) fn soti_vars(vars: &SimCodeVar::SimVars, runs: &ArrayRuns) -> Result<openmodelica_sim_meta::SotiVars> {
+/// The second result is the runtime dims of each `real_arrays` entry (empty for
+/// one of constant size).
+pub(super) fn soti_vars(
+    vars: &SimCodeVar::SimVars,
+    runs: &ArrayRuns,
+    dynv: &DynVars,
+) -> Result<(openmodelica_sim_meta::SotiVars, Vec<Vec<Sz>>)> {
     let named = |sv: &SimCodeVar::SimVar| cref_display(&sv.name);
     let brackets = !openmodelica_util::Config::modelicaOutput()?;
     let mut reals = Vec::new();
     let mut real_arrays = Vec::new();
-    let mut skip = 0usize;
-    for sv in svs(&vars.stateVars).chain(svs(&vars.derivativeVars)).chain(real_alg_vars(vars)) {
-        if skip > 0 {
-            skip -= 1;
-            continue;
-        }
-        let name = named(sv)?;
-        if let Some(run) = runs.get(&run_key(sv)) {
-            if let Some((template, at)) = array_name_template(&name, run.dims.len(), brackets) {
-                real_arrays.push(VarArray { var: reals.len() as u32, dims: run.dims.clone(), at, brackets });
-                reals.push(template);
-                skip = run.len - 1;
+    let mut soti_dims = Vec::new();
+    let sections: [(Vec<&SimCodeVar::SimVar>, Vec<DynVar>); 3] = [
+        (svs(&vars.stateVars).collect(), dynv.states.clone()),
+        (svs(&vars.derivativeVars).collect(), dynv.ders.clone()),
+        (real_alg_vars(vars), dynv.real_algs()),
+    ];
+    for (list, dyns) in sections {
+        let mut skip = 0usize;
+        for sv in list {
+            if skip > 0 {
+                skip -= 1;
                 continue;
             }
+            let name = named(sv)?;
+            if let Some(run) = runs.get(&run_key(sv)) {
+                if let Some((template, at)) = array_name_template(&name, run.dims.len(), brackets) {
+                    real_arrays.push(VarArray { var: reals.len() as u32, dims: run.dims.clone(), at, brackets });
+                    soti_dims.push(Vec::new());
+                    reals.push(template);
+                    skip = run.len - 1;
+                    continue;
+                }
+            }
+            reals.push(name);
         }
-        reals.push(name);
+        for dv in dyns {
+            let ones = vec![1; dv.dims.len()];
+            let first = cref_display(&cref_with_indices(&dv.sv.name, &ones))?;
+            let (template, at) = array_name_template(&first, ones.len(), brackets)
+                .ok_or("CodegenWasmJit: cannot name the elements of a resizable array")?;
+            real_arrays.push(VarArray { var: reals.len() as u32, dims: vec![0; ones.len()], at, brackets });
+            soti_dims.push(dv.dims.clone());
+            reals.push(template);
+        }
     }
     let mut ints = Vec::new();
     for sv in lst(&vars.intAlgVars) {
@@ -162,7 +187,7 @@ pub(super) fn soti_vars(vars: &SimCodeVar::SimVars, runs: &ArrayRuns) -> Result<
         strings.push((named(sv)?, const_str(&sv.initialValue).unwrap_or_default()));
     }
     let n_discrete_real = lst(&vars.discreteAlgVars).count() as u32;
-    Ok(openmodelica_sim_meta::SotiVars { reals, real_arrays, ints, bools, strings, n_discrete_real })
+    Ok((openmodelica_sim_meta::SotiVars { reals, real_arrays, ints, bools, strings, n_discrete_real }, soti_dims))
 }
 
 /// C's `modelData` parameter arrays: the same lists, in the same order, as the

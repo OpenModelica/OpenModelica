@@ -24,7 +24,7 @@ use crate::simflags::JacobianMethod;
 use crate::simflags::{CvodeIter, CvodeLmm};
 use crate::sync::SYNC_EPS;
 use crate::{
-    DaeInfo, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, REAL_OFF, SimMeta, SolveStats, StateSetInfo,
+    DaeInfo, JacAInfo, Layout as SimLayout, MetaKind as ResultKind, SimMeta, SolveStats, StateSetInfo,
     TIME_OFF,
     WTy,
 };
@@ -817,7 +817,7 @@ impl StepRetry {
     fn store(&mut self, e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
         seed_pre_from_live(e, sim_data, layout)?;
         let regions = [
-            (REAL_OFF, layout.real_bytes()),
+            (layout.real_off, layout.real_bytes()),
             (layout.int_off, layout.n_int_alg() as usize * 4),
             (layout.bool_off, layout.n_bool_alg() as usize * 4),
         ];
@@ -857,7 +857,7 @@ impl StepRetry {
         let _ = e.take_pending_assert();
         write_f64(e, sim_data + TIME_OFF, self.time)?;
         for (off, buf) in
-            [(REAL_OFF, &self.real), (layout.int_off, &self.int), (layout.bool_off, &self.bools)]
+            [(layout.real_off, &self.real), (layout.int_off, &self.int), (layout.bool_off, &self.bools)]
         {
             if !buf.is_empty() {
                 e.write_bytes(sim_data + off, buf)?;
@@ -1675,6 +1675,15 @@ mod overrides_store {
     }
 
     pub use imp::{params, set, starts, strings};
+}
+
+/// The size table a resizable model's freshly allocated `SimData` needs before
+/// any generated function runs.
+pub fn write_size_table(e: &mut dyn SimEngine, sim_data: u32, model: &SimMeta) -> Result<()> {
+    for (off, v) in model.size_table_writes() {
+        write_i32(e, sim_data + off, v)?;
+    }
+    Ok(())
 }
 
 /// Set the parameter/start overrides applied by the next [`run_initialization`].
@@ -2787,6 +2796,11 @@ fn set_start_values(
     inputs: &[crate::InputVar],
     model: Option<&SimMeta>,
 ) -> Result<()> {
+    if let Some(m) = model {
+        for (off, v) in m.size_param_writes() {
+            write_i32(e, sim_data + off, v)?;
+        }
+    }
     e.call1("functionParameters", sim_data)?;
     apply_param_overrides(e, sim_data)?;
     e.call1("functionInitStartValues", sim_data)?;
@@ -3108,7 +3122,7 @@ impl HomotopyPath {
         if let Some((_, buf)) = self.file.as_mut() {
             buf.push_str(&format_g(lambda, 16));
             for i in 0..2 * layout.n_states + layout.n_real_alg {
-                let v = read_f64(e, sim_data + crate::REAL_OFF + i * 8).unwrap_or(f64::NAN);
+                let v = read_f64(e, sim_data + layout.real_off + i * 8).unwrap_or(f64::NAN);
                 buf.push(',');
                 buf.push_str(&format_g(v, 16));
             }
@@ -3144,7 +3158,7 @@ fn capture_row_values(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, lay
         read_f64s(e, addr, &mut rows[at..])
     };
     rows.push(read_f64(e, sim_data + TIME_OFF)?);
-    push_f64s(rows, sim_data + REAL_OFF, layout.n_reals_row() - 1)?;
+    push_f64s(rows, sim_data + layout.real_off, layout.n_reals_row() - 1)?;
     let mut ints = vec![0u8; ((layout.n_int_alg() + layout.n_bool_alg()) * 4) as usize];
     let (int_bytes, bool_bytes) = ints.split_at_mut((layout.n_int_alg() * 4) as usize);
     e.read_bytes(sim_data + layout.int_off, int_bytes)?;
@@ -3347,7 +3361,7 @@ fn steady_state_reached(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) ->
     if layout.n_states == 0 {
         return Err("No states in model. Flag -steadyState can only be used if states are present.");
     }
-    let ders = sim_data + REAL_OFF + layout.n_states * 8;
+    let ders = sim_data + layout.real_off + layout.n_states * 8;
     let mut max_der = 0.0f64;
     for i in 0..layout.n_states {
         let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
@@ -3656,7 +3670,7 @@ fn save_pre_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
         return Ok(());
     }
     let mut buf = vec![0u8; bytes];
-    e.read_bytes(sim_data + REAL_OFF, &mut buf)?;
+    e.read_bytes(sim_data + layout.real_off, &mut buf)?;
     e.write_bytes(sim_data + layout.pre_real_off, &buf)
 }
 
@@ -3676,7 +3690,7 @@ fn save_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
     if !layout.has_old_real {
         return Ok(());
     }
-    e.copy_bytes(sim_data + REAL_OFF, sim_data + layout.old_real_off, layout.real_bytes())
+    e.copy_bytes(sim_data + layout.real_off, sim_data + layout.old_real_off, layout.real_bytes())
 }
 
 /// Copy the live real/integer/boolean regions into their `pre()` mirrors (C's
@@ -3684,7 +3698,7 @@ fn save_old_real(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Re
 /// seed `pre` from the start values before the initial system solves.
 fn seed_pre_from_live(e: &mut dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<()> {
     let regions = [
-        (REAL_OFF, layout.pre_real_off, (2 * layout.n_states + layout.n_real_alg) * 8),
+        (layout.real_off, layout.pre_real_off, (2 * layout.n_states + layout.n_real_alg) * 8),
         (layout.int_off, layout.pre_int_off, layout.n_int_alg() * 4),
         (layout.bool_off, layout.pre_bool_off, layout.n_bool_alg() * 4),
     ];
@@ -3760,7 +3774,7 @@ fn set_all_vars_to_start(
     }
     let mut buf = vec![0u8; bytes];
     e.read_bytes(sim_data + layout.start_off, &mut buf)?;
-    e.write_bytes(sim_data + REAL_OFF, &buf)
+    e.write_bytes(sim_data + layout.real_off, &buf)
 }
 
 /// Upper bound on discrete-update iterations at one event: C's `maxEventIterations`
@@ -3875,7 +3889,7 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
     let g = |v: f64| format_g(v, 6);
     omclog::info(omclog::SOTI, true, "### SOLUTION OF THE INITIALIZATION ###");
     let real_line = |i: usize| {
-        let off = REAL_OFF + i as u32 * 8;
+        let off = layout.real_off + i as u32 * 8;
         let name = &soti.reals[i];
         format!(
             "[{}] Real {name}(start={}, nominal={}) = {} (pre: {})",
@@ -3894,7 +3908,7 @@ fn dump_initial_solution(e: &dyn SimEngine, sim_data: u32, model: &SimMeta) {
         omclog::close(omclog::SOTI);
         omclog::info(omclog::SOTI, true, "derivatives variables");
         for i in n..2 * n {
-            let off = REAL_OFF + i as u32 * 8;
+            let off = layout.real_off + i as u32 * 8;
             let name = &soti.reals[i];
             let line = format!("[{}] Real {name} = {} (pre: {})", i + 1, g(real(off)), g(pre_real(off)));
             omclog::info(omclog::SOTI, false, &line);
@@ -3984,8 +3998,10 @@ fn log_reinits(e: &mut dyn SimEngine) {
         if !omclog::active(omclog::EVENTS) {
             continue;
         }
-        let i = off.saturating_sub(REAL_OFF) as usize / 8;
-        let name = event_dump_store::with(|d| d.real_names.get(i).cloned().unwrap_or_default());
+        let name = event_dump_store::with(|d| {
+            let i = off.saturating_sub(d.real_off) as usize / 8;
+            d.real_names.get(i).cloned().unwrap_or_default()
+        });
         omclog::info!(omclog::EVENTS, false, "reinit {name} = {}", format_g(value, 6));
     }
 }
@@ -4023,6 +4039,7 @@ pub(crate) struct EventDump {
     bools: Vec<(String, u32, u32)>,
     /// Every real variable in index order, for [`log_reinits`].
     real_names: Vec<String>,
+    real_off: u32,
 }
 
 impl EventDump {
@@ -4044,10 +4061,11 @@ impl EventDump {
         EventDump {
             rel_desc: model.rel_desc.clone(),
             zc_desc: model.zc_desc.clone(),
-            reals: slots(&model.soti.reals, REAL_OFF, l.pre_real_off, 8, first),
+            reals: slots(&model.soti.reals, l.real_off, l.pre_real_off, 8, first),
             ints: slots(&named(&model.soti.ints), l.int_off, l.pre_int_off, 4, 0),
             bools: slots(&named(&model.soti.bools), l.bool_off, l.pre_bool_off, 4, 0),
             real_names: model.soti.reals.clone(),
+            real_off: model.layout.real_off,
         }
     }
 }
@@ -4714,7 +4732,7 @@ fn event_update_inner(
 ) -> Result<EventUpdate> {
     rethrow_store::note_event();
     let n_states = layout.n_states as usize;
-    let states_base = sim_data + REAL_OFF;
+    let states_base = sim_data + layout.real_off;
     let mut before = vec![0.0f64; n_states];
     for (i, v) in before.iter_mut().enumerate() {
         *v = read_f64(e, states_base + (i as u32) * 8)?;
@@ -5216,6 +5234,7 @@ pub fn drive(
             && !csv_input_given()
             && model.prof.is_none()
             && model.parmod.is_none()
+            && model.resize.is_none()
         {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
@@ -5428,7 +5447,7 @@ impl Driver for EulerDriver {
         let start = model.start_time;
         let stop = model.stop_time;
         let grid = |row: u32| grid_time(row, start, stop, n_steps);
-        let states_base = sim_data + REAL_OFF;
+        let states_base = sim_data + layout.real_off;
         let ders_base = states_base + n_states * 8;
 
         let deadline = deadline_from(budget_ms);
@@ -5502,7 +5521,7 @@ impl Driver for EulerDriver {
         };
         // C's `euler_step` runs before the point is evaluated; redo it over half.
         let h = (target - t) / 2.0;
-        let states_base = self.sim_data + REAL_OFF;
+        let states_base = self.sim_data + model.layout.real_off;
         let ders_base = states_base + model.layout.n_states * 8;
         for i in 0..model.layout.n_states {
             let x = read_f64(e, states_base + i * 8)?;
@@ -6695,7 +6714,7 @@ impl DasslDriver {
         run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
-        let states_base = sim_data + REAL_OFF;
+        let states_base = sim_data + layout.real_off;
         let ders_base = states_base + layout.n_states * 8;
         let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
@@ -8186,7 +8205,7 @@ impl SolverCore {
     ) -> Result<Self> {
         let layout = &model.layout;
         let n_states = layout.n_states as usize;
-        let states_base = sim_data + REAL_OFF;
+        let states_base = sim_data + layout.real_off;
         let ders_base = states_base + layout.n_states * 8;
         let nrt = layout.n_zc as i32;
         let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
@@ -9622,7 +9641,7 @@ impl CsDriver {
                     }
                 }
                 if let Some((tleft, tr)) = troot {
-                    eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[], true)?;
+                    eval_event_left(e, sim_data, layout, sim_data + layout.real_off, tleft, &[], true)?;
                     // The bisection left `SimData` at its last trial point.
                     update_zero_crossings(e, sim_data, layout, tr, &mut scratch, false)?;
                     self.core.t = tr;
@@ -9943,7 +9962,7 @@ impl EventsDriver {
         store_relations(e, sim_data, layout)?;
 
         let n_states = layout.n_states as usize;
-        let states_base = sim_data + REAL_OFF;
+        let states_base = sim_data + layout.real_off;
         let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
 
@@ -10092,7 +10111,7 @@ impl Driver for EventsDriver {
                         log_state_event(tr, &crossed, model);
                         self.core.t = tr;
                         self.core.note_chatter(model, crossed.first().copied().unwrap_or(usize::MAX))?;
-                        eval_event_left(e, sim_data, layout, sim_data + REAL_OFF, tleft, &[], true)?;
+                        eval_event_left(e, sim_data, layout, sim_data + layout.real_off, tleft, &[], true)?;
                         write_time(e, sim_data, tr)?;
                         if !no_event_emit() {
                             capture_row(e, &mut self.rows, sim_data, layout)?; // pre-event row
@@ -10637,7 +10656,7 @@ impl CvodeDriver {
         run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
-        let states_base = sim_data + REAL_OFF;
+        let states_base = sim_data + layout.real_off;
         let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
         let start = model.start_time;
@@ -11007,6 +11026,7 @@ struct DaeSolve {
     n_states: usize,
     /// Base of `daeModeData->residualVars` in `SimData`.
     res_off: u32,
+    real_off: u32,
     /// `SimData` slot of each algebraic unknown (C's `algIndexes`).
     alg_offs: Vec<u32>,
     /// `IDASetId`: 1 for a state, 0 for an algebraic unknown.
@@ -11095,6 +11115,7 @@ impl IdaSetup {
                     n: layout.n_dae_res as usize,
                     n_states,
                     res_off: layout.dae_res_off,
+                    real_off: layout.real_off,
                     alg_offs: info.alg_offs.clone(),
                     id,
                 }))
@@ -11206,8 +11227,8 @@ impl IdaSetup {
     fn dae_store(&self, e: &mut dyn SimEngine, sim_data: u32, y: &[f64], yp: &[f64]) -> Result<()> {
         let Some(d) = self.dae.as_deref() else { return Ok(()) };
         for i in 0..d.n_states {
-            write_f64(e, sim_data + REAL_OFF + (i as u32) * 8, y[i])?;
-            write_f64(e, sim_data + REAL_OFF + ((d.n_states + i) as u32) * 8, yp[i])?;
+            write_f64(e, sim_data + d.real_off + (i as u32) * 8, y[i])?;
+            write_f64(e, sim_data + d.real_off + ((d.n_states + i) as u32) * 8, yp[i])?;
         }
         for (k, &off) in d.alg_offs.iter().enumerate() {
             write_f64(e, sim_data + off, y[d.n_states + k])?;
@@ -11601,7 +11622,7 @@ impl IdaDriver {
         run_initialization_model(e, sim_data, model)?;
 
         let n_states = layout.n_states as usize;
-        let states_base = sim_data + REAL_OFF;
+        let states_base = sim_data + layout.real_off;
         let ders_base = states_base + layout.n_states * 8;
         let n_rows = model.n_output_rows();
         let n_reals = layout.n_row_total();
@@ -12019,7 +12040,7 @@ pub fn dae_solve_explicit(
         return Err("DAE-mode metadata disagrees with the layout");
     }
     let offs: Vec<u32> = (0..ns)
-        .map(|i| REAL_OFF + ((ns + i) as u32) * 8)
+        .map(|i| layout.real_off + ((ns + i) as u32) * 8)
         .chain(dae.alg_offs.iter().copied())
         .collect();
     let mut scale = vec![1.0; n];

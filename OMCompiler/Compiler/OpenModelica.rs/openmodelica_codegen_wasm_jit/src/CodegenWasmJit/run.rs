@@ -37,7 +37,7 @@ pub(super) fn result_path(flags: &simflags::SimFlags, meta: &SimMeta, derived: &
 pub(super) fn result_target(model: &SimModel, meta: &SimMeta, flags: &simflags::SimFlags, derived: &str) -> ResultTarget {
     let path = result_path(flags, meta, derived);
     let format = openmodelica_sim_meta::result::format_of(&path, &meta.output_format).to_string();
-    ResultTarget { path, format, keep: output_selection(model), single: flags.single_precision }
+    ResultTarget { path, format, keep: output_selection(meta), single: flags.single_precision }
 }
 
 /// Resolve each `-override=name=value` to its editable parameter's `SimData` slot.
@@ -50,8 +50,10 @@ pub(super) fn result_target(model: &SimModel, meta: &SimMeta, flags: &simflags::
 /// with the editable parameters as its `isValueChangeable` subset.
 pub(super) fn resolve_overrides(
     model: &SimModel,
+    meta: &SimMeta,
     flags: &simflags::SimFlags,
 ) -> (Vec<(u32, WTy, f64)>, Vec<(u32, WTy, f64)>, Vec<(u32, String)>) {
+    let at = |off: u32| meta.resize.as_ref().map_or(off, |r| r.resolve_off(off));
     let raw = flags.override_raw.as_deref();
     let file = flags.override_file.as_ref();
     if let (Some(raw), Some((path, _))) = (raw, file) {
@@ -105,7 +107,7 @@ pub(super) fn resolve_overrides(
         };
         omclog::info!(omclog::SOLVER, false, "override {name} = {val}");
         if p.is_string {
-            strings.push((p.off, val.to_string()));
+            strings.push((at(p.off), val.to_string()));
             continue;
         }
         // C warns only for the real and integer parameters (`warn_small_override`).
@@ -119,7 +121,7 @@ pub(super) fn resolve_overrides(
             );
         }
         let v = p.read_value(val);
-        if p.is_start { &mut starts } else { &mut params }.push((p.off, p.wty, v));
+        if p.is_start { &mut starts } else { &mut params }.push((at(p.off), p.wty, v));
     }
     for (name, _) in &map {
         if !used.contains(name) {
@@ -344,7 +346,7 @@ fn perform_run(model: &SimModel, flags: &simflags::SimFlags, result_file: &str, 
     sim_driver::set_result_file_reader(read_result_values);
     let (meta, experiment_log) = run_experiment(model, flags);
     openmodelica_wasi::wasi::start_stdout_capture();
-    let (param_ov, start_ov, string_ov) = resolve_overrides(model, flags);
+    let (param_ov, start_ov, string_ov) = resolve_overrides(model, &meta, flags);
     sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
     sim_driver::set_start_imports(resolve_start_imports(&meta, flags));
     // `-abortSlowSimulation`: stop the run when chattering is detected.

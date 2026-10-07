@@ -77,7 +77,11 @@ pub(super) fn build_sim_model(
     let _jac_facts = JacFactsScope;
     let mi = &sim_code.modelInfo;
     let vi = &mi.varInfo;
-    let (scalarized_vars, array_runs) = scalarize_sim_vars(&mi.vars)?;
+    let resizable = has_symbolic_dims(&mi.vars)
+        && !openmodelica_util::Flags::getConfigBool(openmodelica_util::Flags::SIM_CODE_SCALARIZE.clone())?;
+    let size_scope = resizable.then(crate::CodegenWasmJitFunctions::sizes::SizeScope::begin);
+    let mut size_params = if resizable { Some(SizeParams::new(&mi.vars)?) } else { None };
+    let (scalarized_vars, array_runs, dyn_vars) = scalarize_sim_vars(&mi.vars, size_params.as_mut())?;
     let vars = &scalarized_vars;
     let states: Vec<&SimCodeVar::SimVar> = svs(&vars.stateVars).collect();
 
@@ -132,49 +136,58 @@ pub(super) fn build_sim_model(
     // `-reconcile`: F/H, laid out right behind them.
     let mut recon = datarecon::build_plan(sim_code, vars);
     let sym_solver = sym_solver_kind()?;
-    let layout = SimLayout::new(
+    let counts = openmodelica_sim_meta::LayoutCounts {
         n_states,
         n_real_alg,
         n_real_param,
-        count(&vars.intAlgVars) as u32,
-        count(&vars.intParamVars) as u32,
-        count(&vars.boolAlgVars) as u32,
-        count(&vars.boolParamVars) as u32,
-        count(&vars.stringAlgVars) as u32,
-        count(&vars.stringParamVars) as u32,
-        count(&vars.extObjVars) as u32,
-        samples.len() as u32,
-        zero_crossings.len() as u32,
-        vi.numRelations.max(0) as u32,
-        stateset_scratch_f64,
-        nls_jac_scratch_f64,
-        vi.numMathEventFunctions.max(0) as u32,
+        n_int_alg: count(&vars.intAlgVars) as u32,
+        n_int_param: count(&vars.intParamVars) as u32,
+        n_bool_alg: count(&vars.boolAlgVars) as u32,
+        n_bool_param: count(&vars.boolParamVars) as u32,
+        n_str_alg: count(&vars.stringAlgVars) as u32,
+        n_str_param: count(&vars.stringParamVars) as u32,
+        n_eobj: count(&vars.extObjVars) as u32,
+        n_samples: samples.len() as u32,
+        n_zc: zero_crossings.len() as u32,
+        n_rel: vi.numRelations.max(0) as u32,
+        n_stateset_f64: stateset_scratch_f64,
+        n_nlsjac_f64: nls_jac_scratch_f64,
+        n_math: vi.numMathEventFunctions.max(0) as u32,
         n_sens,
-        dae_res_vars.len() as u32,
-        dae_aux_vars.len() as u32,
-        dae_alg_vars.len() as u32,
-        clocks.len() as u32,
+        n_dae_res: dae_res_vars.len() as u32,
+        n_dae_aux: dae_aux_vars.len() as u32,
+        n_dae_alg: dae_alg_vars.len() as u32,
+        n_base_clocks: clocks.len() as u32,
         n_sub_clocks,
-        linz.n_scratch_f64() + recon.n_scratch_f64(),
+        n_linz: linz.n_scratch_f64() + recon.n_scratch_f64(),
         // The optimizer's attribute arrays: one entry per real variable, only for a
         // model that carries an optimization problem.
-        if optimization::is_optimization(sim_code) { 2 * n_states + n_real_alg } else { 0 },
-        bound_attr_equations(sim_code).len() as u32,
-        removed_init_residuals(sim_code).len() as u32,
+        n_opt_attr: if optimization::is_optimization(sim_code) { 2 * n_states + n_real_alg } else { 0 },
+        n_attr_log: bound_attr_equations(sim_code).len() as u32,
+        n_removed_init: removed_init_residuals(sim_code).len() as u32,
+    };
+    let flags = openmodelica_sim_meta::LayoutFlags {
         sym_solver,
         has_when,
         has_homotopy,
-        homotopy_method()?,
-        lst(&sim_code.initialEquations_lambda0).next().is_some(),
+        homotopy_method: homotopy_method()?,
+        has_init_lambda0: lst(&sim_code.initialEquations_lambda0).next().is_some(),
         // `delay(...)` / `spatialDistribution(...)`: the driver has to store their
         // accepted points, which costs an extra evaluation, so it asks first.
-        sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
+        has_history_ops: sim_code.delayedExps.maxDelayedIndex >= 0 || sim_code.spatialInfo.maxIndex >= 0,
         // Mirroring the last accepted step's reals costs a copy per step, so only
         // a model with a method-1 linear system to read them asks for it.
-        has_method1_linear(sim_code),
-    );
+        has_old_real: has_method1_linear(sim_code),
+        resizable,
+    };
+    let counts_sz = resizable_counts(&counts, &dyn_vars);
+    let lz = openmodelica_sim_meta::Layout::<Sz>::build(counts_sz.clone(), flags);
+    let layout = match resizable {
+        true => tagged_layout(&lz)?,
+        false => SimLayout::build(counts, flags),
+    };
 
-    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &array_runs, &layout)?;
+    let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &array_runs, &layout, &lz, &dyn_vars)?;
     let (prof_plan, prof_info) = prof_plan(sim_code, mi)?;
     var_map.prof = prof_plan;
     // DAE-mode residual/auxiliary variables: their own `SimData` regions, indexed by
@@ -196,7 +209,7 @@ pub(super) fn build_sim_model(
     if sym_solver > 0 {
         Arc::make_mut(&mut var_map.vars).insert(
             "__OMC_DT".to_string(),
-            SimSlot { off: layout.inline_dt_off, wty: WTy::F64, negate: Neg::None, heap: false },
+            SimSlot { off: layout.inline_dt_off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 },
         );
         for (i, sv) in states.iter().enumerate() {
             let old = openmodelica_frontend_base::ComponentReference::appendStringLastIdent(
@@ -210,6 +223,7 @@ pub(super) fn build_sim_model(
                     wty: WTy::F64,
                     negate: Neg::None,
                     heap: false,
+                    pre: 0,
                 },
             );
         }
@@ -448,7 +462,17 @@ pub(super) fn build_sim_model(
     let initial_eqs = flatten_eqs(&sim_code.initialEquations);
     let mut computed_params = assigned_cref_keys(&eqs_with_nested(&param_eqs));
     computed_params.extend(assigned_cref_keys(&eqs_with_nested(&initial_eqs)));
-    let param_bindings = collect_param_bindings(vars, &computed_params);
+    let mut param_bindings = collect_param_bindings(vars, &computed_params);
+    if let Some(sp) = &size_params {
+        // The runtime writes the size parameters, -override applied, before
+        // functionParameters.
+        param_bindings.retain(|(cr, _)| sim_cref_key(cr).map_or(true, |k| sp.index_of(&k).is_none()));
+        for dv in dyn_vars.params.iter().chain(&dyn_vars.int_params).chain(&dyn_vars.bool_params) {
+            if let Some(v) = &dv.sv.initialValue {
+                param_bindings.push((dv.sv.name.clone(), v.clone()));
+            }
+        }
+    }
     // C's `functionODE` and `functionDAE` both open with `functionLocalKnownVars`
     // (`--preOptModules+=removeLocalKnownVars` moves the equations that depend only
     // on states and inputs there); empty unless that module ran.
@@ -464,11 +488,11 @@ pub(super) fn build_sim_model(
     let algebraic_eqs = with_local_known(alg_eqs_raw.clone());
     // C's `storePreValues` at the end of `updateContinuousSystem`, which here tails
     // `functionAlgebraics` (see `sim_save_pre_values`).
-    let save_pre: Vec<(u32, u32, u32)> = if has_when {
+    let save_pre: Vec<(u32, u32, Sz)> = if has_when {
         vec![
-            (layout.pre_real_off, REAL_OFF, (2 * layout.n_states + layout.n_real_alg) * 8),
-            (layout.pre_int_off, layout.int_off, layout.n_int_alg() * 4),
-            (layout.pre_bool_off, layout.bool_off, layout.n_bool_alg() * 4),
+            (layout.pre_real_off, layout.real_off, (counts_sz.n_states.clone() * 2 + counts_sz.n_real_alg.clone()) * 8),
+            (layout.pre_int_off, layout.int_off, counts_sz.n_int_alg.clone() * 4),
+            (layout.pre_bool_off, layout.bool_off, counts_sz.n_bool_alg.clone() * 4),
         ]
     } else {
         Vec::new()
@@ -503,10 +527,12 @@ pub(super) fn build_sim_model(
     .collect();
     let nls_nominal_map =
         build_nls_nominal_map(vars, &nls_iteration_keys(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>()));
+    let mut dyn_scratch = DynScratch::new(&dyn_vars, lz.total.clone())?;
     let (nls_systems, nls_jobs, nls_hist_bytes, nls_nominals, nls_bounds, nls_patterns, nls_warnings) = collect_nls_jobs(
         &nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>(),
         &nls_nominal_map,
         &mut attr_targets,
+        &mut dyn_scratch,
     );
     // Dynamic tearing: casual set index -> strict set index.
     let nls_strict_of = nls_strict_map(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>());
@@ -729,8 +755,8 @@ pub(super) fn build_sim_model(
     splits.push(build_split_fn("functionParameters", &param_units, 1, eqfn_type, &stateset_diag, &[], &var_map, &eq_index, &by_name, &mut literals, &mut bodies, &mut pool, false)?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
-    let init_save: Vec<(u32, u32, u32)> = if layout.n_rel > 0 {
-        vec![(layout.relations_pre_off, layout.relations_off, layout.n_rel * 4)]
+    let init_save: Vec<(u32, u32, Sz)> = if layout.n_rel > 0 {
+        vec![(layout.relations_pre_off, layout.relations_off, Sz::lit(layout.n_rel as i64 * 4))]
     } else {
         Vec::new()
     };
@@ -782,16 +808,34 @@ pub(super) fn build_sim_model(
         .chain(svs(&vars.derivativeVars))
         .chain(real_alg_vars(vars))
         .collect();
-    bodies.push(build_init_start_values_fn(&all_reals, &layout, &var_map, &by_name, &mut literals)?);
+    let real_pos = RealPositions::new(
+        [states.len(), count(&vars.derivativeVars), real_alg_vars(vars).len()],
+        &dyn_vars,
+    );
+    bodies.push(build_init_start_values_fn(&all_reals, &real_pos, &lz, &var_map, &by_name, &mut literals)?);
     // A start or nominal bound to a parameter arrives as an attribute equation;
     // `functionUpdateBoundVariableAttributes` fills these slots from those.
     for (i, sv) in all_reals.iter().enumerate() {
-        let nom_off = layout.real_nominal_off(i as u32);
+        let nom_off = at_real(&lz.real_nom_off, &real_pos.fixed(i))?;
         nominal_defaults.push((nom_off, literal_value(&sv.nominalValue).unwrap_or(1.0)));
         if let Some(t) = attr_targets.of(&sv.name) {
-            t.start_offs.push(layout.real_start_off(i as u32));
+            t.start_offs.push(at_real(&lz.start_off, &real_pos.fixed(i))?);
             t.raw_nom_offs.push(nom_off);
         }
+    }
+    // The attribute defaults of the runtime-sized arrays.
+    let mut dyn_defaults: Vec<(u32, Sz, ConstSlot, u32)> = dyn_scratch.fills.clone();
+    let mut sidx = Sz::lit(states.len() as i64);
+    for dv in &dyn_vars.states {
+        let nom = const_value(&dv.sv.nominalValue).unwrap_or(1.0).abs().max(1e-32);
+        dyn_defaults.push((at_real(&lz.state_nom_off, &sidx)?, dv.len(), ConstSlot::f64(nom), 8));
+        dyn_defaults.push((at_real(&lz.state_max_off, &sidx)?, dv.len(), ConstSlot::f64(const_value(&dv.sv.maxValue).unwrap_or(f64::MAX)), 8));
+        dyn_defaults.push((at_real(&lz.state_min_off, &sidx)?, dv.len(), ConstSlot::f64(const_value(&dv.sv.minValue).unwrap_or(-f64::MAX)), 8));
+        sidx = sidx + dv.len();
+    }
+    for (dv, idx) in &real_pos.dyn_reals {
+        let nom = literal_value(&dv.sv.nominalValue).unwrap_or(1.0);
+        dyn_defaults.push((at_real(&lz.real_nom_off, idx)?, dv.len(), ConstSlot::f64(nom), 8));
     }
     // The integrator loop calls `functionCheckAsserts`, whose index is only known
     // once the nonlinear systems below have taken theirs; keep its fixed slot
@@ -809,14 +853,20 @@ pub(super) fn build_sim_model(
         .simulationSettingsOpt
         .as_ref()
         .ok_or_else(|| "CodegenWasmJit: model has no simulation settings")?;
-    apply_variable_filter(&mut result_vars, &settings.variableFilter);
+    if !resizable {
+        apply_variable_filter(&mut result_vars, &settings.variableFilter);
+    }
     let model_name = openmodelica_frontend_dump::AbsynUtil::pathString(mi.name.clone(), arcstr::literal!("."), true, false)?.to_string();
     // Solver metadata, shared by the embedded blob and the host `SimModel`.
     let jac_a_n = match dae_mode {
         Some(_) => dae_res_vars.len() as u32,
         None => n_states,
     };
-    let mut jac_a = build_jac_a_info(sim_code, jac_a_n);
+    // A resizable model's pattern is expanded by the runtime ([`sym_jac_a`]).
+    let mut jac_a = match resizable {
+        false => build_jac_a_info(sim_code, jac_a_n),
+        true => None,
+    };
     // Build the driver metadata once: embedded in the module (for the in-wasm
     // driver / standalone) and kept on the `SimModel` (for the host driver).
     // Only the FMU export needs the vr table; a plain simulation would just carry
@@ -959,7 +1009,7 @@ pub(super) fn build_sim_model(
         let name = cref_display(&sv.name)?;
         match all_reals.iter().position(|r| sim_cref_key(&r.name).ok().as_deref() == Some(key.as_str())) {
             Some(i) => input_vars.push(openmodelica_sim_meta::InputVar {
-                off: openmodelica_sim_meta::REAL_OFF + i as u32 * 8,
+                off: layout.real_off + i as u32 * 8,
                 start_off: layout.real_start_off(i as u32),
                 wty: WTy::F64,
                 name,
@@ -976,14 +1026,15 @@ pub(super) fn build_sim_model(
             }
         }
     }
-    let meta = build_sim_meta(
+    let (soti, soti_dims) = soti_vars(vars, &array_runs, &dyn_vars)?;
+    let mut meta = build_sim_meta(
         &layout, &result_vars, collect_unit_defs(mi, &result_vars.vars), settings, cs_method, fmi_solver_flags, &model_name,
         &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
         fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         nls_warnings.clone(),
-        samples.iter().map(|s| s.index).collect(), soti_vars(vars, &array_runs)?, sens_params, nls_vars,
+        samples.iter().map(|s| s.index).collect(), soti, sens_params, nls_vars,
         mi.varInfo.numLinearSystems.max(0) as u32, dae,
         clocks.iter().map(|c| c.meta.clone()).collect(),
         build_lin_info(&linz, vars, &var_map)?,
@@ -995,31 +1046,11 @@ pub(super) fn build_sim_model(
         prof_info,
         parmod_info.clone(),
     );
-    let meta_bytes = openmodelica_sim_meta::encode(&meta);
-    let meta_len = meta_bytes.len() as u32;
-    let meta_off = literals.intern(&meta_bytes);
-    {
-        // om_meta_ptr(): rt_alloc(len), memory.init the blob into it, return ptr.
-        use we::Instruction as I;
-        let mut f = we::Function::new([(1, we::ValType::I32)]);
-        f.instruction(&I::I32Const(meta_len as i32));
-        f.instruction(&I::Call(rt_index("rt_alloc")?));
-        f.instruction(&I::LocalTee(0));
-        f.instruction(&I::I32Const(meta_off as i32));
-        f.instruction(&I::I32Const(meta_len as i32));
-        f.instruction(&I::MemoryInit { mem: 0, data_index: 0 });
-        f.instruction(&I::LocalGet(0));
-        f.instruction(&I::End);
-        bodies.push(f);
-    }
-    {
-        // om_meta_len(): the constant blob length.
-        use we::Instruction as I;
-        let mut f = we::Function::new([]);
-        f.instruction(&I::I32Const(meta_len as i32));
-        f.instruction(&I::End);
-        bodies.push(f);
-    }
+    // `om_meta_ptr` / `om_meta_len`, filled in once every function is emitted: the
+    // size table of a resizable model grows until then.
+    let meta_fns_at = bodies.len();
+    bodies.push(we::Function::new([]));
+    bodies.push(we::Function::new([]));
 
     // --- External-object destructors (teardown). One function that calls each
     // extObj's `<class>.destructor(handle)`, reading the handle from its SimData
@@ -1212,7 +1243,16 @@ pub(super) fn build_sim_model(
         bodies.push(f);
         idx
     };
-    bodies[simulate_slot] = build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?;
+    // The driver never takes the in-wasm Euler loop for a resizable model.
+    bodies[simulate_slot] = match resizable {
+        false => build_simulate(&layout, &eqfn, has_asserts.then_some(check_asserts_idx))?,
+        true => {
+            let mut f = we::Function::new([]);
+            f.instruction(&we::Instruction::I32Const(0));
+            f.instruction(&we::Instruction::End);
+            f
+        }
+    };
     let update_relations_idx = {
         let idx = import_base + bodies.len() as u32;
         bodies.push(if relations.iter().all(Option::is_none) {
@@ -1318,14 +1358,14 @@ pub(super) fn build_sim_model(
             with_opt.sort_by_key(|&(off, _)| off);
             &with_opt
         };
-        bodies.push(build_update_bound_attrs_fn(sim_code, &layout, slots, &attr_targets, &var_map, &by_name, &mut literals)?);
+        bodies.push(build_update_bound_attrs_fn(sim_code, &layout, slots, &dyn_defaults, &attr_targets, &var_map, &by_name, &mut literals)?);
         idx
     };
     // C's `setupDataStruc` half: the constant defaults, written before the solver is
     // allocated. The expression-bound ones stay in the update function.
     let attr_defaults_idx = {
         let idx = import_base + bodies.len() as u32;
-        bodies.push(build_attr_defaults_fn(&attr_slots, &var_map, &by_name, &mut literals)?);
+        bodies.push(build_attr_defaults_fn(&attr_slots, &dyn_defaults, &var_map, &by_name, &mut literals)?);
         idx
     };
     // Always exported (empty when the backend generated none) so the standalone
@@ -1633,6 +1673,48 @@ pub(super) fn build_sim_model(
             functions.function(guard_fn_type);
             bodies.push(build_guard_fn(*target));
         }
+    }
+
+    if let Some(scope) = &size_scope {
+        let jac_a_sym = size_params.as_mut().and_then(|sp| sym_jac_a(sim_code, sp));
+        let mut params = size_params.take().map(|p| (p.params, p.keys)).unwrap_or_default();
+        for (p, key) in params.0.iter_mut().zip(&params.1) {
+            p.off = var_map.vars.get(key).ok_or("CodegenWasmJit: an array size parameter has no slot")?.off;
+        }
+        meta.resize = Some(openmodelica_sim_meta::Resize {
+            params: params.0,
+            counts: counts_sz.clone(),
+            table: scope.entries(),
+            var_dims: result_vars.sz_dims.clone(),
+            soti_dims: soti_dims.clone(),
+            jac_a: jac_a_sym,
+            var_filter: settings.variableFilter.to_string(),
+            scratch: dyn_scratch.size.clone(),
+            values: Vec::new(),
+            table_values: Vec::new(),
+        });
+    }
+    {
+        use we::Instruction as I;
+        let meta_bytes = openmodelica_sim_meta::encode(&meta);
+        let meta_len = meta_bytes.len() as u32;
+        let meta_off = literals.intern(&meta_bytes);
+        // om_meta_ptr(): rt_alloc(len), memory.init the blob into it, return ptr.
+        let mut f = we::Function::new([(1, we::ValType::I32)]);
+        f.instruction(&I::I32Const(meta_len as i32));
+        f.instruction(&I::Call(rt_index("rt_alloc")?));
+        f.instruction(&I::LocalTee(0));
+        f.instruction(&I::I32Const(meta_off as i32));
+        f.instruction(&I::I32Const(meta_len as i32));
+        f.instruction(&I::MemoryInit { mem: 0, data_index: 0 });
+        f.instruction(&I::LocalGet(0));
+        f.instruction(&I::End);
+        bodies[meta_fns_at] = f;
+        // om_meta_len(): the constant blob length.
+        let mut f = we::Function::new([]);
+        f.instruction(&I::I32Const(meta_len as i32));
+        f.instruction(&I::End);
+        bodies[meta_fns_at + 1] = f;
     }
 
     // --- Code section. ---
