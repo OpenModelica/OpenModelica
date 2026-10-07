@@ -1700,7 +1700,9 @@ algorithm
     // non-scalarized arrays. Force simCodeScalarize=false for the C++ target only,
     // leaving the default (true) for the C target (issue #15496). Must happen
     // before any scalarize-dependent decision in the pipeline.
-    if stringEqual(Config.simCodeTarget(), "Cpp") then
+    // Scalarized sim code has one slot per element and cannot grow, so resizable
+    // arrays are never scalarized.
+    if stringEqual(Config.simCodeTarget(), "Cpp") or Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
       FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
     end if;
     // ToDo: set permanently matching -> SBGraphs
@@ -1826,7 +1828,9 @@ algorithm
     // use the scalarized var layout; the C runtime, on the other hand, does not
     // yet support non-scalarized arrays. So force simCodeScalarize=false for the
     // C++ target only, leaving the default (true) for the C target (issue #15496).
-    if stringEqual(Config.simCodeTarget(), "Cpp") then
+    // Scalarized sim code has one slot per element and cannot grow, so resizable
+    // arrays are never scalarized.
+    if stringEqual(Config.simCodeTarget(), "Cpp") or Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
       FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
     end if;
     func_map := UnorderedMap.fromLists(FunctionTree.listKeys(functions), FunctionTree.listValues(functions), AbsynUtil.pathHash, AbsynUtil.pathEqual);
