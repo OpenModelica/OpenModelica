@@ -34,6 +34,13 @@ unsafe extern "C" {
         gout: *mut f64,
         stage: c_int,
     ) -> c_int;
+    fn omr_protected_call_f64(
+        f: unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> f64,
+        data: *mut DATA,
+        threadData: *mut threadData_t,
+        out: *mut f64,
+        stage: c_int,
+    ) -> c_int;
 }
 
 unsafe extern "C" {
@@ -334,6 +341,19 @@ impl SimEngine for CEngine {
                 if rc > 0 { Err(driver::REMOVED_INIT_INCONSISTENT) } else { Ok(()) }
             }
             "functionUpdateBoundParameters" => self.call_cb(cb.updateBoundParameters),
+            driver::MODEL_FN_NEXT_TIME_EVENT => {
+                let Some(f) = cb.function_nextTimeEvent else { return Ok(()) };
+                self.publish();
+                let mut next = 0.0;
+                let rc = unsafe {
+                    omr_protected_call_f64(f, self.rt.data, self.rt.thread_data, &mut next, self.stage)
+                };
+                self.absorb(rc)?;
+                if rc == 0 {
+                    self.rt.local(0).timeValue = next;
+                }
+                Ok(())
+            }
             "functionUpdateBoundVariableAttributes" => {
                 let r = self.call_cb(cb.updateBoundVariableAttributes);
                 self.sync_attributes();

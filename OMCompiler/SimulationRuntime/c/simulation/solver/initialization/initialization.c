@@ -761,18 +761,14 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
   long i;
 
   data->callback->function_initSample(data, threadData);              /* set-up sample */
-  data->simulationInfo->nextSampleEvent = DBL_MAX;                    /* should never be reached */
   for(i=0; i<data->modelData->nSamples; ++i) {
     if(startTime < data->modelData->samplesInfo[i].start) {
       data->simulationInfo->nextSampleTimes[i] = data->modelData->samplesInfo[i].start;
     } else {
       data->simulationInfo->nextSampleTimes[i] = data->modelData->samplesInfo[i].start + ceil((startTime-data->modelData->samplesInfo[i].start) / data->modelData->samplesInfo[i].interval) * data->modelData->samplesInfo[i].interval;
     }
-
-    if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent)) {
-      data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
-    }
   }
+  updateNextSampleEvent(data, threadData);
 }
 
 /*! \fn int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)

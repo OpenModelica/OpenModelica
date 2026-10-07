@@ -23,4 +23,12 @@ thread_local! {
     pub static fmi3VariableAliasCache: RefCell<
         Option<metamodelica::Array<metamodelica::List<metamodelica::Ref<openmodelica_simcode_types::SimCodeVar::SimVar>>>>,
     > = const { RefCell::new(None) };
+
+    // Index 43 — timeIndependentVars
+    //
+    // The variables the old backend only computes at initialization; source:
+    // SimCodeUtil.setTimeIndependentVars, read by SimCodeCodegenUtil.timeEventTrigger.
+    pub static timeIndependentVars: RefCell<
+        Option<metamodelica::Ref<openmodelica_util::UnorderedSet::UnorderedSet<metamodelica::Ref<openmodelica_frontend_types::DAE::ComponentRef>>>>,
+    > = const { RefCell::new(None) };
 }

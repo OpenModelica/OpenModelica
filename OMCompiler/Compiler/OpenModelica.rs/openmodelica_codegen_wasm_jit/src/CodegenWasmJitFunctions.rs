@@ -199,6 +199,7 @@ use expressions::*;
 #[path = "CodegenWasmJitFunctions/relations.rs"]
 mod relations;
 use relations::*;
+pub(crate) use relations::time_event_trigger;
 
 // Calls: user functions, profiling hooks, spatialDistribution, math events.
 #[path = "CodegenWasmJitFunctions/calls.rs"]

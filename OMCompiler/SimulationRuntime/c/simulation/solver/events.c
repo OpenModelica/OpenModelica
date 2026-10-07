@@ -59,10 +59,18 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
   double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
+  /* A short run would otherwise lose output points to the pulled-in step. */
+  double eps = fmin(SAMPLE_EPS, 1e-9 * fabs(data->simulationInfo->stopTime - data->simulationInfo->startTime));
 
-  if ((data->simulationInfo->nextSampleEvent <= nextTimeStep + SAMPLE_EPS) && (data->simulationInfo->nextSampleEvent >= solverInfo->currentTime))
+  if ((data->simulationInfo->nextSampleEvent <= nextTimeStep + eps) && (data->simulationInfo->nextSampleEvent >= solverInfo->currentTime))
   {
-    solverInfo->currentStepSize = data->simulationInfo->nextSampleEvent - solverInfo->currentTime;
+    const double t = solverInfo->currentTime, te = data->simulationInfo->nextSampleEvent;
+    double h = te - t;
+    int i;
+    /* A relation `time >= te` only switches if the step lands on te exactly. */
+    for (i = 0; i < 4 && t + h < te; i++) h = nextafter(h, INFINITY);
+    for (i = 0; i < 4 && t + h > te; i++) h = nextafter(h, 0.0);
+    solverInfo->currentStepSize = h;
     data->simulationInfo->sampleActivated = 1;
     infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo->nextSampleEvent );
   }
@@ -244,17 +252,8 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
   saveZeroCrossingsAfterEvent(data, threadData);
   /*sim_result_emit(data);*/
 
-  /* Compute time of next time event, disable sampleActivated */
-  if(data->simulationInfo->sampleActivated)
-  {
-    for(i=0; i<data->modelData->nSamples; ++i) {
-      if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent)) {
-        // data->simulationInfo->nextSampleTimes[i] update in updateDiscreteSystem
-        data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
-      }
-    }
-    data->simulationInfo->sampleActivated = 0;
-  }
+  updateNextSampleEvent(data, threadData);
+  data->simulationInfo->sampleActivated = 0;
 }
 
 /*! \fn findRoot

@@ -203,6 +203,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalZeroCross);
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
+    extern double <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>(DATA *data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
@@ -765,6 +766,8 @@ template simulationFile_evt(SimCode simCode)
     <%functionZeroCrossing(zeroCrossings, equationsForZeroCrossings, modelNamePrefix(simCode))%>
 
     <%functionRelations(relations, modelNamePrefix(simCode))%>
+
+    <%functionNextTimeEvent(relations, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -1476,7 +1479,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
       <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>,
-      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>    /* updateStructuralParameters */
+      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>,    /* updateStructuralParameters */
+      <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>
     <%\n%>
     };
 
@@ -5823,6 +5827,42 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   }
   >>
 end functionRelations;
+
+template functionNextTimeEvent(list<ZeroCrossing> relations, String modelNamePrefix)
+ "The earliest time after the current one at which a relation switches that
+  timeEventTrigger recognizes, or DBL_MAX."
+::=
+  let &auxFunction = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let triggers = (relations |> ZERO_CROSSING(iter = NONE()) =>
+    match timeEventTrigger(relation_)
+    case SOME(trigger) then
+      let &preExp = buffer ""
+      let e = daeExp(trigger, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+      <<
+      <%preExp%>
+      tEvent = <%e%>;
+      if (tEvent > tNow && tEvent < tNext) tNext = tEvent;
+      >>
+    ;separator="\n")
+  <<
+  <%auxFunction%>
+  double <%symbolName(modelNamePrefix,"function_nextTimeEvent")%>(DATA *data, threadData_t *threadData)
+  {
+    <%if triggers then
+    <<
+    <%varDecls%>
+    const double tNow = data->localData[0]->timeValue;
+    double tEvent, tNext = DBL_MAX;
+    <%triggers%>
+    <%varFrees%>
+    return tNext;
+    >>
+    else "return DBL_MAX;"%>
+  }
+  >>
+end functionNextTimeEvent;
 
 template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for zero crossings."

@@ -187,6 +187,21 @@ end compareEqSystemsEquality;
 //
 // =============================================================================
 
+protected function setTimeIndependentVars
+  "Records the known variables that are not parameters: the backend only
+   computes them at initialization."
+  input BackendDAE.Variables knownVars;
+protected
+  UnorderedSet<DAE.ComponentRef> vars = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+algorithm
+  for v in BackendVariable.varList(knownVars) loop
+    if BackendVariable.isVarAlg(v) and not BackendVariable.isInput(v) then
+      UnorderedSet.add(v.varName, vars);
+    end if;
+  end for;
+  setGlobalRoot(Global.timeIndependentVars, SOME(vars));
+end setTimeIndependentVars;
+
 public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
@@ -342,6 +357,7 @@ algorithm
                                 classAttrs=classAttributes,
                                 symjacs=symJacs,
                                 eventInfo=eventInfo) := dlow.shared;
+    setTimeIndependentVars(globalKnownVars);
 
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
