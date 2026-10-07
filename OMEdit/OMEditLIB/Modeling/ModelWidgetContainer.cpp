@@ -54,6 +54,7 @@
 #include "OMS/ModelDialog.h"
 #include "OMS/SystemSimulationInformationDialog.h"
 #include "Util/ResourceCache.h"
+#include "Util/Style.h"
 #include "Util/NavigationManager.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Util/NetworkAccessManager.h"
@@ -5288,11 +5289,10 @@ void GraphicsView::leaveEvent(QEvent *event)
 WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-  const bool darkMode = qApp->property("omeditDarkMode").toBool();
   // main frame
   QFrame *pMainFrame = new QFrame;
   pMainFrame->setContentsMargins(0, 0, 0, 0);
-  pMainFrame->setStyleSheet(darkMode ? "QFrame{color: palette(light);}" : "QFrame{color:gray;}");
+  pMainFrame->setStyleSheet(Style::welcomePageMainFrameStyleSheet());
   // top frame
   QFrame *pTopFrame = new QFrame;
   pTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
@@ -5319,7 +5319,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // RecentFiles Frame
   QFrame *pRecentFilesFrame = new QFrame;
   pRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
-  pRecentFilesFrame->setStyleSheet(darkMode ? "QFrame{background-color: palette(base);}" : "QFrame{background-color: white;}");
+  pRecentFilesFrame->setStyleSheet(Style::welcomePagePanelStyleSheet());
   // recent items list
   Label *pRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
   mpNoRecentFileLabel = new Label(tr("No recent files found."));
@@ -5347,7 +5347,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // RecentModels Frame
   QFrame *pRecentModelsFrame = new QFrame;
   pRecentModelsFrame->setFrameShape(QFrame::StyledPanel);
-  pRecentModelsFrame->setStyleSheet(darkMode ? "QFrame{background-color: palette(base);}" : "QFrame{background-color: white;}");
+  pRecentModelsFrame->setStyleSheet(Style::welcomePagePanelStyleSheet());
   // recent models list. The models opened in the model view are kept in their own list so that
   // the recent files list is not cluttered with them.
   Label *pRecentModelsLabel = Utilities::getHeadingLabel(tr("Recent Models"));
@@ -5376,7 +5376,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
-  mpLatestNewsFrame->setStyleSheet(darkMode ? "QFrame{background-color: palette(base);}" : "QFrame{background-color: white;}");
+  mpLatestNewsFrame->setStyleSheet(Style::welcomePagePanelStyleSheet());
   /* Read the show latest news settings */
   if (!OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
     mpLatestNewsFrame->setVisible(false);
