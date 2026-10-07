@@ -3102,9 +3102,9 @@ void OptionsDialog::saveFMISettings()
 
   bool deleteFMUDirectoyAndModel = mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked();
   if (deleteFMUDirectoyAndModel == OptionsDefaults::FMI::deleteFMUDirectoyAndModel) {
-    mpSettings->remove("FMIExport/DeleteFMUDirectoyAndModel");
+    mpSettings->remove("FMIImport/DeleteFMUDirectoyAndModel");
   } else {
-    mpSettings->setValue("FMIExport/DeleteFMUDirectoyAndModel", deleteFMUDirectoyAndModel);
+    mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", deleteFMUDirectoyAndModel);
   }
 }
 
