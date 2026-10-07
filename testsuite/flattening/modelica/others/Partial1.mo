@@ -12,12 +12,12 @@ end A;
 
 model Partial1
   A a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Partial1;
 // Result:
 // Error processing file: Partial1.mo
-// [flattening/modelica/others/Partial1.mo:9:1-11:6:writable] Error: Illegal to instantiate partial class A.
-// Error: Error occurred while flattening model Partial1
+// [flattening/modelica/others/Partial1.mo:10:3-10:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/Partial1.mo:9:1-11:6:writable] Notification: From here:
+// [flattening/modelica/others/Partial1.mo:14:3-14:6:writable] Error: Component 'a' has partial type 'A'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

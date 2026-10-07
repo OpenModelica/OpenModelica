@@ -51,7 +51,8 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //   m * der(v) = f + (-k) * x - d * v;
 // end SynchronousFeatures.ControlledMass;
 // "
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // synchronous features pre-phase: synchronousFeatures
 //
 //
@@ -299,5 +300,6 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 // 4: factor(1/1) shift(2/3)  event(false)
 //
 // true
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

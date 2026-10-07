@@ -1,7 +1,6 @@
 // name:      hideResult
 // keywords:  parameter evaluation, hide result
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 model hideResult
@@ -98,10 +97,10 @@ val(c.b.a, 0.0); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:5:3-5:55:writable] Warning: Ignoring the hideResult annotation on 'b' which could not be evaluated, probably due to missing annotation(Evaluate=true).
-// "
-// 2.0
 // ""
+// NaN
+// "Error: b not found in hideResult_res.mat
+// "
 // true
 // ""
 // record SimulationResult

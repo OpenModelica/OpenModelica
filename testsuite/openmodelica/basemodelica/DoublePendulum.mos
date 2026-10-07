@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // teardown_command: rm DoublePendulum.mof
 
 loadModel(Modelica, {"4.1.0"});getErrorString();

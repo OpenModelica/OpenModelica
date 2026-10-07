@@ -21,12 +21,11 @@ equation
   when e then
     v = pre(v) + 1;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenWithArray;
 
 // Result:
 // class WhenWithArray "Model with many events in when clauses and a when clause with many triggering conditions"
-//   parameter Integer N = 5;
+//   final parameter Integer N = 5;
 //   Real x[1](start = 0.0, fixed = true);
 //   Real x[2](start = 0.0, fixed = true);
 //   Real x[3](start = 0.0, fixed = true);
@@ -60,7 +59,7 @@ end WhenWithArray;
 //     e[5] = true;
 //   end when;
 //   when {e[1], e[2], e[3], e[4], e[5]} then
-//     v = 1 + pre(v);
+//     v = pre(v) + 1;
 //   end when;
 // end WhenWithArray;
 // endResult

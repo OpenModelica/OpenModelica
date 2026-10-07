@@ -1,5 +1,5 @@
 // name: MatchCaseGuard
-// cflags: -g=MetaModelica -d=tail,gen -d=-newInst
+// cflags: -g=MetaModelica -d=tail,gen
 // status: correct
 // suite: metamodelica
 

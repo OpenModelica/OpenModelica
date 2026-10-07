@@ -16,7 +16,6 @@ class ArrayConstruct1
   parameter Angle alpha = 2.0; // The expanded type of alpha is Real
   Real[3] f = array(alpha, 2, 3.0); // A 3-vector of type Real[3]
   Angle[3] A = {1.0, alpha, 4}; // The expanded type of A is Real[3]
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayConstruct1;
 
 // Result:
@@ -48,11 +47,20 @@ end ArrayConstruct1;
 //   Real A[3](unit = "rad");
 // equation
 //   a = {1, 2, 3};
-//   b = {1.0, 2.0, 3};
+//   b = {1.0, 2.0, 3.0};
 //   c = {{11, 12, 13}, {21, 22, 23}};
 //   d = {{{1.0, 2.0, 3.0}}};
 //   v = {1.0, 2.0, 3.0};
-//   f = {alpha, 2, 3.0};
+//   f = {alpha, 2.0, 3.0};
 //   A = {1.0, alpha, 4.0};
 // end ArrayConstruct1;
+// [flattening/modelica/arrays/ArrayConstruct1.mo:11:3-11:27:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:12:3-12:33:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:13:3-13:48:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:14:3-14:37:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:15:3-15:31:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:16:3-16:30:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:17:3-17:35:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayConstruct1.mo:18:3-18:31:writable] Warning: Components are deprecated in class.
+//
 // endResult

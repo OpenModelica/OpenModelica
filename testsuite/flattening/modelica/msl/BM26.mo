@@ -1061,7 +1061,6 @@ model BM26
 
 equation
   connect(tanh1.inPort,constant1.outPort) annotation(Line(visible=true,points={{4.48,-5.0},{-17.31,-2.93}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM26;
 // function Modelica.Math.tanh
 // input Real u;
@@ -1092,33 +1091,25 @@ end BM26;
 // tanh1.inPort.signal[1] = constant1.outPort.signal[1];
 // end BM26;
 // Result:
-// function Modelica.Math.tanh "hyperbolic tangent"
-//   input Real u;
-//   output Real y;
-//
-//   external "C" y = tanh(u);
-// end Modelica.Math.tanh;
-//
 // class BM26
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
-//   parameter Integer tanh1.n = 1 "Number of inputs (= number of outputs)";
-//   parameter Integer tanh1.inPort.n = tanh1.n "Dimension of signal vector";
+//   final parameter Integer tanh1.n = 1 "Number of inputs (= number of outputs)";
+//   final parameter Integer tanh1.inPort.n = 1 "Dimension of signal vector";
 //   Real tanh1.inPort.signal[1] "Real input signals";
-//   parameter Integer tanh1.outPort.n = tanh1.n "Dimension of signal vector";
+//   final parameter Integer tanh1.outPort.n = 1 "Dimension of signal vector";
 //   Real tanh1.outPort.signal[1] "Real output signals";
 //   Real tanh1.y[1] "Output signals";
 //   protected Real tanh1.u[1] "Input signals";
 // equation
+//   tanh1.inPort.signal[1] = constant1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   tanh1.u = {tanh1.inPort.signal[1]};
+//   tanh1.u = tanh1.inPort.signal;
 //   tanh1.y[1] = tanh(tanh1.u[1]);
 //   tanh1.y[1] = tanh1.outPort.signal[1];
-//   assert(tanh1.inPort.n == constant1.outPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = tanh1.inPort.signal[1];
 // end BM26;
 // endResult

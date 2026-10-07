@@ -1,6 +1,5 @@
 // name: LotkaVolterra
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 

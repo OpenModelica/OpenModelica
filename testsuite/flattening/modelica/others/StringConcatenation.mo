@@ -9,7 +9,6 @@ model StringConcatenation
   String s;
 equation
   s = "te" + "st";
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StringConcatenation;
 
 // Result:

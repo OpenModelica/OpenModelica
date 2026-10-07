@@ -65,6 +65,7 @@ end OptimizeContinue;
 // class OptimizeContinue
 //   constant Real r = 1.0;
 // end OptimizeContinue;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [metamodelica/meta/OptimizeContinue.mo:22:5-26:22:writable] Notification: This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue.
 // [metamodelica/meta/OptimizeContinue.mo:22:5-26:22:writable] Notification: Converted match expression to switch of type #T_UNKNOWN#.
 // [metamodelica/meta/OptimizeContinue.mo:22:5-26:22:writable] Notification: Match input OptimizeContinue.Ut.UT1() is a constant value.

@@ -11,7 +11,6 @@ equation
   for i in 1:5 loop
     x[i] = i + 1;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FiveForEquations;
 
 // Result:
@@ -28,4 +27,7 @@ end FiveForEquations;
 //   x[4] = 5.0;
 //   x[5] = 6.0;
 // end FiveForEquations;
+// [flattening/modelica/equations/FiveForEquations.mo:9:3-9:12:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/FiveForEquations.mo:11:3-13:10:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

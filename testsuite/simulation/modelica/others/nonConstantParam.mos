@@ -19,7 +19,8 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// {0.0,0.0,0.0,31.65870540877311,29.83760214337354,29.25749016337537,29.49761079310868,29.44575605316498,29.45282599035931,29.45259634358187,29.45237516797675}
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// {0.0, 0.0, 0.0, 31.658705410048803, 29.837602143096, 29.257490163396614, 29.4976107931307, 29.445756053160324, 29.452825990358697, 29.452596343586286, 29.452375167972658}
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

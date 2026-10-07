@@ -97,6 +97,7 @@ end UnboundLocal;
 // equation
 //   r = UnboundLocal.f(time);
 // end UnboundLocal;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [metamodelica/meta/UnboundLocal.mo:18:5-18:11:writable] Warning: y was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: o was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: ix1 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.

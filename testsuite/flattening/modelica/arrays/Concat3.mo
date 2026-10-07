@@ -12,7 +12,6 @@ class Concat3
   Real[2, 3] r3 = cat(2, r1);
   Real[4, 3] r4 = cat(1, r1, r1);
   Real[:] r5 = cat(1, {1,2,3}, {4,time,6});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Concat3;
 
 // Result:
@@ -66,4 +65,10 @@ end Concat3;
 //   r4 = {{r1[1,1], r1[1,2], r1[1,3]}, {r1[2,1], r1[2,2], r1[2,3]}, {r1[1,1], r1[1,2], r1[1,3]}, {r1[2,1], r1[2,2], r1[2,3]}};
 //   r5 = {1.0, 2.0, 3.0, 4.0, time, 6.0};
 // end Concat3;
+// [flattening/modelica/arrays/Concat3.mo:10:3-10:55:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/Concat3.mo:11:3-11:33:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/Concat3.mo:12:3-12:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/Concat3.mo:13:3-13:33:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/Concat3.mo:14:3-14:43:writable] Warning: Components are deprecated in class.
+//
 // endResult

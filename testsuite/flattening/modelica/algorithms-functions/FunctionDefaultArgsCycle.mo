@@ -17,13 +17,11 @@ end f;
 
 model FunctionDefaultArgsCycle
   Real x = f(4);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionDefaultArgsCycle;
 
 // Result:
 // Error processing file: FunctionDefaultArgsCycle.mo
 // [flattening/modelica/algorithms-functions/FunctionDefaultArgsCycle.mo:19:3-19:16:writable] Error: The default value of y causes a cyclic dependency.
-// Error: Error occurred while flattening model FunctionDefaultArgsCycle
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

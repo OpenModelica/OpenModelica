@@ -9,7 +9,6 @@ model MatrixEquation
   Vector v[2];
 equation
   v.x = {{1,2},{3,cos(time)}};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixEquation;
 
 // Result:

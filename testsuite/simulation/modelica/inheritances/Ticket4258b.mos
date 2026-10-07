@@ -1,6 +1,6 @@
 // name:     Ticket4258a.mos [BUG: #4258]
 // keywords: proper unique scopes for redeclares
-// cflags: -d=nogen -d=-newInst
+// cflags: -d=nogen
 // status:   correct
 // treardown_command: rm -rf Eco*
 //
@@ -21,13 +21,13 @@ buildModel(Eco); getErrorString();
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================
-// 1: FGchannel.mediums[1].Xi[1]
-// 2: FGchannel.mediums[1].Xi[2]
-// 3: FGchannel.mediums[1].Xi[3]
+// 1: FGchannel.mediums[1].T
+// 2: FGchannel.mediums[1].Xi[6]
+// 3: FGchannel.mediums[1].Xi[5]
 // 4: FGchannel.mediums[1].Xi[4]
-// 5: FGchannel.mediums[1].Xi[5]
-// 6: FGchannel.mediums[1].Xi[6]
-// 7: FGchannel.mediums[1].T
+// 5: FGchannel.mediums[1].Xi[3]
+// 6: FGchannel.mediums[1].Xi[2]
+// 7: FGchannel.mediums[1].Xi[1]
 // 8: FGchannel.mediums[2].Xi[1]
 // 9: FGchannel.mediums[2].Xi[2]
 // 10: FGchannel.mediums[2].Xi[3]

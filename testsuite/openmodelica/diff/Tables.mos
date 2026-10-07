@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 echo(false);
 old := readFile("Tables.old.mo");

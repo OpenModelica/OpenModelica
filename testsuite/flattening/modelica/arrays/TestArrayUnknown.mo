@@ -13,13 +13,11 @@ model TestArrayUnknown
   X blah[p];
 equation
   blah.x = fill(0, p);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TestArrayUnknown;
 
 // Result:
 // Error processing file: TestArrayUnknown.mo
-// [flattening/modelica/arrays/TestArrayUnknown.mo:13:3-13:12:writable] Error: Could not evaluate structural parameter (or constant): p which gives dimensions of array: blah[p]. Array dimensions must be known at compile time.
-// Error: Error occurred while flattening model TestArrayUnknown
+// [flattening/modelica/arrays/TestArrayUnknown.mo:13:3-13:12:writable] Error: Could not evaluate structural parameter (or constant): p which gives dimensions of array: blah. Array dimensions must be known at compile time.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

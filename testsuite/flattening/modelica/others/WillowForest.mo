@@ -41,7 +41,6 @@ equation
     // Dead biomass accumulates by mortality
     wMortAcc = if(c == 1) then wMort else pre(wMortAcc) + wMort;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WillowForest;
 
 // Result:
@@ -106,15 +105,31 @@ end WillowForest;
 //   Integer mbiomass "Measured biomass for current year";
 // equation
 //   when sample(0.0, 1.0) then
-//   t = 1 + pre(t);
-//   mbiomass = mbiomasses[t];
-//   c = growthCycles[t];
-//   w = pre(w) + wGrowth + (-wMort) - wHarvest;
-//   wBiomass = wGrowth - wMort;
-//   wGrowth = e[c] * a[c] * /*Real*/(r[t]);
-//   wMort = if c == 1 and t > 1 then (1.0 - h) * m[t] * (pre(w) + wGrowth) else m[t] * (pre(w) + wGrowth);
-//   wHarvest = if c == 1 and t > 1 then h * pre(w) + pre(wMortAcc) else 0.0;
-//   wMortAcc = if c == 1 then wMort else pre(wMortAcc) + wMort;
+//     t = pre(t) + 1;
+//     mbiomass = mbiomasses[t];
+//     c = growthCycles[t];
+//     w = pre(w) + wGrowth - wMort - wHarvest;
+//     wBiomass = wGrowth - wMort;
+//     wGrowth = e[c] * a[c] * /*Real*/(r[t]);
+//     wMort = if c == 1 and t > 1 then (1.0 - h) * m[t] * (pre(w) + wGrowth) else m[t] * (pre(w) + wGrowth);
+//     wHarvest = if c == 1 and t > 1 then h * pre(w) + pre(wMortAcc) else 0.0;
+//     wMortAcc = if c == 1 then wMort else pre(wMortAcc) + wMort;
 //   end when;
 // end WillowForest;
+// [flattening/modelica/others/WillowForest.mo:10:3-10:45:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:11:3-11:78:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:12:3-12:79:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:13:3-13:61:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:14:3-14:124:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:15:3-15:107:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:16:3-16:121:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:17:3-17:61:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:18:3-18:35:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:19:3-19:63:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:20:3-20:76:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:21:3-21:68:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:22:3-22:49:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:23:3-23:55:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/WillowForest.mo:25:3-43:11:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

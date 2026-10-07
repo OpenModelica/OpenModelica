@@ -71,4 +71,6 @@ end ForIterator3;
 //   constant String s3[4,1,4,2] = "bgh4";
 //   constant String s3[4,1,4,3] = "cgh4";
 // end ForIterator3;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

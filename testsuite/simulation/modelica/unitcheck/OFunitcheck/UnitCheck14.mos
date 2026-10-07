@@ -39,7 +39,8 @@ instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
 //   A = der(S);
 // end unitCheckTests.UnitCheck14;
 // "
-// "Notification: \"A\" has the Unit \"1\"
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// Notification: \"A\" has the Unit \"1\"
 // \"S\" has the Unit \"s\"
 // "
 // endResult

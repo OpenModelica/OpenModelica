@@ -29,7 +29,6 @@ model Circuit3
   // The T0 modification is not applied because it did not appear in the original declaration
   extends Circuit2(redeclare replaceable model NonlinearResistor = Resistor(U=10));
   NonlinearResistor r;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Circuit3;
 
 

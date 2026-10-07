@@ -14,7 +14,6 @@ class Lookup6
     a = -a;
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup6;
 
 // Result:
@@ -24,4 +23,9 @@ end Lookup6;
 // equation
 //   b.a = -b.a;
 // end Lookup6;
+// [flattening/modelica/scoping/Lookup6.mo:12:5-12:11:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup6.mo:14:5-14:11:writable] Warning: Equation sections are deprecated in class.
+// [flattening/modelica/scoping/Lookup6.mo:10:3-10:24:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup6.mo:16:3-16:6:writable] Warning: Components are deprecated in class.
+//
 // endResult

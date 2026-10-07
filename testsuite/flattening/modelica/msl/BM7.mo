@@ -1087,7 +1087,6 @@ model BM7
 equation
   connect(atan21.inPort2,constant2.outPort) annotation(Line(visible=true,points={{-16.22,16.53},{-49.37,-2.33}}));
   connect(constant1.outPort,atan21.inPort1) annotation(Line(visible=true,points={{-44.81,43.59},{-17.14,28.39}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM7;
 // function Modelica.Math.atan2
 // input Real u1;
@@ -1131,47 +1130,37 @@ end BM7;
 // atan21.inPort2.signal[1] = constant2.outPort.signal[1];
 // end BM7;
 // Result:
-// function Modelica.Math.atan2 "four quadrant inverse tangent"
-//   input Real u1;
-//   input Real u2;
-//   output Real y(quantity = "Angle", unit = "rad", displayUnit = "deg");
-//
-//   external "C" y = atan2(u1, u2);
-// end Modelica.Math.atan2;
-//
 // class BM7
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
-//   parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant2.outPort.n = constant2.nout "Dimension of signal vector";
+//   parameter Real constant2.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant2.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant2.outPort.n = 1 "Dimension of signal vector";
 //   Real constant2.outPort.signal[1] "Real output signals";
 //   Real constant2.y[1];
-//   parameter Real constant2.k[1] = 1.0 "Constant output values";
-//   parameter Integer atan21.n = 1 "Dimension of input and output vectors.";
-//   parameter Integer atan21.inPort1.n = atan21.n "Dimension of signal vector";
+//   final parameter Integer atan21.n = 1 "Dimension of input and output vectors.";
+//   final parameter Integer atan21.inPort1.n = 1 "Dimension of signal vector";
 //   Real atan21.inPort1.signal[1] "Real input signals";
-//   parameter Integer atan21.inPort2.n = atan21.n "Dimension of signal vector";
+//   final parameter Integer atan21.inPort2.n = 1 "Dimension of signal vector";
 //   Real atan21.inPort2.signal[1] "Real input signals";
-//   parameter Integer atan21.outPort.n = atan21.n "Dimension of signal vector";
+//   final parameter Integer atan21.outPort.n = 1 "Dimension of signal vector";
 //   Real atan21.outPort.signal[1] "Real output signals";
 //   Real atan21.y[1] "Output signals";
 //   protected Real atan21.u1[1] "Input signals 1";
 //   protected Real atan21.u2[1] "Input signals 2";
 // equation
+//   atan21.inPort2.signal[1] = constant2.outPort.signal[1];
+//   constant1.outPort.signal[1] = atan21.inPort1.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
 //   constant2.outPort.signal[1] = constant2.k[1];
 //   constant2.y[1] = constant2.outPort.signal[1];
-//   atan21.u1 = {atan21.inPort1.signal[1]};
-//   atan21.u2 = {atan21.inPort2.signal[1]};
+//   atan21.u1 = atan21.inPort1.signal;
+//   atan21.u2 = atan21.inPort2.signal;
 //   atan21.y[1] = atan2(atan21.u1[1], atan21.u2[1]);
 //   atan21.y[1] = atan21.outPort.signal[1];
-//   assert(atan21.inPort2.n == constant2.outPort.n, "automatically generated from connect");
-//   assert(constant1.outPort.n == atan21.inPort1.n, "automatically generated from connect");
-//   atan21.inPort2.signal[1] = constant2.outPort.signal[1];
-//   atan21.inPort1.signal[1] = constant1.outPort.signal[1];
 // end BM7;
 // endResult

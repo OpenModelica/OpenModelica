@@ -9,13 +9,12 @@ model SubScript1
  parameter Integer tmp  = 2;
  Real arraySubs[3*tmp];
 equation
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubScript1;
 
 
 // Result:
 // class SubScript1
-//   parameter Integer tmp = 2;
+//   final parameter Integer tmp = 2;
 //   Real arraySubs[1];
 //   Real arraySubs[2];
 //   Real arraySubs[3];

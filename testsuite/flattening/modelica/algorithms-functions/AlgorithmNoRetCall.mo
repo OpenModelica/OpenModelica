@@ -33,11 +33,10 @@ end P;
 
 class AlgorithmNoRetCall
   extends P.B;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmNoRetCall;
 
 // Result:
-// function Modelica.Utilities.Streams.print
+// impure function Modelica.Utilities.Streams.print
 //   input String str;
 // algorithm
 //   print(str);
@@ -48,4 +47,7 @@ end AlgorithmNoRetCall;
 //   Modelica.Utilities.Streams.print(String(time, 6, 0, true) + "
 //   ");
 // end AlgorithmNoRetCall;
+// [flattening/modelica/algorithms-functions/AlgorithmNoRetCall.mo:23:3-23:37:writable] Warning: Algorithm sections are deprecated in class.
+// [flattening/modelica/algorithms-functions/AlgorithmNoRetCall.mo:8:1-12:10:writable] Warning: Pure function 'Modelica.Utilities.Streams.print' contains a call to impure function 'print'.
+//
 // endResult

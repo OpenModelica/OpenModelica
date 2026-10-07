@@ -141,6 +141,7 @@ end ImplicitRangeReductions;
 //   m[1] = 1.0;
 //   m[2] = 2.0;
 // end ImplicitRangeReductions;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/operators/ImplicitRangeReductions.mo:43:3-43:22:writable] Error: Variable i not found in scope <global scope>.
 //
 // endResult

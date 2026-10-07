@@ -31,4 +31,6 @@ end ArrayOuterParamExpand;
 // equation
 //   a.v = p1[1] * a.p2[1] + p1[2] * a.p2[2] + p1[3] * a.p2[3];
 // end ArrayOuterParamExpand;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

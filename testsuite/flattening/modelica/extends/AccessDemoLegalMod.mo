@@ -49,4 +49,6 @@ end B;
 //   u2 = 5.0;
 //   u3 = 8.0;
 // end B;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

@@ -13,13 +13,15 @@ class Type10
 equation
   x = y;
   ok[1]=3.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type10;
 
 // Result:
 // Error processing file: prtest.mo
-// [flattening/modelica/others/prtest.mo:14:3-14:8:writable] Error: Type mismatch in equation {{x[1,1], x[1,2], x[1,3]}, {x[2,1], x[2,2], x[2,3]}}={{y[1,1], y[1,2], y[1,3]}, {y[2,1], y[2,2], y[2,3]}, {y[3,1], y[3,2], y[3,3]}} of type Real[2, 3]=Real[3, 3].
-// Error: Error occurred while flattening model Type10
+// [flattening/modelica/others/prtest.mo:10:3-10:15:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/prtest.mo:11:3-11:14:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/prtest.mo:12:3-12:13:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/prtest.mo:14:3-14:8:writable] Warning: Equation sections are deprecated in class.
+// [flattening/modelica/others/prtest.mo:14:3-14:8:writable] Error: Type mismatch in equation x = y of type Real[2, 3] = Real[3, 3].
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

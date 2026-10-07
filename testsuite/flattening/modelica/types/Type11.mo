@@ -13,7 +13,6 @@ class Type11
   Real ok[3];
 equation
   ok[1]=3.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type11;
 
 // Result:
@@ -38,4 +37,9 @@ end Type11;
 //   y = {{11.0, 12.0, 13.0}, {21.0, 22.0, 23.0}};
 //   ok[1] = 3.0;
 // end Type11;
+// [flattening/modelica/types/Type11.mo:10:3-10:45:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/types/Type11.mo:11:3-11:44:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/types/Type11.mo:13:3-13:13:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/types/Type11.mo:15:3-15:12:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

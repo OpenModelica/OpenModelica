@@ -14,7 +14,6 @@ class OutputDeclConnector
   output OutputConnector oc;
 equation
   oc.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OutputDeclConnector;
 
 // Result:
@@ -22,7 +21,11 @@ end OutputDeclConnector;
 //   output Real oc.r;
 //   output Real oc.f;
 // equation
-//   oc.r = 1.0;
 //   oc.f = 0.0;
+//   oc.r = 1.0;
 // end OutputDeclConnector;
+// [flattening/modelica/declarations/OutputDeclConnector.mo:14:3-14:28:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/OutputDeclConnector.mo:16:3-16:13:writable] Warning: Equation sections are deprecated in class.
+// [flattening/modelica/declarations/OutputDeclConnector.mo:14:3-14:28:writable] Warning: Connector oc is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
+//
 // endResult

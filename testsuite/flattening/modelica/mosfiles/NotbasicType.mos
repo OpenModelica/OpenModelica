@@ -1,7 +1,6 @@
 // name:     Not basic type
 // keywords: error handling
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that pointless errors are not generated
 //

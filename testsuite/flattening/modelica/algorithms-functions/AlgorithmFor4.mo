@@ -11,7 +11,6 @@ algorithm
   for i in 1:2:3 loop
     a[i+1] := a[i] + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor4;
 
 // Result:
@@ -22,7 +21,10 @@ end AlgorithmFor4;
 //   Real a[4];
 // algorithm
 //   for i in 1:2:3 loop
-//     a[1 + i] := 1.0 + a[i];
+//     a[i + 1] := a[i] + 1.0;
 //   end for;
 // end AlgorithmFor4;
+// [flattening/modelica/algorithms-functions/AlgorithmFor4.mo:9:3-9:12:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/algorithms-functions/AlgorithmFor4.mo:11:3-13:10:writable] Warning: Algorithm sections are deprecated in class.
+//
 // endResult

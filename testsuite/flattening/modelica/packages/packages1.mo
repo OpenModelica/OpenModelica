@@ -23,7 +23,6 @@ end Modelica;
 model World
   P.C c;
   Modelica.SIunits.Area a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end World;
 
 // Result:
@@ -31,4 +30,6 @@ end World;
 //   Real c.x;
 //   Real a(quantity = "Area", unit = "m2");
 // end World;
+// [flattening/modelica/packages/packages1.mo:12:3-12:9:writable] Warning: Components are deprecated in class.
+//
 // endResult

@@ -163,20 +163,22 @@ end Modelica;
 
 model M
   extends Bug.M3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:
 // class M
-//   Real clock.y;
 //   parameter Real clock.amplitude = 1.0;
-//   parameter Real clock.freqHz(quantity = "Frequency", unit = "Hz", start = 2.0);
+//   parameter Real clock.freqHz(quantity = "Frequency", unit = "Hz", start = 2.0) = 2.0;
 //   parameter Real clock.phase(quantity = "Angle", unit = "rad", displayUnit = "deg") = 0.0;
-//   parameter Real clock.damping(quantity = "DampingCoefficient", unit = "s-1", start = 1.0);
-//   parameter Real clock.offset = 10.0;
-//   parameter Real clock.startTime(quantity = "Time", unit = "s") = 20.0;
+//   parameter Real clock.damping(quantity = "DampingCoefficient", unit = "s-1", start = 1.0) = 1.0;
+//   parameter Real clock.offset = 0.0;
+//   parameter Real clock.startTime(quantity = "Time", unit = "s") = 0.0;
+//   Real clock.y;
 //   protected constant Real clock.pi = 3.141592653589793;
 // equation
-//   clock.y = clock.offset + (if time < clock.startTime then 0.0 else clock.amplitude * exp((clock.startTime - time) * clock.damping) * sin(6.283185307179586 * clock.freqHz * (time - clock.startTime) + clock.phase));
+//   clock.y = clock.offset + (if time < clock.startTime then 0.0 else clock.amplitude * exp(-(time - clock.startTime) * clock.damping) * sin(6.283185307179586 * clock.freqHz * (time - clock.startTime) + clock.phase));
 // end M;
+// [flattening/modelica/redeclare/Bug2727.mo:63:9-63:64:writable] Warning: Parameter clock.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=2) as default value.
+// [flattening/modelica/redeclare/Bug2727.mo:65:9-65:63:writable] Warning: Parameter clock.damping has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+//
 // endResult

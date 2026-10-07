@@ -1,7 +1,6 @@
 // status: correct
 // depends: ticket3619.mo
 // depends: ticket3619.expected
-// cflags: -d=-newInst
 
 echo(false);
 s1 := readFile("ticket3619.mo");

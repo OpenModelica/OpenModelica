@@ -11,7 +11,6 @@ model ArraySlice2
   parameter Real B[:,:] = ABCD[1:end-1,end:end];
   parameter Real C[:,:] = ABCD[end:end,1:end-1];
   parameter Real D[:,:] = matrix(ABCD[end,end]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice2;
 
 // Result:

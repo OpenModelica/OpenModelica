@@ -17,12 +17,11 @@ end B;
 
 model A
  extends B.X(z = 15);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:
 // class A
-//   parameter Real k = 10.0;
+//   parameter Real k = 2.0;
 //   parameter Real z = 15.0;
 // end A;
 // endResult

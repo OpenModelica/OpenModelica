@@ -13,5 +13,6 @@ getErrorString();
 // "Check of Modelica_Electrical_Machines_Examples_AIMC_DOL completed successfully.
 // Class Modelica_Electrical_Machines_Examples_AIMC_DOL has 376 equation(s) and 376 variable(s).
 // 275 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

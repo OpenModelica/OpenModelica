@@ -11,7 +11,6 @@ end ClassA;
 
 class ModifierExtends
   extends ClassA(r1 = 4711.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifierExtends;
 
 // Result:

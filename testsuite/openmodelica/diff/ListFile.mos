@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadString("package P1
 end P1;", "P1", "UTF-8");

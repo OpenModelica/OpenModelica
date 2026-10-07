@@ -20,7 +20,6 @@ end AssertTestInst;
 class AssertTestDuringInst
 equation
   assert(false, "Testing assert during instantiation");
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssertTestDuringInst;
 
 // class AssertTestInst

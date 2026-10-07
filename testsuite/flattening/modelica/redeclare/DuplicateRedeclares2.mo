@@ -17,6 +17,7 @@ end DuplicateRedeclares2;
 
 // Result:
 // Error processing file: DuplicateRedeclares2.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/redeclare/DuplicateRedeclares2.mo:13:23-13:47:writable] Notification: From here:
 // [flattening/modelica/redeclare/DuplicateRedeclares2.mo:14:23-14:47:writable] Error: r is already redeclared in this scope.
 // Error: Error occurred while flattening model DuplicateRedeclares2

@@ -949,40 +949,16 @@ package Toneco
 end Toneco;
 model Toneco_PEXPipe
   extends Toneco.PEXPipe;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Toneco_PEXPipe;
 
 // Result:
-// function Modelica.Math.asin "inverse sine (-1 <= u <= 1)"
-//   input Real u;
-//   output Real y(quantity = "Angle", unit = "rad", displayUnit = "deg");
-//
-//   external "C" y = asin(u);
-// end Modelica.Math.asin;
-//
-// function Modelica.SIunits.Conversions.from_degC "Convert from °Celsius to Kelvin"
-//   input Real Celsius(quantity = "ThermodynamicTemperature", unit = "degC") "Celsius value";
-//   output Real Kelvin(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0) "Kelvin value";
-// algorithm
-//   Kelvin := 273.15 + Celsius;
-// end Modelica.SIunits.Conversions.from_degC;
-//
-// function Modelica.Thermal.FluidHeatFlow.Media.Medium "Automatically generated record constructor for Modelica.Thermal.FluidHeatFlow.Media.Medium"
-//   input Real rho(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 1.0;
-//   input Real cp(quantity = "SpecificHeatCapacity", unit = "J/(kg.K)") = 1.0;
-//   input Real cv(quantity = "SpecificHeatCapacity", unit = "J/(kg.K)") = 1.0;
-//   input Real lamda(quantity = "ThermalConductivity", unit = "W/(m.K)") = 1.0;
-//   input Real nue(quantity = "KinematicViscosity", unit = "m2/s", min = 0.0) = 1.0;
-//   output Medium res;
-// end Modelica.Thermal.FluidHeatFlow.Media.Medium;
-//
 // class Toneco_PEXPipe
 //   parameter Real medium.rho(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = 1.0 "density";
 //   parameter Real medium.cp(quantity = "SpecificHeatCapacity", unit = "J/(kg.K)") = 1.0 "specific heat capacity at constant pressure";
 //   parameter Real medium.cv(quantity = "SpecificHeatCapacity", unit = "J/(kg.K)") = 1.0 "specific heat capacity at constant volume";
 //   parameter Real medium.lamda(quantity = "ThermalConductivity", unit = "W/(m.K)") = 1.0 "thermal conductivity";
 //   parameter Real medium.nue(quantity = "KinematicViscosity", unit = "m2/s", min = 0.0) = 1.0 "kinematic viscosity";
-//   parameter Real m(quantity = "Mass", unit = "kg", min = 0.0) = 1.0 "mass of medium";
+//   final parameter Real m(quantity = "Mass", unit = "kg", min = 0.0) = 1.0 "mass of medium";
 //   parameter Real T0(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0) = 293.15 "initial temperature of medium";
 //   Real dp(quantity = "Pressure", unit = "Pa", displayUnit = "bar") = flowPort_a.p - flowPort_b.p "pressure drop a->b";
 //   Real V_flow(quantity = "VolumeFlowRate", unit = "m3/s") = flowPort_a.m_flow / medium.rho "Volume flow a->b";
@@ -1023,28 +999,28 @@ end Toneco_PEXPipe;
 //   parameter Real h_g(quantity = "Length", unit = "m") = 0.0 "geodetic height (heigth difference from flowPort_a to flowPort_b)";
 // initial algorithm
 //   assert(V_flowNominal > V_flowLaminar, "SimpleFriction: V_flowNominal has to be > V_flowLaminar!");
-//   k := dpLaminar * V_flowNominal / V_flowLaminar;
+//   k := dpLaminar / V_flowLaminar * V_flowNominal;
 //   assert(dpNominal >= k, "SimpleFriction: dpNominal has to be > dpLaminar*V_flowNominal/V_flowLaminar!");
 //   k := (dpNominal - k) / (V_flowNominal - V_flowLaminar) ^ 2.0;
 // equation
+//   flowPort_a.m_flow = 0.0;
+//   flowPort_a.H_flow = 0.0;
+//   flowPort_b.m_flow = 0.0;
+//   flowPort_b.H_flow = 0.0;
 //   VolumeFlow = V_flow;
-//   dp = pressureDrop + 9.806649999999999 * medium.rho * h_g;
+//   dp = pressureDrop + medium.rho * 9.80665 * h_g;
 //   Q_flow = Q_friction;
-//   flowPort_a.m_flow + flowPort_b.m_flow = 0.0;
-//   flowPort_a.H_flow + flowPort_b.H_flow + Q_flow = m * medium.cv * der(T);
-//   flowPort_a.H_flow = semiLinear(flowPort_a.m_flow, flowPort_a.h, h);
-//   flowPort_b.H_flow = semiLinear(flowPort_b.m_flow, flowPort_b.h, h);
 //   if VolumeFlow > V_flowLaminar then
-//     pressureDrop = dpLaminar * VolumeFlow / V_flowLaminar + k * (VolumeFlow - V_flowLaminar) ^ 2.0;
+//     pressureDrop = dpLaminar / V_flowLaminar * VolumeFlow + k * (VolumeFlow - V_flowLaminar) ^ 2.0;
 //   elseif VolumeFlow < (-V_flowLaminar) then
-//     pressureDrop = dpLaminar * VolumeFlow / V_flowLaminar - k * (VolumeFlow + V_flowLaminar) ^ 2.0;
+//     pressureDrop = dpLaminar / V_flowLaminar * VolumeFlow - k * (VolumeFlow + V_flowLaminar) ^ 2.0;
 //   else
-//     pressureDrop = dpLaminar * VolumeFlow / V_flowLaminar;
+//     pressureDrop = dpLaminar / V_flowLaminar * VolumeFlow;
 //   end if;
 //   Q_friction = frictionLoss * VolumeFlow * pressureDrop;
-//   flowPort_a.H_flow = 0.0;
-//   flowPort_a.m_flow = 0.0;
-//   flowPort_b.H_flow = 0.0;
-//   flowPort_b.m_flow = 0.0;
+//   flowPort_a.m_flow + flowPort_b.m_flow = 0.0;
+//   flowPort_a.H_flow + flowPort_b.H_flow + Q_flow = medium.cv * der(T);
+//   flowPort_a.H_flow = semiLinear(flowPort_a.m_flow, flowPort_a.h, h);
+//   flowPort_b.H_flow = semiLinear(flowPort_b.m_flow, flowPort_b.h, h);
 // end Toneco_PEXPipe;
 // endResult

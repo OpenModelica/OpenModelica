@@ -21,7 +21,6 @@ equation
   when (S < 10e-5) then
     terminate("Simulation terminated");
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Epidemics1;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -36,13 +35,13 @@ end Epidemics1;
 //   parameter Real k = 4.0 "recovery coefficient (from 4people infected one is recoved)";
 // equation
 //   der(Indv) = tau * Indv * S - Indv / k;
-//   der(S) = (-tau) * Indv * S;
+//   der(S) = -tau * Indv * S;
 //   der(R) = Indv / k;
-//   when Indv < 0.0001 then
-//   terminate("Simulation terminated");
+//   when Indv < 1e-4 then
+//     terminate("Simulation terminated");
 //   end when;
-//   when S < 0.0001 then
-//   terminate("Simulation terminated");
+//   when S < 1e-4 then
+//     terminate("Simulation terminated");
 //   end when;
 // end Epidemics1;
 // endResult

@@ -20,20 +20,9 @@ end func;
 
 model CatFunc
   Real x[:] = func(3, 5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CatFunc;
 
 // Result:
-// function func
-//   input Integer x1;
-//   input Integer x2;
-//   output Real[x1 + x2] result;
-//   protected parameter Real[x1] vec1 = /*Real[:]*/(array(i for i in 1:x1));
-//   protected parameter Real[x2] vec2 = /*Real[:]*/(array(i for i in 1:x2));
-// algorithm
-//   result := cat(1, vec1, vec2);
-// end func;
-//
 // class CatFunc
 //   Real x[1];
 //   Real x[2];

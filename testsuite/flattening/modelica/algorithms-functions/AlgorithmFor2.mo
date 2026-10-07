@@ -13,7 +13,6 @@ algorithm
   for i in 1:N-1 loop
     a[i+1] := a[i] + 1.0;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor2;
 
 // Result:
@@ -26,7 +25,11 @@ end AlgorithmFor2;
 // algorithm
 //   a[1] := 1.0;
 //   for i in 1:3 loop
-//     a[1 + i] := 1.0 + a[i];
+//     a[i + 1] := a[i] + 1.0;
 //   end for;
 // end AlgorithmFor2;
+// [flattening/modelica/algorithms-functions/AlgorithmFor2.mo:9:3-9:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/algorithms-functions/AlgorithmFor2.mo:10:3-10:12:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/algorithms-functions/AlgorithmFor2.mo:12:3-12:14:writable] Warning: Algorithm sections are deprecated in class.
+//
 // endResult

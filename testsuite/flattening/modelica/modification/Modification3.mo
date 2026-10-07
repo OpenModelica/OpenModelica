@@ -16,7 +16,6 @@ end B;
 
 class Modification3
   B b(redeclare class A=A.AA(p=2),a2(p=4));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification3;
 
 // Result:
@@ -24,4 +23,9 @@ end Modification3;
 //   parameter Real b.a.p = 2.0;
 //   parameter Real b.a2.p = 4.0;
 // end Modification3;
+// [flattening/modelica/modification/Modification3.mo:7:5-7:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Modification3.mo:13:3-13:6:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Modification3.mo:14:3-14:7:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Modification3.mo:18:3-18:43:writable] Warning: Components are deprecated in class.
+//
 // endResult

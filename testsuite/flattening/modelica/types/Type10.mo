@@ -18,7 +18,6 @@ model test
   Integer2 t2(max=8);
   TypeInteger t3;
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 // Result:

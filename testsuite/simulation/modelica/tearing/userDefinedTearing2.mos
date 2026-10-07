@@ -1,7 +1,6 @@
 // name:      userDefinedTearing2
 // keywords:  user defined tearing
 // status:    correct
-// cflags: -d=-newInst
 
 loadFile("Algorithm2.mo"); getErrorString();
 
@@ -27,7 +26,7 @@ val(c,0.5); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Algorithm2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Algorithm2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Algorithm2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -56,7 +55,7 @@ val(c,0.5); getErrorString();
 //  * Linear torn systems (#iteration vars, #inner vars, density): 0 systems
 //  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
 //    {(4,4)}
-// Error: There is no possible matching for a user-defined tearing set.
+// Error: Wrong usage of user defined tearing: The number of tearing variables and residual equations is not identical. Make sure you use user defined tearing as stated in the flag description.
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -83,17 +82,17 @@ val(c,0.5); getErrorString();
 // "
 // -0.5
 // ""
-// -0.2933812051163163
+// -0.2933812051163162
 // ""
-// 1.059928192325525
+// 1.0599281923255255
 // ""
-// 0.7066187948836836
+// 0.7066187948836837
 // ""
-// -0.3533093974418418
+// -0.35330939744184187
 // ""
-// -0.3533093974418418
+// -0.35330939744184187
 // ""
-// -0.7066187948836835
+// -0.7066187948836837
 // ""
 // -0.2397127693021015
 // ""

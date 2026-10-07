@@ -16,13 +16,11 @@ function EnumFuncRel
 algorithm
   if f == E.one then
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumFuncRel;
 
 // Result:
 // Error processing file: EnumFuncRel.mo
-// [flattening/modelica/enums/EnumFuncRel.mo:17:3-18:9:writable] Error: Cannot resolve type of expression f == E.one. The operands have types .f<function>() => #enumeration(one, two, three), enumeration(one, two, three) in component <NO COMPONENT>.
-// Error: Error occurred while flattening model EnumFuncRel
+// [flattening/modelica/enums/EnumFuncRel.mo:15:1-19:16:writable] Error: Cannot instantiate EnumFuncRel due to class specialization function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

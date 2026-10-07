@@ -1,6 +1,5 @@
 // name: Bug3282.mos [BUG: #3282]
 // status: correct
-// cflags: -d=-newInst
 
 loadString("model M Real a; end M;"); getErrorString();
 list(M); getErrorString();

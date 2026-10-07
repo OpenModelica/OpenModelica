@@ -2,7 +2,6 @@
 // keywords: EventHandling, Relations
 // status: correct
 // teardown_command: rm -rf testnoEventsFlag* output.log
-// cflags: -d=-newInst
 
 loadString("
 model testnoEventsFlag

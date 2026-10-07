@@ -1,6 +1,5 @@
 // name: AlgPatternm
 // status: correct
-// cflags: -d=-newInst
 // suite: metamodelica
 // suite: smoke
 

@@ -2,7 +2,6 @@
 // keywords:  hpcom
 // status:    correct
 // depends:   ElectricalCircuit_eqs_prof.json
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"4.1.0"}); getErrorString();
@@ -56,6 +55,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit_res.ma
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {"Taskgraph correct"}
+// {"Node '{2:1}(id: Node3)' is not part of the second graph.", "Taskgraph not correct"}
 // {"Files Equal!"}
 // endResult

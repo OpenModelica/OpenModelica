@@ -29,28 +29,18 @@ class ExternalFunctionBuiltin
   Real r2 = sin2(time);
   Real r3 = cos(time);
   Real r4 = cos2(time);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExternalFunctionBuiltin;
 
 // Result:
-// function ExternalFunctionBuiltin.cos
-//   input Real r;
-//   output Real o;
-//
-//   external "C" o = cos(r);
-// end ExternalFunctionBuiltin.cos;
-//
-// function ExternalFunctionBuiltin.cos2
-//   input Real r;
-//   output Real o;
-//
-//   external "C" o = cos(r);
-// end ExternalFunctionBuiltin.cos2;
-//
 // class ExternalFunctionBuiltin
 //   Real r1 = sin(time);
 //   Real r2 = sin(time);
 //   Real r3 = cos(time);
 //   Real r4 = cos(time);
 // end ExternalFunctionBuiltin;
+// [flattening/modelica/external-functions/ExternalFunctionBuiltin.mo:28:3-28:22:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/external-functions/ExternalFunctionBuiltin.mo:29:3-29:23:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/external-functions/ExternalFunctionBuiltin.mo:30:3-30:22:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/external-functions/ExternalFunctionBuiltin.mo:31:3-31:23:writable] Warning: Components are deprecated in class.
+//
 // endResult

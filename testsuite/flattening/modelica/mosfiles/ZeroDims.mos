@@ -1,7 +1,6 @@
 //name:        Check model with zero dimension arrays.
 //keyword:     checking models.
 //status:      correct
-// cflags: -d=-newInst
 //
 //
 // check model example
@@ -29,10 +28,12 @@ instantiateModel(ZeroDims); getErrorString();
 // "Check of ZeroDims completed successfully.
 // Class ZeroDims has 0 equation(s) and 0 variable(s).
 // 0 of these are trivial equation(s)."
-// ""
+// "[flattening/modelica/mosfiles/ZeroDims.mo:7:3-7:48:writable] Notification: Top-level input 'lines' has a binding equation and will not be accessible as an input of the model.
+// "
 // "class ZeroDims
-//   parameter Integer n = 0;
+//   final parameter Integer n = 0;
 // end ZeroDims;
 // "
-// ""
+// "[flattening/modelica/mosfiles/ZeroDims.mo:7:3-7:48:writable] Notification: Top-level input 'lines' has a binding equation and will not be accessible as an input of the model.
+// "
 // endResult

@@ -1655,7 +1655,8 @@ Simulation Options
 
     -  *Enable parallelization of independent systems of equations (Experimental)*
 
-    -  *Enable old frontend for code generation*
+    -  *Enable old frontend for code generation (deprecated)* - the old frontend
+       will be removed after OpenModelica 1.28.0 is released.
 
     -  *Enable FMU Import* - See :ref:`fmi-import`.
 

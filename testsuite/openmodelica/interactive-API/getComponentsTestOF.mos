@@ -1,7 +1,7 @@
 // name: getComponentsTestOF.mos
 // keywords:
 // status: correct
-// cflags: -d=-newInst,-nfAPI
+// cflags: -d=-nfAPI
 //
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();

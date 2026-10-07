@@ -29,7 +29,6 @@ end ConditionalComponent;
 model Array1
   Integer x[5] = {1,2,3,4,5};
   Integer y[3] = 1:3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array1;
 
 // Result:
@@ -44,6 +43,6 @@ end Array1;
 //   Integer y[3];
 // equation
 //   x = {1, 2, 3, 4, 5};
-//   y = {1, 2, 3};
+//   y = 1:3;
 // end Array1;
 // endResult

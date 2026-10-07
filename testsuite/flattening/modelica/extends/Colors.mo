@@ -21,7 +21,6 @@ model Colors
   Real k;
 equation
   k = c.green;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Colors;
 // Result:
 // class Colors
@@ -33,4 +32,6 @@ end Colors;
 //   c.red + c.blue + c.green = 1.0;
 //   k = c.green;
 // end Colors;
+// [flattening/modelica/extends/Colors.mo:16:3-16:25:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

@@ -11,20 +11,9 @@ end ConstantRecord;
 
 model ConstantDeclRecord
   constant ConstantRecord cr(r = 2.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstantDeclRecord;
 
 // Result:
-// function ConstantRecord "Automatically generated record constructor for ConstantRecord"
-//   input Real r;
-//   output ConstantRecord res;
-// end ConstantRecord;
-//
-// function ConstantRecord$cr "Automatically generated record constructor for ConstantRecord$cr"
-//   input Real r;
-//   output ConstantRecord$cr res;
-// end ConstantRecord$cr;
-//
 // class ConstantDeclRecord
 //   constant Real cr.r = 2.0;
 // end ConstantDeclRecord;

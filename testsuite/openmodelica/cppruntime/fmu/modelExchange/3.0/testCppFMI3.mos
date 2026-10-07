@@ -2,7 +2,6 @@
 // keywords: FMI 3.0 export Cpp
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml testCppFMI3.fmu testCppFMI3.fmutmp output.log
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 

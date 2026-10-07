@@ -9,15 +9,14 @@ model DiagonalSimplify1
   parameter Integer N = 2;
   parameter Real p[N] = ones(N);
   parameter Real m[N] = (diagonal(p) * fill(2.0,N));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DiagonalSimplify1;
 
 // Result:
 // class DiagonalSimplify1
-//   parameter Integer N = 2;
+//   final parameter Integer N = 2;
 //   parameter Real p[1] = 1.0;
 //   parameter Real p[2] = 1.0;
-//   parameter Real m[1] = 2.0;
-//   parameter Real m[2] = 2.0;
+//   parameter Real m[1] = p[1] * 2.0;
+//   parameter Real m[2] = p[2] * 2.0;
 // end DiagonalSimplify1;
 // endResult

@@ -18,7 +18,6 @@ model BlockComponents
 equation
   tb.inInt = 3;
   i = tb.outInt;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockComponents;
 
 // Result:
@@ -27,7 +26,7 @@ end BlockComponents;
 //   Integer tb.inInt;
 //   Integer tb.outInt;
 // equation
-//   0.5 * /*Real*/(tb.outInt) = /*Real*/(tb.inInt);
+//   /*Real*/(tb.outInt) / 2.0 = /*Real*/(tb.inInt);
 //   tb.inInt = 3;
 //   i = tb.outInt;
 // end BlockComponents;

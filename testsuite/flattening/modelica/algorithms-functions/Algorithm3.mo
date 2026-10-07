@@ -10,14 +10,17 @@ class Algorithm3
   Real x;
 algorithm
   x := i;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Algorithm3;
 
 // Result:
 // class Algorithm3
-//   Integer i = integer(10.0 * time);
+//   Integer i = integer(time * 10.0);
 //   Real x;
 // algorithm
 //   x := /*Real*/(i);
 // end Algorithm3;
+// [flattening/modelica/algorithms-functions/Algorithm3.mo:9:3-9:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/algorithms-functions/Algorithm3.mo:10:3-10:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/algorithms-functions/Algorithm3.mo:12:3-12:9:writable] Warning: Algorithm sections are deprecated in class.
+//
 // endResult

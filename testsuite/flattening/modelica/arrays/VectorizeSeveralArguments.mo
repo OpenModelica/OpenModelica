@@ -11,13 +11,14 @@ class SeveralArguments
   // Result {atan2(a, d), atan2(b, e), atan2(c, f)}
   Real atAdd[2] = atan2Add(2, {a, b}, {d, e});
   // Result {2 + atan2(a, d), 2 + atan2(b, e)}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SeveralArguments;
 
 // Result:
 // Error processing file: VectorizeSeveralArguments.mo
-// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:12:3-12:46:writable] Error: Class atan2Add not found in scope SeveralArguments (looking for a function or record).
-// Error: Error occurred while flattening model SeveralArguments
+// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:9:3-9:48:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:10:3-10:43:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:12:3-12:46:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:12:3-12:46:writable] Error: Function atan2Add not found in scope SeveralArguments.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

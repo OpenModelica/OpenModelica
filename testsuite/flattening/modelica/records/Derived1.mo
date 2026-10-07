@@ -12,16 +12,9 @@ model Derived1
   constant Real p = 2.0;
   constant ThermodynamicState res = ThermodynamicState(T = T, p = p);
   record ThermodynamicState = BaseProps_Tpoly;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Derived1;
 
 // Result:
-// function Derived1.ThermodynamicState "Automatically generated record constructor for Derived1.ThermodynamicState"
-//   input Real T;
-//   input Real p;
-//   output ThermodynamicState res;
-// end Derived1.ThermodynamicState;
-//
 // class Derived1
 //   constant Real T = 1.0;
 //   constant Real p = 2.0;

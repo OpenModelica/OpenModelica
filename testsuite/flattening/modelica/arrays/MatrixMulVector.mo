@@ -6,7 +6,6 @@ model MatrixMulVector
   Real b[:] = {1,2,3,time};
 equation
   A*x = b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixMulVector;
 
 // Result:
@@ -38,7 +37,7 @@ end MatrixMulVector;
 // equation
 //   b = {1.0, 2.0, 3.0, time};
 //   x[1] + 2.0 * x[3] + 3.0 * x[4] = b[1];
-//   2.0 * x[2] - x[1] = b[2];
+//   (-1.0) * x[1] + 2.0 * x[2] = b[2];
 //   2.0 * x[1] = b[3];
 //   x[3] + x[4] = b[4];
 // end MatrixMulVector;

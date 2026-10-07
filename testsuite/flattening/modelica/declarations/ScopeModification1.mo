@@ -14,7 +14,6 @@ class ScopeModification1
   end Inner;
   Real a=1;
   Inner m(b = a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeModification1;
 
 // Result:
@@ -23,4 +22,9 @@ end ScopeModification1;
 //   Real m.a = 2.0;
 //   Real m.b = a;
 // end ScopeModification1;
+// [flattening/modelica/declarations/ScopeModification1.mo:12:5-12:13:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeModification1.mo:13:5-13:11:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeModification1.mo:15:3-15:11:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeModification1.mo:16:3-16:17:writable] Warning: Components are deprecated in class.
+//
 // endResult

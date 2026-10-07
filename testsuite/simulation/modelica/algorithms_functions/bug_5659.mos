@@ -61,13 +61,16 @@ checkModel(bug_5659_3); getErrorString();
 // "Check of bug_5659_1 completed successfully.
 // Class bug_5659_1 has 4 equation(s) and 4 variable(s).
 // 0 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // "Check of bug_5659_2 completed successfully.
 // Class bug_5659_2 has 2 equation(s) and 2 variable(s).
 // 0 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // "Check of bug_5659_3 completed successfully.
 // Class bug_5659_3 has 1 equation(s) and 2 variable(s).
 // 0 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

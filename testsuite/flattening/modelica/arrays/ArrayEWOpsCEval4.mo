@@ -12,7 +12,6 @@ u1={2,3}./{4,5};
 u2={2,3}./5;
 u3=2 ./{4,5};
 t=2 ./4;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOpsCEval4;
 
 // Result:
@@ -33,4 +32,8 @@ end ArrayEWOpsCEval4;
 //   u3[2] = 0.4;
 //   t = 0.5;
 // end ArrayEWOpsCEval4;
+// [flattening/modelica/arrays/ArrayEWOpsCEval4.mo:8:3-8:19:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayEWOpsCEval4.mo:9:3-9:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayEWOpsCEval4.mo:11:1-11:16:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

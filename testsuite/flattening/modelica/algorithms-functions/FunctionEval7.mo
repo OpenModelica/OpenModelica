@@ -30,7 +30,6 @@ model FunctionEval7
   Real y;
 equation
   y = test(x1+x3);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionEval7;
 
 
@@ -69,12 +68,12 @@ end FunctionEval7;
 //   input Real x;
 //   output Real y;
 // algorithm
-//   y := 9.0 + test3(x);
+//   y := test3(x) + 9.0;
 // end test;
 //
 // function test3
 //   input Real a;
-//   output Real x = 5.0 + a;
+//   output Real x = a + 5.0;
 // end test3;
 //
 // class FunctionEval7

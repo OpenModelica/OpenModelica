@@ -11,14 +11,15 @@ class Lookup3
     Real c = a;
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup3;
 
 // Result:
 // Error processing file: Lookup3.mo
-// [flattening/modelica/scoping/Lookup3.mo:13:3-13:6:writable] Error: Variable b: Variable a in package Lookup3 is not constant.
-// [flattening/modelica/scoping/Lookup3.mo:11:5-11:15:writable] Error: Variable a not found in scope Lookup3.B.
-// Error: Error occurred while flattening model Lookup3
+// [flattening/modelica/scoping/Lookup3.mo:11:5-11:15:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup3.mo:9:3-9:15:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup3.mo:13:3-13:6:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup3.mo:9:3-9:15:writable] Notification: From here:
+// [flattening/modelica/scoping/Lookup3.mo:11:5-11:15:writable] Error: Component 'a' was found in an enclosing scope but is not a constant.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

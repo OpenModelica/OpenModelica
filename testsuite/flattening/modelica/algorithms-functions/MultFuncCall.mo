@@ -16,19 +16,10 @@ model MultFuncCall
   Real res;
 equation
   res = Multiply(3.5, 2.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MultFuncCall;
 
 
 // Result:
-// function Multiply
-//   input Real x;
-//   input Real y;
-//   output Real result;
-// algorithm
-//   result := x * y;
-// end Multiply;
-//
 // class MultFuncCall
 //   Real res;
 // equation

@@ -16,18 +16,12 @@ end P;
 class Extends5
   extends P;
   constant Integer i = f(1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends5;
 
 // Result:
-// function Extends5.f
-//   input Integer i;
-//   output Integer out;
-// algorithm
-//   out := i;
-// end Extends5.f;
-//
 // class Extends5
 //   constant Integer i = 1;
 // end Extends5;
+// [flattening/modelica/extends/Extends5.mo:18:3-18:28:writable] Warning: Components are deprecated in class.
+//
 // endResult

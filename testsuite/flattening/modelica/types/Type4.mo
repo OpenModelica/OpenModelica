@@ -10,7 +10,6 @@ model Type4
   Real r = 18.0                 "a real value";
   String s = "hi"               "a string";
   Boolean b = false             "a boolean";
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type4;
 
 // Result:

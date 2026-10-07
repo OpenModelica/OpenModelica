@@ -13,15 +13,9 @@ end P;
 
 model ComponentNames
   P.R R;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComponentNames;
 
 // Result:
-// function P.R "Automatically generated record constructor for P.R"
-//   input Real x;
-//   output R res;
-// end P.R;
-//
 // class ComponentNames
 //   Real R.x;
 // end ComponentNames;

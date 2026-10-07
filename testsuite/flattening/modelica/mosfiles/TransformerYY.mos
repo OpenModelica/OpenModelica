@@ -13,5 +13,6 @@ getErrorString();
 // "Check of Modelica.Electrical.MultiPhase.Examples.TransformerYY completed successfully.
 // Class Modelica.Electrical.MultiPhase.Examples.TransformerYY has 257 equation(s) and 257 variable(s).
 // 202 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

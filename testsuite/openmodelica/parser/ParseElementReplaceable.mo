@@ -12,11 +12,12 @@ end Palette;
 
 Palette p(redeclare replaceable Real c1);
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParseElementReplaceable;
 
 // Result:
 // class ParseElementReplaceable
 //   Real p.c1;
 // end ParseElementReplaceable;
+// [openmodelica/parser/ParseElementReplaceable.mo:10:3-10:25:writable] Warning: Components are deprecated in class.
+//
 // endResult

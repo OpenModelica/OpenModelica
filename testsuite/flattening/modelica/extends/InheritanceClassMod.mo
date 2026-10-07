@@ -11,7 +11,6 @@ end A;
 
 class B
   extends A(a = 2.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:

@@ -11,7 +11,6 @@ equation
   when Clock(time > 0.5) then
     x = previous(x) + 1;
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenClocks;
 
 // Result:
@@ -19,10 +18,10 @@ end WhenClocks;
 //   Real x;
 // equation
 //   when Clock() then
-//     x = 1.0 + previous(x);
+//     x = previous(x) + 1.0;
 //   end when;
 //   when Clock(time > 0.5, 0.0) then
-//     x = 1.0 + previous(x);
+//     x = previous(x) + 1.0;
 //   end when;
 // end WhenClocks;
 // endResult

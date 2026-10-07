@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.QuasiStatic.SinglePhase.Examples.ParallelResonance
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

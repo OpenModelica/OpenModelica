@@ -13,7 +13,6 @@ end Container;
 
 class Lookup4
   Real b = Container.a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup4;
 
 
@@ -21,4 +20,7 @@ end Lookup4;
 // class Lookup4
 //   Real b = 3.0;
 // end Lookup4;
+// [flattening/modelica/scoping/Lookup4.mo:15:3-15:23:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup4.mo:11:3-11:24:writable] Warning: Components are deprecated in class.
+//
 // endResult

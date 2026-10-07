@@ -22,6 +22,7 @@ end MatchShadowing;
 
 // Result:
 // Error processing file: MatchShadowing.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [metamodelica/meta/MatchShadowing.mo:14:7-14:13:writable] Error: Local variable 'x' shadows another variable.
 // Error: Error occurred while flattening model MatchShadowing
 //

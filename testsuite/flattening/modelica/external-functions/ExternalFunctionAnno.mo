@@ -56,44 +56,10 @@ equation
  der(z[1:2])=z[2:3];
  z[3]=u[3];
  der(u[1:2])=u[2:3];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end extfunction;
 
 // Result:
-// function FooFunctions.foo0
-//   input Real x;
-//   output Real y;
-//
-//   external "C" y = sin(x);
-// end FooFunctions.foo0;
-//
-// function FooFunctions.foo1
-//   input Real x;
-//   input Real der_x;
-//   output Real der_y;
-//
-//   external "C" der_y = cos(x);
-// end FooFunctions.foo1;
-//
-// function FooFunctions.foo2
-//   input Real x;
-//   input Real der_x;
-//   input Real derder_x;
-//   input Real derderder_x;
-//   output Real der_der_y;
-//
-//   external "C" der_der_y = sin(x);
-// end FooFunctions.foo2;
-//
-// function df1
-//   input Real a;
-//   input Real b;
-//   output Real c;
-//
-//   external "C" c = dmyfoo(a, b);
-// end df1;
-//
-// function f1
+// impure function f1
 //   input Real a;
 //   output Real b;
 //
@@ -123,9 +89,4 @@ end extfunction;
 //   der(u[1]) = u[2];
 //   der(u[2]) = u[3];
 // end extfunction;
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:35:3-35:19:writable] Warning: Unused input variable der_x in function .FooFunctions.foo2.
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:36:3-36:22:writable] Warning: Unused input variable derder_x in function .FooFunctions.foo2.
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:37:3-37:25:writable] Warning: Unused input variable derderder_x in function .FooFunctions.foo2.
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:28:3-28:19:writable] Warning: Unused input variable der_x in function .FooFunctions.foo1.
-//
 // endResult

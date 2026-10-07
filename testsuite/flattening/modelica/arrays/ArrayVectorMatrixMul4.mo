@@ -9,7 +9,6 @@ model ArrayVectorMatrixMul4
   Real x[3], y[3, 0], z[0];
 equation
   z = x * y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayVectorMatrixMul4;
 
 // Result:

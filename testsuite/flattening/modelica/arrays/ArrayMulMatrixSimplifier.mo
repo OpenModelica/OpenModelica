@@ -37,4 +37,6 @@ end ArrayMulMatrixSimplifier;
 //   y[1] = A[1,1] * pre(x[1]) + A[1,2] * pre(x[2]) + B[1,1] * u[1];
 //   y[2] = A[2,1] * pre(x[1]) + A[2,2] * pre(x[2]) + B[2,1] * u[1];
 // end ArrayMulMatrixSimplifier;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

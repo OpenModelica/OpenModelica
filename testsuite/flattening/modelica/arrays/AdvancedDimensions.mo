@@ -160,4 +160,6 @@ end AdvancedDimensions;
 //   protected parameter Real r.m1.p_length[25] = sqrt((r.m1.p[25,1] - r.m1.p[26,1]) ^ 2.0 + (r.m1.p[25,2] - r.m1.p[26,2]) ^ 2.0);
 //   protected parameter Real r.m1.p_length[26] = sqrt((r.m1.p[26,1] - r.m1.p[27,1]) ^ 2.0 + (r.m1.p[26,2] - r.m1.p[27,2]) ^ 2.0);
 // end AdvancedDimensions;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

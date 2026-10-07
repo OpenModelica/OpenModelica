@@ -56,4 +56,6 @@ end PartialFn15;
 // class PartialFn15
 //   constant list<#Real> rs = List(#(11.0), #(5.0), #(24.0), #(2.6666666666666665), #(512.0), #(8.0), #(3.0));
 // end PartialFn15;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

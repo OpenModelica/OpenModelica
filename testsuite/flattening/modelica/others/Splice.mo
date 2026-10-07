@@ -5,12 +5,11 @@ model Splice
   parameter Integer dimensions = 5;
   parameter Real myArray[dimensions] = {1,2,3,4,5};
   parameter Real mySumArray[dimensions] = {sum(myArray[1:i]) for i in 1:dimensions};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Splice;
 
 // Result:
 // class Splice
-//   parameter Integer dimensions = 5;
+//   final parameter Integer dimensions = 5;
 //   parameter Real myArray[1] = 1.0;
 //   parameter Real myArray[2] = 2.0;
 //   parameter Real myArray[3] = 3.0;

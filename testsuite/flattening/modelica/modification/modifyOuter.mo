@@ -56,6 +56,7 @@ end inn;
 //   (-ip.i) + (-io.y.i) = 0.0;
 //   io.y.v = ip.v;
 // end inn;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/modification/modifyOuter.mo:15:2-15:19:writable] Warning: Ignoring the modification on outer element: io.la.ip (i = 3), class or component i.
 //
 // endResult

@@ -35,4 +35,6 @@ end TestContinue;
 //   constant Real r1 = 465.0;
 //   constant Real r2 = 465.0;
 // end TestContinue;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

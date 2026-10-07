@@ -2,7 +2,6 @@
 // keywords: kinsol nls initialization assert
 // status: correct
 // teardown_command: rm -rf testNlsFail* output.log
-// cflags: -d=-newInst
 //
 // An initial system with no real solution: eliminating y leaves x^2 = -32/9.
 // The retry ladder gives up, the generated functionDAE throws, and C's

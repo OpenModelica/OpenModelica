@@ -58,4 +58,6 @@ end ArrayAssignWholeDim;
 //   constant Real A[5,3] = 0.3;
 //   constant Real A[5,4] = 0.4;
 // end ArrayAssignWholeDim;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

@@ -17,7 +17,6 @@ class NestedClasses
   NestedClass1 nc1;
   NestedClass2 nc2;
   Integer i;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NestedClasses;
 
 // Result:
@@ -26,4 +25,10 @@ end NestedClasses;
 //   Integer nc2.nestedInt2;
 //   Integer i;
 // end NestedClasses;
+// [flattening/modelica/others/NestedClasses.mo:10:5-10:23:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/NestedClasses.mo:14:5-14:23:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/NestedClasses.mo:17:3-17:19:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/NestedClasses.mo:18:3-18:19:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/others/NestedClasses.mo:19:3-19:12:writable] Warning: Components are deprecated in class.
+//
 // endResult

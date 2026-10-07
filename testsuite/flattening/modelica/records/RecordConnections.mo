@@ -31,4 +31,6 @@ end RecordConnections;
 //   tr1.i = 3;
 //   tr1.i = tr2.i;
 // end RecordConnections;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

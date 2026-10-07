@@ -10,7 +10,6 @@ end P;
 
 model ImportFullyQualified
   import .P;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ImportFullyQualified;
 
 // Result:

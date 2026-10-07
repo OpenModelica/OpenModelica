@@ -1,5 +1,5 @@
 // name: ErrorInteractiveCallFunctionPtr
-// cflags: -g=MetaModelica -d=gen -d=-newInst
+// cflags: -g=MetaModelica -d=gen
 // teardown_command: rm -f ErrorInteractiveCallFunctionPtr_*
 // status: correct
 // suite: metamodelica

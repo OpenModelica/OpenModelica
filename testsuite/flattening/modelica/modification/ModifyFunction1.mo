@@ -18,20 +18,22 @@ model Inverse
   Real head;
 equation
   head = flowCharacteristic(1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Inverse;
 
 // Result:
 // function Inverse.flowCharacteristic
 //   input Real V_flow;
+//   input Real V_flow_nominal = 1.0;
 //   output Real head;
-//   input Real V_flow_nominal = V_flow_op;
 // end Inverse.flowCharacteristic;
 //
 // class Inverse
 //   parameter Real V_flow_op = 1.0;
 //   Real head;
 // equation
-//   head = 0.0;
+//   head = Inverse.flowCharacteristic(1.0, V_flow_op);
 // end Inverse;
+// [flattening/modelica/modification/ModifyFunction1.mo:16:3-16:74:writable] Notification: From here:
+// [flattening/modelica/modification/ModifyFunction1.mo:11:3-11:19:writable] Warning: Output parameter head was not assigned a value
+//
 // endResult

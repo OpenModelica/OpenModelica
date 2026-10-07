@@ -86,7 +86,7 @@ model TestGravityAcceleration
   Real gravity[3];
 equation
   gravity = w.gravityAcceleration({1,5,6});
-  annotation(__OpenModelica_commandLineOptions="-d=gen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-d=gen");
 end TestGravityAcceleration;
 
 
@@ -124,15 +124,15 @@ end TestGravityAcceleration;
 //   result := smooth(0, if Math.length(v) >= eps then v / Math.length(v) else v / eps);
 // end Math.normalize;
 //
-// function World.gravityAcceleration "Gravity field acceleration depending on field type and position"
+// function TestGravityAcceleration.w.gravityAcceleration
 //   input Real[3] r "Position vector from world frame to actual point, resolved in world frame";
-//   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = gravityType "Type of gravity field";
-//   input Real[3] g = {0.0, -g, 0.0} "Constant gravity acceleration, resolved in world frame, if gravityType=1";
-//   input Real mue(unit = "m3/s2") = mue "Field constant of point gravity field, if gravityType=2";
+//   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = Types.GravityTypes.UniformGravity "Type of gravity field";
+//   input Real[3] g = {0.0, -9.81, 0.0} "Constant gravity acceleration, resolved in world frame, if gravityType=1";
+//   input Real mue(unit = "m3/s2") = 3.986e14 "Field constant of point gravity field, if gravityType=2";
 //   output Real[3] gravity "Gravity acceleration at point r, resolved in world frame";
 // algorithm
-//   gravity := if gravityType == Types.GravityTypes.UniformGravity then {g[1], g[2], g[3]} else if gravityType == Types.GravityTypes.PointGravity then {(-mue) * r[1] / (Math.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[2] / (Math.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[3] / (Math.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0))} else {0.0, 0.0, 0.0};
-// end World.gravityAcceleration;
+//   gravity := if gravityType == Types.GravityTypes.UniformGravity then g else if gravityType == Types.GravityTypes.PointGravity then {mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[1] / Math.length(r) * (-1.0), mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[2] / Math.length(r) * (-1.0), mue / (r[1] * r[1] + r[2] * r[2] + r[3] * r[3]) * r[3] / Math.length(r) * (-1.0)} else {0.0, 0.0, 0.0};
+// end TestGravityAcceleration.w.gravityAcceleration;
 //
 // class TestGravityAcceleration
 //   parameter Real w.n[1](unit = "1") = 0.0;
@@ -145,10 +145,6 @@ end TestGravityAcceleration;
 //   Real gravity[2];
 //   Real gravity[3];
 // equation
-//   gravity[1] = 0.0;
-//   gravity[2] = -9.81;
-//   gravity[3] = 0.0;
+//   gravity = TestGravityAcceleration.w.gravityAcceleration({1.0, 5.0, 6.0}, w.gravityType, Math.normalize(w.n, 1e-13) * w.g, w.mue);
 // end TestGravityAcceleration;
-// [flattening/modelica/algorithms-functions/TestGravityAcceleration.mo:58:7-61:19:writable] Error: Cyclically dependent constants or parameters found in scope : {gravityType}, {g}, {mue} (ignore with -d=ignoreCycles).
-//
 // endResult

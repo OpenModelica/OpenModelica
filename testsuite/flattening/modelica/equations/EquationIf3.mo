@@ -16,14 +16,17 @@ equation
   else
     x = 3.0;
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationIf3;
 
 // Result:
 // class EquationIf3
-//   parameter Boolean b = false;
+//   final parameter Boolean b = false;
 //   Real x;
 // equation
 //   x = 2.0;
 // end EquationIf3;
+// [flattening/modelica/equations/EquationIf3.mo:9:3-9:30:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/EquationIf3.mo:10:3-10:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/EquationIf3.mo:12:3-18:9:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

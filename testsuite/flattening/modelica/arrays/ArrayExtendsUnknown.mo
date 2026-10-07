@@ -20,7 +20,6 @@ end B;
 class ArrayExtendsUnknown
   extends B;
   D d2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayExtendsUnknown;
 
 // Result:
@@ -29,5 +28,16 @@ end ArrayExtendsUnknown;
 //   constant Real tableDensity[1,2] = 2.0;
 //   constant Real tableDensity[2,1] = 3.0;
 //   constant Real tableDensity[2,2] = 4.0;
+//   constant Real d1.tableDensity2[1,1] = 1.0;
+//   constant Real d1.tableDensity2[1,2] = 2.0;
+//   constant Real d1.tableDensity2[2,1] = 3.0;
+//   constant Real d1.tableDensity2[2,2] = 4.0;
+//   constant Real d2.tableDensity2[1,1] = 1.0;
+//   constant Real d2.tableDensity2[1,2] = 2.0;
+//   constant Real d2.tableDensity2[2,1] = 3.0;
+//   constant Real d2.tableDensity2[2,2] = 4.0;
 // end ArrayExtendsUnknown;
+// [flattening/modelica/arrays/ArrayExtendsUnknown.mo:11:5-11:52:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayExtendsUnknown.mo:22:3-22:7:writable] Warning: Components are deprecated in class.
+//
 // endResult

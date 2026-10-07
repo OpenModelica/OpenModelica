@@ -29,17 +29,14 @@ class RedeclareBaseClass1
 
   constant R r = R(4.0);
   Real x = r.x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareBaseClass1;
 
 // Result:
-// function RedeclareBaseClass1.R "Automatically generated record constructor for RedeclareBaseClass1.R"
-//   input Real x;
-//   output R res;
-// end RedeclareBaseClass1.R;
-//
 // class RedeclareBaseClass1
 //   constant Real r.x = 4.0;
 //   Real x = 4.0;
 // end RedeclareBaseClass1;
+// [flattening/modelica/redeclare/RedeclareBaseClass1.mo:30:3-30:24:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/redeclare/RedeclareBaseClass1.mo:31:3-31:15:writable] Warning: Components are deprecated in class.
+//
 // endResult

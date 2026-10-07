@@ -26,7 +26,6 @@ end ModifiersPriority;
 
 model M
   ModifiersPriority.P2.A a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:
@@ -34,4 +33,7 @@ end M;
 //   parameter Real a.x = 10.0;
 //   parameter Real a.y = 3.0;
 // end M;
+// [flattening/modelica/redeclare/ModifiersPriority.mo:14:6-14:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/redeclare/ModifiersPriority.mo:15:6-15:26:writable] Warning: Components are deprecated in class.
+//
 // endResult

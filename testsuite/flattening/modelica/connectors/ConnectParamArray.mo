@@ -29,4 +29,6 @@ end ConnectParamArray;
 //   assert(c1.e[2] == c2.e[2], "automatically generated from connect");
 //   assert(c1.e[3] == c2.e[3], "automatically generated from connect");
 // end ConnectParamArray;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

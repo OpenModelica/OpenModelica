@@ -1,7 +1,6 @@
 // name:     AssertTest8
 // keywords: assert
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 
@@ -28,7 +27,7 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "AssertTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AssertTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_ASSERT        | warning | [<interactive>:3:3-3:29:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
 // |                 | |       | ((x >= 0.0)) --> \"Variable violating min constraint: 0.0 <= x, has value: -0.5\"
@@ -36,5 +35,8 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[<interactive>:3:3-3:29:writable] Warning: Components are deprecated in class.
+// [<interactive>:4:3-4:34:writable] Warning: Components are deprecated in class.
+// [<interactive>:6:3-6:26:writable] Warning: Equation sections are deprecated in class.
+// "
 // endResult

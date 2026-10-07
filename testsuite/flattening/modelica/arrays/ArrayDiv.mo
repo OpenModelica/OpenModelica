@@ -9,7 +9,6 @@ class ArrayDiv
   Real Div1[3];
 equation
   Div1 = {2, 4, 6} / 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDiv;
 
 // Result:
@@ -22,4 +21,7 @@ end ArrayDiv;
 //   Div1[2] = 2.0;
 //   Div1[3] = 3.0;
 // end ArrayDiv;
+// [flattening/modelica/arrays/ArrayDiv.mo:9:3-9:15:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayDiv.mo:11:3-11:23:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

@@ -19,7 +19,6 @@ model FloatingPoint
   Real x;
 equation
   x = 2e0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FloatingPoint;
 
 // Result:

@@ -2,7 +2,6 @@
 // keywords: kinsol jacobian dumps
 // status: correct
 // teardown_command: rm -rf derDebugTest* output.log
-// cflags: -d=-newInst
 //
 // Test flag LOG_NLS_DERIVATIVE_TEST to detect anomalies in the symbolic Jacobian
 //

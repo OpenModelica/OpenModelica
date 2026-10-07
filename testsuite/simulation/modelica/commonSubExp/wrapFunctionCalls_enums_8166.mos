@@ -1,7 +1,6 @@
 // name: wrapFunctionCalls_enums_8166
 // keywords: cse, wrapFunctionCalls, enums
 // status: correct
-// cflags: -d=-newInst
 
 loadFile("wrapFunctionCalls_enums_8166.mo");
 simulate(logical_op_total);

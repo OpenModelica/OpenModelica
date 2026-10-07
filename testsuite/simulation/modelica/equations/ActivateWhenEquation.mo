@@ -14,7 +14,6 @@ equation
   end when;
   when terminal() then z = x - 2; // Equations to be activated at the end of the simulation
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Activate;
 
 //

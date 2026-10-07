@@ -17,7 +17,6 @@ model InStreamUnconnected
   Real instream_s;
 equation
   instream_s = inStream(s.s);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamUnconnected;
 
 // Result:
@@ -27,7 +26,7 @@ end InStreamUnconnected;
 //   Real s.s;
 //   Real instream_s;
 // equation
-//   instream_s = s.s;
 //   s.f = 0.0;
+//   instream_s = s.s;
 // end InStreamUnconnected;
 // endResult

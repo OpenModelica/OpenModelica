@@ -6,7 +6,6 @@
 model Assign4
 equation
   x := res;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Assign4;
 
 // Result:

@@ -3734,6 +3734,9 @@ algorithm
 
     case (false, false)
       algorithm
+        if not nf_inst_actual then
+          Error.addMessage(Error.OLD_FRONTEND_DEPRECATED, {});
+        end if;
         scodeP := SymbolTable.getSCode();
         ExecStat.execStat("FrontEnd - Absyn->SCode");
 

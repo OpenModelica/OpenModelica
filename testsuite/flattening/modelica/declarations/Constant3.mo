@@ -11,7 +11,6 @@ class Constant3
 equation
   x[N-1] = 2.0;
   x[{1,N}] = {1,time};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant3;
 
 // Result:
@@ -25,4 +24,8 @@ end Constant3;
 //   x[1] = 1.0;
 //   x[3] = time;
 // end Constant3;
+// [flattening/modelica/declarations/Constant3.mo:9:3-9:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/Constant3.mo:10:3-10:12:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/Constant3.mo:12:3-12:15:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

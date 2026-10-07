@@ -1,7 +1,7 @@
 // name:     boolSubClocks
 // keywords: synchronous features, cpp
 // status: correct
-// cflags: -d=-newInst --std=3.3
+// cflags: --std=3.3
 //
 loadModel(Modelica, {"4.1.0"});getErrorString();
 

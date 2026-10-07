@@ -28,7 +28,6 @@ class ConnectHierarchical1
 equation
   connect(a.c1, a.c2);
   connect(c, a.c1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectHierarchical1;
 
 // Result:
@@ -42,11 +41,19 @@ end ConnectHierarchical1;
 //   Real c.f = 1.0;
 //   Real c.e = 1.0;
 // equation
-//   a.b.c.f + (-a.c1.f) = 0.0;
-//   a.c1.f + a.c2.f + (-c.f) = 0.0;
-//   a.b.c.e = a.c1.e;
+//   a.c1.e = a.b.c.e;
+//   a.b.c.f - a.c1.f = 0.0;
+//   c.e = a.c1.e;
+//   c.e = a.c2.e;
+//   a.c2.f + a.c1.f - c.f = 0.0;
 //   c.f = 0.0;
-//   a.c1.e = a.c2.e;
-//   a.c1.e = c.e;
 // end ConnectHierarchical1;
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:15:3-15:14:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:19:3-19:6:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:20:3-20:28:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:22:3-22:19:writable] Warning: Equation sections are deprecated in class.
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:26:3-26:6:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:27:3-27:32:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/connectors/ConnectHierarchical1.mo:29:3-29:22:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

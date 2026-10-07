@@ -1,7 +1,7 @@
 // name: EventSubClock
 // keywords: synchronous clocked equations
 // status: correct
-// cflags: -d=-newInst --std=3.3
+// cflags: --std=3.3
 
 loadFile("EventSubClock.mo");getErrorString();
 simulate(EventSubClock);getErrorString();

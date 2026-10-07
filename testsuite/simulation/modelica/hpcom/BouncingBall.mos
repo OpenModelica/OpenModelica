@@ -2,7 +2,6 @@
 // keywords:  hpcom
 // status:    correct
 // depends:   BouncingBall_eqs_prof.json
-// cflags: -d=-newInst
 //
 
 loadFile("BouncingBall.mo"); getErrorString();

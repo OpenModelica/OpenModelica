@@ -7,11 +7,12 @@
 
 class Class2
   Real x = 17.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Class2;
 
 // Result:
 // class Class2
 //   Real x = 17.0;
 // end Class2;
+// [flattening/modelica/others/Class2.mo:9:3-9:16:writable] Warning: Components are deprecated in class.
+//
 // endResult

@@ -19,7 +19,6 @@ model Vectorizable1
 equation
   x=foo({a,b,c})+foo({1,2,3});
   der(s)=-fill(1,2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Vectorizable1;
 
 // Result:
@@ -27,7 +26,7 @@ end Vectorizable1;
 //   input Real x;
 //   output Real y;
 // algorithm
-//   y := 1.0 + x;
+//   y := x + 1.0;
 // end foo;
 //
 // class Vectorizable1
@@ -40,9 +39,7 @@ end Vectorizable1;
 //   Real b;
 //   Real c;
 // equation
-//   x[1] = foo(a) + 2.0;
-//   x[2] = foo(b) + 3.0;
-//   x[3] = foo(c) + 4.0;
+//   x = array(foo({a, b, c}[$i0]) for $i0 in 1:3) + array(foo({1.0, 2.0, 3.0}[$i1]) for $i1 in 1:3);
 //   der(s[1]) = -1.0;
 //   der(s[2]) = -1.0;
 // end Vectorizable1;

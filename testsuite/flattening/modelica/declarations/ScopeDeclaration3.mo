@@ -14,7 +14,6 @@ equation
   x = y;
 public
   Real y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeDeclaration3;
 
 // Result:
@@ -24,4 +23,8 @@ end ScopeDeclaration3;
 // equation
 //   x = y;
 // end ScopeDeclaration3;
+// [flattening/modelica/declarations/ScopeDeclaration3.mo:12:3-12:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeDeclaration3.mo:16:3-16:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeDeclaration3.mo:14:3-14:8:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

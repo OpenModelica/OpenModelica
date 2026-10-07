@@ -4027,7 +4027,8 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   pID.PV = plant.generatedPower;
 // end ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator;
 // "
-// "[flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:971:11-971:36:writable] Warning: Unused input variable tableAvailable in function .Modelica.Blocks.Tables.CombiTable2D$plant$compressor$Eta.getTableValue.
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:971:11-971:36:writable] Warning: Unused input variable tableAvailable in function .Modelica.Blocks.Tables.CombiTable2D$plant$compressor$Eta.getTableValue.
 // [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:971:11-971:36:writable] Warning: Unused input variable tableAvailable in function .Modelica.Blocks.Tables.CombiTable2D$plant$compressor$PressRatio.getTableValue.
 // [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:971:11-971:36:writable] Warning: Unused input variable tableAvailable in function .Modelica.Blocks.Tables.CombiTable2D$plant$compressor$Phic.getTableValue.
 // [flattening/modelica/others/ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo:971:11-971:36:writable] Warning: Unused input variable tableAvailable in function .Modelica.Blocks.Tables.CombiTable2D$plant$turbine$Phic.getTableValue.

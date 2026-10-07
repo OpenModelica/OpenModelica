@@ -2,7 +2,6 @@
 // keywords: fmi assert null threadData
 // status: correct
 // teardown_command: rm -rf issue10978.fmu issue10978_me_FMU* output.log binaries sources modelDescription.xml resources issue10978.log issue10978_info.json
-// cflags: -d=-newInst
 
 loadString("
 model issue10978

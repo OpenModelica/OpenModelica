@@ -15,7 +15,6 @@ algorithm
   B := fill(1,2,2); // B will have the values {{1, 1}, {1, 1}}
   B[2, 1] := 8; // Assignment to the array element B[2, 1]
   c := A[1, 1];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayIndex;
 
 // Result:
@@ -37,4 +36,10 @@ end ArrayIndex;
 //   B[2,1] := 8.0;
 //   c := A[1,1];
 // end ArrayIndex;
+// [flattening/modelica/arrays/ArrayIndex.mo:10:3-10:34:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex.mo:11:3-11:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex.mo:12:3-12:15:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex.mo:13:3-13:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex.mo:15:3-15:19:writable] Warning: Algorithm sections are deprecated in class.
+//
 // endResult

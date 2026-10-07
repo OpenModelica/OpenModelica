@@ -28,20 +28,15 @@ class myTanCall
   Real t;
 equation
   t = myTan(1.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end myTanCall;
 
 // Result:
-// function myTan
-//   input Real x;
-//   output Real result;
-// algorithm
-//   result := tan(x);
-// end myTan;
-//
 // class myTanCall
 //   Real t;
 // equation
 //   t = 1.557407724654902;
 // end myTanCall;
+// [flattening/modelica/extends/OneArgBaseFunction.mo:28:3-28:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/extends/OneArgBaseFunction.mo:30:3-30:17:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

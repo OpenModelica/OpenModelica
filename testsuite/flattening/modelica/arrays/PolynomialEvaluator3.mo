@@ -27,27 +27,15 @@ class NamedCall
   Real p;
 equation
   p = PolynomialEvaluator2(A = {1, 2, 3, 4}, x = 21);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NamedCall;
 
 // Result:
-// function PolynomialEvaluator2
-//   input Real[:] A;
-//   input Real x = 1.0;
-//   output Real sum;
-//   protected Real xpower;
-// algorithm
-//   sum := 0.0;
-//   xpower := 1.0;
-//   for i in 1:size(A, 1) loop
-//     sum := sum + A[i] * xpower;
-//     xpower := xpower * x;
-//   end for;
-// end PolynomialEvaluator2;
-//
 // class NamedCall
 //   Real p;
 // equation
 //   p = 38410.0;
 // end NamedCall;
+// [flattening/modelica/arrays/PolynomialEvaluator3.mo:27:3-27:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/PolynomialEvaluator3.mo:29:3-29:53:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

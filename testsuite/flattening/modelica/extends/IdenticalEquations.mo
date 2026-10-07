@@ -17,7 +17,6 @@ class Color2
   extends Color;
 equation
   red + blue + green = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Color2;
 
 // Result:
@@ -29,4 +28,6 @@ end Color2;
 //   red + blue + green = 1.0;
 //   red + blue + green = 1.0;
 // end Color2;
+// [flattening/modelica/extends/IdenticalEquations.mo:19:3-19:25:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

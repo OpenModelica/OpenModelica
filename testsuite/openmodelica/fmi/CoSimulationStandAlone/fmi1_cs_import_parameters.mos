@@ -2,7 +2,6 @@
 // keywords: fmi import co-simulation parameter
 // status:   correct
 // teardown_command: rm -rf vanDerPol_cs_st_FMU.mo binaries sources documentation resources model.png modelDescription.xml vanDerPol.log vanDerPol_info.json output.log
-// cflags:   -d=-newInst
 //
 // importFMU1CoSimulationStandAlone computed all sixteen parameter bindings and then never
 // referenced a single one of them, so an imported FMI 1.0 Co-Simulation FMU was never told

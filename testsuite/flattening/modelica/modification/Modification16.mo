@@ -16,7 +16,6 @@ model Modification16
   end Inertia;
 
   Inertia inertia1(w.start = 1, w.stateSelect=StateSelect.always, J=1, phi.start=0, phi.stateSelect=StateSelect.always);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification16;
 
 // Result:

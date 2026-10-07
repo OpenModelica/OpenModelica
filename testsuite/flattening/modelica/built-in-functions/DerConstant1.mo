@@ -13,7 +13,6 @@ class DerConstant1
   parameter Real[1,2,1,2] pc = {{{{1,2}},{{3,4}}}};
   Real[1,2,1,2] c = der(pc);
   Real[1,2,1,2] d = der({{{{1.0,2.0}},{{3.0,4.0}}}});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DerConstant1;
 
 // Result:
@@ -37,4 +36,11 @@ end DerConstant1;
 //   c = {{{{0.0, 0.0}}, {{0.0, 0.0}}}};
 //   d = {{{{0.0, 0.0}}, {{0.0, 0.0}}}};
 // end DerConstant1;
+// [flattening/modelica/built-in-functions/DerConstant1.mo:10:3-10:23:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant1.mo:11:3-11:19:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant1.mo:12:3-12:20:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant1.mo:13:3-13:51:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant1.mo:14:3-14:28:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant1.mo:15:3-15:53:writable] Warning: Components are deprecated in class.
+//
 // endResult

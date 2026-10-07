@@ -21,13 +21,11 @@ equation
     connect(c1, c2);
     connect(c2, c3);
   end if;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectInNonParamIf;
 
 // Result:
 // Error processing file: ConnectInNonParamIf.mo
 // [flattening/modelica/equations/ConnectInNonParamIf.mo:18:5-18:20:writable] Error: connect may not be used inside if- or for-equations with non-evaluable conditions or iteration ranges.
-// Error: Error occurred while flattening model ConnectInNonParamIf
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
