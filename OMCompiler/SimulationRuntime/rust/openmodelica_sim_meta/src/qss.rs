@@ -17,7 +17,7 @@ use crate::driver::{
     store_operators, terminated, write_f64, write_i32,
 };
 use crate::omclog;
-use crate::{JacAInfo, Layout as SimLayout, REAL_OFF, SimMeta as SimModel, SolveStats, TIME_OFF};
+use crate::{JacAInfo, Layout as SimLayout, SimMeta as SimModel, SolveStats, TIME_OFF};
 
 /// C's `enum error_msg` as this runtime's error strings. `OO_MEMORY` has no
 /// counterpart: allocation failure aborts here.
@@ -119,7 +119,7 @@ impl Qss {
             qss.dq[i] = 0.0001 * nominal;
             qss.tx[i] = model.start_time;
             qss.tq[i] = model.start_time;
-            qss.qik[i] = read_f64(e, state_addr(sim_data, i))?;
+            qss.qik[i] = read_f64(e, state_addr(sim_data, layout, i))?;
             qss.xik[i] = qss.qik[i];
             qss.der_xik[i] = read_f64(e, der_addr(sim_data, layout, i))?;
             let (d_tnext_q, next_q, _) = delta_q(e, sim_data, layout, qss.dq[i], i)?;
@@ -189,7 +189,7 @@ impl Driver for Qss {
             self.qik[ind] = self.nqh[ind];
 
             self.xik[ind] = self.qik[ind];
-            write_f64(e, state_addr(sim_data, ind), self.qik[ind])?;
+            write_f64(e, state_addr(sim_data, layout, ind), self.qik[ind])?;
 
             self.tx[ind] = self.tqp[ind];
             self.tq[ind] = self.tqp[ind];
@@ -208,7 +208,7 @@ impl Driver for Qss {
                 let j = self.der[k];
                 if j != ind {
                     self.xik[j] += self.der_xik[j] * (self.current_time - self.tx[j]);
-                    write_f64(e, state_addr(sim_data, j), self.xik[j])?;
+                    write_f64(e, state_addr(sim_data, layout, j), self.xik[j])?;
                     self.tx[j] = self.current_time;
                 }
             }
@@ -219,9 +219,9 @@ impl Driver for Qss {
             // saved onto a local stack and overwritten by q. After evaluating the
             // equations the states are written back.
             for i in 0..states {
-                self.xik[i] = read_f64(e, state_addr(sim_data, i))?; // save current state
+                self.xik[i] = read_f64(e, state_addr(sim_data, layout, i))?; // save current state
                 // overwrite current state for dx/dt = f(t,q)
-                write_f64(e, state_addr(sim_data, i), self.qik[i])?;
+                write_f64(e, state_addr(sim_data, layout, i), self.qik[i])?;
             }
 
             // update continous system. The QSS loop does not open C's
@@ -234,7 +234,7 @@ impl Driver for Qss {
             store_operators(e, sim_data, layout)?;
 
             for i in 0..states {
-                write_f64(e, state_addr(sim_data, i), self.xik[i])?; // restore current state
+                write_f64(e, state_addr(sim_data, layout, i), self.xik[i])?; // restore current state
             }
 
             // Get derivatives affected by state[ind] and write back ALL
@@ -293,13 +293,13 @@ impl Driver for Qss {
 }
 
 /// `SimData` address of state `i`.
-fn state_addr(sim_data: u32, i: usize) -> u32 {
-    sim_data + REAL_OFF + i as u32 * 8
+fn state_addr(sim_data: u32, layout: &SimLayout, i: usize) -> u32 {
+    sim_data + layout.real_off + i as u32 * 8
 }
 
 /// `SimData` address of `der(state i)`.
 fn der_addr(sim_data: u32, layout: &SimLayout, i: usize) -> u32 {
-    sim_data + REAL_OFF + (layout.n_states + i as u32) * 8
+    sim_data + layout.real_off + (layout.n_states + i as u32) * 8
 }
 
 /// Computes the next step in time and quantity for `state[index]`.
@@ -315,7 +315,7 @@ fn delta_q(
     dq: f64,
     index: usize,
 ) -> Result<(f64, f64, f64)> {
-    let x = read_f64(e, state_addr(sim_data, index))?;
+    let x = read_f64(e, state_addr(sim_data, layout, index))?;
     let state_der = read_f64(e, der_addr(sim_data, layout, index))?;
 
     let mut next_q;

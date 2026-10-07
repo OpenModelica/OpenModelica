@@ -171,6 +171,7 @@ openmodelica_codegen_wasm_jit/src/CodegenWasmJit/nls_jac.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/optimization.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/prof.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/registry.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJit/resizable.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/run.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/session.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJit/simulate_fn.rs
@@ -212,6 +213,7 @@ openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/signatures.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sim_access.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sim_keys.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sim_systems.rs
+openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/sizes.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/statements.rs
 openmodelica_codegen_wasm_jit/src/CodegenWasmJitFunctions/strings.rs
 openmodelica_codegen_wasm_jit/testmodels/BouncingBall.mo

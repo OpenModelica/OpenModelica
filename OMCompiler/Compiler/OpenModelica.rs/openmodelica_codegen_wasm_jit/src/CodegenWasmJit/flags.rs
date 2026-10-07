@@ -238,6 +238,7 @@ pub(super) fn split_simflags(s: &str) -> Vec<String> {
 /// separately because C prints it ahead of every other startup notice.
 pub(super) fn run_experiment(model: &SimModel, flags: &simflags::SimFlags) -> (SimMeta, String) {
     openmodelica_wasi::wasi::start_stdout_capture();
-    let meta = model.meta().with_flags(flags);
+    let mut meta = model.meta().with_flags(flags);
+    apply_resized_variable_filter(&mut meta);
     (meta, openmodelica_wasi::wasi::take_stdout_capture())
 }

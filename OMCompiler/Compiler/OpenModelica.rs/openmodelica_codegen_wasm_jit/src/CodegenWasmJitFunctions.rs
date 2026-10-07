@@ -145,6 +145,9 @@ pub(crate) use flat::*;
 mod ctx;
 pub(crate) use ctx::*;
 
+#[path = "CodegenWasmJitFunctions/sizes.rs"]
+pub(crate) mod sizes;
+
 // Compiling one function: body, locals, outputs, heap release.
 #[path = "CodegenWasmJitFunctions/function.rs"]
 mod function;
@@ -248,7 +251,7 @@ pub(crate) use generic_calls::{
 #[path = "CodegenWasmJitFunctions/sim_systems.rs"]
 mod sim_systems;
 pub(crate) use sim_systems::{
-    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, IterSlot, NlsResidual, NlsResiduals,
+    LSS_MAX_DENSITY, LSS_MIN_SIZE, NLSS_MAX_DENSITY, NLSS_MIN_SIZE, IterBlock, IterSlot, NlsResidual, NlsResiduals,
     backup_known_outputs, residual_rows, restore_known_outputs,
     compile_linear_system, compile_linear_system_analytic, compile_linear_system_analytic_csc,
     compile_linear_system_symbolic, emit_linz_jac_body, emit_nls_jac_body, emit_nls_jac_csc_body,

@@ -103,6 +103,7 @@ pub(super) fn collect_nls_jobs(
     eq_lists: &[&[metamodelica::Ref<SimCode::SimEqSystem>]],
     nominal_of: &HashMap<String, (f64, f64, f64)>,
     attr_targets: &mut AttrTargetMap,
+    dyn_scratch: &mut DynScratch,
 ) -> (Vec<metamodelica::Ref<SimCode::NonlinearSystem>>, HashMap<i32, NlsJob>, u32, Vec<f64>, Vec<f64>, Vec<i32>, Vec<String>) {
     use SimCode::SimEqSystem as E;
     let mut systems: Vec<metamodelica::Ref<SimCode::NonlinearSystem>> = Vec::new();
@@ -133,6 +134,11 @@ pub(super) fn collect_nls_jobs(
             };
             for (nlSystem, casual) in both {
                 if jobs.contains_key(&nlSystem.index) {
+                    continue;
+                }
+                if let Some(job) = dyn_scratch.nls_job(nlSystem, systems.len() as u32, casual) {
+                    jobs.insert(nlSystem.index, job);
+                    systems.push(nlSystem.clone());
                     continue;
                 }
                 let n = lst(&nlSystem.crefs).count() as u32;
@@ -188,7 +194,7 @@ pub(super) fn collect_nls_jobs(
                     patterns.extend_from_slice(&p.rowidx);
                     patterns.extend_from_slice(&p.color_of_column(n as usize));
                 }
-                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport, casual });
+                jobs.insert(nlSystem.index, NlsJob { k: systems.len() as u32, n, eq_index: nlSystem.index as u32, hist_off, nominal_off, has_jac, mixed, nnz, pat_off, sparse_default, homotopy_support: nlSystem.homotopySupport, casual, dyn_n: None, bounds_off: 0 });
                 if nnz != 0 {
                     pat_off += 4 * (2 * n + 1 + nnz);
                 }
@@ -376,5 +382,67 @@ pub(super) fn emit_nls_start(
         if let Some(strict_idx) = strict_idx {
             set_slot(f, base_off + 3, *strict_idx);
         }
+    }
+}
+
+/// The runtime-sized nonlinear systems' history, nominal and bounds blocks: a
+/// region after the layout's end (`base`), sized `size`, whose defaults `fills`
+/// writes.
+pub(crate) struct DynScratch {
+    /// Each runtime-sized real array by key, with its element count.
+    pub(crate) lens: HashMap<String, Sz>,
+    pub(crate) base: Sz,
+    pub(crate) size: Sz,
+    pub(crate) fills: Vec<(u32, Sz, ConstSlot, u32)>,
+}
+
+impl DynScratch {
+    pub(crate) fn new(dynv: &DynVars, base: Sz) -> Result<DynScratch> {
+        let mut lens = HashMap::default();
+        for dv in dynv.states.iter().chain(&dynv.ders).chain(&dynv.real_algs()) {
+            lens.insert(sim_cref_key(&dv.sv.name)?, dv.len());
+        }
+        Ok(DynScratch { lens, base, size: Sz::lit(0), fills: Vec::new() })
+    }
+
+    fn take(&mut self, bytes: Sz) -> Option<u32> {
+        let off = crate::CodegenWasmJitFunctions::sizes::sim_offset(&(self.base.clone() + self.size.clone())).ok()?;
+        self.size = self.size.clone() + bytes;
+        Some(off)
+    }
+
+    /// The job of a system whose unknowns include a runtime-sized array, solved
+    /// with a numerical Jacobian; `None` for any other system.
+    fn nls_job(&mut self, nls: &SimCode::NonlinearSystem, k: u32, casual: bool) -> Option<NlsJob> {
+        let mut n = Sz::lit(0);
+        for cr in lst(&nls.crefs) {
+            n = n + sim_cref_key(cr).ok().and_then(|key| self.lens.get(&key).cloned()).unwrap_or(Sz::lit(1));
+        }
+        if n.is_const() {
+            return None;
+        }
+        // `nls_hist_bytes`: count + last solved, scaling, extrapolation, 10 stored solutions.
+        let hist_off = self.take(Sz::lit(16) + n.clone() * 16 + (Sz::lit(8) + n.clone() * 8) * 10)?;
+        let nominal_off = self.take(n.clone() * 8)?;
+        let bounds_off = self.take(n.clone() * 16)?;
+        self.fills.push((nominal_off, n.clone(), ConstSlot::f64(1.0), 8));
+        self.fills.push((bounds_off, n.clone(), ConstSlot::f64(-f64::MAX), 16));
+        self.fills.push((bounds_off + 8, n.clone(), ConstSlot::f64(f64::MAX), 16));
+        Some(NlsJob {
+            k,
+            n: 0,
+            eq_index: nls.index as u32,
+            hist_off,
+            nominal_off,
+            has_jac: false,
+            mixed: nls.mixedSystem,
+            nnz: 0,
+            pat_off: 0,
+            sparse_default: false,
+            homotopy_support: nls.homotopySupport,
+            casual,
+            dyn_n: Some(crate::CodegenWasmJitFunctions::sizes::size_entry(&n).ok()?),
+            bounds_off,
+        })
     }
 }
