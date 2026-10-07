@@ -963,7 +963,9 @@ protected
                  ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
         end if;
 
-        if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
+        // a resizable size stays symbolic
+        if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) and
+           not Expression.contains(arg, Expression.isResizableCref) then
           Structural.markExp(arg);
           arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.tryEvalExpResizable(arg);
           arg_ty := Expression.typeOf(arg);
