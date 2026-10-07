@@ -1,7 +1,6 @@
 // name:     Modelica.Blocks.Examples.IntegerNetwork1
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

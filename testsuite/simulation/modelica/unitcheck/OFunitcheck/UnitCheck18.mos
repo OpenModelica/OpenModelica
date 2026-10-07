@@ -66,7 +66,8 @@ instantiateModel(unitCheckTests.UnitCheck18); getErrorString();
 //   b = unitCheckTests.UnitCheck18.test2(t2);
 // end unitCheckTests.UnitCheck18;
 // "
-// "[<interactive>:20:5-20:26:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// [<interactive>:20:5-20:26:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"y1\" has unit \"m/s\"
 // - sub-expression \"unitCheckTests.UnitCheck18.test().z\" has unit \"m\"

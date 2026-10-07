@@ -13,18 +13,17 @@ class FlowDeclRecord
   flow FlowRecord fr;
 equation
   fr.r = 1.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FlowDeclRecord;
 
 // Result:
-// function FlowRecord "Automatically generated record constructor for FlowRecord"
-//   input Real r;
-//   output FlowRecord res;
-// end FlowRecord;
-//
 // class FlowDeclRecord
 //   Real fr.r;
 // equation
 //   fr.r = 1.0;
 // end FlowDeclRecord;
+// [flattening/modelica/declarations/FlowDeclRecord.mo:9:3-9:9:writable] Warning: Prefix 'flow' used outside connector declaration.
+// [flattening/modelica/declarations/FlowDeclRecord.mo:13:3-13:21:writable] Warning: Prefix 'flow' used outside connector declaration.
+// [flattening/modelica/declarations/FlowDeclRecord.mo:13:3-13:21:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/FlowDeclRecord.mo:15:3-15:13:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

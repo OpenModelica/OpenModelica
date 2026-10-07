@@ -12,13 +12,11 @@ end A;
 
 model test
   Real x=A.x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 // Result:
 // Error processing file: Constant9.mo
-// Error: Variable A.x in package A is not constant.
+// [flattening/modelica/declarations/Constant9.mo:10:3-10:21:writable] Error: Variable x in package A is not constant.
 // [flattening/modelica/declarations/Constant9.mo:14:3-14:13:writable] Error: Variable A.x not found in scope test.
-// Error: Error occurred while flattening model test
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

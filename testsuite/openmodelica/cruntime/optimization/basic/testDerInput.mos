@@ -1,6 +1,5 @@
 // name: testDerInput
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 model testDerInput

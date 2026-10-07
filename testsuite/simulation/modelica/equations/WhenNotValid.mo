@@ -14,7 +14,6 @@ equation
   when sample(0, 2) then
     2*x + y = 7;                // Error: not valid Modelica code
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenNotValid;
 
 // class WhenNotValid

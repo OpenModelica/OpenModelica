@@ -47,7 +47,6 @@ class ComplexUser
   equation
     z = ComplexNumbers.Multiply(a, b);
     z = ComplexNumbers.Add(a, b);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexUser;
 
 // Result:
@@ -65,18 +64,6 @@ end ComplexUser;
 //   input Real im;
 //   output Complex res;
 // end ComplexNumbers.Complex;
-//
-// function ComplexNumbers.Complex$a "Automatically generated record constructor for ComplexNumbers.Complex$a"
-//   input Real re;
-//   input Real im;
-//   output Complex$a res;
-// end ComplexNumbers.Complex$a;
-//
-// function ComplexNumbers.Complex$b "Automatically generated record constructor for ComplexNumbers.Complex$b"
-//   input Real re;
-//   input Real im;
-//   output Complex$b res;
-// end ComplexNumbers.Complex$b;
 //
 // function ComplexNumbers.Multiply
 //   input ComplexNumbers.Complex x;
@@ -97,7 +84,12 @@ end ComplexUser;
 //   Real w.re;
 //   Real w.im;
 // equation
-//   z = ComplexNumbers.Multiply(/*.ComplexNumbers.Complex*/(a), /*.ComplexNumbers.Complex*/(b));
-//   z = ComplexNumbers.Add(/*.ComplexNumbers.Complex*/(a), /*.ComplexNumbers.Complex*/(b));
+//   z = ComplexNumbers.Multiply(a, b);
+//   z = ComplexNumbers.Add(a, b);
 // end ComplexUser;
+// [flattening/modelica/packages/ComplexNumbers.mo:44:3-44:43:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/packages/ComplexNumbers.mo:45:3-45:43:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/packages/ComplexNumbers.mo:46:3-46:30:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/packages/ComplexNumbers.mo:48:5-48:38:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

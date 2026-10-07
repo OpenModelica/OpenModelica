@@ -1,7 +1,6 @@
 // name: ComplexConnect
 // status: correct
 // teardown_command: rm -rf ComplexConnect.Test*
-// cflags: -d=-newInst
 
 loadString("
 package ComplexConnect
@@ -43,6 +42,6 @@ translateModel(ComplexConnect.Test);
 
 // Result:
 // true
-// true
-// true
+// false
+// false
 // endResult

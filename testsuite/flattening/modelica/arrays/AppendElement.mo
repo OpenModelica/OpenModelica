@@ -43,7 +43,6 @@ equation
   XA4 = cat(2, {{-1}}, zeros(1, 2), {{1}});
   // Append OK, result is {{-1, 0, 0, 1}}
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AppendElement;
 
 
@@ -119,4 +118,16 @@ end AppendElement;
 //   XA4[1,3] = 0.0;
 //   XA4[1,4] = 1.0;
 // end AppendElement;
+// [flattening/modelica/arrays/AppendElement.mo:9:3-9:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:11:3-11:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:13:3-13:20:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:16:3-16:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:17:3-17:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:18:3-18:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:19:3-19:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:21:3-21:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:22:3-22:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:24:3-24:12:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/AppendElement.mo:28:3-28:16:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

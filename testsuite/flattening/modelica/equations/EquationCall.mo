@@ -20,24 +20,17 @@ class EquationCall
   Real px, py;
 equation
   (px, py) = PointOnCircle(1.2, 2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationCall;
 
 // Result:
-// function PointOnCircle
-//   input Real angle "Angle in radians";
-//   input Real radius;
-//   output Real x;
-//   output Real y;
-// algorithm
-//   x := radius * cos(angle);
-//   y := radius * sin(angle);
-// end PointOnCircle;
-//
 // class EquationCall
 //   Real px;
 //   Real py;
 // equation
-//   (px, py) = (0.7247155089533472, 1.8640781719344526);
+//   px = 0.7247155089533472;
+//   py = 1.8640781719344526;
 // end EquationCall;
+// [flattening/modelica/equations/EquationCall.mo:20:3-20:14:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/EquationCall.mo:22:3-22:35:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

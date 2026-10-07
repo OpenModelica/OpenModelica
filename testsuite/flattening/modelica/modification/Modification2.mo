@@ -14,11 +14,14 @@ end B;
 
 class Modification2
   B b(A(p=2.0));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification2;
 
 // Result:
 // class Modification2
 //   parameter Real b.a.p = 2.0;
 // end Modification2;
+// [flattening/modelica/modification/Modification2.mo:10:5-10:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Modification2.mo:12:3-12:6:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Modification2.mo:16:3-16:16:writable] Warning: Components are deprecated in class.
+//
 // endResult

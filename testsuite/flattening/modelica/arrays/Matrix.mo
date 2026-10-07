@@ -11,7 +11,6 @@ model Matrix
   Real r3[:,:] = matrix([1, 2, 3; 4, 5, 6; 7, 8, 9]);
   Real r4[:,:] = matrix([{1},{2},{3};{4},{5},{6}]);
   Real r5[:,:] = matrix([{{1}},{{2}},{{3}};{{4}},{{5}},{{6}}]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Matrix;
 
 // Result:

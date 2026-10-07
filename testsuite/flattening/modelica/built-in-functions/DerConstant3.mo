@@ -8,12 +8,12 @@
 class A
   discrete Integer pa = 1;
   Real a = der(pa);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 // Result:
 // Error processing file: DerConstant3.mo
-// [flattening/modelica/built-in-functions/DerConstant3.mo:10:3-10:19:writable] Error: Argument 'pa' to der has illegal type Integer, must be a subtype of Real.
-// Error: Error occurred while flattening model A
+// [flattening/modelica/built-in-functions/DerConstant3.mo:9:3-9:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant3.mo:10:3-10:19:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/DerConstant3.mo:10:3-10:19:writable] Error: Argument 'pa' of der is not differentiable.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

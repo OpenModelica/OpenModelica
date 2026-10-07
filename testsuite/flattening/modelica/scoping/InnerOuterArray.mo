@@ -15,7 +15,6 @@ end A;
 model InnerOuterArray
   A a;
   inner Real x[3];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterArray;
 
 // Result:
@@ -25,6 +24,6 @@ end InnerOuterArray;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   a.y = x[1] ^ 2.0 + x[2] ^ 2.0 + x[3] ^ 2.0;
+//   a.y = x[1] * x[1] + x[2] * x[2] + x[3] * x[3];
 // end InnerOuterArray;
 // endResult

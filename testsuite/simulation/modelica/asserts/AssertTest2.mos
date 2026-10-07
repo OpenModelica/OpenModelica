@@ -4,7 +4,6 @@
 // teardown_command: rm -rf Test2* output.log
 // 
 // Drmodelica: 9.1 assert (p. 298) 
-// cflags: -d=-newInst
 // 
 
 loadFile("AssertTest2.mo");
@@ -24,5 +23,10 @@ getErrorString(); // simulation failed, check error string.
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
-// ""
+// "[simulation/modelica/asserts/AssertTest2.mo:9:3-9:26:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest2.mo:10:3-10:27:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest2.mo:11:3-11:13:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest2.mo:13:3-13:70:writable] Warning: Equation sections are deprecated in class.
+// [simulation/modelica/asserts/AssertTest2.mo:17:3-17:54:writable] Warning: Components are deprecated in class.
+// "
 // endResult

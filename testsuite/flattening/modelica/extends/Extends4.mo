@@ -43,4 +43,6 @@ end Multiplex3;
 //   y[2] = u2[1];
 //   y[3] = u3[1];
 // end Multiplex3;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

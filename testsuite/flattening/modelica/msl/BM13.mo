@@ -966,7 +966,6 @@ model BM13
 
 equation
   connect(gain1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-29.3,31.43},{-60.02,28.39}}));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM13;
 
 // class BM13
@@ -996,22 +995,21 @@ end BM13;
 //   parameter Real gain1.k[1] = 1.0 "Gain vector multiplied element-wise with input vector";
 //   protected Real gain1.u[1] "Input signals";
 //   protected Real gain1.y[1] "Output signals";
-//   parameter Integer gain1.inPort.n = 1 "Dimension of signal vector";
+//   final parameter Integer gain1.inPort.n = 1 "Dimension of signal vector";
 //   Real gain1.inPort.signal[1] "Real input signals";
-//   parameter Integer gain1.outPort.n = 1 "Dimension of signal vector";
+//   final parameter Integer gain1.outPort.n = 1 "Dimension of signal vector";
 //   Real gain1.outPort.signal[1] "Real output signals";
-//   parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
-//   parameter Integer constant1.outPort.n = constant1.nout "Dimension of signal vector";
+//   parameter Real constant1.k[1] = 1.0 "Constant output values";
+//   final parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";
+//   final parameter Integer constant1.outPort.n = 1 "Dimension of signal vector";
 //   Real constant1.outPort.signal[1] "Real output signals";
 //   Real constant1.y[1];
-//   parameter Real constant1.k[1] = 1.0 "Constant output values";
 // equation
+//   gain1.inPort.signal[1] = constant1.outPort.signal[1];
 //   gain1.u[1] = gain1.inPort.signal[1];
 //   gain1.y[1] = gain1.outPort.signal[1];
 //   gain1.y[1] = gain1.k[1] * gain1.u[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];
-//   assert(gain1.inPort.n == constant1.outPort.n, "automatically generated from connect");
-//   constant1.outPort.signal[1] = gain1.inPort.signal[1];
 // end BM13;
 // endResult

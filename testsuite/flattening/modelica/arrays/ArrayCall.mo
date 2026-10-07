@@ -11,7 +11,6 @@ class ArrayCall
     array := cos(r*(1.0:10.0));
   end fn;
   Real x[10] = fn(time);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayCall;
 
 // Result:
@@ -27,6 +26,8 @@ end ArrayCall;
 //   Real x[9];
 //   Real x[10];
 // equation
-//   x = {cos(time), cos(2.0 * time), cos(3.0 * time), cos(4.0 * time), cos(5.0 * time), cos(6.0 * time), cos(7.0 * time), cos(8.0 * time), cos(9.0 * time), cos(10.0 * time)};
+//   x = array(cos(time * (1.0:10.0)[$i0]) for $i0 in 1:10);
 // end ArrayCall;
+// [flattening/modelica/arrays/ArrayCall.mo:13:3-13:24:writable] Warning: Components are deprecated in class.
+//
 // endResult

@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Spice3.Examples.CoupledInductors_HPCOM_mcp_OMP
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 // suite: disabled
 // 
 // Simulation Results

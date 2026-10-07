@@ -14,7 +14,6 @@ class ConstructFunc
   Real id[3,3]    = identity(3);    // Creates the matrix {{1,0,0}, {0,1,0}, {0, 0, 1}}
   Real di[3,3] = diagonal({1, 2, 3}); // Creates the matrix {{1, 0, 0}, {0, 2, 0}, {0, 0, 3}}
   Real ls[5] = linspace(0.0, 8.0, 5);  // Computes the vector {0.0, 2.0, 4.0, 6.0, 8.0}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConstructFunc;
 
 // Result:
@@ -74,6 +73,14 @@ end ConstructFunc;
 //   check = {{true, true, true, true}, {true, true, true, true}, {true, true, true, true}};
 //   id = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 //   di = {{1.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 3.0}};
-//   ls = {0.0, 2.0, 4.0, 6.0, 8.0};
+//   ls = array(8.0 * (/*Real*/(i) - 1.0) / 4.0 for i in 1:5);
 // end ConstructFunc;
+// [flattening/modelica/arrays/ConstructFunc.mo:10:3-10:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ConstructFunc.mo:11:3-11:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ConstructFunc.mo:12:3-12:31:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ConstructFunc.mo:13:3-13:42:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ConstructFunc.mo:14:3-14:32:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ConstructFunc.mo:15:3-15:37:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ConstructFunc.mo:16:3-16:37:writable] Warning: Components are deprecated in class.
+//
 // endResult

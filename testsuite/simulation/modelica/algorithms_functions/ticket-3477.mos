@@ -1,7 +1,6 @@
 // name: ticket-3477
 // keywords: algorithm, #3477
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 model ticket_3477

@@ -12,13 +12,14 @@ class ScopeDeclaration2
     Real a(min = a);
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeDeclaration2;
 
 // Result:
 // Error processing file: ScopeDeclaration2.mo
-// [flattening/modelica/declarations/ScopeDeclaration2.mo:12:5-12:20:writable] Error: Variable b.a: Component min of variability PARAM has binding b.a of higher variability VAR.
-// Error: Error occurred while flattening model ScopeDeclaration2
+// [flattening/modelica/declarations/ScopeDeclaration2.mo:12:5-12:20:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeDeclaration2.mo:10:3-10:24:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeDeclaration2.mo:14:3-14:6:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeDeclaration2.mo:12:12-12:19:writable] Error: Component min of variability parameter has binding 'b.a' of higher variability continuous.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

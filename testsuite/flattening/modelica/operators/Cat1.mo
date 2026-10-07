@@ -54,4 +54,6 @@ end Cat1;
 //   z[1] = x[1] * y[1];
 //   z[2] = x[2] * y[2];
 // end Cat1;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

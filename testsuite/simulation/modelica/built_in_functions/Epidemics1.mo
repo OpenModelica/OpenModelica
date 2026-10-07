@@ -21,7 +21,6 @@ equation
   when (S < 10e-5) then
     terminate("Simulation terminated");
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Epidemics1;
 
 // class Epidemics1

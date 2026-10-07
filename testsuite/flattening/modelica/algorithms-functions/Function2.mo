@@ -37,6 +37,7 @@ end Function2;
 // equation
 //   x = f(z);
 // end Function2;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/algorithms-functions/Function2.mo:13:3-13:15:writable] Warning: Invalid public variable toomuch, function variables that are not input/output must be protected.
 //
 // endResult

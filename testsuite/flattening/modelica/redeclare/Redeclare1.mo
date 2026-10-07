@@ -22,7 +22,6 @@ model Redeclare1
   M m(redeclare B a);
 equation
   m.a.z = m.a.x;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare1;
 
 // Result:

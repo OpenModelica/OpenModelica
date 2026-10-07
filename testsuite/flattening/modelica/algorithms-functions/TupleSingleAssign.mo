@@ -23,7 +23,6 @@ algorithm
   a := tuple_ret(time);
 equation
   b = tuple_ret(time);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TupleSingleAssign;
 
 // Result:
@@ -42,7 +41,7 @@ end TupleSingleAssign;
 //   Real a;
 //   Real b;
 // equation
-//   (b, _, _) = tuple_ret(time);
+//   b = tuple_ret(time)[1];
 // algorithm
 //   a := tuple_ret(time)[1];
 // end TupleSingleAssign;

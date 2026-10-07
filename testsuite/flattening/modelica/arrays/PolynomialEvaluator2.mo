@@ -23,7 +23,6 @@ model PolynomialEvaluator2
   Real result;
 equation
   result = polyeval(inVector);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolynomialEvaluator2;
 
 // Result:
@@ -48,6 +47,6 @@ end PolynomialEvaluator2;
 //   Real result;
 // equation
 //   inVector = {3.0, 8.0, 5.0};
-//   result = polyeval({inVector[1], inVector[2], inVector[3]}, 1);
+//   result = polyeval(inVector, 1.0);
 // end PolynomialEvaluator2;
 // endResult

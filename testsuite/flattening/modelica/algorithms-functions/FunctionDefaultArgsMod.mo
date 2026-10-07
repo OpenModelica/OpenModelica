@@ -16,7 +16,6 @@ model FunctionDefaultArgsMod
   Real p = 2.0;
   function g = f(r=p);
   Real x = g(1.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionDefaultArgsMod;
 
 // Result:

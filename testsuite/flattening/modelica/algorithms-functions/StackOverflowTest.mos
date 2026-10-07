@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // suite: stackoverflow
 
 loadString("model StackOverflowTest
@@ -18,19 +17,8 @@ getErrorString();
 // Result:
 // true
 // ""
-// "function StackOverflowTest.f
-//   output Real r = 2.0;
-// algorithm
-//   fail();
-//   print(\"Can't get here, can you?
-//   \");
-// end StackOverflowTest.f;
-//
-// class StackOverflowTest
-//   constant Real r = StackOverflowTest.f();
-// end StackOverflowTest;
-// "
-// "[<interactive>:0:0-0:0:writable] Error: Internal error Stack overflow when evaluating function call: StackOverflowTest.f()...
-// [bt] [Symbols are not generated when running the test suite]
+// ""
+// "[<interactive>:2:3-8:8:writable] Warning: Pure function 'StackOverflowTest.f' contains a call to impure function 'print'.
+// [<interactive>:2:3-8:8:writable] Error: The recursion limit (--evalRecursionLimit=256) was exceeded during evaluation of StackOverflowTest.f.
 // "
 // endResult

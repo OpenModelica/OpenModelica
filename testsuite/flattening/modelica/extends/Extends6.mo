@@ -27,7 +27,6 @@ end Glycol;
 model Extends6
   package Medium = Glycol;
   Glycol.BaseProperties medium;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends6;
 
 // Result:

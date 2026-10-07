@@ -12,7 +12,6 @@ equation
   for k in 1:k+1 loop  // The iteration variable k gets values 1, 2, 3, 4, 5
     x[k] = k;          // Uses of the iteration variable k
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HideVariableForEquations;
 
 // Result:
@@ -30,4 +29,8 @@ end HideVariableForEquations;
 //   x[4] = 4.0;
 //   x[5] = 5.0;
 // end HideVariableForEquations;
+// [flattening/modelica/equations/HideVariableForEquations.mo:9:3-9:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HideVariableForEquations.mo:10:3-10:20:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HideVariableForEquations.mo:12:3-14:10:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

@@ -43,11 +43,10 @@ end dgetrf;
 
   constant Real r[2,2] = {{1,2},{3,4}};
   Real r2[2,2] = r*inv(r);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExternalFunction4;
 
 // Result:
-// function ExternalFunction4.dgetrf
+// impure function ExternalFunction4.dgetrf
 //   input Real[:, :] A;
 //   output Real[size(A, 1), size(A, 2)] LU = A;
 //   output Integer[min(size(A, 1), size(A, 2))] pivots;
@@ -56,27 +55,27 @@ end ExternalFunction4;
 //   external "FORTRAN 77" dgetrf(size(A, 1), size(A, 2), LU, size(A, 1), pivots, info);
 // end ExternalFunction4.dgetrf;
 //
-// function ExternalFunction4.dgetri
+// impure function ExternalFunction4.dgetri
 //   input Real[:, size(LU, 1)] LU;
 //   input Integer[size(LU, 1)] pivots;
 //   output Real[size(LU, 1), size(LU, 2)] inv = LU;
-//   protected Integer info;
 //   protected Integer lwork = min(10, size(LU, 1)) * size(LU, 1);
+//   protected Integer info;
 //   protected Real[lwork] work;
 //
 //   external "FORTRAN 77" dgetri(size(LU, 1), inv, size(LU, 1), pivots, work, lwork, info);
 // end ExternalFunction4.dgetri;
 //
-// function ExternalFunction4.inv
+// impure function ExternalFunction4.inv
 //   input Real[2, 2] A;
 //   output Real[2, 2] invA;
 //   protected Integer info;
 //   protected Integer[2] pivots;
 //   protected Real[2, 2] LU;
 // algorithm
-//   (LU, pivots, info) := ExternalFunction4.dgetrf({{A[1,1], A[1,2]}, {A[2,1], A[2,2]}});
+//   (LU, pivots, info) := ExternalFunction4.dgetrf(A);
 //   assert(info == 0, "Calculating an inverse matrix with function \"Matrices.inv\" is not possible, since matrix A is singular.");
-//   invA := ExternalFunction4.dgetri({{LU[1,1], LU[1,2]}, {LU[2,1], LU[2,2]}}, {pivots[1], pivots[2]});
+//   invA := ExternalFunction4.dgetri(LU, pivots);
 // end ExternalFunction4.inv;
 //
 // class ExternalFunction4
@@ -89,6 +88,8 @@ end ExternalFunction4;
 //   Real r2[2,1];
 //   Real r2[2,2];
 // equation
-//   r2 = {{1.0, 0.0}, {8.881784197001252e-16, 0.9999999999999996}};
+//   r2 = {{1.0, 2.0}, {3.0, 4.0}} * ExternalFunction4.inv({{1.0, 2.0}, {3.0, 4.0}});
 // end ExternalFunction4;
+// [flattening/modelica/external-functions/ExternalFunction4.mo:12:1-23:8:writable] Warning: Pure function 'ExternalFunction4.inv' contains a call to impure function 'ExternalFunction4.dgetrf'.
+//
 // endResult

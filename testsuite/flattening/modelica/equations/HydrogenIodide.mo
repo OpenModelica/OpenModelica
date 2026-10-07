@@ -17,7 +17,6 @@ equation
 der(H2) = k2*HI^2 - k1*H2*I2;
 der(I2) = k2*HI^2 - k1*H2*I2;
 der(HI) = 2*k1*H2*I2 - 2*k2*HI^2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HydrogenIodide;
 
 // Result:
@@ -30,6 +29,13 @@ end HydrogenIodide;
 // equation
 //   der(H2) = k2 * HI ^ 2.0 - k1 * H2 * I2;
 //   der(I2) = k2 * HI ^ 2.0 - k1 * H2 * I2;
-//   der(HI) = 2.0 * (k1 * H2 * I2 - k2 * HI ^ 2.0);
+//   der(HI) = 2.0 * k1 * H2 * I2 - 2.0 * k2 * HI ^ 2.0;
 // end HydrogenIodide;
+// [flattening/modelica/equations/HydrogenIodide.mo:11:1-11:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HydrogenIodide.mo:12:1-12:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HydrogenIodide.mo:13:1-13:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HydrogenIodide.mo:14:1-14:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HydrogenIodide.mo:15:1-15:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/HydrogenIodide.mo:17:1-17:29:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

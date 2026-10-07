@@ -9,7 +9,6 @@ model Rem
   Real r;
 equation
   r = rem(27, 6);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Rem;
 
 // Result:

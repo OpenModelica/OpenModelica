@@ -9,12 +9,12 @@ class Type8
   Real x;
 equation
   x = x.start;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type8;
 // Result:
 // Error processing file: Type8.mo
-// [flattening/modelica/types/Type8.mo:11:3-11:14:writable] Error: Variable x.start not found in scope Type8.
-// Error: Error occurred while flattening model Type8
+// [flattening/modelica/types/Type8.mo:9:3-9:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/types/Type8.mo:11:3-11:14:writable] Warning: Equation sections are deprecated in class.
+// [flattening/modelica/types/Type8.mo:11:3-11:14:writable] Error: Variable start not found in scope x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

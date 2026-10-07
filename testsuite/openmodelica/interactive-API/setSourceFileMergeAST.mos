@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 // Tests that setSourceFile also updates the file of the elements that are
 // stored in the same file as the class. Otherwise loadString with merge=true,
 // which keeps the elements of the old class that come from another file,

@@ -3,7 +3,6 @@
 // keywords: kinsol initial guess file
 // status: correct
 // teardown_command: rm -rf SaveInitialGuess* output.log
-// cflags: -d=-newInst
 //
 // Test flag -saveInitialGuess_system=/path/to/file.mat,nls_index,
 // which writes the current state of the initialization to a .mat file

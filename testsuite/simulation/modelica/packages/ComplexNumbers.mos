@@ -1,7 +1,6 @@
 // Name: ComplexNumbers
 // status: correct
 // teardown_command: rm -rf ComplexNumbers ComplexNumbers.exe ComplexNumbers.c ComplexNumbers.cpp ComplexNumbers.libs ComplexNumbers.log ComplexNumbers.makefile ComplexNumbers.plt ComplexNumbers_* output.log
-// cflags: -d=-newInst
 // 
 
 loadFile("ComplexNumbers.mo");
@@ -12,10 +11,14 @@ getErrorString();
 // true
 // record SimulationResult
 //     resultFile = "ComplexUser_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'ComplexUser', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'ComplexUser', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[simulation/modelica/packages/ComplexNumbers.mo:45:3-45:43:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/packages/ComplexNumbers.mo:46:3-46:43:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/packages/ComplexNumbers.mo:47:3-47:29:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/packages/ComplexNumbers.mo:49:5-49:38:writable] Warning: Equation sections are deprecated in class.
+// "
 // endResult

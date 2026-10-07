@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Machines.Examples.Transformers.AsymmetricalLoad
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

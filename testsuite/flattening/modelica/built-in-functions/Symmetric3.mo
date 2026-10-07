@@ -10,7 +10,6 @@ model Symmetric3
   Real sym[4,4];
 equation
   sym = symmetric(m);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Symmetric3;
 
 // Result:
@@ -48,21 +47,6 @@ end Symmetric3;
 //   Real sym[4,3];
 //   Real sym[4,4];
 // equation
-//   sym[1,1] = m[1,1];
-//   sym[1,2] = m[1,2];
-//   sym[1,3] = m[1,3];
-//   sym[1,4] = m[1,4];
-//   sym[2,1] = m[1,2];
-//   sym[2,2] = m[2,2];
-//   sym[2,3] = m[2,3];
-//   sym[2,4] = m[2,4];
-//   sym[3,1] = m[1,3];
-//   sym[3,2] = m[2,3];
-//   sym[3,3] = m[3,3];
-//   sym[3,4] = m[3,4];
-//   sym[4,1] = m[1,4];
-//   sym[4,2] = m[2,4];
-//   sym[4,3] = m[3,4];
-//   sym[4,4] = m[4,4];
+//   sym = symmetric(m);
 // end Symmetric3;
 // endResult

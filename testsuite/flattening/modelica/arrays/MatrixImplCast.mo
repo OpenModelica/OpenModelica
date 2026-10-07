@@ -15,17 +15,9 @@ model MatrixImplCast
   end f;
 
   Real m[:, :] = f({0.1, 0.2, 0.3});
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixImplCast;
 
 // Result:
-// function MatrixImplCast.f
-//   input Real[:] v;
-//   output Real[size(v, 1), 2] m;
-// algorithm
-//   m := cat(2, promote(fill(0.0, size(v, 1)), 2), promote(v, 2));
-// end MatrixImplCast.f;
-//
 // class MatrixImplCast
 //   Real m[1,1];
 //   Real m[1,2];

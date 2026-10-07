@@ -1,7 +1,7 @@
 // name:      Tearing10-celMC231
 // keywords:  tearing
 // status:    correct
-// cflags:   +d=backenddaeinfo -d=-newInst
+// cflags:   +d=backenddaeinfo
 
 
 loadModel(Modelica,{"4.1.0"}); getErrorString();
@@ -37,14 +37,14 @@ val(R1.v,0.2); getErrorString();
 //  * Number of equations: 54
 //  * Number of variables: 54
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2
+//  * Number of independent subsystems: 3
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (14):
-//  * Single equations (assignments): 13
+// Notification: Strong component statistics for initialization (15):
+//  * Single equations (assignments): 14
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -55,7 +55,7 @@ val(R1.v,0.2); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(1,10,100.0%)}
+//    {(1,9,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 2
@@ -64,8 +64,8 @@ val(R1.v,0.2); getErrorString();
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (8):
-//  * Single equations (assignments): 7
+// Notification: Strong component statistics for simulation (9):
+//  * Single equations (assignments): 8
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -76,7 +76,7 @@ val(R1.v,0.2); getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(1,10,100.0%)}
+//    {(1,9,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 // "
 // -2.7912043330374243e-14

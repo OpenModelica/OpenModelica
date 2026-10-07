@@ -9,7 +9,6 @@ class Overwriting2
   Real u;
 equation
   x = 2.0;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Overwriting2;
 
 // Result:
@@ -19,4 +18,8 @@ end Overwriting2;
 // equation
 //   x = 2.0;
 // end Overwriting2;
+// [flattening/modelica/modification/Overwriting2.mo:8:3-8:17:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Overwriting2.mo:9:3-9:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/modification/Overwriting2.mo:11:3-11:10:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

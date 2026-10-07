@@ -10,7 +10,6 @@ model BooleanRanges
   Boolean b2[:] = true : false;
   Boolean b3[:] = false : false;
   Boolean b4[:] = true : true;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BooleanRanges;
 
 // Result:
@@ -20,8 +19,8 @@ end BooleanRanges;
 //   Boolean b3[1];
 //   Boolean b4[1];
 // equation
-//   b1 = {false, true};
-//   b3 = {false};
-//   b4 = {true};
+//   b1 = false:true;
+//   b3 = false:false;
+//   b4 = true:true;
 // end BooleanRanges;
 // endResult

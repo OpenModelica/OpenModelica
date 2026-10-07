@@ -1,7 +1,6 @@
 // name: isExperiment
 // keywords:
 // status: correct
-// cflags: -d=-newInst
 //
 
 loadString("

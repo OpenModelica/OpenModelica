@@ -1,7 +1,6 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar_analytic
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

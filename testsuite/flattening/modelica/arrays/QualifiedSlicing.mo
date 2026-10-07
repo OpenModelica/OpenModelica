@@ -13,7 +13,6 @@ model QualifiedSlicing
   Vector v[2];
 equation
   v[:].x[:] = {{sin(time),cos(time)},{sin(time-0.5),cos(time-0.5)}};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end QualifiedSlicing;
 
 // Result:
@@ -25,7 +24,7 @@ end QualifiedSlicing;
 // equation
 //   v[1].x[1] = sin(time);
 //   v[1].x[2] = cos(time);
-//   v[2].x[1] = sin(-0.5 + time);
-//   v[2].x[2] = cos(-0.5 + time);
+//   v[2].x[1] = sin(time - 0.5);
+//   v[2].x[2] = cos(time - 0.5);
 // end QualifiedSlicing;
 // endResult

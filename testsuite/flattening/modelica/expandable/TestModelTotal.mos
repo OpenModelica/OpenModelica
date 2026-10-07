@@ -47,9 +47,11 @@ checkModel(TestPackage_TestModel); getErrorString();
 //   OutputFromBus.controlBus.chassis.velocity = inputToBus.controlBus.chassis.velocity;
 // end TestPackage_TestModel;
 // "
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // "Check of TestPackage_TestModel completed successfully.
 // Class TestPackage_TestModel has 13 equation(s) and 13 variable(s).
 // 13 of these are trivial equation(s)."
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

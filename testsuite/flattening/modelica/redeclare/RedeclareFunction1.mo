@@ -37,23 +37,22 @@ model model3 = model2(replaceable function func = func2);
 model RedeclareFunction1
   model2 m2;
   model3 m3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareFunction1;
 
 // Result:
-// function model2.func
+// function RedeclareFunction1.m2.func
 //   input Real x;
 //   output Real y;
 // algorithm
 //   y := x;
-// end model2.func;
+// end RedeclareFunction1.m2.func;
 //
-// function model3.func
+// function RedeclareFunction1.m3.func
 //   input Real x;
 //   output Real y;
 // algorithm
 //   y := 2.0 * x;
-// end model3.func;
+// end RedeclareFunction1.m3.func;
 //
 // class RedeclareFunction1
 //   Real m2.x;
@@ -61,7 +60,7 @@ end RedeclareFunction1;
 //   Real m3.x;
 //   Real m3.y;
 // equation
-//   m2.x = model2.func(m2.y);
-//   m3.x = model3.func(m3.y);
+//   m2.x = RedeclareFunction1.m2.func(m2.y);
+//   m3.x = RedeclareFunction1.m3.func(m3.y);
 // end RedeclareFunction1;
 // endResult

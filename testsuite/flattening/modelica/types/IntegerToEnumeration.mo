@@ -69,6 +69,7 @@ end IntegerToEnumeration;
 //     end if;
 //   end when;
 // end IntegerToEnumeration;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // Warning: Integer (3) to enumeration (.IntegerToEnumeration.Enum) conversion is not valid Modelica, please use enumeration constant (three) instead.
 // Warning: Integer (2) to enumeration (.IntegerToEnumeration.Enum$e) conversion is not valid Modelica, please use enumeration constant (two) instead.
 // Warning: Integer (3) to enumeration (.IntegerToEnumeration.Enum$e) conversion is not valid Modelica, please use enumeration constant (three) instead.

@@ -25,14 +25,13 @@ end A;
 
 model DeclarationOrder2
   A.D d;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationOrder2;
 
 // Result:
 // class DeclarationOrder2
 //   Real d.c2[1].y(start = d.c2[1].x);
 //   parameter Real d.c2[1].x = 3.14;
-//   parameter Integer d.n = 1;
+//   final parameter Integer d.n = 1;
 // equation
 //   der(d.c2[1].y) = d.c2[1].x;
 // end DeclarationOrder2;

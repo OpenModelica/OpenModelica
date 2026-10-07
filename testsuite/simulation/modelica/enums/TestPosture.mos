@@ -21,7 +21,8 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Lying] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Lying] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Sitting] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Standing] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [simulation/modelica/enums/TestPosture.mo:8:4-8:39:writable] Warning: Parameter tmodel.arrayByEnum[Posture.Tilting] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.

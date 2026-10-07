@@ -17,7 +17,6 @@ equation
   connect(c1,c2);
   c1.s="h";
   b=c2.s=="h";
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect6;
 
 // Result:
@@ -28,11 +27,11 @@ end Connect6;
 //   Real c2.f;
 //   Boolean b;
 // equation
-//   c1.s = "h";
-//   b = c2.s == "h";
+//   c1.s = c2.s;
+//   -(c1.f + c2.f) = 0.0;
 //   c1.f = 0.0;
 //   c2.f = 0.0;
-//   (-c1.f) + (-c2.f) = 0.0;
-//   c1.s = c2.s;
+//   c1.s = "h";
+//   b = c2.s == "h";
 // end Connect6;
 // endResult

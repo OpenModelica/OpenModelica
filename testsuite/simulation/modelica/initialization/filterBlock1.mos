@@ -4,7 +4,6 @@
 // teardown_command: rm -rf initializationTests.filterBlock1* _initializationTests.filterBlock1* output.log
 // First order filter block
 // Drmodelica: 9.1 reinit (p. 296)
-// cflags: -d=-newInst
 //
 
 loadString("
@@ -34,7 +33,6 @@ instantiateModel(initializationTests.filterBlock1); getErrorString();
 // true
 // ""
 // ""
-// "[<interactive>:15:5-17:13:writable] Error: Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead.
-// Error: Error occurred while flattening model initializationTests.filterBlock1
+// "[<interactive>:16:7-16:19:writable] Error: Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore).
 // "
 // endResult

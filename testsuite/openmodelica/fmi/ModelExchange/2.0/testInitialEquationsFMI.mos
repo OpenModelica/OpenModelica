@@ -2,7 +2,6 @@
 // keywords: initialization, start values, initial equation, fmi
 // status:   correct
 // teardown_command: rm -rf initializationTestsFMI.initial_equation* initial_equation* output.log binaries sources modelDescription.xml resources
-// cflags: -d=-newInst
 //
 //  test start values and initial equations
 //

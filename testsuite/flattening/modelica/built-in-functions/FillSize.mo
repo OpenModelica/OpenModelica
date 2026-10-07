@@ -21,20 +21,9 @@ end z2;
 model FillSize
   constant Real r[:] = z(ones(3));
   constant Real r2[:,:] = z2(ones(4, 4));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FillSize;
 
 // Result:
-// function z
-//   input Real[:] B;
-//   output Real[size(B, 1)] A = fill(1.0, size(B, 1));
-// end z;
-//
-// function z2
-//   input Real[:, :] B;
-//   output Real[size(B, 1), size(B, 2)] A = fill(0.0, size(B, 1), size(B, 2));
-// end z2;
-//
 // class FillSize
 //   constant Real r[1] = 1.0;
 //   constant Real r[2] = 1.0;

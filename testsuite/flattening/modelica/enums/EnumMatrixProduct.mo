@@ -16,7 +16,6 @@ model EnumMatrixProduct
 equation
   e3 = e1 * e2;
   e4 = e2 * e2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumMatrixProduct;
 
 // Result:
@@ -49,14 +48,14 @@ end EnumMatrixProduct;
 //   e3[E.AA] = e1[E.AA] * e2[E.AA,E.AA] + e1[E.BB] * e2[E.BB,E.AA] + e1[E.CC] * e2[E.CC,E.AA];
 //   e3[E.BB] = e1[E.AA] * e2[E.AA,E.BB] + e1[E.BB] * e2[E.BB,E.BB] + e1[E.CC] * e2[E.CC,E.BB];
 //   e3[E.CC] = e1[E.AA] * e2[E.AA,E.CC] + e1[E.BB] * e2[E.BB,E.CC] + e1[E.CC] * e2[E.CC,E.CC];
-//   e4[E.AA,E.AA] = e2[E.AA,E.AA] ^ 2.0 + e2[E.AA,E.BB] * e2[E.BB,E.AA] + e2[E.AA,E.CC] * e2[E.CC,E.AA];
-//   e4[E.AA,E.BB] = e2[E.AA,E.BB] * (e2[E.AA,E.AA] + e2[E.BB,E.BB]) + e2[E.AA,E.CC] * e2[E.CC,E.BB];
+//   e4[E.AA,E.AA] = e2[E.AA,E.AA] * e2[E.AA,E.AA] + e2[E.AA,E.BB] * e2[E.BB,E.AA] + e2[E.AA,E.CC] * e2[E.CC,E.AA];
+//   e4[E.AA,E.BB] = e2[E.AA,E.AA] * e2[E.AA,E.BB] + e2[E.AA,E.BB] * e2[E.BB,E.BB] + e2[E.AA,E.CC] * e2[E.CC,E.BB];
 //   e4[E.AA,E.CC] = e2[E.AA,E.AA] * e2[E.AA,E.CC] + e2[E.AA,E.BB] * e2[E.BB,E.CC] + e2[E.AA,E.CC] * e2[E.CC,E.CC];
-//   e4[E.BB,E.AA] = e2[E.BB,E.AA] * (e2[E.AA,E.AA] + e2[E.BB,E.BB]) + e2[E.BB,E.CC] * e2[E.CC,E.AA];
-//   e4[E.BB,E.BB] = e2[E.BB,E.AA] * e2[E.AA,E.BB] + e2[E.BB,E.BB] ^ 2.0 + e2[E.BB,E.CC] * e2[E.CC,E.BB];
+//   e4[E.BB,E.AA] = e2[E.BB,E.AA] * e2[E.AA,E.AA] + e2[E.BB,E.BB] * e2[E.BB,E.AA] + e2[E.BB,E.CC] * e2[E.CC,E.AA];
+//   e4[E.BB,E.BB] = e2[E.BB,E.AA] * e2[E.AA,E.BB] + e2[E.BB,E.BB] * e2[E.BB,E.BB] + e2[E.BB,E.CC] * e2[E.CC,E.BB];
 //   e4[E.BB,E.CC] = e2[E.BB,E.AA] * e2[E.AA,E.CC] + e2[E.BB,E.BB] * e2[E.BB,E.CC] + e2[E.BB,E.CC] * e2[E.CC,E.CC];
 //   e4[E.CC,E.AA] = e2[E.CC,E.AA] * e2[E.AA,E.AA] + e2[E.CC,E.BB] * e2[E.BB,E.AA] + e2[E.CC,E.CC] * e2[E.CC,E.AA];
 //   e4[E.CC,E.BB] = e2[E.CC,E.AA] * e2[E.AA,E.BB] + e2[E.CC,E.BB] * e2[E.BB,E.BB] + e2[E.CC,E.CC] * e2[E.CC,E.BB];
-//   e4[E.CC,E.CC] = e2[E.CC,E.AA] * e2[E.AA,E.CC] + e2[E.CC,E.BB] * e2[E.BB,E.CC] + e2[E.CC,E.CC] ^ 2.0;
+//   e4[E.CC,E.CC] = e2[E.CC,E.AA] * e2[E.AA,E.CC] + e2[E.CC,E.BB] * e2[E.BB,E.CC] + e2[E.CC,E.CC] * e2[E.CC,E.CC];
 // end EnumMatrixProduct;
 // endResult

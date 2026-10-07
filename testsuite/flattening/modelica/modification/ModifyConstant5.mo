@@ -25,6 +25,7 @@ end ModifyConstant5;
 
 // Result:
 // Error processing file: ModifyConstant5.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/modification/ModifyConstant5.mo:13:3-13:39:writable] Notification: From here:
 // [flattening/modelica/modification/ModifyConstant5.mo:9:3-9:30:writable] Error: Redeclaration of final component c is not allowed.
 // [flattening/modelica/modification/ModifyConstant5.mo:13:3-13:39:writable] Notification: From here:

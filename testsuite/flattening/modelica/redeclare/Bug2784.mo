@@ -11,11 +11,12 @@ end C1;
 
 model C2
   replaceable parameter C1 x1(redeclare replaceable Real r=3);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end C2;
 
 // Result:
 // class C2
 //   parameter Real x1.r = 3.0;
 // end C2;
+// [flattening/modelica/redeclare/Bug2784.mo:9:3-9:36:writable] Warning: Components are deprecated in class.
+//
 // endResult

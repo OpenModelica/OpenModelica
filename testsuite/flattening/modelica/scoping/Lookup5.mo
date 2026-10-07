@@ -13,7 +13,6 @@ class Lookup5
     Real a = -a;
   end B;
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup5;
 
 // Result:
@@ -21,4 +20,8 @@ end Lookup5;
 //   constant Real a = 3.0;
 //   Real b.a = -b.a;
 // end Lookup5;
+// [flattening/modelica/scoping/Lookup5.mo:13:5-13:16:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup5.mo:11:3-11:24:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/scoping/Lookup5.mo:15:3-15:6:writable] Warning: Components are deprecated in class.
+//
 // endResult

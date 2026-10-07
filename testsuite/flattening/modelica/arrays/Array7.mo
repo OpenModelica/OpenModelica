@@ -26,4 +26,6 @@ end Array7;
 //   parameter Real a[2].x[2,1];
 //   parameter Real a[2].x[2,2];
 // end Array7;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

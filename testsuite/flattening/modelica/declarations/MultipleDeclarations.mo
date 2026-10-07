@@ -27,6 +27,7 @@ end test;
 
 // Result:
 // Error processing file: MultipleDeclarations.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/declarations/MultipleDeclarations.mo:19:2-19:28:writable] Notification: From here:
 // [flattening/modelica/declarations/MultipleDeclarations.mo:8:2-8:28:writable] Error: Duplicate elements (due to inherited elements) not identical:
 //   first element is:  parameter Integer n(min = 3)

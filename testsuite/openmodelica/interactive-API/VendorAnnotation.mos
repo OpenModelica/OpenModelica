@@ -1,6 +1,5 @@
 // name: VendorAnnotation.mos
 // status: correct
-// cflags: -d=-newInst
 
 
 loadFile("VendorAnnotation.mo");

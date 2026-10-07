@@ -2,7 +2,6 @@
 // keywords: function,recursion
 // status: correct
 // teardown_command: rm -rf FunctionIndirectRecursion_* FunctionIndirectRecursion FunctionIndirectRecursion.exe FunctionIndirectRecursion.cpp FunctionIndirectRecursion.makefile FunctionIndirectRecursion.libs FunctionIndirectRecursion.log output.log
-// cflags: -d=-newInst
 // 
 // Indirectly recursive function call
 // 

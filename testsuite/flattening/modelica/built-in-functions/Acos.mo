@@ -9,7 +9,6 @@ model Acos
   Real r;
 equation
   r = acos(0.5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Acos;
 
 // Result:

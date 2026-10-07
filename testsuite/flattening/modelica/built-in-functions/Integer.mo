@@ -9,7 +9,6 @@ model IntegerTest
   Real r;
 equation
   r = integer(4.5);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IntegerTest;
 
 // Result:

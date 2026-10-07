@@ -1236,6 +1236,7 @@ end BS7;
 //   assert(ramp1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = ramp1.outPort.signal[1];
 // end BS7;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/msl/BS7.mo:686:38-686:66:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

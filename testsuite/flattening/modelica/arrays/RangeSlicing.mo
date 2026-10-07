@@ -25,7 +25,6 @@ model RangeSlicing
   Real ea[E] = {1.0, 2.0, 3.0, 4.0};
   Real es1[:] = ea[E.one:E.four];
   Real es2[:] = ea[E.two:E.three];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RangeSlicing;
 
 // Result:
@@ -75,10 +74,10 @@ end RangeSlicing;
 //   Real bs2[2];
 //   Real bs3[1];
 //   Real bs4[1];
-//   Real ea[RangeSlicing.E.one];
-//   Real ea[RangeSlicing.E.two];
-//   Real ea[RangeSlicing.E.three];
-//   Real ea[RangeSlicing.E.four];
+//   Real ea[E.one];
+//   Real ea[E.two];
+//   Real ea[E.three];
+//   Real ea[E.four];
 //   Real es1[1];
 //   Real es1[2];
 //   Real es1[3];
@@ -86,19 +85,19 @@ end RangeSlicing;
 //   Real es2[1];
 //   Real es2[2];
 // equation
-//   ra = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
-//   rs1 = {ra[1], ra[2], ra[3], ra[4], ra[5], ra[6], ra[7], ra[8], ra[9], ra[10]};
-//   rs2 = {ra[1], ra[3], ra[5], ra[7], ra[9]};
-//   rs3 = {ra[3], ra[2], ra[1]};
-//   rs5 = {ra[2]};
-//   rs6 = {ra[4], ra[5], ra[6], ra[7], ra[8], ra[9], ra[10]};
-//   rs7 = {ra[10], ra[6], ra[2]};
+//   ra = /*Real[10]*/(array(i for i in 1:10));
+//   rs1 = ra[:];
+//   rs2 = ra[1:2:10];
+//   rs3 = ra[3:-1:1];
+//   rs5 = ra[2:2];
+//   rs6 = ra[4:10];
+//   rs7 = ra[10:-4:2];
 //   ba = {1.0, 2.0};
-//   bs2 = {ba[false], ba[true]};
-//   bs3 = {ba[true]};
-//   bs4 = {ba[false]};
+//   bs2 = ba[:];
+//   bs3 = ba[true:true];
+//   bs4 = ba[false:false];
 //   ea = {1.0, 2.0, 3.0, 4.0};
-//   es1 = {ea[RangeSlicing.E.one], ea[RangeSlicing.E.two], ea[RangeSlicing.E.three], ea[RangeSlicing.E.four]};
-//   es2 = {ea[RangeSlicing.E.two], ea[RangeSlicing.E.three]};
+//   es1 = ea[:];
+//   es2 = ea[E.two:E.three];
 // end RangeSlicing;
 // endResult

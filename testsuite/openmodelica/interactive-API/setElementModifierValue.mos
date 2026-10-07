@@ -1,7 +1,6 @@
 // name: setElementModifierValue
 // keywords:
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the setElementModifierValue API function.
 //

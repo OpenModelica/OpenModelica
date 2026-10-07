@@ -2,7 +2,6 @@
 // keywords: Graphical API, annotations
 // status: correct
 // teardown_command: rm -f *.c *.dll *.log *.makefile *.cpp *.exe *.h *.libs *_init.xml *_init.txt *_res.* mat-files.txt csv-files.txt plt-files.txt
-// cflags: -d=-newInst
 // Subset of the Graphical API for annotations
 //
 
@@ -110,7 +109,7 @@ readFile("plt-files.txt");
 // Evaluating: "CSV file"
 // "CSV file"
 // Evaluating: readFile("Modelica.Blocks.Examples.BusUsage_res.csv")
-// "\"time\",\"gain.u\",\"gain.y\",\"part.realExpression.y\",\"integerStep.y\",\"booleanStep.y\",\"part.booleanExpression.y\",\"part.subControlBus.myRealSignal\",\"sine.y\",\"part.subControlBus.myBooleanSignal\"
+// "\"time\",\"gain.u\",\"gain.y\",\"part.subControlBus.myRealSignal\",\"integerStep.y\",\"booleanStep.y\",\"part.subControlBus.myBooleanSignal\",\"part.realExpression.y\",\"sine.y\",\"part.booleanExpression.y\"
 // 0,0,0,0,2,0,0,0,0,0
 // 0.004,0.02513009544333748,0.02513009544333748,0.004,2,0,0,0.004,0.02513009544333748,0
 // 0.008,0.05024431817976956,0.05024431817976956,0.008,2,0,0,0.008,0.05024431817976956,0
@@ -236,7 +235,7 @@ readFile("plt-files.txt");
 // 0.488,0.07532680552793304,0.07532680552793304,0.488,2,0,0,0.488,0.07532680552793304,0
 // 0.492,0.05024431817976966,0.05024431817976966,0.492,2,0,0,0.492,0.05024431817976966,0
 // 0.496,0.02513009544333781,0.02513009544333781,0.496,2,0,0,0.496,0.02513009544333781,0
-// 0.5,5.85188598287419e-12,5.85188598287419e-12,0.4999999999990687,2,0,0,0.4999999999990687,5.85188598287419e-12,0
+// 0.5,1.224646799147353e-16,1.224646799147353e-16,0.5,2,0,0,0.5,1.224646799147353e-16,0
 // 0.5,1.224646799147353e-16,1.224646799147353e-16,0.5,3,1,1,0.5,1.224646799147353e-16,1
 // 0.504,-0.02513009544333757,-0.02513009544333757,0.504,3,1,1,0.504,-0.02513009544333757,1
 // 0.508,-0.05024431817976942,-0.05024431817976942,0.508,3,1,1,0.508,-0.05024431817976942,1

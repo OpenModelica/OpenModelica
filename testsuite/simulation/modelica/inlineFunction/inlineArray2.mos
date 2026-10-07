@@ -89,7 +89,8 @@ val(y,{0,0.5,1.0}); // 1, 1.823
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
-// {-1.0,-0.9862025310764797,-0.9859173056116497}
-// {1.0,1.464675331140519,1.826435278620429}
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
+// {-1.0, -0.9862025310297929, -0.9859173056294678}
+// {1.0, 1.4646753292984211, 1.8264352768369525}
 // endResult

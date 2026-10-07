@@ -12,7 +12,6 @@ equation
   x1=y.-t;
   x2=t.-y;
   v=t.-u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps3;
 
 // Result:
@@ -55,4 +54,8 @@ end ArrayEWOps3;
 //   x2[2,2] = t - y[2,2];
 //   v = t - u;
 // end ArrayEWOps3;
+// [flattening/modelica/arrays/ArrayEWOps3.mo:8:3-8:24:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayEWOps3.mo:9:3-9:13:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayEWOps3.mo:11:3-11:9:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

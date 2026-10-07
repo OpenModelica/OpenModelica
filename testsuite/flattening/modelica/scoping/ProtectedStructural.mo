@@ -12,7 +12,6 @@ model ProtectedStructural
   end A;
 
   protected A a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ProtectedStructural;
 
 // Result:

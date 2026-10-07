@@ -1277,6 +1277,7 @@ end BS16;
 //   assert(booleanPulse1.outPort.n == booleanChange1.inPort.n, "automatically generated from connect");
 //   booleanChange1.inPort.signal[1] = booleanPulse1.outPort.signal[1];
 // end BS16;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/msl/BS16.mo:729:41-729:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 // [flattening/modelica/msl/BS16.mo:729:76-729:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
 // [flattening/modelica/msl/BS16.mo:731:45-731:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.

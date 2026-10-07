@@ -11,7 +11,6 @@ class Constant1
   Real x;
 equation
   x = 2.0 * PI;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant1;
 
 // Result:
@@ -22,4 +21,9 @@ end Constant1;
 // equation
 //   x = 6.28318530717958;
 // end Constant1;
+// [flattening/modelica/declarations/Constant1.mo:9:3-9:38:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/Constant1.mo:10:3-10:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/Constant1.mo:11:3-11:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/Constant1.mo:13:3-13:15:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

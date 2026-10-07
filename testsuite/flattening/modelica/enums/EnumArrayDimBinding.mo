@@ -10,7 +10,6 @@ type E = enumeration(A, B, C);
 
 model EnumerationArrayDimBinding
   Real x[E] = {1, 2, 3};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumerationArrayDimBinding;
 
 // Result:

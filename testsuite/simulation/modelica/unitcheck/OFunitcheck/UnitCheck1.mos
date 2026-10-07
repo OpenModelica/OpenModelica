@@ -94,7 +94,8 @@ instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 //   der(V) = A;
 // end unitCheckTests.UnitCheck1;
 // "
-// "[<interactive>:12:5-12:54:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  S = if time > 0.5 then V else X2;
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// [<interactive>:12:5-12:54:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  S = if time > 0.5 then V else X2;
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"V\" has unit \"m/s\"
 // - sub-expression \"X2\" has unit \"m\"

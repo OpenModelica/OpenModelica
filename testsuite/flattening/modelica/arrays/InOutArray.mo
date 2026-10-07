@@ -54,53 +54,9 @@ class InOutArray
     Integer Csum = sumBool(C);
     constant Real D[3, 2] = { { 1.0, 2.0 }, { 3.0, 4.0 }, { 5.0, 6.0 } };
     constant Real F[3, 2] = addReal32(D);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InOutArray;
 
 // Result:
-// function addReal32
-//   input Real[3, 2] inVal;
-//   output Real[3, 2] outVal;
-// algorithm
-//   for i in 1:3 loop
-//     for j in 1:2 loop
-//       outVal[i,j] := 2.0 + inVal[i,j];
-//     end for;
-//   end for;
-// end addReal32;
-//
-// function sumBool
-//   input Boolean[:] inVal;
-//   output Integer outSum;
-// algorithm
-//   outSum := 0;
-//   for i in 1:size(inVal, 1) loop
-//     if inVal[i] then
-//       outSum := 1 + outSum;
-//     end if;
-//   end for;
-// end sumBool;
-//
-// function sumInt
-//   input Integer[:] inVal;
-//   output Integer outSum;
-// algorithm
-//   outSum := 0;
-//   for i in 1:size(inVal, 1) loop
-//     outSum := outSum + inVal[i];
-//   end for;
-// end sumInt;
-//
-// function sumReal
-//   input Real[:] inVal;
-//   output Real outSum;
-// algorithm
-//   outSum := 0.0;
-//   for i in 1:size(inVal, 1) loop
-//     outSum := outSum + inVal[i];
-//   end for;
-// end sumReal;
-//
 // class InOutArray
 //   constant Real A[1] = 1.0;
 //   constant Real A[2] = 2.0;
@@ -128,4 +84,13 @@ end InOutArray;
 //   constant Real F[3,1] = 7.0;
 //   constant Real F[3,2] = 8.0;
 // end InOutArray;
+// [flattening/modelica/arrays/InOutArray.mo:49:5-49:53:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:50:5-50:27:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:51:5-51:40:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:52:5-52:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:53:5-53:44:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:54:5-54:30:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:55:5-55:73:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/InOutArray.mo:56:5-56:41:writable] Warning: Components are deprecated in class.
+//
 // endResult

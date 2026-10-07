@@ -25,7 +25,6 @@ class PolyEvaluate1
 equation
   polyeval.x = time;
   p = polyeval.y;              // p gets the result
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolyEvaluate1;
 
 // Result:
@@ -37,7 +36,7 @@ end PolyEvaluate1;
 //   parameter Real polyeval.c[4] = 4.0;
 //   Real polyeval.x;
 //   Real polyeval.y;
-//   protected parameter Integer polyeval.n = 3;
+//   protected final parameter Integer polyeval.n = 3;
 //   protected Real polyeval.xpowers[1];
 //   protected Real polyeval.xpowers[2];
 //   protected Real polyeval.xpowers[3];
@@ -51,4 +50,8 @@ end PolyEvaluate1;
 //   polyeval.x = time;
 //   p = polyeval.y;
 // end PolyEvaluate1;
+// [flattening/modelica/arrays/PolynomialEvaluatorA.mo:23:3-23:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/PolynomialEvaluatorA.mo:24:3-24:49:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/PolynomialEvaluatorA.mo:26:3-26:20:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

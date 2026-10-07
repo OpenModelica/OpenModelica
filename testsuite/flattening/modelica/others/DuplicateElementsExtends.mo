@@ -21,6 +21,7 @@ end DuplicateElementsExtends;
 
 // Result:
 // Error processing file: DuplicateElementsExtends.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/others/DuplicateElementsExtends.mo:18:2-18:7:writable] Notification: From here:
 // [flattening/modelica/others/DuplicateElementsExtends.mo:12:2-12:10:writable] Error: Duplicate elements (due to inherited elements) not identical:
 //   first element is:  .Crap.X x

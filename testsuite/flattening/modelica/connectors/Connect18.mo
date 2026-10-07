@@ -16,7 +16,6 @@ model Connect18
 equation
   a[1].e = 1;
   connect(a[1:n-1],a[2:n]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect18;
 
 // Result:
@@ -33,16 +32,16 @@ end Connect18;
 //   Real a[5].e;
 //   Real a[5].f;
 // equation
-//   a[1].e = 1.0;
-//   a[5].f = 0.0;
-//   a[4].f = 0.0;
-//   a[3].f = 0.0;
-//   a[2].f = 0.0;
+//   a[4].e = a[5].e;
+//   a[4].e = a[3].e;
+//   a[4].e = a[2].e;
+//   a[4].e = a[1].e;
+//   -(a[4].f + a[5].f + a[3].f + a[2].f + a[1].f) = 0.0;
 //   a[1].f = 0.0;
-//   a[1].e = a[2].e;
-//   a[1].e = a[3].e;
-//   a[1].e = a[4].e;
-//   a[1].e = a[5].e;
-//   (-a[5].f) + (-a[4].f) + (-a[3].f) + (-a[2].f) + (-a[1].f) = 0.0;
+//   a[2].f = 0.0;
+//   a[3].f = 0.0;
+//   a[4].f = 0.0;
+//   a[5].f = 0.0;
+//   a[1].e = 1.0;
 // end Connect18;
 // endResult

@@ -38,4 +38,6 @@ end SS;
 //   y[1] = B[1,1] * u[1];
 //   y[2] = B[2,1] * u[1];
 // end SS;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

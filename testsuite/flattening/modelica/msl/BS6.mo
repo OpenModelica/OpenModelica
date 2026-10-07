@@ -1255,6 +1255,7 @@ end BS6;
 //   assert(pulse1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = pulse1.outPort.signal[1];
 // end BS6;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/msl/BS6.mo:685:41-685:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 // [flattening/modelica/msl/BS6.mo:685:76-685:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
 // [flattening/modelica/msl/BS6.mo:687:45-687:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.

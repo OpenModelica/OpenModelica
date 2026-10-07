@@ -11,5 +11,4 @@ package Something "Something"
 
   end Somewhere;
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Something;

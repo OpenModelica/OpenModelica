@@ -9,7 +9,6 @@ package ExtObjectTest
   model Ex
     package ExtPackage1 = ExtPackage;
     ExtPackage1.ExtObj mapping = ExtPackage1.ExtObj();
-    annotation(__OpenModelica_commandLineOptions="-d=-newInst");
   end Ex;
 
   package ExtPackage
@@ -28,13 +27,13 @@ package ExtObjectTest
 end ExtObjectTest;
 
 // Result:
-// function ExtObjectTest.Ex.ExtPackage1.ExtObj.constructor
+// impure function ExtObjectTest.Ex.ExtPackage1.ExtObj.constructor
 //   output ExtObjectTest.Ex.ExtPackage1.ExtObj mapping;
 //
 //   external "C" mapping = initMapping();
 // end ExtObjectTest.Ex.ExtPackage1.ExtObj.constructor;
 //
-// function ExtObjectTest.Ex.ExtPackage1.ExtObj.destructor
+// impure function ExtObjectTest.Ex.ExtPackage1.ExtObj.destructor
 //   input ExtObjectTest.Ex.ExtPackage1.ExtObj mapping;
 //
 //   external "C" destroyMapping(mapping);

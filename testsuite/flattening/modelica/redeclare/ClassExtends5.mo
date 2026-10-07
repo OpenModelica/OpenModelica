@@ -21,7 +21,6 @@ class P3
   redeclare class extends C Real r3; end C;
 
   C c3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end P3;
 
 // Result:
@@ -36,4 +35,7 @@ end P3;
 //   Real c3.r2;
 //   Real c3.r3;
 // end P3;
+// [flattening/modelica/redeclare/ClassExtends5.mo:21:29-21:36:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/redeclare/ClassExtends5.mo:23:3-23:7:writable] Warning: Components are deprecated in class.
+//
 // endResult

@@ -1,7 +1,6 @@
 // name:     Integer Add/Sub Overflow
 // keywords: 
 // status:   correct
-// cflags: -d=-newInst
 // 
 //  Making sure that add and sub is correct
 //

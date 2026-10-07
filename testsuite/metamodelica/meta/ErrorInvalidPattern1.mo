@@ -20,6 +20,7 @@ end ErrorInvalidPattern1;
 
 // Result:
 // Error processing file: ErrorInvalidPattern1.mo
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [metamodelica/meta/ErrorInvalidPattern1.mo:13:10-13:19:writable] Error: Invalid pattern: str + "" of type String
 // Error: Error occurred while flattening model ErrorInvalidPattern1
 //

@@ -2,7 +2,6 @@
 // keywords: fmu export import parameter initialization
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml Issue16354FMU* Issue16354Import* output.log
-// cflags:   -d=-newInst
 //
 // The parameter modifiers of an imported Model Exchange FMU have to reach the FMU
 // before it leaves Initialization Mode, otherwise the FMU computes the values that

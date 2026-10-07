@@ -6,7 +6,6 @@
 within;
 
 class EmptyWithin
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EmptyWithin;
 // Result:
 // class EmptyWithin

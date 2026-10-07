@@ -110,7 +110,7 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, pidDiscrete.cOut );
   connect(tank.tSensor, pidDiscrete.cIn );
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+std=2.x");
 end TankHybridPID;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -158,6 +158,9 @@ end TankHybridPID;
 //   parameter Real tank.maxV = 10.0;
 //   Real tank.h(unit = "m", start = 0.0) "Tank level";
 // equation
+//   source.qOut.lflow = tank.qIn.lflow;
+//   tank.tActuator.act = pidDiscrete.cOut.act;
+//   tank.tSensor.val = pidDiscrete.cIn.val;
 //   source.qOut.lflow = if time > 150.0 then 3.0 * source.flowLevel else source.flowLevel;
 //   when sample(0.0, pidDiscrete.Ts) then
 //     pidDiscrete.x = pre(pidDiscrete.x) + pidDiscrete.error * pidDiscrete.Ts / pidDiscrete.T;
@@ -168,10 +171,15 @@ end TankHybridPID;
 //   pidDiscrete.cOut.act = pidDiscrete.outCtr;
 //   assert(tank.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank.h) = (tank.qIn.lflow - tank.qOut.lflow) / tank.area;
-//   tank.qOut.lflow = LimitValue(tank.minV, tank.maxV, (-tank.flowGain) * tank.tActuator.act);
+//   tank.qOut.lflow = LimitValue(tank.minV, tank.maxV, -tank.flowGain * tank.tActuator.act);
 //   tank.tSensor.val = tank.h;
-//   source.qOut.lflow = tank.qIn.lflow;
-//   pidDiscrete.cOut.act = tank.tActuator.act;
-//   pidDiscrete.cIn.val = tank.tSensor.val;
 // end TankHybridPID;
+// [flattening/modelica/connectors/TankHybridPID.mo:99:3-99:18:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankHybridPID.mo:36:3-36:60:writable] Warning: Connector cIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankHybridPID.mo:37:3-37:62:writable] Warning: Connector cOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankHybridPID.mo:83:3-83:71:writable] Warning: Connector tSensor is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankHybridPID.mo:84:3-84:73:writable] Warning: Connector tActuator is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankHybridPID.mo:85:3-85:73:writable] Warning: Connector qIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankHybridPID.mo:86:3-86:74:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+//
 // endResult

@@ -18,7 +18,6 @@ equation
   end for;
   z[2]=1;
   z[4]=2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Range1;
 
 // Result:
@@ -39,16 +38,20 @@ end Range1;
 //   Integer z[4];
 //   Integer z[5];
 // equation
-//   x = {1, 2, 3, 4, 5};
-//   y[1] = 1 + x[1];
-//   y[2] = 1 + x[2];
-//   y[3] = 1 + x[3];
-//   y[4] = 1 + x[4];
-//   y[5] = 1 + x[5];
-//   z[1] = 2 + x[1];
-//   z[3] = 2 + x[3];
-//   z[5] = 2 + x[5];
+//   x = 1:5;
+//   y[1] = x[1] + 1;
+//   y[2] = x[2] + 1;
+//   y[3] = x[3] + 1;
+//   y[4] = x[4] + 1;
+//   y[5] = x[5] + 1;
+//   z[1] = x[1] + 2;
+//   z[3] = x[3] + 2;
+//   z[5] = x[5] + 2;
 //   z[2] = 1;
 //   z[4] = 2;
 // end Range1;
+// [flattening/modelica/arrays/Range1.mo:9:3-9:21:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/Range1.mo:10:3-10:21:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/Range1.mo:12:3-14:10:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

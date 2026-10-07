@@ -2,7 +2,6 @@
 // keywords: assert
 // status:   correct
 // teardown_command: rm -rf Test4* _Test4* output.log
-// cflags: -d=-newInst
 // 
 // 
 loadFile("AssertTest4.mo");
@@ -32,5 +31,10 @@ getErrorString();
 // LOG_ASSERT        | error   | No event found, but assert was triggered. Throwing now!
 // "
 // end SimulationResult;
-// ""
+// "[simulation/modelica/asserts/AssertTest4.mo:20:3-20:18:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest4.mo:21:3-21:9:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest4.mo:23:3-23:13:writable] Warning: Equation sections are deprecated in class.
+// [simulation/modelica/asserts/AssertTest4.mo:30:3-30:24:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest4.mo:13:3-19:8:writable] Warning: Pure function 'Test4.assertTest.f' contains a call to impure function 'Test4.assertTest.print'.
+// "
 // endResult

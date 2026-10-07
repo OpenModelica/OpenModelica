@@ -25,15 +25,15 @@ function f
 end f;
 
   Real res[2] = f(1.5);
-  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen");
 end ExternalFunctionArray;
 // Result:
-// function ExternalFunctionArray.f
+// impure function ExternalFunctionArray.f
 //   input Real r;
 //   output Real[2] res = ExternalFunctionArray.get_results(r, "abc", 2) + ExternalFunctionArray.get_results(2.0 * r, "abc", 2);
 // end ExternalFunctionArray.f;
 //
-// function ExternalFunctionArray.get_results
+// impure function ExternalFunctionArray.get_results
 //   input Real m;
 //   input String property;
 //   input Integer n;
@@ -46,6 +46,8 @@ end ExternalFunctionArray;
 //   Real res[1];
 //   Real res[2];
 // equation
-//   res = {6.75, 11.25};
+//   res = ExternalFunctionArray.f(1.5);
 // end ExternalFunctionArray;
+// [flattening/modelica/external-functions/ExternalFunctionArray.mo:22:1-25:6:writable] Warning: Pure function 'ExternalFunctionArray.f' contains a call to impure function 'ExternalFunctionArray.get_results'.
+//
 // endResult

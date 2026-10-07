@@ -13,12 +13,11 @@ model Connect17
   OutReal y[p+1];
 equation
   connect(x,y[2:p+1]);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect17;
 
 // Result:
 // class Connect17
-//   parameter Integer p = 3;
+//   final parameter Integer p = 3;
 //   input Real x[1];
 //   input Real x[2];
 //   input Real x[3];

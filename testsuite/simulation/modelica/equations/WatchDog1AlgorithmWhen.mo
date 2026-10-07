@@ -47,7 +47,6 @@ equation
   connect(turnOn.dOutput,  watchdog.dOn);
   connect(turnOff.dOutput, watchdog.dOff);
   connect(deadlineEmitter.dOutput, watchdog.dDeadline);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WatchDogSystem1;
 
 

@@ -17,7 +17,6 @@ model FinalRedeclareModifier2
   package P2 end P2;
 
   M2 m(redeclare final package P = P2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FinalRedeclareModifier2;
 
 // Result:

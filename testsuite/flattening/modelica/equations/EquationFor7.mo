@@ -11,7 +11,6 @@ equation
   for i in 1:2, j in 1:3 loop
     a[i,j] =  i+j;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor7;
 
 // Result:
@@ -30,4 +29,7 @@ end EquationFor7;
 //   a[2,2] = 4.0;
 //   a[2,3] = 5.0;
 // end EquationFor7;
+// [flattening/modelica/equations/EquationFor7.mo:9:3-9:14:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/EquationFor7.mo:11:3-13:10:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

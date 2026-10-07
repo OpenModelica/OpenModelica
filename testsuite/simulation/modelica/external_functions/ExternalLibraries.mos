@@ -3,7 +3,6 @@
 // status: correct
 // setup_command: $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -c -o libExternalFunc1_ext.o ExternalFunc1.c && $OMC_NATIVE_CC $OMC_NATIVE_CFLAGS -c -o libExternalFunc2.a ExternalFunc2.c
 // teardown_command: rm -rf ExternalFunc1_ext.o ExternalFunc2.a libExternalFunc1_ext.o libExternalFunc2.a ExternalLibraries1* output.log
-// cflags: -d=-newInst
 // depends: ExternalFunc1.c
 // depends: ExternalFunc1_ext.h
 // depends: ExternalFunc2.c

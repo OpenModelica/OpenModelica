@@ -10,7 +10,6 @@ class bug1210
   Real r;
 equation
   r = i[2,2];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end bug1210;
 
 // Result:
@@ -23,4 +22,8 @@ end bug1210;
 // equation
 //   r = 4.4;
 // end bug1210;
+// [flattening/modelica/built-in-functions/Transpose2.mo:9:3-9:58:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/Transpose2.mo:10:3-10:9:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/built-in-functions/Transpose2.mo:12:3-12:13:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

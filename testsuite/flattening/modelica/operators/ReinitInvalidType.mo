@@ -11,13 +11,13 @@ equation
   when b then
     reinit(b, true);
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ReinitInvalidType;
 
 // Result:
 // Error processing file: ReinitInvalidType.mo
+// [flattening/modelica/operators/ReinitInvalidType.mo:9:3-9:27:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/operators/ReinitInvalidType.mo:11:3-13:11:writable] Warning: Equation sections are deprecated in class.
 // [flattening/modelica/operators/ReinitInvalidType.mo:12:5-12:20:writable] Error: The first argument to reinit must be a subtype of Real, but b has type Boolean.
-// Error: Error occurred while flattening model ReinitInvalidType
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

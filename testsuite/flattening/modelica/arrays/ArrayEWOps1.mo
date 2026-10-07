@@ -12,7 +12,6 @@ equation
   x1=y.+t;
   x2=t.+y;
   v=t.+u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayEWOps1;
 
 // Result:
@@ -49,10 +48,14 @@ end ArrayEWOps1;
 //   x1[1,2] = y[1,2] + t;
 //   x1[2,1] = y[2,1] + t;
 //   x1[2,2] = y[2,2] + t;
-//   x2[1,1] = y[1,1] + t;
-//   x2[1,2] = y[1,2] + t;
-//   x2[2,1] = y[2,1] + t;
-//   x2[2,2] = y[2,2] + t;
+//   x2[1,1] = t + y[1,1];
+//   x2[1,2] = t + y[1,2];
+//   x2[2,1] = t + y[2,1];
+//   x2[2,2] = t + y[2,2];
 //   v = t + u;
 // end ArrayEWOps1;
+// [flattening/modelica/arrays/ArrayEWOps1.mo:8:3-8:24:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayEWOps1.mo:9:3-9:13:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayEWOps1.mo:11:3-11:9:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

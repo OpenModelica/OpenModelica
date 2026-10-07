@@ -10,7 +10,6 @@ model SimpleIntegrator4
   Real x(initial = 2.0);
 equation
   der(x) = u;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimpleIntegrator4;
 // Result:
 // Error processing file: SimpleIntegrator4.mo

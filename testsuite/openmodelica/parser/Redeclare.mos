@@ -1,6 +1,5 @@
 // name: Redeclare
 // status: correct
-// cflags: -d=-newInst
 
 loadFile("Redeclare.mo");
 getErrorString();

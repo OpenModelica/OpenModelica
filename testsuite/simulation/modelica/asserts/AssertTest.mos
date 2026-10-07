@@ -6,7 +6,6 @@
 // Error! Assertion does not cancel simulation.
 // Simulation should fail! Update case after implementation of assert.
 // Drmodelica: 8.2 Assert (p. 249)
-// cflags: -d=-newInst
 //
 
 loadFile("AssertTest.mo");
@@ -22,7 +21,8 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertTestDuringInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: AssertTestDuringInst"
 // end SimulationResult;
-// "[simulation/modelica/asserts/AssertTest.mo:22:3-22:55:writable] Error: Assertion triggered during translation: \"Testing assert during instantiation\".
+// "[simulation/modelica/asserts/AssertTest.mo:22:3-22:55:writable] Warning: Equation sections are deprecated in class.
+// [simulation/modelica/asserts/AssertTest.mo:22:3-22:55:writable] Error: Assertion triggered during translation: \"Testing assert during instantiation\".
 // "
 // record SimulationResult
 //     resultFile = "",
@@ -34,5 +34,10 @@ getErrorString();
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
-// ""
+// "[simulation/modelica/asserts/AssertTest.mo:9:3-9:33:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest.mo:10:3-10:34:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest.mo:11:3-11:13:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/asserts/AssertTest.mo:13:3-13:70:writable] Warning: Equation sections are deprecated in class.
+// [simulation/modelica/asserts/AssertTest.mo:17:3-17:54:writable] Warning: Components are deprecated in class.
+// "
 // endResult

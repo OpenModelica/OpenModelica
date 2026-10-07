@@ -69,6 +69,7 @@ end TailRecursion;
 //   Real r2 = 200000.5;
 //   Real r3 = 200000.5;
 // end TailRecursion;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [metamodelica/meta/TailRecursion.mo:12:3-12:19:writable] Notification: Tail recursion of: TailRecursion.last(1.0 + x) with input vars: x
 // [metamodelica/meta/TailRecursion.mo:19:3-19:46:writable] Notification: Tail recursion of: TailRecursion.if_(1.0 + x) with input vars: x
 // [metamodelica/meta/TailRecursion.mo:26:3-30:12:writable] Notification: Tail recursion of: TailRecursion.match_(1.0 + x) with input vars: x

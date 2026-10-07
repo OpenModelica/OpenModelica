@@ -12,7 +12,6 @@ class ArrayMult
   Real m6[1] = {1, 2, 3} * [1; 2; 10];       // Matrix mult:     {35};
   Real m7[2, 2] = {{1, 2}, {3, 4}} * {{1, 2}, {2, 1}};   // Matrix mult:   {{5, 4}, {11, 10}};
   Real m8[2, 2] = [1, 2; 3, 4] * [1, 2; 2, 1];   // Matrix mult: {{5, 4}, {11, 10}};
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMult;
 
 // Result:
@@ -45,4 +44,13 @@ end ArrayMult;
 //   m7 = {{5.0, 4.0}, {11.0, 10.0}};
 //   m8 = {{5.0, 4.0}, {11.0, 10.0}};
 // end ArrayMult;
+// [flattening/modelica/arrays/ArrayMult.mo:7:3-7:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:8:3-8:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:9:3-9:34:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:10:3-10:41:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:11:3-11:44:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:12:3-12:38:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:13:3-13:54:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayMult.mo:14:3-14:46:writable] Warning: Components are deprecated in class.
+//
 // endResult

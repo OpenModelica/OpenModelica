@@ -32,5 +32,4 @@ model Cross
 equation
   z = myCrossReal(x,if time > 0.1 then y2 else y1);
   zi = myCrossInt(xi,if time > 0.1 then yi2 else yi1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cross;

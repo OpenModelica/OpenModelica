@@ -1,7 +1,6 @@
 // name: ticket-2337
 // keywords: when equations, #2337
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 model whenBug

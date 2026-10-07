@@ -18,7 +18,6 @@ end C;
 
 model ConnectorSubtypeComp
   C c;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectorSubtypeComp;
 
 // Result:

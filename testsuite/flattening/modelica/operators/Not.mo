@@ -8,7 +8,6 @@
 model Not
   constant Boolean b1 = not false;
   constant Boolean b2 = not true;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Not;
 
 // Result:

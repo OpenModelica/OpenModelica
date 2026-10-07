@@ -1,6 +1,5 @@
 //name: forceInlineComplexEq4
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("--postOptModules+=forceInlineFunctionInLoops --initOptModules+=forceInlineFunctionInLoops +d=backenddaeinfo,dumpLoops ");
 loadString("
@@ -39,7 +38,7 @@ val(x3,{0,1});
 //
 // ########################################
 //
-//  Algbraic Loops (Simulation):
+//  Algbraic Loops (Simulation): 
 //
 // ########################################
 //
@@ -47,7 +46,7 @@ val(x3,{0,1});
 // ========================================
 //
 // ################################################################################
-//  dumpLoops: SORTED COMPONENT
+//  dumpLoops: SORTED COMPONENT 
 // ################################################################################
 //
 // torn nonlinear Equationsystem:
@@ -61,17 +60,17 @@ val(x3,{0,1});
 // 2: x3:VARIABLE()  type: Real
 //
 // internal equations (2)
-// 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
-// 2/2 (1): x3 = -5.0 + 3.0 * (x1 + x3 - x2)   [unknown |0|0|0|0|]
+// 1/1 (1): x2 = 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - 5.0   [unknown |0|0|0|0|]
+// 2/2 (1): x3 = 3.0 * (x1 + x3 - x2) - 5.0   [unknown |0|0|0|0|]
 //
 // residual equations (2)
-// 1/1 (1): x1 = 23.0 * (10.0 + 3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (10.0 + 3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4))   [unknown |0|0|0|0|]
-// 2/2 (1): x4 = 23.0 * (10.0 + $cse4 - (x1 + x3 - x2)) * (x1 + x3 - x2) - (10.0 + $cse4 - (x1 + x3 - x2))   [unknown |0|0|0|0|]
+// 1/1 (1): x1 = 23.0 * (3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) + 10.0) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) + 10.0)   [unknown |0|0|0|0|]
+// 2/2 (1): x4 = 23.0 * ($cse4 - (x1 + x3 - x2) + 10.0) * (x1 + x3 - x2) - ($cse4 - (x1 + x3 - x2) + 10.0)   [unknown |0|0|0|0|]
 //
 //
 // ########################################
 //
-//  Algbraic Loops (Initialization):
+//  Algbraic Loops (Initialization): 
 //
 // ########################################
 //
@@ -79,7 +78,7 @@ val(x3,{0,1});
 // ========================================
 //
 // ################################################################################
-//  dumpLoops: SORTED COMPONENT
+//  dumpLoops: SORTED COMPONENT 
 // ################################################################################
 //
 // torn nonlinear Equationsystem:
@@ -93,16 +92,16 @@ val(x3,{0,1});
 // 2: x3:VARIABLE()  type: Real
 //
 // internal equations (2)
-// 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [dynamic |0|0|0|0|]
-// 2/2 (1): x3 = -5.0 + 3.0 * (x1 + x3 - x2)   [dynamic |0|0|0|0|]
+// 1/1 (1): x2 = 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - 5.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x3 = 3.0 * (x1 + x3 - x2) - 5.0   [dynamic |0|0|0|0|]
 //
 // residual equations (2)
-// 1/1 (1): x1 = 23.0 * (10.0 + 3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (10.0 + 3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4))   [dynamic |0|0|0|0|]
-// 2/2 (1): x4 = 23.0 * (10.0 + sin(time) - (x1 + x3 - x2)) * (x1 + x3 - x2) - (10.0 + sin(time) - (x1 + x3 - x2))   [dynamic |0|0|0|0|]
+// 1/1 (1): x1 = 23.0 * (3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) + 10.0) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) + 10.0)   [dynamic |0|0|0|0|]
+// 2/2 (1): x4 = 23.0 * (sin(time) - (x1 + x3 - x2) + 10.0) * (x1 + x3 - x2) - (sin(time) - (x1 + x3 - x2) + 10.0)   [dynamic |0|0|0|0|]
 //
 // record SimulationResult
 //     resultFile = "foo_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -154,7 +153,7 @@ val(x3,{0,1});
 //  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
 //    {(2,2)}
 // "
-// {0.07675361072941356,0.07423981665119239}
-// {-4.868670267708994,-4.868661846237776}
-// {-4.918135817657611,-4.914352494333452}
+// {0.076753610729412, 0.07423981665118706}
+// {-4.868670267708994, -4.868661846237781}
+// {-4.9181358176576095, -4.914352494333452}
 // endResult

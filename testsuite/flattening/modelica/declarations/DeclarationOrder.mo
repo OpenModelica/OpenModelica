@@ -17,7 +17,6 @@ end C1;
 
 model DeclarationOrder
   Test t;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DeclarationOrder;
 
 // Result:
@@ -26,4 +25,6 @@ end DeclarationOrder;
 //   Integer t.x = 3;
 //   constant Integer t.y = 3;
 // end DeclarationOrder;
+// [flattening/modelica/declarations/DeclarationOrder.mo:15:3-15:26:writable] Warning: Components are deprecated in class.
+//
 // endResult

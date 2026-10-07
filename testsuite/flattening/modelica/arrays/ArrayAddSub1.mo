@@ -7,9 +7,8 @@
 
 class AddSub1
   Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};
-                                      // Result: {{2, 3}, {5, 6}}
+// Result: {{2, 3}, {5, 6}}
   Real Sub1[3] = {1, 2, 3} - {1, 2, 0};    // Result: {0, 0, 3}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AddSub1;
 
 // Result:
@@ -25,4 +24,7 @@ end AddSub1;
 //   Add3 = {{2.0, 3.0}, {5.0, 6.0}};
 //   Sub1 = {0.0, 0.0, 3.0};
 // end AddSub1;
+// [flattening/modelica/arrays/ArrayAddSub1.mo:9:3-9:56:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayAddSub1.mo:11:3-11:39:writable] Warning: Components are deprecated in class.
+//
 // endResult

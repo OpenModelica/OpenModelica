@@ -4,7 +4,6 @@
 // teardown_command: rm -rf Activate_* Activate.exe Activate Activate.c _Activate.h Activate.makefile Activate.libs Activate.log output.log
 //
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
-// cflags: -d=-newInst
 //
 
 loadFile("ActivateWhenEquation.mo"); getErrorString();
@@ -18,12 +17,15 @@ val(z,1.0);
 // ""
 // record SimulationResult
 //     resultFile = "Activate_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Activate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'Activate', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "[simulation/modelica/equations/ActivateWhenEquation.mo:10:3-10:22:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/equations/ActivateWhenEquation.mo:11:3-11:12:writable] Warning: Components are deprecated in class.
+// [simulation/modelica/equations/ActivateWhenEquation.mo:13:3-14:11:writable] Warning: Equation sections are deprecated in class.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 7.0
 // 2.0

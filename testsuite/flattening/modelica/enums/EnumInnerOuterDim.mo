@@ -28,4 +28,6 @@ end Model2;
 //   parameter Real m1.p2[E.B] = p1[E.B];
 //   parameter Real m1.p2[E.C] = p1[E.C];
 // end Model2;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

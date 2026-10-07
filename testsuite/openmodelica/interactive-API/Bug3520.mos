@@ -1,7 +1,6 @@
 // name:     Bug3520
 // keywords: instantiate API
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks inherited class instantiation
 //
@@ -16,5 +15,6 @@ instantiateModel(Derived.Foo); getErrorString();
 //   parameter Integer foo = 0;
 // end Derived.Foo;
 // "
-// ""
+// "[openmodelica/interactive-API/Bug3520.mo:3:5-3:30:writable] Warning: Components are deprecated in class.
+// "
 // endResult

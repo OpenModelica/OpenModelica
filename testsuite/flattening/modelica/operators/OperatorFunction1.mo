@@ -48,4 +48,6 @@ end OperatorIllegal;
 //   r2.r = 2.0;
 //   r3 = Rec.'+'(r1, r2);
 // end OperatorIllegal;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

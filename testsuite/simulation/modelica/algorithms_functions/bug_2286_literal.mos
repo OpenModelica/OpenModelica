@@ -1,7 +1,6 @@
 // name: bug_2286_literal
 // keywords:
 // status: correct
-// cflags: -d=-newInst
 //
 //  tests for algorithms with arrays as lhs
 //

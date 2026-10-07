@@ -20,4 +20,6 @@ end List5;
 //   constant list<P.UT> lst1 = List(P.UT.R1(), P.UT.R2());
 //   constant list<P.UT> lst2 = List(P.UT.R1(), P.UT.R1(), P.UT.R2());
 // end List5;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+//
 // endResult

@@ -1,7 +1,6 @@
 // name: Reinit
 // keywords: event, reinit
 // status: correct
-// cflags: -d=-newInst
 //
 //   This test is used to check multiple when conditions for a reinit statement
 //

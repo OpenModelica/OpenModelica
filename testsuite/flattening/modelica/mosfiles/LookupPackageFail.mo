@@ -16,7 +16,6 @@ package P
 
   package P
   end P;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end P;
 
 // Result:

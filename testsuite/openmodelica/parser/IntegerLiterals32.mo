@@ -16,7 +16,6 @@ model IntegerLiterals32
   Integer i;
 equation
   i = -2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end IntegerLiterals32;
 // Result:
 // [IntegerLiterals32.mo:14:23-14:33:writable] Warning: Modelica only supports 32-bit signed integers! Transforming: 2147483648 into a real

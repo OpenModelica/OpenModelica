@@ -26,7 +26,6 @@ model MissingModifiersPackages
  A.M m1;
  B.M m2;
  C.M m3;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MissingModifiersPackages;
 
 // Result:

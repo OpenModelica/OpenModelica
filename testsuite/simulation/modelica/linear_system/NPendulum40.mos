@@ -2,7 +2,6 @@
 // keywords:  arrays
 // status:    correct
 // teardown_command: rm -f NPendulum.pendulum40*
-// cflags: -d=-newInst
 //
 
 loadFile("NPendulum.mo");

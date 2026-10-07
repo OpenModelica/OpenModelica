@@ -2,7 +2,6 @@
 // keywords: assert
 // status: correct
 // teardown_command: rm -rf Assert3* output.log
-// cflags: -d=-newInst
 // 
 //
 

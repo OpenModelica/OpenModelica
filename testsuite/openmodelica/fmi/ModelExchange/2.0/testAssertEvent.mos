@@ -63,7 +63,8 @@ simulate(R134a_pTX_phX_all_me_FMU, stopTime=0.2305); getErrorString();
 // true
 // ""
 // "R134a_pTX_phX_all.fmu"
-// "Notification: Building FMU for platform 'static' (1/1).
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// Notification: Building FMU for platform 'static' (1/1).
 // Notification: Finished FMU for platform 'static' (1/1).
 // "
 // "R134a_pTX_phX_all_me_FMU.mo"
@@ -90,5 +91,6 @@ simulate(R134a_pTX_phX_all_me_FMU, stopTime=0.2305); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // endResult

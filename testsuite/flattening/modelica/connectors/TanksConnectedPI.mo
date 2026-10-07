@@ -87,7 +87,7 @@ model TanksConnectedPI
   connect(tank1.qOut,tank2.qIn);
   connect(tank2.tActuator,piContinuous2.cOut);
   connect(tank2.tSensor,piContinuous2.cIn);
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+std=2.x");
 end TanksConnectedPI;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -143,14 +143,20 @@ end TanksConnectedPI;
 //   Real piContinuous2.outCtr "Output control signal";
 //   Real piContinuous2.x "State variable of continuous PI controller";
 // equation
+//   source.qOut.lflow = tank1.qIn.lflow;
+//   tank1.tActuator.act = piContinuous1.cOut.act;
+//   tank1.tSensor.val = piContinuous1.cIn.val;
+//   tank1.qOut.lflow = tank2.qIn.lflow;
+//   tank2.tActuator.act = piContinuous2.cOut.act;
+//   tank2.tSensor.val = piContinuous2.cIn.val;
 //   source.qOut.lflow = if time > 150.0 then 3.0 * source.flowLevel else source.flowLevel;
 //   assert(tank1.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank1.h) = (tank1.qIn.lflow - tank1.qOut.lflow) / tank1.area;
-//   tank1.qOut.lflow = limitValue(tank1.minV, tank1.maxV, (-tank1.flowGain) * tank1.tActuator.act);
+//   tank1.qOut.lflow = limitValue(tank1.minV, tank1.maxV, -tank1.flowGain * tank1.tActuator.act);
 //   tank1.tSensor.val = tank1.h;
 //   assert(tank2.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank2.h) = (tank2.qIn.lflow - tank2.qOut.lflow) / tank2.area;
-//   tank2.qOut.lflow = limitValue(tank2.minV, tank2.maxV, (-tank2.flowGain) * tank2.tActuator.act);
+//   tank2.qOut.lflow = limitValue(tank2.minV, tank2.maxV, -tank2.flowGain * tank2.tActuator.act);
 //   tank2.tSensor.val = tank2.h;
 //   der(piContinuous1.x) = piContinuous1.error / piContinuous1.T;
 //   piContinuous1.outCtr = piContinuous1.K * (piContinuous1.error + piContinuous1.x);
@@ -160,11 +166,19 @@ end TanksConnectedPI;
 //   piContinuous2.outCtr = piContinuous2.K * (piContinuous2.error + piContinuous2.x);
 //   piContinuous2.error = piContinuous2.ref - piContinuous2.cIn.val;
 //   piContinuous2.cOut.act = piContinuous2.outCtr;
-//   source.qOut.lflow = tank1.qIn.lflow;
-//   piContinuous1.cOut.act = tank1.tActuator.act;
-//   piContinuous1.cIn.val = tank1.tSensor.val;
-//   tank1.qOut.lflow = tank2.qIn.lflow;
-//   piContinuous2.cOut.act = tank2.tActuator.act;
-//   piContinuous2.cIn.val = tank2.tSensor.val;
 // end TanksConnectedPI;
+// [flattening/modelica/connectors/TanksConnectedPI.mo:32:3-32:18:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:62:3-62:72:writable] Warning: Connector tSensor is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:63:3-63:74:writable] Warning: Connector tActuator is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:64:3-64:74:writable] Warning: Connector qIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:65:3-65:75:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:62:3-62:72:writable] Warning: Connector tSensor is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:63:3-63:74:writable] Warning: Connector tActuator is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:64:3-64:74:writable] Warning: Connector qIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:65:3-65:75:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:13:3-13:60:writable] Warning: Connector cIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:14:3-14:62:writable] Warning: Connector cOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:13:3-13:60:writable] Warning: Connector cIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TanksConnectedPI.mo:14:3-14:62:writable] Warning: Connector cOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+//
 // endResult

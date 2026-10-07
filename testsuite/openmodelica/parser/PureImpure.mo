@@ -31,7 +31,6 @@ model PureImpure
   parameter Boolean x = f(y);
   parameter Boolean z = fimpure(y);
   parameter Boolean w = fdefaultpure(y);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PureImpure;
 
 // Result:

@@ -12,12 +12,13 @@ class ScopeModification2
     Real b;
   end Inner;
   Inner m(b = a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeModification2;
 // Result:
 // Error processing file: ScopeModification2.mo
+// [flattening/modelica/declarations/ScopeModification2.mo:11:5-11:11:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeModification2.mo:12:5-12:11:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/declarations/ScopeModification2.mo:14:3-14:17:writable] Warning: Components are deprecated in class.
 // [flattening/modelica/declarations/ScopeModification2.mo:14:11-14:16:writable] Error: Variable a not found in scope ScopeModification2.
-// Error: Error occurred while flattening model ScopeModification2
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

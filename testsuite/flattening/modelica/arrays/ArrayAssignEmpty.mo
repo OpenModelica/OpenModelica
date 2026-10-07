@@ -11,16 +11,9 @@ model ArrayAssignEmpty
   Real r[0];
 algorithm
   r := f(time);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAssignEmpty;
 
 // Result:
-// function ArrayAssignEmpty.f
-//   input Real r;
-//   output Real[0] o;
-// end ArrayAssignEmpty.f;
-//
 // class ArrayAssignEmpty
-// algorithm
 // end ArrayAssignEmpty;
 // endResult

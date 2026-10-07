@@ -7,11 +7,12 @@
 
 class ScopeDeclaration1
   Real a = -a;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeDeclaration1;
 
 // Result:
 // class ScopeDeclaration1
 //   Real a = -a;
 // end ScopeDeclaration1;
+// [flattening/modelica/declarations/ScopeDeclaration1.mo:9:3-9:14:writable] Warning: Components are deprecated in class.
+//
 // endResult

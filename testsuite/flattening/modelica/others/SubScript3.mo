@@ -19,7 +19,6 @@ end B;
 
 model Subscript3
   B b;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Subscript3;
 
 // Result:

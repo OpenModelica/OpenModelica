@@ -14,7 +14,6 @@ class AddSub
 
   Real Sub1[3] = {1, 2, 3} - {1, 2, 0};
   // Result {0, 0, 3}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AddSub;
 
 
@@ -22,8 +21,11 @@ end AddSub;
 
 // Result:
 // Error processing file: ArrayAddSub.mo
-// [flattening/modelica/arrays/ArrayAddSub.mo:9:3-9:28:writable] Error: Cannot resolve type of expression {1, 2, 3} + 1. The operands have types Integer[3], Integer in component <NO COMPONENT>.
-// Error: Error occurred while flattening model AddSub
+// [flattening/modelica/arrays/ArrayAddSub.mo:9:3-9:28:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayAddSub.mo:10:3-10:33:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayAddSub.mo:12:3-12:56:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayAddSub.mo:15:3-15:39:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayAddSub.mo:9:3-9:28:writable] Error: Cannot resolve type of expression {1, 2, 3} + 1. The operands have types Integer[3], Integer in component <NO_COMPONENT>.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

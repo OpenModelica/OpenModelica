@@ -33,7 +33,6 @@ end Terminal_n;
 model RedeclareLocalClass 
   extends PartialTwoPort(redeclare package PhaseSystem_n = OnePhase,
     redeclare Terminal_n terminal_n(i(start = zeros(PhaseSystem_n.n))));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareLocalClass;
 
 

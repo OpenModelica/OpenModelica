@@ -11,7 +11,6 @@ equation
   for i loop
     a[i] = i;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor6;
 
 // Result:
@@ -24,4 +23,7 @@ end EquationFor6;
 //   a[2] = 2.0;
 //   a[3] = 3.0;
 // end EquationFor6;
+// [flattening/modelica/equations/EquationFor6.mo:9:3-9:12:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/equations/EquationFor6.mo:11:3-13:10:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

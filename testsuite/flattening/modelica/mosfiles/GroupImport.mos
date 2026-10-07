@@ -1,6 +1,5 @@
 // name: GroupImport
 // status: correct
-// cflags: -d=-newInst
 
 loadFile("GroupImport.mo");
 list();getErrorString();
@@ -11,7 +10,7 @@ instantiateModel(GroupImport);getErrorString();
 // "package B
 //   constant Real c = 1, d = 2;
 // end B;
-// 
+//
 // class GroupImport
 //   import B.{c,e = d};
 //   Real r = c + e;
@@ -21,5 +20,6 @@ instantiateModel(GroupImport);getErrorString();
 //   Real r = 3.0;
 // end GroupImport;
 // "
-// ""
+// "[flattening/modelica/mosfiles/GroupImport.mo:7:3-7:15:writable] Warning: Components are deprecated in class.
+// "
 // endResult

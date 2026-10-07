@@ -10,7 +10,6 @@ class ArrayModification1
     Real x[3];
   end A;
   A a(x[2] = 1.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayModification1;
 
 // Result:

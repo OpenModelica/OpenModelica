@@ -20,7 +20,6 @@ class StatementCall
   Real height, velocity;
 algorithm
   (height, velocity) := PointOnCircle(1.2, 2);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end StatementCall;
 
 // class StatementCall

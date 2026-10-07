@@ -8,7 +8,6 @@
 model NotEquals
   constant Boolean b1 = 5 <> 7;
   constant Boolean b2 = 5 <> 5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NotEquals;
 
 // Result:

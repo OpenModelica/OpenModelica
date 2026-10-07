@@ -1,7 +1,6 @@
 // name:      parameterTest8
 // keywords:  parameter evaluation, structural
 // status:    correct
-// cflags: -d=-newInst
 
 loadString("
 model parameterTest8
@@ -71,9 +70,9 @@ simulate(parameterTest8, simflags="-override state=false -output=state,v,r", res
 // START evaluating parameters:
 // ================================================================================
 // Number of parameters: 1
-// Number of parameters selected for evaluation: 1
+// Number of parameters selected for evaluation: 0
 // Selected parameters for evaluation:
-// 1
+//
 //
 // Adjacency Matrix (row: equation)
 // ========================================
@@ -90,14 +89,14 @@ simulate(parameterTest8, simflags="-override state=false -output=state,v,r", res
 // ================================================================================
 //
 // All replacements:
-// Replacements: (1)
+// Replacements: (0)
 // ========================================
-// state -> true
+//
 //
 // Replacements that will be replaced in the DAE:
-// Replacements: (1)
+// Replacements: (0)
 // ========================================
-// state -> true
+//
 //
 // globalKnownVars (1)
 // ========================================
@@ -105,7 +104,7 @@ simulate(parameterTest8, simflags="-override state=false -output=state,v,r", res
 //
 //
 // mark: 1
-// markarr: 1
+// markarr: -1
 //
 //
 // After sorting parameters:
@@ -132,7 +131,7 @@ simulate(parameterTest8, simflags="-override state=false -output=state,v,r", res
 //
 //
 // mark: 1
-// markarr: 1
+// markarr: -1
 //
 //
 // After replacing the evaluated parameters in variable bindings and start attributes:
@@ -153,7 +152,7 @@ simulate(parameterTest8, simflags="-override state=false -output=state,v,r", res
 //
 //
 // mark: 1
-// markarr: 1
+// markarr: -1
 //
 //
 // ########################################
@@ -194,7 +193,7 @@ simulate(parameterTest8, simflags="-override state=false -output=state,v,r", res
 //
 // record SimulationResult
 //     resultFile = "parameterTest8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=state,v,r'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=state,v,r'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,state=1,v=1,r=2
 // LOG_SUCCESS       | info    | The simulation finished successfully.

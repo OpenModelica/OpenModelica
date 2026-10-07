@@ -1,5 +1,5 @@
 // status: correct
-// cflags: +g=MetaModelica -d=-newInst
+// cflags: +g=MetaModelica
 
 package PKG
 

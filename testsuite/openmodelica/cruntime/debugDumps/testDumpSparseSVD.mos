@@ -2,7 +2,6 @@
 // keywords: kinsol jacobian sparse svd dumps
 // status: correct
 // teardown_command: rm -rf testDumpSVD* output.log
-// cflags: -d=-newInst
 //
 // Test flag LOG_NLS_SVD and -svdCount to detect equations / variables that cause poorly conditioned Jacobians.
 //

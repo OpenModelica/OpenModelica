@@ -37,7 +37,6 @@ class myTestClass
 end myTestClass;
 model myTestClass_a2
   extends myTestClass.a2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end myTestClass_a2;
 // Result:
 // class myTestClass_a2
@@ -52,11 +51,19 @@ end myTestClass_a2;
 //   Real mySomeThingR.OUT.value;
 //   Real mySomeThingR.OUT.f;
 // equation
+//   mySomeThingR.OUT.value = myTable.IN.value;
+//   myTable.OUT.f = 0.0;
+//   mySomeThingR.OUT.f + myTable.IN.f = 0.0;
 //   myTable.v = {1.1, 2.2, 3.3};
 //   myTable.OUT.value = myTable.v[integer(myTable.IN.value)];
 //   mySomeThingR.OUT.value = mySomeThingR.value;
-//   myTable.IN.f + mySomeThingR.OUT.f = 0.0;
-//   myTable.OUT.f = 0.0;
-//   mySomeThingR.OUT.value = myTable.IN.value;
 // end myTestClass_a2;
+// [flattening/modelica/arrays/ArrayIndex3.mo:15:5-15:25:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex3.mo:16:5-16:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex3.mo:18:5-18:28:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex3.mo:20:5-20:35:writable] Warning: Equation sections are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex3.mo:24:5-24:29:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex3.mo:25:5-25:26:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/arrays/ArrayIndex3.mo:27:5-27:20:writable] Warning: Equation sections are deprecated in class.
+//
 // endResult

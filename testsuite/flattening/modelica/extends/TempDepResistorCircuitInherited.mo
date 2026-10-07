@@ -60,7 +60,6 @@ model TempDepResistorCircuitInherited
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TempDepResistorCircuitInherited;
 
 // Result:
@@ -92,14 +91,14 @@ end TempDepResistorCircuitInherited;
 //   Real R3.i(quantity = "ElectricCurrent", unit = "A");
 //   parameter Real R3.R(unit = "Ohm") = 300.0 "Resistance";
 // equation
+//   R1.p.v = R3.p.v;
+//   R1.p.v = R2.p.v;
+//   R1.n.i = 0.0;
+//   R3.p.i + R2.p.i + R1.p.i = 0.0;
+//   R2.n.i = 0.0;
+//   R3.n.i = 0.0;
 //   R1.v = R1.i * R1.R;
 //   R2.v = R2.i * R2.R;
 //   R3.v = R3.i * R3.R;
-//   R2.p.i + R3.p.i + R1.p.i = 0.0;
-//   R2.n.i = 0.0;
-//   R3.n.i = 0.0;
-//   R1.n.i = 0.0;
-//   R1.p.v = R2.p.v;
-//   R1.p.v = R3.p.v;
 // end TempDepResistorCircuitInherited;
 // endResult

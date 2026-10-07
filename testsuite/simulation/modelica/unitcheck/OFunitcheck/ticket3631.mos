@@ -35,7 +35,8 @@ instantiateModel(unitCheckTests.ticket3631); getErrorString();
 //   x + y = sin(time);
 // end unitCheckTests.ticket3631;
 // "
-// "Notification: \"x\" has the Unit \"s\"
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// Notification: \"x\" has the Unit \"s\"
 // \"y\" has the Unit \"s\"
 // "
 // endResult

@@ -11,7 +11,6 @@ algorithm
   for i, j in {2,3} loop
     a[i,j] := i + j;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor6;
 
 // Result:
@@ -25,8 +24,11 @@ end AlgorithmFor6;
 // algorithm
 //   for i in 1:2 loop
 //     for j in {2, 3} loop
-//       a[i,j] := /*Real*/(i + j);
+//       a[i,j] := /*Real*/(i) + /*Real*/(j);
 //     end for;
 //   end for;
 // end AlgorithmFor6;
+// [flattening/modelica/algorithms-functions/AlgorithmFor6.mo:9:3-9:14:writable] Warning: Components are deprecated in class.
+// [flattening/modelica/algorithms-functions/AlgorithmFor6.mo:11:3-13:10:writable] Warning: Algorithm sections are deprecated in class.
+//
 // endResult

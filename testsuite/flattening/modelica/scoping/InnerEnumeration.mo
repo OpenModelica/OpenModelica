@@ -49,6 +49,7 @@ end InnerEnumeration;
 //   assert(b.T0 == InnerEnumeration.P.E.five, "b.T0 was not set to the correct value");
 //   assert(b.T0 == InnerEnumeration.P.E.five, "b.c.T0 was not set to the correct value");
 // end InnerEnumeration;
+// Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
 // [flattening/modelica/scoping/InnerEnumeration.mo:23:7-23:25:writable] Warning: Ignoring the modification on outer element: b.c.T0  = InnerEnumeration.P.E.one.
 //
 // endResult

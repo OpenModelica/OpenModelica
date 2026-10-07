@@ -13,7 +13,6 @@ algorithm
   for k in 1:k+1 loop // The iteration variable k gets values 1, 2, 3, 4, 5
     z[k] := k;
   end for;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HideVariable;
 
 // Result:

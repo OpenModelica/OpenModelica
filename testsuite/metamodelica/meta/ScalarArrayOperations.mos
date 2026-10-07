@@ -1,6 +1,6 @@
 // name:     ScalarArrayOperations
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen -d=-newInst
+// cflags:   -g=MetaModelica -d=gen
 //
 // ticket:4382
 // suite: metamodelica

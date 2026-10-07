@@ -129,7 +129,8 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   points[2,3] = 3.0;
 // end TypeTest;
 // "
-// ""
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// "
 // true
 // ""
 // "class TypeTestArrayBug
@@ -547,6 +548,7 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real a[5,4,10,2](quantity = \"SomeQ\", unit = \"m\", nominal = 5.0);
 // end TypeTestArrayBug;
 // "
-// "[flattening/modelica/arrays/TypeTestArrayBug.mo:3:24-3:34:writable] Warning: Non-array modification '\"m\"' for array component, possibly due to missing 'each'.
+// "Warning: The old frontend (-d=-newInst) is deprecated and will be removed after OpenModelica 1.28.0 is released. Please report models that only work with the old frontend, see https://github.com/OpenModelica/OpenModelica/issues/17177.
+// [flattening/modelica/arrays/TypeTestArrayBug.mo:3:24-3:34:writable] Warning: Non-array modification '\"m\"' for array component, possibly due to missing 'each'.
 // "
 // endResult

@@ -82,7 +82,7 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, pidContinuous.cOut);
   connect(tank.tSensor, pidContinuous.cIn);
-  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
+  annotation(__OpenModelica_commandLineOptions="+std=2.x");
 end TankPID;
 
 // insert expected flat file here. Can be done by issuing the command
@@ -121,6 +121,9 @@ end TankPID;
 //   parameter Real tank.maxV = 10.0;
 //   Real tank.h(unit = "m", start = 0.0) "Tank level";
 // equation
+//   source.qOut.lflow = tank.qIn.lflow;
+//   tank.tActuator.act = pidContinuous.cOut.act;
+//   tank.tSensor.val = pidContinuous.cIn.val;
 //   source.qOut.lflow = if time > 150.0 then 3.0 * source.flowLevel else source.flowLevel;
 //   der(pidContinuous.x) = pidContinuous.error / pidContinuous.T;
 //   pidContinuous.y = pidContinuous.T * der(pidContinuous.error);
@@ -129,10 +132,15 @@ end TankPID;
 //   pidContinuous.cOut.act = pidContinuous.outCtr;
 //   assert(tank.minV >= 0.0, "minV - minimum Valve level must be >= 0 ");
 //   der(tank.h) = (tank.qIn.lflow - tank.qOut.lflow) / tank.area;
-//   tank.qOut.lflow = limitValue(tank.minV, tank.maxV, (-tank.flowGain) * tank.tActuator.act);
+//   tank.qOut.lflow = limitValue(tank.minV, tank.maxV, -tank.flowGain * tank.tActuator.act);
 //   tank.tSensor.val = tank.h;
-//   source.qOut.lflow = tank.qIn.lflow;
-//   pidContinuous.cOut.act = tank.tActuator.act;
-//   pidContinuous.cIn.val = tank.tSensor.val;
 // end TankPID;
+// [flattening/modelica/connectors/TankPID.mo:32:3-32:18:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankPID.mo:11:3-11:60:writable] Warning: Connector cIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankPID.mo:12:3-12:62:writable] Warning: Connector cOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankPID.mo:62:3-62:72:writable] Warning: Connector tSensor is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankPID.mo:63:3-63:74:writable] Warning: Connector tActuator is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankPID.mo:64:3-64:74:writable] Warning: Connector qIn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [flattening/modelica/connectors/TankPID.mo:65:3-65:75:writable] Warning: Connector qOut is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+//
 // endResult

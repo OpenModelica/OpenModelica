@@ -18,7 +18,6 @@ equation
   n = time ^ (2 ^ 3);
   o = (time ^ 2) ^ 3;
   p = (time ^ 6) ^ 0.5;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Pow;
 
 // Result:
@@ -38,9 +37,9 @@ end Pow;
 //   j = 3.0 * /*Real*/(pi) ^ 2.0;
 //   k = 3.0 * 2.0 ^ pr;
 //   l = 3.0 * pr ^ 2.0;
-//   m = 3.0;
+//   m = (3.0 ^ pr) ^ (1.0 / pr);
 //   n = time ^ 8.0;
-//   o = time ^ 6.0;
-//   p = abs(time) ^ 3.0;
+//   o = (time ^ 2.0) ^ 3.0;
+//   p = (time ^ 6.0) ^ 0.5;
 // end Pow;
 // endResult

@@ -27,7 +27,6 @@ model TwoRateSampler
   when slowSample then                // slow sampling (5-times slower)
     y = log(time);
   end when;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TwoRateSampler;
 
 
@@ -40,15 +39,15 @@ end TwoRateSampler;
 //   Integer cyCounter(start = 0);
 // equation
 //   when slowSample then
-//   y = log(time);
+//     y = log(time);
 //   end when;
 //   when fastSample then
-//   x = sin(time);
+//     x = sin(time);
 //   end when;
 //   fastSample = sample(0.0, 1.0);
 //   when fastSample then
-//   cyCounter = if pre(cyCounter) < 5 then 1 + pre(cyCounter) else 0;
-//   slowSample = pre(cyCounter) == 0;
+//     cyCounter = if pre(cyCounter) < 5 then pre(cyCounter) + 1 else 0;
+//     slowSample = pre(cyCounter) == 0;
 //   end when;
 // end TwoRateSampler;
 // endResult

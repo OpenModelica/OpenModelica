@@ -2,7 +2,6 @@
 // keywords: fmu export import boolean
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml resources BooleanImportFMU* BooleanImport* output.log
-// cflags:   -d=-newInst
 //
 // A Modelica boolean is a modelica_boolean, i.e. an int, but the FMI import runtime used to
 // exchange the boolean arrays with the generated wrapper as signed char, so it wrote one byte

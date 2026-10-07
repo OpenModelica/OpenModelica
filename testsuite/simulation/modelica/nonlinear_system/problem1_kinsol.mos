@@ -1,7 +1,6 @@
 // name: problem1 [kinsol]
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem1* _nonlinear_system.problem1* output.log
-// cflags: -d=-newInst
 // suite: smoke
 
 loadFile("nlsTestPackage.mo"); getErrorString();
