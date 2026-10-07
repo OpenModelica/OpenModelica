@@ -165,6 +165,7 @@ namespace IAEX
 
   public slots:
     virtual void updateScrollArea() = 0;
+    virtual void blockScrollUpdates( bool block ) = 0;
 
 
 signals:

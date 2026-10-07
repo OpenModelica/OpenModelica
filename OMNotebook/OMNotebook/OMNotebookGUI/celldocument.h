@@ -152,6 +152,7 @@ namespace IAEX
     void setEditable(bool editable);
     void cursorChangedPosition();
     void updateScrollArea() override;
+    void blockScrollUpdates( bool block ) override;
     void setChanged( bool changed ) override;
     void hoverOverUrl( const QUrl &link ) override;
     void selectedACell(Cell *selected, Qt::KeyboardModifiers);
@@ -196,6 +197,7 @@ namespace IAEX
 
 
     QScrollArea *scroll_ = nullptr;
+    int scrollUpdatesBlocked_ = 0;
     QGridLayout *mainLayout_ = nullptr;
 
     CellCursor *current_ = nullptr;
