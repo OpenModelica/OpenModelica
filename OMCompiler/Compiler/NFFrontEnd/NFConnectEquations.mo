@@ -220,19 +220,11 @@ algorithm
     // expanded array constructor {if i <= n then inStream(c[i].h) else ... for i in 1:n+1}
     // the other branch may refer to connectors that don't exist.
     case Expression.IF()
+      guard Expression.variability(exp.condition) <= Variability.STRUCTURAL_PARAMETER
       algorithm
-        evalExp := exp.condition;
-        if Expression.variability(evalExp) <= Variability.STRUCTURAL_PARAMETER then
-          // The condition might still contain iterators, e.g. in a for-equation
-          // that hasn't been unrolled yet. Keep both branches then.
-          ErrorExt.setCheckpoint(getInstanceName());
-          try
-            evalExp := Ceval.evalExp(evalExp);
-          else
-            evalExp := exp.condition;
-          end try;
-          ErrorExt.rollBack(getInstanceName());
-        end if;
+        // The condition might still contain iterators, e.g. in a for-equation
+        // that hasn't been unrolled yet. Keep both branches then.
+        evalExp := Ceval.tryEvalExp(exp.condition);
       then
         if Expression.isTrue(evalExp) then
           evaluateOperators(exp.trueBranch, sets, setsArray, variables, ctable, replacements)
