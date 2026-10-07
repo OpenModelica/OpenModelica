@@ -46,6 +46,7 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
+#include "PlotCurve.h"
 #include "Modeling/Commands.h"
 #if !defined(WITHOUT_ANIMATION)
 #include "Animation/AnimationWindow.h"
@@ -2047,6 +2048,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
      * Make sure we always update the diagramWindow after simulation.
      */
     MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0, false);
+    plotAnnotatedFigures(simulationOptions.getClassName(), simulationOptions.getFullResultFileName());
   }
   bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
@@ -2082,6 +2084,165 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
         LibraryTreeItem * plibraryItem =  plibraryWidget->getLibraryTreeModel()->findLibraryTreeItemOneLevel(reconciledModelFileInfo.completeBaseName());
         if (plibraryItem) {
           MainWindow::instance()->exportModelFMU(plibraryItem);
+        }
+      }
+    }
+  }
+}
+
+/*!
+ * \brief SimulationDialog::plotAnnotatedFigures
+ * Plots preferred figures after simulation, reusing their windows on subsequent runs.
+ * \param className Simulated model class.
+ * \param resultFileName Result file loaded into the Variable Browser.
+ */
+void SimulationDialog::plotAnnotatedFigures(const QString &className, const QString &resultFileName)
+{
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  if (!pLibraryTreeItem || !pLibraryTreeItem->getModelWidget() || !pLibraryTreeItem->getModelWidget()->getModelInstance()) {
+    return;
+  }
+
+  const ModelInstance::DocumentationAnnotation *pDocumentation = pLibraryTreeItem->getModelWidget()->getModelInstance()->getAnnotation()->getDocumentationAnnotation();
+  if (!pDocumentation) {
+    return;
+  }
+
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  VariablesTreeModel *pVariablesTreeModel = pVariablesWidget->getVariablesTreeModel();
+  VariablesTreeItem *pResultTreeItem = pVariablesTreeModel->findVariablesTreeItemOneLevel(resultFileName);
+  if (!pResultTreeItem) {
+    pResultTreeItem = pVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
+  }
+  if (!pResultTreeItem) {
+    return;
+  }
+
+  auto findResultVariable = [pVariablesTreeModel, pResultTreeItem, className](const QString &name) {
+    VariablesTreeItem *pVariable = pVariablesTreeModel->findVariablesTreeItem(name, pResultTreeItem);
+    if (!pVariable) {
+      QString resultVariableName = name;
+      if (resultVariableName.startsWith(className + ".")) {
+        resultVariableName.remove(0, className.length() + 1);
+      }
+      pVariable = pVariablesTreeModel->findVariablesTreeItem(pResultTreeItem->getVariableName() + "." + resultVariableName, pResultTreeItem);
+    }
+    return pVariable;
+  };
+  PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
+  PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
+  // The stable key identifies one figure/plot/x-variable group independently of its displayed tab title.
+  auto getAnnotatedPlotWindow = [pPlotWindowContainer](const QString &windowKey, bool parametric) -> OMPlot::PlotWindow* {
+    for (QMdiSubWindow *pSubWindow : pPlotWindowContainer->subWindowList()) {
+      OMPlot::PlotWindow *pPlotWindow = qobject_cast<OMPlot::PlotWindow*>(pSubWindow->widget());
+      if (pPlotWindow && pPlotWindow->property("modelicaAnnotatedPlotKey").toString() == windowKey) {
+        pPlotWindowContainer->setActiveSubWindow(pSubWindow);
+        pPlotWindowContainer->removePlotCurves(pPlotWindow);
+        pPlotWindow->updatePlot();
+        return pPlotWindow;
+      }
+    }
+
+    if (parametric) {
+      pPlotWindowContainer->addParametricPlotWindow();
+      return pPlotWindowContainer->getCurrentWindow();
+    }
+    return pPlotWindowContainer->addPlotWindow();
+  };
+
+  for (int figureIndex = 0; figureIndex < static_cast<int>(pDocumentation->getFigures().size()); ++figureIndex) {
+    const auto &figure = pDocumentation->getFigures().at(figureIndex);
+    if (!figure->isPreferred()) {
+      continue;
+    }
+
+    for (int plotIndex = 0; plotIndex < static_cast<int>(figure->getPlots().size()); ++plotIndex) {
+      const auto &plot = figure->getPlots().at(plotIndex);
+      QMap<QString, QVector<QPair<const ModelInstance::Curve*, VariablesTreeItem*>>> curvesByXVariable;
+      for (const auto &curve : plot->getCurves()) {
+        const QString xVariable = curve->getX().isEmpty() ? QStringLiteral("time") : curve->getX();
+        const QString yVariable = curve->getY().toQString();
+        VariablesTreeItem *pYVariable = findResultVariable(yVariable);
+        if (yVariable.isEmpty() || !pYVariable) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                tr("Cannot plot annotated curve because result variable %1 was not found.").arg(yVariable),
+                                                                Helper::scriptingKind, Helper::notificationLevel));
+          continue;
+        }
+        if (xVariable != QStringLiteral("time") && !findResultVariable(xVariable)) {
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                tr("Cannot plot annotated curve because x-axis result variable %1 was not found.").arg(xVariable),
+                                                                Helper::scriptingKind, Helper::notificationLevel));
+          continue;
+        }
+        curvesByXVariable[xVariable].append(qMakePair(curve.get(), pYVariable));
+      }
+
+      for (auto group = curvesByXVariable.cbegin(); group != curvesByXVariable.cend(); ++group) {
+        const bool parametric = group.key() != QStringLiteral("time");
+        // Length-prefix parts so arbitrary Modelica names cannot make two keys ambiguous.
+        QStringList keyParts{className, QString::number(figureIndex), figure->getIdentifier(), figure->getTitle(),
+              QString::number(plotIndex), plot->getIdentifier(), plot->getTitle(), group.key()};
+        QStringList encodedKeyParts;
+        for (const QString &part : keyParts) {
+          encodedKeyParts.append(QString("%1:%2").arg(part.size()).arg(part));
+        }
+        const QString windowKey = encodedKeyParts.join("|");
+        OMPlot::PlotWindow *pPlotWindow = getAnnotatedPlotWindow(windowKey, parametric);
+        if (!pPlotWindow) {
+          continue;
+        }
+
+        if (!figure->getTitle().isEmpty()) {
+          if (pPlotWindow->property("modelicaAnnotatedPlotKey").toString() != windowKey) {
+            pPlotWindow->setWindowTitle(pPlotWindowContainer->getUniqueName(figure->getTitle() + " : "));
+          }
+          // Keep the model title separate from the unique MDI title used to distinguish windows.
+          pPlotWindow->setProperty(Helper::modelicaFigureTitle, figure->getTitle());
+        }
+        pPlotWindow->setProperty("modelicaAnnotatedPlotKey", windowKey);
+        if (!plot->getTitle().isEmpty()) {
+          pPlotWindow->setTitle(plot->getTitle());
+        }
+        const ModelInstance::Axis *pXAxis = plot->getXAxis();
+        const ModelInstance::Axis *pYAxis = plot->getYAxis();
+        if (pXAxis && !pXAxis->getLabel().isEmpty()) {
+          pPlotWindow->setXCustomLabel(pXAxis->getLabel());
+        } else if (parametric) {
+          pPlotWindow->setXCustomLabel(group.key());
+        }
+        if (pYAxis && !pYAxis->getLabel().isEmpty()) {
+          pPlotWindow->setYCustomLabel(pYAxis->getLabel());
+        }
+
+        for (const auto &curve : group.value()) {
+          VariablesTreeItem *pXVariable = parametric ? findResultVariable(group.key()) : nullptr;
+          if (parametric && !pXVariable) {
+            continue;
+          }
+
+          if (pXVariable) {
+            pXVariable->setChecked(true);
+            pVariablesTreeModel->updateVariablesTreeItem(pXVariable, 0);
+            pVariablesWidget->plotVariables(pVariablesTreeModel->variablesTreeItemIndex(pXVariable),
+                                            pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern(),
+                                            Qt::ShiftModifier, nullptr, pPlotWindow);
+          }
+
+          VariablesTreeItem *pYVariable = curve.second;
+          pYVariable->setChecked(true);
+          pVariablesTreeModel->updateVariablesTreeItem(pYVariable, 0);
+          const int previousCurveCount = pPlotWindow->getPlot()->getPlotCurvesList().size();
+          pVariablesWidget->plotVariables(pVariablesTreeModel->variablesTreeItemIndex(pYVariable),
+                                          pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern(),
+                                          Qt::NoModifier, nullptr, pPlotWindow);
+          const auto &plotCurves = pPlotWindow->getPlot()->getPlotCurvesList();
+          if (plotCurves.size() > previousCurveCount && !curve.first->getLegend().isEmpty()) {
+            OMPlot::PlotCurve *pPlotCurve = plotCurves.last();
+            pPlotCurve->setCustomTitle(curve.first->getLegend());
+            pPlotCurve->setTitleLocal();
+            pPlotWindow->updatePlot();
+          }
         }
       }
     }

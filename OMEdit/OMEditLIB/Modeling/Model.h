@@ -43,6 +43,8 @@
 #include <QJsonObject>
 #include <QColor>
 #include <QRectF>
+#include <memory>
+#include <vector>
 
 #include "Annotations/BooleanAnnotation.h"
 #include "Annotations/PointAnnotation.h"
@@ -59,6 +61,7 @@
 #include "Annotations/StringAnnotation.h"
 #include "Annotations/TextStyleAnnotation.h"
 #include "Annotations/TextAlignmentAnnotation.h"
+#include "FlatModelica/Expression.h"
 
 namespace ModelInstance
 {
@@ -415,6 +418,122 @@ private:
     bool mHasInterval = false;
   };
 
+  class AxisScale
+  {
+  public:
+    void deserialize(const QJsonValue &jsonValue);
+
+    const QString &getScaleType() const {return mScaleType;}
+    int getBase() const {return mBase;}
+    QString toString() const;
+  private:
+    QString mScaleType = "Linear";
+    int mBase = 10;
+  };
+
+  class Axis
+  {
+  public:
+    void deserialize(const QJsonValue &jsonValue);
+
+    const FlatModelica::Expression &getMin() const {return mMin;}
+    const FlatModelica::Expression &getMax() const {return mMax;}
+    const QString &getUnit() const {return mUnit;}
+    const QString &getLabel() const {return mLabel;}
+    const AxisScale *getScale() const {return mpScale.get();}
+    QString toString() const;
+  private:
+    FlatModelica::Expression mMin;
+    FlatModelica::Expression mMax;
+    QString mUnit;
+    QString mLabel;
+    std::unique_ptr<AxisScale> mpScale;
+  };
+
+  class Curve
+  {
+  public:
+    void deserialize(const QJsonValue &jsonValue);
+
+    const QString &getX() const {return mX;}
+    const FlatModelica::Expression &getY() const {return mY;}
+    const QString &getLegend() const {return mLegend;}
+    int getZOrder() const {return mZOrder;}
+    QString toString() const;
+  private:
+    QString mX = "time";
+    FlatModelica::Expression mY;
+    QString mLegend;
+    int mZOrder = 0;
+  };
+
+  class Plot
+  {
+  public:
+    void deserialize(const QJsonValue &jsonValue);
+
+    const QString &getTitle() const {return mTitle;}
+    const QString &getIdentifier() const {return mIdentifier;}
+    const std::vector<std::unique_ptr<Curve>> &getCurves() const {return mCurves;}
+    const Axis *getXAxis() const {return mpXAxis.get();}
+    const Axis *getYAxis() const {return mpYAxis.get();}
+    QString toString() const;
+  private:
+    QString mTitle;
+    QString mIdentifier;
+    std::vector<std::unique_ptr<Curve>> mCurves;
+    std::unique_ptr<Axis> mpXAxis;
+    std::unique_ptr<Axis> mpYAxis;
+  };
+
+  class Figure
+  {
+  public:
+    void deserialize(const QJsonValue &jsonValue);
+
+    const QString &getTitle() const {return mTitle;}
+    const QString &getIdentifier() const {return mIdentifier;}
+    const QString &getGroup() const {return mGroup;}
+    bool isPreferred() const {return mPreferred;}
+    const std::vector<std::unique_ptr<Plot>> &getPlots() const {return mPlots;}
+    const QString &getCaption() const {return mCaption;}
+    QString toString() const;
+  private:
+    QString mTitle;
+    QString mIdentifier;
+    QString mGroup;
+    bool mPreferred = false;
+    std::vector<std::unique_ptr<Plot>> mPlots;
+    QString mCaption;
+  };
+
+  class DocumentationAnnotation
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+
+    const std::vector<std::unique_ptr<Figure>> &getFigures() const {return mFigures;}
+    const QString &getInfo() const {return mInfo;}
+    const QString &getRevisions() const {return mRevisions;}
+    const QString &getInfoHeader() const {return mInfoHeader;}
+    const QStringList &getStyleSheets() const {return mStyleSheets;}
+    void setDocumentation(const QString &info, const QString &revisions, const QString &infoHeader);
+    void setFigureAnnotation(const QString &figureTitle, const QString &figureAnnotation);
+    QString toString() const;
+    QString toString(const QString &info, const QString &revisions, const QString &infoHeader) const;
+    QString toString(const QString &figureTitle, const QString &figureAnnotation) const;
+  private:
+    QString toString(const QString &info, const QString &revisions, const QString &infoHeader,
+                     const QString &figureTitle, const QString &figureAnnotation, bool replaceFigure) const;
+    QString mInfo;
+    QString mRevisions;
+    QString mInfoHeader;
+    QStringList mStyleSheets;
+    std::vector<std::unique_ptr<Figure>> mFigures;
+    QStringList mSerializedFigures;
+    QStringList mSerializedFigureTitles;
+  };
+
   class Annotation
   {
   public:
@@ -440,6 +559,8 @@ private:
     // Extend annotation
     const IconDiagramMap &getMap(bool icon) const;
     const ExperimentAnnotation &getExperimentAnnotation() const {return mExperimentAnnotation;}
+    const DocumentationAnnotation *getDocumentationAnnotation() const {return mpDocumentationAnnotation.get();}
+    DocumentationAnnotation *getOrCreateDocumentationAnnotation();
 
     static Annotation defaultAnnotation;
 
@@ -470,6 +591,7 @@ private:
     IconDiagramMap mDiagramMap;
     // experiment annotation
     ExperimentAnnotation mExperimentAnnotation;
+    std::unique_ptr<DocumentationAnnotation> mpDocumentationAnnotation;
   };
 
   class Dimensions
@@ -646,6 +768,7 @@ private:
     QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const;
+    Annotation *getOrCreateAnnotation();
     Annotation *getAnnotationWithoutDefault() const;
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}

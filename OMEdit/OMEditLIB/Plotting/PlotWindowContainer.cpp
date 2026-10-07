@@ -41,14 +41,21 @@
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/Model.h"
+#include "Modeling/Commands.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/DiagramWindow.h"
 #include "PlotCurve.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Util/StringHandler.h"
+#include "qwt_text.h"
 
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QMenu>
+#include <QMap>
+#include <QVariant>
 
 using namespace OMPlot;
 
@@ -691,6 +698,157 @@ void PlotWindowContainer::exportVariables()
   // create a file
   if (MainWindow::instance()->getLibraryWidget()->saveFile(fileName, contents)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported variables in %1").arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief PlotWindowContainer::saveFigureInModel
+ * Saves the active plot into each source model's Documentation annotation.
+ *
+ * Curves are grouped by their own result model because one plot may contain
+ * variables from multiple simulation results.
+ */
+void PlotWindowContainer::saveFigureInModel()
+{
+  PlotWindow *pPlotWindow = getCurrentWindow();
+  if (!pPlotWindow || (!pPlotWindow->isPlot() && !pPlotWindow->isPlotParametric())) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("Select a plot window before saving a figure in a model."), QMessageBox::Ok);
+    return;
+  }
+
+  const QList<PlotCurve*> plotCurves = pPlotWindow->getPlot()->getPlotCurvesList();
+  if (plotCurves.isEmpty()) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("There are no curves to save in the model annotation."), QMessageBox::Ok);
+    return;
+  }
+
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  VariablesTreeModel *pVariablesTreeModel = pVariablesWidget->getVariablesTreeModel();
+  QMap<QString, QList<PlotCurve*>> curvesByModel;
+  for (PlotCurve *pPlotCurve : plotCurves) {
+    if (!pPlotCurve || pPlotCurve->getYVariable().isEmpty()) {
+      continue;
+    }
+    VariablesTreeItem *pResultTreeItem = pVariablesTreeModel->findVariablesTreeItemOneLevel(pPlotCurve->getFileName());
+    if (!pResultTreeItem) {
+      QMessageBox::warning(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                           tr("Could not find the simulation result associated with curve %1.")
+                           .arg(pPlotCurve->getYVariable()), QMessageBox::Ok);
+      return;
+    }
+    const QString className = pResultTreeItem->getSimulationOptions().getClassName();
+    curvesByModel[className].append(pPlotCurve);
+  }
+  if (curvesByModel.isEmpty()) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                             tr("There are no valid curves to save in the model annotation."), QMessageBox::Ok);
+    return;
+  }
+
+  auto makeAxisAnnotation = [](const QString &label, const QString &min, const QString &max, bool logarithmic) {
+    QStringList fields;
+    bool minOk = false;
+    bool maxOk = false;
+    min.toDouble(&minOk);
+    max.toDouble(&maxOk);
+    if (minOk) {
+      fields.append(QString("min={%1}").arg(min));
+    }
+    if (maxOk) {
+      fields.append(QString("max={%1}").arg(max));
+    }
+    if (!label.isEmpty()) {
+      fields.append(QString("label=\"%1\"").arg(StringHandler::escapeString(label)));
+    }
+    if (logarithmic) {
+      fields.append("scale=AxisScale(\"Log\",10)");
+    }
+    return fields.isEmpty() ? QString() : QString("Axis(%1)").arg(fields.join(","));
+  };
+
+  const QString xAxis = makeAxisAnnotation(pPlotWindow->getXCustomLabel(), pPlotWindow->getXRangeMin(),
+                                           pPlotWindow->getXRangeMax(), pPlotWindow->getLogXCheckBox()->isChecked());
+  const QString yAxis = makeAxisAnnotation(pPlotWindow->getYCustomLabel(), pPlotWindow->getYRangeMin(),
+                                           pPlotWindow->getYRangeMax(), pPlotWindow->getLogYCheckBox()->isChecked());
+  const QString plotTitle = pPlotWindow->getPlot()->title().text();
+  const QVariant figureTitleProperty = pPlotWindow->property(Helper::modelicaFigureTitle);
+  const QString figureTitle = figureTitleProperty.isValid() ? figureTitleProperty.toString() : pPlotWindow->windowTitle();
+  bool savedAnyFigure = false;
+  foreach (const QString &className, curvesByModel.keys()) {
+    QStringList curveAnnotations;
+    const QList<PlotCurve*> modelCurves = curvesByModel.value(className);
+    for (int i = 0; i < modelCurves.size(); ++i) {
+      PlotCurve *pPlotCurve = modelCurves.at(i);
+      const QString xVariable = pPlotCurve->getXVariable().isEmpty() ? QStringLiteral("time") : pPlotCurve->getXVariable();
+      QStringList curveFields;
+      if (xVariable != QStringLiteral("time")) {
+        curveFields.append(QString("x=\"%1\"").arg(StringHandler::escapeString(xVariable)));
+      }
+      curveFields.append(QString("y=%1").arg(pPlotCurve->getYVariable()));
+      if (!pPlotCurve->getCustomTitle().isEmpty()) {
+        curveFields.append(QString("legend=\"%1\"").arg(StringHandler::escapeString(pPlotCurve->getCustomTitle())));
+      }
+      if (i != 0) {
+        curveFields.append(QString("zOrder=%1").arg(i));
+      }
+      curveAnnotations.append(QString("Curve(%1)").arg(curveFields.join(",")));
+    }
+
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+    if (!pLibraryTreeItem || !pLibraryTreeItem->isModelica() || pLibraryTreeItem->isSystemLibrary()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            tr("Cannot save figure %1 in model %2 because the model cannot be annotated.").arg(figureTitle, className),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+
+    QStringList plotFields;
+    if (!plotTitle.isEmpty()) {
+      plotFields.append(QString("title=\"%1\"").arg(StringHandler::escapeString(plotTitle)));
+    }
+    plotFields.append(QString("curves={%1}").arg(curveAnnotations.join(",")));
+    if (!xAxis.isEmpty()) {
+      plotFields.append(QString("x=%1").arg(xAxis));
+    }
+    if (!yAxis.isEmpty()) {
+      plotFields.append(QString("y=%1").arg(yAxis));
+    }
+    const QString figureAnnotation = QString("Figure(title=\"%1\",preferred=true,plots={Plot(%2)})")
+                                     .arg(StringHandler::escapeString(figureTitle), plotFields.join(","));
+    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
+    if (!pModelWidget) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            tr("The model %1 is not open; the figure was not saved.").arg(className),
+                                                            Helper::scriptingKind, Helper::notificationLevel));
+      continue;
+    }
+    if (!pModelWidget->getModelInstance()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("The model instance for %1 is not available; the figure was not saved.").arg(className),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+
+    ModelInstance::Model *pModelInstance = pModelWidget->getModelInstance();
+    const ModelInstance::DocumentationAnnotation *pDocumentationAnnotation = pModelInstance->getAnnotation()->getDocumentationAnnotation();
+    const ModelInstance::DocumentationAnnotation emptyDocumentation;
+    const ModelInstance::DocumentationAnnotation &documentation = pDocumentationAnnotation ? *pDocumentationAnnotation : emptyDocumentation;
+    const QString oldAnnotation = QString("annotate=%1").arg(documentation.toString());
+    const QString newAnnotation = QString("annotate=%1").arg(documentation.toString(figureTitle, figureAnnotation));
+
+    pModelWidget->beginMacro(tr("Save Figure in model %1").arg(className));
+    pModelWidget->getUndoStack()->push(new UpdateClassAnnotationCommand(pLibraryTreeItem, oldAnnotation, newAnnotation));
+    pModelWidget->endMacro();
+    // Keep the loaded model-instance data in sync for later saves without reloading it from OMC.
+    pModelInstance->getOrCreateAnnotation()->getOrCreateDocumentationAnnotation()->setFigureAnnotation(figureTitle, figureAnnotation);
+    pModelWidget->updateModelText();
+    savedAnyFigure = true;
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Saved figure %1 in model %2.").arg(figureTitle, className),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+  }
+  if (!savedAnyFigure) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Could not save the figure in any model."), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

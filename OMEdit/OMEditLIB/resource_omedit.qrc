@@ -215,5 +215,6 @@
         <file>Resources/json/MCPAdminTools.json</file>
         <file>Resources/icons/language-server.svg</file>
         <file>Resources/icons/settings.svg</file>
+        <file>Resources/icons/save-figure-in-model.svg</file>
     </qresource>
 </RCC>

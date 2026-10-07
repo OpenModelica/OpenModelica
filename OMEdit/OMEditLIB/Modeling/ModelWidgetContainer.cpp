@@ -6102,7 +6102,6 @@ void ModelWidget::createModelWidgetComponents()
       }
       mpMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpMainLayout->addWidget(mpIconGraphicsView, 1);
-      mpUndoStack->clear();
     } else if (mpLibraryTreeItem->isText()) {
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
       QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
