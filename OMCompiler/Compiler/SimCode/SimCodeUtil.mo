@@ -426,7 +426,8 @@ algorithm
     (uniqueEqIndex, maxValueEquations) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
 
-    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars);
+    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars,
+      List.unionOnTrue(listReverse(shared.parameterAsserts), listReverse(inInitDAE.shared.parameterAsserts), ExpressionSolve.assertCondEqual));
     if debug then execStat("simCode: createParameterEquations"); end if;
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
@@ -6591,6 +6592,7 @@ public function createParameterEquations
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
   input BackendDAE.Variables globalKnownVars;
+  input list<DAE.Statement> parameterAsserts = {};
   output Integer outUniqueEqIndex = inUniqueEqIndex;
   output list<SimCode.SimEqSystem> outParameterEquations = {};
   output Integer nFixedParameters;
@@ -6606,6 +6608,7 @@ algorithm
     print("\n");
   end if;
 
+  varasserts := List.append_reverse(list(DAE.ALGORITHM_STMTS({a}) for a in parameterAsserts), varasserts);
   varasserts := MetaModelica.Dangerous.listReverseInPlace(varasserts);
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 

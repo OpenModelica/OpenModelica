@@ -123,6 +123,9 @@ constant Integer trivialRecords = 42;
 // SimCodeCodegenUtil.timeEventTrigger treats like parameters:
 // SOME(UnorderedSet<DAE.ComponentRef>). Set by SimCodeUtil.createSimCode.
 constant Integer timeIndependentVars = 43;
+// Names of the parameters translateModel makes the frontend evaluate, since a
+// coefficient the backend solved an equation with is zero for their values.
+constant Integer structuralParameters = 44;
 
 // indexes in System.tick
 // ----------------------
@@ -170,6 +173,7 @@ algorithm
   setGlobalRoot(uncertaintyExtraction, NONE());
   setGlobalRoot(trivialRecords, {});
   setGlobalRoot(timeIndependentVars, NONE());
+  setGlobalRoot(structuralParameters, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");
