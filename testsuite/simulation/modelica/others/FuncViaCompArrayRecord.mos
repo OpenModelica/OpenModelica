@@ -1,40 +1,41 @@
-// name: FuncViaCompArray
+// name: FuncViaCompArrayRecord
 // keywords: function lookup component array default argument
 // status: correct
 //
-// Functions called via a component in an array of components, where the
-// default arguments refer to the component: a plain default and a default
-// modified on the function in the component.
+// A function called via a component in an array of components, where the
+// default argument is a record of the component.
 
 loadString("
 package P
-  function f
+  record R
+    parameter Real c = 1;
+  end R;
+
+  function h
     input Real x;
-    input Real k;
-    input Real z = 0;
-    output Real y = k * x + z;
-  end f;
+    input R r;
+    output Real y = r.c * x;
+  end h;
 
   model Obj
-    parameter Real k = 1;
-    function g = f(final k = k);
+    parameter R r;
+    function gr = h(final r = r);
   end Obj;
 
   model Cell
     parameter Real k = 1;
-    parameter Real zc = 0;
-    Obj obj(k = k, g(z = zc));
-    Real y = obj.g(time);
+    Obj obj(r(c = 2 * k));
+    Real yr = obj.gr(time);
   end Cell;
 
   model Test
-    Cell cell[3](k = {1, 2, 3}, zc = {10, 20, 30});
+    Cell cell[3](k = {1, 2, 3});
   end Test;
 end P;
 "); getErrorString();
 
 simulate(P.Test, stopTime = 1); getErrorString();
-val(cell[1].y, 1); val(cell[2].y, 1); val(cell[3].y, 1);
+val(cell[1].yr, 1); val(cell[2].yr, 1); val(cell[3].yr, 1);
 
 // Result:
 // true
@@ -47,7 +48,7 @@ val(cell[1].y, 1); val(cell[2].y, 1); val(cell[3].y, 1);
 // "
 // end SimulationResult;
 // ""
-// 11.0
-// 22.0
-// 33.0
+// 2.0
+// 4.0
+// 6.0
 // endResult
