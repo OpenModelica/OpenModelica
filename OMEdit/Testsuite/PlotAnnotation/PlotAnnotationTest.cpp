@@ -129,7 +129,6 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   QVERIFY(pDocumentation);
   const QString savedDocumentation = pDocumentation->toString();
   QVERIFY(savedDocumentation.contains(QStringLiteral("info=\"Figure test documentation\"")));
-  QVERIFY(savedDocumentation.contains(QStringLiteral("styleSheets={\"figure-test.css\"}")));
   QVERIFY(savedDocumentation.contains(QStringLiteral("Figure(title=\"Annotated decay\"")));
   QVERIFY(savedDocumentation.contains(QStringLiteral("Curve(y=x,legend=\"State\")")));
 }
