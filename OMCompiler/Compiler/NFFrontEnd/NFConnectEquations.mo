@@ -79,7 +79,6 @@ import UnorderedMap;
 import Flatten = NFFlatten;
 import Subscript = NFSubscript;
 import Structural = NFStructural;
-import ErrorExt;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
