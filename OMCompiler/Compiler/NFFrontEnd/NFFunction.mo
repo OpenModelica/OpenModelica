@@ -1692,6 +1692,79 @@ uniontype Function
     end if;
   end typeFunctionSignature;
 
+  function useFirstElementInBinding
+    "A function looked up via a component in an array of components, e.g. f in
+     cell[i].obj.f() with f = g(final k = k), is instantiated once for all
+     elements of the array, so the default values of its inputs refer to the
+     array without subscripts, like cell.obj.k. Arguments are always filled in
+     at the call site, so the default value is only needed for its type, e.g.
+     the values of constants in a record. Use the first element of the array as
+     a representative, so that the default value can be evaluated."
+    input InstNode node;
+  protected
+    Component comp = InstNode.component(node);
+    Binding binding = Component.getBinding(comp);
+    Binding new_binding;
+  algorithm
+    if Binding.isBound(binding) then
+      new_binding := Binding.mapExp(binding, useFirstElementInExp);
+
+      if not referenceEq(binding, new_binding) then
+        comp := Component.setBinding(new_binding, comp);
+        InstNode.updateComponent(comp, node);
+      end if;
+    end if;
+  end useFirstElementInBinding;
+
+  function useFirstElementInExp
+    input output Expression exp;
+  protected
+    ComponentRef cref;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          cref := useFirstElementInCref(exp.cref);
+
+          if not referenceEq(cref, exp.cref) then
+            exp.cref := cref;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end useFirstElementInExp;
+
+  function useFirstElementInCref
+    "Subscripts the array parts of the scope of a cref with index 1. The type of
+     the parts is kept, like for any other subscripted part of the scope."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  protected
+    ComponentRef rest;
+    Type ty;
+  algorithm
+    outCref := match cref
+      case ComponentRef.CREF()
+        algorithm
+          rest := useFirstElementInCref(cref.restCref);
+          ty := ComponentRef.nodeType(cref);
+
+          if cref.origin == NFComponentRef.Origin.SCOPE and listEmpty(cref.subscripts) and
+             InstNode.isComponent(cref.node) and Type.isArray(ty) then
+            cref.subscripts := list(Subscript.INDEX(Expression.INTEGER(1)) for i in 1:Type.dimensionCount(ty));
+            cref.restCref := rest;
+          elseif not referenceEq(rest, cref.restCref) then
+            cref.restCref := rest;
+          end if;
+        then
+          cref;
+
+      else cref;
+    end match;
+  end useFirstElementInCref;
+
   function typeFunctionBody
     "Types the body of a function, along with any component bindings."
     input output Function fn;
@@ -1706,6 +1779,7 @@ uniontype Function
     // Type the bindings of components in the function.
     for c in fn.inputs loop
       Typing.typeComponentBinding(c, fn_context);
+      useFirstElementInBinding(c);
     end for;
 
     for c in fn.outputs loop

@@ -293,6 +293,75 @@ public
     output Boolean unboxable = Type.isScalarBuiltin(ty) or Type.isRecord(ty);
   end isUnboxableType;
 
+  function isComponentPrefix
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF() then InstNode.isComponent(cref.node);
+      else false;
+    end match;
+  end isComponentPrefix;
+
+  function stripClassScope
+    "Removes the class parts of the scope from a cref, e.g. M.cell.obj => cell.obj."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  algorithm
+    outCref := match cref
+      case ComponentRef.CREF() guard InstNode.isClass(cref.node) then ComponentRef.EMPTY();
+      case ComponentRef.CREF()
+        algorithm
+          cref.restCref := stripClassScope(cref.restCref);
+        then
+          cref;
+      else cref;
+    end match;
+  end stripClassScope;
+
+  function hasScopePartOutsideCall
+    "Returns true if the expression refers to a component via the scope that
+     isn't one of the scopes enclosing the call, see InstNode.scopeList."
+    input Expression exp;
+    input list<InstNode> callScopes;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CREF()
+        then ComponentRef.hasScopePartOutside(exp.cref, function isAnyOf(nodes = callScopes));
+      else false;
+    end match;
+  end hasScopePartOutsideCall;
+
+  function isAnyOf
+    input InstNode node;
+    input list<InstNode> nodes;
+    output Boolean res = false;
+  algorithm
+    for n in nodes loop
+      if InstNode.refEqual(n, node) then
+        res := true;
+        return;
+      end if;
+    end for;
+  end isAnyOf;
+
+  function rebaseScopeExp
+    input Expression exp;
+    input ComponentRef prefix;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := ComponentRef.rebaseScope(exp.cref, prefix);
+        then
+          exp;
+
+      else exp;
+    end match;
+  end rebaseScopeExp;
+
   function typeNormalCall
     input output NFCall call;
     input InstContext.Type context;
@@ -394,8 +463,10 @@ public
     Purity pur, arg_pur;
     Type ty;
     Expression arg_exp;
+    ComponentRef fn_ref, fn_prefix;
+    list<InstNode> call_scopes;
   algorithm
-    ARG_TYPED_CALL(call_scope = scope) := call;
+    ARG_TYPED_CALL(ref = fn_ref, call_scope = scope) := call;
     matchedFunc := checkMatchingFunctions(call, context, info, vectorize);
 
     func := matchedFunc.func;
@@ -412,6 +483,28 @@ public
       pur := Prefixes.purityMin(pur, arg_pur);
     end for;
     args := listReverseInPlace(args);
+
+    // Default arguments of a function looked up via a component, e.g. k in
+    // obj.f(x) with f = g(final k = k), refer to the component via the scope.
+    // Use the component as written in the call instead, so that the subscripts
+    // of an enclosing array of components are applied to them when flattening.
+    fn_prefix := stripClassScope(ComponentRef.rest(fn_ref));
+    if isComponentPrefix(fn_prefix) then
+      args := list(Expression.map(a, function rebaseScopeExp(prefix = fn_prefix)) for a in args);
+
+      // A component left in the scope of an argument that isn't an ancestor of
+      // the scope the call is in won't get subscripts when the argument is
+      // flattened, and the argument would silently refer to the wrong element
+      // of an array of components, so make sure that there are none.
+      call_scopes := InstNode.scopeList(InstNode.borrow(scope));
+      for a in args loop
+        if Expression.contains(a, function hasScopePartOutsideCall(callScopes = call_scopes)) then
+          Error.addInternalError(getInstanceName() + ": argument " + Expression.toString(a) +
+            " of " + ComponentRef.toString(fn_ref) + " refers to a component outside the scope of the call", info);
+          fail();
+        end if;
+      end for;
+    end if;
 
     ty := Function.returnType(func);
     ty := resolvePolymorphicReturnType(func, typed_args, ty);

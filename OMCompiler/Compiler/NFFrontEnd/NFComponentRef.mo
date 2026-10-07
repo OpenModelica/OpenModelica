@@ -1377,6 +1377,112 @@ public
     output Boolean isGreater = compare(cref1, cref2) > 0;
   end isGreater;
 
+  function rebaseScope
+    "Gives the scope part of the cref that refers to the same components as the
+     given prefix, or one of its ancestors, the origins of the prefix, e.g.
+     cell.obj.k where cell and obj are part of the scope and the prefix
+     cell.obj.sub where obj was written in the source gives cell.obj.k where obj
+     has the origin CREF. The nodes, subscripts and types of the cref are kept."
+    input ComponentRef cref;
+    input ComponentRef prefix;
+    output ComponentRef outCref;
+  protected
+    Option<ComponentRef> ancestor;
+  algorithm
+    outCref := match cref
+      case CREF(origin = Origin.SCOPE)
+        algorithm
+          ancestor := findEqualAncestor(prefix, cref);
+        then
+          match ancestor
+            local
+              ComponentRef a;
+            case SOME(a) then copyOrigins(cref, a);
+            else setRestCref(cref, rebaseScope(cref.restCref, prefix));
+          end match;
+
+      case CREF()
+        then setRestCref(cref, rebaseScope(cref.restCref, prefix));
+
+      else cref;
+    end match;
+  end rebaseScope;
+
+  function hasScopePartOutside
+    "Returns true if the cref has a part from the scope that refers to a
+     component without subscripts for which the given function returns false,
+     e.g. a component that isn't an ancestor of the scope the cref is used in
+     and therefore won't get subscripts when the cref is flattened."
+    input ComponentRef cref;
+    input IsInside isInside;
+    output Boolean res;
+
+    partial function IsInside
+      input InstNode node;
+      output Boolean res;
+    end IsInside;
+  algorithm
+    res := match cref
+      case CREF(origin = Origin.SCOPE)
+        guard listEmpty(cref.subscripts) and InstNode.isComponent(cref.node) and not isInside(cref.node)
+        then true;
+
+      case CREF() then hasScopePartOutside(cref.restCref, isInside);
+      else false;
+    end match;
+  end hasScopePartOutside;
+
+  function findEqualAncestor
+    "Returns the prefix or the first of its ancestors that refers to the same
+     components as the given cref, ignoring subscripts."
+    input ComponentRef prefix;
+    input ComponentRef cref;
+    output Option<ComponentRef> ancestor;
+  algorithm
+    ancestor := match prefix
+      case CREF()
+        then
+          if InstNode.refEqual(prefix.node, node(cref)) and
+             isEqual(stripSubscriptsAll(prefix), stripSubscriptsAll(cref))
+          then SOME(prefix) else findEqualAncestor(prefix.restCref, cref);
+
+      else NONE();
+    end match;
+  end findEqualAncestor;
+
+  function setRestCref
+    input output ComponentRef cref;
+    input ComponentRef restCref;
+  algorithm
+    cref := match cref
+      case CREF()
+        algorithm
+          if not referenceEq(cref.restCref, restCref) then
+            cref.restCref := restCref;
+          end if;
+        then
+          cref;
+
+      else cref;
+    end match;
+  end setRestCref;
+
+  function copyOrigins
+    input output ComponentRef cref;
+    input ComponentRef source;
+  algorithm
+    cref := match (cref, source)
+      case (CREF(), CREF())
+        algorithm
+          cref.origin := source.origin;
+          cref.restCref := copyOrigins(cref.restCref, source.restCref);
+        then
+          cref;
+
+      else cref;
+    end match;
+  end copyOrigins;
+
   function isPrefix
     input ComponentRef cref1;
     input ComponentRef cref2;
