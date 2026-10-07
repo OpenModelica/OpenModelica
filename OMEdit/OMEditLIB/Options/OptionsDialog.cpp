@@ -2192,7 +2192,7 @@ void OptionsDialog::saveCRMLEditorSettings()
  */
 void OptionsDialog::saveCEditorSettings()
 {
-  QColor textRuleColor = mpMetaModelicaEditorPage->getColor("Text");
+  QColor textRuleColor = mpCEditorPage->getColor("Text");
   if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
     mpSettings->remove(OptionsDialog::themeKey("cEditor/textRuleColor"));
   } else {
