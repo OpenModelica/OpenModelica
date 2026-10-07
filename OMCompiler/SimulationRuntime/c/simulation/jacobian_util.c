@@ -34,8 +34,6 @@
 #include "eval_dep.h"
 #include "jacobian_colpack.h"
 
-static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, unsigned int nRows, unsigned int nCols);
-static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols);
 
 /**
  * @brief Initialize analytic jacobian.
@@ -466,6 +464,118 @@ void printSparsePattern(const SPARSE_PATTERN* sp) {
     }
     printf("======================\n");
 }
+
+/**
+ * @brief Distance-1 column coloring of a CSC sparse pattern.
+ *
+ * Two columns may share a color only if they have no non-zero row in common.
+ * The rows of every column are sorted and made unique first.
+ * Uses ColPack's partial distance-two column coloring when available, with
+ * a greedy C-only fallback.
+ * The fallback uses the existing cscToCsr helper to build the row→columns map, then
+ * assigns the smallest available color to each column in order.
+ *
+ * Needed for the resizable analytic Jacobian path: the C sparsity pattern
+ * is built at runtime from WHOLEDIM loops that over-approximate array
+ * equations as dense blocks, so the compile-time coloring (derived from the
+ * exact symbolic sparsity) is invalid for the runtime pattern.  Recomputing
+ * it here guarantees correctness.
+ *
+ * @param sp     CSC sparse pattern (leadindex, index, colorCols already allocated).
+ * @param nRows  Number of rows in the Jacobian.
+ * @param nCols  Number of columns (== size of sp->colorCols).
+ */
+static int compareUnsigned(const void* a, const void* b)
+{
+  const unsigned int x = *(const unsigned int*) a, y = *(const unsigned int*) b;
+  return (x > y) - (x < y);
+}
+
+/**
+ * @brief Sorts the rows of every column and removes duplicates in place.
+ *
+ * Runtime built patterns can contain the same entry twice, e.g. an array seed
+ * over a whole dimension and one of its elements in the same row.
+ */
+static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols)
+{
+  unsigned int col, nz, start, end, out = 0;
+  for (col = 0; col < nCols; col++) {
+    start = sp->leadindex[col];
+    end = sp->leadindex[col + 1];
+    qsort(sp->index + start, end - start, sizeof(unsigned int), compareUnsigned);
+    sp->leadindex[col] = out;
+    for (nz = start; nz < end; nz++) {
+      if (nz == start || sp->index[nz] != sp->index[nz - 1]) {
+        sp->index[out++] = sp->index[nz];
+      }
+    }
+  }
+  sp->leadindex[nCols] = out;
+  sp->nnz = out;
+}
+
+// Drop this next to computeColumnColoring() / computeRowColoring() in jacobian_util.c.
+// Needs computeColPackStarBicoloring() declared (e.g. in jacobian_colpack.h), same
+// as computeColPackColumnColoring() / computeColPackRowColoring() already are.
+
+/**
+ * @brief Distance-two star bicoloring of a sparsity pattern for bidirectional
+ *        (forward + adjoint) Jacobian evaluation.
+ *
+ * Jointly colors columns and rows of the SAME underlying sparsity pattern
+ * using ColPack's star bicoloring, so that -- together with the recover
+ * masks built in initBidirectionalRecovery() -- every nonzero is guaranteed
+ * to be recoverable from either the forward (column) or the adjoint (row)
+ * evaluation, typically with fewer total colors than coloring both
+ * directions independently.
+ *
+ * Unlike computeColumnColoring()/computeRowColoring(), this has no naive
+ * fallback when ColPack is unavailable: independently coloring each side
+ * (e.g. by calling computeColumnColoring() and computeRowColoring()
+ * separately) does not guarantee every nonzero is recoverable from either
+ * direction, so it would silently produce an incomplete/wrong Jacobian
+ * rather than merely a slower one. Callers must treat FALSE as "bidirectional
+ * evaluation unavailable" and fall back to a single-direction Jacobian
+ * instead -- which is exactly what initSymbolicOdeJacobian() already does
+ * when the bidirectional path can't be set up.
+ *
+ * @param fwdSp   Forward CSC pattern (leadindex, index, colorCols already
+ *                allocated); receives the column coloring on success.
+ * @param rowSp   Adjoint CSR pattern (leadindex, index, colorCols already
+ *                allocated) of the same matrix; receives the row coloring
+ *                on success.
+ * @param nRows   Number of rows of the Jacobian.
+ * @param nCols   Number of columns of the Jacobian.
+ * @return modelica_boolean  TRUE if a star bicoloring was computed (fwdSp and
+ *                           rowSp updated), FALSE if ColPack is unavailable or
+ *                           the algorithm failed (fwdSp and rowSp untouched).
+ */
+static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, unsigned int nRows, unsigned int nCols)
+{
+  if (!fwdSp || !fwdSp->colorCols || !rowSp || !rowSp->colorCols) return 1;
+
+  if (nRows == 0 || nCols == 0) {
+    fwdSp->maxColors = 0;
+    rowSp->maxColors = 0;
+    return 1;
+  }
+
+
+#if defined(OMC_HAVE_COLPACK)
+  /* rowSp is already CSR (leadindex over rows, index = column indices),
+   * exactly what computeColPackStarBicoloring expects as rowPtr/colIdx. */
+  if (computeColPackStarBicoloring(
+          nRows, nCols, rowSp->leadindex, rowSp->index,
+          rowSp->colorCols, &rowSp->maxColors,
+          fwdSp->colorCols, &fwdSp->maxColors) == 0) {
+    return 1;
+  }
+#endif
+
+  return 0;
+}
+
 
 /**
  * @brief Initialize bidirectional recovery masks for star bicoloring.
@@ -970,56 +1080,6 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
   }
 }
 
-/**
- * @brief Distance-1 column coloring of a CSC sparse pattern.
- *
- * Two columns may share a color only if they have no non-zero row in common.
- * The rows of every column are sorted and made unique first.
- * Uses ColPack's partial distance-two column coloring when available, with
- * a greedy C-only fallback.
- * The fallback uses the existing cscToCsr helper to build the row→columns map, then
- * assigns the smallest available color to each column in order.
- *
- * Needed for the resizable analytic Jacobian path: the C sparsity pattern
- * is built at runtime from WHOLEDIM loops that over-approximate array
- * equations as dense blocks, so the compile-time coloring (derived from the
- * exact symbolic sparsity) is invalid for the runtime pattern.  Recomputing
- * it here guarantees correctness.
- *
- * @param sp     CSC sparse pattern (leadindex, index, colorCols already allocated).
- * @param nRows  Number of rows in the Jacobian.
- * @param nCols  Number of columns (== size of sp->colorCols).
- */
-static int compareUnsigned(const void* a, const void* b)
-{
-  const unsigned int x = *(const unsigned int*) a, y = *(const unsigned int*) b;
-  return (x > y) - (x < y);
-}
-
-/**
- * @brief Sorts the rows of every column and removes duplicates in place.
- *
- * Runtime built patterns can contain the same entry twice, e.g. an array seed
- * over a whole dimension and one of its elements in the same row.
- */
-static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols)
-{
-  unsigned int col, nz, start, end, out = 0;
-  for (col = 0; col < nCols; col++) {
-    start = sp->leadindex[col];
-    end = sp->leadindex[col + 1];
-    qsort(sp->index + start, end - start, sizeof(unsigned int), compareUnsigned);
-    sp->leadindex[col] = out;
-    for (nz = start; nz < end; nz++) {
-      if (nz == start || sp->index[nz] != sp->index[nz - 1]) {
-        sp->index[out++] = sp->index[nz];
-      }
-    }
-  }
-  sp->leadindex[nCols] = out;
-  sp->nnz = out;
-}
-
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
 {
   if (!sp || !sp->colorCols) return;
@@ -1122,66 +1182,6 @@ static void computeRowColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned 
 #endif
 }
 
-// Drop this next to computeColumnColoring() / computeRowColoring() in jacobian_util.c.
-// Needs computeColPackStarBicoloring() declared (e.g. in jacobian_colpack.h), same
-// as computeColPackColumnColoring() / computeColPackRowColoring() already are.
-
-/**
- * @brief Distance-two star bicoloring of a sparsity pattern for bidirectional
- *        (forward + adjoint) Jacobian evaluation.
- *
- * Jointly colors columns and rows of the SAME underlying sparsity pattern
- * using ColPack's star bicoloring, so that -- together with the recover
- * masks built in initBidirectionalRecovery() -- every nonzero is guaranteed
- * to be recoverable from either the forward (column) or the adjoint (row)
- * evaluation, typically with fewer total colors than coloring both
- * directions independently.
- *
- * Unlike computeColumnColoring()/computeRowColoring(), this has no naive
- * fallback when ColPack is unavailable: independently coloring each side
- * (e.g. by calling computeColumnColoring() and computeRowColoring()
- * separately) does not guarantee every nonzero is recoverable from either
- * direction, so it would silently produce an incomplete/wrong Jacobian
- * rather than merely a slower one. Callers must treat FALSE as "bidirectional
- * evaluation unavailable" and fall back to a single-direction Jacobian
- * instead -- which is exactly what initSymbolicOdeJacobian() already does
- * when the bidirectional path can't be set up.
- *
- * @param fwdSp   Forward CSC pattern (leadindex, index, colorCols already
- *                allocated); receives the column coloring on success.
- * @param rowSp   Adjoint CSR pattern (leadindex, index, colorCols already
- *                allocated) of the same matrix; receives the row coloring
- *                on success.
- * @param nRows   Number of rows of the Jacobian.
- * @param nCols   Number of columns of the Jacobian.
- * @return modelica_boolean  TRUE if a star bicoloring was computed (fwdSp and
- *                           rowSp updated), FALSE if ColPack is unavailable or
- *                           the algorithm failed (fwdSp and rowSp untouched).
- */
-static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, unsigned int nRows, unsigned int nCols)
-{
-  if (!fwdSp || !fwdSp->colorCols || !rowSp || !rowSp->colorCols) return 1;
-
-  if (nRows == 0 || nCols == 0) {
-    fwdSp->maxColors = 0;
-    rowSp->maxColors = 0;
-    return 1;
-  }
-
-
-#if defined(OMC_HAVE_COLPACK)
-  /* rowSp is already CSR (leadindex over rows, index = column indices),
-   * exactly what computeColPackStarBicoloring expects as rowPtr/colIdx. */
-  if (computeColPackStarBicoloring(
-          nRows, nCols, rowSp->leadindex, rowSp->index,
-          rowSp->colorCols, &rowSp->maxColors,
-          fwdSp->colorCols, &fwdSp->maxColors) == 0) {
-    return 1;
-  }
-#endif
-
-  return 0;
-}
 
 /**
  * @brief Sort row indices within each column of a CSC sparse pattern.
