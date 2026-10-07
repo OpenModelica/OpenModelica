@@ -1,0 +1,101 @@
+// name:      zeroCoefficient
+// keywords:  parameter evaluation, structural parameter, #17069
+// status:    correct
+//
+// Parameters that make a coefficient an equation is solved with zero are
+// evaluated, and setting a nonzero one to zero at run time gives an assert.
+
+loadString("
+package ZeroCoefficient
+  model Inductor
+    parameter Real L = 0.1;
+    parameter Real R = 1;
+    parameter Real V = 1;
+    Real i, vL;
+  equation
+    L*der(i) = vL;
+    V = vL + R*i;
+  end Inductor;
+
+  model ZeroInductor
+    extends Inductor(L = 0);
+  end ZeroInductor;
+
+  model TwoInductors
+    parameter Real L1 = 0.1;
+    parameter Real L2 = 0;
+    parameter Real R = 1;
+    parameter Real V = 1;
+    Real i1, i2, v1, v2;
+  equation
+    L1*der(i1) = v1;
+    L2*der(i2) = v2;
+    i1 = i2;
+    V = v1 + v2 + R*i1;
+  end TwoInductors;
+
+  model DrivenInductor
+    parameter Real L = 0;
+    Real i, v;
+  equation
+    i = sin(time);
+    L*der(i) = v;
+  end DrivenInductor;
+end ZeroCoefficient;
+"); getErrorString();
+
+simulate(ZeroCoefficient.ZeroInductor, stopTime = 0.1); getErrorString();
+val(i, 0.1);
+simulate(ZeroCoefficient.Inductor, stopTime = 0.1, simflags = "-override L=0"); getErrorString();
+simulate(ZeroCoefficient.TwoInductors, stopTime = 0.1, simflags = "-override L2=0.1"); getErrorString();
+val(i1, 0.1);
+simulate(ZeroCoefficient.DrivenInductor, stopTime = 0.1, simflags = "-override L=2"); getErrorString();
+val(v, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ZeroCoefficient.ZeroInductor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroCoefficient.ZeroInductor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Evaluated the parameters L, since an equation would be solved by dividing by zero otherwise. Changing them requires recompiling the model.
+// "
+// 1.0
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroCoefficient.Inductor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override L=0'",
+//     messages = "Simulation execution failed for model: ZeroCoefficient.Inductor
+// LOG_STDOUT        | warning | You are overriding L with a small value or zero.
+// |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
+// LOG_ASSERT        | error   | [<interactive>:9:5-9:18:writable]
+// |                 | |       | The following assertion has been violated at time 0.000000
+// |                 | |       | ((L <> 0.0)) --> \"Parameter L cannot be set to zero at run time, because that causes a structural change in the equations; set L = 0 in the model and recompile it.\"
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// record SimulationResult
+//     resultFile = "ZeroCoefficient.TwoInductors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroCoefficient.TwoInductors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override L2=0.1'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0.39346861885699064
+// record SimulationResult
+//     resultFile = "ZeroCoefficient.DrivenInductor_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ZeroCoefficient.DrivenInductor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override L=2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// endResult
