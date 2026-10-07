@@ -42,6 +42,7 @@
 #include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Util/Helper.h"
+#include "Util/Style.h"
 #include "Util/Utilities.h"
 #include "Editors/HTMLEditor.h"
 #include "Options/OptionsDialog.h"
@@ -1392,9 +1393,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
    * The editor keeps the light canvas, so the colors its tools write are the
    * colors the user sees.
    */
-  if (!mIsContentEditable && qApp->property("omeditDarkMode").toBool()) {
+  if (!mIsContentEditable && Style::isDarkMode()) {
     settings()->setAttribute(QWebEngineSettings::ForceDarkMode, true);
-    page()->setBackgroundColor(QColor(32, 33, 36));
+    page()->setBackgroundColor(Style::documentationPageBackgroundColor());
   }
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
   // set DocumentationViewer web page policy

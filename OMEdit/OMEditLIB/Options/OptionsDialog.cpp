@@ -50,6 +50,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Util/NetworkAccessManager.h"
+#include "Util/Style.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
 #include "LSP/ModelicaLSPClient.h"
@@ -91,7 +92,7 @@ OptionsDialog *OptionsDialog::mpInstance = 0;
  */
 QString OptionsDialog::themeKey(const QString &key)
 {
-  if (qApp->property("omeditDarkMode").toBool()) {
+  if (Style::isDarkMode()) {
     return "darkMode/" + key;
   }
   return key;
@@ -106,7 +107,7 @@ QString OptionsDialog::themeKey(const QString &key)
  */
 QColor OptionsDialog::themeColor(const QColor &lightColor, const QColor &darkColor)
 {
-  return qApp->property("omeditDarkMode").toBool() ? darkColor : lightColor;
+  return Style::pick(lightColor, darkColor);
 }
 
 /*!

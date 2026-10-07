@@ -40,6 +40,7 @@
 #include "MCP/MCPServer.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
+#include "Util/Style.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -52,7 +53,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
-#include <QPalette>
 #include <QTextCodec>
 #include <QTimer>
 
@@ -152,51 +152,6 @@ namespace {
     }
     pStyleSheet->append(styleSheet);
   }
-
-  /* The dark palette. Widgets take their colors from here; stylesheet-dark.qss
-   * only restyles what stylesheet.qss restyles.
-   */
-  QPalette darkPalette()
-  {
-    QPalette palette;
-    const QColor window(32, 33, 36);
-    /* Base sits visibly above Window: Fusion draws check box and radio
-     * indicators with the Base color, and before Qt 6.9.2 their outline is
-     * derived from Window, so the two must not share one brightness. */
-    const QColor base(31, 41, 55);
-    const QColor alternateBase(55, 65, 81);
-    const QColor text(243, 244, 246);
-    const QColor button(55, 65, 81);
-    const QColor disabledText(156, 163, 175);
-    const QColor highlight(29, 78, 216);
-    const QColor link(96, 165, 250);
-    palette.setColor(QPalette::Window, window);
-    palette.setColor(QPalette::WindowText, text);
-    palette.setColor(QPalette::Base, base);
-    palette.setColor(QPalette::AlternateBase, alternateBase);
-    palette.setColor(QPalette::Text, text);
-    palette.setColor(QPalette::PlaceholderText, disabledText);
-    palette.setColor(QPalette::Button, button);
-    palette.setColor(QPalette::ButtonText, text);
-    palette.setColor(QPalette::BrightText, Qt::white);
-    palette.setColor(QPalette::Highlight, highlight);
-    palette.setColor(QPalette::HighlightedText, Qt::white);
-    palette.setColor(QPalette::ToolTipBase, base);
-    palette.setColor(QPalette::ToolTipText, text);
-    palette.setColor(QPalette::Link, link);
-    palette.setColor(QPalette::LinkVisited, QColor(192, 132, 252));
-    palette.setColor(QPalette::Light, QColor(107, 114, 128));
-    palette.setColor(QPalette::Midlight, QColor(75, 85, 99));
-    palette.setColor(QPalette::Mid, QColor(43, 45, 49));
-    palette.setColor(QPalette::Dark, QColor(24, 24, 27));
-    palette.setColor(QPalette::Shadow, Qt::black);
-    palette.setColor(QPalette::Disabled, QPalette::WindowText, disabledText);
-    palette.setColor(QPalette::Disabled, QPalette::Text, disabledText);
-    palette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledText);
-    palette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(55, 65, 81));
-    palette.setColor(QPalette::Disabled, QPalette::HighlightedText, disabledText);
-    return palette;
-  }
 }
 
 /*!
@@ -271,7 +226,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   styleHints()->setColorScheme(darkMode ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);  // must be before setStyleSheet
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   if (darkMode) {
-    setPalette(darkPalette());  // must be before setStyleSheet
+    setPalette(Style::darkPalette());  // must be before setStyleSheet
   }
   // set the stylesheet
   QString applicationStyleSheet;
