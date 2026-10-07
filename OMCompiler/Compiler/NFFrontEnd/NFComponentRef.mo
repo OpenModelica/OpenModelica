@@ -283,6 +283,50 @@ public
     end match;
   end isOutput;
 
+  function isComponent
+    "Returns true if the first part of the cref refers to a component."
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF() then InstNode.isComponent(node(cref));
+      else false;
+    end match;
+  end isComponent;
+
+  function stripClassScope
+    "Removes the class parts of the scope from a cref, e.g. M.cell.obj => cell.obj."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  algorithm
+    outCref := match cref
+      case CREF() guard InstNode.isClass(node(cref)) then EMPTY();
+      case CREF()
+        algorithm
+          cref.restCref := stripClassScope(cref.restCref);
+        then
+          cref;
+      else cref;
+    end match;
+  end stripClassScope;
+
+  function scopeComponentNames
+    "Returns the names of the components in the scope part of the cref,
+     outermost first, e.g. {cell, obj} for cell.obj.k where k was written in
+     the model. The scope part consists of the enclosing instances of the
+     scope the cref was written in, see InstNode.scopeList."
+    input ComponentRef cref;
+    input list<String> accum = {};
+    output list<String> names;
+  algorithm
+    names := match cref
+      case CREF(origin = Origin.SCOPE) guard InstNode.isComponent(node(cref))
+        then scopeComponentNames(cref.restCref, InstNode.name(node(cref)) :: accum);
+      case CREF() then scopeComponentNames(cref.restCref, accum);
+      else accum;
+    end match;
+  end scopeComponentNames;
+
   function isNameNode
     input ComponentRef cref;
     output Boolean res;
@@ -1408,30 +1452,6 @@ public
     end match;
   end rebaseScope;
 
-  function hasScopePartOutside
-    "Returns true if the cref has a part from the scope that refers to a
-     component without subscripts for which the given function returns false,
-     e.g. a component that isn't an ancestor of the scope the cref is used in
-     and therefore won't get subscripts when the cref is flattened."
-    input ComponentRef cref;
-    input IsInside isInside;
-    output Boolean res;
-
-    partial function IsInside
-      input InstNode node;
-      output Boolean res;
-    end IsInside;
-  algorithm
-    res := match cref
-      case CREF(origin = Origin.SCOPE)
-        guard listEmpty(cref.subscripts) and InstNode.isComponent(node(cref)) and not isInside(node(cref))
-        then true;
-
-      case CREF() then hasScopePartOutside(cref.restCref, isInside);
-      else false;
-    end match;
-  end hasScopePartOutside;
-
   function findEqualAncestor
     "Returns the prefix or the first of its ancestors that refers to the same
      components as the given cref, ignoring subscripts."
@@ -1442,8 +1462,7 @@ public
     ancestor := match prefix
       case CREF()
         then
-          if InstNode.refEqual(node(prefix), node(cref)) and
-             isEqual(stripSubscriptsAll(prefix), stripSubscriptsAll(cref))
+          if isEqualStrip(prefix, cref)
           then SOME(prefix) else findEqualAncestor(prefix.restCref, cref);
 
       else NONE();

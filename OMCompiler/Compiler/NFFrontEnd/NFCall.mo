@@ -293,58 +293,39 @@ public
     output Boolean unboxable = Type.isScalarBuiltin(ty) or Type.isRecord(ty);
   end isUnboxableType;
 
-  function isComponentPrefix
-    input ComponentRef cref;
-    output Boolean res;
-  algorithm
-    res := match cref
-      case ComponentRef.CREF() then InstNode.isComponent(ComponentRef.node(cref));
-      else false;
-    end match;
-  end isComponentPrefix;
-
-  function stripClassScope
-    "Removes the class parts of the scope from a cref, e.g. M.cell.obj => cell.obj."
-    input ComponentRef cref;
-    output ComponentRef outCref;
-  algorithm
-    outCref := match cref
-      case ComponentRef.CREF() guard InstNode.isClass(ComponentRef.node(cref)) then ComponentRef.EMPTY();
-      case ComponentRef.CREF()
-        algorithm
-          cref.restCref := stripClassScope(cref.restCref);
-        then
-          cref;
-      else cref;
-    end match;
-  end stripClassScope;
-
-  function hasScopePartOutsideCall
-    "Returns true if the expression refers to a component via the scope that
-     isn't one of the scopes enclosing the call, see InstNode.scopeList."
+  function isOutsideCallScope
+    "Returns true if the expression is a cref whose scope part doesn't refer
+     to the enclosing instances of the scope the call is in. Crefs are compared
+     by name, like elsewhere in the frontend."
     input Expression exp;
-    input list<InstNode> callScopes;
+    input list<String> callScopeNames "Names of the components enclosing the call, outermost first.";
     output Boolean res;
+  protected
+    list<String> names, rest = callScopeNames;
   algorithm
     res := match exp
       case Expression.CREF()
-        then ComponentRef.hasScopePartOutside(exp.cref, function isAnyOf(nodes = callScopes));
+        algorithm
+          names := ComponentRef.scopeComponentNames(exp.cref);
+          res := false;
+
+          // The scope part of a cref is a chain of enclosing instances, so it
+          // must be a prefix of the call's chain.
+          for n in names loop
+            if listEmpty(rest) or n <> listHead(rest) then
+              res := true;
+              return;
+            end if;
+
+            rest := listRest(rest);
+          end for;
+        then
+          res;
+
       else false;
     end match;
-  end hasScopePartOutsideCall;
+  end isOutsideCallScope;
 
-  function isAnyOf
-    input InstNode node;
-    input list<InstNode> nodes;
-    output Boolean res = false;
-  algorithm
-    for n in nodes loop
-      if InstNode.refEqual(n, node) then
-        res := true;
-        return;
-      end if;
-    end for;
-  end isAnyOf;
 
   function rebaseScopeExp
     input Expression exp;
@@ -464,7 +445,7 @@ public
     Type ty;
     Expression arg_exp;
     ComponentRef fn_ref, fn_prefix;
-    list<InstNode> call_scopes;
+    list<String> call_scope_names;
   algorithm
     ARG_TYPED_CALL(ref = fn_ref, call_scope = scope) := call;
     matchedFunc := checkMatchingFunctions(call, context, info, vectorize);
@@ -488,17 +469,17 @@ public
     // obj.f(x) with f = g(final k = k), refer to the component via the scope.
     // Use the component as written in the call instead, so that the subscripts
     // of an enclosing array of components are applied to them when flattening.
-    fn_prefix := stripClassScope(ComponentRef.rest(fn_ref));
-    if isComponentPrefix(fn_prefix) then
+    fn_prefix := ComponentRef.stripClassScope(ComponentRef.rest(fn_ref));
+    if ComponentRef.isComponent(fn_prefix) then
       args := list(Expression.map(a, function rebaseScopeExp(prefix = fn_prefix)) for a in args);
 
       // A component left in the scope of an argument that isn't an ancestor of
       // the scope the call is in won't get subscripts when the argument is
       // flattened, and the argument would silently refer to the wrong element
       // of an array of components, so make sure that there are none.
-      call_scopes := InstNode.scopeList(InstNode.borrow(scope));
+      call_scope_names := list(InstNode.name(n) for n guard InstNode.isComponent(n) in InstNode.scopeList(InstNode.borrow(scope)));
       for a in args loop
-        if Expression.contains(a, function hasScopePartOutsideCall(callScopes = call_scopes)) then
+        if Expression.contains(a, function isOutsideCallScope(callScopeNames = call_scope_names)) then
           Error.addInternalError(getInstanceName() + ": argument " + Expression.toString(a) +
             " of " + ComponentRef.toString(fn_ref) + " refers to a component outside the scope of the call", info);
           fail();
