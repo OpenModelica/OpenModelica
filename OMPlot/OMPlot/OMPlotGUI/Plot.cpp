@@ -90,7 +90,7 @@ Plot::Plot(PlotWindow *pParent)
   mpPlotPanner = new PlotPanner(canvas(), this);
   // create an instance of picker
   mpPlotPicker = new PlotPicker(canvas(), this);
-  mpPlotPicker->setTrackerPen(QPen(Qt::black));
+  mpPlotPicker->setTrackerPen(QPen(OMPlot::isDarkMode() ? palette().color(QPalette::Text) : QColor(Qt::black)));
   mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
@@ -101,7 +101,7 @@ Plot::Plot(PlotWindow *pParent)
   pPlotCanvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
   pPlotCanvas->setPaintAttribute(QwtPlotCanvas::ImmediatePaint, true);
 #endif
-  setCanvasBackground(Qt::white);
+  setCanvasBackground(OMPlot::isDarkMode() ? palette().color(QPalette::Base) : QColor(Qt::white));
   setContentsMargins(10, 10, 10, 10);
 #if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
