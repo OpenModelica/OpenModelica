@@ -773,7 +773,7 @@ void PlotWindowContainer::saveFigureInModel()
   const QString yAxis = makeAxisAnnotation(pPlotWindow->getYCustomLabel(), pPlotWindow->getYRangeMin(),
                                            pPlotWindow->getYRangeMax(), pPlotWindow->getLogYCheckBox()->isChecked());
   const QString plotTitle = pPlotWindow->getPlot()->title().text();
-  const QVariant figureTitleProperty = pPlotWindow->property(Helper::modelicaFigureTitle);
+  const QVariant figureTitleProperty = pPlotWindow->property(Helper::modelicaFigureTitle.toStdString().c_str());
   const QString figureTitle = figureTitleProperty.isValid() ? figureTitleProperty.toString() : pPlotWindow->windowTitle();
   bool savedAnyFigure = false;
   foreach (const QString &className, curvesByModel.keys()) {

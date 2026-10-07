@@ -105,7 +105,7 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   QMdiSubWindow *pPlotSubWindow = nullptr;
   for (QMdiSubWindow *pSubWindow : pPlotWindowContainer->subWindowList()) {
     auto *pPlotWindow = qobject_cast<OMPlot::PlotWindow*>(pSubWindow->widget());
-    if (pPlotWindow && pPlotWindow->property(Helper::modelicaFigureTitle).toString() == QStringLiteral("Annotated decay")) {
+    if (pPlotWindow && pPlotWindow->property(Helper::modelicaFigureTitle.toStdString().c_str()).toString() == QStringLiteral("Annotated decay")) {
       pAnnotatedPlotWindow = pPlotWindow;
       pPlotSubWindow = pSubWindow;
       break;
@@ -113,7 +113,7 @@ void PlotAnnotationTest::plotAndSaveDocumentationFigure()
   }
   QVERIFY(pAnnotatedPlotWindow);
   QVERIFY(pPlotSubWindow);
-  QCOMPARE(pAnnotatedPlotWindow->property(Helper::modelicaFigureTitle).toString(), QStringLiteral("Annotated decay"));
+  QCOMPARE(pAnnotatedPlotWindow->property(Helper::modelicaFigureTitle.toStdString().c_str()).toString(), QStringLiteral("Annotated decay"));
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().size(), 1);
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->getYVariable(), QStringLiteral("x"));
   QCOMPARE(pAnnotatedPlotWindow->getPlot()->getPlotCurvesList().first()->getCustomTitle(), QStringLiteral("State"));

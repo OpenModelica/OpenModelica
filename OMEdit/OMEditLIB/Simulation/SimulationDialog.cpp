@@ -2198,7 +2198,7 @@ void SimulationDialog::plotAnnotatedFigures(const QString &className, const QStr
             pPlotWindow->setWindowTitle(pPlotWindowContainer->getUniqueName(figure->getTitle() + " : "));
           }
           // Keep the model title separate from the unique MDI title used to distinguish windows.
-          pPlotWindow->setProperty(Helper::modelicaFigureTitle, figure->getTitle());
+          pPlotWindow->setProperty(Helper::modelicaFigureTitle.toStdString().c_str(), figure->getTitle());
         }
         pPlotWindow->setProperty("modelicaAnnotatedPlotKey", windowKey);
         if (!plot->getTitle().isEmpty()) {
