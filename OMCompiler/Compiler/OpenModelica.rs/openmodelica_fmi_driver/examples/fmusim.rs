@@ -5,7 +5,9 @@
 //! `--solver <name>` (`Solver::all`), `--input vr=expr`, `--parameter vr=value`
 //! (an array takes one expression or value per element, comma separated),
 //! `--output file.mat`, `--csv` (the trajectory on stdout), `--log`,
-//! `--difference-jacobian` (ignore what the FMU offers).
+//! `--difference-jacobian` (ignore what the FMU offers), `--dae` (Model
+//! Exchange in fmi-ls-dae's DAE mode: the master integrates the FMU's residuals
+//! over the states and the algebraic variables with IDA).
 
 use openmodelica_fmi::{Fmu, InterfaceKind};
 use openmodelica_fmi_driver::api::{Fmi3, Fmi3CoSimulation, Fmi3ModelExchange};
@@ -28,6 +30,7 @@ struct Args {
     tolerance: Option<f64>,
     solver: Solver,
     difference_jacobian: bool,
+    dae: bool,
     log: bool,
     output: Option<PathBuf>,
     csv: bool,
@@ -45,6 +48,7 @@ fn parse_args() -> Result<Args, String> {
         tolerance: None,
         solver: Solver::default(),
         difference_jacobian: false,
+        dae: false,
         log: false,
         output: None,
         csv: false,
@@ -59,6 +63,7 @@ fn parse_args() -> Result<Args, String> {
             "--cs" => a.interface = Some(InterfaceKind::CoSimulation),
             "--log" => a.log = true,
             "--difference-jacobian" => a.difference_jacobian = true,
+            "--dae" => a.dae = true,
             "--csv" => a.csv = true,
             "--start" => a.start = Some(value()?.parse().map_err(|_| "bad --start")?),
             "--stop" => a.stop = Some(value()?.parse().map_err(|_| "bad --stop")?),
@@ -109,6 +114,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     opts.tolerance = args.tolerance.or(opts.tolerance);
     opts.solver = args.solver;
     opts.directional_derivatives = !args.difference_jacobian;
+    if args.dae {
+        // fmi-ls-dae: the manifest names the switch, the algebraic variables and
+        // the residuals. Without one there is nothing for the DAE master to solve.
+        opts.dae = Some(
+            fmu.ls_dae_manifest()
+                .ok_or("--dae: the FMU carries no fmi-ls-dae manifest")??,
+        );
+    }
     opts.logging_on = args.log;
     for (vr, text) in &args.inputs {
         let v = md
