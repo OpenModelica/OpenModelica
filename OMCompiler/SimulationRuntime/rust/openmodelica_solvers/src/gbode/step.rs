@@ -548,7 +548,7 @@ impl Gbode {
             } else {
                 let desired = self.desired_step_size;
                 self.init_step_size(ode, *t, y, desired)?;
-                self.init(ode)?;
+                self.init();
             }
             self.is_first_step = false;
             self.did_event_step = false;

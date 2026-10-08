@@ -169,6 +169,8 @@ pub struct Gbode {
     did_fast_step: bool,
     gbf: Option<alloc::boxed::Box<multirate::GbodeF>>,
     stats: GbStats,
+    /// Model evaluations C does not count as `functionODE` calls.
+    uncounted_calls: u64,
 }
 
 impl Gbode {
@@ -464,6 +466,7 @@ impl Gbode {
             did_fast_step: false,
             gbf,
             stats: GbStats::default(),
+            uncounted_calls: 0,
         })
     }
 
@@ -487,6 +490,7 @@ impl Gbode {
             s.calls_jacobian = nls.n_jac_evals;
             s.calls_ode = s.calls_ode.saturating_sub(nls.uncounted_calls);
         }
+        s.calls_ode = s.calls_ode.saturating_sub(self.uncounted_calls);
         if let Some(gnls) = self.gnls.as_ref() {
             s.calls_jacobian = gnls.n_jac_evals;
         }
@@ -526,8 +530,12 @@ impl Gbode {
         self.initial_failures += 1;
         self.time = time;
         self.y_old.copy_from_slice(&y[..n]);
+        // `gbode_init` resets C's statistics after these evaluations.
+        let calls_before = ode.calls();
         let mut f0 = vec![0.0; n];
         crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
+        // C leaves `f(t0, y0)` in `fODE`, which `gbode_init` takes as `kRight`.
+        self.k_right.copy_from_slice(&f0);
         if self.initial_step_size < 0.0 {
             self.f.copy_from_slice(&f0);
             let (d0, d1) = ctrl::init_step_norms(&self.y_old, &f0, self.tol);
@@ -555,8 +563,6 @@ impl Gbode {
             self.step_size = (100.0 * h0).min(h1);
             self.opt_step_size = self.step_size;
             self.last_step_size = 0.0;
-            // Leave the model at the base point again, as C restores it.
-            crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
         } else {
             self.step_size = self.initial_step_size;
             self.last_step_size = 0.0;
@@ -572,12 +578,13 @@ impl Gbode {
             omclog::g(self.time, 0, 6),
         );
         self.initial_failures = -1;
+        self.uncounted_calls += ode.calls() - calls_before;
         Ok(())
     }
 
-    /// C's `gbode_init`: reset the ring buffers and statistics at a (re)start. The
-    /// model must be at `(time, y_old)` with the derivative evaluated.
-    fn init(&mut self, ode: &mut dyn Ode) -> Result<()> {
+    /// C's `gbode_init`: reset the ring buffers at a (re)start, after
+    /// [`Gbode::init_step_size`] left `f(t0, y0)` in `k_right`.
+    fn init(&mut self) {
         let n = self.n_states;
         for i in 0..self.ring_buffer_size {
             self.err_values[i] = 0.0;
@@ -585,16 +592,12 @@ impl Gbode {
         }
         self.time_right = self.time;
         self.y_right.copy_from_slice(&self.y_old);
-        let mut f0 = vec![0.0; n];
-        crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
-        self.k_right.copy_from_slice(&f0);
         for i in 0..self.ring_buffer_size {
             self.tv[i] = self.time_right;
             self.yv[i * n..(i + 1) * n].copy_from_slice(&self.y_right);
             self.kv[i * n..(i + 1) * n].copy_from_slice(&self.k_right);
         }
         self.event_time = f64::MAX;
-        Ok(())
     }
 
     /// C's `extrapolation_gb`: the initial guess for an implicit stage at `time`.
