@@ -33,6 +33,6 @@ end RecordBinding19;
 //   parameter Real r.y = 2.0;
 //   parameter Real r.z = 0.0;
 // end RecordBinding19;
-// [flattening/modelica/scodeinst/RecordBinding19.mo:15:3-15:13:writable] Warning: Output parameter r.z was not assigned a value
+// [flattening/modelica/scodeinst/RecordBinding19.mo:15:3-15:13:writable] Warning: Output parameter r.z was not assigned a value. This is deprecated and will become an error in future releases.
 //
 // endResult

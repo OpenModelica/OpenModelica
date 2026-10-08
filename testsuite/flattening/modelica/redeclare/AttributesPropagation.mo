@@ -311,9 +311,9 @@ package Buildings
             RCondPipe := Modelica.Math.log((rTub + eTub) / rTub) / (2 * Modelica.Constants.pi * hSeg * kTub);
             sigma := (kFil - kSoi) / (kFil + kSoi);
             R_1delta_LS := 1 / (2 * Modelica.Constants.pi * kFil) * (log(rBor / (rTub + eTub)) + log(rBor / (2 * xC)) + sigma * log(rBor ^ 4 / (rBor ^ 4 - xC ^ 4)));
+            beta := 2 * Modelica.Constants.pi * kFil * RCondPipe;
             R_1delta_MP := R_1delta_LS - 1 / (2 * Modelica.Constants.pi * kFil) * ((rTub + eTub) ^ 2 / (4 * xC ^ 2) * (1 - sigma * 4 * xC ^ 4 / (rBor ^ 4 - xC ^ 4)) ^ 2) / ((1 + beta) / (1 - beta) + (rTub + eTub) ^ 2 / (4 * xC ^ 2) * (1 + sigma * 16 * xC ^ 4 * rBor ^ 4 / (rBor ^ 4 - xC ^ 4) ^ 2));
             Ra_LS := 1 / (Modelica.Constants.pi * kFil) * (log(2 * xC / rTub) + sigma * log((rBor ^ 2 + xC ^ 2) / (rBor ^ 2 - xC ^ 2)));
-            beta := 2 * Modelica.Constants.pi * kFil * RCondPipe;
             Rb := R_1delta_MP / 2;
             Ra := Ra_LS - 1 / (Modelica.Constants.pi * kFil) * (rTub ^ 2 / (4 * xC ^ 2) * (1 + sigma * 4 * rBor ^ 4 * xC ^ 2 / (rBor ^ 4 - xC ^ 4)) / ((1 + beta) / (1 - beta) - rTub ^ 2 / (4 * xC ^ 2) + sigma * 2 * rTub ^ 2 * rBor ^ 2 * (rBor ^ 4 + xC ^ 4) / (rBor ^ 4 - xC ^ 4) ^ 2));
             Rg := 2 * Rb / hSeg;
@@ -3019,9 +3019,9 @@ end BoreholeSegment;
 //   RCondPipe := 0.15915494309189535 * log((rTub + eTub) / rTub) / (kTub * hSeg);
 //   sigma := (kFil - kSoi) / (kFil + kSoi);
 //   R_1delta_LS := 0.15915494309189535 * (log(rBor / (rTub + eTub)) + log(0.5 * rBor / xC) + sigma * log(rBor ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0))) / kFil;
+//   beta := 6.283185307179586 * kFil * RCondPipe;
 //   R_1delta_MP := R_1delta_LS + (-0.039788735772973836) * ((rTub + eTub) * (1.0 + (-4.0) * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 / (kFil * ((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)));
 //   Ra_LS := 0.3183098861837907 * (log(2.0 * xC / rTub) + sigma * log((rBor ^ 2.0 + xC ^ 2.0) / (rBor ^ 2.0 - xC ^ 2.0))) / kFil;
-//   beta := 6.283185307179586 * kFil * RCondPipe;
 //   Rb := 0.5 * R_1delta_MP;
 //   Ra := Ra_LS + (-0.07957747154594767) * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (((1.0 + beta) / (1.0 - beta) + (-0.25) * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0) * kFil);
 //   Rg := 2.0 * Rb / hSeg;
@@ -4896,6 +4896,4 @@ end BoreholeSegment;
 //     seg.TBouCon.iSam := 1 + seg.TBouCon.iSam;
 //   end when;
 // end BoreholeSegment;
-// [flattening/modelica/redeclare/AttributesPropagation.mo:314:13-314:298:writable] Warning: beta was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-//
 // endResult

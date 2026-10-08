@@ -566,7 +566,7 @@ public constant ErrorTypes.Message FUNCTION_RETURNS_META_ARRAY = ErrorTypes.MESS
 public constant ErrorTypes.Message ASSIGN_UNKNOWN_ERROR = ErrorTypes.MESSAGE(244, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Failed to elaborate assignment for some unknown reason: %1 := %2. File a bug report and we will make sure this error gets a better message in the future.");
 public constant ErrorTypes.Message WARNING_DEF_USE = ErrorTypes.MESSAGE(245, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "%s was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.");
+  "'%s' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.");
 public constant ErrorTypes.Message EXP_TYPE_MISMATCH = ErrorTypes.MESSAGE(246, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Expression '%1' has type %3, expected type %2.");
 public constant ErrorTypes.Message PACKAGE_ORDER_DUPLICATES = ErrorTypes.MESSAGE(247, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -744,7 +744,7 @@ public constant ErrorTypes.Message TERMINATE_TRIGGERED = ErrorTypes.MESSAGE(333,
 public constant ErrorTypes.Message EVAL_RECURSION_LIMIT_REACHED = ErrorTypes.MESSAGE(334, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "The recursion limit (--evalRecursionLimit=%s) was exceeded during evaluation of %s.");
 public constant ErrorTypes.Message UNASSIGNED_FUNCTION_OUTPUT = ErrorTypes.MESSAGE(335, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  "Output parameter %s was not assigned a value");
+  "Output parameter %s was not assigned a value. This is deprecated and will become an error in future releases.");
 public constant ErrorTypes.Message INVALID_WHEN_STATEMENT_CONTEXT = ErrorTypes.MESSAGE(336, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "A when-statement may not be used inside a function or a while, if, or for-clause.");
 public constant ErrorTypes.Message MISSING_FUNCTION_DERIVATIVE_NAME = ErrorTypes.MESSAGE(337, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
