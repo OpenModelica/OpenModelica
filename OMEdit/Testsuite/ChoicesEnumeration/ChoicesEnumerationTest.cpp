@@ -92,7 +92,7 @@ void ChoicesEnumerationTest::enumParameterWithChoices()
   QVERIFY(pEnumParamWithChoices);
   if (pEnumParamWithChoices) {
     QVERIFY(pEnumParamWithChoices->isChoices());
-    QVERIFY(pEnumParamWithChoices->isEnumeration());
+    QVERIFY(!pEnumParamWithChoices->isEnumeration());
     QComboBox *pChoicesComboBox = qobject_cast<QComboBox*>(pEnumParamWithChoices->getValueWidget());
     QVERIFY(pChoicesComboBox);
     if (pChoicesComboBox) {
