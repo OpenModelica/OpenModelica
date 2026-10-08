@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+	WhenElseWhenNoOutputs.mos \
 17035.mos \
 AlgorithmCondAssign1.mos \
 AlgorithmCondAssign2.mos \
