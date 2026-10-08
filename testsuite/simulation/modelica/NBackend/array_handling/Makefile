@@ -8,6 +8,7 @@ jacobianElementSeed.mos \
 jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
+resizableSparsity.mos \
 resizableConnectChain.mos \
 arrayConnectOutside.mos \
 mixedDependencyFrames.mos \
