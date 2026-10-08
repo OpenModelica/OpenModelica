@@ -944,6 +944,10 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   initDumpSystem();
 
   int checkArgumentsRes = checkCommandLineArguments(argc, argv);
+  omc_flag[FLAG_S] = 1;
+  omc_flagValue[FLAG_S] = "gbode";
+  omc_flag[FLAG_SR] = 1;
+  omc_flagValue[FLAG_SR] = "radauIIA3";
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if(omc_flag[FLAG_PORT]) {
