@@ -54,6 +54,10 @@ add_omedit_test(CloudSyncPlan "${OMEDIT_TEST_CLOUD_SOURCES}")
 set(OMEDIT_TEST_CLOUD_ENGINE_SOURCES Cloud/CloudSyncEngineTest.cpp)
 add_omedit_test(CloudSyncEngine "${OMEDIT_TEST_CLOUD_ENGINE_SOURCES}")
 
+set(OMEDIT_TEST_CHOICESENUMERATION_SOURCES ChoicesEnumeration/ChoicesEnumerationTest.cpp
+                                           ChoicesEnumeration/ChoicesEnumerationTest.h)
+add_omedit_test(ChoicesEnumeration "${OMEDIT_TEST_CHOICESENUMERATION_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")
