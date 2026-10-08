@@ -2110,6 +2110,7 @@ protected
     Integer pos = 0, sign = 0, c, decided;
     String n;
     Op op;
+    Operator operator;
     Sym bound;
     Iv iv;
     list<Iv> ivs;
@@ -2119,27 +2120,18 @@ protected
       return;
     end if;
 
-    (a, op) := match cond
-      case Expression.RELATION()
-        then (affSub(expToAff(cond.exp1, iterNames, ctx, source), expToAff(cond.exp2, iterNames, ctx, source)), cond.operator.op);
+    (a, operator) := match cond
+      case Expression.RELATION() guard Operator.isRelational(cond.operator)
+        then (affSub(expToAff(cond.exp1, iterNames, ctx, source), expToAff(cond.exp2, iterNames, ctx, source)), cond.operator);
       else algorithm
         unsupported("the condition " + Expression.toString(cond) + " of an if equation", source);
       then fail();
     end match;
 
     if not holds then
-      op := match op
-        case Op.LESS then Op.GREATEREQ;
-        case Op.LESSEQ then Op.GREATER;
-        case Op.GREATER then Op.LESSEQ;
-        case Op.GREATEREQ then Op.LESS;
-        case Op.EQUAL then Op.NEQUAL;
-        case Op.NEQUAL then Op.EQUAL;
-        else algorithm
-          unsupported("the condition " + Expression.toString(cond) + " of an if equation", source);
-        then fail();
-      end match;
+      operator := Operator.negate(operator);
     end if;
+    op := operator.op;
 
     // a op 0 with a = sign * iterator + rest
     rest := a;
