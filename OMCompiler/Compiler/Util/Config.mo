@@ -432,7 +432,7 @@ end targetTriple;
 public function simCodeRustRuntime "+simCodeTarget=C links libSimulationRuntimeRust, +simCodeTarget=C.old libSimulationRuntimeC."
   output Boolean rust;
 algorithm
-  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C";
+  rust := false;
 end simCodeRustRuntime;
 
 public function setsimCodeTarget
