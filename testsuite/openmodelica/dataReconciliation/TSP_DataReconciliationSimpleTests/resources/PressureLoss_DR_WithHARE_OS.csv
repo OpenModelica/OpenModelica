@@ -1,0 +1,8 @@
+Variable name,Measured Value,Half Width Confidence Interval
+GV.Source_ARE.C.P,70e5,1e5
+
+GV.Source_ARE.Q,550,5
+GV.singularPressureLoss_ARE.T,500,1
+GV.singularPressureLoss_ARE.K,650,1e5
+
+GV.singularPressureLoss_ARE.C1.h,980e3,1e7
