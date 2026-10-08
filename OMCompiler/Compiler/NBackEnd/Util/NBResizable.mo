@@ -483,6 +483,221 @@ protected
     end for;
   end getVarReplacements;
 
+public
+  function restrictIterator
+    "The iterator restricted to the box of iterations given by flat slice indices
+     at the analysis sizes (zero based, last frame fastest). Positions near the
+     start of a range are counted from its start, positions near its end from
+     its stop, so the restriction holds for every value of the resizable
+     parameters. NONE() if the indices are no box or a bound is ambiguous."
+    input Iterator iter;
+    input list<Integer> indices;
+    output Option<Iterator> res = NONE();
+  protected
+    list<ComponentRef> names;
+    list<Expression> ranges, new_ranges = {};
+    list<Option<Iterator>> maps;
+    array<Integer> sizes, lo, hi;
+    list<Integer> uniq;
+    Integer n, tmp, p, count = 1;
+    Option<Expression> range;
+  algorithm
+    (names, ranges, maps) := Iterator.getFrames(iter);
+    if listEmpty(indices) or List.any(maps, isSome) then
+      return;
+    end if;
+    sizes := listArray(list(Expression.rangeSize(r, true) for r in ranges));
+    n := arrayLength(sizes);
+    lo := arrayCopy(sizes);
+    hi := arrayCreate(n, -1);
+    uniq := UnorderedSet.toList(UnorderedSet.fromList(indices, Util.id, intEq));
+    for idx in uniq loop
+      tmp := idx;
+      for d in n:-1:1 loop
+        p := mod(tmp, sizes[d]);
+        tmp := intDiv(tmp, sizes[d]);
+        lo[d] := intMin(lo[d], p);
+        hi[d] := intMax(hi[d], p);
+      end for;
+      if tmp <> 0 then
+        return;
+      end if;
+    end for;
+    for d in 1:n loop
+      count := count * (hi[d] - lo[d] + 1);
+    end for;
+    if count <> listLength(uniq) then
+      return;
+    end if;
+    for d in 1:n loop
+      range := restrictedRange(listGet(ranges, d), lo[d], hi[d], sizes[d]);
+      if isNone(range) then
+        return;
+      end if;
+      new_ranges := Util.getOption(range) :: new_ranges;
+    end for;
+    res := SOME(Iterator.fromFrames(List.zip3(names, listReverse(new_ranges), maps)));
+  end restrictIterator;
+
+  function boxes
+    "splits flat indices (zero based, last dimension fastest) of an array with
+     the given sizes into boxes, ordered by their first index"
+    input list<Integer> indices;
+    input list<Integer> sizes;
+    output list<list<Integer>> parts = {};
+  protected
+    list<list<Integer>> locs;
+  algorithm
+    locs := list(indexLocation(i, sizes) for i in List.sort(UnorderedSet.toList(UnorderedSet.fromList(indices, Util.id, intEq)), intGt));
+    for spec in boxSpecs(locs) loop
+      parts := boxIndices(spec, sizes) :: parts;
+    end for;
+    parts := List.sort(parts, function boxGreater());
+  end boxes;
+
+  function boxGreater
+    input list<Integer> a;
+    input list<Integer> b;
+    output Boolean res = listHead(a) > listHead(b);
+  end boxGreater;
+
+  function indexLocation
+    "zero based location of a flat index, last dimension fastest"
+    input Integer index;
+    input list<Integer> sizes;
+    output list<Integer> loc = {};
+  protected
+    Integer tmp = index;
+  algorithm
+    for s in listReverse(sizes) loop
+      loc := mod(tmp, s) :: loc;
+      tmp := intDiv(tmp, s);
+    end for;
+  end indexLocation;
+
+  function boxSpecs
+    "the locations as boxes of (first, last) per dimension: groups of the first
+     coordinate with equal boxes of the others are merged"
+    input list<list<Integer>> locs;
+    output list<list<tuple<Integer, Integer>>> specs = {};
+  protected
+    type Locations = list<list<Integer>>;
+    UnorderedMap<Integer, Locations> groups = UnorderedMap.new<Locations>(Util.id, intEq);
+    list<Integer> values;
+    list<list<tuple<Integer, Integer>>> sub, prev_sub = {};
+    Integer lo = -1, hi = -1;
+    String key, prev_key = "#none";
+  algorithm
+    if listEmpty(locs) then
+      return;
+    elseif listEmpty(listHead(locs)) then
+      specs := {{}};
+      return;
+    end if;
+    for loc in locs loop
+      UnorderedMap.add(listHead(loc), listRest(loc) :: UnorderedMap.getOrDefault(listHead(loc), groups, {}), groups);
+    end for;
+    values := List.sort(UnorderedMap.keyList(groups), intGt);
+    for v in values loop
+      sub := boxSpecs(listReverse(UnorderedMap.getOrFail(v, groups)));
+      key := specString(sub);
+      if v == hi + 1 and key == prev_key then
+        hi := v;
+      else
+        specs := addSpecs(lo, hi, prev_sub, specs);
+        (lo, hi, prev_sub, prev_key) := (v, v, sub, key);
+      end if;
+    end for;
+    specs := listReverse(addSpecs(lo, hi, prev_sub, specs));
+  end boxSpecs;
+
+  function addSpecs
+    input Integer lo;
+    input Integer hi;
+    input list<list<tuple<Integer, Integer>>> sub;
+    input output list<list<tuple<Integer, Integer>>> specs;
+  algorithm
+    if lo >= 0 then
+      for s in sub loop
+        specs := ((lo, hi) :: s) :: specs;
+      end for;
+    end if;
+  end addSpecs;
+
+  function specString
+    input list<list<tuple<Integer, Integer>>> specs;
+    output String str = stringDelimitList(list(stringDelimitList(list(intString(Util.tuple21(t)) + ":" + intString(Util.tuple22(t)) for t in s), ",") for s in specs), ";");
+  end specString;
+
+  function boxIndices
+    "the flat indices of a box"
+    input list<tuple<Integer, Integer>> spec;
+    input list<Integer> sizes;
+    output list<Integer> indices = {0};
+  protected
+    Integer lo, hi;
+  algorithm
+    for tpl in List.zip(spec, sizes) loop
+      ((lo, hi), _) := tpl;
+      indices := List.flatten(list(list(i * Util.tuple22(tpl) + p for p in lo:hi) for i in indices));
+    end for;
+  end boxIndices;
+
+  function restrictedRange
+    "the positions lo..hi (zero based) of a range with n elements at the analysis sizes"
+    input Expression range;
+    input Integer lo;
+    input Integer hi;
+    input Integer n;
+    output Option<Expression> res = NONE();
+  protected
+    Option<Expression> start, stop;
+    Expression size_exp;
+    Dimension dim;
+  algorithm
+    () := match range
+      case Expression.RANGE() guard isNone(range.step) or Expression.isOne(Util.getOption(range.step)) algorithm
+        if lo == 0 and hi == n - 1 then
+          res := SOME(range);
+          return;
+        end if;
+        start := rangeBound(lo, n, range.start, range.stop);
+        stop := rangeBound(hi, n, range.start, range.stop);
+        if isNone(start) or isNone(stop) then
+          return;
+        end if;
+        size_exp := SimplifyExp.simplify(Expression.MULTARY({Util.getOption(stop), Expression.INTEGER(1)}, {Util.getOption(start)}, Operator.makeAdd(Type.INTEGER())));
+        dim := match Type.nthDimension(range.ty, 1)
+          case dim as Dimension.RESIZABLE() then Dimension.RESIZABLE(dim.size - (n - (hi - lo + 1)), SOME(hi - lo + 1), size_exp, dim.var);
+          else Dimension.fromInteger(hi - lo + 1);
+        end match;
+        res := SOME(Expression.RANGE(Type.ARRAY(Type.INTEGER(), {dim}), Util.getOption(start), NONE(), Util.getOption(stop)));
+      then ();
+      else ();
+    end match;
+  end restrictedRange;
+
+  function rangeBound
+    "position p (zero based) of a range with n elements, counted from the nearer end"
+    input Integer p;
+    input Integer n;
+    input Expression start;
+    input Expression stop;
+    output Option<Expression> bound;
+  algorithm
+    if Expression.isInteger(start) and Expression.isInteger(stop) then
+      bound := SOME(Expression.INTEGER(Expression.integerValue(start) + p));
+    elseif p < n - 1 - p then
+      bound := SOME(SimplifyExp.simplify(Expression.MULTARY({start, Expression.INTEGER(p)}, {}, Operator.makeAdd(Type.INTEGER()))));
+    elseif p > n - 1 - p then
+      bound := SOME(SimplifyExp.simplify(Expression.MULTARY({stop}, {Expression.INTEGER(n - 1 - p)}, Operator.makeAdd(Type.INTEGER()))));
+    else
+      bound := NONE();
+    end if;
+  end rangeBound;
+
+protected
+
   function iteratorIsResizable
     input Expression range;
     output Boolean b = Expression.fold(range, expContainsResizable, false);

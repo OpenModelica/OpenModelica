@@ -532,6 +532,19 @@ protected
     end match;
   end forEquationStart;
 
+  function withInnerComps
+    "an algebraic loop preceded by its inner components"
+    input StrongComponent comp;
+    output list<StrongComponent> comps;
+  algorithm
+    comps := match comp
+      local
+        Tearing strict;
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) then listAppend(arrayList(strict.innerEquations), {comp});
+      else {comp};
+    end match;
+  end withInnerComps;
+
   function partialSliceSeedCandidates
     "Creates per-element seed candidates for partial iteration-var slices where
      the for-loop starts at or above the slice's first element index.  This
@@ -677,6 +690,7 @@ protected
     Pointer<Integer> idx = Pointer.create(0);
 
     VariablePointers adjacencyVars;
+    list<StrongComponent> sparsity_comps;
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, res_vars_d, tmp_vars, tmp_vars_d, seed_vars, seed_vars_d;
     BVariable.VarData varDataJac;
     Adjacency.Matrix fullLocal, sparsity;
@@ -796,9 +810,11 @@ protected
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
     end if;
+    // with resizable arrays the inner equations of algebraic loops are needed for their dependencies
+    sparsity_comps := if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then List.flatten(list(withInnerComps(comp) for comp in comps)) else comps;
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
-      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps))));
-    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, comps, seed_set, pder_set, seed_diff_map);
+      EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
+    sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, seed_diff_map);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name      = name,
@@ -1613,6 +1629,7 @@ protected
 
     UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> pder_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    list<StrongComponent> sparsity_comps;
   algorithm
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
@@ -1652,9 +1669,14 @@ protected
       if jacType == JacobianType.ODE then
         adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
       end if;
+      // with resizable arrays the inner equations of algebraic loops are needed for their dependencies
+      sparsity_comps := arrayList(Util.getOption(strongComponents));
+      if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+        sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in sparsity_comps));
+      end if;
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
-        List.flatten(list(StrongComponent.getEquations(comp) for comp in arrayList(Util.getOption(strongComponents))))));
-      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, arrayList(Util.getOption(strongComponents)), seed_set, pder_set, diff_map);
+        List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
+      sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong components are missing."});
       fail();
