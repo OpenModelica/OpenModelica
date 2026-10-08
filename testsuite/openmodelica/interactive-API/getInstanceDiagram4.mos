@@ -1,0 +1,109 @@
+// name: getInstanceDiagram4
+// keywords: UML, instance diagram, arrays, #17181
+// status: correct
+//
+// Tests getInstanceDiagram with expandArrays = true: a box per element of an
+// array of components, with the values of that element, both from a binding of
+// the whole array (k = {1, p}) and from bindings in the class that use other
+// parameters of the element (v); and a connection between two elements.
+
+loadString("package Q
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model A
+    parameter Real k = 2;
+    parameter Real v[2] = {k, 2*k};
+    Pin p, n;
+  end A;
+  model T
+    parameter Real p = 3;
+    A arr[2](k = {1, p});
+    A m[2, 2](each k = 4);
+  equation
+    connect(arr[1].n, arr[2].p);
+  end T;
+end Q;", "Q.mo"); getErrorString();
+getInstanceDiagram(Q.T); getErrorString();
+getInstanceDiagram(Q.T, expandArrays = true); getErrorString();
+
+// Result:
+// true
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"Q.T\" as I_Q_T <<model>> {
+//   {field} + parameter Real p = 3
+// }
+// class \"arr[2] : Q.A\" as I_arr <<model>> {
+//   {field} + parameter Real k = {1, p} (= {1, 3.0})
+//   {field} + parameter Real v[2] = {arr.k, 2.0 * arr.k} (= {{1, 3.0}, {2.0, 6.0}})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"m[2, 2] : Q.A\" as I_m <<model>> {
+//   {field} + parameter Real k = 4
+//   {field} + parameter Real v[2] = {m.k, 2.0 * m.k} (= {4.0, 8.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// I_Q_T *-- \"2\" I_arr : arr
+// I_Q_T *-- \"2, 2\" I_m : m
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"Q.T\" as I_Q_T <<model>> {
+//   {field} + parameter Real p = 3
+// }
+// class \"arr[1] : Q.A\" as I_arr_1_ <<model>> {
+//   {field} + parameter Real k = {1, p} (= 1)
+//   {field} + parameter Real v[2] = {arr[1].k, 2.0 * arr[1].k} (= {1, 2.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"arr[2] : Q.A\" as I_arr_2_ <<model>> {
+//   {field} + parameter Real k = {1, p} (= 3.0)
+//   {field} + parameter Real v[2] = {arr[2].k, 2.0 * arr[2].k} (= {3.0, 6.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"m[1,1] : Q.A\" as I_m_1_1_ <<model>> {
+//   {field} + parameter Real k = 4
+//   {field} + parameter Real v[2] = {m[1, 1].k, 2.0 * m[1, 1].k} (= {4.0, 8.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"m[1,2] : Q.A\" as I_m_1_2_ <<model>> {
+//   {field} + parameter Real k = 4
+//   {field} + parameter Real v[2] = {m[1, 2].k, 2.0 * m[1, 2].k} (= {4.0, 8.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"m[2,1] : Q.A\" as I_m_2_1_ <<model>> {
+//   {field} + parameter Real k = 4
+//   {field} + parameter Real v[2] = {m[2, 1].k, 2.0 * m[2, 1].k} (= {4.0, 8.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"m[2,2] : Q.A\" as I_m_2_2_ <<model>> {
+//   {field} + parameter Real k = 4
+//   {field} + parameter Real v[2] = {m[2, 2].k, 2.0 * m[2, 2].k} (= {4.0, 8.0})
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// I_Q_T *-- I_arr_1_ : arr[1]
+// I_Q_T *-- I_arr_2_ : arr[2]
+// I_Q_T *-- I_m_1_1_ : m[1,1]
+// I_Q_T *-- I_m_1_2_ : m[1,2]
+// I_Q_T *-- I_m_2_1_ : m[2,1]
+// I_Q_T *-- I_m_2_2_ : m[2,2]
+// I_arr_1_ -- I_arr_2_ : arr[1].n - arr[2].p
+// @enduml
+// "
+// ""
+// endResult
