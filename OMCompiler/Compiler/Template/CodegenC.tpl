@@ -3621,22 +3621,22 @@ match sparsity
     void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       unsigned int i, nnz;
-      unsigned int col_counts[<%nCols%>];
-      unsigned int col_fill[<%nCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%nCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%nCols%> * sizeof(unsigned int));
       <%varDecls%>
 
       <%preExp%>
       <%auxFunction%>
 
       /* Phase 1: count non-zeros per column */
-      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
       <%countCode%>
 
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
       inSysData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, 0);
-      if (!inSysData->sparsePattern) return;
+      if (!inSysData->sparsePattern) { free(col_counts); free(col_fill); return; }
 
       /* Compute leadindex as prefix sum of col_counts */
       inSysData->sparsePattern->leadindex[0] = 0;
@@ -3646,6 +3646,8 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, inSysData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
       <%varFrees%>
 
       /* Compute coloring at runtime from the actual pattern (see initialResizableAnalyticJacobians).
@@ -5423,8 +5425,9 @@ match sparsityMatrix
     {
       <%algIndexes%>
       unsigned int i, nnz;
-      unsigned int col_counts[<%nCols%>];
-      unsigned int col_fill[<%nCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%nCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%nCols%> * sizeof(unsigned int));
       <%varDeclsC%><%varDeclsF%>
 
       <%preExpC%><%preExpF%>
@@ -5445,7 +5448,6 @@ match sparsityMatrix
       memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
 
       /* initialize sparse pattern: two-pass CSC construction */
-      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
       <%countCode%>
 
       nnz = 0;
@@ -5458,6 +5460,8 @@ match sparsityMatrix
 
       memcpy(col_fill, daeModeData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
 
       computeColumnColoring(daeModeData->sparsePattern, <%nRows%>, <%nCols%>);
       sortSparseColumns(daeModeData->sparsePattern, <%nCols%>);
@@ -6532,8 +6536,9 @@ match sparsity
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       unsigned int i, nnz;
-      unsigned int col_counts[<%patternCols%>];
-      unsigned int col_fill[<%patternCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%patternCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%patternCols%> * sizeof(unsigned int));
       <%varDecls%>
 
       <%preExp%>
@@ -6543,14 +6548,13 @@ match sparsity
       jacobian->isRowEval = <%isRowEval%>;
 
       /* Phase 1: count non-zeros per column */
-      memset(col_counts, 0, <%patternCols%> * sizeof(unsigned int));
       <%countCode%>
 
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%patternCols%>; i++) nnz += col_counts[i];
       jacobian->sparsePattern = allocSparsePattern(<%patternCols%>, nnz, 0);
-      if (!jacobian->sparsePattern) return 1;
+      if (!jacobian->sparsePattern) { free(col_counts); free(col_fill); return 1; }
 
       /* Compute leadindex as prefix sum of col_counts */
       jacobian->sparsePattern->leadindex[0] = 0;
@@ -6560,6 +6564,8 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%patternCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
       <%varFrees%>
 
       <%if isAdjoint then <<
