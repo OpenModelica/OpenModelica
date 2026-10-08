@@ -7909,19 +7909,20 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         Ok(())
     }
 
-    /// Like the driver's DASKR root callback: the continuous equations first, so
-    /// any algebraic a crossing depends on is current. A nonlinear system that
-    /// fails at this probe must not leak into the next checked evaluation, so the
-    /// flag is cleared around it.
+    /// Like the driver's DASKR root callback and C's `bisection_gb`/`findRoot`:
+    /// `function_ZeroCrossingsEquations`, then the crossings. A nonlinear system
+    /// that fails at this probe must not leak into the next checked evaluation, so
+    /// the flag is cleared around it.
     fn eval_zc(&mut self, t: f64, y: &[f64], zc: &mut [f64]) -> Result<()> {
         if zc.is_empty() {
             return Ok(());
         }
         write_i32(self.e, self.sim_data + self.nls_fail_off, 0)?;
-        let mut f = vec![0.0; y.len()];
         set_context_events(self.e, self.ctx_addr);
         let run = (|| -> Result<()> {
-            openmodelica_solvers::Ode::eval(self, t, y, &mut f)?;
+            write_time(self.e, self.sim_data, t)?;
+            write_f64s(self.e, self.states_base, y)?;
+            self.e.call1("functionZeroCrossingsEquations", self.sim_data)?;
             self.e.call2(MODEL_FN_ZC, self.sim_data, self.sim_data + self.zc_off)?;
             let mut bytes = vec![0u8; zc.len() * 8];
             self.e.read_bytes(self.sim_data + self.zc_off, &mut bytes)?;
@@ -7995,6 +7996,10 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
 
     fn set_context_algebraic(&mut self) {
         set_context_algebraic(self.e, self.ctx_addr);
+    }
+
+    fn restore_zc(&mut self, zc: &[f64]) {
+        let _ = write_f64s(self.e, self.sim_data + self.zc_off, zc);
     }
 
     fn has_jacobian_vector(&self) -> bool {
