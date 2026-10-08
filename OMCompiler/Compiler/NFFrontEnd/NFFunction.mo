@@ -1739,10 +1739,6 @@ uniontype Function
       end if;
     end if;
 
-    if not InstContext.inRelaxed(fn_context) then
-      checkUseBeforeAssign(fn);
-    end if;
-
     // Sort the local variables based on their dependencies.
     fn.locals := sortLocals(fn.locals, InstNode.info(InstNode.fromHandle(fn.node)));
   end typeFunctionBody;
@@ -2985,6 +2981,7 @@ protected
     list<Statement> body;
     InstNode parent;
     list<SourceInfo> sources;
+    Boolean no_return;
   algorithm
     // Skip external and builtin functions.
     if isExternal(fn) or isBuiltin(fn) then
@@ -2997,7 +2994,12 @@ protected
     addUnassignedComponents(unassigned, fn.locals);
 
     body := getBody(fn);
-    checkUseBeforeAssign2(unassigned, body);
+    no_return := checkUseBeforeAssign2(unassigned, body);
+
+    // Skip checking for unassigned outputs if the function is known to never return.
+    if no_return then
+      return;
+    end if;
 
     // Give a warning for any outputs that were not assigned in the function.
     for var in Vector.toList(unassigned) loop
@@ -3035,6 +3037,7 @@ protected
     input Vector<InstNode> unassigned;
     input list<Statement> statements;
     input Option<String> generatedName = NONE() "name of the generated function if checking generated code, where use before assign is an error";
+    output Boolean noReturn = false "True if an assert/terminate is definitely triggered";
   protected
     SourceInfo info;
     Option<InstNode> shadowed;
@@ -3083,9 +3086,21 @@ protected
 
         case Statement.ASSERT()
           algorithm
+            if Expression.isFalse(stmt.condition) then
+              noReturn := true;
+              return;
+            end if;
+
             checkUseBeforeAssignExp(unassigned, stmt.condition, info, generatedName);
             checkUseBeforeAssignExp(unassigned, stmt.message, info, generatedName);
             checkUseBeforeAssignExp(unassigned, stmt.level, info, generatedName);
+          then
+            ();
+
+        case Statement.TERMINATE()
+          algorithm
+            noReturn := true;
+            return;
           then
             ();
 

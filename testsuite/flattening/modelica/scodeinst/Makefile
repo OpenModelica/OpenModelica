@@ -743,6 +743,8 @@ FunctionUnitialized3.mo \
 FunctionUnitialized4.mo \
 FunctionUnitialized5.mo \
 FunctionUnitialized6.mo \
+FunctionUnitialized7.mo \
+FunctionUnitialized8.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \

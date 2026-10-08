@@ -3313,6 +3313,11 @@ algorithm
     fn := Function.mapExp(fn, Expression.expandSplitIndices);
     fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
+
+    if not (Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
+      Function.checkUseBeforeAssign(fn);
+    end if;
+
     Function.collect(fn);
 
     if not InstNode.isPartial(InstNode.fromHandle(fn.node)) then
