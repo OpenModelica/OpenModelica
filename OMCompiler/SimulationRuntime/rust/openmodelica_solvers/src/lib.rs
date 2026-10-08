@@ -97,6 +97,22 @@ pub const SOLVER_FAILED_ERR: &str = "integrator failed";
 /// absolute tolerance.
 pub const MINIMAL_STEP_SIZE: f64 = 1e-12;
 
+/// What [`Ode::catch_begin`] displaced, for [`Ode::catch_end`] to restore.
+#[derive(Clone, Copy, Default)]
+pub struct ModelCatch {
+    pub stage: i32,
+    pub hit: i32,
+}
+
+/// [`Ode::eval`] inside its own catch (C's `gbode_fODE`): `Ok(false)` if the model
+/// threw, which is absorbed rather than propagated.
+pub fn eval_caught(ode: &mut dyn Ode, t: f64, y: &[f64], f: &mut [f64]) -> Result<bool> {
+    let c = ode.catch_begin();
+    let run = ode.eval(t, y, f);
+    let threw = ode.catch_end(c);
+    run.map(|()| !threw)
+}
+
 /// What a solver needs of the model: the ODE right-hand side, the zero-crossing
 /// functions, and the sparsity its finite-difference Jacobian can exploit.
 ///
@@ -190,6 +206,18 @@ pub trait Ode {
     /// Leave `zc` in the model as its zero-crossing values, as C's
     /// `checkForEvents` restores `zeroCrossings` after probing them.
     fn restore_zc(&mut self, _zc: &[f64]) {}
+
+    /// C's `MMC_TRY_INTERNAL(simulationJumpBuffer)` around the evaluations up to
+    /// [`Ode::catch_end`]: a model error in them is absorbed there instead of
+    /// reaching the caller's step, and `catch_end` reports it — as does a
+    /// nonlinear system that failed, which C's generated code throws for.
+    fn catch_begin(&mut self) -> ModelCatch {
+        ModelCatch::default()
+    }
+
+    fn catch_end(&mut self, _c: ModelCatch) -> bool {
+        false
+    }
 
     /// Right-hand-side evaluations so far, for the solver statistics.
     fn calls(&self) -> u64 {
