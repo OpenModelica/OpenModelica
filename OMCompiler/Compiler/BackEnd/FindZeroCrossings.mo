@@ -423,8 +423,9 @@ algorithm
         elseWhen := List.last(elseWhenList);
         stmt2 := DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source);
         if listEmpty(CheckModel.algorithmStatementListOutputs({stmt2}, DAE.EXPAND())) then
-          // without outputs
-          preStmts2 := List.stripLast(elseWhenList);
+          // without outputs: the elsewhen's condition assignments stay
+          // pre-statements too, like the when's own
+          preStmts2 := listAppend(List.stripLast(elseWhenList), preStmts2);
           preStmts := listAppend(preStmts, preStmts2) annotation(__OpenModelica_DisableListAppendWarning=true);
           (stmts, preStmts2, index) := encapsulateWhenConditions_Algorithms(rest, vars, index);
           preStmts := listAppend(preStmts, preStmts2) annotation(__OpenModelica_DisableListAppendWarning=true);
