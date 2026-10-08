@@ -7,9 +7,10 @@ def isMac() {
   return isUnix() && sh(script: 'uname', returnStdout: true).startsWith("Darwin")
 }
 
-// Replaces the declarative default checkout (skipDefaultCheckout). A nested
-// submodule that turns into plain files (or back) leaves a working tree that
-// `git submodule update` refuses to check out over; deinit clears it.
+// Replaces the declarative default checkout (skipDefaultCheckout), including
+// its export of GIT_BRANCH etc. to env. A nested submodule that turns into
+// plain files (or back) leaves a working tree that `git submodule update`
+// refuses to check out over; deinit clears it.
 void checkoutSCM() {
   echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
   int attempt = 0
@@ -18,7 +19,7 @@ void checkoutSCM() {
       String deinit = 'git submodule absorbgitdirs && git submodule deinit --all -f'
       isUnix() ? sh(script: deinit, returnStatus: true) : bat(script: deinit, returnStatus: true)
     }
-    checkout scm
+    checkout(scm).each { k, v -> env.setProperty(k, v) }
   }
 }
 

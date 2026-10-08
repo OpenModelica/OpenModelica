@@ -36,7 +36,7 @@ pipeline {
             if (attempt++ > 0) {
               sh script: 'git submodule absorbgitdirs && git submodule deinit --all -f', returnStatus: true
             }
-            checkout scm
+            checkout(scm).each { k, v -> env.setProperty(k, v) }
           }
           common = load("${env.workspace}/.CI/common.groovy")
         }
