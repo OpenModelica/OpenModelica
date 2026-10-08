@@ -132,12 +132,14 @@ impl SymPattern {
                     for (k, &dim) in dims.iter().enumerate() {
                         let p = match r.subs.get(k).unwrap_or(&SymSub::All) {
                             SymSub::All => Pos::All,
-                            SymSub::Index(a) => Pos::Some(usize::try_from(aff(a) - 1).ok().into_iter().collect()),
+                            SymSub::Index(a) => Pos::Some(usize::try_from(aff(a) - 1).ok().filter(|&p| p < dim).into_iter().collect()),
                             SymSub::Slice { start, step, stop } => {
                                 let (mut v, stop) = (aff(start), aff(stop));
                                 let mut ps = Vec::new();
                                 while *step != 0 && ((*step > 0 && v <= stop) || (*step < 0 && v >= stop)) {
-                                    if let Ok(p) = usize::try_from(v - 1) {
+                                    if let Ok(p) = usize::try_from(v - 1)
+                                        && p < dim
+                                    {
                                         ps.push(p);
                                     }
                                     v += step;
