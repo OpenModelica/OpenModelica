@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+	WhenIfStatements.mos \
 bug1228.mos \
 divisionByZeroAtEvent.mos \
 bug2667.mos \

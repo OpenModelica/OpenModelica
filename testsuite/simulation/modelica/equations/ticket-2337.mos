@@ -23,11 +23,5 @@ translateModel(whenBug); getErrorString();
 // false
 // "Error: Failed to solve equation
 //   y = x + y;
-// [<interactive>:6:2-9:10:writable] Error: Internal error BackendDAECreate.lowerWhenEqn: equation not handled:
-// equation
-//   when sample(1, 0.0, 0.1) then
-//   x = 2.0;
-//   y = x + y;
-//   end when;
 // "
 // endResult

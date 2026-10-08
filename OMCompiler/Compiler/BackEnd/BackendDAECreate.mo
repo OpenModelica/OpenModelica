@@ -894,6 +894,7 @@ algorithm
             outREqns := listAppend(List.map1(reqns, BackendEquation.setEquationAttributes, eq_attrs), outREqns);
           else
             (eqns, reqns, outVars) := lowerWhenEqn(el, inFunctions, {}, {}, outVars);
+            reqns := listAppend(lowerWhenEqnStmts(el), reqns);
             outEqns := listAppend(outEqns, eqns) annotation(__OpenModelica_DisableListAppendWarning=true);
             outREqns := listAppend(outREqns, reqns) annotation(__OpenModelica_DisableListAppendWarning=true);
           end if;
@@ -2509,6 +2510,7 @@ protected function lowerWhenEqn
   output list<BackendDAE.Var> outVars = inVars;
 protected
   //Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
+  Integer numErrors = Error.getNumErrorMessages();
 algorithm
   (outEquationLst, outREquationLst):= matchcontinue inElement
     local
@@ -2543,14 +2545,127 @@ algorithm
 
     else
       algorithm
-        source := ElementSource.getElementSource(inElement);
-        str := "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
-              DAEDump.dumpElementsStr({inElement});
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(source));
+        // only report an internal error if nothing more specific was reported
+        if Error.getNumErrorMessages() == numErrors then
+          source := ElementSource.getElementSource(inElement);
+          str := "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
+                DAEDump.dumpElementsStr({inElement});
+          Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(source));
+        end if;
       then
         fail();
   end matchcontinue;
 end lowerWhenEqn;
+
+protected function lowerWhenEqnStmts
+  "Function calls, asserts, terminate and reinit inside if-equations of a when
+   equation cannot be expressed as when-assignments like the assignments in the
+   same branches (lowerWhenIfEqns), so they are collected into a when-algorithm
+   with the same conditions and elsewhen chain instead."
+  input DAE.Element whenEqn;
+  output list<BackendDAE.Equation> algs = {};
+protected
+  Option<DAE.Statement> stmt;
+  DAE.ElementSource source;
+algorithm
+  stmt := lowerWhenEqnStmts2(whenEqn);
+  if isSome(stmt) then
+    source := ElementSource.getElementSource(whenEqn);
+    algs := {BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({Util.getOption(stmt)}),
+      source, DAE.NOT_EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)};
+  end if;
+end lowerWhenEqnStmts;
+
+protected function lowerWhenEqnStmts2
+  input DAE.Element whenEqn;
+  output Option<DAE.Statement> stmt;
+protected
+  list<DAE.Statement> stmts;
+  Option<DAE.Statement> elseWhen;
+algorithm
+  stmt := match whenEqn
+    case DAE.WHEN_EQUATION()
+      algorithm
+        stmts := listReverse(List.fold(whenEqn.equations, lowerWhenIfEqnStmt, {}));
+        elseWhen := if isSome(whenEqn.elsewhen_)
+          then lowerWhenEqnStmts2(Util.getOption(whenEqn.elsewhen_)) else NONE();
+      then
+        if listEmpty(stmts) and isNone(elseWhen) then NONE()
+        else SOME(DAE.STMT_WHEN(whenEqn.condition, {}, false, stmts, elseWhen, whenEqn.source));
+    else NONE();
+  end match;
+end lowerWhenEqnStmts2;
+
+protected function lowerWhenIfEqnStmt
+  "Prepends the statement part of an if-equation inside a when equation, if any.
+   Other elements are handled by lowerWhenEqn2."
+  input DAE.Element el;
+  input output list<DAE.Statement> stmts;
+protected
+  Option<DAE.Statement> stmt;
+algorithm
+  stmts := match el
+    case DAE.IF_EQUATION()
+      algorithm
+        stmt := lowerIfEqnStmts(el.condition1, el.equations2, el.equations3, el.source);
+      then
+        if isSome(stmt) then Util.getOption(stmt) :: stmts else stmts;
+    else stmts;
+  end match;
+end lowerWhenIfEqnStmt;
+
+protected function lowerIfEqnStmts
+  "The if-statement with the function calls, asserts, terminate and reinit of
+   the branches of an if-equation, NONE() if there are none. Empty branches are
+   kept so the else branches stay exclusive."
+  input list<DAE.Exp> conditions;
+  input list<list<DAE.Element>> branches;
+  input list<DAE.Element> elseBranch;
+  input DAE.ElementSource source;
+  output Option<DAE.Statement> stmt = NONE();
+protected
+  list<list<DAE.Statement>> stmtsl;
+  list<DAE.Statement> stmts;
+  list<DAE.Exp> conds;
+  DAE.Exp cond;
+  DAE.Else else_;
+algorithm
+  stmtsl := list(lowerEqnsToStmts(b) for b in branches);
+  stmts := lowerEqnsToStmts(elseBranch);
+  if List.all(stmtsl, listEmpty) and listEmpty(stmts) then
+    return;
+  end if;
+  else_ := if listEmpty(stmts) then DAE.NOELSE() else DAE.ELSE(stmts);
+  cond :: conds := listReverse(conditions);
+  stmts :: stmtsl := listReverse(stmtsl);
+  for c in conds loop
+    else_ := DAE.ELSEIF(cond, stmts, else_);
+    cond := c;
+    stmts :: stmtsl := stmtsl;
+  end for;
+  stmt := SOME(DAE.STMT_IF(cond, stmts, else_, source));
+end lowerIfEqnStmts;
+
+protected function lowerEqnsToStmts
+  "The function calls, asserts, terminate and reinit among the given equations
+   (recursively for if-equations) as statements, in order."
+  input list<DAE.Element> elements;
+  output list<DAE.Statement> stmts = {};
+protected
+  Option<DAE.Statement> stmt;
+algorithm
+  for el in elements loop
+    stmts := match el
+      case DAE.NORETCALL() then DAE.STMT_NORETCALL(el.exp, el.source) :: stmts;
+      case DAE.ASSERT() then DAE.STMT_ASSERT(el.condition, el.message, el.level, el.source) :: stmts;
+      case DAE.TERMINATE() then DAE.STMT_TERMINATE(el.message, el.source) :: stmts;
+      case DAE.REINIT() then DAE.STMT_REINIT(Expression.crefExp(el.componentRef), el.exp, el.source) :: stmts;
+      case DAE.IF_EQUATION() then lowerWhenIfEqnStmt(el, stmts);
+      else stmts;
+    end match;
+  end for;
+  stmts := listReverse(stmts);
+end lowerEqnsToStmts;
 
 protected function setReinitStateSelect
   "MLS (version 3.6) section 3.7.5: [The first argument of `reinit`] is
@@ -2704,8 +2819,14 @@ algorithm
         // to
         // a=if .. then .. else if .. then else ..;
         ht := HashTableCrToExpSourceTpl.emptyHashTable();
-        ht := lowerWhenIfEqnsElse(eqns, functionTree, ht);
-        ht := lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
+        try
+          ht := lowerWhenIfEqnsElse(eqns, functionTree, ht);
+          ht := lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
+        else
+          // a variable assigned in one branch but not in the others (or no else branch)
+          Error.addSourceMessage(Error.WHEN_IF_VARIABLE_MISMATCH, {}, ElementSource.getElementSourceFileInfo(source));
+          fail();
+        end try;
         crexplst := BaseHashTable.hashTableList(ht);
         eqnl := lowerWhenIfEqns2(crexplst, inCond, source, iEquationLst);
         (eqnl, reqnl, outVar_lst) := lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst, outVar_lst);
@@ -2953,6 +3074,11 @@ algorithm
         ht := lowerWhenIfEqnsMergeNestedIf(crexplst, condition, source, iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
+    // collected into a when-algorithm by lowerWhenEqnStmts
+    case DAE.NORETCALL()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
+    case DAE.ASSERT()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
+    case DAE.TERMINATE()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
+    case DAE.REINIT()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
   end match;
 end lowerWhenIfEqns1;
 
@@ -3043,6 +3169,11 @@ algorithm
         ht := lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
+    // collected into a when-algorithm by lowerWhenEqnStmts
+    case DAE.NORETCALL()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
+    case DAE.ASSERT()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
+    case DAE.TERMINATE()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
+    case DAE.REINIT()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
   end match;
 end lowerWhenIfEqnsElse;
 
