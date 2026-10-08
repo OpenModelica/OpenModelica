@@ -1161,7 +1161,7 @@ public function isWholeResizableArray
    runtime then."
   input DAE.ComponentRef cr;
   input SimCodeVar.SimVar var;
-  output Boolean b = listEmpty(ComponentReference.crefLastSubs(cr)) and isSymbolicArrayVar(var);
+  output Boolean b = not ComponentReference.crefHaveSubs(cr) and isSymbolicArrayVar(var);
 end isWholeResizableArray;
 
 public function residualOffsetExp
