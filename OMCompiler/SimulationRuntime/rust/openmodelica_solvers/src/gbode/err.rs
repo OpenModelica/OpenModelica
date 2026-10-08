@@ -3,7 +3,6 @@
 //! uses as the method order.
 
 use alloc::vec;
-use alloc::vec::Vec;
 
 use super::tableau::{ErrMethod, Estimator};
 use super::{Gbode, Ode};
@@ -57,7 +56,7 @@ impl Gbode {
                 self.embedded_estimate(&bt);
                 let step_size = self.step_size;
                 let Some(nls) = self.nls.as_mut() else { return Ok(None) };
-                nls.contractive_filter(&self.tableau, step_size, &mut self.errest)?;
+                nls.contractive_filter(&self.tableau, step_size, &mut self.errest);
                 for v in &mut self.errest {
                     *v = abs(*v);
                 }
@@ -155,21 +154,18 @@ impl Gbode {
             && !self.did_fast_step
             && !self.event_happened
             && self.extrapolation_base_time != f64::INFINITY;
-        let f_left: Option<Vec<f64>> = (self.tableau.k_right && sr_valid)
-            .then(|| self.k_last[(n_stages - 1) * n..n_stages * n].to_vec());
-        let (time, step_size) = (self.time, self.step_size);
-        let (k, y_old) = (self.k.clone(), self.y_old.clone());
+        let f_left = (self.tableau.k_right && sr_valid)
+            .then(|| &self.k_last[(n_stages - 1) * n..n_stages * n]);
         let Some(nls) = self.nls.as_mut() else {
             return Err("Selected contractive defect error estimator is only available with -gbnls=internal.");
         };
         nls.contractive_defect(
             ode,
             &self.tableau,
-            time,
-            step_size,
-            &y_old,
-            &k,
-            f_left.as_deref(),
+            self.time,
+            &self.y_old,
+            &self.k,
+            f_left,
             &mut self.errest,
         )?;
         for v in &mut self.errest {

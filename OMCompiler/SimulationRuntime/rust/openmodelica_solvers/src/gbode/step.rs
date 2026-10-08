@@ -30,13 +30,12 @@ impl Gbode {
             let stage_time = self.time + self.tableau.c[stage] * self.step_size;
             if self.tableau.a_at(stage, stage) == 0.0 {
                 self.x[stage * n..(stage + 1) * n].copy_from_slice(&self.res_const);
-                let mut f = vec![0.0; n];
+                let k = &mut self.k[stage * n..(stage + 1) * n];
                 if self.tableau.k_left && stage == 0 && !self.did_fast_step {
-                    f.copy_from_slice(&self.k_left);
+                    k.copy_from_slice(&self.k_left);
                 } else {
-                    ode.eval(stage_time, &self.res_const, &mut f)?;
+                    ode.eval(stage_time, &self.res_const, k)?;
                 }
-                self.k[stage * n..(stage + 1) * n].copy_from_slice(&f);
                 continue;
             }
             let mut guess = vec![0.0; n];
@@ -51,9 +50,6 @@ impl Gbode {
                 }
             }
             let (time, step_size, event_happened) = (self.time, self.step_size, self.event_happened);
-            let res_const = self.res_const.clone();
-            let y_old = self.y_old.clone();
-            let nominals = self.nominals.clone();
             if let Some(nls) = self.nls.as_mut() {
                 let solved = nls.solve_dirk(
                     ode,
@@ -61,11 +57,12 @@ impl Gbode {
                     stage,
                     time,
                     step_size,
-                    &y_old,
-                    &res_const,
+                    self.last_step_size,
+                    &self.y_old,
+                    &self.res_const,
                     &mut guess,
                     event_happened,
-                    &nominals,
+                    &self.nominals,
                 )?;
                 if solved != super::Solved::Ok {
                     omclog::info!(
@@ -88,6 +85,9 @@ impl Gbode {
                 // C's generic path: Newton starts from `yOld` and falls back to the
                 // predicted stage value, and `k` is `f` at the accepted iterate.
                 let fac = step_size * self.tableau.a_at(stage, stage);
+                let res_const = self.res_const.clone();
+                let y_old = self.y_old.clone();
+                let nominals = self.nominals.clone();
                 let mut resid = super::nls_generic::StageResidual {
                     stage_time,
                     fac,
@@ -171,11 +171,10 @@ impl Gbode {
         }
         if dense_output_valid && self.tableau.with_dense_output {
             let theta = (stage_time - self.extrapolation_base_time) / self.extrapolation_step_size;
-            let (y_last, k_last) = (self.y_last.clone(), self.k_last.clone());
             self.tableau.dense_out(
                 &mut self.b_dt,
-                &y_last,
-                &k_last,
+                &self.y_last,
+                &self.k_last,
                 theta,
                 self.extrapolation_step_size,
                 guess,
@@ -219,11 +218,10 @@ impl Gbode {
             if dense_output_valid {
                 let theta =
                     (stage_time - self.extrapolation_base_time) / self.extrapolation_step_size;
-                let (y_last, k_last) = (self.y_last.clone(), self.k_last.clone());
                 self.tableau.dense_out(
                     &mut self.b_dt,
-                    &y_last,
-                    &k_last,
+                    &self.y_last,
+                    &self.k_last,
                     theta,
                     self.extrapolation_step_size,
                     &mut z[stage * n..(stage + 1) * n],
@@ -245,9 +243,6 @@ impl Gbode {
             }
         }
         let (time, step_size, event_happened) = (self.time, self.step_size, self.event_happened);
-        let y_old = self.y_old.clone();
-        let k_left = self.k_left.clone();
-        let nominals = self.nominals.clone();
         let mut k = core::mem::take(&mut self.k);
         let solved = if let Some(nls) = self.nls.as_mut() {
             nls.solve_firk(
@@ -255,14 +250,17 @@ impl Gbode {
                 &self.tableau,
                 time,
                 step_size,
-                &y_old,
-                &k_left,
+                self.last_step_size,
+                &self.y_old,
                 &mut z,
                 &mut k,
                 event_happened,
-                &nominals,
+                &self.nominals,
             )
         } else {
+            let y_old = self.y_old.clone();
+            let k_left = self.k_left.clone();
+            let nominals = self.nominals.clone();
             // C's generic path: the primary start is the ring-buffer extrapolation
             // per stage (`nlsxExtrapolation`), the retry `yOld` everywhere.
             let mut z0 = vec![0.0; n * n_stages];
@@ -347,6 +345,7 @@ impl Gbode {
                 &self.tableau,
                 time + step_size,
                 step_size,
+                self.last_step_size,
                 &y_old,
                 &res_const,
                 &mut guess,
@@ -493,16 +492,14 @@ impl Gbode {
 
     pub(super) fn interpolate_step_idx(&mut self, t: f64, out: &mut [f64], idx: Option<&[usize]>) {
         let n = self.n_states;
-        let (y_left, k_left) = (self.y_left.clone(), self.k_left.clone());
-        let (y_right, k_right) = (self.y_right.clone(), self.k_right.clone());
         interp::interpolate(
             self.conf.interpolation,
             self.time_left,
-            &y_left,
-            &k_left,
+            &self.y_left,
+            &self.k_left,
             self.time_right,
-            &y_right,
-            &k_right,
+            &self.y_right,
+            &self.k_right,
             t,
             out,
             idx,
@@ -703,10 +700,7 @@ impl Gbode {
                 self.time_right = self.time + self.step_size;
                 self.y_right.copy_from_slice(&self.y);
                 if !self.tableau.k_right {
-                    let mut f = vec![0.0; n];
-                    let yr = self.y_right.clone();
-                    ode.eval(self.time_right, &yr, &mut f)?;
-                    self.k_right.copy_from_slice(&f);
+                    ode.eval(self.time_right, &self.y_right, &mut self.k_right)?;
                 } else {
                     let s = self.n_stages() - 1;
                     self.k_right.copy_from_slice(&self.k[s * n..(s + 1) * n]);
@@ -838,10 +832,7 @@ impl Gbode {
             if self.no_restart {
                 self.time_right = self.time;
                 self.y_right.copy_from_slice(&self.y_old);
-                let mut f = vec![0.0; n];
-                let yr = self.y_right.clone();
-                ode.eval(self.time, &yr, &mut f)?;
-                self.k_right.copy_from_slice(&f);
+                ode.eval(self.time, &self.y_right, &mut self.k_right)?;
             }
             return Ok(GbStep::Root(event_time));
         }
@@ -867,20 +858,19 @@ impl Gbode {
             }
         }
         let out_time = target.min(stop_time);
-        let mut out = vec![0.0; n];
+        let out = &mut y[..n];
         if self.multi_rate
             && self.gbf.as_ref().expect("multirate without gbf").time >= out_time
         {
             // Slow states from the outer interval, fast states from the inner one.
             let slow = self.slow_states_idx[..self.n_slow].to_vec();
-            self.interpolate_step_idx(out_time, &mut out, Some(&slow));
+            self.interpolate_step_idx(out_time, out, Some(&slow));
             let fast = self.fast_states_idx[..self.n_fast].to_vec();
-            self.interpolate_gbf_idx(out_time, &mut out, Some(&fast));
+            self.interpolate_gbf_idx(out_time, out, Some(&fast));
         } else {
-            self.interpolate_step(out_time, &mut out);
+            self.interpolate_step(out_time, out);
         }
         *t = out_time;
-        y[..n].copy_from_slice(&out);
         self.stats.calls_ode += ode.calls() - calls_before;
         Ok(GbStep::Reached)
     }

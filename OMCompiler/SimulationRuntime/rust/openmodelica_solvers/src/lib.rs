@@ -168,9 +168,9 @@ pub trait Ode {
         false
     }
 
-    /// The whole `df/dy` into `j` (column-major, pattern entries only) through the
-    /// adjoint Jacobian, alone or with the forward one, as `method` says. `false` ⇒
-    /// the model cannot.
+    /// The whole `df/dy` into `j`, the pattern's values in CSC with rows in
+    /// [`Ode::jac_rows_by_col`] order, through the symbolic Jacobian in the
+    /// direction(s) `method` names. `false` ⇒ the model cannot.
     fn jacobian_matrix(
         &mut self,
         _t: f64,

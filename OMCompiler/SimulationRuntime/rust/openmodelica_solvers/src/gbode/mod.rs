@@ -485,6 +485,7 @@ impl Gbode {
         let mut s = self.stats;
         if let Some(nls) = self.nls.as_ref() {
             s.calls_jacobian = nls.n_jac_evals;
+            s.calls_ode = s.calls_ode.saturating_sub(nls.uncounted_calls);
         }
         if let Some(gnls) = self.gnls.as_ref() {
             s.calls_jacobian = gnls.n_jac_evals;

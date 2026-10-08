@@ -160,7 +160,11 @@ pub(super) fn fmu_solver_libraries(
     if named("lis") {
         wanted.push("lis");
     }
-    if !wanted.is_empty() || named("klu") || flag("nlsLS") == "klu" || (cs && flag("idaLS") == "klu")
+    // gbode's internal solver factorizes with KLU, as C's does.
+    if !wanted.is_empty()
+        || named("klu")
+        || flag("nlsLS") == "klu"
+        || (cs && (flag("idaLS") == "klu" || cs_method == "gbode"))
     {
         wanted.push("klu");
     }
