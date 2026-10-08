@@ -114,7 +114,7 @@ pub(crate) fn write(path: &str) -> Result<(), &'static str> {
     let model: &SimMeta = unsafe { &*model };
     let engine = ReadOnly;
     let mut rows = Vec::new();
-    driver::capture_row(&engine, &mut rows, sim_data, &model.layout)?;
+    driver::capture_full_row(&engine, &mut rows, sim_data, &model.layout)?;
     let keep = model.output_keep(None);
     let mut vars: Vec<MatVar> = Vec::new();
     let mut params: Vec<f64> = Vec::new();
