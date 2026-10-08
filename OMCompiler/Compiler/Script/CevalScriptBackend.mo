@@ -4199,6 +4199,22 @@ algorithm
   end try;
 end translateModelFMU;
 
+protected function canExportDaeModeFMU
+  "Which targets can export a --daeMode model as an FMU. The wasm runtime serves
+   the residual form for both FMU kinds. A --simCodeTarget=C+Rust FMU gets its FMI
+   API from the same Rust runtime component, so it serves it as fmi-ls-dae for
+   FMI 3.0 Model Exchange, where the importer owns the DAE residuals and the
+   algebraic variables. The C simulation runtime of --simCodeTarget=C does not."
+  input String FMUType;
+  input String FMUVersion;
+  input Boolean isWasmFMU;
+  output Boolean canExport;
+algorithm
+  canExport := isWasmFMU or
+               (FMI.isFMIVersion30(FMUVersion) and FMI.isFMIMEType(FMUType) and
+                Config.simCodeRustRuntime());
+end canExportDaeModeFMU;
+
 protected function callTranslateModelFMU
  "Translates a model into target code and writes CMakeLists.txt"
   input FCore.Cache inCache;
@@ -4243,7 +4259,7 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     success := false;
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
@@ -4719,7 +4735,7 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
-  if Flags.getConfigBool(Flags.DAE_MODE) and not isWasmFMU then
+  if Flags.getConfigBool(Flags.DAE_MODE) and not canExportDaeModeFMU(FMUType, FMUVersion, isWasmFMU) then
     outValue := Values.STRING("");
     if FMI.isFMIMEType(FMUType) then
       Error.addMessage(Error.FMU_EXPORT_DAE_MODE_ME, {FMUType});
