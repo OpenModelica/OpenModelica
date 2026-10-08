@@ -187,6 +187,10 @@ pub trait Ode {
     fn set_context_jacobian(&mut self) {}
     fn set_context_algebraic(&mut self) {}
 
+    /// Leave `zc` in the model as its zero-crossing values, as C's
+    /// `checkForEvents` restores `zeroCrossings` after probing them.
+    fn restore_zc(&mut self, _zc: &[f64]) {}
+
     /// Right-hand-side evaluations so far, for the solver statistics.
     fn calls(&self) -> u64 {
         0

@@ -2395,7 +2395,6 @@ impl Gbode {
             return Ok(None);
         }
         self.zc_pre.copy_from_slice(&self.zc);
-        let saved_pre = self.zc_pre.clone();
         let (t_right, y_right) = {
             let gbf = self.gbf.as_ref().expect("multirate without gbf");
             (gbf.time_right, gbf.y_right.clone())
@@ -2420,8 +2419,8 @@ impl Gbode {
         } else {
             None
         };
-        self.zc.copy_from_slice(&saved_pre);
-        self.zc_pre.copy_from_slice(&saved_pre);
+        self.zc.copy_from_slice(&self.zc_pre);
+        ode.restore_zc(&self.zc);
         Ok(event_time)
     }
 
