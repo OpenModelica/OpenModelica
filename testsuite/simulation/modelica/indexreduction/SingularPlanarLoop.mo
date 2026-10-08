@@ -16,5 +16,5 @@ equation
   connect(revolute2.frame_a,bodyshape1.frame_b) annotation(Line(points = {{52.5783,25.5422},{42.8916,25.5422},{42.8916,26.0241},{42.8434,26.0241}}));
   connect(bodyshape1.frame_a,revolute1.frame_b) annotation(Line(points = {{18.8434,26.0241},{0,26.0241},{0,26.0241},{-0.0481928,26.0241}}));
   connect(world.frame_b,revolute1.frame_a) annotation(Line(points = {{-42.9398,26.506},{-23.1325,26.506},{-23.1325,26.0241},{-24.0482,26.0241}}));
-  annotation(uses(Modelica(version = "3.2.1")), Diagram(graphics));
+  annotation(uses(Modelica(version = "4.1.0")), Diagram(graphics));
 end SingularPlanarLoop;

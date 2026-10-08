@@ -66,18 +66,17 @@ namespace IAEX
     ReplaceAllVisitor( QString findText, QString replaceText, bool matchCase = false, bool matchWord = false, int* count = 0 )
       : findText_( findText ), replaceText_( replaceText ), matchCase_( matchCase ), matchWord_( matchWord ), count_( count )
     {}
-    ~ReplaceAllVisitor(){}
 
     // Visitor function - CELL
-    void visitCellNodeBefore( Cell *node ){}
-    void visitCellNodeAfter( Cell *node ){}
+    void visitCellNodeBefore( Cell * ) override {}
+    void visitCellNodeAfter( Cell * ) override {}
 
     // Visitor function - GROUPCELL
-    void visitCellGroupNodeBefore( CellGroup *node ){}
-    void visitCellGroupNodeAfter( CellGroup *node ){}
+    void visitCellGroupNodeBefore( CellGroup * ) override {}
+    void visitCellGroupNodeAfter( CellGroup * ) override {}
 
     // Visitor function - TEXTCELL
-    void visitTextCellNodeBefore( TextCell *node )
+    void visitTextCellNodeBefore( TextCell *node ) override
     {
       auto cursor = node->textCursor();
       if( !cursor.isNull() )
@@ -103,10 +102,10 @@ namespace IAEX
         }
       }
     }
-    void visitTextCellNodeAfter( TextCell *node ){}
+    void visitTextCellNodeAfter( TextCell * ) override {}
 
     // Visitor function - INPUTCELL
-    void visitInputCellNodeBefore( InputCell *node )
+    void visitInputCellNodeBefore( InputCell *node ) override
     {
       auto cursor = node->textCursor();
       if( !cursor.isNull() )
@@ -132,11 +131,11 @@ namespace IAEX
         }
       }
     }
-    void visitInputCellNodeAfter( InputCell *node ){}
+    void visitInputCellNodeAfter( InputCell * ) override {}
 
 
     // Visitor function - GRAPHCELL
-    void visitGraphCellNodeBefore( GraphCell *node )
+    void visitGraphCellNodeBefore( GraphCell *node ) override
     {
       auto cursor = node->textCursor();
       if( !cursor.isNull() )
@@ -162,9 +161,9 @@ namespace IAEX
         }
       }
     }
-    void visitGraphCellNodeAfter( GraphCell *node ){}
+    void visitGraphCellNodeAfter( GraphCell * ) override {}
 
-    void visitLatexCellNodeBefore( LatexCell *node )
+    void visitLatexCellNodeBefore( LatexCell *node ) override
     {
       auto cursor = node->textCursor();
       if( !cursor.isNull() )
@@ -191,11 +190,11 @@ namespace IAEX
       }
     }
 
-    void visitLatexCellNodeAfter( LatexCell *node ){}
+    void visitLatexCellNodeAfter( LatexCell * ) override {}
 
     // Visitor function - CURSORCELL
-    void visitCellCursorNodeBefore( CellCursor *cursor ){}
-    void visitCellCursorNodeAfter( CellCursor *cursor ){}
+    void visitCellCursorNodeBefore( CellCursor * ) override {}
+    void visitCellCursorNodeAfter( CellCursor * ) override {}
 
 
   private:

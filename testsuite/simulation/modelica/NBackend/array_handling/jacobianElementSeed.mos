@@ -1,0 +1,52 @@
+// name: jacobianElementSeed
+// keywords: NewBackend array jacobian seed
+// status: correct
+// suite: cSources
+//
+// The linear systems only solve single elements of the component array n, their
+// Jacobians have seeds like $SEED_INI_LS_JAC_1.n[1].T, which are variables on their
+// own and no elements of an array (IDA DistrictsBenchmark nodebdl[1].T_out).
+
+loadString("
+model N
+  Real T;
+  Real m;
+end N;
+
+model jacobianElementSeed
+  N n[2];
+  Real y, z;
+equation
+  n[1].m = 1 + time;
+  n[2].m = 2 + time;
+  n[1].m*n[1].T + y = 1;
+  n[1].T - n[2].m*y = time;
+  n[2].m*n[2].T + z = 2;
+  n[2].T - n[1].m*z = time;
+end jacobianElementSeed;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+simulate(jacobianElementSeed); getErrorString();
+val(n.T[1], 1.0);
+val(n.T[2], 1.0);
+val(y, 1.0);
+val(z, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "jacobianElementSeed_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'jacobianElementSeed', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5714285714285714
+// 0.7142857142857143
+// -0.1428571428571428
+// -0.1428571428571428
+// endResult

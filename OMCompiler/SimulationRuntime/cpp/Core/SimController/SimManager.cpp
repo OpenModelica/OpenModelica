@@ -273,23 +273,26 @@ void SimManager::runSingleStep()
 void SimManager::computeSampleCycles()
 {
     int counter = 0;
-    time_event_type timeEventPairs;                        ///< - Contains start times and time spans
 
     _timeevent_system->initTimeEventData();
-    std::vector<std::pair<double, double> >::iterator iter;
-    iter = timeEventPairs.begin();
-    for (; iter != timeEventPairs.end(); ++iter)
+    int dimTimeEvent = _timeevent_system->getDimTimeEvent();
+    std::pair<double, double>* timeEventData = _timeevent_system->getTimeEventData();
+
+    for (int i = 0; i < dimTimeEvent; i++)
     {
-        if (iter->first != 0.0 || iter->second == 0.0)
+        double startTime = timeEventData[i].first;
+        double interval = timeEventData[i].second;
+
+        if (startTime != 0.0 || interval == 0.0)
         {
             throw ModelicaSimulationError(SIMMANAGER,"Time event not starting at t=0.0 or not cyclic!");
         }
         else
         {
             // Check if sample time is a multiple of the cycle time (with a tolerance)
-            if ((iter->second / _config->getGlobalSettings()->gethOutput()) - int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5) <= 1e6 * UROUND)
+            if (std::fabs((interval / _config->getGlobalSettings()->gethOutput()) - int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5)) <= 1e6 * UROUND)
             {
-                _sampleCycles[counter] = int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5);
+                _sampleCycles[counter] = int((interval / _config->getGlobalSettings()->gethOutput()) + 0.5);
             }
             else
             {

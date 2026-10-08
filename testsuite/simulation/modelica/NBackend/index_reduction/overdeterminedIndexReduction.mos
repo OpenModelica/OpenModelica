@@ -1,0 +1,36 @@
+// name: overdeterminedIndexReduction
+// keywords: NewBackend index reduction
+// status: correct
+//
+// A structurally over-determined system can never be resolved by differentiating
+// the equations. Index reduction used to restart forever, now it gives an error.
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+loadString("
+  model overdeterminedIndexReduction
+    Real a[2,2];
+    Real b[2];
+    Real c;
+  equation
+    a[1,1] = 3;
+    for i in 1:2 loop
+      a[i,:] = {b[i], c} + {time, time};
+    end for;
+    b[1] = 1 + a[2,2];
+    b[2] = 2 * a[1,2];
+    c = 5;
+  end overdeterminedIndexReduction;
+"); getErrorString();
+
+buildModel(overdeterminedIndexReduction); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"", ""}
+// "Error: Internal error NBMatching.singular could not resolve the structural singularity after 20 index reduction steps. The system is probably over-determined or has a too high index.
+// "
+// endResult

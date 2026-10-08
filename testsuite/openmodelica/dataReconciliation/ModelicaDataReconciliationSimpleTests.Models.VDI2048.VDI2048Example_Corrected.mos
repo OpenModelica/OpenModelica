@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_VDI2048_VDI2048Example_Corrected.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,19 +20,22 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected, simflags=simFlags);
 getErrorString();
 
+readFile("ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv
 //
 // ModelInfo: ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected
 // ==========================================================================
@@ -285,7 +289,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -295,4 +299,18 @@ getErrorString();
 // end SimulationResult;
 // "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// mD,2.092,2.092,0.272,0.272,TRUE,0,
+// mHDNK,18.498,18.499,0.205,0.137122,TRUE,0.00684795,
+// mA5,4.391,4.391,0.058,0.0566957,TRUE,0.00022856,
+// mA6,3.744,3.744,0.058,0.0566957,TRUE,0.00022856,
+// mA7,10.364,10.364,0.168,0.133016,TRUE,0.000342739,
+// mHK,69.978,69.997,0.854,0.566796,TRUE,0.0297734,
+// mV,0.525,0.524194,0.105,0.104563,TRUE,0.0242626,
+// mSPLL,44.319,44.3818,0.532,0.469808,TRUE,0.251487,
+// mSPL,44.575,44.6385,0.535,0.471702,TRUE,0.251487,
+// mFDKELL,45.668,44.1188,2.5,1.78991,TRUE,0.887628,
+// mFDKEL,46.241,44.6918,2.5,1.78991,TRUE,0.887628,
+// "
+// ""
 // endResult

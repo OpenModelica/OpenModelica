@@ -1,6 +1,7 @@
 // name:     RedeclareComponent2
 // keywords: redeclare component
 // status:   correct
+// suite: disabled
 //
 // Tests redeclaration of redeclared components.
 //

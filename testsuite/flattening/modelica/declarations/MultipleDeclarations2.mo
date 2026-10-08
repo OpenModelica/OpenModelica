@@ -1,6 +1,7 @@
 // name:     MultipleDeclarations2
 // keywords: declaration
 // status:   incorrect
+// suite: disabled
 //
 // Multiple declarations are not allowed.
 //
@@ -14,7 +15,7 @@ end MultipleDeclarations2;
 
 // Result:
 // Error processing file: MultipleDeclarations2.mo
-// [flattening/modelica/declarations/MultipleDeclarations2.mo:11:3-11:9:writable] Error: An element with name x is already declared in this scope.
+// [flattening/modelica/declarations/MultipleDeclarations2.mo:12:3-12:9:writable] Error: An element with name x is already declared in this scope.
 // Error: Error occurred while flattening model MultipleDeclarations2
 //
 // # Error encountered! Exiting...

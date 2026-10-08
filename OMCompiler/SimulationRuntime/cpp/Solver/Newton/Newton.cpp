@@ -262,7 +262,7 @@ void Newton::solve( )
         catch (ModelicaSimulationError& ex) {
           if (lambda < 1e-10) {
             LOGGER_WRITE_END(_lc, LL_DEBUG);
-            throw ex;
+            throw;
           }
           // reduce step size
           lambda *= 0.5;

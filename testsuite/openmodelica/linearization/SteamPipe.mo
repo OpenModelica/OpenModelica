@@ -1,6 +1,6 @@
 model SteamPipe
   "Detailed thermal advection model with thermal expansion effects using IF97 water vapour"
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
   replaceable package Medium = Modelica.Media.Water.StandardWater
     constrainedby Modelica.Media.Interfaces.PartialMedium;
   parameter Integer N = 10 "Number of nodes";

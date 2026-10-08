@@ -41,13 +41,13 @@ equation
       points={{-46,10},{72,10},{72,70},{52,70}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end test2;
 
 
 model electricalCircuit2
-  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=50, freqHz=100)
+  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=50, f=100)
     annotation (Placement(transformation(extent={{-70,28},{-50,48}})));
   Modelica.Electrical.Analog.Basic.Resistor resistor(R=100)
     annotation (Placement(transformation(extent={{-38,72},{-18,92}})));
@@ -88,12 +88,12 @@ equation
       points={{-50,38},{12,38},{12,70},{8,70}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end electricalCircuit2;
 
 model ElectricalCircuit2
-  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=50, freqHz=5)
+  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=50, f=5)
     annotation (Placement(transformation(extent={{-70,28},{-50,48}})));
   Modelica.Electrical.Analog.Basic.Resistor resistor(R=100)
     annotation (Placement(transformation(extent={{-38,72},{-18,92}})));

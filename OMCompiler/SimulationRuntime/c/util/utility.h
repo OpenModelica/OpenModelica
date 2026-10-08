@@ -140,4 +140,8 @@ static inline modelica_integer modelica_integer_mod(modelica_integer x, modelica
   return ((y > 0 && res < 0) || (y < 0 && res > 0)) ? (res + y) : res;
 }
 
+/* Modelica.Constants.inf and .Integer_inf. */
+extern modelica_real realMaxLit(void);
+extern modelica_integer intMaxLit(void);
+
 #endif

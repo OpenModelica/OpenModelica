@@ -1,6 +1,7 @@
 // name: redeclare8.mo
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model A

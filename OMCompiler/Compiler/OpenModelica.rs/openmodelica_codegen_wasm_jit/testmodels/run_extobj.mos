@@ -1,0 +1,5 @@
+// External-object (table-marshalling foundation) wasm-jit test. Usage: omc run_extobj.mos
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("TestExtObj.mo"); getErrorString();
+simulate(TestExtObj, stopTime = 1.0, numberOfIntervals = 10); getErrorString();
+val(x, 1.0); // expect 5.0

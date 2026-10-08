@@ -1,0 +1,28 @@
+// name:     GetExternalFunctions
+// keywords: ffi external getExternalFunctions
+// status:   correct
+// depends: PrebuiltWasmExternals
+//
+// getExternalFunctions describes the external "C" functions of a library, with
+// the C types of their calls, for the package manager to build wasm modules
+// from. External object constructors and destructors are found too.
+
+loadFile("PrebuiltWasmExternals/package.mo"); getErrorString();
+echo(false); s := getExternalFunctions(PrebuiltWasmExternals); echo(true); getErrorString();
+regexBool(s, "\"abi\": *2");
+regexBool(s, "\"declare\": *false, *\"includeDirectories\": *\\[\"[^\"]*PrebuiltWasmExternals/Resources/C-Sources\"\\], *\"includes\": *\\[\"#include \\\\\"counter_increment.c\\\\\"\"\\], *\"name\": *\"pwe_increment\", *\"parameters\": *\\[\\], *\"path\": *\"PrebuiltWasmExternals.increment\", *\"returns\": *\"int\"");
+regexBool(s, "\"name\": *\"pwe_accumulate\", *\"parameters\": *\\[\"void\\*\", *\"double\"\\], *\"path\": *\"PrebuiltWasmExternals.accumulate\", *\"returns\": *\"double\"");
+regexBool(s, "\"path\": *\"PrebuiltWasmExternals.Accumulator.constructor\", *\"returns\": *\"void\\*\"");
+regexBool(s, "\"parameters\": *\\[\"void\\*\"\\], *\"path\": *\"PrebuiltWasmExternals.Accumulator.destructor\", *\"returns\": *\"void\"");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// true
+// true
+// endResult

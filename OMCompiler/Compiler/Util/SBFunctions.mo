@@ -295,7 +295,7 @@ public
           loint := SBInterval.lowerBound(idim);
           hiint := SBInterval.upperBound(idim);
 
-          if hiint - loint > off * off then
+          if intReal(hiint - loint) > intReal(off) * intReal(off) then
             new_s := arrayCreateNoInit(off, di);
             new_l := arrayCreateNoInit(off, li);
 

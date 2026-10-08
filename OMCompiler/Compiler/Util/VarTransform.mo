@@ -315,7 +315,8 @@ protected function applyReplacementsVarAttr "Help function to applyReplacementsD
 algorithm
   outAttr := match attr
     local
-      Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,startOrigin;
+      Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
+      Option<DAE.StartOrigin> startOrigin;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> dist;
@@ -525,6 +526,7 @@ algorithm
       list<DAE.ComponentRef> conditions;
       Boolean initialCall,iterIsArray;
       DAE.Else el,el_1;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case {} then ({},false);
     case DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs
@@ -571,7 +573,7 @@ algorithm
         (xs_1,_) := replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,true);
-    case (DAE.STMT_FOR(type_=tp,iterIsArray=iterIsArray,iter=id1,range=e,statementLst=stmts,source = source)) :: xs
+    case (DAE.STMT_FOR(type_=tp,iterIsArray=iterIsArray,iter=id1,range=e,statementLst=stmts,source = source,sub_iters=sub_iters)) :: xs
       algorithm
         (stmts2,b1) := replaceEquationsStmts(stmts,repl,condExpFunc);
         (e_1,b2) := replaceExp(e, repl, condExpFunc);
@@ -579,7 +581,7 @@ algorithm
         /* TODO: Add operation to source; do simplify? */
         (xs_1,_) := replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_FOR(tp,iterIsArray,id1,e_1,stmts2,source) :: xs_1,true);
+        (DAE.STMT_FOR(tp,iterIsArray,id1,e_1,stmts2,source,sub_iters) :: xs_1,true);
     case (DAE.STMT_WHILE(exp = e,statementLst=stmts,source = source)) :: xs
       algorithm
         (stmts2,b1) := replaceEquationsStmts(stmts,repl,condExpFunc);
@@ -1192,22 +1194,16 @@ public function replaceExpRepeated2 "help function to replaceExpRepeated"
     output Boolean res;
   end VisitFunc;
 
+protected
+  DAE.Exp e1;
+  Boolean b;
 algorithm
-  outExp := matchcontinue equal
-    local
-      DAE.Exp e1,res;
-      Boolean b;
-    case _
-      algorithm
-        true := i > maxIter;
-      then e;
-    case true then e;
-    else
-      algorithm
-        (e1,b) := replaceExp(e,repl,func);
-        res := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*ExpressionBasics.expEqual(e,e1)*/);
-      then res;
-  end matchcontinue;
+  if i > maxIter or equal then
+    outExp := e;
+  else
+    (e1,b) := replaceExp(e,repl,func);
+    outExp := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*ExpressionBasics.expEqual(e,e1)*/);
+  end if;
 end replaceExpRepeated2;
 
 public function replaceExp

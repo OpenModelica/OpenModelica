@@ -89,7 +89,7 @@ protected import List;
 public
 function create
   input String streamName;
-  input IOStreamType streamType;
+  input IOStreamType streamType = LIST();
   output IOStream outStream;
 algorithm
   outStream := match streamType

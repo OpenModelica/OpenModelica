@@ -113,6 +113,7 @@ extern void SystemImpl__plotCallBack(threadData_t *threadData, int externalWindo
 extern double SystemImpl__time(void);
 extern int SystemImpl__directoryExists(const char *dirname);
 extern int SystemImpl__copyFile(const char* str_1, const char* str_2);
+extern int SystemImpl__copyPath(const char* source, const char* destination);
 extern int SystemImpl__createDirectory(const char *str);
 extern int SystemImpl__removeDirectory(const char *str);
 extern const char* SystemImpl__readFileNoNumeric(const char* filename);
@@ -121,5 +122,8 @@ extern int SystemImpl__unescapedStringLength(const char* str);
 extern const char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
 extern const char* SystemImpl__iconv__ascii(const char * str);
 extern void SystemImpl__initGarbageCollector(void);
+extern int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug);
+extern int SystemImpl__loadLibraryLazy(const char *str, int relativePath, int printDebug);
+extern const char* SystemImpl__getLoadLibraryError(void);
 
 #endif //__SYSTEMIMPL_H

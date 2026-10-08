@@ -60,11 +60,8 @@ public function createColoring
   output array<list<Integer>> coloredArray;
 protected
   constant Boolean debug = false;
-  list<Integer> nodesList;
   array<Integer> colored;
-  array<Integer> forbiddenColor;
-  list<tuple<Integer, list<Integer>>> sparseGraph, sparseGraphT;
-  array<tuple<Integer, list<Integer>>> arraysparseGraph;
+  list<tuple<Integer, list<Integer>>> sparseGraphT;
   Integer maxColor;
 algorithm
   try
@@ -72,30 +69,24 @@ algorithm
     if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
       print("analytical Jacobians[SPARSE] -> build sparse graph.\n");
     end if;
-    nodesList := List.intRange2(1,sizeVarswithDep);
-    sparseGraph := Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
     sparseGraphT := Graph.buildGraph(List.intRange2(1,sizeVars),createBipartiteGraph,sparseArrayT);
 
     // debug dump
     if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
       print("sparse graph: \n");
-      Graph.printGraphInt(sparseGraph);
+      Graph.printGraphInt(Graph.buildGraph(List.intRange2(1,sizeVarswithDep),createBipartiteGraph,sparseArray));
       print("transposed sparse graph: \n");
       Graph.printGraphInt(sparseGraphT);
       print("analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
     end if;
 
     // color sparse bipartite graph
-    forbiddenColor := arrayCreate(sizeVars,0);
     colored := arrayCreate(sizeVars,0);
-    arraysparseGraph := listArray(sparseGraph);
     if debug then execStat("generateSparsePattern -> coloring start "); end if;
     if (sizeVars>0) then
-      Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
+      Graph.partialDistance2colorInt(sparseGraphT, sizeVarswithDep, colored);
     end if;
     if debug then execStat("generateSparsePattern -> coloring end "); end if;
-    GCExt.free(forbiddenColor);
-    GCExt.free(arraysparseGraph);
     // get max color used
     maxColor := Array.fold(colored, intMax, 0);
 

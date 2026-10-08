@@ -20,5 +20,5 @@ equation
 annotation (__OpenModelica_simulationFlags(
       lv="LOG_JAC", eps = "0.023",
       s="dassl",
-      sx="modelica://ModelicaDataReconciliationSimpleTests/resources/Splitter0_Inputs.csv"));
+      sx="./ModelicaDataReconciliationSimpleTests/resources/Splitter0_Inputs.csv"));
 end Splitter0;

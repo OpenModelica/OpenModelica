@@ -1,5 +1,6 @@
 // status: correct
 // cflags: -g=MetaModelica -d=gen -d=-newInst
+// suite: metamodelica
 
 model TestContinue
   function f

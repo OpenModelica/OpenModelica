@@ -10,6 +10,7 @@ endif
 
 TESTFILES = \
 linmodel.mos \
+Pendulum.mos \
 simVanDerPol.mos \
 smallValues.mos \
 simLotkaVolterra.mos \
@@ -72,4 +73,4 @@ failingtest :
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

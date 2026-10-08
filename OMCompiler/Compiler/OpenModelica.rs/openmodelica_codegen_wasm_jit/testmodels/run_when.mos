@@ -1,0 +1,5 @@
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadModel(Modelica); getErrorString();
+loadFile("TestWhenAssert.mo"); getErrorString();
+simulate(TestWhenAssert, stopTime = 2.0, numberOfIntervals = 20); getErrorString();
+val(x, 2.0); // expect 2.0

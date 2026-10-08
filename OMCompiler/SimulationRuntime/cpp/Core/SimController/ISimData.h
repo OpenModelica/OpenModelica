@@ -30,12 +30,6 @@
  *
  *  @{
  */
-/*includes removed for static linking not needed any more
-#ifdef RUNTIME_STATIC_LINKING
-#include <string.h>
-#include <boost/numeric/ublas/fwd.hpp>
-#endif
-*/
 
 class ISimData
 {

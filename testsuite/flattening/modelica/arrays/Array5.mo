@@ -1,6 +1,7 @@
 // name:     Array5
 // keywords: array,modification
 // status:   correct
+// suite: disabled
 //
 // This is a test of values in types.
 // Note that the fill-operation is here generalized to non-scalars

@@ -1,6 +1,7 @@
 // name: conn12.mo
 // keywords:
 // status: correct
+// suite: disabled
 //
 // FAILREASON: Expandable connector checks are not perfect yet.
 //

@@ -107,7 +107,7 @@
 #define CONFIG_TRIPLE ""
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
-#define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
+#define DEFAULT_LDFLAGS "-fopenmp -lpthread -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -loleaut32 -limagehlp -lhdf5 -lz -lsz -Wl,-Bdynamic"
 
 #define CONFIG_WITH_OPENMP 1
 
@@ -153,7 +153,7 @@
 #define CONFIG_GCC_VERSION ""
 #define DEFAULT_LDFLAGS ""
 
-#include "omc_config.unix.h"
+#include <omc_config.unix.h>
 
 #endif /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 

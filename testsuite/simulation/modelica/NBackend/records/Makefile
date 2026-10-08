@@ -1,7 +1,10 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+zeroSizeRecordField.mos \
+constantRecordField.mos \
 simple_record.mos \
+nestedRecordBinding.mos \
 record_inlining.mos \
 simple_tuple.mos \
 ComplexTest.mos \
@@ -9,6 +12,7 @@ NonTopLevelInputs.mos \
 record_arrays.mos \
 RecordCausality.mos \
 AliasRecord.mos \
+recordConstantArgument.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -53,4 +57,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

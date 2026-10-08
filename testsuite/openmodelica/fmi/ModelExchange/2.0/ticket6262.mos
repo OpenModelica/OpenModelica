@@ -1,6 +1,6 @@
 // name:     ticket6262
 // status: correct
-// teardown_command: rm -rf ticket6262.fmu ticket6262.log ticket6262.xml ticket6262_tmp.xml
+// teardown_command: rm -rf ticket6262.fmu ticket6262.log ticket6262.xml ticket6262_tmp.xml ticket6262_info.json
 
 loadString("
 model ticket6262
@@ -23,7 +23,9 @@ readFile("ticket6262.xml"); getErrorString()
 // true
 // ""
 // "ticket6262.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

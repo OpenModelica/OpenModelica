@@ -1,0 +1,41 @@
+// name:     Modelica.ComplexBlocks.Examples.TestConversionBlock
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.ComplexBlocks.Examples.TestConversionBlock);
+compareVars :=
+{
+   "len.y",
+   "phi.y"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.ComplexBlocks.Examples.TestConversionBlock
+// {"len.y", "phi.y"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 1010, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.ComplexBlocks.Examples.TestConversionBlock', options = '', outputFormat = 'mat', variableFilter = 'time|len.y|phi.y', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.ComplexBlocks.Examples.TestConversionBlock_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

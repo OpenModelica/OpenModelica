@@ -1044,10 +1044,57 @@ record CheckSettingsResult
   String MODELICAUSERCFLAGS, WORKING_DIRECTORY;
   Boolean CREATE_FILE_WORKS, REMOVE_FILE_WORKS;
   String OS, SYSTEM_INFO, SENDDATALIBS, C_COMPILER, C_COMPILER_VERSION;
-  Boolean C_COMPILER_RESPONDING, HAVE_CORBA;
+  Boolean C_COMPILER_RESPONDING;
   String CONFIGURE_CMDLINE;
 annotation(preferredView="text");
 end CheckSettingsResult;
+
+record AxisScale
+  "Scale of a figure axis, from the figures annotation."
+  String scaleType = "Linear" "\"Linear\" | \"Log\" | vendor markup";
+  Integer base = 10 "for Log; ignored otherwise";
+annotation(preferredView="text");
+end AxisScale;
+
+record Axis
+  "One axis of a figure plot, from the figures annotation."
+  Real[:] min = fill(0.0, 0) "empty = auto; length 1 = lower bound";
+  Real[:] max = fill(0.0, 0) "empty = auto; length 1 = upper bound";
+  String unit = "";
+  String label = "";
+  AxisScale scale = AxisScale();
+annotation(preferredView="text");
+end Axis;
+
+record Curve
+  "One curve of a figure plot, from the figures annotation."
+  String x = "time" "result reference";
+  String y "result reference";
+  String legend = "";
+  Integer zOrder = 0;
+annotation(preferredView="text");
+end Curve;
+
+record Plot
+  "One plot of a figure, from the figures annotation."
+  String title = "";
+  String identifier = "";
+  Curve[:] curves;
+  Axis x = Axis();
+  Axis y = Axis();
+annotation(preferredView="text");
+end Plot;
+
+record Figure
+  "One figure, from the figures sub-annotation of Documentation."
+  String title = "";
+  String identifier = "";
+  String group = "";
+  Boolean preferred = false;
+  Plot[:] plots;
+  String caption = "";
+annotation(preferredView="text");
+end Figure;
 
 package Internal
   "Internal definitions."
@@ -1068,6 +1115,11 @@ constant Integer RT_CLOCK_LINEARIZE = 16;
 constant Integer RT_CLOCK_TEMPLATES = 17;
 constant Integer RT_CLOCK_UNCERTAINTIES = 18;
 constant Integer RT_CLOCK_USER_RESERVED = 19;
+/* Accumulated over a whole translation, not a single tick/tock: the work only
+   an FMU export does, inside the phase clock of the same name. */
+constant Integer RT_CLOCK_FMU_BACKEND = 27;
+constant Integer RT_CLOCK_FMU_SIMCODE = 28;
+constant Integer RT_CLOCK_FMU_TEMPLATES = 31;
 
 function readableTime
   "Returns the time in seconds formatted as a string with four significant digits."
@@ -1103,6 +1155,16 @@ external "builtin";
 annotation(preferredView="text");
 end timerTock;
 
+function timerAccumulated
+  "Reads the total time accumulated on the internal timer with the given index,
+   or -1 if that timer never ran. Timers that measure a stretch of work that
+   recurs during one command accumulate instead of ticking once."
+  input Integer index;
+  output Real total;
+external "builtin";
+annotation(preferredView="text");
+end timerAccumulated;
+
 function timerClear
   "Clears the internal timer with the given index."
   input Integer index;
@@ -1132,7 +1194,7 @@ annotation(preferredView="text");
 end checkSettings;
 
 function loadFile
-  "Loads a Modelica file (*.mo)."
+  "Loads a Modelica file (``*.mo``)."
   input String fileName;
   input String encoding = "UTF-8";
   input Boolean uses = true;
@@ -1146,13 +1208,13 @@ annotation(Documentation(info="<html>
 <p>
   Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
-  The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
+  The main difference from loadModel is that loadFile appends this directory to OPENMODELICALIBRARY (MODELICAPATH in the language specification) (for this call only).
 </p>
 </html>"), preferredView="text");
 end loadFile;
 
 function loadFiles
-  "Loads Modelica files (*.mo)."
+  "Loads Modelica files (``*.mo``)."
   input String[:] fileNames;
   input String encoding = "UTF-8";
   input Integer numThreads = OpenModelica.Scripting.numProcessors();
@@ -1560,7 +1622,7 @@ function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
 <p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
 </html>"),
   preferredView="text");
@@ -1571,7 +1633,7 @@ function getModelicaPath
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The MODELICAPATH is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
+<p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
 <p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 <p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
 </html>"),
@@ -1878,6 +1940,7 @@ external "builtin" annotation(Library = {"omcruntime"});
 annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
+<p>The first signal asks the running command to stop, so that omc survives to report what it completed; a second one a tenth of the time later (at least 5 and at most 60 seconds) terminates omc if the command has no cancellation point to stop at. Re-arming or clearing the alarm withdraws the request.</p>
 </html>"));
 end alarm;
 
@@ -2075,7 +2138,7 @@ annotation(preferredView="text");
 end getDefaultOpenCLDevice;
 
 function setDefaultOpenCLDevice
-  "Sets the default OpenCL device to be used."
+  "Sets the default OpenCL device to be used. 0 selects one automatically."
   input Integer defdevid;
   output Boolean success;
 algorithm
@@ -2125,24 +2188,6 @@ function getLanguageStandard "Returns the current Modelica Language Standard in 
 external "builtin";
 annotation(preferredView="text");
 end getLanguageStandard;
-
-function getAstAsCorbaString
-  "Returns the AST in CORBA format."
-  input String fileName = "<interactive>";
-  output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
-external "builtin";
-annotation(Documentation(info="<html>
-<p>Prints the whole AST on the CORBA format for records, e.g.:
-<pre>
-  record Absyn.PROGRAM
-    classes = ...,
-    within_ = ...,
-  end Absyn.PROGRAM;
-</pre>
-</p>
-</html>"),
-  preferredView="text");
-end getAstAsCorbaString;
 
 function cd
   "Changes the working directory."
@@ -2237,6 +2282,23 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end generateCode;
 
+function getExternalFunctions
+  "Describes the external \"C\" functions of a library."
+  input TypeName className;
+  output String json;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns, as JSON, every external \"C\" function in <code>className</code>,
+external object constructors and destructors included: its path, C name, the C
+types of its call in the specification's mapping, its <code>Include</code>
+annotations and the include directories omc resolves for it. A function the
+wasm-jit target cannot call carries the reason instead of its C types.</p>
+<p>The package manager builds the WebAssembly modules that the wasm-jit target
+loads for these functions from this description.</p>
+</html>"),
+  preferredView="text");
+end getExternalFunctions;
+
 function loadModel
   "Loads a Modelica library."
   input TypeName className;
@@ -2314,12 +2376,37 @@ API function, which loads <code>className</code> and all the other needed
 classes into memory.</p>
 <p>This is useful to allow third parties to run a certain model (e.g. for
 debugging) without worrying about all the library dependencies.</p>
+<p>The classes it depends upon are found by looking up the names used in
+<code>className</code>, in every class declared in it and in what they use, in the
+scopes of the new frontend, without instantiating them. <code>className</code> is
+saved whole, so for a package all its classes are saved, while of the other classes
+only the ones used and of their packages only the constants used are saved. A class
+that fails to instantiate is saved with what it refers to, so the saved model fails
+the same way. The <code>className_total</code> model extending
+<code>className</code> is not added for packages and functions.</p>
 <p>Please note that the resulting file is not a valid Modelica .mo file according
 to the specification and cannot be loaded in OMEdit - it can only be
 loaded with loadFile() or passing the file to the compiler on the command line.</p>
 </html>"),
   preferredView="text");
 end saveTotalModel;
+
+function previous_saveTotalModel
+  "Saves a model and dependencies to a single file, the previous way."
+  input String fileName;
+  input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
+  input Boolean obfuscate = false;
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>The previous implementation of <a href=\"modelica://OpenModelica.Scripting.saveTotalModel\">saveTotalModel()</a>,
+which finds the classes <code>className</code> depends upon with the dependency
+analysis of the old frontend. It is kept for comparison for now and will be removed.</p>
+</html>"),
+  preferredView="text");
+end previous_saveTotalModel;
 
 
 function getTotalModel
@@ -2338,6 +2425,14 @@ API function, which loads <code>className</code> and all the other needed
 classes into memory.</p>
 <p>This is useful to allow third parties to run a certain model (e.g. for
 debugging) without worrying about all the library dependencies.</p>
+<p>The classes it depends upon are found by looking up the names used in
+<code>className</code>, in every class declared in it and in what they use, in the
+scopes of the new frontend, without instantiating them. <code>className</code> is
+saved whole, so for a package all its classes are saved, while of the other classes
+only the ones used and of their packages only the constants used are saved. A class
+that fails to instantiate is saved with what it refers to, so the saved model fails
+the same way. The <code>className_total</code> model extending
+<code>className</code> is not added for packages and functions.</p>
 <p>Please note that the resulting file is not a valid Modelica .mo file according
 to the specification and cannot be loaded in OMEdit - it can only be
 loaded with loadFile() or passing the file to the compiler on the command line.</p>
@@ -2712,7 +2807,8 @@ function translateModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
 external "builtin";
@@ -2735,8 +2831,10 @@ function buildModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
-                                          \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
+                                          \"<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.28.0\" host triple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.28.0\".
+                                          \"<cpu>-<vendor>-<os> docker run <image>\" host triple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
+  input String method = "<default>" "integration method embedded in a Co-Simulation FMU. <default> = dassl";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2771,6 +2869,7 @@ function simulate
   input String variableFilter = ".*" "Only variables fully matching the regexp are stored in the result file. <default> = \".*\"";
   input String cflags = "<default>" "cflags. <default> = \"\"";
   input String simflags = "<default>" "simflags. <default> = \"\"";
+  input String resimulateExecutable = "" "If non-empty, skip translation and build and simulate this already-built executable directly.";
   output SimulationResult simulationResults;
   record SimulationResult
     String resultFile;
@@ -3374,7 +3473,7 @@ function diffSimulationResults
   output String[:] failVars;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
@@ -3390,7 +3489,7 @@ function diffSimulationResultsHtml
   output String html;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv; an empty diffPrefix writes no files.</p>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResultsHtml;
@@ -4819,6 +4918,14 @@ external "builtin";
 annotation(preferredView="text");
 end getSimulationOptions;
 
+function getModelFigures
+  "Returns the figures defined in the class' figures sub-annotation of Documentation."
+  input TypeName name;
+  output Figure[:] figures;
+external "builtin";
+annotation(preferredView="text");
+end getModelFigures;
+
 function getAnnotationNamedModifiers
   "Returns the names of the modifiers in the given annotation."
   input TypeName className;
@@ -5007,6 +5114,24 @@ annotation(
   preferredView="text");
 end updatePackageIndex;
 
+function installWasmToolchain
+  "Installs the sysroot wasm external \"C\" code is compiled against."
+  input Boolean cxx = false "Also libc++, for C++ code";
+  output String sysroot;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Downloads the WebAssembly sysroot (wasi-libc headers, <code>libc.so</code>
+and the compiler-rt builtins) that the package index's prebuilt wasm modules are
+built with, unless it is installed already, and returns its path. The wasm-jit
+target compiles <code>Include</code> sources against it with the system clang.
+With <code>cxx</code>, libc++'s headers and <code>libc++.so</code> are added,
+for C++ code compiled with <code>-fwasm-exceptions</code>.
+Returns the empty string if the index has none or the download fails.</p>
+</html>"),
+  preferredView="text");
+end installWasmToolchain;
+
 function getAvailablePackageVersions
   "Returns the versions that provide the requested version of the library."
   input TypeName pkg;
@@ -5189,7 +5314,7 @@ end GC_expand_hp;
 
 function GC_set_max_heap_size
   "Forces the GC to limit the maximum heap size."
-  input Integer size;
+  input Real size "In bytes; a Real so that sizes past 2^31 fit";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -5556,9 +5681,125 @@ function getDefinitions
   output String result;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
-<p>Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
+<p>Used by org.openmodelica.corba.parser.DefinitionsCreator in the Java
+interface, which parses the string returned here. The corba in that package
+name is historical and does not imply a CORBA connection; OpenModelica no
+longer has a CORBA interface.</p>
 </html>"));
 end getDefinitions;
+
+function getDefUseChains
+  input TypeName className "A class, or a component declared in a class.";
+  input String fileName = "" "The file to write the JSON to, if not empty.";
+  input TypeName scope = $TypeName(AllLoadedClasses) "The class to look for the uses in.";
+  input Boolean prettyPrint = false;
+  output String chains "The JSON, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the def-use chains of the names in <code>className</code> as JSON: for every
+name used in it or declared in it, where it's declared and everywhere in <code>scope</code>
+it's used. If <code>className</code> is a component, e.g. <code>P.Base.x</code>, only the
+chain of that component is returned.</p>
+<p>The names are looked up with the new frontend like the instantiation would, through
+imports, base classes and redeclares, but without instantiating anything, so it also works
+for packages, partial classes and classes that can't be instantiated. A name looked up
+through a replaceable class is also looked up in the classes it's redeclared as, and those
+uses are marked as <code>candidate</code>.</p>
+<p>The JSON has the definitions, each with its <code>name</code>, <code>kind</code> (class,
+component or iterator), its source span and the position of its name, and its
+<code>uses</code>. A use has the position of the name, the <code>text</code> as written,
+the <code>part</code> of a qualified name that refers to the definition, the class it's
+used <code>in</code> and its <code>role</code> (type, extends, modifier, binding,
+dimension, condition, constrainedby, equation, algorithm, argument, import, annotation,
+classExtends, redeclare, end). If the name isn't found in the source,
+<code>exact</code> is false and the position is the span of what it's used in. The names
+that couldn't be looked up are listed under <code>unresolved</code>.</p>
+</html>"));
+end getDefUseChains;
+
+function getDependencyGraph
+  input TypeName scope = $TypeName(AllLoadedClasses) "The classes to include.";
+  input String fileName = "" "The file to write the JSON to, if not empty.";
+  input Boolean prettyPrint = false;
+  output String graph "The JSON, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the classes in <code>scope</code> and the classes they use as JSON,
+to find out which classes a change of a library affects. The names are looked up like
+in <code>getDefUseChains</code>.</p>
+<p>The JSON has an object <code>classes</code> with a member for each class, named by its
+full name, with its <code>kind</code>, <code>restriction</code>, source span, <code>hash</code>
+and <code>uses</code>. The hash is computed from the source of the class without the classes
+declared in it, comments and whitespace, so it only changes when the class itself changes.
+<code>uses</code> are the full names of the classes it uses, sorted, including the classes
+that declare the components, constants and enumeration literals it uses and the candidates
+of names looked up through replaceable classes. A class is affected by a change if it or
+a class it uses, directly or not, has another hash or other uses.</p>
+</html>"));
+end getDependencyGraph;
+
+function getDefinitionAt
+  input String fileName "A file of a loaded class.";
+  input Integer line;
+  input Integer column "Starting at 1, counting bytes.";
+  input Boolean prettyPrint = false;
+  output String definition;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the definition of the name at a position in a file as JSON, e.g. for go to
+definition in an editor. The names in the innermost class the position is in are looked
+up like in <code>getDefUseChains</code>, and the positions of the names are found in the
+file on disk.</p>
+<p>The JSON has the <code>file</code>, <code>line</code> and <code>column</code>, the
+<code>definition</code> (as in <code>getDefUseChains</code>, without its uses) or
+<code>null</code> if there's no name at the position or it can't be looked up, the
+<code>use</code> of the name at the position or <code>null</code> if it's the declared
+name of the definition, and the <code>candidates</code> in the classes a replaceable
+class is redeclared as. The uses of the definition are returned by
+<code>getDefUseChains</code> with its name.</p>
+</html>"));
+end getDefinitionAt;
+
+function getClassDiagram
+  input TypeName className;
+  input String fileName = "" "The file to write the diagram to, if not empty.";
+  input String format = "plantuml" "plantuml, mermaid or drawio.";
+  input Integer depth = 1 "How many levels of used classes to include.";
+  input String exclude[:] = {"Modelica.Icons"} "Classes and packages to leave out.";
+  input Boolean showModifiers = true;
+  output String diagram "The diagram, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns a UML class diagram of <code>className</code>, as <a href=\"https://plantuml.com\">PlantUML</a>
+text, as <a href=\"https://mermaid.js.org\">Mermaid</a> text, which GitHub and GitLab show as a
+diagram in a <code>mermaid</code> code block, or as a <a href=\"https://www.drawio.com\">draw.io</a>
+(diagrams.net) file that can be edited and rearranged.</p>
+<p>The diagram has the class, the classes it extends, directly or not, and the classes it uses
+up to <code>depth</code> levels: the types of its components, and the classes replaceable
+classes default to, are constrained by or are redeclared as. With <code>depth = 0</code> it only
+has the class and its base classes. Class extends (<code>redeclare model extends</code>) and
+redeclared classes declared in a class in the diagram are also in it, together with the classes
+they replace. The names are looked up like in <code>getDefUseChains</code>, without instantiating
+anything, so it also works for packages and partial classes.</p>
+<p>Every class is shown with its full name, how it's declared as stereotype
+(e.g. <code>&laquo;replaceable package&raquo;</code> or <code>&laquo;redeclare function extends&raquo;</code>)
+and partial classes as abstract, with the components and short class definitions declared in it and
+the replaceable classes declared in it that aren't in the diagram. <code>extends</code> and class
+extends are generalizations, labelled with their modifiers, components of a class in the diagram
+are compositions, labelled with their names and dimensions, and short class definitions, constraining
+classes and redeclares in modifiers are dependencies, labelled with what declares them, and a
+redeclared class that doesn't extend the class it replaces depends on it, labelled
+<code>redeclares</code>. Classes declared in a class are nested in it; Mermaid has no nesting, so
+there they are linked to it, labelled <code>nested</code>.</p>
+<p>In the draw.io file every class links to <code>modelica://</code> and its name, and every line
+in the box of a class links to the line in the file of the element it shows, e.g.
+<code>modelica://P.M?lineNumber=12</code>, and for a component also to its name, e.g.
+<code>modelica://P.M?lineNumber=12&amp;element=c</code>.</p>
+<p>The classes in <code>exclude</code> and in the packages in <code>exclude</code> are left out,
+except <code>className</code> itself.
+With <code>showModifiers = false</code> the modifiers and bindings aren't shown.</p>
+</html>"));
+end getClassDiagram;
 
 function reverseLookup
   input TypeName name;
@@ -5574,7 +5815,7 @@ annotation(preferredView="text",Documentation(info="<html>
 end reverseLookup;
 
 // OMSimulator API calls
-type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";
+type oms_system = enumeration(oms_system_none, oms_system_wc, oms_system_sc, oms_system_sc3) "OMSimulator enumeration for system type.";
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined) "OMSimulator enumeration for casuality.";
 type oms_signal_type = enumeration (oms_signal_type_real,
   oms_signal_type_integer,

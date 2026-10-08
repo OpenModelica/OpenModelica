@@ -30,7 +30,7 @@
  */
 #include "../util/utility.h"
 #include "meta_modelica.h"
-#include "../util/modelica_string.h"
+#include "meta_modelica_string.h"
 
 #if !defined(META_MODELICA_BUILTIN_BOXPTR__H) || defined(GEN_META_MODELICA_BUILTIN_BOXPTR)
 #define META_MODELICA_BUILTIN_BOXPTR__H

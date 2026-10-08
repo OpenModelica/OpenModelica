@@ -1,6 +1,7 @@
 // name:     ConcatArr1
 // keywords: <insert keywords here>
 // status:   correct
+// suite: disabled
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.3 General Array concatenation (p. 213)

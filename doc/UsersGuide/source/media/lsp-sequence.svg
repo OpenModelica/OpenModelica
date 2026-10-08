@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="530" viewBox="0 0 820 530"
+     font-family="DejaVu Sans, Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5"
+            markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="13" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333"/>
+    </marker>
+    <marker id="arrow-accent" viewBox="0 0 10 10" refX="10" refY="5"
+            markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="13" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f6fb2"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="820" height="530" fill="#ffffff"/>
+
+  <!-- Development tool -->
+  <rect x="140" y="20" width="240" height="90" rx="6" fill="#e8f0fb" stroke="#3b6ea8" stroke-width="1.5"/>
+  <text x="260" y="48" text-anchor="middle" font-size="16" font-weight="bold" fill="#1d3f66">Development Tool</text>
+  <text x="260" y="74" text-anchor="middle" font-size="14" fill="#1d3f66">OMEdit</text>
+  <text x="260" y="96" text-anchor="middle" font-size="14" fill="#1d3f66">VS Code extension</text>
+
+  <!-- Language server -->
+  <rect x="560" y="20" width="240" height="90" rx="6" fill="#fdf0e0" stroke="#c47a1e" stroke-width="1.5"/>
+  <text x="680" y="48" text-anchor="middle" font-size="16" font-weight="bold" fill="#6b3f08">Language Server</text>
+  <text x="680" y="74" text-anchor="middle" font-size="14" fill="#6b3f08">Modelica</text>
+  <text x="680" y="96" text-anchor="middle" font-size="14" fill="#6b3f08">Language Server</text>
+
+  <!-- Lifelines -->
+  <line x1="260" y1="110" x2="260" y2="510" stroke="#888888" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <line x1="680" y1="110" x2="680" y2="510" stroke="#888888" stroke-width="1.5" stroke-dasharray="6 5"/>
+
+  <!-- User actions -->
+  <g font-size="13" font-style="italic" fill="#555555" text-anchor="end">
+    <text x="248" y="164">User opens document</text>
+    <text x="248" y="234">User edits document</text>
+    <text x="248" y="314">User executes</text>
+    <text x="248" y="331">Go to Definition</text>
+    <text x="248" y="384">Editor jumps to</text>
+    <text x="248" y="401">the declaration</text>
+    <text x="248" y="474">User closes document</text>
+  </g>
+
+  <!-- didOpen -->
+  <text x="470" y="152" text-anchor="middle" font-size="14" fill="#333333">Notification: textDocument/didOpen</text>
+  <line x1="260" y1="164" x2="680" y2="164" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- didChange -->
+  <text x="470" y="222" text-anchor="middle" font-size="14" fill="#333333">Notification: textDocument/didChange</text>
+  <line x1="260" y1="234" x2="680" y2="234" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Go to definition request -->
+  <text x="470" y="310" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f6fb2">Request: textDocument/definition</text>
+  <line x1="260" y1="322" x2="680" y2="322" stroke="#1f6fb2" stroke-width="2" marker-end="url(#arrow-accent)"/>
+
+  <!-- Go to definition response -->
+  <text x="470" y="368" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f6fb2">Response: location of the declaration</text>
+  <line x1="680" y1="380" x2="260" y2="380" stroke="#1f6fb2" stroke-width="2" stroke-dasharray="8 5" marker-end="url(#arrow-accent)"/>
+
+  <!-- didClose -->
+  <text x="470" y="462" text-anchor="middle" font-size="14" fill="#333333">Notification: textDocument/didClose</text>
+  <line x1="260" y1="474" x2="680" y2="474" stroke="#333333" stroke-width="1.5" marker-end="url(#arrow)"/>
+</svg>

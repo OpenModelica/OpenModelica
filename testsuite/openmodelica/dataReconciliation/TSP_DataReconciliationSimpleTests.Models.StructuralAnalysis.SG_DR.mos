@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Outputs.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Inputs.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Correlation_Inputs.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Reconciled_Sx.csv TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Reconciled_tmp.mo TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_AuxiliaryConditions.html TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_IntermediateEquations.html TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_relatedBoundaryConditionsEquations.html TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_debug.txt TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_iterationVars.txt TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_NonReconcilcedVars.txt Reconciled_TSP_DataReconciliationSimpleTests_Models_StructuralAnalysis_SG_DR.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,21 +20,24 @@ print("simFlags: "+simFlags);
 simulate(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR, simflags=simFlags);
 getErrorString();
 
+readFile("TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "s", "sx", "variableFilter"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv -variableFilter=.*
+// simFlags: -reconcile  -lv=LOG_JAC -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv -variableFilter=.*
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR
 // ==========================================================================
@@ -1944,7 +1948,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv -variableFilter=.*'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/SG_DR_OS.csv -variableFilter=.*'",
 //     messages = "Failed to build model: TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR"
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourcePQ.mo:27:3-28:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -1963,10 +1967,12 @@ getErrorString();
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss_KDR.mo:32:3-33:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss_KDR.mo:30:3-31:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss_KDR.mo:32:3-33:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Thermal/BoundaryConditions/HeatSink.mo:11:3-13:67:writable] Warning: Connector C is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
+// [ThermoSysPro 4.2.0/Thermal/BoundaryConditions/HeatSink.mo:7:3-8:80:readonly] Warning: Connector C is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SinkQ.mo:22:3-23:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // Error: Jacobian F contains non-linear components. This indicates a singular system or internal generation errors.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // [BackEnd/BackendDAEOptimize.mo:0:0-0:0:writable] Error: Internal error BackendDAEOptimize.removeUnusedFunctionsSymJacs: Unexpected data reconciliation jacobian structure.
+// "
+// ""
+// "Error: Error opening file: TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.SG_DR_Outputs.csv: No such file or directory.
 // "
 // endResult

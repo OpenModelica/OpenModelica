@@ -137,5 +137,4 @@ Refer to the source code
 References
 ~~~~~~~~~~
 .. bibliography:: openmodelica.bib extrarefs.bib
-  :cited:
   :filter: docname in docnames

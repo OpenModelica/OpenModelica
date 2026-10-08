@@ -1,6 +1,7 @@
 // name: TransitionTest
 // keywords: state machines features
 // status: wrong
+// suite: disabled
 
 model TransitionTest
   block AState

@@ -32,7 +32,7 @@
 #include "gbode_ctrl.h"
 #include "gbode_conf.h"
 
-unsigned int use_fhr = FALSE;
+modelica_boolean use_fhr = FALSE;
 double use_filter = 1.0;
 
 static inline void swap(int *a, int *b)
@@ -122,9 +122,9 @@ double getErrorThreshold(DATA_GBODE *gbData)
  * @param err_order
  * @return double
  */
-double PIController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+double PIController(double* err_values, double* step_values, int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  unsigned int k = err_order+1;
+  int k = err_order + 1;
   double beta1, beta2;
   double err_n     = err_values[0];
   double err_n1    = err_values[1];
@@ -162,9 +162,9 @@ double PIController(double* err_values, double* step_values, unsigned int err_or
  * @param err_order
  * @return double
  */
-double PIDController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+double PIDController(double* err_values, double* step_values, int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  unsigned int k = err_order + 1;
+  int k = err_order + 1;
   double beta1, beta2, beta3;
 
   double err_n     = err_values[0];
@@ -203,9 +203,9 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
  * @brief Preditive PI controller of the form hfac := (1/err_0)^(alpha_1/k) * (1/err_{-1})^(alpha_2/k) * (h/n_{-1})^ratio
  *        where ratio, alpha1 and alpha2 are DOF for the specific controller.
  */
-double PredictivePIController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+double PredictivePIController(double* err_values, double* step_values, int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  unsigned int k = err_order + 1;
+  int k = err_order + 1;
   double beta1, beta2, ratio;
 
   double err_n     = err_values[0];
@@ -258,9 +258,9 @@ double PredictivePIController(double* err_values, double* step_values, unsigned 
  *        hfac := (1/err_0)^(alpha_1/k) * (1/err_{-1})^(alpha_2/k) * (1/err_{-1})^(alpha_3/k) * (h/n_{-1})^ratio1 * (h_{-1}/n_{-2})^ratio2
  *        where ratio1, ratio2, alpha1, alpha2, alpha3 are DOF for the specific controller.
  */
-double PredictivePIDController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+double PredictivePIDController(double* err_values, double* step_values, int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  unsigned int k = err_order + 1;
+  int k = err_order + 1;
   double beta1, beta2, beta3, ratio1, ratio2;
 
   double err_n     = err_values[0];
@@ -331,13 +331,13 @@ double computeGamma(double err_now, double err_prev, double h_now, double h_prev
  * @param err_order
  * @return double
  */
-double GenericController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+double GenericController(double* err_values, double* step_values, int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
   const double fac    = 0.9;
   const double facmax = 2.5;
   const double facmin = 0.2;
 
-  unsigned int k = err_order + 1;
+  int k = err_order + 1;
 
   double err_n     = err_values[0];
   double err_n1    = err_values[1];

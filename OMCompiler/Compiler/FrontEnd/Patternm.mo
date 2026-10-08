@@ -124,22 +124,20 @@ protected function findFieldExpInList "author: KS
   output Absyn.Exp outExp;
   output list<Absyn.NamedArg> outNamedArgList;
 algorithm
-  (outExp,outNamedArgList) := matchcontinue (firstFieldName,namedArgList)
+  (outExp,outNamedArgList) := match (firstFieldName,namedArgList)
     local
       Absyn.Exp e;
       Absyn.Ident localFieldName,aName;
       list<Absyn.NamedArg> rest;
       Absyn.NamedArg first;
     case (_,{}) then (Absyn.CREF(Absyn.WILD()),{});
-    case (localFieldName,Absyn.NAMEDARG(aName,e) :: rest)
-      algorithm
-        true := stringEq(localFieldName,aName);
+    case (localFieldName,Absyn.NAMEDARG(aName,e) :: rest) guard stringEq(localFieldName,aName)
       then (e,rest);
     case (localFieldName,first::rest)
       algorithm
         (e,rest) := findFieldExpInList(localFieldName,rest);
       then (e,first::rest);
-  end matchcontinue;
+  end match;
 end findFieldExpInList;
 
 protected function checkInvalidPatternNamedArgs
@@ -661,21 +659,11 @@ protected function validUniontype
   input SourceInfo info;
   input Absyn.Exp lhs;
 algorithm
-  () := matchcontinue lhs
-    local
-      String s,s1,s2;
-    case _
-      algorithm
-        true := AbsynUtil.pathEqual(path1,path2);
-      then ();
-    else
-      algorithm
-        s := Dump.printExpStr(lhs);
-        s1 := AbsynUtil.pathString(path1);
-        s2 := AbsynUtil.pathString(path2);
-        Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
-      then fail();
-  end matchcontinue;
+  if not AbsynUtil.pathEqual(path1,path2) then
+    Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE,
+      {Dump.printExpStr(lhs), AbsynUtil.pathString(path1), AbsynUtil.pathString(path2)}, info);
+    fail();
+  end if;
 end validUniontype;
 
 public function elabMatchExpression
@@ -2945,6 +2933,7 @@ algorithm
       Boolean b;
       String id;
       DAE.ElementSource source;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iters;
 
     case DAE.STMT_ASSIGN(type_=ty,exp1=lhs,exp=exp,source=source as DAE.SOURCE(info=info))
       algorithm
@@ -2975,7 +2964,7 @@ algorithm
         useTree := AvlSetString.join(useTree,elseTree);
       then (DAE.STMT_IF(exp,body,else_,source),useTree);
 
-    case DAE.STMT_FOR(ty,b,id,exp,body,source)
+    case DAE.STMT_FOR(ty,b,id,exp,body,source,sub_iters)
       algorithm
         // Loops repeat, so check for usage in the whole loop before removing any dead stores.
         ErrorExt.setCheckpoint(getInstanceName());
@@ -2985,7 +2974,7 @@ algorithm
         (_,useTree) := Expression.traverseExpBottomUp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
         useTree := AvlSetString.join(useTree,inUseTree);
-      then (DAE.STMT_FOR(ty,b,id,exp,body,source),useTree);
+      then (DAE.STMT_FOR(ty,b,id,exp,body,source,sub_iters),useTree);
 
     case DAE.STMT_WHILE(exp=exp,statementLst=body,source=source)
       algorithm

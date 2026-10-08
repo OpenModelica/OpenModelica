@@ -36,7 +36,6 @@
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
-#include "../../meta/meta_modelica.h"
 #include "dae_mode.h"
 
 #include "../../util/omc_error.h"
@@ -54,6 +53,26 @@
 #include "embedded_server.h"
 #include "real_time_sync.h"
 #endif
+
+/* The Rust simulation runtime (`--simCodeTarget=C`) drives the model from
+ * its own loop, so nothing below is ever entered -- and every runtime function
+ * it names would otherwise have to exist twice. Compile it away instead; the
+ * two callbacks stay valid function pointers that report if anything calls them.
+ */
+#if defined(OMC_RUST_SIMULATION_RUNTIME)
+
+void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "updateContinuousSystem: the Rust simulation runtime drives the model itself");
+}
+
+int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "performSimulation: the Rust simulation runtime drives the model itself");
+  return -1;
+}
+
+#else
 
 /*! \fn updateContinuousSystem
  *
@@ -92,6 +111,12 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   data->simulationInfo->needToReThrow = 0 /* false */;
 
   prefixedName_updateContinuousSystem(data, threadData);
+  /* Everything below would evaluate the model again, on the point that just
+     failed. */
+  if (OMC_ERROR_RAISED()) {
+    data->simulationInfo->noThrowAsserts = 0 /* false */;
+    return NO_TIMER_FIRED;
+  }
 
   if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
     DATA_SYM_SOLVER_SSC* solverData = (DATA_SYM_SOLVER_SSC*) solverInfo->solverData;
@@ -100,6 +125,10 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   }
 
   saveZeroCrossings(data, threadData);
+  if (OMC_ERROR_RAISED()) {
+    data->simulationInfo->noThrowAsserts = 0 /* false */;
+    return NO_TIMER_FIRED;
+  }
 
   /***** Event handling *****/
   if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
@@ -123,6 +152,11 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
         rt_tick(SIM_TIMER_EVENT);
       }
       handleEvents(data, threadData, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+      /* Nothing is left to retry from: an error raised here ends the run. */
+      if (OMC_ERROR_RAISED()) {
+        OMC_ERROR_CLEAR();
+        longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
+      }
       cleanUpOldValueListAfterEvent(data, solverInfo->currentTime);
       messageClose(OMC_LOG_EVENTS);
       threadData->currentErrorStage = ERROR_SIMULATION;
@@ -289,7 +323,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
   }
 
   if (terminate) {
-    omc_terminate((FILE_INFO) omc_dummyFileInfo, "The embedded server received command to terminate.");
+    omc_terminate(omc_dummyFileInfo, "The embedded server received command to terminate.");
   }
 
   if (data->real_time_sync.enabled) {
@@ -370,6 +404,9 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
   if (!(omc_flag[FLAG_NO_RESTART] && (solverInfo->solverMethod==S_DASSL || solverInfo->solverMethod==S_GBODE)) && solverInfo->didEventStep)
   {
     addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
+    /* euler, rungekutta and the sym solvers accumulate into solverStatsTmp
+     * instead of overwriting it, so keeping it would count it twice. */
+    resetSolverStats(&(solverInfo->solverStatsTmp));
   }
 }
 
@@ -396,9 +433,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   if (!compiledInDAEMode)
   {
-    printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
-        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
-        data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
+    JACOBIAN* odeJacobian = getSymbolicOdeJacobian(data);
+    printSparseStructure(getJacobianCscPattern(odeJacobian),
+        odeJacobian->sizeRows,
+        odeJacobian->sizeCols,
         OMC_LOG_SOLVER, "ODE sparse pattern");
   }
   else
@@ -466,7 +504,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
       /* try */
 #if !defined(OMC_EMCC)
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       {
         printAllVars(data, 0, OMC_LOG_SOLVER_V);
@@ -475,6 +513,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         if (!compiledInDAEMode || data->modelData->nStates == 0) { /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
+          continueSimulationData(data);
         }
 
         modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep == TIMER_FIRED || syncStep == TIMER_FIRED_EVENT;
@@ -531,6 +570,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
+          continueSimulationData(data);
           continue;
         }
 
@@ -551,6 +591,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           break;
         }
         syncStep = simulationUpdate(data, threadData, solverInfo);
+        /* The step is only over if it came back clean. */
+        if (!OMC_ERROR_RAISED()) {
         retry = 0; /* reset retry */
 
         fmtEmitStep(data, threadData, &fmt, solverInfo);
@@ -579,10 +621,11 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
           break;
         }
-        success = 1;
+        }
       }
+      if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { success = 1; }
 #if !defined(OMC_EMCC)
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+      OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (!success) { /* catch */
         if(0 == retry) {
@@ -605,3 +648,5 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   return retValue;
 }
+
+#endif /* OMC_RUST_SIMULATION_RUNTIME */

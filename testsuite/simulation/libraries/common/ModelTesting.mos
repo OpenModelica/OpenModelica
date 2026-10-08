@@ -40,6 +40,11 @@ if simulationRuntime == OpenModelicaModelTesting.SimulationRuntime.Cpp then
 else
   simflags := simflags + " -abortSlowSimulation -alarm=" + String(timeoutSim);
 end if;
+// Corpus-wide simCodeTarget override (e.g. partest -simCodeTarget=wasm-jit); wins over the choice above.
+simCodeTargetOverride := getEnvironmentVar("OPENMODELICA_TEST_SIMCODETARGET");
+if simCodeTargetOverride <> "" then
+  setCommandLineOptions("+simCodeTarget=" + simCodeTargetOverride); getErrorString();
+end if;
 if modelTestingType == OpenModelicaModelTesting.Kind.Instantiation then
   print(if debug then "Start instantiateModel\n" else "");
   str:=instantiateModel(modelName);
@@ -77,7 +82,7 @@ elseif modelTestingType == OpenModelicaModelTesting.Kind.Compilation then
   error:=getErrorString();
   print(if res[1] <> "" then "Compilation succeeded\n" else "Compilation failed\n");
   print(error);
-  if res[1] <> "" then
+  if res[1] <> "" and not ignoreSimulation then
     base := basename(res[1]);
     info:=checkSettings();
     os:=info.OS;
@@ -152,9 +157,14 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
   end if;
   /* We can only compare to a reference file if we have one */
   modelNameStr := typeNameString(modelName);
-  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/"+referenceFileDir+"/" + modelNameStr + ".mat" else referenceFile;
+  referenceFileBase := if referenceFileName == "" then modelNameStr else referenceFileName;
+  referenceFile := if referenceFile == "" then getEnvironmentVar("REFERENCEFILES") + "/"+referenceFileDir+"/" + referenceFileBase + ".mat" else referenceFile;
   if regularFileExists(referenceFile+".xz") then
-    system("if test ! -f "+referenceFile+" || test "+referenceFile+".xz -nt "+referenceFile+"; then xz --keep --decompress --force "+referenceFile+".xz ; fi");
+    (refFileExists, _, refFileTime) := stat(referenceFile);
+    (_, _, refFileXzTime) := stat(referenceFile + ".xz");
+    if not refFileExists or refFileXzTime > refFileTime then
+      system("xz --keep --decompress --force " + referenceFile + ".xz");
+    end if;
     referenceExists := true;
   elseif regularFileExists(referenceFile) then
     referenceExists := true;
@@ -164,7 +174,11 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
   /* adrpo: we might run into sandbox and here we get a relative file, try to add ../ */
   if not referenceExists then
     if regularFileExists("../" + referenceFile+".xz") then
-      system("if test ! -f ../"+referenceFile+" || test ../"+referenceFile+".xz -nt ../"+referenceFile+"; then xz --keep --decompress --force ../"+referenceFile+".xz ; fi");
+      (refFileExists, _, refFileTime) := stat("../" + referenceFile);
+      (_, _, refFileXzTime) := stat("../" + referenceFile + ".xz");
+      if not refFileExists or refFileXzTime > refFileTime then
+        system("xz --keep --decompress --force ../" + referenceFile + ".xz");
+      end if;
       referenceExists := true;
     elseif regularFileExists("../" + referenceFile) then
       referenceExists := true;

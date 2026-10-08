@@ -1,0 +1,136 @@
+// name: getDefinitionAt1
+// keywords: def-use, go to definition, #16931
+// status: correct
+//
+// Tests getDefinitionAt, the definition of the name at a position in a file.
+
+writeFile("getDefinitionAt1.mo", "package T
+  package I
+    block SO
+      output Real y;
+    end SO;
+    block Base
+      extends T.I.SO;
+      parameter Real offset = 0;
+    end Base;
+  end I;
+  block St
+    extends T.I.Base;
+  equation
+    y = offset + time;
+    assert(y > -1, \"y too small\");
+  end St;
+  partial package PM
+    replaceable record TS
+    end TS;
+    replaceable partial model BP
+      Real p;
+    end BP;
+  end PM;
+  partial package PMM
+    extends PM;
+    redeclare replaceable record extends TS
+      Real p;
+      Real X;
+    end TS;
+  end PMM;
+  package MA
+    extends PMM;
+    redeclare record extends TS
+    end TS;
+    redeclare model extends BP
+      Real phase;
+    end BP;
+    function g
+      input TS state;
+      output Real x = state.X;
+    end g;
+    model Ext
+      extends BP;
+    equation
+      phase = p;
+    end Ext;
+  end MA;
+  record Data
+    Real a = 1;
+  end Data;
+  record MoreData
+    extends Data;
+    Real b = 2;
+  end MoreData;
+  model Cell
+    replaceable parameter Data data;
+  end Cell;
+  model Stack
+    extends Cell(redeclare MoreData data);
+    Real c[2] = {data.a, data.b} .* {1, 2};
+  end Stack;
+  package LF
+    extends PM(redeclare record TS = MoreData);
+    function mk
+      output TS s = TS(a = 3, b = 4);
+    end mk;
+  end LF;
+  class Table
+    extends ExternalObject;
+    function constructor
+      input String fileName;
+      output Table t;
+      external \"C\" t = openTable(fileName);
+    end constructor;
+    function destructor
+      input Table t;
+      external \"C\" closeTable(t);
+    end destructor;
+  end Table;
+  model UseTable
+    import T.{Table, Data};
+    parameter Table t = Table(fileName = \"x.txt\");
+    Data d;
+  end UseTable;
+end T;
+");
+loadFile("getDefinitionAt1.mo"); getErrorString();
+
+// A component used in an equation, inherited through two extends.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 14, 9), cd() + "/", "");
+// A component inherited from the base class of the base class.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 14, 5), cd() + "/", "");
+// The parts of a qualified name.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 12, 13), cd() + "/", "");
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 12, 17), cd() + "/", "");
+// The declared name of a component: no use.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 8, 24), cd() + "/", "");
+// The name after end.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 16, 8), cd() + "/", "");
+// A component of a record only found in the class a replaceable record is redeclared as.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 40, 29), cd() + "/", "");
+// Only found in the type a replaceable component is redeclared with: a candidate.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 60, 31), cd() + "/", "");
+// A named argument of the constructor of an external object.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 82, 31), cd() + "/", "");
+// A name in a group import.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 81, 15), cd() + "/", "");
+// Whitespace: nothing.
+stringReplace(getDefinitionAt("getDefinitionAt1.mo", 14, 3), cd() + "/", "");
+getErrorString();
+deleteFile("getDefinitionAt1.mo");
+
+// Result:
+// true
+// true
+// ""
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":14, \"column\":9, \"definition\":{\"name\":\"T.I.Base.offset\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":8, \"columnStart\":7, \"lineEnd\":8, \"columnEnd\":32, \"nameLine\":8, \"nameColumnStart\":22, \"nameColumnEnd\":27}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":14, \"columnStart\":9, \"lineEnd\":14, \"columnEnd\":14, \"exact\":true, \"text\":\"offset\", \"in\":\"T.St\", \"role\":\"equation\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":14, \"column\":5, \"definition\":{\"name\":\"T.I.SO.y\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":4, \"columnStart\":7, \"lineEnd\":4, \"columnEnd\":20, \"nameLine\":4, \"nameColumnStart\":19, \"nameColumnEnd\":19}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":14, \"columnStart\":5, \"lineEnd\":14, \"columnEnd\":5, \"exact\":true, \"text\":\"y\", \"in\":\"T.St\", \"role\":\"equation\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":12, \"column\":13, \"definition\":{\"name\":\"T\", \"kind\":\"class\", \"restriction\":\"package\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":1, \"columnStart\":1, \"lineEnd\":85, \"columnEnd\":6, \"nameLine\":1, \"nameColumnStart\":9, \"nameColumnEnd\":9}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":12, \"columnStart\":13, \"lineEnd\":12, \"columnEnd\":13, \"exact\":true, \"text\":\"T.I.Base\", \"part\":1, \"in\":\"T.St\", \"role\":\"extends\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":12, \"column\":17, \"definition\":{\"name\":\"T.I.Base\", \"kind\":\"class\", \"restriction\":\"block\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":6, \"columnStart\":5, \"lineEnd\":9, \"columnEnd\":13, \"nameLine\":6, \"nameColumnStart\":11, \"nameColumnEnd\":14}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":12, \"columnStart\":17, \"lineEnd\":12, \"columnEnd\":20, \"exact\":true, \"text\":\"T.I.Base\", \"part\":3, \"in\":\"T.St\", \"role\":\"extends\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":8, \"column\":24, \"definition\":{\"name\":\"T.I.Base.offset\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":8, \"columnStart\":7, \"lineEnd\":8, \"columnEnd\":32, \"nameLine\":8, \"nameColumnStart\":22, \"nameColumnEnd\":27}, \"use\":null, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":16, \"column\":8, \"definition\":{\"name\":\"T.St\", \"kind\":\"class\", \"restriction\":\"block\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":11, \"columnStart\":3, \"lineEnd\":16, \"columnEnd\":9, \"nameLine\":11, \"nameColumnStart\":9, \"nameColumnEnd\":10}, \"use\":null, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":40, \"column\":29, \"definition\":{\"name\":\"T.PMM.TS.X\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":28, \"columnStart\":7, \"lineEnd\":28, \"columnEnd\":13, \"nameLine\":28, \"nameColumnStart\":12, \"nameColumnEnd\":12}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":40, \"columnStart\":29, \"lineEnd\":40, \"columnEnd\":29, \"exact\":true, \"text\":\"state.X\", \"part\":2, \"in\":\"T.MA.g\", \"role\":\"binding\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":60, \"column\":31, \"definition\":null, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":60, \"columnStart\":31, \"lineEnd\":60, \"columnEnd\":31, \"exact\":true, \"text\":\"data.b\", \"part\":2, \"in\":\"T.Stack\", \"role\":\"binding\", \"candidate\":true}, \"candidates\":[{\"name\":\"T.MoreData.b\", \"kind\":\"component\", \"type\":\"Real\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":53, \"columnStart\":5, \"lineEnd\":53, \"columnEnd\":15, \"nameLine\":53, \"nameColumnStart\":10, \"nameColumnEnd\":10}]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":82, \"column\":31, \"definition\":{\"name\":\"T.Table.constructor.fileName\", \"kind\":\"component\", \"type\":\"String\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":71, \"columnStart\":7, \"lineEnd\":71, \"columnEnd\":28, \"nameLine\":71, \"nameColumnStart\":20, \"nameColumnEnd\":27}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":82, \"columnStart\":31, \"lineEnd\":82, \"columnEnd\":38, \"exact\":true, \"text\":\"fileName\", \"in\":\"T.UseTable\", \"role\":\"argument\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":81, \"column\":15, \"definition\":{\"name\":\"T.Table\", \"kind\":\"class\", \"restriction\":\"class\", \"file\":\"getDefinitionAt1.mo\", \"lineStart\":68, \"columnStart\":3, \"lineEnd\":79, \"columnEnd\":12, \"nameLine\":68, \"nameColumnStart\":9, \"nameColumnEnd\":13}, \"use\":{\"file\":\"getDefinitionAt1.mo\", \"lineStart\":81, \"columnStart\":15, \"lineEnd\":81, \"columnEnd\":19, \"exact\":true, \"text\":\"T.Table\", \"part\":2, \"in\":\"T.UseTable\", \"role\":\"import\"}, \"candidates\":[]}"
+// "{\"file\":\"getDefinitionAt1.mo\", \"line\":14, \"column\":3, \"definition\":null, \"use\":null, \"candidates\":[]}"
+// ""
+// true
+// endResult

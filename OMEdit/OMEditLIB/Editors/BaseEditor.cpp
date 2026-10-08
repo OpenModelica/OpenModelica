@@ -43,12 +43,14 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Util/Helper.h"
+#include "Util/NavigationManager.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Util/ResourceCache.h"
 
 #include <QMenu>
 #include <QCompleter>
 #include <QMessageBox>
+#include <QRegularExpression>
 #include <QTextDocumentFragment>
 #include <QDockWidget>
 
@@ -892,11 +894,7 @@ int PlainTextEdit::lineNumberAreaWidth()
     ++digits;
   }
   const QFontMetrics fm(document()->defaultFont());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   int space = fm.horizontalAdvance(QLatin1Char('9')) * digits;
-#else // QT_VERSION_CHECK
-  int space = fm.width(QLatin1Char('9')) * digits;
-#endif // QT_VERSION_CHECK
   if (canHaveBreakpoints()) {
     space += fm.lineSpacing();
   } else {
@@ -1078,11 +1076,7 @@ void PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
         QMenu menu(this);
         mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
         menu.addAction(mpBaseEditor->getToggleBreakpointAction());
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         menu.exec(event->globalPosition().toPoint());
-#else
-        menu.exec(event->globalPos());
-#endif
       }
     }
   }
@@ -1119,6 +1113,22 @@ void PlainTextEdit::goToLineNumber(int lineNumber)
     QTextCursor cursor(block);
     cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
     setTextCursor(cursor);
+    NavigationManager::instance()->recordNavigationPoint(this);
+    centerCursor();
+  }
+}
+
+/*!
+ * \brief PlainTextEdit::moveToNavigationPoint
+ * Moves the text cursor to the given position.
+ * \param position - the position to move to.
+ */
+void PlainTextEdit::moveToNavigationPoint(int position)
+{
+  if (position >= 0 && position <= textCursor().document()->characterCount()) {
+    QTextCursor textCursor = this->textCursor();
+    textCursor.setPosition(position);
+    setTextCursor(textCursor);
     centerCursor();
   }
 }
@@ -1252,6 +1262,10 @@ void PlainTextEdit::ensureCursorVisible()
  */
 void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
 {
+#if defined(__EMSCRIPTEN__)
+  Q_UNUSED(fileName);
+  Q_UNUSED(lineNumber);
+#else
   BreakpointsTreeModel *pBreakpointsTreeModel = MainWindow::instance()->getBreakpointsWidget()->getBreakpointsTreeModel();
   BreakpointMarker *pBreakpointMarker = pBreakpointsTreeModel->findBreakpointMarker(fileName, lineNumber);
   if (!pBreakpointMarker) {
@@ -1266,6 +1280,7 @@ void PlainTextEdit::toggleBreakpoint(const QString fileName, int lineNumber)
     mpBaseEditor->getDocumentMarker()->removeMark(pBreakpointMarker);
     pBreakpointsTreeModel->removeBreakpoint(pBreakpointMarker);
   }
+#endif
 }
 
 /*!
@@ -1813,11 +1828,7 @@ QMimeData* PlainTextEdit::createMimeDataFromSelection() const
     const int selectionStart = cursor.selectionStart();
     const int endOfDocument = tempDocument->characterCount() - 1;
     for (QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   foreach (const QTextLayout::FormatRange &range, current.layout()->formats()) {
-#else // QT_VERSION_CHECK
-  foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
-#endif // QT_VERSION_CHECK
         const int startPosition = current.position() + range.start - selectionStart;
         const int endPosition = startPosition + range.length;
         if (endPosition <= 0 || startPosition >= endOfDocument) {
@@ -2008,11 +2019,7 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
         QString rectReplacement = QLatin1String(" ") + replacement + QLatin1String("); ");
 
         const QFontMetrics fm(document()->defaultFont());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.horizontalAdvance(rectReplacement), lineRect.height());
-#else // QT_VERSION_CHECK
-        QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.width(rectReplacement), lineRect.height());
-#endif // QT_VERSION_CHECK
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.translate(.5, .5);
         painter.drawRoundedRect(collapseRect.adjusted(0, 0, 0, -1), 3, 3);
@@ -2056,11 +2063,7 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
 void PlainTextEdit::wheelEvent(QWheelEvent *event)
 {
   if (event->modifiers() & Qt::ControlModifier) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().x() > 0 || event->angleDelta().y() > 0) {
-#else // QT_VERSION_CHECK
-  if (event->delta() > 0) {
-#endif // QT_VERSION_CHECK
       zoomIn();
     } else {
       zoomOut();
@@ -2082,6 +2085,9 @@ void PlainTextEdit::mousePressEvent(QMouseEvent *event)
     viewport()->unsetCursor();
   }
   QPlainTextEdit::mousePressEvent(event);
+  if (event->button() == Qt::LeftButton) {
+    NavigationManager::instance()->recordNavigationPoint(this);
+  }
 }
 
 /*!
@@ -2797,6 +2803,7 @@ void FindReplaceWidget::findText(bool forward)
     }
   }
   mpBaseEditor->getPlainTextEdit()->setTextCursor(newTextCursor);
+  NavigationManager::instance()->recordNavigationPoint(mpBaseEditor->getPlainTextEdit());
 }
 
 /*!
@@ -2901,7 +2908,7 @@ void FindReplaceWidget::validateRegularExpression(const QString &text)
   if (!mpRegularExpressionCheckBox->isChecked() || text.size() == 0) {
     return; // nothing to validate
   }
-  QRegExp reg(text, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+  QRegularExpression reg(text, (mpCaseSensitiveCheckBox->isChecked() ? QRegularExpression::NoPatternOption : QRegularExpression::CaseInsensitiveOption));
   if (!reg.isValid()) {
     QMessageBox::critical( this, "Find", reg.errorString());
   }

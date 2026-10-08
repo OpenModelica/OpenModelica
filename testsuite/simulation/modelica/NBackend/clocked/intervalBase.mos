@@ -2,6 +2,7 @@
 // keywords: synchronous features, interval, base-clock, c
 // status: correct
 // cflags: --newBackend
+// suite: disabled
 //
 // Check interval() operator for different base-clocks.
 

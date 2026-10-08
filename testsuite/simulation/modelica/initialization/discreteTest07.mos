@@ -4,6 +4,7 @@
 // cflags:
 // teardown_command: rm -rf initializationTests.discreteTest7* _initializationTests.discreteTest7* output.log
 // cflags: -d=-newInst
+// suite: disabled
 //
 //  case for when-clauses in algorithm sections
 //

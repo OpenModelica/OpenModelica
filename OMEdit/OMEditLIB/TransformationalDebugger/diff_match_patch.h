@@ -26,7 +26,7 @@
 #include <QString>
 #include <QList>
 #include <QMap>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QVariant>
 #include <time.h>
 
@@ -165,8 +165,8 @@ class diff_match_patch {
 
  private:
   // Define some regex patterns for matching boundaries.
-  static QRegExp BLANKLINEEND;
-  static QRegExp BLANKLINESTART;
+  static QRegularExpression BLANKLINEEND;
+  static QRegularExpression BLANKLINESTART;
 
 
  public:

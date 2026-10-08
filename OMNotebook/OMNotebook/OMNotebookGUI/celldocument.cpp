@@ -53,6 +53,7 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QDesktopServices>
 
 //IAEX Headers
 #include "celldocument.h"
@@ -122,29 +123,23 @@ namespace IAEX
    *
    * \todo Remove the dependency of QFrame from document.(Ingemar Axelsson)
    */
-  CellDocument::CellDocument( CellApplication *a, const QString filename,
-    int readmode )
-    : changed_(false),
-    open_(false),
-    saved_(false),
-    app_(a),
-    currentImageNo_(0),
-    lastClickedCell_(0)
+  CellDocument::CellDocument( CellApplication *a, const QString filename, int readmode )
+    : app_(a)
   {
     filename_ = filename;
     //Initialize SoQT
 
-    mainFrame_ = new QFrame(a->getMainWindow());
+    mainFrame_ = std::make_unique<QFrame>();
 
     mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
       QSizePolicy::Expanding));
 
-    mainLayout_ = new QGridLayout(mainFrame_);
+    mainLayout_ = new QGridLayout(mainFrame_.get());
     mainLayout_->setContentsMargins(0, 0, 0, 0);
     mainLayout_->setSpacing(0);
 
     //Initialize workspace.
-    factory_ = new CellFactory(this);
+    factory_ = std::make_unique<CellFactory>(this);
     setWorkspace(factory_->createCell("cellgroup"));
 
     // 2005-11-28 AF
@@ -152,16 +147,8 @@ namespace IAEX
       this, SLOT( updateScrollArea() ));
 
     // 2005-12-01 AF, Added try-catch
-    try
-    {
-      if(!filename_.isNull())
-        open( filename_, readmode );
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
-
+    if(!filename_.isNull())
+      open( filename_, readmode );
 
 //    open_ = true; // 2005-09-26 AF, not sure if this should be here //070903 HE, probably not
   }
@@ -173,23 +160,10 @@ namespace IAEX
    */
   CellDocument::~CellDocument()
   {
-    delete scroll_;
-    delete mainLayout_;
-    //delete workspace_;
-    delete mainFrame_;
-    delete factory_;
-
-    // 2006-01-16 AF (update), remove all images in memory and add
-    // the temporary images to removelist in the main application
-    QHash<QString, QImage*>::iterator i_iter = images_.begin();
-    while( i_iter != images_.end() )
+    // add temporary images to removelist
+    for (auto i_iter = images_.begin(); i_iter != images_.end(); ++i_iter)
     {
-      // add temporary images to removelist
       application()->removeTempFiles( i_iter.key() );
-
-      // delete image
-      delete i_iter.value();
-      ++i_iter;
     }
   }
 
@@ -209,28 +183,12 @@ namespace IAEX
   {
     filename_ = filename;
 
-    ParserFactory *parserFactory = new CellParserFactory();
-    NBParser *parser = parserFactory->createParser(filename_, factory_, this, readmode);
+    auto parserFactory = std::make_unique<CellParserFactory>();
+    auto parser = parserFactory->createParser(filename_, factory_.get(), this, readmode);
 
-    // 2005-12-01 AF, Added try-catch
-    try
-    {
-      Cell *cell = parser->parse();
-      setWorkspace( cell );
-    }
-    catch( std::exception e )
-    {
-      delete parserFactory;
-      delete parser;
-      throw e;
-    }
+    Cell *cell = parser->parse();
+    setWorkspace( cell );
 
-
-    //Delete the parser after it is used.
-    delete parserFactory;
-    delete parser;
-
-    // 2005-09-22 AF, Added this...
     open_ = true;
 
     // 2005-11-02 AF, set saved_ to true if the loaded file is .onb
@@ -249,7 +207,7 @@ namespace IAEX
   void CellDocument::cursorChangeStyle(CellStyle style)
   {
     //Invoke style changes to all selected cells.
-    executeCommand(new ChangeStyleOnSelectedCellsCommand(style));
+    executeCommand(std::make_unique<ChangeStyleOnSelectedCellsCommand>(style));
   }
 
   /*!
@@ -274,7 +232,7 @@ namespace IAEX
    */
   void CellDocument::setWorkspace(Cell *newWorkspace)
   {
-    scroll_ = new QScrollArea( mainFrame_ );
+    scroll_ = new QScrollArea( mainFrame_.get() );
     scroll_->setWidgetResizable( true );
     scroll_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     scroll_->setVerticalScrollBarPolicy( Qt::ScrollBarAsNeeded );
@@ -310,7 +268,7 @@ namespace IAEX
    */
   void CellDocument::cursorStepUp()
   {
-    executeCommand(new CursorMoveUpCommand());
+    executeCommand(std::make_unique<CursorMoveUpCommand>());
     emit cursorChanged();
   }
 
@@ -319,7 +277,7 @@ namespace IAEX
    */
   void CellDocument::cursorStepDown()
   {
-    executeCommand(new CursorMoveDownCommand());
+    executeCommand(std::make_unique<CursorMoveDownCommand>());
     emit cursorChanged();
   }
 
@@ -331,16 +289,9 @@ namespace IAEX
    */
   void CellDocument::cursorAddCell()
   {
-    try
-    {
-      executeCommand(new AddCellCommand());
-      open_ = true;
-      emit cursorChanged();
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    executeCommand(std::make_unique<AddCellCommand>());
+    open_ = true;
+    emit cursorChanged();
   }
 
   /*!
@@ -351,15 +302,8 @@ namespace IAEX
    */
   void CellDocument::cursorUngroupCell()
   {
-    try
-    {
-      executeCommand( new UngroupCellCommand() );
-      emit cursorChanged();
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    executeCommand(std::make_unique<UngroupCellCommand>() );
+    emit cursorChanged();
   }
 
   /*!
@@ -370,15 +314,8 @@ namespace IAEX
    */
   void CellDocument::cursorSplitCell()
   {
-    try
-    {
-      executeCommand( new SplitCellCommand() );
-      emit cursorChanged();
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
+    executeCommand(std::make_unique<SplitCellCommand>() );
+    emit cursorChanged();
   }
 
   /*!
@@ -386,7 +323,7 @@ namespace IAEX
    */
   void CellDocument::cursorDeleteCell()
   {
-    executeCommand(new DeleteSelectedCellsCommand());
+    executeCommand(std::make_unique<DeleteSelectedCellsCommand>());
     //qDebug("cursorDeleteCell");
 
     //emit cursorChanged(); //This causes an untracable segfault.
@@ -401,7 +338,7 @@ namespace IAEX
    */
   void CellDocument::cursorCutCell()
   {
-    executeCommand(new DeleteCurrentCellCommand());
+    executeCommand(std::make_unique<DeleteCurrentCellCommand>());
   }
 
   /*!
@@ -409,7 +346,7 @@ namespace IAEX
    */
   void CellDocument::cursorCopyCell()
   {
-    executeCommand(new CopySelectedCellsCommand());
+    executeCommand(std::make_unique<CopySelectedCellsCommand>());
   }
 
   /*!
@@ -417,22 +354,22 @@ namespace IAEX
    */
   void CellDocument::cursorPasteCell()
   {
-    executeCommand(new PasteCellsCommand());
+    executeCommand(std::make_unique<PasteCellsCommand>());
   }
 
   /*!
    * \author Ingemar Axelsson
    */
-  void CellDocument::cursorMoveAfter(Cell *aCell, const bool open)
+  void CellDocument::cursorMoveAfter(Cell *aCell, bool /*open*/)
   {
     //if(!open)
-    executeCommand(new CursorMoveAfterCommand(aCell));
+    executeCommand(std::make_unique<CursorMoveAfterCommand>(aCell));
     // else
     //       {
     //    if(aCell->hasChilds())
-    //       executeCommand(new CursorMoveAfterCommand(aCell->child()));
+    //       executeCommand(std::make_unique<CursorMoveAfterCommand>(aCell->child()));
     //    else
-    //       executeCommand(new CursorMoveAfterCommand(aCell));
+    //       executeCommand(std::make_unique<CursorMoveAfterCommand>(aCell));
     //       }
 
     emit cursorChanged();
@@ -446,7 +383,7 @@ namespace IAEX
    */
   void CellDocument::textcursorCutText()
   {
-    executeCommand( new TextCursorCutText() );
+    executeCommand(std::make_unique<TextCursorCutText>());
   }
 
   /*!
@@ -457,7 +394,7 @@ namespace IAEX
    */
   void CellDocument::textcursorCopyText()
   {
-    executeCommand( new TextCursorCopyText() );
+    executeCommand(std::make_unique<TextCursorCopyText>());
   }
 
   /*!
@@ -468,7 +405,7 @@ namespace IAEX
    */
   void CellDocument::textcursorPasteText()
   {
-    executeCommand( new TextCursorPasteText() );
+    executeCommand(std::make_unique<TextCursorPasteText>());
   }
 
   /*!
@@ -482,7 +419,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeFontFamily(QString family)
   {
-    executeCommand( new TextCursorChangeFontFamily(family) );
+    executeCommand(std::make_unique<TextCursorChangeFontFamily>(family));
   }
 
   /*!
@@ -496,7 +433,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeFontFace(int face)
   {
-    executeCommand( new TextCursorChangeFontFace(face) );
+    executeCommand(std::make_unique<TextCursorChangeFontFace>(face));
   }
 
   /*!
@@ -510,7 +447,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeFontSize(int size)
   {
-    executeCommand( new TextCursorChangeFontSize(size) );
+    executeCommand(std::make_unique<TextCursorChangeFontSize>(size));
   }
 
   /*!
@@ -524,7 +461,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeFontStretch(int stretch)
   {
-    executeCommand( new TextCursorChangeFontStretch(stretch) );
+    executeCommand(std::make_unique<TextCursorChangeFontStretch>(stretch));
   }
 
   /*!
@@ -538,7 +475,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeFontColor(QColor color)
   {
-    executeCommand( new TextCursorChangeFontColor(color) );
+    executeCommand(std::make_unique<TextCursorChangeFontColor>(color));
   }
 
   /*!
@@ -551,7 +488,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeTextAlignment(int alignment)
   {
-    executeCommand( new TextCursorChangeTextAlignment(alignment) );
+    executeCommand(std::make_unique<TextCursorChangeTextAlignment>(alignment));
   }
 
   /*!
@@ -565,7 +502,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeVerticalAlignment(int alignment)
   {
-    executeCommand( new TextCursorChangeVerticalAlignment(alignment) );
+    executeCommand(std::make_unique<TextCursorChangeVerticalAlignment>(alignment));
   }
 
   /*!
@@ -578,7 +515,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeMargin(int margin)
   {
-    executeCommand( new TextCursorChangeMargin(margin) );
+    executeCommand(std::make_unique<TextCursorChangeMargin>(margin));
   }
 
   /*!
@@ -591,7 +528,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangePadding(int padding)
   {
-    executeCommand( new TextCursorChangePadding(padding) );
+    executeCommand(std::make_unique<TextCursorChangePadding>(padding));
   }
 
   /*!
@@ -604,7 +541,7 @@ namespace IAEX
    */
   void CellDocument::textcursorChangeBorder(int border)
   {
-    executeCommand( new TextCursorChangeBorder(border) );
+    executeCommand(std::make_unique<TextCursorChangeBorder>(border));
   }
 
   /*!
@@ -617,7 +554,7 @@ namespace IAEX
    */
   void CellDocument::textcursorInsertImage(QString filepath, QSize size)
   {
-    executeCommand( new TextCursorInsertImage(filepath, size) );
+    executeCommand(std::make_unique<TextCursorInsertImage>(filepath, size));
   }
 
   /*!
@@ -638,7 +575,7 @@ namespace IAEX
    * \param image A pointer to the images that should be added
    * \return the filename of the saved image
    */
-  QString CellDocument::addImage(QImage *image)
+  QString CellDocument::addImage(QImage image)
   {
     // first find a correct temp filename
     QDir dir;
@@ -662,7 +599,7 @@ namespace IAEX
     QImageWriter writer( name, "png" );
     writer.setText("Description", tr("Temporary OMNotebook image") );
     writer.setQuality( 100 );
-    writer.write( *image );
+    writer.write( image );
 
     images_[ name ] = image;
 
@@ -685,21 +622,10 @@ namespace IAEX
    * \param name Name of the image
    * \return a pointer to the image
    */
-  QImage *CellDocument::getImage(QString name)
+  QImage CellDocument::getImage(QString name)
   {
     name.remove( "file:///" );
-
-    QImage *image;
-
-    if( images_.contains( name ))
-      image = images_[name];
-    else
-    {
-      //std::cout << "Could not find image: " << name.toStdString() << std::endl;
-      image = new QImage();
-    }
-
-    return image;
+    return images_[name];
   }
 
   /*!
@@ -712,7 +638,18 @@ namespace IAEX
    */
   void CellDocument::textcursorInsertLink( QString filepath, QTextCursor& cursor )
   {
-    executeCommand( new TextCursorInsertLink( filepath, cursor ));
+    executeCommand(std::make_unique<TextCursorInsertLink>( filepath, cursor ));
+  }
+
+  /*!
+   * \brief Insert (or change) a link to a web page (http/https)
+   *
+   * \param url The web address
+   * \param text The link text, if empty the selected text (or the url) is used
+   */
+  void CellDocument::textcursorInsertWebLink( QString url, QString text, QTextCursor& cursor )
+  {
+    executeCommand(std::make_unique<TextCursorInsertWebLink>( url, text, cursor ));
   }
 
   /*!
@@ -945,7 +882,7 @@ namespace IAEX
     clearSelection();
 
     //Remove focus from old cell.
-    if(getCursor()->currentCell()->isClosed())
+    if(getCursor()->currentCell()->isClosed() && getCursor()->currentCell()->child())
     {
       getCursor()->currentCell()->child()->setReadOnly(true);
       getCursor()->currentCell()->child()->setFocus(false);
@@ -1071,6 +1008,22 @@ namespace IAEX
     // 2006-02-10 AF, check if path is empty
     //fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
     //fflush(stderr); fflush(stdout);
+
+    // Web links (http/https) are opened in the default browser instead of
+    // being treated as a local notebook file.
+    const QString scheme = link->scheme().toLower();
+    if( scheme == QLatin1String("http") || scheme == QLatin1String("https") )
+    {
+      if( !QDesktopServices::openUrl( *link ) )
+      {
+        // e.g. no default browser configured
+        QMessageBox::warning( QApplication::activeWindow(), tr("Error"),
+          tr("Could not open the link in the default web browser:\n%1")
+            .arg( link->toString() ) );
+      }
+      return;
+    }
+
     if( !link->path().isEmpty() )
     {
       // 2005-12-05 AF, check if filename exists, otherwise use work dir
@@ -1081,7 +1034,7 @@ namespace IAEX
         linkpath.replace( "\\", "/" );
 
         QDir dir;
-        executeCommand(new OpenFileCommand( dir.absolutePath() + '/' + linkpath ));
+        executeCommand(std::make_unique<OpenFileCommand>( dir.absolutePath() + '/' + linkpath ));
       }
       else
       {
@@ -1089,7 +1042,7 @@ namespace IAEX
         QString linkpath = link->path();
         linkpath.replace( "\\", "/" );
 
-        executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
+        executeCommand(std::make_unique<OpenFileCommand>( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
       }
     }
 
@@ -1144,10 +1097,10 @@ namespace IAEX
   * this. A problem with this conversion is the commands dependency
   * for the document reference.(Ingemar Axelsson)
   */
-  void CellDocument::executeCommand(Command *cmd)
+  void CellDocument::executeCommand(std::unique_ptr<Command> cmd)
   {
     cmd->setDocument(this);
-    application()->commandCenter()->executeCommand(cmd);
+    application()->commandCenter().executeCommand(std::move(cmd));
   }
 
   /*!
@@ -1155,7 +1108,7 @@ namespace IAEX
   */
   Factory *CellDocument::cellFactory()
   {
-    return factory_;
+    return factory_.get();
   }
 
   /*!
@@ -1439,7 +1392,7 @@ namespace IAEX
 
   QFrame *CellDocument::getState()
   {
-    return mainFrame_;
+    return mainFrame_.get();
   }
 
 

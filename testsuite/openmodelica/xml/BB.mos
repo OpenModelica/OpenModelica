@@ -43,12 +43,12 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // <variables dimension=\"6\">
 // <orderedVariables dimension=\"4\">
 // <variablesList>
-// <variable id=\"1\" name=\"b1.y\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"b1.vy\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"1\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>
-// <initialValue string=\"5.0\">
+// <initialValue string=\"0.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\">5.0
+// <cn type=\"real\">0.0
 // </cn>
 // </math>
 // </MathML>
@@ -70,12 +70,12 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"3\" name=\"b1.y\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"b1.vy\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>
-// <initialValue string=\"0.0\">
+// <initialValue string=\"5.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\">0.0
+// <cn type=\"real\">5.0
 // </cn>
 // </math>
 // </MathML>
@@ -99,17 +99,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </orderedVariables>
 // <knownVariables dimension=\"2\">
 // <variablesList>
-// <variable id=\"1\" name=\"b1.ay\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
-// <bindExpression string=\"-9.8\">
-// <MathML>
-// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\">-9.8
-// </cn>
-// </math>
-// </MathML>
-// </bindExpression>
-// </variable>
-// <variable id=\"2\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"1\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <bindExpression string=\"0.9\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -128,6 +118,16 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </MathML>
 // </initialValue>
 // </attributesValues>
+// </variable>
+// <variable id=\"2\" name=\"b1.ay\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <bindExpression string=\"-9.8\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\">-9.8
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
 // </variable>
 // </variablesList>
 // </knownVariables>

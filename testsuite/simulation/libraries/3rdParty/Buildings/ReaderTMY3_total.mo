@@ -16,8 +16,8 @@ package Buildings  "Library with models for building energy and control systems"
         Modelica.Blocks.Interfaces.RealOutput TBlaSky(final quantity = "ThermodynamicTemperature", displayUnit = "degC", final unit = "K") "Black-body sky temperature";
         Modelica.Blocks.Interfaces.RealInput HHorIR(unit = "W/m2", min = 0, nominal = 100) "Horizontal infrared irradiation";
       protected
-        Modelica.SIunits.Temperature TDewPoiK "Dewpoint temperature";
-        Modelica.SIunits.Emissivity epsSky "Black-body absorptivity of sky";
+        Modelica.Units.SI.Temperature TDewPoiK "Dewpoint temperature";
+        Modelica.Units.SI.Emissivity epsSky "Black-body absorptivity of sky";
         Real nOpa10(min = 0, max = 10) "Opaque sky cover in [0, 10]";
       equation
         if calTSky == Buildings.BoundaryConditions.Types.SkyTemperatureCalculation.TemperaturesAndSkyCover then
@@ -69,7 +69,7 @@ package Buildings  "Library with models for building energy and control systems"
 
         block ZenithAngle  "Zenith angle"
           extends Modelica.Blocks.Icons.Block;
-          parameter Modelica.SIunits.Angle lat "Latitude";
+          parameter Modelica.Units.SI.Angle lat "Latitude";
           Modelica.Blocks.Interfaces.RealInput solHouAng(quantity = "Angle", unit = "rad") "Solar hour angle";
           Modelica.Blocks.Interfaces.RealInput decAng(quantity = "Angle", unit = "rad") "Solar declination angle";
           Modelica.Blocks.Interfaces.RealOutput zen(final quantity = "Angle", final unit = "rad", displayUnit = "deg") "Zenith angle";
@@ -89,7 +89,7 @@ package Buildings  "Library with models for building energy and control systems"
       block ReaderTMY3  "Reader for TMY3 weather data"
         parameter Boolean computeWetBulbTemperature = true "If true, then this model computes the wet bulb temperature" annotation(Evaluate = true);
         parameter Buildings.BoundaryConditions.Types.DataSource pAtmSou = Buildings.BoundaryConditions.Types.DataSource.Parameter "Atmospheric pressure" annotation(Evaluate = true);
-        parameter Modelica.SIunits.Pressure pAtm = 101325 "Atmospheric pressure (used if pAtmSou=Parameter)";
+        parameter Modelica.Units.SI.Pressure pAtm = 101325 "Atmospheric pressure (used if pAtmSou=Parameter)";
         Modelica.Blocks.Interfaces.RealInput pAtm_in(final quantity = "Pressure", final unit = "Pa", displayUnit = "Pa") if pAtmSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input pressure";
         parameter Buildings.BoundaryConditions.Types.DataSource ceiHeiSou = Buildings.BoundaryConditions.Types.DataSource.File "Ceiling height" annotation(Evaluate = true);
         parameter Real ceiHei(final quantity = "Height", final unit = "m", displayUnit = "m") = 20000 "Ceiling height (used if ceiHei=Parameter)";
@@ -101,38 +101,38 @@ package Buildings  "Library with models for building energy and control systems"
         parameter Real opaSkyCov(min = 0, max = 1, unit = "1") = 0.5 "Opaque sky cover (used if opaSkyCov=Parameter). Use 0 <= opaSkyCov <= 1";
         Modelica.Blocks.Interfaces.RealInput opaSkyCov_in(min = 0, max = 1, unit = "1") if opaSkyCovSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input opaque sky cover";
         parameter Buildings.BoundaryConditions.Types.DataSource TDryBulSou = Buildings.BoundaryConditions.Types.DataSource.File "Dry bulb temperature" annotation(Evaluate = true);
-        parameter Modelica.SIunits.Temperature TDryBul(displayUnit = "degC") = 293.15 "Dry bulb temperature (used if TDryBul=Parameter)";
+        parameter Modelica.Units.SI.Temperature TDryBul(displayUnit = "degC") = 293.15 "Dry bulb temperature (used if TDryBul=Parameter)";
         Modelica.Blocks.Interfaces.RealInput TDryBul_in(final quantity = "ThermodynamicTemperature", final unit = "K", displayUnit = "degC") if TDryBulSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input dry bulb temperature";
         parameter Buildings.BoundaryConditions.Types.DataSource TDewPoiSou = Buildings.BoundaryConditions.Types.DataSource.File "Dew point temperature" annotation(Evaluate = true);
-        parameter Modelica.SIunits.Temperature TDewPoi(displayUnit = "degC") = 283.15 "Dew point temperature (used if TDewPoi=Parameter)";
+        parameter Modelica.Units.SI.Temperature TDewPoi(displayUnit = "degC") = 283.15 "Dew point temperature (used if TDewPoi=Parameter)";
         Modelica.Blocks.Interfaces.RealInput TDewPoi_in(final quantity = "ThermodynamicTemperature", final unit = "K", displayUnit = "degC") if TDewPoiSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input dew point temperature";
         parameter Buildings.BoundaryConditions.Types.DataSource TBlaSkySou = Buildings.BoundaryConditions.Types.DataSource.File "Black-body sky temperature" annotation(Evaluate = true);
-        parameter Modelica.SIunits.Temperature TBlaSky = 273.15 "Black-body sky temperature (used if TBlaSkySou=Parameter)";
+        parameter Modelica.Units.SI.Temperature TBlaSky = 273.15 "Black-body sky temperature (used if TBlaSkySou=Parameter)";
         Modelica.Blocks.Interfaces.RealInput TBlaSky_in(final quantity = "ThermodynamicTemperature", displayUnit = "degC", final unit = "K") if TBlaSkySou == Buildings.BoundaryConditions.Types.DataSource.Input "Black-body sky temperature";
         parameter Buildings.BoundaryConditions.Types.DataSource relHumSou = Buildings.BoundaryConditions.Types.DataSource.File "Relative humidity" annotation(Evaluate = true);
         parameter Real relHum(min = 0, max = 1, unit = "1") = 0.5 "Relative humidity (used if relHum=Parameter)";
         Modelica.Blocks.Interfaces.RealInput relHum_in(min = 0, max = 1, unit = "1") if relHumSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input relative humidity";
         parameter Buildings.BoundaryConditions.Types.DataSource winSpeSou = Buildings.BoundaryConditions.Types.DataSource.File "Wind speed" annotation(Evaluate = true);
-        parameter Modelica.SIunits.Velocity winSpe(min = 0) = 1 "Wind speed (used if winSpe=Parameter)";
+        parameter Modelica.Units.SI.Velocity winSpe(min = 0) = 1 "Wind speed (used if winSpe=Parameter)";
         Modelica.Blocks.Interfaces.RealInput winSpe_in(final quantity = "Velocity", final unit = "m/s", min = 0) if winSpeSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input wind speed";
         parameter Buildings.BoundaryConditions.Types.DataSource winDirSou = Buildings.BoundaryConditions.Types.DataSource.File "Wind direction" annotation(Evaluate = true);
-        parameter Modelica.SIunits.Angle winDir = 1.0 "Wind direction (used if winDir=Parameter)";
+        parameter Modelica.Units.SI.Angle winDir = 1.0 "Wind direction (used if winDir=Parameter)";
         Modelica.Blocks.Interfaces.RealInput winDir_in(final quantity = "Angle", final unit = "rad", displayUnit = "deg") if winDirSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input wind direction";
         parameter Buildings.BoundaryConditions.Types.DataSource HInfHorSou = Buildings.BoundaryConditions.Types.DataSource.File "Infrared horizontal radiation" annotation(Evaluate = true);
-        parameter Modelica.SIunits.HeatFlux HInfHor = 0.0 "Infrared horizontal radiation (used if HInfHorSou=Parameter)";
+        parameter Modelica.Units.SI.HeatFlux HInfHor = 0.0 "Infrared horizontal radiation (used if HInfHorSou=Parameter)";
         Modelica.Blocks.Interfaces.RealInput HInfHor_in(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") if HInfHorSou == Buildings.BoundaryConditions.Types.DataSource.Input "Input infrared horizontal radiation";
         parameter Buildings.BoundaryConditions.Types.RadiationDataSource HSou = Buildings.BoundaryConditions.Types.RadiationDataSource.File "Global, diffuse, and direct normal radiation" annotation(Evaluate = true);
         Modelica.Blocks.Interfaces.RealInput HGloHor_in(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") if HSou == Buildings.BoundaryConditions.Types.RadiationDataSource.Input_HGloHor_HDifHor or HSou == Buildings.BoundaryConditions.Types.RadiationDataSource.Input_HDirNor_HGloHor "Input global horizontal radiation";
         Modelica.Blocks.Interfaces.RealInput HDifHor_in(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") if HSou == Buildings.BoundaryConditions.Types.RadiationDataSource.Input_HGloHor_HDifHor or HSou == Buildings.BoundaryConditions.Types.RadiationDataSource.Input_HDirNor_HDifHor "Input diffuse horizontal radiation";
         Modelica.Blocks.Interfaces.RealInput HDirNor_in(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") if HSou == Buildings.BoundaryConditions.Types.RadiationDataSource.Input_HDirNor_HDifHor or HSou == Buildings.BoundaryConditions.Types.RadiationDataSource.Input_HDirNor_HGloHor "Input direct normal radiation";
         parameter String filNam = "" "Name of weather data file";
-        final parameter Modelica.SIunits.Angle lon(displayUnit = "deg") = BaseClasses.getLongitudeTMY3(absFilNam) "Longitude";
-        final parameter Modelica.SIunits.Angle lat(displayUnit = "deg") = BaseClasses.getLatitudeTMY3(absFilNam) "Latitude";
-        final parameter Modelica.SIunits.Time timZon(displayUnit = "h") = BaseClasses.getTimeZoneTMY3(absFilNam) "Time zone";
+        final parameter Modelica.Units.SI.Angle lon(displayUnit = "deg") = BaseClasses.getLongitudeTMY3(absFilNam) "Longitude";
+        final parameter Modelica.Units.SI.Angle lat(displayUnit = "deg") = BaseClasses.getLatitudeTMY3(absFilNam) "Latitude";
+        final parameter Modelica.Units.SI.Time timZon(displayUnit = "h") = BaseClasses.getTimeZoneTMY3(absFilNam) "Time zone";
         Bus weaBus "Weather data bus";
         parameter Buildings.BoundaryConditions.Types.SkyTemperatureCalculation calTSky = Buildings.BoundaryConditions.Types.SkyTemperatureCalculation.TemperaturesAndSkyCover "Computation of black-body sky temperature" annotation(choicesAllMatching = true, Evaluate = true);
         constant Real epsCos = 1e-6 "Small value to avoid division by 0";
-        constant Modelica.SIunits.HeatFlux solCon = 1367.7 "Solar constant";
+        constant Modelica.Units.SI.HeatFlux solCon = 1367.7 "Solar constant";
       protected
         final parameter String absFilNam = BaseClasses.getAbsolutePath(filNam) "Absolute path of the file";
         Modelica.Blocks.Tables.CombiTable1Ds datRea(verboseRead = false, final tableOnFile = true, final tableName = "tab1", final fileName = absFilNam, final smoothness = Modelica.Blocks.Types.Smoothness.ContinuousDerivative, final columns = {2, 3, 4, 5, 6, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}) "Data reader";
@@ -194,7 +194,7 @@ package Buildings  "Library with models for building energy and control systems"
 
         block Latitude  "Generate constant signal of type Real"
           extends Modelica.Blocks.Icons.Block;
-          parameter Modelica.SIunits.Angle latitude "Latitude";
+          parameter Modelica.Units.SI.Angle latitude "Latitude";
           Modelica.Blocks.Interfaces.RealOutput y(unit = "rad", displayUnit = "deg") "Latitude of the location";
         equation
           y = latitude;
@@ -202,7 +202,7 @@ package Buildings  "Library with models for building energy and control systems"
 
         block Longitude  "Generate constant signal of type Real"
           extends Modelica.Blocks.Icons.Block;
-          parameter Modelica.SIunits.Angle longitude "Longitude";
+          parameter Modelica.Units.SI.Angle longitude "Longitude";
           Modelica.Blocks.Interfaces.RealOutput y(unit = "rad", displayUnit = "deg") "Longitude of the location";
         equation
           y = longitude;
@@ -400,8 +400,8 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput TIn(final quantity = "ThermodynamicTemperature", final unit = "K", displayUnit = "degC") "Black-body sky temperature";
           Modelica.Blocks.Interfaces.RealOutput TOut(final quantity = "ThermodynamicTemperature", final unit = "K", displayUnit = "degC") "Black-body sky temperature";
-          parameter Modelica.SIunits.Temperature TMin(displayUnit = "degC") = 203.15 "Minimum allowed temperature";
-          parameter Modelica.SIunits.Temperature TMax(displayUnit = "degC") = 343.15 "Maximum allowed temperature";
+          parameter Modelica.Units.SI.Temperature TMin(displayUnit = "degC") = 203.15 "Minimum allowed temperature";
+          parameter Modelica.Units.SI.Temperature TMax(displayUnit = "degC") = 343.15 "Maximum allowed temperature";
         equation
           TOut = TIn;
           assert(TOut > TMin, "Temperature out of bounds.\n" + "   TOut = " + String(TOut));
@@ -412,7 +412,7 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput ceiHeiIn(final quantity = "Height", final unit = "m") "Input ceiling height";
           Modelica.Blocks.Interfaces.RealOutput ceiHeiOut(final quantity = "Height", final unit = "m") "Ceiling height";
-          constant Modelica.SIunits.Height ceiHeiMin = 0 "Minimum allowed ceiling height";
+          constant Modelica.Units.SI.Height ceiHeiMin = 0 "Minimum allowed ceiling height";
         equation
           ceiHeiOut = Buildings.Utilities.Math.Functions.smoothMax(ceiHeiIn, ceiHeiMin, 0.1);
         end CheckCeilingHeight;
@@ -421,7 +421,7 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput HIn(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") "Input horizontal infrared irradiation";
           Modelica.Blocks.Interfaces.RealOutput HOut(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") "Horizontal infrared irradiation";
-          constant Modelica.SIunits.RadiantEnergyFluenceRate HMin = 0.0001 "Minimum value for radiation";
+          constant Modelica.Units.SI.RadiantEnergyFluenceRate HMin = 0.0001 "Minimum value for radiation";
         equation
           HOut = Buildings.Utilities.Math.Functions.smoothMax(x1 = HIn, x2 = HMin, deltaX = HMin / 10);
         end CheckIRRadiation;
@@ -430,8 +430,8 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput PIn(final quantity = "Pressure", final unit = "Pa") "Input pressure";
           Modelica.Blocks.Interfaces.RealOutput POut(final quantity = "Pressure", final unit = "Pa") "Atmospheric pressure";
-          constant Modelica.SIunits.Pressure PMin = 3100 "Minimum allowed pressure";
-          constant Modelica.SIunits.Pressure PMax = 120000 "Maximum allowed pressure";
+          constant Modelica.Units.SI.Pressure PMin = 3100 "Minimum allowed pressure";
+          constant Modelica.Units.SI.Pressure PMax = 120000 "Maximum allowed pressure";
         equation
           assert(PIn > PMin, "Pressure out of bounds.\n" + "   PIn = " + String(PIn));
           assert(PIn < PMax, "Pressure out of bounds.\n" + "   PIn = " + String(PIn));
@@ -442,7 +442,7 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput HIn(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") "Input radiation";
           Modelica.Blocks.Interfaces.RealOutput HOut(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") "Radiation";
-          constant Modelica.SIunits.RadiantEnergyFluenceRate HMin = 0.0001 "Minimum value for radiation";
+          constant Modelica.Units.SI.RadiantEnergyFluenceRate HMin = 0.0001 "Minimum value for radiation";
         equation
           HOut = Buildings.Utilities.Math.Functions.smoothMax(x1 = HIn, x2 = HMin, deltaX = HMin / 10);
         end CheckRadiation;
@@ -475,8 +475,8 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput TIn(final quantity = "ThermodynamicTemperature", final unit = "K", displayUnit = "degC") "Input Temperature";
           Modelica.Blocks.Interfaces.RealOutput TOut(final quantity = "ThermodynamicTemperature", final unit = "K", displayUnit = "degC") "Output temperature";
-          parameter Modelica.SIunits.Temperature TMin(displayUnit = "degC") = 203.15 "Minimum allowed temperature";
-          parameter Modelica.SIunits.Temperature TMax(displayUnit = "degC") = 343.15 "Maximum allowed temperature";
+          parameter Modelica.Units.SI.Temperature TMin(displayUnit = "degC") = 203.15 "Minimum allowed temperature";
+          parameter Modelica.Units.SI.Temperature TMax(displayUnit = "degC") = 343.15 "Maximum allowed temperature";
         equation
           TOut = TIn;
           assert(TOut > TMin, "Temperature out of bounds.\n" + "   TOut = " + String(TOut));
@@ -499,7 +499,7 @@ package Buildings  "Library with models for building energy and control systems"
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput winSpeIn(final quantity = "Velocity", final unit = "m/s") "Input wind speed";
           Modelica.Blocks.Interfaces.RealOutput winSpeOut(final quantity = "Velocity", final unit = "m/s") "Wind speed";
-          constant Modelica.SIunits.Velocity winSpeMin = 1e-6 "Minimum allowed wind speed";
+          constant Modelica.Units.SI.Velocity winSpeMin = 1e-6 "Minimum allowed wind speed";
         equation
           winSpeOut = Buildings.Utilities.Math.Functions.smoothMax(x1 = winSpeIn, x2 = winSpeMin, deltaX = winSpeMin / 10);
         end CheckWindSpeed;
@@ -509,9 +509,9 @@ package Buildings  "Library with models for building energy and control systems"
           Modelica.Blocks.Interfaces.RealInput HIn(final unit = "W.h/m2") "Input radiation";
           Modelica.Blocks.Interfaces.RealOutput HOut(final quantity = "RadiantEnergyFluenceRate", final unit = "W/m2") "Radiation";
         protected
-          constant Modelica.SIunits.Time Hou = 3600 "1 hour";
+          constant Modelica.Units.SI.Time Hou = 3600 "1 hour";
         equation
-          HOut = HIn / Modelica.SIunits.Conversions.to_hour(Hou);
+          HOut = HIn / Modelica.Units.Conversions.to_hour(Hou);
         end ConvertRadiation;
 
         block ConvertRelativeHumidity  "Convert the relative humidity from percentage to real"
@@ -527,8 +527,8 @@ package Buildings  "Library with models for building energy and control systems"
           Modelica.Blocks.Interfaces.RealInput modTim(final quantity = "Time", final unit = "s") "Simulation time";
           Modelica.Blocks.Interfaces.RealOutput calTim(final quantity = "Time", final unit = "s") "Calendar time";
         protected
-          constant Modelica.SIunits.Time year = 31536000 "Number of seconds in a year";
-          discrete Modelica.SIunits.Time tStart "Start time of period";
+          constant Modelica.Units.SI.Time year = 31536000 "Number of seconds in a year";
+          discrete Modelica.Units.SI.Time tStart "Start time of period";
         initial equation
           tStart = integer(modTim / year) * year;
         equation
@@ -552,11 +552,11 @@ package Buildings  "Library with models for building energy and control systems"
         block LocalCivilTime  "Converts the clock time to local civil time."
           extends Modelica.Blocks.Icons.Block;
           Modelica.Blocks.Interfaces.RealInput cloTim(final quantity = "Time", final unit = "s") "Clock time";
-          parameter Modelica.SIunits.Time timZon(displayUnit = "h") "Time zone";
-          parameter Modelica.SIunits.Angle lon(displayUnit = "deg") "Longitude";
+          parameter Modelica.Units.SI.Time timZon(displayUnit = "h") "Time zone";
+          parameter Modelica.Units.SI.Angle lon(displayUnit = "deg") "Longitude";
           Modelica.Blocks.Interfaces.RealOutput locTim(final quantity = "Time", final unit = "s") "Local civil time";
         protected
-          final parameter Modelica.SIunits.Time diff = (-timZon) + lon * 43200 / Modelica.Constants.pi "Difference between local and clock time";
+          final parameter Modelica.Units.SI.Time diff = (-timZon) + lon * 43200 / Modelica.Constants.pi "Difference between local and clock time";
         equation
           locTim = cloTim + diff;
         end LocalCivilTime;
@@ -616,7 +616,7 @@ package Buildings  "Library with models for building energy and control systems"
 
         function getLatitudeTMY3  "Gets the latitude from a TMY3 weather data file"
           input String filNam "Name of weather data file";
-          output Modelica.SIunits.Angle lat "Latitude from the weather file";
+          output Modelica.Units.SI.Angle lat "Latitude from the weather file";
         protected
           Integer nexInd "Next index, used for error handling";
           String element "String representation of the returned element";
@@ -630,7 +630,7 @@ package Buildings  "Library with models for building energy and control systems"
 
         function getLongitudeTMY3  "Gets the longitude from a TMY3 weather data file"
           input String filNam "Name of weather data file";
-          output Modelica.SIunits.Angle lon "Longitude from the weather file";
+          output Modelica.Units.SI.Angle lon "Longitude from the weather file";
         protected
           Integer nexInd "Next index, used for error handling";
           String element "String representation of the returned element";
@@ -644,7 +644,7 @@ package Buildings  "Library with models for building energy and control systems"
 
         function getTimeZoneTMY3  "Gets the time zone from a TMY3 weather data file"
           input String filNam "Name of weather data file";
-          output Modelica.SIunits.Time timZon "Time zone from the weather file";
+          output Modelica.Units.SI.Time timZon "Time zone from the weather file";
         protected
           Integer nexInd "Next index, used for error handling";
           String element "String representation of the returned element";
@@ -681,10 +681,10 @@ package Buildings  "Library with models for building energy and control systems"
 
       redeclare replaceable model extends BaseProperties(Xi(each stateSelect = if preferredMediumStates then StateSelect.prefer else StateSelect.default), T(stateSelect = if preferredMediumStates then StateSelect.prefer else StateSelect.default), final standardOrderComponents = true)  "Base properties"
       protected
-        constant Modelica.SIunits.MolarMass[2] MMX = {steam.MM, dryair.MM} "Molar masses of components";
+        constant Modelica.Units.SI.MolarMass[2] MMX = {steam.MM, dryair.MM} "Molar masses of components";
         MassFraction X_steam "Mass fraction of steam water";
         MassFraction X_air "Mass fraction of air";
-        Modelica.SIunits.TemperatureDifference dT(start = T_default - reference_T) "Temperature difference used to compute enthalpy";
+        Modelica.Units.SI.TemperatureDifference dT(start = T_default - reference_T) "Temperature difference used to compute enthalpy";
       equation
         assert(T >= 200.0 and T <= 423.15, "
       Temperature T is not in the allowed range
@@ -777,7 +777,7 @@ package Buildings  "Library with models for building energy and control systems"
 
       redeclare function extends specificEntropy  "Return the specific entropy, only valid for phi<1"
       protected
-        Modelica.SIunits.MoleFraction[2] Y "Molar fraction";
+        Modelica.Units.SI.MoleFraction[2] Y "Molar fraction";
       algorithm
         Y := massToMoleFractions(state.X, {steam.MM, dryair.MM});
         s := specificHeatCapacityCp(state) * Modelica.Math.log(state.T / reference_T) - Modelica.Constants.R * sum(state.X[i] / MMX[i] * Modelica.Math.log(max(Y[i], Modelica.Constants.eps) * state.p / reference_p) for i in 1:2);
@@ -839,9 +839,9 @@ package Buildings  "Library with models for building energy and control systems"
 
       redeclare function extends setState_psX  "Return the thermodynamic state as function of p, s and composition X or Xi"
       protected
-        Modelica.SIunits.MassFraction[2] X_int = if size(X, 1) == nX then X else cat(1, X, {1 - sum(X)}) "Mass fraction";
-        Modelica.SIunits.MoleFraction[2] Y "Molar fraction";
-        Modelica.SIunits.Temperature T "Temperature";
+        Modelica.Units.SI.MassFraction[2] X_int = if size(X, 1) == nX then X else cat(1, X, {1 - sum(X)}) "Mass fraction";
+        Modelica.Units.SI.MoleFraction[2] Y "Molar fraction";
+        Modelica.Units.SI.Temperature T "Temperature";
       algorithm
         Y := massToMoleFractions(X_int, {steam.MM, dryair.MM});
         T := 273.15 * Modelica.Math.exp((s + Modelica.Constants.R * sum(X_int[i] / MMX[i] * Modelica.Math.log(max(Y[i], Modelica.Constants.eps)) for i in 1:2)) / specificHeatCapacityCp(setState_pTX(p = p, T = 273.15, X = X_int)));
@@ -857,10 +857,10 @@ package Buildings  "Library with models for building energy and control systems"
 
       redeclare replaceable function specificEnthalpy_pTX  "Specific enthalpy"
         extends Modelica.Icons.Function;
-        input Modelica.SIunits.Pressure p "Pressure";
-        input Modelica.SIunits.Temperature T "Temperature";
-        input Modelica.SIunits.MassFraction[:] X "Mass fractions of moist air";
-        output Modelica.SIunits.SpecificEnthalpy h "Specific enthalpy at p, T, X";
+        input Modelica.Units.SI.Pressure p "Pressure";
+        input Modelica.Units.SI.Temperature T "Temperature";
+        input Modelica.Units.SI.MassFraction[:] X "Mass fractions of moist air";
+        output Modelica.Units.SI.SpecificEnthalpy h "Specific enthalpy at p, T, X";
       algorithm
         h := specificEnthalpy(setState_pTX(p, T, X));
         annotation(smoothOrder = 5, Inline = true, inverse(T = temperature_phX(p, h, X)));
@@ -916,24 +916,24 @@ package Buildings  "Library with models for building energy and control systems"
 
       redeclare function extends thermalConductivity  "Thermal conductivity of dry air as a polynomial in the temperature"
       algorithm
-        lambda := Modelica.Media.Incompressible.TableBased.Polynomials_Temp.evaluate({-4.8737307422969E-008, 7.67803133753502E-005, 0.0241814385504202}, Modelica.SIunits.Conversions.to_degC(state.T));
+        lambda := Modelica.Math.Polynomials.evaluate({-4.8737307422969E-008, 7.67803133753502E-005, 0.0241814385504202}, Modelica.Units.Conversions.to_degC(state.T));
         annotation(LateInline = true);
       end thermalConductivity;
 
     protected
       record GasProperties  "Coefficient data record for properties of perfect gases"
         extends Modelica.Icons.Record;
-        Modelica.SIunits.MolarMass MM "Molar mass";
-        Modelica.SIunits.SpecificHeatCapacity R "Gas constant";
-        Modelica.SIunits.SpecificHeatCapacity cp "Specific heat capacity at constant pressure";
-        Modelica.SIunits.SpecificHeatCapacity cv = cp - R "Specific heat capacity at constant volume";
+        Modelica.Units.SI.MolarMass MM "Molar mass";
+        Modelica.Units.SI.SpecificHeatCapacity R "Gas constant";
+        Modelica.Units.SI.SpecificHeatCapacity cp "Specific heat capacity at constant pressure";
+        Modelica.Units.SI.SpecificHeatCapacity cv = cp - R "Specific heat capacity at constant volume";
       end GasProperties;
 
-      constant GasProperties dryair(R = Modelica.Media.IdealGases.Common.SingleGasesData.Air.R, MM = Modelica.Media.IdealGases.Common.SingleGasesData.Air.MM, cp = Buildings.Utilities.Psychrometrics.Constants.cpAir, cv = Buildings.Utilities.Psychrometrics.Constants.cpAir - Modelica.Media.IdealGases.Common.SingleGasesData.Air.R) "Dry air properties";
-      constant GasProperties steam(R = Modelica.Media.IdealGases.Common.SingleGasesData.H2O.R, MM = Modelica.Media.IdealGases.Common.SingleGasesData.H2O.MM, cp = Buildings.Utilities.Psychrometrics.Constants.cpSte, cv = Buildings.Utilities.Psychrometrics.Constants.cpSte - Modelica.Media.IdealGases.Common.SingleGasesData.H2O.R) "Steam properties";
-      constant Modelica.SIunits.MolarMass[2] MMX = {steam.MM, dryair.MM} "Molar masses of components";
-      constant Modelica.SIunits.SpecificEnergy h_fg = Buildings.Utilities.Psychrometrics.Constants.h_fg "Latent heat of evaporation of water";
-      constant Modelica.SIunits.SpecificHeatCapacity cpWatLiq = Buildings.Utilities.Psychrometrics.Constants.cpWatLiq "Specific heat capacity of liquid water";
+      constant GasProperties dryair(R = Modelica.Media.IdealGases.Common.SingleGasesData.Air.R_s, MM = Modelica.Media.IdealGases.Common.SingleGasesData.Air.MM, cp = Buildings.Utilities.Psychrometrics.Constants.cpAir, cv = Buildings.Utilities.Psychrometrics.Constants.cpAir - Modelica.Media.IdealGases.Common.SingleGasesData.Air.R_s) "Dry air properties";
+      constant GasProperties steam(R = Modelica.Media.IdealGases.Common.SingleGasesData.H2O.R_s, MM = Modelica.Media.IdealGases.Common.SingleGasesData.H2O.MM, cp = Buildings.Utilities.Psychrometrics.Constants.cpSte, cv = Buildings.Utilities.Psychrometrics.Constants.cpSte - Modelica.Media.IdealGases.Common.SingleGasesData.H2O.R_s) "Steam properties";
+      constant Modelica.Units.SI.MolarMass[2] MMX = {steam.MM, dryair.MM} "Molar masses of components";
+      constant Modelica.Units.SI.SpecificEnergy h_fg = Buildings.Utilities.Psychrometrics.Constants.h_fg "Latent heat of evaporation of water";
+      constant Modelica.Units.SI.SpecificHeatCapacity cpWatLiq = Buildings.Utilities.Psychrometrics.Constants.cpWatLiq "Specific heat capacity of liquid water";
 
       replaceable function der_enthalpyOfLiquid  "Temperature derivative of enthalpy of liquid per unit mass of liquid"
         extends Modelica.Icons.Function;
@@ -1214,11 +1214,11 @@ package Buildings  "Library with models for building energy and control systems"
 
       package Constants  "Library of constants for psychometric functions"
         extends Modelica.Icons.Package;
-        constant Modelica.SIunits.Temperature T_ref = 273.15 "Reference temperature for psychrometric calculations";
-        constant Modelica.SIunits.SpecificHeatCapacity cpAir = 1006 "Specific heat capacity of air";
-        constant Modelica.SIunits.SpecificHeatCapacity cpSte = 1860 "Specific heat capacity of water vapor";
-        constant Modelica.SIunits.SpecificHeatCapacity cpWatLiq = 4184 "Specific heat capacity of liquid water";
-        constant Modelica.SIunits.SpecificEnthalpy h_fg = 2501014.5 "Enthalpy of evaporation of water at the reference temperature";
+        constant Modelica.Units.SI.Temperature T_ref = 273.15 "Reference temperature for psychrometric calculations";
+        constant Modelica.Units.SI.SpecificHeatCapacity cpAir = 1006 "Specific heat capacity of air";
+        constant Modelica.Units.SI.SpecificHeatCapacity cpSte = 1860 "Specific heat capacity of water vapor";
+        constant Modelica.Units.SI.SpecificHeatCapacity cpWatLiq = 4184 "Specific heat capacity of liquid water";
+        constant Modelica.Units.SI.SpecificEnthalpy h_fg = 2501014.5 "Enthalpy of evaporation of water at the reference temperature";
       end Constants;
 
       block TWetBul_TDryBulPhi  "Model to compute the wet bulb temperature based on relative humidity"
@@ -1230,11 +1230,11 @@ package Buildings  "Library with models for building energy and control systems"
         Modelica.Blocks.Interfaces.RealInput p(final quantity = "Pressure", final unit = "Pa", min = 0) "Pressure";
         Modelica.Blocks.Interfaces.RealOutput TWetBul(start = Medium.T_default - 2, final quantity = "ThermodynamicTemperature", final unit = "K", min = 0) "Wet bulb temperature";
       protected
-        Modelica.SIunits.Conversions.NonSIunits.Temperature_degC TDryBul_degC "Dry bulb temperature in degree Celsius";
+        Modelica.Units.NonSI.Temperature_degC TDryBul_degC "Dry bulb temperature in degree Celsius";
         Real rh_per(min = 0) "Relative humidity in percentage";
-        Modelica.SIunits.MassFraction XiDryBul "Water vapor mass fraction at dry bulb state";
-        Modelica.SIunits.MassFraction XiSat "Water vapor mass fraction at saturation";
-        Modelica.SIunits.MassFraction XiSatRefIn "Water vapor mass fraction at saturation, referenced to inlet mass flow rate";
+        Modelica.Units.SI.MassFraction XiDryBul "Water vapor mass fraction at dry bulb state";
+        Modelica.Units.SI.MassFraction XiSat "Water vapor mass fraction at saturation";
+        Modelica.Units.SI.MassFraction XiSatRefIn "Water vapor mass fraction at saturation, referenced to inlet mass flow rate";
       equation
         if approximateWetBulb then
           TDryBul_degC = TDryBul - 273.15;
@@ -1258,10 +1258,10 @@ package Buildings  "Library with models for building energy and control systems"
 
         function X_pSatpphi  "Humidity ratio for given water vapor pressure"
           extends Modelica.Icons.Function;
-          input Modelica.SIunits.AbsolutePressure pSat "Saturation pressure";
-          input Modelica.SIunits.Pressure p "Pressure of the fluid";
+          input Modelica.Units.SI.AbsolutePressure pSat "Saturation pressure";
+          input Modelica.Units.SI.Pressure p "Pressure of the fluid";
           input Real phi(min = 0, max = 1) "Relative humidity";
-          output Modelica.SIunits.MassFraction X_w(min = 0, max = 1, nominal = 0.01) "Water vapor concentration per total mass of air";
+          output Modelica.Units.SI.MassFraction X_w(min = 0, max = 1, nominal = 0.01) "Water vapor concentration per total mass of air";
         protected
           constant Real k = 0.621964713077499 "Ratio of molar masses";
         algorithm
@@ -1271,8 +1271,8 @@ package Buildings  "Library with models for building energy and control systems"
 
         function saturationPressure  "Saturation curve valid for 223.16 <= T <= 373.16 (and slightly outside with less accuracy)"
           extends Modelica.Icons.Function;
-          input Modelica.SIunits.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
-          output Modelica.SIunits.AbsolutePressure pSat(displayUnit = "Pa", nominal = 1000) "Saturation pressure";
+          input Modelica.Units.SI.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
+          output Modelica.Units.SI.AbsolutePressure pSat(displayUnit = "Pa", nominal = 1000) "Saturation pressure";
         algorithm
           pSat := Buildings.Utilities.Math.Functions.regStep(y1 = Buildings.Utilities.Psychrometrics.Functions.saturationPressureLiquid(TSat), y2 = Buildings.Utilities.Psychrometrics.Functions.sublimationPressureIce(TSat), x = TSat - 273.16, x_small = 1.0);
           annotation(Inline = true, smoothOrder = 1);
@@ -1280,8 +1280,8 @@ package Buildings  "Library with models for building energy and control systems"
 
         function saturationPressureLiquid  "Return saturation pressure of water as a function of temperature T in the range of 273.16 to 373.16 K"
           extends Modelica.Icons.Function;
-          input Modelica.SIunits.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
-          output Modelica.SIunits.AbsolutePressure pSat(displayUnit = "Pa", nominal = 1000) "Saturation pressure";
+          input Modelica.Units.SI.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
+          output Modelica.Units.SI.AbsolutePressure pSat(displayUnit = "Pa", nominal = 1000) "Saturation pressure";
         algorithm
           pSat := 611.657 * Modelica.Math.exp(17.2799 - 4102.99 / (TSat - 35.719));
           annotation(smoothOrder = 99, derivative = Buildings.Utilities.Psychrometrics.Functions.BaseClasses.der_saturationPressureLiquid, Inline = true);
@@ -1289,11 +1289,11 @@ package Buildings  "Library with models for building energy and control systems"
 
         function sublimationPressureIce  "Return sublimation pressure of water as a function of temperature T between 190 and 273.16 K"
           extends Modelica.Icons.Function;
-          input Modelica.SIunits.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
-          output Modelica.SIunits.AbsolutePressure pSat(displayUnit = "Pa", nominal = 1000) "Saturation pressure";
+          input Modelica.Units.SI.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
+          output Modelica.Units.SI.AbsolutePressure pSat(displayUnit = "Pa", nominal = 1000) "Saturation pressure";
         protected
-          Modelica.SIunits.Temperature TTriple = 273.16 "Triple point temperature";
-          Modelica.SIunits.AbsolutePressure pTriple = 611.657 "Triple point pressure";
+          Modelica.Units.SI.Temperature TTriple = 273.16 "Triple point temperature";
+          Modelica.Units.SI.AbsolutePressure pTriple = 611.657 "Triple point pressure";
           Real r1 = TSat / TTriple "Common subexpression";
           Real[2] a = {-13.9281690, 34.7078238} "Coefficients a[:]";
           Real[2] n = {-1.5, -1.25} "Coefficients n[:]";
@@ -1307,7 +1307,7 @@ package Buildings  "Library with models for building energy and control systems"
 
           function der_saturationPressureLiquid  "Derivative of the function saturationPressureLiquid"
             extends Modelica.Icons.Function;
-            input Modelica.SIunits.Temperature Tsat "Saturation temperature";
+            input Modelica.Units.SI.Temperature Tsat "Saturation temperature";
             input Real dTsat(unit = "K/s") "Saturation temperature derivative";
             output Real psat_der(unit = "Pa/s") "Differential of saturation pressure";
           algorithm
@@ -1317,12 +1317,12 @@ package Buildings  "Library with models for building energy and control systems"
 
           function der_sublimationPressureIce  "Derivative of function sublimationPressureIce"
             extends Modelica.Icons.Function;
-            input Modelica.SIunits.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
+            input Modelica.Units.SI.Temperature TSat(displayUnit = "degC", nominal = 300) "Saturation temperature";
             input Real dTsat(unit = "K/s") "Sublimation temperature derivative";
             output Real psat_der(unit = "Pa/s") "Sublimation pressure derivative";
           protected
-            Modelica.SIunits.Temperature TTriple = 273.16 "Triple point temperature";
-            Modelica.SIunits.AbsolutePressure pTriple = 611.657 "Triple point pressure";
+            Modelica.Units.SI.Temperature TTriple = 273.16 "Triple point temperature";
+            Modelica.Units.SI.AbsolutePressure pTriple = 611.657 "Triple point pressure";
             Real r1 = TSat / TTriple "Common subexpression 1";
             Real r1_der = dTsat / TTriple "Derivative of common subexpression 1";
             Real[2] a = {-13.9281690, 34.7078238} "Coefficients a[:]";

@@ -1,0 +1,34 @@
+// name: fmi3_wasm_solver_absent.mos
+// keywords: FMI 3.0 export wasm Co-Simulation kinsol solver
+// status: correct
+// suite: wasm
+// teardown_command: rm -rf M_absent.fmu M_absent.fmu.log M_absent_artifact M_absent_res.mat om-wasm-include-*
+//
+// The other end of per-solver linking: flags that reach no solver library leave the
+// FMU carrying none of them, each served by a stub whose `om_have_<library>` answers
+// 0. `simflags::check` then rejects the request against the FMU's own capability
+// report, so the stub bodies -- which trap -- stay unreachable.
+
+setCommandLineOptions("--simCodeTarget=wasm-jit --fmiFlags=default"); getErrorString();
+loadFile("fmi3_wasm_solver_libraries.mo"); getErrorString();
+buildModelFMU(MixedSystems, fileNamePrefix="M_absent", fmuType="cs", version="3.0", platforms={"wasm"}); getErrorString();
+simulate(MixedSystems, stopTime=1.0, numberOfIntervals=20, resimulateExecutable="M_absent.fmu", simflags="-nls=kinsol"); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// "M_absent.fmu"
+// "Notification: Building FMU for platform 'wasm' (1/1).
+// Notification: Finished FMU for platform 'wasm' (1/1).
+// "
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MixedSystems', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=kinsol'",
+//     messages = "Simulation execution failed for model: MixedSystems
+// LOG_STDOUT        | info    | wasm artifact loaded (compiled from the component)
+// LOG_ERROR         | error   | -nls=kinsol: this runtime has no kinsol
+// "
+// end SimulationResult;
+// ""
+// endResult

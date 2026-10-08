@@ -32,7 +32,7 @@ set(OMPLOTLIB_HEADERS OMPlot.h
                       LinearScaleEngine.h)
 
 add_library(OMPlotLib SHARED ${OMPLOTLIB_SOURCES} ${OMPLOTLIB_HEADERS})
-target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE)
+target_compile_definitions(OMPlotLib PRIVATE OMPLOTLIB_MOC_INCLUDE OMPLOTLIB_LIBRARY)
 
 if(MSVC)
   set_target_properties(OMPlotLib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
@@ -40,16 +40,14 @@ endif()
 
 target_include_directories(OMPlotLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(OMPlotLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Widgets)
-target_link_libraries(OMPlotLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
-target_link_libraries(OMPlotLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
+target_link_libraries(OMPlotLib PUBLIC Qt6::Widgets)
+target_link_libraries(OMPlotLib PUBLIC Qt6::PrintSupport)
+target_link_libraries(OMPlotLib PUBLIC Qt6::Svg)
 
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  target_link_libraries(OMPlotLib PUBLIC Qt6::Core5Compat)
-endif ()
+target_link_libraries(OMPlotLib PUBLIC Qt6::Core5Compat)
 
 target_link_libraries(OMPlotLib PUBLIC omqwt)
-target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
+target_link_libraries(OMPlotLib PUBLIC omc::result)
 
 if(APPLE)
   set(MACOSX_BUNDLE_ICON_FILE omplot.ico)
@@ -69,6 +67,8 @@ install(TARGETS OMPlotLib)
 omc_install_gui_client(OMPlot)
 
 if(MINGW)
+  omc_get_msys_prefix(MSYSTEM_PREFIX_ESCAPED)
+
   # Find windeployqt6
   find_program(WINDEPLOYQT_EXECUTABLE
     NAMES windeployqt windeployqt6

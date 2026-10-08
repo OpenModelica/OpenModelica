@@ -111,5 +111,5 @@ equation
       lv="LOG_JAC", eps = "0.023",
 
       s="dassl",
-      sx="modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Inputs.csv"));
+      sx="./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Inputs.csv"));
 end Splitter5c;

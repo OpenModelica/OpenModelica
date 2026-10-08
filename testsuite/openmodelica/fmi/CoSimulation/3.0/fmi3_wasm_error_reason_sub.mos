@@ -1,0 +1,15 @@
+// The failing run fmi3_wasm_error_reason.mos greps.
+setCommandLineOptions("--simCodeTarget=wasm-jit --fmuDirectory=true"); getErrorString();
+loadModel(Modelica); getErrorString();
+loadString("model Boom
+  Real x(start = 0, fixed = true);
+equation
+  der(x) = 1;
+algorithm
+  when time > 0.5 then
+    Modelica.Utilities.Streams.error(\"boom from ModelicaError\");
+  end when;
+  annotation(experiment(StopTime = 1));
+end Boom;"); getErrorString();
+buildModelFMU(Boom, fileNamePrefix="M_reason", fmuType="cs", version="3.0", platforms={"wasm"}); getErrorString();
+simulate(Boom, simflags="-lv LOG_STATS -s fmi3:cs", resimulateExecutable="M_reason.fmu"); getErrorString();

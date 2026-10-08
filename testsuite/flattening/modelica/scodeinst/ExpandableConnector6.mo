@@ -18,8 +18,8 @@ end ExpandableConnector6;
 
 // Result:
 // class ExpandableConnector6
-//   Real ec1.x "virtual variable in expandable connector";
-//   Real ec2.x "virtual variable in expandable connector";
+//   Real ec1.x "variable added to expandable connector";
+//   Real ec2.x "variable added to expandable connector";
 //   output Real x;
 // equation
 //   ec1.x = ec2.x;

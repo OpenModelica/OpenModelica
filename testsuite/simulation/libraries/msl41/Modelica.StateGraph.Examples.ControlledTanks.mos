@@ -1,0 +1,38 @@
+// name:     Modelica.StateGraph.Examples.ControlledTanks
+// keywords: simulation MSL Examples
+// status: correct
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+// MSL 4.1.0: the model compiles, but the simulation stops after 20 event
+// iterations, so only test that it builds.
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelName := $TypeName(Modelica.StateGraph.Examples.ControlledTanks);
+compareVars :=
+{
+   "tank1.level",
+   "tank2.level"
+};
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.Compilation
+// Modelica.StateGraph.Examples.ControlledTanks
+// {"tank1.level", "tank2.level"}
+// Compilation succeeded
+// "true
+// "
+// ""
+// endResult

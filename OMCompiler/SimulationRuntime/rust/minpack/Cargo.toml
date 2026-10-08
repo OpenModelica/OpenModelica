@@ -1,0 +1,23 @@
+[package]
+name = "minpack"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../Compiler/OpenModelica.rs"
+description = "Pure-Rust port of MINPACK's hybrd solver for systems of nonlinear equations (no_std)"
+license-file = "LICENSE"
+repository = "https://github.com/OpenModelica/OpenModelica"
+keywords = ["minpack", "hybrd", "nonlinear", "solver", "no_std"]
+categories = ["mathematics", "no-std"]
+
+[lib]
+# Pure Rust, no I/O: compiles to wasm32 with no extra toolchain.
+
+[features]
+default = ["std"]
+# `std` uses the platform `f64::sqrt`; off = `no_std` + `libm`, so the wasm-jit
+# runtime can compile the solver into its in-wasm NLS.
+std = []
+
+[dependencies]
+# `no_std` builds only: pure-Rust `sqrt`. Unused when `std` is on.
+libm = "0.2"

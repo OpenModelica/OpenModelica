@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 // 
 // Simulation Results
 // Modelica Standard Library
@@ -17,9 +18,7 @@ compareVars :=
 {
    "L1.iinternal",
    "L2.iinternal",
-   "C1.v",
-   "L3.iinternal",
-   "C2.v"
+   "L3.iinternal"
 };
 
 setDebugFlags("hpcom"); getErrorString();

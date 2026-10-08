@@ -1,0 +1,49 @@
+// name:     Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects);
+compareVars :=
+{
+   "bodyCylinder2.body.w_a[1]",
+   "bodyCylinder2.body.w_a[2]",
+   "bodyCylinder2.body.w_a[3]",
+   "bodyCylinder3.body.w_a[1]",
+   "bodyCylinder3.body.w_a[2]",
+   "bodyCylinder3.body.w_a[3]",
+   "revolute.phi",
+   "revolute.w",
+   "rotor1D.phi",
+   "rotor1D.w"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects
+// {"bodyCylinder2.body.w_a[1]", "bodyCylinder2.body.w_a[2]", "bodyCylinder2.body.w_a[3]", "bodyCylinder3.body.w_a[1]", "bodyCylinder3.body.w_a[2]", "bodyCylinder3.body.w_a[3]", "revolute.phi", "revolute.w", "rotor1D.phi", "rotor1D.w"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects', options = '', outputFormat = 'mat', variableFilter = 'time|bodyCylinder2.body.w_a.1.|bodyCylinder2.body.w_a.2.|bodyCylinder2.body.w_a.3.|bodyCylinder3.body.w_a.1.|bodyCylinder3.body.w_a.2.|bodyCylinder3.body.w_a.3.|revolute.phi|revolute.w|rotor1D.phi|rotor1D.w', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

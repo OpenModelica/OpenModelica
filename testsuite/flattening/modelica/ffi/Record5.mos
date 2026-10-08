@@ -2,6 +2,7 @@
 // keywords: ffi
 // status:   correct
 // cflags: -d=newInst
+// suite: disabled
 //
 //
 

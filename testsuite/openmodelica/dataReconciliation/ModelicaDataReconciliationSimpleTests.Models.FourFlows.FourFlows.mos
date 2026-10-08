@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_FourFlows_FourFlows.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,19 +20,22 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows, simflags=simFlags);
 getErrorString();
 
+readFile("ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
 //
 // ModelInfo: ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows
 // ==========================================================================
@@ -217,6 +221,11 @@ getErrorString();
 //
 //
 //
+// Parameters in SET_S (1)
+// ========================================
+// 1: a:PARAM()  = 0.5  type: Real
+//
+//
 //
 // Automatic Verification Steps of DataReconciliation Algorithm
 // ==========================================================================
@@ -258,7 +267,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -266,5 +275,12 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
+// ""
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// Q4,2,2.04897,1.91,1.22035,TRUE,0.03333,
+// Q3,0.95,1.02449,1.91,0.610173,TRUE,0.0411544,
+// Q2,1.1,1.02449,1.91,0.610173,TRUE,0.0417225,
+// Q1,2.1,2.04897,1.96,1.22035,TRUE,0.0332704,
+// "
 // ""
 // endResult

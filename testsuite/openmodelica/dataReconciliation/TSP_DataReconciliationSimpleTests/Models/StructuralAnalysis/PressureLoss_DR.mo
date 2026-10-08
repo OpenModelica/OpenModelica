@@ -25,6 +25,6 @@ equation
     __OpenModelica_simulationFlags(
       lv="LOG_JAC",
       s="dassl",
-      sx="modelica://TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_OS.csv",
+      sx="./TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_OS.csv",
       variableFilter=".*"));
 end PressureLoss_DR;

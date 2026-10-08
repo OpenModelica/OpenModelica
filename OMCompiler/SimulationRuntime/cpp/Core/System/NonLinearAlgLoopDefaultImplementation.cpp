@@ -54,7 +54,7 @@ NonLinearAlgLoopDefaultImplementation::~NonLinearAlgLoopDefaultImplementation()
   if(_res)
     delete [] _res;
 if (_x0)
-	 delete _x0;
+	 delete [] _x0;
 }
 
 /// Provide number (dimension) of variables according to data type

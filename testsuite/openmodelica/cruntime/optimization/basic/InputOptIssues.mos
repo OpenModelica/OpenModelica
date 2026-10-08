@@ -4,7 +4,7 @@
 
 // task: guard that real discret variables are set
 
-loadModel(Modelica,{"3.2"});
+loadModel(Modelica,{"4.1.0"});
 getErrorString();
 
 loadFile("InputOptIssues.mo");
@@ -27,7 +27,7 @@ val(angSpeed, {0, 5, 10});
 // ""
 // record SimulationResult
 //     resultFile = "InputOptIssues.Trapezoid_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'InputOptIssues.Trapezoid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'InputOptIssues.Trapezoid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
@@ -49,13 +49,13 @@ val(angSpeed, {0, 5, 10});
 // "
 // end SimulationResult;
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// [Modelica 3.2.3+maint.om/Mechanics/Rotational.mo:2471:7-2471:65:writable] Warning: Parameter inertia1.J has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 4.1.0+maint.om/Mechanics/Rotational/Components/Inertia.mo:4:3-4:61:writable] Warning: Parameter inertia1.J has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {90.0,90.0,55.0241047740795,41.04075758706323,34.60242216404257,-32.98585607543826,-37.96855887785219,-44.74608487310016,-56.17425575296937,-90.0,-90.0}
-// {-0.0,-54.00000053932259,-190.1975011860511,-388.2112789654032,-633.2601751996291,-907.7426818843697,-1159.517183946985,-1374.7678506843,-1552.321893809127,-1674.325496332713,-1710.32549669227}
-// {0.0,0.0,10.0,10.0,0.0,0.0,0.0,10.0,10.0,0.0,0.0}
-// {0.0,8100.000080896142,9000.000089755486,9000.00008955402,9000.000088873398,-9000.00008599359,-9000.000089327559,-9000.000089656573,-9000.000089781792,-8100.000080892903,-0.0}
-// {0.0,2.0,10.0,7.999999999999998,0.0,0.0,0.0,0.0,0.0,0.0,10.0,8.000000000000007,0.0}
-// {0.0,272.8442173945917,0.0}
+// {90.0, 90.0000008988492, 55.024104774079476, 41.040757587063226, 34.60242216404257, -32.98585607543798, -37.96855887785216, -44.746084873100116, -56.174255752969266, -90.00000089874364, -90.00000089896466}
+// {-0.0, -54.00000053932259, -190.19750118605117, -388.21127896540304, -633.2601751996289, -907.7426818843693, -1159.517183946984, -1374.7678506842992, -1552.3218938091263, -1674.325496332713, -1710.3254966922696}
+// {0.0, 0.0, 9.999999999999998, 9.999999999999996, 8.881784197001202e-15, 0.0, 0.0, 9.999999999999964, 9.999999999999991, 2.6645352591003757e-14, 0.0}
+// {0.0, 8100.000161792571, 9000.000089755484, 9000.00008955402, 9000.000088873398, -9000.000085993513, -9000.00008932756, -9000.000089656574, -9000.000089781792, -8100.000161779855, -1.0962939595695817e-28}
+// {0.0, 1.9999999999999996, 10.0, 7.999999999999998, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 8.000000000000034, 0.0}
+// {0.0, 272.8442173945918, 1.2181043873547264e-30}
 // endResult

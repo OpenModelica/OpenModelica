@@ -2,6 +2,8 @@ TEST=../../rtest -v
 
 TESTFILES= \
 ForceAndTorque.mos \
+ModelicaServicesShapeAnimation.mos \
+ModelicaServicesShapeExtends.mos \
 Surfaces.mos \
 
 
@@ -39,4 +41,4 @@ getdeps:
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
 
 failingtest :
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

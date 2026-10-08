@@ -1,5 +1,6 @@
 // name: ErrorMultipleClasses
 // status: incorrect
+// suite: disabled
 
 class A
 end A;
@@ -12,7 +13,7 @@ class sin
 end sin;
 // Result:
 // Error processing file: ErrorMultipleClasses.mo
-// [flattening/modelica/declarations/ErrorMultipleClasses.mo:7:1-8:6:writable] Error: An element with name A is already declared in this scope.
+// [flattening/modelica/declarations/ErrorMultipleClasses.mo:8:1-9:6:writable] Error: An element with name A is already declared in this scope.
 // Error: Error occurred while flattening model sin
 //
 // # Error encountered! Exiting...

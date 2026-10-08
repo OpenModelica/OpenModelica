@@ -6,6 +6,7 @@ PDEModelica1 is nonstandardised experimental Modelica language extension for 1-d
 It is enabled using compiler flag ``--grammar=PDEModelica``. Compiler flags may be set e.g. in OMEdit (globally in Tools->Options->Simulation->Translation Flags or in Simulation Setup->Translation Flags for specific models) or in an OpenModelica script using ``setCommandLineOptions``. Note that PDEModelica does now work yet with the current frontend so you need to also use the flag ``-d=-newInst`` or check "Enable old frontend for code generation" in OMEdit under Translation Flags.
 
 .. omc-mos ::
+
   setCommandLineOptions("--grammar=PDEModelica -d=-newInst")
 
 

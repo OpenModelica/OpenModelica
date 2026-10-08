@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter5_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Splitter_TSP_Splitter5.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,21 +20,24 @@ print("simFlags: "+simFlags);
 simulate(TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5, simflags=simFlags);
 getErrorString();
 
+readFile("TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter5_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter5_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5
 // ==========================================================================
@@ -1887,7 +1891,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter5_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter5_Inputs.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -1902,24 +1906,33 @@ getErrorString();
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourceQ.mo:22:3-23:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:11:3-13:24:writable] Warning: Connector Ce_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:14:3-16:24:writable] Warning: Connector Ce_eco is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:17:3-18:82:writable] Warning: Connector Cs_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:19:3-21:17:writable] Warning: Connector Cs_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:22:3-23:82:writable] Warning: Connector Cs_sur is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:24:3-26:17:writable] Warning: Connector Cs_purg is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:27:3-29:17:writable] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:30:3-32:17:writable] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:9:3-10:81:readonly] Warning: Connector Ce_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:11:3-12:81:readonly] Warning: Connector Ce_eco is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:13:3-14:77:readonly] Warning: Connector Cs_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:15:3-16:79:readonly] Warning: Connector Cs_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:17:3-18:77:readonly] Warning: Connector Cs_sur is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:19:3-20:79:readonly] Warning: Connector Cs_purg is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:21:3-22:79:readonly] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:23:3-24:79:readonly] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/BoundaryConditions/SourceP.mo:30:3-31:45:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:783:9-783:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:850:9-850:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:1088:9-1088:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/Fluid/derDensity_derP_derh.mo:63:5-63:84:writable] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// [ThermoSysPro 4.2.0/WaterSteam/BoundaryConditions/SourceP.mo:19:3-20:78:readonly] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:readonly] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// staticDrum1.hl,1.368e+06,561455,5000,5.98145e-05,FALSE,161.309,
+// singularPressureLoss3.h,1.371e+06,1e+06,5000,0,FALSE,74.2,
+// singularPressureLoss3.Q,0.97,2.9717,1.91,1.56625,FALSE,1.83115,
+// singularPressureLoss2.h,1.365e+06,1.36497e+06,5000,4999.91,TRUE,0.0171622,
+// singularPressureLoss2.Q,1.05,-1.60534,1.91,0.768428,FALSE,1.51855,
+// singularPressureLoss1.h,1.361e+06,561455,5000,5.98145e-05,FALSE,159.909,
+// singularPressureLoss1.Q,2.1,1.36635,1.96,0.797911,TRUE,0.409804,
+// "
+// ""
 // endResult

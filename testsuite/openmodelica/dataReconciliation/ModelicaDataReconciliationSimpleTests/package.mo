@@ -2,7 +2,7 @@ package ModelicaDataReconciliationSimpleTests
   extends Modelica.Icons.Package;
 
   annotation (
-    uses(Modelica(version="4.0.0")),
+    uses(Modelica(version="4.1.0")),
     Icon(graphics={
         Rectangle(
           lineColor={128,128,128},

@@ -166,7 +166,7 @@ PlotWindow* PlotWindowContainer::getInteractiveWindow(QString targetWindow)
   }
 }
 
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
 /*!
  * \brief PlotWindowContainer::getCurrentAnimationWindow
  * Returns the current animation window, if the last window is plot, return null
@@ -517,7 +517,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
  */
 void PlotWindowContainer::addAnimationWindow()
 {
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   AnimationWindow *pAnimationWindow = new AnimationWindow(this);
   pAnimationWindow->setWindowTitle(getUniqueName("Animation : "));
   bool maximize = subWindowList().isEmpty();

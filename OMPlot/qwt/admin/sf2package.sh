@@ -2,7 +2,7 @@
 # 
 # Generates a Qwt package from the sourceforge repository
 #
-# Usage: 2package.sh.sh [-b|--branch <branch>] [packagename] 
+# Usage: 2package.sh.sh [-b|--branch <branch>] [packagename]
 # 
 
 ##########################
@@ -15,7 +15,7 @@ function usage() {
 }
 
 ################################
-# downloadQwt 
+# downloadQwt
 ################################
 
 function downloadQwt() {
@@ -80,7 +80,7 @@ function cleanQwt {
 
     if [ "$SUFFIX" != "" ]
     then
-        sed -i -e "s/\$\$QWT_VERSION-dev/\$\$QWT_VERSION-$SUFFIX/" qwtconfig.pri 
+        sed -i -e "s/\$\$QWT_VERSION-dev/\$\$QWT_VERSION-$SUFFIX/" qwtconfig.pri
     	sed -i -e "s/\$(QWTVERSION)/$VERSION-$SUFFIX/" doc/install.dox
     else
         sed -i -e "s/\$\$QWT_VERSION-dev/\$\$QWT_VERSION/" qwtconfig.pri

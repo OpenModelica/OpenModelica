@@ -213,9 +213,13 @@ public
 uniontype Variables
   record VARIABLES
     array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
+    array<array<list<PrefixIndex>>> prefixIndices "One slot: HashTB, array or record cref->indices of its
+      elements. Empty until getVar first makes a prefix query.";
     VariableArray varArr "Array of variables";
     Integer bucketSize "bucket size";
     Integer numberOfVars "no. of vars";
+    Boolean hasStartVars "Set once a $START. variable is added, never cleared:
+      false means getVar of a $START. cref cannot succeed.";
   end VARIABLES;
 end Variables;
 
@@ -226,6 +230,16 @@ uniontype CrefIndex "Component Reference Index"
     Integer index;
   end CREFINDEX;
 end CrefIndex;
+
+public
+uniontype PrefixIndex "Indices of the variables under one array or record prefix"
+  record PREFIXINDEX
+    .DAE.ComponentRef cref "some variable name starting with the prefix";
+    Integer depth "qualifiers of cref in the prefix";
+    Integer numSubscripts "subscripts of the last qualifier in the prefix";
+    list<Integer> indices;
+  end PREFIXINDEX;
+end PrefixIndex;
 
 public
 uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding
@@ -648,7 +662,7 @@ uniontype EventInfo
   record EVENT_INFO
     list<TimeEvent> timeEvents    "stores all information related to time events";
     ZeroCrossingSet zeroCrossings "list of zero crossing conditions";
-    DoubleEnded.MutableList<ZeroCrossing> relations "list of zero crossing function as before";
+    ZeroCrossingSet relations "list of zero crossing function as before";
     ZeroCrossingSet samples       "[deprecated] list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     Integer numberMathEvents      "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;

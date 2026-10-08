@@ -37,6 +37,7 @@
 #define DYNAMICANNOTATION_H
 
 #include <QString>
+#include <QHash>
 #include "FlatModelica/Expression.h"
 
 class Element;
@@ -94,6 +95,7 @@ class DynamicAnnotation
     FlatModelica::Expression evaluate_wrap_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel,bool readFromResultFileForDynamicSelect, double time);
     FlatModelica::Expression evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect,
                                              double time, bool value);
+    const FlatModelica::Expression *lookupConstant(const QString &name);
 
   protected:
     virtual void fromExp(const FlatModelica::Expression &exp) = 0;
@@ -102,6 +104,11 @@ class DynamicAnnotation
   protected:
     FlatModelica::Expression mExp;
     State mState = State::None;
+    /*!
+     * Values of the names that are not elements of the model, see lookupConstant.
+     * A null expression means the name has no value.
+     */
+    QHash<QString, FlatModelica::Expression> mConstants;
 };
 
 #endif /* DYNAMICANNOTATION_H */

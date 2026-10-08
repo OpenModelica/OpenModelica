@@ -79,5 +79,5 @@ equation
       lv="LOG_JAC",
       eps="0.023",
       s="dassl",
-      sx="modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows_Inputs.csv"));
+      sx="./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows_Inputs.csv"));
 end TSP_FourFlows;

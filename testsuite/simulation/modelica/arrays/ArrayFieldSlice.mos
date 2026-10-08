@@ -2,6 +2,7 @@
 // keywords: array
 // status:   correct
 // teardown_command: rm -rf getPerson_* getPerson getPerson.exe getPerson.cpp getPerson.makefile getPerson.libs getPerson.log output.log
+// suite: disabled
 // 
 // Drmodelica: 7.4  Array Indexing operator (p. 216)
 //

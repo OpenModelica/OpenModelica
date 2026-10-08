@@ -6,7 +6,7 @@
 setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");
 getErrorString();
 
-setDefaultOpenCLDevice(1);
+setDefaultOpenCLDevice(0); // 0 = auto-select a device with double precision support
 getErrorString();
 
 loadFile("bug_3335.mo");

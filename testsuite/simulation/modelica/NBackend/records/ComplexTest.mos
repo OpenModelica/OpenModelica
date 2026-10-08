@@ -140,16 +140,14 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ***************************************
 //
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (3):
+// ****************************************************
+// 	[RECD] (2) $FUN_2 = z5; ($RES_BND_12)
+// 	[RECD] (2) $FUN_1 = z4; ($RES_BND_11)
+// 	[RECD] (2) z3 = Complex.'+'(z1, z2); ($RES_BND_10)
 //
-//
-// Created Record Parameter Binding Equations (1):
-// *************************************************
-// 	[RECD] (2) z3 = Complex.'+'(z1, z2) ($RES_BND_8)
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -175,19 +173,17 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (2):
 // ***************************************
-// 	[RECD] (2) z2 = Complex(0.0, 1.0) ($RES_BND_4)
-// 	[RECD] (2) z1 = Complex(1.0, 0.0) ($RES_BND_3)
+// 	[RECD] (2) z2 = Complex(0.0, 1.0); ($RES_BND_4)
+// 	[RECD] (2) z1 = Complex(1.0, 0.0); ($RES_BND_3)
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (3):
+// ****************************************************
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -214,16 +210,14 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ***************************************
 //
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (3):
+// ****************************************************
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -250,16 +244,14 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ***************************************
 //
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (3):
+// ****************************************************
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -286,16 +278,12 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ***************************************
 //
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (0):
+// ****************************************************
 //
 //
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -320,18 +308,14 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (1):
 // ***************************************
-// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0) ($RES_BND_0)
+// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0); ($RES_BND_0)
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
-//
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
+// Created Secondary Parameter Binding Equations (0):
+// ****************************************************
 //
 //
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -356,19 +340,17 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (2):
 // ***************************************
-// 	[RECD] (2) z2 = Complex(0.0, 1.0) ($RES_BND_4)
-// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0) ($RES_BND_3)
+// 	[RECD] (2) z2 = Complex(0.0, 1.0); ($RES_BND_4)
+// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0); ($RES_BND_3)
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (3):
+// ****************************************************
+// 	[RECD] (2) $FUN_3 = z5; ($RES_BND_23)
+// 	[RECD] (2) $FUN_2 = z4; ($RES_BND_22)
+// 	[RECD] (2) $FUN_1 = z3; ($RES_BND_21)
 //
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -393,18 +375,14 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (1):
 // ***************************************
-// 	[RECD] (2) v0 = Complex(1.0, 0.0) ($RES_BND_2)
+// 	[RECD] (2) v0 = Complex(1.0, 0.0); ($RES_BND_2)
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (1):
+// ****************************************************
+// 	[RECD] (2) $FUN_2 = v; ($RES_BND_24)
 //
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -431,18 +409,14 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (1):
 // ***************************************
-// 	[RECD] (2) v0 = Complex(1.0, 0.0) ($RES_BND_4)
+// 	[RECD] (2) v0 = Complex(1.0, 0.0); ($RES_BND_4)
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (1):
+// ****************************************************
+// 	[RECD] (2) $FUN_2 = v; ($RES_BND_28)
 //
-//
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult
@@ -455,10 +429,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ""
 // Created Continuous Binding Equations (4):
 // *******************************************
-// 	[SCAL] (1) z.im = b ($RES_BND_3)
-// 	[SCAL] (1) z.re = a ($RES_BND_2)
-// 	[SCAL] (1) b = 1.0 ($RES_BND_1)
-// 	[SCAL] (1) a = 1.0 ($RES_BND_0)
+// 	[SCAL] (1) z.im = b; ($RES_BND_3)
+// 	[SCAL] (1) z.re = a; ($RES_BND_2)
+// 	[SCAL] (1) b = 1.0; ($RES_BND_1)
+// 	[SCAL] (1) a = 1.0; ($RES_BND_0)
 //
 // Created Clocked Binding Equations (0):
 // ****************************************
@@ -472,16 +446,12 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ***************************************
 //
 //
-// Created Parameter Binding Equations (0):
-// ******************************************
+// Created Secondary Parameter Binding Equations (0):
+// ****************************************************
 //
 //
-// Created Record Parameter Binding Equations (0):
-// *************************************************
-//
-//
-// Created External Object Parameter Binding Equations (0):
-// **********************************************************
+// Created Primary Parameter Binding Equations (0):
+// **************************************************
 //
 //
 // record SimulationResult

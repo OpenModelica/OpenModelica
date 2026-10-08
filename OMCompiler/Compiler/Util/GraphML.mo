@@ -524,11 +524,8 @@ protected
   AttributeTarget attTarget;
    Option<tuple<Attribute,Integer>> tmpAttribute;
 algorithm
-  oAttribute := matchcontinue iList
-    case (head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest
-      algorithm
-        true := stringEq(name, iAttributeName);
-        true := compareAttributeTargets(iAttributeTarget,attTarget);
+  oAttribute := match iList
+    case (head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest guard stringEq(name, iAttributeName) and compareAttributeTargets(iAttributeTarget,attTarget)
       then SOME((head,attIdx));
     case head::rest
       algorithm
@@ -536,7 +533,7 @@ algorithm
       then tmpAttribute;
     else
       then NONE();
-  end matchcontinue;
+  end match;
 end getAttributeByNameAndTargetTail;
 
 protected function compareAttributeTargets

@@ -10,11 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 
-find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Svg REQUIRED)
-
-if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  find_package(Qt6 COMPONENTS Core5Compat REQUIRED)
-endif ()
+find_package(Qt6 COMPONENTS Widgets PrintSupport Svg Core5Compat REQUIRED)
 
 omc_option (OM_USE_SYSTEM_QWT "Use system qwt" OFF)
 if (OM_USE_SYSTEM_QWT)

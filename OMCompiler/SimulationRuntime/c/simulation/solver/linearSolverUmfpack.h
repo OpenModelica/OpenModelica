@@ -37,7 +37,6 @@
 #include "simulation_data.h"
 
 #include "umfpack.h"
-#include "umfpack_get_numeric.h"
 
 typedef struct DATA_UMFPACK
 {

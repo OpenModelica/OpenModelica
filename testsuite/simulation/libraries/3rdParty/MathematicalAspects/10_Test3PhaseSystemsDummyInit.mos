@@ -5,7 +5,7 @@
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("Test3PhaseSystemsDummyInit.mo"); getErrorString();
 
 simulate(Test3PhaseSystemsDummyInit, stopTime=10); getErrorString();
@@ -21,7 +21,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Test3PhaseSystemsDummyIn
 // ""
 // record SimulationResult
 //     resultFile = "Test3PhaseSystemsDummyInit_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test3PhaseSystemsDummyInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test3PhaseSystemsDummyInit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -4,6 +4,7 @@ TESTFILES = \
 inlineArray2.mos \
 inlineArray3.mos \
 inlineArrayRecord.mos \
+inlineAttributes15947.mos \
 inlineFunction1.mos \
 inlineFunction2.mos \
 inlineFunction3.mos \
@@ -15,6 +16,7 @@ inlineFunction8.mos \
 inlineFunction9.mos \
 inlineFunction10.mos \
 inlineFunction11.mos \
+inlineScalarProductSlice.mos \
 forceComplexEq.mos \
 forceComplexEq2.mos \
 forceComplexEq3.mos \
@@ -70,4 +72,4 @@ failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
-	@$(TEST) $(FAILINGTESTFILES)
+	@$(TEST) -disabled $(FAILINGTESTFILES)

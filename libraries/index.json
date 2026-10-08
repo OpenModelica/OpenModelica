@@ -2,52 +2,67 @@
   "libs": {
     "BioChem": {
       "versions": {
-        "1.0.1+msl.3.2.1": {
+        "1.1.3": {
           "path": "BioChem",
-          "support": "obsolete",
+          "sha": "b8040a8b211e2195fe483e5c707eca68c1e82a52",
+          "support": "experimental",
           "uses": {
-            "Modelica": "3.2.1"
+            "Modelica": "4.1.0"
           },
-          "version": "1.0.1+msl.3.2.1",
-          "zipfile": "https://github.com/OpenModelica/BioChem/archive/b5f3cb999f3cfad2bbb6fb429b496f61ecf2f628.zip"
+          "version": "1.1.3",
+          "zipfile": "https://github.com/OpenModelica/BioChem/archive/b8040a8b211e2195fe483e5c707eca68c1e82a52.zip"
+        }
+      }
+    },
+    "Buildings": {
+      "versions": {
+        "12.1.2-maint.12.x": {
+          "convertFromVersion": [
+            "8.0.0",
+            "8.1.0",
+            "8.1.1",
+            "8.1.2",
+            "8.1.3",
+            "9.0.0",
+            "9.1.0",
+            "9.1.1",
+            "9.1.2",
+            "10.0.0",
+            "10.1.0",
+            "10.1.1",
+            "11.0.0",
+            "11.1.0",
+            "11.1.1"
+          ],
+          "path": "Buildings",
+          "provides": [
+            "12.0.0",
+            "12.1.0",
+            "12.1.1"
+          ],
+          "sha": "4e96182ec2ce24ea97d8d5b345603ad26760fe60",
+          "support": "noSupport",
+          "uses": {
+            "Modelica": "4.1.0"
+          },
+          "version": "12.1.2-maint.12.x",
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "d1913c515d36b40c932f1b7ef12d2e1ca1a4faae24315b21b1e17ff829f940e0",
+              "systemLibraries": [
+                "cpython",
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/Buildings-wasm32-wasip1-45b9486ad7d43fc5.zip"
+            }
+          },
+          "zipfile": "https://github.com/lbl-srg/modelica-buildings/archive/4e96182ec2ce24ea97d8d5b345603ad26760fe60.zip"
         }
       }
     },
     "Complex": {
       "versions": {
-        "3.2.1+maint.om": {
-          "path": "Complex.mo",
-          "provides": [
-            "1.0.0",
-            "1.1.0"
-          ],
-          "support": "obsolete",
-          "version": "3.2.1+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
-        },
-        "3.2.2+maint.om": {
-          "path": "Complex.mo",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "3.2.1"
-          ],
-          "support": "obsolete",
-          "version": "3.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9578058eff7a3a3d953a37d190a9bafa4e77092e.zip"
-        },
-        "3.2.3+maint.om": {
-          "path": "Complex.mo",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "support": "fullSupport",
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/efd981a1176f124938d6d6759f7c09e0fbf55ddf.zip"
-        },
         "4.0.0+maint.om": {
           "path": "Complex.mo",
           "provides": [
@@ -57,10 +72,10 @@
             "3.2.2",
             "3.2.3"
           ],
-          "sha": "96032134c36668898e1693e69bd9f81aa38de3dd",
+          "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
           "support": "fullSupport",
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/96032134c36668898e1693e69bd9f81aa38de3dd.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/f4e20ae4542f70ceab8f2e219d0cf59d09184900.zip"
         },
         "4.1.0+maint.om": {
           "path": "Complex.mo",
@@ -72,117 +87,15 @@
             "3.2.3",
             "4.0.0"
           ],
+          "sha": "e3095be300164486fbc710111d6c291026211d28",
           "support": "fullSupport",
           "version": "4.1.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e3095be300164486fbc710111d6c291026211d28.zip"
         }
       }
     },
     "Modelica": {
       "versions": {
-        "2.2.2+maint.om": {
-          "convertFromVersion": [
-            "1.6.0",
-            "2.1.0-Beta1"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1"
-          ],
-          "support": "obsolete",
-          "version": "2.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/8b7bcac13161a52955ac5a5a92b77b705f8e19f2.zip"
-        },
-        "3.1.0+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1"
-          ],
-          "support": "obsolete",
-          "uses": {
-            "ModelicaServices": "1.0.0"
-          },
-          "version": "3.1.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/c1feaafc23b4a122d20966109d76efd4f8853c58.zip"
-        },
-        "3.2.1+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.2.0"
-          ],
-          "support": "obsolete",
-          "uses": {
-            "Complex": "3.2.1",
-            "ModelicaServices": "3.2.1"
-          },
-          "version": "3.2.1+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
-        },
-        "3.2.2+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.2.0",
-            "3.2.1"
-          ],
-          "support": "obsolete",
-          "uses": {
-            "Complex": "3.2.2",
-            "ModelicaServices": "3.2.2"
-          },
-          "version": "3.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9578058eff7a3a3d953a37d190a9bafa4e77092e.zip"
-        },
-        "3.2.3+maint.om": {
-          "convertFromVersion": [
-            "2.1.0",
-            "2.2.0",
-            "2.2.1",
-            "2.2.2"
-          ],
-          "path": "Modelica",
-          "provides": [
-            "3.0.0",
-            "3.0.1",
-            "3.1.0",
-            "3.2.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "support": "fullSupport",
-          "uses": {
-            "Complex": "3.2.3",
-            "ModelicaServices": "3.2.3"
-          },
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/efd981a1176f124938d6d6759f7c09e0fbf55ddf.zip"
-        },
         "4.0.0+maint.om": {
           "convertFromVersion": [
             "3.0.0",
@@ -194,14 +107,24 @@
             "3.2.3"
           ],
           "path": "Modelica",
-          "sha": "96032134c36668898e1693e69bd9f81aa38de3dd",
+          "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
           "support": "fullSupport",
           "uses": {
             "Complex": "4.0.0",
             "ModelicaServices": "4.0.0"
           },
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/96032134c36668898e1693e69bd9f81aa38de3dd.zip"
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "6fceccb4d64ec8c3ef9e451385122db9ba3db179c43d06c00a03a8e911bbbd81",
+              "systemLibraries": [
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/Modelica-wasm32-wasip1-6b885dd98de5b882.zip"
+            }
+          },
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/f4e20ae4542f70ceab8f2e219d0cf59d09184900.zip"
         },
         "4.1.0+maint.om": {
           "convertFromVersion": [
@@ -217,13 +140,24 @@
           "provides": [
             "4.0.0"
           ],
+          "sha": "e3095be300164486fbc710111d6c291026211d28",
           "support": "fullSupport",
           "uses": {
             "Complex": "4.1.0",
             "ModelicaServices": "4.1.0"
           },
           "version": "4.1.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "6fceccb4d64ec8c3ef9e451385122db9ba3db179c43d06c00a03a8e911bbbd81",
+              "systemLibraries": [
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/Modelica-wasm32-wasip1-6b885dd98de5b882.zip"
+            }
+          },
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e3095be300164486fbc710111d6c291026211d28.zip"
         }
       }
     },
@@ -234,63 +168,40 @@
           "sha": "9734eb101c1adf3bc59ee2ec999e53fffbc13f4b",
           "support": "support",
           "version": "3.2.0-master",
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "b0450dfdfb2d53479b1cfe46ef753d8e5c8111d3ce6b0f9f0b1167945f54cb5d",
+              "systemLibraries": [
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/ModelicaCompliance-wasm32-wasip1-1f117d58a615b5f4.zip"
+            }
+          },
           "zipfile": "https://github.com/modelica/Modelica-Compliance/archive/9734eb101c1adf3bc59ee2ec999e53fffbc13f4b.zip"
+        }
+      }
+    },
+    "ModelicaReference": {
+      "versions": {
+        "4.0.0+maint.om": {
+          "path": "ModelicaReference",
+          "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
+          "support": "fullSupport",
+          "version": "4.0.0+maint.om",
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/f4e20ae4542f70ceab8f2e219d0cf59d09184900.zip"
+        },
+        "4.1.0+maint.om": {
+          "path": "ModelicaReference",
+          "sha": "e3095be300164486fbc710111d6c291026211d28",
+          "support": "fullSupport",
+          "version": "4.1.0+maint.om",
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e3095be300164486fbc710111d6c291026211d28.zip"
         }
       }
     },
     "ModelicaServices": {
       "versions": {
-        "1.0.0": {
-          "path": "ModelicaServices",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.1.0"
-          },
-          "version": "1.0.0",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/c1feaafc23b4a122d20966109d76efd4f8853c58.zip"
-        },
-        "3.2.1+maint.om": {
-          "convertFromVersion": [
-            "1.0.0",
-            "1.1.0",
-            "1.2.0"
-          ],
-          "path": "ModelicaServices",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "3.2.1+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/06af0578789283267a4089fffd8f2fb302e0405a.zip"
-        },
-        "3.2.2+maint.om": {
-          "convertFromVersion": [
-            "1.0.0",
-            "1.1.0",
-            "1.2.0",
-            "3.2.1"
-          ],
-          "path": "ModelicaServices",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.2"
-          },
-          "version": "3.2.2+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/9578058eff7a3a3d953a37d190a9bafa4e77092e.zip"
-        },
-        "3.2.3+maint.om": {
-          "path": "ModelicaServices",
-          "provides": [
-            "1.0.0",
-            "1.1.0",
-            "1.2.0",
-            "3.2.1",
-            "3.2.2"
-          ],
-          "support": "fullSupport",
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/efd981a1176f124938d6d6759f7c09e0fbf55ddf.zip"
-        },
         "4.0.0+maint.om": {
           "path": "ModelicaServices",
           "provides": [
@@ -301,9 +212,10 @@
             "3.2.2",
             "3.2.3"
           ],
+          "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
           "support": "fullSupport",
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/96032134c36668898e1693e69bd9f81aa38de3dd.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/f4e20ae4542f70ceab8f2e219d0cf59d09184900.zip"
         },
         "4.1.0+maint.om": {
           "path": "ModelicaServices",
@@ -316,69 +228,113 @@
             "3.2.3",
             "4.0.0"
           ],
+          "sha": "e3095be300164486fbc710111d6c291026211d28",
           "support": "fullSupport",
           "version": "4.1.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e3095be300164486fbc710111d6c291026211d28.zip"
         }
       }
     },
     "ModelicaTest": {
       "versions": {
-        "3.2.3+maint.om": {
-          "path": "ModelicaTest",
-          "support": "fullSupport",
-          "uses": {
-            "Modelica": "3.2.3"
-          },
-          "version": "3.2.3+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/efd981a1176f124938d6d6759f7c09e0fbf55ddf.zip"
-        },
         "4.0.0+maint.om": {
           "path": "ModelicaTest",
-          "sha": "96032134c36668898e1693e69bd9f81aa38de3dd",
+          "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
           "support": "fullSupport",
           "uses": {
             "Modelica": "4.0.0"
           },
           "version": "4.0.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/96032134c36668898e1693e69bd9f81aa38de3dd.zip"
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "e72065a0d170122638fec1b2e66e26d6f8bfd5462caa309b8059fd828afe3736",
+              "systemLibraries": [
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/ModelicaTest-wasm32-wasip1-38caebb3890fd449.zip"
+            }
+          },
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/f4e20ae4542f70ceab8f2e219d0cf59d09184900.zip"
         },
         "4.1.0+maint.om": {
           "path": "ModelicaTest",
+          "sha": "e3095be300164486fbc710111d6c291026211d28",
           "support": "fullSupport",
           "uses": {
             "Modelica": "4.1.0"
           },
           "version": "4.1.0+maint.om",
-          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/7a4bf7de77a3986e8eb1e88cbb515d646f78f834.zip"
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "e72065a0d170122638fec1b2e66e26d6f8bfd5462caa309b8059fd828afe3736",
+              "systemLibraries": [
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/ModelicaTest-wasm32-wasip1-38caebb3890fd449.zip"
+            }
+          },
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e3095be300164486fbc710111d6c291026211d28.zip"
         }
       }
     },
     "Modelica_DeviceDrivers": {
       "versions": {
-        "1.8.2": {
+        "2.2.0": {
           "path": "Modelica_DeviceDrivers",
+          "provides": [
+            "1.6.0",
+            "1.7.0",
+            "1.7.1",
+            "1.8.0",
+            "1.8.1",
+            "1.8.2",
+            "2.0.0",
+            "2.1.0",
+            "2.1.1"
+          ],
+          "sha": "e18a8e9cbb4a7155df11f0590981f9b5cfcc89bc",
           "support": "support",
           "uses": {
-            "Modelica": "3.2.3",
-            "Modelica_Synchronous": "0.92.2"
+            "Modelica": "4.1.0"
           },
-          "version": "1.8.2",
-          "zipfile": "https://github.com/modelica-3rdparty/Modelica_DeviceDrivers/archive/61247667adad45a1b769bfa0cd5011e33eafa513.zip"
+          "version": "2.2.0",
+          "wasm": {
+            "2": {
+              "generation": 1,
+              "sha256": "b84257593f147ad974ec90d8a4c44a7b4b7a5cd243bb7d1e3607745a4cb5914f",
+              "systemLibraries": [
+                "libc"
+              ],
+              "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/Modelica_DeviceDrivers-wasm32-wasip1-9c3f781419bf3c2e.zip"
+            }
+          },
+          "zipfile": "https://github.com/modelica-3rdparty/Modelica_DeviceDrivers/archive/e18a8e9cbb4a7155df11f0590981f9b5cfcc89bc.zip"
         }
       }
     },
-    "Modelica_Synchronous": {
+    "ObsoleteModelica4": {
       "versions": {
-        "0.92.2": {
-          "path": "Modelica_Synchronous",
-          "support": "obsolete",
+        "4.0.0+maint.om": {
+          "path": "ObsoleteModelica4.mo",
+          "sha": "f4e20ae4542f70ceab8f2e219d0cf59d09184900",
+          "support": "fullSupport",
           "uses": {
-            "Modelica": "3.2.3",
-            "ModelicaServices": "3.2.3"
+            "Modelica": "4.0.0"
           },
-          "version": "0.92.2",
-          "zipfile": "https://github.com/modelica/Modelica_Synchronous/archive/477faa09dcd89b98a8728dbdb2c2efc46ec1a4a8.zip"
+          "version": "4.0.0+maint.om",
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/f4e20ae4542f70ceab8f2e219d0cf59d09184900.zip"
+        },
+        "4.1.0+maint.om": {
+          "path": "ObsoleteModelica4.mo",
+          "sha": "e3095be300164486fbc710111d6c291026211d28",
+          "support": "fullSupport",
+          "uses": {
+            "Modelica": "4.1.0"
+          },
+          "version": "4.1.0+maint.om",
+          "zipfile": "https://github.com/OpenModelica/OpenModelica-ModelicaStandardLibrary/archive/e3095be300164486fbc710111d6c291026211d28.zip"
         }
       }
     },
@@ -386,6 +342,7 @@
       "versions": {
         "2.2.0": {
           "path": "ScalableTestSuite",
+          "sha": "e6dcfb489b7e2d07198d93f00858459aa0611267",
           "support": "fullSupport",
           "uses": {
             "Modelica": "4.0.0"
@@ -395,100 +352,98 @@
         }
       }
     },
-    "SiemensPower": {
-      "versions": {
-        "2.1.0-beta": {
-          "convertFromVersion": [
-            "1.8.0",
-            "2.0.0"
-          ],
-          "path": "SiemensPower 2.1 beta",
-          "support": "noSupport",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "2.1.0-beta",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-2.1-beta.zip"
-        },
-        "2.2.0": {
-          "convertFromVersion": [
-            "1.8.0",
-            "2.0.0",
-            "2.1.0"
-          ],
-          "path": "SiemensPower 2.2",
-          "support": "experimental",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "2.2.0",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-2.2.zip"
-        },
-        "OMCtest": {
-          "path": "SiemensPower OMCtest",
-          "support": "noSupport",
-          "uses": {
-            "Modelica": "3.1.0"
-          },
-          "version": "OMCtest",
-          "zipfile": "https://build.openmodelica.org/libraries/SiemensPower/SiemensPower-OMCtest.20150519.zip"
-        }
-      }
-    },
     "ThermoPower": {
       "versions": {
-        "3.1.0-master": {
-          "path": "ThermoPower",
+        "4.0.0-dev": {
+          "path": "ThermoPower 4.0.0",
+          "sha": "9be3aaf4181c55d99af9c3311e1a4f62a1e2d5ac",
           "support": "experimental",
           "uses": {
-            "Modelica": "3.2.3"
+            "Modelica": "4.0.0"
           },
-          "version": "3.1.0-master",
-          "zipfile": "https://github.com/casella/ThermoPower/archive/e2b011ac7fd90f9cf5771f29f1aefa160550b6ee.zip"
+          "version": "4.0.0-dev",
+          "zipfile": "https://github.com/casella/ThermoPower/archive/9be3aaf4181c55d99af9c3311e1a4f62a1e2d5ac.zip"
         }
       }
     },
     "ThermoSysPro": {
       "versions": {
-        "3.2.0": {
+        "4.2.0": {
           "path": "ThermoSysPro",
-          "provides": [
-            "0.0.0",
-            "4.0.0"
-          ],
+          "sha": "a896ab75ce22162369e7fa4ce79927eeca44ad4a",
           "support": "experimental",
-          "uses": {
-            "Modelica": "3.2.2"
-          },
-          "version": "3.2.0",
-          "zipfile": "https://gitlab.pam-retd.fr/thermosysproandco/ThermoSysPro/-/archive/ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501/ThermoSysPro-ed6f23975beef34bf7bd2e7a3cd4f91cc8e14501.zip"
-        },
-        "4.0.0": {
-          "path": "ThermoSysPro",
-          "support": "experimental",
-          "version": "4.0.0",
-          "zipfile": "https://gitlab.pam-retd.fr/thermosysproandco/ThermoSysPro/-/archive/dfe1168ad22d0364dfd2b129b2931efb5ab4dcf5/ThermoSysPro-dfe1168ad22d0364dfd2b129b2931efb5ab4dcf5.zip"
-        }
-      }
-    },
-    "WasteWater": {
-      "versions": {
-        "2.1.0": {
-          "convertFromVersion": [
-            "2.0.1"
-          ],
-          "path": "WasteWater 2.1.0",
-          "support": "obsolete",
-          "uses": {
-            "Modelica": "3.2.1"
-          },
-          "version": "2.1.0",
-          "zipfile": "https://github.com/modelica-3rdparty/WasteWater/archive/b177accad1843da8d257cfa2aee510d7e45105ce.zip"
+          "version": "4.2.0",
+          "zipfile": "https://gitlab.pam-retd.fr/thermosysproandco/ThermoSysPro/-/archive/a896ab75ce22162369e7fa4ce79927eeca44ad4a/ThermoSysPro-a896ab75ce22162369e7fa4ce79927eeca44ad4a.zip"
         }
       }
     }
   },
   "mirrors": [
     "https://libraries.openmodelica.org/cache/"
-  ]
+  ],
+  "systemLibraries": {
+    "ExternalMediaLib": {
+      "wasm": {
+        "2": {
+          "sha256": "7213d22c49fca55696444b789770789fd6777abaf9ea408e27b4598f0055affa",
+          "version": "4.1.1",
+          "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/system/ExternalMediaLib-4.1.1-wasm32-wasip1-7213d22c49fca556.zip"
+        }
+      }
+    },
+    "ModelicaSDF": {
+      "wasm": {
+        "2": {
+          "sha256": "6daedf2545330903033e4ca8e804ee0390667b5aa33b463f45a8e854839872a6",
+          "version": "0.4.5",
+          "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/system/ModelicaSDF-0.4.5-wasm32-wasip1-6daedf2545330903.zip"
+        }
+      }
+    },
+    "cpython": {
+      "wasm": {
+        "2": {
+          "sha256": "6356d868ea2a42939111e1f8447aabaa5002fab1ff7b060d89f0aacbbffb4571",
+          "version": "3.14.4",
+          "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/system/cpython-3.14.4-wasm32-wasip1-6356d868ea2a4293.zip"
+        }
+      }
+    },
+    "libc": {
+      "wasm": {
+        "2": {
+          "sha256": "4601b87432c14ab6fb182de5410479c1d7c3ccc5c375d23aa13d40ce93f1bdf1",
+          "version": "wasi-sdk-32",
+          "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/system/libc-wasi-sdk-32-wasm32-wasip1-4601b87432c14ab6.zip"
+        }
+      }
+    },
+    "libcxx": {
+      "wasm": {
+        "2": {
+          "sha256": "5700ee4224062652e589650dd9a59de9c168776df1c0f8562b978f8f87953ac0",
+          "version": "21.1.8",
+          "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/system/libcxx-21.1.8-wasm32-wasip1-5700ee4224062652.zip"
+        }
+      }
+    },
+    "netcdf": {
+      "wasm": {
+        "2": {
+          "sha256": "59ef2644d4c2db944ce46e2fd3d8e537a4cf3cf6f655c8fbd20188b8551bb27c",
+          "version": "4.9.3",
+          "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/system/netcdf-4.9.3-wasm32-wasip1-59ef2644d4c2db94.zip"
+        }
+      }
+    }
+  },
+  "wasmToolchain": {
+    "cxx": {
+      "sha256": "51dfcc299872ce0e09ebca2e667a7de720e2bd61ea9489be6167e548420990a7",
+      "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/toolchain/sysroot-cxx-wasm32-wasip1-51dfcc299872ce0e.zip"
+    },
+    "generation": 1,
+    "sha256": "8fc4518ac5caeb958f02dfb74466121e392e0c33bec3d873372800223dceddb6",
+    "zipfile": "https://libraries.openmodelica.org/precompiled/wasm32-wasip1/omc-1/toolchain/sysroot-wasm32-wasip1-8fc4518ac5caeb95.zip"
+  }
 }

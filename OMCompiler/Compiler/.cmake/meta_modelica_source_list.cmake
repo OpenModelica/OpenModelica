@@ -116,20 +116,20 @@ set(OMC_MM_ALWAYS_SOURCES
 
 # Only files needed for compiling MetaModelica
 # "Template";
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.mo
+    ${OMC_GENERATED_MO_DIR}/Template/AbsynDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCFunctions.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/DAEDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/ExpressionDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenUtil.mo
+    ${OMC_GENERATED_MO_DIR}/Template/DAEDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/ExpressionDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/GenerateAPIFunctionsTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/SCodeDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplAbsyn.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.mo
+    ${OMC_GENERATED_MO_DIR}/susan_codegen/TplCodegen.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/Tpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplParser.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/Unparsing.mo
+    ${OMC_GENERATED_MO_DIR}/Template/Unparsing.mo
 
   # Only files needed for compiling MetaModelica
   # "Global";
@@ -153,7 +153,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/BaseHashSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ClockIndexes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Config.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Corba.mo
     #${CMAKE_CURRENT_SOURCE_DIR}/Util/Database.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Debug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DoubleEnded.mo
@@ -187,6 +186,8 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Lapack.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/List.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Mutable.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/MutableWeak.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/PointerWeak.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Pointer.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Print.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SemanticVersion.mo
@@ -340,6 +341,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCeval.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassDiagram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClockKind.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
@@ -352,6 +354,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDefUseChains.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDimension.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEquation.mo
@@ -372,6 +375,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInline.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstanceAPI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstNode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookup.mo
@@ -385,6 +389,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPrefixes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRangeIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRecord.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFResizableConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRestriction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFScalarize.mo
@@ -400,6 +405,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFTyping.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnitCheck.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUsedElements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVariable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVerifyModel.mo
@@ -435,6 +441,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/TotalModelDebug.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/ReverseLookup.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
@@ -443,42 +450,37 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeCodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynJLDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenEmbeddedC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommon.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcom.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcomOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppInit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU3.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSI_common.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSIC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSIC_Equations.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSICpp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo
+    ${OMC_GENERATED_MO_DIR}/Template/AbsynToJulia.mo
+    ${OMC_GENERATED_MO_DIR}/Template/AbsynJLDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenEmbeddedC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenESP32.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCpp.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcom.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppInit.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU1.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU2.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU3.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcom.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenJS.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenMidToC.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenUtilSimulation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJitFunctions.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphMLDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/NFInstDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/CodegenXML.mo
+    ${OMC_GENERATED_MO_DIR}/Template/GraphvizDump.mo
+    ${OMC_GENERATED_MO_DIR}/Template/GraphMLDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/NFInstDumpTpl.mo
+    ${OMC_GENERATED_MO_DIR}/Template/SimCodeDump.mo
+    ${OMC_GENERATED_MO_DIR}/Template/VisualXMLTpl.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Autoconf.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTree.mo
@@ -487,6 +489,7 @@ set(OMC_MM_BACKEND_SOURCES
 
     # ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Curl.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ContainerImage.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExpandableArray.mo
@@ -501,6 +504,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSM1.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMGraphics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulatorExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Rational.mo

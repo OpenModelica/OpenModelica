@@ -43,7 +43,7 @@ encapsulated package NSimCodeUtil
 import ComponentRef = NFComponentRef;
 
 // SimCode imports
-import NSimVar.{SimVar, SimVars, ExtObjInfo};
+import NSimVar.{SimVar, SimVars, ExtObjInfo, ConvertMemo};
 
 // Old SimCode imports
 import HashTableCrefSimVar;
@@ -104,12 +104,13 @@ public
 
   function convertSimCodeMap
     input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    input ConvertMemo memo;
     output HashTableCrefSimVar.HashTable old_ht;
-  protected
-    list<SimVar> vars = UnorderedMap.valueList(simcode_map);
   algorithm
     old_ht := HashTableCrefSimVar.emptyHashTableSized(UnorderedMap.size(simcode_map));
-    old_ht := List.fold(SimVar.convertList(vars), HashTableCrefSimVar.addSimVarToHashTable, old_ht);
+    for var in UnorderedMap.valueList(simcode_map) loop
+      old_ht := HashTableCrefSimVar.addSimVarToHashTable(SimVar.convertMemoized(var, memo), old_ht);
+    end for;
   end convertSimCodeMap;
 
 annotation(__OpenModelica_Interface="nbackend");

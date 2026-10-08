@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f SolveLinearSystem_*
 // cflags: -d=-newInst
+// suite: disabled
 
 solveLinearSystem({{2,0.5},{2,-0.5}},{14.0,30.0});getErrorString();
 solveLinearSystem({{2,0.5},{2,0.5}},{14.0,30.0});getErrorString();

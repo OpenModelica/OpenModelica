@@ -59,11 +59,102 @@ public function valString "This function returns a textual representation of a v
 protected
   Integer handle;
 algorithm
+  if Flags.getConfigEnum(Flags.INTERACTIVE_DUMP_FORMAT) == Flags.IDUMP_JSON then
+    outString := valStringJSON(inValue);
+    return;
+  end if;
   handle := Print.saveAndClearBuf();
   valString2(inValue);
   outString := Print.getString();
   Print.restoreBuf(handle);
 end valString;
+
+public function valStringJSON "A JSON representation of a value, for programmatic consumers."
+  input Values.Value inValue;
+  output String outString;
+protected
+  Integer handle;
+algorithm
+  handle := Print.saveAndClearBuf();
+  valJSON(inValue);
+  outString := Print.getString();
+  Print.restoreBuf(handle);
+end valStringJSON;
+
+protected function valJSON
+  input Values.Value inValue;
+algorithm
+  () := match inValue
+    local
+      String s;
+      Integer n;
+      Real x;
+      list<Values.Value> xs;
+      list<String> ids;
+      Values.Value v;
+      Absyn.Path p;
+    case Values.INTEGER(integer = n) algorithm Print.printBuf(intString(n)); then ();
+    case Values.REAL(real = x) algorithm Print.printBuf(realString(x)); then ();
+    case Values.BOOL(boolean = true) algorithm Print.printBuf("true"); then ();
+    case Values.BOOL(boolean = false) algorithm Print.printBuf("false"); then ();
+    case Values.STRING(string = s) algorithm printJSONString(s); then ();
+    case Values.ENUM_LITERAL(name = p) algorithm printJSONString(AbsynUtil.pathString(p)); then ();
+    case Values.ARRAY(valueLst = xs) algorithm valJSONArray(xs); then ();
+    case Values.LIST(valueLst = xs) algorithm valJSONArray(xs); then ();
+    case Values.META_ARRAY(valueLst = xs) algorithm valJSONArray(xs); then ();
+    case Values.TUPLE(valueLst = xs) algorithm valJSONArray(xs); then ();
+    case Values.META_TUPLE(valueLst = xs) algorithm valJSONArray(xs); then ();
+    case Values.OPTION(some = SOME(v)) algorithm valJSON(v); then ();
+    case Values.OPTION(some = NONE()) algorithm Print.printBuf("null"); then ();
+    case Values.RECORD(orderd = xs, comp = ids) algorithm valJSONRecord(xs, ids); then ();
+    else algorithm Print.printBuf("null"); then ();
+  end match;
+end valJSON;
+
+protected function valJSONArray
+  input list<Values.Value> values;
+protected
+  Boolean first = true;
+algorithm
+  Print.printBuf("[");
+  for v in values loop
+    if not first then Print.printBuf(","); end if;
+    first := false;
+    valJSON(v);
+  end for;
+  Print.printBuf("]");
+end valJSONArray;
+
+protected function valJSONRecord
+  input list<Values.Value> values;
+  input list<String> names;
+protected
+  Boolean first = true;
+  list<String> rest = names;
+  String nm;
+algorithm
+  Print.printBuf("{");
+  for v in values loop
+    nm :: rest := rest;
+    if not first then Print.printBuf(","); end if;
+    first := false;
+    printJSONString(nm);
+    Print.printBuf(":");
+    valJSON(v);
+  end for;
+  Print.printBuf("}");
+end valJSONRecord;
+
+protected function printJSONString
+  "Print a JSON string literal (quoted, escaped) straight to the buffer. escapedString
+   (as JSON.toString uses it) escapes the quote, backslash and \\r\\n, but leaves tab
+   literal — invalid in a JSON string — so escape that too."
+  input String s;
+algorithm
+  Print.printBuf("\"");
+  Print.printBuf(System.stringReplace(System.escapedString(s, true), "\t", "\\t"));
+  Print.printBuf("\"");
+end printJSONString;
 
 public function valString2 "This function returns a textual representation of a value.
   Uses an external buffer to store intermediate results."

@@ -1,0 +1,42 @@
+// status: correct
+// cflags: -d=-newInst
+// Saving an edit made inside a nested class re-loads that class with its own name as
+// the file name. The class must not be relocated to that file, otherwise listFile on
+// the enclosing class silently drops it and the next round trip through loadString
+// deletes it for good.
+
+loadString("model Test
+  model NestedObj
+    Real x;
+  end NestedObj;
+
+  NestedObj nestedObj;
+end Test;", "Test");
+getErrorString();
+
+loadString("within Test;
+
+model NestedObj
+  Real x = 2;
+end NestedObj;", "Test.NestedObj");
+getErrorString();
+
+getSourceFile(Test);
+getSourceFile(Test.NestedObj);
+listFile(Test, true);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Test"
+// "Test"
+// "model Test
+//   model NestedObj
+//     Real x = 2;
+//   end NestedObj;
+//
+//   NestedObj nestedObj;
+// end Test;"
+// endResult

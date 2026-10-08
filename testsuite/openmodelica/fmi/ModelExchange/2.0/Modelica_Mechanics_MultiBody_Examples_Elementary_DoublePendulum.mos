@@ -1,7 +1,7 @@
 // name:     DoublePendulum
 // keywords: DoublePendulum FMI-Export FMI-Import
 // status: correct
-// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.* Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_* binaries sources modelDescription.xml DoublePendulum.fmu DoublePendulum_me_FMU.mo DoublePendulum.lib* DoublePendulum.so DoublePendulum.dll DoublePendulum_*.c DoublePendulum_*.h DoublePendulum_*.o DoublePendulum_*.json
+// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.* Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_* binaries sources modelDescription.xml DoublePendulum.fmu DoublePendulum_me_FMU.mo DoublePendulum.lib* DoublePendulum.so DoublePendulum.dll DoublePendulum_*.c DoublePendulum_*.h DoublePendulum_*.o DoublePendulum_*.json documentation resources DoublePendulum.log DoublePendulum_*.bin
 // cflags: -d=-newInst
 // Simulation Results
 // Modelica Standard Library
@@ -53,15 +53,17 @@ val(revolute2_phi, 3);
 // end SimulationResult;
 // ""
 // 0.0
-// -2.915613964905178
-// -0.036080235981619156
-// -2.317956412885281
+// -2.915613964905049
+// -0.036080235981770306
+// -2.317956412874101
 // 0.0
-// -0.5151898042458495
-// -0.9038989636681983
-// -1.7364060344181733
+// -0.5151898042456662
+// -0.9038989636687181
+// -1.7364060343943821
 // "DoublePendulum.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // "DoublePendulum_me_FMU.mo"
 // ""
 // true
@@ -78,11 +80,11 @@ val(revolute2_phi, 3);
 // end SimulationResult;
 // ""
 // 0.0
-// -2.9156139651967043
-// -0.036080235744109804
-// -2.317956412875898
+// -2.9156139651893698
+// -0.03608023577317662
+// -2.317956411909529
 // 0.0
-// -0.5151898035258814
-// -0.9038989635359058
-// -1.7364060327747979
+// -0.5151898035374123
+// -0.9038989633668075
+// -1.7364060289193992
 // endResult

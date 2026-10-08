@@ -1,0 +1,34 @@
+// name: stringArrayLiteralTest
+// keywords: string array literal
+// status: correct
+// teardown_command: rm -rf OMCppStringArrayLiteral* StringArrayLiteral*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model StringArrayLiteral
+  function f
+    input String s[:];
+    input Real t;
+    output Real y;
+  algorithm
+    y := t;
+    if s[1] == \"water\" then y := y + 1; end if;
+    if s[2] == \"air\" then y := y + 10; end if;
+    annotation(Inline=false);
+  end f;
+  Real y = f({\"water\", \"air\"}, time);
+end StringArrayLiteral;
+");
+getErrorString();
+
+translateModel(StringArrayLiteral);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// endResult

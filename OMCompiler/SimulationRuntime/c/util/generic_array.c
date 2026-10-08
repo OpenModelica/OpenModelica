@@ -91,16 +91,15 @@ static size_t check_copy_sanity(const base_array_t* src, base_array_t* dst, size
 
     // Shape not equal and destination is not flexible array.
     generic_array_dimsizes_eq(src, dst, 1 /*print error*/); // Just to print more info.
-    throwStreamPrint(NULL, "Failed to copy array. Dimension sizes are not equal and destination array is not flexible.");
-    // omc_assert_macro(0 && "Failed to copy array. Dimension sizes are not equal and destination array is not flexible.");
-
-    return -1;
+    raiseStreamPrint(NULL, "Failed to copy array. Dimension sizes are not equal and destination array is not flexible.");
+    return 0;
 }
 
 void generic_array_create_flexible(base_array_t* dst, int ndims)
 {
     dst->ndims = ndims;
     dst->dim_size = size_alloc(ndims);
+    dst->owns_data = 1;
 
     dst->flexible = 1;
 
@@ -205,6 +204,15 @@ void generic_array_copy_data(const base_array_t src_cp, base_array_t* dst, copy_
     }
 }
 
+void simple_array_copy_to(const base_array_t src, void* dst, size_t n, size_t sze)
+{
+    if (base_array_nr_of_elements(src) != n) {
+        raiseStreamPrint(NULL, "Failed to copy array. Dimension sizes are not equal.");
+        return;
+    }
+    memmove(dst, src.data, n*sze);
+}
+
 void simple_array_copy_data(const base_array_t src_cp, base_array_t* dst, size_t sze)
 {
     const base_array_t* src = &src_cp;
@@ -222,19 +230,6 @@ void* generic_array_get(const base_array_t* src, size_t sze, ...) {
   void* trgt = generic_ptrget(src, calc_base_index_va(src, src->ndims, ap), sze);
   va_end(ap);
   return trgt;
-}
-
-void* generic_array_get1(const base_array_t* src, size_t sze, int sub1) {
-    omc_assert_macro(sub1 > 0 && sub1 <= src->dim_size[0]);
-
-    return generic_ptrget(src, sub1 - 1, sze);
-}
-
-void* generic_array_get2(const base_array_t* src, size_t sze, int sub1, int sub2) {
-    omc_assert_macro(sub1 > 0 && sub1 <= src->dim_size[0]);
-    omc_assert_macro(sub2 > 0 && sub2 <= src->dim_size[1]);
-
-    return generic_ptrget(src, ((sub1 - 1) * src->dim_size[1]) + (sub2 - 1), sze);
 }
 
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...) {

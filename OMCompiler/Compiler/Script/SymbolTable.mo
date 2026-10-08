@@ -58,8 +58,13 @@ import Inst;
 import Lookup;
 import List;
 import AbsynToSCode;
+import BackendInterface;
+import Config;
+import MetaUtil;
 import System;
 import SCodeUtil;
+import UnorderedMap;
+import Util;
 protected import ComponentReferenceBasics;
 
 public
@@ -70,6 +75,15 @@ record SYMBOLTABLE
   list<InteractiveTypes.Variable> vars "List of variables with values" ;
   Vector<Absyn.Program> cachedAsts;
   Integer cacheIndex;
+  tuple<Boolean,Boolean,Boolean,Boolean> connectorFlags
+    "has inner/outer, expandable, overconstrained and stream connectors; a side
+     effect of translating explodedAst that the old frontend reads later. Stored
+     here so getSCode can re-assert it on a cache hit, since an intervening
+     translation or NFInst.resetGlobalFlags may have cleared the global flags.";
+  Option<tuple<Absyn.Program, SCode.Program, tuple<Boolean,Boolean,Boolean,Boolean>>> scodeBase
+    "the last translated program, its SCode and connector flags, set while
+     explodedAst is invalid; getSCode only translates the top-level classes
+     that changed since then";
 end SYMBOLTABLE;
 
 constant Integer AST_CACHE_MAX_SIZE = 1000;
@@ -82,10 +96,33 @@ algorithm
                  explodedAst=NONE(),
                  vars={},
                  cachedAsts=Vector.new<Program>(),
-                 cacheIndex=0
+                 cacheIndex=0,
+                 connectorFlags=(false,false,false,false),
+                 scodeBase=NONE()
                  ));
   updateUriMapping({});
 end reset;
+
+function currentConnectorFlags
+  "Reads the global connector flags set as a side effect of translating SCode."
+  output tuple<Boolean,Boolean,Boolean,Boolean> flags;
+algorithm
+  flags := (System.getHasInnerOuterDefinitions(), System.getHasExpandableConnectors(),
+            System.getHasOverconstrainedConnectors(), System.getHasStreamConnectors());
+end currentConnectorFlags;
+
+function applyConnectorFlags
+  "Restores the global connector flags to match the cached SCode."
+  input tuple<Boolean,Boolean,Boolean,Boolean> flags;
+protected
+  Boolean io, ec, oc, sc;
+algorithm
+  (io, ec, oc, sc) := flags;
+  System.setHasInnerOuterDefinitions(io);
+  System.setHasExpandableConnectors(ec);
+  System.setHasOverconstrainedConnectors(oc);
+  System.setHasStreamConnectors(sc);
+end applyConnectorFlags;
 
 function update
   input SymbolTable table;
@@ -117,11 +154,12 @@ algorithm
   if referenceEq(table.ast, ast) then
     return;
   end if;
-  table.ast := ast;
-  updateUriMapping(ast.classes);
   if isSome(table.explodedAst) then
+    table.scodeBase := SOME((table.ast, Util.getOption(table.explodedAst), table.connectorFlags));
     table.explodedAst := NONE();
   end if;
+  table.ast := ast;
+  updateUriMapping(ast.classes);
   update(table);
 end setAbsyn;
 
@@ -156,6 +194,9 @@ algorithm
   updateUriMapping(ast.classes);
 
   if isSome(table.explodedAst) then
+    // Restore the flags for the rest of the program so translateElement only
+    // adds to them, then record the updated set.
+    applyConnectorFlags(table.connectorFlags);
     // Assume the element is public here since we don't know the actual
     // visibility, and then update it later in update_element if it's not.
     scode_elems := AbsynToSCode.translateElement(element, SCode.Visibility.PUBLIC());
@@ -173,6 +214,7 @@ algorithm
     (scode_prog, true) := SCodeUtil.transformPathedElementInProgram(path,
       function update_element(newElement = scode_elem), scode_prog);
     table.explodedAst := SOME(scode_prog);
+    table.connectorFlags := currentConnectorFlags();
   end if;
 
   update(table);
@@ -209,33 +251,195 @@ algorithm
   updateUriMapping(ast.classes);
 
   if isSome(table.explodedAst) then
+    applyConnectorFlags(table.connectorFlags);
     scode_elem := AbsynToSCode.translateClass(cls);
 
     SOME(scode_prog) := table.explodedAst;
     (scode_prog, true) := SCodeUtil.transformPathedElementInProgram(path,
       function update_element(newElement = scode_elem), scode_prog);
     table.explodedAst := SOME(scode_prog);
+    table.connectorFlags := currentConnectorFlags();
   end if;
 
   update(table);
 end setAbsynClass;
 
+function setAbsynLoaded
+  "Sets the Absyn program like setAbsyn, but for loadString: when the SCode is
+   cached and the loaded classes are top-level, it refreshes only those classes
+   in the SCode instead of dropping the whole cache. This keeps a loadString of
+   one class from re-exploding the entire loaded library. Falls back to full
+   invalidation if the merge changed the program in any other way (e.g. a
+   `uses` clause pulled in extra libraries)."
+  input Absyn.Program ast      "the full program after merging";
+  input Absyn.Program loaded   "the just-parsed classes, with their within";
+protected
+  SymbolTable table;
+  list<SCode.Element> sp, newElems = {};
+  SCode.Element se;
+  Boolean found, topLevel;
+  Absyn.Program metaLoaded;
+
+  function update_element
+    input SCode.Element oldElement;
+    input output SCode.Element newElement;
+  algorithm
+    newElement := SCodeUtil.setElementPrefixes(SCodeUtil.elementPrefixes(oldElement), newElement);
+  end update_element;
+algorithm
+  table := get();
+  if referenceEq(table.ast, ast) then
+    return;
+  end if;
+  table.ast := ast;
+  updateUriMapping(ast.classes);
+
+  topLevel := match loaded.within_ case Absyn.TOP() then true; else false; end match;
+
+  if topLevel and isSome(table.explodedAst) then
+    SOME(sp) := table.explodedAst;
+    applyConnectorFlags(table.connectorFlags);
+    // translateClass does not run MetaUtil.createMetaClassesInProgram, which lifts
+    // uniontype records into top-level metarecords (a no-op outside MetaModelica).
+    // Apply it to the loaded classes so the incremental SCode matches what a full
+    // translateAbsyn2SCode would produce.
+    metaLoaded := MetaUtil.createMetaClassesInProgram(loaded);
+    for cls in metaLoaded.classes loop
+      se := AbsynToSCode.translateClass(cls);
+      (sp, found) := SCodeUtil.transformPathedElementInProgram(Absyn.IDENT(cls.name),
+        function update_element(newElement = se), sp);
+      if not found then
+        newElems := se :: newElems;
+      end if;
+    end for;
+    newElems := listReverse(newElems);
+    table.connectorFlags := currentConnectorFlags();
+    // Only trust the incremental SCode if it accounts for exactly the program's
+    // top-level classes after meta expansion; otherwise the merge did more than
+    // we tracked (e.g. a `uses` clause pulled in extra libraries).
+    metaLoaded := MetaUtil.createMetaClassesInProgram(table.ast);
+    table.explodedAst := if listLength(sp) + listLength(newElems) == listLength(metaLoaded.classes)
+                         then SOME(listAppend(sp, newElems)) else NONE();
+  elseif isSome(table.explodedAst) then
+    table.explodedAst := NONE();
+  end if;
+
+  update(table);
+end setAbsynLoaded;
+
+function setAbsynDeleted
+  "Sets the Absyn program like setAbsyn after a class was deleted, but when the
+   SCode is cached and a top-level class was removed, drops just that class from
+   the SCode instead of invalidating the whole cache."
+  input Absyn.Program ast;
+  input Absyn.Path path;
+protected
+  SymbolTable table;
+  list<SCode.Element> sp;
+  String name;
+  Boolean topLevel;
+algorithm
+  table := get();
+  table.ast := ast;
+  updateUriMapping(ast.classes);
+
+  (topLevel, name) := match path case Absyn.IDENT(name) then (true, name); else (false, ""); end match;
+
+  if isSome(table.explodedAst) then
+    if topLevel then
+      SOME(sp) := table.explodedAst;
+      table.explodedAst := SOME(list(e for e guard not SCodeUtil.isElementNamed(name, e) in sp));
+    else
+      table.explodedAst := NONE();
+    end if;
+  end if;
+
+  update(table);
+end setAbsynDeleted;
+
 function getSCode
   output SCode.Program ast;
 protected
   SymbolTable table;
+  Option<SCode.Program> updated;
+  Absyn.Program base_ast;
+  SCode.Program base_scode;
+  tuple<Boolean,Boolean,Boolean,Boolean> base_flags;
 algorithm
   table := get();
   if isNone(table.explodedAst) then
-    ast := AbsynToSCode.translateAbsyn2SCode(table.ast);
+    updated := match table.scodeBase
+      case SOME((base_ast, base_scode, base_flags))
+        then updateSCode(table.ast, base_ast, base_scode, base_flags);
+      else NONE();
+    end match;
+    ast := match updated
+      case SOME(ast) then ast;
+      else AbsynToSCode.translateAbsyn2SCode(table.ast);
+    end match;
     table.explodedAst := SOME(ast);
+    table.scodeBase := NONE();
+    table.connectorFlags := currentConnectorFlags();
     update(table);
   else
     SOME(ast) := table.explodedAst;
+    applyConnectorFlags(table.connectorFlags);
   end if;
 end getSCode;
 
-function setSCode
+protected function updateSCode
+  "Translates the top-level classes of ast that are not in baseAst and reuses
+   the SCode of the others, or returns NONE() if the classes cannot be
+   matched by name."
+  input Absyn.Program ast;
+  input Absyn.Program baseAst;
+  input SCode.Program baseSCode;
+  input tuple<Boolean,Boolean,Boolean,Boolean> baseFlags;
+  output Option<SCode.Program> outSCode = NONE();
+protected
+  UnorderedMap<String, Absyn.Class> base_classes;
+  UnorderedMap<String, SCode.Element> base_elements;
+  list<SCode.Element> elements = {};
+  Option<SCode.Element> elem;
+algorithm
+  // MetaUtil.createMetaClassesInProgram adds top-level classes.
+  if Config.acceptMetaModelicaGrammar() then
+    return;
+  end if;
+
+  base_classes := UnorderedMap.new<Absyn.Class>(stringHashDjb2, stringEq);
+  for cls in baseAst.classes loop
+    if not referenceEq(UnorderedMap.tryAdd(cls.name, cls, base_classes), cls) then
+      return;
+    end if;
+  end for;
+
+  base_elements := UnorderedMap.new<SCode.Element>(stringHashDjb2, stringEq);
+  for e in baseSCode loop
+    UnorderedMap.tryAdd(SCodeUtil.elementName(e), e, base_elements);
+  end for;
+
+  BackendInterface.initInstHashTable();
+  applyConnectorFlags(baseFlags);
+  for cls in ast.classes loop
+    elem := match UnorderedMap.get(cls.name, base_classes)
+      local
+        Absyn.Class base_cls;
+      case SOME(base_cls) guard referenceEq(base_cls, cls) then UnorderedMap.get(cls.name, base_elements);
+      else NONE();
+    end match;
+    elements := (match elem
+      local
+        SCode.Element e;
+      case SOME(e) then e;
+      else AbsynToSCode.translateClass(cls);
+    end match) :: elements;
+  end for;
+
+  outSCode := SOME(listReverse(elements));
+end updateSCode;
+
+public function setSCode
   input Option<SCode.Program> ast;
 protected
   SymbolTable table;
@@ -245,6 +449,7 @@ algorithm
     return;
   end if;
   table.explodedAst := ast;
+  table.scodeBase := NONE();
   update(table);
 end setSCode;
 
@@ -253,8 +458,9 @@ protected
   SymbolTable table;
 algorithm
   table := get();
-  if isSome(table.explodedAst) then
+  if isSome(table.explodedAst) or isSome(table.scodeBase) then
     table.explodedAst := NONE();
+    table.scodeBase := NONE();
     update(table);
   end if;
 end clearSCode;

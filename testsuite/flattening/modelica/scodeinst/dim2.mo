@@ -1,6 +1,7 @@
 // name: dim2.mo
 // keywords:
 // status: correct
+// suite: disabled
 //
 // FAILREASON: Dimensions not subscripted during expansion.
 //

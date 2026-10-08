@@ -10,7 +10,13 @@ pipeline {
   stages {
     stage('Environment') {
       agent {
-        label 'linux'
+        node {
+          label 'linux'
+          customWorkspace 'ws/OpenModelica'
+        }
+      }
+      options {
+        retry(count: 2, conditions: [nonresumable()])
       }
       steps {
         script {

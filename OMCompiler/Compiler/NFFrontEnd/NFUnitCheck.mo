@@ -61,6 +61,7 @@ import Component = NFComponent;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Operator = NFOperator;
+import SimplifyExp = NFSimplifyExp;
 import Type = NFType;
 import Unit = NFUnit;
 import Variable = NFVariable;
@@ -195,18 +196,18 @@ protected function notification2 "help-function"
   output String outS;
 protected
   ComponentRef cr1 = ComponentRef.EMPTY();
-  Real factor=0;
+  Real factor=0, offset=0;
   Integer s=0, m=0, g=0, A=0, K=0, mol=0, cd=0;
 algorithm
   outS := stringAppendList(list(
   // We already assigned the variables before
-  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor), inHtU2S) + "\"\n"
+  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor, offset), inHtU2S) + "\"\n"
   // Do the filtering and unboxing stuff at the same time; then we only need one hashtable call
   // And we only use a try-block for MASTER nodes
   for t1 guard match t1 local Boolean b; case (cr1,Unit.MASTER()) algorithm
     b := false;
     try
-      Unit.UNIT(s, m, g, A, K, mol, cd, factor) :=
+      Unit.UNIT(s, m, g, A, K, mol, cd, factor, offset) :=
         UnorderedMap.getOrFail(ComponentRef.stripSubscripts(cr1), inHtCr2U2);
       b := true;
     else
@@ -396,6 +397,10 @@ algorithm
       list<ComponentRef> vars;
       Integer i;
       Boolean b;
+
+    // n-ary sums and products are checked in their binary form
+    case Expression.MULTARY()
+      then insertUnitInEquation(SimplifyExp.splitMultary(eq), unit, htCr2U, htS2U, htU2S, fnCache);
 
     // SUB equal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.SUB), exp2)
@@ -794,9 +799,9 @@ protected
   list<String> in_units, out_units, in_args, out_args;
 algorithm
   in_units := list(Component.getUnitAttribute(InstNode.component(p), "NONE") for p in func.inputs);
-  out_units := list(Component.getUnitAttribute(InstNode.component(p), "NONE") for p in func.outputs);
+  out_units := list(Component.getUnitAttribute(InstNode.component(InstNode.fromHandle(p)), "NONE") for p in func.outputs);
   in_args := list(InstNode.name(p) for p in func.inputs);
-  out_args := list(InstNode.name(p) for p in func.outputs);
+  out_args := list(InstNode.name(InstNode.fromHandle(p)) for p in func.outputs);
   outArgs := FUNCTIONUNITS(funcName, in_args, out_args, in_units, out_units);
 end parseFunctionUnits;
 

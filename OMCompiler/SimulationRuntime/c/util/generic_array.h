@@ -41,10 +41,12 @@ void simple_array_create(threadData_t* td, base_array_t* dst, int ndims, size_t 
 
 void generic_array_copy_data(const base_array_t src, base_array_t* dst, copy_func cper, size_t sze);
 void simple_array_copy_data(const base_array_t src, base_array_t* dst, size_t sze);
+/* Copy the n elements of src to dst, a block of an array's storage. */
+void simple_array_copy_to(const base_array_t src, void* dst, size_t n, size_t sze);
 
 #define real_array_copy_data(src,dst)               simple_array_copy_data(src, &dst, sizeof(modelica_real));
 #define integer_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_integer));
-#define string_array_copy_data(src,dst)             simple_array_copy_data(src, &dst, sizeof(modelica_string));
+#define string_array_copy_data(src,dst)             omc_string_array_copy_data(src, &dst);
 #define boolean_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_boolean));
 
 void generic_array_alloc_copy(const base_array_t src, base_array_t* dst, copy_func cper, size_t sze);
@@ -52,30 +54,49 @@ void simple_array_alloc_copy(const base_array_t src, base_array_t* dst, size_t s
 
 #define real_array_alloc_copy(src,dst)              simple_array_alloc_copy(src, &dst, sizeof(modelica_real));
 #define integer_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst, sizeof(modelica_integer));
-#define string_array_alloc_copy(src,dst)            simple_array_alloc_copy(src, &dst, sizeof(modelica_string));
+#define string_array_alloc_copy(src,dst)            omc_string_array_alloc_copy(src, &dst);
 #define boolean_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst, sizeof(modelica_boolean));
 
 
 void* generic_array_get(const base_array_t* source, size_t sze,...);
-// Versions with no variadic args for common dimensions 1 and 2
-void* generic_array_get1(const base_array_t* source, size_t sze, int dim1);
-void* generic_array_get2(const base_array_t* source, size_t sze, int dim1, int dim2);
+
+/* Flat index of a fully subscripted 1-D or 2-D array element.
+ *
+ * Macros rather than functions because generated model code is compiled
+ * unoptimized when the testsuite drives it, and there a call into the runtime -
+ * or even an always_inline body, whose locals are spilled - costs several times
+ * what the access itself does. The price is that the *_array_get1/get2 macros
+ * below expand their subscripts more than once, so the code generator only uses
+ * them for subscripts that contain no function call.
+ *
+ * One unsigned comparison bounds-checks each subscript: a subscript below 1
+ * wraps around and fails the same test as one past the end.
+ *
+ * Every nested use parenthesizes src, which can expand to a compound literal
+ * whose commas would otherwise split the arguments of the inner macro. */
+#define omc_array_index1(src,dim1) \
+    ((size_t)((dim1) - 1) < (size_t)(src).dim_size[0] ? (size_t)((dim1) - 1) \
+                                                      : omc_array_bounds_error(1, (src).dim_size[0], (dim1)))
+#define omc_array_index2(src,dim1,dim2) \
+    (omc_array_index1((src), (dim1)) * (size_t)(src).dim_size[1] + \
+     ((size_t)((dim2) - 1) < (size_t)(src).dim_size[1] ? (size_t)((dim2) - 1) \
+                                                       : omc_array_bounds_error(2, (src).dim_size[1], (dim2))))
 
 #define real_array_get(src,ndims,...)               (*(modelica_real*)(generic_array_get(&src, sizeof(modelica_real), __VA_ARGS__)))
-#define real_array_get1(src,ndims,dim1)             (*(modelica_real*)(generic_array_get1(&src, sizeof(modelica_real), dim1)))
-#define real_array_get2(src,ndims,dim1,dim2)        (*(modelica_real*)(generic_array_get2(&src, sizeof(modelica_real), dim1, dim2)))
+#define real_array_get1(src,ndims,dim1)     (((modelica_real*)(src).data)[omc_array_index1((src), (dim1))])
+#define real_array_get2(src,ndims,dim1,dim2) (((modelica_real*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
 
 #define integer_array_get(src,ndims,...)            (*(modelica_integer*)(generic_array_get(&src, sizeof(modelica_integer), __VA_ARGS__)))
-#define integer_array_get1(src,ndims,dim1)          (*(modelica_integer*)(generic_array_get1(&src, sizeof(modelica_integer), dim1)))
-#define integer_array_get2(src,ndims,dim1,dim2)     (*(modelica_integer*)(generic_array_get2(&src, sizeof(modelica_integer), dim1, dim2)))
+#define integer_array_get1(src,ndims,dim1)  (((modelica_integer*)(src).data)[omc_array_index1((src), (dim1))])
+#define integer_array_get2(src,ndims,dim1,dim2) (((modelica_integer*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
 
 #define string_array_get(src,ndims,...)             (*(modelica_string*)(generic_array_get(&src, sizeof(modelica_string), __VA_ARGS__)))
-#define string_array_get1(src,ndims,dim1)           (*(modelica_string*)(generic_array_get1(&src, sizeof(modelica_string), dim1)))
-#define string_array_get2(src,ndims,dim1,dim2)      (*(modelica_string*)(generic_array_get2(&src, sizeof(modelica_string), dim1, dim2)))
+#define string_array_get1(src,ndims,dim1)   (((modelica_string*)(src).data)[omc_array_index1((src), (dim1))])
+#define string_array_get2(src,ndims,dim1,dim2) (((modelica_string*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
 
 #define boolean_array_get(src,ndims,...)            (*(modelica_boolean*)(generic_array_get(&src, sizeof(modelica_boolean), __VA_ARGS__)))
-#define boolean_array_get1(src,ndims,dim1)          (*(modelica_boolean*)(generic_array_get1(&src, sizeof(modelica_boolean), dim1)))
-#define boolean_array_get2(src,ndims,dim1,dim2)     (*(modelica_boolean*)(generic_array_get2(&src, sizeof(modelica_boolean), dim1, dim2)))
+#define boolean_array_get1(src,ndims,dim1)  (((modelica_boolean*)(src).data)[omc_array_index1((src), (dim1))])
+#define boolean_array_get2(src,ndims,dim1,dim2) (((modelica_boolean*)(src).data)[omc_array_index2((src), (dim1), (dim2))])
 
 
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...);

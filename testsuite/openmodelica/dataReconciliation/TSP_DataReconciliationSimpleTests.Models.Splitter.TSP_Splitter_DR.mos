@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter_DR_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Splitter_TSP_Splitter_DR.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,21 +20,24 @@ print("simFlags: "+simFlags);
 simulate(TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR, simflags=simFlags);
 getErrorString();
 
+readFile("TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter_DR_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter_DR_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR
 // ==========================================================================
@@ -1554,7 +1558,7 @@ getErrorString();
 // 41: splitter.pipe1.C2.P type: Real
 //
 //
-// Parameters in SET_S (11)
+// Parameters in SET_S (18)
 // ========================================
 // 1: splitter.volume.b:PARAM()  = 0.0019  type: Real
 // 2: splitter.volume.cp:PARAM(unit = "J/(kg.K)" )  = 4200.0  "Specific heat capacity" type: Real
@@ -1564,9 +1568,16 @@ getErrorString();
 // 6: splitter.pipe3.CoeffDeltaP:PARAM()  = 1.0  "Ponderation of the pressure loss equation" type: Real
 // 7: splitter.pipe3.deltaPnom:PARAM(unit = "Pa" )  = 99999.99999999999  "Nominal pressure loss" type: Real
 // 8: splitter.pipe3.Qnom:PARAM(unit = "kg/s" )  = 1.0  "Nominal mass flow rate" type: Real
-// 9: splitter.pipe2.CoeffDeltaP:PARAM()  = 1.0  "Ponderation of the pressure loss equation" type: Real
-// 10: splitter.pipe2.deltaPnom:PARAM(unit = "Pa" )  = 99999.99999999999  "Nominal pressure loss" type: Real
-// 11: splitter.pipe2.Qnom:PARAM(unit = "kg/s" )  = 1.0  "Nominal mass flow rate" type: Real
+// 9: splitter.pipe2.b:PARAM()  = 0.0019  type: Real
+// 10: splitter.pipe2.cp:PARAM(unit = "J/(kg.K)" )  = 4200.0  "Specific heat capacity" type: Real
+// 11: splitter.pipe2.CoeffDeltaP:PARAM()  = 1.0  "Ponderation of the pressure loss equation" type: Real
+// 12: splitter.pipe2.deltaPnom:PARAM(unit = "Pa" )  = 99999.99999999999  "Nominal pressure loss" type: Real
+// 13: splitter.pipe2.Qnom:PARAM(unit = "kg/s" )  = 1.0  "Nominal mass flow rate" type: Real
+// 14: splitter.pipe1.b:PARAM()  = 0.0019  type: Real
+// 15: splitter.pipe1.cp:PARAM(unit = "J/(kg.K)" )  = 4200.0  "Specific heat capacity" type: Real
+// 16: splitter.pipe1.CoeffDeltaP:PARAM()  = 1.0  "Ponderation of the pressure loss equation" type: Real
+// 17: splitter.pipe1.deltaPnom:PARAM(unit = "Pa" )  = 99999.99999999999  "Nominal pressure loss" type: Real
+// 18: splitter.pipe1.Qnom:PARAM(unit = "kg/s" )  = 1.0  "Nominal mass flow rate" type: Real
 //
 //
 //
@@ -1654,8 +1665,8 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter_DR_Inputs.csv'",
-//     messages = "LOG_ASSERT        | warning | [ThermoSysPro 4.0.0/WaterSteam/Connectors.mo:4:5-5:45:writable]
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter_DR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter_DR_Inputs.csv'",
+//     messages = "LOG_ASSERT        | warning | [ThermoSysPro 4.2.0/WaterSteam/Connectors.mo:6:5-6:85:readonly]
 // |                 | |       | The following assertion has been violated at time 0.000000
 // |                 | |       | ((splitter.pipe1.C1.P >= 0.0)) --> \"Variable violating min constraint: 0.0 <= splitter.pipe1.C1.P, has value: -1.23553e+06\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
@@ -1678,14 +1689,26 @@ getErrorString();
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeBTh.mo:34:3-35:153:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeBTh.mo:36:3-37:151:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeBTh.mo:38:3-39:84:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:783:9-783:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:850:9-850:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:1088:9-1088:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/Fluid/derDensity_derP_derh.mo:63:5-63:84:writable] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:readonly] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// splitter.volume.T,387,387.136,1.96,1.08227,TRUE,0.0830976,
+// splitter.pipe3.T,388,387.174,1.91,1.08163,TRUE,0.524934,
+// splitter.pipe3.Pm,245000,234603,39200,27609.1,TRUE,0.373611,
+// splitter.pipe3.Q,1.25,1.29354,0.196,0.120304,TRUE,0.281377,
+// splitter.pipe2.T,386,387.168,1.91,1.08164,TRUE,0.742181,
+// splitter.pipe2.Pm,255000,246285,39200,27400.8,TRUE,0.310889,
+// splitter.pipe2.Q,1.15,1.19984,0.196,0.120617,TRUE,0.322591,
+// splitter.pipe1.T,292,291.504,1.96,1.789,TRUE,0.619373,
+// splitter.pipe1.Pm,610000,629112,39200,25092.2,TRUE,0.634589,
+// splitter.pipe1.Q,2.5,2.49338,0.196,0.0521284,TRUE,0.0350557,
+// "
+// ""
 // endResult

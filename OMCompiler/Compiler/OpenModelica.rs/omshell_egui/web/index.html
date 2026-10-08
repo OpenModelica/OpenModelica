@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>OMShell (egui)</title>
+  <style>
+    html, body { overflow: hidden; margin: 0; padding: 0; height: 100%; width: 100%; }
+    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <canvas id="the_canvas_id"></canvas>
+  <!--
+    cmake-driven launcher (no trunk). Only this GUI's wasm (./OMShell-egui/)
+    loads here; the omc compiler module (./omc/) is instantiated off the UI
+    thread by omc_worker.js, which the GUI spawns as a Web Worker. So a running
+    command never blocks the page.
+  -->
+  <script type="module">
+    import guiInit from './OMShell-egui/OMShell-egui.js';
+
+    guiInit().catch((e) => {
+      document.body.innerHTML = '<pre style="color:#f48771">Startup error: ' + e + '</pre>';
+    });
+  </script>
+</body>
+</html>

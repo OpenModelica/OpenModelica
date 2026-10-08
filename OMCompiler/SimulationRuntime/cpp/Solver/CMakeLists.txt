@@ -14,6 +14,7 @@ target_sources(OMCppCVode PRIVATE ${OMC_SIMRT_CPP_SOLVER_CVODE_SOURCES})
 
 target_link_libraries(OMCppCVode PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppCVode PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppCVode PRIVATE omc::simrt::cpp::core::utils::extension)
 target_link_libraries(OMCppCVode PRIVATE omc::3rd::sundials::cvode)
 
 install(TARGETS OMCppCVode)
@@ -32,6 +33,7 @@ target_sources(OMCppDASSL PRIVATE ${OMC_SIMRT_CPP_SOLVER_DASSL_SOURCES})
 
 target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::utils::extension)
 target_link_libraries(OMCppDASSL PRIVATE omc::3rd::cdaskr)
 
 install(TARGETS OMCppDASSL)
@@ -50,6 +52,7 @@ target_sources(OMCppDgesvSolver PRIVATE ${OMC_SIMRT_CPP_SOLVER_DGESV_SOURCES})
 
 target_link_libraries(OMCppDgesvSolver PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppDgesvSolver PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppDgesvSolver PRIVATE omc::simrt::cpp::core::utils::extension)
 target_link_libraries(OMCppDgesvSolver PRIVATE ${LAPACK_LIBRARIES})
 
 install(TARGETS OMCppDgesvSolver)
@@ -81,6 +84,7 @@ target_sources(OMCppIda PRIVATE ${OMC_SIMRT_CPP_SOLVER_IDA_SOURCES})
 
 target_link_libraries(OMCppIda PRIVATE omc::simrt::cpp::core::modelica)
 target_link_libraries(OMCppIda PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppIda PRIVATE omc::simrt::cpp::core::utils::extension)
 target_link_libraries(OMCppIda PRIVATE omc::3rd::sundials::ida)
 
 install(TARGETS OMCppIda)

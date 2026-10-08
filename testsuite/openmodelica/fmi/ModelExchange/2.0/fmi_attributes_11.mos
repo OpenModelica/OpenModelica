@@ -1,7 +1,7 @@
 // name: fmi_attributes_11.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf fmi_attributes_11.fmu fmi_attributes_11.log fmi_attributes_11.xml fmi_attributes_11_tmp.xml fmi_attributes_11.fmutmp/
+// teardown_command: rm -rf fmi_attributes_11.fmu fmi_attributes_11.log fmi_attributes_11.xml fmi_attributes_11_tmp.xml fmi_attributes_11.fmutmp/ fmi_attributes_11_info.json
 
 setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives,fmuExperimental");
 getErrorString();
@@ -43,7 +43,9 @@ readFile("fmi_attributes_11.xml"); getErrorString();
 // true
 // ""
 // "fmi_attributes_11.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

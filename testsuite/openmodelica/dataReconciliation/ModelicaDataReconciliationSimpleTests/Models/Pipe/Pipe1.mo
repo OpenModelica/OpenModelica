@@ -11,5 +11,5 @@ equation
       lv="LOG_JAC", eps = "0.023",
 
       s="dassl",
-      sx="modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe1_Inputs.csv"));
+      sx="./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Pipe1_Inputs.csv"));
 end Pipe1;

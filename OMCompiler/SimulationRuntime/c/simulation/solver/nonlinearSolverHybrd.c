@@ -44,14 +44,13 @@ extern "C" {
 #include "../../util/varinfo.h"
 #include "model_help.h"
 #include "../../gc/omc_gc.h"
-#include "../../meta/meta_modelica.h"
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHybrd.h"
 
 extern double enorm_(integer *n, double *x);
 
-static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* userData);
+static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, integer* iflag, void* userData);
 
 /**
  * @brief Allocate memory for non-linear hybrid solver.
@@ -64,6 +63,22 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
 {
   DATA_HYBRD* hybrdData = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
   assertStreamPrint(NULL, hybrdData != NULL, "allocationHybrdData() failed!");
+
+  /* fjac/fjacobian receive evalJacobian's dense output (strided by the
+   * analytic Jacobian's own sizeCols) and getAnalyticalJacobian's memcpy uses
+   * sizeRows*sizeCols directly -- both can exceed size*(size+1) for a
+   * partial-slice Jacobian with extra addressable-but-not-genuinely-unknown
+   * seed columns (see allocateHomotopyData's identical fix and
+   * NBJacobian.mo's partialSliceSeedCandidates whole-array fallback). Size
+   * those two buffers off the larger of the two; `size`/`n`, r__ (MINPACK's
+   * own internal packed triangular factor, sized purely off the genuine
+   * unknown count), and everything else below stays genuine (the solver
+   * itself must never see phantom unknowns). */
+  size_t jacCols = size + 1;
+  if (userData != NULL && userData->analyticJacobian != NULL &&
+      (size_t)userData->analyticJacobian->sizeCols > jacCols) {
+    jacCols = (size_t)userData->analyticJacobian->sizeCols;
+  }
 
   hybrdData->initialized = FALSE;
   hybrdData->resScaling = (double*) malloc(size*sizeof(double));
@@ -90,8 +105,8 @@ DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
   hybrdData->info = 0;
   hybrdData->nfev = 0;
   hybrdData->njev = 0;
-  hybrdData->fjac = (double*) calloc((size*(size+1)), sizeof(double));
-  hybrdData->fjacobian = (double*) calloc((size*(size+1)), sizeof(double));
+  hybrdData->fjac = (double*) calloc((size*jacCols), sizeof(double));
+  hybrdData->fjacobian = (double*) calloc((size*jacCols), sizeof(double));
   hybrdData->ldfjac = size;
   hybrdData->r__ = (double*) malloc(((size*(size+1))/2)*sizeof(double));
   hybrdData->lr = (size*(size + 1)) / 2;
@@ -288,7 +303,7 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
  *                        iflag = 2 ==> Jacobian evaluation
  * @param userDataIn      User data. Get's typecasted to NLS_USERDATA
  */
-static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* userDataIn)
+static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, double* fjac, const integer* ldjac, integer* iflag, void* userDataIn)
 {
   int i,j;
   int n = *n_p;
@@ -320,6 +335,11 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
       (systemData->residualFunc)(&resUserData, (const double*) hybrdData->xScaled, f, (const int*)iflag);
     } else {
       (systemData->residualFunc)(&resUserData, x, f, (const int*)iflag);
+    }
+    /* A negative iflag makes MINPACK stop. */
+    if (OMC_ERROR_RAISED()) {
+      *iflag = -1;
+      return;
     }
 
     /* debug output */
@@ -362,9 +382,9 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
         infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
         for(i=0; i<n; i++)
         {
-          buffer[0] = 0;
+          char *p = buffer;
           for(j=0; j<n; j++)
-            sprintf(buffer, "%s%20.12g ", buffer, fjac[i*hybrdData->n+j]);
+            p += sprintf(p, "%20.12g ", fjac[i*hybrdData->n+j]);
           infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
         }
         messageClose(OMC_LOG_NLS_JAC);
@@ -502,7 +522,7 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
     {
       catchedError = TRUE;
 #ifndef OMC_EMCC
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+      OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       hybrj_(wrapper_fvec_hybrj, &hybrdData->n, hybrdData->x,
           hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &hybrdData->xtol,
@@ -511,6 +531,11 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
           &hybrdData->lr, hybrdData->qtf, hybrdData->wa1, hybrdData->wa2,
           hybrdData->wa3, hybrdData->wa4, hybrdData->userData);
 
+      /* The residual raised: skip the success tail, so the retry counter
+         below keeps counting. */
+      if (OMC_ERROR_RAISED()) {
+        OMC_ERROR_CLEAR();
+      } else {
       if(assertCalled)
       {
         infoStreamPrint(OMC_LOG_NLS_V, 0, "After assertions failed, found a solution for which assertions did not fail.");
@@ -525,8 +550,9 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       assertRetries = 0;
       assertCalled = 0;
       catchedError = FALSE;
+      }
 #ifndef OMC_EMCC
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+      OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       /* catch */
       if (catchedError)
@@ -582,12 +608,12 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 
         /* try */
 #ifndef OMC_EMCC
-        MMC_TRY_INTERNAL(simulationJumpBuffer)
+        OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
-        catchedError = FALSE;
+        if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { catchedError = FALSE; }
 #ifndef OMC_EMCC
-        MMC_CATCH_INTERNAL(simulationJumpBuffer)
+        OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         /* catch */
         if (catchedError)
@@ -642,9 +668,9 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
           infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", (int)hybrdData->n, (int)hybrdData->n);
           for(i=0; i<hybrdData->n; i++)
           {
-            buffer[0] = 0;
+            char *p = buffer;
             for(j=0; j<hybrdData->n; j++)
-              sprintf(buffer, "%s%10g ", buffer, hybrdData->fjacobian[i*hybrdData->n+j]);
+              p += sprintf(p, "%10g ", hybrdData->fjacobian[i*hybrdData->n+j]);
             infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
           }
           messageClose(OMC_LOG_NLS_JAC);
@@ -690,12 +716,12 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
       {
         catchedError = TRUE;
 #ifndef OMC_EMCC
-        MMC_TRY_INTERNAL(simulationJumpBuffer)
+        OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
         wrapper_fvec_hybrj(&hybrdData->n, hybrdData->x, hybrdData->fvec, hybrdData->fjac, &hybrdData->ldfjac, &iflag, hybrdData->userData);
-        catchedError = FALSE;
+        if (OMC_ERROR_RAISED()) { OMC_ERROR_CLEAR(); } else { catchedError = FALSE; }
 #ifndef OMC_EMCC
-        MMC_CATCH_INTERNAL(simulationJumpBuffer)
+        OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         /* catch */
         if (catchedError) {

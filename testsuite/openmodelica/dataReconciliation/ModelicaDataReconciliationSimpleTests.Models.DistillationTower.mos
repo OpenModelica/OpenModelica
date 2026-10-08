@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.DistillationTower ModelicaDataReconciliationSimpleTests.Models.DistillationTower_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_DistillationTower.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,19 +20,22 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.DistillationTower, simflags=simFlags);
 getErrorString();
 
+readFile("ModelicaDataReconciliationSimpleTests.Models.DistillationTower_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv
 //
 // ModelInfo: ModelicaDataReconciliationSimpleTests.Models.DistillationTower
 // ==========================================================================
@@ -217,7 +221,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.DistillationTower', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.DistillationTower', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -225,5 +229,17 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
+// ""
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// xD2,5.01,5.01215,0.05,0.0499338,TRUE,0.136078,
+// xD1,94.1,94.9878,1,0.0499338,TRUE,0.888957,
+// xB2,97.48,98.0286,1,0.0499338,TRUE,0.549244,
+// xB1,1.97,1.97144,0.05,0.0499338,TRUE,0.0911264,
+// xF2,51.7,51.7641,0.1,0.0447104,TRUE,0.716891,
+// xF1,48.22,48.2359,0.05,0.0447104,TRUE,0.709273,
+// D,478.4,486.146,30,20.2038,TRUE,0.349282,
+// B,488.23,491.269,30,20.4163,TRUE,0.138254,
+// F,1095.47,977.415,140,40.6024,TRUE,0.88112,
+// "
 // ""
 // endResult

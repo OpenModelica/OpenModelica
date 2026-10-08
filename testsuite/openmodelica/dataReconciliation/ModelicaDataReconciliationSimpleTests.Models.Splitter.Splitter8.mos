@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8 ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Splitter_Splitter8.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,19 +20,22 @@ print("simFlags: "+simFlags);
 simulate(ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8, simflags=simFlags);
 getErrorString();
 
+readFile("ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from ModelicaDataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv
 //
 // ModelInfo: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8
 // ==========================================================================
@@ -756,11 +760,14 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter8_Inputs.csv'",
 //     messages = "Failed to build model: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8"
 // end SimulationResult;
 // "Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
 // Error: Internal error : Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed
 // Error: pre-optimization module dataReconciliation (simulation) failed.
+// "
+// ""
+// "Error: Error opening file: ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter8_Outputs.csv: No such file or directory.
 // "
 // endResult

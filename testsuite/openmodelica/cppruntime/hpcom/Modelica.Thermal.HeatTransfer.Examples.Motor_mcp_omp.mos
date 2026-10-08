@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 // Simulation Results
 // Modelica Standard Library
@@ -12,8 +13,8 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Thermal.HeatTransfer.Examples.Motor);
 compareVars :=
 {
-   "winding.T",
-   "core.T"
+   "core.T",
+   "winding.T"
 };
 
 setDebugFlags("hpcom"); getErrorString();

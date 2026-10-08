@@ -1,0 +1,43 @@
+// name:     Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource);
+compareVars :=
+{
+   "smpm.is[1]",
+   "smpm.is[2]",
+   "inertiaLoad.w",
+   "multiSensor.flange_a.phi"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource
+// {"smpm.is[1]", "smpm.is[2]", "inertiaLoad.w", "multiSensor.flange_a.phi"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource', options = '', outputFormat = 'mat', variableFilter = 'time|smpm.is.1.|smpm.is.2.|inertiaLoad.w|multiSensor.flange_a.phi', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -287,10 +287,7 @@ void CommitChangesDialog::commitAndGenerateTraceabilityURI(QString fileName)
   QString status = GitCommands::instance()->getSingleFileStatus(fileName);
   QString activity = getFileStatus(status.mid(0, 2));
   QString commitMessage = "OpenModelica Modeling";
-#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-   commitMessage = QInputDialog::getMultiLineText(MainWindow::instance(), tr("Commit Message "), "Please Enter Commit Description:");
-#else // Qt4
-#endif
+  commitMessage = QInputDialog::getMultiLineText(MainWindow::instance(), tr("Commit Message "), "Please Enter Commit Description:");
   QString toolURI, activityURI, agentURI, sourceModelFileNameURI, fmuFileNameURI, gitHash, path;
   QDir dir(OptionsDialog::instance()->getTraceabilityPage()->getGitRepository()->text());
   QDateTime time = QDateTime::currentDateTime();

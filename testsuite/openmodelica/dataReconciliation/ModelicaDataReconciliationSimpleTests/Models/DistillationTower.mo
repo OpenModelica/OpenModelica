@@ -26,5 +26,5 @@ equation
   annotation (__OpenModelica_simulationFlags(
       lv="LOG_JAC",eps = "0.023",
       s="dassl",
-      sx="modelica://ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv"));
+      sx="./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv"));
 end DistillationTower;

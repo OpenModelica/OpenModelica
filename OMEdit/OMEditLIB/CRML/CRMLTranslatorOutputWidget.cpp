@@ -90,10 +90,12 @@ CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget(CRMLTranslatorOptions crm
 CRMLTranslatorOutputWidget::~CRMLTranslatorOutputWidget()
 {
   // translation process
+#if QT_CONFIG(process)
   if (mpTranslationProcess && isTranslationProcessRunning()) {
     mpTranslationProcess->kill();
     mpTranslationProcess->deleteLater();
   }
+#endif
 }
 
 /*!
@@ -111,16 +113,13 @@ void CRMLTranslatorOutputWidget::start()
  */
 void CRMLTranslatorOutputWidget::translateModel()
 {
+#if QT_CONFIG(process)
   mpTranslationProcess = new QProcess;
   mpTranslationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getWorkingDirectory());
   connect(mpTranslationProcess, SIGNAL(started()), SLOT(translationProcessStarted()));
   connect(mpTranslationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readTranslationStandardOutput()));
   connect(mpTranslationProcess, SIGNAL(readyReadStandardError()), SLOT(readTranslationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
   connect(mpTranslationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
-#else
-  connect(mpTranslationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
-#endif
   connect(mpTranslationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(translationProcessFinished(int,QProcess::ExitStatus)));
   QStringList args = {"-jar",
                       mCRMLTranslatorOptions.getCompilerJar(),
@@ -147,6 +146,7 @@ void CRMLTranslatorOutputWidget::translateModel()
   args.removeAll(QString(""));
   writeTranslationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Qt::blue);
   mpTranslationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
+#endif // QT_CONFIG(process)
 }
 
 /*!
@@ -251,7 +251,9 @@ void CRMLTranslatorOutputWidget::cancelTranslation()
   QString msg = tr("Translation of the CRML file %1 is cancelled.").arg(mCRMLTranslatorOptions.getCRMLFile());
   if (isTranslationProcessRunning()) {
     setTranslationProcessKilled(true);
+#if QT_CONFIG(process)
     mpTranslationProcess->kill();
+#endif
     mIsTranslationProcessRunning = false;
     if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
       progressStr = tr("Testsuite run in directory %1 is cancelled.").arg(mCRMLTranslatorOptions.getWorkingDirectory());
@@ -281,6 +283,7 @@ void CRMLTranslatorOutputWidget::cancelTranslation()
   updateMessageTab(progressStr);
 }
 
+#if QT_CONFIG(process)
 /*!
  * \brief CRMLTranslatorOutputWidget::translationProcessStarted
  * Slot activated when mpTranslationProcess started signal is raised.\n
@@ -393,3 +396,4 @@ void CRMLTranslatorOutputWidget::translationProcessFinished(int exitCode, QProce
     updateMessageTab(messageFailed);
   }
 }
+#endif // QT_CONFIG(process)

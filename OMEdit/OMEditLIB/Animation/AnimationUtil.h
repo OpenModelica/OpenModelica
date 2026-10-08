@@ -76,6 +76,9 @@ inline bool isFMU(const std::string& fileIn){
  */
 inline bool isMAT(const std::string& fileIn){
   std::size_t mat = fileIn.find(".mat");
+  if (fileIn.find(".arrow") != std::string::npos) {
+    return true;
+  }
   return (mat != std::string::npos);
 }
 

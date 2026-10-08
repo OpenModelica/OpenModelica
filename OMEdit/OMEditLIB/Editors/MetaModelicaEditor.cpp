@@ -47,8 +47,10 @@ MetaModelicaEditor::MetaModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
+#if !defined(__EMSCRIPTEN__)
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+#endif
   QStringList keywords = MetaModelicaHighlighter::getKeywords();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   QStringList types = MetaModelicaHighlighter::getTypes();
@@ -171,11 +173,7 @@ MetaModelicaHighlighter::MetaModelicaHighlighter(MetaModelicaEditorPage *pMetaMo
 void MetaModelicaHighlighter::initializeSettings()
 {
   const QFont font = mpPlainTextEdit->font();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
-#else // QT_VERSION_CHECK
-  mpPlainTextEdit->setTabStopWidth(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
-#endif // QT_VERSION_CHECK
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;
@@ -187,17 +185,17 @@ void MetaModelicaHighlighter::initializeSettings()
   mQuotationFormat.setForeground(mpMetaModelicaEditorPage->getColor("Quotes"));
   // Priority: keyword > func() > ident > number. Yes, the order matters :)
   mNumberFormat.setForeground(mpMetaModelicaEditorPage->getColor("Number"));
-  rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
+  rule.mPattern = QRegularExpression("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
   rule.mFormat = mNumberFormat;
   mHighlightingRules.append(rule);
-  rule.mPattern = QRegExp("\\b[A-Za-z_][A-Za-z0-9_]*");
+  rule.mPattern = QRegularExpression("\\b[A-Za-z_][A-Za-z0-9_]*");
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
   // keywords
   QStringList keywordPatterns = getKeywords();
   foreach (const QString &pattern, keywordPatterns) {
     QString newPattern = QString("\\b%1\\b").arg(pattern);
-    rule.mPattern = QRegExp(newPattern);
+    rule.mPattern = QRegularExpression(newPattern);
     rule.mFormat = mKeywordFormat;
     mHighlightingRules.append(rule);
   }
@@ -205,7 +203,7 @@ void MetaModelicaHighlighter::initializeSettings()
   QStringList typePatterns = getTypes();
   foreach (const QString &pattern, typePatterns) {
     QString newPattern = QString("\\b%1\\b").arg(pattern);
-    rule.mPattern = QRegExp(newPattern);
+    rule.mPattern = QRegularExpression(newPattern);
     rule.mFormat = mTypeFormat;
     mHighlightingRules.append(rule);
   }
@@ -492,12 +490,13 @@ void MetaModelicaHighlighter::highlightBlock(const QString &text)
   setCurrentBlockState(0);
   setFormat(0, text.length(), mTextFormat.foreground().color());
   foreach (const HighlightingRule &rule, mHighlightingRules) {
-    QRegExp expression(rule.mPattern);
-    int index = expression.indexIn(text);
-    while (index >= 0) {
-      int length = expression.matchedLength();
+    QRegularExpression expression(rule.mPattern);
+    QRegularExpressionMatch match = expression.match(text);
+    while (match.hasMatch()) {
+      int index = match.capturedStart();
+      int length = match.capturedLength();
       setFormat(index, length, rule.mFormat);
-      index = expression.indexIn(text, index + length);
+      match = expression.match(text, index + length);
     }
   }
   highlightMultiLine(text);

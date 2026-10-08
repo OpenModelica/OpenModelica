@@ -27,7 +27,9 @@ readFile("fmi_attributes_22.xml"); getErrorString();
 // true
 // ""
 // "fmi_attributes_22.fmu"
-// ""
+// "Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
 // 0
 // ""
 // 0

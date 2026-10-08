@@ -1,6 +1,7 @@
 // name:     Connect3
 // keywords: connect
 // status:   incorrect
+// suite: disabled
 //
 // Only connector variables can be connected.
 

@@ -17,7 +17,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Therma
 // ""
 // record SimulationResult
 //     resultFile = "ScalableTestSuite.Thermal.DistrictHeating.Verification.TestSat_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 49999, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Thermal.DistrictHeating.Verification.TestSat', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Thermal.DistrictHeating.Verification.TestSat', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

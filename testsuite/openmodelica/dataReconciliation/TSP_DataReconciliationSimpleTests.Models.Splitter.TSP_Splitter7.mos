@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7 TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Splitter_TSP_Splitter7.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,21 +20,24 @@ print("simFlags: "+simFlags);
 simulate(TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7, simflags=simFlags);
 getErrorString();
 
+readFile("TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7
 // ==========================================================================
@@ -309,7 +313,7 @@ getErrorString();
 // 85/98 (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
 // 86/99 (1): 0.0 = if lumpedStraightPipe2.Q > 0.0 then lumpedStraightPipe2.C1.h - lumpedStraightPipe2.C1.h_vol else lumpedStraightPipe2.C2.h - lumpedStraightPipe2.C2.h_vol   [dynamic |0|0|0|0|]
 // 87/100 (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)   [dynamic |0|0|0|0|]
-// 88/101 (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)   [dynamic |0|0|0|0|]
+// 88/101 (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, 0.001) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)   [dynamic |0|0|0|0|]
 // 89/102 (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D   [dynamic |0|0|0|0|]
 // 90/103 (1): lumpedStraightPipe2.lam = lumpedStraightPipe2.lambda   [dynamic |0|0|0|0|]
 // 91/104 (1): lumpedStraightPipe2.Relim = if lumpedStraightPipe2.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe2.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
@@ -339,7 +343,7 @@ getErrorString();
 // 115/128 (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q   [dynamic |0|0|0|0|]
 // 116/129 (1): 0.0 = if lumpedStraightPipe3.Q > 0.0 then lumpedStraightPipe3.C1.h - lumpedStraightPipe3.C1.h_vol else lumpedStraightPipe3.C2.h - lumpedStraightPipe3.C2.h_vol   [dynamic |0|0|0|0|]
 // 117/130 (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)   [dynamic |0|0|0|0|]
-// 118/131 (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)   [dynamic |0|0|0|0|]
+// 118/131 (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, 0.001) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)   [dynamic |0|0|0|0|]
 // 119/132 (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D   [dynamic |0|0|0|0|]
 // 120/133 (1): lumpedStraightPipe3.lam = lumpedStraightPipe3.lambda   [dynamic |0|0|0|0|]
 // 121/134 (1): lumpedStraightPipe3.Relim = if lumpedStraightPipe3.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe3.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
@@ -355,7 +359,7 @@ getErrorString();
 // 131/144 (1): lumpedStraightPipe1.Q = lumpedStraightPipe1.C1.Q   [dynamic |0|0|0|0|]
 // 132/145 (1): 0.0 = if lumpedStraightPipe1.Q > 0.0 then lumpedStraightPipe1.C1.h - lumpedStraightPipe1.C1.h_vol else lumpedStraightPipe1.C2.h - lumpedStraightPipe1.C2.h_vol   [dynamic |0|0|0|0|]
 // 133/146 (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.80665 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)   [dynamic |0|0|0|0|]
-// 134/147 (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)   [dynamic |0|0|0|0|]
+// 134/147 (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, 0.001) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)   [dynamic |0|0|0|0|]
 // 135/148 (1): lumpedStraightPipe1.khi = lumpedStraightPipe1.lam * lumpedStraightPipe1.L / lumpedStraightPipe1.D   [dynamic |0|0|0|0|]
 // 136/149 (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda   [dynamic |0|0|0|0|]
 // 137/150 (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
@@ -645,7 +649,7 @@ getErrorString();
 // 106: staticDrum1.Cth.T: (80/93): (1): staticDrum1.Cth.T = staticDrum1.T
 // 105: staticDrum1.Cth.W: (42/42): (1): staticDrum1.Cth.W = 0.0
 // 104: lumpedStraightPipe2.khi: (89/102): (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D
-// 103: lumpedStraightPipe2.deltaPf: (88/101): (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)
+// 103: lumpedStraightPipe2.deltaPf: (88/101): (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, 0.001) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)
 // 102: lumpedStraightPipe2.deltaP: (87/100): (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)
 // 101: lumpedStraightPipe2.Q: (85/98): (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q
 // 100: lumpedStraightPipe2.Re: (92/105): (1): lumpedStraightPipe2.Re = 4.0 * abs(lumpedStraightPipe2.Q) / (lumpedStraightPipe2.mu * lumpedStraightPipe2.Pw)
@@ -691,7 +695,7 @@ getErrorString();
 // 60: sourceQ2.C.a: (20/20): (1): sourceQ2.C.a = lumpedStraightPipe3.C1.a
 // 59: sourceQ2.C.b: (159/172): (1): sourceQ2.C.b = true
 // 58: lumpedStraightPipe3.khi: (119/132): (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D
-// 57: lumpedStraightPipe3.deltaPf: (118/131): (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)
+// 57: lumpedStraightPipe3.deltaPf: (118/131): (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, 0.001) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)
 // 56: lumpedStraightPipe3.deltaP: (117/130): (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)
 // 55: lumpedStraightPipe3.Q: (115/128): (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q
 // 54: lumpedStraightPipe3.Re: (122/135): (1): lumpedStraightPipe3.Re = 4.0 * abs(lumpedStraightPipe3.Q) / (lumpedStraightPipe3.mu * lumpedStraightPipe3.Pw)
@@ -721,7 +725,7 @@ getErrorString();
 // 30: lumpedStraightPipe1.Re: (138/151): (1): lumpedStraightPipe1.Re = 4.0 * abs(lumpedStraightPipe1.Q) / (lumpedStraightPipe1.mu * lumpedStraightPipe1.Pw)
 // 29: lumpedStraightPipe1.Relim: (137/150): (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0
 // 28: lumpedStraightPipe1.lam: (136/149): (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda
-// 27: lumpedStraightPipe1.rho: (134/147): (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)
+// 27: lumpedStraightPipe1.rho: (134/147): (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, 0.001) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)
 // 26: lumpedStraightPipe1.mu: (142/155): (1): lumpedStraightPipe1.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.1, 0.1, 0.1, 0.0)
 // 25: lumpedStraightPipe1.T: (140/153): (1): lumpedStraightPipe1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.0, 0.0, 0.0, 0.0)
 // 24: lumpedStraightPipe1.Pm: (141/154): (1): lumpedStraightPipe1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.0, 0.0, 0.0, 0.0)
@@ -1108,7 +1112,7 @@ getErrorString();
 // 87/100 (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
 // 88/101 (1): 0.0 = if lumpedStraightPipe2.Q > 0.0 then lumpedStraightPipe2.C1.h - lumpedStraightPipe2.C1.h_vol else lumpedStraightPipe2.C2.h - lumpedStraightPipe2.C2.h_vol   [dynamic |0|0|0|0|]
 // 89/102 (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)   [dynamic |0|0|0|0|]
-// 90/103 (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)   [dynamic |0|0|0|0|]
+// 90/103 (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, 0.001) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)   [dynamic |0|0|0|0|]
 // 91/104 (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D   [dynamic |0|0|0|0|]
 // 92/105 (1): lumpedStraightPipe2.lam = lumpedStraightPipe2.lambda   [dynamic |0|0|0|0|]
 // 93/106 (1): lumpedStraightPipe2.Relim = if lumpedStraightPipe2.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe2.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
@@ -1136,7 +1140,7 @@ getErrorString();
 // 115/128 (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q   [dynamic |0|0|0|0|]
 // 116/129 (1): 0.0 = if lumpedStraightPipe3.Q > 0.0 then lumpedStraightPipe3.C1.h - lumpedStraightPipe3.C1.h_vol else lumpedStraightPipe3.C2.h - lumpedStraightPipe3.C2.h_vol   [dynamic |0|0|0|0|]
 // 117/130 (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)   [dynamic |0|0|0|0|]
-// 118/131 (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)   [dynamic |0|0|0|0|]
+// 118/131 (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, 0.001) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)   [dynamic |0|0|0|0|]
 // 119/132 (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D   [dynamic |0|0|0|0|]
 // 120/133 (1): lumpedStraightPipe3.lam = lumpedStraightPipe3.lambda   [dynamic |0|0|0|0|]
 // 121/134 (1): lumpedStraightPipe3.Relim = if lumpedStraightPipe3.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe3.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
@@ -1152,7 +1156,7 @@ getErrorString();
 // 131/144 (1): lumpedStraightPipe1.Q = lumpedStraightPipe1.C1.Q   [dynamic |0|0|0|0|]
 // 132/145 (1): 0.0 = if lumpedStraightPipe1.Q > 0.0 then lumpedStraightPipe1.C1.h - lumpedStraightPipe1.C1.h_vol else lumpedStraightPipe1.C2.h - lumpedStraightPipe1.C2.h_vol   [dynamic |0|0|0|0|]
 // 133/146 (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.80665 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)   [dynamic |0|0|0|0|]
-// 134/147 (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)   [dynamic |0|0|0|0|]
+// 134/147 (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, 0.001) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)   [dynamic |0|0|0|0|]
 // 135/148 (1): lumpedStraightPipe1.khi = lumpedStraightPipe1.lam * lumpedStraightPipe1.L / lumpedStraightPipe1.D   [dynamic |0|0|0|0|]
 // 136/149 (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda   [dynamic |0|0|0|0|]
 // 137/150 (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
@@ -1442,7 +1446,7 @@ getErrorString();
 // 106: staticDrum1.Cth.T: (82/95): (1): staticDrum1.Cth.T = staticDrum1.T
 // 105: staticDrum1.Cth.W: (44/44): (1): staticDrum1.Cth.W = 0.0
 // 104: lumpedStraightPipe2.khi: (91/104): (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D
-// 103: lumpedStraightPipe2.deltaPf: (90/103): (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)
+// 103: lumpedStraightPipe2.deltaPf: (90/103): (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, 0.001) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)
 // 102: lumpedStraightPipe2.deltaP: (89/102): (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)
 // 101: lumpedStraightPipe2.Q: (87/100): (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q
 // 100: lumpedStraightPipe2.Re: (94/107): (1): lumpedStraightPipe2.Re = 4.0 * abs(lumpedStraightPipe2.Q) / (lumpedStraightPipe2.mu * lumpedStraightPipe2.Pw)
@@ -1488,7 +1492,7 @@ getErrorString();
 // 60: sourceQ2.C.a: (22/22): (1): sourceQ2.C.a = lumpedStraightPipe3.C1.a
 // 59: sourceQ2.C.b: (159/172): (1): sourceQ2.C.b = true
 // 58: lumpedStraightPipe3.khi: (119/132): (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D
-// 57: lumpedStraightPipe3.deltaPf: (118/131): (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)
+// 57: lumpedStraightPipe3.deltaPf: (118/131): (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, 0.001) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)
 // 56: lumpedStraightPipe3.deltaP: (117/130): (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)
 // 55: lumpedStraightPipe3.Q: (2/2): (1): lumpedStraightPipe3.Q = 0.0
 // 54: lumpedStraightPipe3.Re: (122/135): (1): lumpedStraightPipe3.Re = 4.0 * abs(lumpedStraightPipe3.Q) / (lumpedStraightPipe3.mu * lumpedStraightPipe3.Pw)
@@ -1518,7 +1522,7 @@ getErrorString();
 // 30: lumpedStraightPipe1.Re: (138/151): (1): lumpedStraightPipe1.Re = 4.0 * abs(lumpedStraightPipe1.Q) / (lumpedStraightPipe1.mu * lumpedStraightPipe1.Pw)
 // 29: lumpedStraightPipe1.Relim: (137/150): (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0
 // 28: lumpedStraightPipe1.lam: (136/149): (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda
-// 27: lumpedStraightPipe1.rho: (134/147): (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)
+// 27: lumpedStraightPipe1.rho: (134/147): (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, 0.001) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)
 // 26: lumpedStraightPipe1.mu: (142/155): (1): lumpedStraightPipe1.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.1, 0.1, 0.1, 0.0)
 // 25: lumpedStraightPipe1.T: (140/153): (1): lumpedStraightPipe1.T = ThermoSysPro.Properties.Fluid.Temperature_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.0, 0.0, 0.0, 0.0)
 // 24: lumpedStraightPipe1.Pm: (141/154): (1): lumpedStraightPipe1.rho = ThermoSysPro.Properties.Fluid.Density_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.0, 0.0, 0.0, 0.0)
@@ -1723,7 +1727,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.Splitter.TSP_Splitter7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -1731,14 +1735,14 @@ getErrorString();
 // LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "[ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:11:3-13:24:writable] Warning: Connector Ce_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:14:3-16:24:writable] Warning: Connector Ce_eco is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:17:3-18:82:writable] Warning: Connector Cs_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:19:3-21:17:writable] Warning: Connector Cs_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:22:3-23:82:writable] Warning: Connector Cs_sur is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:24:3-26:17:writable] Warning: Connector Cs_purg is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:27:3-29:17:writable] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/StaticDrum.mo:30:3-32:17:writable] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "[ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:9:3-10:81:readonly] Warning: Connector Ce_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:11:3-12:81:readonly] Warning: Connector Ce_eco is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:13:3-14:77:readonly] Warning: Connector Cs_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:15:3-16:79:readonly] Warning: Connector Cs_eva is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:17:3-18:77:readonly] Warning: Connector Cs_sur is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:19:3-20:79:readonly] Warning: Connector Cs_purg is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:21:3-22:79:readonly] Warning: Connector Ce_steam is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSteam/Junctions/StaticDrum.mo:23:3-24:79:readonly] Warning: Connector Ce_sup is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/LumpedStraightPipe.mo:55:3-56:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/LumpedStraightPipe.mo:57:3-58:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourceQ.mo:22:3-23:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -1747,13 +1751,19 @@ getErrorString();
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/LumpedStraightPipe.mo:55:3-56:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/LumpedStraightPipe.mo:57:3-58:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:783:9-783:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:850:9-850:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:1088:9-1088:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/Fluid/derDensity_derP_derh.mo:63:5-63:84:writable] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:readonly] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// lumpedStraightPipe1.Q,2.1,2.07241,1.96,1.58637,TRUE,0.0239712,
+// lumpedStraightPipe3.Q,0.97,0.996203,1.91,1.56627,TRUE,0.0239712,
+// lumpedStraightPipe2.Q,1.05,1.0762,1.91,1.56627,TRUE,0.0239712,
+// "
+// ""
 // endResult

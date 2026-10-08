@@ -62,11 +62,13 @@ import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import SCode;
 
 uniontype AttributeIterator
   record ATTRIBUTE_ITERATOR
     String name;
+    NFBinding.Source source;
     Integer confidence;
     Mutable<ExpressionIterator> iterator;
   end ATTRIBUTE_ITERATOR;
@@ -79,7 +81,8 @@ uniontype AttributeIterator
     Binding binding;
   algorithm
     (name, binding) := attribute;
-    iter := ATTRIBUTE_ITERATOR(name, Binding.confidence(binding), Mutable.create(ExpressionIterator.fromBinding(binding)));
+    iter := ATTRIBUTE_ITERATOR(name, Binding.source(binding), Binding.confidence(binding),
+      Mutable.create(ExpressionIterator.fromBinding(binding)));
   end create;
 
   function nextBinding
@@ -91,7 +94,7 @@ uniontype AttributeIterator
   algorithm
     (it, exp) := ExpressionIterator.next(Mutable.access(iter.iterator));
     Mutable.update(iter.iterator, it);
-    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING, iter.confidence));
+    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, iter.source, iter.confidence));
   end nextBinding;
 end AttributeIterator;
 
@@ -166,11 +169,10 @@ algorithm
         bind_var := Binding.variability(binding);
 
         // Avoid scalarizing the variable if it would result in indexing a
-        // function call (#6267), unless we're building an FMU or the variable
-        // has attributes that must be scalarized (#7485).
+        // function call (#6267), unless the variable has attributes that must
+        // be scalarized (#7485).
         if not forceScalarize and
            ExpressionIterator.isSubscriptedArrayCall(binding_iter) and
-           not Flags.getConfigBool(Flags.BUILDING_FMU) and
            not variableHasForcedScalarAttribute(var) then
           vars := var :: vars;
           return;
@@ -205,6 +207,7 @@ end scalarizeVariable;
 function scalarizeBackendVariable
   input Variable var;
   input List<Integer> indices = {};
+  input Boolean resize = false "resizable dimensions with their resized size, the indices are positions in it";
   output list<Variable> vars = {};
 protected
   list<ComponentRef> crefs;
@@ -219,7 +222,7 @@ protected
   Integer confidence;
 algorithm
   try
-    crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false));
+    crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), resize));
     elem_ty             := Type.arrayElementType(var.ty);
     backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
     if Binding.isBound(var.binding) then
@@ -362,7 +365,7 @@ algorithm
 
             (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
             (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-            equations := Equation.makeEquality(lhs, rhs, ty, src, eq.scope) :: equations;
+            equations := Equation.makeEquality(lhs, rhs, ty, src, InstNode.fromCell(eq.scope)) :: equations;
           end while;
         else
           equations := eq :: equations;
@@ -384,7 +387,7 @@ end scalarizeEquation;
 
 function scalarizeIfEquation
   input list<Equation.Branch> branches;
-  input InstNode scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
@@ -412,7 +415,7 @@ end scalarizeIfEquation;
 
 function scalarizeWhenEquation
   input list<Equation.Branch> branches;
-  input InstNode scope;
+  input NFInstNode.ScopeRef scope;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
@@ -458,7 +461,7 @@ function scalarizeStatement
 algorithm
   statements := match stmt
     case Statement.FOR()
-      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.forType, stmt.source) :: statements;
+      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.forType, stmt.source, stmt.sub_iters) :: statements;
 
     case Statement.IF()
       then scalarizeIfStatement(stmt.branches, stmt.source, statements);

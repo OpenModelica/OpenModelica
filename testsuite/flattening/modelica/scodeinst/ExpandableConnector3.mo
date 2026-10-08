@@ -18,7 +18,7 @@ end ExpandableConnector3;
 
 // Result:
 // class ExpandableConnector3
-//   Real ec.x "virtual variable in expandable connector";
+//   Real ec.x "variable added to expandable connector";
 //   input Real ri;
 // equation
 //   ec.x = ri;

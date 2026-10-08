@@ -1,0 +1,42 @@
+// name:     Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes
+// keywords: simulation MSL Examples
+// status: correct
+// cflags: -d=-newInst
+//
+// Simulation Results
+// Modelica Standard Library
+//
+
+runScript("../common/ModelTestingDefaults.mos"); getErrorString();
+
+packageVersion := "4.1.0";
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes);
+compareVars :=
+{
+   "Ideal.v",
+   "With_Ron_Goff.v",
+   "With_Ron_Goff_Vknee.v"
+};
+
+simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// "4.1.0"
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes
+// {"Ideal.v", "With_Ron_Goff.v", "With_Ron_Goff_Vknee.v"}
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes', options = '', outputFormat = 'mat', variableFilter = 'time|Ideal.v|With_Ron_Goff.v|With_Ron_Goff_Vknee.v', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Analog.Examples.CharacteristicIdealDiodes_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

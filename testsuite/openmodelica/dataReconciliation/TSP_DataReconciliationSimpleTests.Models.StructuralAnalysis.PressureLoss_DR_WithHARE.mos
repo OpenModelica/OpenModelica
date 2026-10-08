@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_WithHARE_OS.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE_* Reconciled_TSP_DataReconciliationSimpleTests_Models_StructuralAnalysis_PressureLoss_DR_WithHARE.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,21 +20,24 @@ print("simFlags: "+simFlags);
 simulate(TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE, simflags=simFlags);
 getErrorString();
 
+readFile("TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "s", "sx", "variableFilter"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_WithHARE_OS.csv -variableFilter=.*
+// simFlags: -reconcile  -lv=LOG_JAC -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_WithHARE_OS.csv -variableFilter=.*
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE
 // ==========================================================================
@@ -1667,7 +1671,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_WithHARE_OS.csv -variableFilter=.*'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.StructuralAnalysis.PressureLoss_DR_WithHARE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/PressureLoss_DR_WithHARE_OS.csv -variableFilter=.*'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
@@ -1691,7 +1695,15 @@ getErrorString();
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss_KDR.mo:32:3-33:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss_KDR.mo:30:3-31:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss_KDR.mo:32:3-33:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Thermal/BoundaryConditions/HeatSink.mo:11:3-13:67:writable] Warning: Connector C is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
+// [ThermoSysPro 4.2.0/Thermal/BoundaryConditions/HeatSink.mo:7:3-8:80:readonly] Warning: Connector C is not balanced: The number of potential variables (0) is not equal to the number of flow variables (1).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SinkQ.mo:22:3-23:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // "
+// "Variable to be Estimated ,Initial Measured Value ,Estimated Value ,Initial Uncertainty ,Estimated Uncertainty,Result of Local Test ,Local Quality  ,
+// GV.singularPressureLoss_ARE.C1.h,980000,976478,1e+07,6313.08,TRUE,0.000352215,
+// GV.singularPressureLoss_ARE.T,500,500,1,1,TRUE,5.15835e-07,
+// GV.Source_ARE.C.P,7e+06,7e+06,100000,100000,TRUE,2.57146e-09,
+// GV.Source_ARE.Q,550,550,5,5,TRUE,5.51487e-11,
+// GV.singularPressureLoss_ARE.K,650,649.985,100000,100000,TRUE,4.66221e-07,
+// "
+// ""
 // endResult

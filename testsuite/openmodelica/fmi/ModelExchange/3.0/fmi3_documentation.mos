@@ -1,0 +1,69 @@
+// name: fmi3_documentation.mos
+// keywords: FMI 3.0 export documentation html images modelica uri icon
+// status: correct
+// teardown_command: rm -rf DocPkg DocM.fmu DocM.fmutmp/ DocM.log DocM_info.json DocM_FMU.libs DocM_FMU.makefile DocM_external_functions.json resources index.html
+//
+// The FMU's documentation/ directory. index.html is a standalone HTML page (the
+// Documentation annotation's own <html> wrapper is dropped rather than nested,
+// and an empty section gets no heading), every modelica:// image it references is
+// copied in beside it keeping the URI's own path — so two same-named images from
+// different libraries cannot collide — and the page shows the icon the graphical
+// representation rendered to terminalsAndIcons/.
+//
+// The package lives on disk because a modelica:// URI resolves against the file
+// the class was loaded from; a loadString class has none.
+
+system("mkdir -p DocPkg/Resources/Images"); getErrorString();
+writeFile("DocPkg/Resources/Images/box.svg", "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 8 8\"><rect width=\"8\" height=\"8\"/></svg>"); getErrorString();
+writeFile("DocPkg/package.mo", "package DocPkg
+  model DocM \"a documented model\"
+    Real x(start = 1);
+  equation
+    der(x) = -x;
+    annotation(
+      Icon(graphics = {Rectangle(extent = {{-80,-60},{80,60}}, fillColor = {170,213,255}, fillPattern = FillPattern.Solid, lineColor = {0,0,127})}),
+      Documentation(info = \"<html><p>See <img src=\\\"modelica://DocPkg/Resources/Images/box.svg\\\"> and <a href=\\\"modelica://DocPkg.DocM\\\">this class</a>.</p></html>\"));
+  end DocM;
+end DocPkg;"); getErrorString();
+
+loadFile("DocPkg/package.mo"); getErrorString();
+buildModelFMU(DocPkg.DocM, version="3.0", fmuType="me"); getErrorString();
+
+// The image travelled under the URI's own path, beside the entry point.
+system("unzip -l DocM.fmu | grep -oE \"documentation/[A-Za-z/]+[.][a-z]+\" | sort"); getErrorString();
+
+// A standalone page: doctype, charset, title, and no nested <html> from the
+// annotation. The heading leads with the icon from terminalsAndIcons/, the <img>
+// points at the copied image, and the unresolvable modelica:// class link keeps
+// its href for a reader to see.
+system("unzip -cqq DocM.fmu documentation/index.html | grep -oiE \"<!DOCTYPE html>|charset=.utf-8.|<title>[^<]*|<h1>.*</h1>|<h2>[^<]*|src=.DocPkg[^\\\"]*.|href=.modelica[^\\\"]*.|</html>\""); getErrorString();
+
+// Result:
+// 0
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "DocM.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
+// "
+// documentation/DocPkg/Resources/Images/box.svg
+// documentation/index.html
+// 0
+// ""
+// <!DOCTYPE html>
+// charset="utf-8"
+// <title>DocPkg.DocM
+// <h1><img class="svgiconhead" src="../terminalsAndIcons/icon.svg" alt=""> DocPkg.DocM</h1>
+// <h2>Information
+// src="DocPkg/Resources/Images/box.svg"
+// href="modelica://DocPkg.DocM"
+// </html>
+// 0
+// ""
+// endResult

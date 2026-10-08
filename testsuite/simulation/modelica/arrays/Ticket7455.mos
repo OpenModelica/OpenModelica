@@ -1,5 +1,6 @@
 // name: Ticket7455.mos
 // status: correct
+// suite: disabled
 //
 
 loadString("

@@ -4,8 +4,15 @@ from subprocess import call
 from github import Github, Auth
 import os
 
-gh_auth = os.environ["GITHUB_AUTH"]
-g = Github(auth=Auth.Token(gh_auth))
+# A token lifts the GitHub rate limit from 60 to 5000 requests an hour, which
+# this needs to stay comfortably inside. Without one the guide still builds,
+# which is what matters for anyone without a token to hand.
+gh_auth = os.environ.get("GITHUB_AUTH")
+if gh_auth:
+    g = Github(auth=Auth.Token(gh_auth))
+else:
+    print("GITHUB_AUTH is not set, reading the releases anonymously.")
+    g = Github()
 om = g.get_repo("OpenModelica/OpenModelica")
 fout = open("githubreleases.md", "w", encoding="utf-8")
 

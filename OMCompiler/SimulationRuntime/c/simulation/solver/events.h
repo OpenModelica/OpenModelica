@@ -30,6 +30,7 @@
 
 #ifndef _EVENTS_H_
 #define _EVENTS_H_
+#include "../../omc_dll.h"
 
 #include "../../simulation_data.h"
 #include "solver_main.h"
@@ -40,7 +41,7 @@
 extern "C" {
 #endif
 
-extern int maxBisectionIterations;
+DLLDataDirection extern int maxBisectionIterations;
 
 int checkForStateEvent(DATA* data, LIST *eventList);
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);

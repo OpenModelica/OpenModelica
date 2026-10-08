@@ -301,7 +301,7 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
       end if;
       s2::ss := ss;
       if compareSubscript == CompareWithSubsType.WithGenericSubscript then
-        res := stringCompare(ExpressionBasics.printSubscriptStr(s1), ExpressionBasics.printSubscriptStr(s2));
+        res := compareSubscriptStr(s1, s2);
       elseif compareSubscript == CompareWithSubsType.WithGenericSubscriptNotAlphabetic then
         res := ExpressionBasics.compareSubscripts(s1, s2);
       else
@@ -317,6 +317,22 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
       res := 1;
     end if;
   end compareSubs;
+
+  function compareSubscriptStr
+    "stringCompare of the printed subscripts, without printing an integer index."
+    input DAE.Subscript s1, s2;
+    output Integer res;
+  algorithm
+    res := match (s1, s2)
+      local
+        Integer i1, i2;
+      case (DAE.INDEX(exp = DAE.ICONST(integer = i1)), DAE.INDEX(exp = DAE.ICONST(integer = i2)))
+        then if i1 == i2 then 0 else stringCompare(intString(i1), intString(i2));
+      else
+        if referenceEq(s1, s2) then 0
+        else stringCompare(ExpressionBasics.printSubscriptStr(s1), ExpressionBasics.printSubscriptStr(s2));
+    end match;
+  end compareSubscriptStr;
 end CompareWithGenericSubscript;
 
 package CompareWithGenericSubscriptNotAlphabetic
@@ -762,6 +778,8 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
 
+    case DAE.CREF_IDENT(subscriptLst = {}) then inComponentRef;
+
     case DAE.CREF_IDENT(ident = id,identType = t2)
       then
         makeCrefIdent(id,t2,{});
@@ -770,7 +788,7 @@ algorithm
       algorithm
         cr_1 := crefStripLastSubs(cr);
       then
-        makeCrefQual(id,t2,s,cr_1);
+        if referenceEq(cr, cr_1) then inComponentRef else makeCrefQual(id,t2,s,cr_1);
   end match;
 end crefStripLastSubs;
 
@@ -885,61 +903,61 @@ algorithm
   res := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ",") + "}";
 end printComponentRefListStr;
 
-public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
+public constant Integer crefHashSeed = 5381;
+
+public function crefHasNoSubscripts
+  "A chain of qualifiers and an identifier none of which has subscripts, so a
+   traversal of the expressions in it has nothing to visit."
   input DAE.ComponentRef cr;
-  output Integer hash;
+  output Boolean b;
 algorithm
-hash := match cr
-  local
-    DAE.Ident id;
-    DAE.Type tp;
-    list<DAE.Subscript> subs;
-    DAE.ComponentRef cr1;
-  case DAE.CREF_IDENT(id,tp,subs) algorithm
-    //print("IDENT, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
-  then stringHashDjb2(id) + hashSubscripts(tp,subs);
+  b := match cr
+    case DAE.CREF_QUAL(subscriptLst = {}) then crefHasNoSubscripts(cr.componentRef);
+    case DAE.CREF_IDENT(subscriptLst = {}) then true;
+    else false;
+  end match;
+end crefHasNoSubscripts;
 
-  case DAE.CREF_QUAL(id,tp,subs,cr1) algorithm
-    //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
-  then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
-
-  else 0;
-end match;
+public function hashComponentRef
+  "djb2 continued over the qualifiers and subscripts in order."
+  input DAE.ComponentRef cr;
+  output Integer hash = hashComponentRefFrom(cr, crefHashSeed);
 end hashComponentRef;
 
-protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"
-  input DAE.Type tp;
-  input list<DAE.Subscript> subs;
-  output Integer hash;
+protected function hashComponentRefFrom
+  input DAE.ComponentRef cr;
+  input Integer hash;
+  output Integer outHash;
 algorithm
-  hash := match subs
-  case {} then 0;
-  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
-  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real.
-  else hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
+  outHash := match cr
+    case DAE.CREF_IDENT() then crefHashSubscripts(cr.subscriptLst, crefHashIdent(cr.ident, hash));
+    case DAE.CREF_QUAL() then hashComponentRefFrom(cr.componentRef, crefHashSubscripts(cr.subscriptLst, crefHashIdent(cr.ident, hash)));
+    else hash;
   end match;
-end hashSubscripts;
+end hashComponentRefFrom;
 
-protected function hashSubscripts2 "help function"
-  input list<Integer> dims;
+public function crefHashIdent
+  input String ident;
+  input Integer hash;
+  output Integer outHash = stringHashDjb2Continue(ident, stringHashDjb2Continue(".", hash));
+end crefHashIdent;
+
+protected function crefHashSubscripts
   input list<DAE.Subscript> subs;
-  input Integer factor;
-  output Integer hash;
+  input output Integer hash;
 algorithm
-  hash := match(dims, subs)
-  local
-    DAE.Subscript s;
-    list<Integer> rest_dims;
-    list<DAE.Subscript> rest_subs;
+  for sub in subs loop
+    hash := crefHashSubscript(sub, hash);
+  end for;
+end crefHashSubscripts;
 
-    case({}, {}) then 0;
-    case(_::rest_dims, s::rest_subs)
-    // TODO: change to using dimensions once cref types has been fixed.
-    then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);
-  end match;
-end hashSubscripts2;
+public function crefHashSubscript
+  input DAE.Subscript sub;
+  input Integer hash;
+  output Integer outHash = intHashDjb2Continue(hashSubscript(sub), stringHashDjb2Continue("[", hash));
+end crefHashSubscript;
 
-protected function hashSubscript "help function"
+public function hashSubscript "help function"
   input DAE.Subscript sub;
   output Integer hash;
 algorithm

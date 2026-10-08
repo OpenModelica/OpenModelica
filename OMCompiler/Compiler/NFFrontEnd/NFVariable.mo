@@ -96,6 +96,7 @@ public
     SourceInfo info;
     BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
     array<InstNode> child_nodes;
+    Type elem_ty;
     list<Variable> children = {};
   algorithm
     node := ComponentRef.node(cref);
@@ -118,7 +119,8 @@ public
     // get the record children if the variable is a record
     if not Type.isExternalObject(ty) then
       children := match Type.arrayElementType(ty)
-        case Type.COMPLEX(cls = class_node) algorithm
+        case elem_ty as Type.COMPLEX() algorithm
+          class_node := Type.complexNode(elem_ty);
           child_nodes := Class.getComponents(InstNode.getClass(class_node));
           children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
         then children;
@@ -347,26 +349,34 @@ public
 
   function isEncrypted
     input Variable variable;
-    output Boolean isEncrypted;
+    output Boolean isEncrypted = isEncryptedName(variable.name);
+  end isEncrypted;
+
+  function isEncryptedName
+    "Whether any part of the name is declared in an encrypted file."
+    input ComponentRef name;
+    output Boolean isEncrypted = false;
   protected
-    ComponentRef name;
-    SourceInfo info;
+    ComponentRef cr = name;
   algorithm
-    name := variable.name;
-
-    while ComponentRef.isCref(name) loop
-      info := InstNode.info(ComponentRef.node(name));
-
-      if StringUtil.endsWith(info.fileName, ".moc") then
+    while ComponentRef.isCref(cr) loop
+      if isEncryptedNode(ComponentRef.node(cr)) then
         isEncrypted := true;
         return;
       end if;
 
-      name := ComponentRef.rest(name);
+      cr := ComponentRef.rest(cr);
     end while;
+  end isEncryptedName;
 
-    isEncrypted := false;
-  end isEncrypted;
+  function isEncryptedNode
+    input InstNode node;
+    output Boolean isEncrypted;
+  protected
+    SourceInfo info = InstNode.info(node);
+  algorithm
+    isEncrypted := StringUtil.endsWith(info.fileName, ".moc");
+  end isEncryptedNode;
 
   function isAccessible
     input Variable variable;
@@ -391,6 +401,20 @@ public
       isAccessible := true;
     end if;
   end isAccessible;
+
+  function isFixed
+    input Variable var;
+    output Boolean fixed;
+  protected
+    Binding binding;
+  algorithm
+    fixed := if var.attributes.variability < Variability.DISCRETE then true else false;
+    binding := lookupTypeAttribute("fixed", var);
+
+    if Binding.hasExp(binding) then
+      fixed := Expression.isTrue(Binding.getExp(binding));
+    end if;
+  end isFixed;
 
   function lookupTypeAttribute
     input String name;

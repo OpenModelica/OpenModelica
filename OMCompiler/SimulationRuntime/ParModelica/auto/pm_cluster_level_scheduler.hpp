@@ -33,7 +33,6 @@
  Mahder.Gebremedhin@liu.se  2014-03-13
 */
 
-#include "gc.h"
 
 #include <cmath>
 
@@ -106,7 +105,7 @@ template <typename TaskType,
           typename clustetring3 = cluster_none,
           typename clustetring4 = cluster_none,
           typename clustetring5 = cluster_none>
-class StepLevels : public TaskGraphScheduler, boost::noncopyable {
+class StepLevels : public TaskGraphScheduler, utility::noncopyable {
   public:
     typedef TaskSystem_v2<TaskType>                TaskSystemType;
     typedef typename TaskSystemType::GraphType     GraphType;
@@ -322,7 +321,7 @@ class StepLevels : public TaskGraphScheduler, boost::noncopyable {
         GraphType& sys_graph = task_system.sys_graph;
 
         typename GraphType::vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
 
         execution_timer.start_timer();
         step_timer.start_timer();

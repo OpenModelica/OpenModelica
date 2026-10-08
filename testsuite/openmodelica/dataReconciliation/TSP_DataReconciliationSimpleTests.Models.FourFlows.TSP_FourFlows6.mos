@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows6_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows6.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -19,21 +20,24 @@ print("simFlags: "+simFlags);
 simulate(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6, simflags=simFlags);
 getErrorString();
 
+readFile("TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6_Outputs.csv");
+getErrorString();
+
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows6_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows6_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6
 // ==========================================================================
@@ -3880,7 +3884,7 @@ getErrorString();
 // 97: singularPressureLoss1.C2.P type: Real
 //
 //
-// Parameters in SET_S (9)
+// Parameters in SET_S (10)
 // ========================================
 // 1: staticDrum2.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
 // 2: staticDrum1.x:PARAM()  = 1.0  "Vapor separation efficiency at the outlet" type: Real
@@ -3889,8 +3893,9 @@ getErrorString();
 // 5: singularPressureLoss3.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
 // 6: singularPressureLoss3.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
 // 7: singularPressureLoss2.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
-// 8: singularPressureLoss1.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
-// 9: singularPressureLoss1.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
+// 8: singularPressureLoss2.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
+// 9: singularPressureLoss1.mode:PARAM()  = 0  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
+// 10: singularPressureLoss1.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
 //
 //
 //
@@ -3992,32 +3997,15 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows6_Inputs.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows6_Inputs.csv'",
 //     messages = "Simulation execution failed for model: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!
 // LOG_STDOUT        | info    | TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6
-// LOG_ASSERT        | error   | [ThermoSysPro 4.0.0/Properties/Fluid/derTemperature_derP_derh.mo:65:5-65:44:writable]
+// LOG_ASSERT        | error   | [ThermoSysPro 4.2.0/Properties/Fluid/derTemperature_derP_derh.mo:56:5-56:44:readonly]
 // |                 | |       | incorrect fluid number
-//
-// Limited backtrace at point of segmentation fault
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(+0xf7595)[0x7ff03ee13595]
-// /lib/x86_64-linux-gnu/libc.so.6(+0x3c050)[0x7ff03c50a050]
-// /lib/x86_64-linux-gnu/libc.so.6(siglongjmp+0x10)[0x7ff03c509db0]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(+0x1cd190)[0x7ff03eee9190]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(+0x1cd58b)[0x7ff03eee958b]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6(omc_ThermoSysPro_Properties_Fluid_derTemperature__derP__derh+0xe6)[0x560f19d04b06]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6(TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows6_eqFunction_171+0x133)[0x560f19dc9dd3]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6(TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows6_functionJacF_column+0xd5)[0x560f19dcc9f5]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(_Z18getJacobianMatrixFP4DATAP12threadData_sRSt14basic_ofstreamIcSt11char_traitsIcEEb+0xea)[0x7ff03eeacbfa]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(dataReconciliation+0x34e)[0x7ff03eeb9e3e]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(startNonInteractiveSimulation+0x12b6)[0x7ff03eed6206]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/build/bin/../lib/x86_64-linux-gnu/omc/libSimulationRuntimeC.so(_main_SimulationRuntime+0xb6)[0x7ff03eed6d56]
-// /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6(main+0x280)[0x560f19cfb490]
-// /lib/x86_64-linux-gnu/libc.so.6(+0x2724a)[0x7ff03c4f524a]
-// /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x85)[0x7ff03c4f5305]
-// Segmentation fault
+// LOG_STDOUT        | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
 // "[openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
@@ -4042,13 +4030,16 @@ getErrorString();
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeATh.mo:36:3-37:82:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/Volumes/VolumeATh.mo:38:3-39:84:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourceQ.mo:22:3-23:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:783:9-783:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:850:9-850:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:1088:9-1088:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/Fluid/derDensity_derP_derh.mo:63:5-63:84:writable] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:470:9-470:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:525:9-525:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteam/IF97_packages.mo:708:9-708:27:readonly] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:51:3-51:60:readonly] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:118:3-118:151:readonly] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 4.2.0/Properties/Fluid/derDensity_derP_derh.mo:56:5-56:88:readonly] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// "
+// ""
+// "Error: Error opening file: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows6_Outputs.csv: No such file or directory.
 // "
 // endResult

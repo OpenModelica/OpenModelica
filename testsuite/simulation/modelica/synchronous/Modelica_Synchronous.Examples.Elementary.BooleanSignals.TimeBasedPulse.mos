@@ -2,6 +2,7 @@
 // keywords: synchronous features
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 //
 
 loadFile("Modelica_Synchronous.Examples.Elementary.BooleanSignals.TimeBasedPulse.mo"); getErrorString();

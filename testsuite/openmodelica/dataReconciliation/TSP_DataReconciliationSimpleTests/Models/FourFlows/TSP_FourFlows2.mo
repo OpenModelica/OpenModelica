@@ -10,8 +10,10 @@ model TSP_FourFlows2
       uncertain=Uncertainty.refine),
     T(
       displayUnit="K"),
+    flow_reversal=false,
     rho(
-      displayUnit="kg/m3"))
+      displayUnit="kg/m3"),
+    specific_enthalpy_as_state_variable=false)
     annotation (Placement(visible=true,transformation(origin={-50,0},extent={{-10,-10},{10,10}},rotation=0)));
   Components.PressureLoss.SingularPressureLoss singularPressureLoss2(
     Pm(
@@ -21,8 +23,10 @@ model TSP_FourFlows2
       uncertain=Uncertainty.refine),
     T(
       displayUnit="K"),
+    flow_reversal=false,
     rho(
-      displayUnit="kg/m3"))
+      displayUnit="kg/m3"),
+    specific_enthalpy_as_state_variable=false)
     annotation (Placement(visible=true,transformation(origin={0,20},extent={{-10,-10},{10,10}},rotation=0)));
   Components.PressureLoss.SingularPressureLoss singularPressureLoss3(
     Pm(
@@ -32,8 +36,10 @@ model TSP_FourFlows2
       uncertain=Uncertainty.refine),
     T(
       displayUnit="K"),
+    flow_reversal=false,
     rho(
-      displayUnit="kg/m3"))
+      displayUnit="kg/m3"),
+    specific_enthalpy_as_state_variable=false)
     annotation (Placement(visible=true,transformation(origin={0,-20},extent={{-10,-10},{10,10}},rotation=0)));
   Components.PressureLoss.SingularPressureLoss singularPressureLoss4(
     Pm(
@@ -43,8 +49,10 @@ model TSP_FourFlows2
       uncertain=Uncertainty.refine),
     T(
       displayUnit="K"),
+    flow_reversal=false,
     rho(
-      displayUnit="kg/m3"))
+      displayUnit="kg/m3"),
+    specific_enthalpy_as_state_variable=false)
     annotation (Placement(visible=true,transformation(origin={60,0},extent={{-10,-10},{10,10}},rotation=0)));
   ThermoSysPro.WaterSteam.Junctions.StaticDrum staticDrum1
     annotation (Placement(visible=true,transformation(origin={-22,0},extent={{-10,-10},{10,10}},rotation=0)));
@@ -74,5 +82,5 @@ equation
       lv="LOG_JAC",
       eps="0.023",
       s="dassl",
-      sx="modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows2_Inputs.csv"));
+      sx="./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows2_Inputs.csv"));
 end TSP_FourFlows2;

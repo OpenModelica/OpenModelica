@@ -21,4 +21,4 @@ tsupdate.bat
 
 ## Creating a .qm file
 
-- Generating .qm files from .ts files is performed by the Makefile. You don't need to worry.
+- Generating .qm files from .ts files is performed by the CMake build. You don't need to worry.

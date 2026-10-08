@@ -38,11 +38,7 @@
 TraceabilityGraphViewWidget::TraceabilityGraphViewWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpTraceabilityGraphWebView = new QWebEngineView;
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  mpTraceabilityGraphWebView = new QWebView;
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpTraceabilityGraphWebView->load(QUrl("http://localhost:7474/browser/"));
   mpTraceabilityGraphViewLabel = new QLabel(tr("Traceability Graph View"));
   QFont font;

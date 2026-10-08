@@ -1,7 +1,7 @@
 // name:     HelloFMIWorldEvent
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml HelloFMI20World.fmu HelloFMI20World* HelloFMI20World/* output.log
+// teardown_command: rm -rf binaries sources modelDescription.xml HelloFMI20World.fmu HelloFMI20World* HelloFMI20World/* output.log resources
 // cflags: -d=-newInst
 //
 
@@ -30,6 +30,8 @@ val(x,1);
 // true
 // "HelloFMI20WorldEvent.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Notification: Building FMU for platform 'static' (1/1).
+// Notification: Finished FMU for platform 'static' (1/1).
 // "
 // "HelloFMI20WorldEvent_me_FMU.mo"
 // ""
@@ -39,11 +41,11 @@ val(x,1);
 // ""
 // record SimulationResult
 //     resultFile = "HelloFMI20WorldEvent_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'HelloFMI20WorldEvent_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'HelloFMI20WorldEvent_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 1.0
-// 1.500000000000002
+// 1.5000000000000018
 // endResult

@@ -348,6 +348,7 @@ private:
     const Selector &getLoadSelector() const {return mLoadSelector;}
     const Selector &getSaveSelector() const {return mSaveSelector;}
     const Selector &getDirectorySelector() const {return mDirectorySelector;}
+    bool hasGroupImage() const {return mHasGroupImage;}
     const QString &getGroupImage() const {return mGroupImage;}
     const BooleanAnnotation &isConnectorSizing() const {return mConnectorSizing;}
   private:
@@ -361,6 +362,7 @@ private:
     Selector mLoadSelector;
     Selector mSaveSelector;
     Selector mDirectorySelector;
+    bool mHasGroupImage = false;
     StringAnnotation mGroupImage;
     BooleanAnnotation mConnectorSizing;
   };
@@ -501,10 +503,10 @@ private:
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
-    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false, bool elementPropertiesDialog = false) const;
+    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false, bool skipDisplayUnit = false) const;
     static Modifier *mergeModifiersIntoOne(QVector<const Modifier *> extendsModifiers, Model *pParentModel);
     static void mergeModifiers(Modifier *pModifier1, const Modifier *pModifier2);
-    Modifier *getModifier(const QString &modifier) const;
+    Modifier *getModifier(const QString &modifier, bool recursive = false) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
     const QVector<Modifier*> &getModifiers() const {return mModifiers;}
@@ -706,8 +708,8 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
-    QString getTopLevelExtendName() const;
-    Element *getTopLevelExtendElement() const;
+    QString getTopLevelParentElementName() const;
+    Element *getTopLevelParentElement() const;
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier *getModifier() const {return mpModifier;}

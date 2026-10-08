@@ -1,0 +1,3 @@
+# `--profile ci` writes a per-test JUnit report to target/nextest/ci/junit.xml.
+[profile.ci.junit]
+path = "junit.xml"

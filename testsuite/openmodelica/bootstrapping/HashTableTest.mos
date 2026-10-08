@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f HashTableTest_*
 // cflags: -d=-newInst
+// suite: metamodelica
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("HashTableTest.mo");getErrorString();

@@ -1,6 +1,7 @@
 // name: MatchCase16
 // cflags: -g=MetaModelica -d=gen -d=-newInst
 // status: correct
+// suite: metamodelica
 
 package MatchCase16
 

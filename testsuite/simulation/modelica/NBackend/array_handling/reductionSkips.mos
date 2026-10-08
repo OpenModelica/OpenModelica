@@ -1,0 +1,34 @@
+// name: reductionSkips
+// keywords: NewBackend, adjacency, array constructor
+// status: correct
+// suite: cSources
+//
+// The scalar product reduces the array constructor to a scalar, its elements are not skipped to.
+// Old backend: x(1) = 1.11963298118
+
+loadString("
+model ReductionSkips
+  Real x(start = 1);
+equation
+  {1, 2, 3} * {1, x, x * x} = time + 6;
+end ReductionSkips;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ReductionSkips); getErrorString();
+abs(val(x, 1.0) - 1.11963298118) < 1e-8;
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ReductionSkips_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ReductionSkips', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult

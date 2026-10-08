@@ -1,6 +1,7 @@
 // name: conn14.mo
 // keywords:
 // status: correct
+// suite: disabled
 //
 // FAILREASON: Maybe no correct, see Modelica issue #768.
 //

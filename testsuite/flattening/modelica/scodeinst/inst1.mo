@@ -1,6 +1,7 @@
 // name: inst1.mo
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 

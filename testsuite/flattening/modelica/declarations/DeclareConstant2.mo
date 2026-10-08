@@ -1,6 +1,7 @@
 // name:     DeclareConstant2
 // keywords: declaration
 // status:   incorrect
+// suite: disabled
 //
 // The attribute 'value' shall not be accessed.
 //

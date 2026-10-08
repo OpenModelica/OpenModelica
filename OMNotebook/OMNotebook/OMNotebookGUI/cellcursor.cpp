@@ -124,7 +124,7 @@ namespace IAEX
    *
    * \return False
    */
-  bool CellCursor::isEditable()
+  bool CellCursor::isEditable() const
   {
     return false;
   }
@@ -146,7 +146,7 @@ namespace IAEX
    *
    * \brief Reimplemenation of the mousePressEvent function
    */
-  void CellCursor::mousePressEvent(QMouseEvent *event)
+  void CellCursor::mousePressEvent(QMouseEvent *)
   {
     clickedOn_ = true;
   }
@@ -559,6 +559,14 @@ namespace IAEX
     //      emit positionChanged(x(), y(), 5, 5);
   }
 
+  void CellCursor::setFocus(bool)
+  {
+  }
+
+  QString CellCursor::text()
+  {
+    return QString();
+  }
 
   /*! \class CursorWidget
   *

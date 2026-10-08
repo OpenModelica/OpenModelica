@@ -1,0 +1,27 @@
+// name: Buildings.Templates.Plants.Controls.Enabling.Validation.Enable
+// keywords: NewBackend, matching, adjacency
+// status: correct
+//
+// Nothing can be solved from a discrete call result, e.g. a function alias inside
+// integer($FUN * 1e-37 + table[i, j]) must not be matched to that equation.
+// Only checks the translation.
+
+loadModel(Buildings, {"12.1.1"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+translateModel(Buildings.Templates.Plants.Controls.Enabling.Validation.Enable); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// "Warning: NBResolveSingularities.balanceInitialization reports an overdetermined initialization!
+// Checking for consistency is not yet supported, following equations had to be removed:
+// [FOR-] (2) ($RES_SIM_222)
+// [----] for {$f1 in 1:1, $f2 in 1:2} loop
+// [----]   [SCAL] (1) $FUN_6[$f1, $f2] = 1.0; ($RES_SIM_223)
+// [----] end for;
+// 	slice: {1}
+// "
+// endResult

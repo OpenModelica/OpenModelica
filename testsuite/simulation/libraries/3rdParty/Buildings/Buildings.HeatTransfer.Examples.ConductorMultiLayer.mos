@@ -14,6 +14,5 @@ simulate(Buildings.HeatTransfer.Examples.ConductorMultiLayer);getErrorString();
 // "
 // end SimulationResult;
 // "[simulation/libraries/3rdParty/Buildings/Buildings.HeatTransfer.Examples.ConductorMultiLayer.mo:262:86-262:161:writable] Warning: In relation con.lay.material.R == 0.0, == on Real operands is deprecated in non-function contexts.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // endResult

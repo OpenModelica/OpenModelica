@@ -79,7 +79,7 @@ int print_csvLineIterStats(void* csvData, int size, int num,
                            int iteration, double* x, double* f, double error_f,
                            double error_fs, double delta_x, double delta_xs,
                            double lambda);
-void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum, modelica_boolean* isSparseNls, modelica_boolean* isBigNls);
+void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum);
 
 NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, JACOBIAN* analyticJacobian);
 void freeNlsUserData(NLS_USERDATA* userData);

@@ -1,0 +1,23 @@
+// name: Buildings.Controls.OBC.CDL.Reals.Validation.PIDWithReset
+// keywords: NewBackend Buildings CDL PID integrator reinit alias
+// status: correct
+// teardown_command: rm -rf Buildings.Controls.OBC.CDL.Reals.Validation.PIDWithReset.libs Buildings*.libs
+
+loadModel(Buildings, {"12.1.1"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(Buildings.Controls.OBC.CDL.Reals.Validation.PIDWithReset); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Buildings.Controls.OBC.CDL.Reals.Validation.PIDWithReset_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Buildings.Controls.OBC.CDL.Reals.Validation.PIDWithReset', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

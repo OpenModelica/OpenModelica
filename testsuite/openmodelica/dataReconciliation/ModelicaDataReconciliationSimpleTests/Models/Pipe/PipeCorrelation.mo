@@ -11,6 +11,6 @@ equation
 annotation (__OpenModelica_simulationFlags(
       lv = "LOG_JAC", eps = "0.023",
       s="dassl",
-      sx="modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv", cx = "modelica://ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_InputsS_xj.csv"));
+      sx="./ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_Inputs.csv", cx = "./ModelicaDataReconciliationSimpleTests/resources/PipeCorrelation_InputsS_xj.csv"));
 
 end PipeCorrelation;

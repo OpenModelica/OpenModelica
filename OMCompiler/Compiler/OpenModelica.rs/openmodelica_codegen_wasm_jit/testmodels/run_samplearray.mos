@@ -1,0 +1,6 @@
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("TestSampleArray.mo"); getErrorString();
+simulate(TestSampleArray, stopTime = 1.0, numberOfIntervals = 50); getErrorString();
+val(x[1], 1.0); // expect 11 (fires at 0,0.1,..,1.0)
+val(x[2], 1.0); // expect 6  (0,0.2,..,1.0)
+val(x[3], 1.0); // expect 4  (0,0.3,0.6,0.9)

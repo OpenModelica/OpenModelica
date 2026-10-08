@@ -5,7 +5,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 
 loadString("
 package ExternalArrayInput
@@ -51,13 +51,15 @@ val(b[2], 1);
 // true
 // ""
 // true
-// ""
+// "[<interactive>:11:3-20:9:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
 // record SimulationResult
-// resultFile = "ExternalArrayInput.Test_res.mat",
-// simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ExternalArrayInput.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-// messages = ""
+//     resultFile = "ExternalArrayInput.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalArrayInput.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
 // end SimulationResult;
-// ""
+// "[<interactive>:3:3-10:9:writable] Warning: Pure function 'ExternalArrayInput.f1' contains a call to impure function 'ExternalArrayInput.f2'.
+// "
 // 1.0
 // 3.0
 // endResult

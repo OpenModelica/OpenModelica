@@ -1,0 +1,37 @@
+// name: enumWithIntegerConstants
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+//
+// Integer constants must not shift the index of the enumeration variables,
+// the runtime only has entries for the variables (segmentation fault).
+
+loadString("
+model enumWithIntegerConstants
+  type E = enumeration(a, b, c);
+  constant Integer tab[3, 3] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+  E e(start = E.a, fixed = true);
+  Integer k(start = 0, fixed = true);
+equation
+  when sample(0.1, 0.1) then
+    e = if pre(e) == E.a then E.b else E.a;
+    k = pre(k) + tab[2, 3];
+  end when;
+end enumWithIntegerConstants;
+"); getErrorString();
+
+simulate(enumWithIntegerConstants, stopTime = 1); getErrorString();
+val(k, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "enumWithIntegerConstants_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'enumWithIntegerConstants', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 60.0
+// endResult

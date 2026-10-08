@@ -1,6 +1,7 @@
 // name: FuncBuiltinEnumTypeName
 // keywords: enumeration
 // status: correct
+// suite: disabled
 //
 // Tests that enumeration type names can be used to convert an Integer to an
 // enumeration value.

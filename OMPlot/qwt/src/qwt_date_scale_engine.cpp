@@ -12,8 +12,38 @@
 #include "qwt_interval.h"
 
 #include <qdatetime.h>
+#if QT_VERSION >= 0x060500
+#include <qtimezone.h>
+#endif
 
 #include <limits>
+
+static inline void qwtSetUtcOffset( QDateTime& dateTime, int seconds )
+{
+#if QT_VERSION >= 0x060500
+    dateTime.setTimeZone( QTimeZone::fromSecondsAheadOfUtc( seconds ) );
+#else
+    dateTime.setOffsetFromUtc( seconds );
+#endif
+}
+
+static inline QDateTime qwtDateTime( const QDate& date, const QTime& time,
+    Qt::TimeSpec timeSpec )
+{
+#if QT_VERSION >= 0x060500
+    switch ( timeSpec )
+    {
+        case Qt::UTC:
+            return QDateTime( date, time, QTimeZone::UTC );
+        case Qt::OffsetFromUTC:
+            return QDateTime( date, time, QTimeZone::fromSecondsAheadOfUtc( 0 ) );
+        default:
+            return QDateTime( date, time, QTimeZone::LocalTime );
+    }
+#else
+    return QDateTime( date, time, timeSpec );
+#endif
+}
 
 static inline double qwtMsecsForType( int type )
 {
@@ -1115,11 +1145,7 @@ QDateTime QwtDateScaleEngine::alignDate(
 
     if ( dateTime.timeSpec() == Qt::OffsetFromUTC )
     {
-#if QT_VERSION >= 0x050200
-        dt.setOffsetFromUtc( 0 );
-#else
-        dt.setUtcOffset( 0 );
-#endif
+        qwtSetUtcOffset( dt, 0 );
     }
 
     switch( intervalType )
@@ -1277,11 +1303,7 @@ QDateTime QwtDateScaleEngine::alignDate(
 
     if ( dateTime.timeSpec() == Qt::OffsetFromUTC )
     {
-#if QT_VERSION >= 0x050200
-        dt.setOffsetFromUtc( dateTime.offsetFromUtc() );
-#else
-        dt.setUtcOffset( dateTime.utcOffset() );
-#endif
+        qwtSetUtcOffset( dt, dateTime.offsetFromUtc() );
     }
 
     return dt;
@@ -1303,17 +1325,13 @@ QDateTime QwtDateScaleEngine::toDateTime( double value ) const
         const QDate date = ( value <= 0.0 )
             ? QwtDate::minDate() : QwtDate::maxDate();
 
-        dt = QDateTime( date, QTime( 0, 0 ), m_data->timeSpec );
+        dt = qwtDateTime( date, QTime( 0, 0 ), m_data->timeSpec );
     }
 
     if ( m_data->timeSpec == Qt::OffsetFromUTC )
     {
         dt = dt.addSecs( m_data->utcOffset );
-#if QT_VERSION >= 0x050200
-        dt.setOffsetFromUtc( m_data->utcOffset );
-#else
-        dt.setUtcOffset( m_data->utcOffset );
-#endif
+        qwtSetUtcOffset( dt, m_data->utcOffset );
     }
 
     return dt;

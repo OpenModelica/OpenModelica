@@ -54,6 +54,7 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 /*!
   \class TVariablesTreeItem
@@ -73,9 +74,10 @@ TVariablesTreeItem::TVariablesTreeItem(const QVector<QVariant> &tVariableItemDat
   mIsRootItem = isRootItem;
   mVariableName = tVariableItemData[0].toString();
   mDisplayVariableName = tVariableItemData[1].toString();
-  mComment = tVariableItemData[2].toString();
-  mLineNumber = tVariableItemData[3].toString();
-  mFilePath = tVariableItemData[4].toString();
+  mAlias = tVariableItemData[2].toString();
+  mComment = tVariableItemData[3].toString();
+  mLineNumber = tVariableItemData[4].toString();
+  mFilePath = tVariableItemData[5].toString();
 }
 
 TVariablesTreeItem::~TVariablesTreeItem()
@@ -101,7 +103,7 @@ void TVariablesTreeItem::removeChildren()
 
 int TVariablesTreeItem::columnCount() const
 {
-  return 4;
+  return 5;
 }
 
 QVariant TVariablesTreeItem::data(int column, int role) const
@@ -122,13 +124,22 @@ QVariant TVariablesTreeItem::data(int column, int role) const
       switch (role)
       {
         case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+          return mAlias;
+        default:
+          return QVariant();
+      }
+    case 2:
+      switch (role)
+      {
+        case Qt::DisplayRole:
           return mComment;
         case Qt::ToolTipRole:
           return mComment;
         default:
           return QVariant();
       }
-    case 2:
+    case 3:
       switch (role)
       {
         case Qt::DisplayRole:
@@ -138,7 +149,7 @@ QVariant TVariablesTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 3:
+    case 4:
       switch (role)
       {
         case Qt::DisplayRole:
@@ -171,7 +182,7 @@ TVariablesTreeModel::TVariablesTreeModel(TVariablesTreeView *pTVariablesTreeView
 {
   mpTVariablesTreeView = pTVariablesTreeView;
   QVector<QVariant> headers;
-  headers << "" << Helper::variables << tr("Comment") << tr("Line") << Helper::fileLocation;
+  headers << "" << Helper::variables << tr("Alias") << tr("Comment") << tr("Line") << Helper::fileLocation;
   mpRootTVariablesTreeItem = new TVariablesTreeItem(headers, 0, true);
 }
 
@@ -311,6 +322,7 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
       QVector<QVariant> data;
       data << fullName
            << displayName
+           << variable.alias
            << variable.comment
            << variable.info.lineStart
            << variable.info.file;
@@ -363,13 +375,16 @@ TVariableTreeProxyModel::TVariableTreeProxyModel(QObject *parent)
 {
 }
 
+/*!
+ * \brief TVariableTreeProxyModel::filterAcceptsRow
+ * Reimplementation of QSortFilterProxyModel::filterAcceptsRow to filter the variables in natural order.
+ * \param sourceRow
+ * \param sourceParent
+ * \return
+ */
 bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   if (!filterRegularExpression().pattern().isEmpty()) {
-#else
-  if (!filterRegExp().isEmpty()) {
-#endif
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if (index.isValid()) {
       // if any of children matches the filter, then current index matches the filter as well
@@ -384,29 +399,24 @@ bool TVariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex 
       if (pTVariablesTreeItem) {
         QString variableName = pTVariablesTreeItem->getVariableName();
         variableName.remove(QRegularExpression("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)"));
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         return variableName.contains(filterRegularExpression());
-#else
-        return variableName.contains(filterRegExp());
-#endif
       } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         return sourceModel()->data(index).toString().contains(filterRegularExpression());
-#else
-        return sourceModel()->data(index).toString().contains(filterRegExp());
-#endif
       }
       QString key = sourceModel()->data(index, filterRole()).toString();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       return key.contains(filterRegularExpression());
-#else
-      return key.contains(filterRegExp());
-#endif
     }
   }
   return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
+/*!
+ * \brief TVariableTreeProxyModel::lessThan
+ * Reimplementation of QSortFilterProxyModel::lessThan to sort the variables in natural order.
+ * \param left
+ * \param right
+ * \return
+ */
 bool TVariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
   QVariant l = (left.model() ? left.model()->data(left) : QVariant());
@@ -422,6 +432,44 @@ bool TVariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelInde
 EquationTreeProxyModel::EquationTreeProxyModel(QObject *parent)
   : QSortFilterProxyModel(parent)
 {
+}
+
+/*!
+ * \brief EquationTreeProxyModel::filterAcceptsRow
+ * Reimplementation of QSortFilterProxyModel::filterAcceptsRow to filter the equations in natural order.
+ * \param sourceRow
+ * \param sourceParent
+ * \return
+ */
+bool EquationTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+  const QRegularExpression filter = filterRegularExpression();
+  if (!filter.isValid() || filter.pattern().isEmpty()) {
+    return true;
+  }
+
+  QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+  if (!index.isValid()) {
+    return false;
+  }
+
+  /* Keep parent equations visible when one of their nested equations matches. */
+  const int rows = sourceModel()->rowCount(index);
+  for (int i = 0; i < rows; ++i) {
+    if (filterAcceptsRow(i, index)) {
+      return true;
+    }
+  }
+
+  const EquationTreeItem *pEquationTreeItem =
+      static_cast<const EquationTreeItem*>(index.internalPointer());
+  const OMEquation *pOMEquation = pEquationTreeItem ? pEquationTreeItem->getOMEquation() : nullptr;
+  if (!pOMEquation) {
+    return false;
+  }
+
+  return filter.match(QString::number(pOMEquation->index)).hasMatch()
+      || filter.match(pOMEquation->tag).hasMatch();
 }
 
 /*!
@@ -499,12 +547,12 @@ QVariant EquationTreeItem::data(int column, int role) const
     return QVariant();
   }
 
-  /* If the equation is not profiled then show only index, section and equation columns
+  /* If the equation is not profiled then show only index, section, size and equation columns
    * and hide the rest of the columns by showing empty string in them.
    * This is done to avoid showing 0 and 0% in NCall, MaxTime, Time and Fraction columns for non-profiled equations.
    */
-  if (column > 2 && mpOMEquation->profileBlock < 0) {
-    column = 7;
+  if (column > 4 && mpOMEquation->profileBlock < 0) {
+    column = 8;
   }
 
   switch (column)
@@ -527,7 +575,17 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 2: // Equation
+    case 2: // Size
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return QString::number(mpOMEquation->unknowns);
+        case Qt::ToolTipRole:
+          return QString("Number of unknowns in the equation.");
+        default:
+          return QVariant();
+      }
+    case 3: // Equation
       switch (role)
       {
         case Qt::DisplayRole:
@@ -539,7 +597,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 3: // NCall
+    case 4: // NCall
       switch (role)
       {
         case Qt::DisplayRole:
@@ -547,7 +605,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 4: // MaxTime
+    case 5: // MaxTime
       switch (role)
       {
         case Qt::DisplayRole:
@@ -557,7 +615,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 5: // Time
+    case 6: // Time
       switch (role)
       {
         case Qt::DisplayRole:
@@ -567,7 +625,7 @@ QVariant EquationTreeItem::data(int column, int role) const
         default:
           return QVariant();
       }
-    case 6: // Fraction
+    case 7: // Fraction
       switch (role)
       {
         case Qt::DisplayRole:
@@ -595,8 +653,8 @@ int EquationTreeItem::getEquationIndex()
   return mpOMEquation ? mpOMEquation->index : -1;
 }
 
-EquationTreeModel::EquationTreeModel(QObject *parent)
-  : QAbstractItemModel(parent)
+EquationTreeModel::EquationTreeModel(const QList<OMEquation*> &equations, QObject *parent)
+  : QAbstractItemModel(parent), mEquations(equations)
 {
   mpRootEquationTreeItem = new EquationTreeItem(nullptr, nullptr, true);
 }
@@ -610,7 +668,7 @@ EquationTreeModel::EquationTreeModel(QObject *parent)
 int EquationTreeModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 7;
+    return 8;
 }
 
 /*!
@@ -648,11 +706,12 @@ QVariant EquationTreeModel::headerData(int section, Qt::Orientation orientation,
     switch (section) {
     case 0: return "Index";
     case 1: return "Type";
-    case 2: return "Equation";
-    case 3: return "NCall";
-    case 4: return "MaxTime";
-    case 5: return "Time";
-    case 6: return "Fraction";
+    case 2: return "Size";
+    case 3: return "Equation";
+    case 4: return "NCall";
+    case 5: return "MaxTime";
+    case 6: return "Time";
+    case 7: return "Fraction";
     default: return QVariant();
     }
 }
@@ -719,7 +778,57 @@ QVariant EquationTreeModel::data(const QModelIndex &index, int role) const
   }
 
   EquationTreeItem *pEquationTreeItem = static_cast<EquationTreeItem*>(index.internalPointer());
+  if (!pEquationTreeItem) {
+    return QVariant();
+  }
+
+  if (index.column() == 3) { /* equation column */
+    switch (role)
+    {
+      case Qt::DisplayRole:
+      case Qt::ToolTipRole:
+        return aliasedEquationText(pEquationTreeItem->getOMEquation());
+      default:
+        return QVariant();
+    }
+  }
   return pEquationTreeItem->data(index.column(), role);
+}
+
+/*!
+ * \brief EquationTreeModel::aliasedEquationText
+ * Returns the text of an equation, resolving an alias equation to the equation it is an alias of
+ * so that e.g. "(alias) 63" is displayed together with the actual text of equation 63.
+ * See issue #16812. The alias equation has the tag "alias" and its text holds nothing but
+ * the index of the equation it points at.
+ * \param pOMEquation
+ * \return
+ */
+QString EquationTreeModel::aliasedEquationText(const OMEquation *pOMEquation) const
+{
+  if (!pOMEquation) {
+    return QString();
+  }
+
+  QString text = pOMEquation->toString();
+
+  /* The text of an alias equation e.g. "63" (and the tag is "alias"). Resolve it to the text of the
+   * equation it is an alias of so that "(alias) 63" is shown together with the actual text of 63. */
+  if (pOMEquation->tag == "alias" && !pOMEquation->text.isEmpty()) {
+    bool ok = false;
+    const int equationIndex = pOMEquation->text.at(0).toInt(&ok);
+    if (ok) {
+      foreach (const OMEquation *pEquation, mEquations) {
+        if (pEquation && pEquation->index == equationIndex) {
+          /* e.g. "(alias) 63: x = 3" */
+          text = QString("%1: %3").arg(pOMEquation->toString()).arg(pEquation->toString());
+          break;
+        }
+      }
+    }
+  }
+
+  return text;
 }
 
 /*!
@@ -878,7 +987,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   /* Defined in tree view */
   Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
   pDefinedInLabel->setObjectName("LabelWithBorder");
-  mpDefinedInEquationTreeModel = new EquationTreeModel(this);
+  mpDefinedInEquationTreeModel = new EquationTreeModel(mEquations, this);
   mpDefinedInEquationProxyModel = new EquationTreeProxyModel(this);
   mpDefinedInEquationProxyModel->setDynamicSortFilter(true);
   mpDefinedInEquationProxyModel->setSourceModel(mpDefinedInEquationTreeModel);
@@ -895,7 +1004,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   /* Used in tree widget  */
   Label *pUsedInLabel = new Label(tr("Used In Equations"));
   pUsedInLabel->setObjectName("LabelWithBorder");
-  mpUsedInEquationTreeModel = new EquationTreeModel(this);
+  mpUsedInEquationTreeModel = new EquationTreeModel(mEquations, this);
   mpUsedInEquationProxyModel = new EquationTreeProxyModel(this);
   mpUsedInEquationProxyModel->setDynamicSortFilter(true);
   mpUsedInEquationProxyModel->setSourceModel(mpUsedInEquationTreeModel);
@@ -928,19 +1037,28 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   /* Equations Heading */
   Label *pEquationBrowserLabel = new Label(tr("Equations"));
   pEquationBrowserLabel->setObjectName("LabelWithBorder");
+  mpEquationSearchFilters = new TreeSearchFilters(this);
+  mpEquationSearchFilters->getFilterTextBox()->setPlaceholderText(tr("Filter Equations"));
+  connect(mpEquationSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findEquations()));
+  connect(mpEquationSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findEquations()));
   /* Equations tree view */
-  mpEquationTreeModel = new EquationTreeModel(this);
+  mpEquationTreeModel = new EquationTreeModel(mEquations, this);
   mpEquationProxyModel = new EquationTreeProxyModel(this);
   mpEquationProxyModel->setDynamicSortFilter(true);
   mpEquationProxyModel->setSourceModel(mpEquationTreeModel);
   mpEquationTreeView = new EquationTreeView(this);
   mpEquationTreeView->setModel(mpEquationProxyModel);
   connect(mpEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
+  connect(mpEquationSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpEquationTreeView, SLOT(expandAll()));
+  connect(mpEquationSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpEquationTreeView, SLOT(collapseAll()));
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
   pEquationsGridLayout->addWidget(pEquationBrowserLabel, 0, 0);
-  pEquationsGridLayout->addWidget(mpEquationTreeView, 1, 0);
+  pEquationsGridLayout->addWidget(mpEquationSearchFilters, 1, 0);
+  pEquationsGridLayout->addWidget(mpEquationTreeView, 2, 0);
   QFrame *pEquationsFrame = new QFrame;
   pEquationsFrame->setLayout(pEquationsGridLayout);
   /* defines tree widget */
@@ -956,6 +1074,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   QStringList headerLabels;
   headerLabels << tr("Variable");
   mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpDefinesVariableTreeWidget, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableDataFromEquationVariable(QModelIndex)));
   QGridLayout *pDefinesGridLayout = new QGridLayout;
   pDefinesGridLayout->setSpacing(1);
   pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -974,6 +1093,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   mpDependsVariableTreeWidget->setSortingEnabled(true);
   mpDependsVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpDependsVariableTreeWidget->setHeaderLabel(tr("Variable"));
+  connect(mpDependsVariableTreeWidget, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchVariableDataFromEquationVariable(QModelIndex)));
   QGridLayout *pDependsGridLayout = new QGridLayout;
   pDependsGridLayout->setSpacing(1);
   pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -1341,11 +1461,17 @@ void TransformationsWidget::loadTransformations()
   signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
   mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
-#else
-  mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
-#endif
+  signalsState = mpEquationSearchFilters->getFilterTextBox()->blockSignals(true);
+  mpEquationSearchFilters->getFilterTextBox()->clear();
+  mpEquationSearchFilters->getFilterTextBox()->blockSignals(signalsState);
+  signalsState = mpEquationSearchFilters->getSyntaxComboBox()->blockSignals(true);
+  mpEquationSearchFilters->getSyntaxComboBox()->setCurrentIndex(0);
+  mpEquationSearchFilters->getSyntaxComboBox()->blockSignals(signalsState);
+  signalsState = mpEquationSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
+  mpEquationSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
+  mpEquationSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
+  mpEquationProxyModel->setFilterRegularExpression(QRegularExpression());
   /* clear equation operations tree */
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* clear TSourceEditor */
@@ -1409,6 +1535,9 @@ void TransformationsWidget::loadTransformations()
           std::string_view sv;
           if (!valueObject["comment"].get(sv)) {
             var.comment = QString::fromUtf8(sv.data(), sv.size());
+          }
+          if (!valueObject["alias"].get(sv)) {
+            var.alias = QString::fromUtf8(sv.data(), sv.size());
           }
 
           simdjson::ondemand::object sourceObject;
@@ -1503,6 +1632,8 @@ void TransformationsWidget::loadTransformations()
             for (simdjson::ondemand::value v : arr) {
               if (!v.get(sv)) {
                 eq->text << QString::fromUtf8(sv.data(), sv.size());
+              } else if (!v.get(iv)) {
+                eq->text << QString::number(iv);
               }
             }
           }
@@ -1720,21 +1851,37 @@ void TransformationsWidget::findVariables()
 {
   QString findText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax
-  QRegularExpression regExp(QRegularExpression::fromWildcard(findText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
+  QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
   mpTVariableTreeProxyModel->setFilterRegularExpression(regExp);
-#else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(findText, caseSensitivity, syntax);
-  mpTVariableTreeProxyModel->setFilterRegExp(regExp);
-#endif
   /* expand all so that the filtered items can be seen. */
   if (!findText.isEmpty()) {
     mpTVariablesTreeView->expandAll();
   }
 }
 
+/*!
+ * \brief TransformationsWidget::findEquations
+ * Finds the equations in the TransformationsWidget Equation Browser.
+ */
+void TransformationsWidget::findEquations()
+{
+  const QString findText = mpEquationSearchFilters->getFilterTextBox()->text();
+  const Qt::CaseSensitivity caseSensitivity = mpEquationSearchFilters->getCaseSensitiveCheckBox()->isChecked()
+                                              ? Qt::CaseSensitive : Qt::CaseInsensitive;
+  const TreeSearchFilters::FilterSyntax syntax = mpEquationSearchFilters->getFilterSyntax();
+  const QRegularExpression regExp = TreeSearchFilters::getFilterRegularExpression(findText, caseSensitivity, syntax);
+  mpEquationProxyModel->setFilterRegularExpression(regExp);
+  if (!findText.isEmpty()) {
+    mpEquationTreeView->expandAll();
+  }
+}
+
+/*!
+ * \brief TransformationsWidget::fetchVariableData
+ * Fetches the variable data.\n
+ * \param index
+ */
 void TransformationsWidget::fetchVariableData(const QModelIndex &index)
 {
   if (!index.isValid()) {
@@ -1747,11 +1894,49 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     return;
   }
 
-  const OMVariable &variable = mVariables[pTVariableTreeItem->getVariableName()];
+  fetchVariableData(pTVariableTreeItem->getVariableName());
+}
+
+/*!
+ * \brief TransformationsWidget::fetchVariableData
+ * Fetches the variable data and selects the variable in the Variables. Fetches the Defined In and Used In.\n
+ * Show the variable in the source editor and scroll to the variable line.\n
+ * \param variableName
+ */
+void TransformationsWidget::fetchVariableData(const QString &variableName)
+{
+  QHash<QString, OMVariable>::const_iterator variableIterator = mVariables.constFind(variableName);
+  if (variableIterator == mVariables.constEnd()) {
+    return;
+  }
+
+  const OMVariable &variable = variableIterator.value();
+  const OMVariable *pRepresentativeVariable = &variable;
+  if (!variable.alias.isEmpty()) {
+    QString representativeName = variable.alias;
+    if (representativeName.startsWith("-")) {
+      representativeName.remove(0, 1);
+    }
+    QHash<QString, OMVariable>::const_iterator representativeIterator = mVariables.constFind(representativeName);
+    if (representativeIterator != mVariables.constEnd()) {
+      pRepresentativeVariable = &representativeIterator.value();
+    }
+  }
+  TVariablesTreeItem *pTVariableTreeItem = mpTVariablesTreeModel->findTVariablesTreeItem(variableName, mpTVariablesTreeModel->getRootTVariablesTreeItem());
+  if (pTVariableTreeItem) {
+    QModelIndex sourceIndex = mpTVariablesTreeModel->tVariablesTreeItemIndex(pTVariableTreeItem);
+    QModelIndex proxyIndex = mpTVariableTreeProxyModel->mapFromSource(sourceIndex);
+    if (proxyIndex.isValid()) {
+      mpTVariablesTreeView->clearSelection();
+      mpTVariablesTreeView->setCurrentIndex(proxyIndex);
+      mpTVariablesTreeView->scrollTo(proxyIndex);
+    }
+  }
+
   /* fetch defined in equations */
-  fetchDefinedInEquations(variable);
+  fetchDefinedInEquations(*pRepresentativeVariable);
   /* fetch used in equations */
-  fetchUsedInEquations(variable);
+  fetchUsedInEquations(*pRepresentativeVariable);
   /* fetch operations */
   fetchOperations(variable);
 
@@ -1778,6 +1963,24 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     file.close();
     mpTransformationsEditor->getPlainTextEdit()->goToLineNumber(variable.info.lineStart);
     mpTransformationsEditor->getPlainTextEdit()->foldAll();
+  }
+}
+
+/*!
+ * \brief TransformationsWidget::fetchVariableDataFromEquationVariable
+ * Fetches the variable data from the equation defines and depends variable tree views.\n
+ * \param index
+ */
+void TransformationsWidget::fetchVariableDataFromEquationVariable(const QModelIndex &index)
+{
+  QTreeWidget *pSender = qobject_cast<QTreeWidget*>(sender());
+  if (!pSender || !index.isValid()) {
+    return;
+  }
+
+  QTreeWidgetItem *pVariableTreeItem = pSender->itemFromIndex(index);
+  if (pVariableTreeItem) {
+    fetchVariableData(pVariableTreeItem->text(0));
   }
 }
 

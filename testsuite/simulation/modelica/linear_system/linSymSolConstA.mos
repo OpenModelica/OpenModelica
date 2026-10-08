@@ -32,12 +32,13 @@ val(max_res,1);
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_LS -s euler'",
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 1 linear systems
-// LOG_LS            | info    | Start solving Linear System 42 (size 19) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 2 (size 20) at time 0 with Lapack Solver
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for linear strong component 1: solving it torn to 19 iteration variables is estimated at 35694 flops against 7733 for the untorn system of size 20.
+// "
 // 1.0
 // 1.000000000000518
 // true
@@ -51,7 +52,9 @@ val(max_res,1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Notification: Tearing is skipped for linear strong component 1: solving it torn to 19 iteration variables is estimated at 35694 flops against 7733 for the untorn system of size 20.
+// Notification: Tearing is skipped for linear strong component 2: solving it torn to 19 iteration variables is estimated at 35694 flops against 7733 for the untorn system of size 20.
+// "
 // 1.0
 // 1.000000000000248
 // endResult

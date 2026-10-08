@@ -42,11 +42,11 @@
 
 #include "QWidget"
 #include "QUrl"
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+#include "Modeling/qtwebengine_compat.h" // QtWebEngine unavailable on wasm / stubbed on MSVC
+#else
 #include <QWebEngineView>
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <QWebView>
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#endif
 
 class TraceabilityGraphViewWidget: public QWidget
 {
@@ -54,11 +54,7 @@ class TraceabilityGraphViewWidget: public QWidget
 public:
   TraceabilityGraphViewWidget(QWidget *pParent = 0);
 private:
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QWebEngineView *mpTraceabilityGraphWebView;
-#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  QWebView *mpTraceabilityGraphWebView;
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QLabel *mpTraceabilityGraphViewLabel;
 };
 

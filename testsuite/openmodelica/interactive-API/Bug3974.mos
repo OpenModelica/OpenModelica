@@ -14,8 +14,8 @@ equation
 end ModelTestBug3974;
 "); getErrorString();
 buildModel(ModelTestBug3974); getErrorString();
-system("./ModelTestBug3974 -r ModelTestBug39741.mat"); getErrorString();
-system("./ModelTestBug3974 -override a=2 -r ModelTestBug39742.mat"); getErrorString();
+simulate(ModelTestBug3974, simflags="-r ModelTestBug39741.mat", resimulateExecutable="ModelTestBug3974"); getErrorString();
+simulate(ModelTestBug3974, simflags="-override a=2 -r ModelTestBug39742.mat", resimulateExecutable="ModelTestBug3974"); getErrorString();
 writeFile("ModelTestBug3974.html", diffSimulationResultsHtml("x", "ModelTestBug39741.mat", "ModelTestBug39742.mat")); getErrorString();
 echo(false);
 str := readFile("ModelTestBug3974.html"); getErrorString();
@@ -29,13 +29,21 @@ v;
 // ""
 // {"ModelTestBug3974", "ModelTestBug3974_init.xml"}
 // ""
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "ModelTestBug39741.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelTestBug3974', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r ModelTestBug39741.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
+// "
+// end SimulationResult;
 // ""
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// record SimulationResult
+//     resultFile = "ModelTestBug39742.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelTestBug3974', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override a=2 -r ModelTestBug39742.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
+// "
+// end SimulationResult;
 // ""
 // true
 // ""

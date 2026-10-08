@@ -1,0 +1,86 @@
+// name: FunctionPointer
+// keywords: function pointer
+// status: correct
+// teardown_command: rm -rf FunctionPointer.Test* output.log
+
+loadString("
+package FunctionPointer
+  partial function pfunc
+    input Real u;
+    output Real y;
+  end pfunc;
+
+  function func
+    input Real u;
+    output Real y;
+  algorithm
+    y := 2*u;
+  end func;
+
+  function func2
+    input Real u;
+    input Real v;
+    input Integer[:] w;
+    output Real y;
+  algorithm
+    y := u + v + sum(w);
+  end func2;
+
+  function feval
+    input FunctionPointer.pfunc f;
+    input Real u;
+    output Real y;
+  algorithm
+    y := f(u);
+  end feval;
+
+  function feval2
+    input FunctionPointer.pfunc f;
+    input Real u;
+    output Real y;
+  algorithm
+    y := f(u) + feval(function func2(v = u, w = {integer(u)}), u);
+  end feval2;
+
+  function feval3
+    input FunctionPointer.pfunc f;
+    input Real u;
+    output Real y;
+  algorithm
+    y := f(u) + feval(function f(), u);
+  end feval3;
+
+  model Test
+    input Real u = 0; // prevent presolving
+    Real x, y, z;
+  equation
+    x = feval2(function func(), u + 4);
+    y = feval2(function func2(v = 1, w = {2, 3}), u + 4);
+    z = feval3(function func(), u + 4);
+    annotation(experiment(StopTime = 0));
+  end Test;
+end FunctionPointer;
+");
+getErrorString();
+
+simulate(FunctionPointer.Test);
+val(x, 0);
+val(y, 0);
+val(z, 0);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionPointer.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionPointer.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// 20.0
+// 22.0
+// 16.0
+// ""
+// endResult

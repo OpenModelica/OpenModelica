@@ -1,6 +1,7 @@
 // name: expconn7.mo
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 // FAILREASON: This should fail, since neither of the connected components
 //             exist.
@@ -17,7 +18,7 @@ end M;
 
 // Result:
 // Error processing file: expconn7.mo
-// [flattening/modelica/scodeinst/expconn7.mo:16:3-16:24:writable] Error: Cannot connect undeclared connectors ec1.r with ec2.e. At least one of them must be declared.
+// [flattening/modelica/scodeinst/expconn7.mo:17:3-17:24:writable] Error: Cannot connect undeclared connectors ec1.r with ec2.e. At least one of them must be declared.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

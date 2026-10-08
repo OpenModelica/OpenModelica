@@ -204,6 +204,7 @@ struct OMInfo {
 
 struct OMVariable {
   QString name;
+  QString alias;
   QString comment;
   OMInfo info;
   QStringList types;
@@ -229,7 +230,7 @@ struct OMEquation {
   QStringList depends;
   QList<OMOperation*> ops;
   QList<int> eqs;
-  int unknowns;
+  int unknowns = 0;
   OMEquation();
   ~OMEquation();
   QString toString() const;

@@ -38,12 +38,14 @@
  */
 
 #include "ElementTreeWidget.h"
+#include "Element/ElementProperties.h"
 #include "ItemDelegate.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/ModelWidgetContainer.h"
 
 #include <QGridLayout>
+#include <QMenu>
 #include <QStringBuilder>
 
 /*!
@@ -86,6 +88,24 @@ QString makeTooltip(const QString &restriction, const QString &name, const QStri
 }
 
 /*!
+ * \brief elementTreeItemName
+ * Returns the name used for an element in the tree (same as ElementTreeItem::mName).
+ * Central place so that ElementTreeItem::updateData and the model updates stay in sync.
+ * \param pElement
+ * \return
+ */
+static QString elementTreeItemName(ModelInstance::Element *pElement)
+{
+  if (pElement->isExtend()) {
+    return pElement->getType();
+  } else if (pElement->isClass()) {
+    auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(pElement);
+    return pReplaceableClass->getName();
+  }
+  return pElement->getName();
+}
+
+/*!
  * \brief ElementTreeItem::ElementTreeItem
  * \param pElement
  * \param pParentElementTreeItem
@@ -93,24 +113,53 @@ QString makeTooltip(const QString &restriction, const QString &name, const QStri
 ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeItem *pParentElementTreeItem)
 {
   mpParentElementTreeItem = pParentElementTreeItem;
+  mpModelInstanceElement = pElement;
+  updateData();
+}
+
+/*!
+ * \brief ElementTreeItem::updateData
+ * Recomputes the name, display name and tooltip from the current model instance element.
+ * Used by the constructor and by setElement to refresh an existing item in place.
+ */
+void ElementTreeItem::updateData()
+{
+  mName.clear();
+  mDisplayName.clear();
+  mTooltip.clear();
+  ModelInstance::Element *pElement = mpModelInstanceElement;
+  if (!pElement) {
+    return;
+  }
+  mName = elementTreeItemName(pElement);
   if (pElement->isExtend()) {
-    mName = pElement->getType();
-    mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
     mDisplayName = "extends " % pElement->getType();
     if (pElement->getModel()) {
       mTooltip = makeTooltip(pElement->getModel()->getRestriction(), mName, "", pElement->getModel()->getComment());
     }
   } else if (pElement->isClass()) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(pElement);
-    mName = pReplaceableClass->getName();
     mDisplayName = pReplaceableClass->getName() % " = " % pReplaceableClass->getBaseClass();
     mTooltip = "<b>" % pReplaceableClass->getBaseClass() % "</b>";
   } else {
-    mName = pElement->getName();
     mDisplayName = pElement->getName();
     mTooltip = makeTooltip(pElement->getType(), mName, pElement->getDimensions().getAbsynDimensionsString(), pElement->getComment());
   }
   mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
+}
+
+/*!
+ * \brief ElementTreeItem::setElement
+ * Updates the model instance element an existing item points to and refreshes its displayed data.
+ * \param pElement
+ */
+void ElementTreeItem::setElement(ModelInstance::Element *pElement)
+{
+  if (!pElement || mpModelInstanceElement == pElement) {
+    return;
+  }
+  mpModelInstanceElement = pElement;
+  updateData();
 }
 
 /*!
@@ -158,6 +207,23 @@ ElementTreeItem* ElementTreeItem::findChild(const QString &name, Qt::CaseSensiti
     }
     return nullptr;
   }
+}
+
+/*!
+ * \brief ElementTreeItem::findChildByName
+ * Finds the child with the given name among the direct children only.
+ * Child names are unique within a parent, so matching by name is enough.
+ * \param name
+ * \return
+ */
+ElementTreeItem* ElementTreeItem::findChildByName(const QString &name) const
+{
+  for (ElementTreeItem *child : mChildren) {
+    if (child->getName() == name) {
+      return child;
+    }
+  }
+  return nullptr;
 }
 
 /*!
@@ -281,11 +347,7 @@ bool ElementTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
         return true;
       }
     }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return pElementTreeItem->getName().contains(filterRegularExpression());
-#else
-    return pElementTreeItem->getName().contains(filterRegExp());
-#endif
   } else {
     return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
   }
@@ -473,16 +535,24 @@ void ElementTreeModel::removeElements()
 
 /*!
  * \brief ElementTreeModel::addElements
- * Adds the Elements of the model to the Element Browser.
+ * Updates the Element Browser tree with the Elements of the model.
+ * When the same model instance is updated (e.g. its parameters are edited) the tree is updated
+ * incrementally: existing items are matched by name and updated in place, new items are inserted
+ * and items that no longer exist are removed. This keeps the expanded/collapsed state of the nodes
+ * intact.
+ * When a different model instance is passed (e.g. switching from one model to another) the whole
+ * tree is rebuilt, since the two models may contain elements with the same names.
  * \param pModel
  */
 void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
   mpElementWidget->setIgnoreSelectionChange(true);
-  // remove the existing elements if there are any
-  removeElements();
-  // add model elements recursively
-  addElementsHelper(pModel, mpRootElementTreeItem);
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (mpModelWidget != pModelWidget) {
+    removeElements();
+    mpModelWidget = pModelWidget;
+  }
+  updateElementsHelper(pModel, mpRootElementTreeItem);
   mpElementWidget->setIgnoreSelectionChange(false);
 }
 
@@ -504,38 +574,101 @@ ElementTreeItem* ElementTreeModel::findElementTreeItem(const QString &name, Elem
 }
 
 /*!
- * \brief ElementTreeModel::addElementsHelper
- * Helper function for ElementTreeModel::addElements
- * Adds the items recursively.
+ * \brief ElementTreeModel::updateElementsHelper
+ * Builds or incrementally updates the Element Browser tree.
+ * When the parent has no existing children this performs a full rebuild.
+ * When the parent already has children it matches items by name, updates
+ * existing items in place, inserts new items and removes stale ones, which
+ * preserves the expanded/collapsed state of the tree.
  * \param pModel
  * \param pParentElementTreeItem
  */
-void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
+void ElementTreeModel::updateElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
 {
-  if (pModel) {
-    QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
-    int row = 0;
-    const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
-    if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      QVector<ModelInstance::Element*> elements = pModel->getElements();
-      QVector<ModelInstance::Element*> visibleElements;
-      for (ModelInstance::Element* element : elements) {
-        // show only public or all elements if access is diagram
-        if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
-          visibleElements.append(element);
-        }
+  if (!pModel) {
+    return;
+  }
+  QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
+  const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
+  if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
+    QVector<ModelInstance::Element*> elements = pModel->getElements();
+    QVector<ModelInstance::Element*> visibleElements;
+    for (ModelInstance::Element* element : elements) {
+      // show only public or all elements if access is diagram
+      if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        visibleElements.append(element);
       }
-      beginInsertRows(index, row, visibleElements.size() - 1);
-      foreach (auto pElement, visibleElements) {
-        pParentElementTreeItem->insertChild(row++, new ElementTreeItem(pElement, pParentElementTreeItem));
+    }
+    // the set of child names that should exist after the update
+    QSet<QString> newNames;
+    QHash<QString, ModelInstance::Element*> newElementsByName;
+    QVector<QString> newOrder;
+    foreach (auto pElement, visibleElements) {
+      QString childName = elementTreeItemName(pElement);
+      newNames.insert(childName);
+      newElementsByName.insert(childName, pElement);
+      newOrder.append(childName);
+    }
+    // remove the children that no longer exist
+    for (int i = pParentElementTreeItem->childrenSize() - 1; i >= 0; --i) {
+      ElementTreeItem *pElementTreeItem = pParentElementTreeItem->child(i);
+      if (!newNames.contains(pElementTreeItem->getName())) {
+        beginRemoveRows(index, i, i);
+        pParentElementTreeItem->removeChild(pElementTreeItem);
+        endRemoveRows();
+      }
+    }
+    // lookup of the remaining children by name
+    QHash<QString, ElementTreeItem*> existingChildrenByName;
+    for (int i = 0; i < pParentElementTreeItem->childrenSize(); ++i) {
+      ElementTreeItem *pChild = pParentElementTreeItem->child(i);
+      existingChildrenByName.insert(pChild->getName(), pChild);
+    }
+    // batches of new items: multiple consecutive new items are inserted in one go
+    int batchStartRow = 0;
+    QVector<ModelInstance::Element*> batchElements;
+    auto insertBatch = [this, index, pParentElementTreeItem, &batchStartRow, &batchElements]() {
+      beginInsertRows(index, batchStartRow, batchStartRow + batchElements.size() - 1);
+      int batchRow = batchStartRow;
+      foreach (ModelInstance::Element *pElement, batchElements) {
+        pParentElementTreeItem->insertChild(batchRow++, new ElementTreeItem(pElement, pParentElementTreeItem));
       }
       endInsertRows();
-
-      for (int i = 0; i < pParentElementTreeItem->childrenSize(); ++i) {
-        ElementTreeItem *pElementTreeItem = pParentElementTreeItem->child(i);
-        addElementsHelper(visibleElements.at(i)->getModel(), pElementTreeItem);
+      // recurse into the newly inserted items to build their children
+      batchRow = batchStartRow;
+      foreach (ModelInstance::Element *pElement, batchElements) {
+        ElementTreeItem *pNewItem = pParentElementTreeItem->child(batchRow++);
+        updateElementsHelper(pElement->getModel(), pNewItem);
       }
+      batchElements.clear();
+    };
+    // update the existing children in place and insert the new ones in batches, keeping the tree order
+    int row = 0;
+    foreach (const QString &childName, newOrder) {
+      ElementTreeItem *pElementTreeItem = existingChildrenByName.value(childName, nullptr);
+      if (pElementTreeItem) {
+        // flush any pending batch of new items
+        if (!batchElements.isEmpty()) {
+          insertBatch();
+        }
+        // update the existing item with the new element data and emit dataChanged so the view refreshes its display
+        pElementTreeItem->setElement(newElementsByName.value(childName));
+        QModelIndex childIndex = elementTreeItemIndex(pElementTreeItem);
+        emit dataChanged(childIndex, childIndex);
+        updateElementsHelper(pElementTreeItem->getModelInstanceElement()->getModel(), pElementTreeItem);
+      } else {
+        // a new item; accumulate it for batch insertion
+        if (batchElements.isEmpty()) {
+          batchStartRow = row;
+        }
+        batchElements.append(newElementsByName.value(childName));
+      }
+      ++row;
+    }
+    // flush any remaining batch of new items
+    if (!batchElements.isEmpty()) {
+      insertBatch();
     }
   }
 }
@@ -556,6 +689,134 @@ ElementTreeView::ElementTreeView(ElementWidget *pElementWidget)
   setIndentation(Helper::treeIndentation);
   setUniformRowHeights(true);
   setHeaderHidden(true);
+  setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(this, &ElementTreeView::customContextMenuRequested, this, &ElementTreeView::showContextMenu);
+}
+
+/*!
+ * \brief ElementTreeView::showContextMenu
+ * Shows the context menu for the ElementTreeItem.
+ * \param pos
+ */
+void ElementTreeView::showContextMenu(const QPoint &pos)
+{
+  QModelIndex index = indexAt(pos);
+  if (!index.isValid()) {
+    return;
+  }
+  QModelIndex sourceIndex = mpElementWidget->getElementTreeProxyModel()->mapToSource(index);
+  auto *pElementTreeItem = static_cast<ElementTreeItem*>(sourceIndex.internalPointer());
+  if (!pElementTreeItem) {
+    return;
+  }
+
+  auto *pModelInstanceElement = pElementTreeItem->getModelInstanceElement();
+  if (!pModelInstanceElement || !pModelInstanceElement->isComponent() || !pModelInstanceElement->getModel()) {
+    return;
+  }
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (!(pModelWidget &&
+        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
+         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible())))) {
+    return;
+  }
+  QMenu menu(this);
+  QAction *pParametersAction = menu.addAction(Helper::parameters);
+  pParametersAction->setStatusTip(Helper::parametersTip);
+  connect(pParametersAction, &QAction::triggered, this, [pElementTreeItem, pModelInstanceElement, pModelWidget]() {
+    // the element is inherited if its top level parent element is an extends clause.
+    bool inherited = false;
+    ModelInstance::Element *pTopLevelParentElement = pModelInstanceElement->getTopLevelParentElement();
+    if (pTopLevelParentElement && pTopLevelParentElement->isExtend()) {
+      inherited = true;
+    }
+    MainWindow *pMainWindow = MainWindow::instance();
+
+    if (pElementTreeItem->isTopLevel()) {
+      // Top-level node: same as Element::showParameters() — all modifier arguments null, nested=false.
+      pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(pModelInstanceElement->getModel()->getName()).arg(pModelInstanceElement->getName()));
+      pMainWindow->getProgressBar()->setRange(0, 0);
+      pMainWindow->showProgressBar();
+      ElementParameters *pElementParameters = new ElementParameters(pModelInstanceElement, pModelWidget->getDiagramGraphicsView(),
+                                                                    inherited, false, false, 0, 0, 0, pMainWindow);
+      pMainWindow->hideProgressBar();
+      pMainWindow->getStatusBar()->clearMessage();
+      pElementParameters->exec();
+      pElementParameters->deleteLater();
+    } else {
+      // Sub-level node: replicate Parameter::editClassButtonClicked() pattern.
+      QString type = pModelInstanceElement->getType();
+      ModelInstance::Modifier *pReplaceableConstrainedByModifier = nullptr;
+      if (pModelInstanceElement->getReplaceable()) {
+        pReplaceableConstrainedByModifier = pModelInstanceElement->getReplaceable()->getModifier();
+      }
+
+      // Create pElementModifier via modifierToJSON round-trip (matching editClassButtonClicked pattern)
+      ModelInstance::Modifier *pElementModifier = nullptr;
+      if (pTopLevelParentElement && pTopLevelParentElement->isComponent() && pTopLevelParentElement->getModifier()) {
+        pElementModifier = pTopLevelParentElement->getModifier()->getModifier(pModelInstanceElement->getName(), true);
+      }
+      if (!pTopLevelParentElement ||
+          !pTopLevelParentElement->getParentModel() ||
+          pTopLevelParentElement->getParentModel()->getName().isEmpty()) {
+        return;
+      }
+      QString classPath = pTopLevelParentElement->getParentModel()->getName();
+      const QString qualifiedType = pMainWindow->getOMCProxy()->qualifyPath(classPath, type);
+      // Merge with constrainedby modifier if applicable.
+      QString modifier;
+      if (pReplaceableConstrainedByModifier && pElementModifier) {
+        QVector<const ModelInstance::Modifier*> modifiers;
+        modifiers.append(pReplaceableConstrainedByModifier);
+        modifiers.append(pElementModifier);
+        ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifiers, pModelInstanceElement->getParentModel());
+        modifier = pMergedModifier->toString();
+        delete pMergedModifier;
+      }
+      // Get the model instance from OMC with the modifier applied.
+      ModelInstance::Model *pCurrentModel = pModelInstanceElement->getModel();
+      const QJsonObject newModelJSON = pMainWindow->getOMCProxy()->getModelInstance(qualifiedType, pModelInstanceElement->getQualifiedName(), modifier);
+      if (!newModelJSON.isEmpty()) {
+        // Create pDefaultElementModifier from the element's own modifier.
+        QString defaultModifier;
+        if (pModelInstanceElement->getModifier()) {
+          defaultModifier = pModelInstanceElement->getModifier()->toString();
+        }
+        ModelInstance::Modifier *pDefaultElementModifier = nullptr;
+        if (!defaultModifier.isEmpty()) {
+          const QJsonObject defaultModifierJSON = pMainWindow->getOMCProxy()->modifierToJSON(defaultModifier);
+          pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(defaultModifierJSON), pModelInstanceElement->getParentModel());
+        }
+        // Create new Model and set on element.
+        ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, pModelInstanceElement);
+        pModelInstanceElement->setModel(pNewModel);
+        pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(pModelInstanceElement->getModel()->getName()).arg(pModelInstanceElement->getName()));
+        pMainWindow->getProgressBar()->setRange(0, 0);
+        pMainWindow->showProgressBar();
+        ElementParameters *pElementParameters = new ElementParameters(pModelInstanceElement, pModelWidget->getDiagramGraphicsView(), inherited, true, false,
+                                                                      pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, pMainWindow);
+        pMainWindow->hideProgressBar();
+        pMainWindow->getStatusBar()->clearMessage();
+        int answer = pElementParameters->exec();
+        pElementParameters->deleteLater();
+        /* Cleanup: if the user accepted the dialog, delete the old model; if rejected, restore the old model and delete the new one.
+         * In accepted case the new model will be deleted as part of updating the model instance so we only delete the current model.
+         * In rejected case we set to the current model and delete the new model.
+         */
+        if (answer == QDialog::Accepted) {
+          delete pCurrentModel;
+        } else {
+          pModelInstanceElement->setModel(pCurrentModel);
+          delete pNewModel;
+        }
+
+        if (pDefaultElementModifier) {
+          delete pDefaultElementModifier;
+        }
+      }
+    }
+  });
+  menu.exec(viewport()->mapToGlobal(pos));
 }
 
 /*!
@@ -643,14 +904,8 @@ void ElementWidget::filterElements()
 {
   QString searchText = mpTreeSearchFilters->getFilterTextBox()->text();
   Qt::CaseSensitivity caseSensitivity = mpTreeSearchFilters->getCaseSensitiveCheckBox()->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // TODO: handle PatternSyntax: https://doc.qt.io/qt-6/qregularexpression.html
-  mpElementTreeProxyModel->setFilterRegularExpression(QRegularExpression::fromWildcard(searchText, caseSensitivity, QRegularExpression::UnanchoredWildcardConversion));
-#else
-  QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpTreeSearchFilters->getSyntaxComboBox()->itemData(mpTreeSearchFilters->getSyntaxComboBox()->currentIndex()).toInt());
-  QRegExp regExp(searchText, caseSensitivity, syntax);
-  mpElementTreeProxyModel->setFilterRegExp(regExp);
-#endif
+  TreeSearchFilters::FilterSyntax syntax = mpTreeSearchFilters->getFilterSyntax();
+  mpElementTreeProxyModel->setFilterRegularExpression(TreeSearchFilters::getFilterRegularExpression(searchText, caseSensitivity, syntax));
 }
 
 /*!

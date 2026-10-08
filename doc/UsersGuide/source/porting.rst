@@ -42,7 +42,7 @@ If a directory-based representation is chosen, each *.mo* file must start with
 a *within* clause, and each directory should contain a *package.order* file that lists
 all the classes and constants defined as separate files in that directory.
 
-When using revision control systems such as GIT or SVN, if the library is
+When using revision control systems such as Git, if the library is
 stored in a directory structure, it is recommended to include the top-level
 directory (that must have the same name as the top-level package) in the
 repository itself, to avoid problems in case the repository is cloned locally

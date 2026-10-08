@@ -1,0 +1,41 @@
+// name: arrayStartSlice
+// keywords: NewBackend
+// status: correct
+// The start values of an array variable are written slice by slice into the
+// start attribute, which has to be large enough for the whole array.
+
+loadString("
+package ArrayStartSlice
+  model Sub
+    parameter Real X_start[3];
+    Real X[3](each fixed = false, start = X_start);
+  equation
+    for j in 1:3 loop
+      X[j] + 0.1*sin(X[j]) = X_start[j] + time;
+    end for;
+  end Sub;
+  model Top
+    parameter Real c[4, 3] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}};
+    Sub s[4](X_start = c);
+  end Top;
+end ArrayStartSlice;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ArrayStartSlice.Top); getErrorString();
+val(s[4].X[3], 0);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayStartSlice.Top_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayStartSlice.Top', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 12.049422899572985
+// endResult

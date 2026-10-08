@@ -113,7 +113,7 @@ private:
   QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
-#if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_ANIMATION)
   QCheckBox *mpLaunchAnimationCheckBox;
 #endif
   // Interactive Simulation Tab
@@ -202,6 +202,7 @@ private:
   void saveSimulationFlagsAnnotation();
   void saveTranslationFlagsAnnotation();
   void performSimulation(const SimulationOptions &simulationOptions);
+  void runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters);
   void saveDialogGeometry();
 public:
   void stopInteractiveSimulationSampling(SimulationOptions simulationOptions);

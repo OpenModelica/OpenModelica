@@ -511,35 +511,33 @@ QHttpServerResponse MCPServer::handleSimulationTool(const QString &toolName, QJs
         }
         QJsonArray variables = arguments.value("variables").toArray();
         QString fileName = foundResultFile->getFilePath() + "/" + foundResultFile->getFileName();
-        if (!fileName.endsWith(".mat")) {
-            return makeMCPError(id, QString("Simulation result file is not a .mat file: %1").arg(fileName));
+        omc::ResultFile reader;
+        try {
+            reader.open(fileName.toStdString());
+        } catch (const omc::ResultError &e) {
+            return makeMCPError(id, QString("Could not read result file %1: %2").arg(fileName).arg(e.what()));
         }
-        ModelicaMatReader reader;
-        const char *err = omc_new_matlab4_reader(fileName.toUtf8().constData(), &reader);
-        if (err || reader.nrows <= 0) {
-            return makeMCPError(id, QString("Could not read .mat file %1: %2").arg(fileName).arg(err));
+        if (reader.rows() <= 0) {
+            return makeMCPError(id, QString("Could not read result file %1: no rows").arg(fileName));
         }
         QJsonObject parameters, vars_result;
         variables.append("time"); // always include time
         for (const auto &variable : variables) {
             QString plotName = variable.toString();
-            ModelicaMatVariable_t *var = omc_matlab4_find_var(&reader, plotName.toUtf8().constData());
-            if (!var) {
-                omc_free_matlab4_reader(&reader);
-                return makeMCPError(id, QString("Could not find variable %1 in .mat file %2").arg(plotName).arg(fileName));
+            std::string name = plotName.toStdString();
+            if (!reader.hasVariable(name)) {
+                return makeMCPError(id, QString("Could not find variable %1 in result file %2").arg(plotName).arg(fileName));
             }
-            if (var->isParam) {
-                // Parameters have a single value in reader.params (1-based index)
-                parameters.insert(plotName, reader.params[var->index - 1]);
+            std::vector<double> d = reader.values(name);
+            if (d.empty()) {
+                return makeMCPError(id, QString("Could not read variable %1 from result file %2").arg(plotName).arg(fileName));
+            }
+            if (reader.isParameter(name)) {
+                parameters.insert(plotName, d[0]);
             } else {
-                double *d = omc_matlab4_read_vals(&reader, var->index);
-                if (!d) {
-                    omc_free_matlab4_reader(&reader);
-                    return makeMCPError(id, QString("Could not read variable %1 from .mat file %2").arg(plotName).arg(fileName));
-                }
                 QJsonArray values;
-                for (uint32_t i = 0; i < reader.nrows; i++) {
-                    values.append(d[i]);
+                for (double v : d) {
+                    values.append(v);
                 }
                 vars_result.insert(plotName, values);
             }

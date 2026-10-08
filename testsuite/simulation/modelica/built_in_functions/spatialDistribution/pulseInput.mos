@@ -4,6 +4,11 @@
 // teardown_command:    rm -f pulseInputSpatialDistribution*
 //
 // Moble with spatialDistribution with constant velocity and pulse input.
+//
+// stopTime is a little past 1: the last pulse edge leaves the belt at
+// 1.00000000019, and a stopTime of exactly 1 leaves that crossing outside the
+// simulated interval -- where whether it is reported at all comes down to how the
+// integrator treats a root at the final point.
 
 loadModel(Modelica, {"4.0.0"}); getErrorString();
 loadString("model pulseInputSpatialDistribution
@@ -28,7 +33,7 @@ equation
 end pulseInputSpatialDistribution;"); getErrorString();
 
 // Simulate
-simulate(pulseInputSpatialDistribution, simflags="-lv=LOG_EVENTS"); getErrorString();
+simulate(pulseInputSpatialDistribution, stopTime=1.02, simflags="-lv=LOG_EVENTS"); getErrorString();
 
 
 // Result:
@@ -38,7 +43,7 @@ simulate(pulseInputSpatialDistribution, simflags="-lv=LOG_EVENTS"); getErrorStri
 // ""
 // record SimulationResult
 //     resultFile = "pulseInputSpatialDistribution_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'pulseInputSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.02, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'pulseInputSpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
 //     messages = "LOG_EVENTS        | info    | status of relations at time=0
 // |                 | |       | | [1] (pre: false) false = time < pulseIn.startTime
 // |                 | |       | | [2] (pre:  true)  true = time < pulseIn.T_start + pulseIn.T_width
@@ -53,27 +58,27 @@ simulate(pulseInputSpatialDistribution, simflags="-lv=LOG_EVENTS"); getErrorStri
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.1
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
-// LOG_EVENTS        | info    | state event at time=0.15
+// LOG_EVENTS        | info    | state event at time=0.150000000215
 // |                 | |       | | [2] time < pulseIn.T_start + pulseIn.T_width
-// LOG_EVENTS        | info    | state event at time=0.25
+// LOG_EVENTS        | info    | state event at time=0.250000000215
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.3
 // |                 | |       | | [5] integer((time - pulseIn.startTime) / pulseIn.period, 0)
 // |                 | |       | | [4] integer((time - pulseIn.startTime) / pulseIn.period) > pre(pulseIn.count)
 // LOG_EVENTS        | info    | state event at time=0.4
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
-// LOG_EVENTS        | info    | state event at time=0.45
+// LOG_EVENTS        | info    | state event at time=0.450000000245
 // |                 | |       | | [2] time < pulseIn.T_start + pulseIn.T_width
-// LOG_EVENTS        | info    | state event at time=0.55
+// LOG_EVENTS        | info    | state event at time=0.550000000245
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.6
 // |                 | |       | | [5] integer((time - pulseIn.startTime) / pulseIn.period, 0)
 // |                 | |       | | [4] integer((time - pulseIn.startTime) / pulseIn.period) > pre(pulseIn.count)
 // LOG_EVENTS        | info    | state event at time=0.7
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
-// LOG_EVENTS        | info    | state event at time=0.75
+// LOG_EVENTS        | info    | state event at time=0.750000000275
 // |                 | |       | | [2] time < pulseIn.T_start + pulseIn.T_width
-// LOG_EVENTS        | info    | state event at time=0.85
+// LOG_EVENTS        | info    | state event at time=0.850000000275
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, true) > 0.0
 // LOG_EVENTS        | info    | state event at time=0.9
 // |                 | |       | | [5] integer((time - pulseIn.startTime) / pulseIn.period, 0)

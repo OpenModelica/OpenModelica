@@ -32,6 +32,7 @@
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/options.h"
+#include "om_format.h"
 
 static inline void generated_jac_struc(OptData *, int*, int*);
 static inline void set_row(int *, int *, int *, const modelica_boolean *const,
@@ -710,16 +711,19 @@ static inline void printMaxError(ipnumber *g, const int m, const int nx, const i
   }
 
   if(kk>-1){
+    char buf1[32], buf2[32];
+    ryu_hr_tdzp_buf(gmax, buf1);
+    ryu_hr_tdzp_buf(t[ii][jj], buf2);
     if(kk < nx){
-      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
-              gmax, data->modelData->realVarsData[kk].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0, "max error is %s for the approximation of the state %s(time = %s)\n",
+              buf1, data->modelData->realVarsData[kk].info.name, buf2);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
-              gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %s for the constraint %s(time = %s)\n",
+              buf1, data->modelData->realVarsData[ll].info.name, buf2);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %s for the final constraint %s(time = %s)\n", buf1, data->modelData->realVarsData[ll].info.name, buf2);
     }
   }
 }

@@ -35,6 +35,7 @@
 
 encapsulated package NFClassTree
   import NFInstNode.InstNode;
+  import NFInstNode;
   import SCode;
   import NFType.Type;
   import Mutable;
@@ -208,7 +209,7 @@ public
           // An import, save it as it is and deal with it in initImports later.
           case SCode.IMPORT()
             algorithm
-              imps := Import.UNRESOLVED_IMPORT(e.imp, parent, e.info) :: imps;
+              imps := Import.UNRESOLVED_IMPORT(e.imp, InstNode.scopeRef(parent), e.info) :: imps;
             then
               ();
 
@@ -454,10 +455,13 @@ public
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
       InstNode node, parent_scope, inst_scope;
+      NFInstNode.ScopeRef inst_ref;
       DuplicateTree.Tree dups;
       SCode.Element ext_def;
       Boolean is_typish;
       InstNodeType inst_ty;
+      Mutable<InstNode> mut_node;
+      list<Mutable<InstNode>> outers = {};
     algorithm
       // TODO: If we don't have any extends we could probably generate a flat
       // tree directly and skip a lot of this.
@@ -465,6 +469,9 @@ public
       // Clone the class node by replacing the class in the node with itself.
       cls := InstNode.getClass(clsNode);
       clsNode := InstNode.replaceClass(cls, clsNode);
+      // The clone is a new node, not an update of the one it was made from, so
+      // it needs an identity of its own before any child points at it.
+      clsNode := InstNode.reidentify(clsNode);
 
       () := match cls
         case Class.EXPANDED_CLASS(elements = INSTANTIATED_TREE())
@@ -498,7 +505,8 @@ public
               // Update the parent of the extends to be the new instance.
               node := exts[i];
               InstNodeType.BASE_CLASS(definition = ext_def, ty = inst_ty) := InstNode.nodeType(node);
-              node := InstNode.setNodeType(InstNodeType.BASE_CLASS(instance, ext_def, inst_ty), node);
+              node := InstNode.setNodeType(
+                InstNodeType.BASE_CLASS(InstNode.identityCell(instance), ext_def, inst_ty), node);
               // Instantiate the class tree of the extends.
               (node, _, cls_count, comp_count) := instantiate(node, InstNode.EMPTY_NODE(), inst_scope);
               exts[i] := node;
@@ -559,28 +567,24 @@ public
             end for;
 
             // Copy both local and inherited components into the new array.
+            inst_ref := InstNode.identityCell(instance);
             for c in old_comps loop
               () := match c
                 case InstNode.COMPONENT_NODE()
                   algorithm
                     // Set the component's parent and create a unique instance for it.
-                    node := InstNode.cloneComponent(c, instance);
+                    node := InstNode.cloneComponentInScope(c, inst_ref);
+                    mut_node := Mutable.create(node);
 
-                    // If the component is outer, link it with the corresponding
-                    // inner component.
+                    // Outer components are saved so they can be linked with their corresponding inner
+                    // further down, to avoid generating missing inners for outer components that have
+                    // been removed with break.
                     if InstNode.isOuter(node) then
-                      try
-                        node := linkInnerOuter(node, inst_scope);
-                      else
-                        // fail if not NF_API
-                        if not Flags.isSet(Flags.NF_API) then
-                          fail();
-                        end if;
-                      end try;
+                      outers := mut_node :: outers;
                     end if;
 
                     // Add the node to the component array.
-                    arrayUpdateNoBoundsChecking(comps, comp_idx, Mutable.create(node));
+                    arrayUpdateNoBoundsChecking(comps, comp_idx, mut_node);
                     local_comps := comp_idx :: local_comps;
                     comp_idx := comp_idx + 1;
                   then
@@ -595,6 +599,7 @@ public
             end for;
 
             breakComponents(instance, comps, ltree, dups);
+            linkInnerOuterComponents(outers, inst_scope);
 
             // Sanity check.
             if comp_idx <> compCount + 1 then
@@ -617,7 +622,8 @@ public
         case Class.EXPANDED_DERIVED(baseClass = node)
           algorithm
             node := InstNode.setNodeType(
-              InstNodeType.BASE_CLASS(clsNode, InstNode.definition(node), InstNode.nodeType(node)), node);
+              InstNodeType.BASE_CLASS(InstNode.identityCell(clsNode),
+                InstNode.definition(node), InstNode.nodeType(node)), node);
             (node, instance, classCount, compCount) := instantiate(node, instance, scope);
             cls.baseClass := node;
           then
@@ -626,7 +632,8 @@ public
         case Class.PARTIAL_BUILTIN(elements = tree as FLAT_TREE(components = old_comps))
           algorithm
             instance := if InstNode.isEmpty(instance) then clsNode else instance;
-            tree.components := Array.map(old_comps, function InstNode.cloneComponent(newParent = instance));
+            inst_ref := InstNode.identityCell(instance);
+            tree.components := Array.map(old_comps, function InstNode.cloneComponentInScope(parent = inst_ref));
             cls.elements := tree;
             compCount := arrayLength(old_comps);
 
@@ -2388,6 +2395,31 @@ public
       entry.children := list(replaceDuplicates3(c, node) for c in entry.children);
     end replaceDuplicates3;
 
+    function linkInnerOuterComponents
+      "Helper function to instantiate that links a list of outer components
+       with their corresponding inners."
+      input list<Mutable<InstNode>> outerComps;
+      input InstNode scope;
+    protected
+      InstNode node;
+    algorithm
+      for c in outerComps loop
+        node := Mutable.access(c);
+
+        if not InstNode.isEmpty(node) then
+          try
+            node := linkInnerOuter(node, scope);
+            Mutable.update(c, node);
+          else
+            // fail if not NF_API
+            if not Flags.isSet(Flags.NF_API) then
+              fail();
+            end if;
+          end try;
+        end if;
+      end for;
+    end linkInnerOuterComponents;
+
     function linkInnerOuter
       "Looks up the corresponding inner node for the given outer node,
        and returns an INNER_OUTER_NODE containing them both."
@@ -2536,7 +2568,7 @@ public
       SCode.Restriction restriction;
     algorithm
       try
-        ty_path := SCodeUtil.getElementTypePath(InstNode.definition(node));
+        ty_path := SCodeUtil.getElementTypePath(InstNode.definition(InstNode.resolveOuter(node)));
         cls_node := Lookup.lookupName(ty_path, scope, NFInstContext.NO_CONTEXT, false);
         restriction := SCodeUtil.getClassRestriction(InstNode.definition(cls_node));
       else

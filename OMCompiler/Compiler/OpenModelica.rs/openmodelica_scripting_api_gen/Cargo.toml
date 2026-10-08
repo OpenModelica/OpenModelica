@@ -1,0 +1,30 @@
+[package]
+name = "openmodelica_scripting_api_gen"
+version = "0.1.0"
+edition = "2024"
+
+# Standalone generator for Script/OpenModelicaScriptingAPI.mo — the typed thin
+# MetaModelica wrappers around the interactive `cevalInteractiveFunctions2` API.
+#
+# In the C build this file is produced by running omc on
+# OpenModelicaScriptingAPI.mos (`OpenModelica.Scripting.generateScriptingAPI`),
+# which needs a fully built omc + the frontend `Lookup`. That is a bootstrap
+# cycle for the Rust port: the omc binary links libOpenModelicaCompiler.so, whose
+# `openmodelica_scripting_qt` crate is mmtorust-generated FROM this very .mo.
+#
+# This tool breaks the cycle. It is a tiny standalone binary — like `susan` — that
+# depends only on the hand-written parser crate (`openmodelica_ast`, not generated
+# by mmtorust, so no codegen is needed to build this). It parses
+# FrontEnd/ModelicaBuiltin.mo, walks the `OpenModelica.Scripting` package at the
+# Absyn level (no `Lookup`, no DAE, no Tpl — the per-function MetaModelica is
+# emitted directly), and writes OpenModelicaScriptingAPI.mo. mmtorust then turns
+# that into scripting_api_qt.rs as usual. See GenerateAPIFunctionsTpl.tpl for the
+# template this reproduces and CevalScript.isSimpleAPIFunction for the filter.
+[[bin]]
+name = "scripting_api_gen"
+path = "src/main.rs"
+
+[dependencies]
+openmodelica_ast.workspace = true
+metamodelica.workspace = true
+arcstr.workspace = true

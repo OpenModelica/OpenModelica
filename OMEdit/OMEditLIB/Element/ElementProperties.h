@@ -102,6 +102,7 @@ public:
   void setShowStartAndFixed(bool showStartAndFixed) {mShowStartAndFixed = showStartAndFixed;}
   bool isShowStartAndFixed() const {return mShowStartAndFixed;}
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
+  bool hasGroupImage() const {return mHasGroupImage;}
   void updateNameLabel();
   QString getName() const {return mName;}
   QString getExtendName() const {return mExtendName;}
@@ -165,6 +166,7 @@ private:
   StringAnnotation mSaveSelectorFilter;
   StringAnnotation mSaveSelectorCaption;
   StringAnnotation mGroupImage;
+  bool mHasGroupImage = false;
   BooleanAnnotation mConnectorSizing;
 
   QString mName;
@@ -252,7 +254,7 @@ class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, ModelInstance::Modifier *pDefaultElementModifier,
+  ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, bool subDialog, ModelInstance::Modifier *pDefaultElementModifier,
                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
   QString getElementQualifiedName() const;
@@ -266,7 +268,6 @@ public:
   bool isElementArray() const {return mpElement->getDimensions().isArray();}
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
   bool isInherited() const {return mInherited;}
-  bool isNested() const {return mNested;}
   bool skipFocusOutEvent() const {return mSkipFocusOutEvent;}
   QString getModification() const {return mModification;}
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
@@ -275,8 +276,9 @@ public:
 private:
   ModelInstance::Element *mpElement;
   GraphicsView *mpGraphicsView;
-  bool mInherited;
-  bool mNested;
+  bool mInherited = false;
+  bool mNested = false;
+  bool mSubDialog = false;
   bool mSkipFocusOutEvent = false;
   ModelInstance::Modifier *mpDefaultElementModifier;
   ModelInstance::Modifier *mpReplaceableConstrainedByModifier;

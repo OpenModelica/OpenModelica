@@ -46,6 +46,7 @@ import Binding = NFBinding;
 import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+  import NFInstNode;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
 import Algorithm = NFAlgorithm;
@@ -99,6 +100,7 @@ import SCodeUtil;
 import DAE;
 import Structural = NFStructural;
 import ArrayConnections = NFArrayConnections;
+import ResizableConnections = NFResizableConnections;
 import UnorderedMap;
 import UnorderedSet;
 import Inline = NFInline;
@@ -337,7 +339,8 @@ protected
 algorithm
   settings := FlattenSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE),
-    Flags.isSet(Flags.ARRAY_CONNECT),
+    // connections in for equations over resizable parameters can only be resolved with the array handler
+    Flags.isSet(Flags.ARRAY_CONNECT) or Flags.getConfigBool(Flags.RESIZABLE_ARRAYS),
     Flags.isSet(Flags.NF_API),
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
@@ -385,7 +388,7 @@ algorithm
     end if;
 
     if settings.arrayConnect then
-      flatModel := resolveArrayConnections(flatModel);
+      flatModel := resolveArrayConnections(flatModel, deleted_vars);
     else
       flatModel := resolveConnections(flatModel, deleted_vars, settings);
     end if;
@@ -1036,13 +1039,15 @@ protected
   ComponentRef cr, field_cr;
   Type ty;
   list<Expression> fields;
+  Type cls_ty;
   Expression cond;
 algorithm
   outExp := ExpandExp.expand(exp);
 
   outExp := match outExp
-    case Expression.CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
+    case Expression.CREF(ty = cls_ty as Type.COMPLEX(), cref = cr)
       algorithm
+        cls := Type.complexNode(cls_ty);
         comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
         fields := {};
 
@@ -1176,7 +1181,7 @@ protected
   ComponentRef iter;
   String name;
 algorithm
-  name := "$" + InstNode.name(ComponentRef.node(prefix));
+  name := "$" + ComponentRef.nodeName(prefix);
 
   for d in dimensions loop
     index := index + 1;
@@ -1234,7 +1239,8 @@ algorithm
   nodes := ComponentRef.nodes(prefix_cr);
   dims := List.flatten(list(Type.arrayDims(InstNode.getType(n)) for n in nodes));
   dims := List.lastN(dims, listLength(subs));
-  binding_ty := Type.liftArrayLeftList(binding_ty, dims);
+  // the expression is already split, e.g. CAST(Real, {..}[$x1]), so its own type is the element type
+  binding_ty := Type.liftArrayLeftList(Expression.typeOf(exp), dims);
 
   if not listEmpty(dims) then
     if Expression.isLiteral(exp) or not Expression.contains(exp, Expression.isIterator) then
@@ -1360,13 +1366,13 @@ protected
   Expression range;
   list<Expression> ranges;
   list<Subscript> subs;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
   DAE.ElementSource src;
 algorithm
   (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
   subs := listReverseInPlace(subs);
   vectorizedEqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
-  scope := Equation.scope(eqn);
+  scope := Equation.scopeCell(eqn);
   src := Equation.source(eqn);
 
   while not listEmpty(iters) loop
@@ -1420,7 +1426,7 @@ algorithm
         while not listEmpty(iters) loop
           iter :: iters := iters;
           range :: ranges := ranges;
-          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
+          body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source, {})};
         end while;
       then
         Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, NONE(), alg.scope, alg.source); // ToDo: update inputs, outputs?
@@ -1616,7 +1622,10 @@ algorithm
         exp.cref := flattenCref(exp.cref, prefix, info);
         exp.ty := flattenType(exp.ty, prefix, info);
       then
-        exp;
+        // the same size parameter everywhere: in loop ranges and indices as in
+        // the dimensions, see resizableDimensionAlias
+        if Type.isInteger(exp.ty) and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
+        then resizableDimensionAlias(exp, prefix, info) else exp;
 
     case Expression.SUBSCRIPTED_EXP(split = true)
       then Expression.mapShallow(
@@ -1673,7 +1682,7 @@ function replaceSplitIndices2
 algorithm
   replace := match sub
     case Subscript.SPLIT_INDEX()
-      then sub.dimIndex == index and InstNode.refEqual(sub.node, node);
+      then sub.dimIndex == index and InstNode.refEqual(InstNode.borrow(sub.node), node);
     else false;
   end match;
 end replaceSplitIndices2;
@@ -1721,7 +1730,7 @@ algorithm
 
     case Subscript.SPLIT_INDEX()
       algorithm
-        subs := UnorderedMap.getOrDefault(sub.node, subMap, {});
+        subs := UnorderedMap.getOrDefault(InstNode.borrow(sub.node), subMap, {});
       then
         if sub.dimIndex > listLength(subs) then Subscript.WHOLE() else listGet(subs, sub.dimIndex);
 
@@ -1808,14 +1817,124 @@ function flattenDimension
   input output Dimension dim;
   input Prefix prefix;
   input SourceInfo info;
+protected
+  Expression exp, alias;
 algorithm
   dim := match dim
     case Dimension.EXP()
-      then Dimension.fromExp(flattenExp(dim.exp, prefix, info), dim.var);
+      algorithm
+        exp := flattenExp(dim.exp, prefix, info);
+        if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+          exp := resizableDimensionAlias(exp, prefix, info);
+        end if;
+      then Dimension.fromExp(exp, dim.var);
+
+    // a resizable dimension given by an alias of another size parameter, see
+    // resizableDimensionAlias (flattenExp replaces the alias)
+    case Dimension.RESIZABLE() guard Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
+      algorithm
+        exp := flattenExp(dim.exp, prefix, info);
+      then if sameComponent(exp, dim.exp) then dim else Dimension.fromExp(exp, dim.var);
 
     else dim;
   end match;
 end flattenDimension;
+
+function sameComponent
+  "true if both expressions are crefs of the same component"
+  input Expression exp1;
+  input Expression exp2;
+  output Boolean b;
+algorithm
+  b := match (exp1, exp2)
+    case (Expression.CREF(cref = ComponentRef.CREF()), Expression.CREF(cref = ComponentRef.CREF()))
+      then InstNode.refEqual(ComponentRef.node(exp1.cref), ComponentRef.node(exp2.cref));
+    else false;
+  end match;
+end sameComponent;
+
+function resizableDimensionAlias
+  "A dimension given by a parameter of an array of components (e.g. b[N] in
+   s[M](each N = K) is s.N, one size for each element) is an alias of the
+   binding if all elements get the same value: the dimension is K then. Without
+   scalarization all elements of an array have to have the same size anyway.
+   A dimension given by a parameter of a component bound to another parameter
+   (s.N for s(N = N)) is that parameter. Otherwise the dimension stays as it is."
+  input Expression exp;
+  input Prefix prefix;
+  input SourceInfo info;
+  output Expression outExp = exp;
+protected
+  InstNode node;
+  Binding binding;
+  Expression bexp;
+algorithm
+  () := match exp
+    // ComponentRef.node, the Rust port stores a handle in the record field
+    case Expression.CREF(cref = ComponentRef.CREF())
+      guard InstNode.isComponent(ComponentRef.node(exp.cref)) and ComponentRef.variability(exp.cref) <= Variability.NON_STRUCTURAL_PARAMETER
+      algorithm
+        node := ComponentRef.node(exp.cref);
+        try
+          binding := Component.getBinding(InstNode.component(node));
+          if Binding.isBound(binding) then
+            bexp := Binding.getTypedExp(flattenBinding(binding, prefix));
+            if isInComponentArray(exp.cref) then
+              // a parameter of an array of components, e.g. s.N or s[$s1].N for s[M]
+              bexp := uniformArrayElement(bexp);
+              if not Type.isArray(Expression.typeOf(bexp)) then
+                outExp := bexp;
+              end if;
+            elseif not ComponentRef.isEmpty(ComponentRef.rest(exp.cref)) and Expression.isCref(bexp) and
+                   not Expression.isIterator(bexp) and Type.isInteger(Expression.typeOf(bexp)) and
+                   ComponentRef.isResizable(Expression.toCref(bexp)) then
+              // a parameter of a component bound to another resizable parameter, e.g. s.N for s(N = N)
+              outExp := resizableDimensionAlias(bexp, prefix, info);
+            end if;
+          end if;
+        else
+        end try;
+      then ();
+    else ();
+  end match;
+end resizableDimensionAlias;
+
+function uniformArrayElement
+  "The value of all elements of an array expression if they are all the same:
+   the body of an array constructor that does not depend on its iterators, or
+   the expression itself if it is no array. Fails otherwise."
+  input Expression exp;
+  output Expression elem;
+algorithm
+  elem := match exp
+    local
+      Expression body;
+      list<tuple<InstNode, Expression>> iters;
+    case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body, iters = iters))
+      guard not List.any(iters, function iteratorOccursIn(exp = body))
+      then uniformArrayElement(body);
+    case Expression.CALL() guard Call.isNamed(exp.call, "fill")
+      then uniformArrayElement(listHead(Call.arguments(exp.call)));
+    case _ guard not Type.isArray(Expression.typeOf(exp)) then exp;
+  end match;
+end uniformArrayElement;
+
+function isInComponentArray
+  "true if a cref is a component of an array of components, e.g. s.N for s[M]"
+  input ComponentRef cref;
+  output Boolean b;
+protected
+  ComponentRef rest;
+algorithm
+  rest := ComponentRef.rest(cref);
+  b := not ComponentRef.isEmpty(rest) and Type.isArray(ComponentRef.nodeType(ComponentRef.stripSubscripts(rest)));
+end isInComponentArray;
+
+function iteratorOccursIn
+  input tuple<InstNode, Expression> iter;
+  input Expression exp;
+  output Boolean b = Expression.containsIterator(exp, Util.tuple21(iter));
+end iteratorOccursIn;
 
 function flattenSections
   input Sections sections;
@@ -1872,6 +1991,7 @@ algorithm
         e1 := flattenExp(eq.lhs, prefix, info);
         e2 := flattenExp(eq.rhs, prefix, info);
         ty := flattenType(eq.ty, prefix, info);
+        checkEqualityEquation(e1, e2, eq.source);
       then
         Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
 
@@ -1931,6 +2051,50 @@ algorithm
   end match;
 end flattenEquation;
 
+function checkEqualityEquation
+  input Expression lhs;
+  input Expression rhs;
+  input DAE.ElementSource src;
+protected
+  Expression out0, out1, pos_vel;
+  Call call;
+algorithm
+  () := match (lhs, rhs)
+    // spatialDistribution has special rules on how its outputs can be used.
+    case (Expression.TUPLE(elements = {out0, out1}), Expression.CALL(call))
+      guard (Expression.isWildCref(out0) or Expression.isWildCref(out1)) and
+            Call.isNamed(call, "spatialDistribution")
+      algorithm
+        // The second output may not be ignored.
+        if Expression.isWildCref(out1) then
+          Error.addSourceMessage(Error.SPATIAL_DISTRIBUTION_IGNORED_OUT1, {}, ElementSource.getInfo(src));
+          fail();
+        end if;
+
+        // The first output may only be ignored if positiveVelocity is true.
+        {_, _, _, pos_vel, _, _} := Call.arguments(call);
+        Structural.markExp(pos_vel);
+        pos_vel := Ceval.tryEvalExp(pos_vel);
+
+        if not Expression.isTrue(pos_vel) then
+          Error.addSourceMessage(Error.SPATIAL_DISTRIBUTION_IGNORED_OUT0, {}, ElementSource.getInfo(src));
+          fail();
+        end if;
+      then
+        ();
+
+    // spatialDistribution may be wrapped in a noEvent.
+    case (Expression.TUPLE(), Expression.CALL(call))
+      guard Call.isNamed(call, "noEvent")
+      algorithm
+        checkEqualityEquation(lhs, listHead(Call.arguments(call)), src);
+      then
+        ();
+
+    else ();
+  end match;
+end checkEqualityEquation;
+
 function flattenIfEquation
   input Equation eq;
   input Prefix prefix;
@@ -1946,7 +2110,7 @@ protected
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
 algorithm
   Equation.IF(branches = branches, scope = scope, source = src) := eq;
   has_connect := Equation.contains(eq, Equation.isConnection);
@@ -2121,14 +2285,21 @@ protected
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
-  InstNode scope;
+  NFInstNode.ScopeRef scope;
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
   (connects, non_connects) := splitForLoop2(body, settings);
 
+  // the size parameters in the range like in the dimensions, see resizableDimensionAlias
+  if isSome(opt_range) and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    SOME(range) := opt_range;
+    opt_range := SOME(flattenExp(range, EMPTY_PREFIX, ElementSource.getInfo(src)));
+  end if;
+
   if not listEmpty(connects) then
-    if isSome(opt_range) then
+    // with resizable arrays the connections are resolved with symbolic ranges
+    if isSome(opt_range) and not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
       SOME(range) := opt_range;
       range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
       Structural.markExp(range);
@@ -2566,7 +2737,7 @@ algorithm
         while UnorderedMap.contains(tlio_var.name, variables) loop
           tlio_node := InstNode.NAME_NODE(Util.makeQuotedIdentifier(name));
           tlio_var.name := match cref case ComponentRef.CREF() then
-            ComponentRef.CREF(tlio_node, cref.subscripts, cref.ty, cref.origin, ComponentRef.EMPTY());
+            ComponentRef.prefixCref(tlio_node, cref.ty, cref.subscripts, ComponentRef.EMPTY());
           end match;
           name := name + "_" "append underscore until name is unique";
         end while;
@@ -2597,8 +2768,9 @@ protected
   ComponentRef fc;
 algorithm
   // crefs of all flow connector members (to tell a generated zero-flow equation
-  // apart from a genuine `x = 0` model equation)
-  flowCrefs := list(v.name for v guard Variable.isFlow(v) in flatModel.variables);
+  // apart from a genuine `x = 0` model equation). Only public ones: a protected
+  // connector is an internal wiring node, not an FMU boundary.
+  flowCrefs := list(v.name for v guard Variable.isFlow(v) and Variable.isPublic(v) in flatModel.variables);
   if listEmpty(flowCrefs) then return; end if;
 
   // collect and drop the `flow = 0` equations of unconnected flows.
@@ -2668,8 +2840,22 @@ algorithm
   flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in flatModel.variables);
   flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable, replacements);
   flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable, replacements);
-  // TODO: Implement evaluation for algorithm sections.
+  flatModel.algorithms := evaluateAlgorithmsConnOp(flatModel.algorithms, sets, setsArray, variables, ctable, replacements);
+  flatModel.initialAlgorithms := evaluateAlgorithmsConnOp(flatModel.initialAlgorithms, sets, setsArray, variables, ctable, replacements);
 end evaluateConnectionOperators;
+
+function evaluateAlgorithmsConnOp
+  input output list<Algorithm> algorithms;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
+  input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
+algorithm
+  algorithms := Algorithm.mapExpList(algorithms,
+    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
+      variables = variables, ctable = ctable, replacements = replacements));
+end evaluateAlgorithmsConnOp;
 
 function evaluateBindingConnOp
   input output Variable var;
@@ -2749,10 +2935,67 @@ end evaluateEquationConnOp;
 function resolveArrayConnections
   "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
+  input DeletedVariables deletedVars;
+protected
+  Connections conns;
+  Connections.BrokenEdges broken;
+  FlatModel unrolled;
+  Boolean symbolic_oc;
 algorithm
-  flatModel := ArrayConnections.resolve(flatModel);
+  // Overconstrained connections: build the graph like resolveConnections, which
+  // evaluates the Connections.* operators (isRoot, rooted). The connect equations
+  // stay in the model for the array handler.
+  // with resizable arrays the graph is built with symbolic sizes if possible
+  symbolic_oc := false;
+  if System.getHasOverconstrainedConnectors() and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    (flatModel, symbolic_oc) := ResizableConnections.resolveOverconstrained(flatModel);
+  end if;
+  if System.getHasOverconstrainedConnectors() and not symbolic_oc then
+    // the graph needs the single connections, roots and branches: unroll the
+    // for loops of a copy of the equations for it
+    unrolled := FlatModel.FLAT_MODEL(flatModel.name, {}, unrollForGraph(flatModel.equations), {}, {}, {}, flatModel.source);
+    (_, conns) := Connections.collectConnections(unrolled, function isDeletedCref(deletedVars = deletedVars));
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedArrayConnections(flatModel, unrolled.equations, conns,
+      function isDeletedCref(deletedVars = deletedVars));
+    if not listEmpty(broken) then
+      Error.addInternalError(getInstanceName() + ": overconstrained connection graphs with loops (broken connections) are not supported with array connections yet.", sourceInfo());
+      fail();
+    end if;
+  end if;
+
+  if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    // sizes, ranges and indices stay symbolic in the size parameters
+    flatModel := ResizableConnections.resolve(flatModel);
+  else
+    flatModel := ArrayConnections.resolve(flatModel);
+  end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function unrollForGraph
+  "The equations with their for loops unrolled, the ranges evaluated. Only for
+   building the overconstrained connection graph, the model keeps the loops."
+  input list<Equation> equations;
+  output list<Equation> outEquations = {};
+protected
+  Expression range, val;
+  RangeIterator range_iter;
+algorithm
+  for eq in equations loop
+    outEquations := match eq
+      case Equation.FOR(range = SOME(range)) algorithm
+        range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(eq), NFInstContext.ITERATION_RANGE));
+        range_iter := RangeIterator.fromExp(range);
+        while RangeIterator.hasNext(range_iter) loop
+          (range_iter, val) := RangeIterator.next(range_iter);
+          outEquations := List.append_reverse(unrollForGraph(Equation.replaceIteratorList(eq.body, eq.iterator, val)), outEquations);
+        end while;
+      then outEquations;
+      else eq :: outEquations;
+    end match;
+  end for;
+  outEquations := listReverseInPlace(outEquations);
+end unrollForGraph;
 
 function collectComponentFuncs
   input Variable var;
@@ -2793,7 +3036,8 @@ protected
 algorithm
   () := match ty
     local
-      InstNode con, de;
+      NFInstNode.ScopeRef con, de;
+      NFInstNode.ScopeRef rec_con;
       Function fn;
 
     case Type.ARRAY()
@@ -2812,15 +3056,15 @@ algorithm
     // Collect external object structors.
     case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de))
       algorithm
-        funcs := collectStructor(con, funcs);
-        funcs := collectStructor(de, funcs);
+        funcs := collectStructor(InstNode.borrow(con), funcs);
+        funcs := collectStructor(InstNode.borrow(de), funcs);
       then
         ();
 
     // Collect record constructors.
-    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_con))
       algorithm
-        funcs := collectStructor(con, funcs);
+        funcs := collectStructor(InstNode.borrow(rec_con), funcs);
       then
         ();
 
@@ -3071,12 +3315,12 @@ algorithm
     SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);
 
-    if not InstNode.isPartial(fn.node) then
+    if not InstNode.isPartial(InstNode.fromHandle(fn.node)) then
       funcs := FunctionTree.add(funcs, Function.name(fn), fn);
-      funcs := collectClassFunctions(fn.node, funcs);
+      funcs := collectClassFunctions(InstNode.fromHandle(fn.node), funcs);
 
       for fn_der in fn.derivatives loop
-        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+        for der_fn in Function.getCachedFuncs(InstNode.borrow(fn_der.derivativeFn)) loop
           funcs := flattenFunction(der_fn, funcs);
         end for;
       end for;
@@ -3086,7 +3330,7 @@ algorithm
       end for;
 
       if Function.isPartialDerivative(fn) then
-        for f in Function.getCachedFuncs(Class.lastBaseClass(fn.node)) loop
+        for f in Function.getCachedFuncs(Class.lastBaseClass(InstNode.fromHandle(fn.node))) loop
           flattenFunction(f, funcs);
         end for;
       end if;

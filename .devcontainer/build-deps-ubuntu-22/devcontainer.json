@@ -1,0 +1,32 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+{
+  "name": "build-deps:ubuntu-22.04",
+
+  // Dockerfile
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+        // On Windows USERNAME is set, on Linux USER is set
+        // We hope only one is set
+        "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
+    }
+  },
+
+  // Additional VSCode extensions
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "AnHeuermann.metamodelica",
+        "ms-vscode.cpptools-extension-pack",
+        "njpwerner.autodocstring",
+        "lextudio.restructuredtext",
+        "trond-snekvik.simple-rst",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+
+  "remoteUser": "${localEnv:USER}${localEnv:USERNAME}"
+}

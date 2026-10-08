@@ -19,7 +19,7 @@ end parameterTest7;
 
 setCommandLineOptions("-d=evalParameterDump");
 simulate(parameterTest7, simflags="-output=p1,p2,s,a[1],a[2],a[3]"); getErrorString();
-system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"); getErrorString();
+simulate(parameterTest7, simflags="-override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]", resimulateExecutable="parameterTest7"); getErrorString();
 
 // Result:
 // true
@@ -390,11 +390,15 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 // "
 // end SimulationResult;
 // ""
-// LOG_STDOUT        | warning | It is not possible to override the following quantity: p2
+// record SimulationResult
+//     resultFile = "parameterTest7_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'parameterTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]'",
+//     messages = "LOG_STDOUT        | warning | It is not possible to override the following quantity: p2
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=3,p2=3,s=3,a[1]=10,a[2]=2,a[3]=3
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// 0
+// "
+// end SimulationResult;
 // ""
 // endResult

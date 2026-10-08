@@ -156,14 +156,23 @@ namespace OptionsDefaults
   }
 
   namespace Simulation {
+#if defined(_WIN32) && !defined(__MINGW32__)
+    QString targetBuild = "msvc";
+#else
     QString targetBuild = "gcc";
+#endif
     QString cCompiler; // this value is set in SimulationPage constructor.
     QString cxxCompiler; // this value is set in SimulationPage constructor.
     bool useStaticLinking = false;
     QString postCompilationCommand = "";
     bool ignoreCommandLineOptionsAnnotation = false;
     bool ignoreSimulationFlagsAnnotation = false;
+#if defined(__EMSCRIPTEN__)
+    // Saving is a download here, so prompting before every run gets in the way.
+    bool saveClassBeforeSimulation = false;
+#else
     bool saveClassBeforeSimulation = true;
+#endif
     bool switchToPlottingPerspective = true;
     bool closeSimulationOutputWidgetsBeforeSimulation = true;
     bool deleteIntermediateCompilationFiles = true;
@@ -242,14 +251,20 @@ namespace OptionsDefaults
   }
 
   namespace FMI {
+#if defined(__EMSCRIPTEN__)
+    QString version = "3.0";
+    QString solver = "";
+    bool includeSourceCode = false;
+#else
     QString version = "2.0";
+    QString solver = "cvode";
+    bool includeSourceCode = true;
+#endif
     QString type = "me_cs";
     QString FMUName = "";
     QString moveFMU = "";
-    QString solver = "";
     QString modelDescriptionFilter = "protected";
     bool includeResources = false;
-    bool includeSourceCode = true;
     bool generateDebugSymbols = false;
     bool deleteFMUDirectoyAndModel = false;
   }

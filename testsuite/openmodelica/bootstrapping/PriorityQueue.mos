@@ -1,6 +1,7 @@
 // name: PriorityQueue
 // cflags: -g=MetaModelica -d=-newInst
 // status: correct
+// suite: metamodelica
 //
 // TODO: Make me faster; I'm slow
 

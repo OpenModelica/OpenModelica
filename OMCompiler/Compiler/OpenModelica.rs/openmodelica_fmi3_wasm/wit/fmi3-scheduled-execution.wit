@@ -1,0 +1,240 @@
+package fmi:fmi3@3.0.0;
+
+// Copyright (C) 2026 Modelica Association Project "FMI"
+//               All rights reserved.
+//
+// Copied from the FMI Layered Standard WebAssembly (fmi-ls-wasm) repository
+// (https://github.com/modelica/fmi-ls-wasm), released under the BSD 2-Clause
+// license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// - Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// - Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// SPDX-License-Identifier: BSD-2-Clause
+
+interface scheduled-execution {
+  use types.{
+    value-reference, status, fmu-state,
+    interval-qualifier, interval-fraction,
+    variable-dependency, discrete-states-info,
+  };
+
+  resource scheduled-execution-instance {
+
+    // ── Construction ──────────────────────────────────────────────────────────
+
+    /// Instantiate a Scheduled Execution FMU instance.
+    ///
+    /// FMI C: fmi3Instance fmi3InstantiateScheduledExecution(
+    ///     fmi3String instanceName, fmi3String instantiationToken,
+    ///     fmi3String resourcePath, fmi3Boolean visible,
+    ///     fmi3Boolean loggingOn,
+    ///     fmi3InstanceEnvironment instanceEnvironment,
+    ///     fmi3LogMessageCallback logMessage,
+    ///     fmi3ClockUpdateCallback clockUpdate,
+    ///     fmi3LockPreemptionCallback lockPreemption,
+    ///     fmi3UnlockPreemptionCallback unlockPreemption);
+    instantiate-scheduled-execution: static func(
+      instance-name:        string,
+      instantiation-token:  string,
+      resource-path:        string,
+      visible:              bool,
+      logging-on:           bool,
+    ) -> option<scheduled-execution-instance>;
+
+    // ── Debug logging ─────────────────────────────────────────────────────────
+
+    /// Enable or disable logging for specific categories.
+    ///
+    /// FMI C: fmi3Status fmi3SetDebugLogging(...)
+    set-debug-logging: func(logging-on: bool, categories: list<string>) -> status;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    /// Transition to Initialisation Mode.
+    ///
+    /// FMI C: fmi3Status fmi3EnterInitializationMode(...)
+    enter-initialization-mode: func(
+      tolerance:  option<f64>,
+      start-time: f64,
+      stop-time:  option<f64>,
+    ) -> status;
+
+    /// Leave Initialisation Mode and enter the appropriate operating mode.
+    ///
+    /// FMI C: fmi3Status fmi3ExitInitializationMode(fmi3Instance instance);
+    exit-initialization-mode: func() -> status;
+
+    /// Enter Event Mode.
+    ///
+    /// FMI C: fmi3Status fmi3EnterEventMode(fmi3Instance instance);
+    enter-event-mode: func() -> status;
+
+    /// Update discrete states and check for further event iterations.
+    ///
+    /// FMI C: fmi3Status fmi3UpdateDiscreteStates(...)
+    update-discrete-states: func() -> result<discrete-states-info, status>;
+
+    /// Terminate the simulation run (orderly shutdown).
+    ///
+    /// FMI C: fmi3Status fmi3Terminate(fmi3Instance instance);
+    terminate: func() -> status;
+
+    /// Reset the instance to the state after fmi3Instantiate*.
+    ///
+    /// FMI C: fmi3Status fmi3Reset(fmi3Instance instance);
+    reset: func() -> status;
+
+    // ── Configuration mode ───────────────────────────────────────────────────
+
+    /// Enter Configuration Mode to set structural parameters.
+    ///
+    /// FMI C: fmi3Status fmi3EnterConfigurationMode(fmi3Instance instance);
+    enter-configuration-mode: func() -> status;
+
+    /// Leave Configuration Mode.
+    ///
+    /// FMI C: fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance);
+    exit-configuration-mode: func() -> status;
+
+    // ── Variable getters ──────────────────────────────────────────────────────
+
+    get-float32: func(value-references: list<value-reference>) -> result<list<f32>, status>;
+    get-float64: func(value-references: list<value-reference>) -> result<list<f64>, status>;
+    get-int8:    func(value-references: list<value-reference>) -> result<list<s8>,  status>;
+    get-int16:   func(value-references: list<value-reference>) -> result<list<s16>, status>;
+    get-int32:   func(value-references: list<value-reference>) -> result<list<s32>, status>;
+    get-int64:   func(value-references: list<value-reference>) -> result<list<s64>, status>;
+    get-uint8:   func(value-references: list<value-reference>) -> result<list<u8>,  status>;
+    get-uint16:  func(value-references: list<value-reference>) -> result<list<u16>, status>;
+    get-uint32:  func(value-references: list<value-reference>) -> result<list<u32>, status>;
+    get-uint64:  func(value-references: list<value-reference>) -> result<list<u64>, status>;
+    get-boolean: func(value-references: list<value-reference>) -> result<list<bool>, status>;
+    get-string:  func(value-references: list<value-reference>) -> result<list<string>, status>;
+    get-binary:  func(value-references: list<value-reference>) -> result<list<list<u8>>, status>;
+    get-clock:   func(value-references: list<value-reference>) -> result<list<bool>, status>;
+
+    // ── Variable setters ──────────────────────────────────────────────────────
+
+    set-float32: func(value-references: list<value-reference>, values: list<f32>)    -> status;
+    set-float64: func(value-references: list<value-reference>, values: list<f64>)    -> status;
+    set-int8:    func(value-references: list<value-reference>, values: list<s8>)     -> status;
+    set-int16:   func(value-references: list<value-reference>, values: list<s16>)    -> status;
+    set-int32:   func(value-references: list<value-reference>, values: list<s32>)    -> status;
+    set-int64:   func(value-references: list<value-reference>, values: list<s64>)    -> status;
+    set-uint8:   func(value-references: list<value-reference>, values: list<u8>)     -> status;
+    set-uint16:  func(value-references: list<value-reference>, values: list<u16>)    -> status;
+    set-uint32:  func(value-references: list<value-reference>, values: list<u32>)    -> status;
+    set-uint64:  func(value-references: list<value-reference>, values: list<u64>)    -> status;
+    set-boolean: func(value-references: list<value-reference>, values: list<bool>)   -> status;
+    set-string:  func(value-references: list<value-reference>, values: list<string>) -> status;
+    set-binary:  func(value-references: list<value-reference>, values: list<list<u8>>) -> status;
+    set-clock:   func(value-references: list<value-reference>, values: list<bool>)   -> status;
+
+    // ── Variable dependencies ─────────────────────────────────────────────────
+
+    get-number-of-variable-dependencies: func(vr: value-reference) -> result<u64, status>;
+    get-variable-dependencies: func(
+      dependent: value-reference,
+    ) -> result<list<variable-dependency>, status>;
+
+    // ── FMU state (save / restore) ────────────────────────────────────────────
+
+    get-fmu-state: func() -> result<fmu-state, status>;
+    set-fmu-state: func(state: fmu-state) -> status;
+
+    // ── Directional derivatives ───────────────────────────────────────────────
+
+    get-directional-derivative: func(
+      unknowns:  list<value-reference>,
+      knowns:    list<value-reference>,
+      seed:      list<f64>,
+    ) -> result<list<f64>, status>;
+
+    get-adjoint-derivative: func(
+      unknowns:  list<value-reference>,
+      knowns:    list<value-reference>,
+      seed:      list<f64>,
+    ) -> result<list<f64>, status>;
+
+    // ── Clock interval / shift queries ────────────────────────────────────────
+
+    get-interval-decimal: func(
+      value-references: list<value-reference>,
+    ) -> result<list<tuple<f64, interval-qualifier>>, status>;
+
+    get-interval-fraction: func(
+      value-references: list<value-reference>,
+    ) -> result<list<tuple<interval-fraction, interval-qualifier>>, status>;
+
+    get-shift-decimal: func(
+      value-references: list<value-reference>,
+    ) -> result<list<f64>, status>;
+
+    get-shift-fraction: func(
+      value-references: list<value-reference>,
+    ) -> result<list<interval-fraction>, status>;
+
+    set-interval-decimal: func(
+      value-references: list<value-reference>,
+      intervals:        list<f64>,
+    ) -> status;
+
+    set-interval-fraction: func(
+      value-references: list<value-reference>,
+      intervals:        list<interval-fraction>,
+    ) -> status;
+
+    set-shift-decimal: func(
+      value-references: list<value-reference>,
+      shifts:           list<f64>,
+    ) -> status;
+
+    set-shift-fraction: func(
+      value-references: list<value-reference>,
+      shifts:           list<interval-fraction>,
+    ) -> status;
+
+    evaluate-discrete-states: func() -> status;
+
+    // ── Partition activation ──────────────────────────────────────────────────
+
+    /// Activate a single model partition identified by its clock value reference.
+    ///
+    /// FMI C: fmi3Status fmi3ActivateModelPartition(
+    ///     fmi3Instance instance,
+    ///     fmi3ValueReference clockReference,
+    ///     fmi3Float64 activationTime);
+    ///
+    /// Mapping notes:
+    ///   • activationTime is the absolute simulation time at which the
+    ///     partition is being activated (corresponds to the clock tick time).
+    ///   • The master is responsible for acquiring the preemption lock before
+    ///     calling this function and releasing it afterwards (via the
+    ///     lock-preemption / unlock-preemption callbacks in the `callbacks`
+    ///     imported interface).
+    activate-model-partition: func(
+      clock-reference: value-reference,
+      activation-time: f64,
+    ) -> status;
+  }
+}

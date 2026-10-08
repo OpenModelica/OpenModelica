@@ -916,28 +916,24 @@ protected function expEqual
   input DAE.Exp e2;
   output Boolean isEqual;
 algorithm
-  isEqual := matchcontinue(e1, e2)
+  isEqual := match(e1, e2)
     local
       Integer i;
       Real r;
 
     // we need additional rules here for int/real
-    case (DAE.ICONST(i), DAE.RCONST(r))
-      algorithm
-        true := realEq(intReal(i), r);
+    case (DAE.ICONST(i), DAE.RCONST(r)) guard realEq(intReal(i), r)
       then
         true;
 
-    case (DAE.RCONST(r), DAE.ICONST(i))
-      algorithm
-        true := realEq(intReal(i), r);
+    case (DAE.RCONST(r), DAE.ICONST(i)) guard realEq(intReal(i), r)
       then
         true;
 
     // all others forward to expEqual
     else ExpressionBasics.expEqual(e1, e2);
 
-  end matchcontinue;
+  end match;
 end expEqual;
 
 protected function operatorMatches

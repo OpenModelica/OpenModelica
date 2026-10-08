@@ -1,6 +1,7 @@
 // name: nmpcOilShalePyrolysis2
 // status: correct
 // cflags: -d=-newInst
+// suite: disabled
 
 setCommandLineOptions("+g=Optimica");
 getErrorString();

@@ -1,0 +1,8 @@
+// Nonlinear system under wasm-jit (rt_solve_nls runtime Newton solver).
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+loadFile("TestNLS.mo"); getErrorString();
+simulate(TestNLS, stopTime = 2.0, numberOfIntervals = 20); getErrorString();
+val(x, 0.0); // expect ~1.641944
+val(y, 0.0); // expect ~1.141944
+val(x, 2.0); // expect ~1.963910
+val(y, 2.0); // expect ~1.463910

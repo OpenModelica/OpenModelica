@@ -67,16 +67,14 @@
 #include "util/omc_strdup.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
-#include "meta/meta_modelica.h"
 
 #include "linearization/linearize.h"
 #include "options.h"
 #include "simulation_runtime.h"
 #include "simulation_input_xml.h"
-#include "simulation/results/simulation_result_plt.h"
-#include "simulation/results/simulation_result_csv.h"
-#include "simulation/results/simulation_result_mat4.h"
+#include "arrayIndex.h"
 #include "simulation/results/simulation_result_ia.h"
+#include "simulation/results/simulation_result_rust.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/gbode_util.h"
 #include "simulation_info_json.h"
@@ -91,7 +89,6 @@
 #include "simulation/solver/initialization/initialization.h"
 #include "simulation/solver/dae_mode.h"
 #include "dataReconciliation/dataReconciliation.h"
-#include "util/parallel_helper.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
@@ -550,12 +547,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   if(omc_flag[FLAG_S]) {
     if (omc_flagValue[FLAG_S]) {
+      omc_rc_release((void*) data->simulationInfo->solverMethod);
       data->simulationInfo->solverMethod = GC_strdup(omc_flagValue[FLAG_S]);
       infoStreamPrint(OMC_LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
   /* if the model is compiled in daeMode then we have to use ida solver */
   if (compiledInDAEMode && std::string("ida") != data->simulationInfo->solverMethod) {
+    omc_rc_release((void*) data->simulationInfo->solverMethod);
     data->simulationInfo->solverMethod = GC_strdup(std::string("ida").c_str());
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
   }
@@ -570,6 +569,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
       throwStreamPrint(NULL, "simulation_runtime.c: Error: can not allocate memory.");
     }
     data->modelData->resultFileName = GC_strdup(result_file);
+    omc_rc_release((void*) result_file);
   } else {
     result_file_cstr = string(data->modelData->modelFilePrefix) + string("_res.") + data->simulationInfo->outputFormat;
     data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());
@@ -717,31 +717,23 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
   mmc_sint_t maxSteps = 4 * simData->simulationInfo->numSteps;
+  free((void*) sim_result.filename);
   sim_result.filename = omc_strdup(simData->modelData->resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
   if (sim_noemit || 0 == strcmp("empty", simData->simulationInfo->outputFormat)) {
     /* Default is set to noemit */
-  } else if(0 == strcmp("csv", simData->simulationInfo->outputFormat)) {
-    sim_result.init = omc_csv_init;
-    sim_result.emit = omc_csv_emit;
-    /* sim_result.writeParameterData = omc_csv_writeParameterData; */
-    sim_result.free = omc_csv_free;
-  } else if(0 == strcmp("mat", simData->simulationInfo->outputFormat)) {
-    sim_result.init = mat4_init4;
-    sim_result.emit = mat4_emit4;
-    sim_result.writeParameterData = mat4_writeParameterData4;
-    sim_result.free = mat4_free4;
+  } else if(0 == strcmp("csv", simData->simulationInfo->outputFormat)
+            || 0 == strcmp("mat", simData->simulationInfo->outputFormat)
+            || 0 == strcmp("plt", simData->simulationInfo->outputFormat)
+            || 0 == strcmp("arrow", simData->simulationInfo->outputFormat)) {
+    sim_result.init = rust_result_init;
+    sim_result.emit = rust_result_emit;
+    sim_result.writeParameterData = rust_result_writeParameterData;
+    sim_result.free = rust_result_free;
     resultFormatHasCheapAliasesAndParameters = 1;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  } else if(0 == strcmp("plt", simData->simulationInfo->outputFormat)) {
-    sim_result.init = plt_init;
-    sim_result.emit = plt_emit;
-    /* sim_result.writeParameterData = plt_writeParameterData; */
-    sim_result.free = plt_free;
-  }
-  //NEW interactive
-  else if(0 == strcmp("ia", simData->simulationInfo->outputFormat)) {
+  } else if(0 == strcmp("ia", simData->simulationInfo->outputFormat)) {
     sim_result.init = ia_init;
     sim_result.emit = ia_emit;
     //sim_result.writeParameterData = ia_writeParameterData;
@@ -772,8 +764,8 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   mmc_sint_t i;
   enum SOLVER_METHOD solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
-  MMC_TRY_INTERNAL(mmc_jumper)
-  MMC_TRY_INTERNAL(globalJumpBuffer)
+  OMC_TRY_INTERNAL(mmc_jumper)
+  OMC_TRY_INTERNAL(globalJumpBuffer)
 
   if (initializeResultData(simData, threadData, cpuTime)) {
     return -1;
@@ -849,10 +841,10 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
       retVal = solver_main(simData, threadData, init_initMethod.c_str(), init_file.c_str(), init_time, solverID, outVars, argv_0);
   }
 
-  MMC_CATCH_INTERNAL(mmc_jumper)
-  MMC_CATCH_INTERNAL(globalJumpBuffer)
+  OMC_CATCH_INTERNAL(mmc_jumper)
+  OMC_CATCH_INTERNAL(globalJumpBuffer)
 
-  sim_result.free(&sim_result, simData, threadData);
+  deinitializeResultData(simData, threadData);
 
   return retVal;
 }
@@ -1097,6 +1089,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(data->modelData, data->simulationInfo, threadData);
+  /* derived sizes of resizable arrays from the start values, then the sizes
+   * again with them (read_input_xml computed them already without) */
+  if (data->callback->updateStructuralParameters) {
+    data->callback->updateStructuralParameters(data, threadData);
+    calculateAllScalarLength(data->modelData);
+  }
   rt_accumulate(SIM_TIMER_INIT_XML);
   data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
 
@@ -1175,21 +1173,10 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauStart changed to %f", homTauStart);
   }
 
-  if(omc_flag[FLAG_LSS_MAX_DENSITY]) {
-    linearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_LSS_MAX_DENSITY]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum density for using linear sparse solver changed to %f", linearSparseSolverMaxDensity);
-  }
-  if(omc_flag[FLAG_LSS_MIN_SIZE]) {
-    linearSparseSolverMinSize = atoi(omc_flagValue[FLAG_LSS_MIN_SIZE]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Minimum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
-  }
-  if(omc_flag[FLAG_NLSS_MAX_DENSITY]) {
-    nonlinearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_NLSS_MAX_DENSITY]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum density for using non-linear sparse solver changed to %f", nonlinearSparseSolverMaxDensity);
-  }
-  if(omc_flag[FLAG_NLSS_MIN_SIZE]) {
-    nonlinearSparseSolverMinSize = atoi(omc_flagValue[FLAG_NLSS_MIN_SIZE]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "Minimum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
+  if(omc_flag[FLAG_LSS_MAX_DENSITY] || omc_flag[FLAG_LSS_MIN_SIZE] ||
+     omc_flag[FLAG_NLSS_MAX_DENSITY] || omc_flag[FLAG_NLSS_MIN_SIZE]) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "The flags -lssMaxDensity, -lssMinSize, -nlssMaxDensity and -nlssMinSize are\n"
+                                          "deprecated and ignored: the compiler chooses dense or sparse per system.");
   }
   if(omc_flag[FLAG_NEWTON_XTOL]) {
     newtonXTol = atof(omc_flagValue[FLAG_NEWTON_XTOL]);
@@ -1237,36 +1224,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     warningStreamPrint(OMC_LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
       "If a model is compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically in DAE mode.");
   }
-
-  /* Set the maximum number of threads prior to any allocation w.r.t.
-   * linear systems and Jacobians in order to avoid memory leaks.
-   */
-#ifdef USE_PARJAC
-  int num_threads = omc_get_max_threads();
-  if (omc_flag[FLAG_JACOBIAN_THREADS]) {
-    int num_threads_tmp = atoi(omc_flagValue[FLAG_JACOBIAN_THREADS]);
-    infoStreamPrint(OMC_LOG_STDOUT, 0,
-         "Number of threads passed via -jacobianThreads: %d",
-         num_threads_tmp);
-    if (0 >= num_threads_tmp) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0,
-          "Number of desired OpenMP threads for parallel Jacobian evaluation is <= 0.");
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Use omp_get_max_threads().");
-    } else {
-      num_threads = num_threads_tmp;
-    }
-  }
-  omp_set_num_threads(num_threads);
-
-  infoStreamPrint(OMC_LOG_STDOUT, 0,
-      "Number of OpenMP threads for parallel Jacobian evaluation: %d",
-      omc_get_max_threads());
-#else
-  if (omc_flag[FLAG_JACOBIAN_THREADS]) {
-      warningStreamPrint(OMC_LOG_STDOUT, 0,
-          "Simulation flag jacobianThreads not available. Make sure you have configured omc with \"--enable-parjac\" and build with a compiler supporting OpenMP.");
-  }
-#endif
 
   /* set log activation from equationIndex and lv_system */
   setLVSystems(data, threadData);
@@ -1359,7 +1316,7 @@ int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_
 int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData)
 {
   int retVal = -1;
-  MMC_TRY_INTERNAL(globalJumpBuffer)
+  OMC_TRY_INTERNAL(globalJumpBuffer)
 
   /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1
@@ -1376,7 +1333,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
   data->callback->callExternalObjectDestructors(data, threadData);
   deInitializeDataStruc(data);
   fflush(NULL);
-  MMC_CATCH_INTERNAL(globalJumpBuffer)
+  OMC_CATCH_INTERNAL(globalJumpBuffer)
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if(sim_communication_port_open)

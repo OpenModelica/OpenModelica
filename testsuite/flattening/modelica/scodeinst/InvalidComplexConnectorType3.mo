@@ -1,6 +1,7 @@
 // name: InvalidComplexConnectorType3
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidComplexConnectorType3
@@ -17,7 +18,7 @@ end InvalidComplexConnectorType3;
 
 // Result:
 // Error processing file: InvalidComplexConnectorType3.mo
-// [flattening/modelica/scodeinst/InvalidComplexConnectorType3.mo:16:3-16:18:writable] Error: c1 is a composite connector element, and may not be declared as parameter.
+// [flattening/modelica/scodeinst/InvalidComplexConnectorType3.mo:17:3-17:18:writable] Error: c1 is a composite connector element, and may not be declared as parameter.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

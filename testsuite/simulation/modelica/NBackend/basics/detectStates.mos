@@ -85,7 +85,7 @@ simulate(expandDerOperator3); getErrorString();
 //
 // [stateselection] (1) Selected Dummy States
 // ********************************************
-// 	[DSTA] (1) Real y;
+// [DSTA] (1) Real y
 //
 // record SimulationResult
 //     resultFile = "expandDerOperator2_res.mat",
@@ -105,7 +105,7 @@ simulate(expandDerOperator3); getErrorString();
 //
 // [stateselection] (1) Created auxiliary equations:
 // ***************************************************
-// 	[SCAL] (1) $AUX_0 = x + y ($RES_$AUX_0)
+// 	[SCAL] (1) $AUX_0 = x + y; ($RES_$AUX_0)
 //
 // [stateselection] State Order:
 // *******************************

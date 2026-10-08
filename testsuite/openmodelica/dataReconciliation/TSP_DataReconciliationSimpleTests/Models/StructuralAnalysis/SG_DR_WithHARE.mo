@@ -11,6 +11,6 @@ equation
     __OpenModelica_simulationFlags(
       lv="LOG_JAC",
       s="dassl",
-      sx="modelica://TSP_DataReconciliationSimpleTests/resources/SG_DR_WithHARE_OS.csv",
+      sx="./TSP_DataReconciliationSimpleTests/resources/SG_DR_WithHARE_OS.csv",
       variableFilter=".*"));
 end SG_DR_WithHARE;

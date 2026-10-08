@@ -60,6 +60,41 @@ algorithm
   setGlobalRoot(Global.backendInterface, inFunctions);
 end initializeBackendInterface;
 
+public function initializeWithoutBackend
+  "A table for a host that has no backend: no rewrite rules, no library
+   loading, and nothing to prepare for the old instantiation, which such a host
+   never runs. AbsynToSCode.translateAbsyn2SCode reaches initInstHashTable
+   through this table, so anything that translates a program at all has to
+   install one; the compiler does it from BackendInterfaceImplementation and a
+   frontend-only tool -- the documentation generator -- from here, which is why
+   this lives beside the table rather than in the frontend."
+algorithm
+  initializeBackendInterface(BACKEND_INTERFACE_FUNCTIONS(
+    noBackendRewriteRules, keepExpression, noBackendLibrary, doNothing));
+end initializeWithoutBackend;
+
+protected function noBackendRewriteRules
+  output Boolean noRules = true;
+end noBackendRewriteRules;
+
+protected function keepExpression
+  input Absyn.Exp inExp;
+  output Absyn.Exp outExp = inExp;
+  output Boolean isChanged = false;
+end keepExpression;
+
+protected function noBackendLibrary
+  input Absyn.Path modelName;
+  input String modelicaPath;
+  output Absyn.Program program = Absyn.Program.PROGRAM({}, Absyn.Within.TOP());
+  output Boolean success = false;
+end noBackendLibrary;
+
+protected function doNothing
+end doNothing;
+
+public
+
 function noRewriteRulesFrontEnd
   output Boolean noRules;
 protected

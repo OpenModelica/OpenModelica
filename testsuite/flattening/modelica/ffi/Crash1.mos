@@ -2,6 +2,7 @@
 // keywords: ffi
 // status:   correct
 // cflags: -d=newInst
+// suite: disabled
 //
 // Checks that the compiler doesn't crash if the external function crashes.
 //

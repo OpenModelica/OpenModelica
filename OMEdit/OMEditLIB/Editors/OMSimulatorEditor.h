@@ -42,7 +42,7 @@
 
 #include "Editors/BaseEditor.h"
 
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QSyntaxHighlighter>
 
 class OMSimulatorEditor : public BaseEditor
@@ -77,14 +77,14 @@ private:
   QPlainTextEdit *mpPlainTextEdit;
   struct HighlightingRule
   {
-    QRegExp mPattern;
+    QRegularExpression mPattern;
     QTextCharFormat mFormat;
   };
   QVector<HighlightingRule> mHighlightingRules;
-  QRegExp mCommentStartExpression;
-  QRegExp mCommentEndExpression;
-  QRegExp mStringStartExpression;
-  QRegExp mStringEndExpression;
+  QRegularExpression mCommentStartExpression;
+  QRegularExpression mCommentEndExpression;
+  QRegularExpression mStringStartExpression;
+  QRegularExpression mStringEndExpression;
   QTextCharFormat mTextFormat;
   QTextCharFormat mTagFormat;
   QTextCharFormat mElementFormat;

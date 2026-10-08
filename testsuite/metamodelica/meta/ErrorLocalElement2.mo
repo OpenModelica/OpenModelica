@@ -1,6 +1,7 @@
 // name: ErrorLocalElement2
 // cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
+// suite: metamodelica
 
 class ErrorLocalElement2
   function fn
@@ -19,7 +20,7 @@ end ErrorLocalElement2;
 
 // Result:
 // Error processing file: ErrorLocalElement2.mo
-// [metamodelica/meta/ErrorLocalElement2.mo:10:5-14:14:writable] Error: Only components without direction are allowed in local declarations, got: input Integer t
+// [metamodelica/meta/ErrorLocalElement2.mo:11:5-15:14:writable] Error: Only components without direction are allowed in local declarations, got: input Integer t
 // Error: Error occurred while flattening model ErrorLocalElement2
 //
 // # Error encountered! Exiting...

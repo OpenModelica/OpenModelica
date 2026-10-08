@@ -1,0 +1,68 @@
+// name: AliasCyclic4
+// keywords: NewBackend, Alias, ASSC
+// status: correct
+// function: Testing Bareiss algorithm.
+
+loadString("
+  model AliasCyclic4
+    Integer a, b, c;       // constant simple
+  equation
+    -a = c + 10000;
+    -5001*b - c = -10000;
+    -2*b = 2*c;
+  end AliasCyclic4;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(AliasCyclic4); getErrorString();
+diffSimulationResults("AliasCyclic4_res.mat", "ReferenceFiles/AliasCyclic4_res.mat", "AliasCyclic4_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) -2 * b = 2 * c; ($RES_SIM_0)
+// 	[SCAL] (1) -(5001 * b + c) = -10000; ($RES_SIM_1)
+// 	[SCAL] (1) -a = 10000 + c; ($RES_SIM_2)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// 	c	 ==> 	-2
+// 	b	 ==> 	2.0
+// 	a	 ==> 	-9998
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "AliasCyclic4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

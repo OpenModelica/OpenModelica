@@ -43,7 +43,7 @@ encapsulated package HpcOmSimCodeMain
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import HashTableExpToIndex;
+public import UnorderedMap;
 public import HpcOmSimCode;
 public import HpcOmTaskGraph;
 public import HpcOmEqSystems;
@@ -70,6 +70,7 @@ import SimCodeUtil;
 import SimCodeVar;
 import System;
 import Util;
+import SimCodeCodegenUtil;
 
 public function createSimCode "
   Entry point to create SimCode from BackendDAE."
@@ -88,7 +89,7 @@ public function createSimCode "
   input Absyn.Program program;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
   input list<SimCodeFunction.RecordDeclaration> recordDecls;
-  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
 algorithm
@@ -248,7 +249,7 @@ algorithm
       //---------------------
       taskGraphZeroFuncs := arrayCopy(taskGraphDae);
       taskGraphDataZeroFuncs := HpcOmTaskGraph.copyTaskGraphMeta(taskGraphDataDae);
-      zeroFuncsSimEqIdc := List.map(simCode.equationsForZeroCrossings, SimCodeUtil.simEqSystemIndex);
+      zeroFuncsSimEqIdc := List.map(simCode.equationsForZeroCrossings, SimCodeCodegenUtil.simEqSystemIndex);
       (taskGraphZeroFuncs,taskGraphDataZeroFuncs) := HpcOmTaskGraph.getZeroFuncsSystem(taskGraphZeroFuncs,taskGraphDataZeroFuncs, inBackendDAE, arrayLength(daeSccSimEqMapping), zeroFuncsSimEqIdc, simeqCompMapping);
 
       fileName := ("taskGraph"+filenamePrefix+"_ZeroFuncs.graphml");
@@ -893,7 +894,7 @@ algorithm
     //print("the ODE-system size is correct("+intString(actualSize)+")\n");
   else
     print("the size of the ODE-system should be "+intString(targetSize)+" but it is "+intString(actualSize)+"!\n");
-    print("expected the following sim code equations: " + stringDelimitList(List.map(List.map(List.flatten(iOdeEqs), SimCodeUtil.simEqSystemIndex), intString), ",") + "\n");
+    print("expected the following sim code equations: " + stringDelimitList(List.map(List.map(List.flatten(iOdeEqs), SimCodeCodegenUtil.simEqSystemIndex), intString), ",") + "\n");
     print("the ODE-system is NOT correct\n");
   end if;
 end checkOdeSystemSize;

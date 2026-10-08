@@ -25,13 +25,13 @@ simulate(solveCallExp); getErrorString();
 // ### Variable:
 // 	$FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = 0.9092974268256817 ($RES_SIM_0)
+// 	[SCAL] (1) $FUN_1 = 0.9092974268256817; ($RES_SIM_0)
 //
 // Solve Output:
 // ### Status:
 // 	Solve.EXPLICIT
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = 0.9092974268256817 ($RES_SIM_0)
+// 	[SCAL] (1) $FUN_1 = 0.9092974268256817; ($RES_SIM_0)
 //
 // END - Solve
 // ##########################################
@@ -44,7 +44,7 @@ simulate(solveCallExp); getErrorString();
 // ### Variable:
 // 	x
 // ### Equation:
-// 	[SCAL] (1) 0.9092974268256817 = exp(-(2.0 ^ x) ^ 2.0) ($RES_AUX_1)
+// 	[SCAL] (1) 0.9092974268256817 = exp(-(2.0 ^ x) ^ 2.0); ($RES_AUX_1)
 //
 // SolveUnique Instructions (substitute from top to bottom):
 // 	0 (is initial)
@@ -61,7 +61,7 @@ simulate(solveCallExp); getErrorString();
 // ### Status:
 // 	Solve.EXPLICIT
 // ### Equation:
-// 	[SCAL] (1) x = -1.6973341095413634 ($RES_AUX_1)
+// 	[SCAL] (1) x = -1.6973341095413634; ($RES_AUX_1)
 //
 // END - Solve
 // ##########################################

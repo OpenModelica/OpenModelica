@@ -1,0 +1,45 @@
+// name: initParamLinearSystem
+// keywords: NewBackend
+// status: correct
+
+// A torn init-time linear system whose iteration variables are fixed=false
+// parameters (not continuous-time variables). initializeStaticLSVars used to
+// hardcode VAR_KIND_VARIABLE for every iteration variable regardless of its
+// actual kind, so looking up nominal/min/max for a, b, c below indexed into
+// the wrong (too-small) array and crashed with
+// "getNominalFromScalarIdx: scalar_idx N out of bounds [...]" instead of
+// reaching the (still failing, but non-crashing) linear solve below.
+
+loadString("
+model initParamLinearSystem
+  parameter Real a(fixed=false), b(fixed=false), c(fixed=false);
+  Real x(start=1);
+initial equation
+  a + 2*b - c = 1;
+  2*a - b + c = 2;
+  a + b + c = 6;
+equation
+  der(x) = a*x + b - c;
+end initParamLinearSystem;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(initParamLinearSystem); getErrorString();
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initParamLinearSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: initParamLinearSystem
+// LOG_STDOUT        | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_STDOUT        | warning | Error solving linear system of equations (no. 8) at time 0.000000.
+// LOG_STDOUT        | warning | Solving linear system 8 fails at time 0. For more information use -lv LOG_LS.
+// LOG_ASSERT        | debug   | Solving linear system 8 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_LS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

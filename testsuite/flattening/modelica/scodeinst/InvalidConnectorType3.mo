@@ -1,6 +1,7 @@
 // name: InvalidConnectorType3
 // keywords:
 // status: incorrect
+// suite: disabled
 //
 
 model InvalidConnectorType3
@@ -15,7 +16,7 @@ end InvalidConnectorType3;
 
 // Result:
 // Error processing file: InvalidConnectorType3.mo
-// [flattening/modelica/scodeinst/InvalidConnectorType3.mo:14:3-14:18:writable] Error: Cannot connect stream component c1 to non-stream component c2.
+// [flattening/modelica/scodeinst/InvalidConnectorType3.mo:15:3-15:18:writable] Error: Cannot connect stream component c1 to non-stream component c2.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

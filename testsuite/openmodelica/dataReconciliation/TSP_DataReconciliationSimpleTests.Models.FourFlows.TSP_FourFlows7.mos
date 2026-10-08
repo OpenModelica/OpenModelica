@@ -1,7 +1,10 @@
 // name:     TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7
 // keywords: extraction algorithm
 // status:   correct
+// The expected result records a known failure, not the correct output. Update it when
+// the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7 TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7_* Reconciled_TSP_DataReconciliationSimpleTests_Models_FourFlows_TSP_FourFlows7.mo
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -16,24 +19,29 @@ for i in 1:size(AnnotationNamedModifiers, 1) loop
 end for;
 print("simFlags: "+simFlags);
 
-simulate(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7, simflags=simFlags);
-getErrorString();
+// How the simulation fails depends on the runtime (C or wasm-jit), so only
+// record that it fails: resultFile stays empty until the model works.
+echo(false);
+res := simulate(TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7, simflags=simFlags);
+echo(true);
+res.resultFile;
+echo(false); getErrorString(); echo(true);
 
 
 // Result:
 // true
 // ""
 // true
-// "Notification: Automatically loaded package ThermoSysPro 4.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using MODELICAPATH /home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/EDF/SIDONIE/DataReconciliation/gits/DR_testSuite/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
-// Notification: Automatically loaded package Modelica 4.0.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
-// Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package ThermoSysPro 4.2 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Skipped loading package ModelicaDataReconciliationSimpleTests (4.0) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) /home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica/testsuite/openmodelica/dataReconciliation:/home/j74082/Documents/Logiciels/OpenModelica/main_2/OpenModelica//libraries/.openmodelica/libraries (uses-annotation may be wrong).
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TSP_DataReconciliationSimpleTests.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // {"lv", "eps", "s", "sx"}
 // "-reconcile "
 //
-// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv
+// simFlags: -reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv
 //
 // ModelInfo: TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7
 // ==========================================================================
@@ -2113,13 +2121,17 @@ getErrorString();
 // 61: singularPressureLoss1.C2.Q type: Real
 //
 //
-// Parameters in SET_S (5)
+// Parameters in SET_S (9)
 // ========================================
 // 1: constante1.k:PARAM()  = 0.5  "Valeur de la sortie" type: Real
 // 2: singularPressureLoss4.mode:PARAM()  = 1  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
 // 3: singularPressureLoss4.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
-// 4: singularPressureLoss2.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
-// 5: singularPressureLoss1.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
+// 4: singularPressureLoss3.mode:PARAM()  = 1  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
+// 5: singularPressureLoss3.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
+// 6: singularPressureLoss2.mode:PARAM()  = 1  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
+// 7: singularPressureLoss2.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
+// 8: singularPressureLoss1.mode:PARAM()  = 1  "IF97 region. 1:liquid - 2:steam - 4:saturation line - 0:automatic" type: Integer
+// 9: singularPressureLoss1.K:PARAM()  = 1e-4  "Pressure loss coefficient" type: Real
 //
 //
 //
@@ -2221,40 +2233,7 @@ getErrorString();
 // -Passed
 //  Set_S has 61 equations and 61 variables
 //
-// record SimulationResult
-//     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile  -lv=LOG_JAC -eps=0.023 -s=dassl -sx=modelica://TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// LOG_STDOUT        | info    | DataReconciliation Starting!
-// LOG_STDOUT        | info    | TSP_DataReconciliationSimpleTests.Models.FourFlows.TSP_FourFlows7
-// LOG_STDOUT        | info    | DataReconciliation Completed!
-// "
-// end SimulationResult;
-// "[openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:39:3-40:84:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/PressureLoss/SingularPressureLoss.mo:41:3-42:82:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/Splitter2.mo:14:3-16:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/Splitter2.mo:17:3-18:82:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/Splitter2.mo:19:3-21:17:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/Mixer2.mo:14:3-16:24:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/Mixer2.mo:17:3-18:52:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/WaterSteam/Junctions/Mixer2.mo:20:3-22:17:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/SourceP.mo:29:3-30:82:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [openmodelica/dataReconciliation/TSP_DataReconciliationSimpleTests/Components/BoundaryConditions/Sink.mo:17:3-18:84:writable] Warning: Connector C is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:783:9-783:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:850:9-850:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteam/IF97_packages.mo:1088:9-1088:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph.mo:69:3-69:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:167:3-170:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 4.0.0/Properties/Fluid/derDensity_derP_derh.mo:63:5-63:84:writable] Warning: T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// "
+// true
+// "econcile"
+// true
 // endResult

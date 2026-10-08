@@ -28,7 +28,6 @@
 /*! MoveData.c
  */
 
-#include "../../meta/meta_modelica.h"
 #include "../../openmodelica_types.h"
 #include "../../openmodelica.h"
 #include "../../simulation/arrayIndex.h"
@@ -154,7 +153,19 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
 
   cflags = (char*)omc_flagValue[FLAG_OPTIMIZER_TGRID];
   dim->nsi = -1; /* Initialize the data just in case */
-  data->callback->getTimeGrid(data, &dim->nsi, &time->tt); /* TODO: dim->nsi is long*, expected is int* */
+  {
+    /* The model names its time grid by parameter index; the values are read here. */
+    modelica_integer *tgrid = NULL;
+    modelica_integer i;
+    data->callback->getTimeGrid(data, &dim->nsi, &tgrid); /* TODO: dim->nsi is long*, expected is int* */
+    if (dim->nsi > 0) {
+      time->tt = (modelica_real*) malloc((dim->nsi+1)*sizeof(modelica_real));
+      for (i = 0; i < dim->nsi+1; ++i) {
+        time->tt[i] = data->simulationInfo->realParameter[tgrid[i]];
+      }
+    }
+    free(tgrid);
+  }
   time->model_grid = (modelica_boolean)(dim->nsi > 0);
 
   if (!time->model_grid) {
@@ -251,7 +262,6 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
   pFile = omc_fopen(filename,"r");
   if(pFile == NULL){
     warningStreamPrint(OMC_LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
-    fclose(pFile);
     return nsi;
   }
    while(1){
@@ -538,10 +548,6 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 
   for(i = 0; i < nx; ++i){
 
-    if(data->modelData->realVarsData[i].dimension.numberOfDimensions > 0){
-      throwStreamPrint(NULL, "Support for array variables not yet implemented!");
-    }
-
     if (xmin[i] > -1e20) {
       sprintf(buffer, ", min = %g", real_get(data->modelData->realVarsData[i].attribute.min, 0));
     }
@@ -764,7 +770,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
     /* try */
   optData->scc = 0;
 #if !defined(OMC_EMCC)
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
+    OMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     data->callback->input_function(data, optData->threadData);
     updateDiscreteSystem(data, optData->threadData);
@@ -774,7 +780,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
     }
     optData->scc = 1;
 #if !defined(OMC_EMCC)
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
 }
 
@@ -840,6 +846,9 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   const int nJ1 = optData->dim.nJ + 1;
 
   modelica_real **sV = optData->s.seedVec[index];
+  /* The optimizer lends the Jacobian a seed vector of its own per colour. The
+     Jacobian owns seedVars and frees it, so give its own back. */
+  modelica_real * const ownSeedVars = jacobian->seedVars;
 
   /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
   setContext(data, data->localData[0]->timeValue, CONTEXT_SYM_JACOBIAN);
@@ -879,6 +888,7 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 
     }
   }
+  jacobian->seedVars = ownSeedVars;
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
 }
@@ -899,6 +909,8 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
     const unsigned int * const sPindex = jacobian->sparsePattern->index;
 
     modelica_real **sV = optData->s.seedVec[index];
+    /* See diffSynColoredOptimizerSystem: seedVars is the Jacobian's to free. */
+    modelica_real * const ownSeedVars = jacobian->seedVars;
 
     /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
     setContext(data, data->localData[0]->timeValue, CONTEXT_SYM_JACOBIAN);
@@ -923,6 +935,7 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
         }
       }
     }
+    jacobian->seedVars = ownSeedVars;
     /* set context for the start values extrapolation of non-linear algebraic loops */
     unsetContext(data);
   }
@@ -960,7 +973,7 @@ static inline void pickUpStates(OptData* optData){
         char buffer[200];
         rewind(pFile);
         for(i =0; i< n; ++i){
-          fscanf(pFile, "%s", buffer);
+          fscanf(pFile, "%199s", buffer);
           if (fscanf(pFile, "%lf", &start_value) <= 0) continue;
 
           for(j = 0, b = 0; j < optData->dim.nReal; ++j){
