@@ -64,6 +64,10 @@ getClassDiagram1.mos \
 getClassDiagram2.mos \
 getClassDiagram3.mos \
 getClassDiagram4.mos \
+getInstanceDiagram1.mos \
+getInstanceDiagram2.mos \
+getInstanceDiagram3.mos \
+getInstanceDiagram4.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \

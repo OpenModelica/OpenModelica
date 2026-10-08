@@ -5801,6 +5801,44 @@ With <code>showModifiers = false</code> the modifiers and bindings aren't shown.
 </html>"));
 end getClassDiagram;
 
+function getInstanceDiagram
+  input TypeName className;
+  input String fileName = "" "The file to write the diagram to, if not empty.";
+  input String format = "plantuml" "plantuml, mermaid or drawio.";
+  input Integer depth = 1 "How many levels of components to draw as boxes of their own.";
+  input String exclude[:] = fill("", 0) "Classes and packages whose instances are left out.";
+  input Boolean showConnections = true;
+  input Boolean showProtected = false "Also show the protected elements.";
+  input Boolean expandArrays = false "A box for each element of an array of components.";
+  output String diagram "The diagram, or the file name if it was written to a file.";
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns a UML instance diagram of the model <code>className</code> as it is instantiated, in the
+formats of <code>getClassDiagram</code>: <a href=\"https://plantuml.com\">PlantUML</a>,
+<a href=\"https://mermaid.js.org\">Mermaid</a> or <a href=\"https://www.drawio.com\">draw.io</a>.</p>
+<p>Where <code>getClassDiagram</code> shows each class once, with the modifiers it declares, this
+shows the instances: the model, and each of its components that is an instance of a class, as
+a box of its own, e.g. <code>a1 : P.A</code>, up to <code>depth</code> levels of components. Each box
+has the parameters and constants of its instance, including the inherited ones, with the value
+they have in that instance, as written and evaluated, e.g. <code>parameter Real k = 2*p (= 6)</code>.
+The components that aren't drawn as boxes, connectors and the components below
+<code>depth</code>, are lines in the box of the instance they are in; variables aren't shown.
+Protected elements are left out, unless <code>showProtected = true</code>, which shows them marked with
+<code>-</code>.
+An array of components is one box, e.g. <code>r[10] : Resistor</code>, or with
+<code>expandArrays = true</code> a box for each of its elements, e.g. <code>r[1] : Resistor</code>,
+with the values of that element, if it has at most 100 elements and their number is known.</p>
+<p>A component is a composition of the instance it's in, labelled with its name and dimensions.
+With <code>showConnections = true</code> the connect equations are associations between the boxes
+of the components they connect, labelled with the connectors.</p>
+<p>In the draw.io file every box and line links to the line the component is declared on in its
+class, with its name, e.g. <code>modelica://P.M?lineNumber=12&amp;element=c</code>, and the box of
+the model to <code>modelica://</code> and its name.</p>
+<p>The instances of the classes in <code>exclude</code> and in the packages in <code>exclude</code>
+are left out.</p>
+</html>"));
+end getInstanceDiagram;
+
 function reverseLookup
   input TypeName name;
   input TypeName scope = $TypeName(AllLoadedClasses);

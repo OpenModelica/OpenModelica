@@ -3526,6 +3526,10 @@ algorithm
                               Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
       then ValuesMake.makeString(getClassDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b));
 
+    case ("getInstanceDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
+                                 Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      then NFApi.getInstanceDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b1, b2, b3);
+
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
 

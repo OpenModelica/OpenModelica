@@ -1,0 +1,118 @@
+// name: getInstanceDiagram2
+// keywords: UML, instance diagram, #17181
+// status: correct
+//
+// Tests getInstanceDiagram with connections: connectors are lines in the box
+// of their instance and connect equations are associations between the boxes
+// of the components they connect, or the model's own box; depth, exclude,
+// showConnections = false and nested instances.
+
+loadString("package C
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model R
+    parameter Real r = 1;
+    Pin p, n;
+  equation
+    p.v - n.v = r*p.i;
+    p.i + n.i = 0;
+  end R;
+  model Two
+    parameter Real r = 10;
+    R r1(r = r), r2(r = 2*r);
+    Pin a, b;
+  equation
+    connect(a, r1.p);
+    connect(r1.n, r2.p);
+    connect(r2.n, b);
+  end Two;
+  model Top
+    Two t(r = 5);
+    R load;
+  equation
+    connect(t.b, load.p);
+    connect(load.n, t.a);
+  end Top;
+end C;", "C.mo"); getErrorString();
+getInstanceDiagram(C.Top); getErrorString();
+getInstanceDiagram(C.Top, depth = 2); getErrorString();
+getInstanceDiagram(C.Top, depth = 2, exclude = {"C.R"}, showConnections = false); getErrorString();
+
+// Result:
+// true
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"C.Top\" as I_C_Top <<model>>
+// class \"t : C.Two\" as I_t <<model>> {
+//   {field} + parameter Real r = 5.0
+//   {field} + r1 : R
+//   {field} + r2 : R
+//   {field} + a : Pin
+//   {field} + b : Pin
+// }
+// class \"load : C.R\" as I_load <<model>> {
+//   {field} + parameter Real r = 1.0
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// I_C_Top *-- I_t : t
+// I_C_Top *-- I_load : load
+// I_t -- I_load : t.b - load.p
+// I_load -- I_t : load.n - t.a
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"C.Top\" as I_C_Top <<model>>
+// class \"t : C.Two\" as I_t <<model>> {
+//   {field} + parameter Real r = 5.0
+//   {field} + a : Pin
+//   {field} + b : Pin
+// }
+// class \"r1 : C.R\" as I_t_r1 <<model>> {
+//   {field} + parameter Real r = t.r (= 5.0)
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"r2 : C.R\" as I_t_r2 <<model>> {
+//   {field} + parameter Real r = 2.0 * t.r (= 10.0)
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// class \"load : C.R\" as I_load <<model>> {
+//   {field} + parameter Real r = 1.0
+//   {field} + p : Pin
+//   {field} + n : Pin
+// }
+// I_t *-- I_t_r1 : r1
+// I_t *-- I_t_r2 : r2
+// I_t -- I_t_r1 : a - r1.p
+// I_t_r1 -- I_t_r2 : r1.n - r2.p
+// I_t_r2 -- I_t : r2.n - b
+// I_C_Top *-- I_t : t
+// I_C_Top *-- I_load : load
+// I_t -- I_load : t.b - load.p
+// I_load -- I_t : load.n - t.a
+// @enduml
+// "
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"C.Top\" as I_C_Top <<model>>
+// class \"t : C.Two\" as I_t <<model>> {
+//   {field} + parameter Real r = 5.0
+//   {field} + a : Pin
+//   {field} + b : Pin
+// }
+// I_C_Top *-- I_t : t
+// @enduml
+// "
+// ""
+// endResult
