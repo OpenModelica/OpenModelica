@@ -13,6 +13,9 @@
 //!
 //! As in C, `J` lives in the model's sparsity pattern and every system in
 //! `struct(I + J)`, all sharing one symbolic factorization ([`GbLinSys`]).
+//!
+//! The birate mode's inner integration solves the same systems packed over its
+//! fast states ([`Fast`], C's `multirate`), with the pattern reduced to them.
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -31,9 +34,52 @@ pub enum Solved {
     Failed,
 }
 
-/// C's `GB_INTERNAL_NLS_DATA`, single-rate.
+/// The packed systems of the inner integration: the fast states, and the full
+/// state vectors their values are scattered into for an evaluation, whose slow
+/// entries the caller sets (C's `slowStateCache_overwrite_*`).
+pub(super) struct Fast {
+    idx: Vec<usize>,
+    /// At the interval's left end, then one per stage.
+    left: Vec<f64>,
+    stages: Vec<Vec<f64>>,
+    f: Vec<f64>,
+    fbase: Vec<f64>,
+    probe: Vec<f64>,
+    seed: Vec<f64>,
+    /// C's `new_fast_states`: rebuild the pattern before the next solve.
+    changed: bool,
+}
+
+/// Where a packed evaluation takes its slow states from.
+#[derive(Clone, Copy)]
+enum At {
+    Left,
+    Stage(usize),
+}
+
+/// `f(t, x)` for the system's unknowns: directly, or scattered into the full
+/// state vector at `at` with the fast entries read back.
+fn eval_at(fast: &mut Option<Fast>, ode: &mut dyn Ode, t: f64, at: At, x: &[f64], f: &mut [f64]) -> Result<bool> {
+    let Some(m) = fast.as_mut() else { return eval_caught(ode, t, x, f) };
+    let full = match at {
+        At::Left => &mut m.left,
+        At::Stage(j) => &mut m.stages[j],
+    };
+    for (i, &k) in m.idx.iter().enumerate() {
+        full[k] = x[i];
+    }
+    let ok = eval_caught(ode, t, full, &mut m.f)?;
+    for (i, &k) in m.idx.iter().enumerate() {
+        f[i] = m.f[k];
+    }
+    Ok(ok)
+}
+
+/// C's `GB_INTERNAL_NLS_DATA`.
 pub(super) struct GbNls {
-    n_states: usize,
+    /// The system's size: all states, or the fast ones.
+    n: usize,
+    n_full: usize,
     integrator_tol: f64,
     fnewt: f64,
     eta_initial_damping: f64,
@@ -49,8 +95,11 @@ pub(super) struct GbNls {
     call_jac: bool,
     n_real: usize,
     n_cmplx: usize,
-    /// The ODE Jacobian's pattern and values (C's `jacobian_callback`).
+    /// The ODE Jacobian's pattern (reduced to the fast states in the birate
+    /// mode, whose full one is `full_pat`) and values (C's `jacobian_callback`).
     ode_pat: Option<OdePattern>,
+    full_pat: Option<OdePattern>,
+    fast: Option<Fast>,
     jac: Vec<f64>,
     maxs: Vec<f64>,
     sys: Option<GbLinSys>,
@@ -114,7 +163,8 @@ impl GbNls {
         let (n_real, n_cmplx) = tr.map_or((1, 0), |tr| (tr.n_real_eigenvalues, tr.n_complex_eigenpairs));
         let tsize = tr.map_or(1, |tr| tr.size);
         GbNls {
-            n_states,
+            n: n_states,
+            n_full: n_states,
             integrator_tol: tol,
             fnewt,
             eta_initial_damping,
@@ -128,6 +178,8 @@ impl GbNls {
             n_real,
             n_cmplx,
             ode_pat: None,
+            full_pat: None,
+            fast: None,
             jac: Vec::new(),
             maxs: Vec::new(),
             sys: None,
@@ -151,6 +203,42 @@ impl GbNls {
         }
     }
 
+    /// The inner integration's solver: packed over the fast states
+    /// [`GbNls::set_fast`] names.
+    pub(super) fn with_fast(mut self, n_stages: usize) -> Self {
+        let n = self.n_full;
+        self.fast = Some(Fast {
+            idx: Vec::new(),
+            left: vec![0.0; n],
+            stages: vec![vec![0.0; n]; n_stages],
+            f: vec![0.0; n],
+            fbase: vec![0.0; n],
+            probe: vec![0.0; n],
+            seed: vec![0.0; n],
+            changed: true,
+        });
+        self
+    }
+
+    /// C's `gbInternalScheduleFastStatesUpdate`, with the new fast states.
+    pub(super) fn set_fast(&mut self, idx: &[usize]) {
+        let m = self.fast.as_mut().expect("fast states for a single-rate solver");
+        m.idx.clear();
+        m.idx.extend_from_slice(idx);
+        m.changed = true;
+        self.n = idx.len();
+    }
+
+    /// The full state vector at the interval's left end, or at `stage`, whose
+    /// slow entries the evaluations use.
+    pub(super) fn fast_left_mut(&mut self) -> &mut [f64] {
+        &mut self.fast.as_mut().expect("single-rate solver").left
+    }
+
+    pub(super) fn fast_stage_mut(&mut self, stage: usize) -> &mut [f64] {
+        &mut self.fast.as_mut().expect("single-rate solver").stages[stage]
+    }
+
     /// Called after an event or a restart.
     pub(super) fn invalidate(&mut self) {
         self.call_jac = true;
@@ -160,13 +248,29 @@ impl GbNls {
     }
 
     /// The patterns and the symbolic analysis, on first use: C's
-    /// `gbodeMapSparsePattern` + `gbInternal_KLU_analyze`.
+    /// `gbodeMapSparsePattern` + `gbInternal_KLU_analyze`. In the birate mode
+    /// also after a fast-state change, C's `updateFastStates` with
+    /// `updateSparsePattern_GBODEF`.
     fn ensure_systems(&mut self, ode: &dyn Ode) {
-        if self.sys.is_some() {
+        let changed = self.fast.as_ref().is_some_and(|m| m.changed);
+        if self.sys.is_some() && !changed {
             return;
         }
-        let n = self.n_states;
-        let ode_pat = OdePattern::new(n, ode.jac_rows_by_col(), ode.jac_colors());
+        let n = self.n;
+        let full = OdePattern::new(self.n_full, ode.jac_rows_by_col(), ode.jac_colors());
+        let ode_pat = match self.fast.as_mut() {
+            None => full,
+            Some(m) => {
+                m.changed = false;
+                let reduced = full.reduce(&m.idx, self.n_full);
+                self.full_pat = Some(full);
+                self.call_jac = true;
+                for e in &mut self.etas {
+                    *e = f64::MAX;
+                }
+                reduced
+            }
+        };
         let pat = NlsPattern::new(n, &ode_pat);
         let nnz = pat.nnz();
         self.jac = vec![0.0; ode_pat.nnz()];
@@ -180,14 +284,18 @@ impl GbNls {
     /// C's `createGbScales`.
     fn make_scales(&mut self, nominals: &[f64], y1: &[f64], y2: &[f64]) {
         let tol = self.integrator_tol;
-        for i in 0..self.n_states {
-            self.scal[i] = 1.0 / (tol * nominals[i] + abs(y1[i]).max(abs(y2[i])) * tol);
+        for i in 0..self.n {
+            let nom = match self.fast.as_ref() {
+                Some(m) => nominals[m.idx[i]],
+                None => nominals[i],
+            };
+            self.scal[i] = 1.0 / (tol * nom + abs(y1[i]).max(abs(y2[i])) * tol);
         }
     }
 
     /// C's `gbScalesNorm` over `stack` blocks of `n`.
     fn scaled_norm(&self, v: &[f64], stack: usize) -> f64 {
-        let n = self.n_states;
+        let n = self.n;
         let mut sum = 0.0;
         for j in 0..stack {
             for i in 0..n {
@@ -206,12 +314,79 @@ impl GbNls {
         self.n_jac_evals += 1;
         if self.sym_jac && ode.has_jacobian_vector() {
             let c = ode.catch_begin();
-            let run = self.eval_sym_jacobian(ode, time, y);
+            let run = match self.fast.is_some() {
+                true => self.eval_sym_jacobian_fast(ode, time),
+                false => self.eval_sym_jacobian(ode, time, y),
+            };
             let threw = ode.catch_end(c);
             return run.map(|()| !threw);
         }
-        self.eval_num_jacobian(ode, time, y, nominals)?;
+        match self.fast.is_some() {
+            true => self.eval_num_jacobian_fast(ode, time, nominals)?,
+            false => self.eval_num_jacobian(ode, time, y, nominals)?,
+        }
         Ok(true)
+    }
+
+    /// C's `gbInternal_evalJacobianMR`: the fast columns seeded colour by colour
+    /// at the left end, the reduced pattern's rows read back.
+    fn eval_sym_jacobian_fast(&mut self, ode: &mut dyn Ode, time: f64) -> Result<()> {
+        let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
+        let m = self.fast.as_mut().expect("fast Jacobian without fast states");
+        m.seed.fill(0.0);
+        for group in &pat.colors {
+            for &c in group {
+                m.seed[m.idx[c as usize]] = 1.0;
+            }
+            if !ode.jacobian_vector(time, &m.left, &m.seed, &mut m.probe) {
+                return Err("##GBODE## the model could not multiply by its Jacobian");
+            }
+            for &c in group {
+                let c = c as usize;
+                m.seed[m.idx[c]] = 0.0;
+                for nz in pat.ap[c] as usize..pat.ap[c + 1] as usize {
+                    self.jac[nz] = m.probe[m.idx[pat.ai[nz] as usize]];
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// `gbInternal_evalNumericalJacobian` with the fast state map, about the left
+    /// end, whose full derivative the evaluation before left in `Fast::f`.
+    fn eval_num_jacobian_fast(&mut self, ode: &mut dyn Ode, time: f64, nominals: &[f64]) -> Result<()> {
+        let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
+        let m = self.fast.as_mut().expect("fast Jacobian without fast states");
+        let tol = self.integrator_tol;
+        let delta_h = crate::simflags::with_flags(crate::simflags::delta_x_solver);
+        m.fbase.copy_from_slice(&m.f);
+        m.probe.copy_from_slice(&m.left);
+        for group in &pat.colors {
+            for &col in group {
+                let c = m.idx[col as usize];
+                let x = m.left[c];
+                let delta_hhh = delta_h * m.fbase[c];
+                let raw_weight = tol * nominals[c] + tol * abs(x);
+                let mut del = delta_h * abs(x).max(1e-3).max(abs(delta_hhh)).max(abs(raw_weight));
+                del = x + del - x;
+                if self.maxs.get(c).is_some_and(|&mx| x + del >= mx) {
+                    del = -del;
+                }
+                m.probe[c] = x + del;
+                self.inv_del[col as usize] = 1.0 / del;
+            }
+            eval_caught(ode, time, &m.probe, &mut m.f)?;
+            self.uncounted_calls += 1;
+            for &col in group {
+                let col = col as usize;
+                for nz in pat.ap[col] as usize..pat.ap[col + 1] as usize {
+                    let r = m.idx[pat.ai[nz] as usize];
+                    self.jac[nz] = (m.f[r] - m.fbase[r]) * self.inv_del[col];
+                }
+                m.probe[m.idx[col]] = m.left[m.idx[col]];
+            }
+        }
+        Ok(())
     }
 
     fn eval_sym_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64]) -> Result<()> {
@@ -244,7 +419,7 @@ impl GbNls {
     }
 
     fn eval_num_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64], nominals: &[f64]) -> Result<()> {
-        let n = self.n_states;
+        let n = self.n;
         let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
         let tol = self.integrator_tol;
         let delta_h = crate::simflags::with_flags(crate::simflags::delta_x_solver);
@@ -355,7 +530,7 @@ impl GbNls {
             let mut jac_called = false;
             if self.call_jac || event_happened {
                 // C's `gbInternalEvaluateSimplifiedJacobian`.
-                if !eval_caught(ode, time, y_old, &mut self.fbase)?
+                if !eval_at(&mut self.fast, ode, time, At::Left, y_old, &mut self.fbase)?
                     || !self.eval_jacobian(ode, time, y_old, nominals)?
                 {
                     return Ok(Solved::Failed);
@@ -373,7 +548,7 @@ impl GbNls {
         }
         let stage_time = time + t.c[stage] * step_size;
         let fac = step_size * t.a_at(stage, stage);
-        self.newton_scalar(ode, stage, stage_time, fac, 1.0, res_const, x)
+        self.newton_scalar(ode, stage, At::Stage(stage), stage_time, fac, 1.0, res_const, x)
     }
 
     /// The `adams` corrector, residual `res_const - c[s-1]*x + h*b[s-1]*f(t + h, x)`,
@@ -400,7 +575,9 @@ impl GbNls {
         let mut jac_called = false;
         if self.call_jac || event_happened {
             let t0 = stage_time - step_size;
-            if !eval_caught(ode, t0, y_old, &mut self.fbase)? || !self.eval_jacobian(ode, t0, y_old, nominals)? {
+            if !eval_at(&mut self.fast, ode, t0, At::Left, y_old, &mut self.fbase)?
+                || !self.eval_jacobian(ode, t0, y_old, nominals)?
+            {
                 return Ok(Solved::Failed);
             }
             jac_called = true;
@@ -411,7 +588,7 @@ impl GbNls {
         if event_happened {
             self.etas[0] = f64::MAX;
         }
-        self.newton_scalar(ode, 0, stage_time, step_size * gamma, t.c[last], res_const, x)
+        self.newton_scalar(ode, 0, At::Stage(0), stage_time, step_size * gamma, t.c[last], res_const, x)
     }
 
     /// The simplified Newton iteration of `gbInternalSolveNls_DIRK`, over the
@@ -421,19 +598,20 @@ impl GbNls {
         &mut self,
         ode: &mut dyn Ode,
         stage: usize,
+        at: At,
         stage_time: f64,
         fac: f64,
         c_scale: f64,
         res_const: &[f64],
         x: &mut [f64],
     ) -> Result<Solved> {
-        let n = self.n_states;
+        let n = self.n;
         let mut nrm_delta = 0.0;
         let mut theta = 0.0;
         let mut newt_it = 1;
         loop {
             // C's `residual_DIRK`/`residual_MS` ignore `gbode_fODE`'s verdict.
-            eval_caught(ode, stage_time, x, &mut self.f)?;
+            eval_at(&mut self.fast, ode, stage_time, at, x, &mut self.f)?;
             for i in 0..n {
                 self.res[i] = res_const[i] - c_scale * x[i] + fac * self.f[i];
             }
@@ -477,7 +655,7 @@ impl GbNls {
 
     /// C's `gbInternalSolveNls_T_Transform`: the FIRK system decoupled by the
     /// tableau's T-transformation. `z` holds the stage values (`n_stages` blocks
-    /// of `n_states`), starting at the prediction; `k` receives the stage
+    /// of the system's size), starting at the prediction; `k` receives the stage
     /// derivatives.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_firk(
@@ -497,7 +675,7 @@ impl GbNls {
             return Err("##GBODE## the internal solver needs the method's T-transformation");
         };
         self.ensure_systems(ode);
-        let n = self.n_states;
+        let n = self.n;
         let inv_h = 1.0 / step_size;
         let tsize = tr.size;
         let off = usize::from(tr.first_row_zero);
@@ -506,7 +684,7 @@ impl GbNls {
         self.make_scales(nominals, y_old, &z[..n]);
         let mut jac_called = false;
         if self.call_jac || tr.first_row_zero || event_happened {
-            if !eval_caught(ode, time, y_old, &mut self.fbase)? {
+            if !eval_at(&mut self.fast, ode, time, At::Left, y_old, &mut self.fbase)? {
                 return Ok(Solved::Failed);
             }
             if tr.first_row_zero {
@@ -546,7 +724,8 @@ impl GbNls {
                 for i in 0..n {
                     self.probe[i] = y_old[i] + self.tz[j * n + i];
                 }
-                if !eval_caught(ode, st, &self.probe, &mut self.fw[j * n..(j + 1) * n])? {
+                let at = At::Stage(j + off);
+                if !eval_at(&mut self.fast, ode, st, at, &self.probe, &mut self.fw[j * n..(j + 1) * n])? {
                     return Ok(Solved::Failed);
                 }
             }
@@ -611,7 +790,7 @@ impl GbNls {
     /// The block-forward substitution of the transformed Newton step: each solved
     /// row feeds the `L` coupling of the ones below it.
     fn forward_substitute(&mut self, tr: &TTransform, inv_h: f64) {
-        let n = self.n_states;
+        let n = self.n;
         let sys = self.sys.as_mut().expect("solve before factor");
         let res = &mut self.res;
         for row in 0..tr.n_real_blocks {
@@ -661,7 +840,7 @@ impl GbNls {
         z: &mut [f64],
         k: &mut [f64],
     ) -> Result<Solved> {
-        let n = self.n_states;
+        let n = self.n;
         let tsize = tr.size;
         let off = usize::from(tr.first_row_zero);
         let inv_h = 1.0 / step_size;
@@ -692,7 +871,8 @@ impl GbNls {
                 }
                 self.probe[i] = v;
             }
-            if !eval_caught(ode, self.stage_time_0 + t.c[last] * step_size, &self.probe, &mut self.f)? {
+            let st = self.stage_time_0 + t.c[last] * step_size;
+            if !eval_at(&mut self.fast, ode, st, At::Stage(last), &self.probe, &mut self.f)? {
                 return Ok(Solved::Failed);
             }
             z[last * n..(last + 1) * n].copy_from_slice(&self.probe);
@@ -714,7 +894,7 @@ impl GbNls {
         f_left: Option<&[f64]>,
         err: &mut [f64],
     ) -> Result<()> {
-        let n = self.n_states;
+        let n = self.n;
         let dt_a = t.contractive_dt_a.as_ref().expect("contractive defect without dT_A");
         for i in 0..n {
             let mut acc = 0.0;
@@ -730,7 +910,7 @@ impl GbNls {
                 }
             }
             None => {
-                eval_caught(ode, time, y_old, &mut self.f)?;
+                eval_at(&mut self.fast, ode, time, At::Left, y_old, &mut self.f)?;
                 for i in 0..n {
                     err[i] += self.f[i];
                 }
@@ -747,7 +927,7 @@ impl GbNls {
     /// the filter up to sign, `gamma/h*I - J` for a transformed one, scaled back
     /// by `gamma/h`.
     pub(super) fn contractive_filter(&mut self, t: &Tableau, step_size: f64, err: &mut [f64]) {
-        let n = self.n_states;
+        let n = self.n;
         if let Some(sys) = self.sys.as_mut() {
             sys.solve_real(0, &mut err[..n]);
         }
