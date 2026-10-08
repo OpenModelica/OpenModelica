@@ -497,6 +497,37 @@ impl Gbode {
         s
     }
 
+    /// C's `logSolverStats` for the birate mode's two integrators.
+    fn log_birate_stats(&self) {
+        let Some(gbf) = self.gbf.as_ref() else { return };
+        let (jac, fd_calls) = match (gbf.inls.as_ref(), gbf.nls.as_ref()) {
+            (Some(n), _) => (n.n_jac_evals, n.uncounted_calls),
+            (None, Some(n)) => (n.n_jac_evals, 0),
+            (None, None) => (0, 0),
+        };
+        let inner = GbStats {
+            steps: gbf.steps,
+            calls_ode: gbf.calls_ode - gbf.additional_full_calls - fd_calls,
+            calls_jacobian: jac,
+            err_test_failures: gbf.err_test_failures,
+            convergence_test_failures: gbf.convergence_test_failures,
+        };
+        let extra = [gbf.fast_state_update_count, gbf.additional_full_calls];
+        for (name, s, extra) in [("inner", inner, Some(extra)), ("outer", self.stats(), None)] {
+            omclog::info!(omclog::STATS, true, "{name} integration call statistics:");
+            omclog::info!(omclog::STATS, false, "number of steps taken so far: {}", s.steps);
+            omclog::info!(omclog::STATS, false, "number of calls of functionODE() : {}", s.calls_ode);
+            omclog::info!(omclog::STATS, false, "number of calculation of jacobian : {}", s.calls_jacobian);
+            omclog::info!(omclog::STATS, false, "error test failure : {}", s.err_test_failures);
+            omclog::info!(omclog::STATS, false, "convergence failure : {}", s.convergence_test_failures);
+            if let Some([updates, additional]) = extra {
+                omclog::info!(omclog::STATS, false, "number of fast state updates : {updates}");
+                omclog::info!(omclog::STATS, false, "number of additional full calls of functionODE() : {additional}");
+            }
+            omclog::close(omclog::STATS);
+        }
+    }
+
     /// The solver must re-initialize at the caller's `(t, y)`: C's `didEventStep`.
     pub fn restart(&mut self) {
         self.did_event_step = true;

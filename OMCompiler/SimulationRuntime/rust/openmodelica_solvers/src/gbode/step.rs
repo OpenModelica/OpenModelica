@@ -528,7 +528,7 @@ impl Gbode {
         let no_grid = crate::simflags::with_flags(|f| f.no_equidistant_grid);
         let const_step = self.conf.ctrl_method == CtrlMethod::Const;
         let int_with_err_ctrl = !const_step && self.conf.interpolation.is_err_ctrl();
-        let calls_before = ode.calls();
+        let mut calls_before = ode.calls();
 
         // C's `targetTime = fmin(gbData->eventTime, targetTime)`: an event located in
         // an earlier step but still ahead of the grid caps this call, so the run stops
@@ -848,6 +848,9 @@ impl Gbode {
                     self.conf.method_name(),
                     fast,
                 );
+                self.stats.calls_ode += ode.calls() - calls_before;
+                calls_before = ode.calls();
+                self.log_birate_stats();
             } else {
                 omclog::info!(
                     omclog::STATS,

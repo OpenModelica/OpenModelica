@@ -669,6 +669,10 @@ pub(super) struct GbodeF {
     pub fast_states_old: Vec<usize>,
 
     pub steps: u64,
+    /// Every model evaluation of the inner bursts; the statistics take out
+    /// what C does not count as the inner `functionODE` calls.
+    pub calls_ode: u64,
+    pub additional_full_calls: u64,
     pub err_test_failures: u64,
     pub convergence_test_failures: u64,
     pub fast_state_update_count: u64,
@@ -773,6 +777,8 @@ impl GbodeF {
             // Empty so the first inner call always sizes the NLS for its fast set.
             fast_states_old: Vec::new(),
             steps: 0,
+            calls_ode: 0,
+            additional_full_calls: 0,
             err_test_failures: 0,
             convergence_test_failures: 0,
             fast_state_update_count: 0,
@@ -936,12 +942,19 @@ impl Gbode {
         }
     }
 
-    /// One inner (fast-states) integration burst — C's `gbodef_main`.
-    pub(super) fn gbodef_main(
-        &mut self,
-        ode: &mut dyn Ode,
-        target_time: f64,
-    ) -> Result<InnerStep> {
+    /// One inner (fast-states) integration burst — C's `gbodef_main`. Its
+    /// evaluations are the inner integrator's statistics, not the outer one's.
+    pub(super) fn gbodef_main(&mut self, ode: &mut dyn Ode, target_time: f64) -> Result<InnerStep> {
+        let calls_before = ode.calls();
+        let run = self.gbodef_main_impl(ode, target_time);
+        let calls = ode.calls() - calls_before;
+        self.uncounted_calls += calls;
+        let gbf = self.gbf.as_mut().expect("multirate without gbf");
+        gbf.calls_ode += calls;
+        run
+    }
+
+    fn gbodef_main_impl(&mut self, ode: &mut dyn Ode, target_time: f64) -> Result<InnerStep> {
         let n = self.n_states;
         let stop_time = self.stop_time;
         let inner_target = target_time.min(self.time_right);
@@ -1184,6 +1197,7 @@ impl Gbode {
             let mut f = vec![0.0; n];
             crate::eval_caught(ode, t, &y, &mut f)?;
             let gbf = self.gbf.as_mut().expect("multirate without gbf");
+            gbf.additional_full_calls += 1;
             for si in 0..self.n_slow {
                 let j = self.slow_states_idx[si];
                 gbf.kv[i * n + j] = f[j];
