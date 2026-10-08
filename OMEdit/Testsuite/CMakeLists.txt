@@ -105,6 +105,10 @@ set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
 
+set(OMEDIT_TEST_PLOTANNOTATION_SOURCES PlotAnnotation/PlotAnnotationTest.cpp
+                                       PlotAnnotation/PlotAnnotationTest.h)
+add_omedit_test(PlotAnnotation "${OMEDIT_TEST_PLOTANNOTATION_SOURCES}")
+
 set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
                                      RecentModels/RecentModelsTest.h)
 add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")

@@ -5119,6 +5119,10 @@ void MainWindow::createActions()
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
   connect(mpExportVariablesAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(exportVariables()));
+  // save plot figures in their respective model annotations
+  mpSaveFigureInModelAction = new QAction(QIcon(":/Resources/icons/save-figure-in-model.svg"), tr("Save Figure in Model"), this);
+  mpSaveFigureInModelAction->setStatusTip(tr("Saves the current plot as a figure in the model annotation"));
+  connect(mpSaveFigureInModelAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(saveFigureInModel()));
   // clear plot window action
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
@@ -5801,6 +5805,8 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
+  mpPlotToolBar->addSeparator();
+  mpPlotToolBar->addAction(mpSaveFigureInModelAction);
   connect(mpPlotToolBar, SIGNAL(visibilityChanged(bool)), SLOT(plotToolBarVisibilityChanged(bool)));
   // Debugger Toolbar
   mpDebuggerToolBar = addToolBar(tr("Debugger Toolbar"));

@@ -4483,7 +4483,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     int handle = 0;
     if (icon) {
       QList<QString> filter;
-      filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
+      filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment" << "Documentation";
       handle = mpOMCInterface->getModelInstanceAnnotationReference(className, filter);
     } else {
       handle = mpOMCInterface->getModelInstanceReference(className, cnt, modifier);
@@ -4517,7 +4517,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   if (icon) {
     QList<QString> filter;
-    filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
+    filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment" << "Documentation";
     modelInstanceJson = mpOMCInterface->getModelInstanceAnnotation(className, filter, prettyPrint);
     if (modelInstanceJson.isEmpty()) {
       if (MainWindow::instance()->isDebug()) {

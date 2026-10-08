@@ -67,7 +67,12 @@ private slots:
    */
   void classConnections();
   /*!
-   * \brief isParameter
+   * \brief documentationFigures
+   * Tests deserialization and serialization of Documentation figures.
+   */
+   void documentationFigures();
+   /*!
+    * \brief isParameter
    * Tests if the element is a parameter.
    */
   void isParameter();
