@@ -3655,7 +3655,9 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, _, var) := typeCondition(cond, cond_context, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if var > Variability.PARAMETER or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
+    // Conditions on resizable parameters (and iterators over them) are resolved with the connections.
+    if (var > Variability.PARAMETER and not (var == Variability.NON_STRUCTURAL_PARAMETER and
+        Flags.getConfigBool(Flags.RESIZABLE_ARRAYS))) or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the context so we can check that when
       // typing the body of the branch.

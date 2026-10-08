@@ -9,6 +9,7 @@ jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 resizableConnectChain.mos \
+resizableConnectIf.mos \
 arrayConnectOutside.mos \
 mixedDependencyFrames.mos \
 arrayConnectRooted.mos \
