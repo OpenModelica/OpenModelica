@@ -8047,7 +8047,12 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
 
     fn jacobian_matrix(&mut self, t: f64, y: &[f64], method: JacobianMethod, j: &mut [f64]) -> bool {
         let Some(jac) = self.jac_a else { return false };
-        let n = jac.n as usize;
+        let mut colptr = Vec::with_capacity(jac.rows_by_col.len());
+        let mut nnz = 0;
+        for rows in &jac.rows_by_col {
+            colptr.push(nnz);
+            nnz += rows.len();
+        }
         let run = (|| -> Result<()> {
             write_time(self.e, self.sim_data, t)?;
             let mut bytes = vec![0u8; y.len() * 8];
@@ -8055,8 +8060,10 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
                 bytes[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
             }
             self.e.write_bytes(self.states_base, &bytes)?;
-            eval_ode_jacobian(self.e, self.sim_data, jac, self.ctx_addr, method, true, &mut |row, col, _, v| {
-                j[col * n + row] = v;
+            eval_ode_jacobian(self.e, self.sim_data, jac, self.ctx_addr, method, true, &mut |_, col, k, v| {
+                if k != usize::MAX {
+                    j[colptr[col] + k] = v;
+                }
             })
         })();
         run.is_ok()
