@@ -2159,7 +2159,9 @@ protected
         case Op.LESSEQ then affLe(a, affInt(0), {});
         case Op.GREATER then affLe(affInt(1), a, {});
         case Op.GREATEREQ then affLe(affInt(0), a, {});
-        else if affIsConst(a) then (if (a.c == 0) == (op == Op.EQUAL) then YES else NO) else MAYBE;
+        case Op.EQUAL then if affIsConst(a) then (if a.c == 0 then YES else NO) else MAYBE;
+        case Op.NEQUAL then if affIsConst(a) then (if a.c == 0 then NO else YES) else MAYBE;
+        else MAYBE;
       end match;
       if decided == MAYBE then
         unsupported("the condition " + Expression.toString(cond) + " of an if equation", source);
