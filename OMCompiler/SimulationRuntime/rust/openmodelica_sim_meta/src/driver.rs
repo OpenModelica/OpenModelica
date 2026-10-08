@@ -1260,10 +1260,12 @@ pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
     ROW_SINK.store(rows.map_or(0, |f| f as usize), Ordering::Relaxed);
     ROW_SINK_FINISH.store(finish.map_or(0, |f| f as usize), Ordering::Relaxed);
 }
-/// The output buffer, reserved for a first stretch of rows: a sink takes them as
-/// they come, and a whole long run's can exceed what wasm32 can address.
+/// The output buffer, reserved for a first stretch of rows (at most 8 MiB): a sink
+/// takes them as they come, and a whole long run's can exceed what wasm32 can address.
 fn rows_buffer(n_rows: u32, n_reals: u32) -> Vec<f64> {
-    Vec::with_capacity(n_rows.min(1024) as usize * n_reals as usize)
+    let per_row = (n_reals as usize).max(1);
+    let reserve = (n_rows.min(1024) as usize).min(((8 << 20) / 8 / per_row).max(1));
+    Vec::with_capacity(reserve * per_row)
 }
 
 /// Hand `rows` to the sink and empty the buffer; nothing without a sink.
