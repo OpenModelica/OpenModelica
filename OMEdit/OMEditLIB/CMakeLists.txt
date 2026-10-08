@@ -156,8 +156,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       MCP/MCPToolsSimulation.cpp
                       MCP/MCPToolsDiagram.cpp
                       Search/FindUsageWidget.cpp
-                      resource_omedit.qrc
-                      resource_drawio.qrc)
+                      resource_omedit.qrc)
 
 set(OMEDITLIB_ANIMATION_SOURCES Animation/AbstractAnimationWindow.cpp
                                 Animation/AnimationWindow.cpp

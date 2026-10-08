@@ -34,11 +34,10 @@
  */
 
 #include "ClassDiagramWidget.h"
-
-#ifdef OM_OMEDIT_CLASS_DIAGRAM
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Options/OptionsDialog.h"
 #include "OMC/OMCProxy.h"
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
@@ -47,12 +46,13 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDesktopServices>
-#include <QDockWidget>
 #include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QMessageBox>
 #include <QSettings>
 #include <QSpinBox>
@@ -96,18 +96,22 @@ void ClassDiagramPage::newWindowRequested(QWebEngineNewWindowRequest &request)
 /*!
  * \class ClassDiagramWidget
  * \brief Shows the UML class diagram of a class, from getClassDiagram, in the draw.io viewer.
- * It is in a dock, tabbed with the documentation, that floats in a window of its own until the
- * user docks it with the dock button.
+ * Each class has a window of its own, see MainWindow::showClassDiagramWidget; it is never
+ * docked in the main window, as a web view there would switch the main window from raster to
+ * GPU rendering, which flickers and on Windows can lose the D3D11 device.
  * A click on a class opens it and a click on a line in a class, e.g. a component, opens the
  * text view of the class at the line the element is declared on.
+ * \param className
  */
-ClassDiagramWidget::ClassDiagramWidget(QWidget *pParent)
-  : QWidget(pParent)
+ClassDiagramWidget::ClassDiagramWidget(const QString &className)
+  : QWidget(nullptr), mClassName(className)
 {
-  // The viewer is in a resource file of its own, which OMEditLib, a static library, must initialize.
-  Q_INIT_RESOURCE(resource_drawio);
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowIcon(QIcon(":/Resources/icons/model.svg"));
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::classDiagram, className));
   mpClassNameLabel = new Label;
   mpClassNameLabel->setElideMode(Qt::ElideMiddle);
+  mpClassNameLabel->setText(className);
   mpDepthSpinBox = new QSpinBox;
   mpDepthSpinBox->setRange(0, 10);
   mpDepthSpinBox->setValue(1);
@@ -124,10 +128,6 @@ ClassDiagramWidget::ClassDiagramWidget(QWidget *pParent)
   mpSaveAsToolButton->setToolTip(tr("Save the diagram as a draw.io file"));
   mpSaveAsToolButton->setAutoRaise(true);
   connect(mpSaveAsToolButton, SIGNAL(clicked()), SLOT(saveAs()));
-  mpDockToolButton = new QToolButton;
-  mpDockToolButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
-  mpDockToolButton->setAutoRaise(true);
-  connect(mpDockToolButton, SIGNAL(clicked()), SLOT(toggleDocked()));
   mpLayoutComboBox = new QComboBox;
   mpLayoutComboBox->addItem(tr("Class on top"), "north");
   mpLayoutComboBox->addItem(tr("Base classes on top"), "south");
@@ -136,7 +136,10 @@ ClassDiagramWidget::ClassDiagramWidget(QWidget *pParent)
   connect(mpLayoutComboBox, SIGNAL(currentIndexChanged(int)), SLOT(refresh()));
   connect(mpDepthSpinBox, SIGNAL(valueChanged(int)), SLOT(refresh()));
   connect(mpShowModifiersCheckBox, SIGNAL(toggled(bool)), SLOT(refresh()));
-  mpClassDiagramView = createClassDiagramView();
+  mpClassDiagramView = new QWebEngineView;
+  ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(mpClassDiagramView);
+  mpClassDiagramView->setPage(pClassDiagramPage);
+  connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
   // layout
   QHBoxLayout *pToolsLayout = new QHBoxLayout;
   pToolsLayout->setContentsMargins(0, 0, 0, 0);
@@ -148,114 +151,42 @@ ClassDiagramWidget::ClassDiagramWidget(QWidget *pParent)
   pToolsLayout->addWidget(mpLayoutComboBox);
   pToolsLayout->addWidget(mpRefreshToolButton);
   pToolsLayout->addWidget(mpSaveAsToolButton);
-  pToolsLayout->addWidget(mpDockToolButton);
-  mpMainLayout = new QVBoxLayout;
-  mpMainLayout->setContentsMargins(0, 0, 0, 0);
-  mpMainLayout->addLayout(pToolsLayout);
-  mpMainLayout->addWidget(mpClassDiagramView, 1);
-  setLayout(mpMainLayout);
-}
-
-QWebEngineView* ClassDiagramWidget::createClassDiagramView()
-{
-  QWebEngineView *pClassDiagramView = new QWebEngineView;
-  ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(pClassDiagramView);
-  pClassDiagramView->setPage(pClassDiagramPage);
-  connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
-  return pClassDiagramView;
-}
-
-QString ClassDiagramWidget::pageFileName() const
-{
-  return QString("%1/classdiagram.html").arg(Utilities::tempDirectory());
-}
-
-/*!
- * \brief ClassDiagramWidget::showClassDiagram
- * Shows the diagram of a class; the first time in a window in the middle of the main window,
- * two thirds its size, and afterwards where the user left it.
- * \param className
- */
-void ClassDiagramWidget::showClassDiagram(const QString &className)
-{
-  mClassName = className;
-  mpClassNameLabel->setText(className);
-  QDockWidget *pDockWidget = dockWidget();
-  if (pDockWidget) {
-    pDockWidget->setWindowTitle(QString("%1 - %2").arg(Helper::classDiagram, className));
-    QSettings *pSettings = Utilities::getApplicationSettings();
-    if (pDockWidget->isFloating() && !pSettings->value("classDiagram/placed", false).toBool()) {
-      QRect mainWindowGeometry = MainWindow::instance()->geometry();
-      pDockWidget->resize(mainWindowGeometry.width() * 2 / 3, mainWindowGeometry.height() * 2 / 3);
-      pDockWidget->move(mainWindowGeometry.center() - pDockWidget->rect().center());
-      pSettings->setValue("classDiagram/placed", true);
-    }
-    pDockWidget->show();
-    pDockWidget->raise();
-    pDockWidget->activateWindow();
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addLayout(pToolsLayout);
+  pMainLayout->addWidget(mpClassDiagramView, 1);
+  setLayout(pMainLayout);
+  // Where the last one was, else in the middle of the main window, two thirds its size.
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  if (!(OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+        && restoreGeometry(pSettings->value("classDiagram/geometry").toByteArray()))) {
+    QRect mainWindowGeometry = MainWindow::instance()->geometry();
+    resize(mainWindowGeometry.width() * 2 / 3, mainWindowGeometry.height() * 2 / 3);
+    move(mainWindowGeometry.center() - rect().center());
   }
   refresh();
 }
 
-QDockWidget* ClassDiagramWidget::dockWidget() const
+/*!
+ * \brief ClassDiagramWidget::~ClassDiagramWidget
+ * Keeps the geometry for the next window.
+ */
+ClassDiagramWidget::~ClassDiagramWidget()
 {
-  return qobject_cast<QDockWidget*>(parentWidget());
+  Utilities::getApplicationSettings()->setValue("classDiagram/geometry", saveGeometry());
+  QFile::remove(pageFileName());
 }
 
 /*!
- * \brief ClassDiagramWidget::toggleDocked
- * Docks the floating window, or makes the dock float. A floating window has the frame of the
- * window manager, so it can't be dragged back to the main window like a Qt one.
+ * \brief ClassDiagramWidget::pageFileName
+ * The page of the diagram, one per class as each has a window of its own.
+ * \return
  */
-void ClassDiagramWidget::toggleDocked()
+QString ClassDiagramWidget::pageFileName() const
 {
-  QDockWidget *pDockWidget = dockWidget();
-  if (pDockWidget) {
-    pDockWidget->setFloating(!pDockWidget->isFloating());
-    pDockWidget->show();
-    pDockWidget->raise();
-  }
-}
-
-/*!
- * \brief ClassDiagramWidget::floatingChanged
- * A floating dock gets the frame of the window manager, which moves it; Qt's own frame is moved
- * by Qt, which some window managers (WSLg) don't allow, so the window couldn't be moved at all.
- * Only on X11/Wayland: on Windows changing the flags recreates the native window under the web
- * view, which loses its D3D11 device when it is docked again, and the diagram stays blank.
- * \param floating
- */
-void ClassDiagramWidget::floatingChanged(bool floating)
-{
-  mpDockToolButton->setToolTip(floating ? tr("Dock in the main window") : tr("Float in a window of its own"));
-  /* On Windows the web view stays black once the dock floats or docks, as its native window is
-   * recreated, so a new view shows the page again; the diagram isn't asked from omc again.
-   */
-  QWebEngineView *pClassDiagramView = createClassDiagramView();
-  delete mpMainLayout->replaceWidget(mpClassDiagramView, pClassDiagramView);
-  mpClassDiagramView->deleteLater();
-  mpClassDiagramView = pClassDiagramView;
-  if (!mClassName.isEmpty()) {
-    mpClassDiagramView->setUrl(QUrl::fromLocalFile(pageFileName()));
-  }
-#if !defined(Q_OS_WIN) && !defined(Q_OS_MAC)
-  QDockWidget *pDockWidget = dockWidget();
-  if (!pDockWidget) {
-    return;
-  }
-  // The frame of the window manager has the title, so Qt's title bar is only shown in the main window.
-  QWidget *pTitleBarWidget = pDockWidget->titleBarWidget();
-  pDockWidget->setTitleBarWidget(floating ? new QWidget(pDockWidget) : nullptr);
-  delete pTitleBarWidget;
-  if (floating) {
-    // Changing the flags hides the window, but not explicitly.
-    bool visible = pDockWidget->isVisible();
-    pDockWidget->setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint
-                                | Qt::WindowCloseButtonHint);
-    // Explicitly, or it is shown with the main window.
-    pDockWidget->setVisible(visible);
-  }
-#endif
+  QString name = mClassName;
+  name.replace(QRegularExpression("[^A-Za-z0-9_.]"), "_");
+  return QString("%1/classdiagram-%2.html").arg(Utilities::tempDirectory(), name);
 }
 
 /*!
@@ -273,7 +204,7 @@ void ClassDiagramWidget::refresh()
    * can't load scripts from qrc:, so the viewer is copied next to it.
    */
   QString viewerFileName = QString("%1/drawio-viewer-static.min.js").arg(Utilities::tempDirectory());
-  QFile viewerFile(":/drawio/viewer-static.min.js");
+  QFile viewerFile(":/Resources/drawio/viewer-static.min.js");
   if (QFileInfo(viewerFileName).size() != viewerFile.size()) {
     // The copy is read-only like the resource, and may be from another version.
     QFile::setPermissions(viewerFileName, QFile::ReadOwner | QFile::WriteOwner);
@@ -309,7 +240,7 @@ QString ClassDiagramWidget::htmlPage(const QString &diagram) const
   QJsonObject config;
   config.insert("xml", xml);
   config.insert("nav", true);
-  // At its size, scrolled, with the zoom and fit buttons; fitting a diagram into the dock makes the text unreadable.
+  // At its size, scrolled, with the zoom and fit buttons; fitting a diagram into the window makes the text unreadable.
   config.insert("resize", false);
   config.insert("auto-fit", false);
   config.insert("zoom", 1);
@@ -464,4 +395,3 @@ void ClassDiagramWidget::openLink(const QUrl &url)
   }
 }
 
-#endif // OM_OMEDIT_CLASS_DIAGRAM

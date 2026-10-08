@@ -575,19 +575,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   mpDocumentationDockWidget->hide();
   connect(mpDocumentationDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(documentationDockWidgetVisibilityChanged(bool)));
-#ifdef OM_OMEDIT_CLASS_DIAGRAM
-  // Create ClassDiagramWidget dock, tabbed with the documentation, floating until the user docks it
-  mpClassDiagramWidget = new ClassDiagramWidget;
-  mpClassDiagramDockWidget = new QDockWidget(Helper::classDiagram, this);
-  mpClassDiagramDockWidget->setObjectName("ClassDiagram");
-  mpClassDiagramDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-  mpClassDiagramDockWidget->setWidget(mpClassDiagramWidget);
-  addDockWidget(Qt::RightDockWidgetArea, mpClassDiagramDockWidget);
-  tabifyDockWidget(mpDocumentationDockWidget, mpClassDiagramDockWidget);
-  connect(mpClassDiagramDockWidget, SIGNAL(topLevelChanged(bool)), mpClassDiagramWidget, SLOT(floatingChanged(bool)));
-  mpClassDiagramDockWidget->setFloating(true);
-  mpClassDiagramDockWidget->hide();
-#endif
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
   // create an object of VariablesWidget
@@ -1180,6 +1167,14 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mTransformationsWidgetHash.clear();
+#endif
+  /* delete the ClassDiagramWidgets, the last one keeps its geometry. Their web pages must go
+   * before the web engine profile does, at exit.
+   */
+  const QList<ClassDiagramWidget*> classDiagramWidgets = mClassDiagramWidgetHash.values();
+  mClassDiagramWidgetHash.clear();
+  qDeleteAll(classDiagramWidgets);
+#if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
   pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
@@ -2138,6 +2133,34 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
 #endif
+}
+
+/*!
+ * \brief MainWindow::showClassDiagramWidget
+ * Shows the class diagram of a class in a window of its own, or raises the one already
+ * showing it and gets the diagram again.
+ * \param className
+ * \return
+ */
+ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className)
+{
+  ClassDiagramWidget *pClassDiagramWidget = mClassDiagramWidgetHash.value(className, 0);
+  if (!pClassDiagramWidget) {
+    pClassDiagramWidget = new ClassDiagramWidget(className);
+    /* Each new window is moved a bit per window already open, so that the others are seen.
+     * Not by comparing positions: a shown window has the frame of the window manager, a new one not yet.
+     */
+    pClassDiagramWidget->move(pClassDiagramWidget->pos() + QPoint(30, 30) * static_cast<int>(mClassDiagramWidgetHash.size() % 10));
+    mClassDiagramWidgetHash.insert(className, pClassDiagramWidget);
+    connect(pClassDiagramWidget, &QObject::destroyed, this, [this, className]() {mClassDiagramWidgetHash.remove(className);});
+  } else {
+    pClassDiagramWidget->refresh();
+  }
+  pClassDiagramWidget->show();
+  pClassDiagramWidget->raise();
+  pClassDiagramWidget->activateWindow();
+  pClassDiagramWidget->setWindowState(pClassDiagramWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+  return pClassDiagramWidget;
 }
 
 /*!
@@ -5283,9 +5306,6 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpElementDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
-#ifdef OM_OMEDIT_CLASS_DIAGRAM
-  pViewWindowsMenu->addAction(mpClassDiagramDockWidget->toggleViewAction());
-#endif
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());

@@ -416,7 +416,6 @@ OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIParser.cpp \
   Debugger/Parser/main.cpp
 
-RESOURCES += resource_omedit.qrc \
-  resource_drawio.qrc
+RESOURCES += resource_omedit.qrc
 
 include(../OMEdit.config.post.pri)

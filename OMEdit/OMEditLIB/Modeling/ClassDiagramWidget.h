@@ -36,22 +36,20 @@
 #ifndef CLASSDIAGRAMWIDGET_H
 #define CLASSDIAGRAMWIDGET_H
 
-// Needs QtWebEngine, see DocumentationWidget.h.
-#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
-#define OM_OMEDIT_CLASS_DIAGRAM
-
 #include <QWidget>
+#if defined(__EMSCRIPTEN__) || defined(OM_OMEDIT_NO_WEBENGINE)
+#include "Modeling/qtwebengine_compat.h" // see DocumentationWidget.h
+#else
 #include <QWebEngineView>
 #include <QWebEnginePage>
 #include <QWebEngineNewWindowRequest>
+#endif
 
 class Label;
 class QSpinBox;
 class QCheckBox;
 class QComboBox;
 class QToolButton;
-class QDockWidget;
-class QVBoxLayout;
 
 /*!
  * \brief The page of the class diagram. Hands the links clicked in the diagram to
@@ -74,8 +72,8 @@ class ClassDiagramWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ClassDiagramWidget(QWidget *pParent = nullptr);
-  void showClassDiagram(const QString &className);
+  ClassDiagramWidget(const QString &className);
+  ~ClassDiagramWidget();
 private:
   QString mClassName;
   QString mDiagram;
@@ -85,21 +83,13 @@ private:
   QComboBox *mpLayoutComboBox;
   QToolButton *mpRefreshToolButton;
   QToolButton *mpSaveAsToolButton;
-  QToolButton *mpDockToolButton;
   QWebEngineView *mpClassDiagramView;
-  QVBoxLayout *mpMainLayout;
-  QWebEngineView* createClassDiagramView();
   QString pageFileName() const;
   QString htmlPage(const QString &diagram) const;
-  QDockWidget* dockWidget() const;
 public slots:
-  void toggleDocked();
-  void floatingChanged(bool floating);
   void refresh();
   void saveAs();
   void openLink(const QUrl &url);
 };
-
-#endif // !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
 
 #endif // CLASSDIAGRAMWIDGET_H
