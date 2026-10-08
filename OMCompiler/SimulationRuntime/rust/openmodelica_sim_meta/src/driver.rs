@@ -1149,7 +1149,7 @@ pub trait Driver {
 // because `sysstat` -- measured inside the solvers -- needs it too.
 pub use openmodelica_solvers::clock::{now_ms as now_ms_host, set_clock};
 
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 fn now_ms() -> f64 {
     now_ms_host()
@@ -1259,6 +1259,19 @@ static ROW_SINK_FINISH: AtomicUsize = AtomicUsize::new(0);
 pub fn set_row_sink(rows: Option<fn(&[f64]) -> bool>, finish: Option<fn()>) {
     ROW_SINK.store(rows.map_or(0, |f| f as usize), Ordering::Relaxed);
     ROW_SINK_FINISH.store(finish.map_or(0, |f| f as usize), Ordering::Relaxed);
+}
+// `outputFormat="empty"` (`-noemit`): no writer reads the rows, so a row is only
+// its time, which the terminal row needs. Set by `drive` and `make_driver`.
+static TIME_ONLY_ROWS: AtomicBool = AtomicBool::new(false);
+fn set_time_only_rows(model: &SimModel) {
+    TIME_ONLY_ROWS.store(model.output_format == "empty", Ordering::Relaxed);
+}
+/// Values per row of the output buffer.
+pub fn row_width(layout: &SimLayout) -> u32 {
+    match TIME_ONLY_ROWS.load(Ordering::Relaxed) {
+        true => 1,
+        false => layout.n_row_total(),
+    }
 }
 /// The output buffer, reserved for a first stretch of rows (at most 8 MiB): a sink
 /// takes them as they come, and a whole long run's can exceed what wasm32 can address.
@@ -3146,6 +3159,18 @@ impl HomotopyPath {
 /// assigns. Used by the host-driven drivers; the in-wasm `simulate` emits the
 /// same layout.
 pub fn capture_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
+    if TIME_ONLY_ROWS.load(Ordering::Relaxed) {
+        let time = read_f64(e, sim_data + TIME_OFF)?;
+        rows.push(time);
+        #[cfg(feature = "std")]
+        rt_sync::row(time);
+        return Ok(());
+    }
+    capture_full_row(e, rows, sim_data, layout)
+}
+
+/// Every result column, whatever the output format.
+pub fn capture_full_row(e: &dyn SimEngine, rows: &mut Vec<f64>, sim_data: u32, layout: &SimLayout) -> Result<()> {
     // C's `emit` — the result writer's share of the run (`SIM_TIMER_OUTPUT`).
     rtclock::tick(rtclock::OUTPUT);
     let out = capture_row_values(e, rows, sim_data, layout);
@@ -3527,13 +3552,12 @@ pub fn emit_terminal_row(
     rows: &mut Vec<f64>,
     sim_data: u32,
     layout: &SimLayout,
-    n_reals: u32,
     at: Option<f64>,
 ) -> Result<()> {
     // A run that ended mid-step left its `StepRetry` region open.
     let addr = e.error_stage_addr();
     set_error_stage(e, addr, ERROR_SIMULATION);
-    let Some(time) = rows.len().checked_sub(n_reals as usize).map(|i| at.unwrap_or(rows[i])) else {
+    let Some(time) = rows.len().checked_sub(row_width(layout) as usize).map(|i| at.unwrap_or(rows[i])) else {
         return Ok(());
     };
     if no_event_emit() {
@@ -4975,6 +4999,7 @@ fn make_driver_resolved(
 ) -> Result<(Box<dyn Driver>, &'static str)> {
     let layout = &model.layout;
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
+    set_time_only_rows(model);
     solver_setup(e, model, sim_data)?;
     let gbode = alloc_gbode(model, method)?;
 
@@ -5119,6 +5144,7 @@ pub fn drive(
     let layout = &model.layout;
     let n_reals = layout.n_row_total();
     let n_rows = model.n_output_rows();
+    set_time_only_rows(model);
     let start = model.start_time;
     let stop = model.stop_time;
 
@@ -5181,7 +5207,7 @@ pub fn drive(
                 }
                 driver.fill_stats(model, &mut stats);
                 let mut rows = driver.take_rows();
-                emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, driver.terminal_time())?;
+                emit_terminal_row(e, &mut rows, sim_data, layout, driver.terminal_time())?;
                 return Ok(rows);
             }
             label = "optimization";
@@ -5240,10 +5266,11 @@ pub fn drive(
         {
             // Fast in-wasm Euler (one host->wasm call; not resumable/cancellable).
             label = "euler-wasm";
+            TIME_ONLY_ROWS.store(false, Ordering::Relaxed);
             solver_setup(e, model, sim_data)?;
             let mut rows = run_wasm(e, sim_data, n_reals, n_rows, model, start, stop, &mut stats)?;
             open_result(e, model, sim_data)?;
-            emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, None)?;
+            emit_terminal_row(e, &mut rows, sim_data, layout, None)?;
             return Ok(rows);
         }
         // enrich_trap: a trap in init/integration is usually a failed model assert().
@@ -5300,7 +5327,7 @@ pub fn drive(
         }
         driver.fill_stats(model, &mut stats);
         let mut rows = driver.take_rows();
-        emit_terminal_row(e, &mut rows, sim_data, layout, n_reals, driver.terminal_time())?;
+        emit_terminal_row(e, &mut rows, sim_data, layout, driver.terminal_time())?;
         Ok(rows)
     })();
     if lv_time.is_some() {
@@ -5340,7 +5367,13 @@ pub fn drive(
     // C's `finishSimulation` order: this line, then the caller's LOG_STATS block.
     let out_names = crate::simflags::with_flags(|f| f.output_vars.clone());
     if !out_names.is_empty() {
-        write_output_vars(e, model, sim_data, &rows, n_reals as usize, &out_names)?;
+        let mut last = Vec::new();
+        // A time-only last row is the terminal one, and `SimData` still holds it.
+        if TIME_ONLY_ROWS.load(Ordering::Relaxed) && !rows.is_empty() {
+            capture_full_row(e, &mut last, sim_data, layout)?;
+        }
+        let rows = if last.is_empty() { &rows } else { &last };
+        write_output_vars(e, model, sim_data, rows, n_reals as usize, &out_names)?;
     }
     signal_stats(e, &stats);
 
@@ -5422,7 +5455,6 @@ impl EulerDriver {
         // them internally around its Newton solve.
         run_initialization_model(e, sim_data, model)?;
         let n_rows = model.n_output_rows();
-        let n_reals = model.layout.n_row_total();
         let mut retry = StepRetry::default();
         retry.store(e, sim_data, &model.layout)?;
         // The initial selection belongs to initialization, before row 0 (see
@@ -5433,7 +5465,7 @@ impl EulerDriver {
             row: 0,
             pending_time: None,
             dss,
-            rows: rows_buffer(n_rows, n_reals),
+            rows: rows_buffer(n_rows, row_width(&model.layout)),
             retry,
         })
     }
@@ -6719,10 +6751,9 @@ impl DasslDriver {
         let states_base = sim_data + layout.real_off;
         let ders_base = states_base + layout.n_states * 8;
         let n_rows = model.n_output_rows();
-        let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows = rows_buffer(n_rows, n_reals);
+        let mut rows = rows_buffer(n_rows, row_width(&model.layout));
         // Dynamic state selection, then row 0 at the start time. For an explicit ODE
         // the consistent initial derivative is exactly f(t0, y0), which `functionODE`
         // (called by `emit_initial_row`) leaves in the derivative slots — so INFO(11)=0.
@@ -9966,11 +9997,10 @@ impl EventsDriver {
         let n_states = layout.n_states as usize;
         let states_base = sim_data + layout.real_off;
         let n_rows = model.n_output_rows();
-        let n_reals = layout.n_row_total();
 
         let mut samp = Samples::load(e, sim_data, layout, start)?;
         samp.set_relation_horizon(model.stop_time);
-        let mut rows = rows_buffer(n_rows, n_reals);
+        let mut rows = rows_buffer(n_rows, row_width(&model.layout));
         // A sample due at the start time is left to the first step, which C shortens
         // to zero length and handles as an ordinary time event.
         let dss = StateSelection::initial(e, sim_data, model)?;
@@ -10660,10 +10690,9 @@ impl CvodeDriver {
         let n_states = layout.n_states as usize;
         let states_base = sim_data + layout.real_off;
         let n_rows = model.n_output_rows();
-        let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows = rows_buffer(n_rows, n_reals);
+        let mut rows = rows_buffer(n_rows, row_width(&model.layout));
         let dss = StateSelection::initial(e, sim_data, model)?;
         emit_initial_row(e, &mut rows, sim_data, layout, start)?;
         let pending_terminate = terminated(e, sim_data, layout)?;
@@ -11627,10 +11656,9 @@ impl IdaDriver {
         let states_base = sim_data + layout.real_off;
         let ders_base = states_base + layout.n_states * 8;
         let n_rows = model.n_output_rows();
-        let n_reals = layout.n_row_total();
         let start = model.start_time;
 
-        let mut rows = rows_buffer(n_rows, n_reals);
+        let mut rows = rows_buffer(n_rows, row_width(&model.layout));
         // For an explicit ODE the consistent `y'` is f(t0, y0), which the initial
         // row leaves in the derivative slots.
         let dss = StateSelection::initial(e, sim_data, model)?;
