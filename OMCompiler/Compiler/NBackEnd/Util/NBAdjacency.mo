@@ -1236,6 +1236,8 @@ public
               else ();
             end match;
           then ();
+          // a symbolic index without iterators (e.g. x[N] of a resizable array) may match, like a literal
+          case (Subscript.INDEX(index = key_exp), _) guard(not Expression.contains(key_exp, Expression.isIterator)) then ();
           case (Subscript.INDEX(index = key_exp), Subscript.INDEX(index = exp)) algorithm
             (ok, iter, offset, negated) := sparsityIteratorOffset(key_exp);
             if ok then
