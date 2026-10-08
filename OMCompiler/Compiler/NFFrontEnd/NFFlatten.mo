@@ -3333,6 +3333,12 @@ algorithm
       then
         ();
 
+    case Expression.ARRAY() guard Type.isRecord(Type.arrayElementType(exp.ty))
+      algorithm
+        funcs := collectTypeFuncs(Type.arrayElementType(exp.ty), funcs);
+      then
+        ();
+
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       algorithm
         for f in Function.getRefCache(exp.fn) loop

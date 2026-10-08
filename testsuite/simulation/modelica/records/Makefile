@@ -19,6 +19,7 @@ Ticket12135_inline.mos \
 Ticket13009.mos \
 Ticket14485.mos \
 Ticket16177.mos \
+Ticket16960.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
