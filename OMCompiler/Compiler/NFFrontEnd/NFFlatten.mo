@@ -356,7 +356,12 @@ algorithm
   src := ElementSource.addCommentToSource(src,
     SCodeUtil.getElementComment(InstNode.definition(classInst)));
 
-  deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  // the array connection handlers check connectors with subscripts against the deleted components
+  if settings.arrayConnect then
+    deleted_vars := UnorderedSet.new(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
+  else
+    deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  end if;
 
   (vars, sections) := flattenClass(InstNode.getClass(classInst), prefix,
     Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
@@ -3004,8 +3009,7 @@ function isDeletedConnector
   output Boolean res;
 algorithm
   res := match exp
-    // deleted components are stored without subscripts
-    case Expression.CREF() then isDeletedCref(ComponentRef.stripSubscriptsAll(exp.cref), deletedVars);
+    case Expression.CREF() then isDeletedCref(exp.cref, deletedVars);
     else false;
   end match;
 end isDeletedConnector;
