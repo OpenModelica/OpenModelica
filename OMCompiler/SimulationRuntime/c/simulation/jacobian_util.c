@@ -33,6 +33,7 @@
 #include "../util/omc_file.h"
 #include "eval_dep.h"
 #include "jacobian_colpack.h"
+#include <assert.h>
 
 
 /**
@@ -55,65 +56,62 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
    * either orientation. For square Jacobians (the common case) this is exact. */
   const unsigned int sizeDirection = sizeCols > sizeRows ? sizeCols : sizeRows;
 
+  /* Deterministic baseline for all constructor paths. */
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
+  jacobian->sizeTmpVars = 0;
+  jacobian->sizeTmpVarsAdj = 0;
 
-  if (isAdjoint == 1) {
-    jacobian->seedVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-    jacobian->seedVars = NULL;
+  jacobian->sparsePattern = NULL;
+  jacobian->sparsePatternT = NULL;
 
-    jacobian->resultVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-    jacobian->resultVars = NULL;
+  jacobian->seedVars = NULL;
+  jacobian->tmpVars = NULL;
+  jacobian->resultVars = NULL;
 
-    jacobian->sizeTmpVars = 0;
-    jacobian->sizeTmpVarsAdj = sizeTmpVars;
+  jacobian->seedVarsAdj = NULL;
+  jacobian->tmpVarsAdj = NULL;
+  jacobian->resultVarsAdj = NULL;
 
-    jacobian->tmpVars = NULL;
-    jacobian->tmpVarsAdj = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
-
-    jacobian->dag = NULL;
-    jacobian->dagT = NULL;
-
-    jacobian->evalColumn = NULL;
-    jacobian->evalRow = evalColumn;
-
-    jacobian->constColEqns = NULL;
-    jacobian->constRowEqns = constantEqns;
-
-    jacobian->sparsePattern = NULL;
-    jacobian->sparsePatternT = sparsePattern;
-  } else {
-    jacobian->seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-    jacobian->seedVarsAdj = NULL;
-
-    jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-    jacobian->resultVarsAdj = NULL;
-
-    jacobian->sizeTmpVars = sizeTmpVars;
-    jacobian->sizeTmpVarsAdj = 0;
-
-    jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
-    jacobian->tmpVarsAdj = NULL;
-
-    jacobian->dag = dag;
-    jacobian->dagT = NULL;
-
-    jacobian->evalColumn = evalColumn;
-    jacobian->evalRow = NULL;
-
-    jacobian->constColEqns = constantEqns;
-    jacobian->constRowEqns = NULL;
-
-    jacobian->sparsePattern = sparsePattern;
-    jacobian->sparsePatternT = NULL;
-  }
-
+  jacobian->dag = NULL;
+  jacobian->dagT = NULL;
   jacobian->evalSelectionCol = NULL;
   jacobian->evalSelectionRow = NULL;
+  jacobian->evalColumn = NULL;
+  jacobian->evalRow = NULL;
+  jacobian->constColEqns = NULL;
+  jacobian->constRowEqns = NULL;
 
   jacobian->dae_cj = 0;
   jacobian->recoverMask = NULL;
   jacobian->csrToCscMap = NULL;
+
+  // remove
+  jacobian->constantEqns = NULL;
+  jacobian->isRowEval = 0;
+  jacobian->isBidirectional = 0;
+  jacobian->availability = JACOBIAN_UNKNOWN;
+  jacobian->adjointJacobian = NULL;
+
+  if (isAdjoint == 1) {
+    jacobian->seedVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->resultVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->sizeTmpVarsAdj = sizeTmpVars;
+    jacobian->tmpVarsAdj = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+    // no dagT is computed
+    jacobian->evalRow = evalColumn;
+    jacobian->constRowEqns = constantEqns;
+    jacobian->sparsePatternT = sparsePattern;
+  } else {
+    jacobian->seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->sizeTmpVars = sizeTmpVars;
+    jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+    jacobian->dag = dag;
+    jacobian->evalColumn = evalColumn;
+    jacobian->constColEqns = constantEqns;
+    jacobian->sparsePattern = sparsePattern;
+  }
 }
 
 
@@ -128,16 +126,17 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
 JACOBIAN* copyJacobian(JACOBIAN* source)
 {
   // what if its bidirectional?
+  const unsigned int isAdjoint = (source->evalColumn == NULL && source->evalRow != NULL);
   JACOBIAN* jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
   initJacobian(jacobian,
     source->sizeCols,
     source->sizeRows,
-    source->sizeTmpVars,
+    isAdjoint ? source->sizeTmpVarsAdj : source->sizeTmpVars,
     source->dag,
-    source->evalColumn,
-    source->constColEqns,
-    source->sparsePattern,
-    source->evalRow != NULL /* isAdjoint */);
+    isAdjoint ? source->evalRow : source->evalColumn,
+    isAdjoint ? source->constRowEqns : source->constColEqns,
+    isAdjoint ? source->sparsePatternT : source->sparsePattern,
+    isAdjoint);
 
   jacobian->recoverMask = source->recoverMask;
   jacobian->csrToCscMap = source->csrToCscMap;
@@ -196,6 +195,17 @@ void freeJacobianCopy(JACOBIAN *jac)
 
 static void prepareAdjointJacobianForRowEvaluation(JACOBIAN* jacobian)
 {
+  /* In-place ownership move from forward-oriented fields to adjoint-oriented fields. */
+  assert(jacobian != NULL);
+  assert(jacobian->seedVarsAdj == NULL);
+  assert(jacobian->tmpVarsAdj == NULL);
+  assert(jacobian->resultVarsAdj == NULL);
+  assert(jacobian->sparsePatternT == NULL);
+  assert(jacobian->dagT == NULL);
+  assert(jacobian->evalSelectionRow == NULL);
+  assert(jacobian->evalRow == NULL);
+  assert(jacobian->constRowEqns == NULL);
+
   jacobian->sizeTmpVarsAdj = jacobian->sizeTmpVars;
   jacobian->sparsePatternT = jacobian->sparsePattern;
   jacobian->seedVarsAdj = jacobian->seedVars;
@@ -219,6 +229,19 @@ static void prepareAdjointJacobianForRowEvaluation(JACOBIAN* jacobian)
 
 static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, JACOBIAN* adjointJacobian)
 {
+  /* Ownership transfer (move semantics): adopt row-side storage in forward,
+   * then detach source ownership before freeing source container. */
+  assert(forwardJacobian != NULL);
+  assert(adjointJacobian != NULL);
+  assert(forwardJacobian->seedVarsAdj == NULL);
+  assert(forwardJacobian->tmpVarsAdj == NULL);
+  assert(forwardJacobian->resultVarsAdj == NULL);
+  assert(forwardJacobian->sparsePatternT == NULL);
+  assert(forwardJacobian->dagT == NULL);
+  assert(forwardJacobian->evalSelectionRow == NULL);
+  assert(forwardJacobian->evalRow == NULL);
+  assert(forwardJacobian->constRowEqns == NULL);
+
   forwardJacobian->sizeTmpVarsAdj = adjointJacobian->sizeTmpVarsAdj;
   forwardJacobian->sparsePatternT = adjointJacobian->sparsePatternT;
   forwardJacobian->seedVarsAdj = adjointJacobian->seedVarsAdj;
@@ -229,10 +252,6 @@ static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, J
   forwardJacobian->evalRow = adjointJacobian->evalRow;
   forwardJacobian->constRowEqns = adjointJacobian->constRowEqns;
 
-  /* The adjoint Jacobian owns the CSR pattern in sparsePatternT (sparsePattern is
-   * NULL for a pure-adjoint Jacobian, see initJacobian). Move that ownership to the
-   * unified Jacobian and clear the source container's owning pointers before freeing
-   * it, so the pattern is not released twice. */
   adjointJacobian->sizeTmpVarsAdj = 0;
   adjointJacobian->sparsePatternT = NULL;
   adjointJacobian->sparsePattern = NULL;
@@ -245,6 +264,7 @@ static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, J
   adjointJacobian->constRowEqns = NULL;
   freeJacobian(adjointJacobian);
 }
+
 /**
  * \brief Row-wise Jacobian evaluation.
  *
@@ -269,6 +289,11 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
   const unsigned int nRows = jacobian->sizeRows;
   const unsigned int nCols = jacobian->sizeCols;
   const modelica_boolean writeSparseCSC = !isDense;
+
+  if (!sp || !jacobian->seedVarsAdj || !jacobian->tmpVarsAdj || !jacobian->resultVarsAdj) {
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform row-wise evaluation without fully initialized adjoint storage.\n");
+    return;
+  }
 
   if (!jacobian->evalRow) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform row-wise evaluation without adjoint derivatives available.\n");
@@ -1514,7 +1539,8 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   } else if (wantAdjoint) {
     //printf("Initializing adjoint Jacobian in wantAdjoint.\n");
     //printf("Adjoint Jacobian status: %d, evalRow: %p\n", adjointStatus, adjointJacobian->evalRow);
-    if (adjointStatus == 0 && adjointJacobian->evalRow) {
+    if (adjointStatus == 0 && adjointJacobian->evalRow && adjointJacobian->sparsePatternT
+      && adjointJacobian->seedVarsAdj && adjointJacobian->tmpVarsAdj && adjointJacobian->resultVarsAdj) {
       //printf("Adjoint Jacobian successfully initialized.\n");
       // prepareAdjointJacobianForRowEvaluation(adjointJacobian);
       jacobian = adjointJacobian;

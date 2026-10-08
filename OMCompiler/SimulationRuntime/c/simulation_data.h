@@ -228,7 +228,13 @@ typedef struct JACOBIAN
   unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
                                            corresponding CSC (column oriented) nz positions of J. Size nnz. */
 
-  // Stuff that needs to be kept for rust compile compatibility, but is not used in C code
+  /*
+   * Legacy ABI compatibility fields.
+   *
+   * These members are kept for Rust/ABI compatibility only and are deprecated in
+   * the C runtime. New C code must not read or write them and must use the
+   * unified forward/adjoint fields above instead.
+   */
   jacobianColumn_func_ptr constantEqns;
   modelica_boolean isRowEval;
   modelica_boolean isBidirectional;
