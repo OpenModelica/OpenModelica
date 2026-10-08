@@ -1,0 +1,53 @@
+// name: resizableConnectDeleted
+// keywords: NewBackend resizable connect conditional
+// status: correct
+// cflags: --newBackend --resizableArrays
+//
+// A connect to a deleted conditional component inside a resizable component
+// array is removed, the other connects of the same set stay.
+
+loadString("
+connector RI = input Real;
+
+model E
+  RI q;
+end E;
+
+model Inner
+  parameter Boolean b = false;
+  input Real u = 1;
+  Get g;
+  E em if b;
+  Real x(start = 0, fixed = true);
+protected
+  RI _u = u if not b;
+  model Get
+    RI y;
+  end Get;
+equation
+  connect(g.y, _u);
+  connect(g.y, em.q);
+  der(x) = g.y;
+end Inner;
+
+model resizableConnectDeleted
+  parameter Integer N = 3;
+  Inner e[N](each final b = false, each final u = 2);
+end resizableConnectDeleted;
+"); getErrorString();
+
+simulate(resizableConnectDeleted, stopTime = 1); getErrorString();
+abs(val(e.x[2], 1) - 2) < 1e-6;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableConnectDeleted_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableConnectDeleted', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// endResult

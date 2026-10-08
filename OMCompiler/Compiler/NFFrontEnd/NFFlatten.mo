@@ -2942,6 +2942,9 @@ protected
   FlatModel unrolled;
   Boolean symbolic_oc;
 algorithm
+  // the array handlers do not know about deleted conditional components
+  flatModel.equations := removeDeletedConnects(flatModel.equations, deletedVars);
+
   // Overconstrained connections: build the graph like resolveConnections, which
   // evaluates the Connections.* operators (isRoot, rooted). The connect equations
   // stay in the model for the array handler.
@@ -2971,6 +2974,41 @@ algorithm
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function removeDeletedConnects
+  "Removes the connect equations with a deleted conditional connector, also
+   inside for loops."
+  input list<Equation> equations;
+  input DeletedVariables deletedVars;
+  output list<Equation> outEquations = {};
+protected
+  list<Equation> body;
+algorithm
+  for eq in equations loop
+    outEquations := match eq
+      case Equation.CONNECT()
+        guard isDeletedConnector(eq.lhs, deletedVars) or isDeletedConnector(eq.rhs, deletedVars)
+        then outEquations;
+      case Equation.FOR() algorithm
+        body := removeDeletedConnects(eq.body, deletedVars);
+      then if listEmpty(body) then outEquations else Equation.FOR(eq.iterator, eq.range, body, eq.scope, eq.source) :: outEquations;
+      else eq :: outEquations;
+    end match;
+  end for;
+  outEquations := listReverseInPlace(outEquations);
+end removeDeletedConnects;
+
+function isDeletedConnector
+  input Expression exp;
+  input DeletedVariables deletedVars;
+  output Boolean res;
+algorithm
+  res := match exp
+    // deleted components are stored without subscripts
+    case Expression.CREF() then isDeletedCref(ComponentRef.stripSubscriptsAll(exp.cref), deletedVars);
+    else false;
+  end match;
+end isDeletedConnector;
 
 function unrollForGraph
   "The equations with their for loops unrolled, the ranges evaluated. Only for
