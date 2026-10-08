@@ -20,7 +20,7 @@ use alloc::vec::Vec;
 use super::linsol::{GbLinSys, NlsPattern, OdePattern};
 use super::tableau::{TTransform, Tableau};
 use crate::gbode::math::{abs, pow, sqrt};
-use crate::{Ode, Result};
+use crate::{eval_caught, Ode, Result};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
@@ -200,13 +200,18 @@ impl GbNls {
 
     /// C's `gbInternal_evalJacobian` at `(time, y)`, with `f(time, y)` already in
     /// `fbase`: the colored symbolic Jacobian when the model carries one, else
-    /// colored finite differences (`gbInternal_evalNumericalJacobian`).
-    fn eval_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64], nominals: &[f64]) -> Result<()> {
+    /// colored finite differences (`gbInternal_evalNumericalJacobian`), whose
+    /// evaluations swallow their own model errors. `false`: the symbolic one threw.
+    fn eval_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64], nominals: &[f64]) -> Result<bool> {
         self.n_jac_evals += 1;
         if self.sym_jac && ode.has_jacobian_vector() {
-            return self.eval_sym_jacobian(ode, time, y);
+            let c = ode.catch_begin();
+            let run = self.eval_sym_jacobian(ode, time, y);
+            let threw = ode.catch_end(c);
+            return run.map(|()| !threw);
         }
-        self.eval_num_jacobian(ode, time, y, nominals)
+        self.eval_num_jacobian(ode, time, y, nominals)?;
+        Ok(true)
     }
 
     fn eval_sym_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64]) -> Result<()> {
@@ -259,7 +264,7 @@ impl GbNls {
                 self.probe[c] = y[c] + del;
                 self.inv_del[c] = 1.0 / del;
             }
-            ode.eval(time, &self.probe, &mut self.f)?;
+            eval_caught(ode, time, &self.probe, &mut self.f)?;
             self.uncounted_calls += 1;
             for &col in group {
                 let c = col as usize;
@@ -350,8 +355,11 @@ impl GbNls {
             let mut jac_called = false;
             if self.call_jac || event_happened {
                 // C's `gbInternalEvaluateSimplifiedJacobian`.
-                ode.eval(time, y_old, &mut self.fbase)?;
-                self.eval_jacobian(ode, time, y_old, nominals)?;
+                if !eval_caught(ode, time, y_old, &mut self.fbase)?
+                    || !self.eval_jacobian(ode, time, y_old, nominals)?
+                {
+                    return Ok(Solved::Failed);
+                }
                 jac_called = true;
             }
             if (jac_called || step_size != last_step_size)
@@ -392,8 +400,9 @@ impl GbNls {
         let mut jac_called = false;
         if self.call_jac || event_happened {
             let t0 = stage_time - step_size;
-            ode.eval(t0, y_old, &mut self.fbase)?;
-            self.eval_jacobian(ode, t0, y_old, nominals)?;
+            if !eval_caught(ode, t0, y_old, &mut self.fbase)? || !self.eval_jacobian(ode, t0, y_old, nominals)? {
+                return Ok(Solved::Failed);
+            }
             jac_called = true;
         }
         if (jac_called || step_size != last_step_size) && self.factor_dirk(step_size * gamma) < 0 {
@@ -423,7 +432,8 @@ impl GbNls {
         let mut theta = 0.0;
         let mut newt_it = 1;
         loop {
-            ode.eval(stage_time, x, &mut self.f)?;
+            // C's `residual_DIRK`/`residual_MS` ignore `gbode_fODE`'s verdict.
+            eval_caught(ode, stage_time, x, &mut self.f)?;
             for i in 0..n {
                 self.res[i] = res_const[i] - c_scale * x[i] + fac * self.f[i];
             }
@@ -496,12 +506,16 @@ impl GbNls {
         self.make_scales(nominals, y_old, &z[..n]);
         let mut jac_called = false;
         if self.call_jac || tr.first_row_zero || event_happened {
-            ode.eval(time, y_old, &mut self.fbase)?;
+            if !eval_caught(ode, time, y_old, &mut self.fbase)? {
+                return Ok(Solved::Failed);
+            }
             if tr.first_row_zero {
                 k[..n].copy_from_slice(&self.fbase);
             }
             if self.call_jac || event_happened {
-                self.eval_jacobian(ode, time, y_old, nominals)?;
+                if !self.eval_jacobian(ode, time, y_old, nominals)? {
+                    return Ok(Solved::Failed);
+                }
                 jac_called = true;
             }
         }
@@ -532,7 +546,9 @@ impl GbNls {
                 for i in 0..n {
                     self.probe[i] = y_old[i] + self.tz[j * n + i];
                 }
-                ode.eval(st, &self.probe, &mut self.fw[j * n..(j + 1) * n])?;
+                if !eval_caught(ode, st, &self.probe, &mut self.fw[j * n..(j + 1) * n])? {
+                    return Ok(Solved::Failed);
+                }
             }
             // res = (T^-1 otimes I)*F - 1/h*((Lambda+L) otimes I)*W (+ phi*k_1).
             kron_vec(&tr.t_inv, tsize, n, &self.fw, &mut self.res);
@@ -676,7 +692,9 @@ impl GbNls {
                 }
                 self.probe[i] = v;
             }
-            ode.eval(self.stage_time_0 + t.c[last] * step_size, &self.probe, &mut self.f)?;
+            if !eval_caught(ode, self.stage_time_0 + t.c[last] * step_size, &self.probe, &mut self.f)? {
+                return Ok(Solved::Failed);
+            }
             z[last * n..(last + 1) * n].copy_from_slice(&self.probe);
             k[last * n..(last + 1) * n].copy_from_slice(&self.f);
         }
@@ -712,7 +730,7 @@ impl GbNls {
                 }
             }
             None => {
-                ode.eval(time, y_old, &mut self.f)?;
+                eval_caught(ode, time, y_old, &mut self.f)?;
                 for i in 0..n {
                     err[i] += self.f[i];
                 }

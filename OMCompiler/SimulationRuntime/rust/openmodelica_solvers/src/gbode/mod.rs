@@ -527,7 +527,7 @@ impl Gbode {
         self.time = time;
         self.y_old.copy_from_slice(&y[..n]);
         let mut f0 = vec![0.0; n];
-        ode.eval(self.time, &self.y_old, &mut f0)?;
+        crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
         if self.initial_step_size < 0.0 {
             self.f.copy_from_slice(&f0);
             let (d0, d1) = ctrl::init_step_norms(&self.y_old, &f0, self.tol);
@@ -542,7 +542,7 @@ impl Gbode {
                 y1[i] = self.y_old[i] + f0[i] * h0;
             }
             let mut f1 = vec![0.0; n];
-            ode.eval(self.time + h0, &y1, &mut f1)?;
+            crate::eval_caught(ode, self.time + h0, &y1, &mut f1)?;
             let mut d2 = 0.0;
             for i in 0..n {
                 let sc = self.tol + abs(self.y_old[i]) * self.tol;
@@ -556,7 +556,7 @@ impl Gbode {
             self.opt_step_size = self.step_size;
             self.last_step_size = 0.0;
             // Leave the model at the base point again, as C restores it.
-            ode.eval(self.time, &self.y_old, &mut f0)?;
+            crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
         } else {
             self.step_size = self.initial_step_size;
             self.last_step_size = 0.0;
@@ -586,7 +586,7 @@ impl Gbode {
         self.time_right = self.time;
         self.y_right.copy_from_slice(&self.y_old);
         let mut f0 = vec![0.0; n];
-        ode.eval(self.time, &self.y_old, &mut f0)?;
+        crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
         self.k_right.copy_from_slice(&f0);
         for i in 0..self.ring_buffer_size {
             self.tv[i] = self.time_right;

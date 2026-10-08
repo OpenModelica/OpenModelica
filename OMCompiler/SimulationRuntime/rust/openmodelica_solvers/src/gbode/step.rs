@@ -34,7 +34,7 @@ impl Gbode {
                 if self.tableau.k_left && stage == 0 && !self.did_fast_step {
                     k.copy_from_slice(&self.k_left);
                 } else {
-                    ode.eval(stage_time, &self.res_const, k)?;
+                    crate::eval_caught(ode, stage_time, &self.res_const, k)?;
                 }
                 continue;
             }
@@ -381,7 +381,7 @@ impl Gbode {
             Some(f) => f,
             None => {
                 let mut f = vec![0.0; n];
-                ode.eval(time + step_size, &guess, &mut f)?;
+                crate::eval_caught(ode, time + step_size, &guess, &mut f)?;
                 f
             }
         };
@@ -428,7 +428,7 @@ impl Gbode {
                     self.tv[0] = self.time;
                     let mut f = vec![0.0; n];
                     let y = self.y.clone();
-                    ode.eval(t, &y, &mut f)?;
+                    crate::eval_caught(ode, t, &y, &mut f)?;
                     self.yv[..n].copy_from_slice(&self.y);
                     self.kv[..n].copy_from_slice(&f);
                 }
@@ -463,7 +463,7 @@ impl Gbode {
         let n = self.n_states;
         let mut f = vec![0.0; n];
         let y = self.y.clone();
-        ode.eval(t, &y, &mut f)?;
+        crate::eval_caught(ode, t, &y, &mut f)?;
         self.tv[1] = self.tv[0];
         let (front, rest) = self.yv.split_at_mut(n);
         rest[..n].copy_from_slice(front);
@@ -700,7 +700,7 @@ impl Gbode {
                 self.time_right = self.time + self.step_size;
                 self.y_right.copy_from_slice(&self.y);
                 if !self.tableau.k_right {
-                    ode.eval(self.time_right, &self.y_right, &mut self.k_right)?;
+                    crate::eval_caught(ode, self.time_right, &self.y_right, &mut self.k_right)?;
                 } else {
                     let s = self.n_stages() - 1;
                     self.k_right.copy_from_slice(&self.k[s * n..(s + 1) * n]);
@@ -762,7 +762,7 @@ impl Gbode {
                         self.err.copy_from_slice(&gerr);
                         let mut f = vec![0.0; n];
                         let yr = self.y_right.clone();
-                        ode.eval(self.time_right, &yr, &mut f)?;
+                        crate::eval_caught(ode, self.time_right, &yr, &mut f)?;
                         self.k_right.copy_from_slice(&f);
                     }
                 }
@@ -832,7 +832,7 @@ impl Gbode {
             if self.no_restart {
                 self.time_right = self.time;
                 self.y_right.copy_from_slice(&self.y_old);
-                ode.eval(self.time, &self.y_right, &mut self.k_right)?;
+                crate::eval_caught(ode, self.time, &self.y_right, &mut self.k_right)?;
             }
             return Ok(GbStep::Root(event_time));
         }

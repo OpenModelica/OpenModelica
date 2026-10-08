@@ -8002,6 +8002,22 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         let _ = write_f64s(self.e, self.sim_data + self.zc_off, zc);
     }
 
+    /// A nested region in the stage already open, so the model reports the error
+    /// as it would have, but the enclosing step never sees it.
+    fn catch_begin(&mut self) -> openmodelica_solvers::ModelCatch {
+        let addr = self.e.error_stage_addr();
+        let stage = if addr == 0 { ERROR_SIMULATION } else { read_i32(self.e, addr).unwrap_or(ERROR_SIMULATION) };
+        let _ = write_i32(self.e, self.sim_data + self.nls_fail_off, 0);
+        let save = set_error_stage(self.e, addr, stage);
+        openmodelica_solvers::ModelCatch { stage: save.stage, hit: save.hit }
+    }
+
+    fn catch_end(&mut self, c: openmodelica_solvers::ModelCatch) -> bool {
+        let addr = self.e.error_stage_addr();
+        let hit = took_error_stage(self.e, addr, StageSave { stage: c.stage, hit: c.hit });
+        hit || read_i32(self.e, self.sim_data + self.nls_fail_off).is_ok_and(|v| v != 0)
+    }
+
     fn has_jacobian_vector(&self) -> bool {
         self.jac_a.is_some_and(|j| j.sym.is_some())
     }
