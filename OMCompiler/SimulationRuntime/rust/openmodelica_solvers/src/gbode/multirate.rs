@@ -220,7 +220,7 @@ impl GbfNls {
         let nf = self.n_fast;
         let n = y_full.len();
         if self.sym_jac && ode.has_jacobian_vector() {
-            crate::eval_caught(ode, time, y_full, &mut self.fbase)?;
+            crate::eval_caught_fast(ode, time, y_full, &mut self.fbase)?;
             let mut seed = vec![0.0; n];
             let mut out = vec![0.0; n];
             for group in colors {
@@ -244,7 +244,7 @@ impl GbfNls {
         ode.set_context_jacobian();
         let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
         let run = (|| -> Result<()> {
-            crate::eval_caught(ode, time, y_full, &mut self.fbase)?;
+            crate::eval_caught_fast(ode, time, y_full, &mut self.fbase)?;
             let mut probe = y_full.to_vec();
             let mut fp = vec![0.0; n];
             let mut inv_del = vec![0.0; nf];
@@ -265,7 +265,7 @@ impl GbfNls {
                     inv_del[cf] = 1.0 / del;
                     probe[c] = y_full[c] + del;
                 }
-                crate::eval_caught(ode, time, &probe, &mut fp)?;
+                crate::eval_caught_fast(ode, time, &probe, &mut fp)?;
                 for &cf in group {
                     let c = fast_idx[cf];
                     for &rf in &self.rows[cf] {
@@ -308,7 +308,7 @@ impl MrStage<'_> {
         for (i, &fi) in self.fast_idx.iter().enumerate() {
             self.base_full[fi] = x[i];
         }
-        crate::eval_caught(ode, self.stage_time, self.base_full, f_full)?;
+        crate::eval_caught_fast(ode, self.stage_time, self.base_full, f_full)?;
         for (i, &fi) in self.fast_idx.iter().enumerate() {
             res[i] = self.res_const[fi] - self.c_scale * x[i] + self.fac * f_full[fi];
         }
@@ -686,6 +686,7 @@ impl GbodeF {
         tol: f64,
         jac_colors: usize,
         sym_jac: bool,
+        eval_dags: &mut dyn FnMut(bool) -> Option<bool>,
     ) -> core::result::Result<Self, String> {
         let conf = gb_conf.fast_conf(|m| {
             let (t, _) = super::tableau::init(m, super::tableau::ErrMethod::Default, 1);
@@ -694,7 +695,7 @@ impl GbodeF {
         let (mut t, _size) = super::tableau::init(conf.method, conf.err_method, n_states);
         let is_explicit = t.gm_type == GmType::Explicit;
         if t.gm_type == GmType::Implicit && conf.nls_method != NlsMethod::Internal {
-            return Err(String::from(
+            return Err(super::setup_throw(
                 "Unsupported configuration: fully implicit Runge-Kutta multirate integration is \
                  only available with -gbnls=internal.",
             ));
@@ -708,6 +709,14 @@ impl GbodeF {
             "Step control factor is set to {}",
             omclog::g(t.fac, 0, 6),
         );
+        let jac_dag = eval_dags(!is_explicit);
+        if !is_explicit && jac_dag == Some(false) {
+            return Err(super::setup_throw(
+                "Cannot create multirate data structures without a valid Jacobian DAG. Use a symbolic \
+                 Jacobian (--generateDynamicJacobian=symbolic), an explicit integrator, or switch to \
+                 single-rate integration.",
+            ));
+        }
         let inls = (!is_explicit && internal).then(|| {
             super::nls::GbNls::new(&t, n_states, tol, jac_colors, sym_jac, None).with_fast(t.n_stages)
         });
@@ -971,6 +980,7 @@ impl Gbode {
             let gbf = self.gbf.as_mut().expect("multirate without gbf");
             gbf.extrapolation_valid = false;
             gbf.fast_state_update_count += 1;
+            ode.select_fast_states(&self.fast_states_idx[..n_fast]);
             if !gbf.is_explicit {
                 gbf.cache.invalidate();
             }
@@ -1107,7 +1117,7 @@ impl Gbode {
                     let s = gbf.tableau.n_stages - 1;
                     gbf.k_right.copy_from_slice(&gbf.k[s * n..(s + 1) * n]);
                 } else {
-                    crate::eval_caught(ode, gbf.time_right, &gbf.y_right, &mut gbf.k_right)?;
+                    crate::eval_caught_fast(ode, gbf.time_right, &gbf.y_right, &mut gbf.k_right)?;
                 }
             }
 
@@ -1278,7 +1288,7 @@ impl Gbode {
                     (gbf.time, gbf.y.clone())
                 };
                 let mut f = vec![0.0; n];
-                crate::eval_caught(ode, t, &y, &mut f)?;
+                crate::eval_caught_fast(ode, t, &y, &mut f)?;
                 let gbf = self.gbf.as_mut().expect("multirate without gbf");
                 gbf.tv[1] = gbf.tv[0];
                 gbf.yv.copy_within(0..n, n);
@@ -1298,7 +1308,7 @@ impl Gbode {
                         (gbf.time + gbf.step_size, gbf.y.clone())
                     };
                     let mut f = vec![0.0; n];
-                    crate::eval_caught(ode, t, &y, &mut f)?;
+                    crate::eval_caught_fast(ode, t, &y, &mut f)?;
                     let gbf = self.gbf.as_mut().expect("multirate without gbf");
                     gbf.tv[0] = gbf.time;
                     gbf.yv[..n].copy_from_slice(&y);
@@ -1420,7 +1430,7 @@ impl Gbode {
                     f_full
                 } else {
                     let mut f = vec![0.0; n];
-                    crate::eval_caught(ode, stage_time, &res_const, &mut f)?;
+                    crate::eval_caught_fast(ode, stage_time, &res_const, &mut f)?;
                     f
                 };
                 let gbf = self.gbf.as_mut().expect("multirate without gbf");

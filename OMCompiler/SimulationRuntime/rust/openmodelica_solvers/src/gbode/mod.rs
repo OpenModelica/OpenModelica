@@ -51,6 +51,16 @@ const GB_MINIMAL_STEP_SIZE: f64 = 1e-20;
 /// C's `GB_TOLERANCE_SCALING_SAFETY` (`gbode_err.h`).
 const GB_TOLERANCE_SCALING_SAFETY: f64 = 0.2;
 
+/// What [`Gbode::new`] fails with after reporting the error as C's
+/// `throwStreamPrint` does.
+pub const SETUP_THROWN: &str = "gbode setup failed";
+
+/// C's `throwStreamPrint` during `gbode_allocateData`.
+fn setup_throw(msg: &str) -> String {
+    omclog::debug(omclog::ASSERT, false, msg);
+    String::from(SETUP_THROWN)
+}
+
 /// How far one [`Gbode::step`] got.
 pub enum GbStep {
     /// `target` reached; the states were interpolated onto it.
@@ -178,6 +188,9 @@ impl Gbode {
     /// arrays. `jac_colors` is the ODE Jacobian's color count (0 without a pattern);
     /// `sym_jac_available` whether the model answers [`Ode::jacobian_vector`],
     /// `adj_jac_available` whether it carries an adjoint for [`Ode::jacobian_matrix`].
+    /// `eval_dags` is the birate mode's `getDAG_ODE` (and with `true` also
+    /// `getDAG_JacA`): whether the forward Jacobian's DAG exists, `None` for a model
+    /// that cannot evaluate a selection of its equations.
     pub fn new(
         n_states: usize,
         tolerance: f64,
@@ -185,6 +198,7 @@ impl Gbode {
         jac_colors: usize,
         sym_jac_available: bool,
         adj_jac_available: bool,
+        eval_dags: &mut dyn FnMut(bool) -> Option<bool>,
     ) -> core::result::Result<Self, String> {
         let conf = GbConf::from_flags()?;
         let tol = if tolerance > 0.0 { tolerance } else { 1e-6 };
@@ -367,7 +381,7 @@ impl Gbode {
         conf.interpolation = interpolation;
         let percentage = conf.ratio;
         let gbf = if multi_rate {
-            let gbf = multirate::GbodeF::new(&conf, n_states, tol, jac_colors, sym_jac)?;
+            let gbf = multirate::GbodeF::new(&conf, n_states, tol, jac_colors, sym_jac, eval_dags)?;
             // C: the outer step's last stage is not reused with a fast integration
             // in between.
             t.k_right = false;

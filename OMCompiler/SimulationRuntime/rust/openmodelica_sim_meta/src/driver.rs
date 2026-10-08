@@ -631,6 +631,16 @@ pub trait SimEngine {
     fn error_stage_addr(&mut self) -> u32 {
         0
     }
+    /// C's `getDAG_ODE` + `allocEvalSelection`, with `jac` also `getDAG_JacA`:
+    /// whether the forward Jacobian has its DAG. `None`: the model always
+    /// evaluates all of its equations.
+    fn build_eval_dags(&mut self, _jac: bool) -> Option<bool> {
+        None
+    }
+    /// C's `updateEvalSelection` for these fast states.
+    fn select_fast_states(&mut self, _fast: &[usize]) {}
+    /// Point `simulationInfo->evalSelection` at the selection, or clear it.
+    fn use_eval_selection(&mut self, _on: bool) {}
     /// Address of the runtime's `noThrowDivZero` word, or 0 when the backend has no
     /// such export.
     fn no_throw_div_zero_addr(&mut self) -> u32 {
@@ -4923,6 +4933,7 @@ fn resolve_sim_solver_method<'a>(method: &'a str, layout: &SimLayout) -> Result<
 /// C allocates the solver before initializing the model, and gbode logs its setup
 /// there, so it is built outside the driver.
 fn alloc_gbode(
+    e: &mut dyn SimEngine,
     model: &SimModel,
     method: &str,
 ) -> Result<Option<alloc::boxed::Box<crate::gbode::Gbode>>> {
@@ -4939,8 +4950,19 @@ fn alloc_gbode(
     let sym = jac_a.is_some_and(|j| j.sym.is_some());
     let adj = jac_a.and_then(|j| j.sym.as_ref()).is_some_and(|s| s.adj.is_some());
     let tol = if model.tolerance > 0.0 { model.tolerance } else { 1e-6 };
-    let gb = crate::gbode::Gbode::new(layout.n_states as usize, tol, layout.n_zc as usize, colors, sym, adj)
-        .map_err(leak_error)?;
+    let gb = crate::gbode::Gbode::new(
+        layout.n_states as usize,
+        tol,
+        layout.n_zc as usize,
+        colors,
+        sym,
+        adj,
+        &mut |jac| e.build_eval_dags(jac),
+    )
+    .map_err(|err| match err == crate::gbode::SETUP_THROWN {
+        true => INIT_FAILED_ERR,
+        false => leak_error(err),
+    })?;
     Ok(Some(alloc::boxed::Box::new(gb)))
 }
 
@@ -5001,7 +5023,7 @@ fn make_driver_resolved(
     // Both `drive` and the in-wasm `rt_sim_start` build their driver here.
     set_time_only_rows(model);
     solver_setup(e, model, sim_data)?;
-    let gbode = alloc_gbode(model, method)?;
+    let gbode = alloc_gbode(e, model, method)?;
 
     // C configures the solver before `initializeModel`, so the method it settles on
     // is announced here; the drivers resolve the same thing again, silently.
@@ -8002,6 +8024,17 @@ impl openmodelica_solvers::Ode for EngineOde<'_> {
         let _ = write_f64s(self.e, self.sim_data + self.zc_off, zc);
     }
 
+    fn select_fast_states(&mut self, fast: &[usize]) {
+        self.e.select_fast_states(fast);
+    }
+
+    fn eval_fast(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> Result<()> {
+        self.e.use_eval_selection(true);
+        let run = openmodelica_solvers::Ode::eval(self, t, y, f);
+        self.e.use_eval_selection(false);
+        run
+    }
+
     /// A nested region in the stage already open, so the model reports the error
     /// as it would have, but the enclosing step never sees it.
     fn catch_begin(&mut self) -> openmodelica_solvers::ModelCatch {
@@ -9542,7 +9575,8 @@ impl CsDriver {
                 s
             }
         };
-        let mut core = SolverCore::new(&*e, model, sim_data, t, method, alloc_gbode(model, method)?)?;
+        let gbode = alloc_gbode(e, model, method)?;
+        let mut core = SolverCore::new(&*e, model, sim_data, t, method, gbode)?;
         core.fmi_cs_solver_setup(defer);
         if core.n_states > 0 {
             core.read_states(e)?;
