@@ -1063,7 +1063,10 @@ algorithm
           cref := getRecordElement(var.name, expl, path);
           // only replace if the expression is const and the name was found
           // if replacement already happened the name might not be found -> no error!
-          if Expression.isConst(bind) and not ComponentReference.isWild(cref) then
+          // the type may carry the modifier of a whole component array
+          if Expression.isConst(bind) and not ComponentReference.isWild(cref)
+             and not hasReplacement(repl, cref)
+             and Types.equivtypes(Expression.typeof(bind), var.ty) then
             repl := addReplacement(repl, cref, bind, inFuncTypeExpExpToBooleanOption);
           end if;
         end if;
