@@ -1,7 +1,6 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-	RecordConstantInComponentArray.mos \
 ATotal.mos \
 constVar1.mos \
 constVar2.mos \
@@ -9,6 +8,7 @@ constVar4.mos \
 InOutRecord.mos \
 InputRecord.mos \
 RecordCoercion1.mos \
+RecordConstantInComponentArray.mos \
 RecordConstructor1.mos \
 RecordNested1.mos \
 RecordStructs.mos \

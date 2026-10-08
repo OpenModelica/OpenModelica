@@ -1063,10 +1063,7 @@ algorithm
           cref := getRecordElement(var.name, expl, path);
           // only replace if the expression is const and the name was found
           // if replacement already happened the name might not be found -> no error!
-          // The element's own replacement takes precedence, and a binding of
-          // another type is not the element's: for a record in an array of
-          // components the type may carry the modifier of the whole array,
-          // e.g. {1, 2} for r.c of cell[2](r(c = {1, 2})).
+          // the type may carry the modifier of a whole component array
           if Expression.isConst(bind) and not ComponentReference.isWild(cref)
              and not hasReplacement(repl, cref)
              and Types.equivtypes(Expression.typeof(bind), var.ty) then
