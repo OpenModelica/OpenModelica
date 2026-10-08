@@ -161,10 +161,6 @@ public:
   GDBLoggerWidget* getGDBLoggerWidget() {return mpGDBLoggerWidget;}
   DocumentationWidget* getDocumentationWidget() {return mpDocumentationWidget;}
   QDockWidget* getDocumentationDockWidget() {return mpDocumentationDockWidget;}
-#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE) // see ClassDiagramWidget.h
-  ClassDiagramWidget* getClassDiagramWidget() {return mpClassDiagramWidget;}
-  QDockWidget* getClassDiagramDockWidget() {return mpClassDiagramDockWidget;}
-#endif
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
@@ -290,6 +286,7 @@ public:
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists);
+  ClassDiagramWidget* showClassDiagramWidget(const QString &className);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
@@ -342,10 +339,6 @@ private:
   QDockWidget *mpGDBLoggerDockWidget;
   DocumentationWidget *mpDocumentationWidget;
   QDockWidget *mpDocumentationDockWidget;
-#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE) // see ClassDiagramWidget.h
-  ClassDiagramWidget *mpClassDiagramWidget;
-  QDockWidget *mpClassDiagramDockWidget;
-#endif
   PlotWindowContainer *mpPlotWindowContainer;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
@@ -531,6 +524,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  QHash<QString, ClassDiagramWidget*> mClassDiagramWidgetHash;
   QMdiSubWindow *mpLastModelingSubWindow = nullptr;
   //! Mounts with a synchronisation already running; a second one would race it.
   QSet<QString> mSyncingMounts;

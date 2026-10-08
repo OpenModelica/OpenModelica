@@ -55,7 +55,6 @@
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
 #include "Search/FindUsageWidget.h"
-#include "Modeling/ClassDiagramWidget.h"
 #include "Cloud/CloudMount.h"
 #if defined(__EMSCRIPTEN__)
 #include "OMEditGUI/wasm/WasmLocalFiles.h"
@@ -3127,7 +3126,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpFindUsageAction);
-#ifdef OM_OMEDIT_CLASS_DIAGRAM
+#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
+          // The draw.io viewer needs QtWebEngine, see ClassDiagramWidget.
           menu.addAction(mpClassDiagramAction);
 #endif
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
@@ -3576,12 +3576,10 @@ void LibraryTreeView::findUsageOfClass()
  */
 void LibraryTreeView::showClassDiagram()
 {
-#ifdef OM_OMEDIT_CLASS_DIAGRAM
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    MainWindow::instance()->getClassDiagramWidget()->showClassDiagram(pLibraryTreeItem->getNameStructure());
+    MainWindow::instance()->showClassDiagramWidget(pLibraryTreeItem->getNameStructure());
   }
-#endif
 }
 
 /*!
