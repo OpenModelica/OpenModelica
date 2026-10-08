@@ -1091,6 +1091,7 @@ uniontype Function
     input Function fn;
     input InstContext.Type context;
     input SourceInfo info;
+    input ComponentRef callPrefix = ComponentRef.EMPTY() "See collectArgs.";
     output list<TypedArg> args = posArgs;
     output Boolean matching;
   protected
@@ -1138,7 +1139,7 @@ uniontype Function
       end if;
     end for;
 
-    (args, matching) := collectArgs(slots_arr, context, info);
+    (args, matching) := collectArgs(slots_arr, context, info, callPrefix);
   end fillArgs;
 
   function fillNamedArg
@@ -1205,12 +1206,20 @@ uniontype Function
     input array<Slot> slots;
     input InstContext.Type context;
     input SourceInfo info;
+    input ComponentRef callPrefix = ComponentRef.EMPTY()
+      "The components the function was looked up via, e.g. cell.obj for
+       cell.obj.f(x), without the class part of the scope. Default arguments
+       that refer to these components, e.g. k in f = g(final k = k), do so via
+       the scope of the function. Give those parts the origins of the prefix
+       instead, so that the subscripts of enclosing arrays of components are
+       applied to them when flattening, like to any cref written in the model.";
     output list<TypedArg> args = {};
     output Boolean matching = true;
   protected
     Option<Expression> default;
     Option<TypedArg> arg;
     TypedArg a;
+    Boolean rebase = ComponentRef.isComponent(callPrefix);
   algorithm
     for s in slots loop
       SLOT(default = default, arg = arg) := s;
@@ -1220,7 +1229,15 @@ uniontype Function
         case SOME(a) then a :: args;
 
         // Otherwise, try to fill the slot with its default argument.
-        case _ then fillDefaultSlot(s, slots, context, info) :: args;
+        case _
+          algorithm
+            a := fillDefaultSlot(s, slots, context, info);
+
+            if rebase then
+              a := rebaseDefaultArg(a, callPrefix, info);
+            end if;
+          then
+            a :: args;
 
         else
           algorithm
@@ -1232,6 +1249,51 @@ uniontype Function
 
     args := listReverse(args);
   end collectArgs;
+
+  function rebaseDefaultArg
+    "See collectArgs."
+    input output TypedArg arg;
+    input ComponentRef callPrefix;
+    input SourceInfo info;
+  algorithm
+    arg.value := Expression.map(arg.value, function rebaseScopeExp(prefix = callPrefix));
+
+    // A part left in the scope that isn't one of the prefix's components
+    // wouldn't get subscripts when flattened and would silently refer to the
+    // wrong element of an array of components, so make sure there is none.
+    if Expression.contains(arg.value, function hasUnmatchedScopePartExp(prefix = callPrefix)) then
+      Error.addInternalError(getInstanceName() + ": default argument " + Expression.toString(arg.value) +
+        " of " + ComponentRef.toString(callPrefix) + " refers to a component outside the scope of the function", info);
+      fail();
+    end if;
+  end rebaseDefaultArg;
+
+  function rebaseScopeExp
+    input Expression exp;
+    input ComponentRef prefix;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := ComponentRef.rebaseScope(exp.cref, prefix);
+        then
+          exp;
+
+      else exp;
+    end match;
+  end rebaseScopeExp;
+
+  function hasUnmatchedScopePartExp
+    input Expression exp;
+    input ComponentRef prefix;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CREF() then ComponentRef.hasUnmatchedScopePart(exp.cref, prefix);
+      else false;
+    end match;
+  end hasUnmatchedScopePartExp;
 
   function fillDefaultSlot
     input Slot slot;
@@ -1549,12 +1611,13 @@ uniontype Function
     input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
+    input ComponentRef callPrefix = ComponentRef.EMPTY() "See collectArgs.";
     output list<TypedArg> out_args;
     output FunctionMatchKind matchKind = NO_MATCH;
   protected
     Boolean slot_matched;
   algorithm
-    (out_args, slot_matched) := fillArgs(args, named_args, func, context, info);
+    (out_args, slot_matched) := fillArgs(args, named_args, func, context, info, callPrefix);
 
     if slot_matched then
       (out_args, matchKind) := matchArgs(func, out_args, info, vectorize);
@@ -1568,6 +1631,7 @@ uniontype Function
     input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
+    input ComponentRef callPrefix = ComponentRef.EMPTY() "See collectArgs.";
     output list<MatchedFunction> matchedFunctions;
   protected
     list<TypedArg> m_args;
@@ -1575,7 +1639,7 @@ uniontype Function
   algorithm
     matchedFunctions := {};
     for func in funcs loop
-      (m_args, matchKind) := matchFunction(func, args, named_args, context, info, vectorize);
+      (m_args, matchKind) := matchFunction(func, args, named_args, context, info, vectorize, callPrefix);
 
       if FunctionMatchKind.isValid(matchKind) then
         matchedFunctions := MatchedFunction.MATCHED_FUNC(func,m_args,matchKind)::matchedFunctions;

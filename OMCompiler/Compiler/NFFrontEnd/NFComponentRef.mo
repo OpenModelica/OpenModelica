@@ -310,23 +310,6 @@ public
     end match;
   end stripClassScope;
 
-  function scopeComponentNames
-    "Returns the names of the components in the scope part of the cref,
-     outermost first, e.g. {cell, obj} for cell.obj.k where k was written in
-     the model. The scope part consists of the enclosing instances of the
-     scope the cref was written in, see InstNode.scopeList."
-    input ComponentRef cref;
-    input list<String> accum = {};
-    output list<String> names;
-  algorithm
-    names := match cref
-      case CREF(origin = Origin.SCOPE) guard InstNode.isComponent(node(cref))
-        then scopeComponentNames(cref.restCref, InstNode.name(node(cref)) :: accum);
-      case CREF() then scopeComponentNames(cref.restCref, accum);
-      else accum;
-    end match;
-  end scopeComponentNames;
-
   function isNameNode
     input ComponentRef cref;
     output Boolean res;
@@ -1451,6 +1434,23 @@ public
       else cref;
     end match;
   end rebaseScope;
+
+  function hasUnmatchedScopePart
+    "Returns true if the cref refers to a component via the scope that isn't
+     one of the components in the given prefix, see rebaseScope."
+    input ComponentRef cref;
+    input ComponentRef prefix;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF(origin = Origin.SCOPE)
+        guard InstNode.isComponent(node(cref)) and isNone(findEqualAncestor(prefix, cref))
+        then true;
+
+      case CREF() then hasUnmatchedScopePart(cref.restCref, prefix);
+      else false;
+    end match;
+  end hasUnmatchedScopePart;
 
   function findEqualAncestor
     "Returns the prefix or the first of its ancestors that refers to the same
