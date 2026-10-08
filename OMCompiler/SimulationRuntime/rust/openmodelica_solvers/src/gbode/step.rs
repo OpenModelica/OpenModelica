@@ -562,7 +562,6 @@ impl Gbode {
         if const_step {
             self.step_size = self.desired_step_size;
         }
-        let mut retries = 0u32;
 
         // C's continuation block: an output point interrupted the inner (fast)
         // integration mid-interval, so finish it before stepping on.
@@ -637,13 +636,14 @@ impl Gbode {
                     continue;
                 }
 
+                // A failed estimator fails the step function in C.
                 let est_order = self.estimate_error(ode)?;
                 if est_order.is_none() {
                     self.stats.convergence_test_failures += 1;
                     if const_step {
                         return Err(const_step_failed(self.time, self.step_size));
                     }
-                    self.step_size *= 0.5;
+                    self.step_size *= if self.event_happened { 0.1 } else { 0.5 };
                     if self.step_size < GB_MINIMAL_STEP_SIZE {
                         return Err(min_step_failed("error still to large"));
                     }
@@ -712,35 +712,13 @@ impl Gbode {
                     self.k_right.copy_from_slice(&self.k[s * n..(s + 1) * n]);
                 }
 
-                if int_with_err_ctrl {
+                if int_with_err_ctrl || omclog::active(omclog::SOLVER) {
                     let idx = (self.multi_rate && self.n_fast > 0)
                         .then(|| self.slow_states_idx[..self.n_slow].to_vec());
                     self.err_int = self.error_interpolation(tol, idx.as_deref());
-                    if self.err_int > 1.0 {
-                        retries += 1;
-                        self.stats.err_test_failures += 1;
-                        self.step_size *= 0.5;
-                        if self.step_size < GB_MINIMAL_STEP_SIZE {
-                            return Err(min_step_failed("interpolation error still too large"));
-                        }
-                        if omclog::active(omclog::SOLVER) {
-                            omclog::info!(
-                                omclog::SOLVER,
-                                false,
-                                "Reject step from {} to {}, error {}, interpolation error {}, new stepsize {}",
-                                omclog::g(self.time, 0, 16),
-                                omclog::g(self.time + self.step_size, 0, 16),
-                                omclog::g(err, 0, 16),
-                                omclog::g(self.err_int, 0, 16),
-                                omclog::g(self.step_size, 0, 16),
-                            );
-                        }
-                        continue;
-                    }
-                    retries = 0;
-                } else {
-                    let _ = retries;
                 }
+                // `err_int` only reaches the log: C's rejection test after it checks
+                // `err`, which passed above.
 
                 // Accepted.
                 self.extrapolation_base_time = self.time;
