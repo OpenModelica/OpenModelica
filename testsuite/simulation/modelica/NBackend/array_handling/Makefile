@@ -70,6 +70,7 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
+resizableConnectDeleted.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
