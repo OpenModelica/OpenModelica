@@ -37,6 +37,9 @@ impl Gbode {
             ErrMethod::Embedded => {
                 let Some(bt) = self.tableau.bt.clone() else { return Ok(None) };
                 self.embedded_estimate(&bt);
+                for v in &mut self.errest {
+                    *v = abs(*v);
+                }
                 Ok(Some(est.order))
             }
             // `gbode_richardson` already left the signed error in `yt`; the main
@@ -66,8 +69,8 @@ impl Gbode {
         }
     }
 
-    /// C's `embeddedErrorEstimate_gb` + `absErrorEstimate_gb`:
-    /// `errest = |h * (K otimes I) * (b - bt)|`.
+    /// C's `embeddedErrorEstimate_gb`: `errest = h * (K otimes I) * (b - bt)`,
+    /// signed.
     fn embedded_estimate(&mut self, weights: &[f64]) {
         let n = self.n_states;
         let n_stages = self.tableau.n_stages;
@@ -77,7 +80,7 @@ impl Gbode {
                 acc += self.step_size * (self.tableau.b[stage] - weights[stage])
                     * self.k[stage * n + i];
             }
-            self.errest[i] = abs(acc);
+            self.errest[i] = acc;
         }
     }
 
