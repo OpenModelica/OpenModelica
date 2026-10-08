@@ -367,7 +367,7 @@ impl Gbode {
         conf.interpolation = interpolation;
         let percentage = conf.ratio;
         let gbf = if multi_rate {
-            let gbf = multirate::GbodeF::new(&conf, n_states, tol, sym_jac)?;
+            let gbf = multirate::GbodeF::new(&conf, n_states, tol, jac_colors, sym_jac)?;
             // C: the outer step's last stage is not reused with a fast integration
             // in between.
             t.k_right = false;
@@ -505,6 +505,9 @@ impl Gbode {
         }
         if let Some(gbf) = self.gbf.as_mut() {
             gbf.did_event_step = true;
+            if let Some(nls) = gbf.inls.as_mut() {
+                nls.invalidate();
+            }
             if let Some(nls) = gbf.nls.as_mut() {
                 nls.invalidate();
             }

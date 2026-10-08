@@ -6,8 +6,8 @@
 //! CSC goes to LINPACK's dense LU, or past a size threshold under the `sparse`
 //! feature to an `rsparse` LU, a complex system as its real `2n` embedding.
 //!
-//! The generic and multirate solvers still assemble dense matrices and use
-//! [`factor`], which scans them for structural nonzeros.
+//! The generic solvers' own Newton (without the runtime's) still assembles
+//! dense matrices and uses [`factor`], which scans them for structural nonzeros.
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -197,6 +197,56 @@ impl OdePattern {
     pub(super) fn nnz(&self) -> usize {
         self.ai.len()
     }
+
+    /// C's `reduceSparsePattern` onto the principal submatrix of `idx`, then
+    /// `colorSparsePattern` over it.
+    pub(super) fn reduce(&self, idx: &[usize], n_full: usize) -> Self {
+        let mut pos = vec![u32::MAX; n_full];
+        for (i, &k) in idx.iter().enumerate() {
+            pos[k] = i as u32;
+        }
+        let mut ap = Vec::with_capacity(idx.len() + 1);
+        let mut ai = Vec::new();
+        ap.push(0);
+        for &c in idx {
+            for nz in self.ap[c] as usize..self.ap[c + 1] as usize {
+                let r = pos[self.ai[nz] as usize];
+                if r != u32::MAX {
+                    ai.push(r);
+                }
+            }
+            ap.push(ai.len() as u32);
+        }
+        let colors = color_csc(&ap, &ai, idx.len());
+        OdePattern { ap, ai, colors }
+    }
+}
+
+/// C's `colorSparsePattern` for one block: greedily, columns whose rows are
+/// disjoint share a colour.
+fn color_csc(ap: &[u32], ai: &[u32], n: usize) -> Vec<Vec<u32>> {
+    let mut colored = vec![false; n];
+    let mut row_mark = vec![0u32; n];
+    let mut groups: Vec<Vec<u32>> = Vec::new();
+    let mut remaining = n;
+    while remaining > 0 {
+        let color = groups.len() as u32 + 1;
+        let mut group = Vec::new();
+        for col in 0..n {
+            let rows = &ai[ap[col] as usize..ap[col + 1] as usize];
+            if colored[col] || rows.iter().any(|&r| row_mark[r as usize] == color) {
+                continue;
+            }
+            colored[col] = true;
+            remaining -= 1;
+            for &r in rows {
+                row_mark[r as usize] = color;
+            }
+            group.push(col as u32);
+        }
+        groups.push(group);
+    }
+    groups
 }
 
 /// C's `sparsePatternWithDiagonal` and `gbodeMapSparsePattern`: `struct(I + J)`
