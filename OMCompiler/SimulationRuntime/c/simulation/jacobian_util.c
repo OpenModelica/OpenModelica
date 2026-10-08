@@ -540,10 +540,6 @@ static void sortUniqueSparsePattern(SPARSE_PATTERN* sp, unsigned int nCols)
   sp->nnz = out;
 }
 
-// Drop this next to computeColumnColoring() / computeRowColoring() in jacobian_util.c.
-// Needs computeColPackStarBicoloring() declared (e.g. in jacobian_colpack.h), same
-// as computeColPackColumnColoring() / computeColPackRowColoring() already are.
-
 /**
  * @brief Distance-two star bicoloring of a sparsity pattern for bidirectional
  *        (forward + adjoint) Jacobian evaluation.
@@ -1332,6 +1328,95 @@ JACOBIAN_METHOD getRequestedJacobianMethod(threadData_t* threadData)
 }
 
 /**
+ * @brief Pick the best available Jacobian method for the current generated data.
+ *
+ * The method ordering intentionally mirrors the previous explicit fallback chains
+ * in checkJacobianMethod() so the runtime behavior stays unchanged.
+ */
+static JACOBIAN_METHOD getFallbackJacobianMethod(threadData_t* threadData, JACOBIAN_METHOD jacobianMethod, modelica_boolean hasColumn,
+                                                modelica_boolean hasRow, modelica_boolean hasSparse, modelica_boolean hasSparseT)
+{
+  switch (jacobianMethod)
+  {
+  case JAC_UNKNOWN:
+    if (hasColumn && hasSparse) {
+      return COLOREDSYMJAC;
+    } else if (hasColumn) {
+      return SYMJAC;
+    } else if (hasRow && hasSparseT) {
+      return COLOREDSYMJACADJ;
+    } else if (hasSparse) {
+      return COLOREDNUMJAC;
+    }
+    return INTERNALNUMJAC;
+  case BICOLOREDSYMJAC:
+    if (hasColumn && hasRow && (hasSparse || hasSparseT)) {
+      return BICOLOREDSYMJAC;
+    }
+    if (hasColumn && hasSparse) {
+      return COLOREDSYMJAC;
+    } else if (hasRow && hasSparseT) {
+      return COLOREDSYMJACADJ;
+    } else if (hasColumn) {
+      return SYMJAC;
+    } else if (hasSparse) {
+      return COLOREDNUMJAC;
+    }
+    return INTERNALNUMJAC;
+  case COLOREDSYMJACADJ:
+    if (hasRow && hasSparseT) {
+      return COLOREDSYMJACADJ;
+    }
+    if (hasColumn && hasSparse) {
+      return COLOREDSYMJAC;
+    } else if (hasColumn) {
+      return SYMJAC;
+    } else if (hasSparse) {
+      return COLOREDNUMJAC;
+    }
+    return INTERNALNUMJAC;
+  case COLOREDSYMJAC:
+    if (hasColumn && hasSparse) {
+      return COLOREDSYMJAC;
+    }
+    if (hasRow && hasSparseT) {
+      return COLOREDSYMJACADJ;
+    } else if (hasColumn) {
+      return SYMJAC;
+    } else if (hasSparse) {
+      return COLOREDNUMJAC;
+    }
+    return INTERNALNUMJAC;
+  case COLOREDNUMJAC:
+    if (hasSparse) {
+      return COLOREDNUMJAC;
+    }
+    if (hasColumn) {
+      return SYMJAC;
+    } else if (hasRow && hasSparseT) {
+      return COLOREDSYMJACADJ;
+    }
+    return NUMJAC;
+  case SYMJAC:
+    if (hasColumn) {
+      return SYMJAC;
+    }
+    if (hasRow && hasSparseT) {
+      return COLOREDSYMJACADJ;
+    } else if (hasSparse) {
+      return COLOREDNUMJAC;
+    }
+    return INTERNALNUMJAC;
+  case NUMJAC:
+  case INTERNALNUMJAC:
+    return jacobianMethod;
+  default:
+    throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
+    return jacobianMethod;
+  }
+}
+
+/**
  * @brief Check that the requested Jacobian method can be used and log it.
  *
  * @param threadData              Used for error handling.
@@ -1351,95 +1436,8 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian
    * checks below must use hasSparseT, not hasSparse. */
   const modelica_boolean hasSparse = jacobian->sparsePattern != NULL;
   const modelica_boolean hasSparseT = jacobian->sparsePatternT != NULL;
-  const modelica_boolean hasAnySparse = hasSparse || hasSparseT;
 
-  /* Choose the best method that is actually backed by generated data. */
-  if (jacobianMethod == JAC_UNKNOWN) {
-    if (hasColumn && hasSparse) {
-      jacobianMethod = COLOREDSYMJAC;
-    } else if (hasColumn) {
-      jacobianMethod = SYMJAC;
-    } else if (hasRow && hasSparseT) {
-      jacobianMethod = COLOREDSYMJACADJ;
-    } else if (hasSparse) {
-      jacobianMethod = COLOREDNUMJAC;
-    } else {
-      jacobianMethod = INTERNALNUMJAC;
-    }
-  } else {
-    switch (jacobianMethod)
-    {
-    case BICOLOREDSYMJAC:
-      if (!(hasColumn && hasRow && hasAnySparse)) {
-        if (hasColumn && hasSparse) {
-          jacobianMethod = COLOREDSYMJAC;
-        } else if (hasRow && hasSparseT) {
-          jacobianMethod = COLOREDSYMJACADJ;
-        } else if (hasColumn) {
-          jacobianMethod = SYMJAC;
-        } else if (hasSparse) {
-          jacobianMethod = COLOREDNUMJAC;
-        } else {
-          jacobianMethod = INTERNALNUMJAC;
-        }
-      }
-      break;
-    case COLOREDSYMJACADJ:
-      if (!(hasRow && hasSparseT)) {
-        if (hasColumn && hasSparse) {
-          jacobianMethod = COLOREDSYMJAC;
-        } else if (hasColumn) {
-          jacobianMethod = SYMJAC;
-        } else if (hasSparse) {
-          jacobianMethod = COLOREDNUMJAC;
-        } else {
-          jacobianMethod = INTERNALNUMJAC;
-        }
-      }
-      break;
-    case COLOREDSYMJAC:
-      if (!(hasColumn && hasSparse)) {
-        if (hasRow && hasSparseT) {
-          jacobianMethod = COLOREDSYMJACADJ;
-        } else if (hasColumn) {
-          jacobianMethod = SYMJAC;
-        } else if (hasSparse) {
-          jacobianMethod = COLOREDNUMJAC;
-        } else {
-          jacobianMethod = INTERNALNUMJAC;
-        }
-      }
-      break;
-    case COLOREDNUMJAC:
-      if (!hasSparse) {
-        if (hasColumn) {
-          jacobianMethod = SYMJAC;
-        } else if (hasRow && hasSparseT) {
-          jacobianMethod = COLOREDSYMJACADJ;
-        } else {
-          jacobianMethod = NUMJAC;
-        }
-      }
-      break;
-    case SYMJAC:
-      if (!hasColumn) {
-        if (hasRow && hasSparseT) {
-          jacobianMethod = COLOREDSYMJACADJ;
-        } else if (hasSparse) {
-          jacobianMethod = COLOREDNUMJAC;
-        } else {
-          jacobianMethod = INTERNALNUMJAC;
-        }
-      }
-      break;
-    case NUMJAC:
-    case INTERNALNUMJAC:
-      break;
-    default:
-      throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
-      break;
-    }
-  }
+  jacobianMethod = getFallbackJacobianMethod(threadData, jacobianMethod, hasColumn, hasRow, hasSparse, hasSparseT);
 
   if (requestedJacobianMethod != jacobianMethod && requestedJacobianMethod != JAC_UNKNOWN) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian method %s is not available for this generated Jacobian, switching to %s.",
@@ -1510,16 +1508,23 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   }
 
   if (wantAdjoint || wantBidirectional) {
-    //printf("Initializing adjoint Jacobian ADJ in wantAdjoint or wantBidirectional.\n");
     adjointStatus = data->callback->initialAnalyticJacobianADJ(data, threadData, adjointJacobian);
     computeRowColoring(adjointJacobian->sparsePatternT, (unsigned int) adjointJacobian->sizeRows, (unsigned int) adjointJacobian->sizeCols);
   }
 
   if (wantBidirectional) {
-    //printf("Initializing bidirectional Jacobian in wantBidirectional.\n");
-    if (forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalRow) {
+    const modelica_boolean bidirectionalJacobianAvailable =
+        forwardStatus == 0 && adjointStatus == 0 && forwardJacobian->evalColumn && adjointJacobian->evalRow;
+
+    if (!bidirectionalJacobianAvailable) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
+                                            "(compile with --generateDynamicJacobian=bidirectional). "
+                                            "Switching to the forward symbolic Jacobian.");
+      *jacobianMethod = COLOREDSYMJAC;
+      jacobian = forwardJacobian;
+    } else {
       transferAdjointJacobianToUnifiedStorage(forwardJacobian, adjointJacobian);
-      int ret = initBidirectionalRecovery(forwardJacobian, threadData);
+      const int ret = initBidirectionalRecovery(forwardJacobian, threadData);
       if (ret != 0) {
         errorStreamPrint(OMC_LOG_STDOUT, 0, "Failed to initialize bidirectional Jacobian. "
                                               "Switching to the forward symbolic Jacobian.");
@@ -1528,29 +1533,20 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
         *jacobianMethod = BICOLOREDSYMJAC;
       }
       jacobian = forwardJacobian;
-    } else {
-      //printf("Bidirectional Jacobian not available, falling back to forward Jacobian.\n");
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "No bidirectional symbolic Jacobian was generated "
-                                            "(compile with --generateDynamicJacobian=bidirectional). "
-                                            "Switching to the forward symbolic Jacobian.");
-      *jacobianMethod = COLOREDSYMJAC;
-      jacobian = forwardJacobian;
     }
   } else if (wantAdjoint) {
-    //printf("Initializing adjoint Jacobian in wantAdjoint.\n");
-    //printf("Adjoint Jacobian status: %d, evalRow: %p\n", adjointStatus, adjointJacobian->evalRow);
-    if (adjointStatus == 0 && adjointJacobian->evalRow && adjointJacobian->sparsePatternT
-      && adjointJacobian->seedVarsAdj && adjointJacobian->tmpVarsAdj && adjointJacobian->resultVarsAdj) {
-      //printf("Adjoint Jacobian successfully initialized.\n");
+    const modelica_boolean adjointJacobianAvailable =
+        adjointStatus == 0 && adjointJacobian->evalRow && adjointJacobian->sparsePatternT &&
+        adjointJacobian->seedVarsAdj && adjointJacobian->tmpVarsAdj && adjointJacobian->resultVarsAdj;
+
+    if (adjointJacobianAvailable) {
       // prepareAdjointJacobianForRowEvaluation(adjointJacobian);
       jacobian = adjointJacobian;
     } else {
-      //printf("Adjoint Jacobian not available, falling back to forward Jacobian.\n");
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "
                                             "(compile with --generateDynamicJacobian=symbolicAdjoint or =bidirectional). "
                                             "Switching to the forward symbolic Jacobian.");
       if (!needForwardJacobian) {
-        //printf("Initializing forward Jacobian A as fallback.\n");
         forwardStatus = data->callback->initialAnalyticJacobianA(data, threadData, forwardJacobian);
       }
       *jacobianMethod = COLOREDSYMJAC;
@@ -1559,7 +1555,6 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
   }
 
   if (jacobian->sparsePattern != NULL) {
-    //printf("Sorting sparse pattern of Jacobian for ascending secondary indices.\n");
     /* KLU and the sparse pattern printers require ascending secondary indices. */
     sortSparseColumns(jacobian->sparsePattern, (unsigned int) jacobian->sizeCols);
   }
