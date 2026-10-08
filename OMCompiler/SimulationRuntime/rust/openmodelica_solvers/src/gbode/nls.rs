@@ -23,7 +23,7 @@ use alloc::vec::Vec;
 use super::linsol::{GbLinSys, NlsPattern, OdePattern};
 use super::tableau::{TTransform, Tableau};
 use crate::gbode::math::{abs, pow, sqrt};
-use crate::{eval_caught, Ode, Result};
+use crate::{eval_caught, eval_caught_fast, Ode, Result};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
@@ -68,7 +68,7 @@ fn eval_at(fast: &mut Option<Fast>, ode: &mut dyn Ode, t: f64, at: At, x: &[f64]
     for (i, &k) in m.idx.iter().enumerate() {
         full[k] = x[i];
     }
-    let ok = eval_caught(ode, t, full, &mut m.f)?;
+    let ok = eval_caught_fast(ode, t, full, &mut m.f)?;
     for (i, &k) in m.idx.iter().enumerate() {
         f[i] = m.f[k];
     }
@@ -375,7 +375,7 @@ impl GbNls {
                 m.probe[c] = x + del;
                 self.inv_del[col as usize] = 1.0 / del;
             }
-            eval_caught(ode, time, &m.probe, &mut m.f)?;
+            eval_caught_fast(ode, time, &m.probe, &mut m.f)?;
             self.uncounted_calls += 1;
             for &col in group {
                 let col = col as usize;

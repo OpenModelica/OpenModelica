@@ -113,6 +113,14 @@ pub fn eval_caught(ode: &mut dyn Ode, t: f64, y: &[f64], f: &mut [f64]) -> Resul
     run.map(|()| !threw)
 }
 
+/// [`eval_caught`] of the fast states' equations only ([`Ode::eval_fast`]).
+pub fn eval_caught_fast(ode: &mut dyn Ode, t: f64, y: &[f64], f: &mut [f64]) -> Result<bool> {
+    let c = ode.catch_begin();
+    let run = ode.eval_fast(t, y, f);
+    let threw = ode.catch_end(c);
+    run.map(|()| !threw)
+}
+
 /// What a solver needs of the model: the ODE right-hand side, the zero-crossing
 /// functions, and the sparsity its finite-difference Jacobian can exploit.
 ///
@@ -202,6 +210,17 @@ pub trait Ode {
     /// leaves both alone.
     fn set_context_jacobian(&mut self) {}
     fn set_context_algebraic(&mut self) {}
+
+    /// C's `updateEvalSelection`: the equations [`Ode::eval_fast`] evaluates are
+    /// those the derivatives of `fast` depend on.
+    fn select_fast_states(&mut self, _fast: &[usize]) {}
+
+    /// C's `gbode_fODE` with `evalSelectionFast`: [`Ode::eval`] of the selected
+    /// equations only, the other derivatives in `f` left as the model had them.
+    /// A model that cannot select evaluates them all.
+    fn eval_fast(&mut self, t: f64, y: &[f64], f: &mut [f64]) -> Result<()> {
+        self.eval(t, y, f)
+    }
 
     /// Leave `zc` in the model as its zero-crossing values, as C's
     /// `checkForEvents` restores `zeroCrossings` after probing them.

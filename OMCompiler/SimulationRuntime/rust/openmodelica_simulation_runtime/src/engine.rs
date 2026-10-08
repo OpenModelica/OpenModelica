@@ -92,11 +92,13 @@ pub struct CEngine {
     /// C's `initialization(…, "fmi", …)`: the parameters are what the FMI
     /// interface set, not the start attributes.
     pub keep_params: bool,
+    /// gbode's `evalSelectionFast` over `modelData->dag`.
+    eval_sel: Option<crate::support::EvalSelection>,
 }
 
 impl CEngine {
     pub fn new(rt: RtData) -> Self {
-        CEngine { rt, stage: error_stage::SIMULATION, keep_params: false }
+        CEngine { rt, stage: error_stage::SIMULATION, keep_params: false, eval_sel: None }
     }
 
     /// The `modelica_string` behind a string slot (`str_off`/`sparam_off` region).
@@ -245,6 +247,50 @@ impl SimEngine for CEngine {
     /// The `[stage, hit]` pair, in the driver's own memory past the layout's end.
     fn error_stage_addr(&mut self) -> u32 {
         self.err_off()
+    }
+
+    fn build_eval_dags(&mut self, jac: bool) -> Option<bool> {
+        let (data, td) = (self.rt.data, self.rt.thread_data);
+        let cb = self.rt.callbacks();
+        if let Some(f) = cb.getDAG_ODE {
+            unsafe { f(data, td) };
+        }
+        self.eval_sel = crate::support::EvalSelection::new(unsafe { (*(*data).modelData).dag });
+        if !jac {
+            return Some(true);
+        }
+        let j = crate::data::jac_a_ptr(data);
+        let Some(jr) = (unsafe { j.as_mut() }) else { return Some(false) };
+        if jr.availability == JACOBIAN_AVAILABLE
+            && let Some(f) = cb.getDAG_JacA
+        {
+            unsafe { f(data, td, j) };
+        }
+        Some(!jr.dag.is_null())
+    }
+
+    fn select_fast_states(&mut self, fast: &[usize]) {
+        let n_states = self.rt.model().nStates.max(0) as usize;
+        let Some(sel) = self.eval_sel.as_mut() else { return };
+        sel.select_states(fast, n_states);
+        if omclog::active(omclog::GBODE_V) {
+            let time = self.rt.local(0).timeValue;
+            let mut row = format!("eqFunctions (time={}): =", omclog::g(time, 0, 6));
+            for k in 0..sel.sel.n {
+                row += &format!(" {}", unsafe { *sel.sel.idx.add(k) });
+            }
+            omclog::info(omclog::GBODE_V, true, "updateEvalSelection");
+            omclog::info(omclog::GBODE_V, false, &row);
+            omclog::close(omclog::GBODE_V);
+        }
+    }
+
+    fn use_eval_selection(&mut self, on: bool) {
+        let sel = match (on, self.eval_sel.as_mut()) {
+            (true, Some(s)) => &mut *s.sel as *mut crate::support::EVAL_SELECTION as *mut core::ffi::c_void,
+            _ => core::ptr::null_mut(),
+        };
+        self.rt.info().evalSelection = sel;
     }
 
     /// The per-system statistics `LOG_STATS_V` renders, measured where the systems
