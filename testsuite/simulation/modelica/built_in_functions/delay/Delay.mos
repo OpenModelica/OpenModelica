@@ -35,19 +35,20 @@ val(w, 5);      // sin(3)
 // |                 | |       | | [4] (pre:  0) -1 = delayZeroCrossing(3, 3, 1.5) > 0.0
 // |                 | |       | | [5] (pre:  0) -1 = delayZeroCrossing(2, 4, 0.5) > 0.0
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=5.0
-// |                 | |       | | [2] time < 5.0
+// LOG_EVENTS        | info    | time event at time=5
 // LOG_EVENTS        | info    | state event at time=5.01
 // |                 | |       | | [3] delayZeroCrossing(1, 2, 0.01) > 0.0
 // LOG_EVENTS        | info    | state event at time=5.5
 // |                 | |       | | [5] delayZeroCrossing(2, 4, 0.5) > 0.0
+// LOG_EVENTS        | info    | state event at time=7
+// |                 | |       | | [4] delayZeroCrossing(3, 3, 1.5) > 0.0
 // LOG_EVENTS        | info    | state event at time=7.5
 // |                 | |       | | [1] delayZeroCrossing(0, 0, 2.5) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 1.5984721441039564
-// 0.2837580764722216
-// -0.9693068057771698
+// 0.28375793446257686
+// -0.9616648181823344
 // 0.1411200080598672
 // endResult

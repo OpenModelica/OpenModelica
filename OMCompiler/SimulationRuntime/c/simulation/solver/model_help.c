@@ -956,7 +956,7 @@ void storeRelations(DATA* data)
  */
 int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 {
-  if(0 < data->modelData->nSamples)
+  if(0 < data->modelData->nSamples || data->simulationInfo->nextSampleEvent < DBL_MAX)
   {
     infoStreamPrint(OMC_LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
     *nextSampleEvent = data->simulationInfo->nextSampleEvent;
@@ -964,6 +964,25 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
   }
 
   return 0 /* FALSE */;
+}
+
+/*! \fn updateNextSampleEvent
+ *
+ *  Sets nextSampleEvent to the earliest of the next sample times and the next
+ *  time a relation on time switches.
+ */
+void updateNextSampleEvent(DATA *data, threadData_t *threadData)
+{
+  long i;
+  double next = DBL_MAX;
+
+  for(i=0; i<data->modelData->nSamples; ++i) {
+    next = fmin(next, data->simulationInfo->nextSampleTimes[i]);
+  }
+  if (data->callback->function_nextTimeEvent) {
+    next = fmin(next, data->callback->function_nextTimeEvent(data, threadData));
+  }
+  data->simulationInfo->nextSampleEvent = next;
 }
 
 /**

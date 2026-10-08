@@ -2,7 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.VDI2048Example_Corrected_Inputs.csv
-// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_VDI2048_VDI2048Example_Corrected.mo
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_VDI2048_VDI2048Example_Corrected.mo ModelicaDataReconciliationSimpleTests.Models.VDI2048.VDI2048Example_Corrected.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

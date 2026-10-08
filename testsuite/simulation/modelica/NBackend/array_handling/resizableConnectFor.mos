@@ -50,7 +50,7 @@ end resizableConnectFor;
 "); getErrorString();
 
 simulate(resizableConnectFor, stopTime = 1); getErrorString();
-abs(val(snk[2].w, 1) - 0.5) < 1e-6;
+abs(val(snk.w[2], 1) - 0.5) < 1e-6;
 // Result:
 // true
 // ""

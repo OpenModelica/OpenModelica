@@ -3,14 +3,12 @@
 
 use super::*;
 
-/// Does `$PRE.<x>` have pre-storage — its own scalar slot, or a subscripted
-/// element of a `$PRE` array group? A whole-array `pre(x)` deliberately does not
-/// count: C's `daeExpCrefRhsSimContext` wraps the live `<type>Vars` region for it,
-/// never `<type>VarsPre`.
+/// Does `$PRE.<x>` have pre-storage: its own scalar slot, a `$PRE` array group
+/// (whole array), or an element of one?
 pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
     let sim = ctx.sim()?;
     if let Ok(key) = sim_cref_key(cref) {
-        if sim.vars.contains_key(&key) {
+        if sim.vars.contains_key(&key) || sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key) {
             return Ok(true);
         }
     }
@@ -24,20 +22,6 @@ pub(super) fn sim_pre_is_stored(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result
             Ok(sim.array_groups.contains_key(&base) || sim.scatter_groups.contains_key(&base))
         }
         None => Ok(false),
-    }
-}
-
-/// [`sim_pre_is_stored`] for an assignment *target*: a whole-array `$PRE.x := …`
-/// keeps the prefix in C where its right-hand side drops it, so the write must
-/// land on the pre-value mirror and not on the live array.
-pub(super) fn sim_pre_is_stored_lhs(ctx: &FnCtx, cref: &DAE::ComponentRef) -> Result<bool> {
-    if sim_pre_is_stored(ctx, cref)? {
-        return Ok(true);
-    }
-    let sim = ctx.sim()?;
-    match sim_cref_key(cref) {
-        Ok(key) => Ok(sim.array_groups.contains_key(&key) || sim.scatter_groups.contains_key(&key)),
-        Err(_) => Ok(false),
     }
 }
 
@@ -266,11 +250,11 @@ pub(super) fn emit_sim_const_index_error(ctx: &mut FnCtx, cref: &DAE::ComponentR
     let outside = subs
         .iter()
         .zip(&group.dims)
-        .any(|(e, d)| matches!(const_index_value(e), Some(i) if i < 1 || i > *d as i32));
+        .any(|(e, d)| matches!((const_index_value(e), d.as_const()), (Some(i), Some(d)) if i < 1 || i as i64 > d));
     if !outside {
         return Ok(None);
     }
-    let dims = group.dims.iter().map(|d| d.to_string()).collect::<Vec<_>>().join(",");
+    let dims = group.dims.iter().map(|d| d.as_const().unwrap_or(0).to_string()).collect::<Vec<_>>().join(",");
     emit_runtime_error(ctx, &format!("Index out of bounds: `{key}` of array of size [{dims}]"))?;
     match group.wty {
         WTy::F64 => ctx.emit(we::Instruction::F64Const(0.0.into())),
@@ -478,17 +462,16 @@ pub(super) fn subs_select_array(subs: &List<metamodelica::Ref<DAE::Subscript>>, 
 /// Push the byte address of element `group[leading, 1, …]` and return
 /// `(trailing_element_count, element_stride)`; the block spans
 /// `trailing_count * stride` contiguous bytes from there.
-pub(super) fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>]) -> Result<(u32, u32)> {
+pub(super) fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
     let (_, stride) = sim_array_elem_kind_stride(group.wty);
     let k = leading.len();
     if k >= group.dims.len() {
         return Err("CodegenWasmJit: array slice indexes all dimensions");
     }
-    let trailing_total: u32 = group.dims[k..].iter().product();
-    let data = ctx.sim()?.data_local;
+    let trailing_total = super::sizes::sz_product(&group.dims[k..]);
     ctx.emit(we::Instruction::I32Const(0)); // acc = 0
     for (axis, exp) in leading.iter().enumerate() {
-        ctx.emit(we::Instruction::I32Const(group.dims[axis] as i32));
+        ctx.emit_size(&group.dims[axis])?;
         ctx.emit(we::Instruction::I32Mul); // acc * dims[axis]
         let wt = compile_exp(ctx, exp)?;
         coerce(ctx, wt, WTy::I32);
@@ -497,11 +480,9 @@ pub(super) fn emit_sim_slice_addr(ctx: &mut FnCtx, group: &ArrayGroup, leading: 
         ctx.emit(we::Instruction::I32Add); // acc = acc*dims[axis] + (e - 1)
     }
     // addr = data + base_off + acc * (trailing_total * stride)
-    ctx.emit(we::Instruction::I32Const((trailing_total * stride) as i32));
+    ctx.emit_size(&(trailing_total * stride as i64))?;
     ctx.emit(we::Instruction::I32Mul);
-    ctx.emit(we::Instruction::LocalGet(data));
+    ctx.emit_sim_addr(group.base_off)?;
     ctx.emit(we::Instruction::I32Add);
-    ctx.emit(we::Instruction::I32Const(group.base_off as i32));
-    ctx.emit(we::Instruction::I32Add);
-    Ok((trailing_total, stride))
+    Ok(())
 }

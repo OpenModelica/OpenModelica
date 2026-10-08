@@ -338,6 +338,7 @@ algorithm
         (if referenceEq(exp.exp, e1) and referenceEq(exp.subscripts, subs) then exp else Absyn.SUBSCRIPTED_EXP(e1, subs), arg);
 
     case Absyn.BREAK() then (exp, arg);
+    case Absyn.UNITFUL_LITERAL() then (exp, arg);
 
     else
       algorithm
@@ -2010,6 +2011,7 @@ algorithm
         l1;
 
     case Absyn.BREAK() then {};
+    case Absyn.UNITFUL_LITERAL() then {};
 
     else
       algorithm
@@ -5615,6 +5617,7 @@ algorithm
   b := match e
     case Absyn.INTEGER() then true;
     case Absyn.REAL() then true;
+    case Absyn.UNITFUL_LITERAL() then true;
     case Absyn.STRING() then true;
     case Absyn.BOOL() then true;
     case Absyn.BINARY() then true;

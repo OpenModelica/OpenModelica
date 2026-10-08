@@ -26,6 +26,7 @@
  */
 
 /* Standard C headers */
+#include <float.h>
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -1110,8 +1111,17 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     return 0;
   }
 
-  /* No stop time: CVODE may step past tout and interpolates back to it */
+  /* CVODE may step past tout and interpolates back to it, but never past the
+   * next time event */
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
+  if (simulationInfo->nextSampleEvent < DBL_MAX)
+  {
+    CVodeSetStopTime(cvodeData->cvode_mem, fmax(simulationInfo->nextSampleEvent, tout));
+  }
+  else
+  {
+    CVodeClearStopTime(cvodeData->cvode_mem);
+  }
 
   if (solverInfo->didEventStep && !omc_flag[FLAG_INITIAL_STEP_SIZE])
   {

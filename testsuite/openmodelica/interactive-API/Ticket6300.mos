@@ -24,6 +24,6 @@ getElementAnnotations(Modelica.Mechanics.MultiBody.World); getErrorString();
 //    By redeclaring this function, any type of gravity field can be defined, see example
 //      <a href=\"modelica://Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField\">Examples.Elementary.UserDefinedGravityField</a>.
 // </p>
-// </html>","")}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+// </html>","","",)}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 // ""
 // endResult

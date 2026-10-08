@@ -2,7 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.DistillationTower_Inputs.csv
-// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.DistillationTower ModelicaDataReconciliationSimpleTests.Models.DistillationTower_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_DistillationTower.mo
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.DistillationTower ModelicaDataReconciliationSimpleTests.Models.DistillationTower_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_DistillationTower.mo ModelicaDataReconciliationSimpleTests.Models.DistillationTower.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

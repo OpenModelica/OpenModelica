@@ -149,7 +149,7 @@ impl RefScan {
     pub(crate) fn scan_exp(&mut self, e: &Absyn::Exp) {
         use Absyn::Exp::*;
         match e {
-            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK => {}
+            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK | UNITFUL_LITERAL { .. } => {}
             CODE { .. } => {}
             // A bare CREF in expression position may denote a function value
             // (e.g. `List.map(stringGet, xs)`). Record the dotted name; the
@@ -157,6 +157,7 @@ impl RefScan {
             // at a function class.
             CREF { componentRef } => {
                 self.refs.insert(cref_to_dotted(componentRef));
+                self.scan_cref_subscripts(componentRef);
             }
             BINARY { exp1, exp2, .. } | LBINARY { exp1, exp2, .. } | RELATION { exp1, exp2, .. } => {
                 self.scan_exp(exp1); self.scan_exp(exp2);
@@ -213,7 +214,31 @@ impl RefScan {
             }
             DOT { exp, index } => { self.scan_exp(exp); self.scan_exp(index); }
             EXPRESSIONCOMMENT { exp, .. } => self.scan_exp(exp),
-            SUBSCRIPTED_EXP { exp, .. } => self.scan_exp(exp),
+            SUBSCRIPTED_EXP { exp, subscripts } => {
+                self.scan_exp(exp);
+                self.scan_subscripts(subscripts);
+            }
+        }
+    }
+
+    fn scan_cref_subscripts(&mut self, cr: &Absyn::ComponentRef) {
+        use Absyn::ComponentRef::*;
+        match cr {
+            CREF_FULLYQUALIFIED { componentRef } => self.scan_cref_subscripts(componentRef),
+            CREF_QUAL { subscripts, componentRef, .. } => {
+                self.scan_subscripts(subscripts);
+                self.scan_cref_subscripts(componentRef);
+            }
+            CREF_IDENT { subscripts, .. } => self.scan_subscripts(subscripts),
+            WILD | ALLWILD => {}
+        }
+    }
+
+    fn scan_subscripts(&mut self, subs: &metamodelica::List<metamodelica::Ref<Absyn::Subscript>>) {
+        for s in &**subs {
+            if let Absyn::Subscript::SUBSCRIPT { subscript } = &**s {
+                self.scan_exp(subscript);
+            }
         }
     }
 

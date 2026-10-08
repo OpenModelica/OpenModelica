@@ -2,7 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/model_assert_DR.csv
-// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.assert ModelicaDataReconciliationSimpleTests.Models.assert_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_assert.mo
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.assert ModelicaDataReconciliationSimpleTests.Models.assert_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_assert.mo ModelicaDataReconciliationSimpleTests.Models.assert.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

@@ -1100,6 +1100,14 @@ public constant ErrorTypes.Message STACK_OVERFLOW_DETAILED = ErrorTypes.MESSAGE(
   "Stack overflow occurred while evaluating %s:\n%s");
 public constant ErrorTypes.Message OUT_OF_MEMORY_DETAILED = ErrorTypes.MESSAGE(628, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   "Out of memory while evaluating %s: %s.\n%s");
+public constant ErrorTypes.Message RECORD_ELEMENT_NOT_FOUND = ErrorTypes.MESSAGE(629, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Expression %s of type %s has no record element named %s.");
+public constant ErrorTypes.Message UNITFUL_LITERAL_UNIT_CONFLICT = ErrorTypes.MESSAGE(630, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "The unitful literal %s can not be converted to the unit \"%s\" of %s.");
+public constant ErrorTypes.Message UNITFUL_LITERAL_ABSOLUTE_VALUE = ErrorTypes.MESSAGE(631, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "The unitful literal %s can only be converted to the unit \"%s\" of %s if it has an absoluteValue annotation.");
+public constant ErrorTypes.Message EVALUATED_ZERO_COEFFICIENT = ErrorTypes.MESSAGE(632, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
+  "Evaluated the parameters %s, since an equation would be solved by dividing by zero otherwise. Changing them requires recompiling the model.");
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Invalid dimensions %s in %s, no more than one dimension may have size > 1.");
 public constant ErrorTypes.Message NF_ARRAY_TYPE_MISMATCH = ErrorTypes.MESSAGE(587, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

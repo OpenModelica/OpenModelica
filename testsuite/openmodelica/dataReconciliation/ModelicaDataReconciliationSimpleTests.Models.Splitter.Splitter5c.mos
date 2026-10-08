@@ -2,7 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Inputs.csv
-// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Splitter_Splitter5c.mo
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_Splitter_Splitter5c.mo ModelicaDataReconciliationSimpleTests.Models.Splitter.Splitter5c.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

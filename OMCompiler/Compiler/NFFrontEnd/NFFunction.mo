@@ -1091,6 +1091,7 @@ uniontype Function
     input Function fn;
     input InstContext.Type context;
     input SourceInfo info;
+    input ComponentRef callPrefix = ComponentRef.EMPTY() "See collectArgs.";
     output list<TypedArg> args = posArgs;
     output Boolean matching;
   protected
@@ -1138,7 +1139,7 @@ uniontype Function
       end if;
     end for;
 
-    (args, matching) := collectArgs(slots_arr, context, info);
+    (args, matching) := collectArgs(slots_arr, context, info, callPrefix);
   end fillArgs;
 
   function fillNamedArg
@@ -1205,12 +1206,20 @@ uniontype Function
     input array<Slot> slots;
     input InstContext.Type context;
     input SourceInfo info;
+    input ComponentRef callPrefix = ComponentRef.EMPTY()
+      "The components the function was looked up via, e.g. cell.obj for
+       cell.obj.f(x), without the class part of the scope. Default arguments
+       that refer to these components, e.g. k in f = g(final k = k), do so via
+       the scope of the function. Give those parts the origins of the prefix
+       instead, so that the subscripts of enclosing arrays of components are
+       applied to them when flattening, like to any cref written in the model.";
     output list<TypedArg> args = {};
     output Boolean matching = true;
   protected
     Option<Expression> default;
     Option<TypedArg> arg;
     TypedArg a;
+    Boolean rebase = ComponentRef.isComponent(callPrefix);
   algorithm
     for s in slots loop
       SLOT(default = default, arg = arg) := s;
@@ -1220,7 +1229,15 @@ uniontype Function
         case SOME(a) then a :: args;
 
         // Otherwise, try to fill the slot with its default argument.
-        case _ then fillDefaultSlot(s, slots, context, info) :: args;
+        case _
+          algorithm
+            a := fillDefaultSlot(s, slots, context, info);
+
+            if rebase then
+              a := rebaseDefaultArg(a, callPrefix, info);
+            end if;
+          then
+            a :: args;
 
         else
           algorithm
@@ -1232,6 +1249,51 @@ uniontype Function
 
     args := listReverse(args);
   end collectArgs;
+
+  function rebaseDefaultArg
+    "See collectArgs."
+    input output TypedArg arg;
+    input ComponentRef callPrefix;
+    input SourceInfo info;
+  algorithm
+    arg.value := Expression.map(arg.value, function rebaseScopeExp(prefix = callPrefix));
+
+    // A part left in the scope that isn't one of the prefix's components
+    // wouldn't get subscripts when flattened and would silently refer to the
+    // wrong element of an array of components, so make sure there is none.
+    if Expression.contains(arg.value, function hasUnmatchedScopePartExp(prefix = callPrefix)) then
+      Error.addInternalError(getInstanceName() + ": default argument " + Expression.toString(arg.value) +
+        " of " + ComponentRef.toString(callPrefix) + " refers to a component outside the scope of the function", info);
+      fail();
+    end if;
+  end rebaseDefaultArg;
+
+  function rebaseScopeExp
+    input Expression exp;
+    input ComponentRef prefix;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case Expression.CREF()
+        algorithm
+          exp.cref := ComponentRef.rebaseScope(exp.cref, prefix);
+        then
+          exp;
+
+      else exp;
+    end match;
+  end rebaseScopeExp;
+
+  function hasUnmatchedScopePartExp
+    input Expression exp;
+    input ComponentRef prefix;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case Expression.CREF() then ComponentRef.hasUnmatchedScopePart(exp.cref, prefix);
+      else false;
+    end match;
+  end hasUnmatchedScopePartExp;
 
   function fillDefaultSlot
     input Slot slot;
@@ -1549,12 +1611,13 @@ uniontype Function
     input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
+    input ComponentRef callPrefix = ComponentRef.EMPTY() "See collectArgs.";
     output list<TypedArg> out_args;
     output FunctionMatchKind matchKind = NO_MATCH;
   protected
     Boolean slot_matched;
   algorithm
-    (out_args, slot_matched) := fillArgs(args, named_args, func, context, info);
+    (out_args, slot_matched) := fillArgs(args, named_args, func, context, info, callPrefix);
 
     if slot_matched then
       (out_args, matchKind) := matchArgs(func, out_args, info, vectorize);
@@ -1568,6 +1631,7 @@ uniontype Function
     input InstContext.Type context;
     input SourceInfo info;
     input Boolean vectorize = true;
+    input ComponentRef callPrefix = ComponentRef.EMPTY() "See collectArgs.";
     output list<MatchedFunction> matchedFunctions;
   protected
     list<TypedArg> m_args;
@@ -1575,7 +1639,7 @@ uniontype Function
   algorithm
     matchedFunctions := {};
     for func in funcs loop
-      (m_args, matchKind) := matchFunction(func, args, named_args, context, info, vectorize);
+      (m_args, matchKind) := matchFunction(func, args, named_args, context, info, vectorize, callPrefix);
 
       if FunctionMatchKind.isValid(matchKind) then
         matchedFunctions := MatchedFunction.MATCHED_FUNC(func,m_args,matchKind)::matchedFunctions;
@@ -1692,6 +1756,79 @@ uniontype Function
     end if;
   end typeFunctionSignature;
 
+  function useFirstElementInBinding
+    "A function looked up via a component in an array of components, e.g. f in
+     cell[i].obj.f() with f = g(final k = k), is instantiated once for all
+     elements of the array, so the default values of its inputs refer to the
+     array without subscripts, like cell.obj.k. Arguments are always filled in
+     at the call site, so the default value is only needed for its type, e.g.
+     the values of constants in a record. Use the first element of the array as
+     a representative, so that the default value can be evaluated."
+    input InstNode node;
+  protected
+    Component comp = InstNode.component(node);
+    Binding binding = Component.getBinding(comp);
+    Binding new_binding;
+  algorithm
+    if Binding.isBound(binding) then
+      new_binding := Binding.mapExp(binding, useFirstElementInExp);
+
+      if not referenceEq(binding, new_binding) then
+        comp := Component.setBinding(new_binding, comp);
+        InstNode.updateComponent(comp, node);
+      end if;
+    end if;
+  end useFirstElementInBinding;
+
+  function useFirstElementInExp
+    input output Expression exp;
+  protected
+    ComponentRef cref;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          cref := useFirstElementInCref(exp.cref);
+
+          if not referenceEq(cref, exp.cref) then
+            exp.cref := cref;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end useFirstElementInExp;
+
+  function useFirstElementInCref
+    "Subscripts the array parts of the scope of a cref with index 1. The type of
+     the parts is kept, like for any other subscripted part of the scope."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  protected
+    ComponentRef rest;
+    Type ty;
+  algorithm
+    outCref := match cref
+      case ComponentRef.CREF()
+        algorithm
+          rest := useFirstElementInCref(cref.restCref);
+          ty := ComponentRef.nodeType(cref);
+
+          if cref.origin == NFComponentRef.Origin.SCOPE and listEmpty(cref.subscripts) and
+             InstNode.isComponent(ComponentRef.node(cref)) and Type.isArray(ty) then
+            cref.subscripts := list(Subscript.INDEX(Expression.INTEGER(1)) for i in 1:Type.dimensionCount(ty));
+            cref.restCref := rest;
+          elseif not referenceEq(rest, cref.restCref) then
+            cref.restCref := rest;
+          end if;
+        then
+          cref;
+
+      else cref;
+    end match;
+  end useFirstElementInCref;
+
   function typeFunctionBody
     "Types the body of a function, along with any component bindings."
     input output Function fn;
@@ -1706,6 +1843,7 @@ uniontype Function
     // Type the bindings of components in the function.
     for c in fn.inputs loop
       Typing.typeComponentBinding(c, fn_context);
+      useFirstElementInBinding(c);
     end for;
 
     for c in fn.outputs loop
@@ -1737,10 +1875,6 @@ uniontype Function
         attr.purity := DAE.Purity.IMPURE;
         fn.attributes := attr;
       end if;
-    end if;
-
-    if not InstContext.inRelaxed(fn_context) then
-      checkUseBeforeAssign(fn);
     end if;
 
     // Sort the local variables based on their dependencies.
@@ -2985,6 +3119,7 @@ protected
     list<Statement> body;
     InstNode parent;
     list<SourceInfo> sources;
+    Boolean no_return;
   algorithm
     // Skip external and builtin functions.
     if isExternal(fn) or isBuiltin(fn) then
@@ -2997,7 +3132,12 @@ protected
     addUnassignedComponents(unassigned, fn.locals);
 
     body := getBody(fn);
-    checkUseBeforeAssign2(unassigned, body);
+    no_return := checkUseBeforeAssign2(unassigned, body);
+
+    // Skip checking for unassigned outputs if the function is known to never return.
+    if no_return then
+      return;
+    end if;
 
     // Give a warning for any outputs that were not assigned in the function.
     for var in Vector.toList(unassigned) loop
@@ -3035,6 +3175,7 @@ protected
     input Vector<InstNode> unassigned;
     input list<Statement> statements;
     input Option<String> generatedName = NONE() "name of the generated function if checking generated code, where use before assign is an error";
+    output Boolean noReturn = false "True if an assert/terminate is definitely triggered";
   protected
     SourceInfo info;
     Option<InstNode> shadowed;
@@ -3083,9 +3224,21 @@ protected
 
         case Statement.ASSERT()
           algorithm
+            if Expression.isFalse(stmt.condition) then
+              noReturn := true;
+              return;
+            end if;
+
             checkUseBeforeAssignExp(unassigned, stmt.condition, info, generatedName);
             checkUseBeforeAssignExp(unassigned, stmt.message, info, generatedName);
             checkUseBeforeAssignExp(unassigned, stmt.level, info, generatedName);
+          then
+            ();
+
+        case Statement.TERMINATE()
+          algorithm
+            noReturn := true;
+            return;
           then
             ();
 

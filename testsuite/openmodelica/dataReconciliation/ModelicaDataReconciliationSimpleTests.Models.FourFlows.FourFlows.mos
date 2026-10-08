@@ -2,7 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./ModelicaDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.FourFlows_Inputs.csv
-// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_FourFlows_FourFlows.mo
+// teardown_command: rm -rf ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows_* Reconciled_ModelicaDataReconciliationSimpleTests_Models_FourFlows_FourFlows.mo ModelicaDataReconciliationSimpleTests.Models.FourFlows.FourFlows.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

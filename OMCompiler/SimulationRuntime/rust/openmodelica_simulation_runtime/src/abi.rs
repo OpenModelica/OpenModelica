@@ -1018,6 +1018,8 @@ pub struct OpenModelicaGeneratedFunctionCallbacks {
     /// The size parameters of derived dimensions of resizable arrays (N-1), from
     /// the start values; before the sizes are computed. `None` if the model has none.
     pub updateStructuralParameters: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t)>,
+    /// The next time a `time >= e` / `time < e` relation switches, or `DBL_MAX`.
+    pub function_nextTimeEvent: Option<unsafe extern "C" fn(*mut DATA, *mut threadData_t) -> f64>,
 }
 
 /// The solver defaults `initializeDataStruc` installs (util/simulation_options.h,

@@ -847,7 +847,8 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
     sim_driver::init_host_hooks(); // cancel poll + model-assertion routing (idempotent)
     let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, meta)?;
 
-    let layout = &model.layout;
+    // The run's metadata: a resizable model's sizes are resolved there.
+    let layout = &meta.layout;
     // Allocate the shared SimData block.
     let sim_data_new =
         wts(rt_inst.exports.get_typed_function::<u32, u32>(&store, "rt_sim_data_new"))?;
@@ -863,8 +864,10 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         wts(set.call(&mut store, ptr, blob.len() as u32, sim_data))?;
     }
 
-    let engine = WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };
-    Ok((Box::new(engine), sim_data))
+    let mut engine: Box<dyn sim_driver::SimEngine + 'static> =
+        Box::new(WasmerEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() });
+    sim_driver::write_size_table(&mut *engine, sim_data, meta).map_err(|e| e.to_string())?;
+    Ok((engine, sim_data))
 }
 
 /// wasmer backend for the [`sim_driver::SimEngine`] drivers: owns the store, the

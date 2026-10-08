@@ -201,7 +201,7 @@ protected
 algorithm
   // Add roots and branches from the model to the graph.
   graph := addBreakableBranches(conns.connections, isDeleted, print_trace, graph);
-  (eql, graph) := addRootsAndBranches(flatModel.equations, print_trace, graph);
+  (eql, graph) := addRootsAndBranches(List.flatten(list(expandArrayOperatorCall(eq) for eq in flatModel.equations)), print_trace, graph);
   flatModel.equations := eql;
 
   // now we have the graph, remove the broken connects and evaluate the equation operators
@@ -239,7 +239,7 @@ algorithm
     print("Branches: " + intString(listLength(getBranches(graph))) + ", connections: " + intString(listLength(getConnections(graph)))
       + ", potential roots: " + intString(listLength(getPotentialRoots(graph))) + "\n");
   end if;
-  rooted := buildRootedTable(roots, graph);
+  rooted := buildRootedTable(roots, connected, graph);
   flatModel.variables := list(evalConnectionsOperatorsVar(roots, rooted, graph, v) for v in flatModel.variables);
   flatModel.equations := list(Equation.mapExp(eq,
       function evaluateOperators(rooted = rooted, roots = roots, graph = graph, info = Equation.info(eq)))
@@ -285,12 +285,18 @@ algorithm
 end expandArrayOperatorCall;
 
 function isComponentArrayCref
-  "true for a cref of an array of components, e.g. line.a.theta for line[N]"
+  "true for a cref of an array of components, e.g. line.a.theta for line[N],
+   also if the array has a single element"
   input Expression exp;
   output Boolean b;
+protected
+  list<ComponentRef> elems;
 algorithm
   b := match exp
-    case Expression.CREF() then listLength(componentElements(exp.cref)) > 1;
+    case Expression.CREF()
+      algorithm
+        elems := componentElements(exp.cref);
+      then listLength(elems) <> 1 or not ComponentRef.isEqual(listHead(elems), ComponentRef.stripSubscripts(exp.cref));
     else false;
   end match;
 end isComponentArrayCref;
@@ -559,7 +565,7 @@ algorithm
       print("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", ") + "\n");
     end if;
 
-    rooted := buildRootedTable(roots, graph);
+    rooted := buildRootedTable(roots, connected, graph);
     flatModel.variables := list(evalConnectionsOperatorsVar(roots, rooted, graph, v) for v in flatModel.variables);
     flatModel.equations := evalConnectionsOperatorsEqs(roots, rooted, graph, flatModel.equations);
     flatModel.initialEquations := evalConnectionsOperatorsEqs(roots, rooted, graph, flatModel.initialEquations);
@@ -1051,7 +1057,9 @@ algorithm
 end printPotentialRootTuple;
 
 protected function buildRootedTable
+  "Distances to the roots in the spanning tree, i.e. without the broken connections."
   input list<ComponentRef> roots;
+  input FlatEdges connected;
   input NFOCConnectionGraph graph;
   output CrefIndexTable rooted;
 protected
@@ -1061,7 +1069,7 @@ algorithm
 
   // Add branches and connections to table.
   List.map1_0(getBranches(graph), addBranches, table);
-  List.map1_0(getConnections(graph), addConnectionsRooted, table);
+  List.map1_0(connected, addConnectionsRooted, table);
 
   // Get distance to root.
   rooted := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1192,8 +1200,9 @@ algorithm
   outExp := match exp
     local
       Expression uroots, nodes, message, res;
-      ComponentRef cref,cref1;
+      ComponentRef cref;
       Boolean result;
+      list<Boolean> results;
       Edges branches;
       Call call;
       String str;
@@ -1222,24 +1231,23 @@ algorithm
                   cref := ComponentRef.stripIteratorSubscripts(cref);
 
                   try
-                    cref1 := getEdge(cref,branches);
-                    // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                    //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-                    if Flags.isSet(Flags.CGRAPH) then
-                      print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                        ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-                    end if;
-                    result := getRooted(cref,cref1,rooted);
-                    //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
-                    //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
-                    if Flags.isSet(Flags.CGRAPH) then
-                      print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
-                    end if;
-                  else // add an error message:
-                    str := ComponentRef.toString(cref);
-                    Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
-                    result := false;
+                    result := elementRooted(cref, branches, rooted);
+                  else
+                    // an array of components in a for-equation, e.g. rooted(joint[$i].frame_a.R):
+                    // the graph has its elements, which all have to agree
+                    try
+                      result :: results := list(elementRooted(c, branches, rooted) for c in componentElements(cref));
+                      true := List.all(results, function boolEq(b2 = result));
+                    else
+                      str := ComponentRef.toString(cref);
+                      Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
+                      result := false;
+                    end try;
                   end try;
+
+                  if Flags.isSet(Flags.CGRAPH) then
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
+                  end if;
                 then
                   Expression.BOOLEAN(result);
             end match;
@@ -1307,6 +1315,14 @@ algorithm
     else exp;
   end match;
 end evalConnectionsOperatorsHelper;
+
+protected function elementRooted
+  "Connections.rooted of a connector, fails if it is not part of a branch."
+  input ComponentRef cref;
+  input Edges branches;
+  input CrefIndexTable rooted;
+  output Boolean result = getRooted(cref, getEdge(cref, branches), rooted);
+end elementRooted;
 
 protected function getRooted
   input ComponentRef cref1;

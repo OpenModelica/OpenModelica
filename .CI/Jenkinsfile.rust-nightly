@@ -27,7 +27,11 @@
 //                          the two macOS trees into one universal distribution.
 //                          The command-line tools ship on their own as
 //                          OpenModelica-CLI-* whether or not the GUI clients
-//                          were built.
+//                          were built. The linux64 tarballs are uploaded by
+//                          stage 5 instead, and only if it passes.
+//   5. 'linux64 on ubuntu 26.04'
+//                          the linux64 CLI tarball in a bare newer distribution:
+//                          a simulation and an FMU export must link and load.
 //
 // The stage bodies are in .CI/common.groovy (buildRustNightly*).
 def common
@@ -35,6 +39,7 @@ def common
 pipeline {
   agent none
   options {
+    skipDefaultCheckout()
     newContainerPerStage()
     // No parallelsAlwaysFailFast: a nightly should report every platform, not
     // abort the others as soon as one goes red.
@@ -72,6 +77,15 @@ pipeline {
       }
       steps {
         script {
+          // common.checkoutSCM(), which is not loaded yet
+          echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+          int attempt = 0
+          retry(2) {
+            if (attempt++ > 0) {
+              sh script: 'git submodule absorbgitdirs && git submodule deinit --all -f', returnStatus: true
+            }
+            checkout scm
+          }
           common = load("${env.workspace}/.CI/common.groovy")
         }
       }
@@ -94,6 +108,7 @@ pipeline {
         }
       }
       steps {
+        script { common.checkoutSCM() }
         script { common.buildRustNightlyShared() }
       }
     }
@@ -121,6 +136,7 @@ pipeline {
             expression { params.BUILD_WINDOWS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('win64') }
           }
         }
@@ -143,6 +159,7 @@ pipeline {
             expression { params.BUILD_MACOS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('mac-x86_64') }
           }
         }
@@ -165,6 +182,7 @@ pipeline {
             expression { params.BUILD_MACOS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('mac-aarch64') }
           }
         }
@@ -190,6 +208,7 @@ pipeline {
             expression { params.BUILD_LINUX }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('linux64') }
           }
         }
@@ -213,6 +232,7 @@ pipeline {
             expression { params.BUILD_LINUX_AARCH64 }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('linux-aarch64') }
           }
         }
@@ -243,6 +263,7 @@ pipeline {
             expression { params.BUILD_WINDOWS && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('win64') }
           }
         }
@@ -265,6 +286,7 @@ pipeline {
             expression { params.BUILD_MACOS && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('mac-x86_64') }
           }
         }
@@ -287,6 +309,7 @@ pipeline {
             expression { params.BUILD_MACOS && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('mac-aarch64') }
           }
         }
@@ -310,6 +333,7 @@ pipeline {
             expression { params.BUILD_LINUX && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('linux64') }
           }
         }
@@ -333,6 +357,7 @@ pipeline {
             expression { params.BUILD_WINDOWS }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.packageRustNightlyWindows(['nightly-omc-win64'],
                 params.BUILD_GUI_CLIENTS ? ['nightly-gui-win64'] : [])
@@ -357,6 +382,7 @@ pipeline {
             expression { params.BUILD_MACOS }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.packageRustNightlyMacUniversal(
                 ['nightly-omc-mac-x86_64', 'nightly-omc-mac-aarch64'],
@@ -380,6 +406,7 @@ pipeline {
             expression { params.BUILD_LINUX }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.packageRustNightlyLinux('linux64', ['nightly-omc-linux64'],
                 params.BUILD_GUI_CLIENTS ? ['nightly-gui-linux64'] : [])
@@ -403,12 +430,41 @@ pipeline {
             expression { params.BUILD_LINUX_AARCH64 }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               // No GUI stashes: no Qt kit, so only the CLI distribution.
               common.packageRustNightlyLinux('linux-aarch64', ['nightly-omc-linux-aarch64'], [])
             }
           }
         }
+      }
+    }
+
+    // Stage 5. The linux64 CLI tarball in a bare image of a newer distribution:
+    // a simulation and an FMU of a model that links HDF5 through
+    // ModelicaStandardTables. Uploads both linux64 tarballs if that works.
+    stage('linux64 on ubuntu 26.04') {
+      agent {
+        docker {
+          alwaysPull true
+          image 'ubuntu:26.04'
+          label 'linux'
+          // root for apt-get. A workspace of its own, so the root-owned files a
+          // mistake would leave cannot break the other stages' git clean.
+          args '-u root'
+          customWorkspace 'ws/OpenModelica-check'
+        }
+      }
+      when {
+        beforeAgent true
+        expression { params.BUILD_LINUX }
+      }
+      options {
+        // The bare image has no git.
+        skipDefaultCheckout false
+      }
+      steps {
+        script { common.checkRustNightlyLinux('linux64') }
       }
     }
   }

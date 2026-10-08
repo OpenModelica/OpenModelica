@@ -40,6 +40,7 @@
 
 #include <QList>
 #include <QColor>
+#include <QApplication>
 
 #include "PlotWindow.h"
 #include "Legend.h"
@@ -52,6 +53,15 @@
 
 namespace OMPlot
 {
+/*!
+ * \brief isDarkMode
+ * True when the hosting application (OMEdit) runs in dark mode. Standalone
+ * OMPlot has no such property and keeps its light, print-friendly colors.
+ */
+inline bool isDarkMode()
+{
+  return qApp && qApp->property("omeditDarkMode").toBool();
+}
 class Plot : public QwtPlot
 {
   Q_OBJECT

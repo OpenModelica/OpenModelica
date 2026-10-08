@@ -4,7 +4,7 @@
 // The expected result records a known failure, not the correct output. Update it when
 // the model starts working, see https://github.com/OpenModelica/OpenModelica/issues/15384
 // depends: ./TSP_DataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv
-// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe3.mo
+// teardown_command: rm -rf TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3 TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3_* Reconciled_TSP_DataReconciliationSimpleTests_Models_Pipe_TSP_Pipe3.mo TSP_DataReconciliationSimpleTests.Models.Pipe.TSP_Pipe3.html
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

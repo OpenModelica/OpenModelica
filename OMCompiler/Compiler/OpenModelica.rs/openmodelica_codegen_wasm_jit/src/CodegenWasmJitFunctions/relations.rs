@@ -65,8 +65,10 @@ fn compile_relation_indexed(
     asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
 ) -> Result<WTy> {
     use DAE::Operator as O;
+    let time_event = time_event_trigger(e1, op, e2, index, asub).is_some();
     let real_ineq = operand_type_of_relation(op)? == WTy::F64
-        && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. });
+        && matches!(op, O::LESS { .. } | O::LESSEQ { .. } | O::GREATER { .. } | O::GREATEREQ { .. })
+        && !time_event;
     let data = ctx.sim()?.data_local;
     // Region bases: `relations[]` (live), `relationsPre[]` (held) and the held
     // snapshot the hysteresis band's direction reads. Element `k` is at
@@ -98,7 +100,11 @@ fn compile_relation_indexed(
     ctx.emit(we::Instruction::I32Add); // data + eff_index*4
     ctx.emit(we::Instruction::LocalSet(slot));
     if zc_context {
-        if real_ineq {
+        // A time event switches it, so the root function never sees it move.
+        if time_event {
+            ctx.emit(we::Instruction::LocalGet(slot));
+            ctx.emit(we::Instruction::I32Load(mem_arg(dir_off, 2)));
+        } else if real_ineq {
             compile_relation_hyst(ctx, e1, op, e2, slot, dir_off)?;
         } else {
             compile_relation_fresh(ctx, e1, op, e2)?;
@@ -247,6 +253,25 @@ fn emit_relation_nominal(ctx: &mut FnCtx, e1: &metamodelica::Ref<DAE::Exp>, e2: 
         }
     }
     Ok(())
+}
+
+/// C's `timeEventTrigger`: the `e` of a relation `time >= e` / `time < e` that
+/// only switches when time reaches it, so it needs no hysteresis band.
+pub(crate) fn time_event_trigger(
+    e1: &metamodelica::Ref<DAE::Exp>,
+    op: &DAE::Operator,
+    e2: &metamodelica::Ref<DAE::Exp>,
+    index: i32,
+    asub: &Option<(metamodelica::Ref<DAE::Exp>, i32, i32)>,
+) -> Option<metamodelica::Ref<DAE::Exp>> {
+    let rel = metamodelica::Ref::new(DAE::Exp::RELATION {
+        exp1: e1.clone(),
+        operator: op.clone(),
+        exp2: e2.clone(),
+        index,
+        optionExpisASUB: asub.clone(),
+    });
+    openmodelica_codegen_util::SimCodeCodegenUtil::timeEventTrigger(&rel).ok().flatten()
 }
 
 fn nominal_exp(e: &metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {

@@ -182,7 +182,8 @@ algorithm
                                                       BackendDAEUtil.emptyPartitionsInfo(),
                                                       BackendDAE.emptyDAEModeData,
                                                       NONE(),
-                                                      NONE()
+                                                      NONE(),
+                                                      {}
                                                       ));
     BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
     BackendDAEUtil.checkAdjacencyMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));

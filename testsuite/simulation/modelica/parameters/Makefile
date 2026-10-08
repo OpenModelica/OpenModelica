@@ -23,6 +23,7 @@ Engine1a_output.mos \
 revoluteConstraint.mos \
 hideResult.mos \
 simDataZeroed.mos \
+zeroCoefficient.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

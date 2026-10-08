@@ -101,7 +101,7 @@ namespace IAEX
 
 
   protected slots:
-    void contentChanged();
+    void contentChanged() override;
     void hoverOverLink(const QUrl &link);
     void openLinkInternal(const QUrl *url);
     void openLinkInternal(const QUrl &url);

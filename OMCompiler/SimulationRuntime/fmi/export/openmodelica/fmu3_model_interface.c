@@ -437,12 +437,6 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
       }
     }
 
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
-      if ((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent)) {
-        comp->fmuData->simulationInfo->nextSampleEvent = comp->fmuData->simulationInfo->nextSampleTimes[i];
-      }
-    }
-
     /* Handle clock timers */
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
 
@@ -472,6 +466,7 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
 
+    updateNextSampleEvent(comp->fmuData, comp->threadData);
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
 
     /* Get next event time */

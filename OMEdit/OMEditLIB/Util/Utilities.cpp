@@ -38,6 +38,7 @@
  */
 
 #include "Utilities.h"
+#include "Style.h"
 #include "Helper.h"
 #if defined(__EMSCRIPTEN__)
 #include "PersistentStorage.h"
@@ -1062,8 +1063,7 @@ void Utilities::highlightCurrentLine(QPlainTextEdit *pPlainTextEdit)
 {
   QList<QTextEdit::ExtraSelection> selections = pPlainTextEdit->extraSelections();
   QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
-  selection.format.setBackground(lineColor);
+  selection.format.setBackground(Style::currentLineHighlightColor());
   selection.format.setProperty(QTextFormat::FullWidthSelection, true);
   selection.cursor = pPlainTextEdit->textCursor();
   selection.cursor.clearSelection();

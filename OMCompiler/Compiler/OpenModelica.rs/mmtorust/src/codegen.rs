@@ -7460,7 +7460,7 @@ fn subst_exp(e: &metamodelica::Ref<Absyn::Exp>, map: &HashMap<String, metamodeli
         }),
         // Leaves with no sub-expressions.
         E::INTEGER { .. } | E::REAL { .. } | E::STRING { .. } | E::BOOL { .. }
-        | E::END | E::CODE { .. } | E::BREAK => e.clone(),
+        | E::END | E::CODE { .. } | E::BREAK | E::UNITFUL_LITERAL { .. } => e.clone(),
     }
 }
 
@@ -13768,7 +13768,7 @@ fn global_root_var_path(grc: &GlobalRootConst, ctx: &GenCtx) -> String {
         // openmodelica_codegen_util — optionSimCode and fmi3VariableAliasCache
         // hold SimCode values read by the codegen queries there. The types crate
         // is datatype-only and must not own mutable global state.
-        "optionSimCode" | "fmi3VariableAliasCache" => Some("openmodelica_codegen_util"),
+        "optionSimCode" | "fmi3VariableAliasCache" | "timeIndependentVars" => Some("openmodelica_codegen_util"),
         // openmodelica_backend_main — the interactive cache holds a tuple
         // whose third element is `Interactive.GraphicEnvCache`, a uniontype
         // defined in Script/Interactive.mo (→ openmodelica_backend_main). The

@@ -68,6 +68,7 @@ Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Temperature.mos \
 Modelica.Electrical.Machines.Examples.DCMachines.DCPM_withLosses.mos \
 Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase.mos \
 Modelica.Electrical.Machines.Examples.DCMachines.DCSE_Start.mos \
+Modelica.Electrical.Machines.Examples.InductionMachines.IMC_DCBraking.mos \
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_DOL.mos \
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Initialize.mos \
 Modelica.Electrical.Machines.Examples.InductionMachines.IMC_Inverter.mos \

@@ -1178,7 +1178,7 @@ protected
   algorithm
     backend_equations := match frontend_equation
        case FEquation.FOR(range = SOME(range)) algorithm
-        if Expression.rangeSize(range) > 0 then
+        if not Expression.emptyRange(range) then
           // Treat each body equation individually because they can have different equation attributes
           // E.g.: DISCRETE, EvalStages
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);

@@ -43,6 +43,7 @@
 
 #include <QtMath>
 #include <QStringBuilder>
+#include <QApplication>
 
 using namespace OMPlot;
 
@@ -108,7 +109,7 @@ void PlotCurve::setTitleLocal()
     // visibility
     QwtText text = title();
     if (isVisible()) {
-      text.setColor(QColor(Qt::black));
+      text.setColor(OMPlot::isDarkMode() ? QApplication::palette().color(QPalette::Text) : QColor(Qt::black));
     } else {
       text.setColor(QColor(Qt::gray));
     }

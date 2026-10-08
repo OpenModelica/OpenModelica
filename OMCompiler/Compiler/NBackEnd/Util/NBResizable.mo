@@ -54,6 +54,7 @@ protected
   import Variable = NFVariable;
 
   // backend imports
+  import NFInstNode.InstNode;
   import NBEquation.{Equation, Iterator, EquationPointers, EquationAttributes, EquationKind};
   import NBVariable.{VarData, VariablePointers};
   import BVariable = NBVariable;
@@ -263,6 +264,8 @@ public
         // all lists: e.g. the function alias variables of the initialization are not in variables
         for v in List.flatten(list(VariablePointers.toList(l) for l in {varData.variables, varData.unknowns,
             varData.knowns, varData.initials, varData.auxiliaries, varData.aliasVars, varData.nonTrivialAlias})) loop
+          // calculated size parameters (s.N = N) have no start value at runtime
+          Pointer.update(v, Variable.applyToType(Pointer.access(v), function Type.applyToDims(func = resolveSizeParameters)));
           for dim in Type.arrayDims(Variable.typeOf(Pointer.access(v))) loop
             dim_exps := match dim
               case Dimension.RESIZABLE() guard isDimensionExpression(dim.exp) and not List.isMemberOnTrue(dim.exp, dim_exps, Expression.isEqual)
@@ -290,6 +293,40 @@ public
       else varData;
     end match;
   end addDimensionParameters;
+
+  function resolveSizeParameters
+    "replaces Integer parameters with a non-literal binding in a resizable
+    dimension by their binding, e.g. s.N with binding N"
+    input output Dimension dim;
+  algorithm
+    dim := match dim
+      case Dimension.RESIZABLE() algorithm
+        dim.exp := Expression.map(dim.exp, resolveSizeParameter);
+      then dim;
+      else dim;
+    end match;
+  end resolveSizeParameters;
+
+  function resolveSizeParameter
+    input output Expression exp;
+  protected
+    Pointer<Variable> var_ptr;
+    Variable var;
+  algorithm
+    exp := match exp
+      case Expression.CREF(ty = Type.INTEGER()) guard InstNode.isVar(ComponentRef.node(exp.cref)) algorithm
+        var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+        var := Pointer.access(var_ptr);
+      then match Binding.getExpOpt(var.binding)
+        local
+          Expression b;
+        case SOME(b) guard BVariable.isParamOrConst(var_ptr) and not Expression.isLiteral(b)
+          then Expression.map(b, resolveSizeParameter);
+        else exp;
+      end match;
+      else exp;
+    end match;
+  end resolveSizeParameter;
 
   function isDimensionExpression
     "true for a dimension that is neither a literal nor a plain parameter"

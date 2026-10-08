@@ -115,6 +115,7 @@ WITHIN;
 RETURN;
 BREAK;
 STREAM;
+T_TIME;
 /* MetaModelica keywords. I guess not all are needed here. */
 AS;
 CASE;

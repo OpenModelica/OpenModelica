@@ -88,6 +88,7 @@ protected
   constant Integer YES = 1;
   constant Integer MAYBE = 2;
   constant Integer PARAM_MIN = 1 "size parameters are at least this";
+  constant Integer MIN_SIZE = 2 "resizable dimensions and connect loops have at least this many elements";
   constant Integer MAX_PIECES = 300 "pieces of one connector array before giving up";
   constant Integer MAX_ROUNDS = 50;
 
@@ -968,30 +969,50 @@ protected
     end for;
   end sideConstIn;
 
+  function addFact
+    input Sym f;
+    input UnorderedSet<String> keys;
+    input output list<Aff> facts;
+  algorithm
+    if symIsAff(f) and not affIsConst(symGetAff(f)) and not UnorderedSet.contains(symString(f), keys) then
+      UnorderedSet.add(symString(f), keys);
+      facts := symGetAff(f) :: facts;
+    end if;
+  end addFact;
+
   function indexFacts
-    "valid indices: the image of a certainly non-empty connection domain lies in
-     the connector array, which gives facts like N <= P"
+    "resizable connector arrays and connect loops have at least MIN_SIZE elements
+     (as the backend requires). Valid indices: the image of a certainly non-empty
+     connection domain lies in the connector array, which gives facts like N <= P"
     input Vector<Vertex> vertices;
     input list<Edge> edges;
     output list<Aff> facts = {};
   protected
     list<Iv> vbox;
     Iv viv;
-    Sym f;
+    list<Aff> size_facts;
     UnorderedSet<String> keys = UnorderedSet.new(stringHashDjb2, stringEq);
   algorithm
+    for v in 1:Vector.size(vertices) loop
+      for iv in vertexBox(vertices, v) loop
+        facts := addFact(symSub(iv.hi, symAddInt(iv.lo, MIN_SIZE - 1, {}), {}), keys, facts);
+      end for;
+    end for;
     for e in edges loop
-      if boxEmpty(e.dom, {}) == NO then
+      for iv in e.dom loop
+        facts := addFact(symSub(iv.hi, symAddInt(iv.lo, MIN_SIZE - 1, {}), {}), keys, facts);
+      end for;
+    end for;
+    size_facts := facts;
+
+    for e in edges loop
+      if boxEmpty(e.dom, size_facts) == NO then
         for side in {e.a, e.b} loop
           vbox := vertexBox(vertices, side.vertex);
           for iv in sideImage(side, e.dom, {}) loop
             viv :: vbox := vbox;
-            for f in {symSub(viv.hi, iv.hi, {}), symSub(iv.lo, viv.lo, {})} loop
-              if symIsAff(f) and not affIsConst(symGetAff(f)) and not UnorderedSet.contains(symString(f), keys) then
-                UnorderedSet.add(symString(f), keys);
-                facts := symGetAff(f) :: facts;
-              end if;
-            end for;
+            facts := addFact(symSub(viv.hi, iv.hi, {}), keys, facts);
+            facts := addFact(symSub(iv.lo, viv.lo, {}), keys, facts);
           end for;
         end for;
       end if;
@@ -1487,6 +1508,7 @@ protected
     array<Sym> oa, ob;
     Option<Sym> shift;
     Sym s;
+    Boolean found = false;
   algorithm
     ia := listArray(e.a.iters); ib := listArray(e.b.iters);
     oa := listArray(e.a.offs); ob := listArray(e.b.offs);
@@ -1500,6 +1522,7 @@ protected
       if boxEmpty(pre, facts) == YES then
         continue;
       end if;
+      found := true;
       p := pieceOf(sets, e.a.vertex, sideImage(e.a, pre, facts), vertices, e.source, facts);
       pieceUnion(sets, p, q);
       for j in 1:ndom loop
@@ -1529,6 +1552,10 @@ protected
         end if;
       end for;
     end for;
+    // a constant index that lies in no piece for certain would lose the connection
+    if not found and boxEmpty(e.dom, facts) <> YES then
+      unsupported("the connection of " + vertexName(vertices, e.b.vertex) + boxString(sideImage(e.b, e.dom, facts)) + " (no matching piece)", e.source);
+    end if;
   end addEdgeToSets;
 
   function readdMerged

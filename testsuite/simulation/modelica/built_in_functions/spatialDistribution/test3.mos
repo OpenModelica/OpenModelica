@@ -35,13 +35,12 @@ simulate(TestSpatialDiscretization.Test2, simflags="-lv=LOG_EVENTS"); getErrorSt
 // |                 | |       | | [5] (pre:  0)  1 = time < 0.35
 // |                 | |       | | [6] (pre:  0)  1 = time < 0.75
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=0.100000000011
-// |                 | |       | | [2] time < 0.1
-// LOG_EVENTS        | info    | state event at time=0.350000000011
+// LOG_EVENTS        | info    | time event at time=0.1
+// LOG_EVENTS        | info    | time event at time=0.35
+// LOG_EVENTS        | info    | state event at time=0.35
 // |                 | |       | | [4] spatialDistributionZeroCrossing(0, 3, x, isPosVel) > 0.0
-// LOG_EVENTS        | info    | state event at time=0.500000000015
-// |                 | |       | | [1] time < 0.5
-// LOG_EVENTS        | info    | state event at time=0.750000000015
+// LOG_EVENTS        | info    | time event at time=0.5
+// LOG_EVENTS        | info    | time event at time=0.75
 // |                 | |       | | [4] spatialDistributionZeroCrossing(0, 3, x, isPosVel) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -6121,7 +6121,7 @@ algorithm
   end match;
 end adjacencyRowEnhanced3;
 
-protected function replaceVarWithValue
+public function replaceVarWithValue
 "Helper function to adjacencyRowEnhanced3. Traverser to replace variables(parameters) with their bind expression."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVars;
@@ -9565,7 +9565,8 @@ algorithm
                               emptyPartitionsInfo(),
                               BackendDAE.emptyDAEModeData,
                               NONE(),
-                              NONE()
+                              NONE(),
+                              {}
                               );
 end createEmptyShared;
 

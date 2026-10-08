@@ -793,7 +793,7 @@ algorithm
         end if;
       outEqns := BackendEquation.setAtIndex(outEqns, eqIdx, eqDiff);
       //collect original equations
-      outOrgEqns := addOrgEqn(eqIdx, eqOrig, outOrgEqns);
+      outOrgEqns := addOrgEqn(eqIdx, BackendEquation.removeDiscreteTupleElements(eqOrig), outOrgEqns);
     end if;
   end for;
 end replaceDifferentiatedEqns;
@@ -1845,13 +1845,19 @@ algorithm
       BackendDAE.ConstraintEquations orgEqnsLst;
       HashTableCrIntToExp.HashTable ht;
       HashTable2.HashTable repl;
+      list<Integer> orgIdxs;
+      array<Boolean> canReplace;
+      list<tuple<Integer, BackendDAE.Equation>> combined;
+      Integer k, e;
+      BackendDAE.Equation eqn;
+      Option<BackendDAE.Equation> deqn;
     case _
       guard Array.all(iOrgEqnsLst, listEmpty)
       then (inSystem,inShared,iHt,iSetIndex);
     case BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))
       algorithm
         // get orgequations of that level
-        (eqnslst1,orgEqnsLst) := removeFirstOrgEqns(iOrgEqnsLst);
+        (eqnslst1,orgEqnsLst,orgIdxs) := removeFirstOrgEqns(iOrgEqnsLst);
         // replace final parameter
         (eqnslst,_) := BackendEquation.traverseExpsOfEquationList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeGlobalKnownVars(inShared),false,BackendVarTransform.emptyReplacements()));
         // replace all der(x) with dx
@@ -1870,7 +1876,22 @@ algorithm
         neqns := BackendEquation.equationLstSizeKeepAlgorithmAsOne(eqnslst); //vwaurich: algorithms are handled as single equations, like a function call
         nfreeStates := listLength(varlst);
         // do state selection of that level
-        (dummyVars,stateSets) := selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,hov,{},{});
+        // a constraint equation can be replaced by a combination if its derivative is in the system
+        canReplace := if listLength(eqnslst) == listLength(eqnslst1)
+          then listArray(list(listEmpty(orgEqnsLst[i]) for i in orgIdxs)) else arrayCreate(0, false);
+        (dummyVars,stateSets,combined) := selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,hov,{},{},canReplace);
+        syst := inSystem;
+        shared := inShared;
+        for c in combined loop
+          (k, eqn) := c;
+          e := listGet(orgIdxs, k);
+          (deqn, shared) := Differentiate.differentiateEquationTime(eqn, vars, shared);
+          if isSome(deqn) then
+            eqnslst1 := List.set(eqnslst1, k, eqn);
+            (eqn, _) := BackendEquation.traverseExpsOfEquation(Util.getOption(deqn), replaceStateOrderExp, vars);
+            syst := BackendDAEUtil.setEqSystEqs(syst, BackendEquation.setAtIndex(syst.orderedEqs, e, eqn));
+          end if;
+        end for;
         // get derivatives one order less
         lov := List.fold3(iHov, getlowerOrderDerivatives, level, so, vars, {});
         // remove DummyStates DER.x from States with v_d>1 with unkown derivative dummyVars
@@ -1879,7 +1900,7 @@ algorithm
         nv := BackendVariable.varsSize(vars);
         ne := BackendDAEUtil.systemSize(inSystem);
         // add the original equations to the systems
-        syst := BackendEquation.equationsAddDAE(eqnslst1, inSystem);
+        syst := BackendEquation.equationsAddDAE(eqnslst1, syst);
         // Dummy Derivatives
         if Flags.getConfigString(Flags.INDEX_REDUCTION_METHOD) == "dummyDerivatives" and neqns < nfreeStates then
           //print("BEFORE:\n");
@@ -1896,7 +1917,7 @@ algorithm
         // fix derivative indexes
         List.fold1(iHov, fixDerivativeIndex, level, BackendVariable.daeVars(syst));
         // update AdjacencyMatrix
-        (syst,m,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (syst,m,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
         // genereate new Matching
         nv1 := BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne1 := BackendDAEUtil.systemSize(syst);
@@ -1909,7 +1930,7 @@ algorithm
         syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
         //  BackendDump.dumpEqSystem(syst,"Next Level");
         // next level
-        (syst,shared,ht,setIndex) := selectStatesWork(level+1,lov,syst,inShared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ht,setIndex);
+        (syst,shared,ht,setIndex) := selectStatesWork(level+1,lov,syst,shared,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ht,setIndex);
       then
         (syst,shared,ht,setIndex);
   end match;
@@ -2018,10 +2039,12 @@ protected function selectStatesWork1
   input list<BackendDAE.Var> iHov;
   input list<BackendDAE.Var> inDummyVars;
   input StateSets iStateSets;
+  input array<Boolean> canReplace "constraint equations that can be replaced by a combination";
   output list<BackendDAE.Var> outDummyVars;
   output StateSets oStateSets;
+  output list<tuple<Integer, BackendDAE.Equation>> combined = {} "replaced constraint equations";
 algorithm
-  (outDummyVars,oStateSets) :=
+  (outDummyVars,oStateSets,combined) :=
   match inSystem
     local
       list<BackendDAE.Var> dummyVars,stateVars,vlst;
@@ -2048,7 +2071,7 @@ algorithm
     case _
       guard intEq(nfreeStates,neqns)
       then
-        (statecandidates,iStateSets);
+        (statecandidates,iStateSets,{});
     // do state selection
     case BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))
       guard intGt(nfreeStates,1) and not intGt(neqns,nfreeStates)
@@ -2118,6 +2141,7 @@ algorithm
         eqns := BackendEquation.addList(eqnslst1, eqns);
         vars := BackendVariable.listVar1(vlst);
         vars := BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
+        (eqns, combined) := eliminateCancellingVars(eqns, vars, inShared, canReplace);
         syst := BackendDAEUtil.createEqSystem(vars, eqns);
         // get advanced adjacency Matrix
         (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
@@ -2181,7 +2205,7 @@ algorithm
         (vlst,_,stateSets) := processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,iStateSets);
         vlst := List.select(vlst, BackendVariable.isStateVar);
       then
-        (listAppend(dummyVars, vlst), stateSets);
+        (listAppend(dummyVars, vlst), stateSets, combined);
     // to much equations this is an error
     // number of differentiated equations exceeds number of free states, add StateSelect.always states and try again
     case _
@@ -2204,11 +2228,317 @@ algorithm
         if not intGe(nv,neqns) then
           fail();
         end if;
-        (dummyVars,stateSets) := selectStatesWork1(nv,iHov,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,iHov,inDummyVars,iStateSets);
+        (dummyVars,stateSets,combined) := selectStatesWork1(nv,iHov,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,iHov,inDummyVars,iStateSets,canReplace);
       then
-        (dummyVars,stateSets);
+        (dummyVars,stateSets,combined);
   end match;
 end selectStatesWork1;
+
+protected function eliminateCancellingVars
+"Equations that are linear with constant coefficients are combined by Gaussian
+  elimination of the variables that occur in such equations only. An equation whose
+  coefficients of these variables cancel, although the structure of the combination
+  still contains some of them, is replaced by the combination: the structural
+  matching would otherwise solve it for one of them, e.g. for the phase currents of
+  a delta connection fed by a line current."
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Shared shared;
+  input array<Boolean> canReplace;
+  output BackendDAE.EquationArray outEqns = inEqns;
+  output list<tuple<Integer, BackendDAE.Equation>> combined = {};
+protected
+  Integer ne = BackendEquation.getNumberOfEquations(inEqns), nv = BackendVariable.varsSize(vars);
+  AvlTreePathFunction.Tree funcs = BackendDAEUtil.getFunctions(shared);
+  array<Option<list<tuple<Integer, Real>>>> coefs = arrayCreate(ne, NONE());
+  array<Integer> occurrence "1: only in linear equations with constant coefficients, 2: also elsewhere";
+  array<Integer> pivotOf "pivot index of a variable";
+  array<tuple<Real, list<tuple<Integer, Real>>, list<tuple<Integer, Real>>, list<Integer>>> pivots;
+  BackendDAE.AdjacencyMatrix m;
+  array<Integer> mapIncRowEqn;
+  list<tuple<Integer, Real>> row, comb, prow, pcomb;
+  list<Integer> pattern "eliminated variables in the structure of the combination", ppattern;
+  Integer v, pcol, npivots = 0;
+  Real a, pval, scale;
+  BackendDAE.Equation eqn;
+algorithm
+  if arrayEmpty(canReplace) then
+    return;
+  end if;
+  for i in 1:ne loop
+    coefs[i] := linearConstantCoefficients(BackendEquation.get(inEqns, i), vars, funcs);
+  end for;
+  if not Array.any(coefs, isSome) then
+    return;
+  end if;
+
+  (_, m, _, _, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAEUtil.createEqSystem(vars, inEqns),
+    BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+  occurrence := arrayCreate(nv, 0);
+  for r in 1:arrayLength(m) loop
+    for i in m[r] loop
+      v := intAbs(i);
+      occurrence[v] := if isSome(coefs[mapIncRowEqn[r]]) then max(occurrence[v], 1) else 2;
+    end for;
+  end for;
+
+  pivotOf := arrayCreate(nv, 0);
+  pivots := arrayCreate(ne, (0.0, {}, {}, {}));
+  for i in 1:ne loop
+    if isSome(coefs[i]) then
+      SOME(row) := coefs[i];
+      if List.any(row, function isEliminatedEntry(occurrence = occurrence)) then
+        comb := {(i, 1.0)};
+        scale := maxAbsEntry(row);
+        pattern := list(Util.tuple21(e) for e guard isEliminatedEntry(e, occurrence) in row);
+        pcol := firstPivot(pattern, pivotOf);
+        while pcol > 0 loop
+          (pval, prow, pcomb, ppattern) := pivots[pivotOf[pcol]];
+          a := -sparseGet(row, pcol) / pval;
+          if a <> 0.0 then
+            scale := max(scale, abs(a) * maxAbsEntry(prow));
+            row := list(e for e guard Util.tuple21(e) <> pcol in sparseAxpy(row, a, prow));
+            comb := sparseAxpy(comb, a, pcomb);
+          end if;
+          pattern := sortedUnionWithout(pattern, ppattern, pcol);
+          pcol := firstPivot(pattern, pivotOf);
+        end while;
+        row := list(e for e guard abs(Util.tuple22(e)) > 1e-10 * scale in row);
+
+        pcol := 0;
+        pval := 0.0;
+        for e in row loop
+          if isEliminatedEntry(e, occurrence) and abs(Util.tuple22(e)) > abs(pval) then
+            (pcol, pval) := e;
+          end if;
+        end for;
+        if pcol > 0 then
+          npivots := npivots + 1;
+          pivots[npivots] := (pval, row, comb, pattern);
+          pivotOf[pcol] := npivots;
+        elseif not listEmpty(pattern) and not listEmpty(row) and List.all(comb, function isReplaceableEntry(canReplace = canReplace)) then
+          eqn := BackendEquation.get(inEqns, i);
+          eqn := BackendDAE.EQUATION(DAE.RCONST(0.0), combinedResidual(row, comb, inEqns, vars, funcs, scale),
+            BackendEquation.equationSource(eqn), BackendEquation.getEquationAttributes(eqn));
+          outEqns := BackendEquation.setAtIndex(outEqns, i, eqn);
+          combined := (i, eqn) :: combined;
+        end if;
+      end if;
+    end if;
+  end for;
+
+  if Flags.isSet(Flags.BLT_DUMP) and not listEmpty(combined) then
+    BackendDump.dumpEquationList(list(Util.tuple22(c) for c in listReverse(combined)), "Constraint equations combined to eliminate variables with cancelling coefficients:");
+  end if;
+end eliminateCancellingVars;
+
+protected function linearConstantCoefficients
+"The coefficients of the variables of a scalar equation that is linear in them with
+  constant coefficients, sorted by variable index."
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Variables vars;
+  input AvlTreePathFunction.Tree funcs;
+  output Option<list<tuple<Integer, Real>>> coefs = NONE();
+protected
+  DAE.Exp res;
+  Integer idx;
+  Real value;
+  list<tuple<Integer, Real>> lst = {};
+algorithm
+  if not isScalarEquation(eqn) then
+    return;
+  end if;
+  try
+    BackendDAE.RESIDUAL_EQUATION(exp = res) := BackendEquation.equationToResidualForm(eqn);
+    false := Expression.expHasDer(res);
+    for cr in Expression.extractUniqueCrefsFromExp(res, false) loop
+      if BackendVariable.existsVar(cr, vars, false) then
+        (_, idx) := BackendVariable.getVarSingle(cr, vars);
+        value := Expression.toReal(Differentiate.differentiateExpSolve(res, cr, SOME(funcs)));
+        if value <> 0.0 then
+          lst := (idx, value) :: lst;
+        end if;
+      end if;
+    end for;
+    coefs := SOME(List.sort(lst, sparseEntryGt));
+  else
+  end try;
+end linearConstantCoefficients;
+
+protected function isScalarEquation
+  input BackendDAE.Equation eqn;
+  output Boolean b;
+algorithm
+  b := match eqn
+    case BackendDAE.EQUATION() then BackendEquation.equationSize(eqn) == 1;
+    case BackendDAE.RESIDUAL_EQUATION() then BackendEquation.equationSize(eqn) == 1;
+    else false;
+  end match;
+end isScalarEquation;
+
+protected function combinedResidual
+  "sum(f * res) for the combination of equations, with the variables replaced by
+  their combined coefficients. Other crefs whose coefficients cancel are removed."
+  input list<tuple<Integer, Real>> row;
+  input list<tuple<Integer, Real>> comb;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.Variables vars;
+  input AvlTreePathFunction.Tree funcs;
+  input Real scale;
+  output DAE.Exp res;
+protected
+  DAE.Exp e;
+  list<DAE.Exp> terms = {};
+algorithm
+  for c in comb loop
+    BackendDAE.RESIDUAL_EQUATION(exp = e) := BackendEquation.equationToResidualForm(BackendEquation.get(eqns, Util.tuple21(c)));
+    e := Expression.traverseExpBottomUp(e, zeroVariable, vars);
+    terms := Expression.expMul(DAE.RCONST(Util.tuple22(c)), e) :: terms;
+  end for;
+  (e, _) := ExpressionSimplify.simplify(Expression.makeSum(terms));
+  for cr in Expression.extractUniqueCrefsFromExp(e, false) loop
+    try
+      true := abs(Expression.toReal(Differentiate.differentiateExpSolve(e, cr, SOME(funcs)))) <= 1e-10 * scale;
+      e := Expression.traverseExpBottomUp(e, Expression.replaceCref, (cr, DAE.RCONST(0.0)));
+    else
+    end try;
+  end for;
+  terms := {e};
+  for c in row loop
+    e := Expression.crefExp(BackendVariable.varCref(BackendVariable.getVarAt(vars, Util.tuple21(c))));
+    terms := Expression.expMul(DAE.RCONST(Util.tuple22(c)), e) :: terms;
+  end for;
+  (res, _) := ExpressionSimplify.simplify(Expression.makeSum(listReverse(terms)));
+end combinedResidual;
+
+protected function zeroVariable
+  input DAE.Exp inExp;
+  input BackendDAE.Variables vars;
+  output DAE.Exp outExp;
+  output BackendDAE.Variables outVars = vars;
+algorithm
+  outExp := match inExp
+    case DAE.CREF() guard BackendVariable.existsVar(inExp.componentRef, vars, false) then DAE.RCONST(0.0);
+    else inExp;
+  end match;
+end zeroVariable;
+
+protected function isReplaceableEntry
+  input tuple<Integer, Real> entry;
+  input array<Boolean> canReplace;
+  output Boolean b = if Util.tuple21(entry) <= arrayLength(canReplace) then canReplace[Util.tuple21(entry)] else false;
+end isReplaceableEntry;
+
+protected function isEliminatedEntry
+  input tuple<Integer, Real> entry;
+  input array<Integer> occurrence;
+  output Boolean b = occurrence[Util.tuple21(entry)] == 1;
+end isEliminatedEntry;
+
+protected function firstPivot
+  "the variable with the earliest pivot, 0 if there is none"
+  input list<Integer> vars;
+  input array<Integer> pivotOf;
+  output Integer col = 0;
+protected
+  Integer first = 0, p;
+algorithm
+  for v in vars loop
+    p := pivotOf[v];
+    if p > 0 and (first == 0 or p < first) then
+      first := p;
+      col := v;
+    end if;
+  end for;
+end firstPivot;
+
+protected function sortedUnionWithout
+  "union of two sorted lists without the given element"
+  input list<Integer> l1;
+  input list<Integer> l2;
+  input Integer removed;
+  output list<Integer> r = {};
+protected
+  list<Integer> rest1 = l1, rest2 = l2;
+  Integer i, j;
+algorithm
+  while not listEmpty(rest1) and not listEmpty(rest2) loop
+    i := listHead(rest1);
+    j := listHead(rest2);
+    if i <= j then
+      rest1 := listRest(rest1);
+      if i == j then
+        rest2 := listRest(rest2);
+      end if;
+    else
+      i := j;
+      rest2 := listRest(rest2);
+    end if;
+    if i <> removed then
+      r := i :: r;
+    end if;
+  end while;
+  r := List.append_reverse(r, list(e for e guard e <> removed in (if listEmpty(rest1) then rest2 else rest1)));
+end sortedUnionWithout;
+
+protected function maxAbsEntry
+  input list<tuple<Integer, Real>> v;
+  output Real m = 0.0;
+algorithm
+  for e in v loop
+    m := max(m, abs(Util.tuple22(e)));
+  end for;
+end maxAbsEntry;
+
+protected function sparseEntryGt
+  input tuple<Integer, Real> e1;
+  input tuple<Integer, Real> e2;
+  output Boolean b = Util.tuple21(e1) > Util.tuple21(e2);
+end sparseEntryGt;
+
+protected function sparseGet
+  input list<tuple<Integer, Real>> v;
+  input Integer index;
+  output Real value = 0.0;
+algorithm
+  for e in v loop
+    if Util.tuple21(e) == index then
+      value := Util.tuple22(e);
+      return;
+    end if;
+  end for;
+end sparseGet;
+
+protected function sparseAxpy
+  "v + f*w for sparse vectors sorted by index"
+  input list<tuple<Integer, Real>> v;
+  input Real f;
+  input list<tuple<Integer, Real>> w;
+  output list<tuple<Integer, Real>> r = {};
+protected
+  list<tuple<Integer, Real>> v_rest = v, w_rest = w;
+  Integer i, j;
+  Real x, y;
+algorithm
+  while not listEmpty(v_rest) and not listEmpty(w_rest) loop
+    (i, x) := listHead(v_rest);
+    (j, y) := listHead(w_rest);
+    if i < j then
+      r := (i, x) :: r;
+      v_rest := listRest(v_rest);
+    elseif j < i then
+      r := (j, f * y) :: r;
+      w_rest := listRest(w_rest);
+    else
+      if x + f * y <> 0.0 then
+        r := (i, x + f * y) :: r;
+      end if;
+      v_rest := listRest(v_rest);
+      w_rest := listRest(w_rest);
+    end if;
+  end while;
+  r := List.append_reverse(r, if listEmpty(v_rest) then list((Util.tuple21(e), f * Util.tuple22(e)) for e in w_rest) else v_rest);
+end sparseAxpy;
 
 protected function forceStateSelectNever
   input array<Integer> vec_old1;
@@ -2984,6 +3314,7 @@ protected function removeFirstOrgEqns
   input BackendDAE.ConstraintEquations inOrgEqns;
   output list<BackendDAE.Equation> outEqnsLst = {};
   output BackendDAE.ConstraintEquations outOrgEqns;
+  output list<Integer> outIndices = {} "system index of each equation";
 protected
   list<BackendDAE.Equation> orgeqns;
   Integer e, numEqs;
@@ -2999,6 +3330,7 @@ algorithm
                                case eqn::eqns then (eqn :: outEqnsLst, eqns);
                                end match;
       arrayUpdate(outOrgEqns,e,orgeqns);
+      outIndices := e :: outIndices;
     end if;
   end for;
 end removeFirstOrgEqns;
@@ -3762,16 +4094,6 @@ algorithm
       algorithm
         // add replacement for each derivative
         (varlst,ht) := makeAllDummyVarandDummyDerivativeRepl1(diffcount,1,name,name,var,vars,so,varlst,ht);
-        // dummy_der name vor Source information
-        cr := ComponentReference.crefPrefixDer(name);
-        source := ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
-      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false,false,var.encrypted),(vars,so,varlst,ht));
-    // regular variable with StateSelect.Prefer
-    case (var as BackendDAE.VAR(name,BackendDAE.VARIABLE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
-      guard(BackendVariable.varStateSelectPrefer(var))
-      algorithm
-        // add replacement for each derivative
-        (varlst,ht) := makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
         // dummy_der name vor Source information
         cr := ComponentReference.crefPrefixDer(name);
         source := ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));

@@ -97,6 +97,7 @@ import NFSections.Sections;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
 import UnitCheck = NFUnitCheck;
+import Unit = NFUnit;
 import NFPrefixes.*;
 import Prefixes = NFPrefixes;
 import NFFlatten.FunctionTree;
@@ -2952,6 +2953,10 @@ algorithm
         c.state := ComponentState.FullyInstantiated;
         InstNode.updateComponent(c, node);
 
+        if not InstNode.isEmpty(c.classInst) then
+          c.binding := convertUnitfulLiterals(node, c);
+        end if;
+
         c.binding := instBinding(c.binding, context);
         c.condition := instBinding(c.condition, context);
 
@@ -2989,6 +2994,239 @@ algorithm
 
   end match;
 end instComponentExpressions;
+
+function convertUnitfulLiterals
+  "Converts a (negated) unitful literal that is the whole binding equation or
+   start/min/max/nominal modifier of a component to the component's unit.
+   Returns the component's binding and updates the modifiers in place."
+  input InstNode node;
+  input Component component;
+  output Binding binding = Component.getBinding(component);
+protected
+  Option<Class> ocls;
+  Class cls;
+  Boolean convert_binding;
+  list<InstNode> attrs = {};
+  InstNode attr_node;
+  Component attr;
+  String unit, name;
+  Option<Boolean> abs_value;
+algorithm
+  ocls := realTypeClass(Component.classInstance(component));
+
+  if isNone(ocls) then
+    return;
+  end if;
+
+  SOME(cls) := ocls;
+
+  convert_binding := isUnitfulBinding(binding);
+
+  for attr_name in {"start", "min", "max", "nominal"} loop
+    attr_node := ClassTree.lookupElement(attr_name, Class.classTree(cls));
+
+    if isUnitfulBinding(Component.getBinding(InstNode.component(attr_node))) then
+      attrs := attr_node :: attrs;
+    end if;
+  end for;
+
+  if not convert_binding and listEmpty(attrs) then
+    return;
+  end if;
+
+  unit := match Class.lookupAttributeBinding("unit", cls)
+    case Binding.RAW_BINDING(bindingExp = Absyn.Exp.STRING(value = unit))
+      then System.unescapedString(unit);
+    case Binding.UNTYPED_BINDING(bindingExp = Expression.STRING(value = unit)) then unit;
+    case Binding.TYPED_BINDING(bindingExp = Expression.STRING(value = unit)) then unit;
+    else "";
+  end match;
+
+  if stringEmpty(unit) then
+    return;
+  end if;
+
+  name := InstNode.name(node);
+  abs_value := SCodeUtil.lookupBooleanAnnotationMod(
+    SCodeUtil.lookupElementAnnotation(InstNode.definition(node), "absoluteValue"));
+
+  if isNone(abs_value) then
+    abs_value := typeAbsoluteValue(Component.classInstance(component));
+  end if;
+
+  if convert_binding then
+    binding := convertUnitfulBinding(binding, unit, abs_value, name);
+  end if;
+
+  for attr_node in attrs loop
+    attr := InstNode.component(attr_node);
+    attr := Component.setBinding(
+      convertUnitfulBinding(Component.getBinding(attr), unit, abs_value, name), attr);
+    InstNode.updateComponent(attr, attr_node);
+  end for;
+end convertUnitfulLiterals;
+
+function realTypeClass
+  "Returns the builtin Real class a type is derived from, the only type with a unit."
+  input InstNode node;
+  output Option<Class> outCls;
+protected
+  Class cls = InstNode.getClass(node);
+algorithm
+  outCls := match cls
+    case Class.EXPANDED_DERIVED() then realTypeClass(cls.baseClass);
+    case Class.INSTANCED_BUILTIN(ty = Type.REAL()) then SOME(cls);
+    else NONE();
+  end match;
+end realTypeClass;
+
+function typeAbsoluteValue
+  "Returns the absoluteValue annotation of a type, which is inherited by the
+   types derived from it."
+  input InstNode node;
+  output Option<Boolean> absValue;
+protected
+  Class cls;
+algorithm
+  absValue := SCodeUtil.lookupBooleanAnnotationMod(
+    SCodeUtil.lookupElementAnnotation(InstNode.definition(node), "absoluteValue"));
+
+  if isNone(absValue) then
+    cls := InstNode.getClass(node);
+
+    absValue := match cls
+      case Class.EXPANDED_DERIVED() then typeAbsoluteValue(cls.baseClass);
+      else NONE();
+    end match;
+  end if;
+end typeAbsoluteValue;
+
+function isUnitfulBinding
+  input Binding binding;
+  output Boolean res;
+algorithm
+  res := match binding
+    case Binding.RAW_BINDING(bindingExp = Absyn.Exp.UNITFUL_LITERAL()) then true;
+    case Binding.RAW_BINDING(bindingExp = Absyn.Exp.UNARY(op = Absyn.Operator.UMINUS(),
+                                                          exp = Absyn.Exp.UNITFUL_LITERAL())) then true;
+    else false;
+  end match;
+end isUnitfulBinding;
+
+function convertUnitfulBinding
+  input output Binding binding;
+  input String unit;
+  input Option<Boolean> absValue;
+  input String name;
+algorithm
+  () := match binding
+    case Binding.RAW_BINDING()
+      algorithm
+        binding.bindingExp := convertUnitfulLiteral(binding.bindingExp, unit, absValue, name, binding.info);
+      then
+        ();
+
+    else ();
+  end match;
+end convertUnitfulBinding;
+
+function convertUnitfulLiteral
+  "Converts e.g. -5'cm' to -0.05 for unit m. A literal that can't be converted
+   is returned as the bare number after a warning."
+  input Absyn.Exp exp;
+  input String unit;
+  input Option<Boolean> absValue;
+  input String name;
+  input SourceInfo info;
+  output Absyn.Exp outExp;
+protected
+  Absyn.Exp value_exp;
+  String lit_unit;
+  Boolean negated;
+  Real value, from_factor, from_offset, to_factor, to_offset;
+  Unit.StringToUnitTable known_units;
+  Unit.Unit from, to;
+algorithm
+  (value_exp, lit_unit, negated) := match exp
+    case Absyn.Exp.UNITFUL_LITERAL(value = value_exp, unit = lit_unit) then (value_exp, lit_unit, false);
+    case Absyn.Exp.UNARY(exp = Absyn.Exp.UNITFUL_LITERAL(value = value_exp, unit = lit_unit))
+      then (value_exp, lit_unit, true);
+  end match;
+
+  outExp := if negated then Absyn.Exp.UNARY(Absyn.Operator.UMINUS(), value_exp) else value_exp;
+
+  if lit_unit == unit then
+    return;
+  end if;
+
+  known_units := Unit.getKnownUnits();
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    from := Unit.parseUnitString(lit_unit, known_units);
+    to := Unit.parseUnitString(unit, known_units);
+    (from_factor, from_offset, to_factor, to_offset) := unitConversion(from, to);
+  else
+    ErrorExt.rollBack(getInstanceName());
+    Error.addSourceMessage(Error.UNITFUL_LITERAL_UNIT_CONFLICT, {Dump.printExpStr(exp), unit, name}, info);
+    return;
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+
+  value := match value_exp
+    case Absyn.Exp.INTEGER() then intReal(value_exp.value);
+    case Absyn.Exp.REAL() then stringReal(value_exp.value);
+  end match;
+
+  if negated then
+    value := -value;
+  end if;
+
+  if from_offset <> to_offset then
+    if isNone(absValue) then
+      Error.addSourceMessage(Error.UNITFUL_LITERAL_ABSOLUTE_VALUE, {Dump.printExpStr(exp), unit, name}, info);
+      return;
+    elseif Util.getOption(absValue) then
+      value := (value * from_factor + from_offset - to_offset) / to_factor;
+    else
+      value := scaleUnitValue(value, from_factor, to_factor);
+    end if;
+  else
+    value := scaleUnitValue(value, from_factor, to_factor);
+  end if;
+
+  // 15 digits drop the noise of the conversion, e.g. -20'degC' = 253.14999999999998'K'.
+  outExp := Absyn.Exp.REAL(System.sprintff("%.15g", abs(value)));
+
+  if value < 0 then
+    outExp := Absyn.Exp.UNARY(Absyn.Operator.UMINUS(), outExp);
+  end if;
+end convertUnitfulLiteral;
+
+function unitConversion
+  "Returns the factors and offsets of two units, failing if their dimensions differ."
+  input Unit.Unit from;
+  input Unit.Unit to;
+  output Real fromFactor;
+  output Real fromOffset;
+  output Real toFactor;
+  output Real toOffset;
+algorithm
+  (fromFactor, fromOffset, toFactor, toOffset) := match (from, to)
+    case (Unit.UNIT(), Unit.UNIT())
+      guard from.s == to.s and from.m == to.m and from.g == to.g and from.A == to.A and
+            from.K == to.K and from.mol == to.mol and from.cd == to.cd
+      then (from.factor, from.offset, to.factor, to.offset);
+  end match;
+end unitConversion;
+
+function scaleUnitValue
+  "Divides by the larger factor ratio to avoid e.g. 3 * 0.01 = 0.030000000000000002."
+  input Real value;
+  input Real fromFactor;
+  input Real toFactor;
+  output Real outValue = if fromFactor >= toFactor then value * (fromFactor / toFactor)
+                                                   else value / (toFactor / fromFactor);
+end scaleUnitValue;
 
 function instBinding
   input output Binding binding;
@@ -3058,6 +3296,7 @@ algorithm
       list<list<Expression>> expll;
       Absyn.Exp absynExp1;
       array<Expression> arr;
+      String name;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
     case Absyn.Exp.REAL() then Expression.REAL(stringReal(absynExp.value));
@@ -3165,6 +3404,11 @@ algorithm
         Type.UNKNOWN(),
         false
       );
+
+    case Absyn.Exp.DOT(index = Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {})))
+      then Expression.RECORD_ELEMENT(instExp(absynExp.exp, scope, context, info), 0, name, Type.UNKNOWN());
+
+    case Absyn.Exp.UNITFUL_LITERAL() then instExp(absynExp.value, scope, context, info);
 
     else
       algorithm
@@ -4164,6 +4408,16 @@ algorithm
   end match;
 end updateImplicitVariability;
 
+function isForcedStructural
+  "Whether translateModel asked to evaluate the parameter, see Global.structuralParameters."
+  input InstNode node;
+  output Boolean res;
+protected
+  list<String> names = getGlobalRoot(Global.structuralParameters);
+algorithm
+  res := not listEmpty(names) and listMember(AbsynUtil.pathString(InstNode.scopePath(node)), names);
+end isForcedStructural;
+
 function updateImplicitVariabilityComp
   input InstNode component;
   input Boolean parentEval;
@@ -4196,7 +4450,8 @@ algorithm
           InstNode.updateComponent(Component.setVariability(Variability.NON_STRUCTURAL_PARAMETER, c), node);
         else
           // Otherwise check if we should mark it as structural.
-          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval, context) then
+          if Structural.isStructuralComponent(c, c.attributes, binding, node,
+               eval or (c.attributes.variability == Variability.PARAMETER and isForcedStructural(node)), parentEval, context) then
             Structural.markComponent(c, node);
           end if;
         end if;

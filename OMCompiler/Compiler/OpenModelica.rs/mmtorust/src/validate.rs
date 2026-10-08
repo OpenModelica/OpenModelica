@@ -204,7 +204,7 @@ impl Finder<'_> {
     fn scan_exp(&mut self, e: &Absyn::Exp) {
         use Absyn::Exp::*;
         match e {
-            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK | CODE { .. } | CREF { .. } => {}
+            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK | UNITFUL_LITERAL { .. } | CODE { .. } | CREF { .. } => {}
             BINARY { exp1, exp2, .. } | LBINARY { exp1, exp2, .. } | RELATION { exp1, exp2, .. } => {
                 self.scan_exp(exp1); self.scan_exp(exp2);
             }

@@ -2,6 +2,7 @@ def common
 pipeline {
   agent none
   options {
+    skipDefaultCheckout()
     newContainerPerStage()
     buildDiscarder(logRotator(numToKeepStr: "100", artifactNumToKeepStr: "2"))
   }
@@ -28,6 +29,15 @@ pipeline {
             if (buildNumber > 1) milestone(buildNumber - 1)
             milestone(buildNumber)
           }
+          // common.checkoutSCM(), which is not loaded yet
+          echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+          int attempt = 0
+          retry(2) {
+            if (attempt++ > 0) {
+              sh script: 'git submodule absorbgitdirs && git submodule deinit --all -f', returnStatus: true
+            }
+            checkout scm
+          }
           common = load("${env.workspace}/.CI/common.groovy")
         }
       }
@@ -47,6 +57,7 @@ pipeline {
         retry(count: 2, conditions: [nonresumable()])
       }
       steps {
+        script { common.checkoutSCM() }
         script {
           common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
                                  "--mount type=volume,source=runtest-cpp-test-cache,target=/cache/runtest " +

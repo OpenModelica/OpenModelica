@@ -159,7 +159,8 @@ pub(super) fn build_equations_synchronous_fn(
 /// would put it on the wrong side of the `pre`-value snapshot.
 pub(super) fn build_init_start_values_fn(
     reals: &[&SimCodeVar::SimVar],
-    layout: &SimLayout,
+    pos: &RealPositions,
+    lz: &openmodelica_sim_meta::Layout<Sz>,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
@@ -168,9 +169,14 @@ pub(super) fn build_init_start_values_fn(
     let starts: Vec<(f64, u32)> = reals
         .iter()
         .enumerate()
-        .map(|(i, sv)| (literal_value(&sv.initialValue).unwrap_or(0.0), layout.real_start_off(i as u32)))
-        .collect();
-    ctx.emit_init_start_values(&starts)?;
+        .map(|(i, sv)| Ok((literal_value(&sv.initialValue).unwrap_or(0.0), at_real(&lz.start_off, &pos.fixed(i))?)))
+        .collect::<Result<_>>()?;
+    let fills: Vec<(u32, Sz, f64)> = pos
+        .dyn_reals
+        .iter()
+        .map(|(dv, idx)| Ok((at_real(&lz.start_off, idx)?, dv.len(), literal_value(&dv.sv.initialValue).unwrap_or(0.0))))
+        .collect::<Result<_>>()?;
+    ctx.emit_init_start_values(&starts, &fills)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -225,6 +231,7 @@ pub(super) fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
     defaults: &[(u32, ConstSlot)],
+    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
     attr_targets: &AttrTargetMap,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
@@ -242,7 +249,7 @@ pub(super) fn build_update_bound_attrs_fn(
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, &attrs)?;
+    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &attrs)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -255,12 +262,13 @@ pub(super) fn build_update_bound_attrs_fn(
 /// a solver built before initialization.
 pub(super) fn build_attr_defaults_fn(
     defaults: &[(u32, ConstSlot)],
+    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    ctx.emit_update_bound_attrs(defaults, &[])?;
+    ctx.emit_update_bound_attrs(defaults, dyn_defaults, &[])?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {
@@ -299,6 +307,23 @@ pub(super) fn build_update_relations_fn(
     let sim = SimCtx { zc_context: true, ..sim_ctx(var_map) };
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
     ctx.emit_update_relations(relations, var_map.relations_off)?;
+    let (locals, instrs) = ctx.finish_sim();
+    let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+    for i in &instrs {
+        func.instruction(i);
+    }
+    Ok(func)
+}
+
+/// Build `functionNextTimeEvent(SimData*)` (C's `function_nextTimeEvent`).
+pub(super) fn build_next_time_event_fn(
+    triggers: &[metamodelica::Ref<DAE::Exp>],
+    var_map: &SimVarMap,
+    by_name: &HashMap<String, FnInfo>,
+    literals: &mut Literals,
+) -> Result<we::Function> {
+    let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
+    ctx.emit_next_time_event(triggers)?;
     let (locals, instrs) = ctx.finish_sim();
     let mut func = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
     for i in &instrs {

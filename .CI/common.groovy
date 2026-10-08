@@ -7,6 +7,21 @@ def isMac() {
   return isUnix() && sh(script: 'uname', returnStdout: true).startsWith("Darwin")
 }
 
+// Replaces the declarative default checkout (skipDefaultCheckout). A nested
+// submodule that turns into plain files (or back) leaves a working tree that
+// `git submodule update` refuses to check out over; deinit clears it.
+void checkoutSCM() {
+  echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+  int attempt = 0
+  retry(2) {
+    if (attempt++ > 0) {
+      String deinit = 'git submodule absorbgitdirs && git submodule deinit --all -f'
+      isUnix() ? sh(script: deinit, returnStatus: true) : bat(script: deinit, returnStatus: true)
+    }
+    checkout scm
+  }
+}
+
 void standardSetup() {
   echo "${env.NODE_NAME}"
 
@@ -745,6 +760,8 @@ String qtLinuxPrefix() { return '/opt/Qt/6.11.2/gcc_64' }
 //   cdylib    the file name cargo gives libOpenModelicaCompiler for it
 //   multiarch the Linux targets' <triple> under lib/; absent elsewhere
 //   arch      the Linux targets' archive-name architecture
+//   checked   the Linux tarballs are tried on another distribution before they
+//             are uploaded (checkRustNightlyLinux)
 Map nightlyTarget(String name) {
   String rs = 'OMCompiler/Compiler/OpenModelica.rs/.cmake'
   // Fortran is off for both: flang compiles for either target but links for
@@ -804,6 +821,7 @@ Map nightlyTarget(String name) {
       cdylib: 'libOpenModelicaCompiler.so',
       arch: 'x86_64',
       multiarch: 'x86_64-linux-gnu',
+      checked: true,
     ],
     // Cross-compiled on the same 22.04 floor with the distribution's own GNU
     // cross toolchain (the qt-aarch64-linux add-on), which has a real gfortran,
@@ -1077,14 +1095,23 @@ void packageRustNightlyLinux(String name, List omcStashes, List guiStashes) {
   // No Qt prefix: the CLI tree has no GUI clients, but it still needs its own
   // libraries bundled -- omc pulls in libgfortran and libcurl-gnutls, neither of
   // which a target is required to have.
-  tarRustNightlyLinux(t, "OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz", '')
-  if (!guiStashes) {
-    return
+  List tgzs = ["OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz"]
+  tarRustNightlyLinux(t, tgzs[0], '')
+  if (guiStashes) {
+    for (s in guiStashes) {
+      unstash s
+    }
+    tgzs << "OpenModelica-${tagName()}-${t.arch}-linux.tar.gz"
+    tarRustNightlyLinux(t, tgzs[1], qtLinuxPrefix())
   }
-  for (s in guiStashes) {
-    unstash s
+  // A checked target is uploaded by checkRustNightlyLinux, once it has passed.
+  if (t.checked) {
+    stash name: "nightly-tarballs-${name}", includes: tgzs.join(',')
+  } else {
+    for (tgz in tgzs) {
+      uploadRustNightly(tgz)
+    }
   }
-  tarRustNightlyLinux(t, "OpenModelica-${tagName()}-${t.arch}-linux.tar.gz", qtLinuxPrefix())
 }
 
 void tarRustNightlyLinux(Map t, String tgz, String qtPrefix) {
@@ -1096,7 +1123,28 @@ void tarRustNightlyLinux(Map t, String tgz, String qtPrefix) {
   nightlyCheckGlibcFloor(tree, nightlyGlibcFloor())
   sh "rm -f ${tgz} && tar -C ${tree} -czf ${tgz} ."
   sh "ls -l ${tgz}"
-  uploadRustNightly(tgz)
+}
+
+// Stage 5: the CLI tarball on a bare distribution newer than the one it was
+// built on, with only the C toolchain a user is told to install. The build
+// agents have every -dev package, so a build-host path on a generated link line
+// only fails here. Runs as root for apt-get, so nothing is written into the
+// workspace. Both tarballs are uploaded only if the check passes.
+void checkRustNightlyLinux(String name) {
+  Map t = nightlyTarget(name)
+  unstash "nightly-tarballs-${name}"
+  sh """#!/bin/bash
+    set -euo pipefail
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq --no-install-recommends clang make cmake ca-certificates >/dev/null
+    tree=\$(mktemp -d)
+    tar -C "\$tree" -xzf OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz
+    .CI/scripts/linux-tarball-check.sh "\$tree"
+  """
+  for (tgz in findFiles(glob: "OpenModelica-*${t.arch}-linux.tar.gz")) {
+    uploadRustNightly(tgz.name)
+  }
 }
 
 // Stage 4, macOS: lipo the two per-architecture install trees into one universal

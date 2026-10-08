@@ -557,7 +557,6 @@ pub extern "C" fn initSample(
         });
     }
     let (md, si) = unsafe { (&*(*data).modelData, &mut *(*data).simulationInfo) };
-    si.nextSampleEvent = f64::MAX;
     for i in 0..md.nSamples as usize {
         let info = unsafe { &*md.samplesInfo.add(i) };
         let next = if start_time < info.start {
@@ -566,16 +565,34 @@ pub extern "C" fn initSample(
             info.start + ((start_time - info.start) / info.interval).ceil() * info.interval
         };
         unsafe { *si.nextSampleTimes.add(i) = next };
-        if i == 0 || next < si.nextSampleEvent {
-            si.nextSampleEvent = next;
-        }
     }
+    updateNextSampleEvent(data, thread_data);
+}
+
+/// The earliest of the next sample times and the next time a relation on `time`
+/// switches, into `nextSampleEvent`.
+#[unsafe(no_mangle)]
+pub extern "C" fn updateNextSampleEvent(data: *mut DATA, thread_data: *mut threadData_t) {
+    let (md, si) = unsafe { (&*(*data).modelData, &mut *(*data).simulationInfo) };
+    let mut next = f64::MAX;
+    for i in 0..md.nSamples as usize {
+        next = next.min(unsafe { *si.nextSampleTimes.add(i) });
+    }
+    let cb = unsafe { &*(*data).callback };
+    if let Some(f) = cb.function_nextTimeEvent {
+        let mut t = f64::MAX;
+        crate::support::protected(thread_data, crate::support::error_stage::SIMULATION, || {
+            t = unsafe { f(data, thread_data) };
+        });
+        next = next.min(t);
+    }
+    si.nextSampleEvent = next;
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn getNextSampleTimeFMU(data: *mut DATA, next_sample_event: *mut c_double) -> c_int {
     let (md, si) = unsafe { (&*(*data).modelData, &*(*data).simulationInfo) };
-    if md.nSamples <= 0 {
+    if md.nSamples <= 0 && si.nextSampleEvent >= f64::MAX {
         return 0;
     }
     omclog::info!(omclog::EVENTS, false, "Next event time = {}", si.nextSampleEvent);
