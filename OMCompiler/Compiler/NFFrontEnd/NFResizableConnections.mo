@@ -2027,6 +2027,8 @@ protected
     input output list<Edge> edges;
   protected
     Sym lo, hi;
+    list<Box> doms;
+    list<Equation> body;
   algorithm
     edges := match eq
       local
@@ -2048,8 +2050,9 @@ protected
       case Equation.IF()
         algorithm
           for b in ifDomains(eq.branches, eq.source, iterNames, dom, ctx) loop
-            for d in Util.tuple21(b) loop
-              for e in Util.tuple22(b) loop
+            (doms, body) := b;
+            for d in doms loop
+              for e in body loop
                 edges := collectEdges(e, iterNames, d, ctx, edges);
               end for;
             end for;
