@@ -1,0 +1,54 @@
+// name: FuncViaCompArrayRecord
+// keywords: function lookup component array default argument
+// status: correct
+//
+// A function called via a component in an array of components, where the
+// default argument is a record of the component.
+
+loadString("
+package P
+  record R
+    parameter Real c = 1;
+  end R;
+
+  function h
+    input Real x;
+    input R r;
+    output Real y = r.c * x;
+  end h;
+
+  model Obj
+    parameter R r;
+    function gr = h(final r = r);
+  end Obj;
+
+  model Cell
+    parameter Real k = 1;
+    Obj obj(r(c = 2 * k));
+    Real yr = obj.gr(time);
+  end Cell;
+
+  model Test
+    Cell cell[3](k = {1, 2, 3});
+  end Test;
+end P;
+"); getErrorString();
+
+simulate(P.Test, stopTime = 1); getErrorString();
+val(cell[1].yr, 1); val(cell[2].yr, 1); val(cell[3].yr, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 4.0
+// 6.0
+// endResult

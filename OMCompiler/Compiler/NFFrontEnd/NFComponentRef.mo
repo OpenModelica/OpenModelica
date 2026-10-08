@@ -283,6 +283,33 @@ public
     end match;
   end isOutput;
 
+  function isComponent
+    "Returns true if the first part of the cref refers to a component."
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF() then InstNode.isComponent(node(cref));
+      else false;
+    end match;
+  end isComponent;
+
+  function stripClassScope
+    "Removes the class parts of the scope from a cref, e.g. M.cell.obj => cell.obj."
+    input ComponentRef cref;
+    output ComponentRef outCref;
+  algorithm
+    outCref := match cref
+      case CREF() guard InstNode.isClass(node(cref)) then EMPTY();
+      case CREF()
+        algorithm
+          cref.restCref := stripClassScope(cref.restCref);
+        then
+          cref;
+      else cref;
+    end match;
+  end stripClassScope;
+
   function isNameNode
     input ComponentRef cref;
     output Boolean res;
@@ -1376,6 +1403,104 @@ public
     input ComponentRef cref2;
     output Boolean isGreater = compare(cref1, cref2) > 0;
   end isGreater;
+
+  function rebaseScope
+    "Gives the scope part of the cref that refers to the same components as the
+     given prefix, or one of its ancestors, the origins of the prefix, e.g.
+     cell.obj.k where cell and obj are part of the scope and the prefix
+     cell.obj.sub where obj was written in the source gives cell.obj.k where obj
+     has the origin CREF. The nodes, subscripts and types of the cref are kept."
+    input ComponentRef cref;
+    input ComponentRef prefix;
+    output ComponentRef outCref;
+  protected
+    Option<ComponentRef> ancestor;
+  algorithm
+    outCref := match cref
+      case CREF(origin = Origin.SCOPE)
+        algorithm
+          ancestor := findEqualAncestor(prefix, cref);
+        then
+          match ancestor
+            local
+              ComponentRef a;
+            case SOME(a) then copyOrigins(cref, a);
+            else setRestCref(cref, rebaseScope(cref.restCref, prefix));
+          end match;
+
+      case CREF()
+        then setRestCref(cref, rebaseScope(cref.restCref, prefix));
+
+      else cref;
+    end match;
+  end rebaseScope;
+
+  function hasUnmatchedScopePart
+    "Returns true if the cref refers to a component via the scope that isn't
+     one of the components in the given prefix, see rebaseScope."
+    input ComponentRef cref;
+    input ComponentRef prefix;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF(origin = Origin.SCOPE)
+        guard InstNode.isComponent(node(cref)) and isNone(findEqualAncestor(prefix, cref))
+        then true;
+
+      case CREF() then hasUnmatchedScopePart(cref.restCref, prefix);
+      else false;
+    end match;
+  end hasUnmatchedScopePart;
+
+  function findEqualAncestor
+    "Returns the prefix or the first of its ancestors that refers to the same
+     components as the given cref, ignoring subscripts."
+    input ComponentRef prefix;
+    input ComponentRef cref;
+    output Option<ComponentRef> ancestor;
+  algorithm
+    ancestor := match prefix
+      case CREF()
+        then
+          if isEqualStrip(prefix, cref)
+          then SOME(prefix) else findEqualAncestor(prefix.restCref, cref);
+
+      else NONE();
+    end match;
+  end findEqualAncestor;
+
+  function setRestCref
+    input output ComponentRef cref;
+    input ComponentRef restCref;
+  algorithm
+    cref := match cref
+      case CREF()
+        algorithm
+          if not referenceEq(cref.restCref, restCref) then
+            cref.restCref := restCref;
+          end if;
+        then
+          cref;
+
+      else cref;
+    end match;
+  end setRestCref;
+
+  function copyOrigins
+    input output ComponentRef cref;
+    input ComponentRef source;
+  algorithm
+    cref := match (cref, source)
+      case (CREF(), CREF())
+        algorithm
+          cref.origin := source.origin;
+          cref.restCref := copyOrigins(cref.restCref, source.restCref);
+        then
+          cref;
+
+      else cref;
+    end match;
+  end copyOrigins;
 
   function isPrefix
     input ComponentRef cref1;

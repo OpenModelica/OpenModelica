@@ -10,6 +10,8 @@ Bug2432.mos \
 Bug2536.mos \
 Bug2633.mos \
 Bug2704.mos \
+FuncViaCompArray.mos \
+FuncViaCompArrayRecord.mos \
 Bug2788.mos \
 Bug2833.mos \
 Bug3023.mos \

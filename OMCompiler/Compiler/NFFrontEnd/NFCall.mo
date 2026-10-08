@@ -2931,7 +2931,8 @@ protected
             allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
           end if;
         then
-          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize);
+          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize,
+            callPrefix = ComponentRef.stripClassScope(ComponentRef.rest(call.ref)));
     end match;
 
     if listEmpty(matchedFunctions) then
