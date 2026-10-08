@@ -1039,8 +1039,8 @@ protected
     frames  := list(Iterator.createFrame(iter, local_set) for iter in iters);
     UnorderedSet.merge(set, local_set);
 
-    // add the iterators to the cref
-    subs      := Iterator.normalizedSubscripts(Iterator.fromFrames(frames));
+    // add the iterators to the cref, the last iterator is the outermost dimension
+    subs      := listReverse(Iterator.normalizedSubscripts(Iterator.fromFrames(frames)));
     cref_exp  := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref, true));
 
     // lower the potentiall new iterators

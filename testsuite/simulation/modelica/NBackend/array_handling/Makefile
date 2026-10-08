@@ -18,6 +18,7 @@ resizableOverrideDerived.mos \
 resizableConnectArrays.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
+resizableFill.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\
