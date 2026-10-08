@@ -973,6 +973,15 @@ public
                 (dep_cref, dep) := tpl;
                 repeated := UnorderedSet.contains(dep_cref, full.repetitions[eqn_index]);
                 (inner_deps, changed) := match UnorderedMap.get(dep_cref, inner_map)
+                  // with resizable arrays other slices of the variable (e.g. solved by an algebraic
+                  // loop) can have the same iterator but another range, also use their dependencies
+                  case SOME(inner_deps) guard Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and not filterSet(dep_cref, seed_set) and ComponentRef.hasSubscripts(dep_cref) algorithm
+                    inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
+                    if isSome(inner_opt) then
+                      inner_deps := UnorderedSet.unique_list(listAppend(inner_deps, List.flatten(list(sparsityExpandForeignIterators(c, no_iters, seed_elements)
+                        for c guard not List.contains(inner_deps, c, ComponentRef.isEqual) in Util.getOption(inner_opt)))), ComponentRef.hash, ComponentRef.isEqual);
+                    end if;
+                  then (inner_deps, true);
                   case SOME(inner_deps) then (inner_deps, true);
                   else algorithm
                     // Base-key fallback for subscripted inner LS vars (partial-slice NLS).
@@ -1108,6 +1117,11 @@ public
 
                 // filter inner dependencies for relevant seeds and add
                 inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
+                // with resizable arrays the variables of an algebraic loop depend on whole arrays,
+                // the iterators of its equations do not correspond to the ones of other equations
+                if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and StrongComponent.isAlgebraicLoop(comp) then
+                  inner_deps := UnorderedSet.unique_list(list(ComponentRef.stripSubscriptsAll(c) for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
+                end if;
                 for cref in tmp_crefs loop
                   sparsityAddInner(cref, inner_deps, inner_map);
                   sparsityAddTemplate(cref, inner_deps, template_map);

@@ -6345,7 +6345,7 @@ template indexSubRecursive(list<Dimension> dims, list<DAE.Subscript> subs, Conte
       let recurse = indexSubRecursive(List.restOrEmpty(dims), sub_rest, context, preExp, varDecls, varFrees, auxFunction)
       let dim1 = dimension(listHead(dims), context, &preExp, &varDecls, &varFrees, &auxFunction)
       let sub1 = daeSubscript(sub, context, &preExp, &varDecls, &varFrees, &auxFunction)
-      '(<%recurse%>) * <%dim1%> + (<%sub1%>-1)'
+      '(<%recurse%>) * (<%dim1%>) + (<%sub1%>-1)'
 end indexSubRecursive;
 
 template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,

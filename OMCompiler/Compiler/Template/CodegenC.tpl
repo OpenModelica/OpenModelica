@@ -6491,7 +6491,7 @@ template numScalarElemsVarExp(SimVar var, Text &preExp, Text &varDecls, Text &va
 ::=
   match var
   case SIMVAR(type_ = T_ARRAY(dims = dims)) then
-    '(<%dims |> d => dimension(d, contextOther, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=" * "%>)'
+    '(<%dims |> d => '(<%dimension(d, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>)' ;separator=" * "%>)'
   else '1'
 end numScalarElemsVarExp;
 
@@ -8587,11 +8587,12 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       >>
       %>
       /* get old value */
-      <%nls.crefs |> name hasindex i0 =>
+      <%if nlsResizable(nls.crefs) then nlsGetIterVars(nls.crefs, 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld') else
+      (nls.crefs |> name hasindex i0 =>
         let &auxFunction = buffer ""
         let START = contextCrefNoPrevExp(name, context, &auxFunction)
         'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
-      ;separator="\n"%>
+      ;separator="\n")%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
       /* check if solution process was successful */
       if (retValue > 0){
@@ -8601,9 +8602,10 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
         <%match at case SOME(__) then 'return 0;'%>
       }
       /* write solution */
-      <%nls.crefs |> name hasindex i0 =>
+      <%if nlsResizable(nls.crefs) then nlsSetIterVars(nls.crefs, 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx') else
+      (nls.crefs |> name hasindex i0 =>
         let &auxFunction = buffer ""
-        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n")%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);' %>
       <%match at case SOME(__) then 'return 1;'%>
       >>
