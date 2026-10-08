@@ -294,11 +294,15 @@ algorithm
 
     case SOME(binding) guard(is_rec and UnorderedMap.contains(rec_cref, map) and Expression.isConst(binding)) algorithm
 
-      if ComponentReference.isArrayElement(var.varName) then
-        arrayCref := ComponentReference.crefStripSubsExceptModelSubs(var.varName);
+      // The subscripts of the record or the element itself make it an element
+      // of an array binding. The subscripts of enclosing model arrays stay in
+      // the cref, cell[1].r.n is a scalar binding of the type of cell[1].r.
+      arrayCref := ComponentReference.crefStripSubsExceptModelSubs(var.varName);
+      if not ComponentReferenceBasics.crefEqual(arrayCref, var.varName) then
         arrayBindingExpList := UnorderedMap.getOrDefault(arrayCref, arrayMap, {});
 
-        subscriptLst := ComponentReferenceBasics.crefSubs(var.varName);
+        subscriptLst := List.stripN(ComponentReferenceBasics.crefSubs(var.varName),
+          listLength(ComponentReferenceBasics.crefSubs(arrayCref)));
         intSubLst := list(match subscript
           local
             Integer i;

@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+	RecordConstantInComponentArray.mos \
 ATotal.mos \
 constVar1.mos \
 constVar2.mos \

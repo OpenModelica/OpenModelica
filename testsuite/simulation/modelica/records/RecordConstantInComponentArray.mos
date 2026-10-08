@@ -1,0 +1,87 @@
+// name:     RecordConstantInComponentArray
+// keywords: record constant array
+// status:   correct
+// teardown_command: rm -rf RecordConstantInComponentArray.NoMod* RecordConstantInComponentArray.ArrMod* RecordConstantInComponentArray.Nested* output.log
+//
+// A record with a constant element, modified per element of an array of
+// components and passed to a function.
+//
+
+loadString("
+package RecordConstantInComponentArray
+  record R
+    constant Integer n = 1;
+    parameter Real c = 1;
+  end R;
+
+  function g
+    input Real x;
+    input R r;
+    output Real y;
+  algorithm
+    y := r.c*x + r.n + sum(ones(r.n));
+  end g;
+
+  model Cell
+    parameter R r;
+    Real y = g(time, r);
+  end Cell;
+
+  model NoMod
+    Cell cell[2];
+  end NoMod;
+
+  model ArrMod
+    Cell cell[2](r(n = {2, 3}, c = {1, 2}));
+  end ArrMod;
+
+  model Nested
+    NoMod a[2];
+    ArrMod b;
+  end Nested;
+end RecordConstantInComponentArray;
+"); getErrorString();
+
+simulate(RecordConstantInComponentArray.NoMod, stopTime=1); getErrorString();
+val(cell[1].y, 1);
+val(cell[2].y, 1);
+simulate(RecordConstantInComponentArray.ArrMod, stopTime=1); getErrorString();
+val(cell[1].y, 1);
+val(cell[2].y, 1);
+simulate(RecordConstantInComponentArray.Nested, stopTime=1); getErrorString();
+val(a[2].cell[1].y, 1);
+val(b.cell[2].y, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RecordConstantInComponentArray.NoMod_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RecordConstantInComponentArray.NoMod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 3.0
+// record SimulationResult
+//     resultFile = "RecordConstantInComponentArray.ArrMod_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RecordConstantInComponentArray.ArrMod', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// 8.0
+// record SimulationResult
+//     resultFile = "RecordConstantInComponentArray.Nested_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RecordConstantInComponentArray.Nested', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 8.0
+// endResult
