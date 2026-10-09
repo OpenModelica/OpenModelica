@@ -48,6 +48,7 @@ protected
 
   // NF imports
   import Call = NFCall;
+  import NFBuiltinFuncs;
   import NFPrefixes;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -321,7 +322,7 @@ protected
 
         // add parameter function alias
         varData.parameters := VariablePointers.mapPtr(varData.parameters,
-          function BVariable.mapExp(funcExp = function introduceFunctionAlias(map = map, aux_index = aux_index, iter = Iterator.EMPTY(), init = true),
+          function BVariable.mapExp(funcExp = function introduceFunctionAlias(map = map, aux_index = aux_index, iter = Iterator.EMPTY(), init = true, noEvent = false),
           mapFunc = Expression.fakeMap));
 
         // create new initialization variables and corresponding equations for the function alias
@@ -704,9 +705,9 @@ protected
 
     // do the function alias replacement
     if depth == Depth.FULL then
-      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init), NONE(), Expression.fakeMap);
+      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = false), NONE(), Expression.fakeMap);
     elseif depth == Depth.CONDITION then
-      eqn := Equation.mapCondition(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init), NONE(), Expression.fakeMap);
+      eqn := Equation.mapCondition(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = false), NONE(), Expression.fakeMap);
     end if;
   end introduceFunctionAliasEquation;
 
@@ -719,15 +720,17 @@ protected
     input Pointer<Integer> aux_index;
     input Iterator iter;
     input Boolean init;
+    input Boolean noEvent = false "inside of noEvent(): the alias equations get it too";
   protected
     Iterator deep_iter;
+    Boolean deep_noEvent = noEvent or Expression.isCallNamed(exp, "noEvent");
   algorithm
     // add local iterators to deep recursion
     deep_iter := match exp
       case Expression.CALL() then Iterator.expand(iter, exp.call);
       else iter;
     end match;
-    exp := Expression.mapShallow(exp, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = deep_iter, init = init));
+    exp := Expression.mapShallow(exp, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = deep_iter, init = init, noEvent = deep_noEvent));
 
     // use the original iterator for local analysis
     exp := match exp
@@ -735,23 +738,23 @@ protected
         Call call;
         Expression new_exp, sub_exp;
 
-      case Expression.CALL() guard(checkCallReplacement(exp.call)) then introduceAlias(exp, map, aux_index, NBVariable.FUNCTION_STR, iter, init);
+      case Expression.CALL() guard(checkCallReplacement(exp.call)) then introduceAlias(wrapNoEvent(exp, noEvent), map, aux_index, NBVariable.FUNCTION_STR, iter, init);
 
       // create alias for array constructors as arguments to functions
       case new_exp as Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-        call.arguments  := list(Expression.map(arg, function introduceArrayConstructorAlias(map = map, aux_index = aux_index, iter = iter, init = init)) for arg in call.arguments);
+        call.arguments  := list(Expression.map(arg, function introduceArrayConstructorAlias(map = map, aux_index = aux_index, iter = iter, init = init, noEvent = deep_noEvent)) for arg in call.arguments);
         new_exp.call    := call;
       then new_exp;
 
       // create alias for array constructors in multaries and binaries
       // Note: do not map! only replace top lvl constructors
       case Expression.MULTARY() algorithm
-        exp.arguments     := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init) for arg in exp.arguments);
-        exp.inv_arguments := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init) for arg in exp.inv_arguments);
+        exp.arguments     := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init, noEvent) for arg in exp.arguments);
+        exp.inv_arguments := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init, noEvent) for arg in exp.inv_arguments);
       then exp;
       case Expression.BINARY() algorithm
-        exp.exp1 := introduceArrayConstructorAlias(exp.exp1, map, aux_index, iter, init);
-        exp.exp2 := introduceArrayConstructorAlias(exp.exp2, map, aux_index, iter, init);
+        exp.exp1 := introduceArrayConstructorAlias(exp.exp1, map, aux_index, iter, init, noEvent);
+        exp.exp2 := introduceArrayConstructorAlias(exp.exp2, map, aux_index, iter, init, noEvent);
       then exp;
 
       // remove tuple expressions that occur when using a function only for one output
@@ -778,13 +781,24 @@ protected
     input Pointer<Integer> aux_index;
     input Iterator iter;
     input Boolean init;
+    input Boolean noEvent = false;
   algorithm
     exp := match exp
-      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then introduceAlias(exp, map, aux_index,  NBVariable.FUNCTION_STR, iter, init);
-      case Expression.CALL(call = Call.TYPED_REDUCTION()) then introduceAlias(exp, map, aux_index,  NBVariable.FUNCTION_STR, iter, init);
+      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then introduceAlias(wrapNoEvent(exp, noEvent), map, aux_index,  NBVariable.FUNCTION_STR, iter, init);
+      case Expression.CALL(call = Call.TYPED_REDUCTION()) then introduceAlias(wrapNoEvent(exp, noEvent), map, aux_index,  NBVariable.FUNCTION_STR, iter, init);
       else exp;
     end match;
   end introduceArrayConstructorAlias;
+
+  function wrapNoEvent
+    input output Expression exp;
+    input Boolean noEvent;
+  algorithm
+    if noEvent then
+      exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.NO_EVENT, {exp}, Expression.variability(exp),
+        NFPrefixes.Purity.PURE, Expression.typeOf(exp)));
+    end if;
+  end wrapNoEvent;
 
   function introduceAliasCrefConditional
     "introduces alias variables for crefs, only if they are in the set"
