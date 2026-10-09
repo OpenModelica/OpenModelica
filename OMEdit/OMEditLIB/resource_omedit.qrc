@@ -32,6 +32,12 @@
         <file>Resources/icons/translateAs.svg</file>
         <file>Resources/icons/runScript.svg</file>
         <file>Resources/css/stylesheet.qss</file>
+        <file>Resources/css/stylesheet-dark.qss</file>
+    <file>Resources/icons/dark-check.svg</file>
+    <file>Resources/icons/dark-check-partial.svg</file>
+    <file>Resources/icons/dark-radio.svg</file>
+    <file>Resources/icons/dark-check-disabled.svg</file>
+    <file>Resources/icons/dark-radio-disabled.svg</file>
         <file>Resources/icons/check.svg</file>
         <file>Resources/icons/check-all.svg</file>
         <file>Resources/icons/zoomReset.svg</file>
@@ -215,5 +221,6 @@
         <file>Resources/json/MCPAdminTools.json</file>
         <file>Resources/icons/language-server.svg</file>
         <file>Resources/icons/settings.svg</file>
+        <file>Resources/icons/save-figure-in-model.svg</file>
     </qresource>
 </RCC>

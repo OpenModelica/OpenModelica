@@ -908,7 +908,7 @@ public
           UnorderedMap<ComponentRef, Integer> index_map = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, Dependencies> inner_map = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           list<Pointer<Equation>> eqns;
-          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs;
+          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs, own_vars;
           ComponentRef eqn_name, dep_cref, seed_cref, pder_cref;
           Option<ComponentRef> oseed_cref;
           Integer eqn_index;
@@ -966,10 +966,22 @@ public
               // map the dependencies with the inner maps
               local_deps  := {};
               changed     := false;
-              for tpl in UnorderedMap.toList(full.dependencies[eqn_index]) loop
+              // the variable a single equation solves is no input of it
+              own_vars := if listLength(eqns) == 1 then var_crefs else {};
+              for tpl in list(t for t guard(not List.any(own_vars, function ComponentRef.isEqual(cref2 = Util.tuple21(t))))
+                  in UnorderedMap.toList(full.dependencies[eqn_index])) loop
                 (dep_cref, dep) := tpl;
                 repeated := UnorderedSet.contains(dep_cref, full.repetitions[eqn_index]);
                 (inner_deps, changed) := match UnorderedMap.get(dep_cref, inner_map)
+                  // with resizable arrays other slices of the variable (e.g. solved by an algebraic
+                  // loop) can have the same iterator but another range, also use their dependencies
+                  case SOME(inner_deps) guard Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and not filterSet(dep_cref, seed_set) and ComponentRef.hasSubscripts(dep_cref) algorithm
+                    inner_opt := UnorderedMap.get(ComponentRef.stripSubscriptsAll(dep_cref), inner_map);
+                    if isSome(inner_opt) then
+                      inner_deps := UnorderedSet.unique_list(listAppend(inner_deps, List.flatten(list(sparsityExpandForeignIterators(c, no_iters, seed_elements)
+                        for c guard not List.contains(inner_deps, c, ComponentRef.isEqual) in Util.getOption(inner_opt)))), ComponentRef.hash, ComponentRef.isEqual);
+                    end if;
+                  then (inner_deps, true);
                   case SOME(inner_deps) then (inner_deps, true);
                   else algorithm
                     // Base-key fallback for subscripted inner LS vars (partial-slice NLS).
@@ -1105,6 +1117,11 @@ public
 
                 // filter inner dependencies for relevant seeds and add
                 inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
+                // with resizable arrays the variables of an algebraic loop depend on whole arrays,
+                // the iterators of its equations do not correspond to the ones of other equations
+                if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and StrongComponent.isAlgebraicLoop(comp) then
+                  inner_deps := UnorderedSet.unique_list(list(ComponentRef.stripSubscriptsAll(c) for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
+                end if;
                 for cref in tmp_crefs loop
                   sparsityAddInner(cref, inner_deps, inner_map);
                   sparsityAddTemplate(cref, inner_deps, template_map);
@@ -1197,10 +1214,9 @@ public
       output Integer status = 1;
       output UnorderedMap<ComponentRef, Expression> bindings = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     protected
-      Expression key_exp, exp, value;
+      Expression key_exp, exp, value, offset;
       Boolean ok, negated;
       ComponentRef iter;
-      Integer offset;
     algorithm
       if listLength(key_subs) <> listLength(subs) then
         status := 2;
@@ -1209,9 +1225,10 @@ public
       for tpl in List.zip(key_subs, subs) loop
         () := match tpl
           case (Subscript.WHOLE(), _) then ();
-          case (Subscript.INDEX(index = key_exp), _) guard(Expression.isInteger(key_exp)) algorithm
+          // a literal or a parameter (x[N]) binds nothing, it can only be told apart from another literal
+          case (Subscript.INDEX(index = key_exp), _) guard(not sparsityHasIterator(key_exp)) algorithm
             () := match Util.tuple22(tpl)
-              case Subscript.INDEX(index = exp) guard(Expression.isInteger(exp)) algorithm
+              case Subscript.INDEX(index = exp) guard(Expression.isInteger(exp) and Expression.isInteger(key_exp)) algorithm
                 if Expression.integerValue(exp) <> Expression.integerValue(key_exp) then
                   status := 0;
                 end if;
@@ -1219,12 +1236,14 @@ public
               else ();
             end match;
           then ();
+          // a symbolic index without iterators (e.g. x[N] of a resizable array) may match, like a literal
+          case (Subscript.INDEX(index = key_exp), _) guard(not Expression.contains(key_exp, Expression.isIterator)) then ();
           case (Subscript.INDEX(index = key_exp), Subscript.INDEX(index = exp)) algorithm
             (ok, iter, offset, negated) := sparsityIteratorOffset(key_exp);
             if ok then
               value := if negated
-                then SimplifyExp.simplify(Expression.BINARY(Expression.INTEGER(offset), Operator.makeSub(Type.INTEGER()), exp))
-                else SimplifyExp.simplify(Expression.BINARY(exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(offset)));
+                then SimplifyExp.simplify(Expression.BINARY(offset, Operator.makeSub(Type.INTEGER()), exp))
+                else SimplifyExp.simplify(Expression.BINARY(exp, Operator.makeSub(Type.INTEGER()), offset));
               if UnorderedMap.contains(iter, bindings) and not Expression.isEqual(value, UnorderedMap.getSafe(iter, bindings, sourceInfo())) then
                 status := 2;
               else
@@ -1245,37 +1264,42 @@ public
     end sparsityUnify;
 
     function sparsityIteratorOffset
-      "i + c, c + i, i - c and i as (i, c, false), c - i as (i, c, true)"
+      "i + c, c + i, i - c and i as (i, c, false), c - i as (i, c, true); c without iterators"
       input Expression exp;
       output Boolean ok = true;
       output ComponentRef iter = ComponentRef.EMPTY();
-      output Integer offset = 0;
+      output Expression offset = Expression.INTEGER(0);
       output Boolean negated = false;
     algorithm
       () := match exp
         case Expression.CREF() guard(ComponentRef.isIterator(exp.cref)) algorithm
           iter := exp.cref;
         then ();
-        case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.ADD), exp2 = Expression.INTEGER(offset))
-          guard(ComponentRef.isIterator(iter)) then ();
-        case Expression.BINARY(exp1 = Expression.INTEGER(offset), operator = Operator.OPERATOR(op = Op.ADD), exp2 = Expression.CREF(cref = iter))
-          guard(ComponentRef.isIterator(iter)) then ();
-        case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.INTEGER(offset))
-          guard(ComponentRef.isIterator(iter)) algorithm
-          offset := -offset;
+        case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.ADD), exp2 = offset)
+          guard(ComponentRef.isIterator(iter) and not sparsityHasIterator(offset)) then ();
+        case Expression.BINARY(exp1 = offset, operator = Operator.OPERATOR(op = Op.ADD), exp2 = Expression.CREF(cref = iter))
+          guard(ComponentRef.isIterator(iter) and not sparsityHasIterator(offset)) then ();
+        case Expression.BINARY(exp1 = Expression.CREF(cref = iter), operator = Operator.OPERATOR(op = Op.SUB), exp2 = offset)
+          guard(ComponentRef.isIterator(iter) and not sparsityHasIterator(offset)) algorithm
+          offset := Expression.negate(offset);
         then ();
-        case Expression.BINARY(exp1 = Expression.INTEGER(offset), operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.CREF(cref = iter))
-          guard(ComponentRef.isIterator(iter)) algorithm
+        case Expression.BINARY(exp1 = offset, operator = Operator.OPERATOR(op = Op.SUB), exp2 = Expression.CREF(cref = iter))
+          guard(ComponentRef.isIterator(iter) and not sparsityHasIterator(offset)) algorithm
           negated := true;
         then ();
         case Expression.MULTARY(operator = Operator.OPERATOR(op = Op.ADD)) algorithm
-          (ok, iter, offset, negated) := sparsityMultaryOffset(exp.arguments, exp.inv_arguments);
+          (ok, iter, offset, negated) := sparsityMultaryOffset(exp);
         then ();
         else algorithm
           ok := false;
         then ();
       end match;
     end sparsityIteratorOffset;
+
+    function sparsityHasIterator
+      input Expression exp;
+      output Boolean b = UnorderedSet.any(Expression.extractCrefs(exp), ComponentRef.isIterator);
+    end sparsityHasIterator;
 
     function sparsitySimplify
       input output Expression exp;
@@ -1300,45 +1324,34 @@ public
     end sparsityHasUnbound;
 
     function sparsityMultaryOffset
-      "a sum of integers and one iterator, which may be subtracted"
-      input list<Expression> arguments;
-      input list<Expression> inv_arguments;
-      output Boolean ok = true;
+      "a sum with one iterator, which may be subtracted, and terms without iterators"
+      input Expression exp;
+      output Boolean ok = false;
       output ComponentRef iter = ComponentRef.EMPTY();
-      output Integer offset = 0;
+      output Expression offset = Expression.INTEGER(0);
       output Boolean negated = false;
+    protected
+      list<Expression> its, inv_its, rest, inv_rest;
     algorithm
-      for e in arguments loop
-        (ok, iter, offset, negated) := sparsityMultaryArgument(e, false, ok, iter, offset, negated);
-      end for;
-      for e in inv_arguments loop
-        (ok, iter, offset, negated) := sparsityMultaryArgument(e, true, ok, iter, offset, negated);
-      end for;
-      ok := ok and not ComponentRef.isEmpty(iter);
+      () := match exp
+        case Expression.MULTARY() algorithm
+          (its, rest) := List.splitOnTrue(exp.arguments, sparsityIsIteratorExp);
+          (inv_its, inv_rest) := List.splitOnTrue(exp.inv_arguments, sparsityIsIteratorExp);
+          if listLength(its) + listLength(inv_its) == 1 then
+            negated := listEmpty(its);
+            iter := Expression.toCref(listHead(if negated then inv_its else its));
+            offset := Expression.MULTARY(rest, inv_rest, exp.operator);
+            ok := not sparsityHasIterator(offset);
+          end if;
+        then ();
+        else ();
+      end match;
     end sparsityMultaryOffset;
 
-    function sparsityMultaryArgument
-      input Expression e;
-      input Boolean inv;
-      input output Boolean ok;
-      input output ComponentRef iter;
-      input output Integer offset;
-      input output Boolean negated;
-    algorithm
-      () := match e
-        case Expression.INTEGER() algorithm
-          offset := if inv then offset - e.value else offset + e.value;
-        then ();
-        case Expression.CREF() guard(ComponentRef.isIterator(e.cref)) algorithm
-          ok := ok and ComponentRef.isEmpty(iter);
-          iter := e.cref;
-          negated := inv;
-        then ();
-        else algorithm
-          ok := false;
-        then ();
-      end match;
-    end sparsityMultaryArgument;
+    function sparsityIsIteratorExp
+      input Expression exp;
+      output Boolean b = Expression.isCref(exp) and ComponentRef.isIterator(Expression.toCref(exp));
+    end sparsityIsIteratorExp;
 
     function sparsityBind
       input output Expression exp;
@@ -1381,7 +1394,7 @@ public
       end match;
     end sparsityInBounds;
 
-    type SliceAlias = tuple<Integer, Integer, ComponentRef, Integer> "solved start, solved stop, seed, seed start";
+    type SliceAlias = tuple<Expression, Expression, ComponentRef, Expression> "solved start, solved stop, seed, seed start";
     type SliceAliases = list<SliceAlias>;
 
     function sparsityAddSliceAlias
@@ -1413,14 +1426,16 @@ public
       ComponentRef solved_base = ComponentRef.stripSubscriptsAll(solved);
       ComponentRef seed_base = ComponentRef.stripSubscriptsAll(seed);
       Boolean ok1, ok2;
-      Integer start1, stop1, start2, stop2;
+      Expression start1, stop1, start2, stop2;
     algorithm
       if not List.any(tmp_crefs, function sparsitySameBase(base = solved_base)) or not UnorderedSet.contains(seed_base, seed_set) then
         return;
       end if;
       (ok1, start1, stop1) := sparsitySliceBounds(solved);
       (ok2, start2, stop2) := sparsitySliceBounds(seed);
-      if ok1 and ok2 and stop1 - start1 == stop2 - start2 then
+      // the sides of an array equation have the same size, only literal bounds can be checked
+      if ok1 and ok2 and not (List.all({start1, stop1, start2, stop2}, Expression.isInteger)
+         and Expression.integerValue(stop1) - Expression.integerValue(start1) <> Expression.integerValue(stop2) - Expression.integerValue(start2)) then
         UnorderedMap.add(solved_base, (start1, stop1, seed_base, start2) :: UnorderedMap.getOrDefault(solved_base, slice_map, {}), slice_map);
       end if;
     end sparsityAddSliceAlias2;
@@ -1435,35 +1450,62 @@ public
       "bounds of a one-dimensional variable or a unit step slice of it"
       input ComponentRef cref;
       output Boolean ok = false;
-      output Integer start = 0;
-      output Integer stop = 0;
+      output Expression start = Expression.INTEGER(1);
+      output Expression stop = Expression.INTEGER(0);
     protected
       Type ty = ComponentRef.getSubscriptedType(ComponentRef.stripSubscriptsAll(cref));
       list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
-      Integer step;
+      Integer istart, istep, istop;
+      Expression size;
     algorithm
-      if Type.dimensionCount(ty) <> 1 or not Type.hasKnownSize(ty)
-         or listLength(subs) <> listLength(ComponentRef.getSubscripts(cref)) then
+      if Type.dimensionCount(ty) <> 1 or listLength(subs) <> listLength(ComponentRef.getSubscripts(cref)) then
         return;
+      end if;
+      if Type.hasKnownSize(ty) then
+        size := Expression.INTEGER(Type.sizeOf(ty));
+      else
+        size := match Type.arrayDims(ty)
+          local
+            Dimension dim;
+          case {dim as Dimension.RESIZABLE()} then Dimension.sizeExp(dim);
+          case {dim as Dimension.EXP()} then Dimension.sizeExp(dim);
+          else Expression.EMPTY(Type.INTEGER());
+        end match;
       end if;
       (ok, start, stop) := match subs
         local
           Expression range;
           list<Subscript> indices;
-        case {} then (true, 1, Type.sizeOf(ty));
-        case {Subscript.WHOLE()} then (true, 1, Type.sizeOf(ty));
+        case {} then (not Expression.isEmpty(size), Expression.INTEGER(1), size);
+        case {Subscript.WHOLE()} then (not Expression.isEmpty(size), Expression.INTEGER(1), size);
         case {Subscript.SLICE(slice = range as Expression.RANGE())} guard(Expression.isLiteral(range)) algorithm
-          (start, step, stop) := Expression.getIntegerRange(range, false);
-        then (step == 1, start, stop);
+          (istart, istep, istop) := Expression.getIntegerRange(range, false);
+        then (istep == 1, Expression.INTEGER(istart), Expression.INTEGER(istop));
+        case {Subscript.SLICE(slice = range as Expression.RANGE())}
+          guard(Util.applyOptionOrDefault(range.step, function Expression.isEqual(exp2 = Expression.INTEGER(1)), true))
+        then (true, range.start, range.stop);
         case {Subscript.SLICE(slice = range as Expression.ARRAY())}
         then sparsityConsecutive(Expression.arrayElementList(range));
         case {Subscript.EXPANDED_SLICE(indices = indices)}
         then sparsityConsecutive(list(Subscript.toExp(sub) for sub in indices));
-        else (false, 0, 0);
+        else (false, start, stop);
       end match;
     end sparsitySliceBounds;
 
     function sparsityConsecutive
+      input list<Expression> indices;
+      output Boolean ok;
+      output Expression start_exp;
+      output Expression stop_exp;
+    protected
+      Integer start = 0, stop = 0;
+    algorithm
+      (ok, start, stop) := sparsityConsecutive2(indices);
+      start_exp := Expression.INTEGER(start);
+      stop_exp := Expression.INTEGER(stop);
+    end sparsityConsecutive;
+
+    function sparsityConsecutive2
       input list<Expression> indices;
       output Boolean ok = true;
       output Integer start = 0;
@@ -1483,7 +1525,7 @@ public
         stop := Expression.integerValue(index);
       end for;
       ok := stop > 0;
-    end sparsityConsecutive;
+    end sparsityConsecutive2;
 
     function sparsitySliceAliasDeps
       "x[e] with a slice alias x[a:b] = y[c:d] -> y[e - a + c]"
@@ -1492,9 +1534,8 @@ public
       output list<ComponentRef> deps = {};
     protected
       list<SliceAlias> aliases;
-      Integer start1, stop1, start2, value;
+      Expression start1, stop1, start2, index;
       ComponentRef seed;
-      Expression index;
     algorithm
       aliases := UnorderedMap.getOrDefault(ComponentRef.stripSubscriptsAll(cref), slice_map, {});
       if listEmpty(aliases) or listLength(ComponentRef.subscriptsAllFlat(cref)) <> listLength(ComponentRef.getSubscripts(cref)) then
@@ -1504,14 +1545,12 @@ public
         case {Subscript.INDEX(index = index)} algorithm
           for alias in aliases loop
             (start1, stop1, seed, start2) := alias;
-            if Expression.isInteger(index) then
-              value := Expression.integerValue(index);
-              if value >= start1 and value <= stop1 then
-                deps := ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(value - start1 + start2))}, seed) :: deps;
-              end if;
-            else
-              deps := ComponentRef.setSubscripts({Subscript.INDEX(SimplifyExp.simplify(Expression.BINARY(index,
-                Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(start2 - start1))))}, seed) :: deps;
+            if not (Expression.isInteger(index) and (
+                 Expression.isInteger(start1) and Expression.integerValue(index) < Expression.integerValue(start1) or
+                 Expression.isInteger(stop1) and Expression.integerValue(index) > Expression.integerValue(stop1))) then
+              deps := ComponentRef.setSubscripts({Subscript.INDEX(SimplifyExp.simplify(Expression.BINARY(
+                Expression.BINARY(index, Operator.makeAdd(Type.INTEGER()), start2),
+                Operator.makeSub(Type.INTEGER()), start1)))}, seed) :: deps;
             end if;
           end for;
         then ();
@@ -1544,8 +1583,15 @@ public
       input Subscript sub;
       input UnorderedSet<ComponentRef> own_iters;
       output Boolean b = Subscript.isLiteral(sub) or Subscript.isWhole(sub) or Subscript.isSliced(sub)
-        or UnorderedSet.all(Expression.extractCrefs(Subscript.toExp(sub)), function UnorderedSet.contains(set = own_iters));
+        or UnorderedSet.all(Expression.extractCrefs(Subscript.toExp(sub)), function sparsityIsOwnCref(own_iters = own_iters));
     end sparsityIsOwnSubscript;
+
+    function sparsityIsOwnCref
+      "an iterator of this equation or a parameter (x[N])"
+      input ComponentRef cref;
+      input UnorderedSet<ComponentRef> own_iters;
+      output Boolean b = UnorderedSet.contains(cref, own_iters) or not ComponentRef.isIterator(cref);
+    end sparsityIsOwnCref;
 
     function sparsityAddInner
       "sliced inner variables are also added by their name, later equations might use other slices of them.

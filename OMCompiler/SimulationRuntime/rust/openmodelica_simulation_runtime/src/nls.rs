@@ -994,7 +994,7 @@ fn write_state(path: &str) -> Result<(), String> {
     let meta = unsafe { &*meta };
     let engine = ReadOnly(rt);
     let mut rows = Vec::new();
-    driver::capture_row(&engine, &mut rows, 0, &meta.layout).map_err(String::from)?;
+    driver::capture_full_row(&engine, &mut rows, 0, &meta.layout).map_err(String::from)?;
     // Every parameter, in `meta.vars` order: `result::write` is what applies `keep`.
     let mut params = Vec::new();
     for v in &meta.vars {

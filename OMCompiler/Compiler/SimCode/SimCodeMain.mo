@@ -423,6 +423,7 @@ algorithm
       print(NSimCode.SimCode.toString(simCode));
     end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
+    setGlobalRoot(Global.timeIndependentVars, NONE());
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       SimCodeUtil.dumpSimCodeDebug(oldSimCode);
@@ -1676,6 +1677,8 @@ protected
   UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   Boolean dumpValidFlatModelicaNF;
   String flatString = "", NFFlatString = "";
+  Boolean restart;
+  list<String> structuralParameters;
 
 algorithm
   // BUILD_MODEL starts only once the translation is through, so clear it too:
@@ -1699,7 +1702,9 @@ algorithm
     // non-scalarized arrays. Force simCodeScalarize=false for the C++ target only,
     // leaving the default (true) for the C target (issue #15496). Must happen
     // before any scalarize-dependent decision in the pipeline.
-    if stringEqual(Config.simCodeTarget(), "Cpp") then
+    // Scalarized sim code has one slot per element and cannot grow, so resizable
+    // arrays are never scalarized.
+    if stringEqual(Config.simCodeTarget(), "Cpp") or Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
       FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
     end if;
     // ToDo: set permanently matching -> SBGraphs
@@ -1728,46 +1733,72 @@ algorithm
 
   // old backend
   else
-    // calculate stuff that we need to create SimCode data structure
-    System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-    ExecStat.execStatReset();
-    (cache, env, odae, NFFlatString) := CevalScriptBackend.runFrontEnd(cache, inEnv, className, false, dumpValidFlatModelicaNF);
-    ExecStat.execStat("FrontEnd");
-    SOME(dae) := odae;
+    // The frontend runs again if the backend asks to evaluate parameters that
+    // make a coefficient it solved an equation with zero.
+    setGlobalRoot(Global.structuralParameters, {});
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      restart := true;
+      while restart loop
+        // calculate stuff that we need to create SimCode data structure
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
+        ExecStat.execStatReset();
+        (cache, env, odae, NFFlatString) := CevalScriptBackend.runFrontEnd(inCache, inEnv, className, false, dumpValidFlatModelicaNF);
+        ExecStat.execStat("FrontEnd");
+        SOME(dae) := odae;
 
-    if dumpValidFlatModelicaNF then
-      flatString := NFFlatString;
-    elseif not runSilent then
-      funcs := FCore.getFunctionTree(cache);
-      flatString := DAEDump.dumpStr(dae, funcs);
-    end if;
+        if dumpValidFlatModelicaNF then
+          flatString := NFFlatString;
+        elseif not runSilent then
+          funcs := FCore.getFunctionTree(cache);
+          flatString := DAEDump.dumpStr(dae, funcs);
+        end if;
 
 
-    if Flags.isSet(Flags.SERIALIZED_SIZE) then
-      allRoots := {};
-      for i in 1:300 loop
-        try
-          allRoots := getGlobalRoot(i)::allRoots;
+        if Flags.isSet(Flags.SERIALIZED_SIZE) then
+          allRoots := {};
+          for i in 1:300 loop
+            try
+              allRoots := getGlobalRoot(i)::allRoots;
+            else
+            end try;
+          end for;
+          serializeNotify(allRoots, "All local+global roots (1:300)");
+          serializeNotify(dae, "FrontEnd DAE");
+          serializeNotify((env,inEnv,cache,inCache), "FCore.Graph + Cache + Old graph + Old cache");
+          serializeNotify((SymbolTable.get(),dae,env,inEnv,cache,inCache), "Symbol Table, DAE, Graph, OldGraph, Cache, OldCache");
+          ExecStat.execStat("Serialize FrontEnd");
+        end if;
+
+        timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+        if runBackend then
+          if useDAEMode then
+            (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args, kind);
+            restart := false;
+          else
+            (cache, outLibs, outFileDir, resultValues, restart) := translateModelCallBackendOB(kind, cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
+          end if;
         else
-        end try;
-      end for;
-      serializeNotify(allRoots, "All local+global roots (1:300)");
-      serializeNotify(dae, "FrontEnd DAE");
-      serializeNotify((env,inEnv,cache,inCache), "FCore.Graph + Cache + Old graph + Old cache");
-      serializeNotify((SymbolTable.get(),dae,env,inEnv,cache,inCache), "Symbol Table, DAE, Graph, OldGraph, Cache, OldCache");
-      ExecStat.execStat("Serialize FrontEnd");
+          restart := false;
+        end if;
+
+        if restart then
+          ErrorExt.rollBack(getInstanceName());
+          ErrorExt.setCheckpoint(getInstanceName());
+        end if;
+      end while;
+    else
+      ErrorExt.delCheckpoint(getInstanceName());
+      setGlobalRoot(Global.structuralParameters, {});
+      fail();
+    end try;
+    ErrorExt.delCheckpoint(getInstanceName());
+
+    structuralParameters := getGlobalRoot(Global.structuralParameters);
+    if not listEmpty(structuralParameters) then
+      Error.addMessage(Error.EVALUATED_ZERO_COEFFICIENT, {stringDelimitList(listReverse(structuralParameters), ", ")});
+      setGlobalRoot(Global.structuralParameters, {});
     end if;
-
-    timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
-
-    if runBackend then
-      if useDAEMode then
-        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args, kind);
-      else
-        (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(kind, cache, env, dae, className, inFileNamePrefix, inSimSettingsOpt, args);
-      end if;
-    end if;
-
   end if;
 
   resultValues := List.appendElt(("timeFrontend", Values.REAL(timeFrontend)), resultValues);
@@ -1825,7 +1856,9 @@ algorithm
     // use the scalarized var layout; the C runtime, on the other hand, does not
     // yet support non-scalarized arrays. So force simCodeScalarize=false for the
     // C++ target only, leaving the default (true) for the C target (issue #15496).
-    if stringEqual(Config.simCodeTarget(), "Cpp") then
+    // Scalarized sim code has one slot per element and cannot grow, so resizable
+    // arrays are never scalarized.
+    if stringEqual(Config.simCodeTarget(), "Cpp") or Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
       FlagsUtil.setConfigBool(Flags.SIM_CODE_SCALARIZE, false);
     end if;
     func_map := UnorderedMap.fromLists(FunctionTree.listKeys(functions), FunctionTree.listValues(functions), AbsynUtil.pathHash, AbsynUtil.pathEqual);
@@ -1871,9 +1904,11 @@ protected function translateModelCallBackendOB
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
+  output Boolean restart = false "the backend added parameters that the frontend must evaluate";
 protected
   Boolean generateFunctions = false;
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
+  Integer numStructuralParameters = listLength(getGlobalRoot(Global.structuralParameters));
 algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
   (outLibs, outFileDir) := match inEnv
@@ -1938,9 +1973,10 @@ algorithm
 
       //BackendDump.printBackendDAE(dlow);
       (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
+      restart := listLength(getGlobalRoot(Global.structuralParameters)) > numStructuralParameters;
 
       // generate derivatives
-      if (isFMI2) and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
+      if (isFMI2) and not restart and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
         System.realtimeTick(ClockIndexes.RT_CLOCK_FMU_BACKEND);
@@ -1961,6 +1997,7 @@ algorithm
       end if;
 
       (libs, file_dir, timeSimCode, timeTemplates) := match kind
+        case _ guard restart then ({}, "", 0.0, 0.0);
         case TranslateModelKind.NORMAL()
           algorithm
             (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, SymbolTable.getAbsyn(), className, inFileNamePrefix, inSimSettingsOpt, args,fmiDer);
@@ -2457,6 +2494,7 @@ algorithm
       crefToClockIndexHT := HashTable.emptyHashTable();
     end if;
 
+    setGlobalRoot(Global.timeIndependentVars, NONE());
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {},               // Set by the traversal below...

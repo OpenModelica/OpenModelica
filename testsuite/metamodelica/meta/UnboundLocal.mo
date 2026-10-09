@@ -80,10 +80,10 @@ end UnboundLocal;
 //     o[ix6] := /*Real*/(i);
 //   end for;
 //   z := /*Real*/(match (j)
-//     case (_) then i;
-//     case (i2) then i2;
-//     case (_) then i;
-//   end match);
+//       case (_) then i;
+//       case (i2) then i2;
+//       case (_) then i;
+//     end match);
 // end UnboundLocal.f;
 //
 // function UnboundLocal.g
@@ -97,15 +97,15 @@ end UnboundLocal;
 // equation
 //   r = UnboundLocal.f(time);
 // end UnboundLocal;
-// [metamodelica/meta/UnboundLocal.mo:18:5-18:11:writable] Warning: y was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: o was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: ix1 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:20:5-20:15:writable] Warning: ix3 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:21:5-21:20:writable] Warning: ix2 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:25:7-25:17:writable] Warning: ix4 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:35:7-35:18:writable] Warning: ix6 was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:37:5-44:14:writable] Warning: j was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:40:14-41:7:writable] Warning: i was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [metamodelica/meta/UnboundLocal.mo:43:14-44:5:writable] Warning: i was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [metamodelica/meta/UnboundLocal.mo:18:5-18:11:writable] Warning: 'y' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: 'o' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:19:5-19:19:writable] Warning: 'ix1' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:20:5-20:15:writable] Warning: 'ix3' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:21:5-21:20:writable] Warning: 'ix2' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:25:7-25:17:writable] Warning: 'ix4' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:35:7-35:18:writable] Warning: 'ix6' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:37:5-44:14:writable] Warning: 'j' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:40:14-41:7:writable] Warning: 'i' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
+// [metamodelica/meta/UnboundLocal.mo:43:14-44:5:writable] Warning: 'i' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 //
 // endResult

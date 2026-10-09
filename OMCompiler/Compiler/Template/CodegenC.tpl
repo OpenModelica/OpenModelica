@@ -203,6 +203,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalZeroCross);
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
+    extern double <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>(DATA *data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
@@ -765,6 +766,8 @@ template simulationFile_evt(SimCode simCode)
     <%functionZeroCrossing(zeroCrossings, equationsForZeroCrossings, modelNamePrefix(simCode))%>
 
     <%functionRelations(relations, modelNamePrefix(simCode))%>
+
+    <%functionNextTimeEvent(relations, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -1476,7 +1479,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
       <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>,
-      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>    /* updateStructuralParameters */
+      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>,    /* updateStructuralParameters */
+      <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>
     <%\n%>
     };
 
@@ -3617,22 +3621,22 @@ match sparsity
     void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       unsigned int i, nnz;
-      unsigned int col_counts[<%nCols%>];
-      unsigned int col_fill[<%nCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%nCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%nCols%> * sizeof(unsigned int));
       <%varDecls%>
 
       <%preExp%>
       <%auxFunction%>
 
       /* Phase 1: count non-zeros per column */
-      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
       <%countCode%>
 
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
       inSysData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, 0);
-      if (!inSysData->sparsePattern) return;
+      if (!inSysData->sparsePattern) { free(col_counts); free(col_fill); return; }
 
       /* Compute leadindex as prefix sum of col_counts */
       inSysData->sparsePattern->leadindex[0] = 0;
@@ -3642,6 +3646,8 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, inSysData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
       <%varFrees%>
 
       /* Compute coloring at runtime from the actual pattern (see initialResizableAnalyticJacobians).
@@ -5419,8 +5425,9 @@ match sparsityMatrix
     {
       <%algIndexes%>
       unsigned int i, nnz;
-      unsigned int col_counts[<%nCols%>];
-      unsigned int col_fill[<%nCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%nCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%nCols%> * sizeof(unsigned int));
       <%varDeclsC%><%varDeclsF%>
 
       <%preExpC%><%preExpF%>
@@ -5441,7 +5448,6 @@ match sparsityMatrix
       memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
 
       /* initialize sparse pattern: two-pass CSC construction */
-      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
       <%countCode%>
 
       nnz = 0;
@@ -5454,6 +5460,8 @@ match sparsityMatrix
 
       memcpy(col_fill, daeModeData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
 
       computeColumnColoring(daeModeData->sparsePattern, <%nRows%>, <%nCols%>);
       sortSparseColumns(daeModeData->sparsePattern, <%nCols%>);
@@ -5823,6 +5831,42 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   }
   >>
 end functionRelations;
+
+template functionNextTimeEvent(list<ZeroCrossing> relations, String modelNamePrefix)
+ "The earliest time after the current one at which a relation switches that
+  timeEventTrigger recognizes, or DBL_MAX."
+::=
+  let &auxFunction = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let triggers = (relations |> ZERO_CROSSING(iter = NONE()) =>
+    match timeEventTrigger(relation_)
+    case SOME(trigger) then
+      let &preExp = buffer ""
+      let e = daeExp(trigger, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+      <<
+      <%preExp%>
+      tEvent = <%e%>;
+      if (tEvent > tNow && tEvent < tNext) tNext = tEvent;
+      >>
+    ;separator="\n")
+  <<
+  <%auxFunction%>
+  double <%symbolName(modelNamePrefix,"function_nextTimeEvent")%>(DATA *data, threadData_t *threadData)
+  {
+    <%if triggers then
+    <<
+    <%varDecls%>
+    const double tNow = data->localData[0]->timeValue;
+    double tEvent, tNext = DBL_MAX;
+    <%triggers%>
+    <%varFrees%>
+    return tNext;
+    >>
+    else "return DBL_MAX;"%>
+  }
+  >>
+end functionNextTimeEvent;
 
 template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for zero crossings."
@@ -6451,7 +6495,7 @@ template numScalarElemsVarExp(SimVar var, Text &preExp, Text &varDecls, Text &va
 ::=
   match var
   case SIMVAR(type_ = T_ARRAY(dims = dims)) then
-    '(<%dims |> d => dimension(d, contextOther, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=" * "%>)'
+    '(<%dims |> d => '(<%dimension(d, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>)' ;separator=" * "%>)'
   else '1'
 end numScalarElemsVarExp;
 
@@ -6492,8 +6536,9 @@ match sparsity
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       unsigned int i, nnz;
-      unsigned int col_counts[<%patternCols%>];
-      unsigned int col_fill[<%patternCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%patternCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%patternCols%> * sizeof(unsigned int));
       <%varDecls%>
 
       <%preExp%>
@@ -6502,14 +6547,13 @@ match sparsity
       initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%isAdjointInt%>);
 
       /* Phase 1: count non-zeros per column */
-      memset(col_counts, 0, <%patternCols%> * sizeof(unsigned int));
       <%countCode%>
 
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%patternCols%>; i++) nnz += col_counts[i];
       jacobian->sparsePattern = allocSparsePattern(<%patternCols%>, nnz, 0);
-      if (!jacobian->sparsePattern) return 1;
+      if (!jacobian->sparsePattern) { free(col_counts); free(col_fill); return 1; }
 
       /* Compute leadindex as prefix sum of col_counts */
       jacobian->sparsePattern->leadindex[0] = 0;
@@ -6519,6 +6563,8 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%patternCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
       <%varFrees%>
 
       <%if isAdjoint then <<
@@ -8514,11 +8560,12 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       >>
       %>
       /* get old value */
-      <%nls.crefs |> name hasindex i0 =>
+      <%if nlsResizable(nls.crefs) then nlsGetIterVars(nls.crefs, 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld') else
+      (nls.crefs |> name hasindex i0 =>
         let &auxFunction = buffer ""
         let START = contextCrefNoPrevExp(name, context, &auxFunction)
         'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
-      ;separator="\n"%>
+      ;separator="\n")%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
       /* check if solution process was successful */
       if (retValue > 0){
@@ -8528,9 +8575,10 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
         <%match at case SOME(__) then 'return 0;'%>
       }
       /* write solution */
-      <%nls.crefs |> name hasindex i0 =>
+      <%if nlsResizable(nls.crefs) then nlsSetIterVars(nls.crefs, 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx') else
+      (nls.crefs |> name hasindex i0 =>
         let &auxFunction = buffer ""
-        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n")%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);' %>
       <%match at case SOME(__) then 'return 1;'%>
       >>

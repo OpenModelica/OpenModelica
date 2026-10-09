@@ -197,6 +197,29 @@ int omr_protected_call_zc(int (*f)(void *, void *, double *), void *data, void *
   return rc;
 }
 
+/* Ditto for `function_nextTimeEvent(data, threadData)`, whose result goes to `out`. */
+int omr_protected_call_f64(double (*f)(void *, void *), void *data, void *threadData, double *out,
+                           int stage) {
+  jmp_buf buf;
+  void *saved_jb = TD_PTR(threadData, omr_td_off_sim_jumper);
+  void *saved_gj = TD_PTR(threadData, omr_td_off_global_jumper);
+  int saved_stage = TD_INT(threadData, omr_td_off_error_stage);
+  int rc = 0;
+  OMR_RAISING_CALL(*out = f(data, threadData));
+  if (setjmp(buf) == 0) {
+    TD_PTR(threadData, omr_td_off_sim_jumper) = &buf;
+    if (!saved_gj) TD_PTR(threadData, omr_td_off_global_jumper) = &buf;
+    TD_INT(threadData, omr_td_off_error_stage) = stage;
+    *out = f(data, threadData);
+  } else {
+    rc = -1;
+  }
+  TD_PTR(threadData, omr_td_off_sim_jumper) = saved_jb;
+  TD_PTR(threadData, omr_td_off_global_jumper) = saved_gj;
+  TD_INT(threadData, omr_td_off_error_stage) = saved_stage;
+  return rc;
+}
+
 /* `residualFunc` at `stage`. A violated assertion comes back as a raised error,
  * or as -1 where the stage still jumps; the nonlinear solver rejects the trial.
  */

@@ -88,6 +88,7 @@ protected
   constant Integer YES = 1;
   constant Integer MAYBE = 2;
   constant Integer PARAM_MIN = 1 "size parameters are at least this";
+  constant Integer MIN_SIZE = 2 "resizable dimensions and connect loops have at least this many elements";
   constant Integer MAX_PIECES = 300 "pieces of one connector array before giving up";
   constant Integer MAX_ROUNDS = 50;
 
@@ -968,30 +969,50 @@ protected
     end for;
   end sideConstIn;
 
+  function addFact
+    input Sym f;
+    input UnorderedSet<String> keys;
+    input output list<Aff> facts;
+  algorithm
+    if symIsAff(f) and not affIsConst(symGetAff(f)) and not UnorderedSet.contains(symString(f), keys) then
+      UnorderedSet.add(symString(f), keys);
+      facts := symGetAff(f) :: facts;
+    end if;
+  end addFact;
+
   function indexFacts
-    "valid indices: the image of a certainly non-empty connection domain lies in
-     the connector array, which gives facts like N <= P"
+    "resizable connector arrays and connect loops have at least MIN_SIZE elements
+     (as the backend requires). Valid indices: the image of a certainly non-empty
+     connection domain lies in the connector array, which gives facts like N <= P"
     input Vector<Vertex> vertices;
     input list<Edge> edges;
     output list<Aff> facts = {};
   protected
     list<Iv> vbox;
     Iv viv;
-    Sym f;
+    list<Aff> size_facts;
     UnorderedSet<String> keys = UnorderedSet.new(stringHashDjb2, stringEq);
   algorithm
+    for v in 1:Vector.size(vertices) loop
+      for iv in vertexBox(vertices, v) loop
+        facts := addFact(symSub(iv.hi, symAddInt(iv.lo, MIN_SIZE - 1, {}), {}), keys, facts);
+      end for;
+    end for;
     for e in edges loop
-      if boxEmpty(e.dom, {}) == NO then
+      for iv in e.dom loop
+        facts := addFact(symSub(iv.hi, symAddInt(iv.lo, MIN_SIZE - 1, {}), {}), keys, facts);
+      end for;
+    end for;
+    size_facts := facts;
+
+    for e in edges loop
+      if boxEmpty(e.dom, size_facts) == NO then
         for side in {e.a, e.b} loop
           vbox := vertexBox(vertices, side.vertex);
           for iv in sideImage(side, e.dom, {}) loop
             viv :: vbox := vbox;
-            for f in {symSub(viv.hi, iv.hi, {}), symSub(iv.lo, viv.lo, {})} loop
-              if symIsAff(f) and not affIsConst(symGetAff(f)) and not UnorderedSet.contains(symString(f), keys) then
-                UnorderedSet.add(symString(f), keys);
-                facts := symGetAff(f) :: facts;
-              end if;
-            end for;
+            facts := addFact(symSub(viv.hi, iv.hi, {}), keys, facts);
+            facts := addFact(symSub(iv.lo, viv.lo, {}), keys, facts);
           end for;
         end for;
       end if;
@@ -1487,6 +1508,7 @@ protected
     array<Sym> oa, ob;
     Option<Sym> shift;
     Sym s;
+    Boolean found = false;
   algorithm
     ia := listArray(e.a.iters); ib := listArray(e.b.iters);
     oa := listArray(e.a.offs); ob := listArray(e.b.offs);
@@ -1500,6 +1522,7 @@ protected
       if boxEmpty(pre, facts) == YES then
         continue;
       end if;
+      found := true;
       p := pieceOf(sets, e.a.vertex, sideImage(e.a, pre, facts), vertices, e.source, facts);
       pieceUnion(sets, p, q);
       for j in 1:ndom loop
@@ -1529,6 +1552,10 @@ protected
         end if;
       end for;
     end for;
+    // a constant index that lies in no piece for certain would lose the connection
+    if not found and boxEmpty(e.dom, facts) <> YES then
+      unsupported("the connection of " + vertexName(vertices, e.b.vertex) + boxString(sideImage(e.b, e.dom, facts)) + " (no matching piece)", e.source);
+    end if;
   end addEdgeToSets;
 
   function readdMerged
@@ -1659,9 +1686,22 @@ protected
         Equation e;
       case Equation.CONNECT() then true;
       case Equation.FOR(body = e :: _) then isConnection(e);
+      case Equation.IF() then List.any(eq.branches, isConnectionBranch);
       else false;
     end match;
   end isConnection;
+
+  function isConnectionBranch
+    input Equation.Branch branch;
+    output Boolean isConn;
+  algorithm
+    isConn := match branch
+      local
+        Equation e;
+      case Equation.Branch.BRANCH(body = e :: _) then isConnection(e);
+      else false;
+    end match;
+  end isConnectionBranch;
 
   function crefDims
     input ComponentRef cr;
@@ -1987,6 +2027,8 @@ protected
     input output list<Edge> edges;
   protected
     Sym lo, hi;
+    list<Box> doms;
+    list<Equation> body;
   algorithm
     edges := match eq
       local
@@ -2005,11 +2047,150 @@ protected
           end for;
         then edges;
 
+      case Equation.IF()
+        algorithm
+          for b in ifDomains(eq.branches, eq.source, iterNames, dom, ctx) loop
+            (doms, body) := b;
+            for d in doms loop
+              for e in body loop
+                edges := collectEdges(e, iterNames, d, ctx, edges);
+              end for;
+            end for;
+          end for;
+        then edges;
+
       else algorithm
         unsupported("the connection equation " + Equation.toString(eq), Equation.source(eq));
       then fail();
     end match;
   end collectEdges;
+
+  function ifDomains
+    "the domains of the branches of an if equation in the surrounding loops: a
+     branch holds where its condition holds and the ones before do not"
+    input list<Equation.Branch> branches;
+    input DAE.ElementSource source;
+    input list<String> iterNames;
+    input Box dom;
+    input Context ctx;
+    output list<tuple<list<Box>, list<Equation>>> res = {};
+  protected
+    list<Box> rest = {dom};
+    Expression cond;
+    list<Equation> body;
+  algorithm
+    for branch in branches loop
+      if listEmpty(rest) then
+        break;
+      end if;
+      (cond, body) := match branch
+        case Equation.Branch.BRANCH() then (branch.condition, branch.body);
+        else algorithm
+          unsupported("an invalid branch of an if equation", source);
+        then fail();
+      end match;
+      res := (List.flatten(list(restrictBox(d, cond, true, iterNames, ctx, source) for d in rest)), body) :: res;
+      rest := List.flatten(list(restrictBox(d, cond, false, iterNames, ctx, source) for d in rest));
+    end for;
+    res := listReverseInPlace(res);
+  end ifDomains;
+
+  function restrictBox
+    "the parts of the box where the condition holds (or not): true, false or a
+     comparison of one iterator with an affine expression in the size parameters"
+    input Box box;
+    input Expression cond;
+    input Boolean holds;
+    input list<String> iterNames;
+    input Context ctx;
+    input DAE.ElementSource source;
+    output list<Box> res;
+  protected
+    Aff a, rest;
+    Integer pos = 0, sign = 0, c, decided;
+    String n;
+    Op op;
+    Operator operator;
+    Sym bound;
+    Iv iv;
+    list<Iv> ivs;
+  algorithm
+    if Expression.isBoolean(cond) then
+      res := if Expression.isTrue(cond) == holds then {box} else {};
+      return;
+    end if;
+
+    (a, operator) := match cond
+      case Expression.RELATION() guard Operator.isRelational(cond.operator)
+        then (affSub(expToAff(cond.exp1, iterNames, ctx, source), expToAff(cond.exp2, iterNames, ctx, source)), cond.operator);
+      else algorithm
+        unsupported("the condition " + Expression.toString(cond) + " of an if equation", source);
+      then fail();
+    end match;
+
+    if not holds then
+      operator := Operator.negate(operator);
+    end if;
+    op := operator.op;
+
+    // a op 0 with a = sign * iterator + rest
+    rest := a;
+    for t in a.k loop
+      (n, c) := t;
+      if stringGet(n, 1) == 35 /* # */ then
+        if pos <> 0 or abs(c) <> 1 then
+          unsupported("the condition " + Expression.toString(cond) + " of an if equation", source);
+        end if;
+        pos := stringInt(substring(n, 2, stringLength(n)));
+        sign := c;
+        rest := affSub(a, affScale(affParam(n), c));
+      end if;
+    end for;
+
+    if pos == 0 then
+      // no iterator: decided for all values of the size parameters or unsupported
+      decided := match op
+        case Op.LESS then affLe(a, affInt(-1), {});
+        case Op.LESSEQ then affLe(a, affInt(0), {});
+        case Op.GREATER then affLe(affInt(1), a, {});
+        case Op.GREATEREQ then affLe(affInt(0), a, {});
+        case Op.EQUAL then if affIsConst(a) then (if a.c == 0 then YES else NO) else MAYBE;
+        case Op.NEQUAL then if affIsConst(a) then (if a.c == 0 then NO else YES) else MAYBE;
+        else MAYBE;
+      end match;
+      if decided == MAYBE then
+        unsupported("the condition " + Expression.toString(cond) + " of an if equation", source);
+      end if;
+      res := if decided == YES then {box} else {};
+      return;
+    end if;
+
+    // iterator op bound
+    if sign < 0 then
+      op := match op
+        case Op.LESS then Op.GREATER;
+        case Op.LESSEQ then Op.GREATEREQ;
+        case Op.GREATER then Op.LESS;
+        case Op.GREATEREQ then Op.LESSEQ;
+        else op;
+      end match;
+      bound := symAff(rest);
+    else
+      bound := symAff(affNeg(rest));
+    end if;
+
+    iv := listGet(box, pos);
+    ivs := match op
+      case Op.LESS then {IV(iv.lo, symMin(iv.hi, symAddInt(bound, -1, {}), {}))};
+      case Op.LESSEQ then {IV(iv.lo, symMin(iv.hi, bound, {}))};
+      case Op.GREATER then {IV(symMax(iv.lo, symAddInt(bound, 1, {}), {}), iv.hi)};
+      case Op.GREATEREQ then {IV(symMax(iv.lo, bound, {}), iv.hi)};
+      case Op.EQUAL then {IV(symMax(iv.lo, bound, {}), symMin(iv.hi, bound, {}))};
+      case Op.NEQUAL then {IV(iv.lo, symMin(iv.hi, symAddInt(bound, -1, {}), {})),
+                           IV(symMax(iv.lo, symAddInt(bound, 1, {}), {}), iv.hi)};
+    end match;
+    res := list(List.set(box, pos, i) for i guard ivEmpty(i, {}) <> YES in ivs);
+  end restrictBox;
 
   function makeEdge
     "the edge between two connectors (or connector arrays, paired slice by slice)

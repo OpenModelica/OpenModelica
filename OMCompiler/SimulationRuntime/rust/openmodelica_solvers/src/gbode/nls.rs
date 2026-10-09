@@ -1,31 +1,29 @@
 //! gbode's own nonlinear solver (`-gbnls=internal`), a port of the single-rate
 //! part of C's `gbode_internal_nls.c`.
 //!
-//! Two systems appear, both solved by a simplified Newton iteration over one
-//! factorization of a matrix built from the ODE Jacobian `J = df/dy`:
+//! Two systems appear, both solved by a simplified Newton iteration over
+//! factorizations built from the ODE Jacobian `J = df/dy`:
 //!
 //! * DIRK, one stage at a time, `0 = res_const - x + h*a_ii*f(t_i, x)`, whose
 //!   simplified Jacobian is `h*a_ii*J - I` (C's `jacobian_DIRK_assemble`).
-//! * FIRK, all stages coupled, `0 = yOld - Z_i + h*sum_j a_ij*f(t_j, Z_j)`, whose
-//!   simplified Jacobian is `h*(A kron J) - I`.
+//! * FIRK, all stages coupled, decoupled by the tableau's T-transformation
+//!   (`gbInternalSolveNls_T_Transform`): one `gamma/h*I - J` per distinct real
+//!   eigenvalue of `A^-1`, one complex `(alpha+i*beta)/h*I - J` per conjugate
+//!   pair, with forward substitution through `L`.
 //!
-//! As in C, a FIRK tableau that carries its T-transformation is decoupled by it
-//! (`solve_firk_t`): one `n` system per distinct real eigenvalue of `A^-1`, one
-//! per conjugate pair — solved as its real `2n` embedding where C uses complex
-//! KLU — with forward substitution through `L`. A FIRK tableau without one falls
-//! back to the coupled `s*n` solve; both go through [`super::linsol`], which is
-//! sparse when the model carries a pattern.
+//! As in C, `J` lives in the model's sparsity pattern and every system in
+//! `struct(I + J)`, all sharing one symbolic factorization ([`GbLinSys`]).
 //!
-//! The convergence test, the `eta`/`theta` bookkeeping that decides when to reuse
-//! the factorization, and the scaled norms are C's, so a step converges after the
-//! same number of iterations.
+//! The birate mode's inner integration solves the same systems packed over its
+//! fast states ([`Fast`], C's `multirate`), with the pattern reduced to them.
 
 use alloc::vec;
 use alloc::vec::Vec;
 
-use super::tableau::{GmType, Tableau};
+use super::linsol::{GbLinSys, NlsPattern, OdePattern};
+use super::tableau::{TTransform, Tableau};
 use crate::gbode::math::{abs, pow, sqrt};
-use crate::{Ode, Result};
+use crate::{eval_caught, eval_caught_fast, Ode, Result};
 
 /// C's `DBL_ABSORPTION`.
 const DBL_ABSORPTION: f64 = 10.0 * f64::EPSILON;
@@ -36,12 +34,52 @@ pub enum Solved {
     Failed,
 }
 
-/// C's `GB_INTERNAL_NLS_DATA`, single-rate.
+/// The packed systems of the inner integration: the fast states, and the full
+/// state vectors their values are scattered into for an evaluation, whose slow
+/// entries the caller sets (C's `slowStateCache_overwrite_*`).
+pub(super) struct Fast {
+    idx: Vec<usize>,
+    /// At the interval's left end, then one per stage.
+    left: Vec<f64>,
+    stages: Vec<Vec<f64>>,
+    f: Vec<f64>,
+    fbase: Vec<f64>,
+    probe: Vec<f64>,
+    seed: Vec<f64>,
+    /// C's `new_fast_states`: rebuild the pattern before the next solve.
+    changed: bool,
+}
+
+/// Where a packed evaluation takes its slow states from.
+#[derive(Clone, Copy)]
+enum At {
+    Left,
+    Stage(usize),
+}
+
+/// `f(t, x)` for the system's unknowns: directly, or scattered into the full
+/// state vector at `at` with the fast entries read back.
+fn eval_at(fast: &mut Option<Fast>, ode: &mut dyn Ode, t: f64, at: At, x: &[f64], f: &mut [f64]) -> Result<bool> {
+    let Some(m) = fast.as_mut() else { return eval_caught(ode, t, x, f) };
+    let full = match at {
+        At::Left => &mut m.left,
+        At::Stage(j) => &mut m.stages[j],
+    };
+    for (i, &k) in m.idx.iter().enumerate() {
+        full[k] = x[i];
+    }
+    let ok = eval_caught_fast(ode, t, full, &mut m.f)?;
+    for (i, &k) in m.idx.iter().enumerate() {
+        f[i] = m.f[k];
+    }
+    Ok(ok)
+}
+
+/// C's `GB_INTERNAL_NLS_DATA`.
 pub(super) struct GbNls {
-    /// `n_states` for DIRK, `n_stages * n_states` for FIRK.
-    pub size: usize,
-    n_states: usize,
-    n_stages: usize,
+    /// The system's size: all states, or the fast ones.
+    n: usize,
+    n_full: usize,
     integrator_tol: f64,
     fnewt: f64,
     eta_initial_damping: f64,
@@ -54,37 +92,37 @@ pub(super) struct GbNls {
     sym_jac: bool,
     /// ... or as a whole, through the adjoint or both directions.
     whole_jac: Option<crate::simflags::JacobianMethod>,
-    /// The factorization is stale and `J` must be recomputed.
     call_jac: bool,
+    n_real: usize,
+    n_cmplx: usize,
+    /// The ODE Jacobian's pattern (reduced to the fast states in the birate
+    /// mode, whose full one is `full_pat`) and values (C's `jacobian_callback`).
+    ode_pat: Option<OdePattern>,
+    full_pat: Option<OdePattern>,
+    fast: Option<Fast>,
+    jac: Vec<f64>,
+    maxs: Vec<f64>,
+    sys: Option<GbLinSys>,
+    real_jacs: Vec<Vec<f64>>,
+    /// Interleaved `re, im` per pattern entry.
+    cmplx_jacs: Vec<Vec<f64>>,
     scal: Vec<f64>,
-    /// The ODE Jacobian, column-major `n_states * n_states`.
-    j: Vec<f64>,
-    /// Assembly scratch for the simplified NLS matrix (column-major `size * size`)
-    /// and its factorization.
-    lu: Vec<f64>,
-    factored: Option<super::linsol::GbLu>,
-    /// The step size the current factorization was built for.
-    lu_step_size: f64,
-    /// `gamma/h*I - J` for the contractive-defect estimator, and the `h` it was
-    /// built for.
-    defect_lu: Vec<f64>,
-    defect_factored: Option<super::linsol::GbLu>,
-    defect_step_size: f64,
-    /// T-transform factorizations, one per distinct eigenvalue of `A^-1`:
-    /// `gamma/h*I - J` for the real ones, `(alpha+i*beta)/h*I - J` for the
-    /// conjugate pairs as their real `2n` embedding. Valid for `lu_step_size`.
-    t_real: Vec<super::linsol::GbLu>,
-    t_cmplx: Vec<super::linsol::GbLu>,
-    /// The current step's base time, for the explicit stages `reconstruct_k`
-    /// evaluates outside the Newton loop.
     stage_time_0: f64,
-    /// Scratch: residual, saved states, base derivative.
     res: Vec<f64>,
-    ysave: Vec<f64>,
+    f: Vec<f64>,
     fbase: Vec<f64>,
-    /// Newton iterations and Jacobian evaluations, for the solver statistics.
+    probe: Vec<f64>,
+    inv_del: Vec<f64>,
+    tz: Vec<f64>,
+    w: Vec<f64>,
+    fw: Vec<f64>,
+    k1: Vec<f64>,
+    cres: Vec<f64>,
     pub n_iters: u64,
     pub n_jac_evals: u64,
+    /// Model evaluations of finite-difference Jacobians, which C does not count
+    /// as `functionODE` calls.
+    pub uncounted_calls: u64,
 }
 
 impl GbNls {
@@ -97,8 +135,6 @@ impl GbNls {
         sym_jac: bool,
         whole_jac: Option<crate::simflags::JacobianMethod>,
     ) -> Self {
-        let size = if t.gm_type == GmType::Implicit { t.n_stages * n_states } else { n_states };
-        // C's Newton convergence target `fnewt`.
         let alpha_default: f64 = 3e-2;
         let alpha_maximal: f64 = 5e-2;
         let safety_newt: f64 = 0.1;
@@ -122,17 +158,13 @@ impl GbNls {
         } else {
             1e-3
         };
-        // C: 5 Newton iterations per (E)SDIRK stage, more for a FIRK system
-        // (`4 + 2*transform->size`).
-        let max_newton_it = if t.gm_type == GmType::Implicit {
-            4 + 2 * t.t_transform.as_ref().map_or(t.n_stages, |tr| tr.size) as u32
-        } else {
-            5
-        };
+        let tr = t.t_transform.as_ref();
+        let max_newton_it = tr.map_or(5, |tr| 4 + 2 * tr.size as u32);
+        let (n_real, n_cmplx) = tr.map_or((1, 0), |tr| (tr.n_real_eigenvalues, tr.n_complex_eigenpairs));
+        let tsize = tr.map_or(1, |tr| tr.size);
         GbNls {
-            size,
-            n_states,
-            n_stages: t.n_stages,
+            n: n_states,
+            n_full: n_states,
             integrator_tol: tol,
             fnewt,
             eta_initial_damping,
@@ -143,192 +175,338 @@ impl GbNls {
             sym_jac,
             whole_jac,
             call_jac: true,
-            scal: vec![0.0; size],
-            j: vec![0.0; n_states * n_states],
-            lu: vec![0.0; size * size],
-            factored: None,
-            lu_step_size: 0.0,
-            defect_lu: vec![0.0; n_states * n_states],
-            defect_factored: None,
-            defect_step_size: 0.0,
-            t_real: Vec::new(),
-            t_cmplx: Vec::new(),
+            n_real,
+            n_cmplx,
+            ode_pat: None,
+            full_pat: None,
+            fast: None,
+            jac: Vec::new(),
+            maxs: Vec::new(),
+            sys: None,
+            real_jacs: Vec::new(),
+            cmplx_jacs: Vec::new(),
+            scal: vec![0.0; n_states],
             stage_time_0: 0.0,
-            res: vec![0.0; size],
-            ysave: vec![0.0; n_states],
+            res: vec![0.0; tsize * n_states],
+            f: vec![0.0; n_states],
             fbase: vec![0.0; n_states],
+            probe: vec![0.0; n_states],
+            inv_del: vec![0.0; n_states],
+            tz: vec![0.0; tsize * n_states],
+            w: vec![0.0; tsize * n_states],
+            fw: vec![0.0; tsize * n_states],
+            k1: vec![0.0; n_states],
+            cres: vec![0.0; 2 * n_states],
             n_iters: 0,
             n_jac_evals: 0,
+            uncounted_calls: 0,
         }
+    }
+
+    /// The inner integration's solver: packed over the fast states
+    /// [`GbNls::set_fast`] names.
+    pub(super) fn with_fast(mut self, n_stages: usize) -> Self {
+        let n = self.n_full;
+        self.fast = Some(Fast {
+            idx: Vec::new(),
+            left: vec![0.0; n],
+            stages: vec![vec![0.0; n]; n_stages],
+            f: vec![0.0; n],
+            fbase: vec![0.0; n],
+            probe: vec![0.0; n],
+            seed: vec![0.0; n],
+            changed: true,
+        });
+        self
+    }
+
+    /// C's `gbInternalScheduleFastStatesUpdate`, with the new fast states.
+    pub(super) fn set_fast(&mut self, idx: &[usize]) {
+        let m = self.fast.as_mut().expect("fast states for a single-rate solver");
+        m.idx.clear();
+        m.idx.extend_from_slice(idx);
+        m.changed = true;
+        self.n = idx.len();
+    }
+
+    /// The full state vector at the interval's left end, or at `stage`, whose
+    /// slow entries the evaluations use.
+    pub(super) fn fast_left_mut(&mut self) -> &mut [f64] {
+        &mut self.fast.as_mut().expect("single-rate solver").left
+    }
+
+    pub(super) fn fast_stage_mut(&mut self, stage: usize) -> &mut [f64] {
+        &mut self.fast.as_mut().expect("single-rate solver").stages[stage]
     }
 
     /// Called after an event or a restart.
     pub(super) fn invalidate(&mut self) {
         self.call_jac = true;
-        self.lu_step_size = 0.0;
-        self.defect_step_size = 0.0;
         for e in &mut self.etas {
             *e = f64::MAX;
         }
     }
 
-    /// C's `createGbScales`: the reciprocal tolerance weights the Newton norms use.
+    /// The patterns and the symbolic analysis, on first use: C's
+    /// `gbodeMapSparsePattern` + `gbInternal_KLU_analyze`. In the birate mode
+    /// also after a fast-state change, C's `updateFastStates` with
+    /// `updateSparsePattern_GBODEF`.
+    fn ensure_systems(&mut self, ode: &dyn Ode) {
+        let changed = self.fast.as_ref().is_some_and(|m| m.changed);
+        if self.sys.is_some() && !changed {
+            return;
+        }
+        let n = self.n;
+        let full = OdePattern::new(self.n_full, ode.jac_rows_by_col(), ode.jac_colors());
+        let ode_pat = match self.fast.as_mut() {
+            None => full,
+            Some(m) => {
+                m.changed = false;
+                let reduced = full.reduce(&m.idx, self.n_full);
+                self.full_pat = Some(full);
+                self.call_jac = true;
+                for e in &mut self.etas {
+                    *e = f64::MAX;
+                }
+                reduced
+            }
+        };
+        let pat = NlsPattern::new(n, &ode_pat);
+        let nnz = pat.nnz();
+        self.jac = vec![0.0; ode_pat.nnz()];
+        self.maxs = ode.maxs().to_vec();
+        self.real_jacs = (0..self.n_real).map(|_| vec![0.0; nnz]).collect();
+        self.cmplx_jacs = (0..self.n_cmplx).map(|_| vec![0.0; 2 * nnz]).collect();
+        self.sys = Some(GbLinSys::new(pat, self.n_real, self.n_cmplx));
+        self.ode_pat = Some(ode_pat);
+    }
+
+    /// C's `createGbScales`.
     fn make_scales(&mut self, nominals: &[f64], y1: &[f64], y2: &[f64]) {
         let tol = self.integrator_tol;
-        for i in 0..self.size {
-            let nom = nominals[i % self.n_states];
+        for i in 0..self.n {
+            let nom = match self.fast.as_ref() {
+                Some(m) => nominals[m.idx[i]],
+                None => nominals[i],
+            };
             self.scal[i] = 1.0 / (tol * nom + abs(y1[i]).max(abs(y2[i])) * tol);
         }
     }
 
-    /// C's `gbScalesNorm`.
-    fn scaled_norm(&self, v: &[f64]) -> f64 {
+    /// C's `gbScalesNorm` over `stack` blocks of `n`.
+    fn scaled_norm(&self, v: &[f64], stack: usize) -> f64 {
+        let n = self.n;
         let mut sum = 0.0;
-        for i in 0..self.size {
-            let t = v[i] * self.scal[i];
-            sum += t * t;
+        for j in 0..stack {
+            for i in 0..n {
+                let t = v[j * n + i] * self.scal[i];
+                sum += t * t;
+            }
         }
-        sqrt(sum / self.size as f64)
+        sqrt(sum / (n as f64 * stack as f64))
     }
 
-    /// The ODE Jacobian at `(time, y)` — C's `gbInternal_evalJacobian`: the colored
-    /// symbolic Jacobian when the model carries one, else colored finite
-    /// differences (`gbInternal_evalNumericalJacobian`). Stored column-major so it
-    /// can feed `dgefa` directly.
-    fn eval_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64]) -> Result<()> {
-        let n = self.n_states;
+    /// C's `gbInternal_evalJacobian` at `(time, y)`, with `f(time, y)` already in
+    /// `fbase`: the colored symbolic Jacobian when the model carries one, else
+    /// colored finite differences (`gbInternal_evalNumericalJacobian`), whose
+    /// evaluations swallow their own model errors. `false`: the symbolic one threw.
+    fn eval_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64], nominals: &[f64]) -> Result<bool> {
         self.n_jac_evals += 1;
-        // Anything factorized from the old `J` is now stale, whatever the step size.
-        self.lu_step_size = 0.0;
-        self.defect_step_size = 0.0;
-        // The colouring outlives the evaluations below, which borrow `ode`.
-        let colors: Vec<Vec<u32>> = match ode.jac_colors() {
-            [] => (0..n as u32).map(|c| vec![c]).collect(),
-            c => c.to_vec(),
-        };
-        let rows_by_col: Vec<Vec<u32>> = match ode.jac_rows_by_col() {
-            [] => (0..n).map(|_| (0..n as u32).collect()).collect(),
-            r => r.to_vec(),
-        };
         if self.sym_jac && ode.has_jacobian_vector() {
-            // C evaluates the ODE at the base point before the column equations.
-            ode.eval(time, y, &mut self.fbase)?;
-            if let Some(method) = self.whole_jac {
-                return match ode.jacobian_matrix(time, y, method, &mut self.j) {
-                    true => Ok(()),
-                    false => Err("##GBODE## the model could not evaluate its Jacobian"),
-                };
+            let c = ode.catch_begin();
+            let run = match self.fast.is_some() {
+                true => self.eval_sym_jacobian_fast(ode, time),
+                false => self.eval_sym_jacobian(ode, time, y),
+            };
+            let threw = ode.catch_end(c);
+            return run.map(|()| !threw);
+        }
+        match self.fast.is_some() {
+            true => self.eval_num_jacobian_fast(ode, time, nominals)?,
+            false => self.eval_num_jacobian(ode, time, y, nominals)?,
+        }
+        Ok(true)
+    }
+
+    /// C's `gbInternal_evalJacobianMR`: the fast columns seeded colour by colour
+    /// at the left end, the reduced pattern's rows read back.
+    fn eval_sym_jacobian_fast(&mut self, ode: &mut dyn Ode, time: f64) -> Result<()> {
+        let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
+        let m = self.fast.as_mut().expect("fast Jacobian without fast states");
+        m.seed.fill(0.0);
+        for group in &pat.colors {
+            for &c in group {
+                m.seed[m.idx[c as usize]] = 1.0;
             }
-            let mut seed = vec![0.0; n];
-            let mut out = vec![0.0; n];
-            for group in &colors {
-                seed.fill(0.0);
-                for &c in group {
-                    seed[c as usize] = 1.0;
-                }
-                if !ode.jacobian_vector(time, y, &seed, &mut out) {
-                    return Err(
-                        "##GBODE## the model could not multiply by its Jacobian",
-                    );
-                }
-                for &c in group {
-                    let c = c as usize;
-                    for &r in &rows_by_col[c] {
-                        self.j[c * n + r as usize] = out[r as usize];
-                    }
+            if !ode.jacobian_vector(time, &m.left, &m.seed, &mut m.probe) {
+                return Err("##GBODE## the model could not multiply by its Jacobian");
+            }
+            for &c in group {
+                let c = c as usize;
+                m.seed[m.idx[c]] = 0.0;
+                for nz in pat.ap[c] as usize..pat.ap[c + 1] as usize {
+                    self.jac[nz] = m.probe[m.idx[pat.ai[nz] as usize]];
                 }
             }
+        }
+        Ok(())
+    }
+
+    /// `gbInternal_evalNumericalJacobian` with the fast state map, about the left
+    /// end, whose full derivative the evaluation before left in `Fast::f`.
+    fn eval_num_jacobian_fast(&mut self, ode: &mut dyn Ode, time: f64, nominals: &[f64]) -> Result<()> {
+        let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
+        let m = self.fast.as_mut().expect("fast Jacobian without fast states");
+        let tol = self.integrator_tol;
+        let delta_h = crate::simflags::with_flags(crate::simflags::delta_x_solver);
+        m.fbase.copy_from_slice(&m.f);
+        m.probe.copy_from_slice(&m.left);
+        for group in &pat.colors {
+            for &col in group {
+                let c = m.idx[col as usize];
+                let x = m.left[c];
+                let delta_hhh = delta_h * m.fbase[c];
+                let raw_weight = tol * nominals[c] + tol * abs(x);
+                let mut del = delta_h * abs(x).max(1e-3).max(abs(delta_hhh)).max(abs(raw_weight));
+                del = x + del - x;
+                if self.maxs.get(c).is_some_and(|&mx| x + del >= mx) {
+                    del = -del;
+                }
+                m.probe[c] = x + del;
+                self.inv_del[col as usize] = 1.0 / del;
+            }
+            eval_caught_fast(ode, time, &m.probe, &mut m.f)?;
+            self.uncounted_calls += 1;
+            for &col in group {
+                let col = col as usize;
+                for nz in pat.ap[col] as usize..pat.ap[col + 1] as usize {
+                    let r = m.idx[pat.ai[nz] as usize];
+                    self.jac[nz] = (m.f[r] - m.fbase[r]) * self.inv_del[col];
+                }
+                m.probe[m.idx[col]] = m.left[m.idx[col]];
+            }
+        }
+        Ok(())
+    }
+
+    fn eval_sym_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64]) -> Result<()> {
+        let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
+        let method = self.whole_jac.unwrap_or(crate::simflags::JacobianMethod::ColoredSymJac);
+        if ode.jacobian_matrix(time, y, method, &mut self.jac) {
             return Ok(());
         }
-        let nominals: Vec<f64> = ode.nominals().to_vec();
-        let maxs: Vec<f64> = ode.maxs().to_vec();
+        if self.whole_jac.is_some() {
+            return Err("##GBODE## the model could not evaluate its Jacobian");
+        }
+        let (seed, out) = (&mut self.probe, &mut self.f);
+        seed.fill(0.0);
+        for group in &pat.colors {
+            for &c in group {
+                seed[c as usize] = 1.0;
+            }
+            if !ode.jacobian_vector(time, y, seed, out) {
+                return Err("##GBODE## the model could not multiply by its Jacobian");
+            }
+            for &c in group {
+                let c = c as usize;
+                seed[c] = 0.0;
+                for nz in pat.ap[c] as usize..pat.ap[c + 1] as usize {
+                    self.jac[nz] = out[pat.ai[nz] as usize];
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn eval_num_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64], nominals: &[f64]) -> Result<()> {
+        let n = self.n;
+        let pat = self.ode_pat.as_ref().expect("Jacobian before the pattern");
         let tol = self.integrator_tol;
-        ode.set_context_jacobian();
-        let delta_x = crate::simflags::with_flags(crate::simflags::delta_x_solver);
-        let run = (|| -> Result<()> {
-            ode.eval(time, y, &mut self.fbase)?;
-            self.ysave.copy_from_slice(y);
-            let mut probe = self.ysave.clone();
-            for group in &colors {
-                let mut inv_del = vec![0.0; n];
-                for &col in group {
-                    let c = col as usize;
-                    // C's step choice, a la the DASSL interface:
-                    // h_i = delta_h * max(|x_i|, 1e-3, |delta_h*f_i|, atol*nom + rtol*|x_i|).
-                    let nominal = nominals.get(c).copied().unwrap_or(1.0);
-                    let raw_weight = tol * nominal + tol * abs(y[c]);
-                    let mut del = delta_x
-                        * abs(y[c])
-                            .max(1e-3)
-                            .max(abs(delta_x * self.fbase[c]))
-                            .max(abs(raw_weight));
-                    del = y[c] + del - y[c];
-                    if maxs.get(c).is_some_and(|&mx| y[c] + del >= mx) {
-                        del = -del;
-                    }
-                    inv_del[c] = 1.0 / del;
-                    probe[c] = y[c] + del;
+        let delta_h = crate::simflags::with_flags(crate::simflags::delta_x_solver);
+        self.probe[..n].copy_from_slice(&y[..n]);
+        for group in &pat.colors {
+            for &col in group {
+                let c = col as usize;
+                // C's step, a la the DASSL interface:
+                // h_i = delta_h * max(|x_i|, 1e-3, |delta_h*f_i|, atol*nom + rtol*|x_i|).
+                let delta_hhh = delta_h * self.fbase[c];
+                let raw_weight = tol * nominals[c] + tol * abs(y[c]);
+                let mut del = delta_h * abs(y[c]).max(1e-3).max(abs(delta_hhh)).max(abs(raw_weight));
+                del = y[c] + del - y[c];
+                if self.maxs.get(c).is_some_and(|&mx| y[c] + del >= mx) {
+                    del = -del;
                 }
-                let mut fp = vec![0.0; n];
-                ode.eval(time, &probe, &mut fp)?;
-                for &col in group {
-                    let c = col as usize;
-                    for &r in &rows_by_col[c] {
-                        let r = r as usize;
-                        self.j[c * n + r] = (fp[r] - self.fbase[r]) * inv_del[c];
-                    }
-                    probe[c] = y[c];
+                self.probe[c] = y[c] + del;
+                self.inv_del[c] = 1.0 / del;
+            }
+            eval_caught(ode, time, &self.probe, &mut self.f)?;
+            self.uncounted_calls += 1;
+            for &col in group {
+                let c = col as usize;
+                for nz in pat.ap[c] as usize..pat.ap[c + 1] as usize {
+                    let r = pat.ai[nz] as usize;
+                    self.jac[nz] = (self.f[r] - self.fbase[r]) * self.inv_del[c];
                 }
+                self.probe[c] = y[c];
             }
-            Ok(())
-        })();
-        ode.set_context_algebraic();
-        run
-    }
-
-    /// C's `jacobian_DIRK_assemble`: `h*gamma*J - I`, factorized.
-    fn factor_dirk(&mut self, step_size: f64, gamma: f64) -> Result<()> {
-        let n = self.n_states;
-        let hg = step_size * gamma;
-        for c in 0..n {
-            for r in 0..n {
-                self.lu[c * n + r] = hg * self.j[c * n + r];
-            }
-            self.lu[c * n + c] -= 1.0;
         }
-        self.factored = Some(super::linsol::factor(&self.lu, n)?);
         Ok(())
     }
 
-    /// `h*(A kron J) - I`, factorized: the simplified Jacobian of the coupled FIRK
-    /// residual. Block `(i, j)` is `h*a_ij*J`, minus the identity on the diagonal.
-    fn factor_firk(&mut self, t: &Tableau, step_size: f64) -> Result<()> {
-        let n = self.n_states;
-        let s = self.n_stages;
-        let size = self.size;
-        self.lu.iter_mut().for_each(|v| *v = 0.0);
-        for bi in 0..s {
-            for bj in 0..s {
-                let f = step_size * t.a_at(bi, bj);
-                if f == 0.0 {
-                    continue;
-                }
-                for c in 0..n {
-                    for r in 0..n {
-                        self.lu[(bj * n + c) * size + bi * n + r] += f * self.j[c * n + r];
-                    }
-                }
-            }
+    /// C's `jacobian_DIRK_assemble` (`fac*J - I`) into system 0, factorized.
+    fn factor_dirk(&mut self, fac: f64) -> i32 {
+        let sys = self.sys.as_mut().expect("factor before the pattern");
+        let ax = &mut self.real_jacs[0];
+        ax.fill(0.0);
+        for (nz, &to) in sys.pat.ode_to_nls.iter().enumerate() {
+            ax[to as usize] = fac * self.jac[nz];
         }
-        for i in 0..size {
-            self.lu[i * size + i] -= 1.0;
+        for &d in &sys.pat.diag {
+            ax[d as usize] -= 1.0;
         }
-        self.factored = Some(super::linsol::factor(&self.lu, size)?);
-        Ok(())
+        sys.factor_real(0, ax)
     }
 
-    /// C's `gbInternalSolveNls_DIRK`: solve stage `stage` of a DIRK method.
-    /// `x` starts at the predicted stage value and holds the solution on return.
+    /// C's `jacobian_real_assemble` (`weight*I - J`) and
+    /// `jacobian_cmplx_assemble` (`(wr + i*wi)*I - J`), each factorized.
+    fn factor_transformed(&mut self, tr: &TTransform, inv_h: f64) -> i32 {
+        let sys = self.sys.as_mut().expect("factor before the pattern");
+        for e in 0..tr.n_real_eigenvalues {
+            let weight = inv_h * tr.gamma[e];
+            let ax = &mut self.real_jacs[e];
+            ax.fill(0.0);
+            for (nz, &to) in sys.pat.ode_to_nls.iter().enumerate() {
+                ax[to as usize] = -self.jac[nz];
+            }
+            for &d in &sys.pat.diag {
+                ax[d as usize] += weight;
+            }
+            let ret = sys.factor_real(e, ax);
+            if ret < 0 {
+                return ret;
+            }
+        }
+        for e in 0..tr.n_complex_eigenpairs {
+            let (wr, wi) = (inv_h * tr.alpha[e], inv_h * tr.beta[e]);
+            let ax = &mut self.cmplx_jacs[e];
+            ax.fill(0.0);
+            for (nz, &to) in sys.pat.ode_to_nls.iter().enumerate() {
+                ax[2 * to as usize] = -self.jac[nz];
+            }
+            for &d in &sys.pat.diag {
+                ax[2 * d as usize] += wr;
+                ax[2 * d as usize + 1] += wi;
+            }
+            let ret = sys.factor_cmplx(e, ax);
+            if ret < 0 {
+                return ret;
+            }
+        }
+        0
+    }
+
+    /// C's `gbInternalSolveNls_DIRK`: solve stage `stage` of a DIRK method. `x`
+    /// starts at the predicted stage value and holds the solution on return.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_dirk(
         &mut self,
@@ -337,25 +515,32 @@ impl GbNls {
         stage: usize,
         time: f64,
         step_size: f64,
+        last_step_size: f64,
         y_old: &[f64],
         res_const: &[f64],
         x: &mut [f64],
         event_happened: bool,
         nominals: &[f64],
     ) -> Result<Solved> {
-        let x_start: Vec<f64> = x.to_vec();
-        self.make_scales(nominals, x, &x_start);
+        self.ensure_systems(ode);
+        self.make_scales(nominals, y_old, x);
         let is_esdirk = t.a_at(0, 0) == 0.0;
         let first_implicit = (stage == 0 && !is_esdirk) || (stage == 1 && is_esdirk);
         if first_implicit {
             let mut jac_called = false;
             if self.call_jac || event_happened {
-                self.eval_jacobian(ode, time, y_old)?;
+                // C's `gbInternalEvaluateSimplifiedJacobian`.
+                if !eval_at(&mut self.fast, ode, time, At::Left, y_old, &mut self.fbase)?
+                    || !self.eval_jacobian(ode, time, y_old, nominals)?
+                {
+                    return Ok(Solved::Failed);
+                }
                 jac_called = true;
             }
-            if jac_called || step_size != self.lu_step_size {
-                self.factor_dirk(step_size, t.a_at(stage, stage))?;
-                self.lu_step_size = step_size;
+            if (jac_called || step_size != last_step_size)
+                && self.factor_dirk(step_size * t.a_at(stage, stage)) < 0
+            {
+                return Ok(Solved::Failed);
             }
         }
         if event_happened {
@@ -363,11 +548,12 @@ impl GbNls {
         }
         let stage_time = time + t.c[stage] * step_size;
         let fac = step_size * t.a_at(stage, stage);
-        self.newton_scalar(ode, stage, stage_time, fac, 1.0, res_const, x)
+        self.newton_scalar(ode, stage, At::Stage(stage), stage_time, fac, 1.0, res_const, x)
     }
 
-    /// C's `gbInternalSolveNls_DIRK` for the `adams` multi-step system, whose
-    /// residual is `res_const - c[s-1]*x + h*b[s-1]*f(t + h, x)`.
+    /// The `adams` corrector, residual `res_const - c[s-1]*x + h*b[s-1]*f(t + h, x)`,
+    /// through the DIRK machinery. C assembles it from the all-zero `A` and so never
+    /// factorizes; this assembles `h*b[s-1]*J - I` instead.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_multistep(
         &mut self,
@@ -375,63 +561,68 @@ impl GbNls {
         t: &Tableau,
         stage_time: f64,
         step_size: f64,
+        last_step_size: f64,
         y_old: &[f64],
         res_const: &[f64],
         x: &mut [f64],
         event_happened: bool,
         nominals: &[f64],
     ) -> Result<Solved> {
+        self.ensure_systems(ode);
         let last = t.n_stages - 1;
-        let x_start: Vec<f64> = x.to_vec();
-        self.make_scales(nominals, x, &x_start);
+        self.make_scales(nominals, x, x);
         let gamma = t.b[last];
         let mut jac_called = false;
         if self.call_jac || event_happened {
-            self.eval_jacobian(ode, stage_time - step_size, y_old)?;
+            let t0 = stage_time - step_size;
+            if !eval_at(&mut self.fast, ode, t0, At::Left, y_old, &mut self.fbase)?
+                || !self.eval_jacobian(ode, t0, y_old, nominals)?
+            {
+                return Ok(Solved::Failed);
+            }
             jac_called = true;
         }
-        if jac_called || step_size != self.lu_step_size {
-            self.factor_dirk(step_size, gamma)?;
-            self.lu_step_size = step_size;
+        if (jac_called || step_size != last_step_size) && self.factor_dirk(step_size * gamma) < 0 {
+            return Ok(Solved::Failed);
         }
         if event_happened {
             self.etas[0] = f64::MAX;
         }
-        self.newton_scalar(ode, 0, stage_time, step_size * gamma, t.c[last], res_const, x)
+        self.newton_scalar(ode, 0, At::Stage(0), stage_time, step_size * gamma, t.c[last], res_const, x)
     }
 
-    /// The scalar (single-`n_states`) simplified Newton iteration both the DIRK
-    /// stages and the multi-step corrector run, over the residual
-    /// `res_const - c_scale*x + fac*f(stage_time, x)`.
+    /// The simplified Newton iteration of `gbInternalSolveNls_DIRK`, over the
+    /// residual `res_const - c_scale*x + fac*f(stage_time, x)`.
     #[allow(clippy::too_many_arguments)]
     fn newton_scalar(
         &mut self,
         ode: &mut dyn Ode,
         stage: usize,
+        at: At,
         stage_time: f64,
         fac: f64,
         c_scale: f64,
         res_const: &[f64],
         x: &mut [f64],
     ) -> Result<Solved> {
-        let n = self.n_states;
+        let n = self.n;
         let mut nrm_delta = 0.0;
         let mut theta = 0.0;
         let mut newt_it = 1;
         loop {
-            let mut f = vec![0.0; n];
-            ode.eval(stage_time, x, &mut f)?;
+            // C's `residual_DIRK`/`residual_MS` ignore `gbode_fODE`'s verdict.
+            eval_at(&mut self.fast, ode, stage_time, at, x, &mut self.f)?;
             for i in 0..n {
-                self.res[i] = res_const[i] - c_scale * x[i] + fac * f[i];
+                self.res[i] = res_const[i] - c_scale * x[i] + fac * self.f[i];
             }
-            self.factored.as_mut().expect("solve before factor").solve(&mut self.res[..n]);
+            self.sys.as_mut().expect("solve before factor").solve_real(0, &mut self.res[..n]);
             for i in 0..n {
                 x[i] -= self.res[i];
             }
             self.n_iters += 1;
             let nrm_delta_prev = f64::EPSILON.max(nrm_delta);
-            nrm_delta = self.scaled_norm(&self.res);
-            let nrm_x = self.scaled_norm(x);
+            nrm_delta = self.scaled_norm(&self.res, 1);
+            let nrm_x = self.scaled_norm(x, 1);
             let absorption = nrm_delta <= DBL_ABSORPTION * nrm_x;
             if newt_it > 1 {
                 theta = nrm_delta / nrm_delta_prev;
@@ -462,10 +653,10 @@ impl GbNls {
         Ok(Solved::Failed)
     }
 
-    /// The FIRK solve: the T-transformed iteration when the tableau carries a
-    /// transform, else the coupled `s*n` system. `z` holds the stage values
-    /// (`n_stages` blocks of `n_states`), starting at the prediction; `k` receives
-    /// the stage derivatives.
+    /// C's `gbInternalSolveNls_T_Transform`: the FIRK system decoupled by the
+    /// tableau's T-transformation. `z` holds the stage values (`n_stages` blocks
+    /// of the system's size), starting at the prediction; `k` receives the stage
+    /// derivatives.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn solve_firk(
         &mut self,
@@ -473,249 +664,99 @@ impl GbNls {
         t: &Tableau,
         time: f64,
         step_size: f64,
-        y_old: &[f64],
-        k_left: &[f64],
-        z: &mut [f64],
-        k: &mut [f64],
-        event_happened: bool,
-        nominals: &[f64],
-    ) -> Result<Solved> {
-        if t.t_transform.is_some() {
-            return self.solve_firk_t(ode, t, time, step_size, y_old, z, k, event_happened, nominals);
-        }
-        let n = self.n_states;
-        let s = self.n_stages;
-        let size = self.size;
-        let z_start: Vec<f64> = z.to_vec();
-        self.make_scales(nominals, z, &z_start);
-        self.stage_time_0 = time;
-        let mut jac_called = false;
-        if self.call_jac || event_happened {
-            self.eval_jacobian(ode, time, y_old)?;
-            jac_called = true;
-        }
-        if jac_called || step_size != self.lu_step_size {
-            self.factor_firk(t, step_size)?;
-            self.lu_step_size = step_size;
-        }
-        if event_happened {
-            for e in &mut self.etas {
-                *e = f64::MAX;
-            }
-        }
-        let mut nrm_delta = 0.0;
-        let mut theta = 0.0;
-        let mut newt_it = 1;
-        loop {
-            // K_i = f(t + c_i*h, Z_i) for every stage, except that a tableau with
-            // `isKLeftAvailable` reuses the derivative at the interval's left end
-            // for stage 1 rather than evaluating it (C's `residual_IRK`).
-            for stage in 0..s {
-                if t.k_left && stage == 0 {
-                    k[..n].copy_from_slice(&k_left[..n]);
-                    continue;
-                }
-                let st = time + t.c[stage] * step_size;
-                let mut f = vec![0.0; n];
-                ode.eval(st, &z[stage * n..(stage + 1) * n], &mut f)?;
-                k[stage * n..(stage + 1) * n].copy_from_slice(&f);
-            }
-            for stage in 0..s {
-                for i in 0..n {
-                    let mut r = y_old[i] - z[stage * n + i];
-                    for j in 0..s {
-                        r += step_size * t.a_at(stage, j) * k[j * n + i];
-                    }
-                    self.res[stage * n + i] = r;
-                }
-            }
-            self.factored.as_mut().expect("solve before factor").solve(&mut self.res);
-            for i in 0..size {
-                z[i] -= self.res[i];
-            }
-            self.n_iters += 1;
-            let nrm_delta_prev = f64::EPSILON.max(nrm_delta);
-            nrm_delta = self.scaled_norm(&self.res);
-            let nrm_z = self.scaled_norm(z);
-            let absorption = nrm_delta <= DBL_ABSORPTION * nrm_z;
-            if newt_it > 1 {
-                theta = nrm_delta / nrm_delta_prev;
-                if theta >= self.theta_divergence && !absorption {
-                    break;
-                }
-                self.etas[0] = theta / (1.0 - theta);
-            } else {
-                self.etas[0] = pow(self.etas[0].max(f64::EPSILON), self.eta_initial_damping);
-            }
-            if !self.etas[0].is_finite() || !nrm_delta.is_finite() {
-                return Ok(Solved::Failed);
-            }
-            if self.etas[0] * nrm_delta < self.fnewt || absorption {
-                self.call_jac = theta >= self.theta_keep;
-                self.reconstruct_k(t, step_size, y_old, z, k, ode)?;
-                return Ok(Solved::Ok);
-            }
-            if newt_it == self.max_newton_it
-                || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
-                    > self.fnewt)
-            {
-                break;
-            }
-            newt_it += 1;
-        }
-        self.call_jac = true;
-        Ok(Solved::Failed)
-    }
-
-    /// C's `gbInternalSolveNls_T_Transform`: the FIRK system decoupled by the
-    /// tableau's T-transformation. `T^-1*A^-1*T = Lambda + L` block-triangularizes
-    /// the Runge-Kutta matrix, so each Newton iteration solves one `n` system per
-    /// distinct real eigenvalue of `A^-1` and one per conjugate pair — the latter
-    /// as its real `2n` embedding `[[M_re, -M_im], [M_im, M_re]]`, where C uses
-    /// KLU's complex factorization — with forward substitution through `L`.
-    #[allow(clippy::too_many_arguments)]
-    fn solve_firk_t(
-        &mut self,
-        ode: &mut dyn Ode,
-        t: &Tableau,
-        time: f64,
-        step_size: f64,
+        last_step_size: f64,
         y_old: &[f64],
         z: &mut [f64],
         k: &mut [f64],
         event_happened: bool,
         nominals: &[f64],
     ) -> Result<Solved> {
-        let n = self.n_states;
+        let Some(tr) = t.t_transform.as_ref() else {
+            return Err("##GBODE## the internal solver needs the method's T-transformation");
+        };
+        self.ensure_systems(ode);
+        let n = self.n;
         let inv_h = 1.0 / step_size;
-        let z_start: Vec<f64> = z.to_vec();
-        // C's scales for the transformed solve run over `n` (the first stage's
-        // start values), with the stacked norms below.
-        self.make_scales_t(nominals, y_old, &z_start[..n]);
-        let tr = t.t_transform.as_ref().expect("transformed solve without a transform");
         let tsize = tr.size;
         let off = usize::from(tr.first_row_zero);
+        self.stage_time_0 = time;
+        // C's scales: `nlsx` is `yOld`, `nlsxOld` the prediction.
+        self.make_scales(nominals, y_old, &z[..n]);
         let mut jac_called = false;
-        if self.call_jac || event_happened {
-            self.eval_jacobian(ode, time, y_old)?;
-            jac_called = true;
+        if self.call_jac || tr.first_row_zero || event_happened {
+            if !eval_at(&mut self.fast, ode, time, At::Left, y_old, &mut self.fbase)? {
+                return Ok(Solved::Failed);
+            }
             if tr.first_row_zero {
-                z[..n].copy_from_slice(y_old);
                 k[..n].copy_from_slice(&self.fbase);
             }
-        } else if tr.first_row_zero {
-            // The explicit first stage's derivative, fresh each solve as in C.
-            let mut f0 = vec![0.0; n];
-            ode.eval(time, y_old, &mut f0)?;
-            z[..n].copy_from_slice(y_old);
-            k[..n].copy_from_slice(&f0);
-            self.fbase.copy_from_slice(&f0);
-        }
-        if jac_called || step_size != self.lu_step_size {
-            self.factor_transformed(t, inv_h)?;
-            self.lu_step_size = step_size;
-        }
-        if event_happened {
-            for e in &mut self.etas {
-                *e = f64::MAX;
+            if self.call_jac || event_happened {
+                if !self.eval_jacobian(ode, time, y_old, nominals)? {
+                    return Ok(Solved::Failed);
+                }
+                jac_called = true;
             }
         }
-        let tr = t.t_transform.as_ref().unwrap();
+        if (jac_called || step_size != last_step_size) && self.factor_transformed(tr, inv_h) < 0 {
+            return Ok(Solved::Failed);
+        }
         // Z_j = X_start_j - yOld (C copies the guesses without the explicit-row
         // offset), W = (T^-1 otimes I) Z.
-        let mut tz = vec![0.0; tsize * n];
         for j in 0..tsize {
             for i in 0..n {
-                tz[j * n + i] = z_start[j * n + i] - y_old[i];
+                self.tz[j * n + i] = z[j * n + i] - y_old[i];
             }
         }
-        let mut w = vec![0.0; tsize * n];
-        kron_vec(&tr.t_inv, tsize, n, &tz, &mut w);
-        let k1: Vec<f64> = tr.first_row_zero.then(|| k[..n].to_vec()).unwrap_or_default();
-        let mut fw = vec![0.0; tsize * n];
-        let mut res = vec![0.0; tsize * n];
-        let mut work_y = vec![0.0; n];
-        let mut f = vec![0.0; n];
-        let mut rhs2 = vec![0.0; 2 * n];
+        kron_vec(&tr.t_inv, tsize, n, &self.tz, &mut self.w);
+        if tr.first_row_zero {
+            self.k1.copy_from_slice(&k[..n]);
+        }
+        if event_happened {
+            self.etas[0] = f64::MAX;
+        }
         let mut nrm_delta = 0.0;
         let mut theta = 0.0;
         let mut newt_it = 1;
         loop {
-            // F at the current stage values yOld + Z_j.
+            // F at the stage values yOld + Z_j.
             for j in 0..tsize {
                 let st = time + t.c[j + off] * step_size;
                 for i in 0..n {
-                    work_y[i] = y_old[i] + tz[j * n + i];
+                    self.probe[i] = y_old[i] + self.tz[j * n + i];
                 }
-                ode.eval(st, &work_y, &mut f)?;
-                fw[j * n..(j + 1) * n].copy_from_slice(&f);
+                let at = At::Stage(j + off);
+                if !eval_at(&mut self.fast, ode, st, at, &self.probe, &mut self.fw[j * n..(j + 1) * n])? {
+                    return Ok(Solved::Failed);
+                }
             }
             // res = (T^-1 otimes I)*F - 1/h*((Lambda+L) otimes I)*W (+ phi*k_1).
-            kron_vec(&tr.t_inv, tsize, n, &fw, &mut res);
-            lambda_l_matvec(tr, n, -inv_h, &w, &mut res);
+            kron_vec(&tr.t_inv, tsize, n, &self.fw, &mut self.res);
+            scaled_transform_matvec(tr, n, -inv_h, &self.w, &mut self.res);
             if tr.first_row_zero {
                 let phi = tr.phi.as_ref().expect("explicit first row without phi");
                 for j in 0..tsize {
                     for i in 0..n {
-                        res[j * n + i] += phi[j] * k1[i];
+                        self.res[j * n + i] += phi[j] * self.k1[i];
                     }
                 }
             }
-            // Block-forward substitution: each solved row feeds the `L` coupling
-            // of the ones below it.
-            for row in 0..tr.n_real_blocks {
-                if tr.has_l[row] {
-                    for col in 0..row {
-                        let a = -inv_h * tr.l[row * (row - 1) / 2 + col];
-                        if a != 0.0 {
-                            for i in 0..n {
-                                res[row * n + i] += a * res[col * n + i];
-                            }
-                        }
-                    }
-                }
-                let sys = tr.real_eigenvalue_index[row];
-                self.t_real[sys].solve(&mut res[row * n..(row + 1) * n]);
-            }
-            let mut cmplx_row = tr.n_real_blocks;
-            for block in 0..tr.n_complex_blocks {
-                for row in [cmplx_row, cmplx_row + 1] {
-                    if !tr.has_l[row] {
-                        continue;
-                    }
-                    for col in 0..cmplx_row {
-                        let a = -inv_h * tr.l[row * (row - 1) / 2 + col];
-                        if a != 0.0 {
-                            for i in 0..n {
-                                res[row * n + i] += a * res[col * n + i];
-                            }
-                        }
-                    }
-                }
-                rhs2[..n].copy_from_slice(&res[cmplx_row * n..(cmplx_row + 1) * n]);
-                rhs2[n..2 * n].copy_from_slice(&res[(cmplx_row + 1) * n..(cmplx_row + 2) * n]);
-                let sys = tr.complex_eigenpair_index[block];
-                self.t_cmplx[sys].solve(&mut rhs2);
-                res[cmplx_row * n..(cmplx_row + 1) * n].copy_from_slice(&rhs2[..n]);
-                res[(cmplx_row + 1) * n..(cmplx_row + 2) * n].copy_from_slice(&rhs2[n..2 * n]);
-                cmplx_row += 2;
-            }
+            self.forward_substitute(tr, inv_h);
             for i in 0..tsize * n {
-                w[i] += res[i];
+                self.w[i] += self.res[i];
             }
-            kron_vec(&tr.t, tsize, n, &w, &mut tz);
+            kron_vec(&tr.t, tsize, n, &self.w, &mut self.tz);
             self.n_iters += 1;
             let nrm_delta_prev = f64::EPSILON.max(nrm_delta);
-            nrm_delta = self.scaled_norm_t(&res, tsize);
+            nrm_delta = self.scaled_norm(&self.res, tsize);
             let nrm_x = {
                 let mut sum = 0.0;
                 for j in 0..tsize {
                     for i in 0..n {
-                        let v = (y_old[i] + tz[j * n + i]) * self.scal[i];
+                        let v = (y_old[i] + self.tz[j * n + i]) * self.scal[i];
                         sum += v * v;
                     }
                 }
-                sqrt(sum / (n * tsize) as f64)
+                sqrt(sum / (n as f64 * tsize as f64))
             };
             let absorption = nrm_delta <= DBL_ABSORPTION * nrm_x;
             if newt_it > 1 {
@@ -732,37 +773,7 @@ impl GbNls {
             }
             if self.etas[0] * nrm_delta < self.fnewt || absorption {
                 self.call_jac = theta >= self.theta_keep;
-                // X_j = yOld + Z_j; K = 1/h*(A_part^-1 otimes I)*Z (+ rho*k_1).
-                for j in 0..tsize {
-                    for i in 0..n {
-                        z[(j + off) * n + i] = y_old[i] + tz[j * n + i];
-                    }
-                }
-                kron_vec(&tr.a_part_inv, tsize, n, &tz, &mut fw);
-                for j in 0..tsize {
-                    for i in 0..n {
-                        let mut v = inv_h * fw[j * n + i];
-                        if tr.first_row_zero {
-                            v += tr.rho.as_ref().map_or(0.0, |r| r[j]) * k1[i];
-                        }
-                        k[(j + off) * n + i] = v;
-                    }
-                }
-                // An explicit last stage (Lobatto IIIB) evaluates off the others.
-                if tr.last_column_zero {
-                    let last = t.n_stages - 1;
-                    for i in 0..n {
-                        let mut v = y_old[i];
-                        for j in 0..last {
-                            v += step_size * t.a_at(last, j) * k[j * n + i];
-                        }
-                        work_y[i] = v;
-                    }
-                    ode.eval(time + t.c[last] * step_size, &work_y, &mut f)?;
-                    z[last * n..(last + 1) * n].copy_from_slice(&work_y);
-                    k[last * n..(last + 1) * n].copy_from_slice(&f);
-                }
-                return Ok(Solved::Ok);
+                return self.finish_firk(ode, t, tr, step_size, y_old, z, k);
             }
             if newt_it == self.max_newton_it
                 || (pow(theta, (self.max_newton_it - newt_it) as f64) / (1.0 - theta) * nrm_delta
@@ -776,154 +787,119 @@ impl GbNls {
         Ok(Solved::Failed)
     }
 
-    /// Factor the transformed systems from the current `J`: `gamma/h*I - J` per
-    /// distinct real eigenvalue, the real `2n` embedding of
-    /// `(alpha+i*beta)/h*I - J` per conjugate pair.
-    fn factor_transformed(&mut self, t: &Tableau, inv_h: f64) -> Result<()> {
-        let n = self.n_states;
-        let tr = t.t_transform.as_ref().expect("transformed factor without a transform");
-        self.t_real.clear();
-        self.t_cmplx.clear();
-        for e in 0..tr.n_real_eigenvalues {
-            let g = tr.gamma[e] * inv_h;
-            for c in 0..n {
-                for r in 0..n {
-                    self.lu[c * n + r] = -self.j[c * n + r];
+    /// The block-forward substitution of the transformed Newton step: each solved
+    /// row feeds the `L` coupling of the ones below it.
+    fn forward_substitute(&mut self, tr: &TTransform, inv_h: f64) {
+        let n = self.n;
+        let sys = self.sys.as_mut().expect("solve before factor");
+        let res = &mut self.res;
+        for row in 0..tr.n_real_blocks {
+            if tr.has_l[row] {
+                for col in 0..row {
+                    add_l_coupling(res, n, row, col, -inv_h * tr.l[l_index(row, col)]);
                 }
-                self.lu[c * n + c] += g;
             }
-            self.t_real.push(super::linsol::factor(&self.lu[..n * n], n)?);
+            sys.solve_real(tr.real_eigenvalue_index[row], &mut res[row * n..(row + 1) * n]);
         }
-        let m = 2 * n;
-        for e in 0..tr.n_complex_eigenpairs {
-            let a = tr.alpha[e] * inv_h;
-            let b = tr.beta[e] * inv_h;
-            self.lu[..m * m].iter_mut().for_each(|v| *v = 0.0);
-            for c in 0..n {
-                for r in 0..n {
-                    let v = -self.j[c * n + r];
-                    self.lu[c * m + r] = v;
-                    self.lu[(n + c) * m + n + r] = v;
+        let mut cmplx_row = tr.n_real_blocks;
+        for block in 0..tr.n_complex_blocks {
+            for row in [cmplx_row, cmplx_row + 1] {
+                if tr.has_l[row] {
+                    for col in 0..cmplx_row {
+                        add_l_coupling(res, n, row, col, -inv_h * tr.l[l_index(row, col)]);
+                    }
                 }
-                self.lu[c * m + c] += a;
-                self.lu[(n + c) * m + n + c] += a;
-                self.lu[c * m + n + c] += b;
-                self.lu[(n + c) * m + c] -= b;
             }
-            self.t_cmplx.push(super::linsol::factor(&self.lu[..m * m], m)?);
-        }
-        Ok(())
-    }
-
-    /// `createGbScales` for the transformed solve: `n` weights, stacked norms.
-    fn make_scales_t(&mut self, nominals: &[f64], y1: &[f64], y2: &[f64]) {
-        let tol = self.integrator_tol;
-        for i in 0..self.n_states {
-            self.scal[i] = 1.0 / (tol * nominals[i] + abs(y1[i]).max(abs(y2[i])) * tol);
-        }
-    }
-
-    /// `gbScalesNorm` over `stack` blocks of `n` against the `n` weights.
-    fn scaled_norm_t(&self, v: &[f64], stack: usize) -> f64 {
-        let n = self.n_states;
-        let mut sum = 0.0;
-        for j in 0..stack {
             for i in 0..n {
-                let t = v[j * n + i] * self.scal[i];
-                sum += t * t;
+                self.cres[2 * i] = res[cmplx_row * n + i];
+                self.cres[2 * i + 1] = res[(cmplx_row + 1) * n + i];
             }
+            sys.solve_cmplx(tr.complex_eigenpair_index[block], &mut self.cres);
+            for i in 0..n {
+                res[cmplx_row * n + i] = self.cres[2 * i];
+                res[(cmplx_row + 1) * n + i] = self.cres[2 * i + 1];
+            }
+            cmplx_row += 2;
         }
-        sqrt(sum / (n * stack) as f64)
     }
 
-    /// C's `K = 1/h * (A_part^-1 otimes I) * Z (+ rho * k_1)`: rebuild the stage
-    /// derivatives from the *converged* stage values instead of keeping `f(Z)` from
-    /// the last Newton iterate.
-    ///
-    /// This is not an optimization. `y = yOld + h*b^T*K` off the iterate's `f(Z)`
-    /// carries the Newton residual amplified by `h*b^T*J`, an error that does not
-    /// shrink with the step size — so the step size controller cannot buy accuracy
-    /// back. Reconstructed from `Z`, `y` is the collocation polynomial's end value
-    /// (for a stiffly accurate method like Radau IIA, exactly `Z_s`).
-    fn reconstruct_k(
+    /// The converged transformed solve: `X_j = yOld + Z_j` and
+    /// `K = 1/h*(A_part^-1 otimes I)*Z (+ rho*k_1)`, rebuilt from the stage values
+    /// rather than kept from the last iterate's `f(Z)` — that would carry the
+    /// Newton residual amplified by `h*b^T*J`, an error the step size controller
+    /// cannot shrink. An explicit last stage (Lobatto IIIB) is evaluated off the
+    /// others.
+    #[allow(clippy::too_many_arguments)]
+    fn finish_firk(
         &mut self,
+        ode: &mut dyn Ode,
         t: &Tableau,
+        tr: &TTransform,
         step_size: f64,
         y_old: &[f64],
         z: &mut [f64],
         k: &mut [f64],
-        ode: &mut dyn Ode,
-    ) -> Result<()> {
-        let n = self.n_states;
-        let s = self.n_stages;
-        // Without the tableau's `A_part^-1` there is nothing to invert with, so the
-        // iterate's `f(Z)` has to do. Every FIRK method in `tableau_data` has one.
-        let Some(tr) = t.t_transform.as_ref() else { return Ok(()) };
-        let sr = tr.size;
+    ) -> Result<Solved> {
+        let n = self.n;
+        let tsize = tr.size;
         let off = usize::from(tr.first_row_zero);
-        // An explicit first stage is `Z_1 = yOld`, `k_1 = f(t, yOld)`.
-        if tr.first_row_zero {
-            z[..n].copy_from_slice(y_old);
-            let mut f = vec![0.0; n];
-            ode.eval(self.stage_time_0, y_old, &mut f)?;
-            k[..n].copy_from_slice(&f);
-        }
         let inv_h = 1.0 / step_size;
-        let k1 = k[..n].to_vec();
-        let mut out = vec![0.0; sr * n];
-        for j in 0..sr {
+        for j in 0..tsize {
             for i in 0..n {
-                let mut acc = 0.0;
-                for l in 0..sr {
-                    acc += tr.a_part_inv[j * sr + l] * (z[(off + l) * n + i] - y_old[i]);
-                }
-                out[j * n + i] = acc * inv_h;
-                if tr.first_row_zero {
-                    // `rho = -A_part^-1 * A_{r,1}` folds the explicit stage back in.
-                    out[j * n + i] += tr.rho.as_ref().map_or(0.0, |r| r[j]) * k1[i];
-                }
+                z[(j + off) * n + i] = self.tz[j * n + i] + y_old[i];
             }
         }
-        k[off * n..(off + sr) * n].copy_from_slice(&out);
-        // An explicit last stage (Lobatto IIIB) is evaluated from the ones before it.
+        kron_vec(&tr.a_part_inv, tsize, n, &self.tz, &mut k[off * n..(off + tsize) * n]);
+        for v in &mut k[off * n..(off + tsize) * n] {
+            *v *= inv_h;
+        }
+        if tr.first_row_zero {
+            let rho = tr.rho.as_ref().expect("explicit first row without rho");
+            for j in 0..tsize {
+                for i in 0..n {
+                    k[(off + j) * n + i] += rho[j] * self.k1[i];
+                }
+            }
+            z[..n].copy_from_slice(y_old);
+        }
         if tr.last_column_zero {
-            let last = s - 1;
-            let mut x_last = y_old.to_vec();
+            let last = t.n_stages - 1;
             for i in 0..n {
+                let mut v = y_old[i];
                 for j in 0..last {
-                    x_last[i] += step_size * t.a_at(last, j) * k[j * n + i];
+                    v += step_size * t.a_at(last, j) * k[j * n + i];
                 }
+                self.probe[i] = v;
             }
-            let mut f = vec![0.0; n];
-            ode.eval(self.stage_time_0 + t.c[last] * step_size, &x_last, &mut f)?;
-            k[last * n..(last + 1) * n].copy_from_slice(&f);
-            z[last * n..(last + 1) * n].copy_from_slice(&x_last);
+            let st = self.stage_time_0 + t.c[last] * step_size;
+            if !eval_at(&mut self.fast, ode, st, At::Stage(last), &self.probe, &mut self.f)? {
+                return Ok(Solved::Failed);
+            }
+            z[last * n..(last + 1) * n].copy_from_slice(&self.probe);
+            k[last * n..(last + 1) * n].copy_from_slice(&self.f);
         }
-        Ok(())
+        Ok(Solved::Ok)
     }
 
     /// C's `gbInternalContractiveDefect`: `err = (gamma/h*I - J)^-1 * (f(t_n, y_n) -
-    /// d(0)^T*A*K)`, contracting with the transformed solve's first real system
-    /// when its factorization is current, else with a separate one.
+    /// d(0)^T*A*K)`, contracting with the first real system of the Newton solve.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn contractive_defect(
         &mut self,
         ode: &mut dyn Ode,
         t: &Tableau,
         time: f64,
-        step_size: f64,
         y_old: &[f64],
         k: &[f64],
         f_left: Option<&[f64]>,
         err: &mut [f64],
     ) -> Result<()> {
-        let n = self.n_states;
+        let n = self.n;
         let dt_a = t.contractive_dt_a.as_ref().expect("contractive defect without dT_A");
-        let gamma = t.t_transform.as_ref().and_then(|tr| tr.gamma.first().copied()).unwrap_or(1.0);
         for i in 0..n {
             let mut acc = 0.0;
-            for stage in 0..self.n_stages {
-                acc += dt_a[stage] * k[stage * n + i];
+            for (stage, &d) in dt_a.iter().enumerate().take(t.n_stages) {
+                acc += k[stage * n + i] * d;
             }
             err[i] = -acc;
         }
@@ -934,102 +910,72 @@ impl GbNls {
                 }
             }
             None => {
-                let mut f0 = vec![0.0; n];
-                ode.eval(time, y_old, &mut f0)?;
+                eval_at(&mut self.fast, ode, time, At::Left, y_old, &mut self.f)?;
                 for i in 0..n {
-                    err[i] += f0[i];
+                    err[i] += self.f[i];
                 }
             }
         }
-        // C contracts with the T-transform's first real system, whose
-        // factorization the Newton iteration already holds for this step size.
-        if step_size == self.lu_step_size && !self.t_real.is_empty() {
-            self.t_real[0].solve(&mut err[..n]);
-        } else {
-            self.factor_defect(gamma, step_size)?;
-            self.defect_factored.as_mut().expect("solve before factor").solve(&mut err[..n]);
+        if let Some(sys) = self.sys.as_mut() {
+            sys.solve_real(0, &mut err[..n]);
         }
         Ok(())
     }
 
-    /// C's `gbInternalContractiveFilterError`: apply one contraction to the
-    /// embedded estimate already in `err`.
-    pub(super) fn contractive_filter(
-        &mut self,
-        t: &Tableau,
-        step_size: f64,
-        err: &mut [f64],
-    ) -> Result<()> {
-        let n = self.n_states;
-        match t.t_transform.as_ref().and_then(|tr| tr.gamma.first().copied()) {
-            // C contracts with the first real block of the T-transform,
-            // `gamma/h*I - J`, then scales by `gamma/h`.
-            Some(gamma) => {
-                if step_size == self.lu_step_size && !self.t_real.is_empty() {
-                    self.t_real[0].solve(&mut err[..n]);
-                } else {
-                    self.factor_defect(gamma, step_size)?;
-                    self.defect_factored
-                        .as_mut()
-                        .expect("solve before factor")
-                        .solve(&mut err[..n]);
-                }
-                let scale = gamma / step_size;
+    /// C's `gbInternalContractiveFilterError`: contract the embedded estimate in
+    /// `err` with system 0 — `h*gamma*J - I` for a DIRK method, which is already
+    /// the filter up to sign, `gamma/h*I - J` for a transformed one, scaled back
+    /// by `gamma/h`.
+    pub(super) fn contractive_filter(&mut self, t: &Tableau, step_size: f64, err: &mut [f64]) {
+        let n = self.n;
+        if let Some(sys) = self.sys.as_mut() {
+            sys.solve_real(0, &mut err[..n]);
+        }
+        if let Some(tr) = t.t_transform.as_ref() {
+            let scale = tr.gamma[0] / step_size;
+            if scale != 1.0 {
                 for v in &mut err[..n] {
                     *v *= scale;
                 }
             }
-            // Without one the system is the DIRK `h*gamma*J - I`, which already is
-            // the filter up to sign.
-            None => self.factored.as_mut().expect("solve before factor").solve(&mut err[..n]),
         }
-        Ok(())
-    }
-
-    /// Factorize `gamma/h*I - J`, which both contractive estimators contract with.
-    fn factor_defect(&mut self, gamma: f64, step_size: f64) -> Result<()> {
-        if step_size == self.defect_step_size {
-            return Ok(());
-        }
-        let n = self.n_states;
-        let g = gamma / step_size;
-        for c in 0..n {
-            for r in 0..n {
-                self.defect_lu[c * n + r] = -self.j[c * n + r];
-            }
-            self.defect_lu[c * n + c] += g;
-        }
-        self.defect_factored = Some(super::linsol::factor(&self.defect_lu, n)?);
-        self.defect_step_size = step_size;
-        Ok(())
     }
 }
 
+/// C's `GBODE_L_INDEX`: `L` packed by row, strictly lower.
+fn l_index(row: usize, col: usize) -> usize {
+    row * (row - 1) / 2 + col
+}
 
-/// `(M otimes I) * v` for `stack` blocks of `n`: `out_j = sum_l M[j,l] * v_l`,
-/// with `M` in the tableau data's flat `j*stack + l` convention.
+fn add_l_coupling(res: &mut [f64], n: usize, row: usize, col: usize, a: f64) {
+    if a == 0.0 {
+        return;
+    }
+    let (head, tail) = res.split_at_mut(row * n);
+    for (r, c) in tail[..n].iter_mut().zip(&head[col * n..(col + 1) * n]) {
+        *r += a * c;
+    }
+}
+
+/// C's `dense_kron_id_vec`, `(M otimes I) * v` for `stack` blocks of `n`:
+/// `out_j = sum_l M[j,l] * v_l`, with `M` row-major.
 fn kron_vec(m: &[f64], stack: usize, n: usize, v: &[f64], out: &mut [f64]) {
     for j in 0..stack {
-        for i in 0..n {
-            let mut acc = 0.0;
-            for l in 0..stack {
-                acc += m[j * stack + l] * v[l * n + i];
+        let o = &mut out[j * n..(j + 1) * n];
+        o.fill(0.0);
+        for l in 0..stack {
+            let a = m[j * stack + l];
+            for (o, v) in o.iter_mut().zip(&v[l * n..(l + 1) * n]) {
+                *o += a * v;
             }
-            out[j * n + i] = acc;
         }
     }
 }
 
 /// C's `scaled_transform_matvec`: `out += factor * ((Lambda + L) otimes I) * v`,
 /// with the 1x1 real rows, the 2x2 conjugate-pair blocks, and the strictly lower
-/// couplings (`L` packed by row, rows without one skipped via `has_l`).
-fn lambda_l_matvec(
-    tr: &super::tableau::TTransform,
-    n: usize,
-    factor: f64,
-    v: &[f64],
-    out: &mut [f64],
-) {
+/// couplings (rows without one skipped via `has_l`).
+fn scaled_transform_matvec(tr: &TTransform, n: usize, factor: f64, v: &[f64], out: &mut [f64]) {
     for row in 0..tr.n_real_blocks {
         let a = factor * tr.gamma[tr.real_eigenvalue_index[row]];
         for i in 0..n {
@@ -1041,15 +987,17 @@ fn lambda_l_matvec(
         let sys = tr.complex_eigenpair_index[block];
         let a = factor * tr.alpha[sys];
         let b = factor * tr.beta[sys];
+        let mb = -b;
         for i in 0..n {
             let (v0, v1) = (v[row * n + i], v[(row + 1) * n + i]);
-            out[row * n + i] += a * v0 - b * v1;
-            out[(row + 1) * n + i] += b * v0 + a * v1;
+            let o0 = out[row * n + i] + a * v0;
+            out[row * n + i] = o0 + mb * v1;
+            let o1 = out[(row + 1) * n + i] + a * v1;
+            out[(row + 1) * n + i] = o1 + b * v0;
         }
         row += 2;
     }
-    let size = tr.size;
-    for row in 1..size {
+    for row in 1..tr.size {
         if !tr.has_l[row] {
             continue;
         }
@@ -1060,12 +1008,7 @@ fn lambda_l_matvec(
             row
         };
         for col in 0..col_end {
-            let a = factor * tr.l[row * (row - 1) / 2 + col];
-            if a != 0.0 {
-                for i in 0..n {
-                    out[row * n + i] += a * v[col * n + i];
-                }
-            }
+            add_l_coupling(out, n, row, col, factor * tr.l[l_index(row, col)]);
         }
     }
 }

@@ -356,7 +356,12 @@ algorithm
   src := ElementSource.addCommentToSource(src,
     SCodeUtil.getElementComment(InstNode.definition(classInst)));
 
-  deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  // the array connection handlers check connectors with subscripts against the deleted components
+  if settings.arrayConnect then
+    deleted_vars := UnorderedSet.new(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
+  else
+    deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  end if;
 
   (vars, sections) := flattenClass(InstNode.getClass(classInst), prefix,
     Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
@@ -2942,6 +2947,9 @@ protected
   FlatModel unrolled;
   Boolean symbolic_oc;
 algorithm
+  // the array handlers do not know about deleted conditional components
+  flatModel.equations := removeDeletedConnects(flatModel.equations, deletedVars);
+
   // Overconstrained connections: build the graph like resolveConnections, which
   // evaluates the Connections.* operators (isRoot, rooted). The connect equations
   // stay in the model for the array handler.
@@ -2971,6 +2979,40 @@ algorithm
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function removeDeletedConnects
+  "Removes the connect equations with a deleted conditional connector, also
+   inside for loops."
+  input list<Equation> equations;
+  input DeletedVariables deletedVars;
+  output list<Equation> outEquations = {};
+protected
+  list<Equation> body;
+algorithm
+  for eq in equations loop
+    outEquations := match eq
+      case Equation.CONNECT()
+        guard isDeletedConnector(eq.lhs, deletedVars) or isDeletedConnector(eq.rhs, deletedVars)
+        then outEquations;
+      case Equation.FOR() algorithm
+        body := removeDeletedConnects(eq.body, deletedVars);
+      then if listEmpty(body) then outEquations else Equation.FOR(eq.iterator, eq.range, body, eq.scope, eq.source) :: outEquations;
+      else eq :: outEquations;
+    end match;
+  end for;
+  outEquations := listReverseInPlace(outEquations);
+end removeDeletedConnects;
+
+function isDeletedConnector
+  input Expression exp;
+  input DeletedVariables deletedVars;
+  output Boolean res;
+algorithm
+  res := match exp
+    case Expression.CREF() then isDeletedCref(exp.cref, deletedVars);
+    else false;
+  end match;
+end isDeletedConnector;
 
 function unrollForGraph
   "The equations with their for loops unrolled, the ranges evaluated. Only for
@@ -3291,6 +3333,12 @@ algorithm
       then
         ();
 
+    case Expression.ARRAY() guard Type.isRecord(Type.arrayElementType(exp.ty))
+      algorithm
+        funcs := collectTypeFuncs(Type.arrayElementType(exp.ty), funcs);
+      then
+        ();
+
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       algorithm
         for f in Function.getRefCache(exp.fn) loop
@@ -3313,6 +3361,11 @@ algorithm
     fn := Function.mapExp(fn, Expression.expandSplitIndices);
     fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
+
+    if not (Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
+      Function.checkUseBeforeAssign(fn);
+    end if;
+
     Function.collect(fn);
 
     if not InstNode.isPartial(InstNode.fromHandle(fn.node)) then

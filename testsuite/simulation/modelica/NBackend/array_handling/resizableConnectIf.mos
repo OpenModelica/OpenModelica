@@ -1,0 +1,118 @@
+// name: resizableConnectIf
+// keywords: NewBackend resizable connect if
+// status: correct
+// cflags: --newBackend --resizableArrays
+//
+// Connects in if equations in for equations over resizable parameters, with
+// conditions comparing the iterator with the size parameter (TLK_Battery). The
+// branches restrict the loop ranges.
+
+loadString("
+connector Port
+  Real T;
+  flow Real Q;
+end Port;
+
+model Cap
+  Port a, b;
+  Real T(start = 0, fixed = true);
+equation
+  der(T) = a.Q + b.Q;
+  a.Q = 2 * (a.T - T);
+  b.Q = 2 * (b.T - T);
+end Cap;
+
+model Fixed
+  parameter Real T = 1;
+  Port p;
+equation
+  p.T = T;
+end Fixed;
+
+model resizableConnectIf
+  parameter Integer N = 4;
+  parameter Integer M = 3;
+  Cap c[M, N];
+  Fixed hot[M](each T = 1), cold[M](each T = 0);
+equation
+  for i in 1:M loop
+    for k in 1:N loop
+      if k == 1 then
+        connect(c[i, k].a, hot[i].p);
+      end if;
+      if N > k then
+        connect(c[i, k].b, c[i, k + 1].a);
+      else
+        connect(c[i, k].b, cold[i].p);
+      end if;
+    end for;
+  end for;
+end resizableConnectIf;
+"); getErrorString();
+
+instantiateModel(resizableConnectIf); getErrorString();
+// Result:
+// true
+// ""
+// "class resizableConnectIf
+//   parameter Integer N = 4;
+//   parameter Integer M = 3;
+//   Real[M, N] c.a.T;
+//   Real[M, N] c.a.Q;
+//   Real[M, N] c.b.T;
+//   Real[M, N] c.b.Q;
+//   Real[M, N] c.T(start = array(array(0.0 for $f1 in 1:N) for $f2 in 1:M), fixed = {{true, true, true, true}, {true, true, true, true}, {true, true, true, true}});
+//   parameter Real[M] hot.T = array(1.0 for $f1 in 1:M);
+//   Real[M] hot.p.T;
+//   Real[M] hot.p.Q;
+//   parameter Real[M] cold.T = array(0.0 for $f1 in 1:M);
+//   Real[M] cold.p.T;
+//   Real[M] cold.p.Q;
+// equation
+//   for $i4 in 1:M loop
+//     for $i5 in 1:N loop
+//       der(c[$i4,$i5].T) = c[$i4,$i5].a.Q + c[$i4,$i5].b.Q;
+//     end for;
+//   end for;
+//   for $i2 in 1:M loop
+//     for $i3 in 1:N loop
+//       c[$i2,$i3].a.Q = 2.0 * (c[$i2,$i3].a.T - c[$i2,$i3].T);
+//     end for;
+//   end for;
+//   for $i0 in 1:M loop
+//     for $i1 in 1:N loop
+//       c[$i0,$i1].b.Q = 2.0 * (c[$i0,$i1].b.T - c[$i0,$i1].T);
+//     end for;
+//   end for;
+//   for $i6 in 1:M loop
+//     hot[$i6].p.T = hot[$i6].T;
+//   end for;
+//   for $i7 in 1:M loop
+//     cold[$i7].p.T = cold[$i7].T;
+//   end for;
+//   for $i8 in 1:M loop
+//     hot[$i8].p.T = c[$i8,1].a.T;
+//   end for;
+//   for $i8 in 1:M loop
+//     c[$i8,1].a.Q + hot[$i8].p.Q = 0.0;
+//   end for;
+//   for $i9 in 1:M loop
+//     for $i10 in 1:N - 1 loop
+//       c[$i9,$i10].b.T = c[$i9,$i10 + 1].a.T;
+//     end for;
+//   end for;
+//   for $i9 in 1:M loop
+//     for $i10 in 1:N - 1 loop
+//       c[$i9,$i10 + 1].a.Q + c[$i9,$i10].b.Q = 0.0;
+//     end for;
+//   end for;
+//   for $i11 in 1:M loop
+//     cold[$i11].p.T = c[$i11,N].b.T;
+//   end for;
+//   for $i11 in 1:M loop
+//     c[$i11,N].b.Q + cold[$i11].p.Q = 0.0;
+//   end for;
+// end resizableConnectIf;
+// "
+// ""
+// endResult

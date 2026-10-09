@@ -926,22 +926,138 @@ pub extern "C" fn readSparsePatternColor(
     }
 }
 
-/// C's adaptive evaluation of `functionODE` (`eval_dep.c`). The Rust runtime's
-/// integrators always evaluate the whole right-hand side, as the wasm-jit runtime
-/// does, so no dependency graph is built and nothing selects a subset.
-#[unsafe(no_mangle)]
-pub extern "C" fn buildEvalDAG_ODE(modelData: *mut MODEL_DATA, _nEqns: usize, _ixs: *const usize) {
-    unsafe { (*modelData).dag = ptr::null_mut() };
+/// C's `EVAL_DAG` (`eval_dep.c`): which equation solves each variable, and which
+/// equations each one reads from. Only the runtime looks inside it, so it is a
+/// Rust value behind `modelData->dag` / `JACOBIAN.dag`.
+pub struct EvalDag {
+    map_var_to_eq: Vec<usize>,
+    eq_dep: Vec<Vec<usize>>,
+}
+
+/// C's `EVAL_SELECTION`, which the generated `functionODE` reads `n` and `idx` of.
+#[repr(C)]
+pub struct EVAL_SELECTION {
+    pub n: usize,
+    pub idx: *mut usize,
+    pub dag: *mut c_void,
+}
+
+const NO_INDEX: usize = usize::MAX;
+
+/// `buildVarNameHashTable` + the two passes `buildEvalDAG_ODE`/`_Jac` share.
+fn build_eval_dag(md: *mut MODEL_DATA, n_vars: usize, n_eqns: usize, ixs: *const usize) -> *mut c_void {
+    use std::collections::HashMap;
+    use std::collections::hash_map::Entry;
+    let md = unsafe { &mut *md };
+    // name -> (variable index, solving equation), the first variable of a name.
+    let mut table: HashMap<&core::ffi::CStr, (usize, usize)> = HashMap::new();
+    for i in 0..md.nVariablesReal.max(0) as usize {
+        let info = unsafe { &(*md.realVarsData.add(i)).info };
+        let name = unsafe { core::ffi::CStr::from_ptr(info.name) };
+        let var = if info.id >= 1000 { (info.id - 1000) as usize } else { NO_INDEX };
+        if let Entry::Vacant(v) = table.entry(name) {
+            v.insert((var, NO_INDEX));
+        }
+    }
+    let ixs = unsafe { core::slice::from_raw_parts(ixs, n_eqns) };
+    let cstrs = |p: *const *const c_char, n: c_int| -> Vec<&'static core::ffi::CStr> {
+        (0..n.max(0) as usize).map(|j| unsafe { core::ffi::CStr::from_ptr(*p.add(j)) }).collect()
+    };
+    let mut map_var_to_eq = vec![NO_INDEX; n_vars];
+    for (i, &ix) in ixs.iter().enumerate() {
+        let eq = crate::info_json::modelInfoGetEquation(&mut md.modelDataXml, ix);
+        for name in cstrs(eq.vars, eq.numVar) {
+            let Some(entry) = table.get_mut(name) else { continue };
+            if entry.0 == NO_INDEX {
+                continue;
+            }
+            if entry.1 != NO_INDEX {
+                omclog::error!(
+                    omclog::STDOUT,
+                    true,
+                    "Variable {} is solved in more than one equation.",
+                    name.to_string_lossy(),
+                );
+                omclog::error!(omclog::STDOUT, false, "originally solved in {}, now in {}", entry.1, i);
+                omclog::close(omclog::STDOUT);
+            } else {
+                entry.1 = i;
+            }
+            if entry.0 < n_vars {
+                map_var_to_eq[entry.0] = i;
+            }
+        }
+    }
+    let eq_dep = ixs
+        .iter()
+        .map(|&ix| {
+            let eq = crate::info_json::modelInfoGetEquation(&mut md.modelDataXml, ix);
+            cstrs(eq.varsUsed, eq.numVarUsed).iter().map(|u| table.get(u).map_or(NO_INDEX, |e| e.1)).collect()
+        })
+        .collect();
+    Box::into_raw(Box::new(EvalDag { map_var_to_eq, eq_dep })) as *mut c_void
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn buildEvalDAG_Jac(
-    jacobian: *mut JACOBIAN,
-    _modelData: *mut MODEL_DATA,
-    _nEqns: usize,
-    _ixs: *const usize,
-) {
-    unsafe { (*jacobian).dag = ptr::null_mut() };
+pub extern "C" fn buildEvalDAG_ODE(modelData: *mut MODEL_DATA, nEqns: usize, ixs: *const usize) {
+    let n_vars = unsafe { (*modelData).nVariablesReal.max(0) as usize };
+    let dag = build_eval_dag(modelData, n_vars, nEqns, ixs);
+    unsafe { (*modelData).dag = dag };
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn buildEvalDAG_Jac(jacobian: *mut JACOBIAN, modelData: *mut MODEL_DATA, nEqns: usize, ixs: *const usize) {
+    let n_vars = unsafe { (*jacobian).sizeRows + (*jacobian).sizeTmpVars };
+    let dag = build_eval_dag(modelData, n_vars, nEqns, ixs);
+    unsafe { (*jacobian).dag = dag };
+}
+
+/// A selection over `modelData->dag`: C's `allocEvalSelection` with the DAG's
+/// `select` work array.
+pub struct EvalSelection {
+    pub sel: Box<EVAL_SELECTION>,
+    idx: Vec<usize>,
+    select: Vec<bool>,
+}
+
+impl EvalSelection {
+    pub fn new(dag: *mut c_void) -> Option<Self> {
+        let d = unsafe { (dag as *const EvalDag).as_ref()? };
+        let mut idx = vec![0usize; d.eq_dep.len()];
+        let sel = Box::new(EVAL_SELECTION { n: 0, idx: idx.as_mut_ptr(), dag });
+        Some(EvalSelection { sel, idx, select: vec![false; d.eq_dep.len()] })
+    }
+
+    /// C's `updateEvalSelection`: the equations solving the derivatives of
+    /// `fast` (the state indices), then everything they depend on
+    /// (`activateEvalDependencies`).
+    pub fn select_states(&mut self, fast: &[usize], n_states: usize) {
+        let dag = unsafe { &*(self.sel.dag as *const EvalDag) };
+        self.select.fill(false);
+        for &k in fast {
+            let eq = dag.map_var_to_eq.get(k + n_states).copied().unwrap_or(NO_INDEX);
+            if eq != NO_INDEX {
+                self.select[eq] = true;
+            }
+        }
+        for i in (0..dag.eq_dep.len()).rev() {
+            if self.select[i] {
+                for &dep in &dag.eq_dep[i] {
+                    if dep != NO_INDEX {
+                        self.select[dep] = true;
+                    }
+                }
+            }
+        }
+        let mut n = 0;
+        for (i, &on) in self.select.iter().enumerate() {
+            if on {
+                self.idx[n] = i;
+                n += 1;
+            }
+        }
+        self.sel.n = n;
+    }
 }
 
 // ---------------------------------------------------------------------------

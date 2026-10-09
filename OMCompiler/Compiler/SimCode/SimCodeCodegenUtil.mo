@@ -1161,7 +1161,7 @@ public function isWholeResizableArray
    runtime then."
   input DAE.ComponentRef cr;
   input SimCodeVar.SimVar var;
-  output Boolean b = listEmpty(ComponentReference.crefLastSubs(cr)) and isSymbolicArrayVar(var);
+  output Boolean b = not ComponentReference.crefHaveSubs(cr) and isSymbolicArrayVar(var);
 end isWholeResizableArray;
 
 public function residualOffsetExp
@@ -2025,6 +2025,83 @@ algorithm
     else algorithm Error.addInternalError("Tried to generate code that requires the SimCode structure, but this is not set (function context?)", sourceInfo()); then fail();
   end match;
 end getSimCode;
+
+public function timeEventTrigger
+  "The e of a relation `time >= e` or `time < e` (or `e <= time`, `e > time`)
+   where e changes only at events. Such a relation switches exactly when time
+   reaches e, which the runtime schedules as a time event."
+  input DAE.Exp rel;
+  output Option<DAE.Exp> trigger = NONE();
+protected
+  SimCode.SimCode simCode;
+algorithm
+  if not isSimulationCodegen() then
+    return;
+  end if;
+  simCode := getSimCode();
+  trigger := match rel
+    case DAE.RELATION(exp1 = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")), optionExpisASUB = NONE())
+      guard rel.index >= 0 and (match rel.operator case DAE.GREATEREQ() then true; case DAE.LESS() then true; else false; end match)
+            and isEventConstantExp(rel.exp2, simCode)
+      then SOME(rel.exp2);
+    case DAE.RELATION(exp2 = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")), optionExpisASUB = NONE())
+      guard rel.index >= 0 and (match rel.operator case DAE.LESSEQ() then true; case DAE.GREATER() then true; else false; end match)
+            and isEventConstantExp(rel.exp1, simCode)
+      then SOME(rel.exp1);
+    else NONE();
+  end match;
+end timeEventTrigger;
+
+public function isTimeEventRelation
+  input DAE.Exp rel;
+  output Boolean b = isSome(timeEventTrigger(rel));
+end isTimeEventRelation;
+
+protected function isTimeIndependentVar
+  input DAE.ComponentRef cref;
+  output Boolean b;
+protected
+  Option<UnorderedSet<DAE.ComponentRef>> vars = getGlobalRoot(Global.timeIndependentVars);
+algorithm
+  b := match vars
+    local
+      UnorderedSet<DAE.ComponentRef> s;
+    case SOME(s) then UnorderedSet.contains(cref, s);
+    else false;
+  end match;
+end isTimeIndependentVar;
+
+protected function isEventConstantExp
+  "Whether exp can only change at events."
+  input DAE.Exp exp;
+  input SimCode.SimCode simCode;
+  output Boolean b;
+protected
+  SimCodeVar.SimVar v;
+algorithm
+  b := match exp
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
+    case DAE.CREF()
+      guard not ComponentReference.isTime(exp.componentRef)
+      algorithm
+        v := cref2simvar(exp.componentRef, simCode);
+      then v.index <> -2 and (not Types.isRealOrSubTypeReal(exp.ty) or
+        (match v.varKind
+          case BackendDAE.DISCRETE() then true;
+          case BackendDAE.PARAM() then true;
+          case BackendDAE.CONST() then true;
+          else isTimeIndependentVar(exp.componentRef);
+        end match));
+    case DAE.CALL(path = Absyn.IDENT("pre"), expLst = {DAE.CREF()}) then true;
+    case DAE.BINARY() then isEventConstantExp(exp.exp1, simCode) and isEventConstantExp(exp.exp2, simCode);
+    case DAE.UNARY() then isEventConstantExp(exp.exp, simCode);
+    case DAE.CAST() then isEventConstantExp(exp.exp, simCode);
+    else false;
+  end match;
+end isEventConstantExp;
 
 public function isSimulationCodegen
   "Whether the templates are running for a simulation or an FMU rather than for

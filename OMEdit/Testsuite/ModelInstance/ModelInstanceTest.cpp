@@ -123,6 +123,94 @@ void ModelInstanceTest::classConnections()
   delete pModelInstance;
 }
 
+void ModelInstanceTest::documentationFigures()
+{
+  const auto makeRecord = [](const QString &name, const QJsonArray &elements) {
+    return QJsonObject{{"$kind", "record"}, {"name", name}, {"elements", elements}};
+  };
+  const QJsonObject curve = makeRecord("Curve", QJsonArray{
+                                         "time",
+                                         QJsonObject{
+                                           {"$kind", "cref"},
+                                           {"parts", QJsonArray{QJsonObject{{"name", "h"}}}}
+                                         },
+                                         "Height of ball",
+                                         0
+                                       });
+  const QJsonObject axisScale = makeRecord("AxisScale", QJsonArray{"Log", 2});
+  const QJsonObject xAxis = makeRecord("Axis", QJsonArray{QJsonArray{}, QJsonArray{}, "", "time (s)", axisScale});
+  const QJsonObject yAxis = makeRecord("Axis", QJsonArray{QJsonArray{}, QJsonArray{}, "", "", QJsonObject{}});
+  const QJsonObject plot = makeRecord("Plot", QJsonArray{"height", "", QJsonArray{curve}, xAxis, yAxis});
+  const QJsonObject figure = makeRecord("Figure", QJsonArray{"Bouncing ball", "", "", true, QJsonArray{plot}, ""});
+  const QJsonObject secondFigure = makeRecord("Figure", QJsonArray{"Other", "", "", false, QJsonArray{}, ""});
+
+  ModelInstance::DocumentationAnnotation documentation;
+  documentation.deserialize(QJsonObject{
+                              {"info", "Model information"},
+                              {"revisions", "Model revisions"},
+                              {"__OpenModelica_infoHeader", "Header"},
+                              {"styleSheets", QJsonArray{"plot.css"}},
+                              {"figures", QJsonArray{figure, secondFigure}}
+                            });
+
+  QCOMPARE(documentation.getInfo(), QString("Model information"));
+  QCOMPARE(documentation.getRevisions(), QString("Model revisions"));
+  QCOMPARE(documentation.getInfoHeader(), QString("Header"));
+  QCOMPARE(documentation.getStyleSheets(), QStringList{"plot.css"});
+  QCOMPARE(documentation.getFigures().size(), size_t(2));
+
+  const ModelInstance::Figure *pFigure = documentation.getFigures().at(0).get();
+  QCOMPARE(pFigure->getTitle(), QString("Bouncing ball"));
+  QVERIFY(pFigure->isPreferred());
+  QCOMPARE(pFigure->getPlots().size(), size_t(1));
+
+  const ModelInstance::Plot *pPlot = pFigure->getPlots().at(0).get();
+  QCOMPARE(pPlot->getTitle(), QString("height"));
+  QCOMPARE(pPlot->getCurves().size(), size_t(1));
+  QVERIFY(pPlot->getXAxis());
+  QVERIFY(pPlot->getYAxis());
+  QCOMPARE(pPlot->getXAxis()->getLabel(), QString("time (s)"));
+  QVERIFY(pPlot->getXAxis()->getScale());
+  QCOMPARE(pPlot->getXAxis()->getScale()->getScaleType(), QString("Log"));
+  QCOMPARE(pPlot->getXAxis()->getScale()->getBase(), 2);
+  QCOMPARE(pPlot->getCurves().at(0)->getY().toQString(), QString("h"));
+  QCOMPARE(pPlot->getCurves().at(0)->getLegend(), QString("Height of ball"));
+
+  const QString serialized =
+      "Documentation(info=\"Model information\",revisions=\"Model revisions\",__OpenModelica_infoHeader=\"Header\","
+      "styleSheets={\"plot.css\"},figures={Figure(title=\"Bouncing ball\",preferred=true,"
+      "plots={Plot(title=\"height\",curves={Curve(y=h,legend=\"Height of ball\")},"
+      "x=Axis(label=\"time (s)\",scale=AxisScale(scaleType=\"Log\",base=2)))}),Figure(title=\"Other\",plots={})})";
+  QCOMPARE(documentation.toString(), serialized);
+
+  const QString replacement = "Figure(title=\"Bouncing ball\",preferred=true,plots={Plot(curves={Curve(y=v)})})";
+  const QString replacementSerialization =
+      "Documentation(info=\"Model information\",revisions=\"Model revisions\",__OpenModelica_infoHeader=\"Header\","
+      "styleSheets={\"plot.css\"},figures={Figure(title=\"Bouncing ball\",preferred=true,plots={Plot(curves={Curve(y=v)})}),"
+      "Figure(title=\"Other\",plots={})})";
+  QCOMPARE(documentation.toString("Bouncing ball", replacement), replacementSerialization);
+
+  documentation.setDocumentation("Updated information", "Updated revisions", "Updated header");
+  const QString updatedDocumentation =
+      "Documentation(info=\"Updated information\",revisions=\"Updated revisions\",__OpenModelica_infoHeader=\"Updated header\","
+      "styleSheets={\"plot.css\"},figures={Figure(title=\"Bouncing ball\",preferred=true,"
+      "plots={Plot(title=\"height\",curves={Curve(y=h,legend=\"Height of ball\")},"
+      "x=Axis(label=\"time (s)\",scale=AxisScale(scaleType=\"Log\",base=2)))}),Figure(title=\"Other\",plots={})})";
+  QCOMPARE(documentation.toString(), updatedDocumentation);
+
+  documentation.setFigureAnnotation("Bouncing ball", replacement);
+  const QString updatedFigureSerialization =
+      "Documentation(info=\"Updated information\",revisions=\"Updated revisions\",__OpenModelica_infoHeader=\"Updated header\","
+      "styleSheets={\"plot.css\"},figures={Figure(title=\"Bouncing ball\",preferred=true,plots={Plot(curves={Curve(y=v)})}),"
+      "Figure(title=\"Other\",plots={})})";
+  QCOMPARE(documentation.toString(), updatedFigureSerialization);
+
+  documentation.setFigureAnnotation("New figure", "Figure(title=\"New figure\",plots={})");
+  QVERIFY(documentation.toString().contains("figures={Figure(title=\"Bouncing ball\""));
+  QVERIFY(documentation.toString().contains("Figure(title=\"New figure\",plots={})"));
+  QCOMPARE(documentation.getFigures().size(), size_t(2));
+}
+
 void ModelInstanceTest::isParameter()
 {
   QFETCH(QString, model);

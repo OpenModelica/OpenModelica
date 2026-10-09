@@ -2,6 +2,7 @@
 //! `ProfPlan`, `NlsJob`, attribute targets, array/scatter/const groups, slots.
 
 use super::*;
+use openmodelica_sim_meta::Sz;
 
 /// The module's constant pool: every literal concatenated into the single
 /// passive data segment 0, since `memory.init` reads its segment at a source
@@ -99,6 +100,7 @@ pub(crate) struct FnCtx<'a> {
     pub(super) flat_outs: Vec<Option<String>>,
     /// Flat outputs are returned field by field (a `$flat` variant), not boxed.
     pub(super) flat_results: bool,
+    pub(super) size_locals: sizes::SizeLocals,
 }
 
 #[derive(Clone)]
@@ -225,7 +227,7 @@ pub(crate) struct SimCtx {
     pub(crate) zctol_off: u32,
     /// C's `data->localData[1]->realVars` as `(one past the live real region, the
     /// mirror's base)`; `None` when no linear system reads it.
-    pub(crate) old_real: Option<(u32, u32)>,
+    pub(crate) old_real: Option<(u32, u32, u32)>,
     /// `SimData` byte offset of `zeroCrossingsPre` — the previous accepted
     /// g-values, read by the `delayZeroCrossing` builtin in `zc_context`.
     pub(crate) zc_pre_off: u32,
@@ -296,6 +298,11 @@ pub(crate) struct NlsJob {
     /// `4k+3` holds the strict set's `solve(sim_data) -> solved` function — C's
     /// `strictTearingFunctionCall`, which `solveNLS` falls back to.
     pub(crate) casual: bool,
+    /// A system with runtime-sized unknowns: the size-table entry of `n`, and its
+    /// history, nominal and bounds blocks in `SimData` (`hist_off`, `nominal_off`,
+    /// `bounds_off`, tagged offsets) rather than in the module's blocks.
+    pub(crate) dyn_n: Option<u32>,
+    pub(crate) bounds_off: u32,
 }
 
 /// Per-system solver state for `n` unknowns: a count (padded to 8), C's
@@ -389,9 +396,9 @@ pub(crate) struct ArrayGroup {
     /// The elements are heap handles (String), so a read borrows and must retain.
     pub(crate) heap: bool,
     /// Array dimension sizes (row-major, outermost first).
-    pub(crate) dims: Vec<u32>,
+    pub(crate) dims: Vec<Sz>,
     /// Product of `dims` (number of scalar elements).
-    pub(crate) total: u32,
+    pub(crate) total: Sz,
     /// The `dims.len() + 1` pieces an element key is spelled from, one subscript
     /// between each: `["module", ".x", ""]` -> `module[i].x[j]`.
     pub(crate) key_pieces: Vec<String>,
@@ -491,11 +498,27 @@ pub(crate) fn row_major_pos(dims: &[u32], idx: &[i32]) -> Option<u32> {
     Some(lin)
 }
 
+/// [`row_major_pos`] for runtime sizes; the bounds are not checked.
+pub(crate) fn dyn_row_major_pos(dims: &[Sz], idx: &[i32]) -> Option<Sz> {
+    if dims.len() != idx.len() || idx.iter().any(|&i| i < 1) {
+        return None;
+    }
+    let mut lin = Sz::lit(0);
+    for (d, &i) in dims.iter().zip(idx) {
+        lin = lin * d.clone() + Sz::lit(i as i64 - 1);
+    }
+    Some(lin)
+}
+
 /// An array entry of a [`KeyTable`]: the value of its element at row-major `pos`.
 /// `suffix` is the element key's subscript part (`[2][1]`).
 pub(crate) trait ArrayEntry: Clone {
     type Value: Clone;
     fn element(&self, pos: u32, suffix: &str) -> Option<Self::Value>;
+    /// The element of a runtime-sized array at `idx` (1-based), row-major `pos`.
+    fn dyn_element(&self, _idx: &[i32], pos: &Sz, suffix: &str) -> Option<Self::Value> {
+        self.element(u32::try_from(pos.as_const()?).ok()?, suffix)
+    }
 }
 
 /// A cref-key table whose array variables are one entry each instead of one per
@@ -504,11 +527,12 @@ pub(crate) trait ArrayEntry: Clone {
 pub(crate) struct KeyTable<A: ArrayEntry> {
     scalars: HashMap<String, A::Value>,
     arrays: HashMap<String, (A, Vec<u32>)>,
+    dyn_arrays: HashMap<String, (A, Vec<Sz>)>,
 }
 
 impl<A: ArrayEntry> Default for KeyTable<A> {
     fn default() -> Self {
-        KeyTable { scalars: HashMap::default(), arrays: HashMap::default() }
+        KeyTable { scalars: HashMap::default(), arrays: HashMap::default(), dyn_arrays: HashMap::default() }
     }
 }
 
@@ -518,8 +542,19 @@ impl<A: ArrayEntry> KeyTable<A> {
             return Some(v.clone());
         }
         let (base, idx) = split_elem_key(key)?;
-        let (entry, dims) = self.arrays.get(base)?;
-        entry.element(row_major_pos(dims, &idx)?, &key[base.len()..])
+        if let Some((entry, dims)) = self.arrays.get(base) {
+            return entry.element(row_major_pos(dims, &idx)?, &key[base.len()..]);
+        }
+        let (entry, dims) = self.dyn_arrays.get(base)?;
+        entry.dyn_element(&idx, &dyn_row_major_pos(dims, &idx)?, &key[base.len()..])
+    }
+
+    pub(crate) fn insert_dyn_array(&mut self, base: String, entry: A, dims: Vec<Sz>) {
+        self.dyn_arrays.insert(base, (entry, dims));
+    }
+
+    pub(crate) fn dyn_array(&self, base: &str) -> Option<&(A, Vec<Sz>)> {
+        self.dyn_arrays.get(base)
     }
 
     pub(crate) fn insert(&mut self, key: String, value: A::Value) {
@@ -539,11 +574,18 @@ impl<A: ArrayEntry> KeyTable<A> {
 impl ArrayEntry for SimSlot {
     type Value = SimSlot;
     fn element(&self, pos: u32, _: &str) -> Option<SimSlot> {
-        let stride = match self.wty {
-            WTy::F64 => 8,
-            WTy::I32 => 4,
-        };
-        Some(SimSlot { off: self.off + pos * stride, ..*self })
+        if openmodelica_sim_meta::resize::is_dyn(self.off) {
+            return self.dyn_element(&[], &Sz::lit(pos as i64), "");
+        }
+        let stride = self.wty.bytes();
+        let pre = if self.pre != 0 { self.pre + pos * stride } else { 0 };
+        Some(SimSlot { off: self.off + pos * stride, pre, ..*self })
+    }
+    fn dyn_element(&self, _: &[i32], pos: &Sz, _: &str) -> Option<SimSlot> {
+        let stride = self.wty.bytes() as i64;
+        let at = |off: u32| sizes::sim_offset(&(sizes::off_sz(off) + pos.clone() * stride)).ok();
+        let pre = if self.pre != 0 { at(self.pre)? } else { 0 };
+        Some(SimSlot { off: at(self.off)?, pre, ..*self })
     }
 }
 
@@ -556,6 +598,9 @@ impl ArrayEntry for StartSlot {
     fn element(&self, pos: u32, _: &str) -> Option<u32> {
         Some(self.0 + pos * 8)
     }
+    fn dyn_element(&self, _: &[i32], pos: &Sz, _: &str) -> Option<u32> {
+        sizes::sim_offset(&(sizes::off_sz(self.0) + pos.clone() * 8)).ok()
+    }
 }
 
 /// The elements' start expressions, row-major.
@@ -566,6 +611,10 @@ impl ArrayEntry for StartExps {
     type Value = Option<metamodelica::Ref<DAE::Exp>>;
     fn element(&self, pos: u32, _: &str) -> Option<Self::Value> {
         self.0.get(pos as usize).cloned()
+    }
+    /// A runtime-sized array keeps its one whole-array start expression.
+    fn dyn_element(&self, idx: &[i32], _: &Sz, _: &str) -> Option<Self::Value> {
+        Some(self.0.first()?.as_ref().map(|e| crate::CodegenWasmJit::index_exp(e, idx)))
     }
 }
 
@@ -594,6 +643,9 @@ impl VarTable {
             return Some(s);
         }
         let live = self.get(key.strip_prefix("$PRE.")?)?;
+        if live.pre != 0 {
+            return Some(SimSlot { off: live.pre, pre: 0, ..live });
+        }
         Some(SimSlot { off: self.pre.as_ref()?.pre_slot_off(live.off)?, ..live })
     }
 
@@ -616,6 +668,9 @@ pub(crate) struct SimSlot {
     /// an assignment releases the previous handle before storing the new (owned)
     /// one. Scalar Real/Integer/Boolean slots are not heap.
     pub(crate) heap: bool,
+    /// The `pre()` slot when it is not the layout's mirror of `off` (a resizable
+    /// model's); 0 otherwise.
+    pub(crate) pre: u32,
 }
 
 impl<'a> FnCtx<'a> {
@@ -766,6 +821,7 @@ impl<'a> FnCtx<'a> {
             flat: HashMap::default(),
             flat_outs: Vec::new(),
             flat_results: false,
+            size_locals: Default::default(),
         }
     }
 
@@ -848,19 +904,14 @@ impl<'a> FnCtx<'a> {
     /// Emit `savePreValues`: `pre := live` for each `(pre_off, live_off, bytes)`
     /// region (via `memory.copy` within `SimData`). Appended to the per-step
     /// function so a `when` edge test sees the previous step's values.
-    pub(crate) fn sim_save_pre_values(&mut self, regions: &[(u32, u32, u32)]) -> Result<()> {
-        let data = self.sim()?.data_local;
-        for &(dst_off, src_off, bytes) in regions {
-            if bytes == 0 {
+    pub(crate) fn sim_save_pre_values(&mut self, regions: &[(u32, u32, Sz)]) -> Result<()> {
+        for (dst_off, src_off, bytes) in regions {
+            if bytes.as_const() == Some(0) {
                 continue;
             }
-            self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::I32Const(dst_off as i32));
-            self.emit(we::Instruction::I32Add);
-            self.emit(we::Instruction::LocalGet(data));
-            self.emit(we::Instruction::I32Const(src_off as i32));
-            self.emit(we::Instruction::I32Add);
-            self.emit(we::Instruction::I32Const(bytes as i32));
+            self.emit_sim_addr(*dst_off)?;
+            self.emit_sim_addr(*src_off)?;
+            self.emit_size(bytes)?;
             self.emit(we::Instruction::MemoryCopy { src_mem: 0, dst_mem: 0 });
         }
         Ok(())
@@ -992,10 +1043,14 @@ impl<'a> FnCtx<'a> {
     pub(crate) fn emit_update_bound_attrs(
         &mut self,
         defaults: &[(u32, ConstSlot)],
+        dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
         attrs: &[(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)],
     ) -> Result<()> {
         let data = self.sim()?.data_local;
         emit_const_slots(self, defaults)?;
+        for (off, n, v, stride) in dyn_defaults {
+            emit_fill_slots(self, *off, n, *v, *stride)?;
+        }
         if attrs.is_empty() {
             return Ok(());
         }
@@ -1011,19 +1066,19 @@ impl<'a> FnCtx<'a> {
             if matches!(attr, Attr::Nominal) {
                 for off in &targets.nom_offs {
                     // C's `dassl.c`: `atol[i] = tol * fmax(fabs(nominal), 1e-32)`.
-                    self.emit(we::Instruction::LocalGet(data));
+                    let rel = self.emit_sim_base(*off)?;
                     self.emit(we::Instruction::LocalGet(raw));
                     self.emit(we::Instruction::F64Abs);
                     self.emit(we::Instruction::F64Const(1e-32f64.into()));
                     self.emit(we::Instruction::F64Max);
-                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                    self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
                 }
             }
             if matches!(attr, Attr::Max) {
                 for off in &targets.max_offs {
-                    self.emit(we::Instruction::LocalGet(data));
+                    let rel = self.emit_sim_base(*off)?;
                     self.emit(we::Instruction::LocalGet(raw));
-                    self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                    self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
                 }
             }
             let raw_offs: &[u32] = match attr {
@@ -1033,20 +1088,20 @@ impl<'a> FnCtx<'a> {
                 Attr::Start => &targets.start_offs,
             };
             for off in raw_offs {
-                self.emit(we::Instruction::LocalGet(data));
+                let rel = self.emit_sim_base(*off)?;
                 self.emit(we::Instruction::LocalGet(raw));
-                self.emit(we::Instruction::F64Store(mem_arg(*off, 3)));
+                self.emit(we::Instruction::F64Store(mem_arg(rel, 3)));
             }
             // C's `postExp`: `<var> = $START.<var>`, but not for a String, whose slot
             // holds a reference-counted handle.
             if let Some(slot) = var.filter(|s| s.negate == Neg::None && !s.heap) {
-                self.emit(we::Instruction::LocalGet(data));
+                let rel = self.emit_sim_base(slot.off)?;
                 self.emit(we::Instruction::LocalGet(raw));
                 match slot.wty {
-                    WTy::F64 => self.emit(we::Instruction::F64Store(mem_arg(slot.off, 3))),
+                    WTy::F64 => self.emit(we::Instruction::F64Store(mem_arg(rel, 3))),
                     _ => {
                         self.emit(we::Instruction::I32TruncSatF64S);
-                        self.emit(we::Instruction::I32Store(mem_arg(slot.off, 2)));
+                        self.emit(we::Instruction::I32Store(mem_arg(rel, 2)));
                     }
                 }
             }
@@ -1088,10 +1143,14 @@ impl<'a> FnCtx<'a> {
 
     /// Store each real variable's declared `start` value in its start attribute
     /// slot at `off`.
-    pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)]) -> Result<()> {
+    pub(crate) fn emit_init_start_values(&mut self, starts: &[(f64, u32)], fills: &[(u32, Sz, f64)]) -> Result<()> {
         let mut stores: Vec<(u32, ConstSlot)> = starts.iter().map(|&(v, off)| (off, ConstSlot::f64(v))).collect();
         stores.sort_by_key(|&(off, _)| off);
-        emit_const_slots(self, &stores)
+        emit_const_slots(self, &stores)?;
+        for (off, n, v) in fills {
+            emit_fill_slots(self, *off, n, ConstSlot::f64(*v), 8)?;
+        }
+        Ok(())
     }
 
     /// Emit `functionZeroCrossings`: store each crossing `k`'s g-value as f64 at
@@ -1153,6 +1212,41 @@ impl<'a> FnCtx<'a> {
             coerce(self, w, WTy::I32);
             self.emit(we::Instruction::I32Store(mem_arg(relations_off + i as u32 * 4, 2)));
         }
+        Ok(())
+    }
+
+    /// Emit `functionNextTimeEvent`: replace the time in `SimData` by the earliest
+    /// later `trigger`, or `f64::MAX`.
+    pub(crate) fn emit_next_time_event(&mut self, triggers: &[metamodelica::Ref<DAE::Exp>]) -> Result<()> {
+        use we::Instruction as I;
+        let data = self.sim()?.data_local;
+        let now = self.alloc_temp(WTy::F64);
+        let next = self.alloc_temp(WTy::F64);
+        let te = self.alloc_temp(WTy::F64);
+        self.emit(I::LocalGet(data));
+        self.emit(I::F64Load(mem_arg(0, 3)));
+        self.emit(I::LocalSet(now));
+        self.emit(I::F64Const(f64::MAX.into()));
+        self.emit(I::LocalSet(next));
+        for e in triggers {
+            let w = compile_exp(self, e)?;
+            coerce(self, w, WTy::F64);
+            self.emit(I::LocalSet(te));
+            self.emit(I::LocalGet(te));
+            self.emit(I::LocalGet(now));
+            self.emit(I::F64Gt);
+            self.emit(I::LocalGet(te));
+            self.emit(I::LocalGet(next));
+            self.emit(I::F64Lt);
+            self.emit(I::I32And);
+            self.emit(I::If(we::BlockType::Empty));
+            self.emit(I::LocalGet(te));
+            self.emit(I::LocalSet(next));
+            self.emit(I::End);
+        }
+        self.emit(I::LocalGet(data));
+        self.emit(I::LocalGet(next));
+        self.emit(I::F64Store(mem_arg(0, 3)));
         Ok(())
     }
 
@@ -1353,6 +1447,10 @@ impl<'a> FnCtx<'a> {
     /// `return`/fall-through value handling appropriate for the function.
     pub(crate) fn finish_sim(mut self) -> (Vec<we::ValType>, Vec<we::Instruction<'static>>) {
         self.emit(we::Instruction::End);
+        let prologue = self.size_prologue();
+        if !prologue.is_empty() {
+            self.instrs.splice(0..0, prologue);
+        }
         (self.extra_locals, self.instrs)
     }
 }

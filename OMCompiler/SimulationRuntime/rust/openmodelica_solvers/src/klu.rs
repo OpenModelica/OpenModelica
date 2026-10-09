@@ -64,6 +64,10 @@ mod real {
         fn klu_tsolve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
         fn klu_free_symbolic(symbolic: *mut *mut c_void, common: *mut Common) -> i32;
         fn klu_free_numeric(numeric: *mut *mut c_void, common: *mut Common) -> i32;
+        fn klu_z_factor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, common: *mut Common) -> *mut c_void;
+        fn klu_z_refactor(ap: *mut i32, ai: *mut i32, ax: *mut f64, symbolic: *mut c_void, numeric: *mut c_void, common: *mut Common) -> i32;
+        fn klu_z_solve(symbolic: *mut c_void, numeric: *mut c_void, ldim: i32, nrhs: i32, b: *mut f64, common: *mut Common) -> i32;
+        fn klu_z_free_numeric(numeric: *mut *mut c_void, common: *mut Common) -> i32;
     }
 
     impl Common {
@@ -170,6 +174,86 @@ mod real {
             }
         }
     }
+
+    /// Several matrices over one pattern and one symbolic analysis, real and
+    /// complex (values interleaved `re, im`): gbode's `KLUInternals`. Unlike
+    /// [`Factorization`] a numeric is refactored without a pivot-growth check, and
+    /// a singular one is dropped, as `klu_factor` leaves it.
+    pub struct Shared {
+        common: Common,
+        symbolic: *mut c_void,
+        real: alloc::vec::Vec<*mut c_void>,
+        cmplx: alloc::vec::Vec<*mut c_void>,
+        n: usize,
+    }
+
+    impl Shared {
+        pub fn analyze(n: usize, ap: &mut [i32], ai: &mut [i32], n_real: usize, n_cmplx: usize) -> Option<Shared> {
+            let mut s = Shared {
+                common: Common::defaults()?,
+                symbolic: core::ptr::null_mut(),
+                real: alloc::vec![core::ptr::null_mut(); n_real],
+                cmplx: alloc::vec![core::ptr::null_mut(); n_cmplx],
+                n,
+            };
+            s.symbolic = unsafe { klu_analyze(n as i32, ap.as_mut_ptr(), ai.as_mut_ptr(), &mut s.common) };
+            (!s.symbolic.is_null()).then_some(s)
+        }
+
+        /// `klu_refactor` over the system's numeric, else `klu_factor`; the
+        /// resulting `klu_common.status` (negative on failure, `1` singular).
+        pub fn factor_real(&mut self, sys: usize, ap: &mut [i32], ai: &mut [i32], ax: &mut [f64]) -> i32 {
+            let (ap, ai, ax) = (ap.as_mut_ptr(), ai.as_mut_ptr(), ax.as_mut_ptr());
+            let num = &mut self.real[sys];
+            unsafe {
+                if num.is_null() {
+                    *num = klu_factor(ap, ai, ax, self.symbolic, &mut self.common);
+                } else {
+                    klu_refactor(ap, ai, ax, self.symbolic, *num, &mut self.common);
+                }
+            }
+            self.common.status
+        }
+
+        pub fn solve_real(&mut self, sys: usize, b: &mut [f64]) -> bool {
+            unsafe { klu_solve(self.symbolic, self.real[sys], self.n as i32, 1, b.as_mut_ptr(), &mut self.common) != 0 }
+        }
+
+        pub fn factor_cmplx(&mut self, sys: usize, ap: &mut [i32], ai: &mut [i32], ax: &mut [f64]) -> i32 {
+            let (ap, ai, ax) = (ap.as_mut_ptr(), ai.as_mut_ptr(), ax.as_mut_ptr());
+            let num = &mut self.cmplx[sys];
+            unsafe {
+                if num.is_null() {
+                    *num = klu_z_factor(ap, ai, ax, self.symbolic, &mut self.common);
+                } else {
+                    klu_z_refactor(ap, ai, ax, self.symbolic, *num, &mut self.common);
+                }
+            }
+            self.common.status
+        }
+
+        pub fn solve_cmplx(&mut self, sys: usize, b: &mut [f64]) -> bool {
+            unsafe { klu_z_solve(self.symbolic, self.cmplx[sys], self.n as i32, 1, b.as_mut_ptr(), &mut self.common) != 0 }
+        }
+    }
+
+    impl Drop for Shared {
+        fn drop(&mut self) {
+            unsafe {
+                for num in &mut self.real {
+                    if !num.is_null() {
+                        klu_free_numeric(num, &mut self.common);
+                    }
+                }
+                for num in &mut self.cmplx {
+                    if !num.is_null() {
+                        klu_z_free_numeric(num, &mut self.common);
+                    }
+                }
+                klu_free_symbolic(&mut self.symbolic, &mut self.common);
+            }
+        }
+    }
 }
 
 #[cfg(not(sundials))]
@@ -199,6 +283,26 @@ mod real {
         }
         pub fn rgrowth(&self) -> f64 {
             -1.0
+        }
+    }
+
+    pub struct Shared {}
+
+    impl Shared {
+        pub fn analyze(_n: usize, _ap: &mut [i32], _ai: &mut [i32], _n_real: usize, _n_cmplx: usize) -> Option<Shared> {
+            None
+        }
+        pub fn factor_real(&mut self, _sys: usize, _ap: &mut [i32], _ai: &mut [i32], _ax: &mut [f64]) -> i32 {
+            super::INVALID
+        }
+        pub fn solve_real(&mut self, _sys: usize, _b: &mut [f64]) -> bool {
+            false
+        }
+        pub fn factor_cmplx(&mut self, _sys: usize, _ap: &mut [i32], _ai: &mut [i32], _ax: &mut [f64]) -> i32 {
+            super::INVALID
+        }
+        pub fn solve_cmplx(&mut self, _sys: usize, _b: &mut [f64]) -> bool {
+            false
         }
     }
 }

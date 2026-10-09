@@ -1,0 +1,90 @@
+// name: resizablePartialLoops
+// keywords: NewBackend resizable override algebraic loop slice
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizablePartialLoops*.log resizablePartialLoops*.mat
+//
+// Algebraic loops whose iteration variables, residuals and inner equations are
+// only parts of resizable arrays (x[2:N], x[1:N-1], single iterations at N):
+// the parts become whole arrays and for-equations over symbolic ranges, the
+// results with -override equal those of the old backend for that size.
+
+loadString("
+package resizablePartialLoops
+  connector Port
+    Real T;
+    flow Real Q;
+  end Port;
+  model Cap
+    Port a, b;
+    Real T(start = 0, fixed = true);
+  equation
+    der(T) = a.Q + b.Q;
+    a.Q = 2 * (a.T - T);
+    b.Q = 2 * (b.T - T);
+  end Cap;
+  model Fixed
+    parameter Real T = 1;
+    Port p;
+  equation
+    p.T = T;
+  end Fixed;
+  model Chain
+    parameter Integer N = 4;
+    Cap c[N];
+    Fixed hot(T = 1), cold(T = 0);
+  equation
+    connect(c[1].a, hot.p);
+    for k in 1:N - 1 loop
+      connect(c[k].b, c[k + 1].a);
+    end for;
+    connect(c[N].b, cold.p);
+  end Chain;
+  model Grid
+    parameter Integer N = 4;
+    parameter Integer M = 3;
+    Cap c[M, N];
+    Fixed hot[M](each T = 1), cold[M](each T = 0);
+  equation
+    for i in 1:M loop
+      connect(c[i, 1].a, hot[i].p);
+      for k in 1:N - 1 loop
+        connect(c[i, k].b, c[i, k + 1].a);
+      end for;
+      connect(c[i, N].b, cold[i].p);
+    end for;
+  end Grid;
+  model Chain6 = Chain(N = 6);
+  model Grid26 = Grid(M = 2, N = 6);
+end resizablePartialLoops;
+"); getErrorString();
+
+buildModel(resizablePartialLoops.Chain, stopTime = 1, fileNamePrefix = "resizablePartialLoopsChain"); getErrorString();
+system("./resizablePartialLoopsChain -override=N=6 -r=resizablePartialLoopsChain_6.mat > resizablePartialLoopsChain_6.log 2>&1 && ! grep -i warning resizablePartialLoopsChain_6.log");
+buildModel(resizablePartialLoops.Grid, stopTime = 1, fileNamePrefix = "resizablePartialLoopsGrid"); getErrorString();
+system("./resizablePartialLoopsGrid -override=M=2,N=6 -r=resizablePartialLoopsGrid_26.mat > resizablePartialLoopsGrid_26.log 2>&1 && ! grep -i warning resizablePartialLoopsGrid_26.log");
+
+// the results of the old backend for these sizes
+abs(val(c.T[1], 1, "resizablePartialLoopsChain_6.mat") - 0.6914908972581503) < 1e-6;
+abs(val(c.T[5], 1, "resizablePartialLoopsChain_6.mat") - 0.0031534577628211696) < 1e-6;
+abs(val(c.b.Q[6], 1, "resizablePartialLoopsChain_6.mat") - (-8.66246766758432e-4)) < 1e-6;
+abs(val(c.T[1,1], 1, "resizablePartialLoopsGrid_26.mat") - 0.6914908972581503) < 1e-6;
+abs(val(c.T[2,3], 1, "resizablePartialLoopsGrid_26.mat") - 0.07447483509858582) < 1e-6;
+abs(val(c.T[2,6], 1, "resizablePartialLoopsGrid_26.mat") - 4.33123383379216e-4) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizablePartialLoopsChain", "resizablePartialLoopsChain_init.xml"}
+// ""
+// 0
+// {"resizablePartialLoopsGrid", "resizablePartialLoopsGrid_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// true
+// true
+// true
+// endResult

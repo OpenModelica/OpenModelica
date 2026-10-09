@@ -53,6 +53,7 @@ QString Helper::userHomeDirectory = "";
 QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OMEditInternal = "OMEditInternal";
 QString Helper::OMCServerName = "OMEdit";
+QString Helper::modelicaFigureTitle = "modelicaFigureTitle";
 QString Helper::omFileTypes = QString("All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml%1);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
                                       ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)%2")
 #if defined(__EMSCRIPTEN__)

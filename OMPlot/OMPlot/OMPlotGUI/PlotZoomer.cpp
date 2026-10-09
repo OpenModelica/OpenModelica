@@ -34,10 +34,12 @@
  */
 
 #include "PlotZoomer.h"
+#include "OMPlot.h"
 
 #include "qwt_plot.h"
 
 #include <QPen>
+#include <QApplication>
 
 using namespace OMPlot;
 
@@ -55,7 +57,7 @@ PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
 #endif
   setTrackerMode(QwtPicker::AlwaysOff);
   setRubberBand(QwtPicker::RectRubberBand);
-  setRubberBandPen(QPen(Qt::black, 1.0, Qt::DashLine));
+  setRubberBandPen(QPen(OMPlot::isDarkMode() ? QApplication::palette().color(QPalette::Text) : QColor(Qt::black), 1.0, Qt::DashLine));
 
   // RightButton: zoom out by 1
   // Ctrl+RightButton: zoom out to full size

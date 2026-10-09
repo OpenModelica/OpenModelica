@@ -724,6 +724,10 @@ namespace IAEX
    */
   void CellDocument::updateScrollArea()
   {
+    // blocked while the text zoom sets the scroll position itself
+    if( scrollUpdatesBlocked_ > 0 )
+      return;
+
     if( scroll_->verticalScrollBar()->isVisible() )
     {
       CellCursor *cursor = getCursor();
@@ -825,6 +829,21 @@ namespace IAEX
         }
       }
     }
+  }
+
+  /*!
+   * \brief Blocks (or unblocks) updateScrollArea(). Every cell calls it when its
+   * height changes, and it scrolls the active cell into view. The text zoom
+   * changes the height of all cells and scrolls by itself.
+   *
+   * Calls can be nested, every block(true) needs a block(false).
+   */
+  void CellDocument::blockScrollUpdates( bool block )
+  {
+    if( block )
+      ++scrollUpdatesBlocked_;
+    else if( scrollUpdatesBlocked_ > 0 )
+      --scrollUpdatesBlocked_;
   }
 
   /*!

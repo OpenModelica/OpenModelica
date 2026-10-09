@@ -140,6 +140,7 @@ uniontype Shared "Data shared for all equation-systems"
     BackendDAEModeData daeModeData          "DAEMode Data";
     Option<DataReconciliationData> dataReconciliationData;
     Option<.DAE.Exp> timeInterval           "from experiment annotation Interval, used for derivative nominal guesswork";
+    list<.DAE.Statement> parameterAsserts   "asserts that the parameter coefficients equations were solved with are nonzero";
   end SHARED;
 end Shared;
 

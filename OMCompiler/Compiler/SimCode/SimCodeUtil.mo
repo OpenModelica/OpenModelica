@@ -187,6 +187,21 @@ end compareEqSystemsEquality;
 //
 // =============================================================================
 
+protected function setTimeIndependentVars
+  "Records the known variables that are not parameters: the backend only
+   computes them at initialization."
+  input BackendDAE.Variables knownVars;
+protected
+  UnorderedSet<DAE.ComponentRef> vars = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+algorithm
+  for v in BackendVariable.varList(knownVars) loop
+    if BackendVariable.isVarAlg(v) and not BackendVariable.isInput(v) then
+      UnorderedSet.add(v.varName, vars);
+    end if;
+  end for;
+  setGlobalRoot(Global.timeIndependentVars, SOME(vars));
+end setTimeIndependentVars;
+
 public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
@@ -342,6 +357,7 @@ algorithm
                                 classAttrs=classAttributes,
                                 symjacs=symJacs,
                                 eventInfo=eventInfo) := dlow.shared;
+    setTimeIndependentVars(globalKnownVars);
 
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
@@ -410,7 +426,8 @@ algorithm
     (uniqueEqIndex, maxValueEquations) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
 
-    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars);
+    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars,
+      List.unionOnTrue(listReverse(shared.parameterAsserts), listReverse(inInitDAE.shared.parameterAsserts), ExpressionSolve.assertCondEqual));
     if debug then execStat("simCode: createParameterEquations"); end if;
     //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
@@ -3342,6 +3359,7 @@ algorithm
       BackendDAE.TearingSet strictTearingSet;
       Option<BackendDAE.TearingSet> casualTearingSet;
       Boolean partOfJac;
+      BackendDAE.InnerEquations innerEquations;
 
     // EQUATIONSYSTEM: continuous system of equations
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
@@ -3372,6 +3390,13 @@ algorithm
         tmpEqSccMapping := appendSccIdxRange(uniqueEqIndexMapping, uniqueEqIndex - 1, isccIndex, ieqSccMapping);
         tmpBackendMapping := setEqMapping(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1),eqIdcs,iBackendMapping);
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
+
+    // TORNSYSTEM without residual equations: its inner equations solve it
+    case (_, _, BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations={}, innerEquations=innerEquations)))
+      algorithm
+        (equations_, uniqueEqIndex, tempvars) := createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
+        tmpEqSccMapping := appendSccIdxRange(iuniqueEqIndex, uniqueEqIndex - 1, isccIndex, ieqSccMapping);
+      then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, iBackendMapping);
 
     // TORNSYSTEM
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.TORNSYSTEM(strictTearingSet=strictTearingSet, casualTearingSet=casualTearingSet, linear=b, mixedSystem=mixedSystem))
@@ -6567,6 +6592,7 @@ public function createParameterEquations
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
   input BackendDAE.Variables globalKnownVars;
+  input list<DAE.Statement> parameterAsserts = {};
   output Integer outUniqueEqIndex = inUniqueEqIndex;
   output list<SimCode.SimEqSystem> outParameterEquations = {};
   output Integer nFixedParameters;
@@ -6582,6 +6608,7 @@ algorithm
     print("\n");
   end if;
 
+  varasserts := List.append_reverse(list(DAE.ALGORITHM_STMTS({a}) for a in parameterAsserts), varasserts);
   varasserts := MetaModelica.Dangerous.listReverseInPlace(varasserts);
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
