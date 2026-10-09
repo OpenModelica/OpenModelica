@@ -267,12 +267,32 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
+    FlatModel flat = FlatModel.mapExp(flatModel, lowerFunctionPointers);
   algorithm
-    variableData := lowerVariableData(continuousImplicitDiscretes(flatModel.variables, listAppend(flatModel.equations, flatModel.initialEquations),
-      listAppend(flatModel.algorithms, flatModel.initialAlgorithms)));
-    (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
+    variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
+      listAppend(flat.algorithms, flat.initialAlgorithms)));
+    (equationData, variableData) := lowerEquationData(flat.equations, flat.algorithms, flat.initialEquations, flat.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
+
+  function lowerFunctionPointers
+    "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
+    the function. Represent it as a function partial application without arguments,
+    so it is not mistaken for a variable anywhere in the backend."
+    input output Expression exp;
+  algorithm
+    exp := Expression.map(exp, lowerFunctionPointer);
+  end lowerFunctionPointers;
+
+  function lowerFunctionPointer
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF(ty = Type.FUNCTION())
+      then Expression.PARTIAL_FUNCTION_APPLICATION(exp.cref, {}, {}, exp.ty);
+      else exp;
+    end match;
+  end lowerFunctionPointer;
 
   function continuousImplicitDiscretes
     "Real variables assigned in a when-equation are implicitly discrete. The frontend marks them before

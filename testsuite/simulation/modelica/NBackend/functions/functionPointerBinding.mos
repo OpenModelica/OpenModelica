@@ -1,0 +1,61 @@
+// name: functionPointerBinding
+// keywords: NewBackend
+// status: correct
+//
+// Function pointers, e.g. f in solveOneNonlinearEquation(function f(), ...),
+// must not be treated as variables or iterators: in a parameter binding,
+// an algebraic equation and a state equation.
+
+loadString("
+model functionPointerBinding
+  partial function F
+    input Real u;
+    output Real y;
+  end F;
+
+  function f
+    extends F;
+  algorithm
+    y := u - 2;
+  end f;
+
+  function apply
+    input F g;
+    input Real u;
+    output Real y;
+  algorithm
+    y := g(u);
+    annotation(Inline=false);
+  end apply;
+
+  parameter Real p = apply(function f(), 5);
+  Real x = p * time;
+  Real y;
+  Real z(start = 1, fixed = true);
+equation
+  y = apply(function f(), time);
+  der(z) = apply(function f(), -z);
+end functionPointerBinding;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(functionPointerBinding); getErrorString();
+val(x, 1.0); val(y, 1.0); val(z, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "functionPointerBinding_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'functionPointerBinding', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// -1.0
+// -0.8963613266362818
+// endResult
