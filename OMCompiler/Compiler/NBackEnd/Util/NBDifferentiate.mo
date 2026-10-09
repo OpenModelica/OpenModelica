@@ -83,6 +83,7 @@ public
   import Array;
   import BackendUtil = NBBackendUtil;
   import Error;
+  import StringUtil;
   import UnorderedMap;
   import Slice = NBSlice;
 
@@ -1610,6 +1611,22 @@ public
     end if;
   end differentiateComponentRefNoCollect;
 
+  function isRelatedCref
+    "true if the expression is a cref of the same variable, one of its records or one of its fields"
+    input Expression exp;
+    input String name "of the cref without subscripts";
+    output Boolean b;
+  protected
+    String other;
+  algorithm
+    b := match exp
+      case Expression.CREF() algorithm
+        other := ComponentRef.toString(ComponentRef.stripSubscriptsAll(exp.cref));
+      then other == name or StringUtil.startsWith(name, other + ".") or StringUtil.startsWith(other, name + ".");
+      else false;
+    end match;
+  end isRelatedCref;
+
   function differentiateVariablePointer
     input Pointer<Variable> var_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
@@ -1680,6 +1697,13 @@ public
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
         (ret, diffArguments) := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
+
+      // a call that does not depend on the variable has a zero derivative,
+      // its derivative function might not even be applicable (e.g. external object inputs)
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(diffArguments.diffType == DifferentiationType.SIMPLE
+          and not Expression.contains(exp, function isRelatedCref(name = ComponentRef.toString(ComponentRef.stripSubscriptsAll(diffArguments.diffCref)))))
+      then (Expression.makeZero(Expression.typeOf(exp)), diffArguments);
 
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
