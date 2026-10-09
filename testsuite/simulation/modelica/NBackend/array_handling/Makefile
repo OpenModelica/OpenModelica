@@ -8,6 +8,7 @@ scalarDivArray.mos \
 arrayRowScalar.mos \
 eachScalarProduct.mos \
 ifBranchSizes.mos \
+recordActualStream.mos \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \

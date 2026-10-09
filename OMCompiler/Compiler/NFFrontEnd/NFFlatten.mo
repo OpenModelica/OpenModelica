@@ -2878,13 +2878,19 @@ protected
 algorithm
   () := match var
     case Variable.VARIABLE()
-      guard Binding.hasExp(var.binding)
       algorithm
-        exp := Binding.getExp(var.binding);
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
+        if Binding.hasExp(var.binding) then
+          exp := Binding.getExp(var.binding);
+          eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
 
-        if not referenceEq(exp, eval_exp) then
-          var.binding := Binding.setExp(eval_exp, var.binding);
+          if not referenceEq(exp, eval_exp) then
+            var.binding := Binding.setExp(eval_exp, var.binding);
+          end if;
+        end if;
+
+        // record fields that are not flattened keep their own bindings
+        if not listEmpty(var.children) then
+          var.children := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in var.children);
         end if;
       then
         ();
