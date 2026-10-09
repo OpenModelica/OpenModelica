@@ -1168,12 +1168,9 @@ void MainWindow::beforeClosingMainWindow()
   }
   mTransformationsWidgetHash.clear();
 #endif
-  /* delete the ClassDiagramWidgets, the last one keeps its geometry. Their web pages must go
-   * before the web engine profile does, at exit.
-   */
-  const QList<ClassDiagramWidget*> classDiagramWidgets = mClassDiagramWidgetHash.values();
-  mClassDiagramWidgetHash.clear();
-  qDeleteAll(classDiagramWidgets);
+  /* delete the ClassDiagramWindow, its web pages must go before the web engine profile does, at exit. */
+  delete mpClassDiagramWindow;
+  mpClassDiagramWindow = nullptr;
 #if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
@@ -2137,30 +2134,16 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
 
 /*!
  * \brief MainWindow::showClassDiagramWidget
- * Shows the class diagram of a class in a window of its own, or raises the one already
- * showing it and gets the diagram again.
+ * Shows the class diagram of a class in a tab of the Class Diagram window.
  * \param className
  * \return
  */
 ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className)
 {
-  ClassDiagramWidget *pClassDiagramWidget = mClassDiagramWidgetHash.value(className, 0);
-  if (!pClassDiagramWidget) {
-    pClassDiagramWidget = new ClassDiagramWidget(className);
-    /* Each new window is moved a bit per window already open, so that the others are seen.
-     * Not by comparing positions: a shown window has the frame of the window manager, a new one not yet.
-     */
-    pClassDiagramWidget->move(pClassDiagramWidget->pos() + QPoint(30, 30) * static_cast<int>(mClassDiagramWidgetHash.size() % 10));
-    mClassDiagramWidgetHash.insert(className, pClassDiagramWidget);
-    connect(pClassDiagramWidget, &QObject::destroyed, this, [this, className]() {mClassDiagramWidgetHash.remove(className);});
-  } else {
-    pClassDiagramWidget->refresh();
+  if (!mpClassDiagramWindow) {
+    mpClassDiagramWindow = new ClassDiagramWindow;
   }
-  pClassDiagramWidget->show();
-  pClassDiagramWidget->raise();
-  pClassDiagramWidget->activateWindow();
-  pClassDiagramWidget->setWindowState(pClassDiagramWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
-  return pClassDiagramWidget;
+  return mpClassDiagramWindow->showClassDiagram(className);
 }
 
 /*!

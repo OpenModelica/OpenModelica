@@ -48,6 +48,7 @@
 #include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
+#include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QJsonDocument>
@@ -56,6 +57,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrlQuery>
@@ -96,19 +98,14 @@ void ClassDiagramPage::newWindowRequested(QWebEngineNewWindowRequest &request)
 /*!
  * \class ClassDiagramWidget
  * \brief Shows the UML class diagram of a class, from getClassDiagram, in the draw.io viewer.
- * Each class has a window of its own, see MainWindow::showClassDiagramWidget; it is never
- * docked in the main window, as a web view there would switch the main window from raster to
- * GPU rendering, which flickers and on Windows can lose the D3D11 device.
+ * Each class has a tab of its own in the ClassDiagramWindow.
  * A click on a class opens it and a click on a line in a class, e.g. a component, opens the
  * text view of the class at the line the element is declared on.
  * \param className
  */
-ClassDiagramWidget::ClassDiagramWidget(const QString &className)
-  : QWidget(nullptr), mClassName(className)
+ClassDiagramWidget::ClassDiagramWidget(const QString &className, QWidget *pParent)
+  : QWidget(pParent), mClassName(className)
 {
-  setAttribute(Qt::WA_DeleteOnClose);
-  setWindowIcon(QIcon(":/Resources/icons/model.svg"));
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::classDiagram, className));
   mpClassNameLabel = new Label;
   mpClassNameLabel->setElideMode(Qt::ElideMiddle);
   mpClassNameLabel->setText(className);
@@ -156,24 +153,11 @@ ClassDiagramWidget::ClassDiagramWidget(const QString &className)
   pMainLayout->addLayout(pToolsLayout);
   pMainLayout->addWidget(mpClassDiagramView, 1);
   setLayout(pMainLayout);
-  // Where the last one was, else in the middle of the main window, two thirds its size.
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  if (!(OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
-        && restoreGeometry(pSettings->value("classDiagram/geometry").toByteArray()))) {
-    QRect mainWindowGeometry = MainWindow::instance()->geometry();
-    resize(mainWindowGeometry.width() * 2 / 3, mainWindowGeometry.height() * 2 / 3);
-    move(mainWindowGeometry.center() - rect().center());
-  }
   refresh();
 }
 
-/*!
- * \brief ClassDiagramWidget::~ClassDiagramWidget
- * Keeps the geometry for the next window.
- */
 ClassDiagramWidget::~ClassDiagramWidget()
 {
-  Utilities::getApplicationSettings()->setValue("classDiagram/geometry", saveGeometry());
   QFile::remove(pageFileName());
 }
 
@@ -395,3 +379,114 @@ void ClassDiagramWidget::openLink(const QUrl &url)
   }
 }
 
+/*!
+ * \class ClassDiagramWindow
+ * \brief The window of the class diagrams, a tab per class, see MainWindow::showClassDiagramWidget.
+ * It is a window of its own and never docked in the main window: a web view docked there, or moved
+ * between a floating dock and the main window, made the main window flicker and on Windows lost the
+ * D3D11 device, and changing the window flags of a floating dock crashed QtWebEngine's view.
+ * Closing it closes the diagrams, so that their web pages don't stay around.
+ */
+ClassDiagramWindow::ClassDiagramWindow()
+  : QWidget(nullptr)
+{
+  setWindowIcon(QIcon(":/Resources/icons/model.svg"));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::classDiagram));
+  mpTabWidget = new QTabWidget;
+  mpTabWidget->setTabsClosable(true);
+  mpTabWidget->setMovable(true);
+  mpTabWidget->setDocumentMode(true);
+  connect(mpTabWidget, SIGNAL(tabCloseRequested(int)), SLOT(closeTab(int)));
+  connect(mpTabWidget, SIGNAL(currentChanged(int)), SLOT(currentTabChanged(int)));
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpTabWidget);
+  setLayout(pMainLayout);
+  // Where it was left, else in the middle of the main window, two thirds its size.
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  if (!(OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+        && restoreGeometry(pSettings->value("classDiagram/geometry").toByteArray()))) {
+    QRect mainWindowGeometry = MainWindow::instance()->geometry();
+    resize(mainWindowGeometry.width() * 2 / 3, mainWindowGeometry.height() * 2 / 3);
+    move(mainWindowGeometry.center() - rect().center());
+  }
+}
+
+/*!
+ * \brief ClassDiagramWindow::~ClassDiagramWindow
+ * Keeps the geometry, and deletes the diagrams: their web pages must go before the web engine
+ * profile does, at exit.
+ */
+ClassDiagramWindow::~ClassDiagramWindow()
+{
+  Utilities::getApplicationSettings()->setValue("classDiagram/geometry", saveGeometry());
+  closeAllTabs();
+}
+
+/*!
+ * \brief ClassDiagramWindow::showClassDiagram
+ * Shows the diagram of a class in a tab of its own, or the tab already showing it, with the
+ * diagram got again.
+ * \param className
+ * \return
+ */
+ClassDiagramWidget* ClassDiagramWindow::showClassDiagram(const QString &className)
+{
+  ClassDiagramWidget *pClassDiagramWidget = nullptr;
+  for (int i = 0; i < mpTabWidget->count(); ++i) {
+    ClassDiagramWidget *pWidget = qobject_cast<ClassDiagramWidget*>(mpTabWidget->widget(i));
+    if (pWidget && pWidget->getClassName().compare(className) == 0) {
+      pClassDiagramWidget = pWidget;
+      break;
+    }
+  }
+  if (pClassDiagramWidget) {
+    pClassDiagramWidget->refresh();
+  } else {
+    pClassDiagramWidget = new ClassDiagramWidget(className);
+    const int index = mpTabWidget->addTab(pClassDiagramWidget, StringHandler::getLastWordAfterDot(className));
+    mpTabWidget->setTabToolTip(index, className);
+  }
+  mpTabWidget->setCurrentWidget(pClassDiagramWidget);
+  show();
+  raise();
+  activateWindow();
+  setWindowState(windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
+  return pClassDiagramWidget;
+}
+
+void ClassDiagramWindow::closeEvent(QCloseEvent *pEvent)
+{
+  Utilities::getApplicationSettings()->setValue("classDiagram/geometry", saveGeometry());
+  closeAllTabs();
+  pEvent->accept();
+}
+
+void ClassDiagramWindow::closeAllTabs()
+{
+  while (mpTabWidget->count() > 0) {
+    closeTab(0);
+  }
+}
+
+/*!
+ * \brief ClassDiagramWindow::closeTab
+ * Closes a diagram, and the window with the last one.
+ * \param index
+ */
+void ClassDiagramWindow::closeTab(int index)
+{
+  QWidget *pWidget = mpTabWidget->widget(index);
+  mpTabWidget->removeTab(index);
+  delete pWidget;
+  if (mpTabWidget->count() == 0) {
+    hide();
+  }
+}
+
+void ClassDiagramWindow::currentTabChanged(int index)
+{
+  ClassDiagramWidget *pClassDiagramWidget = qobject_cast<ClassDiagramWidget*>(mpTabWidget->widget(index));
+  setWindowTitle(pClassDiagramWidget ? QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::classDiagram, pClassDiagramWidget->getClassName())
+                                     : QString("%1 - %2").arg(Helper::applicationName, Helper::classDiagram));
+}
