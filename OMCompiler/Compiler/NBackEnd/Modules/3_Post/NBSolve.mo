@@ -1930,7 +1930,8 @@ protected
   end applyInstruction;
 
   function tupleSolvable
-    "checks if the tuple expression exactly represents the variables we need to solve for"
+    "checks if the tuple expression contains all variables we need to solve for. other elements
+    are solved by other slices of the same equation, evaluating the call again does not change them."
     input list<Expression> tuple_exps;
     input list<Pointer<Variable>> vars;
     input Boolean inFor = false "elements are one iteration of the (sliced) variables";
@@ -1941,7 +1942,7 @@ protected
     UnorderedMap<ComponentRef, Integer> sizes;
     ComponentRef stripped;
   algorithm
-    if List.compareLength(filtered_exps, vars) == 0 then
+    if List.compareLength(filtered_exps, vars) >= 0 then
       map   := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
       sizes := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
@@ -1961,7 +1962,7 @@ protected
             stripped := ComponentRef.stripSubscriptsAll(exp.cref);
             if UnorderedMap.contains(stripped, map) and (inFor or UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp))) then
               UnorderedMap.add(stripped, true, map);
-            else
+            elseif UnorderedMap.contains(stripped, map) then
               return;
             end if;
           then ();
