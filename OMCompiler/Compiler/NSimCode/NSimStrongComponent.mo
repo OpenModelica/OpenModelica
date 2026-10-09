@@ -1202,6 +1202,14 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
+        // external object arrays have no array representation in C, assign them element-wise
+        case (BEquation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()), NBSolve.Status.EXPLICIT)
+          guard(Type.isExternalObject(Type.arrayElementType(eqn.ty))) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, list(Statement.ASSIGNMENT(Expression.fromCref(l), Expression.fromCref(r), Type.arrayElementType(eqn.ty), eqn.source)
+            threaded for l in ComponentRef.scalarizeAll(Expression.toCref(eqn.lhs), false), r in ComponentRef.scalarizeAll(Expression.toCref(eqn.rhs), false)), eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
         case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           // expand scalar rhs to array when lhs is array (implicit broadcast in Modelica)
           rhs := if Type.isArray(Expression.typeOf(eqn.rhs)) then eqn.rhs else Expression.fillType(eqn.ty, eqn.rhs);
