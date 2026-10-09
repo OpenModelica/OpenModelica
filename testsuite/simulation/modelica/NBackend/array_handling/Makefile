@@ -5,6 +5,8 @@ reductionSkips.mos \
 nestedForConnectRange.mos \
 forNestedElseIf.mos \
 scalarDivArray.mos \
+arrayRowScalar.mos \
+eachScalarProduct.mos \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \
