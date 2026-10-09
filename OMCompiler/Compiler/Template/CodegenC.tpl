@@ -8220,9 +8220,18 @@ template equationSimpleAssignLhs(ComponentRef cref, Context context,
   hand side and variable subscripts are handled in daeExpCref*SimContext."
 ::=
   match context
-  case FUNCTION_CONTEXT(__)
-  case JACOBIAN_CONTEXT(__) then
+  case FUNCTION_CONTEXT(__) then
     contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+  // an element of an array Jacobian variable (e.g. $pDER.$FUN[2]) needs the flattened index too
+  case JACOBIAN_CONTEXT(__) then
+    if isJacobianElementVar(cref, context) then
+      contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    else match crefSubs(crefArrayGetFirstCref(cref))
+      case {} then
+        contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+      else
+        let &idxSub = buffer '<%indexSubs(crefDims(cref), crefSubs(crefArrayGetFirstCref(cref)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
+        contextCref(crefStripSubs(cref), context, &preExp, &varDecls, &varFrees, &auxFunction, &idxSub)
   else
     // Note: $START crefs address the (array valued) start attribute and must
     // not be flattened here, they keep the regular handling.
