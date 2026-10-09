@@ -1119,8 +1119,10 @@ public
                 inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
                 // with resizable arrays the variables of an algebraic loop depend on whole arrays,
                 // the iterators of its equations do not correspond to the ones of other equations
+                // (dependencies without iterators, e.g. x[2, N], stay exact)
                 if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and StrongComponent.isAlgebraicLoop(comp) then
-                  inner_deps := UnorderedSet.unique_list(list(ComponentRef.stripSubscriptsAll(c) for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
+                  inner_deps := UnorderedSet.unique_list(list(if sparsityCrefHasIterator(c) then ComponentRef.stripSubscriptsAll(c) else c
+                    for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
                 end if;
                 for cref in tmp_crefs loop
                   sparsityAddInner(cref, inner_deps, inner_map);
@@ -1300,6 +1302,12 @@ public
       input Expression exp;
       output Boolean b = UnorderedSet.any(Expression.extractCrefs(exp), ComponentRef.isIterator);
     end sparsityHasIterator;
+
+    function sparsityCrefHasIterator
+      input ComponentRef cref;
+      output Boolean b = List.any(list(sparsityHasIterator(Subscript.toExp(s))
+        for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)), Util.id);
+    end sparsityCrefHasIterator;
 
     function sparsitySimplify
       input output Expression exp;
