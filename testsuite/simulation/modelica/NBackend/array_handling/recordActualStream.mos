@@ -1,0 +1,56 @@
+// name: recordActualStream
+// keywords: NewBackend stream record binding
+// status: correct
+// cflags: --newBackend
+//
+// actualStream in the binding of a record field is evaluated by the frontend.
+
+loadString("
+package recordActualStream
+  connector P
+    Real p;
+    flow Real m_flow;
+    stream Real h_outflow;
+  end P;
+  model Source
+    P port;
+    parameter Real h = 10;
+  equation
+    port.p = 1;
+    port.h_outflow = h;
+  end Source;
+  model Sink
+    P port;
+    record Summary
+      Real m;
+      Real h;
+    end Summary;
+    Summary summary(m = port.m_flow, h = actualStream(port.h_outflow));
+  equation
+    port.m_flow = 1 + time;
+    port.h_outflow = 5;
+  end Sink;
+  model Test
+    Source a;
+    Sink b;
+  equation
+    connect(a.port, b.port);
+  end Test;
+end recordActualStream;
+"); getErrorString();
+
+simulate(recordActualStream.Test, stopTime = 1); getErrorString();
+val(b.summary.h, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "recordActualStream.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'recordActualStream.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 10.0
+// endResult

@@ -894,7 +894,7 @@ public
         crefs := {cref};
         if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
           ty := ComponentRef.getSubscriptedType(cref);
-          if Type.isArray(ty) and Type.sizeOf(ty) <= 256 then
+          if Type.isArray(ty) and Type.hasKnownSize(ty) and Type.sizeOf(ty) <= 256 then
             crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarizeAll(cref, false));
             if listEmpty(crefs) then
               crefs := {cref};
@@ -3355,7 +3355,7 @@ public
     end if;
 
     // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
-    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.hasKnownSize(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
       hasSetSub := true;
     end if;
 

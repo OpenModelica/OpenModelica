@@ -2,6 +2,13 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 reductionSkips.mos \
+nestedForConnectRange.mos \
+forNestedElseIf.mos \
+scalarDivArray.mos \
+arrayRowScalar.mos \
+eachScalarProduct.mos \
+ifBranchSizes.mos \
+recordActualStream.mos \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \

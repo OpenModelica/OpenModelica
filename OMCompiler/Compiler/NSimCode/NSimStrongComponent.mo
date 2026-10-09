@@ -779,6 +779,16 @@ public
       end match;
     end blockSource;
 
+    function isNumericJacobian
+      input BackendDAE jac;
+      output Boolean b;
+    algorithm
+      b := match jac
+        case BackendDAE.JACOBIAN() then arrayEmpty(jac.comps);
+        else false;
+      end match;
+    end isNumericJacobian;
+
     function jacobianHasGenericLoopCalls
       "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
       input SimJacobian jac;
@@ -969,7 +979,8 @@ public
             end if;
           end for;
 
-          if isSome(strict.jac) then
+          // a jacobian without equations is the numeric fallback, the runtime differentiates numerically
+          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
@@ -1199,6 +1210,14 @@ public
 
         case (BEquation.SCALAR_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        // external object arrays have no array representation in C, assign them element-wise
+        case (BEquation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()), NBSolve.Status.EXPLICIT)
+          guard(Type.isExternalObject(Type.arrayElementType(eqn.ty))) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, list(Statement.ASSIGNMENT(Expression.fromCref(l), Expression.fromCref(r), Type.arrayElementType(eqn.ty), eqn.source)
+            threaded for l in ComponentRef.scalarizeAll(Expression.toCref(eqn.lhs), false), r in ComponentRef.scalarizeAll(Expression.toCref(eqn.rhs), false)), eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 

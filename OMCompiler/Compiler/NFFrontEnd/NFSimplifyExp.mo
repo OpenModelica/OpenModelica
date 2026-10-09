@@ -1614,8 +1614,8 @@ algorithm
           new_exp := Expression.negate(chainBinaries(inv_args, exp.operator));
           inv_args := {};
         else
-          // create an artificial 1 to divide by the inverse arguments
-          new_exp := Expression.makeOne(Operator.typeOf(exp.operator));
+          // create an artificial scalar 1 to divide by the inverse arguments
+          new_exp := Expression.makeOne(Type.arrayElementType(Operator.typeOf(exp.operator)));
         end if;
       else
         new_exp := chainBinaries(args, exp.operator);
