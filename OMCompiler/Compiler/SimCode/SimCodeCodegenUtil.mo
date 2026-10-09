@@ -657,6 +657,17 @@ algorithm
   end match;
 end providesDirectionalDerivative;
 
+public function providesAdjointDerivative
+  input SimCode.SimCode inSimCode;
+  output Boolean b;
+algorithm
+  b := match inSimCode
+    case SimCode.SIMCODE(modelStructure=SOME(SimCode.FMIMODELSTRUCTURE(adjointPartialDerivatives=SOME(_))))
+    then true;
+    else false;
+  end match;
+end providesAdjointDerivative;
+
 protected function getVarIndexInfosByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
