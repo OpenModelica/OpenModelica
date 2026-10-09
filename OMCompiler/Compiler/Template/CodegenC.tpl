@@ -6530,8 +6530,8 @@ match sparsity
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
-    let isRowEval = if isAdjoint then "1" else "0"
     let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(columns) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
+    let isAdjointInt = if isAdjoint then 1 else 0
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
@@ -6544,8 +6544,7 @@ match sparsity
       <%preExp%>
       <%auxFunction%>
 
-      initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
-      jacobian->isRowEval = <%isRowEval%>;
+      initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%isAdjointInt%>);
 
       /* Phase 1: count non-zeros per column */
       <%countCode%>
@@ -6571,33 +6570,17 @@ match sparsity
       <%if isAdjoint then <<
       /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
        * generated primal CSC structure to CSR before computing row colors. */
-      {
-        SPARSE_PATTERN* cscPattern = jacobian->sparsePattern;
-        jacobian->sparsePattern = cscToCsr(cscPattern, <%patternRows%>, <%patternCols%>);
-        freeSparsePattern(cscPattern);
-        if (!jacobian->sparsePattern) return 1;
-      }
+      jacobian->sparsePatternT = cscToCsr(jacobian->sparsePattern, <%patternRows%>, <%patternCols%>);
+      if (!jacobian->sparsePatternT) return 1;
       >> %>
 
-      /* Compute coloring at runtime from the actual <%if isAdjoint then 'CSR (treated as CSC of the transpose)' else 'CSC'%> pattern.
+      /* Compute coloring at runtime from the actual sparse pattern.
        * The WHOLEDIM-based C loops over-approximate array equations as dense
        * blocks, so a compile-time coloring (derived from the exact symbolic
        * sparsity) would be invalid for the runtime pattern.  Re-deriving it
        * here guarantees that no two same-color columns share a non-zero row. */
       computeColumnColoring(jacobian->sparsePattern, <%if isAdjoint then patternCols else patternRows%>, <%if isAdjoint then patternRows else patternCols%>);
 
-      <%if isBidirectional then <<
-      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
-       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
-       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
-      {
-        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
-        // initialize adjoint Jacobian with check for error and proceed to link it to the forward Jacobian
-        if (<%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac)) return 1;
-        jacobian->adjointJacobian = adjJac;
-        initBidirectionalRecovery(jacobian);
-      }
-      >> %>
 
       jacobian->availability = <%availability%>;
       return 0;
@@ -7545,14 +7528,13 @@ match sparsepattern
     <<
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
-      jacobian->availability = JACOBIAN_NOT_AVAILABLE;
+      /* TODO set all relevant pointers to NULL? */
       return 1;
     }
     >>
   case _ then
     let sp_size_index = lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
-    let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => numScalarElemsExp(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
@@ -7560,7 +7542,7 @@ match sparsepattern
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
-    let isRowEval = if isAdjoint then "1" else "0"
+    let isAdjointInt = if isAdjoint then 1 else 0
     <<
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -7569,10 +7551,8 @@ match sparsepattern
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileNamePrefix%>_Jac<%matrixname%>.bin");
 
-      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
+      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%isAdjointInt%>);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
-      jacobian->availability = <%availability%>;
-      jacobian->isRowEval = <%isRowEval%>;
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
@@ -7590,19 +7570,6 @@ match sparsepattern
       <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
 
       omc_fclose(pFile);
-
-      <%if isBidirectional then <<
-      /* Link the adjoint Jacobian to this forward Jacobian so that the integrators can
-       * evaluate it bidirectionally. Whether that actually happens is decided at runtime
-       * by initSymbolicOdeJacobian() based on the `-jacobian` flag. */
-      {
-        JACOBIAN* adjJac = &data->simulationInfo->analyticJacobians[<%adjointJacobianIndex%>];
-        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%adjointMatrixName%>(data, threadData, adjJac);
-        jacobian->adjointJacobian = adjJac;
-        initBidirectionalRecovery(jacobian);
-      }
-      >> %>
-
       return 0;
     }
     >>
@@ -7677,7 +7644,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 match context
 case JACOBIAN_CONTEXT() then
   let &chunks = buffer ""
-  let calls = equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelection', true, &chunks)
+  let calls = equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelectionCol', true, &chunks)
   <<
   /* constant equations */
   <%(constantEqns |> eq hasindex sub_idx =>

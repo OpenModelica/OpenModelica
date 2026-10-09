@@ -14,6 +14,7 @@ arrayScalar.mos \
 algebraicLoop.mos \
 numericJacobianRows.mos \
 tornNLSJacobianRows.mos \
+symbolicJacobianEntries.mos \
 derSeedJacobian.mos \
 tupleAssignmentDerivative.mos \
 functionInputDerivative.mos \
