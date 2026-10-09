@@ -1,0 +1,86 @@
+// name:     AssertInWhen
+// keywords: assert when event
+// status:   correct
+// teardown_command: rm -rf AssertInWhen* output.log
+//
+// A when-body runs only at the event that activates it, so a violated assert
+// there ends the simulation (#17213). An assert outside a when that is violated
+// only in an intermediate event iteration is still excused.
+
+loadString("
+package AssertInWhen
+  model Equation
+    Boolean y = time > 0.1;
+  equation
+    when time > 0.26 then
+      assert(not y, \"Test violation that should interrupt execution\");
+    end when;
+  end Equation;
+
+  model Algorithm
+    Boolean y = time > 0.1;
+  algorithm
+    when time > 0.26 then
+      if y then
+        assert(time < 0.2, \"Test violation that should interrupt execution\");
+      end if;
+    end when;
+  end Algorithm;
+
+  model IntermediateIteration
+    discrete Real a(start = 0, fixed = true);
+    discrete Real b(start = 0, fixed = true);
+  equation
+    when time > 0.5 then
+      a = 1;
+    end when;
+    when pre(a) > 0.5 then
+      b = 1;
+    end when;
+    assert(a <= b, \"a is ahead of b\");
+  end IntermediateIteration;
+end AssertInWhen;
+"); getErrorString();
+
+simulate(AssertInWhen.Equation); getErrorString();
+simulate(AssertInWhen.Algorithm); getErrorString();
+simulate(AssertInWhen.IntermediateIteration); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertInWhen.Equation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: AssertInWhen.Equation
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | error   | [<interactive>:7:7-7:70:writable]
+// |                 | |       | The following assertion has been violated at time 0.260000
+// |                 | |       | ((not y)) --> \"Test violation that should interrupt execution\"
+// ",
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertInWhen.Algorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: AssertInWhen.Algorithm
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | error   | [<interactive>:16:9-16:77:writable]
+// |                 | |       | The following assertion has been violated at time 0.260000
+// |                 | |       | ((time < 0.2)) --> \"Test violation that should interrupt execution\"
+// ",
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "AssertInWhen.IntermediateIteration_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AssertInWhen.IntermediateIteration', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | info    | [<interactive>:31:5-31:38:writable]
+// |                 | |       | The following assertion has been violated at time 0.500000
+// |                 | |       | ((a <= b)) --> \"a is ahead of b\"
+// LOG_ASSERT        | info    | Found event, previous asserts are ignored.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// ",
+// end SimulationResult;
+// ""
+// endResult

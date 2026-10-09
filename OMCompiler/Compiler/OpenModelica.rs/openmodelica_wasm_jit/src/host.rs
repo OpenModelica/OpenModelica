@@ -285,8 +285,9 @@ fn record_warning(rec: [i32; 10]) {
 /// `rt_assert`: a failed `assert()`. Returns 1 when the caller must trap — a model
 /// or runtime error (`cond == 0`) always does, a user assertion is held instead
 /// while the driver has asserts suppressed (and recorded, unless it is probing).
-fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) -> i32 {
-    let hold = if cond != 0 { ASSERT_HOLD.with(|n| n.get()) } else { AssertHold::Throw };
+/// `rt_assert_when` passes `holdable` clear: a when-body's assertion always traps.
+fn assert_failed(holdable: bool, cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) -> i32 {
+    let hold = if cond != 0 && holdable { ASSERT_HOLD.with(|n| n.get()) } else { AssertHold::Throw };
     if hold == AssertHold::Record {
         record_warning([
             openmodelica_sim_meta::driver::ASSERT_SUPPRESSED,
@@ -468,7 +469,10 @@ pub mod lin_solve {
 pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()> {
     let wt = |r: std::result::Result<&mut wasmtime::Linker<HostState>, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
     wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
-        assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+        assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+    }))?;
+    wt(linker.func_wrap("rt", "rt_assert_when", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
+        assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
     }))?;
     wt(linker.func_wrap("rt", "rt_ext_stack_save", |mut caller: wasmtime::Caller<'_, HostState>| -> std::result::Result<i32, wasmtime::Error> {
         save_shadow_stack(&mut caller)
@@ -707,7 +711,11 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     use wasmer::Function;
     imports.define("rt", "rt_assert", Function::new_typed(store,
         |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
-            assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+            assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+        }));
+    imports.define("rt", "rt_assert_when", Function::new_typed(store,
+        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
+            assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
         }));
     imports.define("rt", "rt_assert_warning", Function::new_typed(store,
         |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32| {

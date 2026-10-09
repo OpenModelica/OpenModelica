@@ -8790,7 +8790,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       omc_terminate(info, omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
-      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction, info)
+      assertCommon(condition, List.fill(message,1), level, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction, info)
     case NORETCALL(__) then
       let &preExp = buffer ""
       let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)

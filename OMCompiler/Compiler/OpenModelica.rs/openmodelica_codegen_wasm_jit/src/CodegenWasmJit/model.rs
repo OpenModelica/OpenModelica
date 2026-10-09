@@ -2128,6 +2128,7 @@ pub(crate) fn sim_ctx(var_map: &SimVarMap) -> SimCtx {
         zctol_off: var_map.zctol_off,
         zc_pre_off: var_map.zc_pre_off,
         zc_context: false,
+        when_body: false,
         clock_fire_off: var_map.clock_fire_off,
         sub_clock_off: None,
         prof: var_map.prof.clone(),

@@ -425,8 +425,44 @@ pub extern "C" fn rt_assert(
     initial: i32,
     sim_data: i32,
 ) -> i32 {
+    assert_failed(true, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data)
+}
+
+/// `rt_assert` for a when-body, which runs only at its event: never held.
+#[cfg(feature = "wasm")]
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_when(
+    msg: i32,
+    file: i32,
+    sline: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
+) -> i32 {
+    assert_failed(false, msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data)
+}
+
+#[cfg(feature = "wasm")]
+fn assert_failed(
+    holdable: bool,
+    msg: i32,
+    file: i32,
+    sline: i32,
+    scol: i32,
+    eline: i32,
+    ecol: i32,
+    read_only: i32,
+    cond: i32,
+    initial: i32,
+    sim_data: i32,
+) -> i32 {
     if cond != 0 {
-        match driver::assert_hold() {
+        let hold = if holdable { driver::assert_hold() } else { driver::AssertHold::Throw };
+        match hold {
             driver::AssertHold::Throw => {}
             driver::AssertHold::Record => {
                 unsafe {
