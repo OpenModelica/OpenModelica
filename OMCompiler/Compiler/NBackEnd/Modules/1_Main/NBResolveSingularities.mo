@@ -57,7 +57,7 @@ protected
   import Adjacency = NBAdjacency;
   import NBFunctionAlias.Call_Aux;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, SlicingStatus, Iterator};
+  import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, IfEquationBody, SlicingStatus, Iterator};
   import Initialization = NBInitialization;
   import Matching = NBMatching;
   import Variable = NFVariable;
@@ -419,6 +419,7 @@ public
     list<Pointer<Variable>> start_vars, failed_vars = {};
     list<Pointer<Equation>> sliced_eqns, start_eqns, kept_eqns;
     list<Integer> remaining;
+    Integer row_idx;
     Pointer<Variable> var_ptr;
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
     Pointer<list<Pointer<Equation>>> ptr_start_eqns = Pointer.create({});
@@ -455,6 +456,16 @@ public
             remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
             (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
             kept_eqns := listAppend(sliced_eqns, kept_eqns);
+          elseif not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(Slice.getT(eqn_slice)) then
+            // keep the other rows of an array equation as scalar equations
+            row_idx := 0;
+            for row in IfEquationBody.scalarRows(Slice.getT(eqn_slice)) loop
+              if not List.contains(eqn_slice.indices, row_idx, intEq) then
+                Equation.createName(row, EqData.getUniqueIndex(eqData), NBEquation.SIMULATION_STR);
+                kept_eqns := row :: kept_eqns;
+              end if;
+              row_idx := row_idx + 1;
+            end for;
           end if;
         end for;
         // also update adjacency matrices

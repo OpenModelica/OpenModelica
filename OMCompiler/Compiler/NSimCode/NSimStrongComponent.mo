@@ -789,6 +789,20 @@ public
       end match;
     end isNumericJacobian;
 
+    function solvesConstant
+      "true if the strong component solves a constant variable"
+      input StrongComponent comp;
+      output Boolean b;
+    algorithm
+      b := match comp
+        case StrongComponent.SINGLE_COMPONENT() then BVariable.isConst(comp.var);
+        case StrongComponent.SLICED_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        case StrongComponent.RESIZABLE_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        case StrongComponent.GENERIC_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        else false;
+      end match;
+    end solvesConstant;
+
     function jacobianHasGenericLoopCalls
       "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
       input SimJacobian jac;
@@ -847,6 +861,14 @@ public
           list<Integer> call_order = {};
           Identifier ident;
           list<SimIterator> iters;
+
+        // constants are known, an equation that solves one (e.g. a constant record field
+        // in the initial system) has nothing to compute
+        case _ guard(solvesConstant(comp)) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, {Statement.ASSERT(Expression.BOOLEAN(true), Expression.STRING(""),
+            NFBuiltin.ASSERTIONLEVEL_ERROR, DAE.emptyElementSource)}, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);

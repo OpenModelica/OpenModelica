@@ -266,7 +266,7 @@ protected
   algorithm
     (variables, equations, full, matching, comps) := match kind
       local
-        list<Pointer<Variable>> fixable, unfixable;
+        list<Pointer<Variable>> fixable, unfixable, no_start;
         list<Pointer<Equation>> initials, simulation;
         UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
@@ -284,10 +284,10 @@ protected
 
         // do not resolve potential singular partitions in Phase I or II! -> regular matching
         // #################################################
-        // Phase I: match initial equations <-> unfixable vars
+        // Phase I: match simulation equations <-> unfixable vars
         // #################################################
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in unfixable));
-        en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
+        en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
         adj_matching := Adjacency.Matrix.fullToFinal(full, vn, en, partition.equations, NBAdjacency.MatrixStrictness.MATCHING);
         matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj_matching, true, true);
 
@@ -297,17 +297,27 @@ protected
         vo := vn;
         eo := en;
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-        en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
+        en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
         (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
-        matching := Matching.regular(matching, adj_matching, true, true);
+        matching := Matching.regular(matching, adj_matching, true, true, false);
 
         // #################################################
         // Phase III: match all equations <-> all vars
+        // fixable vars without start value first, matched vars stay matched,
+        // so the ones that are left over to be fixed have a start value if possible
         // #################################################
+        (fixable, no_start) := List.splitOnTrue(fixable, BVariable.hasStartAttr);
         vo := UnorderedMap.merge(vo, vn, sourceInfo());
         eo := UnorderedMap.merge(eo, en, sourceInfo());
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
         en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        if not listEmpty(no_start) then
+          vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in no_start));
+          (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
+          matching := Matching.regular(matching, adj_matching, true, true, false);
+          vo := UnorderedMap.merge(vo, vn, sourceInfo());
+          vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
+        end if;
         (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
         (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcMap, varData, eqData, kind, false, false);
 

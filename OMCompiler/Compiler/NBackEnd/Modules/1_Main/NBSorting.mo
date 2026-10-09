@@ -652,7 +652,12 @@ public
           (m_local, matching_local, map_back) := getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)), var_loc);
           sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := mapFlatten(sorted_body_components, map_back);
-          comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
+          if List.any(node_comp, isAlgebraicLoop) or List.compareLength(sorted_body_components, sorted_body_indices) <> 0 then
+            // an algebraic loop can not be interleaved with the other equations, solve all of them together
+            comp := StrongComponent.createPseudoScalar(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns);
+          else
+            comp := StrongComponent.createPseudoEntwined(sorted_body_indices, matching.eqn_to_var, mapping, vars, eqns, node_comp);
+          end if;
         then comp;
 
         // fallback: pure scalar or algebraic loop phase III nodes (body components not actually sorted)
@@ -663,6 +668,16 @@ public
     end collapse;
 
   protected
+    function isAlgebraicLoop
+      input SuperNode node;
+      output Boolean b;
+    algorithm
+      b := match node
+        case ALGEBRAIC_LOOP() then true;
+        else false;
+      end match;
+    end isAlgebraicLoop;
+
     function mapFlatten
       "flattens the components and maps the local indices back to global ones"
       input list<list<Integer>> components;
