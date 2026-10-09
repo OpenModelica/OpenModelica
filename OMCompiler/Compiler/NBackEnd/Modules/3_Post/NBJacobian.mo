@@ -666,15 +666,6 @@ protected
     end match;
   end compJacobian;
 
-  function varPtrNameIsLess
-    input Pointer<Variable> v1;
-    input Pointer<Variable> v2;
-    output Boolean isLess;
-  algorithm
-    /* List.sort in this codebase expects a "greater-than" style predicate. */
-    isLess := ComponentRef.isGreater(BVariable.getVarName(v1), BVariable.getVarName(v2));
-  end varPtrNameIsLess;
-
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -686,8 +677,7 @@ protected
     Pointer<Integer> idx = Pointer.create(0);
 
     VariablePointers adjacencyVars;
-    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, res_vars_d, tmp_vars, tmp_vars_d, seed_vars, seed_vars_d;
-    list<Pointer<Variable>> seed_vars_sorted;
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, res_vars_d, tmp_vars, tmp_vars_d, seed_vars_d;
     BVariable.VarData varDataJac;
     Adjacency.Matrix fullLocal, sparsity;
     UnorderedSet<ComponentRef> seed_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -706,14 +696,10 @@ protected
       fail();
     end if;
 
-    // create seed vars in deterministic cref order to keep Jacobian column order
-    // aligned with solver state ordering.
-    //seed_vars_sorted := List.sort(VariablePointers.toList(seedCandidates), varPtrNameIsLess);
-    seed_vars_sorted := VariablePointers.toList(seedCandidates);
-    for v in seed_vars_sorted loop
-      makeVarTraverse(v, name, seed_vars_ptr, diff_map, BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous);
-    end for;
-    for v in seed_vars_sorted loop
+    // create seed vars
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
+                                                                     makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    for v in VariablePointers.toList(seedCandidates) loop
       if BVariable.isContinuous(v, staticAsContinuous) then
         UnorderedSet.add(BVariable.getVarName(v), seed_set);
         // Also add base cref so iterator-subscripted deps from for-loop equations
@@ -725,7 +711,6 @@ protected
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    //res_vars := List.sort(res_vars, varPtrNameIsLess);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     for v in res_vars loop
@@ -1463,7 +1448,6 @@ protected
     Pointer<Integer> idx = Pointer.create(0);
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars, baseTmpVarCandidates;
-    list<Pointer<Variable>> seed_vars_sorted;
     BVariable.VarData varDataJac;
 
     VariablePointers adjacencyVars;
@@ -1505,11 +1489,8 @@ protected
       print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
     end if;
 
-    // create seed vars in deterministic cref order to keep Jacobian row/column
-    // ordering aligned with the forward Jacobian and solver ordering.
-    // seed_vars_sorted := List.sort(VariablePointers.toList(seedCandidates), varPtrNameIsLess);
-    seed_vars_sorted := VariablePointers.toList(seedCandidates);
-    for v in seed_vars_sorted loop
+    // create seed vars
+    for v in VariablePointers.toList(seedCandidates) loop
       makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
 
       if BVariable.isContinuous(v, staticAsContinuous) then
@@ -1520,7 +1501,6 @@ protected
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    //old_res_vars := List.sort(old_res_vars, varPtrNameIsLess);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     for v in old_res_vars loop
