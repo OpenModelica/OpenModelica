@@ -3057,8 +3057,13 @@ public
           location := Slice.indexToLocation(scal_idx, sizes);
           // create the replacement rules for this location
           Iterator.createLocationReplacements(eqn.iter, listArray(location), replacements);
-          // replace iterators
-          sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
+          // replace iterators, on a copy because map updates nested equation pointers in place
+          sliced_eqn := map(copyNested(listHead(eqn.body)), function Replacements.applySimpleExp(replacements = replacements));
+          // remove the branches made unreachable by the iterator value, one nesting level at a time
+          for i in 1:maxIfDepth(sliced_eqn) loop
+            if not isIfEquation(Pointer.create(sliced_eqn)) then break; end if;
+            sliced_eqn := simplify(sliced_eqn);
+          end for;
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
             (sliced_eqn, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcMap);
@@ -3071,6 +3076,48 @@ public
         else (eqn, NBSolve.Status.UNPROCESSED);
       end match;
     end singleSlice;
+
+    function maxIfDepth
+      "upper bound for the nesting of if-equations and their branches"
+      input Equation eqn;
+      output Integer depth = 0;
+    algorithm
+      depth := match eqn
+        case IF_EQUATION() then maxIfBodyDepth(SOME(eqn.body));
+        else 0;
+      end match;
+    end maxIfDepth;
+
+    function maxIfBodyDepth
+      input Option<IfEquationBody> body;
+      output Integer depth = 0;
+    protected
+      IfEquationBody b;
+    algorithm
+      if isSome(body) then
+        SOME(b) := body;
+        depth := 1 + maxIfBodyDepth(b.else_if);
+        for e in b.then_eqns loop
+          depth := max(depth, 1 + maxIfDepth(Pointer.access(e)));
+        end for;
+      end if;
+    end maxIfBodyDepth;
+
+    function copyNested
+      "copies the nested equation pointers of if-equations so that mapping the copy
+      does not change the original equation"
+      input output Equation eqn;
+    algorithm
+      eqn := match eqn
+        case IF_EQUATION() algorithm
+          eqn.body := IfEquationBody.copyNested(eqn.body);
+        then eqn;
+        case FOR_EQUATION() algorithm
+          eqn.body := list(copyNested(e) for e in eqn.body);
+        then eqn;
+        else eqn;
+      end match;
+    end copyNested;
 
     protected function makeInequality
       input tuple<ComponentRef, Expression> tpl;
@@ -3327,6 +3374,13 @@ public
       ifBody.else_if := Util.applyOption(ifBody.else_if, function mapCondition(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end mapCondition;
 
+    function copyNested
+      input output IfEquationBody ifBody;
+    algorithm
+      ifBody.then_eqns := list(Pointer.create(Equation.copyNested(Pointer.access(e))) for e in ifBody.then_eqns);
+      ifBody.else_if := Util.applyOption(ifBody.else_if, copyNested);
+    end copyNested;
+
     function mapEqnExpCref
       input output IfEquationBody ifBody;
       input MapFuncEqnPtr func;
@@ -3444,7 +3498,7 @@ public
       Expression new_exp;
     algorithm
       exp := match body.then_eqns
-        case {eqn_ptr} algorithm
+        case {eqn_ptr} guard(isSome(Equation.getLHS(Pointer.access(eqn_ptr)))) algorithm
           SOME(new_exp) := Equation.getLHS(Pointer.access(eqn_ptr));
           if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
             if isSome(body.else_if) then
@@ -3459,7 +3513,7 @@ public
         then new_exp;
         else algorithm
           if Flags.isSet(Flags.FAILTRACE) then
-            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation:\n" + toString(body));
+            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation or branch without LHS:\n" + toString(body));
           end if;
           success := false;
         then exp;
@@ -3501,7 +3555,7 @@ public
       Expression new_exp, new_exp2;
     algorithm
       exp := match body.then_eqns
-        case {eqn_ptr} algorithm
+        case {eqn_ptr} guard(isSome(Equation.getRHS(Pointer.access(eqn_ptr)))) algorithm
           SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if isSome(body.else_if) then
             (new_exp2, success) := getRHS(Util.getOption(body.else_if));
@@ -3516,7 +3570,7 @@ public
         then new_exp;
         else algorithm
           if Flags.isSet(Flags.FAILTRACE) then
-            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation:\n" + toString(body));
+            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation or branch without RHS:\n" + toString(body));
           end if;
           success := false;
         then exp;
