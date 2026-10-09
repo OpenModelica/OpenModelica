@@ -609,6 +609,8 @@ static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, u
  * and linked (fwd->adjointJacobian != NULL).
  *
  * @param fwd   Forward jacobian with CSC pattern + column coloring.
+ * @param threadData  Thread data for error reporting.
+ * @return int  0 on success, 1 on failure (e.g., star bicoloring failed).
  */
 static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
 {
@@ -1056,12 +1058,15 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
     return NULL;
   }
 
+  const modelica_boolean hasDirectCscPattern = jac->sparsePattern != NULL;
+  const modelica_boolean canReuseExistingCscPattern = !jac->evalRow || (jac->evalColumn && jac->evalRow);
+
   // forward mode Jacobians and bidirectional Jacobians already have a CSC pattern; return it directly
-  if (jac->sparsePattern != NULL && (!jac->evalRow || (jac->evalColumn && jac->evalRow))) {
+  if (hasDirectCscPattern && canReuseExistingCscPattern) {
     return jac->sparsePattern;
   }
 
-   // Nothing to build a CSC pattern from (no CSR pattern for the adjoint case either).
+  // Nothing to build a CSC pattern from (no CSR pattern for the adjoint case either).
   if (jac->sparsePatternT == NULL) {
     return NULL;
   }
