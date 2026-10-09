@@ -88,6 +88,7 @@ class TargetOutputWidget;
 class GDBLoggerWidget;
 class DocumentationWidget;
 class ClassDiagramWidget;
+class ClassDiagramWindow;
 class PlotWindowContainer;
 class VariablesWidget;
 class BreakpointsWidget;
@@ -524,7 +525,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
-  QHash<QString, ClassDiagramWidget*> mClassDiagramWidgetHash;
+  ClassDiagramWindow *mpClassDiagramWindow = nullptr;
   QMdiSubWindow *mpLastModelingSubWindow = nullptr;
   //! Mounts with a synchronisation already running; a second one would race it.
   QSet<QString> mSyncingMounts;

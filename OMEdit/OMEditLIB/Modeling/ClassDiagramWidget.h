@@ -46,6 +46,7 @@
 #endif
 
 class Label;
+class QTabWidget;
 class QSpinBox;
 class QCheckBox;
 class QComboBox;
@@ -72,8 +73,9 @@ class ClassDiagramWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ClassDiagramWidget(const QString &className);
+  ClassDiagramWidget(const QString &className, QWidget *pParent = nullptr);
   ~ClassDiagramWidget();
+  const QString &getClassName() const {return mClassName;}
 private:
   QString mClassName;
   QString mDiagram;
@@ -90,6 +92,26 @@ public slots:
   void refresh();
   void saveAs();
   void openLink(const QUrl &url);
+};
+
+/*!
+ * \brief The window of the class diagrams, a tab per class.
+ */
+class ClassDiagramWindow : public QWidget
+{
+  Q_OBJECT
+public:
+  ClassDiagramWindow();
+  ~ClassDiagramWindow();
+  ClassDiagramWidget* showClassDiagram(const QString &className);
+protected:
+  virtual void closeEvent(QCloseEvent *pEvent) override;
+private:
+  QTabWidget *mpTabWidget;
+  void closeAllTabs();
+private slots:
+  void closeTab(int index);
+  void currentTabChanged(int index);
 };
 
 #endif // CLASSDIAGRAMWIDGET_H
