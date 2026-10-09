@@ -1506,6 +1506,17 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isSymbolicArrayVar;
 
+  function jacobianOffsetVars
+    input HashTableCrefSimVar.HashTable ht;
+    input String kind;
+    output list<SimCodeVar.SimVar> vars;
+  end jacobianOffsetVars;
+
+  function jacobianOffsetSize
+    input list<SimCodeVar.SimVar> vars;
+    output Integer n;
+  end jacobianOffsetSize;
+
   function simVarSizeExp
     input SimCodeVar.SimVar var;
     output DAE.Exp exp;

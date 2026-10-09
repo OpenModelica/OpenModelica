@@ -5179,6 +5179,71 @@ template jacobianVarIndex(SimVar var, Context context)
   else match var case SIMVAR(__) then index
 end jacobianVarIndex;
 
+template jacobianVarOffset(SimVar var, Context context)
+  "jacobianVarIndex for the resizable sparsity pattern functions: runtime
+   positions are read from the arrays of jacobianOffsetDecls, spelling out the
+   sum for every entry makes the code quadratic in the number of arrays."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match jacobianIndexExp(var, jacHT)
+    case ICONST(__) then integer
+    else match var
+      case SIMVAR(varKind=BackendDAE.SEED_VAR()) then '_jac_off_seed[<%index%>]'
+      case SIMVAR(varKind=BackendDAE.JAC_VAR()) then '_jac_off_res[<%index%>]'
+      case SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then '_jac_off_tmp[<%index%>]'
+      else jacobianVarIndex(var, context)
+  else jacobianVarIndex(var, context)
+end jacobianVarOffset;
+
+template jacobianOffsetDecls(Context context)
+  "Allocates and fills the offset arrays used by jacobianVarOffset."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    <<
+    <%jacobianOffsetDecl(jacobianOffsetVars(jacHT, "seed"), "seed")%>
+    <%jacobianOffsetDecl(jacobianOffsetVars(jacHT, "res"), "res")%>
+    <%jacobianOffsetDecl(jacobianOffsetVars(jacHT, "tmp"), "tmp")%>
+    >>
+end jacobianOffsetDecls;
+
+template jacobianOffsetDecl(list<SimVar> vars, String kind)
+::=
+  match vars
+  case {} then ""
+  else
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &varFrees = buffer ""
+    let &auxFunction = buffer ""
+    let assigns = (vars |> v as SIMVAR(__) =>
+      '_jac_off_<%kind%>[<%index%>] = _jac_acc; _jac_acc += <%daeExp(simVarSizeExp(v), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>;'
+      ;separator="
+")
+    <<
+    modelica_integer* _jac_off_<%kind%> = (modelica_integer*) malloc(<%jacobianOffsetSize(vars)%> * sizeof(modelica_integer));
+    {
+      modelica_integer _jac_acc = 0;
+      <%assigns%>
+    }
+    >>
+end jacobianOffsetDecl;
+
+template jacobianOffsetFrees(Context context)
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    let seed = match jacobianOffsetVars(jacHT, "seed") case {} then "" else 'free(_jac_off_seed);'
+    let res = match jacobianOffsetVars(jacHT, "res") case {} then "" else 'free(_jac_off_res);'
+    let tmp = match jacobianOffsetVars(jacHT, "tmp") case {} then "" else 'free(_jac_off_tmp);'
+    <<
+    <%seed%>
+    <%res%>
+    <%tmp%>
+    >>
+end jacobianOffsetFrees;
+
 template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
 ::=
