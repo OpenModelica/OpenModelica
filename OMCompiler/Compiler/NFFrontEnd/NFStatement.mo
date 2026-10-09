@@ -909,6 +909,19 @@ public
       function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
   end replaceIteratorList;
 
+  function branchesEmpty
+    "Whether none of the branches of an if- or when-statement has a body."
+    input list<tuple<Expression, list<Statement>>> branches;
+    output Boolean b = true;
+  algorithm
+    for branch in branches loop
+      if not listEmpty(Util.tuple22(branch)) then
+        b := false;
+        return;
+      end if;
+    end for;
+  end branchesEmpty;
+
   function toString
     input Statement stmt;
     input String indent = "";

@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 compositeEvent.mos \
 algorithmWhenNoOutputs.mos \
+whenIfStatements.mos \
 spatialDistributionTuple.mos \
 eventSystem.mos \
 hybridSys.mos \
