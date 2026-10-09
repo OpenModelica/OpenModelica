@@ -1155,7 +1155,7 @@ constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(105, "zeroMQFileSuffix",
   SOME("z"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Sets the file suffix for zeroMQ port file if --interactive=zmq is used.");
 constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(106, "homotopyApproach",
-  NONE(), EXTERNAL(), STRING_FLAG("equidistantGlobal"),
+  NONE(), EXTERNAL(), STRING_FLAG("adaptiveGlobal"),
   SOME(STRING_DESC_OPTION({
     ("equidistantLocal", "Local homotopy approach with equidistant lambda steps. The homotopy parameter only effects the local strongly connected component."),
     ("adaptiveLocal", "Local homotopy approach with adaptive lambda steps. The homotopy parameter only effects the local strongly connected component."),
