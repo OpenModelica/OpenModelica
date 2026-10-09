@@ -5387,9 +5387,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpCompilerComboBox->setEditable(true);
   mpCompilerComboBox->addItem("");
   mpCompilerComboBox->addItem("gcc");
-#ifdef Q_OS_UNIX
   mpCompilerComboBox->addItem("clang");
-#endif
   OptionsDefaults::Simulation::cCompiler = MainWindow::instance()->getOMCProxy()->getCompiler();
   mpCompilerComboBox->lineEdit()->setPlaceholderText(OptionsDefaults::Simulation::cCompiler);
   // CXX Compiler
