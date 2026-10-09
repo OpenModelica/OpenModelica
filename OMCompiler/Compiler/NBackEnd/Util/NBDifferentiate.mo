@@ -1160,11 +1160,13 @@ public
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
-      // Known variables, except for top level inputs have a 0-derivative
+      // Known variables, except for top level inputs have a 0-derivative.
+      // parameters solved in the initial system are seeds or inner variables of its jacobians.
       case (Expression.CREF(), _, _)
         guard(BVariable.isParamOrConst(var_ptr) and
               not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr))
-              and not BVariable.isOptimizable(var_ptr) /* TODO? */ )
+              and not BVariable.isOptimizable(var_ptr) /* TODO? */
+              and not isJacobianUnknown(exp.cref, diffArguments))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
@@ -1576,6 +1578,21 @@ public
     end for;
     res := Expression.applySubscripts(subs, makeShapedArray(base_ty, listReverse(elem_exps)));
   end differentiateIteratorElement;
+
+  function isJacobianUnknown
+    "true if the cref has a seed or partial derivative variable in a jacobian"
+    input ComponentRef cref;
+    input DifferentiationArguments diffArguments;
+    output Boolean b;
+  algorithm
+    b := match (diffArguments.diffType, diffArguments.diff_map)
+      local
+        UnorderedMap<ComponentRef, ComponentRef> diff_map;
+      case (DifferentiationType.JACOBIAN, SOME(diff_map))
+        then UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map);
+      else false;
+    end match;
+  end isJacobianUnknown;
 
   function differentiateComponentRefNoCollect
     input output Expression exp;
