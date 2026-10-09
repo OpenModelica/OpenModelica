@@ -1443,7 +1443,7 @@ protected
             else ();
           end match;
         end for;
-        if not listEmpty(List.flatten(list(Util.tuple22(b) for b in branches))) then
+        if not Statement.branchesEmpty(branches) then
           alg := Algorithm.ALGORITHM({Statement.WHEN(listReverse(branches), whenEq.source)}, {}, {}, NONE(), NFInstNode.NO_SCOPE, whenEq.source);
           alg := Algorithm.setInputsOutputs(alg);
           algs := {lowerAlgorithm(alg, init)};
@@ -1474,7 +1474,7 @@ protected
             else ();
           end match;
         end for;
-        if not listEmpty(List.flatten(list(Util.tuple22(b) for b in branches))) then
+        if not Statement.branchesEmpty(branches) then
           stmts := {Statement.IF(listReverse(branches), eq.source)};
         end if;
       then ();
