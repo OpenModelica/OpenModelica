@@ -2161,9 +2161,7 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
    * obtained by transposing/reusing the forward functionJacFMIDER_column
    * code. */
   setThreadData(comp);
-  MemPoolState mem_pool_state_adj = omc_util_get_pool_state();
   fmudata->callback->functionJacFMIDERADJ_column(fmudata, td, comp->fmiDerJacAdj, NULL);
-  omc_util_restore_pool_state(mem_pool_state_adj);
   resetThreadData(comp);
 
   /* Write the results to dvKnownSensitivity (over "knowns" = states + inputs) */
