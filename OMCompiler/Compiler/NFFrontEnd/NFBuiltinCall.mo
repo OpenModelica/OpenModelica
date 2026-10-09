@@ -2104,8 +2104,10 @@ protected
           end if;
 
           // The argument of actualStream/inStream must have subscripts that can be evaluated.
+          // with resizable arrays the subscripts can be iterators over resizable ranges
           for sub in ComponentRef.subscriptsAllFlat(arg.cref) loop
-            if Subscript.variability(sub) > Variability.PARAMETER then
+            if Subscript.variability(sub) > Variability.PARAMETER and not (Subscript.variability(sub) == Variability.NON_STRUCTURAL_PARAMETER
+               and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)) then
               Error.addSourceMessageAndFail(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
                 {ComponentRef.toString(arg.cref), Subscript.toString(sub)}, info);
             end if;

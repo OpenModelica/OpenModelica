@@ -2664,7 +2664,8 @@ protected
             // Don't try to evaluate the range if it contains an iterator.
             has_iterator := iter_pur == Purity.IMPURE and Expression.contains(range, Expression.isIterator);
 
-            if is_structural and not has_iterator then
+            // ranges over resizable sizes stay symbolic
+            if is_structural and not has_iterator and not Expression.contains(range, Expression.isResizableCref) then
               if InstContext.inRelaxed(context) then
                 range := Ceval.tryEvalExp(range);
               else
