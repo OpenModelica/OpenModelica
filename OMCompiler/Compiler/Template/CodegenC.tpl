@@ -8224,7 +8224,9 @@ template equationSimpleAssignLhs(ComponentRef cref, Context context,
     contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
   // an element of an array Jacobian variable (e.g. $pDER.$FUN[2]) needs the flattened index too
   case JACOBIAN_CONTEXT(__) then
-    if isJacobianElementVar(cref, context) then
+    if boolOr(boolNot(Flags.getConfigBool(Flags.NEW_BACKEND)), Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE)) then
+      contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    else if isJacobianElementVar(cref, context) then
       contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
     else match crefSubs(crefArrayGetFirstCref(cref))
       case {} then
