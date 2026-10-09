@@ -31,4 +31,18 @@ thread_local! {
     pub static timeIndependentVars: RefCell<
         Option<metamodelica::Ref<openmodelica_util::UnorderedSet::UnorderedSet<metamodelica::Ref<openmodelica_frontend_types::DAE::ComponentRef>>>>,
     > = const { RefCell::new(None) };
+
+    // Index 45 — jacobianOffsets
+    //
+    // The positions of the variables of the last few Jacobians per hash table;
+    // source: SimCodeCodegenUtil.jacobianOffsets, reset by SimCodeMain.
+    pub static jacobianOffsets: RefCell<
+        metamodelica::List<(
+            openmodelica_simcode_types::HashTableCrefSimVar::HashTable,
+            metamodelica::List<(
+                openmodelica_backend_types::BackendDAE::VarKind,
+                metamodelica::Ref<openmodelica_util::UnorderedMap::UnorderedMap<i32, metamodelica::Ref<openmodelica_frontend_types::DAE::Exp>>>,
+            )>,
+        )>,
+    > = RefCell::new(metamodelica::nil());
 }
