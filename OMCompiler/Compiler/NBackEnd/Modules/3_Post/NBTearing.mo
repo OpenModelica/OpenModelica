@@ -57,6 +57,7 @@ protected
 
   // NF imports
   import Algorithm = NFAlgorithm;
+  import Binding = NFBinding;
   import Expression = NFExpression;
   import NFFunction.Function;
   import Variable = NFVariable;
@@ -1831,12 +1832,64 @@ protected
       try
         (_, status, _) := Solve.solveBody(eqn, listHead(crefs), funcMap);
         b := status == NBSolve.Status.EXPLICIT;
+        // like the old backend: do not divide by parameters that are zero
+        if b and isParameterDivision(UnorderedMap.getSafe(listHead(crefs), solvabilities, sourceInfo())) then
+          b := not isZeroCoefficient(eqn, listHead(crefs), funcMap);
+        end if;
       else
         b := false;
       end try;
       ErrorExt.rollBack(getInstanceName());
     end if;
   end cellierSolvable;
+
+  function isParameterDivision
+    input Solvability sol;
+    output Boolean b;
+  algorithm
+    b := match sol
+      case Solvability.EXPLICIT_LINEAR(pars = SOME(_), vars = NONE()) then true;
+      else false;
+    end match;
+  end isParameterDivision;
+
+  function isZeroCoefficient
+    "true if the coefficient of the variable evaluates to zero with the parameter bindings"
+    input Equation eqn;
+    input ComponentRef cref;
+    input UnorderedMap<Path, Function> funcMap;
+    output Boolean b;
+  protected
+    Expression coeff;
+  algorithm
+    try
+      (coeff, _) := Differentiate.differentiateExpression(Equation.getResidualExp(eqn), Differentiate.DifferentiationArguments.simpleCref(cref, funcMap));
+      for i in 1:5 loop
+        coeff := SimplifyExp.simplify(Expression.map(coeff, parameterBinding));
+        if Expression.isLiteral(coeff) then break; end if;
+      end for;
+      b := Expression.isLiteral(coeff) and Expression.isZero(coeff);
+    else
+      b := false;
+    end try;
+  end isZeroCoefficient;
+
+  function parameterBinding
+    input output Expression exp;
+  protected
+    Pointer<Variable> var_ptr;
+    Variable var;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo())) algorithm
+        var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+        var := Pointer.access(var_ptr);
+      then if Binding.hasExp(var.binding) then
+          Expression.applySubscripts(ComponentRef.getSubscripts(exp.cref), Binding.getExp(var.binding))
+        else exp;
+      else exp;
+    end match;
+  end parameterBinding;
 
   function cellierRank
     "worst solvability rank of all occurrences of a variable, for equations also keyed by subscripted crefs"
