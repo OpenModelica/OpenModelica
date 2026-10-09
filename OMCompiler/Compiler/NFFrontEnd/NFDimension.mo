@@ -450,6 +450,8 @@ public
   algorithm
     isZero := match dim
       case INTEGER() then dim.size == 0;
+      // the backend drops resizable arrays of size zero as well
+      case RESIZABLE() then dim.size == 0;
       case ENUM() then Type.enumSize(dim.enumType) == 0;
       else false;
     end match;

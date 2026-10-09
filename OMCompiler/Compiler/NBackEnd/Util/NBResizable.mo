@@ -396,7 +396,8 @@ protected
         // fill the occurence sets traversing the body of the equation
         for body in eqn.body loop
           Equation.map(body, function collectOccurences(occs = occs));
-          Equation.map(body, function collectVars(func = BVariable.isArray, collector = constrained_vars));
+          // the branches of if-expressions are guarded by their conditions (e.g. x[i + 1] for i < n)
+          Equation.map(body, function collectUnguardedVars(func = BVariable.isArray, collector = constrained_vars), NONE(), Expression.fakeMap);
         end for;
         findOptimalValue(eqn, occs, resizables, parameters, min_parameters, optimal_values, c2pi);
         UnorderedSet.fold(constrained_vars, function addVariableConstraint(eqn = eqn, replacements = SOME(replacements)), c2pi);
@@ -790,6 +791,25 @@ protected
       else();
     end match;
   end collectVars;
+
+  function collectUnguardedVars
+    "collectVars without the branches of if-expressions"
+    input output Expression exp;
+    input BVariable.checkVar func;
+    input UnorderedSet<ComponentRef> collector;
+  algorithm
+    () := match exp
+      case Expression.IF() algorithm
+        collectUnguardedVars(exp.condition, func, collector);
+      then ();
+      case Expression.CREF() algorithm
+        collectVars(exp, func, collector);
+      then ();
+      else algorithm
+        Expression.mapShallow(exp, function collectUnguardedVars(func = func, collector = collector));
+      then ();
+    end match;
+  end collectUnguardedVars;
 
   function findOptimalValue
     input Equation eqn;
