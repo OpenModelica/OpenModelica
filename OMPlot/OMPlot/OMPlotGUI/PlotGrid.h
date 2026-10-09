@@ -48,7 +48,9 @@ class PlotGrid : public QwtPlotGrid
 public:
   PlotGrid(Plot *pParent);
   ~PlotGrid();
-  QPen getMajorPen() {return QPen(QColor(201, 201, 201));} // #C9C9C9 light gray color. More lighter than Qt::lightGray
+  /* Width 0.0 keeps the pen cosmetic (always 1 device pixel) so that the grid lines stay
+   * crisp instead of being resampled to a fractional device pixel width at e.g. 125% scaling. */
+  QPen getMajorPen() {return QPen(QColor(201, 201, 201), 0.0);} // #C9C9C9 light gray color. More lighter than Qt::lightGray
   QPen getMinorPen() {return QPen(Qt::lightGray, 0.0, Qt::DotLine);}
   void setGrid();
   void setDetailedGrid();

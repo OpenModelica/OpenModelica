@@ -153,6 +153,10 @@ void PlotCurve::setCurveWidth(qreal width)
 {
   mWidth = width;
   QPen customPen = pen();
+  /* A cosmetic pen's width is measured in device pixels, so the curve keeps the same
+   * physical thickness at any device pixel ratio (a non-cosmetic pen would be resampled
+   * to a fractional device pixel width at e.g. 125% scaling and look blurry). */
+  customPen.setCosmetic(true);
   customPen.setWidthF(mWidth);
   setPen(customPen);
 }
