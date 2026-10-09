@@ -103,16 +103,24 @@ Plot::Plot(PlotWindow *pParent)
 #endif
   setCanvasBackground(OMPlot::isDarkMode() ? palette().color(QPalette::Base) : QColor(Qt::white));
   setContentsMargins(10, 10, 10, 10);
-#if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
+  // No gap between axis backbone and canvas
+  // Zeroing the margins makes the canvas and scale widgets flush. At a fractional device
+  // pixel ratio (e.g. 125%) Qt rounds every widget's device rect independently, so the
+  // boundary seam can move by one device pixel during a resize and the opaque canvas
+  // intermittently covers the axis backbone. ScaleDraw::drawBackbone() compensates for this
+  // by insetting the backbone one device pixel into the scale widget when dpr != 1.0.
   for (int i = 0; i < QwtPlot::axisCnt; i++) {
     QwtScaleWidget *pScaleWidget = axisWidget(i);
     if (pScaleWidget) {
+      pScaleWidget->setContentsMargins(0, 0, 0, 0);
       pScaleWidget->setMargin(0);
+      pScaleWidget->setBorderDist(0, 0);
     }
   }
+  // Remove the plot layout's own margins from all axes
+  plotLayout()->setCanvasMargin(0);
   plotLayout()->setAlignCanvasToScales(true);
-#endif
   // Use monospaced font for better readability.
   QFont monospaceFont("Monospace");
   monospaceFont.setStyleHint(QFont::TypeWriter);
