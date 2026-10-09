@@ -7,6 +7,7 @@ forNestedElseIf.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 eachScalarProduct.mos \
+ifBranchSizes.mos \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \

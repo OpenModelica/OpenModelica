@@ -56,6 +56,7 @@ public
   import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
+  import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
@@ -3588,10 +3589,23 @@ public
       Expression condition;
       Pointer<Equation> eqn;
       Option<IfEquationBody> tmp;
+      IfEquationBody scalar_body;
     algorithm
       if isSplittable(body, s) then
         then_eqns := arrayCreate(s, {});
         (conditions, then_eqns) := splitCollect(sortForSplit(body), conditions, then_eqns);
+        // equations of different sizes can not be paired across the branches, pair their scalar rows instead
+        if not Array.all(then_eqns, sameSize) then
+          scalar_body := scalarizeBranches(body);
+          s := listLength(scalar_body.then_eqns);
+          if not isSplittable(scalar_body, s) then
+            bodies := {body};
+            return;
+          end if;
+          conditions := {};
+          then_eqns := arrayCreate(s, {});
+          (conditions, then_eqns) := splitCollect(scalar_body, conditions, then_eqns);
+        end if;
         for i in 1:arrayLength(then_eqns) loop
           tmp := NONE();
           for tpl in List.zip(conditions, then_eqns[i]) loop
@@ -3604,6 +3618,58 @@ public
         bodies := {body};
       end if;
     end split;
+
+    function scalarizeBranches
+      "replaces the array equations of all branches by their scalar rows"
+      input output IfEquationBody body;
+    algorithm
+      body.then_eqns := List.flatten(list(scalarRows(e) for e in body.then_eqns));
+      body.else_if := Util.applyOption(body.else_if, scalarizeBranches);
+    end scalarizeBranches;
+
+    function scalarRows
+      input Pointer<Equation> eqn_ptr;
+      output list<Pointer<Equation>> rows;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+      list<Integer> sizes;
+      list<Subscript> subs;
+    algorithm
+      rows := match eqn
+        case ARRAY_EQUATION() guard(Type.hasKnownSize(eqn.ty)) algorithm
+          sizes := Equation.sizes(eqn_ptr);
+          rows := {};
+          for i in Equation.size(eqn_ptr)-1:-1:0 loop
+            subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, sizes));
+            rows := Pointer.create(SCALAR_EQUATION(Type.arrayElementType(eqn.ty), rowElement(eqn.lhs, subs),
+              rowElement(eqn.rhs, subs), eqn.source, eqn.attr)) :: rows;
+          end for;
+        then rows;
+        else {eqn_ptr};
+      end match;
+    end scalarRows;
+
+    function rowElement
+      "the element of an array expression, expanded to make it solvable"
+      input Expression exp;
+      input list<Subscript> subs;
+      output Expression element;
+    protected
+      Expression expanded;
+      Boolean success;
+    algorithm
+      (expanded, success) := ExpandExp.expand(exp, true);
+      element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
+    end rowElement;
+
+    function sameSize
+      input list<Pointer<Equation>> eqns;
+      output Boolean b;
+    protected
+      Integer sz = Equation.size(listHead(eqns));
+    algorithm
+      b := List.all(list(Equation.size(e) == sz for e in eqns), Util.id);
+    end sameSize;
 
     function isSplittable
       "an if equation can be split if all branches have the same size"
