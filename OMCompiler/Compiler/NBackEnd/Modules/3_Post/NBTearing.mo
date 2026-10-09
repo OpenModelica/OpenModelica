@@ -1048,6 +1048,7 @@ protected
     VariablePointers disc_variables;
     EquationPointers disc_equations;
     UnorderedSet<ComponentRef> matched_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> cont_set;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -1116,7 +1117,9 @@ protected
           end for;
 
           strict.innerEquations := listArray(inner_comps);
-          strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
+          // keep the slices, only a part of an array equation might belong to the loop
+          cont_set := UnorderedSet.fromList(list(Equation.getEqnName(eqn) for eqn in cont_eqns), ComponentRef.hash, ComponentRef.isEqual);
+          strict.residual_eqns  := list(eqn for eqn guard(UnorderedSet.contains(Equation.getEqnName(Slice.getT(eqn)), cont_set)) in strict.residual_eqns);
           strict.iteration_vars := listReverse(iteration_vars);
           comp.strict := strict;
         end if;
