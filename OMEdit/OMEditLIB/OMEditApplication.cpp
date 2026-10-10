@@ -207,8 +207,12 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 #endif // #ifdef Q_OS_LINUX
 
+  // Dark mode comes from the Options dialog setting (off by default, see
+  // OptionsDefaults::GeneralSettings::enableDarkMode). The --DarkMode command
+  // line option overrides it. The testsuite always runs in light mode.
   bool darkMode = false;
-  if (arguments().size() > 1 && !testsuiteRunning) {
+  if (!testsuiteRunning) {
+    darkMode = Utilities::getApplicationSettings()->value("enableDarkMode", false).toBool();
     for (int i = 1; i < arguments().size(); i++) {
       bool argumentDarkMode = false;
       if (darkModeArgumentValue(arguments().at(i), &argumentDarkMode)) {

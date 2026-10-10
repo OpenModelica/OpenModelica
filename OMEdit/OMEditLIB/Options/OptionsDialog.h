@@ -311,6 +311,7 @@ public:
   QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
   QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
   QCheckBox* getEnableInstanceApiNoJsonCheckBox() {return mpEnableInstanceApiNoJsonCheckBox;}
+  QCheckBox* getDarkModeCheckBox() {return mpDarkModeCheckBox;}
   SpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   SpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
@@ -350,6 +351,7 @@ private:
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QCheckBox *mpEnableInstanceApiNoJsonCheckBox;
   QCheckBox *mpEnableCRMLSupportCheckBox;
+  QCheckBox *mpDarkModeCheckBox;
   QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   SpinBox *mpLibraryIconSizeSpinBox;

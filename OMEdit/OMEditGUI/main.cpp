@@ -199,8 +199,8 @@ void printOMEditUsage()
   fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
   fprintf(stderr, "                                Default: false.\n\n");
 
-  fprintf(stderr, "  --DarkMode=[true|false]       Start OMEdit with a dark palette.\n");
-  fprintf(stderr, "                                Default: false.\n\n");
+  fprintf(stderr, "  --DarkMode=[true|false]       Start OMEdit with a dark palette. Overrides the\n");
+  fprintf(stderr, "                                Dark Mode setting of the Options dialog.\n\n");
 
   fprintf(stderr, "  --StyleSheet=<file>           Load an additional Qt stylesheet after\n");
   fprintf(stderr, "                                OMEdit's default stylesheet.\n\n");
