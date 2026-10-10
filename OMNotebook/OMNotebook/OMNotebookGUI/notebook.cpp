@@ -211,6 +211,11 @@ NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
   // 2006-01-16 AF, Added an icon to the window
   setWindowIcon( QIcon(":/Resources/OMNotebook_icon.svg"));
 
+  // Delete the window (with its document and cells) when it is closed. Without this a closed
+  // window only gets hidden: ~NotebookWindow() never runs, the window stays in the application's
+  // list and in the Window menu, and the document, the cells and the plots are never freed.
+  setAttribute(Qt::WA_DeleteOnClose);
+
   statusBar()->showMessage(tr("Ready"));
   resize(800, 600);
 
@@ -2821,6 +2826,19 @@ void NotebookWindow::newFile()
     dynamic_cast<CellDocument*>(subject_.get())->autoIndent = autoIndentAction->isChecked();
     subject_->executeCommand(std::make_unique<NewFileCommand>());
     subject_->attach(this);
+
+    // the connections of the constructor were to the old document
+    connect( subject_->getCursor(), SIGNAL( changedPosition() ),
+             this, SLOT( updateMenus() ));
+    connect( subject_.get(), SIGNAL( contentChanged() ),
+             this, SLOT( updateWindowTitle() ));
+    connect( subject_.get(), SIGNAL( hoverOverFile(QString) ),
+             this, SLOT( setStatusMessage(QString) ));
+    connect( subject_.get(), SIGNAL( forwardAction(int) ),
+             this, SLOT( forwardedAction(int) ));
+    connect( subject_.get(), SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
+    connect( subject_.get(), SIGNAL(newState(QString)), this, SLOT(setState(QString)));
+    connect( subject_.get(), SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
 
     update();
     updateWindowTitle();
