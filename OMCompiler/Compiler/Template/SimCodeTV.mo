@@ -1266,6 +1266,7 @@ package SimCodeFunction
   uniontype Context
     record SIMULATION_CONTEXT
       Boolean genDiscrete;
+      Boolean whenBody;
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
       String cref_prefix;
@@ -1294,6 +1295,7 @@ package SimCodeFunction
 
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
+  constant Context contextSimulationWhenBody;
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloopJacobian;

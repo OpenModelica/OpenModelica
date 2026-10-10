@@ -332,6 +332,11 @@ pub extern "C" fn rt_assert(msg: i32, _file: i32, _sline: i32, _scol: i32, _elin
     core::arch::wasm32::unreachable()
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn rt_assert_when(msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, sim_data: i32) -> i32 {
+    rt_assert(msg, file, sline, scol, eline, ecol, read_only, cond, initial, sim_data)
+}
+
 /// In-wasm `rt_print`: the `print` builtin. Write the String handle's bytes to
 /// stdout, flushed so the captured output stays ordered.
 #[unsafe(no_mangle)]

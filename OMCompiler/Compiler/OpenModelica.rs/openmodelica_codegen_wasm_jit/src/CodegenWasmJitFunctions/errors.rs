@@ -72,6 +72,7 @@ pub(super) fn emit_assert(
     let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
     // C's `FUNCTION_CONTEXT` arm reports the message alone, with no dumped condition.
     let in_function = ctx.sim().is_err();
+    let when_body = ctx.sim().is_ok_and(|s| s.when_body);
     let warn_flag = is_warning.then(shared_lits::new_flag);
     if let Some(g) = warn_flag {
         ctx.emit(we::Instruction::GlobalGet(g));
@@ -142,7 +143,7 @@ pub(super) fn emit_assert(
     // C's `FUNCTION_CONTEXT` arm has no such check, so a function's assert throws
     // whatever the window says (a domain guard the solver must back off from).
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-    if !in_function {
+    if !in_function && !when_body {
         ctx.emit(we::Instruction::Call(rt_index("rt_assert_suppressed")?));
         ctx.emit(we::Instruction::I32Eqz);
         ctx.emit(we::Instruction::I32And);
@@ -159,7 +160,8 @@ pub(super) fn emit_assert(
     report_args(ctx)?;
     emit_initial_flag(ctx);
     emit_sim_data_or_zero(ctx);
-    ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    let report = if when_body { "rt_assert_when" } else { "rt_assert" };
+    ctx.emit(we::Instruction::Call(env_extra_index(report)?));
     // Unwind unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     emit_assert_unwind(ctx);
