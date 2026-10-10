@@ -625,7 +625,9 @@ namespace IAEX
   QImage CellDocument::getImage(QString name)
   {
     name.remove( "file:///" );
-    return images_[name];
+    // value() does not insert an entry for unknown names. Every key of images_ is handed to
+    // removeTempFiles() in the destructor.
+    return images_.value(name);
   }
 
   /*!
