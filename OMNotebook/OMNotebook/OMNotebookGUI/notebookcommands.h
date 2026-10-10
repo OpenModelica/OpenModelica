@@ -49,6 +49,7 @@
 
 //QT Headers
 #include <QtCore/QFile>
+#include <QtCore/QSaveFile>
 #include <QtCore/QTextStream>
 #include <QtGui/QTextDocument>
 #include <QtXml/qdom.h>
@@ -173,14 +174,22 @@ namespace IAEX
           throw std::runtime_error( msg.c_str() );
         }
 
-        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate) == true)
-        {
-          if(filename_.endsWith("onbz", Qt::CaseInsensitive))
-            file.write(qCompress(ba, 9));
-          else
-            file.write(ba);
+        // QSaveFile writes to a temporary file and replaces the document only in commit(). A failed
+        // write (disk full, crash) does not destroy the existing file, and the errors are detected.
+        QSaveFile saveFile( filename_.trimmed() );
+        saveFile.setDirectWriteFallback( true );  // e.g. directory without write permission
 
-          file.close();
+        if (saveFile.open(QIODevice::WriteOnly) == true)
+        {
+          const QByteArray data = filename_.endsWith("onbz", Qt::CaseInsensitive) ? qCompress(ba, 9) : ba;
+
+          if (saveFile.write(data) != data.size() || !saveFile.commit())
+          {
+            std::string msg = "Could not write document to file:\n" +
+              saveFile.fileName().toStdString() + " because:\n" +
+              saveFile.errorString().toStdString();
+            throw std::runtime_error( msg.c_str() );
+          }
 
           // AF, Added this
           doc_->setFilename( filename_ );
@@ -190,8 +199,8 @@ namespace IAEX
         else
         {
           std::string msg = "Could not write document to file:\n" +
-            file.fileName().toStdString() + " because:\n" +
-            file.errorString().toStdString() + " error code: ";
+            saveFile.fileName().toStdString() + " because:\n" +
+            saveFile.errorString().toStdString();
           throw std::runtime_error( msg.c_str() );
         }
       }

@@ -481,7 +481,8 @@ namespace IAEX
     }
     else
     {
-      // Error
+      // Error, newCell has no parent and is not in the document
+      delete newCell;
       throw std::runtime_error("pasteCell(): Unknown celltype.");
     }
     // *************************************************************************
@@ -645,6 +646,11 @@ namespace IAEX
        Factory *fac = document()->cellFactory();
        CellCursor *cursor = document()->getCursor();
 
+       // Without a cell before the cursor currentCell() is the parent group, which can be
+       // the workspace without a parent: nothing to group.
+       if(!cursor->hasPrevious())
+         return;
+
        Cell *prev = cursor->currentCell();
        cursor->currentCell()->parentCell()->removeChild(prev);
 
@@ -718,13 +724,10 @@ namespace IAEX
                 child->setNext( deletedCellsNext );
                 if( !child->hasNext() )
                 {
-                  // update last value on all cells
-                  Cell* current = child;
-                  while( current != 0 )
-                  {
-                    current->setLast( child );
-                    current = current->previous();
-                  }
+                  // the last child of the parent is now the last cell of the group.
+                  // (The old loop set last on the sibling cells, which is the last child of
+                  // each of them, and left the parent pointing to the deleted groupcell.)
+                  deletedCellsParent->setLast( child );
                 }
                 else
                   deletedCellsNext->setPrevious( child );

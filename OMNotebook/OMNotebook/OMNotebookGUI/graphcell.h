@@ -63,6 +63,7 @@ class GraphCell : public Cell
     Q_OBJECT
 public:
     explicit GraphCell(Document *doc, QWidget *parent = nullptr);
+    ~GraphCell() override;
 
     /* ----- Cell‑interface (override virtuals from Cell) ----- */
     QString          text()               override;
@@ -153,6 +154,7 @@ private:
     bool                     closed_      = true;
     static int               numEvals_;
     int                      oldHeight_   = 0;
+    bool                     plotCallbackSet_ = false;  // OMC's plotClassPointer may point to this cell
 
 public:   // widgets – left public for historic reasons (kept unchanged)
     MyTextEdit2a*            input_                = nullptr;

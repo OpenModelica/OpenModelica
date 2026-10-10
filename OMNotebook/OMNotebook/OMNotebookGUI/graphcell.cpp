@@ -722,6 +722,24 @@ namespace IAEX {
     connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
   }
 
+  GraphCell::~GraphCell()
+  {
+#ifndef __EMSCRIPTEN__
+    // OMC calls PlotCallbackFunction with the pointer set in eval(), also for plot()
+    // commands of other cells. Do not leave a pointer to a destroyed cell behind.
+    // (plotCallbackSet_ guarantees that the environment already exists.)
+    if (plotCallbackSet_)
+    {
+      OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
+      if (env->threadData_->plotClassPointer == this)
+      {
+        env->threadData_->plotClassPointer = nullptr;
+        env->threadData_->plotCB = nullptr;
+      }
+    }
+#endif
+  }
+
   /*!
   * \author Anders Fernström and Ingemar Axelsson
   * \date 2006-03-02 (update)
@@ -1541,10 +1559,16 @@ namespace IAEX {
     {
       mpPlotWindow->show();
       // clear any curves if we have.
-      foreach (PlotCurve *pPlotCurve, mpPlotWindow->getPlot()->getPlotCurvesList())
+      // detach() only takes a curve out of the plot, it does not delete it (the plot
+      // deletes only the curves that are still attached when it is destroyed), and
+      // removeCurve() must not delete it either since it is used after that call.
+      const auto curves = mpPlotWindow->getPlot()->getPlotCurvesList();
+      for (PlotCurve *pPlotCurve : curves)
       {
         mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
         pPlotCurve->detach();
+        pPlotCurve->deletePointMarker();  // otherwise one invisible marker per curve stays in the plot
+        delete pPlotCurve;
       }
       mpPlotWindow->initializePlot(lst);
       /*! @note Calling the fitInView function removes the xRange/yRange set on the plotter by user.
@@ -1561,6 +1585,16 @@ namespace IAEX {
 #else
       QMessageBox::warning(nullptr, tr("Error"), e.what());
 #endif
+    }
+    // this slot runs inside the OMC plot callback: never let an exception
+    // propagate through the OMC C frames
+    catch (const std::exception &e)
+    {
+      qWarning("OMNotebook plot error: %s", e.what());
+    }
+    catch (...)
+    {
+      qWarning("OMNotebook plot error: unknown exception");
     }
   }
 
@@ -1584,8 +1618,6 @@ namespace IAEX {
   * highlightning is used in the output cell.
   *
   */
-  QRecursiveMutex guard;
-
   void GraphCell::eval()
   {
     input_->blockSignals(true);
@@ -1603,6 +1635,7 @@ namespace IAEX {
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
       env->threadData_->plotClassPointer = this;
       env->threadData_->plotCB = GraphCell::PlotCallbackFunction;
+      plotCallbackSet_ = true;
 #endif
       // Before evaluating any expression also hide the PlotWindow. If callback function is called it will show it.
       mpPlotWindow->hide();
@@ -1617,7 +1650,9 @@ namespace IAEX {
       output_->textCursor().insertText( "{evaluating expression}" );
       setOutputStyle();
       output_->update();
-      QCoreApplication::processEvents();
+      // no user input here: the window could be closed (this would be gone)
+      // or another cell evaluated (OMC is not reentrant) while we are in eval()
+      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
       // 2005-11-24 AF, added check to see if the user wants to quit
       if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
@@ -1629,7 +1664,6 @@ namespace IAEX {
       }
 
       {
-        guard.lock();
         // adrpo:FIXME! WRONG! TODO! this is wrong!
         //       the commands should be sent to OMC in the same sequence
         //       they appear in the notebook, otherwise a simulate command
@@ -1672,9 +1706,6 @@ namespace IAEX {
     QString error = delegate->getError();
     int errorLevel= delegate->getErrorLevel();
 
-    //delete sender();
-    guard.unlock();
-
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) ) {
       res = "[done]";
       setState(Finished);
@@ -1702,7 +1733,7 @@ namespace IAEX {
     output_->setPalette(pal);
     // The old implementation used QRegExp; replace it with QRegularExpression.
     // The expression finds either “line:col‑line:col” or “line:col” patterns.
-    QRegularExpression e(R"(([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+))");
+    static const QRegularExpression e(R"((\d+:\d+-\d+:\d+)|(\d+:\d+))");
     int p = 0;                                   // start position for the search
     QList<QAction*> actions;
 

@@ -115,7 +115,7 @@ namespace IAEX{
    */
   void CellGroup::setStyle(CellStyle style)
   {
-    if(closed_)
+    if(closed_ && hasChilds())
       child()->setStyle(style);
   }
 
@@ -134,7 +134,7 @@ namespace IAEX{
    */
   CellStyle *CellGroup::style()
   {
-    if(closed_)
+    if(closed_ && hasChilds())
       return child()->style();
     else
     {
@@ -338,7 +338,7 @@ namespace IAEX{
   {
     int height = 0;
 
-    if( closed_ )
+    if( closed_ && hasChilds() )
     {
       //Height of the first cell.
       height = child()->height();
@@ -477,17 +477,13 @@ namespace IAEX{
     if(aCell->parentCell()->last() == aCell)
       aCell->parentCell()->setLast(aCell->previous());
 
+    // Unlink the cell. The neighbours must be updated also if the removed cell was the first
+    // or the last one, otherwise they keep a pointer to the removed (and later deleted) cell.
     if(next)
-    {
-      if(prev)
-        next->setPrevious(prev);
-    }
+      next->setPrevious(prev);
 
     if(prev)
-    {
-      if(next)
-        prev->setNext(next);
-    }
+      prev->setNext(next);
     //Insert all widgets again.
     par->addCellWidgets();
   }
@@ -500,7 +496,7 @@ namespace IAEX{
     newCell->show();
 
     connect(newCell, SIGNAL(heightChanged()),
-      this, SLOT(adjustHeight()));
+      this, SLOT(adjustHeight()), Qt::UniqueConnection);
 
     removeCellWidgets();
     addCellWidgets();
@@ -532,7 +528,7 @@ namespace IAEX{
         current->show();
 
         connect(current, SIGNAL(heightChanged()),
-          this, SLOT(adjustHeight()));
+          this, SLOT(adjustHeight()), Qt::UniqueConnection);
       }
 
       layout_->addWidget(current,i,0);

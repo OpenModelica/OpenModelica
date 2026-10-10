@@ -1334,7 +1334,9 @@ void PlotWindow::setLegendPosition(QString position)
   }
   else if (position.toLower().compare("none") == 0)
   {
+    // insertLegend(0) deletes the old legend, do not keep a dangling pointer to it
     mpPlot->insertLegend(0);
+    mpPlot->setLegend(nullptr);
   }
 }
 
@@ -1404,10 +1406,16 @@ Plot* PlotWindow::getPlot()
 
 void PlotWindow::receiveMessage(QStringList arguments)
 {
-  foreach (PlotCurve *pCurve, mpPlot->getPlotCurvesList())
+  /* detach() does not delete the curve. Delete the curves (and their point markers) here,
+   * otherwise every message leaks all curves of the previous plot.
+   */
+  const QList<PlotCurve*> curves = mpPlot->getPlotCurvesList();
+  for (PlotCurve *pCurve : curves)
   {
-    pCurve->detach();
     mpPlot->removeCurve(pCurve);
+    pCurve->detach();
+    pCurve->deletePointMarker();
+    delete pCurve;
   }
   initializePlot(arguments);
 }

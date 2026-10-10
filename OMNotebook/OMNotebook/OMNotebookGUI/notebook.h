@@ -112,7 +112,6 @@ public slots:
   void setPosition(int r, int c);
   void setState(QString);
   void setStatusMenu(QList<QAction*>);
-  void recentTriggered();
   QVector<Cell*> SearchCells(Cell* current);  // search the cells in a document and return the number of cells
 
 protected:
@@ -187,7 +186,9 @@ private slots:
   void inputCellsAction();
   void latexCellsAction();
   void textCellsAction();
-  void updateRecentFiles(QString);
+  void updateRecentFiles(const QString &filename);
+  void rebuildRecentMenu();
+  void openRecent(const QString &path);
 
   void indent();
   void setAutoIndent(bool);
@@ -223,6 +224,7 @@ private:
 private:
   QToolBar* toolBar;
   QMenu *formatMenu;
+  QMenu *recentMenu_ = nullptr;
   QMenu *windowMenu;
 
   // Added some more for text setting changes
