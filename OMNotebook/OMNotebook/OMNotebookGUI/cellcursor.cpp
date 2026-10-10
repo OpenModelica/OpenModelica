@@ -281,6 +281,14 @@ namespace IAEX
         parentCell()->setChild(this);
 
       setPrevious(current->previous());
+      setNext(current->next());
+
+      // The cursor takes the place of the removed cell. The cell after it (or the last pointer of
+      // the parent) still points to the removed cell, which is deleted by deleteCurrentCell().
+      if(hasNext())
+        next()->setPrevious(this);
+      else
+        parentCell()->setLast(this);
 
       current->setParentCell(0);
       current->setPrevious(0);
