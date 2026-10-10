@@ -145,7 +145,10 @@ public
       for comp in Util.getOption(partition.strongComponents) loop
         solved_comps := match UnorderedMap.get(comp, duplicate_map)
           local list<StrongComponent> alias_comps;
-          case SOME(alias_comps) then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
+          case SOME(alias_comps) algorithm
+            // strong component already solved -> get alias comps, they take up positions too
+            Pointer.update(comp_idx, Pointer.access(comp_idx) + listLength(alias_comps));
+          then listAppend(alias_comps, solved_comps);
           else algorithm
             // solve strong component -> create alias comps
             (alias_comps, implicit_index) := solveStrongComponent(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);

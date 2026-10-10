@@ -1132,6 +1132,25 @@ protected
 
     rhs := if n == 1 then listHead(elems) else Expression.makeArray(alias_ty, listArray(elems));
     alias_eqn := Equation.makeAssignment(Expression.fromCref(alias_cref), rhs, eq_index, "DUM", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false));
+
+    // the alias starts at the start values of the elements it replaces
+    () := match BVariable.getStartAttribute(Slice.getT(dummy))
+      local
+        Expression start_exp;
+        list<Expression> starts;
+      case SOME(start_exp) guard(Type.isArray(Expression.typeOf(start_exp))) algorithm
+        starts := list(SimplifyExp.simplify(Expression.applySubscripts(list(Subscript.INDEX(Expression.INTEGER(l + 1))
+          for l in Slice.indexToLocation(idx, sizes)), start_exp, true)) for idx in dummy.indices);
+        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+          if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+      then ();
+      case SOME(start_exp) algorithm
+        // a scalar start value applies to all elements
+        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+          if n == 1 then start_exp else Expression.fillType(alias_ty, start_exp), true));
+      then ();
+      else ();
+    end match;
   end resolveSlicedDummy;
 
   function substituteSlicedDummyEqn

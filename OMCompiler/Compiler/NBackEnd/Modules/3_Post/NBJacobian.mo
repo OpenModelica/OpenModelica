@@ -533,11 +533,11 @@ protected
   end forEquationStart;
 
   function withInnerComps
-    "an algebraic loop preceded by its inner components"
+    "an algebraic loop (also behind an alias) preceded by its inner components"
     input StrongComponent comp;
     output list<StrongComponent> comps;
   algorithm
-    comps := match comp
+    comps := match StrongComponent.removeAlias(comp)
       local
         Tearing strict;
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) then listAppend(arrayList(strict.innerEquations), {comp});
@@ -810,8 +810,8 @@ protected
     if jacType == JacobianType.ODE then
       adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
     end if;
-    // with resizable arrays the inner equations of algebraic loops are needed for their dependencies
-    sparsity_comps := if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then List.flatten(list(withInnerComps(comp) for comp in comps)) else comps;
+    // the inner equations of algebraic loops are needed for their dependencies
+    sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in comps));
     fullLocal := Adjacency.Matrix.createFull(adjacencyVars,
       EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
     sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, seed_diff_map);
@@ -1669,11 +1669,8 @@ protected
       if jacType == JacobianType.ODE then
         adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
       end if;
-      // with resizable arrays the inner equations of algebraic loops are needed for their dependencies
-      sparsity_comps := arrayList(Util.getOption(strongComponents));
-      if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
-        sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in sparsity_comps));
-      end if;
+      // the inner equations of algebraic loops are needed for their dependencies
+      sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in arrayList(Util.getOption(strongComponents))));
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
         List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
       sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map);
