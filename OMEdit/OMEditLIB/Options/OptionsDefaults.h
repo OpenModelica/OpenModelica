@@ -62,6 +62,7 @@ namespace OptionsDefaults
     bool displayNFAPIErrorsWarnings = false;
     bool enableInstanceApiNoJson = false;
     bool enableCRMLSupport = false;
+    int colorSchemeIndex = 0; // GeneralSettingsPage::SystemColorScheme
     int libraryIconSize = 24;
     int libraryIconMaximumTextLength = 3;
     bool showProtectedClasses = false;
