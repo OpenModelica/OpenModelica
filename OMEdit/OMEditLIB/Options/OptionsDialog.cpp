@@ -326,6 +326,12 @@ void OptionsDialog::readGeneralSettings()
     mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
   }
   MainWindow::instance()->setCRMLEnabled(mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->isChecked());
+  // read enable dark mode. The key must not be named "darkMode": that is the group themeKey() uses.
+  if (mpSettings->contains("enableDarkMode")) {
+    mpGeneralSettingsPage->getDarkModeCheckBox()->setChecked(mpSettings->value("enableDarkMode").toBool());
+  } else {
+    mpGeneralSettingsPage->getDarkModeCheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableDarkMode);
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -1689,6 +1695,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->remove("enableCRMLSupport");
   } else {
     mpSettings->setValue("enableCRMLSupport", enableCRMLSupport);
+  }
+  // save enable dark mode. It is applied at startup, see OMEditApplication.
+  bool enableDarkMode = mpGeneralSettingsPage->getDarkModeCheckBox()->isChecked();
+  if (enableDarkMode == OptionsDefaults::GeneralSettings::enableDarkMode) {
+    mpSettings->remove("enableDarkMode");
+  } else {
+    mpSettings->setValue("enableDarkMode", enableDarkMode);
   }
   // save library icon size
   int libraryIconSize = mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value();
@@ -3718,6 +3731,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // Enable CRML support
   mpEnableCRMLSupportCheckBox = new QCheckBox(tr("Enable CRML Support *"));
   mpEnableCRMLSupportCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
+  // dark mode
+  mpDarkModeCheckBox = new QCheckBox(tr("Dark Mode *"));
+  mpDarkModeCheckBox->setToolTip(tr("Start OMEdit with the dark color scheme. The --DarkMode command line option overrides this setting."));
+  mpDarkModeCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableDarkMode);
   // set the layout of general settings group
   QGridLayout *pGeneralSettingsLayout = new QGridLayout;
   pGeneralSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3741,6 +3758,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpEnableInstanceApiNoJsonCheckBox, 10, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 11, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpDarkModeCheckBox, 12, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Library Browser group box
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));

@@ -62,6 +62,7 @@ namespace OptionsDefaults
     bool displayNFAPIErrorsWarnings = false;
     bool enableInstanceApiNoJson = false;
     bool enableCRMLSupport = false;
+    bool enableDarkMode = false;
     int libraryIconSize = 24;
     int libraryIconMaximumTextLength = 3;
     bool showProtectedClasses = false;

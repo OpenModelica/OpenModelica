@@ -1429,6 +1429,9 @@ General Options
   -  *Enable CRML Support* - Enables the CRML support.
      The user can create/open .crml files and translate them to Modelica.
 
+  -  *Dark Mode* - Starts OMEdit with the dark color scheme.
+     The ``--DarkMode=true`` or ``--DarkMode=false`` command line option overrides this setting.
+
 -  Libraries Browser
 
   -  *Library Icon Size* - Sets the size for library icons.
