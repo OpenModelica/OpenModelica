@@ -51,6 +51,7 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#include "OMUQ/OMUQDialog.h"
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
@@ -2931,6 +2932,10 @@ void LibraryTreeView::createActions()
   mpUnloadOMSModelAction->setShortcut(QKeySequence::Delete);
   mpUnloadOMSModelAction->setStatusTip(Helper::unloadOMSModelTip);
   connect(mpUnloadOMSModelAction, SIGNAL(triggered()), SLOT(unloadOMSModel()));
+  // omuq UQ activities Action
+  mpOMUQActivitiesAction = new QAction(tr("UQ Activities..."), this);
+  mpOMUQActivitiesAction->setStatusTip(tr("Runs the uncertainty quantification activities attached to the SSP model with omuq"));
+  connect(mpOMUQActivitiesAction, SIGNAL(triggered()), SLOT(runOMUQActivities()));
 }
 
 /*!
@@ -3211,6 +3216,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpSaveAction);
             menu.addAction(mpSaveAsAction);
+#if QT_CONFIG(process)
+            menu.addSeparator();
+            menu.addAction(mpOMUQActivitiesAction);
+#endif
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
           }
@@ -3807,6 +3816,19 @@ void LibraryTreeView::unloadOMSModel()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::runOMUQActivities
+ * Opens the OMUQDialog to run the UQ activities of the SSP model.
+ */
+void LibraryTreeView::runOMUQActivities()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    OMUQDialog *pOMUQDialog = new OMUQDialog(pLibraryTreeItem, MainWindow::instance());
+    pOMUQDialog->exec();
   }
 }
 

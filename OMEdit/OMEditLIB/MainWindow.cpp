@@ -69,6 +69,7 @@
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "CRML/CRMLTranslatorOutputWidget.h"
+#include "OMUQ/OMUQOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
@@ -4394,6 +4395,12 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
       if (pCRMLTranslatorOutputWidget) {
         connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
         connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      } else {
+        OMUQOutputWidget *pOMUQOutputWidget = qobject_cast<OMUQOutputWidget*>(pSimulationOutputTab);
+        if (pOMUQOutputWidget) {
+          connect(pOMUQOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+          connect(pOMUQOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+        }
       }
     }
   }
