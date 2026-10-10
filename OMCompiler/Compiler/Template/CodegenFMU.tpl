@@ -125,6 +125,9 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/modelDescription.xml')
 
+  // Generate optional extra/org.fmi-standard.fmi-ls-dae/fmi-ls-manifest.xml (--daeMode ME)
+  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiLsDaeManifestFile(simCode, FMUType, fileNamePrefixHash)
+
   // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals)
   let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash)
 
@@ -218,6 +221,8 @@ end translateModel;
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_dae(simCode), '<%modelNamePrefix%>_16dae.c')
+     // ... and its header, which the main file includes under --daeMode
+     let()= textFile(simulationFile_dae_header(simCode), '<%modelNamePrefix%>_16dae.h')
      // inline solver
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
@@ -421,6 +426,13 @@ case SIMCODE(__) then
   >>
   %>
   void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData) {
+    <%if Flags.getConfigBool(Flags.DAE_MODE) then
+    <<
+    /* What the generated main says for a simulation: the runtime lays out the
+       DAE residuals (fmi-ls-dae) only for a model translated with --daeMode. */
+    compiledInDAEMode = 1;
+    >>
+    %>
     <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(data, threadData);
   }
   #if defined(OMC_RUST_SIMULATION_RUNTIME)
