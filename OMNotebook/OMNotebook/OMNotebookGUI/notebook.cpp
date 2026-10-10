@@ -2667,6 +2667,10 @@ void NotebookWindow::setStatusMenu(QList<QAction*> l)
   else
   {
     stateIndicator->setContextMenuPolicy(Qt::ActionsContextMenu);
+    // the actions are created without parent (GraphCell/InputCell), take ownership
+    // so they are deleted with the label and not leaked when the window closes
+    for(QAction *a : l)
+      a->setParent(stateIndicator);
     stateIndicator->addActions(l);
   }
 }

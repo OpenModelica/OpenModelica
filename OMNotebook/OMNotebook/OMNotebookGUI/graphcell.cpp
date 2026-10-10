@@ -1562,6 +1562,16 @@ namespace IAEX {
       QMessageBox::warning(nullptr, tr("Error"), e.what());
 #endif
     }
+    // this slot runs inside the OMC plot callback: never let an exception
+    // propagate through the OMC C frames
+    catch (const std::exception &e)
+    {
+      qWarning("OMNotebook plot error: %s", e.what());
+    }
+    catch (...)
+    {
+      qWarning("OMNotebook plot error: unknown exception");
+    }
   }
 
   /*!
@@ -1617,7 +1627,9 @@ namespace IAEX {
       output_->textCursor().insertText( "{evaluating expression}" );
       setOutputStyle();
       output_->update();
-      QCoreApplication::processEvents();
+      // no user input here: the window could be closed (this would be gone)
+      // or another cell evaluated (OMC is not reentrant) while we are in eval()
+      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
       // 2005-11-24 AF, added check to see if the user wants to quit
       if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
@@ -1702,7 +1714,7 @@ namespace IAEX {
     output_->setPalette(pal);
     // The old implementation used QRegExp; replace it with QRegularExpression.
     // The expression finds either “line:col‑line:col” or “line:col” patterns.
-    QRegularExpression e(R"(([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+))");
+    static const QRegularExpression e(R"((\d+:\d+-\d+:\d+)|(\d+:\d+))");
     int p = 0;                                   // start position for the search
     QList<QAction*> actions;
 
