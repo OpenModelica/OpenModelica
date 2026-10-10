@@ -3577,7 +3577,7 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
         let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
         let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
         <<
-        <%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>
+        <%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>
         indexed_assign_<%arrayType%>(<%exp%>, &<%wrapperArray%>, &<%ispec%>);
         >>
   else
@@ -6159,12 +6159,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
               '((modelica_<%type%>*)&(<%nosubname%>))'
             else
               '((modelica_<%type%>*)<%daeExpCrefRhsArrayElems(cr, type, context, &preExp, &varDecls, &varFrees, &auxFunction)%>.data)'
-          '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+          '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
     else if contiguousSlice(cr, type, context) then
       let data = contiguousSliceData(cr, type, context, &preExp, &varDecls, &varFrees, &auxFunction)
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, <%data%>, <%listLength(contiguousSliceDims(crefSubs(cr), crefDims(cr)))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => '(_index_t)<%d%>' ;separator=", "%>);<%\n%>'
+      let &preExp += '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, <%data%>, <%listLength(contiguousSliceDims(crefSubs(cr), crefDims(cr)))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => '(_index_t)<%d%>' ;separator=", "%>);<%\n%>'
       wrapperArray
     else
       let &sub = buffer ""
@@ -6174,7 +6174,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
           '&<%contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
         else
           '<%daeExpCrefRhsArrayElems(crefStripSubs(cr), type, context, &preExp, &varDecls, &varFrees, &auxFunction)%>.data'
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)<%arrData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let &preExp += '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)<%arrData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let slicedArray = tempDecl(arrayType, &varDecls, &varFrees)
       let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction)
       let &preExp += '<%rcReleaseBefore(arrayType, slicedArray)%>index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
@@ -6381,7 +6381,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
             else
               contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
           '((modelica_<%type%>*)&(<%nosubname%>))'
-      let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let t = '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
   else
