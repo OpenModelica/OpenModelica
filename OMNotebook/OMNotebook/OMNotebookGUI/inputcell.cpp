@@ -1107,7 +1107,9 @@ namespace IAEX
       output_->textCursor().insertText( tr("{evaluating expression}") );
       setOutputStyle();
       output_->update();
-      QCoreApplication::processEvents();
+      // no user input here: a queued key press or click would run while this cell is half way
+      // through its evaluation (the text above is repainted by the paint events)
+      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
       delegate()->evalExpression(expr);
 
       // 2005-11-24 AF, added check to see if the user wants to quit
