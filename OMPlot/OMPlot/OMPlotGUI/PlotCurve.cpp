@@ -80,6 +80,32 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   mpPointMarker->setSymbol(new QwtSymbol(QwtSymbol::Rect, QColor(Qt::red), QColor(Qt::red), QSize(6, 6)));
 }
 
+PlotCurve::~PlotCurve()
+{
+  // QwtPlotDirectPainter is a QObject without parent that nobody else owns.
+  delete mpPlotDirectPainter;
+  /* mpPointMarker is attached to the plot, which deletes it together with the other attached
+   * items when it is destroyed. Do not delete it here: QwtPlot::detachItems() iterates over a
+   * copy of its item list while deleting, so an item deleted by another item is a dangling
+   * pointer. A curve that is removed while the plot lives must call deletePointMarker().
+   */
+}
+
+/*!
+ * \brief PlotCurve::deletePointMarker
+ * Detaches and deletes the point marker. To be used for a curve that is removed from a plot that
+ * stays alive, otherwise the invisible marker stays attached to the plot (one per removed curve).
+ * Must not be called while the plot is being destroyed.
+ */
+void PlotCurve::deletePointMarker()
+{
+  if (mpPointMarker) {
+    mpPointMarker->detach();
+    delete mpPointMarker;
+    mpPointMarker = nullptr;
+  }
+}
+
 void PlotCurve::setTitleLocal()
 {
   if (mCustomTitle.isEmpty()) {
