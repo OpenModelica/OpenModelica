@@ -8525,7 +8525,7 @@ template dimExpCpp(Exp exp, Boolean useFlatArrayNotation)
   case BINARY(operator = DIV(__)) then '(<%dimExpCpp(exp1, useFlatArrayNotation)%> / <%dimExpCpp(exp2, useFlatArrayNotation)%>)'
   case UNARY(operator = UMINUS(__)) then '(-<%dimExpCpp(exp, useFlatArrayNotation)%>)'
   case CAST(__) then dimExpCpp(exp, useFlatArrayNotation)
-  else error(sourceInfo(), 'dimExpCpp: unsupported dimension <%ExpressionDumpTpl.dumpExp(exp,"\"")%> of a resizable array')
+  else CodegenCppCommon.error(sourceInfo(), 'dimExpCpp: unsupported dimension <%ExpressionDumpTpl.dumpExp(exp,"\"")%> of a resizable array')
 end dimExpCpp;
 
 template dimSizeCpp(Dimension dim, Boolean useFlatArrayNotation)
@@ -8535,7 +8535,7 @@ template dimSizeCpp(Dimension dim, Boolean useFlatArrayNotation)
   case DIM_BOOLEAN(__) then '2'
   case DIM_ENUM(__) then size
   case DIM_EXP(__) then '(size_t)<%dimExpCpp(exp, useFlatArrayNotation)%>'
-  else error(sourceInfo(), 'dimSizeCpp: unknown dimension of a resizable array')
+  else CodegenCppCommon.error(sourceInfo(), 'dimSizeCpp: unknown dimension of a resizable array')
 end dimSizeCpp;
 
 template resizableDims(SimVar var, Boolean useFlatArrayNotation)
