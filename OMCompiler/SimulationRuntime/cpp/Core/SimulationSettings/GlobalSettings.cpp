@@ -184,6 +184,16 @@ void GlobalSettings::setOutputPath(string path)
   _output_path = path;
 }
 
+string GlobalSettings::getParameterOverrides()
+{
+  return _parameterOverrides;
+}
+
+void GlobalSettings::setParameterOverrides(string overrides)
+{
+  _parameterOverrides = overrides;
+}
+
 string GlobalSettings::getInputPath()
 {
   return _input_path;

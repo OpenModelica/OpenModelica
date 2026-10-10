@@ -63,6 +63,8 @@ public:
   virtual void useEndlessSim(bool);
   ///path for input files, like init xml
   virtual string getInputPath();
+  virtual string getParameterOverrides();
+  virtual void setParameterOverrides(string);
   virtual void setInputPath(string);
   ///path for simulation results in textfile
   virtual string getOutputPath();
@@ -105,7 +107,8 @@ private:
   EmitResults
       _emitResults; ///< Write out results (default: EMIT_ALL)
   string
-      _variableFilter;
+      _variableFilter,
+      _parameterOverrides;
   bool
       _infoOutput,  ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
       _endless_sim,

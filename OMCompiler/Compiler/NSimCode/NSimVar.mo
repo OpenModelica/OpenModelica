@@ -47,6 +47,7 @@ protected
   // NF imports
   import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -155,6 +156,38 @@ public
       end if;
     end listToString;
 
+    function layoutSizeExp
+      "The size of a dimension for numArrayElement. The C++ runtime lays out its
+      variables with the sizes the model is built with, so a resizable dimension
+      gives the size its parameter has at that point. The symbolic size stays in
+      the type."
+      input Dimension dim;
+      output Expression exp;
+    algorithm
+      exp := match dim
+        case Dimension.RESIZABLE() guard stringEqual(Config.simCodeTarget(), "Cpp") then Expression.INTEGER(dim.size);
+        else Dimension.sizeExp(dim);
+      end match;
+    end layoutSizeExp;
+
+    function eachStart
+      "An array start value that is the same for all elements, {e for i in 1:n},
+      as its element e. The C++ runtime sets it for all elements of the array and
+      does not build the array, whose sizes in the start value are those of the
+      declaration and can be resizable parameters of other components (N of an
+      array of components)."
+      input output Expression start;
+    algorithm
+      start := match start
+        local
+          Expression body;
+        case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body))
+          guard not Expression.contains(body, Expression.isIterator)
+          then eachStart(body);
+        else start;
+      end match;
+    end eachStart;
+
     function create
       input Variable var;
       output SimVar simVar;
@@ -181,6 +214,9 @@ public
           // for parameters the binding supersedes the start value if it exists and is constant
           // ToDo: also for other cases? (constant, struct param ...)
           (start, isValueChangeable, causality) := parseBinding(start, var);
+          if stringEqual(Config.simCodeTarget(), "Cpp") then
+            start := Util.applyOption(start, eachStart);
+          end if;
           result := SIMVAR(
             name                = var.name,
             varKind             = varKind,
@@ -202,7 +238,7 @@ public
             variable_index      = SOME(uniqueIndex),
             fmi_index           = SOME(typeIndex),
             // dimension sizes (row-major); empty for scalars. Used for FMI array variables.
-            numArrayElement     = list(Dimension.sizeExp(dim) for dim in Type.arrayDims(var.ty)),
+            numArrayElement     = list(layoutSizeExp(dim) for dim in Type.arrayDims(var.ty)),
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,

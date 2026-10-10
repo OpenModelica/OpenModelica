@@ -53,6 +53,7 @@ struct SimSettings
   string variableFilter;
   string inputPath;
   string outputPath;
+  string parameterOverrides;
 };
 
 /**
