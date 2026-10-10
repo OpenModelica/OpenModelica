@@ -61,6 +61,7 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Modeling/DocumentationWidget.h"
+#include "Modeling/ClassDiagramWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
@@ -1166,6 +1167,11 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mTransformationsWidgetHash.clear();
+#endif
+  /* delete the ClassDiagramWindow, its web pages must go before the web engine profile does, at exit. */
+  delete mpClassDiagramWindow;
+  mpClassDiagramWindow = nullptr;
+#if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
   pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
@@ -2124,6 +2130,20 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
 #endif
+}
+
+/*!
+ * \brief MainWindow::showClassDiagramWidget
+ * Shows the class diagram of a class in a tab of the Class Diagram window.
+ * \param className
+ * \return
+ */
+ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className)
+{
+  if (!mpClassDiagramWindow) {
+    mpClassDiagramWindow = new ClassDiagramWindow;
+  }
+  return mpClassDiagramWindow->showClassDiagram(className);
 }
 
 /*!

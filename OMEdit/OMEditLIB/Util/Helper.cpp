@@ -251,6 +251,8 @@ QString Helper::question;
 QString Helper::search;
 QString Helper::findUsage;
 QString Helper::findUsageTip;
+QString Helper::classDiagram;
+QString Helper::classDiagramTip;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClass;
@@ -577,6 +579,8 @@ void Helper::initHelperVariables()
   Helper::search = tr("Search");
   Helper::findUsage = tr("Find Usage");
   Helper::findUsageTip = tr("Finds the usage of class");
+  Helper::classDiagram = tr("Class Diagram");
+  Helper::classDiagramTip = tr("Shows the UML class diagram of the class");
   Helper::duplicate = tr("Duplicate");
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");

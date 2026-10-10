@@ -98,6 +98,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
+                      Modeling/ClassDiagramWidget.cpp
                       Simulation/TranslationFlagsWidget.cpp
                       Simulation/SimulationDialog.cpp
                       Simulation/SimulationOutputWidget.cpp
@@ -255,6 +256,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Element/ElementProperties.h
                       Element/Transformation.h
                       Modeling/DocumentationWidget.h
+                      Modeling/ClassDiagramWidget.h
                       Modeling/qtwebengine_compat.h
                       Simulation/SimulationOptions.h
                       Simulation/TranslationFlagsWidget.h

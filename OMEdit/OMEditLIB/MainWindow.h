@@ -87,6 +87,8 @@ class LocalsWidget;
 class TargetOutputWidget;
 class GDBLoggerWidget;
 class DocumentationWidget;
+class ClassDiagramWidget;
+class ClassDiagramWindow;
 class PlotWindowContainer;
 class VariablesWidget;
 class BreakpointsWidget;
@@ -285,6 +287,7 @@ public:
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists);
+  ClassDiagramWidget* showClassDiagramWidget(const QString &className);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
@@ -522,6 +525,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  ClassDiagramWindow *mpClassDiagramWindow = nullptr;
   QMdiSubWindow *mpLastModelingSubWindow = nullptr;
   //! Mounts with a synchronisation already running; a second one would race it.
   QSet<QString> mSyncingMounts;
