@@ -165,6 +165,10 @@ namespace IAEX
     {
       application()->removeTempFiles( i_iter.key() );
     }
+
+    // Delete all cells while the document is still complete. Otherwise the cells are deleted
+    // after the other members (selectedCells_, factory_, current_, ...) are already gone.
+    mainFrame_.reset();
   }
 
 
@@ -232,6 +236,19 @@ namespace IAEX
    */
   void CellDocument::setWorkspace(Cell *newWorkspace)
   {
+    // Remove the old workspace (it is owned by the old scroll area, together with its cursor).
+    // Without this every open() and close() leaves another complete scroll area in mainFrame_.
+    // deleteLater(), because this may be called from a slot of a cell of the old workspace.
+    if( scroll_ )
+    {
+      mainLayout_->removeWidget( scroll_ );
+      scroll_->hide();
+      scroll_->deleteLater();
+    }
+    // these point into the old workspace
+    selectedCells_.clear();
+    lastClickedCell_ = nullptr;
+
     scroll_ = new QScrollArea( mainFrame_.get() );
     scroll_->setWidgetResizable( true );
     scroll_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
