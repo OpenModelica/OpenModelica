@@ -966,8 +966,9 @@ public
               // map the dependencies with the inner maps
               local_deps  := {};
               changed     := false;
-              // the variable a single equation solves is no input of it
-              own_vars := if listLength(eqns) == 1 then var_crefs else {};
+              // the variable a single equation solves is no input of it (the residual of a loop
+              // uses the loop variables, they are resolved through the inner equations)
+              own_vars := if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then var_crefs else {};
               for tpl in list(t for t guard(not List.any(own_vars, function ComponentRef.isEqual(cref2 = Util.tuple21(t))))
                   in UnorderedMap.toList(full.dependencies[eqn_index])) loop
                 (dep_cref, dep) := tpl;
