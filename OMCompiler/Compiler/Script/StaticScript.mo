@@ -179,7 +179,8 @@ algorithm
         Values.CODE(Absyn.C_TYPENAME(className)) := CevalScript.evalCodeTypeName(v,env);
 
         cname_str := AbsynUtil.pathString(AbsynUtil.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
-        defaulSimOpt := CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(className, cname_str, defaultOption);
+        defaulSimOpt := CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(className, cname_str, defaultOption,
+          optimization = stringEq(callName, "optimize"));
 
         (cache, startTime, stopTime, numberOfIntervals) :=
           calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inPrefix, inInfo, defaulSimOpt);
