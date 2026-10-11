@@ -427,6 +427,7 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
   input Option<InteractiveTypes.SimulationOptions> defaultOption;
+  input Boolean optimization = false "true for optimize(), which defaults to the optimization method";
   output InteractiveTypes.SimulationOptions outSimOpt;
 algorithm
   outSimOpt := matchcontinue defaultOption
@@ -440,7 +441,7 @@ algorithm
     case _
       algorithm
         loadProgram(inModelPath);
-        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
+        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix, optimization));
 
         experiment_ann := InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
 
@@ -465,20 +466,43 @@ algorithm
     // if we fail, just use the defaults
     else
       algorithm
-        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix, optimization);
       then defaults;
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
+protected function setOptimizationFlags
+  "Sets the flags needed to build a dynamic optimization problem (optimize, moo)
+   and returns their previous values, to be given to restoreOptimizationFlags."
+  output Boolean symbolicLinearization = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+  output Integer grammar = Flags.getConfigEnum(Flags.GRAMMAR);
+  output Boolean dynOptimization = Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+algorithm
+  FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
+  FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+  FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, true);
+end setOptimizationFlags;
+
+protected function restoreOptimizationFlags
+  input Boolean symbolicLinearization;
+  input Integer grammar;
+  input Boolean dynOptimization;
+algorithm
+  FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicLinearization);
+  FlagsUtil.setConfigEnum(Flags.GRAMMAR, grammar);
+  FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, dynOptimization);
+end restoreOptimizationFlags;
+
 protected function setFileNamePrefixInSimulationOptions
   input  InteractiveTypes.SimulationOptions inSimOpt;
   input  String inFileNamePrefix;
+  input  Boolean optimization = false;
   output InteractiveTypes.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, options, outputFormat, variableFilter, cflags, simflags;
   Boolean UseOtimica;
 algorithm
-  UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+  UseOtimica := optimization or Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
   InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
@@ -705,6 +729,8 @@ algorithm
       list<String> strs,strs1,strs2;
       Real timeTotal,timeSimulation,linearizeTime,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, lineEndingIsCRLF;
+      Boolean symLinFlag, dynOptFlag;
+      Integer grammarFlag;
       list<tuple<String,Values.Value>> resultValues;
       list<Values.Value> cvars;
       list<Absyn.Path> paths;
@@ -1635,11 +1661,16 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
-
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        // the optimization flags are only needed to build the model, restore them so that
+        // they do not leak into later simulate() calls
+        (symLinFlag, grammarFlag, dynOptFlag) := setOptimizationFlags();
+        try
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        else
+          restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
+          fail();
+        end try;
+        restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
         if b then
           exeDir:=compileDir;
           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1694,11 +1725,16 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
-
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        // the optimization flags are only needed to build the model, restore them so that
+        // they do not leak into later simulate() calls
+        (symLinFlag, grammarFlag, dynOptFlag) := setOptimizationFlags();
+        try
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        else
+          restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
+          fail();
+        end try;
+        restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
         simflags := stringAppend(simflags, " -moo");
         if b then
           exeDir:=compileDir;
