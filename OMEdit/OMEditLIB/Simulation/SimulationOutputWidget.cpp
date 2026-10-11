@@ -610,8 +610,13 @@ void SimulationOutputWidget::writeSimulationMessage(StringHandler::SimulationMes
   } else {
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
-  /* write the error link */
-  if (!index.isEmpty()) {
+  /* write the error link; the web build has no transformational debugger to open */
+#if defined(__EMSCRIPTEN__)
+  const bool debugLink = false;
+#else
+  const bool debugLink = !index.isEmpty();
+#endif
+  if (debugLink) {
     mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + index + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");
@@ -1384,10 +1389,13 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     if (QFileInfo(fileName).exists()) {
       bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, false);
-      QUrlQuery query(url);
-      int equationIndex = query.queryItemValue("index").toInt();
-      pTransformationsWidget->selectEquation(equationIndex);
-      pTransformationsWidget->fetchEquationData(equationIndex);
+      // null in the web build, which has no transformational debugger
+      if (pTransformationsWidget) {
+        QUrlQuery query(url);
+        int equationIndex = query.queryItemValue("index").toInt();
+        pTransformationsWidget->selectEquation(equationIndex);
+        pTransformationsWidget->fetchEquationData(equationIndex);
+      }
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
                             .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
