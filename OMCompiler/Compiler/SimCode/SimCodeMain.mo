@@ -761,13 +761,14 @@ algorithm
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
       // The wasm module carries its own metadata; *_init.xml is only read by
-      // OMEdit's variable browser and *_info.json only for debugging.
+      // OMEdit's variable browser and *_info.json by its transformational
+      // debugger ("Debug more" on a simulation message) and for debugging.
       if Flags.isSet(Flags.OMEDIT) then
         guid := System.getUUIDStr();
         SerializeInitXML.simulationInitFile(simCode, guid);
       end if;
-      if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
-        SerializeModelInfo.serialize(simCode, true);
+      if Flags.isSet(Flags.OMEDIT) or Flags.isSet(Flags.INFO_XML_OPERATIONS) then
+        SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
       end if;
     then ();
 

@@ -8553,22 +8553,28 @@ impl SolverCore {
             return Ok(());
         };
         let desc = model.zc_desc.get(zc).map(String::as_str).unwrap_or("<zero-crossing>");
+        // The equations the crossing occurs in, which OMEdit's "Debug more" opens.
+        let used: Vec<i32> = model.zc_eqs.get(zc).map(|v| v.iter().map(|&i| i as i32).collect()).unwrap_or_default();
         let (t0, t1, limit) = (format_g(t0, 12), format_g(t1, 12), format_g(limit, 12));
         let fraction = format_g(fraction, 6);
-        omclog::info!(
+        omclog::info_used(
             omclog::STDOUT,
             false,
-            "Chattering detected around time {t0}..{t1} ({events} state events in a row \
-             with a total time delta less than {limit}, the smaller of the step size and \
-             {fraction} times the simulation interval). This can be a performance bottleneck. \
-             Use -lv LOG_EVENTS for more information. The zero-crossing was: {desc}",
+            &format!(
+                "Chattering detected around time {t0}..{t1} ({events} state events in a row \
+                 with a total time delta less than {limit}, the smaller of the step size and \
+                 {fraction} times the simulation interval). This can be a performance bottleneck. \
+                 Use -lv LOG_EVENTS for more information. The zero-crossing was: {desc}"
+            ),
+            &used,
         );
         if chatter_store::abort() {
-            omclog::debug(
+            omclog::debug_used(
                 omclog::ASSERT,
                 false,
                 "Aborting simulation due to chattering being detected and the simulation flags \
                  requesting we do not continue further.",
+                &used,
             );
             return Err(CHATTER_ABORT_ERR);
         }

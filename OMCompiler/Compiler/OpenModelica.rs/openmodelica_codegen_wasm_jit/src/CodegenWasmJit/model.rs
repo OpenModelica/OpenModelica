@@ -1030,7 +1030,8 @@ pub(super) fn build_sim_model(
     let mut meta = build_sim_meta(
         &layout, &result_vars, collect_unit_defs(mi, &result_vars.vars), settings, cs_method, fmi_solver_flags, &model_name,
         &sim_code.fileNamePrefix, jac_a.clone(), &state_sets,
-        fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings), rel_descriptions(&sim_code.relations),
+        fmi_vrs, fmi_dae_enable_vr, zc_descriptions(&zero_crossings),
+        zc_equations(&sim_code.zeroCrossings)?, rel_descriptions(&sim_code.relations),
         param_vars(vars)?, attr_log_entries(sim_code)?,
         removed_init_residuals(sim_code).iter().map(|e| dump_exp(e)).collect(),
         nls_warnings.clone(),
