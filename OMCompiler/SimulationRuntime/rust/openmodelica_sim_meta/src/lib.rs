@@ -1456,6 +1456,10 @@ pub struct SimMeta {
     /// `x > 0.0`), 1:1 with the layout's zero-crossings — the driver names the
     /// culprit crossing in the chattering message. Empty ⇒ descriptions absent.
     pub zc_desc: Vec<String>,
+    /// The equations each zero-crossing occurs in (C's `zeroCrossingDescription`
+    /// out-indexes), 1:1 with [`zc_desc`](Self::zc_desc): the chattering message
+    /// lists them, which OMEdit links to the transformational debugger.
+    pub zc_eqs: Vec<Vec<u32>>,
     /// Per-relation description, 1:1 with the layout's relations — C's
     /// `relationDescription`, dumped in the `LOG_EVENTS` relation status block.
     pub rel_desc: Vec<String>,
@@ -1897,7 +1901,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 23;
+const VERSION: u32 = 24;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -2078,6 +2082,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
     for d in &m.zc_desc {
         put_str(&mut o, d);
     }
+    put_u32s2(&mut o, &m.zc_eqs);
     put_u32(&mut o, m.rel_desc.len() as u32);
     for d in &m.rel_desc {
         put_str(&mut o, d);
@@ -2633,6 +2638,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     for _ in 0..ndesc {
         zc_desc.push(r.string()?);
     }
+    let zc_eqs = r.u32s2()?;
     let nrdesc = r.u32()? as usize;
     let mut rel_desc = Vec::with_capacity(nrdesc);
     for _ in 0..nrdesc {
@@ -2935,7 +2941,7 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let mut meta = SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
         output_format, prefix,
-        model_name, vars, var_arrays, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
+        model_name, vars, var_arrays, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, zc_eqs, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
         parmod, resize,
     };
@@ -3008,6 +3014,7 @@ mod tests {
             ],
             fmi_dae_enable_vr: 9,
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
+            zc_eqs: vec![vec![5, 7], vec![]],
             rel_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
             params: ParamVars {
                 reals: vec![("a".to_string(), 1.5, true)],
