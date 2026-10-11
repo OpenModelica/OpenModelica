@@ -193,6 +193,15 @@ public:
     return _isRefArray;
   }
 
+  /**
+   * true if getData() is the storage of the elements in column major order,
+   * not a copy (reference arrays, array slices)
+   */
+  virtual bool isContiguous() const
+  {
+    return !_isRefArray;
+  }
+
 protected:
   bool _isStatic;
   bool _isRefArray;
