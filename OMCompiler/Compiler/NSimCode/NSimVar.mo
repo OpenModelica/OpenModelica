@@ -170,23 +170,23 @@ public
       end match;
     end layoutSizeExp;
 
-    function eachStart
-      "An array start value that is the same for all elements, {e for i in 1:n},
-      as its element e. The C++ runtime sets it for all elements of the array and
-      does not build the array, whose sizes in the start value are those of the
-      declaration and can be resizable parameters of other components (N of an
-      array of components)."
-      input output Expression start;
+    function eachValue
+      "An array attribute (start, min, max, nominal) that is the same for all
+      elements, {e for i in 1:n}, as its element e. The C++ runtime uses it for all
+      elements of the array and does not build the array, whose sizes in the
+      attribute are those of the declaration and can be resizable parameters of
+      other components (N of an array of components)."
+      input output Expression exp;
     algorithm
-      start := match start
+      exp := match exp
         local
           Expression body;
         case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = body))
           guard not Expression.contains(body, Expression.isIterator)
-          then eachStart(body);
-        else start;
+          then eachValue(body);
+        else exp;
       end match;
-    end eachStart;
+    end eachValue;
 
     function create
       input Variable var;
@@ -215,7 +215,10 @@ public
           // ToDo: also for other cases? (constant, struct param ...)
           (start, isValueChangeable, causality) := parseBinding(start, var);
           if stringEqual(Config.simCodeTarget(), "Cpp") then
-            start := Util.applyOption(start, eachStart);
+            start := Util.applyOption(start, eachValue);
+            min := Util.applyOption(min, eachValue);
+            max := Util.applyOption(max, eachValue);
+            nominal := Util.applyOption(nominal, eachValue);
           end if;
           result := SIMVAR(
             name                = var.name,
