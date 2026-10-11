@@ -134,12 +134,45 @@ namespace IAEX
         else
           oldFilepath = QFileInfo(oldFilepath).absolutePath();
 
+        if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
+        {
+          std::string msg = "The file for saving the document is not writable: " +
+            file.fileName().toStdString() + "\nPlease use Save As.";
+          throw std::runtime_error( msg.c_str() );
+        }
+
+        // QSaveFile writes to a temporary file and replaces the document only in commit(). A failed
+        // write (disk full, crash) does not destroy the existing file, and the errors are detected.
+        // It is opened before the links are updated: if the target is not writable, the document
+        // must stay untouched (otherwise its links would point relative to the unused new directory).
+        QSaveFile saveFile( filename_.trimmed() );
+        saveFile.setDirectWriteFallback( true );  // e.g. directory without write permission
+
+        if (saveFile.open(QIODevice::WriteOnly) != true)
+        {
+          std::string msg = "Could not write document to file:\n" +
+            saveFile.fileName().toStdString() + " because:\n" +
+            saveFile.errorString().toStdString();
+          throw std::runtime_error( msg.c_str() );
+        }
+
         // use visitor if the new path is different from the old
-        if( oldFilepath != newFilepath )
+        const bool linksUpdated = ( oldFilepath != newFilepath );
+        if( linksUpdated )
         {
           UpdateLinkVisitor visitor( oldFilepath, newFilepath );
           doc_->runVisitor( visitor );
         }
+
+        // restores the links if the document could not be written
+        auto revertLinks = [&]()
+        {
+          if( linksUpdated )
+          {
+            UpdateLinkVisitor undo( newFilepath, oldFilepath );
+            doc_->runVisitor( undo );
+          }
+        };
 
         // save the document
         SerializingVisitor visitor(doc, doc_);
@@ -162,47 +195,27 @@ namespace IAEX
         QByteArray ba = doc.toByteArray(2);
         if (!ba.size())
         {
+          revertLinks();
           std::string msg = "Document is empty and will not be saved to file: " +
             file.fileName().toStdString();
           throw std::runtime_error( msg.c_str() );
         }
 
-        if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
+        const QByteArray data = filename_.endsWith("onbz", Qt::CaseInsensitive) ? qCompress(ba, 9) : ba;
+
+        if (saveFile.write(data) != data.size() || !saveFile.commit())
         {
-          std::string msg = "The file for saving the document is not writable: " +
-            file.fileName().toStdString() + "\nPlease use Save As.";
-          throw std::runtime_error( msg.c_str() );
-        }
-
-        // QSaveFile writes to a temporary file and replaces the document only in commit(). A failed
-        // write (disk full, crash) does not destroy the existing file, and the errors are detected.
-        QSaveFile saveFile( filename_.trimmed() );
-        saveFile.setDirectWriteFallback( true );  // e.g. directory without write permission
-
-        if (saveFile.open(QIODevice::WriteOnly) == true)
-        {
-          const QByteArray data = filename_.endsWith("onbz", Qt::CaseInsensitive) ? qCompress(ba, 9) : ba;
-
-          if (saveFile.write(data) != data.size() || !saveFile.commit())
-          {
-            std::string msg = "Could not write document to file:\n" +
-              saveFile.fileName().toStdString() + " because:\n" +
-              saveFile.errorString().toStdString();
-            throw std::runtime_error( msg.c_str() );
-          }
-
-          // AF, Added this
-          doc_->setFilename( filename_ );
-          doc_->setSaved( true );
-          doc_->setChanged( false );
-        }
-        else
-        {
+          revertLinks();
           std::string msg = "Could not write document to file:\n" +
             saveFile.fileName().toStdString() + " because:\n" +
             saveFile.errorString().toStdString();
           throw std::runtime_error( msg.c_str() );
         }
+
+        // AF, Added this
+        doc_->setFilename( filename_ );
+        doc_->setSaved( true );
+        doc_->setChanged( false );
       }
       catch(const std::exception &e)
       {
