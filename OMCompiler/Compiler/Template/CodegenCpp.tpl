@@ -3883,6 +3883,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
    <%updateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
+   <%algloopSparsityPattern(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
 
    <%NonLinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -4119,6 +4120,269 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
    >>
 end updateAlgloopNonLinear;
+
+template algloopSparsityPattern(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates getSparsityPattern of a nonlinear algebraic loop from the sparsity rows of the new
+  backend. Like CodegenC.tpl's generateResizableSparseData the entries are computed by loops at
+  runtime, so the pattern holds for sizes that are only known at runtime (resizable arrays).
+  Only for loops with whole array iteration variables, whose residuals evaluate() places at
+  the positions of the residual variables of the Jacobian (residualOffsetExp). Rows and columns
+  that cannot be resolved make it return false, the solver then uses a dense Jacobian."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+  match eqn
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME(JAC_MATRIX(sparsityMatrix = SPARSITY(rows = rows), crefsHT = SOME(jacHT))))) then
+    if not algloopHasArrayVars(nls.crefs) then noSparsityPatternCpp(modelname, nls.index) else
+    let &varDecls = buffer ""
+    let seedOffsets = jacobianOffsetDeclCpp(jacobianOffsetVars(jacHT, "seed"), "seed", context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let resOffsets = jacobianOffsetDeclCpp(jacobianOffsetVars(jacHT, "res"), "res", context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let tmpOffsets = jacobianOffsetDeclCpp(jacobianOffsetVars(jacHT, "tmp"), "tmp", context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let rowsCode = (rows |> row => sparsityRowCpp(row, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+    <<
+    bool <%modelname%>Algloop<%nls.index%>::getSparsityPattern(std::vector<std::pair<int, int> >& entries)
+    {
+      const int nCols = _dimAEq;
+      <%varDecls%>
+      <%seedOffsets%>
+      <%resOffsets%>
+      <%tmpOffsets%>
+      entries.clear();
+      <%rowsCode%>
+      return true;
+    }
+    >>
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+    noSparsityPatternCpp(modelname, nls.index)
+end algloopSparsityPattern;
+
+template noSparsityPatternCpp(String modelname, Integer index)
+::=
+  <<
+  bool <%modelname%>Algloop<%index%>::getSparsityPattern(std::vector<std::pair<int, int> >& entries)
+  {
+    return false;
+  }
+  >>
+end noSparsityPatternCpp;
+
+template jacobianOffsetDeclCpp(list<SimVar> vars, String kind, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                               Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Positions of the Jacobian variables of one kind if sizes are only known at runtime, see
+  CodegenCFunctions.tpl's jacobianOffsetDecl."
+::=
+  match vars
+  case {} then ""
+  else
+    let &preExp = buffer ""
+    let assigns = (vars |> v as SIMVAR(__) =>
+      '_jac_off_<%kind%>[<%index%>] = _jac_acc; _jac_acc += <%daeExp(simVarSizeExp(v), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;'
+      ;separator="\n")
+    <<
+    std::vector<int> _jac_off_<%kind%>(<%jacobianOffsetSize(vars)%>);
+    {
+      int _jac_acc = 0;
+      <%preExp%>
+      <%assigns%>
+    }
+    >>
+end jacobianOffsetDeclCpp;
+
+template jacobianVarOffsetCpp(SimVar var, HashTableCrefSimVar.HashTable jacHT, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                              Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Position of a Jacobian variable in its seed, result or tmp vector, see jacobianOffsetDeclCpp."
+::=
+  match jacobianIndexExp(var, jacHT)
+  case ICONST(__) then integer
+  else match var
+    case SIMVAR(varKind=BackendDAE.SEED_VAR()) then '_jac_off_seed[<%index%>]'
+    case SIMVAR(varKind=BackendDAE.JAC_VAR()) then '_jac_off_res[<%index%>]'
+    case SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then '_jac_off_tmp[<%index%>]'
+    else
+      let &preExp = buffer ""
+      let exp = daeExp(jacobianIndexExp(var, jacHT), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '(<%exp%>)'
+end jacobianVarOffsetCpp;
+
+template sparsityRowCpp(SparsityRow row, HashTableCrefSimVar.HashTable jacHT, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Entries of one sparsity row: loops over the equation iterators, the elements of the solved
+  (residual) crefs are the rows, the elements of their dependencies the columns."
+::=
+match row
+case SPARSITY_ROW(equation_iterators = iters, dependencies = deps, solved_crefs = scs) then
+  let &preExp = buffer ""
+  let forIter = (iters |> it => forIteratorCpp(it, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+  let forTail = (iters |> it => "}" ;separator="\n")
+  let flatIdx = <<<%(iters |> it => forIteratorBodyCpp(it, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+  let body = (scs |> sc => sparsitySolvedCrefCpp(sc, deps, listEmpty(iters), flatIdx, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+  <<
+  /* <%System.stringReplace(System.stringReplace(CodegenUtil.crefStrNoUnderscore(equation_name), "/*", ""), "*/", "")%> */
+  <%preExp%>
+  <%forIter%>
+    <%body%>
+  <%forTail%>
+  >>
+end sparsityRowCpp;
+
+template sparsitySolvedCrefCpp(ComponentRef sc, list<tuple<ComponentRef, Dependency, Boolean>> deps, Boolean noIters, Text flatIdx, HashTableCrefSimVar.HashTable jacHT,
+                               Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                               Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Rows of one solved cref. Inside a for-equation the whole dimensions of a (residual) cref follow
+  the iterators, otherwise all of its elements are rows. _wr is the position of the row in the
+  cref, regular dependencies use it as the position of their column, like in CodegenC.tpl's
+  resizableSparsityRowFill."
+::=
+  match simVarFromHT(crefStripSubs(sc), jacHT)
+  case v as SIMVAR(__) then
+    let off = jacobianVarOffsetCpp(v, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let followsIters = if noIters then "" else lastSubIsWholeCpp(crefSubs(sc))
+    if followsIters then
+      // exactly two whole dimensions are not regular, like in CodegenC.tpl
+      let regular = match crefSubs(sc) case {WHOLEDIM(), WHOLEDIM()} then "" else "true"
+      let cols = (deps |> (seed, dep, rep) => sparsityColumnCpp(seed, dep, rep, regular, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      <<
+      {
+        const int _wr = <%flatIdx%>;
+        const int _row = <%off%> + _wr;
+        <%cols%>
+      }
+      >>
+    else
+      let regular = match crefSubs(sc) case {WHOLEDIM()} then "true" else ""
+      let cols = (deps |> (seed, dep, rep) => sparsityColumnCpp(seed, dep, rep, regular, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      let &loops = buffer ""
+      let &tails = buffer ""
+      let &preExp = buffer ""
+      let pos = crefElementsCpp(sc, false, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      if pos then
+        <<
+        {
+          <%preExp%>
+          <%loops%>
+          const int _wr = <%pos%>;
+          const int _row = <%off%> + _wr;
+          <%cols%>
+          <%tails%>
+        }
+        >>
+      else 'return false; /* unsupported subscripts of <%CodegenUtil.crefStrNoUnderscore(sc)%> */'
+  else 'return false; /* <%CodegenUtil.crefStrNoUnderscore(sc)%> not found */'
+end sparsitySolvedCrefCpp;
+
+template sparsityColumnCpp(ComponentRef seed, Dependency dep, Boolean rep, String regular, HashTableCrefSimVar.HashTable jacHT, Context context, Text &varDecls,
+                           SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Columns of one dependency of the row _row. A regular (not reduced, not repeated) dependency on
+  a whole one-dimensional seed is the element at the position _wr of the row, otherwise all
+  elements of the seed cref are columns."
+::=
+  let isRegular = if regular then (if rep then "" else regularDependencyCpp(seed, dep))
+  match simVarFromHT(crefStripSubs(seed), jacHT)
+  case v as SIMVAR(__) then
+    let off = jacobianVarOffsetCpp(v, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    if isRegular then
+      sparsityEntryCpp('<%off%> + _wr')
+    else
+      match crefSubs(seed)
+      case {} then sparsityColumnElementsCpp(seed, off, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      else
+        // elements of a partially covered array have their own seed variable
+        match simVarExactFromHT(seed, jacHT)
+        case SOME(ev as SIMVAR(__)) then
+          sparsityEntryCpp(jacobianVarOffsetCpp(ev, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation))
+        else sparsityColumnElementsCpp(seed, off, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else 'return false; /* <%CodegenUtil.crefStrNoUnderscore(seed)%> not found */'
+end sparsityColumnCpp;
+
+template regularDependencyCpp(ComponentRef seed, Dependency dep)
+ "non empty if the first dimension of the dependency is regular and the seed a whole 1-dim array"
+::=
+  match dep
+  case DEPENDENCY(__) then
+    if listEmpty(kinds) then ""
+    else if listHead(kinds) then ""
+    else (match crefSubs(seed) case {WHOLEDIM()} then "true" else "")
+end regularDependencyCpp;
+
+template sparsityColumnElementsCpp(ComponentRef seed, String off, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                                   Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "All elements of the seed cref are columns of the row _row."
+::=
+  let &loops = buffer ""
+  let &tails = buffer ""
+  let &preExp = buffer ""
+  let pos = crefElementsCpp(seed, true, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  if pos then
+    <<
+    {
+      <%preExp%>
+      <%loops%>
+      <%sparsityEntryCpp('<%off%> + <%pos%>')%>
+      <%tails%>
+    }
+    >>
+  else 'return false; /* unsupported subscripts of <%CodegenUtil.crefStrNoUnderscore(seed)%> */'
+end sparsityColumnElementsCpp;
+
+template sparsityEntryCpp(String col)
+::=
+  <<
+  { const int _col = <%col%>; if (_col >= 0 && _col < nCols) entries.push_back(std::make_pair(_row, _col)); }
+  >>
+end sparsityEntryCpp;
+
+template crefElementsCpp(ComponentRef cr, Boolean colMajor, Text &loops, Text &tails, Text &preExp, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Loops over the elements of a subscripted cref (into loops and tails) and returns the
+  expression of the flattened position of an element in the whole variable, empty if a
+  subscript is not supported. A cref without subscripts denotes all of its elements. Iteration
+  variables are in the storage order of the arrays of the C++ runtime (column major), the
+  residuals in the row major order of the iterators of evaluate()."
+::=
+  if listEmpty(crefDims(cr)) then "0"
+  else if listEmpty(crefSubs(cr)) then crefElementsSubsCpp(crefDims(cr), crefSubs(cr), true, colMajor, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else if intEq(listLength(crefDims(cr)), listLength(crefSubs(cr))) then crefElementsSubsCpp(crefDims(cr), crefSubs(cr), false, colMajor, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else ""
+end crefElementsCpp;
+
+template crefElementsSubsCpp(list<Dimension> dims, list<Subscript> subs, Boolean allWhole, Boolean colMajor, Text &loops, Text &tails, Text &preExp, Context context, Text &varDecls, SimCode simCode,
+                             Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "See crefElementsCpp. The position of the zero based indices ek in the dimensions dk is built in
+  Horner form, row major (((0)*(d1)+(e1))*(d2)+(e2))... or column major (e1)+(d1)*((e2)+(d2)*(...0))."
+::=
+  let id = System.tmpTick()
+  let &unsupported = buffer ""
+  let terms = (dims |> dim hasindex i0 =>
+    let size = daeDimension(dim, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let idx = if allWhole then elementLoopCpp('_e<%id%>_<%i0%>', size, &loops, &tails)
+      else (match listGet(subs, intAdd(i0, 1))
+        case WHOLEDIM() then elementLoopCpp('_e<%id%>_<%i0%>', size, &loops, &tails)
+        case INDEX(__) then '(<%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>) - 1'
+        else
+          let &unsupported += "true"
+          "")
+    if colMajor then '(<%idx%>)+(<%size%>)*(' else ')*(<%size%>)+(<%idx%>)'
+    ;separator="")
+  if unsupported then ""
+  else if colMajor then '<%terms%>0<%(dims |> dim => ")" ;separator="")%>'
+  else '<%(dims |> dim => "(" ;separator="")%>0<%terms%>'
+end crefElementsSubsCpp;
+
+template elementLoopCpp(String name, String size, Text &loops, Text &tails)
+::=
+  let &loops += 'for (int <%name%> = 0; <%name%> < (int)(<%size%>); <%name%>++) {<%\n%>'
+  let &tails += '}<%\n%>'
+  name
+end elementLoopCpp;
+
+template lastSubIsWholeCpp(list<Subscript> subs)
+ "non empty if the last subscript is a whole dimension"
+::=
+  match listReverse(subs)
+  case WHOLEDIM() :: _ then "true"
+  else ""
+end lastSubIsWholeCpp;
 
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -7351,6 +7615,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void getRHS(double* vars) const;
     virtual const matrix_t& getSystemMatrix() ;
     virtual sparsematrix_t& getSystemSparseMatrix() ;
+    virtual bool getSparsityPattern(std::vector<std::pair<int, int> >& entries);
 
     bool getUseSparseFormat();
     void setUseSparseFormat(bool value);

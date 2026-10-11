@@ -1156,7 +1156,7 @@ protected
   Boolean symbolic;
 algorithm
   vars := BaseHashTable.hashTableValueList(ht);
-  if not List.any(vars, isSymbolicArrayVar) then
+  if not List.any(vars, hasRuntimeSize) then
     return;
   end if;
   for v in vars loop
@@ -1181,7 +1181,7 @@ algorithm
         UnorderedMap.add(v.index, exp, map);
       end if;
       exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
-      symbolic := symbolic or isSymbolicArrayVar(v);
+      symbolic := symbolic or hasRuntimeSize(v);
     end for;
     offsets := (kind, map) :: offsets;
   end for;
@@ -1214,7 +1214,7 @@ algorithm
       vars := v :: vars;
     end if;
   end for;
-  if List.any(vars, isSymbolicArrayVar) then
+  if List.any(vars, hasRuntimeSize) then
     vars := List.sort(vars, simVarIndexGt);
   else
     vars := {};
@@ -1439,6 +1439,26 @@ algorithm
     else false;
   end match;
 end isSymbolicArrayVar;
+
+public function hasRuntimeSize
+  "true if an array SimVar has a size that is only known at runtime. Unlike
+   isSymbolicArrayVar this also holds for the C++ target, whose numArrayElement
+   are the sizes the model is built with (see NSimVar.layoutSizeExp); the
+   symbolic size stays in the type."
+  input SimCodeVar.SimVar var;
+  output Boolean b = isSymbolicArrayVar(var) or List.any(Expression.arrayDimension(var.type_), isRuntimeDimension);
+end hasRuntimeSize;
+
+protected function isRuntimeDimension
+  input DAE.Dimension dim;
+  output Boolean b;
+algorithm
+  b := match dim
+    case DAE.DIM_EXP(exp = DAE.ICONST()) then false;
+    case DAE.DIM_EXP() then true;
+    else false;
+  end match;
+end isRuntimeDimension;
 
 protected function isIntegerString
   input String s;

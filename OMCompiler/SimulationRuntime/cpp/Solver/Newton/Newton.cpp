@@ -41,6 +41,8 @@
 #include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
+#include <algorithm>
+
 Newton::Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
   :AlgLoopSolverDefaultImplementation()
    ,_algLoop          (algLoop)
@@ -62,6 +64,12 @@ Newton::Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> alg
   , _firstCall        (true)
   , _iterationStatus  (CONTINUE)
   , _lc               (LC_NLS)
+  , _sparse           (false)
+  , _analyticJacobian (false)
+#if defined(USE_KLU)
+  , _kluSymbolic      (NULL)
+  , _kluNumeric       (NULL)
+#endif
 {
 	if (_algLoop)
 	{
@@ -89,6 +97,7 @@ Newton::~Newton()
   if (_iHelp)    delete []    _iHelp;
   if (_jHelp)    delete []    _jHelp;
   if (_jac)      delete []    _jac;
+  freeSparsity();
 }
 
 void Newton::initialize()
@@ -134,12 +143,18 @@ void Newton::initialize()
       _fTest        = new double[_dimSys];
       _iHelp        = new long int[_dimSys];
       _jHelp        = new long int[_dimSys];
-      _jac          = new double[_dimSys*_dimSys];
+      _jac          = NULL;
 
       _algLoop->getNamesReal(_yNames);
       _algLoop->getNominalReal(_yNominal);
       _algLoop->getMinReal(_yMin);
       _algLoop->getMaxReal(_yMax);
+
+      initializeSparsity();
+      // the dense Jacobian is quadratic in the size, with a sparsity pattern it is only
+      // allocated for the fallback
+      if (!_sparse)
+        _jac = new double[_dimSys*_dimSys];
     }
 
 
@@ -197,7 +212,12 @@ void Newton::solve( )
       LOGGER_WRITE_VECTOR("y" + to_string(totSteps), _y, _dimSys, _lc, LL_DEBUG);
       LOGGER_WRITE_VECTOR("f" + to_string(totSteps), _f, _dimSys, _lc, LL_DEBUG);
 
-      calcJacobian(_jac, _fNominal);
+      bool sparseJac = _sparse && calcSparseJacobian(_fNominal);
+      if (!sparseJac) {
+        if (!_jac)
+          _jac = new double[_dimSys*_dimSys];
+        calcJacobian(_jac, _fNominal);
+      }
 
       // Initialize line search function
       double phi = 0.0;
@@ -206,8 +226,15 @@ void Newton::solve( )
         phi += _f[i] * _f[i];
       }
 
+      bool solved = sparseJac && solveSparse();
+      if (sparseJac && !solved)
+        sparseToDense(); // fall back to Lapack, which also handles singular Jacobians
+
       double det;
-      if (_dimSys == 1 && (det = _jac[0]) != 0.0) {
+      if (solved) {
+        info = 0;
+      }
+      else if (_dimSys == 1 && (det = _jac[0]) != 0.0) {
         det = _jac[0];
         _f[0] /= det;
         info = 0;
@@ -372,6 +399,169 @@ void Newton::calcFunction(const double *y, double *residual)
   _algLoop->setReal(y);
   _algLoop->evaluate();
   _algLoop->getRHS(residual);
+}
+
+void Newton::initializeSparsity()
+{
+  freeSparsity();
+  std::vector<std::pair<int, int> > entries;
+  if (!_algLoop->getSparsityPattern(entries))
+    return;
+
+  // an analytic Jacobian is preferred, see calcJacobian
+  try {
+    const matrix_t& A = _algLoop->getSystemMatrix();
+    _analyticJacobian = A.size1() == _dimSys && A.size2() == _dimSys;
+  }
+  catch (ModelicaSimulationError& ex) {
+    _analyticJacobian = false;
+  }
+  if (_analyticJacobian)
+    return;
+
+  // compressed column format: sort by column, then row
+  for (size_t k = 0; k < entries.size(); k++) {
+    if (entries[k].first < 0 || entries[k].first >= _dimSys || entries[k].second < 0 || entries[k].second >= _dimSys) {
+      LOGGER_WRITE("Newton: eq" + to_string(_algLoop->getEquationIndex()) + " sparsity pattern out of range, using dense Jacobian", _lc, LL_WARNING);
+      return;
+    }
+    std::swap(entries[k].first, entries[k].second);
+  }
+  std::sort(entries.begin(), entries.end());
+  entries.erase(std::unique(entries.begin(), entries.end()), entries.end());
+
+  // small or dense systems are solved faster with the dense Jacobian
+  int nnz = entries.size();
+  if (_dimSys < 10 || nnz > 0.2 * _dimSys * _dimSys)
+    return;
+
+  _colPtr.assign(_dimSys + 1, 0);
+  _rowIdx.resize(nnz);
+  _jacValues.assign(nnz, 0.0);
+  for (int k = 0; k < nnz; k++) {
+    _colPtr[entries[k].first + 1]++;
+    _rowIdx[k] = entries[k].second;
+  }
+  for (int j = 0; j < _dimSys; j++)
+    _colPtr[j + 1] += _colPtr[j];
+
+  // greedy coloring: columns of the same color share no row, so they can be perturbed together
+  std::vector<std::vector<int> > rowCols(_dimSys);
+  for (int j = 0; j < _dimSys; j++)
+    for (int k = _colPtr[j]; k < _colPtr[j + 1]; k++)
+      rowCols[_rowIdx[k]].push_back(j);
+  std::vector<int> color(_dimSys, -1);
+  std::vector<int> forbidden; // forbidden[c] == j: color c is used by a neighbor of column j
+  for (int j = 0; j < _dimSys; j++) {
+    for (int k = _colPtr[j]; k < _colPtr[j + 1]; k++)
+      for (size_t l = 0; l < rowCols[_rowIdx[k]].size(); l++) {
+        int c = color[rowCols[_rowIdx[k]][l]];
+        if (c >= 0)
+          forbidden[c] = j;
+      }
+    int c = 0;
+    while (c < (int)forbidden.size() && forbidden[c] == j)
+      c++;
+    if (c == (int)forbidden.size()) {
+      forbidden.push_back(-1);
+      _colorCols.push_back(std::vector<int>());
+    }
+    color[j] = c;
+    _colorCols[c].push_back(j);
+  }
+
+#if defined(USE_KLU)
+  klu_defaults(&_kluCommon);
+  _kluSymbolic = klu_analyze(_dimSys, &_colPtr[0], &_rowIdx[0], &_kluCommon);
+#endif
+  _sparse = true;
+  LOGGER_WRITE("Newton: eq" + to_string(_algLoop->getEquationIndex()) + " uses a sparse Jacobian with "
+               + to_string(nnz) + " non-zeros and " + to_string(_colorCols.size()) + " colors", _lc, LL_INFO);
+}
+
+void Newton::freeSparsity()
+{
+#if defined(USE_KLU)
+  if (_kluNumeric)
+    klu_free_numeric(&_kluNumeric, &_kluCommon);
+  if (_kluSymbolic)
+    klu_free_symbolic(&_kluSymbolic, &_kluCommon);
+#endif
+  _sparse = false;
+  _analyticJacobian = false;
+  _colPtr.clear();
+  _rowIdx.clear();
+  _jacValues.clear();
+  _colorCols.clear();
+}
+
+bool Newton::calcSparseJacobian(double *fNominal)
+{
+  if (_analyticJacobian)
+    return false;
+  std::fill(fNominal, fNominal + _dimSys, 1e2 * _newtonSettings->getAtol());
+  std::copy(_y, _y + _dimSys, _yHelp);
+  double rtol = _newtonSettings->getRtol();
+
+  // finite differences, all columns of a color at once
+  for (size_t c = 0; c < _colorCols.size(); c++) {
+    const std::vector<int>& cols = _colorCols[c];
+    for (size_t l = 0; l < cols.size(); l++)
+      _yHelp[cols[l]] += 1e2 * rtol * _yNominal[cols[l]];
+
+    calcFunction(_yHelp, _fHelp);
+
+    for (size_t l = 0; l < cols.size(); l++) {
+      int j = cols[l];
+      double stepsize = 1e2 * rtol * _yNominal[j];
+      for (int k = _colPtr[j]; k < _colPtr[j + 1]; k++) {
+        int i = _rowIdx[k];
+        double value = (_fHelp[i] - _f[i]) / stepsize;
+        if (!isfinite(value))
+          value = 0.0; // remove infinite element in favor of potential singularity
+        _jacValues[k] = value;
+        fNominal[i] = std::max(std::abs(value), fNominal[i]);
+      }
+      _yHelp[j] = _y[j];
+    }
+  }
+
+  // Scale Jacobian
+  for (int k = 0; k < (int)_jacValues.size(); k++)
+    _jacValues[k] /= fNominal[_rowIdx[k]];
+  return true;
+}
+
+bool Newton::solveSparse()
+{
+#if defined(USE_KLU)
+  if (!_kluSymbolic)
+    return false;
+  // reuse the pivoting of the last factorization unless it became inaccurate
+  if (_kluNumeric) {
+    if (!klu_refactor(&_colPtr[0], &_rowIdx[0], &_jacValues[0], _kluSymbolic, _kluNumeric, &_kluCommon)
+        || !klu_rgrowth(&_colPtr[0], &_rowIdx[0], &_jacValues[0], _kluSymbolic, _kluNumeric, &_kluCommon)
+        || _kluCommon.rgrowth < 1e-3)
+      klu_free_numeric(&_kluNumeric, &_kluCommon);
+  }
+  if (!_kluNumeric)
+    _kluNumeric = klu_factor(&_colPtr[0], &_rowIdx[0], &_jacValues[0], _kluSymbolic, &_kluCommon);
+  if (!_kluNumeric)
+    return false; // singular
+  return klu_solve(_kluSymbolic, _kluNumeric, _dimSys, 1, _f, &_kluCommon) != 0;
+#else
+  return false;
+#endif
+}
+
+void Newton::sparseToDense()
+{
+  if (!_jac)
+    _jac = new double[_dimSys*_dimSys];
+  std::fill(_jac, _jac + _dimSys * _dimSys, 0.0);
+  for (int j = 0; j < _dimSys; j++)
+    for (int k = _colPtr[j]; k < _colPtr[j + 1]; k++)
+      _jac[j * _dimSys + _rowIdx[k]] = _jacValues[k];
 }
 
 void Newton::stepCompleted(double time)
