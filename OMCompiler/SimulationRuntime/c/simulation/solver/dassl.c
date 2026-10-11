@@ -519,6 +519,7 @@ int printJacobianMatrix(int logLevel, const char* name, double* matrix, DATA* da
 int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
+  double tStepStart = 0;
   int i = 0;
   unsigned int ui = 0;
   int retVal = 0;
@@ -583,6 +584,19 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
   }
 
+  /* Never step past the next time event: what the model computes beyond it
+   * continues the left limit and is no part of the solution. */
+  if (data->simulationInfo->nextSampleEvent < DBL_MAX &&
+      (0 == dasslData->info[0] || data->simulationInfo->nextSampleEvent >= dasslData->rwork[3]))
+  {
+    dasslData->info[3] = 1;
+    dasslData->rwork[0] = fmax(data->simulationInfo->nextSampleEvent, tout);
+  }
+  else
+  {
+    dasslData->info[3] = 0;
+  }
+
   /* Check that tout is not less than timeValue
    * else will dassl get in trouble. If that is the case we skip the current step.
      Also check if step size is smaller than DASSL_STEP_EPS or DASSL_STEP_EPS times simulation interval */
@@ -618,6 +632,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       data->callback->input_function(data, threadData);
       if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
+      tStepStart = solverInfo->currentTime;
       DDASKR(dasslData->residualFunction, (int*) &dasslData->N,
               &solverInfo->currentTime, states, stateDer, &tout,
               dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
@@ -625,6 +640,16 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
               (double*) (void*) dasslData->rpar, dasslData->ipar, callJacobian, dummy_precondition,
               dasslData->zeroCrossingFunction, (int*) &dasslData->ng, dasslData->jroot);
       dasslData->info[7] = omc_flag[FLAG_INITIAL_STEP_SIZE] ? 1 : 0;
+
+      /* A step landing on TSTOP returns there even past TOUT; called again from
+       * the old T, DDASKR interpolates back to TOUT. */
+      if (dasslData->idid == 2 && solverInfo->currentTime > tout)
+      {
+        solverInfo->currentTime = tStepStart;
+        dasslData->idid = 1;
+        messageClose(OMC_LOG_DASSL);
+        continue;
+      }
 
       /* closing new step message */
       messageClose(OMC_LOG_DASSL);

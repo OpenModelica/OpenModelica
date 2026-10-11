@@ -1,0 +1,42 @@
+// name: homotopy8
+// keywords: initialization, homotopy
+// status: correct
+// teardown_command: rm -rf initializationTests.homotopy8* _initializationTests.homotopy8* output.log
+//
+// The adaptive global approach with homotopy only in an explicitly solved
+// equation, as in an MSL 4 Limiter outside any loop. The homotopy component
+// then has lambda as its only unknown and no residual equations.
+//
+
+loadString("
+within ;
+package initializationTests
+  model homotopy8
+    Real x, y(start = 1, fixed = true);
+  equation
+    x = homotopy(exp(y) + 2, 3);
+    der(y) = -x;
+  end homotopy8;
+end initializationTests;
+"); getErrorString();
+
+setCommandLineOptions("--homotopyApproach=adaptiveGlobal"); getErrorString();
+simulate(initializationTests.homotopy8, startTime=0.0, stopTime=0.0); getErrorString();
+res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy8_res.mat", {time, x, y}, 2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy8_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {{0.0, 0.0}, {4.718281828459045, 4.718281828459045}, {1.0, 1.0}}
+// ""
+// endResult

@@ -1593,6 +1593,12 @@ public
     end if;
   end makeTuple;
 
+  function emptyRange
+    "returns true if the range is size 0 or less and not resizable"
+    input Expression range "has to be RANGE()!";
+    output Boolean b = (not contains(range, isResizableCref)) and 0 >= Dimension.size(Type.nthDimension(typeOf(range), 1), false);
+  end emptyRange;
+
   function rangeSize
     input Expression range "has to be RANGE()!";
     input Boolean resize = false;
@@ -2888,6 +2894,10 @@ public
 
       case RECORD_ELEMENT()
         then DAE.RSUB(toDAE(exp.recordExp), -1, exp.fieldName, Type.toDAE(exp.ty));
+
+      // a plain function reference, see NBackendDAE.lowerFunctionPointers
+      case PARTIAL_FUNCTION_APPLICATION(args = {}, ty = Type.FUNCTION(fnType = NFType.FunctionType.FUNCTION_REFERENCE))
+        then toDAE(CREF(exp.ty, exp.fn));
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm

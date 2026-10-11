@@ -28,6 +28,8 @@
 /*! \file ida_solver.c
  */
 
+#include <float.h>
+#include <math.h>
 #include <string.h>
 #include <setjmp.h>
 
@@ -942,6 +944,15 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   {
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
     stepsMode = IDA_NORMAL;
+    /* Never step past the next time event */
+    if (data->simulationInfo->nextSampleEvent < DBL_MAX)
+    {
+      IDASetStopTime(idaData->ida_mem, fmax(data->simulationInfo->nextSampleEvent, tout));
+    }
+    else
+    {
+      IDAClearStopTime(idaData->ida_mem);
+    }
   }
 
 

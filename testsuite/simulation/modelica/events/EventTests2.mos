@@ -34,14 +34,12 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [3] (pre:  0) -1 = time > 0.1
 // |                 | |       | | [4] (pre:  0) -1 = time >= 0.2
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=-0.19999999988
-// |                 | |       | | [1] time < -0.2
-// LOG_EVENTS        | info    | state event at time=-0.0999999998894
+// LOG_EVENTS        | info    | time event at time=-0.2
+// LOG_EVENTS        | info    | state event at time=-0.0999999999796
 // |                 | |       | | [2] time <= -0.1
-// LOG_EVENTS        | info    | state event at time=0.100000000111
+// LOG_EVENTS        | info    | state event at time=0.10000000002
 // |                 | |       | | [3] time > 0.1
-// LOG_EVENTS        | info    | state event at time=0.20000000012
-// |                 | |       | | [4] time >= 0.2
+// LOG_EVENTS        | info    | time event at time=0.2
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -60,14 +58,12 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [3] (pre:  0) -1 = time > 0.1
 // |                 | |       | | [4] (pre:  0) -1 = time >= 0.2
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | state event at time=-0.19999999988
-// |                 | |       | | [1] time < -0.2
-// LOG_EVENTS        | info    | state event at time=-0.0999999998894
+// LOG_EVENTS        | info    | time event at time=-0.2
+// LOG_EVENTS        | info    | state event at time=-0.0999999999798
 // |                 | |       | | [2] time <= -0.1
-// LOG_EVENTS        | info    | state event at time=0.100000000111
+// LOG_EVENTS        | info    | state event at time=0.10000000002
 // |                 | |       | | [3] time > 0.1
-// LOG_EVENTS        | info    | state event at time=0.20000000012
-// |                 | |       | | [4] time >= 0.2
+// LOG_EVENTS        | info    | time event at time=0.2
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

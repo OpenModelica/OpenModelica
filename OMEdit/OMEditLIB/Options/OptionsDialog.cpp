@@ -50,6 +50,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Util/NetworkAccessManager.h"
+#include "Util/Style.h"
 #include "Editors/HTMLEditor.h"
 #include "Simulation/TranslationFlagsWidget.h"
 #include "LSP/ModelicaLSPClient.h"
@@ -58,6 +59,7 @@
 #include "Cloud/CloudMount.h"
 #include <limits>
 
+#include <QApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QEventLoop>
@@ -80,6 +82,33 @@
  */
 
 OptionsDialog *OptionsDialog::mpInstance = 0;
+
+/*!
+ * \brief OptionsDialog::themeKey
+ * Returns the settings key for a color. Dark mode keeps its colors under the
+ * "darkMode" group, so each mode has its own defaults and its own user values.
+ * \param key
+ * \return
+ */
+QString OptionsDialog::themeKey(const QString &key)
+{
+  if (Style::isDarkMode()) {
+    return "darkMode/" + key;
+  }
+  return key;
+}
+
+/*!
+ * \brief OptionsDialog::themeColor
+ * Returns the default color for the current mode.
+ * \param lightColor
+ * \param darkColor
+ * \return
+ */
+QColor OptionsDialog::themeColor(const QColor &lightColor, const QColor &darkColor)
+{
+  return Style::pick(lightColor, darkColor);
+}
 
 /*!
  * \brief OptionsDialog::create
@@ -515,46 +544,46 @@ void OptionsDialog::readModelicaEditorSettings()
     mpModelicaEditorPage->getPreserveTextIndentationCheckBox()->setChecked(OptionsDefaults::ModelicaEditor::preserveTextIndentation);
   }
 
-  if (mpSettings->contains("modelicaEditor/textRuleColor")) {
-    mpModelicaEditorPage->setColor("Text", QColor(mpSettings->value("modelicaEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/textRuleColor"))) {
+    mpModelicaEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/textRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpModelicaEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("modelicaEditor/numberRuleColor")) {
-    mpModelicaEditorPage->setColor("Number", QColor(mpSettings->value("modelicaEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/numberRuleColor"))) {
+    mpModelicaEditorPage->setColor("Number", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/numberRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Number", OptionsDefaults::ModelicaEditor::numberRuleColor);
+    mpModelicaEditorPage->setColor("Number", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::numberRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::numberRuleColor));
   }
 
-  if (mpSettings->contains("modelicaEditor/keywordRuleColor")) {
-    mpModelicaEditorPage->setColor("Keyword", QColor(mpSettings->value("modelicaEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/keywordRuleColor"))) {
+    mpModelicaEditorPage->setColor("Keyword", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/keywordRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Keyword", OptionsDefaults::ModelicaEditor::keywordRuleColor);
+    mpModelicaEditorPage->setColor("Keyword", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::keywordRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::keywordRuleColor));
   }
 
-  if (mpSettings->contains("modelicaEditor/typeRuleColor")) {
-    mpModelicaEditorPage->setColor("Type", QColor(mpSettings->value("modelicaEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/typeRuleColor"))) {
+    mpModelicaEditorPage->setColor("Type", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/typeRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Type", OptionsDefaults::ModelicaEditor::typeRuleColor);
+    mpModelicaEditorPage->setColor("Type", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::typeRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::typeRuleColor));
   }
 
-  if (mpSettings->contains("modelicaEditor/functionRuleColor")) {
-    mpModelicaEditorPage->setColor("Function", QColor(mpSettings->value("modelicaEditor/functionRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/functionRuleColor"))) {
+    mpModelicaEditorPage->setColor("Function", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/functionRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Function", OptionsDefaults::ModelicaEditor::functionRuleColor);
+    mpModelicaEditorPage->setColor("Function", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::functionRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::functionRuleColor));
   }
 
-  if (mpSettings->contains("modelicaEditor/quotesRuleColor")) {
-    mpModelicaEditorPage->setColor("Quotes", QColor(mpSettings->value("modelicaEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/quotesRuleColor"))) {
+    mpModelicaEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Quotes", OptionsDefaults::ModelicaEditor::quotesRuleColor);
+    mpModelicaEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::quotesRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("modelicaEditor/commentRuleColor")) {
-    mpModelicaEditorPage->setColor("Comment", QColor(mpSettings->value("modelicaEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("modelicaEditor/commentRuleColor"))) {
+    mpModelicaEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("modelicaEditor/commentRuleColor")).toUInt()));
   } else {
-    mpModelicaEditorPage->setColor("Comment", OptionsDefaults::ModelicaEditor::commentRuleColor);
+    mpModelicaEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::commentRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -564,40 +593,40 @@ void OptionsDialog::readModelicaEditorSettings()
  */
 void OptionsDialog::readMOSEditorSettings()
 {
-  if (mpSettings->contains("mosEditor/textRuleColor")) {
-    mpMOSEditorPage->setColor("Text", QColor(mpSettings->value("mosEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("mosEditor/textRuleColor"))) {
+    mpMOSEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("mosEditor/textRuleColor")).toUInt()));
   } else {
-    mpMOSEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpMOSEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("mosEditor/numberRuleColor")) {
-    mpMOSEditorPage->setColor("Number", QColor(mpSettings->value("mosEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("mosEditor/numberRuleColor"))) {
+    mpMOSEditorPage->setColor("Number", QColor(mpSettings->value(OptionsDialog::themeKey("mosEditor/numberRuleColor")).toUInt()));
   } else {
-    mpMOSEditorPage->setColor("Number", OptionsDefaults::MOSEditor::numberRuleColor);
+    mpMOSEditorPage->setColor("Number", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::numberRuleColor, OptionsDefaults::MOSEditor::DarkMode::numberRuleColor));
   }
 
-  if (mpSettings->contains("mosEditor/keywordRuleColor")) {
-    mpMOSEditorPage->setColor("Keyword", QColor(mpSettings->value("mosEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("mosEditor/keywordRuleColor"))) {
+    mpMOSEditorPage->setColor("Keyword", QColor(mpSettings->value(OptionsDialog::themeKey("mosEditor/keywordRuleColor")).toUInt()));
   } else {
-    mpMOSEditorPage->setColor("Keyword", OptionsDefaults::MOSEditor::keywordRuleColor);
+    mpMOSEditorPage->setColor("Keyword", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::keywordRuleColor, OptionsDefaults::MOSEditor::DarkMode::keywordRuleColor));
   }
 
-  if (mpSettings->contains("mosEditor/typeRuleColor")) {
-    mpMOSEditorPage->setColor("Type", QColor(mpSettings->value("mosEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("mosEditor/typeRuleColor"))) {
+    mpMOSEditorPage->setColor("Type", QColor(mpSettings->value(OptionsDialog::themeKey("mosEditor/typeRuleColor")).toUInt()));
   } else {
-    mpMOSEditorPage->setColor("Type", OptionsDefaults::MOSEditor::typeRuleColor);
+    mpMOSEditorPage->setColor("Type", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::typeRuleColor, OptionsDefaults::MOSEditor::DarkMode::typeRuleColor));
   }
 
-  if (mpSettings->contains("mosEditor/quotesRuleColor")) {
-    mpMOSEditorPage->setColor("Quotes", QColor(mpSettings->value("mosEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("mosEditor/quotesRuleColor"))) {
+    mpMOSEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("mosEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpMOSEditorPage->setColor("Quotes", OptionsDefaults::MOSEditor::quotesRuleColor);
+    mpMOSEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::quotesRuleColor, OptionsDefaults::MOSEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("mosEditor/commentRuleColor")) {
-    mpMOSEditorPage->setColor("Comment", QColor(mpSettings->value("mosEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("mosEditor/commentRuleColor"))) {
+    mpMOSEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("mosEditor/commentRuleColor")).toUInt()));
   } else {
-    mpMOSEditorPage->setColor("Comment", OptionsDefaults::MOSEditor::commentRuleColor);
+    mpMOSEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::commentRuleColor, OptionsDefaults::MOSEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -607,40 +636,40 @@ void OptionsDialog::readMOSEditorSettings()
  */
 void OptionsDialog::readMetaModelicaEditorSettings()
 {
-  if (mpSettings->contains("metaModelicaEditor/textRuleColor")) {
-    mpMetaModelicaEditorPage->setColor("Text", QColor(mpSettings->value("metaModelicaEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("metaModelicaEditor/textRuleColor"))) {
+    mpMetaModelicaEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("metaModelicaEditor/textRuleColor")).toUInt()));
   } else {
-    mpMetaModelicaEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpMetaModelicaEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("metaModelicaEditor/numberRuleColor")) {
-    mpMetaModelicaEditorPage->setColor("Number", QColor(mpSettings->value("metaModelicaEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("metaModelicaEditor/numberRuleColor"))) {
+    mpMetaModelicaEditorPage->setColor("Number", QColor(mpSettings->value(OptionsDialog::themeKey("metaModelicaEditor/numberRuleColor")).toUInt()));
   } else {
-    mpMetaModelicaEditorPage->setColor("Number", OptionsDefaults::MetaModelicaEditor::numberRuleColor);
+    mpMetaModelicaEditorPage->setColor("Number", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::numberRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::numberRuleColor));
   }
 
-  if (mpSettings->contains("metaModelicaEditor/keywordRuleColor")) {
-    mpMetaModelicaEditorPage->setColor("Keyword", QColor(mpSettings->value("metaModelicaEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("metaModelicaEditor/keywordRuleColor"))) {
+    mpMetaModelicaEditorPage->setColor("Keyword", QColor(mpSettings->value(OptionsDialog::themeKey("metaModelicaEditor/keywordRuleColor")).toUInt()));
   } else {
-    mpMetaModelicaEditorPage->setColor("Keyword", OptionsDefaults::MetaModelicaEditor::keywordRuleColor);
+    mpMetaModelicaEditorPage->setColor("Keyword", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::keywordRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::keywordRuleColor));
   }
 
-  if (mpSettings->contains("metaModelicaEditor/typeRuleColor")) {
-    mpMetaModelicaEditorPage->setColor("Type", QColor(mpSettings->value("metaModelicaEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("metaModelicaEditor/typeRuleColor"))) {
+    mpMetaModelicaEditorPage->setColor("Type", QColor(mpSettings->value(OptionsDialog::themeKey("metaModelicaEditor/typeRuleColor")).toUInt()));
   } else {
-    mpMetaModelicaEditorPage->setColor("Type", OptionsDefaults::MetaModelicaEditor::typeRuleColor);
+    mpMetaModelicaEditorPage->setColor("Type", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::typeRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::typeRuleColor));
   }
 
-  if (mpSettings->contains("metaModelicaEditor/quotesRuleColor")) {
-    mpMetaModelicaEditorPage->setColor("Quotes", QColor(mpSettings->value("metaModelicaEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("metaModelicaEditor/quotesRuleColor"))) {
+    mpMetaModelicaEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("metaModelicaEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpMetaModelicaEditorPage->setColor("Quotes", OptionsDefaults::MetaModelicaEditor::quotesRuleColor);
+    mpMetaModelicaEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::quotesRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("metaModelicaEditor/commentRuleColor")) {
-    mpMetaModelicaEditorPage->setColor("Comment", QColor(mpSettings->value("metaModelicaEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("metaModelicaEditor/commentRuleColor"))) {
+    mpMetaModelicaEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("metaModelicaEditor/commentRuleColor")).toUInt()));
   } else {
-    mpMetaModelicaEditorPage->setColor("Comment", OptionsDefaults::MetaModelicaEditor::commentRuleColor);
+    mpMetaModelicaEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::commentRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -650,34 +679,34 @@ void OptionsDialog::readMetaModelicaEditorSettings()
  */
 void OptionsDialog::readOMSimulatorEditorSettings()
 {
-  if (mpSettings->contains("omsimulatorEditor/textRuleColor")) {
-    mpOMSimulatorEditorPage->setColor("Text", QColor(mpSettings->value("omsimulatorEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("omsimulatorEditor/textRuleColor"))) {
+    mpOMSimulatorEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("omsimulatorEditor/textRuleColor")).toUInt()));
   } else {
-    mpOMSimulatorEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpOMSimulatorEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("omsimulatorEditor/tagRuleColor")) {
-    mpOMSimulatorEditorPage->setColor("Tag", QColor(mpSettings->value("omsimulatorEditor/tagRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("omsimulatorEditor/tagRuleColor"))) {
+    mpOMSimulatorEditorPage->setColor("Tag", QColor(mpSettings->value(OptionsDialog::themeKey("omsimulatorEditor/tagRuleColor")).toUInt()));
   } else {
-    mpOMSimulatorEditorPage->setColor("Tag", OptionsDefaults::OMSimulatorEditor::tagRuleColor);
+    mpOMSimulatorEditorPage->setColor("Tag", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::tagRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::tagRuleColor));
   }
 
-  if (mpSettings->contains("omsimulatorEditor/elementsRuleColor")) {
-    mpOMSimulatorEditorPage->setColor("Element", QColor(mpSettings->value("omsimulatorEditor/elementsRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("omsimulatorEditor/elementsRuleColor"))) {
+    mpOMSimulatorEditorPage->setColor("Element", QColor(mpSettings->value(OptionsDialog::themeKey("omsimulatorEditor/elementsRuleColor")).toUInt()));
   } else {
-    mpOMSimulatorEditorPage->setColor("Element", OptionsDefaults::OMSimulatorEditor::elementRuleColor);
+    mpOMSimulatorEditorPage->setColor("Element", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::elementRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::elementRuleColor));
   }
 
-  if (mpSettings->contains("omsimulatorEditor/quotesRuleColor")) {
-    mpOMSimulatorEditorPage->setColor("Quotes", QColor(mpSettings->value("omsimulatorEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("omsimulatorEditor/quotesRuleColor"))) {
+    mpOMSimulatorEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("omsimulatorEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpOMSimulatorEditorPage->setColor("Quotes", OptionsDefaults::OMSimulatorEditor::quotesRuleColor);
+    mpOMSimulatorEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::quotesRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("omsimulatorEditor/commentRuleColor")) {
-    mpOMSimulatorEditorPage->setColor("Comment", QColor(mpSettings->value("omsimulatorEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("omsimulatorEditor/commentRuleColor"))) {
+    mpOMSimulatorEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("omsimulatorEditor/commentRuleColor")).toUInt()));
   } else {
-    mpOMSimulatorEditorPage->setColor("Comment", OptionsDefaults::OMSimulatorEditor::commentRuleColor);
+    mpOMSimulatorEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::commentRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -687,40 +716,40 @@ void OptionsDialog::readOMSimulatorEditorSettings()
  */
 void OptionsDialog::readCRMLEditorSettings()
 {
-  if (mpSettings->contains("crmlEditor/textRuleColor")) {
-    mpCRMLEditorPage->setColor("Text", QColor(mpSettings->value("crmlEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("crmlEditor/textRuleColor"))) {
+    mpCRMLEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("crmlEditor/textRuleColor")).toUInt()));
   } else {
-    mpCRMLEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpCRMLEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("crmlEditor/numberRuleColor")) {
-    mpCRMLEditorPage->setColor("Number", QColor(mpSettings->value("crmlEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("crmlEditor/numberRuleColor"))) {
+    mpCRMLEditorPage->setColor("Number", QColor(mpSettings->value(OptionsDialog::themeKey("crmlEditor/numberRuleColor")).toUInt()));
   } else {
-    mpCRMLEditorPage->setColor("Number", OptionsDefaults::CRMLEditor::numberRuleColor);
+    mpCRMLEditorPage->setColor("Number", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::numberRuleColor, OptionsDefaults::CRMLEditor::DarkMode::numberRuleColor));
   }
 
-  if (mpSettings->contains("crmlEditor/keywordRuleColor")) {
-    mpCRMLEditorPage->setColor("Keyword", QColor(mpSettings->value("crmlEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("crmlEditor/keywordRuleColor"))) {
+    mpCRMLEditorPage->setColor("Keyword", QColor(mpSettings->value(OptionsDialog::themeKey("crmlEditor/keywordRuleColor")).toUInt()));
   } else {
-    mpCRMLEditorPage->setColor("Keyword", OptionsDefaults::CRMLEditor::keywordRuleColor);
+    mpCRMLEditorPage->setColor("Keyword", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::keywordRuleColor, OptionsDefaults::CRMLEditor::DarkMode::keywordRuleColor));
   }
 
-  if (mpSettings->contains("crmlEditor/typeRuleColor")) {
-    mpCRMLEditorPage->setColor("Type", QColor(mpSettings->value("crmlEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("crmlEditor/typeRuleColor"))) {
+    mpCRMLEditorPage->setColor("Type", QColor(mpSettings->value(OptionsDialog::themeKey("crmlEditor/typeRuleColor")).toUInt()));
   } else {
-    mpCRMLEditorPage->setColor("Type", OptionsDefaults::CRMLEditor::typeRuleColor);
+    mpCRMLEditorPage->setColor("Type", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::typeRuleColor, OptionsDefaults::CRMLEditor::DarkMode::typeRuleColor));
   }
 
-  if (mpSettings->contains("crmlEditor/quotesRuleColor")) {
-    mpCRMLEditorPage->setColor("Quotes", QColor(mpSettings->value("crmlEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("crmlEditor/quotesRuleColor"))) {
+    mpCRMLEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("crmlEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpCRMLEditorPage->setColor("Quotes", OptionsDefaults::CRMLEditor::quotesRuleColor);
+    mpCRMLEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::quotesRuleColor, OptionsDefaults::CRMLEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("crmlEditor/commentRuleColor")) {
-    mpCRMLEditorPage->setColor("Comment", QColor(mpSettings->value("crmlEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("crmlEditor/commentRuleColor"))) {
+    mpCRMLEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("crmlEditor/commentRuleColor")).toUInt()));
   } else {
-    mpCRMLEditorPage->setColor("Comment", OptionsDefaults::CRMLEditor::commentRuleColor);
+    mpCRMLEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::commentRuleColor, OptionsDefaults::CRMLEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -730,40 +759,40 @@ void OptionsDialog::readCRMLEditorSettings()
  */
 void OptionsDialog::readCEditorSettings()
 {
-  if (mpSettings->contains("cEditor/textRuleColor")) {
-    mpCEditorPage->setColor("Text", QColor(mpSettings->value("cEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("cEditor/textRuleColor"))) {
+    mpCEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("cEditor/textRuleColor")).toUInt()));
   } else {
-    mpCEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpCEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("cEditor/numberRuleColor")) {
-    mpCEditorPage->setColor("Number", QColor(mpSettings->value("cEditor/numberRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("cEditor/numberRuleColor"))) {
+    mpCEditorPage->setColor("Number", QColor(mpSettings->value(OptionsDialog::themeKey("cEditor/numberRuleColor")).toUInt()));
   } else {
-    mpCEditorPage->setColor("Number", OptionsDefaults::CEditor::numberRuleColor);
+    mpCEditorPage->setColor("Number", OptionsDialog::themeColor(OptionsDefaults::CEditor::numberRuleColor, OptionsDefaults::CEditor::DarkMode::numberRuleColor));
   }
 
-  if (mpSettings->contains("cEditor/keywordRuleColor")) {
-    mpCEditorPage->setColor("Keyword", QColor(mpSettings->value("cEditor/keywordRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("cEditor/keywordRuleColor"))) {
+    mpCEditorPage->setColor("Keyword", QColor(mpSettings->value(OptionsDialog::themeKey("cEditor/keywordRuleColor")).toUInt()));
   } else {
-    mpCEditorPage->setColor("Keyword", OptionsDefaults::CEditor::keywordRuleColor);
+    mpCEditorPage->setColor("Keyword", OptionsDialog::themeColor(OptionsDefaults::CEditor::keywordRuleColor, OptionsDefaults::CEditor::DarkMode::keywordRuleColor));
   }
 
-  if (mpSettings->contains("cEditor/typeRuleColor")) {
-    mpCEditorPage->setColor("Type", QColor(mpSettings->value("cEditor/typeRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("cEditor/typeRuleColor"))) {
+    mpCEditorPage->setColor("Type", QColor(mpSettings->value(OptionsDialog::themeKey("cEditor/typeRuleColor")).toUInt()));
   } else {
-    mpCEditorPage->setColor("Type", OptionsDefaults::CEditor::typeRuleColor);
+    mpCEditorPage->setColor("Type", OptionsDialog::themeColor(OptionsDefaults::CEditor::typeRuleColor, OptionsDefaults::CEditor::DarkMode::typeRuleColor));
   }
 
-  if (mpSettings->contains("cEditor/quotesRuleColor")) {
-    mpCEditorPage->setColor("Quotes", QColor(mpSettings->value("cEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("cEditor/quotesRuleColor"))) {
+    mpCEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("cEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpCEditorPage->setColor("Quotes", OptionsDefaults::CEditor::quotesRuleColor);
+    mpCEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::CEditor::quotesRuleColor, OptionsDefaults::CEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("cEditor/commentRuleColor")) {
-    mpCEditorPage->setColor("Comment", QColor(mpSettings->value("cEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("cEditor/commentRuleColor"))) {
+    mpCEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("cEditor/commentRuleColor")).toUInt()));
   } else {
-    mpCEditorPage->setColor("Comment", OptionsDefaults::CEditor::commentRuleColor);
+    mpCEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::CEditor::commentRuleColor, OptionsDefaults::CEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -773,28 +802,28 @@ void OptionsDialog::readCEditorSettings()
  */
 void OptionsDialog::readHTMLEditorSettings()
 {
-  if (mpSettings->contains("HTMLEditor/textRuleColor")) {
-    mpHTMLEditorPage->setColor("Text", QColor(mpSettings->value("HTMLEditor/textRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("HTMLEditor/textRuleColor"))) {
+    mpHTMLEditorPage->setColor("Text", QColor(mpSettings->value(OptionsDialog::themeKey("HTMLEditor/textRuleColor")).toUInt()));
   } else {
-    mpHTMLEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
+    mpHTMLEditorPage->setColor("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor));
   }
 
-  if (mpSettings->contains("HTMLEditor/tagRuleColor")) {
-    mpHTMLEditorPage->setColor("Tag", QColor(mpSettings->value("HTMLEditor/tagRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("HTMLEditor/tagRuleColor"))) {
+    mpHTMLEditorPage->setColor("Tag", QColor(mpSettings->value(OptionsDialog::themeKey("HTMLEditor/tagRuleColor")).toUInt()));
   } else {
-    mpHTMLEditorPage->setColor("Tag", OptionsDefaults::HTMLEditor::tagRuleColor);
+    mpHTMLEditorPage->setColor("Tag", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::tagRuleColor, OptionsDefaults::HTMLEditor::DarkMode::tagRuleColor));
   }
 
-  if (mpSettings->contains("HTMLEditor/quotesRuleColor")) {
-    mpHTMLEditorPage->setColor("Quotes", QColor(mpSettings->value("HTMLEditor/quotesRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("HTMLEditor/quotesRuleColor"))) {
+    mpHTMLEditorPage->setColor("Quotes", QColor(mpSettings->value(OptionsDialog::themeKey("HTMLEditor/quotesRuleColor")).toUInt()));
   } else {
-    mpHTMLEditorPage->setColor("Quotes", OptionsDefaults::HTMLEditor::quotesRuleColor);
+    mpHTMLEditorPage->setColor("Quotes", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::quotesRuleColor, OptionsDefaults::HTMLEditor::DarkMode::quotesRuleColor));
   }
 
-  if (mpSettings->contains("HTMLEditor/commentRuleColor")) {
-    mpHTMLEditorPage->setColor("Comment", QColor(mpSettings->value("HTMLEditor/commentRuleColor").toUInt()));
+  if (mpSettings->contains(OptionsDialog::themeKey("HTMLEditor/commentRuleColor"))) {
+    mpHTMLEditorPage->setColor("Comment", QColor(mpSettings->value(OptionsDialog::themeKey("HTMLEditor/commentRuleColor")).toUInt()));
   } else {
-    mpHTMLEditorPage->setColor("Comment", OptionsDefaults::HTMLEditor::commentRuleColor);
+    mpHTMLEditorPage->setColor("Comment", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::commentRuleColor, OptionsDefaults::HTMLEditor::DarkMode::commentRuleColor));
   }
 }
 
@@ -1048,36 +1077,36 @@ void OptionsDialog::readMessagesSettings()
     mpMessagesPage->getFontSizeSpinBox()->setValue(textBrowser.font().pointSize());
   }
   // read notification color
-  if (mpSettings->contains("messages/notificationColor")) {
-    QColor color = QColor(mpSettings->value("messages/notificationColor").toUInt());
+  if (mpSettings->contains(OptionsDialog::themeKey("messages/notificationColor"))) {
+    QColor color = QColor(mpSettings->value(OptionsDialog::themeKey("messages/notificationColor")).toUInt());
     if (color.isValid()) {
       mpMessagesPage->setNotificationColor(color);
       mpMessagesPage->setNotificationPickColorButtonIcon();
     }
   } else {
-    mpMessagesPage->setNotificationColor(OptionsDefaults::Messages::notificationColor);
+    mpMessagesPage->setNotificationColor(OptionsDialog::themeColor(OptionsDefaults::Messages::notificationColor, OptionsDefaults::Messages::DarkMode::notificationColor));
     mpMessagesPage->setNotificationPickColorButtonIcon();
   }
   // read warning color
-  if (mpSettings->contains("messages/warningColor")) {
-    QColor color = QColor(mpSettings->value("messages/warningColor").toUInt());
+  if (mpSettings->contains(OptionsDialog::themeKey("messages/warningColor"))) {
+    QColor color = QColor(mpSettings->value(OptionsDialog::themeKey("messages/warningColor")).toUInt());
     if (color.isValid()) {
       mpMessagesPage->setWarningColor(color);
       mpMessagesPage->setWarningPickColorButtonIcon();
     }
   } else {
-    mpMessagesPage->setWarningColor(OptionsDefaults::Messages::warningColor);
+    mpMessagesPage->setWarningColor(OptionsDialog::themeColor(OptionsDefaults::Messages::warningColor, OptionsDefaults::Messages::DarkMode::warningColor));
     mpMessagesPage->setWarningPickColorButtonIcon();
   }
   // read error color
-  if (mpSettings->contains("messages/errorColor")) {
-    QColor color = QColor(mpSettings->value("messages/errorColor").toUInt());
+  if (mpSettings->contains(OptionsDialog::themeKey("messages/errorColor"))) {
+    QColor color = QColor(mpSettings->value(OptionsDialog::themeKey("messages/errorColor")).toUInt());
     if (color.isValid()) {
       mpMessagesPage->setErrorColor(color);
       mpMessagesPage->setErrorPickColorButtonIcon();
     }
   } else {
-    mpMessagesPage->setErrorColor(OptionsDefaults::Messages::errorColor);
+    mpMessagesPage->setErrorColor(OptionsDialog::themeColor(OptionsDefaults::Messages::errorColor, OptionsDefaults::Messages::DarkMode::errorColor));
     mpMessagesPage->setErrorPickColorButtonIcon();
   }
 }
@@ -1920,52 +1949,52 @@ void OptionsDialog::saveModelicaEditorSettings()
   }
 
   QColor textRuleColor = mpModelicaEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("modelicaEditor/textRuleColor");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor numberRuleColor = mpModelicaEditorPage->getColor("Number");
-  if (numberRuleColor == OptionsDefaults::ModelicaEditor::numberRuleColor) {
-    mpSettings->remove("modelicaEditor/numberRuleColor");
+  if (numberRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::numberRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::numberRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/numberRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/numberRuleColor", numberRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/numberRuleColor"), numberRuleColor.rgba());
   }
 
   QColor keywordRuleColor = mpModelicaEditorPage->getColor("Keyword");
-  if (keywordRuleColor == OptionsDefaults::ModelicaEditor::keywordRuleColor) {
-    mpSettings->remove("modelicaEditor/keywordRuleColor");
+  if (keywordRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::keywordRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::keywordRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/keywordRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/keywordRuleColor", keywordRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/keywordRuleColor"), keywordRuleColor.rgba());
   }
 
   QColor typeRuleColor = mpModelicaEditorPage->getColor("Type");
-  if (typeRuleColor == OptionsDefaults::ModelicaEditor::typeRuleColor) {
-    mpSettings->remove("modelicaEditor/typeRuleColor");
+  if (typeRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::typeRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::typeRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/typeRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/typeRuleColor", typeRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/typeRuleColor"), typeRuleColor.rgba());
   }
 
   QColor functionRuleColor = mpModelicaEditorPage->getColor("Function");
-  if (functionRuleColor == OptionsDefaults::ModelicaEditor::functionRuleColor) {
-    mpSettings->remove("modelicaEditor/functionRuleColor");
+  if (functionRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::functionRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::functionRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/functionRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/functionRuleColor", functionRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/functionRuleColor"), functionRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpModelicaEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::ModelicaEditor::quotesRuleColor) {
-    mpSettings->remove("modelicaEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::quotesRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpModelicaEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::ModelicaEditor::commentRuleColor) {
-    mpSettings->remove("modelicaEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::commentRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("modelicaEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("modelicaEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("modelicaEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -1976,45 +2005,45 @@ void OptionsDialog::saveModelicaEditorSettings()
 void OptionsDialog::saveMOSEditorSettings()
 {
   QColor textRuleColor = mpMOSEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("mosEditor/textRuleColor");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("mosEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("mosEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("mosEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor numberRuleColor = mpMOSEditorPage->getColor("Number");
-  if (numberRuleColor == OptionsDefaults::MOSEditor::numberRuleColor) {
-    mpSettings->remove("mosEditor/numberRuleColor");
+  if (numberRuleColor == OptionsDialog::themeColor(OptionsDefaults::MOSEditor::numberRuleColor, OptionsDefaults::MOSEditor::DarkMode::numberRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("mosEditor/numberRuleColor"));
   } else {
-    mpSettings->setValue("mosEditor/numberRuleColor", numberRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("mosEditor/numberRuleColor"), numberRuleColor.rgba());
   }
 
   QColor keywordRuleColor = mpMOSEditorPage->getColor("Keyword");
-  if (keywordRuleColor == OptionsDefaults::MOSEditor::keywordRuleColor) {
-    mpSettings->remove("mosEditor/keywordRuleColor");
+  if (keywordRuleColor == OptionsDialog::themeColor(OptionsDefaults::MOSEditor::keywordRuleColor, OptionsDefaults::MOSEditor::DarkMode::keywordRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("mosEditor/keywordRuleColor"));
   } else {
-    mpSettings->setValue("mosEditor/keywordRuleColor", keywordRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("mosEditor/keywordRuleColor"), keywordRuleColor.rgba());
   }
 
   QColor typeRuleColor = mpMOSEditorPage->getColor("Type");
-  if (typeRuleColor == OptionsDefaults::MOSEditor::typeRuleColor) {
-    mpSettings->remove("mosEditor/typeRuleColor");
+  if (typeRuleColor == OptionsDialog::themeColor(OptionsDefaults::MOSEditor::typeRuleColor, OptionsDefaults::MOSEditor::DarkMode::typeRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("mosEditor/typeRuleColor"));
   } else {
-    mpSettings->setValue("mosEditor/typeRuleColor", typeRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("mosEditor/typeRuleColor"), typeRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpMOSEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::MOSEditor::quotesRuleColor) {
-    mpSettings->remove("mosEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::MOSEditor::quotesRuleColor, OptionsDefaults::MOSEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("mosEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("mosEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("mosEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpMOSEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::MOSEditor::commentRuleColor) {
-    mpSettings->remove("mosEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::MOSEditor::commentRuleColor, OptionsDefaults::MOSEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("mosEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("mosEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("mosEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -2025,45 +2054,45 @@ void OptionsDialog::saveMOSEditorSettings()
 void OptionsDialog::saveMetaModelicaEditorSettings()
 {
   QColor textRuleColor = mpMetaModelicaEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("metaModelicaEditor/textRuleColor");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("metaModelicaEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("metaModelicaEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("metaModelicaEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor numberRuleColor = mpMetaModelicaEditorPage->getColor("Number");
-  if (numberRuleColor == OptionsDefaults::MetaModelicaEditor::numberRuleColor) {
-    mpSettings->remove("metaModelicaEditor/numberRuleColor");
+  if (numberRuleColor == OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::numberRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::numberRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("metaModelicaEditor/numberRuleColor"));
   } else {
-    mpSettings->setValue("metaModelicaEditor/numberRuleColor", numberRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("metaModelicaEditor/numberRuleColor"), numberRuleColor.rgba());
   }
 
   QColor keywordRuleColor = mpMetaModelicaEditorPage->getColor("Keyword");
-  if (keywordRuleColor == OptionsDefaults::MetaModelicaEditor::keywordRuleColor) {
-    mpSettings->remove("metaModelicaEditor/keywordRuleColor");
+  if (keywordRuleColor == OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::keywordRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::keywordRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("metaModelicaEditor/keywordRuleColor"));
   } else {
-    mpSettings->setValue("metaModelicaEditor/keywordRuleColor", keywordRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("metaModelicaEditor/keywordRuleColor"), keywordRuleColor.rgba());
   }
 
   QColor typeRuleColor = mpMetaModelicaEditorPage->getColor("Type");
-  if (typeRuleColor == OptionsDefaults::MetaModelicaEditor::typeRuleColor) {
-    mpSettings->remove("metaModelicaEditor/typeRuleColor");
+  if (typeRuleColor == OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::typeRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::typeRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("metaModelicaEditor/typeRuleColor"));
   } else {
-    mpSettings->setValue("metaModelicaEditor/typeRuleColor", typeRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("metaModelicaEditor/typeRuleColor"), typeRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpMetaModelicaEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::MetaModelicaEditor::quotesRuleColor) {
-    mpSettings->remove("metaModelicaEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::quotesRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("metaModelicaEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("metaModelicaEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("metaModelicaEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpMetaModelicaEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::MetaModelicaEditor::commentRuleColor) {
-    mpSettings->remove("metaModelicaEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::commentRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("metaModelicaEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("metaModelicaEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("metaModelicaEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -2074,38 +2103,38 @@ void OptionsDialog::saveMetaModelicaEditorSettings()
 void OptionsDialog::saveOMSimulatorEditorSettings()
 {
   QColor textRuleColor = mpOMSimulatorEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("omsimulatorEditor/textRuleColor");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("omsimulatorEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("omsimulatorEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("omsimulatorEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor tagRuleColor = mpOMSimulatorEditorPage->getColor("Tag");
-  if (tagRuleColor == OptionsDefaults::OMSimulatorEditor::tagRuleColor) {
-    mpSettings->remove("omsimulatorEditor/tagRuleColor");
+  if (tagRuleColor == OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::tagRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::tagRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("omsimulatorEditor/tagRuleColor"));
   } else {
-    mpSettings->setValue("omsimulatorEditor/tagRuleColor", tagRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("omsimulatorEditor/tagRuleColor"), tagRuleColor.rgba());
   }
 
   QColor elementRuleColor = mpOMSimulatorEditorPage->getColor("Element");
-  if (elementRuleColor == OptionsDefaults::OMSimulatorEditor::elementRuleColor) {
-    mpSettings->remove("omsimulatorEditor/elementsRuleColor");
+  if (elementRuleColor == OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::elementRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::elementRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("omsimulatorEditor/elementsRuleColor"));
   } else {
-    mpSettings->setValue("omsimulatorEditor/elementsRuleColor", elementRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("omsimulatorEditor/elementsRuleColor"), elementRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpOMSimulatorEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::OMSimulatorEditor::quotesRuleColor) {
-    mpSettings->remove("omsimulatorEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::quotesRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("omsimulatorEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("omsimulatorEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("omsimulatorEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpOMSimulatorEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::OMSimulatorEditor::commentRuleColor) {
-    mpSettings->remove("omsimulatorEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::commentRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("omsimulatorEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("omsimulatorEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("omsimulatorEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -2116,45 +2145,45 @@ void OptionsDialog::saveOMSimulatorEditorSettings()
 void OptionsDialog::saveCRMLEditorSettings()
 {
   QColor textRuleColor = mpCRMLEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("crmlEditor/textRuleColor");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("crmlEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("crmlEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("crmlEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor numberRuleColor = mpCRMLEditorPage->getColor("Number");
-  if (numberRuleColor == OptionsDefaults::CRMLEditor::numberRuleColor) {
-    mpSettings->remove("crmlEditor/numberRuleColor");
+  if (numberRuleColor == OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::numberRuleColor, OptionsDefaults::CRMLEditor::DarkMode::numberRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("crmlEditor/numberRuleColor"));
   } else {
-    mpSettings->setValue("crmlEditor/numberRuleColor", numberRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("crmlEditor/numberRuleColor"), numberRuleColor.rgba());
   }
 
   QColor keywordRuleColor = mpCRMLEditorPage->getColor("Keyword");
-  if (keywordRuleColor == OptionsDefaults::CRMLEditor::keywordRuleColor) {
-    mpSettings->remove("crmlEditor/keywordRuleColor");
+  if (keywordRuleColor == OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::keywordRuleColor, OptionsDefaults::CRMLEditor::DarkMode::keywordRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("crmlEditor/keywordRuleColor"));
   } else {
-    mpSettings->setValue("crmlEditor/keywordRuleColor", keywordRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("crmlEditor/keywordRuleColor"), keywordRuleColor.rgba());
   }
 
   QColor typeRuleColor = mpCRMLEditorPage->getColor("Type");
-  if (typeRuleColor == OptionsDefaults::CRMLEditor::typeRuleColor) {
-    mpSettings->remove("crmlEditor/typeRuleColor");
+  if (typeRuleColor == OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::typeRuleColor, OptionsDefaults::CRMLEditor::DarkMode::typeRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("crmlEditor/typeRuleColor"));
   } else {
-    mpSettings->setValue("crmlEditor/typeRuleColor", typeRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("crmlEditor/typeRuleColor"), typeRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpCRMLEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::CRMLEditor::quotesRuleColor) {
-    mpSettings->remove("crmlEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::quotesRuleColor, OptionsDefaults::CRMLEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("crmlEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("crmlEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("crmlEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpCRMLEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::CRMLEditor::commentRuleColor) {
-    mpSettings->remove("crmlEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::commentRuleColor, OptionsDefaults::CRMLEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("crmlEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("crmlEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("crmlEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -2164,46 +2193,46 @@ void OptionsDialog::saveCRMLEditorSettings()
  */
 void OptionsDialog::saveCEditorSettings()
 {
-  QColor textRuleColor = mpMetaModelicaEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("cEditor/textRuleColor");
+  QColor textRuleColor = mpCEditorPage->getColor("Text");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("cEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("cEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("cEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor numberRuleColor = mpCEditorPage->getColor("Number");
-  if (numberRuleColor == OptionsDefaults::CEditor::numberRuleColor) {
-    mpSettings->remove("cEditor/numberRuleColor");
+  if (numberRuleColor == OptionsDialog::themeColor(OptionsDefaults::CEditor::numberRuleColor, OptionsDefaults::CEditor::DarkMode::numberRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("cEditor/numberRuleColor"));
   } else {
-    mpSettings->setValue("cEditor/numberRuleColor", numberRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("cEditor/numberRuleColor"), numberRuleColor.rgba());
   }
 
   QColor keywordRuleColor = mpCEditorPage->getColor("Keyword");
-  if (keywordRuleColor == OptionsDefaults::CEditor::keywordRuleColor) {
-    mpSettings->remove("cEditor/keywordRuleColor");
+  if (keywordRuleColor == OptionsDialog::themeColor(OptionsDefaults::CEditor::keywordRuleColor, OptionsDefaults::CEditor::DarkMode::keywordRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("cEditor/keywordRuleColor"));
   } else {
-    mpSettings->setValue("cEditor/keywordRuleColor", keywordRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("cEditor/keywordRuleColor"), keywordRuleColor.rgba());
   }
 
   QColor typeRuleColor = mpCEditorPage->getColor("Type");
-  if (typeRuleColor == OptionsDefaults::CEditor::typeRuleColor) {
-    mpSettings->remove("cEditor/typeRuleColor");
+  if (typeRuleColor == OptionsDialog::themeColor(OptionsDefaults::CEditor::typeRuleColor, OptionsDefaults::CEditor::DarkMode::typeRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("cEditor/typeRuleColor"));
   } else {
-    mpSettings->setValue("cEditor/typeRuleColor", typeRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("cEditor/typeRuleColor"), typeRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpCEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::CEditor::quotesRuleColor) {
-    mpSettings->remove("cEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::CEditor::quotesRuleColor, OptionsDefaults::CEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("cEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("cEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("cEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpCEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::CEditor::commentRuleColor) {
-    mpSettings->remove("cEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::CEditor::commentRuleColor, OptionsDefaults::CEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("cEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("cEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("cEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -2214,31 +2243,31 @@ void OptionsDialog::saveCEditorSettings()
 void OptionsDialog::saveHTMLEditorSettings()
 {
   QColor textRuleColor = mpHTMLEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("HTMLEditor/textRuleColor");
+  if (textRuleColor == OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("HTMLEditor/textRuleColor"));
   } else {
-    mpSettings->setValue("HTMLEditor/textRuleColor", textRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("HTMLEditor/textRuleColor"), textRuleColor.rgba());
   }
 
   QColor tagRuleColor = mpHTMLEditorPage->getColor("Tag");
-  if (tagRuleColor == OptionsDefaults::HTMLEditor::tagRuleColor) {
-    mpSettings->remove("HTMLEditor/tagRuleColor");
+  if (tagRuleColor == OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::tagRuleColor, OptionsDefaults::HTMLEditor::DarkMode::tagRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("HTMLEditor/tagRuleColor"));
   } else {
-    mpSettings->setValue("HTMLEditor/tagRuleColor", tagRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("HTMLEditor/tagRuleColor"), tagRuleColor.rgba());
   }
 
   QColor quotesRuleColor = mpHTMLEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::HTMLEditor::quotesRuleColor) {
-    mpSettings->remove("HTMLEditor/quotesRuleColor");
+  if (quotesRuleColor == OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::quotesRuleColor, OptionsDefaults::HTMLEditor::DarkMode::quotesRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("HTMLEditor/quotesRuleColor"));
   } else {
-    mpSettings->setValue("HTMLEditor/quotesRuleColor", quotesRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("HTMLEditor/quotesRuleColor"), quotesRuleColor.rgba());
   }
 
   QColor commentRuleColor = mpHTMLEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::HTMLEditor::commentRuleColor) {
-    mpSettings->remove("HTMLEditor/commentRuleColor");
+  if (commentRuleColor == OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::commentRuleColor, OptionsDefaults::HTMLEditor::DarkMode::commentRuleColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("HTMLEditor/commentRuleColor"));
   } else {
-    mpSettings->setValue("HTMLEditor/commentRuleColor", commentRuleColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("HTMLEditor/commentRuleColor"), commentRuleColor.rgba());
   }
 }
 
@@ -2598,24 +2627,24 @@ void OptionsDialog::saveMessagesSettings()
   }
   // save notification color
   QColor notificationColor = mpMessagesPage->getNotificationColor();
-  if (notificationColor == OptionsDefaults::Messages::notificationColor) {
-    mpSettings->remove("messages/notificationColor");
+  if (notificationColor == OptionsDialog::themeColor(OptionsDefaults::Messages::notificationColor, OptionsDefaults::Messages::DarkMode::notificationColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("messages/notificationColor"));
   } else {
-    mpSettings->setValue("messages/notificationColor", notificationColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("messages/notificationColor"), notificationColor.rgba());
   }
   // save warning color
   QColor warningColor = mpMessagesPage->getWarningColor();
-  if (warningColor == OptionsDefaults::Messages::warningColor) {
-    mpSettings->remove("messages/warningColor");
+  if (warningColor == OptionsDialog::themeColor(OptionsDefaults::Messages::warningColor, OptionsDefaults::Messages::DarkMode::warningColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("messages/warningColor"));
   } else {
-    mpSettings->setValue("messages/warningColor", warningColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("messages/warningColor"), warningColor.rgba());
   }
   // save error color
   QColor errorColor = mpMessagesPage->getErrorColor();
-  if (errorColor == OptionsDefaults::Messages::errorColor) {
-    mpSettings->remove("messages/errorColor");
+  if (errorColor == OptionsDialog::themeColor(OptionsDefaults::Messages::errorColor, OptionsDefaults::Messages::DarkMode::errorColor)) {
+    mpSettings->remove(OptionsDialog::themeKey("messages/errorColor"));
   } else {
-    mpSettings->setValue("messages/errorColor", errorColor.rgba());
+    mpSettings->setValue(OptionsDialog::themeKey("messages/errorColor"), errorColor.rgba());
   }
   // apply the above settings to Messages
   MessagesWidget::instance()->applyMessagesSettings();
@@ -3074,9 +3103,9 @@ void OptionsDialog::saveFMISettings()
 
   bool deleteFMUDirectoyAndModel = mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked();
   if (deleteFMUDirectoyAndModel == OptionsDefaults::FMI::deleteFMUDirectoyAndModel) {
-    mpSettings->remove("FMIExport/DeleteFMUDirectoyAndModel");
+    mpSettings->remove("FMIImport/DeleteFMUDirectoyAndModel");
   } else {
-    mpSettings->setValue("FMIExport/DeleteFMUDirectoyAndModel", deleteFMUDirectoyAndModel);
+    mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", deleteFMUDirectoyAndModel);
   }
 }
 
@@ -3570,7 +3599,7 @@ CodeColorsWidget::CodeColorsWidget(QWidget *pParent)
   mpItemsListWidget->setItemDelegate(new ItemDelegate(mpItemsListWidget));
   mpItemsListWidget->setMaximumHeight(90);
   // text (black)
-  new ListWidgetItem("Text", OptionsDefaults::ModelicaEditor::textRuleColor, mpItemsListWidget);
+  new ListWidgetItem("Text", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::textRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::textRuleColor), mpItemsListWidget);
   // make first item in the list selected
   mpItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
   // preview textbox
@@ -4491,17 +4520,17 @@ ModelicaEditorPage::ModelicaEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // number (purple)
-  new ListWidgetItem("Number", OptionsDefaults::ModelicaEditor::numberRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::numberRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // keyword (dark red)
-  new ListWidgetItem("Keyword", OptionsDefaults::ModelicaEditor::keywordRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Keyword", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::keywordRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::keywordRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // type (red)
-  new ListWidgetItem("Type", OptionsDefaults::ModelicaEditor::typeRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Type", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::typeRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::typeRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // function (blue)
-  new ListWidgetItem("Function", OptionsDefaults::ModelicaEditor::functionRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Function", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::functionRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::functionRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // Quotes (dark green)
-  new ListWidgetItem("Quotes", OptionsDefaults::ModelicaEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::quotesRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::ModelicaEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::ModelicaEditor::commentRuleColor, OptionsDefaults::ModelicaEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview text
   QString previewText;
   previewText.append("class HelloWorld /* block\n"
@@ -4594,15 +4623,15 @@ MetaModelicaEditorPage::MetaModelicaEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // number (purple)
-  new ListWidgetItem("Number", OptionsDefaults::MetaModelicaEditor::numberRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::numberRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // keyword (dark red)
-  new ListWidgetItem("Keyword", OptionsDefaults::MetaModelicaEditor::keywordRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Keyword", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::keywordRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::keywordRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // type (red)
-  new ListWidgetItem("Type", OptionsDefaults::MetaModelicaEditor::typeRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Type", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::typeRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::typeRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // Quotes (dark green)
-  new ListWidgetItem("Quotes", OptionsDefaults::MetaModelicaEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::quotesRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::MetaModelicaEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::MetaModelicaEditor::commentRuleColor, OptionsDefaults::MetaModelicaEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview text
   QString previewText;
   previewText.append("function HelloWorld /* block\n"
@@ -4698,15 +4727,15 @@ CRMLEditorPage::CRMLEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // number (purple)
-  new ListWidgetItem("Number", OptionsDefaults::CRMLEditor::numberRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::numberRuleColor, OptionsDefaults::CRMLEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // keyword (dark red)
-  new ListWidgetItem("Keyword", OptionsDefaults::CRMLEditor::keywordRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Keyword", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::keywordRuleColor, OptionsDefaults::CRMLEditor::DarkMode::keywordRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // type (red)
-  new ListWidgetItem("Type", OptionsDefaults::CRMLEditor::typeRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Type", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::typeRuleColor, OptionsDefaults::CRMLEditor::DarkMode::typeRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // Quotes (dark green)
-  new ListWidgetItem("Quotes", OptionsDefaults::CRMLEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::quotesRuleColor, OptionsDefaults::CRMLEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::CRMLEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::CRMLEditor::commentRuleColor, OptionsDefaults::CRMLEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview text
   QString previewText;
   previewText.append("model HelloWorld is {\n"
@@ -4793,15 +4822,15 @@ MOSEditorPage::MOSEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // number (purple)
-  new ListWidgetItem("Number", OptionsDefaults::MOSEditor::numberRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::numberRuleColor, OptionsDefaults::MOSEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // keyword (dark red)
-  new ListWidgetItem("Keyword", OptionsDefaults::MOSEditor::keywordRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Keyword", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::keywordRuleColor, OptionsDefaults::MOSEditor::DarkMode::keywordRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // type (red)
-  new ListWidgetItem("Type", OptionsDefaults::MOSEditor::typeRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Type", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::typeRuleColor, OptionsDefaults::MOSEditor::DarkMode::typeRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // Quotes (dark green)
-  new ListWidgetItem("Quotes", OptionsDefaults::MOSEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::quotesRuleColor, OptionsDefaults::MOSEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::MOSEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::MOSEditor::commentRuleColor, OptionsDefaults::MOSEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview text
   QString previewText;
   previewText.append("loadModel(Modelica); getErrorString();\n"
@@ -4891,13 +4920,13 @@ OMSimulatorEditorPage::OMSimulatorEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // tag (blue)
-  new ListWidgetItem("Tag", OptionsDefaults::OMSimulatorEditor::tagRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Tag", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::tagRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::tagRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // element (blue)
-  new ListWidgetItem("Element", OptionsDefaults::OMSimulatorEditor::elementRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Element", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::elementRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::elementRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // quotes (dark red)
-  new ListWidgetItem("Quotes", OptionsDefaults::OMSimulatorEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::quotesRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::OMSimulatorEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::OMSimulatorEditor::commentRuleColor, OptionsDefaults::OMSimulatorEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview textbox
   QString previewText;
   previewText.append("<!-- This is a comment. -->\n"
@@ -4993,15 +5022,15 @@ CEditorPage::CEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // number (purple)
-  new ListWidgetItem("Number", OptionsDefaults::CEditor::numberRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Number", OptionsDialog::themeColor(OptionsDefaults::CEditor::numberRuleColor, OptionsDefaults::CEditor::DarkMode::numberRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // keyword (dark red)
-  new ListWidgetItem("Keyword", OptionsDefaults::CEditor::keywordRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Keyword", OptionsDialog::themeColor(OptionsDefaults::CEditor::keywordRuleColor, OptionsDefaults::CEditor::DarkMode::keywordRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // type (red)
-  new ListWidgetItem("Type", OptionsDefaults::CEditor::typeRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Type", OptionsDialog::themeColor(OptionsDefaults::CEditor::typeRuleColor, OptionsDefaults::CEditor::DarkMode::typeRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // Quotes (dark green)
-  new ListWidgetItem("Quotes", OptionsDefaults::CEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::CEditor::quotesRuleColor, OptionsDefaults::CEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::CEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::CEditor::commentRuleColor, OptionsDefaults::CEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview text
   QString previewText;
   previewText.append("#include <stdio.h>\n"
@@ -5092,11 +5121,11 @@ HTMLEditorPage::HTMLEditorPage(OptionsDialog *pOptionsDialog)
   connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
   // Add items to list
   // tag (blue)
-  new ListWidgetItem("Tag", OptionsDefaults::HTMLEditor::tagRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Tag", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::tagRuleColor, OptionsDefaults::HTMLEditor::DarkMode::tagRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // quotes (dark red)
-  new ListWidgetItem("Quotes", OptionsDefaults::HTMLEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Quotes", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::quotesRuleColor, OptionsDefaults::HTMLEditor::DarkMode::quotesRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::HTMLEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
+  new ListWidgetItem("Comment", OptionsDialog::themeColor(OptionsDefaults::HTMLEditor::commentRuleColor, OptionsDefaults::HTMLEditor::DarkMode::commentRuleColor), mpCodeColorsWidget->getItemsListWidget());
   // preview textbox
   QString previewText;
   previewText.append("<!-- This is a comment. -->\n"
@@ -5358,9 +5387,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpCompilerComboBox->setEditable(true);
   mpCompilerComboBox->addItem("");
   mpCompilerComboBox->addItem("gcc");
-#ifdef Q_OS_UNIX
   mpCompilerComboBox->addItem("clang");
-#endif
   OptionsDefaults::Simulation::cCompiler = MainWindow::instance()->getOMCProxy()->getCompiler();
   mpCompilerComboBox->lineEdit()->setPlaceholderText(OptionsDefaults::Simulation::cCompiler);
   // CXX Compiler
@@ -5570,21 +5597,21 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpNotificationColorButton = new QPushButton(Helper::pickColor);
   mpNotificationColorButton->setAutoDefault(false);
   connect(mpNotificationColorButton, SIGNAL(clicked()), SLOT(pickNotificationColor()));
-  setNotificationColor(OptionsDefaults::Messages::notificationColor);
+  setNotificationColor(OptionsDialog::themeColor(OptionsDefaults::Messages::notificationColor, OptionsDefaults::Messages::DarkMode::notificationColor));
   setNotificationPickColorButtonIcon();
   // Warning Color
   mpWarningColorLabel = new Label(tr("Warning Color:"));
   mpWarningColorButton = new QPushButton(Helper::pickColor);
   mpWarningColorButton->setAutoDefault(false);
   connect(mpWarningColorButton, SIGNAL(clicked()), SLOT(pickWarningColor()));
-  setWarningColor(OptionsDefaults::Messages::warningColor);
+  setWarningColor(OptionsDialog::themeColor(OptionsDefaults::Messages::warningColor, OptionsDefaults::Messages::DarkMode::warningColor));
   setWarningPickColorButtonIcon();
   // Error Color
   mpErrorColorLabel = new Label(tr("Error Color:"));
   mpErrorColorButton = new QPushButton(Helper::pickColor);
   mpErrorColorButton->setAutoDefault(false);
   connect(mpErrorColorButton, SIGNAL(clicked()), SLOT(pickErrorColor()));
-  setErrorColor(OptionsDefaults::Messages::errorColor);
+  setErrorColor(OptionsDialog::themeColor(OptionsDefaults::Messages::errorColor, OptionsDefaults::Messages::DarkMode::errorColor));
   setErrorPickColorButtonIcon();
   // set the layout of FontColors group
   QGridLayout *pFontColorsLayout = new QGridLayout;

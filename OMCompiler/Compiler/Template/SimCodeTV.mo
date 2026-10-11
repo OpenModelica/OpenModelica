@@ -1506,6 +1506,17 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isSymbolicArrayVar;
 
+  function jacobianOffsetVars
+    input HashTableCrefSimVar.HashTable ht;
+    input String kind;
+    output list<SimCodeVar.SimVar> vars;
+  end jacobianOffsetVars;
+
+  function jacobianOffsetSize
+    input list<SimCodeVar.SimVar> vars;
+    output Integer n;
+  end jacobianOffsetSize;
+
   function simVarSizeExp
     input SimCodeVar.SimVar var;
     output DAE.Exp exp;
@@ -1701,6 +1712,16 @@ package SimCodeCodegenUtil
   function isSimulationCodegen
     output Boolean simulation;
   end isSimulationCodegen;
+
+  function timeEventTrigger
+    input DAE.Exp rel;
+    output Option<DAE.Exp> trigger;
+  end timeEventTrigger;
+
+  function isTimeEventRelation
+    input DAE.Exp rel;
+    output Boolean b;
+  end isTimeEventRelation;
 
   function cref2simvar
     input DAE.ComponentRef cref;

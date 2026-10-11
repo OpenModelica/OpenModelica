@@ -83,6 +83,7 @@ public
   import Array;
   import BackendUtil = NBBackendUtil;
   import Error;
+  import StringUtil;
   import UnorderedMap;
   import Slice = NBSlice;
 
@@ -1160,11 +1161,13 @@ public
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
-      // Known variables, except for top level inputs have a 0-derivative
+      // Known variables, except for top level inputs have a 0-derivative.
+      // parameters solved in the initial system are seeds or inner variables of its jacobians.
       case (Expression.CREF(), _, _)
         guard(BVariable.isParamOrConst(var_ptr) and
               not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr))
-              and not BVariable.isOptimizable(var_ptr) /* TODO? */ )
+              and not BVariable.isOptimizable(var_ptr) /* TODO? */
+              and not isJacobianUnknown(exp.cref, diffArguments))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
@@ -1239,7 +1242,7 @@ public
           // elementwise, everything else that is not in diff_map gets differentiated to zero
           hasSetSub := false;
           elem_crefs := {};
-          if Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
             elem_crefs := listReverse(ComponentRef.scalarizeAll(exp.cref, false));
             for c in elem_crefs loop
               if UnorderedMap.contains(c, diff_map) then
@@ -1330,7 +1333,7 @@ public
             end if;
           end for;
           // a slice (e.g. i[1:2]) of variables whose elements are the seeds needs to be expanded as well
-          if not hasSetSub and Type.isArray(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
+          if not hasSetSub and Type.isArray(exp.ty) and Type.hasKnownSize(exp.ty) and Type.sizeOf(exp.ty) <= 256 then
             for c in listReverse(ComponentRef.scalarizeAll(exp.cref, false)) loop
               if UnorderedMap.contains(c, diff_map) then
                 hasSetSub := true;
@@ -1577,6 +1580,21 @@ public
     res := Expression.applySubscripts(subs, makeShapedArray(base_ty, listReverse(elem_exps)));
   end differentiateIteratorElement;
 
+  function isJacobianUnknown
+    "true if the cref has a seed or partial derivative variable in a jacobian"
+    input ComponentRef cref;
+    input DifferentiationArguments diffArguments;
+    output Boolean b;
+  algorithm
+    b := match (diffArguments.diffType, diffArguments.diff_map)
+      local
+        UnorderedMap<ComponentRef, ComponentRef> diff_map;
+      case (DifferentiationType.JACOBIAN, SOME(diff_map))
+        then UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map);
+      else false;
+    end match;
+  end isJacobianUnknown;
+
   function differentiateComponentRefNoCollect
     input output Expression exp;
     input output DifferentiationArguments diffArguments;
@@ -1592,6 +1610,22 @@ public
       (exp, diffArguments) := differentiateComponentRef(exp, diffArguments);
     end if;
   end differentiateComponentRefNoCollect;
+
+  function isRelatedCref
+    "true if the expression is a cref of the same variable, one of its records or one of its fields"
+    input Expression exp;
+    input String name "of the cref without subscripts";
+    output Boolean b;
+  protected
+    String other;
+  algorithm
+    b := match exp
+      case Expression.CREF() algorithm
+        other := ComponentRef.toString(ComponentRef.stripSubscriptsAll(exp.cref));
+      then other == name or StringUtil.startsWith(name, other + ".") or StringUtil.startsWith(other, name + ".");
+      else false;
+    end match;
+  end isRelatedCref;
 
   function differentiateVariablePointer
     input Pointer<Variable> var_ptr;
@@ -1663,6 +1697,13 @@ public
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
         (ret, diffArguments) := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
+
+      // a call that does not depend on the variable has a zero derivative,
+      // its derivative function might not even be applicable (e.g. external object inputs)
+      case Expression.CALL(call = call as Call.TYPED_CALL())
+        guard(diffArguments.diffType == DifferentiationType.SIMPLE
+          and not Expression.contains(exp, function isRelatedCref(name = ComponentRef.toString(ComponentRef.stripSubscriptsAll(diffArguments.diffCref)))))
+      then (Expression.makeZero(Expression.typeOf(exp)), diffArguments);
 
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm

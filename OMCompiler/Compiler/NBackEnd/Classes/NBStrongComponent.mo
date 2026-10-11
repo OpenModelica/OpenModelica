@@ -476,6 +476,8 @@ public
     // create individual slices (array bucket → slice component, scalar → scalar component)
     for tpl in UnorderedMap.toList(elem_map) loop
       (eqn_arr_idx, scal_indices) := tpl;
+      // the calls of the slice consume its indices in order, see the call order below
+      scal_indices := listReverse(scal_indices);
       if UnorderedMap.contains(eqn_arr_idx, cref_map) then
         var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
         entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;

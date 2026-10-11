@@ -116,7 +116,7 @@ sim_driver::set_teardown_hook(on_teardown);
         "CodegenWasmJit: unsupported output format"
     })?;
     openmodelica_wasi::wasi::start_stdout_capture();
-    let (param_ov, start_ov, string_ov) = resolve_overrides(&model, &flags);
+    let (param_ov, start_ov, string_ov) = resolve_overrides(&model, &meta, &flags);
     sim_driver::set_param_overrides(param_ov, start_ov, string_ov);
     sim_driver::set_start_imports(resolve_start_imports(&meta, &flags));
     // Build the backend (instantiate, init, emit row 0). An init trap is usually
@@ -233,7 +233,7 @@ pub fn sim_advance(budget_ms: f64) -> Result<SimStatus> {
                         recon_res?;
                         let run = sim_driver::RunResult {
                             rows,
-                            n_reals: model.layout.n_row_total(),
+                            n_reals: sess.meta.layout.n_row_total(),
                             params,
                             stats,
                             lin,

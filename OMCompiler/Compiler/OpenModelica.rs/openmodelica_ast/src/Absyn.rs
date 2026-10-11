@@ -1734,6 +1734,13 @@ pub enum Exp {
         subscripts: metamodelica::List<metamodelica::Ref<Subscript>>,
     },
     BREAK,
+    /// Numeric literal with a unit, e.g. 9.8'm/s2'
+    UNITFUL_LITERAL {
+        /// INTEGER or REAL
+        value: metamodelica::Ref<Exp>,
+        /// The unit-of-measurement without the quotes
+        unit: ArcStr,
+    },
 }
 impl metamodelica::gc::MMTrace for Exp {
     fn mm_accept(&self, __mmv: &mut dyn metamodelica::gc::MMVisitor) -> Result<(), ()> {
@@ -1866,6 +1873,11 @@ impl metamodelica::gc::MMTrace for Exp {
                 Ok(())
             }
             Exp::BREAK => Ok(()),
+            Exp::UNITFUL_LITERAL { value, unit } => {
+                metamodelica::gc::MMTrace::mm_accept(value, __mmv)?;
+                metamodelica::gc::MMTrace::mm_accept(unit, __mmv)?;
+                Ok(())
+            }
         }
     }
 }
@@ -1884,7 +1896,7 @@ pub fn interned_BREAK() -> metamodelica::Ref<Exp> { Exp::interned_BREAK() }
 impl Default for Exp {
     fn default() -> Self { Self::END }
 }
-pub use self::Exp::{INTEGER,REAL,CREF,STRING,BOOL,BINARY,UNARY,LBINARY,LUNARY,RELATION,IFEXP,CALL,PARTEVALFUNCTION,ARRAY,MATRIX,RANGE,TUPLE,END,CODE,AS,CONS,MATCHEXP,LIST,DOT,EXPRESSIONCOMMENT,SUBSCRIPTED_EXP,BREAK};
+pub use self::Exp::{INTEGER,REAL,CREF,STRING,BOOL,BINARY,UNARY,LBINARY,LUNARY,RELATION,IFEXP,CALL,PARTEVALFUNCTION,ARRAY,MATRIX,RANGE,TUPLE,END,CODE,AS,CONS,MATCHEXP,LIST,DOT,EXPRESSIONCOMMENT,SUBSCRIPTED_EXP,BREAK,UNITFUL_LITERAL};
 
 /// case in match or matchcontinue
 #[derive(Clone, Debug, Eq, Hash, metamodelica::MMCtor, metamodelica::MetaCmp, metamodelica::ReferenceEq, metamodelica::serial::MMSerial)]

@@ -436,7 +436,7 @@ public
             directory := ProgramUtil.getFileDir(AbsynUtil.pathToCref(name), program);
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
-            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
+            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(list(tpl for tpl guard(not hasExternalObjectArrayField(Util.tuple22(tpl))) in UnorderedMap.toList(funcMap))));
             (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := SimCodeUtilShared.createFunctions(program, oldFunctionTree);
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
@@ -636,6 +636,25 @@ public
     end getDirectoryAndLibs;
 
   protected
+    function hasExternalObjectArrayField
+      "record constructors with external object array fields have no C representation.
+      they are only collected because of record bindings that get split into fields."
+      input Function fn;
+      output Boolean b;
+    algorithm
+      b := Function.isDefaultRecordConstructor(fn) and List.any(listAppend(fn.inputs, fn.locals),
+        hasExternalObjectArrayType);
+    end hasExternalObjectArrayField;
+
+    function hasExternalObjectArrayType
+      input InstNode node;
+      output Boolean b;
+    protected
+      Type ty = InstNode.getType(node);
+    algorithm
+      b := Type.isArray(ty) and Type.isExternalObject(Type.arrayElementType(ty));
+    end hasExternalObjectArrayType;
+
     function collectAlgebraicLoops
       "Collects algebraic loops from all systems (ode, init, init_0, dae, ...).
       ToDo: Add other systems once implemented!"

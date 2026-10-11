@@ -349,26 +349,36 @@ thread_local! {
     /// applies to just that expression — nested expressions fall back to the
     /// default, exactly like the explicit rule arguments in Modelica.g.
     static ALLOW_PART_EVAL_FUNC: std::cell::Cell<Option<bool>> = const { std::cell::Cell::new(None) };
-    /// Whether `pure`/`impure` are lexed as plain identifiers rather than
-    /// keywords. Mirrors the `Modelica_3_Lexer.g` predicate
-    /// `if (ModelicaParser_langStd < 33 && ModelicaParser_strict) $type = IDENT;`
-    /// — i.e. they only became keywords in Modelica 3.3, so a `--std=3.2
-    /// --strict` parse must reject `pure function …`. Defaults to `false`
-    /// (keywords); set per-parse by [`set_pure_impure_as_ident`].
-    static PURE_IMPURE_AS_IDENT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// `ModelicaParser_langStd` and `ModelicaParser_strict`; set per-parse by
+    /// [`set_language_standard`].
+    static LANGUAGE_STANDARD: std::cell::Cell<(i32, bool)> = const { std::cell::Cell::new((1000, false)) };
 }
 
-/// Set whether `pure`/`impure` should be lexed as identifiers for subsequent
-/// parses on this thread (see [`PURE_IMPURE_AS_IDENT`]). Called from
-/// `ParserExt` with `languageStandardInt < 33 && strict`.
-pub fn set_pure_impure_as_ident(b: bool) {
-    PURE_IMPURE_AS_IDENT.with(|c| c.set(b));
+/// `--std` as an integer (36 for 3.6) and `--strict`, for later parses on this thread.
+pub fn set_language_standard(std: i32, strict: bool) {
+    LANGUAGE_STANDARD.with(|c| c.set((std, strict)));
 }
 
-/// Whether the lexer should treat `pure`/`impure` as identifiers. Read by the
-/// Modelica-3 keyword table in [`lexer`].
+fn reset_language_standard() {
+    set_language_standard(1000, false);
+}
+
+fn language_standard() -> i32 {
+    LANGUAGE_STANDARD.with(|c| c.get().0)
+}
+
+fn strict_and_at_least(std: i32) -> bool {
+    LANGUAGE_STANDARD.with(|c| { let (s, strict) = c.get(); strict && s >= std })
+}
+
+/// `pure`/`impure` became keywords in Modelica 3.3 (`Modelica_3_Lexer.g`).
 pub(crate) fn pure_impure_as_ident() -> bool {
-    PURE_IMPURE_AS_IDENT.with(|c| c.get())
+    LANGUAGE_STANDARD.with(|c| { let (s, strict) = c.get(); strict && s < 33 })
+}
+
+/// `time` is a keyword since Modelica 3.7, but only enforced under `--strict`.
+pub(crate) fn time_is_keyword() -> bool {
+    strict_and_at_least(37)
 }
 
 /// Parse a function-call argument expression, permitting a top-level partial
@@ -657,38 +667,35 @@ pub fn parse_statements(
     readonly: bool,
     timestamp: f64,
 ) -> Result<crate::GlobalScript::Statements, Box<dyn std::error::Error>> {
-    // The pure/impure language-version gating is a property of a full-file
-    // parse (set by ParserExt.parse/parsestring); interactive statements and
-    // fragments use the default (keywords), so reset any inherited value.
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, info_filename, grammar, true, readonly, timestamp, interactive_stmt)
 }
 
 /// Parse a dotted name path such as `Modelica.Blocks.Sources` (ANTLR3 rule
 /// `name_path_end`; entry point for `ParserExt.stringPath`).
 pub fn parse_path(src: &str, filename: &str, grammar: Grammar) -> Result<Path, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, name_path)
 }
 
 /// Parse a component reference such as `a.b[1].c` (ANTLR3 rule
 /// `component_reference_end`; entry point for `ParserExt.stringCref`).
 pub fn parse_cref(src: &str, filename: &str, grammar: Grammar) -> Result<Absyn::ComponentRef, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, component_reference)
 }
 
 /// Parse a single element modification such as `x(start = 1.0)` (ANTLR3 rule
 /// `element_modification_or_replaceable`; entry point for `ParserExt.stringMod`).
 pub fn parse_modification(src: &str, filename: &str, grammar: Grammar) -> Result<Absyn::ElementArg, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, element_modification_or_replaceable)
 }
 
 /// Parse a single equation such as `x = y + 1` (ANTLR3 rule `equation`;
 /// entry point for `ParserExt.stringEq`).
 pub fn parse_equation(src: &str, filename: &str, grammar: Grammar) -> Result<Absyn::EquationItem, Box<dyn std::error::Error>> {
-    set_pure_impure_as_ident(false);
+    reset_language_standard();
     run_entry(src, filename, filename, grammar, false, /*readonly=*/false, /*timestamp=*/0.0, equation_item)
 }
 
@@ -1829,10 +1836,19 @@ fn modification(input: &mut TokenInput) -> ModalResult<Modification> {
     // ANTLR anchors the EQMOD info at the `=`/`:=` token
     // (`PARSER_INFO($eq)`), not at the start of the whole modification.
     let eq_start = *input;
+    let is_assign = matches!(peek_kind(input), Some(TK::Assign));
     let eq = if opt(alt((t(TK::Assign), t(TK::Equal)))).parse_next(input)?.is_some() {
         let exp = cut_err(modification_expression)
                 .context(StrContext::Label("modification expression"))
                 .parse_next(input)?;
+        if is_assign {
+            let (l1, c1) = (eq_start[0].line, eq_start[0].col);
+            let (l2, c2) = input.first().map_or((l1, c1 + 2), |t| (t.line, t.col));
+            if strict_and_at_least(37) {
+                return Err(parser_assert_fail(":= in modifiers is not allowed since Modelica 3.7", l1, c1, l2, c2));
+            }
+            add_syntax_message(SyntaxSeverity::Warning, ":= in modifiers has been deprecated".to_owned(), l1, c1, l2, c2);
+        }
         Absyn::EqMod::EQMOD {
             exp: metamodelica::Ref::new(exp),
             info: parser_info(&eq_start, input),
@@ -2717,7 +2733,7 @@ fn assign_clause_a(input: &mut TokenInput) -> ModalResult<Algorithm> {
                     start[0].line, start[0].col, lt1_line, lt1_col.saturating_sub(1),
                 ));
             }
-            if looks_like_der_cr {
+            if looks_like_der_cr && language_standard() < 37 {
                 add_syntax_message(
                     SyntaxSeverity::Warning,
                     "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.".to_owned(),
@@ -3756,12 +3772,41 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
         Some(TK::End)   => { skip_tok(input)?; return Ok(Absyn::Exp::END {}); }
         Some(TK::True)  => { skip_tok(input)?; return Ok(Absyn::Exp::BOOL { value: true  }); }
         Some(TK::False) => { skip_tok(input)?; return Ok(Absyn::Exp::BOOL { value: false }); }
+        Some(TK::Time)  => {
+            skip_tok(input)?;
+            let cr = Absyn::ComponentRef::CREF_IDENT { name: "time".into(), subscripts: nil() };
+            return Ok(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(cr) });
+        }
         Some(TK::Str(s))=> { let value = s.clone(); skip_tok(input)?; return Ok(Absyn::Exp::STRING { value }); }
         Some(TK::Int(_)) | Some(TK::Real(..)) => { return number_literal(input); }
         Some(TK::LParen) => {
             let (paren_line, paren_col) = next_pos(input);
             skip_tok(input)?;
             let (exprs, is_tuple) = output_expression_list(input)?;
+            if input.len() >= 2 && input[0].kind == TK::Dot
+                && let TK::Ident(name) = &input[1].kind
+            {
+                let (l2, c2) = (input[1].line, input[1].col);
+                let name = name.clone();
+                skip_tok(input)?;
+                skip_tok(input)?;
+                if is_tuple {
+                    add_syntax_message(
+                        SyntaxSeverity::Error,
+                        "Tuple expression can not be used with the dot operator.".to_owned(),
+                        paren_line, paren_col, l2, c2,
+                    );
+                    return Err(ErrMode::Cut(ContextError::new()));
+                }
+                let metamodelica::ListNode::Cons { head: exp, .. } = &*exprs else {
+                    unreachable!("non-tuple output_expression_list returned no expression")
+                };
+                let cr = Absyn::ComponentRef::CREF_IDENT { name, subscripts: nil() };
+                return Ok(Absyn::Exp::DOT {
+                    exp: exp.clone(),
+                    index: metamodelica::Ref::new(Absyn::Exp::CREF { componentRef: metamodelica::Ref::new(cr) }),
+                });
+            }
             let before_subs: TokenInput = *input;
             let raw_subs = opt(array_subscripts).parse_next(input)?;
             if let Some(subs) = raw_subs {
@@ -3875,11 +3920,20 @@ fn primary(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
 }
 
 fn number_literal(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
-    match next_tok(input)? {
-        TK::Int(n)  => Ok(Absyn::Exp::INTEGER { value: n }),
-        TK::Real(_, s) => Ok(Absyn::Exp::REAL    { value: s }),
-        _           => Err(ErrMode::Backtrack(ContextError::default())),
+    let value = match next_tok(input)? {
+        TK::Int(n)  => Absyn::Exp::INTEGER { value: n },
+        TK::Real(_, s) => Absyn::Exp::REAL    { value: s },
+        _           => return Err(ErrMode::Backtrack(ContextError::default())),
+    };
+    // unit-of-measurement: a Q-IDENT directly after the number (9.8'm/s2').
+    if let Some(TK::Ident(q)) = peek_kind(input)
+        && q.starts_with('\'')
+    {
+        let unit: ArcStr = q[1..q.len() - 1].into();
+        skip_tok(input)?;
+        return Ok(Absyn::Exp::UNITFUL_LITERAL { value: metamodelica::Ref::new(value), unit });
     }
+    Ok(value)
 }
 
 fn component_reference__function_call(input: &mut TokenInput) -> ModalResult<Absyn::Exp> {
@@ -4281,6 +4335,48 @@ mod tests {
         let mut ts = tokens.as_slice();
         let exp = expression(&mut ts).unwrap();
         assert!(matches!(exp, Exp::ARRAY { arrayExp } if arrayExp.len() == 3));
+    }
+
+    fn parse_exp(src: &str) -> ModalResult<Exp> {
+        CURRENT_GRAMMAR.with(|g| g.set(Grammar::Modelica3));
+        let tokens = lexer::lex(src, Grammar::Modelica3).unwrap();
+        let mut ts = tokens.as_slice();
+        expression(&mut ts)
+    }
+
+    #[test]
+    fn unitful_literal() {
+        let Exp::UNARY { exp, .. } = parse_exp("-5'cm';").unwrap() else { panic!("expected UNARY") };
+        let Exp::UNITFUL_LITERAL { value, unit } = &*exp else { panic!("expected UNITFUL_LITERAL, got {exp:?}") };
+        assert!(matches!(&**value, Exp::INTEGER { value: 5 }));
+        assert_eq!(unit.as_str(), "cm");
+        let exp = parse_exp("9.81 'm/s2';").unwrap();
+        assert!(matches!(&exp, Exp::UNITFUL_LITERAL { value, unit }
+            if matches!(&**value, Exp::REAL { .. }) && unit.as_str() == "m/s2"), "got {exp:?}");
+    }
+
+    #[test]
+    fn parenthesized_member_access() {
+        let exp = parse_exp("(f(x)).b;").unwrap();
+        let Exp::DOT { exp, index } = &exp else { panic!("expected DOT, got {exp:?}") };
+        assert!(matches!(&**exp, Exp::CALL { .. }));
+        assert!(matches!(&**index, Exp::CREF { componentRef }
+            if matches!(&**componentRef, ComponentRef::CREF_IDENT { name, .. } if name.as_str() == "b")));
+        assert!(parse_exp("(a, b).c;").is_err());
+        let msgs = take_syntax_messages();
+        assert!(msgs.iter().any(|m| m.message.contains("dot operator")), "messages = {msgs:?}");
+    }
+
+    #[test]
+    fn time_keyword() {
+        let kind = || lexer::lex("time", Grammar::Modelica3).unwrap()[0].kind.clone();
+        set_language_standard(37, true);
+        assert_eq!(kind(), TK::Time);
+        set_language_standard(37, false);
+        assert!(matches!(kind(), TK::Ident(_)));
+        set_language_standard(36, true);
+        assert!(matches!(kind(), TK::Ident(_)));
+        reset_language_standard();
     }
 
     #[test]

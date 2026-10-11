@@ -104,7 +104,7 @@ namespace IAEX
     void nextField();
     void clickEvent();
     void clickEventOutput();
-    void contentChanged();
+    void contentChanged() override;
     void setText(QString text) override;
     void setTextHtml(QString html) override;
     virtual void setTextOutput(QString output);

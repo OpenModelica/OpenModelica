@@ -53,6 +53,34 @@
 
 namespace ModelInstance
 {
+  namespace
+  {
+    /*! Returns positional record fields emitted by the model-instance JSON API. */
+    QJsonArray getRecordElements(const QJsonValue &jsonValue)
+    {
+      return jsonValue.toObject().value("elements").toArray();
+    }
+
+    /*!
+     * Unlike StringHandler::escapeString, preserve leading/trailing whitespace and include quotes.
+     */
+    QString quoteModelicaString(const QString &value)
+    {
+      QString escaped = value;
+      escaped.replace("\\", "\\\\");
+      escaped.replace("\"", "\\\"");
+      escaped.replace("\a", "\\a");
+      escaped.replace("\b", "\\b");
+      escaped.replace("\f", "\\f");
+      escaped.replace("\n", "\\n");
+      escaped.replace("\r", "\\r");
+      escaped.replace("\t", "\\t");
+      escaped.replace("\v", "\\v");
+      return QString("\"%1\"").arg(escaped);
+    }
+
+  }
+
   /*!
    * \class CoordinateSystem
    * \brief A class to represent the coordinate system of view.
@@ -522,6 +550,422 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \class AxisScale
+   * \brief Represents a Documentation figure axis scale.
+   */
+  /*!
+   * \brief AxisScale::deserialize
+   * Reads the Modelica record's positional JSON elements.
+   */
+  void AxisScale::deserialize(const QJsonValue &jsonValue)
+  {
+    const QJsonArray elements = getRecordElements(jsonValue);
+    if (elements.size() > 0) {
+      mScaleType = elements.at(0).toString();
+    }
+    if (elements.size() > 1) {
+      mBase = elements.at(1).toInt();
+    }
+  }
+
+  /*!
+   * \brief AxisScale::toString
+   * Omits values equal to the record defaults.
+   */
+  QString AxisScale::toString() const
+  {
+    QStringList fields;
+    if (mScaleType != QStringLiteral("Linear")) {
+      fields.append(QString("scaleType=%1").arg(quoteModelicaString(mScaleType)));
+    }
+    if (mBase != 10) {
+      fields.append(QString("base=%1").arg(mBase));
+    }
+    return QString("AxisScale(%1)").arg(fields.join(","));
+  }
+
+  /*!
+   * \class Axis
+   * \brief Represents bounds, units, labels, and scale for a Documentation plot axis.
+   */
+  /*!
+   * \brief Axis::deserialize
+   * Reads axis bounds, labels, and the optional nested scale record.
+   */
+  void Axis::deserialize(const QJsonValue &jsonValue)
+  {
+    const QJsonArray elements = getRecordElements(jsonValue);
+    if (elements.size() > 0) {
+      mMin.deserialize(elements.at(0));
+    }
+    if (elements.size() > 1) {
+      mMax.deserialize(elements.at(1));
+    }
+    if (elements.size() > 2) {
+      mUnit = elements.at(2).toString();
+    }
+    if (elements.size() > 3) {
+      mLabel = elements.at(3).toString();
+    }
+    if (elements.size() > 4 && elements.at(4).isObject()) {
+      mpScale = std::make_unique<AxisScale>();
+      mpScale->deserialize(elements.at(4));
+    }
+  }
+
+  /*!
+   * \brief Axis::toString
+   * Omits empty bounds and other values equal to the record defaults.
+   */
+  QString Axis::toString() const
+  {
+    QStringList fields;
+    if (!mMin.isNull() && (!mMin.isArray() || mMin.size() > 0)) {
+      fields.append(QString("min=%1").arg(mMin.toQString()));
+    }
+    if (!mMax.isNull() && (!mMax.isArray() || mMax.size() > 0)) {
+      fields.append(QString("max=%1").arg(mMax.toQString()));
+    }
+    if (!mUnit.isEmpty()) {
+      fields.append(QString("unit=%1").arg(quoteModelicaString(mUnit)));
+    }
+    if (!mLabel.isEmpty()) {
+      fields.append(QString("label=%1").arg(quoteModelicaString(mLabel)));
+    }
+    if (mpScale && mpScale->toString() != QStringLiteral("AxisScale()")) {
+      fields.append(QString("scale=%1").arg(mpScale->toString()));
+    }
+    return QString("Axis(%1)").arg(fields.join(","));
+  }
+
+  /*!
+   * \class Curve
+   * \brief Represents a curve entry in a Documentation plot.
+   */
+  /*!
+   * \brief Curve::deserialize
+   * Reads the curve's positional JSON elements, preserving y as a Modelica expression.
+   */
+  void Curve::deserialize(const QJsonValue &jsonValue)
+  {
+    const QJsonArray elements = getRecordElements(jsonValue);
+    if (elements.size() > 0) {
+      mX = elements.at(0).toString();
+    }
+    if (elements.size() > 1) {
+      mY.deserialize(elements.at(1));
+    }
+    if (elements.size() > 2) {
+      mLegend = elements.at(2).toString();
+    }
+    if (elements.size() > 3) {
+      mZOrder = elements.at(3).toInt();
+    }
+  }
+
+  /*!
+   * \brief Curve::toString
+   * Omits default x, legend, and z-order values.
+   */
+  QString Curve::toString() const
+  {
+    QStringList fields;
+    if (mX != QStringLiteral("time")) {
+      fields.append(QString("x=%1").arg(quoteModelicaString(mX)));
+    }
+    fields.append(QString("y=%1").arg(mY.toQString()));
+    if (!mLegend.isEmpty()) {
+      fields.append(QString("legend=%1").arg(quoteModelicaString(mLegend)));
+    }
+    if (mZOrder != 0) {
+      fields.append(QString("zOrder=%1").arg(mZOrder));
+    }
+    return QString("Curve(%1)").arg(fields.join(","));
+  }
+
+  /*!
+   * \class Plot
+   * \brief Represents a plot and its curves and axes in a Documentation figure.
+   */
+  /*!
+   * \brief Plot::deserialize
+   * Reads plot metadata and creates objects only for nested records present in JSON.
+   */
+  void Plot::deserialize(const QJsonValue &jsonValue)
+  {
+    const QJsonArray elements = getRecordElements(jsonValue);
+    if (elements.size() > 0) {
+      mTitle = elements.at(0).toString();
+    }
+    if (elements.size() > 1) {
+      mIdentifier = elements.at(1).toString();
+    }
+    if (elements.size() > 2) {
+      const QJsonArray curves = elements.at(2).toArray();
+      mCurves.reserve(curves.size());
+      for (const QJsonValue &curveValue : curves) {
+        if (curveValue.isObject()) {
+          auto curve = std::make_unique<Curve>();
+          curve->deserialize(curveValue);
+          mCurves.push_back(std::move(curve));
+        }
+      }
+    }
+    if (elements.size() > 3 && elements.at(3).isObject()) {
+      mpXAxis = std::make_unique<Axis>();
+      mpXAxis->deserialize(elements.at(3));
+    }
+    if (elements.size() > 4 && elements.at(4).isObject()) {
+      mpYAxis = std::make_unique<Axis>();
+      mpYAxis->deserialize(elements.at(4));
+    }
+  }
+
+  /*!
+   * \brief Plot::toString
+   * Serializes present curves and axes, omitting default metadata and empty axes.
+   */
+  QString Plot::toString() const
+  {
+    QStringList fields;
+    if (!mTitle.isEmpty()) {
+      fields.append(QString("title=%1").arg(quoteModelicaString(mTitle)));
+    }
+    if (!mIdentifier.isEmpty()) {
+      fields.append(QString("identifier=%1").arg(quoteModelicaString(mIdentifier)));
+    }
+    QStringList curves;
+    for (const auto &curve : mCurves) {
+      curves.append(curve->toString());
+    }
+    fields.append(QString("curves={%1}").arg(curves.join(",")));
+    if (mpXAxis && mpXAxis->toString() != QStringLiteral("Axis()")) {
+      fields.append(QString("x=%1").arg(mpXAxis->toString()));
+    }
+    if (mpYAxis && mpYAxis->toString() != QStringLiteral("Axis()")) {
+      fields.append(QString("y=%1").arg(mpYAxis->toString()));
+    }
+    return QString("Plot(%1)").arg(fields.join(","));
+  }
+
+  /*!
+   * \class Figure
+   * \brief Represents a figure and its plots from a Documentation annotation.
+   */
+  /*!
+   * \brief Figure::deserialize
+   * Reads figure metadata and creates plot objects from its JSON records.
+   */
+  void Figure::deserialize(const QJsonValue &jsonValue)
+  {
+    const QJsonArray elements = getRecordElements(jsonValue);
+    if (elements.size() > 0) {
+      mTitle = elements.at(0).toString();
+    }
+    if (elements.size() > 1) {
+      mIdentifier = elements.at(1).toString();
+    }
+    if (elements.size() > 2) {
+      mGroup = elements.at(2).toString();
+    }
+    if (elements.size() > 3) {
+      mPreferred = elements.at(3).toBool();
+    }
+    if (elements.size() > 4) {
+      const QJsonArray plots = elements.at(4).toArray();
+      mPlots.reserve(plots.size());
+      for (const QJsonValue &plotValue : plots) {
+        if (plotValue.isObject()) {
+          auto plot = std::make_unique<Plot>();
+          plot->deserialize(plotValue);
+          mPlots.push_back(std::move(plot));
+        }
+      }
+    }
+    if (elements.size() > 5) {
+      mCaption = elements.at(5).toString();
+    }
+  }
+
+  /*!
+   * \brief Figure::toString
+   * Serializes the figure while omitting fields at their Modelica defaults.
+   */
+  QString Figure::toString() const
+  {
+    QStringList fields;
+    if (!mTitle.isEmpty()) {
+      fields.append(QString("title=%1").arg(quoteModelicaString(mTitle)));
+    }
+    if (!mIdentifier.isEmpty()) {
+      fields.append(QString("identifier=%1").arg(quoteModelicaString(mIdentifier)));
+    }
+    if (!mGroup.isEmpty()) {
+      fields.append(QString("group=%1").arg(quoteModelicaString(mGroup)));
+    }
+    if (mPreferred) {
+      fields.append("preferred=true");
+    }
+    QStringList plots;
+    for (const auto &plot : mPlots) {
+      plots.append(plot->toString());
+    }
+    fields.append(QString("plots={%1}").arg(plots.join(",")));
+    if (!mCaption.isEmpty()) {
+      fields.append(QString("caption=%1").arg(quoteModelicaString(mCaption)));
+    }
+    return QString("Figure(%1)").arg(fields.join(","));
+  }
+
+  /*!
+   * \class DocumentationAnnotation
+   * \brief Stores Documentation text, stylesheets, and simulation figure annotations.
+   *
+   * Figure titles and serialized forms are cached so later saves can replace one
+   * figure without rebuilding the other serialized figures.
+   */
+  /*!
+   * \brief DocumentationAnnotation::deserialize
+   * Reads documentation text, stylesheets, and figures; cache figures for safe replacement.
+   */
+  void DocumentationAnnotation::deserialize(const QJsonObject &jsonObject)
+  {
+    mInfo = jsonObject.value("info").toString();
+    mRevisions = jsonObject.value("revisions").toString();
+    mInfoHeader = jsonObject.value("__OpenModelica_infoHeader").toString();
+    const QJsonValue styleSheets = jsonObject.value("styleSheets");
+    mStyleSheets.clear();
+    if (styleSheets.isArray()) {
+      for (const QJsonValue &styleSheet : styleSheets.toArray()) {
+        mStyleSheets.append(styleSheet.toString());
+      }
+    }
+
+    mFigures.clear();
+    mSerializedFigures.clear();
+    mSerializedFigureTitles.clear();
+    const QJsonArray figures = jsonObject.value("figures").toArray();
+    mFigures.reserve(figures.size());
+    for (const QJsonValue &figureValue : figures) {
+      if (figureValue.isObject()) {
+        auto figure = std::make_unique<Figure>();
+        figure->deserialize(figureValue);
+        mSerializedFigures.append(figure->toString());
+        mSerializedFigureTitles.append(figure->getTitle());
+        mFigures.push_back(std::move(figure));
+      }
+    }
+  }
+
+  /*!
+   * \brief DocumentationAnnotation::setDocumentation
+   * Replaces the editable info, revisions, and info-header fields.
+   */
+  void DocumentationAnnotation::setDocumentation(const QString &info, const QString &revisions, const QString &infoHeader)
+  {
+    mInfo = info;
+    mRevisions = revisions;
+    mInfoHeader = infoHeader;
+  }
+
+  /*!
+   * \brief DocumentationAnnotation::setFigureAnnotation
+   * Replaces a figure with the matching title or appends it if no title matches.
+   */
+  void DocumentationAnnotation::setFigureAnnotation(const QString &figureTitle, const QString &figureAnnotation)
+  {
+    // Keep the serialized list synchronized with titles so a later save can replace by title.
+    for (int i = 0; i < mSerializedFigureTitles.size(); ++i) {
+      if (mSerializedFigureTitles.at(i) == figureTitle) {
+        mSerializedFigures[i] = figureAnnotation;
+        return;
+      }
+    }
+    mSerializedFigures.append(figureAnnotation);
+    mSerializedFigureTitles.append(figureTitle);
+  }
+
+  /*!
+   * \brief DocumentationAnnotation::toString
+   * Serializes the full Documentation annotation while preserving its figures.
+   */
+  QString DocumentationAnnotation::toString() const
+  {
+    return toString(mInfo, mRevisions, mInfoHeader, QString(), QString(), false);
+  }
+
+  /*!
+   * \brief DocumentationAnnotation::toString
+   * Serializes updated documentation text while retaining all other fields.
+   */
+  QString DocumentationAnnotation::toString(const QString &info, const QString &revisions, const QString &infoHeader) const
+  {
+    return toString(info, revisions, infoHeader, QString(), QString(), false);
+  }
+
+  /*!
+   * \brief DocumentationAnnotation::toString
+   * Serializes a figure replacement or append while retaining other Documentation fields.
+   */
+  QString DocumentationAnnotation::toString(const QString &figureTitle, const QString &figureAnnotation) const
+  {
+    return toString(mInfo, mRevisions, mInfoHeader, figureTitle, figureAnnotation, true);
+  }
+
+  QString DocumentationAnnotation::toString(const QString &info, const QString &revisions, const QString &infoHeader,
+                                            const QString &figureTitle, const QString &figureAnnotation, bool replaceFigure) const
+  {
+    QStringList fields;
+    if (!info.isEmpty()) {
+      fields.append(QString("info=%1").arg(quoteModelicaString(info)));
+    }
+    if (!revisions.isEmpty()) {
+      fields.append(QString("revisions=%1").arg(quoteModelicaString(revisions)));
+    }
+    if (!infoHeader.isEmpty()) {
+      fields.append(QString("__OpenModelica_infoHeader=%1").arg(quoteModelicaString(infoHeader)));
+    }
+    if (!mStyleSheets.isEmpty()) {
+      QStringList styleSheets;
+      for (const QString &styleSheet : mStyleSheets) {
+        styleSheets.append(quoteModelicaString(styleSheet));
+      }
+      fields.append(QString("styleSheets={%1}").arg(styleSheets.join(",")));
+    }
+
+    // Reuse the cached figures so updating text or one figure leaves other figures intact.
+    QStringList figures = mSerializedFigures;
+    bool replacedFigure = false;
+    if (replaceFigure) {
+      for (int i = 0; i < mSerializedFigureTitles.size(); ++i) {
+        if (!replacedFigure && mSerializedFigureTitles.at(i) == figureTitle) {
+          figures[i] = figureAnnotation;
+          replacedFigure = true;
+        }
+      }
+    }
+    if (replaceFigure && !replacedFigure) {
+      figures.append(figureAnnotation);
+    }
+    if (!figures.isEmpty() || replaceFigure) {
+      fields.append(QString("figures={%1}").arg(figures.join(",")));
+    }
+    return QString("Documentation(%1)").arg(fields.join(","));
+  }
+
+  /*!
+   * \brief Annotation::getOrCreateDocumentationAnnotation
+   * Lazily creates and returns the Documentation annotation data.
+   */
+  DocumentationAnnotation *Annotation::getOrCreateDocumentationAnnotation()
+  {
+    if (!mpDocumentationAnnotation) {
+      mpDocumentationAnnotation = std::make_unique<DocumentationAnnotation>();
+    }
+    return mpDocumentationAnnotation.get();
+  }
+
   Annotation Annotation::defaultAnnotation{nullptr};
 
   Annotation::Annotation(Model *pParentModel)
@@ -641,6 +1085,17 @@ namespace ModelInstance
     // experiment annotation
     if (jsonObject.contains("experiment")) {
       mExperimentAnnotation.deserialize(jsonObject.value("experiment").toObject());
+    }
+
+    // Keep documentation storage lazy for models without any Documentation fields.
+    if (jsonObject.contains("Documentation")) {
+      const QJsonObject documentation = jsonObject.value("Documentation").toObject();
+      if (documentation.value("figures").isArray() || documentation.contains("info") ||
+          documentation.contains("revisions") || documentation.contains("__OpenModelica_infoHeader") ||
+          documentation.contains("styleSheets")) {
+        mpDocumentationAnnotation = std::make_unique<DocumentationAnnotation>();
+        mpDocumentationAnnotation->deserialize(documentation);
+      }
     }
   }
 
@@ -1532,9 +1987,25 @@ namespace ModelInstance
     return dir;
   }
 
+  /*!
+   * \brief Model::getAnnotation
+   * Returns this model's annotation or the shared default annotation.
+   */
   Annotation *Model::getAnnotation() const
   {
     return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
+  }
+
+  /*!
+   * \brief Model::getOrCreateAnnotation
+   * Lazily creates and returns this model's mutable annotation.
+   */
+  Annotation *Model::getOrCreateAnnotation()
+  {
+    if (!mpAnnotation) {
+      mpAnnotation = std::make_unique<Annotation>(this);
+    }
+    return mpAnnotation.get();
   }
 
   Annotation *Model::getAnnotationWithoutDefault() const

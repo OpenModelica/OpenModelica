@@ -52,6 +52,7 @@ protected
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Operator = NFOperator;
+  import Scalarize = NFScalarize;
   import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -80,10 +81,12 @@ protected
 
   // Util imports
   import Config;
+  import Flags;
   import Error;
   import Pointer;
   import PointerWeak;
   import StringUtil;
+  import List;
   import Util;
 
 public
@@ -1560,12 +1563,35 @@ public
       input output SimVars vars;
       input output SimCodeIndices simCodeIndices;
     protected
-      list<SimVar> var_lst;
+      list<SimVar> var_lst, constructed = {};
+      list<Pointer<Variable>> elements = {};
+      list<Boolean> is_constructed = {};
+      Variable var;
+      Boolean b;
     algorithm
-      (var_lst, simCodeIndices) := SimVar.createList(VariablePointers.toList(external_objects), VarType.EXTERNAL_OBJECT, simCodeIndices);
+      // in scalarized simcode every element of an external object array has its own slot
+      for var_ptr in VariablePointers.toList(external_objects) loop
+        var := Pointer.access(var_ptr);
+        // objects that are assigned from other objects are not constructed and must not be destructed
+        b := Binding.hasExp(var.binding) and Expression.contains(Binding.getExp(var.binding), Expression.isCall);
+        if Type.isArray(var.ty) and Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+          for elem in Scalarize.scalarizeBackendVariable(var) loop
+            elements := Pointer.create(elem) :: elements;
+            is_constructed := b :: is_constructed;
+          end for;
+        else
+          elements := var_ptr :: elements;
+          is_constructed := b :: is_constructed;
+        end if;
+      end for;
+      (var_lst, simCodeIndices) := SimVar.createList(listReverse(elements), VarType.EXTERNAL_OBJECT, simCodeIndices);
       vars.extObjVars := var_lst;
-      // todo: alias
-      info := EXT_OBJ_INFO(var_lst, {});
+      for tpl in List.zip(var_lst, listReverse(is_constructed)) loop
+        if Util.tuple22(tpl) then
+          constructed := Util.tuple21(tpl) :: constructed;
+        end if;
+      end for;
+      info := EXT_OBJ_INFO(listReverse(constructed), {});
     end create;
 
     function convert

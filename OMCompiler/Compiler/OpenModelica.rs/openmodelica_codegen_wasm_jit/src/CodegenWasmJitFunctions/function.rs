@@ -186,7 +186,7 @@ fn compile_function_body(
         }
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat, flat_outs, flat_results: mode == FlatMode::Variant };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat, flat_outs, flat_results: mode == FlatMode::Variant, size_locals: Default::default() };
     borrow_record_params(&mut ctx, functionArguments, Some(body))?;
     // In declaration order, like C's `varInit` loop: a declaration's dimensions
     // may read an earlier one (`Integer n = size(x,1); Real delta[n-1]`), so
@@ -255,7 +255,7 @@ fn compile_external_function(
         intern_local(v, &mut idx, &mut extra_locals, &mut locals, &mut array_allocs)?;
     }
 
-    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat: HashMap::default(), flat_outs: Vec::new(), flat_results: false };
+    let mut ctx = FnCtx { locals, extra_locals, n_params, outputs, by_name, literals, instrs: Vec::new(), ctrl_depth: 0, loops: Vec::new(), borrowed_locals: Vec::new(), null_locals: Vec::new(), elem_ptr_tmp: None, src_loc: None, sim: None, dt_local_cons: false, dt_fallback: None, flat: HashMap::default(), flat_outs: Vec::new(), flat_results: false, size_locals: Default::default() };
     borrow_record_params(&mut ctx, funArgs, None)?;
     // In the order the C body emits them: `extFunCallF77` appends the `biVars` to
     // the *outputAlloc* buffer, ahead of the outputs (`output Real x[max(nrow,

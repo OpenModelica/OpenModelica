@@ -678,6 +678,10 @@ FuncUnknownDim3.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
 FuncViaComp3.mo \
+FuncViaComp4.mo \
+FuncViaComp5.mo \
+FuncViaComp6.mo \
+FuncViaComp7.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
@@ -743,6 +747,8 @@ FunctionUnitialized3.mo \
 FunctionUnitialized4.mo \
 FunctionUnitialized5.mo \
 FunctionUnitialized6.mo \
+FunctionUnitialized7.mo \
+FunctionUnitialized8.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \

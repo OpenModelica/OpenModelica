@@ -8,6 +8,7 @@ constVar4.mos \
 InOutRecord.mos \
 InputRecord.mos \
 RecordCoercion1.mos \
+RecordConstantInComponentArray.mos \
 RecordConstructor1.mos \
 RecordNested1.mos \
 RecordStructs.mos \
@@ -19,6 +20,7 @@ Ticket12135_inline.mos \
 Ticket13009.mos \
 Ticket14485.mos \
 Ticket16177.mos \
+Ticket16960.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

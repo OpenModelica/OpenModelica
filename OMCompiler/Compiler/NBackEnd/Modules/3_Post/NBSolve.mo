@@ -145,7 +145,10 @@ public
       for comp in Util.getOption(partition.strongComponents) loop
         solved_comps := match UnorderedMap.get(comp, duplicate_map)
           local list<StrongComponent> alias_comps;
-          case SOME(alias_comps) then listAppend(alias_comps, solved_comps); // strong component already solved -> get alias comps
+          case SOME(alias_comps) algorithm
+            // strong component already solved -> get alias comps, they take up positions too
+            Pointer.update(comp_idx, Pointer.access(comp_idx) + listLength(alias_comps));
+          then listAppend(alias_comps, solved_comps);
           else algorithm
             // solve strong component -> create alias comps
             (alias_comps, implicit_index) := solveStrongComponent(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
@@ -344,6 +347,20 @@ public
           (generic_comp, solve_status, implicit_index) := solveGenericEquation(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then ({generic_comp}, solve_status);
 
+        // a single row of an array equation solved for a scalar, e.g. x from row 1 of v = fill(1, 3) .* x
+        case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))
+          and List.hasOneElement(comp.eqn.indices) and not Type.isArray(ComponentRef.getSubscriptedType(comp.var_cref, true))) algorithm
+          eqn := arrayRowEquation(Slice.getT(comp.eqn), listHead(comp.eqn.indices));
+          (eqn, solve_status, implicit_index) := solveSingleStrongComponent(eqn, Variable.fromCref(comp.var_cref), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+          if solve_status < Status.UNSOLVABLE then
+            comp.eqn := Slice.SLICE(Pointer.create(eqn), {});
+          else
+            (eqn_slice, implicit_index, solve_status) := solveForVarSlice(comp.eqn, comp.var, comp.var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
+            comp.eqn := eqn_slice;
+          end if;
+          comp.status := solve_status;
+        then ({comp}, solve_status);
+
         case StrongComponent.SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable occurring in the equation and select the slice that fits the indices
@@ -487,10 +504,28 @@ public
     Equation eqn;
     Slice<EquationPointer> solved_slice;
     UnorderedMap<ComponentRef, Expression> replacements;
+    Option<ComponentRef> iter_cref;
+    ComponentRef solve_cref = cref;
   algorithm
-    if List.hasOneElement(eqn_slice.indices) then
+    // single iterations of resizable loops stay generic, their index is only known at the analysis sizes
+    if List.hasOneElement(eqn_slice.indices) and isResizableForSlice(eqn_slice) then
+      iter_cref := iteratorCref(eqn_ptr, listHead(eqn_slice.indices), cref);
+    else
+      iter_cref := NONE();
+    end if;
+    if isSome(iter_cref) then
+      solve_cref := Util.getOption(iter_cref);
+      (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), solve_cref, functions, kind, implicit_index, slicing_map, varData, eqData);
+      if solve_status >= Status.UNSOLVABLE then
+        // solve the single iteration instead
+        solve_cref := cref;
+        (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr, true), cref,
+          UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), functions);
+      end if;
+    elseif List.hasOneElement(eqn_slice.indices) then
       replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-      (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, functions);
+      // the index refers to the analysis sizes of resizable arrays
+      (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr, Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)), cref, replacements, functions);
     else
       (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
@@ -504,11 +539,55 @@ public
 
     // create a generic component if its a for-equation, otherwise create a sliced component
     if Equation.isForEquation(Slice.getT(solved_slice)) then
-      comp := StrongComponent.GENERIC_COMPONENT(cref, var_slice, solved_slice);
+      comp := StrongComponent.GENERIC_COMPONENT(solve_cref, var_slice, solved_slice);
     else
       comp := StrongComponent.SLICED_COMPONENT(cref, var_slice, solved_slice, solve_status);
     end if;
   end solveGenericEquationSlice;
+
+  function isResizableForSlice
+    "a slice of a for-equation with a scalar body over a resizable range"
+    input Slice<EquationPointer> eqn_slice;
+    output Boolean b = false;
+  protected
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    Iterator iter;
+  algorithm
+    if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and Equation.isForEquation(eqn_ptr) then
+      iter := Equation.getForIterator(Pointer.access(eqn_ptr));
+      b := Iterator.isResizable(iter) and Equation.size(eqn_ptr, true) == Iterator.size(iter, true);
+    end if;
+  end isResizableForSlice;
+
+  function iteratorCref
+    "the occurrence of the variable of cref in the body of a for-equation that is
+     cref in the iteration of the scalar index"
+    input Pointer<Equation> eqn_ptr;
+    input Integer index;
+    input ComponentRef cref;
+    output Option<ComponentRef> res = NONE();
+  protected
+    UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref), target = ComponentRef.simplifySubscripts(cref);
+    Expression e;
+  algorithm
+    Iterator.createLocationReplacements(Equation.getForIterator(Pointer.access(eqn_ptr)), listArray(Slice.indexToLocation(index, Equation.sizes(eqn_ptr, true))), replacements);
+    for c in Equation.collectCrefs(Pointer.access(eqn_ptr), function sameVariable(stripped = stripped)) loop
+      e := SimplifyExp.simplify(Expression.map(Expression.fromCref(c), function Replacements.applySimpleExp(replacements = replacements)));
+      if Expression.isCref(e) and ComponentRef.isEqual(ComponentRef.simplifySubscripts(Expression.toCref(e)), target) then
+        res := SOME(c);
+        return;
+      end if;
+    end for;
+  end iteratorCref;
+
+  function sameVariable extends Slice.filterCref;
+    input ComponentRef stripped;
+  algorithm
+    if ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), stripped) then
+      UnorderedSet.add(cref, acc);
+    end if;
+  end sameVariable;
 
   function solveSliceElementwise
     "Solves each matched element of a sliced for-equation separately for its variable element.
@@ -1868,7 +1947,8 @@ protected
   end applyInstruction;
 
   function tupleSolvable
-    "checks if the tuple expression exactly represents the variables we need to solve for"
+    "checks if the tuple expression contains all variables we need to solve for. other elements
+    are solved by other slices of the same equation, evaluating the call again does not change them."
     input list<Expression> tuple_exps;
     input list<Pointer<Variable>> vars;
     input Boolean inFor = false "elements are one iteration of the (sliced) variables";
@@ -1879,7 +1959,7 @@ protected
     UnorderedMap<ComponentRef, Integer> sizes;
     ComponentRef stripped;
   algorithm
-    if List.compareLength(filtered_exps, vars) == 0 then
+    if List.compareLength(filtered_exps, vars) >= 0 then
       map   := UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
       sizes := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
       // add all variables to solve for
@@ -1899,7 +1979,7 @@ protected
             stripped := ComponentRef.stripSubscriptsAll(exp.cref);
             if UnorderedMap.contains(stripped, map) and (inFor or UnorderedMap.getSafe(stripped, sizes, sourceInfo()) == Type.sizeOf(Expression.typeOf(exp))) then
               UnorderedMap.add(stripped, true, map);
-            else
+            elseif UnorderedMap.contains(stripped, map) then
               return;
             end if;
           then ();
@@ -2022,6 +2102,35 @@ protected
       end if;
     end if;
   end getVarSlice;
+
+  function arrayRowEquation
+    "the scalar equation of one row of an array equation"
+    input Pointer<Equation> eqn_ptr;
+    input Integer index "zero based";
+    output Equation row;
+  protected
+    Equation eqn = Pointer.access(eqn_ptr);
+    list<Subscript> subs;
+    Type ty;
+  algorithm
+    subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(index, Equation.sizes(eqn_ptr)));
+    ty := Type.arrayElementType(Equation.getType(eqn));
+    row := Equation.SCALAR_EQUATION(ty, rowElement(Util.getOption(Equation.getLHS(eqn)), subs),
+      rowElement(Util.getOption(Equation.getRHS(eqn)), subs), Equation.getSource(eqn), Equation.getAttributes(eqn));
+  end arrayRowEquation;
+
+  function rowElement
+    "the element of an array expression, expanded to make it solvable"
+    input Expression exp;
+    input list<Subscript> subs;
+    output Expression element;
+  protected
+    Expression expanded;
+    Boolean success;
+  algorithm
+    (expanded, success) := ExpandExp.expand(exp, true);
+    element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
+  end rowElement;
 
   function solveForVarSlice
     input output Slice<EquationPointer> eqn_slice;

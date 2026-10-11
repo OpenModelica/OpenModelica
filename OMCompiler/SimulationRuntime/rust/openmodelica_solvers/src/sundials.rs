@@ -156,6 +156,7 @@ unsafe extern "C" {
     fn CVodeGetRootInfo(mem: *mut c_void, rootsfound: *mut c_int) -> c_int;
     fn CVodeSetMaxStep(mem: *mut c_void, hmax: f64) -> c_int;
     fn CVodeSetStopTime(mem: *mut c_void, tstop: f64) -> c_int;
+    fn CVodeClearStopTime(mem: *mut c_void) -> c_int;
     fn CVodeSetInitStep(mem: *mut c_void, hin: f64) -> c_int;
     fn CVodeSetMaxOrd(mem: *mut c_void, maxord: c_int) -> c_int;
     fn CVodeSetMaxConvFails(mem: *mut c_void, maxncf: c_int) -> c_int;
@@ -368,6 +369,15 @@ impl Cvode {
         unsafe { CVodeSetUserData(self.mem, user_data) == CV_SUCCESS }
     }
 
+    /// `CVodeSetStopTime`, which holds until CVODE reaches it, or for a non-finite
+    /// `tstop` `CVodeClearStopTime`.
+    pub fn set_stop_time(&mut self, tstop: f64) -> bool {
+        let flag = unsafe {
+            if tstop.is_finite() { CVodeSetStopTime(self.mem, tstop) } else { CVodeClearStopTime(self.mem) }
+        };
+        flag == CV_SUCCESS
+    }
+
     /// Integrate to `tout`, stopping early on a root. `t` is updated to where the
     /// integration actually stopped and `y()` holds the state there. Unless `stop`,
     /// CVODE may step past `tout` and interpolate back to it, as IDA does; an FMU's
@@ -503,6 +513,8 @@ unsafe extern "C" {
     fn IDASetNonlinConvCoef(mem: *mut c_void, epcon: f64) -> c_int;
     fn IDASetInitStep(mem: *mut c_void, hin: f64) -> c_int;
     fn IDASetMaxStep(mem: *mut c_void, hmax: f64) -> c_int;
+    fn IDASetStopTime(mem: *mut c_void, tstop: f64) -> c_int;
+    fn IDAClearStopTime(mem: *mut c_void) -> c_int;
     fn IDASolve(mem: *mut c_void, tout: f64, tret: *mut f64, yret: NVector, ypret: NVector, itask: c_int) -> c_int;
     fn IDAGetCurrentStep(mem: *mut c_void, hcur: *mut f64) -> c_int;
 
@@ -940,11 +952,20 @@ impl Ida {
         }
     }
 
+    /// `IDASetStopTime`, which holds until IDA reaches it, or for a non-finite
+    /// `tstop` `IDAClearStopTime`.
+    pub fn set_stop_time(&mut self, tstop: f64) -> bool {
+        let flag = unsafe {
+            if tstop.is_finite() { IDASetStopTime(self.mem, tstop) } else { IDAClearStopTime(self.mem) }
+        };
+        flag == IDA_SUCCESS
+    }
+
     /// Integrate to `tout`, stopping early on a root. `t` is updated to where the
-    /// integration actually stopped and `y()`/`yp()` hold the state there. No
-    /// `IDASetStopTime`, as in `ida_solver.c`: IDA may step past `tout` internally
-    /// and interpolate back to it. `one_step` is `ida_solver.c`'s `idaSmode` under
-    /// `-noEquidistantTimeGrid`: return after each internal step.
+    /// integration actually stopped and `y()`/`yp()` hold the state there. IDA may
+    /// step past `tout` internally and interpolate back to it, as in `ida_solver.c`.
+    /// `one_step` is `ida_solver.c`'s `idaSmode` under `-noEquidistantTimeGrid`:
+    /// return after each internal step.
     pub fn step(&mut self, t: &mut f64, tout: f64, one_step: bool) -> Stop {
         let mode = if one_step { IDA_ONE_STEP } else { IDA_NORMAL };
         unsafe {

@@ -144,28 +144,42 @@ public
     array<SBSet> dom = map.dom;
     array<SBLinearMap> lmap = map.lmap;
     SBSet ss, partial_res;
-
-    function add_set
-      input SBAtomicSet aset;
-      input SBLinearMap map;
-      input output SBSet set;
-    protected
-      SBPWAtomicLinearMap aux_map;
-    algorithm
-      aux_map := SBPWAtomicLinearMap.new(aset, map);
-      set := SBSet.addAtomicSet(SBPWAtomicLinearMap.image(aux_map, aset), set);
-    end add_set;
   algorithm
     for i in 1:arrayLength(dom) loop
       ss := dom[i];
       ss := SBSet.intersection(ss, set);
 
       partial_res := UnorderedSet.fold(SBSet.asets(ss),
-        function add_set(map = lmap[i]), SBSet.newEmpty());
+        function imageAddSet(map = lmap[i]), SBSet.newEmpty());
 
       outSet := SBSet.union(outSet, partial_res);
     end for;
   end image;
+
+  function fullImage
+    "The image of the whole domain of the map."
+    input SBPWLinearMap map;
+    output SBSet outSet = SBSet.newEmpty();
+  protected
+    SBSet partial_res;
+  algorithm
+    for i in 1:arrayLength(map.dom) loop
+      partial_res := UnorderedSet.fold(SBSet.asets(map.dom[i]),
+        function imageAddSet(map = map.lmap[i]), SBSet.newEmpty());
+      outSet := SBSet.union(outSet, partial_res);
+    end for;
+  end fullImage;
+
+  function imageAddSet
+    input SBAtomicSet aset;
+    input SBLinearMap map;
+    input output SBSet set;
+  protected
+    SBPWAtomicLinearMap aux_map;
+  algorithm
+    aux_map := SBPWAtomicLinearMap.new(aset, map);
+    set := SBSet.addAtomicSet(SBPWAtomicLinearMap.image(aux_map, aset), set);
+  end imageAddSet;
 
   function preImage
     input SBPWLinearMap map;

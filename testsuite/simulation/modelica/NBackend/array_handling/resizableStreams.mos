@@ -1,0 +1,129 @@
+// name: resizableStreams
+// keywords: NewBackend resizable connect stream inStream
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableStreams*.log resizableStreams*.mat resizableStreams*_ref*
+//
+// inStream of connectors in symbolic connection sets: the partner element, outside
+// connectors resolved one level up. npipes only works at its value (literal connects),
+// it is evaluated; the number of cells n stays resizable.
+
+loadString("
+package resizableStreams
+  connector Port
+    Real p;
+    flow Real m_flow;
+    stream Real h;
+  end Port;
+
+  model Source
+    parameter Real h0;
+    parameter Real m0 = 1;
+    Port port;
+  equation
+    port.m_flow = -m0;
+    port.h = h0;
+  end Source;
+
+  model Sink
+    Port port;
+    Real hIn = inStream(port.h);
+  equation
+    port.p = 0;
+    port.h = 0;
+  end Sink;
+
+  model Load
+    Port port;
+    Sink sink;
+  equation
+    connect(port, sink.port);
+  end Load;
+
+  model Pipe
+    parameter Integer n = 4;
+    Port a, b;
+    Real h[n](each start = 0, each fixed = true);
+  equation
+    a.m_flow + b.m_flow = 0;
+    a.p - b.p = a.m_flow;
+    der(h[1]) = a.m_flow*(inStream(a.h) - h[1]);
+    for i in 2:n loop
+      der(h[i]) = a.m_flow*(h[i - 1] - h[i]);
+    end for;
+    a.h = h[1];
+    b.h = h[n];
+  end Pipe;
+
+  model Bundle
+    parameter Integer npipes = 2;
+    parameter Integer n = 4;
+    parameter Real w[n] = fill(1, n) \"cell weights, makes n a size\";
+    Pipe pipe[npipes](each n = n);
+    Port a[npipes], b[npipes];
+    Real hIn[npipes] = {inStream(a[j].h) for j in 1:npipes};
+    Real hPos = noEvent(sum((if pipe[j].a.m_flow > 0 then pipe[j].h[n] else 0) for j in 1:npipes));
+  equation
+    for j in 1:npipes loop
+      connect(a[j], pipe[j].a);
+      connect(pipe[j].b, b[j]);
+    end for;
+  end Bundle;
+
+  model Test
+    Source s1(h0 = 10), s2(h0 = 20);
+    Bundle bundle(n = 5);
+    Load l1, l2;
+  equation
+    connect(s1.port, bundle.a[1]);
+    connect(s2.port, bundle.a[2]);
+    connect(bundle.b[1], l1.port);
+    connect(bundle.b[2], l2.port);
+  end Test;
+
+  model Test7 = Test(bundle(n = 7));
+end resizableStreams;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpResizable"); getErrorString();
+buildModel(resizableStreams.Test, stopTime = 3, fileNamePrefix = "resizableStreams"); getErrorString();
+system("./resizableStreams -override=bundle.n=7 -r=resizableStreams_7.mat", "resizableStreams_7.log");
+
+setCommandLineOptions("--resizableArrays=false -d=-dumpResizable"); getErrorString();
+buildModel(resizableStreams.Test7, stopTime = 3, fileNamePrefix = "resizableStreams_ref"); getErrorString();
+system("./resizableStreams_ref", "resizableStreams_ref.log");
+
+abs(val(bundle.hIn[1], 3, "resizableStreams_7.mat") - val(bundle.hIn[1], 3, "resizableStreams_ref_res.mat")) < 1e-6;
+abs(val(bundle.hIn[2], 3, "resizableStreams_7.mat") - val(bundle.hIn[2], 3, "resizableStreams_ref_res.mat")) < 1e-6;
+abs(val(bundle.hPos, 3, "resizableStreams_7.mat") - val(bundle.hPos, 3, "resizableStreams_ref_res.mat")) < 1e-6;
+abs(val(l1.sink.hIn, 3, "resizableStreams_7.mat") - val(l1.sink.hIn, 3, "resizableStreams_ref_res.mat")) < 1e-6;
+abs(val(l2.sink.hIn, 3, "resizableStreams_7.mat") - val(l2.sink.hIn, 3, "resizableStreams_ref_res.mat")) < 1e-6;
+val(l2.sink.hIn, 3, "resizableStreams_7.mat");
+// Result:
+// true
+// ""
+// true
+// ""
+// =================================================================
+//   [dumpResizable] Evaluated Optimal Resizable Parameter Values:
+// =================================================================
+//
+//   bundle.n ..... OPTIMAL: 4 (ORIGINAL: 5)
+//
+// {"resizableStreams", "resizableStreams_init.xml"}
+// "Warning: --resizableArrays: the parameters bundle.npipes cannot be used to resize the model, other values would leave connectors unconnected. They keep their values.
+// "
+// 0
+// true
+// ""
+// {"resizableStreams_ref", "resizableStreams_ref_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// true
+// true
+// 0.6701719647945108
+// endResult

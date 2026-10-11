@@ -414,7 +414,7 @@ pub fn parse(
     }
     let (src, orig_bytes) = read_source_file(filename.as_str())
         .map_err(|_| "ParserExt::parse: cannot read {filename}")?;
-    parser::set_pure_impure_as_ident(languageStandardInt < 33 && strict);
+    parser::set_language_standard(languageStandardInt, strict);
     // Outside string literals the grammar allows nothing but ASCII, so only
     // the literals are transcoded from `encoding`.
     parser::set_non_utf8_source_bytes(orig_bytes);
@@ -441,7 +441,7 @@ pub fn parsestring(
     _runningTestsuite: bool,
 ) -> Result<Absyn::Program> {
     let grammar = select_grammar(acceptedGram, languageStandardInt);
-    parser::set_pure_impure_as_ident(languageStandardInt < 33 && strict);
+    parser::set_language_standard(languageStandardInt, strict);
     // String input has no on-disk path; the interactive name serves as both
     // the SOURCEINFO and the error-display name (like the C `parseString`).
     run_parse(r#str.as_str(), infoFilename.as_str(), infoFilename.as_str(), grammar, /*readonly=*/false, now_timestamp())

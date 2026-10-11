@@ -1,0 +1,53 @@
+// name: FuncViaCompArray
+// keywords: function lookup component array default argument
+// status: correct
+//
+// Functions called via a component in an array of components, where the
+// default arguments refer to the component: a plain default and a default
+// modified on the function in the component.
+
+loadString("
+package P
+  function f
+    input Real x;
+    input Real k;
+    input Real z = 0;
+    output Real y = k * x + z;
+  end f;
+
+  model Obj
+    parameter Real k = 1;
+    function g = f(final k = k);
+  end Obj;
+
+  model Cell
+    parameter Real k = 1;
+    parameter Real zc = 0;
+    Obj obj(k = k, g(z = zc));
+    Real y = obj.g(time);
+  end Cell;
+
+  model Test
+    Cell cell[3](k = {1, 2, 3}, zc = {10, 20, 30});
+  end Test;
+end P;
+"); getErrorString();
+
+simulate(P.Test, stopTime = 1); getErrorString();
+val(cell[1].y, 1); val(cell[2].y, 1); val(cell[3].y, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "P.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 11.0
+// 22.0
+// 33.0
+// endResult

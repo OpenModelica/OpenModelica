@@ -39,6 +39,7 @@ def common
 pipeline {
   agent none
   options {
+    skipDefaultCheckout()
     newContainerPerStage()
     // No parallelsAlwaysFailFast: a nightly should report every platform, not
     // abort the others as soon as one goes red.
@@ -76,6 +77,15 @@ pipeline {
       }
       steps {
         script {
+          // common.checkoutSCM(), which is not loaded yet
+          echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+          int attempt = 0
+          retry(2) {
+            if (attempt++ > 0) {
+              sh script: 'git submodule absorbgitdirs && git submodule deinit --all -f', returnStatus: true
+            }
+            checkout(scm).each { k, v -> env.setProperty(k, v) }
+          }
           common = load("${env.workspace}/.CI/common.groovy")
         }
       }
@@ -98,6 +108,7 @@ pipeline {
         }
       }
       steps {
+        script { common.checkoutSCM() }
         script { common.buildRustNightlyShared() }
       }
     }
@@ -125,6 +136,7 @@ pipeline {
             expression { params.BUILD_WINDOWS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('win64') }
           }
         }
@@ -147,6 +159,7 @@ pipeline {
             expression { params.BUILD_MACOS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('mac-x86_64') }
           }
         }
@@ -169,6 +182,7 @@ pipeline {
             expression { params.BUILD_MACOS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('mac-aarch64') }
           }
         }
@@ -194,6 +208,7 @@ pipeline {
             expression { params.BUILD_LINUX }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('linux64') }
           }
         }
@@ -217,6 +232,7 @@ pipeline {
             expression { params.BUILD_LINUX_AARCH64 }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyOMC('linux-aarch64') }
           }
         }
@@ -247,6 +263,7 @@ pipeline {
             expression { params.BUILD_WINDOWS && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('win64') }
           }
         }
@@ -269,6 +286,7 @@ pipeline {
             expression { params.BUILD_MACOS && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('mac-x86_64') }
           }
         }
@@ -291,6 +309,7 @@ pipeline {
             expression { params.BUILD_MACOS && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('mac-aarch64') }
           }
         }
@@ -314,6 +333,7 @@ pipeline {
             expression { params.BUILD_LINUX && params.BUILD_GUI_CLIENTS }
           }
           steps {
+            script { common.checkoutSCM() }
             script { common.buildRustNightlyGUI('linux64') }
           }
         }
@@ -337,6 +357,7 @@ pipeline {
             expression { params.BUILD_WINDOWS }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.packageRustNightlyWindows(['nightly-omc-win64'],
                 params.BUILD_GUI_CLIENTS ? ['nightly-gui-win64'] : [])
@@ -361,6 +382,7 @@ pipeline {
             expression { params.BUILD_MACOS }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.packageRustNightlyMacUniversal(
                 ['nightly-omc-mac-x86_64', 'nightly-omc-mac-aarch64'],
@@ -384,6 +406,7 @@ pipeline {
             expression { params.BUILD_LINUX }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               common.packageRustNightlyLinux('linux64', ['nightly-omc-linux64'],
                 params.BUILD_GUI_CLIENTS ? ['nightly-gui-linux64'] : [])
@@ -407,6 +430,7 @@ pipeline {
             expression { params.BUILD_LINUX_AARCH64 }
           }
           steps {
+            script { common.checkoutSCM() }
             script {
               // No GUI stashes: no Qt kit, so only the CLI distribution.
               common.packageRustNightlyLinux('linux-aarch64', ['nightly-omc-linux-aarch64'], [])
@@ -434,6 +458,10 @@ pipeline {
       when {
         beforeAgent true
         expression { params.BUILD_LINUX }
+      }
+      options {
+        // The bare image has no git.
+        skipDefaultCheckout false
       }
       steps {
         script { common.checkRustNightlyLinux('linux64') }

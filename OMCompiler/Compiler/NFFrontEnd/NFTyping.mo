@@ -1454,6 +1454,9 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
 
+    case Expression.RECORD_ELEMENT(ty = Type.UNKNOWN())
+      then typeRecordElement(exp, context, info);
+
     case Expression.MUTABLE()
       algorithm
         e1 := Mutable.access(exp.exp);
@@ -1525,6 +1528,44 @@ algorithm
 
   exp := Expression.makeRecord(path, ty, listReverseInPlace(ty_elems));
 end typeRecordExp;
+
+function typeRecordElement
+  input Expression exp;
+  input InstContext.Type context;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type ty;
+  output Variability variability;
+  output Purity purity;
+protected
+  Expression rec_exp;
+  Type rec_ty;
+  String name;
+  Boolean found;
+algorithm
+  Expression.RECORD_ELEMENT(recordExp = rec_exp, fieldName = name) := exp;
+  (rec_exp, rec_ty, variability, purity) :=
+    typeExp(rec_exp, InstContext.set(context, NFInstContext.SUBEXPRESSION), info);
+
+  found := Type.isRecord(Type.arrayElementType(rec_ty));
+  if found then
+    try
+      _ := Class.lookupComponentIndex(name,
+        InstNode.getClass(Type.complexNode(Type.arrayElementType(rec_ty))));
+    else
+      found := false;
+    end try;
+  end if;
+
+  if not found then
+    Error.addSourceMessage(Error.RECORD_ELEMENT_NOT_FOUND,
+      {Expression.toString(rec_exp), Type.toString(rec_ty), name}, info);
+    fail();
+  end if;
+
+  outExp := Expression.recordElement(name, rec_exp);
+  ty := Expression.typeOf(outExp);
+end typeRecordElement;
 
 function typeSubscriptedExp
   input output Expression exp;
@@ -3614,7 +3655,9 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, _, var) := typeCondition(cond, cond_context, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if var > Variability.PARAMETER or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
+    // Conditions on resizable parameters (and iterators over them) are resolved with the connections.
+    if (var > Variability.PARAMETER and not (var == Variability.NON_STRUCTURAL_PARAMETER and
+        Flags.getConfigBool(Flags.RESIZABLE_ARRAYS))) or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the context so we can check that when
       // typing the body of the branch.

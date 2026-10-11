@@ -620,7 +620,7 @@ impl Walk {
     fn scan_exp(&mut self, e: &Absyn::Exp) {
         use Absyn::Exp::*;
         match e {
-            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK => {}
+            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK | UNITFUL_LITERAL { .. } => {}
             CREF { componentRef } => self.scan_cref(componentRef),
             CODE { .. } => {}
             BINARY { exp1, op, exp2 } => {

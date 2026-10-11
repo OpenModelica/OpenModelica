@@ -99,6 +99,8 @@ unsafe extern "C" {
     fn functionZeroCrossingsEquations_guard(sim_data: u32) -> u32;
     #[link_name = "functionUpdateRelations$guard"]
     fn functionUpdateRelations_guard(sim_data: u32) -> u32;
+    #[link_name = "functionNextTimeEvent$guard"]
+    fn functionNextTimeEvent_guard(sim_data: u32) -> u32;
     #[link_name = "functionCheckAsserts$guard"]
     fn functionCheckAsserts_guard(sim_data: u32) -> u32;
     #[link_name = "functionStoreDelayed$guard"]
@@ -604,6 +606,7 @@ impl SimEngine for Engine {
                 "functionStateSetJacobians" => functionStateSetJacobians_guard(arg),
                 "functionZeroCrossingsEquations" => functionZeroCrossingsEquations_guard(arg),
                 "functionUpdateRelations" => functionUpdateRelations_guard(arg),
+                "functionNextTimeEvent" => functionNextTimeEvent_guard(arg),
                 "functionCheckAsserts" => functionCheckAsserts_guard(arg),
                 "functionStoreDelayed" => functionStoreDelayed_guard(arg),
                 "functionInitDelay" => functionInitDelay_guard(arg),
@@ -1633,8 +1636,9 @@ macro_rules! shared_instance_methods {
         st.mode = Mode::Ready;
         // Exiting Initialization Mode leaves the instance in Event Mode.
         st.event_mode = true;
-        // `run_initialization` has run `initSample`, so the schedule is readable.
-        if st.layout.n_samples > 0 {
+        // `run_initialization` has run `initSample`, so the schedule is readable. A
+        // relation on `time` is scheduled the same way.
+        if st.layout.n_samples > 0 || st.layout.n_zc > 0 {
             let start_time = st.read_f64(TIME_OFF);
             let (sim_data, layout) = (st.sim_data, st.layout);
             match Samples::load(&st.engine, sim_data, &layout, start_time) {

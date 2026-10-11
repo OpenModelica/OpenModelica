@@ -157,6 +157,22 @@ namespace IAEX {
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
   }
 
+  /*!
+   * \brief The width of the line number area depends on the font. Adapt it
+   * when the font changes, e.g. when the text is zoomed.
+   */
+  void MyTextEdit2a::changeEvent(QEvent *e)
+  {
+    QPlainTextEdit::changeEvent(e);
+
+    if (e->type() == QEvent::FontChange && lineNumberArea) {
+      updateLineNumberAreaWidth(0);
+      QRect cr = contentsRect();
+      lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+      lineNumberArea->update();
+    }
+  }
+
   void MyTextEdit2a::highlightCurrentLine(bool highlight)
   {
     QList<QTextEdit::ExtraSelection> extraSelections;
@@ -1060,6 +1076,11 @@ namespace IAEX {
 
     // 2005-12-16 AF, unblock signals and tell highlighter to highlight
     input_->document()->blockSignals(state);
+
+    // highlight the new text
+    if( mpModelicaTextHighlighter )
+      mpModelicaTextHighlighter->rehighlight();
+
     contentChanged();
   }
 
@@ -1095,6 +1116,17 @@ namespace IAEX {
     if( !text.isNull() && !text.isEmpty() )
     {
       output_->setPlainText( text );
+
+      // apply the character format of the Output style to the whole text
+      Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+      CellStyle style = sheet->getStyle( "Output" );
+      if( style.name() != "null" )
+      {
+        QTextCursor cursor( output_->document() );
+        cursor.select( QTextCursor::Document );
+        cursor.mergeCharFormat( *style.textCharFormat() );
+      }
+
       evaluated_ = true;
       contentChanged();
     }

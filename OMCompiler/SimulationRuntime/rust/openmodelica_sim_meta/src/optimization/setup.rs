@@ -1051,7 +1051,7 @@ fn initial_guess_sim(data: &mut OptData, o: i32) -> Result<i32> {
         .iter()
         .map(|&i| data.names.get(i as usize).map(String::as_str).unwrap_or(""))
         .collect();
-    let mut ext = crate::extinput::ExtInputHook::load_reals(&opt.inputs, &input_names);
+    let mut ext = crate::extinput::ExtInputHook::load_reals(&opt.inputs, &input_names, data.model.layout.real_off);
     // The file drives the inputs for the guess only; the Ipopt iterations take
     // theirs from `vopt`.
     let _armed = ext.as_mut().map(crate::extinput::arm);

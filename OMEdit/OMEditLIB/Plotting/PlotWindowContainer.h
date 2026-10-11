@@ -89,6 +89,7 @@ public slots:
   void renamePlotWindow();
   void exportVariables();
   void updatePlotWindows(QString variable);
+  void saveFigureInModel();
 };
 
 #endif // PLOTWINDOWCONTAINER_H

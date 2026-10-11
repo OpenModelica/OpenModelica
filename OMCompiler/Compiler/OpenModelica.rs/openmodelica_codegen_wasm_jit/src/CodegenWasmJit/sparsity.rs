@@ -568,3 +568,165 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
     }
     Some(JacAInfo { n: n as u32, colors, rows_by_col, sym: None })
 }
+
+/// The ODE Jacobian's sparsity of a resizable model, for the runtime to expand
+/// once the sizes are known. Rows and columns are the states' positions in the
+/// layout: the constant-size states in `stateVars` order, then the runtime-sized.
+pub(super) fn sym_jac_a(
+    sim_code: &SimCode::SimCode,
+    sizes: &mut SizeParams,
+) -> Option<openmodelica_sim_meta::sym_sparsity::SymPattern> {
+    use openmodelica_sim_meta::sym_sparsity::{SymIter, SymPattern, SymRow, SymVar};
+    let jm = jac_a_matrix(sim_code)?;
+    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
+    let mut fixed: Vec<(String, Vec<Sz>)> = Vec::new();
+    let mut dynamic: Vec<(String, Vec<Sz>)> = Vec::new();
+    for sv in lst(&sim_code.modelInfo.vars.stateVars) {
+        let dims = sizes.dims(&sv.type_).ok()?;
+        let stripped = strip_all_subs(&sv.name)?;
+        let entry = (sim_cref_key(&stripped).ok()?, dims);
+        match entry.1.iter().all(|d| d.is_const()) {
+            true => fixed.push(entry),
+            false => dynamic.push(entry),
+        }
+    }
+    let mut states: HashMap<String, SymVar> = HashMap::default();
+    let mut at = Sz::lit(0);
+    for (key, dims) in fixed.into_iter().chain(dynamic) {
+        let len = dims.iter().fold(Sz::lit(1), |a, d| a * d.clone());
+        states.insert(key, SymVar { base: at.clone(), dims });
+        at = at + len;
+    }
+    let mut pat = SymPattern { n: at, ..Default::default() };
+    let mut row_ids: HashMap<String, u32> = HashMap::default();
+    let mut col_ids: HashMap<String, u32> = HashMap::default();
+    for row in lst(rows) {
+        let mut names = Vec::new();
+        let mut iters = Vec::new();
+        for it in lst(&row.equation_iterators) {
+            let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, size, sub_iter, .. } = it else { return None };
+            if lst(sub_iter).next().is_some() {
+                return None;
+            }
+            names.push(cref_display(name).ok()?);
+            iters.push(SymIter { start: sizes.sz_of_exp(start).ok()?, step: const_int_exp(step)? as i64, size: sizes.sz_of_exp(size).ok()? });
+        }
+        let mut sym_ref = |cr: &metamodelica::Ref<DAE::ComponentRef>, strip: usize, ids: &mut HashMap<String, u32>, vars: &mut Vec<SymVar>| {
+            let state = strip_quals(cr, strip)?;
+            let stripped = strip_all_subs(&state)?;
+            let key = sim_cref_key(&stripped).ok()?;
+            let var = states.get(&key)?;
+            let id = *ids.entry(key).or_insert_with(|| {
+                vars.push(var.clone());
+                vars.len() as u32 - 1
+            });
+            let subs = all_subs(&state).into_iter().map(|s| sym_sub(&s, &names, sizes)).collect::<Option<_>>()?;
+            Some(openmodelica_sim_meta::sym_sparsity::SymRef { var: id, subs })
+        };
+        let solved = lst(&row.solved_crefs).map(|c| sym_ref(c, 2, &mut row_ids, &mut pat.rows_vars)).collect::<Option<_>>()?;
+        let deps = lst(&row.dependencies)
+            .map(|(seed, dep, rep)| Some((sym_ref(seed, 1, &mut col_ids, &mut pat.cols_vars)?, !*rep && lst(&dep.kinds).next() == Some(&false))))
+            .collect::<Option<_>>()?;
+        pat.rows.push(SymRow { iters, solved, deps });
+    }
+    Some(pat)
+}
+
+/// `cr` without its first `n` qualifiers (`$pDER_ODE_JAC.$DER.x` -> `x`).
+fn strip_quals(cr: &metamodelica::Ref<DAE::ComponentRef>, n: usize) -> Option<metamodelica::Ref<DAE::ComponentRef>> {
+    let mut cr = cr.clone();
+    for _ in 0..n {
+        cr = match &*cr {
+            DAE::ComponentRef::CREF_QUAL { componentRef, .. } => componentRef.clone(),
+            _ => return None,
+        };
+    }
+    Some(cr)
+}
+
+fn strip_all_subs(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Option<metamodelica::Ref<DAE::ComponentRef>> {
+    openmodelica_frontend_base::ComponentReference::crefStripSubs(cr).ok()
+}
+
+/// Every subscript of `cr`, outermost component first.
+fn all_subs(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Vec<metamodelica::Ref<DAE::Subscript>> {
+    let mut out = Vec::new();
+    let mut node = cr;
+    loop {
+        match &**node {
+            DAE::ComponentRef::CREF_IDENT { subscriptLst, .. } => {
+                out.extend(lst(subscriptLst).cloned());
+                return out;
+            }
+            DAE::ComponentRef::CREF_QUAL { subscriptLst, componentRef, .. } => {
+                out.extend(lst(subscriptLst).cloned());
+                node = componentRef;
+            }
+            _ => return out,
+        }
+    }
+}
+
+fn sym_sub(
+    s: &DAE::Subscript,
+    iters: &[String],
+    sizes: &mut SizeParams,
+) -> Option<openmodelica_sim_meta::sym_sparsity::SymSub> {
+    use openmodelica_sim_meta::sym_sparsity::SymSub;
+    Some(match s {
+        DAE::Subscript::WHOLEDIM | DAE::Subscript::WHOLE_NONEXP { .. } => SymSub::All,
+        DAE::Subscript::INDEX { exp } => SymSub::Index(affine(exp, iters, sizes)?),
+        DAE::Subscript::SLICE { exp } => match &**exp {
+            DAE::Exp::RANGE { start, step, stop, .. } => SymSub::Slice {
+                start: affine(start, iters, sizes)?,
+                step: step.as_ref().map_or(Some(1), |s| const_int_exp(s))? as i64,
+                stop: affine(stop, iters, sizes)?,
+            },
+            _ => return None,
+        },
+    })
+}
+
+/// `exp` as a constant plus integer multiples of the loop iterators.
+fn affine(exp: &DAE::Exp, iters: &[String], sizes: &mut SizeParams) -> Option<openmodelica_sim_meta::sym_sparsity::Affine> {
+    use openmodelica_sim_meta::sym_sparsity::Affine;
+    use DAE::Operator as O;
+    let konst = |c: Sz| Affine { c, k: vec![0; iters.len()] };
+    Some(match exp {
+        DAE::Exp::CREF { componentRef, .. } => {
+            if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef
+                && subscriptLst.is_empty()
+                && let Some(i) = iters.iter().position(|n| n == ident.as_str())
+            {
+                let mut a = konst(Sz::lit(0));
+                a.k[i] = 1;
+                return Some(a);
+            }
+            konst(sizes.sz_of_exp(exp).ok()?)
+        }
+        DAE::Exp::UNARY { operator: O::UMINUS { .. }, exp } => {
+            let a = affine(exp, iters, sizes)?;
+            Affine { c: -a.c, k: a.k.iter().map(|k| -k).collect() }
+        }
+        DAE::Exp::CAST { exp, .. } => affine(exp, iters, sizes)?,
+        DAE::Exp::BINARY { exp1, operator, exp2 } => {
+            let (a, b) = (affine(exp1, iters, sizes)?, affine(exp2, iters, sizes)?);
+            let is_const = |x: &Affine| x.k.iter().all(|&k| k == 0);
+            match operator {
+                O::ADD { .. } => Affine { c: a.c + b.c, k: a.k.iter().zip(&b.k).map(|(x, y)| x + y).collect() },
+                O::SUB { .. } => Affine { c: a.c - b.c, k: a.k.iter().zip(&b.k).map(|(x, y)| x - y).collect() },
+                O::MUL { .. } if is_const(&a) => {
+                    let f = a.c.as_const()?;
+                    Affine { c: b.c * f, k: b.k.iter().map(|k| k * f).collect() }
+                }
+                O::MUL { .. } if is_const(&b) => {
+                    let f = b.c.as_const()?;
+                    Affine { c: a.c * f, k: a.k.iter().map(|k| k * f).collect() }
+                }
+                _ if is_const(&a) && is_const(&b) => konst(sizes.sz_of_exp(exp).ok()?),
+                _ => return None,
+            }
+        }
+        _ => konst(sizes.sz_of_exp(exp).ok()?),
+    })
+}

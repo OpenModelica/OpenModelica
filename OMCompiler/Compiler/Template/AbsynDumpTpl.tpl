@@ -884,12 +884,13 @@ match exp
     let list_str = (exps |> e => dumpExp(e) ;separator=", ")
     '{<%list_str%>}'
   case DOT(__) then
-    '<%dumpExp(exp)%>.<%dumpExp(index)%>'
+    '(<%dumpExp(exp)%>).<%dumpExp(index)%>'
   case EXPRESSIONCOMMENT(__) then
     ((commentsBefore |> cmt => cmt ; absIndent=0) + dumpExp(exp) + (commentsAfter |> cmt => cmt ; absIndent=0))
   case SUBSCRIPTED_EXP(__) then
     '(<%dumpExp(exp)%>)[<%dumpSubscripts(subscripts)%>]'
   case BREAK(__) then 'break'
+  case UNITFUL_LITERAL(__) then dumpExp(value) + "'" + unit + "'"
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 

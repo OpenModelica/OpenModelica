@@ -164,6 +164,7 @@ namespace IAEX
     virtual void setReadOnly(bool) {}
     virtual void setFocus(bool focus) = 0;
     virtual void applyLinksToText() {}
+    virtual void contentChanged() {};
 
     virtual void setBackgroundColor(const QColor color);
     virtual void setSelected(bool selected);

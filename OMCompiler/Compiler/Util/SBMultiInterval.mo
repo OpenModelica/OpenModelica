@@ -270,9 +270,15 @@ public
 
   function hash
     input SBMultiInterval mi;
-    output Integer res;
+    output Integer res = 0;
+  protected
+    // Small enough that res * 31 + p fits in a 32-bit Integer.
+    constant Integer p = 33554393;
   algorithm
-    res := arrayLength(mi.intervals);
+    for i in mi.intervals loop
+      res := intMod(res * 31 + intMod(SBInterval.lowerBound(i), p), p);
+      res := intMod(res * 31 + intMod(SBInterval.upperBound(i), p), p);
+    end for;
   end hash;
 
   function size

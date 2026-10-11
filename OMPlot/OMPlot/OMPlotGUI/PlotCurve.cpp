@@ -43,6 +43,7 @@
 
 #include <QtMath>
 #include <QStringBuilder>
+#include <QApplication>
 
 using namespace OMPlot;
 
@@ -108,7 +109,7 @@ void PlotCurve::setTitleLocal()
     // visibility
     QwtText text = title();
     if (isVisible()) {
-      text.setColor(QColor(Qt::black));
+      text.setColor(OMPlot::isDarkMode() ? QApplication::palette().color(QPalette::Text) : QColor(Qt::black));
     } else {
       text.setColor(QColor(Qt::gray));
     }
@@ -152,6 +153,10 @@ void PlotCurve::setCurveWidth(qreal width)
 {
   mWidth = width;
   QPen customPen = pen();
+  /* A cosmetic pen's width is measured in device pixels, so the curve keeps the same
+   * physical thickness at any device pixel ratio (a non-cosmetic pen would be resampled
+   * to a fractional device pixel width at e.g. 125% scaling and look blurry). */
+  customPen.setCosmetic(true);
   customPen.setWidthF(mWidth);
   setPen(customPen);
 }

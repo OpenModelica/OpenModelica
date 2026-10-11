@@ -11,7 +11,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::driver::{self, SimEngine};
-use crate::{Layout, OptInfo, OptJac, REAL_OFF, TIME_OFF};
+use crate::{Layout, OptInfo, OptJac, TIME_OFF};
 
 /// The model handle the optimizer and its Ipopt callbacks evaluate through. Holds
 /// the engine as a raw pointer because the callbacks reach it through Ipopt's
@@ -64,7 +64,7 @@ impl Model {
     }
 
     fn real_base(&self) -> u32 {
-        self.sim_data + REAL_OFF
+        self.sim_data + self.layout.real_off
     }
 
     /// C's `memcpy(sData->realVars, …)` in both directions.

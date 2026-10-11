@@ -20,7 +20,7 @@ end FunctionUnitialized5;
 
 // Result:
 // Error processing file: FunctionUnitialized5.mo
-// [flattening/modelica/scodeinst/FunctionUnitialized5.mo:10:3-10:40:writable] Error: Output parameter y[1, 2] was not assigned a value
+// [flattening/modelica/scodeinst/FunctionUnitialized5.mo:10:3-10:40:writable] Error: Output parameter y[1, 2] was not assigned a value. This is deprecated and will become an error in future releases.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

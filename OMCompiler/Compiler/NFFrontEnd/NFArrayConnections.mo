@@ -51,6 +51,8 @@ protected
   import Array;
   import Call = NFCall;
   import Ceval = NFCeval;
+  import Class = NFClass;
+  import NFClassTree.ClassTree;
   import Component = NFComponent;
   import DAE;
   import Dimension = NFDimension;
@@ -58,6 +60,7 @@ protected
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
   import NFInstNode;
+  import NFPrefixes.ConnectorType;
   import NFPrefixes.Purity;
   import NFPrefixes.Variability;
   import NFBuiltin;
@@ -83,12 +86,6 @@ protected
       input SetVertex v2;
       output Boolean equal = Connector.isEqual(v1.name, v2.name);
     end isEqual;
-
-    function isNamed
-      input SetVertex v;
-      input Connector name;
-      output Boolean equal = Connector.isEqual(v.name, name);
-    end isNamed;
 
     function toString
       input SetVertex v;
@@ -116,19 +113,27 @@ protected
   end SetEdge;
 
 public
-  type NameVertexTable = UnorderedMap<String, SBMultiInterval>;
+  type NameVertexTable = UnorderedMap<String, VertexDescriptor>;
   type SBGraph = IncidenceList<SetVertex, SetEdge>;
+  type ConnVar = tuple<ComponentRef, Integer, String, Boolean> "variable, dimensions of its connector, path inside the connector, outside connector";
+  type VertexList = list<VertexDescriptor>;
+  type VertexSets = UnorderedMap<SBAtomicSet, VertexDescriptor>;
 
   function resolve
     input output FlatModel flatModel;
   protected
     Integer max_dim = 1;
     Vector<Integer> v_count, e_count;
-    list<Equation> conns, eql;
+    list<Equation> conns;
+    list<list<Equation>> eqll = {};
     SBGraph graph;
-    SBSet vss;
-    SBPWLinearMap res, emap1, emap2;
+    SBPWLinearMap res;
     NameVertexTable nmv_table;
+    array<list<VertexDescriptor>> comp_vertices;
+    array<list<Integer>> comp_edges;
+    array<list<ConnVar>> pot_vars, flow_vars;
+    array<InstNode> iterators;
+    list<Expression> iter_expl;
   algorithm
     for var in flatModel.variables loop
       max_dim := max(max_dim, Type.dimensionCount(var.ty));
@@ -140,23 +145,32 @@ public
     (flatModel, conns) := collect(flatModel);
 
     graph := IncidenceList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
-    nmv_table := UnorderedMap.new<SBMultiInterval>(stringHashDjb2, stringEq);
+    nmv_table := UnorderedMap.new<VertexDescriptor>(stringHashDjb2, stringEq);
     createGraph(flatModel.variables, conns, graph, v_count, e_count, nmv_table);
 
     if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
       print(IncidenceList.toString(graph));
     end if;
 
-    (vss, emap1, emap2) := createMaps(graph);
-    res := SBFunctions.connectedComponents(vss, emap1, emap2);
+    iterators := arrayCreate(Vector.size(v_count), InstNode.EMPTY_NODE());
+    for i in 1:arrayLength(iterators) loop
+      iterators[i] := InstNode.newUniqueIterator();
+    end for;
+    iter_expl := list(Expression.fromCref(ComponentRef.makeIterator(i, Type.INTEGER())) for i in iterators);
+
+    (pot_vars, flow_vars) := vertexVars(flatModel.variables, graph);
+    (comp_vertices, comp_edges) := components(graph);
+
+    for i in 1:arrayLength(comp_vertices) loop
+      res := componentMap(comp_vertices[i], comp_edges[i], graph);
+      eqll := generateEquations(res, vertexSets(comp_vertices[i], graph), iterators, iter_expl, pot_vars, flow_vars) :: eqll;
+    end for;
 
     if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
       print(IncidenceList.toString(graph));
     end if;
 
-    conns := generateEquations(res, flatModel, graph, v_count, nmv_table);
-    eql := listAppend(flatModel.equations, conns);
-    flatModel.equations := eql;
+    flatModel.equations := listAppend(flatModel.equations, List.flatten(listReverseInPlace(eqll)));
   end resolve;
 
 protected
@@ -236,8 +250,11 @@ protected
         case Equation.FOR(range = SOME(range))
           algorithm
             range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(eq), NFInstContext.ITERATION_RANGE));
-            body := Equation.replaceIteratorList(eq.body, eq.iterator, range);
-            addConnectionsToGraph(body, graph, vCount, eCount, nmvTable);
+
+            if not Type.isEmptyArray(Expression.typeOf(range)) then
+              body := Equation.replaceIteratorList(eq.body, eq.iterator, range);
+              addConnectionsToGraph(body, graph, vCount, eCount, nmvTable);
+            end if;
           then
             ();
 
@@ -315,12 +332,12 @@ protected
     SBSet s;
     String name;
   algorithm
-    od := IncidenceList.findVertex(graph, function SetVertex.isNamed(name = conn));
+    name := Connector.toString(conn) + "$" + Connector.faceString(conn);
+    od := UnorderedMap.get(name, nmvTable);
 
     if isSome(od) then
       SOME(d) := od;
-      v := IncidenceList.getVertex(graph, d);
-      mi := SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(v.vs)));
+      mi := vertexInterval(IncidenceList.getVertex(graph, d));
       return;
     end if;
 
@@ -332,10 +349,26 @@ protected
 
     v := SET_VERTEX(conn, s);
     d := IncidenceList.addVertex(graph, v);
-
-    name := Connector.toString(conn) + "$" + Connector.faceString(conn);
-    UnorderedMap.addUnique(name, mi, nmvTable);
+    UnorderedMap.addUnique(name, d, nmvTable);
   end createVertex;
+
+  function vertexInterval
+    input SetVertex v;
+    output SBMultiInterval mi = SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(v.vs)));
+  end vertexInterval;
+
+  function vertexSets
+    input list<VertexDescriptor> vertices;
+    input SBGraph graph;
+    output VertexSets sets = UnorderedMap.new<VertexDescriptor>(SBAtomicSet.hash, SBAtomicSet.isEqual);
+  protected
+    SetVertex v;
+  algorithm
+    for d in vertices loop
+      v := IncidenceList.getVertex(graph, d);
+      UnorderedMap.add(UnorderedSet.first(SBSet.asets(v.vs)), d, sets);
+    end for;
+  end vertexSets;
 
   function crefDims
     input ComponentRef cr;
@@ -366,74 +399,239 @@ protected
     IncidenceList.addEdge(graph, d1, d2, se);
   end updateGraph;
 
-  function createMaps
+  function components
+    "The vertices and edges of each connected component of the graph, ignoring
+     which elements an edge connects."
     input SBGraph graph;
-    output SBSet vss;
+    output array<list<VertexDescriptor>> vertices;
+    output array<list<Integer>> edges;
+  protected
+    Integer nv = IncidenceList.vertexCount(graph);
+    Integer ne = IncidenceList.edgeCount(graph);
+    Integer count = 0, r, c;
+    array<Integer> parent = listArray(List.intRange(nv));
+    array<Integer> edge_vertex = arrayCreate(ne, 0);
+    array<Integer> comp = arrayCreate(nv, 0);
+  algorithm
+    for d in 1:nv loop
+      for e in IncidenceList.getRow(graph, d) loop
+        if edge_vertex[e] == 0 then
+          edge_vertex[e] := d;
+        else
+          joinRoots(parent, d, edge_vertex[e]);
+        end if;
+      end for;
+    end for;
+
+    for d in 1:nv loop
+      r := findRoot(parent, d);
+      if comp[r] == 0 then
+        count := count + 1;
+        comp[r] := count;
+      end if;
+    end for;
+
+    vertices := arrayCreate(count, {});
+    edges := arrayCreate(count, {});
+
+    for d in nv:-1:1 loop
+      c := comp[findRoot(parent, d)];
+      vertices[c] := d :: vertices[c];
+    end for;
+
+    for e in ne:-1:1 loop
+      c := comp[findRoot(parent, edge_vertex[e])];
+      edges[c] := e :: edges[c];
+    end for;
+  end components;
+
+  function findRoot
+    input array<Integer> parent;
+    input output Integer i;
+  protected
+    Integer p;
+  algorithm
+    while parent[i] <> i loop
+      p := parent[parent[i]];
+      arrayUpdate(parent, i, p);
+      i := p;
+    end while;
+  end findRoot;
+
+  function joinRoots
+    input array<Integer> parent;
+    input Integer i1;
+    input Integer i2;
+  protected
+    Integer r1 = findRoot(parent, i1), r2 = findRoot(parent, i2);
+  algorithm
+    if r1 < r2 then
+      arrayUpdate(parent, r2, r1);
+    elseif r2 < r1 then
+      arrayUpdate(parent, r1, r2);
+    end if;
+  end joinRoots;
+
+  function componentMap
+    "Maps each element of the vertices of a component of the graph to the
+     smallest element it is connected to."
+    input list<VertexDescriptor> vertices;
+    input list<Integer> edges;
+    input SBGraph graph;
+    output SBPWLinearMap res;
+  protected
+    SBSet vss = SBSet.newEmpty();
+    SetVertex v;
+    Boolean scalar = true;
+    SBPWLinearMap emap1, emap2;
+    array<Real> offset;
+  algorithm
+    for d in vertices loop
+      v := IncidenceList.getVertex(graph, d);
+      vss := SBSet.addAtomicSets(SBSet.asets(v.vs), vss);
+      scalar := scalar and UnorderedSet.size(SBSet.asets(v.vs)) == 1 and
+                SBMultiInterval.size(vertexInterval(v)) == 1;
+    end for;
+
+    if listEmpty(edges) then
+      res := SBPWLinearMap.newIdentity(vss);
+    elseif scalar then
+      offset := Array.map(SBSet.minElem(vss), intReal);
+      res := SBPWLinearMap.newScalar(vss, SBLinearMap.new(arrayCreate(arrayLength(offset), 0.0), offset));
+    else
+      (emap1, emap2) := createMaps(list(IncidenceList.getEdge(graph, e) for e in edges));
+      res := SBFunctions.connectedComponents(vss, emap1, emap2);
+    end if;
+  end componentMap;
+
+  function createMaps
+    input list<SetEdge> edges;
     output SBPWLinearMap emap1;
     output SBPWLinearMap emap2;
   protected
-    list<SetVertex> vs;
-    list<SetEdge> es;
     SetEdge e;
+    list<SetEdge> es;
   algorithm
-    vss := SBSet.newEmpty();
-    for v in IncidenceList.vertices(graph) loop
-      vss := SBSet.union(vss, v.vs);
+    e :: es := edges;
+    emap1 := e.es1;
+    emap2 := e.es2;
+
+    for e in es loop
+      emap1 := SBPWLinearMap.combine(e.es1, emap1);
+      emap2 := SBPWLinearMap.combine(e.es2, emap2);
+    end for;
+  end createMaps;
+
+  function vertexVars
+    "The potential and flow variables of the connector of each vertex, with the
+     number of dimensions of the connector and their path inside it."
+    input list<Variable> variables;
+    input SBGraph graph;
+    output array<list<ConnVar>> potVars;
+    output array<list<ConnVar>> flowVars;
+  protected
+    Integer nv = IncidenceList.vertexCount(graph);
+    UnorderedMap<ComponentRef, VertexList> names;
+    SetVertex v;
+    ComponentRef name;
+    list<VertexDescriptor> candidates;
+    Boolean is_pot;
+    ConnVar cv;
+  algorithm
+    potVars := arrayCreate(nv, {});
+    flowVars := arrayCreate(nv, {});
+    names := UnorderedMap.new<VertexList>(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
+
+    for d in 1:nv loop
+      v := IncidenceList.getVertex(graph, d);
+      name := Connector.name(v.name);
+      UnorderedMap.add(name, d :: UnorderedMap.getOrDefault(name, names, {}), names);
     end for;
 
-    es := IncidenceList.edges(graph);
+    for var in variables loop
+      is_pot := Variable.isPotential(var);
 
-    if listEmpty(es) then
-      emap1 := SBPWLinearMap.newEmpty();
-      emap2 := SBPWLinearMap.newEmpty();
-    else
-      e :: es := IncidenceList.edges(graph);
-      emap1 := e.es1;
-      emap2 := e.es2;
+      if is_pot or Variable.isFlow(var) then
+        // ComponentRef.isPrefix only matches the variable itself or its parent.
+        candidates := UnorderedMap.getOrDefault(var.name, names, {});
+        if ComponentRef.isCref(var.name) then
+          candidates := listAppend(UnorderedMap.getOrDefault(ComponentRef.rest(var.name), names, {}), candidates);
+        end if;
 
-      for e in es loop
-        emap1 := SBPWLinearMap.combine(e.es1, emap1);
-        emap2 := SBPWLinearMap.combine(e.es2, emap2);
+        for d in candidates loop
+          v := IncidenceList.getVertex(graph, d);
+          name := Connector.name(v.name);
+
+          if ComponentRef.isPrefix(name, var.name) then
+            for field in recordFields(var.name) loop
+              cv := (field, listLength(crefDims(name)), memberName(field, name), Connector.isOutside(v.name));
+
+              if is_pot then
+                potVars[d] := cv :: potVars[d];
+              else
+                flowVars[d] := cv :: flowVars[d];
+              end if;
+            end for;
+          end if;
+        end for;
+      end if;
+    end for;
+
+    for d in 1:nv loop
+      potVars[d] := listReverseInPlace(potVars[d]);
+      flowVars[d] := listReverseInPlace(flowVars[d]);
+    end for;
+  end vertexVars;
+
+  function recordFields
+    "The scalar fields of a record variable, or the variable itself if it is
+     not a record."
+    input ComponentRef cref;
+    input output list<ComponentRef> fields = {};
+  protected
+    Type ty = Type.arrayElementType(ComponentRef.nodeType(cref));
+    array<InstNode> comps;
+    Component c;
+  algorithm
+    if Type.isRecord(ty) then
+      comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(Type.complexNode(ty))));
+
+      for i in arrayLength(comps):-1:1 loop
+        c := InstNode.component(comps[i]);
+
+        if not ConnectorType.isPotentiallyPresent(Component.connectorType(c)) then
+          fields := recordFields(ComponentRef.append(ComponentRef.fromNode(comps[i], Component.getType(c)), cref), fields);
+        end if;
       end for;
+    else
+      fields := cref :: fields;
     end if;
-  end createMaps;
+  end recordFields;
 
   function generateEquations
     input SBPWLinearMap pw;
-    input FlatModel flatModel;
-    input SBGraph graph;
-    input Vector<Integer> vCount;
-    input NameVertexTable nmvTable;
+    input VertexSets vertexSets;
+    input array<InstNode> iterators;
+    input list<Expression> iterExps;
+    input array<list<ConnVar>> potVars;
+    input array<list<ConnVar>> flowVars;
     output list<Equation> equations = {};
   protected
-    SBSet vc_dom, vc_im, aux_s, vc_domi, vc_domi_aux;
-    array<InstNode> iterators;
-    list<Variable> pot_vars, flow_vars;
-    list<tuple<ComponentRef, Integer, String>> vars;
-    list<Expression> iter_expl;
+    SBSet vc_im, aux_s, vc_domi, vc_domi_aux;
+    list<ConnVar> vars;
   algorithm
-    vc_dom := SBPWLinearMap.wholeDom(pw);
-    vc_im := SBPWLinearMap.image(pw, vc_dom);
-
-    iterators := arrayCreate(Vector.size(vCount), InstNode.EMPTY_NODE());
-    for i in 1:arrayLength(iterators) loop
-      iterators[i] := InstNode.newUniqueIterator();
-    end for;
-
-    iter_expl := list(Expression.fromCref(ComponentRef.makeIterator(i, Type.INTEGER())) for i in iterators);
-
-    (pot_vars, flow_vars) := getConnectors(flatModel);
+    vc_im := SBPWLinearMap.fullImage(pw);
 
     for aset in UnorderedSet.toArray(SBSet.asets(vc_im)) loop
       aux_s := SBSet.newEmpty();
       aux_s := SBSet.addAtomicSet(aset, aux_s);
       vc_domi := SBPWLinearMap.preImage(pw, aux_s);
       vc_domi_aux := SBSet.complement(vc_domi, aux_s);
-      vars := getVars(pot_vars, aux_s, graph);
+      vars := getVars(aset, vertexSets, potVars);
 
       equations := generatePotentialEquations(aset, vc_domi_aux, vars, iterators,
-        iter_expl, pot_vars, graph, nmvTable, equations);
-      equations := generateFlowEquation(aset, vc_domi, iterators, flow_vars, graph, nmvTable, equations);
+        iterExps, vertexSets, potVars, equations);
+      equations := generateFlowEquation(aset, vc_domi, iterators, vertexSets, flowVars, equations);
     end for;
 
     equations := listReverseInPlace(equations);
@@ -456,34 +654,30 @@ protected
   function generatePotentialEquations
     input SBAtomicSet aset;
     input SBSet dom;
-    input list<tuple<ComponentRef, Integer, String>> vars;
+    input list<ConnVar> vars;
     input array<InstNode> iterators;
     input list<Expression> iterExps;
-    input list<Variable> potVars;
-    input SBGraph graph;
-    input NameVertexTable nmvTable;
+    input VertexSets vertexSets;
+    input array<list<ConnVar>> potVars;
     input output list<Equation> equations;
   protected
-    SBSet sauxi;
     SBMultiInterval mi, mi_range, aux_mi;
     array<SBInterval> inters;
     array<Expression> ranges;
-    list<tuple<ComponentRef, Integer, String>> vars1;
+    list<ConnVar> vars1;
     list<Equation> eql;
     list<Expression> inds;
   algorithm
     for auxi in UnorderedSet.toArray(SBSet.asets(dom)) loop
       mi := SBAtomicSet.aset(auxi);
-      mi_range := applyOffset(mi, getOffset(mi, nmvTable));
+      mi_range := applyOffset(mi, getOffset(auxi, vertexSets));
       inters := SBMultiInterval.intervals(mi_range);
       ranges := Array.map(inters, intervalToRange);
 
-      sauxi := SBSet.newEmpty();
-      sauxi := SBSet.addAtomicSet(auxi, sauxi);
-      vars1 := getVars(potVars, sauxi, graph);
+      vars1 := getVars(auxi, vertexSets, potVars);
 
       mi := SBAtomicSet.aset(aset);
-      aux_mi := applyOffset(mi, getOffset(mi, nmvTable));
+      aux_mi := applyOffset(mi, getOffset(aset, vertexSets));
       inds := transMulti(mi_range, aux_mi, iterators, false);
 
       eql := generatePotentialEquations2(vars1, vars, iterExps, inds);
@@ -492,8 +686,8 @@ protected
   end generatePotentialEquations;
 
   function generatePotentialEquations2
-    input list<tuple<ComponentRef, Integer, String>> vars1;
-    input list<tuple<ComponentRef, Integer, String>> vars2;
+    input list<ConnVar> vars1;
+    input list<ConnVar> vars2;
     input list<Expression> inds1;
     input list<Expression> inds2;
     output list<Equation> equations = {};
@@ -506,9 +700,9 @@ protected
     Equation eq;
   algorithm
     for v1 in vars1 loop
-      (var1, n1, m1) := v1;
+      (var1, n1, m1, _) := v1;
       for v2 in vars2 loop
-        (var2, n2, m2) := v2;
+        (var2, n2, m2, _) := v2;
         // the same member of both connectors: a connector can have several
         // potential variables of the same type (e.g. v and an angle theta)
         // (the element types: the dimensions of a node can belong to the
@@ -563,18 +757,16 @@ protected
     input SBAtomicSet aset;
     input SBSet dom;
     input array<InstNode> iterators;
-    input list<Variable> flowVars;
-    input SBGraph graph;
-    input NameVertexTable nmvTable;
+    input VertexSets vertexSets;
+    input array<list<ConnVar>> flowVars;
     input output list<Equation> equations;
   protected
     SBMultiInterval mi, mi_range, mi_range2;
-    SBSet sauxi;
     array<SBInterval> inters;
     array<Expression> ranges;
     list<Expression> expl, inds;
-    Boolean is_sum;
-    list<tuple<ComponentRef, Integer, String>> vars;
+    Boolean is_sum, outside;
+    list<ConnVar> vars;
     ComponentRef var;
     Integer n;
     String m;
@@ -583,11 +775,11 @@ protected
     Equation eq;
     UnorderedMap<String, ExpList> named_expl = UnorderedMap.new<ExpList>(stringHashDjb2, stringEq) "the terms of each sum, in reverse order";
     UnorderedSet<String> elementwise = UnorderedSet.new(stringHashDjb2, stringEq);
-    list<tuple<ComponentRef, Integer, String, list<Expression>, Boolean>> terms = {};
+    list<tuple<ComponentRef, Integer, String, Boolean, list<Expression>, Boolean>> terms = {};
     Integer sz;
   algorithm
     mi := SBAtomicSet.aset(aset);
-    mi_range := applyOffset(mi, getOffset(mi, nmvTable));
+    mi_range := applyOffset(mi, getOffset(aset, vertexSets));
     inters := SBMultiInterval.intervals(mi_range);
     ranges := Array.map(inters, intervalToRange);
     expl := {};
@@ -595,16 +787,13 @@ protected
     // collect the flow variables of all connectors of the set with their indices
     for auxi in UnorderedSet.toArray(SBSet.asets(dom)) loop
       mi := SBAtomicSet.aset(auxi);
-      mi_range2 := applyOffset(mi, getOffset(mi, nmvTable));
+      mi_range2 := applyOffset(mi, getOffset(auxi, vertexSets));
       (inds, is_sum) := transMulti(mi_range, mi_range2, iterators, true);
-
-      sauxi := SBSet.newEmpty();
-      sauxi := SBSet.addAtomicSet(auxi, sauxi);
-      vars := getVars(flowVars, sauxi, graph);
+      vars := getVars(auxi, vertexSets, flowVars);
 
       for v in vars loop
-        (var, n, m) := v;
-        terms := (var, n, m, inds, is_sum) :: terms;
+        (var, n, m, outside) := v;
+        terms := (var, n, m, outside, inds, is_sum) :: terms;
         // a flow variable that is an array in its connector (e.g. i[3]) summed
         // over a range of connectors has to be summed element by element
         if is_sum and Type.isArray(ComponentRef.nodeType(var)) then
@@ -614,15 +803,15 @@ protected
     end for;
 
     for t in listReverse(terms) loop
-      (var, n, m, inds, is_sum) := t;
+      (var, n, m, outside, inds, is_sum) := t;
       if UnorderedSet.contains(m, elementwise) then
         sz := memberSize(var);
         for k in 1:sz loop
-          e := flowTerm(ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(k))}, var), inds, n, is_sum);
+          e := flowTerm(ComponentRef.setSubscripts({Subscript.INDEX(Expression.INTEGER(k))}, var), inds, n, is_sum, outside);
           addNamed(m + "[" + intString(k) + "]", e, named_expl);
         end for;
       else
-        e := flowTerm(var, inds, n, is_sum);
+        e := flowTerm(var, inds, n, is_sum, outside);
         addNamed(m, e, named_expl);
       end if;
     end for;
@@ -651,6 +840,7 @@ protected
     input list<Expression> inds;
     input Integer connectorDims;
     input Boolean isSum;
+    input Boolean outside;
     output Expression e;
   algorithm
     e := generateConnector(var, inds, connectorDims);
@@ -662,6 +852,10 @@ protected
       end if;
       e := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SUM,
         {e}, Expression.variability(e), Purity.PURE, Type.arrayElementType(Expression.typeOf(e))));
+    end if;
+
+    if outside then
+      e := Expression.negate(e);
     end if;
   end flowTerm;
 
@@ -739,38 +933,25 @@ protected
     equations := List.append_reverse(body, equations);
   end generateForLoop;
 
-  function getConnectors
-    input FlatModel flatModel;
-    output list<Variable> effVars = {};
-    output list<Variable> flowVars = {};
-  algorithm
-    for v in flatModel.variables loop
-      if Variable.isPotential(v) then
-        effVars := v :: effVars;
-      elseif Variable.isFlow(v) then
-        flowVars := v :: flowVars;
-      end if;
-    end for;
-
-    effVars := listReverseInPlace(effVars);
-    flowVars := listReverseInPlace(flowVars);
-  end getConnectors;
-
   function getOffset
-    input SBMultiInterval mi;
-    input NameVertexTable nmvTable;
-    output array<Integer> res;
+    "The smallest element of the vertex containing aset."
+    input SBAtomicSet aset;
+    input VertexSets vertexSets;
+    output array<Integer> res = listArray({});
   protected
-    SBMultiInterval i, aux;
+    SBAtomicSet vset;
   algorithm
-    res := listArray({});
+    if UnorderedMap.contains(aset, vertexSets) then
+      res := SBAtomicSet.minElem(aset);
+      return;
+    end if;
 
-    // TODO: Surely this isn't the best way to do this.
-    for i in UnorderedMap.valueList(nmvTable) loop
-      aux := SBMultiInterval.intersection(mi, i);
+    for i in 1:UnorderedMap.size(vertexSets) loop
+      vset := UnorderedMap.keyAt(vertexSets, i);
 
-      if not SBMultiInterval.isEmpty(aux) then
-        res := SBMultiInterval.minElem(i);
+      if not SBAtomicSet.isEmpty(SBAtomicSet.intersection(aset, vset)) then
+        res := SBAtomicSet.minElem(vset);
+        return;
       end if;
     end for;
   end getOffset;
@@ -832,27 +1013,32 @@ protected
   end crefNames;
 
   function getVars
-    "The variables of the connectors of the vertices in sauxi, with the number of
-     dimensions of their connector and their path inside the connector."
-    input list<Variable> vars;
-    input SBSet sauxi;
-    input SBGraph graph;
-    output list<tuple<ComponentRef, Integer, String>> res = {};
+    "The variables of the connectors of the vertices that intersect aset, with
+     the number of dimensions of their connector and their path inside it."
+    input SBAtomicSet aset;
+    input VertexSets vertexSets;
+    input array<list<ConnVar>> vertexVars;
+    output list<ConnVar> res;
   protected
-    list<SetVertex> vl;
+    Option<VertexDescriptor> od;
+    VertexDescriptor d;
+    list<list<ConnVar>> varsl = {};
   algorithm
-    vl := IncidenceList.vertices(graph);
-    for v in vl loop
-      if not SBSet.isEmpty(SBSet.intersection(v.vs, sauxi)) then
-        for var in vars loop
-          if ComponentRef.isPrefix(Connector.name(v.name), var.name) then
-            res := (var.name, listLength(crefDims(Connector.name(v.name))), memberName(var.name, Connector.name(v.name))) :: res;
-          end if;
-        end for;
+    od := UnorderedMap.get(aset, vertexSets);
+
+    if isSome(od) then
+      SOME(d) := od;
+      res := vertexVars[d];
+      return;
+    end if;
+
+    for i in 1:UnorderedMap.size(vertexSets) loop
+      if not SBAtomicSet.isEmpty(SBAtomicSet.intersection(aset, UnorderedMap.keyAt(vertexSets, i))) then
+        varsl := vertexVars[UnorderedMap.valueAt(vertexSets, i)] :: varsl;
       end if;
     end for;
 
-    res := listReverseInPlace(res);
+    res := List.flatten(listReverseInPlace(varsl));
   end getVars;
 
   function transMulti

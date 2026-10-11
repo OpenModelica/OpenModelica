@@ -61,7 +61,7 @@ use crate::CodegenWasmJitFunctions::{
     ProfPlan, ScatterGroup, SimCtx, SimSlot, SlotMap, VarTable, KeyTable, StartExps, StartSlot, AliasTarget, split_elem_key, WTy, WTyVal, compile_function, compile_linear_system, compile_linear_system_analytic,
     compile_linear_system_analytic_csc, compile_linear_system_symbolic,
     ClockInit, ClockUpdate,
-    IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
+    IterBlock, IterSlot, NlsResidual, NlsResiduals, backup_known_outputs, residual_rows, restore_known_outputs,
     emit_nls_load_body, emit_nls_jac_body, emit_nls_jac_csc_body, nls_use_sparse,
     emit_entwined_assign, emit_generic_assign, emit_resizable_assign,
     emit_nls_residual_body, emit_nls_residual_prologue, emit_nls_residual_epilogue,
@@ -233,6 +233,10 @@ pub use fmu::*;
 #[path = "CodegenWasmJit/var_map.rs"]
 mod var_map;
 pub(crate) use var_map::*;
+
+#[path = "CodegenWasmJit/resizable.rs"]
+mod resizable;
+pub(crate) use resizable::*;
 
 // Zero crossings, relations, `sample()` and clock collection.
 #[path = "CodegenWasmJit/events.rs"]

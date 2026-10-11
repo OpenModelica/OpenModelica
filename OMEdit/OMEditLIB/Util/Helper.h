@@ -63,6 +63,7 @@ public:
   static QString OpenModelicaUsersGuideVersion;
   static QString OMEditInternal;
   static QString OMCServerName;
+  static QString modelicaFigureTitle;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
   static QString omnotebookFileTypes;

@@ -119,7 +119,7 @@ public slots:
     void             nextField();
     void             clickEvent();
     void             clickEventOutput();
-    void             contentChanged();
+    void             contentChanged() override;
     void             addToHighlighter();
     void             setState(int state);
 
@@ -272,6 +272,7 @@ protected:
     void focusInEvent(QFocusEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private:
     bool                     inCommand      = false;

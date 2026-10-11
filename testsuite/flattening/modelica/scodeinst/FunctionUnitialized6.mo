@@ -25,6 +25,6 @@ end FunctionUnitialized6;
 //   constant Real r.x[2] = 0.0;
 //   constant Real r.x[3] = 0.0;
 // end FunctionUnitialized6;
-// [flattening/modelica/scodeinst/FunctionUnitialized6.mo:13:3-13:13:writable] Warning: Output parameter r.x[2] was not assigned a value
+// [flattening/modelica/scodeinst/FunctionUnitialized6.mo:13:3-13:13:writable] Warning: Output parameter r.x[2] was not assigned a value. This is deprecated and will become an error in future releases.
 //
 // endResult

@@ -128,6 +128,8 @@ pub enum TokenKind {
     Pure,
     /// `impure` — Modelica 3.3+, always a keyword in MetaModelica.
     Impure,
+    /// `time` — Modelica 3.7+ under `--strict`; otherwise an identifier.
+    Time,
     /// `optimization` — Optimica extension; treated as identifier in Modelica2.
     Optimization,
     /// `constraint` — Optimica extension; treated as identifier in Modelica2.
@@ -356,6 +358,7 @@ pub fn keyword_as_str(kind: &TokenKind) -> Option<&'static str> {
         TokenKind::Stream => Some("stream"),
         TokenKind::Pure => Some("pure"),
         TokenKind::Impure => Some("impure"),
+        TokenKind::Time => Some("time"),
         TokenKind::Optimization => Some("optimization"),
         TokenKind::Constraint => Some("constraint"),
         TokenKind::Field => Some("field"),
@@ -744,7 +747,13 @@ impl<'s> Lexer<'s> {
     fn keyword_or_ident(&self, word: &str) -> TokenKind {
         match lookup_word(word) {
             Word::Keyword => {}
-            Word::Common(s) => return TokenKind::Ident(s.clone()),
+            Word::Common(s) => {
+                if word == "time" && super::time_is_keyword()
+                    && matches!(self.grammar, Grammar::Modelica3 | Grammar::PDEModelica) {
+                    return TokenKind::Time;
+                }
+                return TokenKind::Ident(s.clone());
+            }
             Word::Other => return TokenKind::Ident(word.into()),
         }
 

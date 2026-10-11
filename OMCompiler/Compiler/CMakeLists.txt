@@ -313,18 +313,23 @@ set_target_properties(OpenModelicaCompiler
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 
-# It also wants to have these builtin files in ../lib/ relative to its location.
-add_custom_command (
-    TARGET OpenModelicaCompiler
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_1_x.mo
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_2_x.mo
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_3_x.mo
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/ModelicaBuiltin.mo
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/MetaModelicaBuiltin.mo
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/NFModelicaBuiltin.mo
-    COMMENT "Copying (NF/Meta/Modelica)Builtin.mo files for the omc generated in the build tree (not installed yet).")
-
+# Refresh the runtime builtin files independently of whether the compiler library itself needs relinking.
+add_custom_target(OpenModelicaBuiltinFiles ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_1_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_1_x.mo
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_2_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_2_x.mo
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AnnotationsBuiltin_3_x.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/AnnotationsBuiltin_3_x.mo
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/ModelicaBuiltin.mo
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/MetaModelicaBuiltin.mo
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModelicaBuiltin.mo ${CMAKE_CURRENT_BINARY_DIR}/lib/omc/NFModelicaBuiltin.mo
+    DEPENDS
+      FrontEnd/AnnotationsBuiltin_1_x.mo
+      FrontEnd/AnnotationsBuiltin_2_x.mo
+      FrontEnd/AnnotationsBuiltin_3_x.mo
+      FrontEnd/ModelicaBuiltin.mo
+      FrontEnd/MetaModelicaBuiltin.mo
+      NFFrontEnd/NFModelicaBuiltin.mo
+    COMMENT "Refreshing (NF/Meta/Modelica)Builtin.mo files for the omc generated in the build tree.")
+add_dependencies(OpenModelicaCompiler OpenModelicaBuiltinFiles)
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 

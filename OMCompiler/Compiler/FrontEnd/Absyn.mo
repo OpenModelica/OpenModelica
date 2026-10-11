@@ -842,6 +842,11 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   record BREAK
   end BREAK;
 
+  record UNITFUL_LITERAL "Numeric literal with a unit, e.g. 9.8'm/s2'"
+    Exp value "INTEGER or REAL";
+    String unit "The unit-of-measurement without the quotes";
+  end UNITFUL_LITERAL;
+
 end Exp;
 
 uniontype Case "case in match or matchcontinue"

@@ -1,0 +1,102 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+/*
+ * Dark mode counterparts of the rules in stylesheet.qss. Everything else
+ * comes from the dark palette set in OMEditApplication.
+ */
+
+QStatusBar#ModelStatusBar {
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2b2d31, stop: 1 #202124);
+  border: 1px solid #4b5563;
+}
+QStatusBar#ModelStatusBar::item {
+  border-left: 1px solid #4b5563;
+}
+
+QListWidget#RecentItemsList::item:hover, QListWidget#RecentModelItemsList::item:hover, QListWidget#LatestNewsList::item:hover {
+  border: 1px solid #6b7280;
+  color: #60a5fa;
+}
+
+QLabel#LabelWithBorder {
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2b2d31, stop: 1 #202124);
+  border: 1px solid #4b5563;
+}
+
+/*
+ * Fusion derives the outline of check and radio indicators from the Window
+ * color and fills them with Base, so on a dark palette an unchecked box is
+ * invisible before Qt 6.9.2 (newer Fusion brightens the outline in a dark
+ * scheme). Draw the indicators here; the images replace the check mark and
+ * dot that the style would otherwise paint. Menus are left to the style: a
+ * QMenu::indicator rule makes the stylesheet style draw every menu item
+ * through the Windows style.
+ */
+QCheckBox::indicator, QGroupBox::indicator, QAbstractItemView::indicator {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #6b7280;
+  border-radius: 2px;
+  background-color: #1f2937;
+}
+QCheckBox::indicator:checked, QGroupBox::indicator:checked, QAbstractItemView::indicator:checked {
+  image: url(:/Resources/icons/dark-check.svg);
+}
+QCheckBox::indicator:checked:disabled, QGroupBox::indicator:checked:disabled, QAbstractItemView::indicator:checked:disabled {
+  image: url(:/Resources/icons/dark-check-disabled.svg);
+}
+QCheckBox::indicator:indeterminate, QAbstractItemView::indicator:indeterminate {
+  image: url(:/Resources/icons/dark-check-partial.svg);
+}
+QCheckBox::indicator:disabled, QGroupBox::indicator:disabled, QAbstractItemView::indicator:disabled {
+  border-color: #4b5563;
+}
+QRadioButton::indicator {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #6b7280;
+  border-radius: 7px;
+  background-color: #1f2937;
+}
+QRadioButton::indicator:checked {
+  image: url(:/Resources/icons/dark-radio.svg);
+}
+QRadioButton::indicator:checked:disabled {
+  image: url(:/Resources/icons/dark-radio-disabled.svg);
+}
+QRadioButton::indicator:disabled {
+  border-color: #4b5563;
+}

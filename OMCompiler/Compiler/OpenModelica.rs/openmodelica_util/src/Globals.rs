@@ -276,4 +276,9 @@ thread_local! {
     /// Source: `SimCodeFunctionUtil.setTrivialRecords`.
     pub static trivialRecords: RefCell<metamodelica::List<ArcStr>> =
         RefCell::new(metamodelica::nil());
+
+    /// Index 44 — Names of the parameters the frontend must evaluate.
+    /// Source: `ExpressionSolve.checkSolveCoefficient`, read by `NFInst`.
+    pub static structuralParameters: RefCell<metamodelica::List<ArcStr>> =
+        RefCell::new(metamodelica::nil());
 }

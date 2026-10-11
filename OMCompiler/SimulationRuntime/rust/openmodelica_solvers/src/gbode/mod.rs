@@ -51,6 +51,16 @@ const GB_MINIMAL_STEP_SIZE: f64 = 1e-20;
 /// C's `GB_TOLERANCE_SCALING_SAFETY` (`gbode_err.h`).
 const GB_TOLERANCE_SCALING_SAFETY: f64 = 0.2;
 
+/// What [`Gbode::new`] fails with after reporting the error as C's
+/// `throwStreamPrint` does.
+pub const SETUP_THROWN: &str = "gbode setup failed";
+
+/// C's `throwStreamPrint` during `gbode_allocateData`.
+fn setup_throw(msg: &str) -> String {
+    omclog::debug(omclog::ASSERT, false, msg);
+    String::from(SETUP_THROWN)
+}
+
 /// How far one [`Gbode::step`] got.
 pub enum GbStep {
     /// `target` reached; the states were interpolated onto it.
@@ -169,6 +179,8 @@ pub struct Gbode {
     did_fast_step: bool,
     gbf: Option<alloc::boxed::Box<multirate::GbodeF>>,
     stats: GbStats,
+    /// Model evaluations C does not count as `functionODE` calls.
+    uncounted_calls: u64,
 }
 
 impl Gbode {
@@ -176,6 +188,9 @@ impl Gbode {
     /// arrays. `jac_colors` is the ODE Jacobian's color count (0 without a pattern);
     /// `sym_jac_available` whether the model answers [`Ode::jacobian_vector`],
     /// `adj_jac_available` whether it carries an adjoint for [`Ode::jacobian_matrix`].
+    /// `eval_dags` is the birate mode's `getDAG_ODE` (and with `true` also
+    /// `getDAG_JacA`): whether the forward Jacobian's DAG exists, `None` for a model
+    /// that cannot evaluate a selection of its equations.
     pub fn new(
         n_states: usize,
         tolerance: f64,
@@ -183,6 +198,7 @@ impl Gbode {
         jac_colors: usize,
         sym_jac_available: bool,
         adj_jac_available: bool,
+        eval_dags: &mut dyn FnMut(bool) -> Option<bool>,
     ) -> core::result::Result<Self, String> {
         let conf = GbConf::from_flags()?;
         let tol = if tolerance > 0.0 { tolerance } else { 1e-6 };
@@ -365,7 +381,7 @@ impl Gbode {
         conf.interpolation = interpolation;
         let percentage = conf.ratio;
         let gbf = if multi_rate {
-            let gbf = multirate::GbodeF::new(&conf, n_states, tol, sym_jac)?;
+            let gbf = multirate::GbodeF::new(&conf, n_states, tol, jac_colors, sym_jac, eval_dags)?;
             // C: the outer step's last stage is not reused with a fast integration
             // in between.
             t.k_right = false;
@@ -464,6 +480,7 @@ impl Gbode {
             did_fast_step: false,
             gbf,
             stats: GbStats::default(),
+            uncounted_calls: 0,
         })
     }
 
@@ -485,11 +502,44 @@ impl Gbode {
         let mut s = self.stats;
         if let Some(nls) = self.nls.as_ref() {
             s.calls_jacobian = nls.n_jac_evals;
+            s.calls_ode = s.calls_ode.saturating_sub(nls.uncounted_calls);
         }
+        s.calls_ode = s.calls_ode.saturating_sub(self.uncounted_calls);
         if let Some(gnls) = self.gnls.as_ref() {
             s.calls_jacobian = gnls.n_jac_evals;
         }
         s
+    }
+
+    /// C's `logSolverStats` for the birate mode's two integrators.
+    fn log_birate_stats(&self) {
+        let Some(gbf) = self.gbf.as_ref() else { return };
+        let (jac, fd_calls) = match (gbf.inls.as_ref(), gbf.nls.as_ref()) {
+            (Some(n), _) => (n.n_jac_evals, n.uncounted_calls),
+            (None, Some(n)) => (n.n_jac_evals, 0),
+            (None, None) => (0, 0),
+        };
+        let inner = GbStats {
+            steps: gbf.steps,
+            calls_ode: gbf.calls_ode - gbf.additional_full_calls - fd_calls,
+            calls_jacobian: jac,
+            err_test_failures: gbf.err_test_failures,
+            convergence_test_failures: gbf.convergence_test_failures,
+        };
+        let extra = [gbf.fast_state_update_count, gbf.additional_full_calls];
+        for (name, s, extra) in [("inner", inner, Some(extra)), ("outer", self.stats(), None)] {
+            omclog::info!(omclog::STATS, true, "{name} integration call statistics:");
+            omclog::info!(omclog::STATS, false, "number of steps taken so far: {}", s.steps);
+            omclog::info!(omclog::STATS, false, "number of calls of functionODE() : {}", s.calls_ode);
+            omclog::info!(omclog::STATS, false, "number of calculation of jacobian : {}", s.calls_jacobian);
+            omclog::info!(omclog::STATS, false, "error test failure : {}", s.err_test_failures);
+            omclog::info!(omclog::STATS, false, "convergence failure : {}", s.convergence_test_failures);
+            if let Some([updates, additional]) = extra {
+                omclog::info!(omclog::STATS, false, "number of fast state updates : {updates}");
+                omclog::info!(omclog::STATS, false, "number of additional full calls of functionODE() : {additional}");
+            }
+            omclog::close(omclog::STATS);
+        }
     }
 
     /// The solver must re-initialize at the caller's `(t, y)`: C's `didEventStep`.
@@ -500,6 +550,9 @@ impl Gbode {
         }
         if let Some(gbf) = self.gbf.as_mut() {
             gbf.did_event_step = true;
+            if let Some(nls) = gbf.inls.as_mut() {
+                nls.invalidate();
+            }
             if let Some(nls) = gbf.nls.as_mut() {
                 nls.invalidate();
             }
@@ -525,8 +578,12 @@ impl Gbode {
         self.initial_failures += 1;
         self.time = time;
         self.y_old.copy_from_slice(&y[..n]);
+        // `gbode_init` resets C's statistics after these evaluations.
+        let calls_before = ode.calls();
         let mut f0 = vec![0.0; n];
-        ode.eval(self.time, &self.y_old, &mut f0)?;
+        crate::eval_caught(ode, self.time, &self.y_old, &mut f0)?;
+        // C leaves `f(t0, y0)` in `fODE`, which `gbode_init` takes as `kRight`.
+        self.k_right.copy_from_slice(&f0);
         if self.initial_step_size < 0.0 {
             self.f.copy_from_slice(&f0);
             let (d0, d1) = ctrl::init_step_norms(&self.y_old, &f0, self.tol);
@@ -541,7 +598,7 @@ impl Gbode {
                 y1[i] = self.y_old[i] + f0[i] * h0;
             }
             let mut f1 = vec![0.0; n];
-            ode.eval(self.time + h0, &y1, &mut f1)?;
+            crate::eval_caught(ode, self.time + h0, &y1, &mut f1)?;
             let mut d2 = 0.0;
             for i in 0..n {
                 let sc = self.tol + abs(self.y_old[i]) * self.tol;
@@ -554,8 +611,6 @@ impl Gbode {
             self.step_size = (100.0 * h0).min(h1);
             self.opt_step_size = self.step_size;
             self.last_step_size = 0.0;
-            // Leave the model at the base point again, as C restores it.
-            ode.eval(self.time, &self.y_old, &mut f0)?;
         } else {
             self.step_size = self.initial_step_size;
             self.last_step_size = 0.0;
@@ -571,12 +626,13 @@ impl Gbode {
             omclog::g(self.time, 0, 6),
         );
         self.initial_failures = -1;
+        self.uncounted_calls += ode.calls() - calls_before;
         Ok(())
     }
 
-    /// C's `gbode_init`: reset the ring buffers and statistics at a (re)start. The
-    /// model must be at `(time, y_old)` with the derivative evaluated.
-    fn init(&mut self, ode: &mut dyn Ode) -> Result<()> {
+    /// C's `gbode_init`: reset the ring buffers at a (re)start, after
+    /// [`Gbode::init_step_size`] left `f(t0, y0)` in `k_right`.
+    fn init(&mut self) {
         let n = self.n_states;
         for i in 0..self.ring_buffer_size {
             self.err_values[i] = 0.0;
@@ -584,16 +640,12 @@ impl Gbode {
         }
         self.time_right = self.time;
         self.y_right.copy_from_slice(&self.y_old);
-        let mut f0 = vec![0.0; n];
-        ode.eval(self.time, &self.y_old, &mut f0)?;
-        self.k_right.copy_from_slice(&f0);
         for i in 0..self.ring_buffer_size {
             self.tv[i] = self.time_right;
             self.yv[i * n..(i + 1) * n].copy_from_slice(&self.y_right);
             self.kv[i * n..(i + 1) * n].copy_from_slice(&self.k_right);
         }
         self.event_time = f64::MAX;
-        Ok(())
     }
 
     /// C's `extrapolation_gb`: the initial guess for an implicit stage at `time`.

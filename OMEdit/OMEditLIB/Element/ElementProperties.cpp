@@ -204,6 +204,9 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     } else {
       mValueType = Parameter::Boolean;
     }
+  // Choices take precedence over enumeration so annotated enumeration parameters use their choices (see issue #16620).
+  } else if (mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty()) {
+    mValueType = Parameter::Choices;
   } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
   } else if (mpModelInstanceElement->getReplaceable()) {
@@ -213,8 +216,6 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     } else {
       mValueType = Parameter::ReplaceableComponent;
     }
-  } else if (mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty()) {
-    mValueType = Parameter::Choices;
   } else if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
     mValueType = Parameter::ChoicesAllMatching;
   } else {

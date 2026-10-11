@@ -1,0 +1,91 @@
+// name: lateInlineTupleArray
+// keywords: inline, LateInline, tuple, array, #14185
+// status: correct
+//
+// Late-inlined wrappers around a function with an array output whose size
+// depends on an input (Real[size(xi, 1)]): a wrapper that passes all outputs
+// through, and wrappers that reorder or drop outputs (with zero-sized arrays).
+
+loadString("
+model lateInlineTupleArray
+  function core
+    input Real x;
+    input Real xi[:];
+    output Real a;
+    output Real b[size(xi, 1)];
+    output Real c;
+  algorithm
+    a := x;
+    b := xi;
+    c := 2*x;
+    annotation(Inline=false);
+  end core;
+
+  function wrapper
+    input Real x;
+    input Real xi[:];
+    output Real a;
+    output Real b[size(xi, 1)];
+    output Real c;
+  algorithm
+    (a, b, c) := core(x, xi);
+    annotation(Inline=false, LateInline=true);
+  end wrapper;
+
+  function swapped
+    input Real x;
+    input Real xi[:];
+    output Real c;
+    output Real b[size(xi, 1)];
+    output Real a;
+  algorithm
+    (a, b, c) := core(x, xi);
+    annotation(Inline=false, LateInline=true);
+  end swapped;
+
+  function subset
+    input Real x;
+    input Real xi[:];
+    output Real b[size(xi, 1)];
+    output Real c;
+  protected
+    Real a;
+  algorithm
+    (a, b, c) := core(x, xi);
+    annotation(Inline=false, LateInline=true);
+  end subset;
+
+  Real a, c;
+  Real b[2];
+  Real a0, c0;
+  Real b0[0];
+  Real a1, c1, c2;
+  Real b1[0], b2[0];
+equation
+  (a, b, c) = wrapper(time, {0.5, 0.25});
+  (a0, b0, c0) = wrapper(time, fill(0.5, 0));
+  (c1, b1, a1) = swapped(time, fill(0.5, 0));
+  (b2, c2) = subset(time, fill(0.5, 0));
+end lateInlineTupleArray;
+"); getErrorString();
+
+simulate(lateInlineTupleArray); getErrorString();
+val(b[2], 1.0); val(c, 1.0); val(c0, 1.0); val(c1, 1.0); val(c2, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "lateInlineTupleArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'lateInlineTupleArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.25
+// 2.0
+// 2.0
+// 2.0
+// 2.0
+// endResult

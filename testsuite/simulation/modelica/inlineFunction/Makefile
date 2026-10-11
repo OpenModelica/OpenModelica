@@ -26,6 +26,7 @@ testBug3997.mos \
 testComplexMath.mos \
 testBug4808.mos \
 testBug4841.mos \
+lateInlineTupleArray.mos \
 
 
 # test that currently fail. Move up when fixed.

@@ -361,7 +361,7 @@ impl<'a> Scan<'a> {
     fn walk_exp(&mut self, e: &Absyn::Exp, env: &BTreeSet<String>) {
         use Absyn::Exp::*;
         match e {
-            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK => {}
+            INTEGER { .. } | REAL { .. } | STRING { .. } | BOOL { .. } | END | BREAK | UNITFUL_LITERAL { .. } => {}
             CODE { .. } => {}
             CREF { .. } => {}
             BINARY { exp1, exp2, .. } | LBINARY { exp1, exp2, .. } | RELATION { exp1, exp2, .. } => {

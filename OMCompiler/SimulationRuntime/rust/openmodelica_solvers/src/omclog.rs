@@ -111,6 +111,8 @@ pub const NLS_DERIVATIVE_TEST: Stream = 39;
 pub const NLS_SVD: Stream = 40;
 pub const NLS_SVD_V: Stream = 41;
 pub const NLS_RES: Stream = 42;
+pub const GBODE: Stream = 14;
+pub const GBODE_V: Stream = 15;
 pub const GBODE_NLS: Stream = 16;
 pub const NLS_EXTRAPOLATE: Stream = 43;
 pub const RT: Stream = 45;
@@ -188,9 +190,6 @@ pub fn mask_from_streams<S: AsRef<str>>(streams: &[S]) -> Result<Mask, String> {
 /// `setGlobalVerboseLevel`'s "print X if Y is active" implications, in its order
 /// (`LOG_INIT_V` reaches `LOG_INIT_HOMOTOPY` through `LOG_INIT`).
 fn finish(mut m: Mask) -> Mask {
-    const GBODE: Stream = 14;
-    const GBODE_V: Stream = 15;
-    const GBODE_NLS: Stream = 16;
     const GBODE_NLS_V: Stream = 17;
     for (from, to) in [
         (GBODE_V, GBODE),

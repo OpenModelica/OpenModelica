@@ -28,6 +28,6 @@ end CevalFuncRecord5;
 //   parameter Real r2.x = 2.0;
 //   parameter Real r2.y(fixed = false) = 0.0;
 // end CevalFuncRecord5;
-// [flattening/modelica/scodeinst/CevalFuncRecord5.mo:14:3-14:16:writable] Warning: Output parameter outR.y was not assigned a value
+// [flattening/modelica/scodeinst/CevalFuncRecord5.mo:14:3-14:16:writable] Warning: Output parameter outR.y was not assigned a value. This is deprecated and will become an error in future releases.
 //
 // endResult
