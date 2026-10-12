@@ -78,10 +78,10 @@ pipeline {
     stage('setup') {
       parallel {
         // Linux build stages
-        stage('jammy-clang') {
+        stage('noble-clang') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -99,10 +99,10 @@ pipeline {
             script { common.buildClangOMC() }
           }
         }
-        stage('jammy-gcc') {
+        stage('noble-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -307,7 +307,7 @@ pipeline {
         stage('checks') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args '''
@@ -353,7 +353,7 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-gcc-cache')) {
                 common.ctestStashed('omc-gcc', 1, 2)
               }
@@ -382,7 +382,7 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
                 common.partestStashed('omc-clang', 2, 2)
               }
@@ -567,7 +567,7 @@ pipeline {
           agent {
             docker {
               alwaysPull true
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               args '''
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
@@ -593,7 +593,7 @@ pipeline {
         stage('17 build-gui-clang + omedit-testsuite') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -624,10 +624,10 @@ pipeline {
           agent {
             node {
               // Intel only: ParModelica compiles its OpenCL kernels through the node's ICD,
-              // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) cannot name a Zen CPU it
-              // does not know and falls back to the target CPU 'generic', which LLVM
-              // rejects; the POCL_LLVM_CPU_NAME override only exists in later PoCL. Lifting
-              // this needs both the build and the tests on a newer image (Ubunut 26.04 or newer).
+              // which on AMD is PoCL. Jammy's PoCL 1.8 (LLVM 14) could not name a Zen CPU it
+              // did not know and fell back to the target CPU 'generic', which LLVM
+              // rejects. Noble's PoCL 5.0 has the POCL_LLVM_CPU_NAME override, but it is
+              // still built against LLVM 14 and has not been tried on the AMD nodes.
               label 'linux-intel-x64'
               customWorkspace 'ws/OpenModelica'
             }
@@ -646,7 +646,7 @@ pipeline {
           steps {
             script { common.checkoutSCM() }
             script {
-              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-icon-generator')) {
                 common.testMisc()
               }
@@ -720,7 +720,7 @@ pipeline {
         }
 
         // The C omc cross-compiled to Windows (MSVC) from the C sources
-        // 'cmake-jammy-gcc' translated, and the Windows smoke set run against
+        // 'noble-gcc' translated, and the Windows smoke set run against
         // it under wine. See common.crossBuildOMCWindows().
         stage('21 cross-build-omc-msvc') {
           agent {
@@ -793,7 +793,7 @@ pipeline {
         stage('upload-compliance') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -815,7 +815,7 @@ pipeline {
         stage('upload-doc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
@@ -837,7 +837,7 @@ pipeline {
         stage('upload-web') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:ubuntu-22.04'
+              image 'docker.openmodelica.org/build-deps:ubuntu-24.04'
               label 'linux'
               alwaysPull true
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
