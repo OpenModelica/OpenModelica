@@ -95,6 +95,7 @@ public:
   void start();
   void runWasmJitSimulation(const QString &simulationParameters);
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
+  bool isDebugInfoAvailable() const {return mDebugInfoAvailable;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
   bool isOutputStructured() {return mIsOutputStructured;}
@@ -156,6 +157,9 @@ private:
   // flight, and whether the user asked to cancel it (shared-flag cooperative cancel).
   bool mIsWasmJitSimulationRunning = false;
   bool mWasmJitCancelled = false;
+  // Whether <model>_info.json is there for "Debug more". A wasm-jit run writes it
+  // only under -d=infoXmlOperations; the C target always does.
+  bool mDebugInfoAvailable = true;
   // simulate() writes <prefix>.log itself; OMEdit must not truncate it or hold it open.
   bool mIsLogFileWrittenByOmc = false;
   QDateTime mResultFileLastModifiedDateTime;

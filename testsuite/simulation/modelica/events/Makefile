@@ -14,6 +14,7 @@ bug4419.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 ChatteringEventsTestXML.mos \
+WasmJitInfoJson.mos \
 CheckEvents.mos \
 cseOutsideNoEvent.mos \
 DelayZeroCrossing.mos \
