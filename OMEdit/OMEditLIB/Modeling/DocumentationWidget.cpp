@@ -59,6 +59,8 @@
 // QtWebEngine stubs come in via DocumentationWidget.h on wasm.
 #else
 #include <QWebEnginePage>
+#include <QWebEngineScript>
+#include <QWebEngineScriptCollection>
 #include <QWebEngineSettings>
 #endif
 #include <QWidgetAction>
@@ -1382,6 +1384,29 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   if (!mIsContentEditable && Style::isDarkMode()) {
     settings()->setAttribute(QWebEngineSettings::ForceDarkMode, true);
     page()->setBackgroundColor(Style::documentationPageBackgroundColor());
+    /* Chromium darkens a white page to almost black. Give the page the colors
+     * of the dark palette; Chromium leaves colors that are already dark alone.
+     * The rule goes first so the colors of the document win over it.
+     */
+    QWebEngineScript script;
+    script.setName("omeditDarkMode");
+    script.setInjectionPoint(QWebEngineScript::DocumentCreation);
+    script.setWorldId(QWebEngineScript::ApplicationWorld);
+    script.setSourceCode(QString("(function() {"
+                                 "  function addStyle() {"
+                                 "    var style = document.createElement('style');"
+                                 "    style.textContent = ':root { background-color: %1; color: %2; }';"
+                                 "    var parent = document.head || document.documentElement;"
+                                 "    parent.insertBefore(style, parent.firstChild);"
+                                 "  }"
+                                 "  if (document.documentElement) {"
+                                 "    addStyle();"
+                                 "  } else {"
+                                 "    document.addEventListener('DOMContentLoaded', addStyle);"
+                                 "  }"
+                                 "})();")
+                         .arg(Style::documentationPageBackgroundColor().name(), Style::documentationPageTextColor().name()));
+    page()->scripts().insert(script);
   }
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
   // set DocumentationViewer web page policy
