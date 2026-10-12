@@ -139,11 +139,13 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
   QString toolTip;
   QVariant variant = QVariant();
   if (pSimulationMessage) {
-    // create debuglink
+    // create debuglink; the web build has no transformational debugger to open
+#if !defined(__EMSCRIPTEN__)
     SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
     debugLink = QString("&nbsp;<a href=\"omedittransformationsbrowser://%1?index=%2\">Debug more</a>")
         .arg(QUrl::fromLocalFile(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json").path())
         .arg(pSimulationMessage->mIndex);
+#endif
     // create display text
     if (pSimulationMessage->mText.compare(Helper::displayLimit) == 0) {
       QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
