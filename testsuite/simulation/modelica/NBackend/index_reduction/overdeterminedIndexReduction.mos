@@ -31,6 +31,6 @@ buildModel(overdeterminedIndexReduction); getErrorString();
 // true
 // ""
 // {"", ""}
-// "Error: Internal error NBMatching.singular could not resolve the structural singularity after 20 index reduction steps. The system is probably over-determined or has a too high index.
+// "Error: Internal error NBResolveSingularities.indexReduction failed because dynamic state selection is not yet supported.
 // "
 // endResult
