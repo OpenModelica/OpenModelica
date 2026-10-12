@@ -567,6 +567,16 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         /* if regular output point and last time events are almost equals
         * skip that step and go further */
         if (solverInfo->currentStepSize < 1e-15 && syncEventStep){
+          if (simInfo->useStopTime) {
+            const double stopTol = 1e-12 * fmax(1.0, fabs(simInfo->stopTime));
+            if (simInfo->stopTime - solverInfo->currentTime <= stopTol) {
+              solverInfo->currentTime = simInfo->stopTime;
+              data->localData[0]->timeValue = simInfo->stopTime;
+              solverInfo->laststep = solverInfo->currentTime;
+              solverInfo->didEventStep = 0;
+              break;
+            }
+          }
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
