@@ -1138,7 +1138,6 @@ void MainWindow::beforeClosingMainWindow()
   }
 
   QSettings *pSettings = Utilities::getApplicationSettings();
-#if !defined(__EMSCRIPTEN__)
   /* delete the TransformationsWidgets */
   const int size = mTransformationsWidgetHash.size();
   int index = 0;
@@ -1166,6 +1165,7 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mTransformationsWidgetHash.clear();
+#if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
   pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
@@ -2105,12 +2105,6 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
  */
 TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
-#if defined(__EMSCRIPTEN__)
-  Q_UNUSED(fileName);
-  Q_UNUSED(profiling);
-  Q_UNUSED(checkProfilingExists);
-  return nullptr;
-#else
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
     pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
@@ -2118,12 +2112,17 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   } else {
     pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
+#if defined(__EMSCRIPTEN__)
+  // The browser is the screen: a window sized for a desktop runs past its right
+  // edge and takes the title bar's close button with it.
+  pTransformationsWidget->showMaximized();
+#else
   pTransformationsWidget->show();
+#endif
   pTransformationsWidget->raise();
   pTransformationsWidget->activateWindow();
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
-#endif
 }
 
 /*!
