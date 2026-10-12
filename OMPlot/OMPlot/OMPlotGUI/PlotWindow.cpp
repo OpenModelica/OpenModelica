@@ -1406,7 +1406,7 @@ Plot* PlotWindow::getPlot()
 
 void PlotWindow::receiveMessage(QStringList arguments)
 {
-  /* detach() does not delete the curve. Delete the curves (and their point markers) here,
+  /* detach() does not delete the curve. Delete the curves here (they delete their point markers),
    * otherwise every message leaks all curves of the previous plot.
    */
   const QList<PlotCurve*> curves = mpPlot->getPlotCurvesList();
@@ -1414,7 +1414,6 @@ void PlotWindow::receiveMessage(QStringList arguments)
   {
     mpPlot->removeCurve(pCurve);
     pCurve->detach();
-    pCurve->deletePointMarker();
     delete pCurve;
   }
   initializePlot(arguments);

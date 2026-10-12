@@ -1559,15 +1559,14 @@ namespace IAEX {
     {
       mpPlotWindow->show();
       // clear any curves if we have.
-      // detach() only takes a curve out of the plot, it does not delete it (the plot
-      // deletes only the curves that are still attached when it is destroyed), and
+      // detach() only takes a curve (and its point marker) out of the plot, it does not delete
+      // it (the plot deletes only the curves that are still attached when it is destroyed), and
       // removeCurve() must not delete it either since it is used after that call.
       const auto curves = mpPlotWindow->getPlot()->getPlotCurvesList();
       for (PlotCurve *pPlotCurve : curves)
       {
         mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
         pPlotCurve->detach();
-        pPlotCurve->deletePointMarker();  // otherwise one invisible marker per curve stays in the plot
         delete pPlotCurve;
       }
       mpPlotWindow->initializePlot(lst);

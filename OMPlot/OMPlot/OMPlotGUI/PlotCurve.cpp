@@ -84,25 +84,29 @@ PlotCurve::~PlotCurve()
 {
   // QwtPlotDirectPainter is a QObject without parent that nobody else owns.
   delete mpPlotDirectPainter;
-  /* mpPointMarker is attached to the plot, which deletes it together with the other attached
-   * items when it is destroyed. Do not delete it here: QwtPlot::detachItems() iterates over a
-   * copy of its item list while deleting, so an item deleted by another item is a dangling
-   * pointer. A curve that is removed while the plot lives must call deletePointMarker().
+  /* As long as the marker is attached, the plot owns it and deletes it together with the other
+   * attached items when it is destroyed. Do not delete it then: QwtPlot::detachItems() iterates
+   * over a copy of its item list while deleting, so an item deleted by another item is a dangling
+   * pointer. Once the curve was detached with PlotCurve::detach() the marker is detached as well
+   * and nobody else owns it.
    */
+  if (mPointMarkerDetached) {
+    delete mpPointMarker;
+  }
 }
 
 /*!
- * \brief PlotCurve::deletePointMarker
- * Detaches and deletes the point marker. To be used for a curve that is removed from a plot that
- * stays alive, otherwise the invisible marker stays attached to the plot (one per removed curve).
- * Must not be called while the plot is being destroyed.
+ * \brief PlotCurve::detach
+ * Detaches the curve and its point marker from the plot. Like for the curve, neither is deleted
+ * here. A curve that is still attached when the plot is destroyed is deleted by the plot together
+ * with its marker, a detached curve deletes its detached marker in its destructor.
  */
-void PlotCurve::deletePointMarker()
+void PlotCurve::detach()
 {
+  QwtPlotCurve::detach();
   if (mpPointMarker) {
     mpPointMarker->detach();
-    delete mpPointMarker;
-    mpPointMarker = nullptr;
+    mPointMarkerDetached = true;
   }
 }
 
