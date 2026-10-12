@@ -179,12 +179,17 @@ public
         case Expression.CREF(cref = cref)
           guard ComponentRef.isEmptyArray(cref)
           algorithm
-            if ComponentRef.hasSubscripts(cref) then
+            if Type.isEmptyArray(exp.ty) then
+              // the subscripted cref is empty itself, no need to keep the subscripts
+              subs := {};
+              ty := exp.ty;
+            elseif ComponentRef.hasSubscripts(cref) then
               cref := ComponentRef.fillSubscripts(cref);
               cref := ComponentRef.replaceWholeSubscripts(cref);
               subs := ComponentRef.subscriptsAllFlat(cref);
               cref := ComponentRef.stripSubscriptsAll(cref);
-              ty := ComponentRef.getSubscriptedType(cref);
+              // the subscripts include those of the scope, so must the type
+              ty := ComponentRef.getSubscriptedType(cref, includeScope = true);
             else
               subs := {};
               ty := exp.ty;

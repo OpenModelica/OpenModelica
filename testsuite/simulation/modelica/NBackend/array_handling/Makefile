@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+EmptyArrayInComponentArray.mos \
 reductionSkips.mos \
 nestedForConnectRange.mos \
 forNestedElseIf.mos \
