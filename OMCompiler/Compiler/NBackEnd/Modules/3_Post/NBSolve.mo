@@ -52,6 +52,7 @@ public
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import ExpandExp = NFExpandExp;
@@ -1439,6 +1440,11 @@ protected
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
       case Expression.CALL(call = call as Call.TYPED_REDUCTION())         guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
 
+      // a function with an inverse annotation
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(arrayLength(call.fn.inverses) > 0) algorithm
+        (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallInverse(substExp, exp, cref, crefFound, inverseInstructions);
+        then ();
+
       // check if invertable if occurs
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(List.hasOneElement(Call.arguments(exp.call))) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallOneArg(ty, substExp, exp, cref, crefFound, inverseInstructions);
@@ -1801,6 +1807,98 @@ protected
     end match;
   end solveUniqueFindInstructionsCallTwoArgs;
 
+  function solveUniqueFindInstructionsCallInverse
+    "find instructions for a call to a function with an inverse annotation:
+     f(args) -> args[i] = inverse call with the inputs of f replaced by the arguments and its output by $SUBST_CREF"
+    input Expression substExp;
+    input Expression exp;
+    input ComponentRef cref;
+    input output Boolean crefFound;
+    input output list<Expression> inverseInstructions;
+    output Status status = Status.EXPLICIT;
+  protected
+    Function fn;
+    list<Expression> args, rest;
+    Integer i = 0, found = 0;
+    Boolean crefFoundInRecursion;
+    Expression arg, inv;
+    Option<Expression> oinv = NONE();
+    String name;
+    list<tuple<String, Expression>> repl;
+  algorithm
+    Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
+    // the cref has to occur in exactly one argument
+    for a in args loop
+      i := i + 1;
+      if Expression.containsCref(a, cref) then
+        if found > 0 then
+          status := Status.IMPLICIT;
+          return;
+        end if;
+        found := i;
+      end if;
+    end for;
+    if found == 0 or listLength(fn.inputs) <> listLength(args) or listLength(fn.outputs) <> 1 then
+      return;
+    end if;
+
+    // the inverse for the input that contains the cref
+    name := InstNode.name(listGet(fn.inputs, found));
+    for fnInv in fn.inverses loop
+      if ComponentRef.firstName(fnInv.inputParam) == name then
+        oinv := SOME(fnInv.inverseCall);
+      end if;
+    end for;
+    if isNone(oinv) then
+      if Flags.isSet(Flags.DUMP_SOLVE) then
+        solveUniquePrintImplicitFallback(exp);
+      end if;
+      status := Status.IMPLICIT;
+      return;
+    end if;
+
+    (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(listGet(args, found), cref, crefFound, inverseInstructions);
+    if status == Status.IMPLICIT then
+      return;
+    end if;
+    crefFound := true;
+
+    // substitute simultaneously, the arguments may use the same names as the function variables
+    repl := {(InstNode.name(InstNode.fromHandle(listHead(fn.outputs))), substExp)};
+    rest := args;
+    for node in fn.inputs loop
+      arg :: rest := rest;
+      repl := (InstNode.name(node), arg) :: repl;
+    end for;
+    inv := Expression.map(Util.getOption(oinv), function replaceFunctionVariables(repl = repl));
+    inverseInstructions := inv :: inverseInstructions;
+  end solveUniqueFindInstructionsCallInverse;
+
+  function replaceFunctionVariables
+    "replaces the simple crefs of a function body expression by the given expressions"
+    input output Expression exp;
+    input list<tuple<String, Expression>> repl;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(ComponentRef.isSimple(exp.cref))
+      then lookupFunctionVariable(ComponentRef.firstName(exp.cref), repl, exp);
+      else exp;
+    end match;
+  end replaceFunctionVariables;
+
+  function lookupFunctionVariable
+    input String name;
+    input list<tuple<String, Expression>> repl;
+    input output Expression exp;
+  algorithm
+    for r in repl loop
+      if name == Util.tuple21(r) then
+        exp := Util.tuple22(r);
+        return;
+      end if;
+    end for;
+  end lookupFunctionVariable;
+
   function solveUniqueCreateSubstCall
     "helper to create call with substitute cref and to the instructions"
     input Function fn;
@@ -1921,30 +2019,26 @@ protected
           instruction.exp := insertExp;
         end if;
       then instruction;
-      case exp as Expression.CALL() algorithm
-        () := match instruction.call
-          local Call local_call;
-          case local_call as Call.TYPED_CALL() algorithm
-            for arg in local_call.arguments loop
-              if not Expression.isSubstitute(arg) then
-                argList := arg :: argList;
-              else
-                argList := insertExp :: argList;
-              end if;
-            end for;
-            local_call.arguments := listReverse(argList);
-            exp.call := local_call;
-          then ();
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
-          then fail();
-        end match;
-      then exp;
+      // the substitute can be nested in the arguments of an inverse call
+      case Expression.CALL(call = Call.TYPED_CALL())
+      then Expression.map(instruction, function replaceSubstitute(insertExp = insertExp));
+      case Expression.CALL() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " can only handle TYPED_CALL."});
+      then fail();
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for instruction: " + Expression.toString(instruction)});
       then fail();
     end match;
   end applyInstruction;
+
+  function replaceSubstitute
+    input output Expression exp;
+    input Expression insertExp;
+  algorithm
+    if Expression.isSubstitute(exp) then
+      exp := insertExp;
+    end if;
+  end replaceSubstitute;
 
   function tupleSolvable
     "checks if the tuple expression contains all variables we need to solve for. other elements
