@@ -1407,6 +1407,11 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
     args := typeConnectionsArgs(args, arg_context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
@@ -1490,6 +1495,11 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
     arg1 :: args := args;
 
     arg1 := typeConnectionsArg(arg1, arg_context, info, fn_ref, 1);
@@ -1545,6 +1555,11 @@ protected
 
     if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
@@ -1635,6 +1650,11 @@ protected
 
     if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 

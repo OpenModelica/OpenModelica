@@ -2419,6 +2419,69 @@ public
     end match;
   end isConnectionsOperator;
 
+  function isConnectionGraphDefinition
+    input Call call;
+    output Boolean res;
+  protected
+    String name;
+
+    function is_def
+      input String name;
+      output Boolean res;
+    algorithm
+      res := match name
+        case "branch" then true;
+        case "root" then true;
+        case "potentialRoot" then true;
+        case "uniqueRoot" then true;
+        else false;
+      end match;
+    end is_def;
+  algorithm
+    res := match call
+      case TYPED_CALL()
+        guard Function.isBuiltin(call.fn)
+        then match Function.name(call.fn)
+               case Absyn.Path.QUALIFIED("Connections", Absyn.Path.IDENT(name))
+                 then is_def(name);
+               else false;
+             end match;
+
+      // Also handle untyped calls, because connection operators in invalid
+      // if-branches might not be typed.
+      case UNTYPED_CALL()
+        guard ComponentRef.isQualified(call.ref) and
+              ComponentRef.firstName(ComponentRef.rest(call.ref)) == "Connections"
+        then is_def(ComponentRef.firstName(call.ref));
+
+      else false;
+    end match;
+  end isConnectionGraphDefinition;
+
+  function isConnectionGraphQuery
+    input Call call;
+    output Boolean res;
+  protected
+    String name;
+  algorithm
+    res := match call
+      case TYPED_CALL()
+        guard Function.isBuiltin(call.fn)
+        then match Function.name(call.fn)
+               case Absyn.Path.IDENT("cardinality") then true;
+               case Absyn.Path.QUALIFIED("Connections", Absyn.Path.IDENT(name))
+                 then match name
+                     case "rooted" then true;
+                     case "isRoot" then true;
+                     case "uniqueRootIndices" then true;
+                     else false;
+                 end match;
+               else false;
+             end match;
+      else false;
+    end match;
+  end isConnectionGraphQuery;
+
   function isStreamOperator
     input Call call;
     output Boolean isOp;

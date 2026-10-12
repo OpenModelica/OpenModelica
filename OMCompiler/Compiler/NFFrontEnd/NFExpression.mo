@@ -384,6 +384,16 @@ public
     end match;
   end isConnectionCall;
 
+  function isConnectionGraphQuery
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isConnectionGraphQuery(exp.call);
+      else false;
+    end match;
+  end isConnectionGraphQuery;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
