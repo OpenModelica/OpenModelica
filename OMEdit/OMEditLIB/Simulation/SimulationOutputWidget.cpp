@@ -535,6 +535,13 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
                          .match(simulationResult).captured(1);
   messages.replace("\\\"", "\"");
   const bool ok = !resultFile.isEmpty();
+#if defined(__EMSCRIPTEN__)
+  // The transformational debugger ("Debug more") reads <model>_info.json from the
+  // page MEMFS. omc writes it only under -d=infoXmlOperations, and without it the
+  // messages get no link. Staged before they are written, which is when the links are made.
+  extern bool omcWorkerStageFile(const char *path);
+  mDebugInfoAvailable = omcWorkerStageFile(QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()).toUtf8().constData());
+#endif
   // Enable + switch to the Output tab; on the native path this is done when the
   // simulation process starts, but that code is compiled out on wasm (no QProcess),
   // so the wasm-jit path must do it here or the messages land in a disabled tab.
@@ -566,10 +573,7 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
 #if defined(__EMSCRIPTEN__)
   // omc cd'd into the working directory, so the result lands there in the worker
   // VFS. Stage it into the page MEMFS at the same path for OMPlot's .mat reader.
-  extern bool omcWorkerStageFile(const char *path);
   omcWorkerStageFile(QString("%1/%2").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getFullResultFileName()).toUtf8().constData());
-  // The transformational debugger ("Debug more") reads <model>_info.json with C stdio too.
-  omcWorkerStageFile(QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()).toUtf8().constData());
 #endif
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setValue(100);
@@ -611,7 +615,7 @@ void SimulationOutputWidget::writeSimulationMessage(StringHandler::SimulationMes
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
   /* write the error link */
-  if (!index.isEmpty()) {
+  if (!index.isEmpty() && mDebugInfoAvailable) {
     mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + index + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");
