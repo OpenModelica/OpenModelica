@@ -14,7 +14,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::driver::{Result, SimEngine, format_g, read_f64, write_f64, write_i32};
-use crate::{LinInfo, LinLanguage, LinVar, REAL_OFF, SimMeta};
+use crate::{LinInfo, LinLanguage, LinVar, SimMeta};
 
 /// The linearized model, for the caller to write where its file system is.
 #[derive(Clone, Debug, PartialEq)]
@@ -73,21 +73,21 @@ fn ode_residual(
     e.call1("functionAlgebraics", sim_data)?;
     e.call1_if_present("functionOutputVars", sim_data)?;
     for (i, slot) in dx.iter_mut().enumerate() {
-        *slot = read_f64(e, sim_data + REAL_OFF + (layout.n_states + i as u32) * 8)?;
+        *slot = read_f64(e, sim_data + layout.real_off + (layout.n_states + i as u32) * 8)?;
     }
     for (i, slot) in dy.iter_mut().enumerate() {
         *slot = read_lin_var(e, sim_data, &lin.output_vars[i])?;
     }
     if let Some(dz) = dz {
         for (i, slot) in dz.iter_mut().enumerate() {
-            *slot = read_f64(e, sim_data + REAL_OFF + (2 * layout.n_states + i as u32) * 8)?;
+            *slot = read_f64(e, sim_data + layout.real_off + (2 * layout.n_states + i as u32) * 8)?;
         }
     }
     Ok(())
 }
 
-fn read_states(e: &dyn SimEngine, sim_data: u32, n: u32) -> Result<Vec<f64>> {
-    (0..n).map(|i| read_f64(e, sim_data + REAL_OFF + i * 8)).collect()
+fn read_states(e: &dyn SimEngine, sim_data: u32, layout: &crate::Layout) -> Result<Vec<f64>> {
+    (0..layout.n_states).map(|i| read_f64(e, sim_data + layout.real_off + i * 8)).collect()
 }
 
 /// C's `functionJacAC_num`: perturb each state, difference `A`, `C` and `Cz`.
@@ -115,11 +115,11 @@ fn jac_ac_num(
     let mut scaling = Vec::with_capacity(n_x);
     for i in 0..n_x as u32 {
         let nominal = read_f64(e, sim_data + layout.state_nom_off + i * 8)?;
-        let x = read_f64(e, sim_data + REAL_OFF + i * 8)?;
+        let x = read_f64(e, sim_data + layout.real_off + i * 8)?;
         scaling.push(fmath::fmax(nominal, fmath::fabs(x)));
     }
     for i in 0..n_x {
-        let addr = sim_data + REAL_OFF + (i as u32) * 8;
+        let addr = sim_data + layout.real_off + (i as u32) * 8;
         let xsave = read_f64(e, addr)?;
         let mut delta_hh = delta_h * (fmath::fabs(xsave) + 1.0);
         if xsave + delta_hh >= read_f64(e, sim_data + layout.state_max_off + (i as u32) * 8)? {
@@ -362,13 +362,13 @@ pub fn linearize(e: &mut dyn SimEngine, model: &SimMeta, sim_data: u32) -> Resul
         }
     }
 
-    let x0 = read_states(e, sim_data, layout.n_states)?;
+    let x0 = read_states(e, sim_data, layout)?;
     let u0: Vec<f64> =
         lin.input_vars.iter().map(|v| read_lin_var(e, sim_data, v)).collect::<Result<_>>()?;
     // C reads z0 before anything perturbs the model.
     let z0: Vec<f64> = if datarec {
         (0..n_z as u32)
-            .map(|i| read_f64(e, sim_data + REAL_OFF + (2 * layout.n_states + i) * 8))
+            .map(|i| read_f64(e, sim_data + layout.real_off + (2 * layout.n_states + i) * 8))
             .collect::<Result<_>>()?
     } else {
         Vec::new()

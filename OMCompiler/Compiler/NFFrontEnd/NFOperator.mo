@@ -140,6 +140,23 @@ public
     end match;
   end invert;
 
+  function negate
+    "the logical negation of a relational operator, e.g. < to >= and == to <>"
+    input output Operator operator;
+  algorithm
+    operator.op := match operator.op
+      case Op.LESS      then Op.GREATEREQ;
+      case Op.LESSEQ    then Op.GREATER;
+      case Op.GREATER   then Op.LESSEQ;
+      case Op.GREATEREQ then Op.LESS;
+      case Op.EQUAL     then Op.NEQUAL;
+      case Op.NEQUAL    then Op.EQUAL;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Don't know how to negate: " + symbol(operator)});
+      then fail();
+    end match;
+  end negate;
+
   type TypeRestriction = enumeration(SCALAR, VECTOR, MATRIX, ARRAY, OTHER);
 
   function typeRestriction

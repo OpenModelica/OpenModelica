@@ -8,15 +8,20 @@ jacobianElementSeed.mos \
 jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
+resizableSparsity.mos \
+resizableConnectChain.mos \
+resizableConnectIf.mos \
 arrayConnectOutside.mos \
 mixedDependencyFrames.mos \
 arrayConnectRooted.mos \
 entwinedOrder.mos \
 resizableOverride.mos \
 resizableOverrideDerived.mos \
+resizablePartialLoops.mos \
 resizableConnectArrays.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
+resizableFill.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\
@@ -69,6 +74,7 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
+resizableConnectDeleted.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

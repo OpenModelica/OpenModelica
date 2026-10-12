@@ -15,6 +15,7 @@ use openmodelica_frontend_types::DAE;
 use wasm_encoder as we;
 
 use super::*;
+use openmodelica_sim_meta::Sz;
 
 /// Emit one residual evaluation for a torn linear system: run the inner
 /// constraint equations (`lower_inner`), then store each residual `r_k` as an f64
@@ -133,6 +134,43 @@ pub(crate) struct IterSlot {
     pub(crate) wty: WTy,
 }
 
+/// A runtime-sized array among a system's unknowns: `len` f64 slots from `off`.
+/// They follow the scalar unknowns in `x`, in order.
+#[derive(Clone)]
+pub(crate) struct IterBlock {
+    pub(crate) off: u32,
+    pub(crate) len: Sz,
+}
+
+/// Copy the [`IterBlock`]s between `x` (local `x_local`, after `n_scalar` values)
+/// and their slots; `to_x` picks the direction.
+fn emit_blocks(ctx: &mut FnCtx, x_local: u32, n_scalar: usize, blocks: &[IterBlock], to_x: bool) -> Result<()> {
+    use we::Instruction as I;
+    let mut at = Sz::lit(n_scalar as i64);
+    for b in blocks {
+        let x_addr = |ctx: &mut FnCtx, at: &Sz| -> Result<()> {
+            ctx.emit(I::LocalGet(x_local));
+            ctx.emit_size(&(at.clone() * 8))?;
+            ctx.emit(I::I32Add);
+            Ok(())
+        };
+        match to_x {
+            true => {
+                x_addr(ctx, &at)?;
+                ctx.emit_sim_addr(b.off)?;
+            }
+            false => {
+                ctx.emit_sim_addr(b.off)?;
+                x_addr(ctx, &at)?;
+            }
+        }
+        ctx.emit_size(&(b.len.clone() * 8))?;
+        ctx.emit(I::MemoryCopy { src_mem: 0, dst_mem: 0 });
+        at = at + b.len.clone();
+    }
+    Ok(())
+}
+
 /// `slot = x[j]` (wasm locals: 0 = `SimData`, `x_local` = the `x` pointer).
 fn emit_x_to_slot(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) {
     use we::Instruction as I;
@@ -168,10 +206,11 @@ pub(crate) fn emit_nls_residual_body(
     ctx: &mut FnCtx,
     eq_index: i32,
     slots: &[IterSlot],
+    blocks: &[IterBlock],
     residuals: &NlsResiduals,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
-    emit_nls_residual_prologue(ctx, eq_index, slots)?;
+    emit_nls_residual_prologue(ctx, eq_index, slots, blocks)?;
     let residuals = match residuals {
         NlsResiduals::Explicit(r) => r,
         NlsResiduals::InverseAlgorithm(known) => {
@@ -179,9 +218,60 @@ pub(crate) fn emit_nls_residual_body(
         }
     };
     lower_inner(ctx)?;
+    if !blocks.is_empty() {
+        return emit_counted_residual_stores(ctx, eq_index, residuals);
+    }
     let all_scalar = nls_residuals_all_scalar(residuals);
     for i in 0..residuals.len() {
         emit_nls_residual_store(ctx, residuals, all_scalar, i)?;
+    }
+    emit_nls_residual_epilogue(ctx, eq_index)
+}
+
+/// The residual rows of a system with runtime-sized unknowns, whose `res_index`
+/// were numbered for the sizes at translation: one after another, counted at
+/// runtime.
+fn emit_counted_residual_stores(ctx: &mut FnCtx, eq_index: i32, residuals: &[NlsResidual]) -> Result<()> {
+    use we::Instruction as I;
+    let row = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(row));
+    let bump = |ctx: &mut FnCtx, n: i32| {
+        ctx.emit(I::LocalGet(row));
+        ctx.emit(I::I32Const(n));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(row));
+    };
+    for res in residuals {
+        match res {
+            NlsResidual::Scalar { exp, .. } => {
+                ctx.emit(I::LocalGet(2));
+                ctx.emit(I::LocalGet(row));
+                ctx.emit(I::I32Const(8));
+                ctx.emit(I::I32Mul);
+                ctx.emit(I::I32Add);
+                let w = compile_exp(ctx, exp)?;
+                coerce(ctx, w, WTy::F64);
+                ctx.emit(I::F64Store(mem_arg(0, 3)));
+                bump(ctx, 1);
+            }
+            NlsResidual::For { iterators, exp, .. } => {
+                emit_for_residual_at(ctx, iterators, exp, RowBase::Local(row), &[])?;
+                ctx.emit(I::LocalGet(row));
+                ctx.emit(I::I32Const(1));
+                for it in iterators {
+                    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { size, .. } = it else {
+                        return Err("CodegenWasmJit: for-residual over a non-range iterator");
+                    };
+                    let w = compile_exp(ctx, size)?;
+                    coerce(ctx, w, WTy::I32);
+                    ctx.emit(I::I32Mul);
+                }
+                ctx.emit(I::I32Add);
+                ctx.emit(I::LocalSet(row));
+            }
+            _ => return Err("CodegenWasmJit: residual of a runtime-sized system"),
+        }
     }
     emit_nls_residual_epilogue(ctx, eq_index)
 }
@@ -193,6 +283,7 @@ pub(crate) fn emit_nls_residual_prologue(
     ctx: &mut FnCtx,
     eq_index: i32,
     slots: &[IterSlot],
+    blocks: &[IterBlock],
 ) -> Result<()> {
     use we::Instruction as I;
     let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
@@ -209,7 +300,7 @@ pub(crate) fn emit_nls_residual_prologue(
     for (j, &slot) in slots.iter().enumerate() {
         emit_x_to_slot(ctx, 1, j, slot);
     }
-    Ok(())
+    emit_blocks(ctx, 1, slots.len(), blocks, false)
 }
 
 /// The `all`-profiling accumulate that closes [`emit_nls_residual_prologue`].
@@ -263,7 +354,7 @@ pub(crate) fn emit_nls_residual_store(
             release_temp_array(ctx, arr)?;
         }
         NlsResidual::For { iterators, exp, res_index } => {
-            emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
+            emit_for_residual_at(ctx, iterators, exp, RowBase::Const(*res_index), &[])?;
         }
         NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
             emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
@@ -378,11 +469,18 @@ fn emit_inverse_algorithm_residual(
 /// (i1,i2,...) combinations onto the same `res[]` slot, leaving the rest of the
 /// residual vector uninitialized. Each iterator registers as a wasm local so
 /// `compile_exp` resolves `x[$i]` and bare `$i`.
-fn emit_for_residual(
+/// Where a for-residual's rows start in `r`.
+#[derive(Clone, Copy)]
+enum RowBase {
+    Const(i32),
+    Local(u32),
+}
+
+fn emit_for_residual_at(
     ctx: &mut FnCtx,
     iterators: &[BackendDAE::SimIterator],
     exp: &metamodelica::Ref<DAE::Exp>,
-    res_index: i32,
+    res_index: RowBase,
     outer: &[(u32, u32)],
 ) -> Result<()> {
     use we::Instruction as I;
@@ -390,7 +488,10 @@ fn emit_for_residual(
         // addr = r + (res_index + flatten(outer)) * 8, outer[k] = (offset_k, size_k),
         // flatten = off_0 + size_0*(off_1 + size_1*(... + size_{n-2}*off_{n-1}))
         ctx.emit(I::LocalGet(2)); // r
-        ctx.emit(I::I32Const(res_index));
+        match res_index {
+            RowBase::Const(k) => ctx.emit(I::I32Const(k)),
+            RowBase::Local(l) => ctx.emit(I::LocalGet(l)),
+        }
         if let Some(&(last_off, _)) = outer.last() {
             ctx.emit(I::LocalGet(last_off));
             for &(off_l, size_l) in outer[..outer.len() - 1].iter().rev() {
@@ -452,7 +553,7 @@ fn emit_for_residual(
     ctx.emit(I::LocalSet(off_l));
     let mut inner = outer.to_vec();
     inner.push((off_l, size_l));
-    emit_for_residual(ctx, rest, exp, res_index, &inner)?;
+    emit_for_residual_at(ctx, rest, exp, res_index, &inner)?;
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(step_l));
     ctx.emit(I::I32Add);
@@ -466,7 +567,8 @@ fn emit_for_residual(
 /// Emit the body of a nonlinear system's `load(sim_data, x)` callback (wasm
 /// locals: 0 = `SimData`, 1 = `x` pointer): copy the current unknown `slots` into
 /// `x`, the warm start `rt_solve_nls` reads.
-pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[IterSlot]) -> Result<()> {
+pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[IterSlot], blocks: &[IterBlock]) -> Result<()> {
+    emit_blocks(ctx, 1, slots.len(), blocks, true)?;
     for (j, &slot) in slots.iter().enumerate() {
         emit_slot_to_x(ctx, 1, j, slot);
     }
@@ -1049,10 +1151,9 @@ fn emit_aux_x(ctx: &mut FnCtx, base: u32, aux_off: u32, slots: &[u32]) -> Result
 }
 
 /// The `localData[1]` mirror of the live real slot at `off`.
-fn old_slot(old_real: Option<(u32, u32)>, off: u32) -> Option<u32> {
-    let (real_end, base) = old_real?;
-    (off >= openmodelica_sim_meta::REAL_OFF && off < real_end)
-        .then(|| base + (off - openmodelica_sim_meta::REAL_OFF))
+fn old_slot(old_real: Option<(u32, u32, u32)>, off: u32) -> Option<u32> {
+    let (real_off, real_end, base) = old_real?;
+    (off >= real_off && off < real_end).then(|| base + (off - real_off))
 }
 
 /// Scatter the solve's result (at `base+b_off`) into `slots`, recover the torn
@@ -2106,15 +2207,23 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
     ctx.emit(I::I32Const((4 * job.k + 1) as i32));
     ctx.emit(I::I32Add); // load table index
-    ctx.emit(I::I32Const(job.n as i32));
+    match job.dyn_n {
+        Some(k) => ctx.emit_size_entry(k),
+        None => ctx.emit(I::I32Const(job.n as i32)),
+    }
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(nls_fail_off as i32));
     ctx.emit(I::I32Add); // nls_fail flag address
     // history block address for this system, and the current time (SimData+0),
     // for the extrapolated initial guess.
-    ctx.emit(I::GlobalGet(NLS_HIST_GLOBAL));
-    ctx.emit(I::I32Const(job.hist_off as i32));
-    ctx.emit(I::I32Add);
+    match job.dyn_n {
+        Some(_) => ctx.emit_sim_addr(job.hist_off)?,
+        None => {
+            ctx.emit(I::GlobalGet(NLS_HIST_GLOBAL));
+            ctx.emit(I::I32Const(job.hist_off as i32));
+            ctx.emit(I::I32Add);
+        }
+    }
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // time at SimData offset 0
     // relation-mode flag address: the solver holds relations around the Newton
@@ -2123,12 +2232,20 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
     // nominal block address (x-scaling), and the matching min/max pairs.
-    ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
-    ctx.emit(I::I32Const(job.nominal_off as i32));
-    ctx.emit(I::I32Add);
-    ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
-    ctx.emit(I::I32Const(2 * job.nominal_off as i32));
-    ctx.emit(I::I32Add);
+    match job.dyn_n {
+        Some(_) => {
+            ctx.emit_sim_addr(job.nominal_off)?;
+            ctx.emit_sim_addr(job.bounds_off)?;
+        }
+        None => {
+            ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
+            ctx.emit(I::I32Const(job.nominal_off as i32));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
+            ctx.emit(I::I32Const(2 * job.nominal_off as i32));
+            ctx.emit(I::I32Add);
+        }
+    }
     // analytic-Jacobian table index, or `u32::MAX` when the system has none.
     if job.has_jac {
         ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));

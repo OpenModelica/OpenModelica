@@ -20,7 +20,5 @@ equation
     reinit(v, v_new);
   end when;
 
-  annotation(Documentation(figures = {
-    Figure(title = "Bouncing ball", identifier = "height", preferred = true,
-      plots = {Plot(curves = {Curve(y = h, legend = "Height of ball")})})}));
+  annotation(Documentation(figures = {Figure(title = "Bouncing ball", preferred = true, plots = {Plot(curves = {Curve(y = h, legend = "Height of ball")})})}, info = "<html><head></head><body>Adeel Asghar</body></html>"));
 end BouncingBall;

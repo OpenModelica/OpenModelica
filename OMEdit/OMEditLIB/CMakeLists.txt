@@ -22,6 +22,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       LSP/ModelicaLSPClient.cpp
                       Util/Helper.cpp
                       Util/Utilities.cpp
+                      Util/Style.cpp
                       Util/PersistentStorage.cpp
                       Cloud/CloudTypes.cpp
                       Cloud/CloudConfig.cpp
@@ -192,6 +193,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Cloud/OAuth2Client.h
                       Cloud/OAuth2Redirect.h
                       Util/Utilities.h
+                      Util/Style.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
                       Util/DirectoryOrFileSelector.h

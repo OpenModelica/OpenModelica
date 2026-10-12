@@ -9,12 +9,11 @@ use crate::gbode::math::abs;
 
 impl Gbode {
     fn zc_at(&mut self, ode: &mut dyn Ode, t: f64) -> Result<()> {
-        let n = self.n_states;
-        let mut y = vec![0.0; n];
+        let mut y = core::mem::take(&mut self.y1);
         self.interpolate_step(t, &mut y);
-        ode.eval_zc(t, &y, &mut self.zc)?;
-        self.y1.copy_from_slice(&y);
-        Ok(())
+        let run = ode.eval_zc(t, &y, &mut self.zc);
+        self.y1 = y;
+        run
     }
 
     /// C's `checkForStateEvent`: which crossings changed sign against `zc_pre`.
@@ -80,17 +79,14 @@ impl Gbode {
     }
 
     /// C's `checkForEvents`: evaluate the crossings at the right end of the
-    /// accepted step and, if any flipped, bisect for the first one. Leaves
-    /// `zc_pre` holding the values it was called with.
+    /// accepted step and, if any flipped, bisect for the first one.
     pub(super) fn check_for_events(&mut self, ode: &mut dyn Ode) -> Result<Option<f64>> {
         if self.zc.is_empty() {
             return Ok(None);
         }
         // C snapshots the left-hand values as the comparison base.
         self.zc_pre.copy_from_slice(&self.zc);
-        let saved_pre = self.zc_pre.clone();
-        let (t_right, y_right) = (self.time_right, self.y_right.clone());
-        ode.eval_zc(t_right, &y_right, &mut self.zc)?;
+        ode.eval_zc(self.time_right, &self.y_right, &mut self.zc)?;
         self.event_ids = self.changed_crossings();
         let found = !self.event_ids.is_empty();
         let event_time = if found {
@@ -105,10 +101,9 @@ impl Gbode {
         } else {
             None
         };
-        // C restores the crossing values it started from, so the caller's next
-        // comparison is against the same base.
-        self.zc.copy_from_slice(&saved_pre);
-        self.zc_pre.copy_from_slice(&saved_pre);
+        // C's `zeroCrossings = zeroCrossingsPre`, which the driver holds next.
+        self.zc.copy_from_slice(&self.zc_pre);
+        ode.restore_zc(&self.zc);
         Ok(event_time)
     }
 
@@ -140,5 +135,4 @@ fn no_root_finding() -> bool {
     crate::simflags::with_flags(|f| f.no_root_finding)
 }
 
-use alloc::vec;
 use alloc::vec::Vec;

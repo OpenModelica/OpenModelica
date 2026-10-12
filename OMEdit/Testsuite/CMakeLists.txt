@@ -54,6 +54,10 @@ add_omedit_test(CloudSyncPlan "${OMEDIT_TEST_CLOUD_SOURCES}")
 set(OMEDIT_TEST_CLOUD_ENGINE_SOURCES Cloud/CloudSyncEngineTest.cpp)
 add_omedit_test(CloudSyncEngine "${OMEDIT_TEST_CLOUD_ENGINE_SOURCES}")
 
+set(OMEDIT_TEST_CHOICESENUMERATION_SOURCES ChoicesEnumeration/ChoicesEnumerationTest.cpp
+                                           ChoicesEnumeration/ChoicesEnumerationTest.h)
+add_omedit_test(ChoicesEnumeration "${OMEDIT_TEST_CHOICESENUMERATION_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")
@@ -77,6 +81,26 @@ set(OMEDIT_TEST_LANGUAGESERVER_SOURCES LanguageServer/LanguageServerTest.cpp
                                        LanguageServer/LanguageServerTest.h)
 add_omedit_test(LanguageServer "${OMEDIT_TEST_LANGUAGESERVER_SOURCES}")
 
+# Real editor navigation against the same server staged for OMEdit. Builds that
+# deliberately omit the server can supply one with MODELICA_LS_DIR.
+if(MODELICA_LS_STAGE_EXE AND NOT CMAKE_CROSSCOMPILING)
+  set(OMEDIT_TEST_LANGUAGESERVERNAVIGATION_SOURCES LanguageServer/LanguageServerNavigationTest.cpp
+                                                LanguageServer/LanguageServerNavigationTest.h)
+  add_omedit_test(LanguageServerNavigation "${OMEDIT_TEST_LANGUAGESERVERNAVIGATION_SOURCES}")
+  add_executable(OMEditDefinitionTestServer LanguageServer/DefinitionTestServer.cpp)
+  target_link_libraries(OMEditDefinitionTestServer PRIVATE Qt6::Core)
+  add_dependencies(LanguageServerNavigation OMEditDefinitionTestServer)
+  target_compile_definitions(LanguageServerNavigation PRIVATE
+    OMEDIT_DEFINITION_TEST_SERVER="$<TARGET_FILE:OMEditDefinitionTestServer>")
+  # OMEdit's staging step renames downloaded assets and makes them executable.
+  add_dependencies(LanguageServerNavigation OMEdit)
+  target_compile_definitions(LanguageServerNavigation PRIVATE
+    OMEDIT_TEST_LSP_EXECUTABLE="$<TARGET_FILE_DIR:OMEdit>/ls/modelica/${MODELICA_LS_STAGE_EXE_NAME}")
+  set_tests_properties(LanguageServerNavigation PROPERTIES TIMEOUT 60 LABELS "OMEditTestsuite")
+else()
+  message(STATUS "LanguageServerNavigation not registered: no runnable staged language server")
+endif()
+
 set(OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES MergeExtendsModifiers/MergeExtendsModifiersTest.cpp
                                               MergeExtendsModifiers/MergeExtendsModifiersTest.h)
 add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURCES}")
@@ -84,6 +108,10 @@ add_omedit_test(MergeExtendsModifiers "${OMEDIT_TEST_MERGEEXTENDSMODIFIERS_SOURC
 set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
+
+set(OMEDIT_TEST_PLOTANNOTATION_SOURCES PlotAnnotation/PlotAnnotationTest.cpp
+                                       PlotAnnotation/PlotAnnotationTest.h)
+add_omedit_test(PlotAnnotation "${OMEDIT_TEST_PLOTANNOTATION_SOURCES}")
 
 set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
                                      RecentModels/RecentModelsTest.h)

@@ -118,6 +118,7 @@ pub(crate) fn build_init_fns(
             flat: HashMap::default(),
             flat_outs: Vec::new(),
             flat_results: false,
+            size_locals: Default::default(),
         };
         while ctx.instr_len() < 4096 {
             let Some((i, e)) = todo.next() else { break };

@@ -1781,7 +1781,8 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
     sim_driver::init_host_hooks(); // cancel poll + model-assertion routing (idempotent)
     let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, meta)?;
 
-    let layout = &model.layout;
+    // The run's metadata: a resizable model's sizes are resolved there.
+    let layout = &meta.layout;
     // Allocate the shared SimData block.
     let sim_data_new = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_sim_data_new"))?;
     let sim_data = wts(sim_data_new.call(&mut store, layout.total))?;
@@ -1814,7 +1815,9 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         absent: Default::default(),
         addrs: [None; 4],
     };
-    Ok((Box::new(engine), sim_data))
+    let mut engine: Box<dyn sim_driver::SimEngine + 'static> = Box::new(engine);
+    sim_driver::write_size_table(&mut *engine, sim_data, meta).map_err(|e| e.to_string())?;
+    Ok((engine, sim_data))
 }
 
 /// Prove the in-wasm-driver call path: append the model's `functionParameters`

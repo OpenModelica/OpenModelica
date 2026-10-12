@@ -138,6 +138,7 @@ void storeRelations(DATA* data);
 void setZCtol(double relativeTol);
 
 int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent);
+void updateNextSampleEvent(DATA *data, threadData_t *threadData);
 
 void storeOldValues(DATA *data);
 

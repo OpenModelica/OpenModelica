@@ -87,8 +87,8 @@ pub fn open_stream(
     };
     let params = crate::driver::read_params(e, model, sim_data)?;
     let mut first = Vec::new();
-    crate::driver::capture_row(e, &mut first, sim_data, &model.layout)?;
-    Ok(ResultStream::open(model, format, keep, &params, &first, model.layout.n_row_total(), precision, out))
+    crate::driver::capture_full_row(e, &mut first, sim_data, &model.layout)?;
+    Ok(ResultStream::open(model, format, keep, &params, &first, crate::driver::row_width(&model.layout), precision, out))
 }
 
 struct MatOut<'a> {
@@ -276,7 +276,7 @@ impl ResultStream {
         self.n_rows
     }
 
-    /// The initial result row (`n_reals` values).
+    /// The initial result row, every column.
     pub fn first_row(&self) -> &[f64] {
         &self.first_row
     }

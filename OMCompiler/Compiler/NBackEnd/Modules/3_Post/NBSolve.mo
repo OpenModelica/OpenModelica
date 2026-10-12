@@ -487,10 +487,28 @@ public
     Equation eqn;
     Slice<EquationPointer> solved_slice;
     UnorderedMap<ComponentRef, Expression> replacements;
+    Option<ComponentRef> iter_cref;
+    ComponentRef solve_cref = cref;
   algorithm
-    if List.hasOneElement(eqn_slice.indices) then
+    // single iterations of resizable loops stay generic, their index is only known at the analysis sizes
+    if List.hasOneElement(eqn_slice.indices) and isResizableForSlice(eqn_slice) then
+      iter_cref := iteratorCref(eqn_ptr, listHead(eqn_slice.indices), cref);
+    else
+      iter_cref := NONE();
+    end if;
+    if isSome(iter_cref) then
+      solve_cref := Util.getOption(iter_cref);
+      (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), solve_cref, functions, kind, implicit_index, slicing_map, varData, eqData);
+      if solve_status >= Status.UNSOLVABLE then
+        // solve the single iteration instead
+        solve_cref := cref;
+        (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr, true), cref,
+          UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual), functions);
+      end if;
+    elseif List.hasOneElement(eqn_slice.indices) then
       replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-      (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, functions);
+      // the index refers to the analysis sizes of resizable arrays
+      (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr, Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)), cref, replacements, functions);
     else
       (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, functions, kind, implicit_index, slicing_map, varData, eqData);
     end if;
@@ -504,11 +522,55 @@ public
 
     // create a generic component if its a for-equation, otherwise create a sliced component
     if Equation.isForEquation(Slice.getT(solved_slice)) then
-      comp := StrongComponent.GENERIC_COMPONENT(cref, var_slice, solved_slice);
+      comp := StrongComponent.GENERIC_COMPONENT(solve_cref, var_slice, solved_slice);
     else
       comp := StrongComponent.SLICED_COMPONENT(cref, var_slice, solved_slice, solve_status);
     end if;
   end solveGenericEquationSlice;
+
+  function isResizableForSlice
+    "a slice of a for-equation with a scalar body over a resizable range"
+    input Slice<EquationPointer> eqn_slice;
+    output Boolean b = false;
+  protected
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
+    Iterator iter;
+  algorithm
+    if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and Equation.isForEquation(eqn_ptr) then
+      iter := Equation.getForIterator(Pointer.access(eqn_ptr));
+      b := Iterator.isResizable(iter) and Equation.size(eqn_ptr, true) == Iterator.size(iter, true);
+    end if;
+  end isResizableForSlice;
+
+  function iteratorCref
+    "the occurrence of the variable of cref in the body of a for-equation that is
+     cref in the iteration of the scalar index"
+    input Pointer<Equation> eqn_ptr;
+    input Integer index;
+    input ComponentRef cref;
+    output Option<ComponentRef> res = NONE();
+  protected
+    UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref), target = ComponentRef.simplifySubscripts(cref);
+    Expression e;
+  algorithm
+    Iterator.createLocationReplacements(Equation.getForIterator(Pointer.access(eqn_ptr)), listArray(Slice.indexToLocation(index, Equation.sizes(eqn_ptr, true))), replacements);
+    for c in Equation.collectCrefs(Pointer.access(eqn_ptr), function sameVariable(stripped = stripped)) loop
+      e := SimplifyExp.simplify(Expression.map(Expression.fromCref(c), function Replacements.applySimpleExp(replacements = replacements)));
+      if Expression.isCref(e) and ComponentRef.isEqual(ComponentRef.simplifySubscripts(Expression.toCref(e)), target) then
+        res := SOME(c);
+        return;
+      end if;
+    end for;
+  end iteratorCref;
+
+  function sameVariable extends Slice.filterCref;
+    input ComponentRef stripped;
+  algorithm
+    if ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(cref), stripped) then
+      UnorderedSet.add(cref, acc);
+    end if;
+  end sameVariable;
 
   function solveSliceElementwise
     "Solves each matched element of a sliced for-equation separately for its variable element.

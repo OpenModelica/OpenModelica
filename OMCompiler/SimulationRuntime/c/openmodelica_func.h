@@ -415,6 +415,12 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * computed (calculateAllScalarLength). NULL when the model has none.
   */
   void (*updateStructuralParameters)(DATA* data, threadData_t* threadData);
+
+  /*
+  * The earliest time after the current one at which a relation `time >= e` or
+  * `time < e`, with e only changing at events, switches; DBL_MAX if none.
+  */
+  double (*function_nextTimeEvent)(DATA* data, threadData_t* threadData);
 };
 
 

@@ -2267,9 +2267,9 @@ algorithm
     - Maybe not only for SIMPLE_DIFFERENTIATION ?
     */
     case (_, BackendDAE.SIMPLE_DIFFERENTIATION())
-      guard(not Expression.expHasCref(inExp, inDiffwrtCref))
+      guard(not expHasRelatedCref(inExp, inDiffwrtCref))
       algorithm
-        (e, _) := Expression.makeZeroExpression(Expression.arrayDimension(ComponentReference.crefTypeFull(inDiffwrtCref)));
+        (e, _) := Expression.makeZeroExpression(Expression.arrayDimension(Expression.typeof(inExp)));
     then (e, inFunctionTree);
 
     case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), BackendDAE.DIFFERENTIATION_TIME())
@@ -2347,7 +2347,7 @@ algorithm
                  - failure(BackendDAE.GENERIC_GRADIENT() = inDiffType);
                  but anyway fornow it catches some testsuite cases.
         */
-        false := Expression.expContains(inExp, Expression.crefExp(inDiffwrtCref))
+        false := expHasRelatedCref(inExp, inDiffwrtCref)
         "If the expression does not contain the variable,
          the derivative is zero. For efficiency reasons this rule
          is last. Otherwise expressions is always traversed twice

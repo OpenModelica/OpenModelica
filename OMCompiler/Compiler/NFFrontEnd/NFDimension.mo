@@ -304,10 +304,23 @@ public
       case (_, UNKNOWN()) then true;
       case (EXP(), _) then true;
       case (_, EXP()) then true;
-      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then isEqualResizableExp(dim1.exp, dim2.exp);
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqual;
+
+  function isEqualResizableExp
+    "resizable size expressions can be in different forms (e.g. BINARY and MULTARY)"
+    input Expression exp1;
+    input Expression exp2;
+    output Boolean b = Expression.isEqual(exp1, exp2) or Expression.isEqual(canonicalExp(exp1), canonicalExp(exp2));
+  end isEqualResizableExp;
+
+  function canonicalExp
+    input output Expression exp;
+  algorithm
+    exp := SimplifyExp.simplify(SimplifyExp.combineBinaries(exp));
+  end canonicalExp;
 
   function isEqualKnown
     input Dimension dim1;
@@ -318,7 +331,7 @@ public
       case (UNKNOWN(), _)             then false;
       case (_, UNKNOWN())             then false;
       case (EXP(), EXP())             then Expression.isEqual(dim1.exp, dim2.exp);
-      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then isEqualResizableExp(dim1.exp, dim2.exp);
       case (EXP(), _)                 then false;
       case (_, EXP())                 then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
@@ -345,7 +358,7 @@ public
       case (_, EXP()) guard isSizeOf(dim2, node1, index1) then true;
 
       case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
-      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then isEqualResizableExp(dim1.exp, dim2.exp);
       case (UNKNOWN(), _) then false;
       case (_, UNKNOWN()) then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
@@ -366,7 +379,7 @@ public
       case (BOOLEAN(), BOOLEAN()) then true;
       case (ENUM(), ENUM()) then Type.isEqual(dim1.enumType, dim2.enumType);
       case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
-      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then isEqualResizableExp(dim1.exp, dim2.exp);
       case (UNKNOWN(), UNKNOWN()) then true;
       else false;
     end match;
@@ -492,7 +505,7 @@ public
     output Integer hash = Util.HASH_SEED;
   algorithm
     for dim in dims loop
-      hash := stringHashDjb2Continue(toString(dim), hash);
+      hash := stringHashDjb2Continue(match dim case RESIZABLE() then Expression.toString(canonicalExp(dim.exp)) + "(R)"; else toString(dim); end match, hash);
     end for;
   end hashList;
 

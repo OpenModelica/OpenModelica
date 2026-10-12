@@ -1,0 +1,43 @@
+// name: noEventReduction
+// keywords: NewBackend noEvent reduction function alias
+// status: correct
+// cflags: --newBackend
+// suite: cSources
+// teardown_command: rm -f noEventReduction*.log noEventReduction*.mat noEventReduction_*
+//
+// A reduction inside noEvent() is moved to an alias equation, which has to keep
+// the noEvent(): the relation must not become an event relation.
+
+loadString("
+model noEventReduction
+  parameter Integer m = 2;
+  parameter Integer n = 3;
+  Real x[m, n];
+  Real q[m];
+equation
+  for j in 1:m loop
+    for i in 1:n loop
+      x[j, i] = (if i == 3 then 1.0 else -1.0)*(j + time);
+    end for;
+    q[j] = noEvent(sum((if x[j, i] > 0 then 2*x[j, i] else 0) for i in 1:n));
+  end for;
+end noEventReduction;
+"); getErrorString();
+
+simulate(noEventReduction, stopTime = 1); getErrorString();
+val(q[1], 0.5);
+val(q[2], 0.5);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "noEventReduction_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'noEventReduction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 3.0
+// 5.0
+// endResult

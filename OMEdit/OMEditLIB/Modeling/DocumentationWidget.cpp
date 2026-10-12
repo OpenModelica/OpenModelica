@@ -41,7 +41,10 @@
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/Model.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Util/Helper.h"
+#include "Util/Style.h"
 #include "Util/Utilities.h"
 #include "Editors/HTMLEditor.h"
 #include "Options/OptionsDialog.h"
@@ -61,6 +64,7 @@
 #include <QWidgetAction>
 #include <QButtonGroup>
 #include <QInputDialog>
+#include <QMessageBox>
 
 /*!
  * \class DocumentationWidget
@@ -940,35 +944,6 @@ void DocumentationWidget::editInfoHeaderDocumentation()
 }
 
 /*!
- * \brief buildDocumentationAnnotationString
- * Helper: builds a Documentation(...) annotation string from the three doc fields.
- * Empty fields are omitted from the output.
- * \param info
- * \param revisions
- * \param infoHeader
- * \return
- */
-QString buildDocumentationAnnotationString(const QString &info, const QString &revisions, const QString &infoHeader)
-{
-  const struct { const char *key; const QString &value; } fields[] = {
-  {"info", info},
-  {"revisions", revisions},
-  {"__OpenModelica_infoHeader", infoHeader},
-};
-
-  QStringList parts;
-  for (const auto &field : fields) {
-    if (!field.value.isEmpty()) {
-      parts.append(QString("%1=\"%2\"")
-                   .arg(field.key)
-                   .arg(StringHandler::escapeStringQuotes(field.value)));
-    }
-  }
-
-  return QString("annotate=Documentation(%1)").arg(parts.join(","));
-}
-
-/*!
  * \brief DocumentationWidget::saveDocumentation
  * Saves the documentaiton annotation. If pLibraryTreeItem is 0 then the documentation of the editing class is shown after save.\n
  * Otherwise the documentation of pLibraryTreeItem is shown.
@@ -992,21 +967,33 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
     updateHTMLSourceEditor();
   }
 
-  const QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
-  const QString currentText = mpHTMLSourceEditor->getPlainTextEdit()->toPlainText();
-  const QString oldAnnotation = buildDocumentationAnnotationString(documentation[0], documentation[1], documentation[2]);
-  const QString newAnnotation  = buildDocumentationAnnotationString(
-                                   mEditType == EditType::Info        ? currentText : documentation[0],
-                                   mEditType == EditType::Revisions   ? currentText : documentation[1],
-                                   mEditType == EditType::InfoHeader  ? currentText : documentation[2]);
-
-  // if we have ModelWidget for class then put the change on undo stack.
-  if (pLibraryTreeItem->getModelWidget()) {
-    UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldAnnotation, newAnnotation);
-    pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
-    pLibraryTreeItem->getModelWidget()->updateModelText();
+  ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
+  if (!pModelWidget || !pModelWidget->getModelInstance()) {
+    QMessageBox::warning(this, QString("%1 - %2").arg(Helper::applicationName, tr("Warning")),
+                         tr("The model instance for %1 is not available; the documentation changes were not saved.")
+                         .arg(pLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
+    return;
   }
+  ModelInstance::Model *pModelInstance = pModelWidget->getModelInstance();
+  const ModelInstance::DocumentationAnnotation *pDocumentationAnnotation = pModelInstance->getAnnotation()->getDocumentationAnnotation();
+
+  const QString currentText = mpHTMLSourceEditor->getPlainTextEdit()->toPlainText();
+  const ModelInstance::DocumentationAnnotation emptyDocumentation;
+  const ModelInstance::DocumentationAnnotation &documentation = pDocumentationAnnotation
+                                                                ? *pDocumentationAnnotation : emptyDocumentation;
+  const QString oldAnnotation = QString("annotate=%1").arg(documentation.toString());
+  const QString newAnnotation = QString("annotate=%1").arg(documentation.toString(
+                                                             mEditType == EditType::Info ? currentText : documentation.getInfo(),
+                                                             mEditType == EditType::Revisions ? currentText : documentation.getRevisions(),
+                                                             mEditType == EditType::InfoHeader ? currentText : documentation.getInfoHeader()));
+  // Put the change on the undo stack.
+  pModelWidget->getUndoStack()->push(new UpdateClassAnnotationCommand(pLibraryTreeItem, oldAnnotation, newAnnotation));
+  // Keep the loaded model-instance annotation in sync with the undoable OMC update.
+  pModelInstance->getOrCreateAnnotation()->getOrCreateDocumentationAnnotation()->setDocumentation(
+        mEditType == EditType::Info ? currentText : documentation.getInfo(),
+        mEditType == EditType::Revisions ? currentText : documentation.getRevisions(),
+        mEditType == EditType::InfoHeader ? currentText : documentation.getInfoHeader());
+  pModelWidget->updateModelText();
   // ticket:5190 - Save the class when documentation save button is hit
   MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
   mEditType = EditType::None;
@@ -1386,6 +1373,17 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
+  /* The application palette and stylesheet do not reach the web content. Let
+   * Chromium render the documentation dark; the document itself is untouched.
+   * The editor keeps the light canvas, so the colors its tools write are the
+   * colors the user sees.
+   */
+  if (!mIsContentEditable && Style::isDarkMode()) {
+    settings()->setAttribute(QWebEngineSettings::ForceDarkMode, true);
+    page()->setBackgroundColor(Style::documentationPageBackgroundColor());
+  }
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
   // set DocumentationViewer web page policy
   // Set the contenteditable="true" in pageLoaded()
   /* Qt WebEngine doesn't support DelegateAllLinks, linkClicked

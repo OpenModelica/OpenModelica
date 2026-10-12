@@ -73,6 +73,7 @@ protected
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import Partitioning = NBPartitioning;
+  import Resizable = NBResizable;
   import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
@@ -882,6 +883,19 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
+        // a slice of a for-equation over a resizable range that is a box of
+        // iterations is the loop over symbolic sub-ranges for every size
+        case StrongComponent.GENERIC_COMPONENT() guard not entwined and isSome(restrictedResizableIterator(comp.eqn)) algorithm
+          eqn_ptr := Slice.getT(comp.eqn);
+          eqn     := Pointer.access(eqn_ptr);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
+          iters   := SimIterator.fromIterator(Util.getOption(restrictedResizableIterator(comp.eqn)));
+          generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
+          tmp     := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, iters, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.GENERIC_COMPONENT() algorithm
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
@@ -1026,6 +1040,25 @@ public
         then fail();
       end match;
     end fromStrongComponent;
+
+    function restrictedResizableIterator
+      "the iterator of a slice of a for-equation with a scalar body over a
+       resizable range, restricted to the iterations of the slice (whole if empty)"
+      input Slice<EquationPointer> slice;
+      output Option<Iterator> iter = NONE();
+    protected
+      Equation eqn = Pointer.access(Slice.getT(slice));
+      Iterator it;
+    algorithm
+      if not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) or not Equation.isForEquation(Slice.getT(slice)) then
+        return;
+      end if;
+      it := Equation.getForIterator(eqn);
+      if Iterator.isResizable(it) and Equation.size(Slice.getT(slice), true) == Iterator.size(it, true) then
+        // an empty slice is the whole loop
+        iter := if listEmpty(slice.indices) then SOME(it) else Resizable.restrictIterator(it, slice.indices);
+      end if;
+    end restrictedResizableIterator;
 
     function coversAllResizableIterations
       "true if the slice of a for-equation over a resizable range contains every

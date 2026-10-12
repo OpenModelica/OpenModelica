@@ -1,0 +1,57 @@
+// name: resizableSparsity
+// keywords: NewBackend resizable jacobian sparsity
+// status: correct
+// cflags: --newBackend --resizableArrays
+// suite: cSources
+// teardown_command: rm -f resizableSparsity_20.mat resizableSparsity_20.log resizableSparsityRef*
+//
+// The resizable sparsity pattern of a variable solved by a for-equation and by
+// an equation for a symbolic index (T[N]) stays tridiagonal: the neighbours
+// T[i + 1] depend on x[i + 1], not on the whole array x.
+
+loadString("
+model resizableSparsity
+  parameter Integer N = 8;
+  Real T[N];
+  Real x[N - 1](each start = 0, each fixed = true);
+equation
+  for i in 1:N - 1 loop
+    T[i] = x[i];
+  end for;
+  T[N] = 1;
+  der(x[1]) = T[2] - T[1];
+  for i in 2:N - 1 loop
+    der(x[i]) = T[i + 1] - 2 * T[i] + T[i - 1];
+  end for;
+end resizableSparsity;
+model resizableSparsityRef20 = resizableSparsity(N = 20);
+"); getErrorString();
+
+buildModel(resizableSparsity, stopTime = 10); getErrorString();
+system("grep -q 'SEED_ODE_JAC.x\\[WHOLEDIM\\]' resizableSparsity_12jac.c");
+system("./resizableSparsity -override=N=20 -r=resizableSparsity_20.mat", "resizableSparsity_20.log");
+
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+simulate(resizableSparsityRef20, stopTime = 10); getErrorString();
+abs(val(x[1], 10, "resizableSparsity_20.mat") - val(x[1], 10, "resizableSparsityRef20_res.mat")) < 1e-6;
+abs(val(x[19], 10, "resizableSparsity_20.mat") - val(x[19], 10, "resizableSparsityRef20_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizableSparsity", "resizableSparsity_init.xml"}
+// ""
+// 1
+// 0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableSparsityRef20_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableSparsityRef20', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// endResult

@@ -500,6 +500,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         opt: crate::optimization::describe(data, thread_data, layout, real_names),
         recon: crate::datarecon::describe(data, layout, &version),
         prof: crate::info_json::prof_info(data),
+        resize: None,
     }
 }
 

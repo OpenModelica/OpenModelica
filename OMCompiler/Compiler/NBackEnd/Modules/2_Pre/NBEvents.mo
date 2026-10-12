@@ -679,6 +679,7 @@ public
       input VariablePointers variables;
       input UnorderedMap<Path, Function> funcMap;
       input list<Frame> frames = {};
+      input Boolean createEqn = false "create equations for the conditions instead of statements";
     algorithm
       stmt := match stmt
         local
@@ -698,7 +699,7 @@ public
           name := BackendDAE.lowerComponentReference(name, variables);
           new_frames := (name, range, NONE()) :: frames;
           for elem in stmt.body loop
-            new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcMap, new_frames);
+            new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcMap, new_frames, createEqn);
             // the auxiliaries of the conditions have to be computed before the statement
             new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
             new_stmts := new_stmt :: new_stmts;
@@ -714,7 +715,7 @@ public
                 iter        = iter,
                 eqn         = eqn,
                 funcMap     = funcMap,
-                createEqn   = false, mathEvents = true)));
+                createEqn   = createEqn, mathEvents = true)));
         then stmt;
       end match;
     end fromStatement;
@@ -1541,8 +1542,11 @@ protected
     eqn := match eqn
       case Equation.ALGORITHM(alg = alg) algorithm
         new_stmts := {};
+        // an algorithm without outputs is not part of the simulation system,
+        // its conditions become equations of their own there
+        createEqn := listEmpty(alg.outputs);
         for stmt in alg.statements loop
-          stmt := StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, variables, funcMap);
+          stmt := StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, variables, funcMap, {}, createEqn);
           new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
           new_stmts := stmt :: new_stmts;
         end for;

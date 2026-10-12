@@ -157,7 +157,7 @@ algorithm
           Debug.traceln("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", "));
         end if;
 
-        elts := evalConnectionsOperators(roots, graph, elts);
+        elts := evalConnectionsOperators(roots, connected, graph, elts);
       then
         (DAE.DAE(elts), connected, broken);
 
@@ -953,6 +953,7 @@ protected function evalConnectionsOperators
     http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
    for a specification of this operator"
   input list<DAE.ComponentRef> inRoots;
+  input DaeEdges connected "the connections of the spanning tree";
   input ConnectionGraph graph;
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
@@ -962,7 +963,6 @@ algorithm
       HashTable.HashTable rooted;
       HashTable3.HashTable table;
       Edges branches;
-      DaeEdges connections;
 
     case {} then {};
 
@@ -974,8 +974,7 @@ algorithm
         branches := getBranches(graph);
         table := List.fold(branches,addBranches,table);
         // add connections to table
-        connections := getConnections(graph);
-        table := List.fold(connections,addConnectionsRooted,table);
+        table := List.fold(connected,addConnectionsRooted,table);
         // get distanste to root
         //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentReferenceBasics.printComponentRefStr),"\n") + "\n");
         //  BaseHashTable.dumpHashTable(table);

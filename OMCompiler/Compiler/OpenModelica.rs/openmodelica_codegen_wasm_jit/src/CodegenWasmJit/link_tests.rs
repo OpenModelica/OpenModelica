@@ -224,6 +224,8 @@ fn solver_libraries_follow_the_fmi_flags() {
         (r#"{"ls":"umfpack"}"#, true, false, vec!["umfpack", "klu"]),
         (r#"{"nlsLS":"klu"}"#, true, false, vec!["klu"]),
         (r#"{"ls":"lapack"}"#, true, false, vec![]),
+        (r#"{"s":"gbode"}"#, true, false, vec!["klu"]),
+        (r#"{"s":"gbode"}"#, false, false, vec![]),
         // ME: the same solvers, never the integrator.
         (r#"{"nls":"kinsol"}"#, false, false, vec!["kinsol", "klu"]),
         (r#"{"lss":"lis"}"#, false, false, vec!["lis", "klu"]),

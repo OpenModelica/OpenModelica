@@ -104,6 +104,16 @@ namespace OptionsDefaults
     QColor functionRuleColor = QColor(0, 0, 255);
     QColor quotesRuleColor = QColor(0, 139, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor textRuleColor = QColor(232, 234, 237);
+      QColor numberRuleColor = QColor(251, 191, 36);
+      QColor keywordRuleColor = QColor(248, 113, 113);
+      QColor typeRuleColor = QColor(147, 197, 253);
+      QColor functionRuleColor = QColor(192, 132, 252);
+      QColor quotesRuleColor = QColor(134, 239, 172);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace MetaModelicaEditor {
@@ -112,6 +122,14 @@ namespace OptionsDefaults
     QColor typeRuleColor = QColor(255, 10, 10);
     QColor quotesRuleColor = QColor(0, 139, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor numberRuleColor = QColor(251, 191, 36);
+      QColor keywordRuleColor = QColor(248, 113, 113);
+      QColor typeRuleColor = QColor(147, 197, 253);
+      QColor quotesRuleColor = QColor(134, 239, 172);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace CRMLEditor {
@@ -120,6 +138,14 @@ namespace OptionsDefaults
     QColor typeRuleColor = QColor(255, 10, 10);
     QColor quotesRuleColor = QColor(0, 139, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor numberRuleColor = QColor(251, 191, 36);
+      QColor keywordRuleColor = QColor(248, 113, 113);
+      QColor typeRuleColor = QColor(147, 197, 253);
+      QColor quotesRuleColor = QColor(134, 239, 172);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace MOSEditor {
@@ -128,6 +154,14 @@ namespace OptionsDefaults
     QColor typeRuleColor = QColor(255, 10, 10);
     QColor quotesRuleColor = QColor(0, 139, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor numberRuleColor = QColor(251, 191, 36);
+      QColor keywordRuleColor = QColor(248, 113, 113);
+      QColor typeRuleColor = QColor(147, 197, 253);
+      QColor quotesRuleColor = QColor(134, 239, 172);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace OMSimulatorEditor {
@@ -135,6 +169,13 @@ namespace OptionsDefaults
     QColor elementRuleColor = QColor(0, 0, 255);
     QColor quotesRuleColor = QColor(139, 0, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor tagRuleColor = QColor(147, 197, 253);
+      QColor elementRuleColor = QColor(147, 197, 253);
+      QColor quotesRuleColor = QColor(248, 113, 113);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace CEditor {
@@ -143,12 +184,26 @@ namespace OptionsDefaults
     QColor typeRuleColor = QColor(255, 10, 10);
     QColor quotesRuleColor = QColor(0, 139, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor numberRuleColor = QColor(251, 191, 36);
+      QColor keywordRuleColor = QColor(248, 113, 113);
+      QColor typeRuleColor = QColor(147, 197, 253);
+      QColor quotesRuleColor = QColor(134, 239, 172);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace HTMLEditor {
     QColor tagRuleColor = QColor(0, 0, 255);
     QColor quotesRuleColor = QColor(139, 0, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor tagRuleColor = QColor(147, 197, 253);
+      QColor quotesRuleColor = QColor(248, 113, 113);
+      QColor commentRuleColor = QColor(148, 163, 184);
+    }
   }
 
   namespace GraphicalViewsPage {
@@ -188,6 +243,12 @@ namespace OptionsDefaults
     QColor notificationColor = Qt::black;
     QColor warningColor = QColor(255, 170, 0);
     QColor errorColor = Qt::red;
+    // Defaults for dark mode. Read and saved under the "darkMode" settings group.
+    namespace DarkMode {
+      QColor notificationColor = QColor(232, 234, 237);
+      QColor warningColor = QColor(250, 204, 21);
+      QColor errorColor = QColor(255, 107, 107);
+    }
   }
 
   namespace Notification {

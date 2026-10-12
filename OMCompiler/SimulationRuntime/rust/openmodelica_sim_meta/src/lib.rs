@@ -27,6 +27,11 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub mod driver;
+pub mod sizes;
+pub use sizes::Sz;
+pub mod resize;
+pub mod sym_sparsity;
+pub use resize::{Resize, SizeParam};
 pub mod linearize;
 // The solvers and the flags/logging they read live in `openmodelica_solvers`,
 // which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
@@ -77,6 +82,11 @@ pub const TIME_OFF: u32 = 0;
 /// `[ time | states | ders | algs | params… ]`.
 pub const REAL_OFF: u32 = 8;
 
+/// A model with resizable arrays: the i32 at [`TABLE_PTR_OFF`] is
+/// [`Layout::table_off`], and the reals start here.
+pub const REAL_OFF_RESIZABLE: u32 = 16;
+pub const TABLE_PTR_OFF: u32 = 8;
+
 /// i32 words in the fired-`terminate` info block at [`Layout::term_info_off`]:
 /// `msg`, `file`, `lineStart`, `colStart`, `lineEnd`, `colEnd`, `readOnly`.
 pub const TERM_INFO_WORDS: u32 = 7;
@@ -108,6 +118,15 @@ pub mod clock_field {
 pub enum WTy {
     I32,
     F64,
+}
+
+impl WTy {
+    pub fn bytes(self) -> u32 {
+        match self {
+            WTy::I32 => 4,
+            WTy::F64 => 8,
+        }
+    }
 }
 
 /// C's `HOMOTOPY_METHOD`, selected by `--homotopyApproach` (and forced to
@@ -146,15 +165,15 @@ impl HomotopyMethod {
 }
 
 /// Fully-resolved layout of one model's `SimData` block. All offsets are byte
-/// offsets within the block; all are compile-time constants baked into the
-/// generated module. This is the single source of truth: the codegen computes it
-/// via [`Layout::new`] and the driver reads it back verbatim from the blob.
+/// offsets within the block. This is the single source of truth: the codegen
+/// computes it via [`Layout::build`] and the driver reads it back from the blob; a
+/// model with resizable arrays has it over [`Sz`] until [`SimMeta::resolve_sizes`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
-pub struct Layout {
-    pub n_states: u32,
+pub struct Layout<T = u32> {
+    pub n_states: T,
     /// `algVars ++ discreteAlgVars` (the real algebraic variables emitted as
     /// time-variant result signals after the states and derivatives).
-    pub n_real_alg: u32,
+    pub n_real_alg: T,
     /// `functionAlgebraics` ends with C's `storePreValues`, so a driver calls it
     /// only in the once-per-step order.
     pub has_when: bool,
@@ -175,103 +194,103 @@ pub struct Layout {
     /// `old_real_off`.
     pub has_old_real: bool,
     /// `SimData` offset of the homotopy parameter lambda (f64).
-    pub lambda_off: u32,
-    pub rparam_off: u32,
-    pub int_off: u32,
-    pub iparam_off: u32,
-    pub bool_off: u32,
-    pub bparam_off: u32,
+    pub lambda_off: T,
+    pub rparam_off: T,
+    pub int_off: T,
+    pub iparam_off: T,
+    pub bool_off: T,
+    pub bparam_off: T,
     /// String algebraic variables (one i32 String handle each).
-    pub str_off: u32,
+    pub str_off: T,
     /// String parameters (one i32 String handle each).
-    pub sparam_off: u32,
+    pub sparam_off: T,
     /// External-object variables (one i32 pointer-registry handle each).
-    pub eobj_off: u32,
+    pub eobj_off: T,
     /// `pre()` regions parallel to the live variable regions.
-    pub pre_real_off: u32,
-    pub pre_int_off: u32,
-    pub pre_bool_off: u32,
+    pub pre_real_off: T,
+    pub pre_int_off: T,
+    pub pre_bool_off: T,
     /// C's `data->localData[1]->realVars`: the reals as of the last accepted step,
     /// a method-1 linear system's `aux_x`.
-    pub old_real_off: u32,
+    pub old_real_off: T,
     /// `terminate(...)` flag (i32).
-    pub terminate_off: u32,
+    pub terminate_off: T,
     /// `terminal()` flag (i32): C's `data->simulationInfo->terminal`, raised by
     /// the driver for the run's final discrete update.
-    pub terminal_off: u32,
+    pub terminal_off: T,
     /// `initial()` flag (i32): C's `data->simulationInfo->initial`, raised by the
     /// driver for the whole initialization phase.
-    pub initial_off: u32,
+    pub initial_off: T,
     /// C's `TermMsg`/`TermInfo`: the fired `terminate(...)`'s message and source
     /// position, as `[msg, file, lineStart, colStart, lineEnd, colEnd, readOnly]`
     /// (i32 each; the first two are String handles).
-    pub term_info_off: u32,
+    pub term_info_off: T,
     /// Number of result rows actually written (i32).
-    pub n_out_off: u32,
+    pub n_out_off: T,
     /// Nonlinear-solver failure flag (i32).
-    pub nls_fail_off: u32,
+    pub nls_fail_off: T,
     /// Number of `sample(...)` time events.
-    pub n_samples: u32,
+    pub n_samples: T,
     /// Base of the sample parameter region (start/interval f64 pairs).
-    pub sample_off: u32,
+    pub sample_off: T,
     /// Base of the per-sample `active` flags (one i32 each).
-    pub sample_active_off: u32,
+    pub sample_active_off: T,
     /// Number of state-event zero-crossing functions.
-    pub n_zc: u32,
+    pub n_zc: T,
     /// Base of the zero-crossing value region (one f64 per crossing).
-    pub zc_off: u32,
+    pub zc_off: T,
     /// `zeroCrossingsPre`: the previous accepted g-value of each crossing (one f64
     /// per crossing). `delayZeroCrossing` reads it; the driver snapshots it from
     /// `zc_off` at init and after each accepted point/event.
-    pub zc_pre_off: u32,
+    pub zc_pre_off: T,
     /// Where an integrator's root callback writes its g-values (one f64 per
     /// crossing): C's `gout`, kept apart from `zc_off` so a probe never overwrites
     /// the accepted-point snapshot.
-    pub zc_probe_off: u32,
+    pub zc_probe_off: T,
     /// Number of indexed relations (hysteresis count).
-    pub n_rel: u32,
+    pub n_rel: T,
     /// Base of the held relation values (one i32 per indexed relation).
-    pub relations_off: u32,
+    pub relations_off: T,
     /// Relation evaluation mode (i32): 0 held, 1 event, 2 initialization.
-    pub rel_fresh_off: u32,
+    pub rel_fresh_off: T,
     /// `storedRelations` snapshot (one i32 per relation).
-    pub stored_rel_off: u32,
+    pub stored_rel_off: T,
     /// `relationsPre` (one i32 per relation).
-    pub relations_pre_off: u32,
+    pub relations_pre_off: T,
     /// Base of the state-set Jacobian scratch region (f64).
-    pub stateset_off: u32,
+    pub stateset_off: T,
     /// Base of the nonlinear-system analytic-Jacobian scratch region (f64): the
     /// per-system seed and column-result slots the emitted `nls_jac` callbacks use.
-    pub nls_jac_off: u32,
+    pub nls_jac_off: T,
     /// `mathEventsValuePre` length.
-    pub n_math: u32,
+    pub n_math: T,
     /// Base of the held math-event values (f64 each).
-    pub mathevents_off: u32,
+    pub mathevents_off: T,
     /// Zero-crossing hysteresis tolerance slot (f64).
-    pub zctol_off: u32,
+    pub zctol_off: T,
     /// C's `realVarsData[i].attribute.start`: one f64 per real variable, in
     /// real-variable index order (states, derivatives, algebraics).
     /// `functionInitStartValues` fills it; `-iif`/`-override` may replace entries;
     /// the driver then copies it over the live region (C's `setAllVarsToStart`).
-    pub start_off: u32,
+    pub start_off: T,
     /// C's `realVarsData[i].attribute.nominal` as declared, one f64 per real
     /// variable in [`Layout::start_off`] order. [`Layout::state_nom_off`] is the
     /// integrator's clamped copy.
-    pub real_nom_off: u32,
+    pub real_nom_off: T,
     /// Base of the per-state `nominal` attribute (one f64 per state), written by
     /// `functionUpdateBoundVariableAttributes` once the parameters are computed.
     /// `fmax(|nominal|, 1e-32)` rather than the attribute itself: it is the
     /// integrator's `atol` scale and the Jacobian's FD step floor.
-    pub state_nom_off: u32,
+    pub state_nom_off: T,
     /// Base of the per-state `max` attribute, written the same way; C's
     /// `functionJacAC_num` flips its difference quotient at the bound.
-    pub state_max_off: u32,
+    pub state_max_off: T,
     /// Base of the per-state `min` attribute, for gbode's KINSOL sign constraints.
-    pub state_min_off: u32,
+    pub state_min_off: T,
     /// Base of the linearization scratch (f64): the symbolic `A|B|C|D` the
     /// `linearJac*` fill (column-major), then their seed/`$pDER` slots.
-    pub linz_off: u32,
-    pub n_linz: u32,
+    pub linz_off: T,
+    pub n_linz: T,
     /// `method="optimization"`: the attribute arrays C reads out of the `_init.xml`
     /// (`realVarsData[i].attribute`), one entry per real variable in real-variable
     /// index order — `min`, `max`, `nominal` as f64 and `useNominal` as i32
@@ -279,45 +298,45 @@ pub struct Layout {
     /// `functionUpdateBoundVariableAttributes` once the parameters are known; the
     /// optimizer also *writes* `nominal` back, as C does.
     /// `n_opt_attr` is 0 for a model without an optimization problem.
-    pub n_opt_attr: u32,
-    pub opt_min_off: u32,
-    pub opt_max_off: u32,
-    pub opt_nom_off: u32,
-    pub opt_use_nom_off: u32,
+    pub n_opt_attr: T,
+    pub opt_min_off: T,
+    pub opt_max_off: T,
+    pub opt_nom_off: T,
+    pub opt_use_nom_off: T,
     /// C's `simulationInfo->sensitivityMatrix`: `d(state)/d(parameter)`,
     /// parameter-major, written by the IDA driver from `IDAGetSens` and captured
     /// as a result row's last columns.
-    pub n_sens: u32,
-    pub sens_off: u32,
+    pub n_sens: T,
+    pub sens_off: T,
     /// `--daeMode`: C's `daeModeData->nResidualVars`, also the size of the implicit
     /// system IDA solves. 0 ⇒ an explicit ODE, and no `dae_*` region exists.
-    pub n_dae_res: u32,
+    pub n_dae_res: T,
     /// Base of `daeModeData->residualVars` (f64 each).
-    pub dae_res_off: u32,
-    pub n_dae_aux: u32,
+    pub dae_res_off: T,
+    pub n_dae_aux: T,
     /// Base of `daeModeData->auxiliaryVars` (f64 each).
-    pub dae_aux_off: u32,
+    pub dae_aux_off: T,
     /// `daeModeData->nAlgebraicDAEVars`: the unknowns IDA carries after the states,
     /// so `n_dae_res == n_states + n_dae_alg`.
-    pub n_dae_alg: u32,
+    pub n_dae_alg: T,
     /// Base of their `nominal` attributes, written like `state_nom_off`.
-    pub dae_alg_nom_off: u32,
+    pub dae_alg_nom_off: T,
     /// Number of synchronous base clocks (`SimCode.clockedPartitions`).
-    pub n_base_clocks: u32,
+    pub n_base_clocks: T,
     /// Base of the per-base-clock state ([`BASECLOCK_BYTES`] each).
-    pub clock_off: u32,
+    pub clock_off: T,
     /// Total number of sub-clocks over all base clocks.
-    pub n_sub_clocks: u32,
+    pub n_sub_clocks: T,
     /// Base of the per-sub-clock state ([`SUBCLOCK_BYTES`] each), flattened in
     /// base-clock order — [`BaseClockMeta::sub_base`] indexes into it.
-    pub subclock_off: u32,
+    pub subclock_off: T,
     /// Base of the per-base-clock `$_clkfire` flags (one i32 each): an event
     /// clock's `when`-body raises its flag, the driver fires and clears it.
-    pub clock_fire_off: u32,
+    pub clock_fire_off: T,
     /// One f64 per attribute `functionUpdateBoundVariableAttributes` computes; C
     /// prints those values from inside that function, which the driver cannot.
-    pub n_attr_log: u32,
-    pub attr_log_off: u32,
+    pub n_attr_log: T,
+    pub attr_log_off: T,
     /// C's `compiledWithSymSolver` (`--symSolver`): 0 none, 1 `impEuler`, 2
     /// `expEuler`. Nonzero ⇒ the module exports `symbolicInlineSystem` and the two
     /// regions below exist.
@@ -325,14 +344,21 @@ pub struct Layout {
     /// C's `simulationInfo->inlineData`: the step size `__OMC_DT` (f64) the inline
     /// equations read, and the `<state>$Old` values (one f64 per state) they step
     /// from.
-    pub inline_dt_off: u32,
-    pub alg_old_off: u32,
+    pub inline_dt_off: T,
+    pub alg_old_off: T,
     /// Residuals `functionRemovedInitialEquations` checks; 0 ⇒ it is a stub.
-    pub n_removed_init: u32,
+    pub n_removed_init: T,
     /// The rejected residual (f64) and its 1-based index (i32); index 0 ⇒ consistent.
-    pub removed_init_res_off: u32,
-    pub removed_init_idx_off: u32,
-    pub total: u32,
+    pub removed_init_res_off: T,
+    pub removed_init_idx_off: T,
+    pub total: T,
+    /// The first real variable: [`REAL_OFF`], or [`REAL_OFF_RESIZABLE`] when the
+    /// header word at [`TABLE_PTR_OFF`] points at the size table.
+    pub real_off: T,
+    /// Where the size table starts (one i32 per entry, see [`Resize::table`]); 0
+    /// without one.
+    pub table_off: T,
+    pub n_table: u32,
     /// `-cpu` / `-steps` ([`EXTRA_CPU_TIME`], [`EXTRA_SOLVER_STEPS`]): result
     /// columns after the String block. Set per run by [`SimMeta::apply_flags`].
     pub extra_cols: u32,
@@ -344,9 +370,7 @@ pub const EXTRA_CPU_TIME: u32 = 1;
 pub const EXTRA_SOLVER_STEPS: u32 = 2;
 
 impl Layout {
-    /// Compute the `SimData` layout from a model's variable/solver counts. The
-    /// codegen's single call site; the byte offsets it derives are exactly what
-    /// the emitted module bakes in and the driver reads back.
+    /// Compute the `SimData` layout from a model's variable/solver counts.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         n_states: u32,
@@ -383,80 +407,281 @@ impl Layout {
         has_history_ops: bool,
         has_old_real: bool,
     ) -> Self {
-        let n_real = 2 * n_states + n_real_alg; // states | ders | algs
-        let rparam_off = REAL_OFF + n_real * 8;
-        let int_off = rparam_off + n_real_param * 8;
-        let iparam_off = int_off + n_int_alg * 4;
-        let bool_off = iparam_off + n_int_param * 4;
-        let bparam_off = bool_off + n_bool_alg * 4;
-        let str_off = bparam_off + n_bool_param * 4;
-        let sparam_off = str_off + n_str_alg * 4;
-        let eobj_off = sparam_off + n_str_param * 4;
-        // pre() region, 8-aligned so the real pre-slots are naturally aligned.
-        let pre_real_off = (eobj_off + n_eobj * 4 + 7) & !7;
-        let pre_int_off = pre_real_off + n_real * 8;
-        let pre_bool_off = pre_int_off + n_int_alg * 4;
-        let old_real_off = (pre_bool_off + n_bool_alg * 4 + 7) & !7;
-        let terminate_off = old_real_off + if has_old_real { n_real * 8 } else { 0 };
-        let terminal_off = terminate_off + 4;
-        let initial_off = terminal_off + 4;
-        let term_info_off = initial_off + 4;
-        let n_out_off = term_info_off + TERM_INFO_WORDS * 4;
-        let nls_fail_off = n_out_off + 4;
-        let lambda_off = (nls_fail_off + 4 + 7) & !7;
-        let sample_off = (lambda_off + 8 + 7) & !7;
-        let sample_active_off = sample_off + n_samples * 16;
-        let zc_off = (sample_active_off + n_samples * 4 + 7) & !7;
-        let zc_pre_off = zc_off + n_zc * 8;
-        let zc_probe_off = zc_pre_off + n_zc * 8;
-        let relations_off = zc_probe_off + n_zc * 8;
-        let rel_fresh_off = relations_off + n_rel * 4;
-        let stored_rel_off = rel_fresh_off + 4;
-        let relations_pre_off = stored_rel_off + n_rel * 4;
-        let stateset_off = (relations_pre_off + n_rel * 4 + 7) & !7;
-        let nls_jac_off = stateset_off + n_stateset_f64 * 8;
-        let mathevents_off = nls_jac_off + n_nlsjac_f64 * 8;
-        let n_math_slots = if n_math > 0 { n_math + 2 } else { 0 };
-        let zctol_off = mathevents_off + n_math_slots * 8;
-        let start_off = zctol_off + 8;
-        let real_nom_off = start_off + n_real * 8;
-        let state_nom_off = real_nom_off + n_real * 8;
-        let state_max_off = state_nom_off + n_states * 8;
-        let state_min_off = state_max_off + n_states * 8;
-        let sens_off = state_min_off + n_states * 8;
-        let dae_res_off = sens_off + n_sens * 8;
-        let dae_aux_off = dae_res_off + n_dae_res * 8;
-        let dae_alg_nom_off = dae_aux_off + n_dae_aux * 8;
-        let clock_off = dae_alg_nom_off + n_dae_alg * 8;
-        let subclock_off = clock_off + n_base_clocks * BASECLOCK_BYTES;
-        let clock_fire_off = subclock_off + n_sub_clocks * SUBCLOCK_BYTES;
-        let linz_off = (clock_fire_off + n_base_clocks * 4 + 7) & !7;
-        let opt_min_off = linz_off + n_linz * 8;
-        let opt_max_off = opt_min_off + n_opt_attr * 8;
-        let opt_nom_off = opt_max_off + n_opt_attr * 8;
-        let opt_use_nom_off = opt_nom_off + n_opt_attr * 8;
-        let attr_log_off = (opt_use_nom_off + n_opt_attr * 4 + 7) & !7;
-        let removed_init_res_off = attr_log_off + n_attr_log * 8;
-        let removed_init_idx_off = removed_init_res_off + 8;
-        let inline_dt_off = (removed_init_idx_off + 4 + 7) & !7;
-        let alg_old_off = inline_dt_off + if sym_solver > 0 { 8 } else { 0 };
-        let total = alg_old_off + if sym_solver > 0 { n_states * 8 } else { 0 };
+        let counts = LayoutCounts {
+            n_states, n_real_alg, n_real_param, n_int_alg, n_int_param, n_bool_alg, n_bool_param, n_str_alg,
+            n_str_param, n_eobj, n_samples, n_zc, n_rel, n_stateset_f64, n_nlsjac_f64, n_math, n_sens, n_dae_res,
+            n_dae_aux, n_dae_alg, n_base_clocks, n_sub_clocks, n_linz, n_opt_attr, n_attr_log, n_removed_init,
+        };
+        let flags = LayoutFlags {
+            sym_solver, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real,
+            resizable: false,
+        };
+        Layout::build(counts, flags)
+    }
+}
+
+/// The counts a [`Layout`] is computed from.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct LayoutCounts<T = u32> {
+    pub n_states: T,
+    pub n_real_alg: T,
+    pub n_real_param: T,
+    pub n_int_alg: T,
+    pub n_int_param: T,
+    pub n_bool_alg: T,
+    pub n_bool_param: T,
+    pub n_str_alg: T,
+    pub n_str_param: T,
+    pub n_eobj: T,
+    pub n_samples: T,
+    pub n_zc: T,
+    pub n_rel: T,
+    pub n_stateset_f64: T,
+    pub n_nlsjac_f64: T,
+    pub n_math: T,
+    pub n_sens: T,
+    pub n_dae_res: T,
+    pub n_dae_aux: T,
+    pub n_dae_alg: T,
+    pub n_base_clocks: T,
+    pub n_sub_clocks: T,
+    pub n_linz: T,
+    pub n_opt_attr: T,
+    pub n_attr_log: T,
+    pub n_removed_init: T,
+}
+
+impl LayoutCounts<Sz> {
+    pub fn eval(&self, params: &[i64]) -> LayoutCounts {
+        let e = |s: &Sz| s.eval(params).max(0) as u32;
+        LayoutCounts {
+            n_states: e(&self.n_states),
+            n_real_alg: e(&self.n_real_alg),
+            n_real_param: e(&self.n_real_param),
+            n_int_alg: e(&self.n_int_alg),
+            n_int_param: e(&self.n_int_param),
+            n_bool_alg: e(&self.n_bool_alg),
+            n_bool_param: e(&self.n_bool_param),
+            n_str_alg: e(&self.n_str_alg),
+            n_str_param: e(&self.n_str_param),
+            n_eobj: e(&self.n_eobj),
+            n_samples: e(&self.n_samples),
+            n_zc: e(&self.n_zc),
+            n_rel: e(&self.n_rel),
+            n_stateset_f64: e(&self.n_stateset_f64),
+            n_nlsjac_f64: e(&self.n_nlsjac_f64),
+            n_math: e(&self.n_math),
+            n_sens: e(&self.n_sens),
+            n_dae_res: e(&self.n_dae_res),
+            n_dae_aux: e(&self.n_dae_aux),
+            n_dae_alg: e(&self.n_dae_alg),
+            n_base_clocks: e(&self.n_base_clocks),
+            n_sub_clocks: e(&self.n_sub_clocks),
+            n_linz: e(&self.n_linz),
+            n_opt_attr: e(&self.n_opt_attr),
+            n_attr_log: e(&self.n_attr_log),
+            n_removed_init: e(&self.n_removed_init),
+        }
+    }
+}
+
+/// The parts of a [`Layout`] that are not counts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct LayoutFlags {
+    pub sym_solver: u8,
+    pub has_when: bool,
+    pub has_homotopy: bool,
+    pub homotopy_method: HomotopyMethod,
+    pub has_init_lambda0: bool,
+    pub has_history_ops: bool,
+    pub has_old_real: bool,
+    /// The size-table pointer in the header ([`REAL_OFF_RESIZABLE`]), and the
+    /// regions of constant size first.
+    pub resizable: bool,
+}
+
+impl<T: sizes::LayoutNum> Layout<T> {
+    /// The single definition of the `SimData` layout: the codegen builds it over
+    /// [`Sz`] for a model with resizable arrays, the runtime over the counts the
+    /// size parameters give.
+    pub fn build(c: LayoutCounts<T>, f: LayoutFlags) -> Self {
+        let mut l = Layout::<T> {
+            n_states: c.n_states.clone(),
+            n_real_alg: c.n_real_alg.clone(),
+            n_samples: c.n_samples.clone(),
+            n_zc: c.n_zc.clone(),
+            n_rel: c.n_rel.clone(),
+            n_math: c.n_math.clone(),
+            n_sens: c.n_sens.clone(),
+            n_dae_res: c.n_dae_res.clone(),
+            n_dae_aux: c.n_dae_aux.clone(),
+            n_dae_alg: c.n_dae_alg.clone(),
+            n_base_clocks: c.n_base_clocks.clone(),
+            n_sub_clocks: c.n_sub_clocks.clone(),
+            n_linz: c.n_linz.clone(),
+            n_opt_attr: c.n_opt_attr.clone(),
+            n_attr_log: c.n_attr_log.clone(),
+            n_removed_init: c.n_removed_init.clone(),
+            has_when: f.has_when,
+            has_homotopy: f.has_homotopy,
+            homotopy_method: f.homotopy_method,
+            has_init_lambda0: f.has_init_lambda0,
+            has_history_ops: f.has_history_ops,
+            has_old_real: f.has_old_real,
+            sym_solver: f.sym_solver,
+            ..Layout::zero()
+        };
+        let start = T::lit(if f.resizable { REAL_OFF_RESIZABLE } else { REAL_OFF });
+        // A resizable model keeps the regions of constant size in front, so the
+        // codegen addresses them without the size table.
+        let at = match f.resizable {
+            false => {
+                let at = l.vars(start, &c, &f);
+                let at = l.flags_events(at, &c);
+                let at = l.attrs(at, &c);
+                let at = l.clocks(at, &c);
+                let at = l.opt(at, &c);
+                let at = l.log(at, &c, &f);
+                l.inline_old(at, &c, &f)
+            }
+            true => {
+                let at = l.flags_events(start, &c);
+                let at = l.clocks(at, &c);
+                let at = l.log(at, &c, &f);
+                let at = l.vars(at.align8(), &c, &f);
+                let at = l.attrs(at, &c);
+                let at = l.opt(at, &c);
+                l.inline_old(at.align8(), &c, &f)
+            }
+        };
+        l.total = at;
+        l
+    }
+
+    fn zero() -> Self {
+        let z = T::lit(0);
         Layout {
-            n_states, n_real_alg, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real, lambda_off, rparam_off, int_off, iparam_off,
-            bool_off, bparam_off, str_off, sparam_off, eobj_off, pre_real_off, pre_int_off, pre_bool_off, old_real_off,
-            terminate_off, terminal_off, initial_off, term_info_off, n_out_off, nls_fail_off, n_samples, sample_off, sample_active_off, n_zc, zc_off, zc_pre_off, zc_probe_off,
-            n_rel, relations_off, rel_fresh_off, stored_rel_off, relations_pre_off, stateset_off, nls_jac_off, n_math,
-            mathevents_off, zctol_off, start_off, real_nom_off, state_nom_off, state_max_off, state_min_off, n_sens, sens_off,
-            n_dae_res, dae_res_off, n_dae_aux, dae_aux_off, n_dae_alg, dae_alg_nom_off,
-            n_base_clocks, clock_off, n_sub_clocks, subclock_off, clock_fire_off, linz_off, n_linz,
-            n_opt_attr, opt_min_off, opt_max_off, opt_nom_off, opt_use_nom_off,
-            n_attr_log, attr_log_off,
-            n_removed_init, removed_init_res_off, removed_init_idx_off,
-            sym_solver, inline_dt_off, alg_old_off, total,
-            extra_cols: 0,
+            n_states: z.clone(), n_real_alg: z.clone(), has_when: false, has_homotopy: false,
+            homotopy_method: HomotopyMethod::default(), has_init_lambda0: false, has_history_ops: false,
+            has_old_real: false, lambda_off: z.clone(), rparam_off: z.clone(), int_off: z.clone(), iparam_off: z.clone(),
+            bool_off: z.clone(), bparam_off: z.clone(), str_off: z.clone(), sparam_off: z.clone(), eobj_off: z.clone(),
+            pre_real_off: z.clone(), pre_int_off: z.clone(), pre_bool_off: z.clone(), old_real_off: z.clone(),
+            terminate_off: z.clone(), terminal_off: z.clone(), initial_off: z.clone(), term_info_off: z.clone(),
+            n_out_off: z.clone(), nls_fail_off: z.clone(), n_samples: z.clone(), sample_off: z.clone(),
+            sample_active_off: z.clone(), n_zc: z.clone(), zc_off: z.clone(), zc_pre_off: z.clone(),
+            zc_probe_off: z.clone(), n_rel: z.clone(), relations_off: z.clone(), rel_fresh_off: z.clone(),
+            stored_rel_off: z.clone(), relations_pre_off: z.clone(), stateset_off: z.clone(), nls_jac_off: z.clone(),
+            n_math: z.clone(), mathevents_off: z.clone(), zctol_off: z.clone(), start_off: z.clone(),
+            real_nom_off: z.clone(), state_nom_off: z.clone(), state_max_off: z.clone(), state_min_off: z.clone(),
+            n_sens: z.clone(), sens_off: z.clone(), n_dae_res: z.clone(), dae_res_off: z.clone(), n_dae_aux: z.clone(),
+            dae_aux_off: z.clone(), n_dae_alg: z.clone(), dae_alg_nom_off: z.clone(), n_base_clocks: z.clone(),
+            clock_off: z.clone(), n_sub_clocks: z.clone(), subclock_off: z.clone(), clock_fire_off: z.clone(),
+            linz_off: z.clone(), n_linz: z.clone(), n_opt_attr: z.clone(), opt_min_off: z.clone(), opt_max_off: z.clone(),
+            opt_nom_off: z.clone(), opt_use_nom_off: z.clone(), n_attr_log: z.clone(), attr_log_off: z.clone(),
+            n_removed_init: z.clone(), removed_init_res_off: z.clone(), removed_init_idx_off: z.clone(), sym_solver: 0,
+            inline_dt_off: z.clone(), alg_old_off: z.clone(), total: z.clone(), real_off: z.clone(), table_off: z,
+            n_table: 0, extra_cols: 0,
         }
     }
 
+    fn n_real(c: &LayoutCounts<T>) -> T {
+        c.n_states.clone().times(2) + c.n_real_alg.clone() // states | ders | algs
+    }
+
+    /// The variables, their `pre()` mirrors and the reals of the last step.
+    fn vars(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
+        let n_real = Self::n_real(c);
+        self.real_off = at.clone();
+        self.rparam_off = at + n_real.clone().times(8);
+        self.int_off = self.rparam_off.clone() + c.n_real_param.clone().times(8);
+        self.iparam_off = self.int_off.clone() + c.n_int_alg.clone().times(4);
+        self.bool_off = self.iparam_off.clone() + c.n_int_param.clone().times(4);
+        self.bparam_off = self.bool_off.clone() + c.n_bool_alg.clone().times(4);
+        self.str_off = self.bparam_off.clone() + c.n_bool_param.clone().times(4);
+        self.sparam_off = self.str_off.clone() + c.n_str_alg.clone().times(4);
+        self.eobj_off = self.sparam_off.clone() + c.n_str_param.clone().times(4);
+        // pre() region, 8-aligned so the real pre-slots are naturally aligned.
+        self.pre_real_off = (self.eobj_off.clone() + c.n_eobj.clone().times(4)).align8();
+        self.pre_int_off = self.pre_real_off.clone() + n_real.clone().times(8);
+        self.pre_bool_off = self.pre_int_off.clone() + c.n_int_alg.clone().times(4);
+        self.old_real_off = (self.pre_bool_off.clone() + c.n_bool_alg.clone().times(4)).align8();
+        self.old_real_off.clone() + if f.has_old_real { n_real.times(8) } else { T::lit(0) }
+    }
+
+    /// Flags, samples, zero crossings, relations and solver scratch.
+    fn flags_events(&mut self, at: T, c: &LayoutCounts<T>) -> T {
+        let lit = T::lit;
+        self.terminate_off = at;
+        self.terminal_off = self.terminate_off.clone() + lit(4);
+        self.initial_off = self.terminal_off.clone() + lit(4);
+        self.term_info_off = self.initial_off.clone() + lit(4);
+        self.n_out_off = self.term_info_off.clone() + lit(TERM_INFO_WORDS * 4);
+        self.nls_fail_off = self.n_out_off.clone() + lit(4);
+        self.lambda_off = (self.nls_fail_off.clone() + lit(4)).align8();
+        self.sample_off = (self.lambda_off.clone() + lit(8)).align8();
+        self.sample_active_off = self.sample_off.clone() + c.n_samples.clone().times(16);
+        self.zc_off = (self.sample_active_off.clone() + c.n_samples.clone().times(4)).align8();
+        self.zc_pre_off = self.zc_off.clone() + c.n_zc.clone().times(8);
+        self.zc_probe_off = self.zc_pre_off.clone() + c.n_zc.clone().times(8);
+        self.relations_off = self.zc_probe_off.clone() + c.n_zc.clone().times(8);
+        self.rel_fresh_off = self.relations_off.clone() + c.n_rel.clone().times(4);
+        self.stored_rel_off = self.rel_fresh_off.clone() + lit(4);
+        self.relations_pre_off = self.stored_rel_off.clone() + c.n_rel.clone().times(4);
+        self.stateset_off = (self.relations_pre_off.clone() + c.n_rel.clone().times(4)).align8();
+        self.nls_jac_off = self.stateset_off.clone() + c.n_stateset_f64.clone().times(8);
+        self.mathevents_off = self.nls_jac_off.clone() + c.n_nlsjac_f64.clone().times(8);
+        let n_math_slots = c.n_math.clone().plus_if_positive(2);
+        self.zctol_off = self.mathevents_off.clone() + n_math_slots.times(8);
+        self.zctol_off.clone() + lit(8)
+    }
+
+    /// The per-variable attributes, sensitivities and the DAE-mode vectors.
+    fn attrs(&mut self, at: T, c: &LayoutCounts<T>) -> T {
+        let n_real = Self::n_real(c);
+        self.start_off = at;
+        self.real_nom_off = self.start_off.clone() + n_real.clone().times(8);
+        self.state_nom_off = self.real_nom_off.clone() + n_real.times(8);
+        self.state_max_off = self.state_nom_off.clone() + c.n_states.clone().times(8);
+        self.state_min_off = self.state_max_off.clone() + c.n_states.clone().times(8);
+        self.sens_off = self.state_min_off.clone() + c.n_states.clone().times(8);
+        self.dae_res_off = self.sens_off.clone() + c.n_sens.clone().times(8);
+        self.dae_aux_off = self.dae_res_off.clone() + c.n_dae_res.clone().times(8);
+        self.dae_alg_nom_off = self.dae_aux_off.clone() + c.n_dae_aux.clone().times(8);
+        self.dae_alg_nom_off.clone() + c.n_dae_alg.clone().times(8)
+    }
+
+    fn clocks(&mut self, at: T, c: &LayoutCounts<T>) -> T {
+        self.clock_off = at;
+        self.subclock_off = self.clock_off.clone() + c.n_base_clocks.clone().times(BASECLOCK_BYTES);
+        self.clock_fire_off = self.subclock_off.clone() + c.n_sub_clocks.clone().times(SUBCLOCK_BYTES);
+        self.linz_off = (self.clock_fire_off.clone() + c.n_base_clocks.clone().times(4)).align8();
+        self.linz_off.clone() + c.n_linz.clone().times(8)
+    }
+
+    fn opt(&mut self, at: T, c: &LayoutCounts<T>) -> T {
+        self.opt_min_off = at;
+        self.opt_max_off = self.opt_min_off.clone() + c.n_opt_attr.clone().times(8);
+        self.opt_nom_off = self.opt_max_off.clone() + c.n_opt_attr.clone().times(8);
+        self.opt_use_nom_off = self.opt_nom_off.clone() + c.n_opt_attr.clone().times(8);
+        (self.opt_use_nom_off.clone() + c.n_opt_attr.clone().times(4)).align8()
+    }
+
+    fn log(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
+        let lit = T::lit;
+        self.attr_log_off = at;
+        self.removed_init_res_off = self.attr_log_off.clone() + c.n_attr_log.clone().times(8);
+        self.removed_init_idx_off = self.removed_init_res_off.clone() + lit(8);
+        self.inline_dt_off = (self.removed_init_idx_off.clone() + lit(4)).align8();
+        self.inline_dt_off.clone() + lit(if f.sym_solver > 0 { 8 } else { 0 })
+    }
+
+    fn inline_old(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
+        self.alg_old_off = at.clone();
+        at + if f.sym_solver > 0 { c.n_states.clone().times(8) } else { T::lit(0) }
+    }
+}
+
+impl Layout {
     /// Byte offset of base clock `i`'s state block.
     pub fn base_clock_off(&self, i: u32) -> u32 {
         self.clock_off + i * BASECLOCK_BYTES
@@ -485,8 +710,8 @@ impl Layout {
     /// Offset of the `pre()` slot mirroring a live variable slot at byte offset
     /// `off`, if `off` is in a variable region that carries pre-values.
     pub fn pre_slot_off(&self, off: u32) -> Option<u32> {
-        if off >= REAL_OFF && off < self.rparam_off {
-            Some(self.pre_real_off + (off - REAL_OFF))
+        if off >= self.real_off && off < self.rparam_off {
+            Some(self.pre_real_off + (off - self.real_off))
         } else if off >= self.int_off && off < self.iparam_off {
             Some(self.pre_int_off + (off - self.int_off))
         } else if off >= self.bool_off && off < self.bparam_off {
@@ -1278,6 +1503,8 @@ pub struct SimMeta {
     pub recon: Option<ReconInfo>,
     /// `+profiling`; `None` for a model translated without it.
     pub prof: Option<ProfInfo>,
+    /// The symbolic sizes of a model with resizable arrays ([`resize`]).
+    pub resize: Option<Resize>,
 }
 
 /// One `input` variable. C writes the file's value both to the `start` attribute,
@@ -1563,6 +1790,10 @@ impl SimMeta {
 
     /// Replace each [`VarArray`] entry of `vars` and of `soti.reals` by its elements.
     pub fn expand_arrays(&mut self) {
+        // A resizable model's dims are known once `resolve_sizes` ran.
+        if self.resize.as_ref().is_some_and(|r| r.values.is_empty()) {
+            return;
+        }
         let arrays = core::mem::take(&mut self.var_arrays);
         self.vars = expand_var_arrays(core::mem::take(&mut self.vars), &arrays);
         let arrays = core::mem::take(&mut self.soti.real_arrays);
@@ -1571,6 +1802,12 @@ impl SimMeta {
 
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
         use crate::omclog::{self, STDOUT};
+        if self.resize.as_ref().is_some_and(|r| r.values.is_empty()) {
+            if let Err(e) = self.resolve_sizes(&f.overrides) {
+                omclog::error(STDOUT, false, &e);
+                let _ = self.resolve_sizes(&[]);
+            }
+        }
         let translated = self.translated_step_size();
         let mut recalc = false;
         if let Some(t) = f.start_time {
@@ -1660,7 +1897,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 22;
+const VERSION: u32 = 23;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());
@@ -1699,7 +1936,7 @@ fn put_layout(o: &mut Vec<u8>, l: &Layout) {
         l.n_attr_log, l.attr_log_off,
         l.n_removed_init, l.removed_init_res_off, l.removed_init_idx_off,
         l.inline_dt_off, l.alg_old_off,
-        l.total,
+        l.total, l.real_off, l.table_off, l.n_table,
     ] {
         put_u32(o, v);
     }
@@ -2124,6 +2361,7 @@ pub fn encode(m: &SimMeta) -> Vec<u8> {
             o.push(d.inverse as u8);
         }
     }
+    resize::put_resize(&mut o, &m.resize);
     o
 }
 
@@ -2272,6 +2510,9 @@ impl<'a> Reader<'a> {
             inline_dt_off: self.u32()?,
             alg_old_off: self.u32()?,
             total: self.u32()?,
+            real_off: self.u32()?,
+            table_off: self.u32()?,
+            n_table: self.u32()?,
             sym_solver: 0,
             has_when: false,
             has_homotopy: false,
@@ -2690,12 +2931,13 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         }
         units.push(UnitDef { name, base, display_units });
     }
+    let resize = resize::get_resize(r.b, &mut r.p)?;
     let mut meta = SimMeta {
         layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
         output_format, prefix,
         model_name, vars, var_arrays, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, rel_desc, params, attr_log,
         removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
-        parmod,
+        parmod, resize,
     };
     meta.expand_arrays();
     Ok(meta)
@@ -2884,6 +3126,7 @@ mod tests {
                 equations: vec![ProfEq { id: 0, defines: vec![] }, ProfEq { id: 1, defines: vec!["x".to_string()] }],
                 blocks: vec![1],
             }),
+            resize: None,
         }
     }
 

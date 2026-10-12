@@ -62,6 +62,7 @@
 #include "imagesizedlg.h"
 #include "notebook.h"
 #include "notebookcommands.h"
+#include "cursorposvisitor.h"
 #include "otherdlg.h"
 #include "stylesheet.h"
 #include "searchform.h"
@@ -143,6 +144,7 @@ NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
   createCellMenu();
   createFormatMenu();
   createInsertMenu();
+  createViewMenu();
   createWindowMenu();
   createAboutMenu();
 
@@ -222,6 +224,8 @@ NotebookWindow::~NotebookWindow()
 {
   //2006-01-27 AF, remove document view from application list
   application()->removeDocumentView( this );
+
+  qApp->removeEventFilter( this );
 
   //2006-01-05 AF, add all inputcell to removelist on highlighter
   RemoveHighlighterVisitor visitor;
@@ -1387,6 +1391,475 @@ void NotebookWindow::createInsertMenu()
   *
   * \brief Method for creating window nemu.
   */
+void NotebookWindow::createViewMenu()
+{
+  auto viewMenu = menuBar()->addMenu( tr("&View") );
+
+  // Ctrl++ and Ctrl+- are already used by Format->Size (font size of the selection)
+  zoomInAction = new QAction( tr("Zoom &In"), this );
+  zoomInAction->setStatusTip( tr("Enlarge the displayed text of the cells (the notebook is not changed)") );
+  connect( zoomInAction, SIGNAL( triggered() ), this, SLOT( zoomTextIn() ));
+  viewMenu->addAction( zoomInAction );
+
+  zoomOutAction = new QAction( tr("Zoom &Out"), this );
+  zoomOutAction->setStatusTip( tr("Reduce the displayed text of the cells (the notebook is not changed)") );
+  connect( zoomOutAction, SIGNAL( triggered() ), this, SLOT( zoomTextOut() ));
+  viewMenu->addAction( zoomOutAction );
+
+  zoomResetAction = new QAction( tr("&Reset Zoom"), this );
+  zoomResetAction->setShortcut( QKeySequence("Ctrl+0") );
+  zoomResetAction->setStatusTip( tr("Display the text of the cells in its original size") );
+  connect( zoomResetAction, SIGNAL( triggered() ), this, SLOT( zoomTextReset() ));
+  viewMenu->addAction( zoomResetAction );
+
+  // the zoom is done by a paint device with scaled resolution
+  zoomDevice_ = QImage( 1, 1, QImage::Format_ARGB32 );
+  zoomResetAction->setEnabled( false );
+
+  // Ctrl (macOS: Cmd) + mouse wheel zooms the texts, see eventFilter()
+  qApp->installEventFilter( this );
+}
+
+namespace {
+  const std::array zoomSteps = { 50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400 };
+}
+
+void NotebookWindow::zoomTextIn()
+{
+  for( int step : zoomSteps )
+  {
+    if( step > textZoom_ )
+    {
+      setTextZoom( step );
+      return;
+    }
+  }
+}
+
+void NotebookWindow::zoomTextOut()
+{
+  for( int i = zoomSteps.size() - 1; i >= 0; --i )
+  {
+    if( zoomSteps[i] < textZoom_ )
+    {
+      setTextZoom( zoomSteps[i] );
+      return;
+    }
+  }
+}
+
+void NotebookWindow::zoomTextReset()
+{
+  setTextZoom( 100 );
+}
+
+/*!
+  * \brief Sets the zoom of the cell texts in percent.
+  *
+  * Only the display is scaled, the notebook content (font sizes in the
+  * cells, the saved .onb file) and the size of the GUI are not changed.
+  * All text, also text with a fixed font size from the cell style, is scaled
+  * by giving the text layout a paint device with a scaled resolution.
+  * (QTextEdit::zoomIn() doesn't work here, it ignores fixed font sizes.)
+  */
+void NotebookWindow::setTextZoom( int percent )
+{
+  if( percent == textZoom_ )
+    return;
+
+  // remember which part of the document has to stay in place
+  captureZoomAnchor();
+
+  // The cells change their height. Don't let the document scroll the active
+  // cell into view meanwhile, the zoom scrolls to the remembered place itself.
+  subject_->blockScrollUpdates( true );
+
+  textZoom_ = percent;
+
+  const double dpi = logicalDpiY() * percent / 100.0;
+  const int dotsPerMeter = qRound( dpi / 0.0254 );
+  zoomDevice_.setDotsPerMeterX( dotsPerMeter );
+  zoomDevice_.setDotsPerMeterY( dotsPerMeter );
+
+  zoomResetAction->setEnabled( percent != 100 );
+  statusBar()->showMessage( tr("Zoom: %1%").arg( percent ), 3000 );
+
+  // cells that are created later (open file, new cell) are zoomed in eventFilter()
+  applyTextZoom();
+
+  // The cells have new heights now. Scroll so that the remembered point of the
+  // document is at the same place as before. The layouts that run later in the
+  // event loop can change positions again, so repeat it afterwards.
+  restoreZoomAnchor();
+  QTimer::singleShot( 0, this, [this]() { restoreZoomAnchor(); });
+  QTimer::singleShot( 50, this, [this]() { restoreZoomAnchor(); });
+
+  // height changes can still be reported a little later (layouts, queued updates)
+  QTimer::singleShot( 150, this, [this]() { subject_->blockScrollUpdates( false ); });
+}
+
+namespace {
+  /*!
+    * \brief Calculates the vertical position of a cell in the document from the
+    * heights of the cells before it, like CursorPosVisitor does.
+    *
+    * The positions of the cell widgets can't be used right after the cells got
+    * new heights: the layouts of the (nested) cell groups are not finished yet.
+    * The heights of the cells are up to date immediately.
+    * Cells in closed groups are not visible and not counted.
+    */
+  class CellTopVisitor : public Visitor
+  {
+  public:
+    explicit CellTopVisitor( QWidget *target ) : target_( target ) {}
+    bool found() const { return found_; }
+    int top() const { return top_; }
+
+    void visitCellNodeBefore( Cell * ) override {}
+    void visitCellNodeAfter( Cell * ) override {}
+
+    void visitCellGroupNodeBefore( CellGroup *node ) override
+    {
+      check( node );
+      if( !closedGroup_ && node->isClosed() )
+        closedGroup_ = node;
+    }
+    void visitCellGroupNodeAfter( CellGroup *node ) override
+    {
+      if( closedGroup_ == node )
+      {
+        position_ += node->height();
+        closedGroup_ = nullptr;
+      }
+    }
+
+    void visitTextCellNodeBefore( TextCell *node ) override { check( node ); }
+    void visitTextCellNodeAfter( TextCell *node ) override { add( node ); }
+    void visitGraphCellNodeBefore( GraphCell *node ) override { check( node ); }
+    void visitGraphCellNodeAfter( GraphCell *node ) override { add( node ); }
+    void visitLatexCellNodeBefore( LatexCell *node ) override { check( node ); }
+    void visitLatexCellNodeAfter( LatexCell *node ) override { add( node ); }
+    void visitInputCellNodeBefore( InputCell *node ) override { check( node ); }
+    void visitInputCellNodeAfter( InputCell *node ) override { add( node ); }
+    void visitCellCursorNodeBefore( CellCursor *node ) override { check( node ); }
+    void visitCellCursorNodeAfter( CellCursor *node ) override { add( node ); }
+
+  private:
+    void check( QWidget *node )
+    {
+      if( node == target_ && !found_ && !closedGroup_ )
+      {
+        found_ = true;
+        top_ = position_;
+      }
+    }
+    void add( QWidget *node )
+    {
+      if( !closedGroup_ )
+        position_ += node->height();
+    }
+
+    QWidget *target_;
+    CellGroup *closedGroup_ = nullptr;
+    bool found_ = false;
+    int top_ = 0;
+    int position_ = 0;
+  };
+
+  // Let the pending layout work run now: positions of widgets and the scroll
+  // range are updated, also for nested cell groups.
+  void settleLayouts()
+  {
+    for( int i = 0; i < 8; ++i )
+      QCoreApplication::sendPostedEvents( nullptr, QEvent::LayoutRequest );
+  }
+}
+
+/*!
+  * \brief Remembers the point of the document that has to keep its place on
+  * the screen when the zoom changes.
+  *
+  * Visible active cell: its top (the topmost visible part), except for wheel zoom
+  * with the mouse over the active cell, there the point under the mouse.
+  * No visible active cell: the point under the mouse (wheel zoom) or the middle
+  * of the visible area (menu/keyboard zoom).
+  */
+void NotebookWindow::captureZoomAnchor()
+{
+  zoomAnchorCell_ = nullptr;
+
+  // a previous zoom step can still be in progress (fast wheel)
+  settleLayouts();
+
+  QScrollArea *scroll = documentScrollArea();
+  if( !scroll || !scroll->widget() )
+    return;
+
+  QWidget *viewport = scroll->viewport();
+  QWidget *under = nullptr;
+  int refY = 0;
+
+  // The active cell, if it is (partly) visible. It must not get lost by the zoom.
+  QWidget *visibleActive = nullptr;
+  int activeRefY = 0;
+  CellCursor *cursor = subject_->getCursor();
+  Cell *active = cursor ? cursor->currentCell() : nullptr;
+  if( active && scroll->widget()->isAncestorOf( active ) )
+  {
+    const int top = active->mapTo( viewport, QPoint( 0, 0 ) ).y();
+    if( top + active->height() > 0 && top < viewport->height() )
+    {
+      visibleActive = active;
+      activeRefY = qMax( top, 0 );   // the topmost visible part of the cell
+    }
+  }
+
+  if( zoomByMouse_ && zoomMouseWidget_ )
+  {
+    // Wheel: the point under the mouse stays in place. Exception: the active
+    // cell is visible, but the mouse is somewhere else. Then the active cell
+    // stays in place, otherwise it would move away and may leave the window.
+    const bool mouseOnActive = visibleActive &&
+      ( zoomMouseWidget_ == visibleActive || visibleActive->isAncestorOf( zoomMouseWidget_ ) );
+
+    if( visibleActive && !mouseOnActive )
+    {
+      under = visibleActive;
+      refY = activeRefY;
+    }
+    else
+    {
+      under = zoomMouseWidget_;
+      refY = viewport->mapFromGlobal( zoomMousePos_ ).y();
+    }
+  }
+  else if( visibleActive )
+  {
+    // Menu/keyboard: the active cell stays in place
+    under = visibleActive;
+    refY = activeRefY;
+  }
+  else
+  {
+    // no (visible) active cell: keep the middle of the visible area
+    refY = viewport->height() / 2;
+    under = QApplication::widgetAt( viewport->mapToGlobal( QPoint( viewport->width() / 2, refY ) ) );
+  }
+
+  // the innermost cell at that point
+  QWidget *cell = nullptr;
+  for( QWidget *w = under; w; w = w->parentWidget() )
+  {
+    if( dynamic_cast<Cell*>( w ) )
+    {
+      cell = w;
+      break;
+    }
+  }
+  if( !cell || !( scroll->widget() == cell || scroll->widget()->isAncestorOf( cell ) ) )
+    return;
+
+  CellTopVisitor visitor( cell );
+  subject_->runVisitor( visitor );
+  if( !visitor.found() )
+    return;
+
+  const int cellTop = cell->mapTo( scroll->widget(), QPoint( 0, 0 ) ).y();
+  const int contentY = scroll->verticalScrollBar()->value() + refY;
+
+  zoomAnchorOffset_ = cellTop - visitor.top();
+  zoomAnchorCell_ = cell;
+  zoomAnchorFraction_ = qBound( 0.0, double( contentY - cellTop ) / qMax( 1, cell->height() ), 1.0 );
+  zoomAnchorViewportY_ = refY;
+}
+
+/*!
+  * \brief Scrolls the document so that the point remembered by
+  * captureZoomAnchor() is at its old place on the screen.
+  */
+void NotebookWindow::restoreZoomAnchor()
+{
+  if( !zoomAnchorCell_ )
+    return;
+
+  QScrollArea *scroll = documentScrollArea();
+  if( !scroll || !scroll->widget() )
+    return;
+
+  // Cell heights have just been changed. Let the (nested) layouts update the
+  // scroll range now, not at the next event loop run.
+  settleLayouts();
+
+  // The position of the cell comes from the cell heights, not from the widget
+  // position: that is still the old one, as long as the layouts of the cell
+  // groups are not finished. The (constant) difference between both was
+  // measured before the zoom.
+  CellTopVisitor visitor( zoomAnchorCell_ );
+  subject_->runVisitor( visitor );
+  if( !visitor.found() )
+    return;
+
+  const int cellTop = visitor.top() + zoomAnchorOffset_;
+  const int contentY = cellTop + qRound( zoomAnchorFraction_ * zoomAnchorCell_->height() );
+  scroll->verticalScrollBar()->setValue( contentY - zoomAnchorViewportY_ );
+}
+
+/*!
+  * \brief The scroll area that contains the cells.
+  *
+  * There can be more than one QScrollArea in the window: CellDocument::setWorkspace()
+  * creates a new one each time and leaves the old (empty) one. findChild() would
+  * return the wrong one.
+  */
+QScrollArea *NotebookWindow::documentScrollArea()
+{
+  CellCursor *cursor = subject_->getCursor();
+  for( QWidget *w = cursor; w; w = w->parentWidget() )
+  {
+    if( QScrollArea *area = qobject_cast<QScrollArea*>( w ) )
+      return area;
+  }
+  return nullptr;
+}
+
+namespace {
+  // immediate: now (needed to scroll to the right place afterwards), otherwise in the event loop
+  void requestCellHeightUpdate( QWidget *editor, bool immediate )
+  {
+    for( QWidget *w = editor->parentWidget(); w; w = w->parentWidget() )
+    {
+      if( Cell *cell = dynamic_cast<Cell*>( w ) )
+      {
+        bool success = QMetaObject::invokeMethod( cell, &Cell::contentChanged,
+                                   immediate ? Qt::DirectConnection : Qt::QueuedConnection );
+        Q_ASSERT(success);
+        return;
+      }
+    }
+  }
+}
+
+void NotebookWindow::applyTextZoom()
+{
+  const QList<QTextEdit*> editors = centralWidget()->findChildren<QTextEdit*>();
+  for( QTextEdit *editor : editors )
+    applyTextZoom( editor, true );
+
+  // the code editor of a GraphCell is a QPlainTextEdit (not a QTextEdit)
+  const QList<QPlainTextEdit*> codeEditors = centralWidget()->findChildren<QPlainTextEdit*>();
+  for( QPlainTextEdit *editor : codeEditors )
+    applyTextZoom( editor, true );
+}
+
+void NotebookWindow::applyTextZoom( QTextEdit *editor, bool immediate )
+{
+  QAbstractTextDocumentLayout *layout = editor->document()->documentLayout();
+  if( !layout )
+    return;
+
+  if( textZoom_ == 100 )
+    layout->setPaintDevice( editor->viewport() );
+  else
+    layout->setPaintDevice( &zoomDevice_ );
+
+  editor->document()->markContentsDirty( 0, editor->document()->characterCount() );
+  editor->viewport()->update();
+
+  requestCellHeightUpdate( editor, immediate );
+}
+
+/*!
+  * \brief Zoom for a QPlainTextEdit (code editor of the GraphCell).
+  *
+  * All text of such an editor uses the font of the widget, so the zoom scales
+  * the widget font. The original size is remembered in a property of the
+  * editor. Child widgets (the line number area) follow the font of the editor.
+  */
+void NotebookWindow::applyTextZoom( QPlainTextEdit *editor, bool immediate )
+{
+  static const char *baseSizeProperty = "omnotebookZoomBaseSize";
+
+  QFont font = editor->font();
+  const bool usePoints = font.pointSizeF() > 0;
+  if( !editor->property( baseSizeProperty ).isValid() )
+    editor->setProperty( baseSizeProperty,
+                         usePoints ? font.pointSizeF() : static_cast<qreal>( font.pixelSize() ) );
+
+  const qreal size = editor->property( baseSizeProperty ).toReal() * textZoom_ / 100.0;
+  if( usePoints )
+    font.setPointSizeF( size );
+  else
+    font.setPixelSize( qMax( 1, qRound( size ) ) );
+
+  if( font == editor->font() )
+    return;
+
+  editor->setFont( font );
+  editor->viewport()->update();
+
+  requestCellHeightUpdate( editor, immediate );
+}
+
+/*!
+  * \brief Applies the zoom to text editors that are shown after the zoom was set
+  * (new cells, opened notebooks, opened cell groups).
+  */
+bool NotebookWindow::eventFilter( QObject *obj, QEvent *event )
+{
+  // Ctrl (macOS: Cmd, Qt reports it as ControlModifier) + mouse wheel changes the zoom
+  if( event->type() == QEvent::Wheel )
+  {
+    QWheelEvent *wheel = static_cast<QWheelEvent*>( event );
+    QWidget *widget = qobject_cast<QWidget*>( obj );
+    if( widget && centralWidget() && ( wheel->modifiers() & Qt::ControlModifier ) &&
+        wheel->angleDelta().y() != 0 &&
+        ( widget == centralWidget() || centralWidget()->isAncestorOf( widget ) ) )
+    {
+      const int delta = wheel->angleDelta().y();
+      if( zoomWheelDelta_ * delta < 0 )   // direction changed
+        zoomWheelDelta_ = 0;
+      zoomWheelDelta_ += delta;
+
+      // the point under the mouse keeps its place while zooming
+      zoomByMouse_ = true;
+      zoomMousePos_ = wheel->globalPosition().toPoint();
+      zoomMouseWidget_ = widget;
+
+      // one step per notch (120), touchpads send many small values
+      while( zoomWheelDelta_ >= 120 )
+      {
+        zoomTextIn();
+        zoomWheelDelta_ -= 120;
+      }
+      while( zoomWheelDelta_ <= -120 )
+      {
+        zoomTextOut();
+        zoomWheelDelta_ += 120;
+      }
+
+      zoomByMouse_ = false;
+      zoomMouseWidget_ = nullptr;
+      return true;
+    }
+  }
+
+  if( event->type() == QEvent::Show && textZoom_ != 100 )
+  {
+    if( QTextEdit *editor = qobject_cast<QTextEdit*>( obj ) )
+    {
+      if( editor->window() == this &&
+          editor->document()->documentLayout()->paintDevice() != &zoomDevice_ )
+        applyTextZoom( editor );
+    }
+    else if( QPlainTextEdit *codeEditor = qobject_cast<QPlainTextEdit*>( obj ) )
+    {
+      if( codeEditor->window() == this )
+        applyTextZoom( codeEditor );
+    }
+  }
+  return DocumentView::eventFilter( obj, event );
+}
+
 void NotebookWindow::createWindowMenu()
 {
   windowMenu = menuBar()->addMenu( tr("&Window") );
@@ -3294,6 +3767,38 @@ void NotebookWindow::redoEdit()
   if( doc ) doc->redo();
 }
 
+namespace {
+  // The text of a cell as it is visible on the screen: a closed group shows
+  // only its first cell, an open group all its cells.
+  QString visibleCellText( Cell *cell )
+  {
+    if( !dynamic_cast<CellGroup *>( cell ) )
+      return cell->text();
+
+    QStringList texts;
+    for( Cell *child = cell->child(); child; child = child->next() )
+    {
+      // the cell cursor is part of the cell list, but it is not a cell of the group
+      if( dynamic_cast<CellCursor *>( child ) )
+        continue;
+
+      texts << visibleCellText( child );
+      if( cell->isClosed() )
+        break;
+    }
+    return texts.join( "\n\n" );
+  }
+
+  // The text of the cells, as plain text for the clipboard of the system
+  QString cellsText( const std::vector<Cell *> &cells )
+  {
+    QStringList texts;
+    for( Cell *cell : cells )
+      texts << visibleCellText( cell );
+    return texts.join( "\n\n" );
+  }
+}
+
 /*!
   * \author Anders Fernström
   * \date 2006-02-03
@@ -3308,8 +3813,13 @@ void NotebookWindow::cutEdit()
 {
   if( subject_ )
   {
-    if( subject_->getSelection().size() > 0 )
+    const std::vector<Cell *> cells = subject_->getSelection();
+    if( cells.size() > 0 )
+    {
+      const QString text = cellsText( cells );
       cutCell();
+      putCellsOnClipboard( text );
+    }
     else
       subject_->textcursorCutText();
   }
@@ -3329,8 +3839,13 @@ void NotebookWindow::copyEdit()
 {
   if( subject_ )
   {
-    if( subject_->getSelection().size() > 0 )
+    const std::vector<Cell *> cells = subject_->getSelection();
+    if( cells.size() > 0 )
+    {
+      const QString text = cellsText( cells );
       copyCell();
+      putCellsOnClipboard( text );
+    }
     else
       subject_->textcursorCopyText();
   }
@@ -3343,18 +3858,58 @@ void NotebookWindow::copyEdit()
   *
   * \brief Method for pasteing text
   *
-  * 2006-04-27 AF, if the cell cursor is selected, paste
-  * cell instead of text.
+  * Pastes the copied cells at the position of the cell cursor if the
+  * clipboard contains the mark of a cell copy, otherwise the text.
   */
 void NotebookWindow::pasteEdit()
 {
   if( subject_ )
   {
-    if( subject_->getCursor()->isClickedOn() )
+    if( cellsOnClipboard() )
       pasteCell();
     else
       subject_->textcursorPasteText();
   }
+}
+
+namespace {
+  // The copied cells are in the pasteboard of the application. The clipboard of
+  // the system gets the text of the cells and a mark in this format.
+  const char cellsMimeType[] = "application/x-openmodelica-notebook-cells";
+  int cellsCopyCounter = 0;   // the same for all windows of the process
+
+  QString cellsCopyId()
+  {
+    return QString( "%1:%2" ).arg( QCoreApplication::applicationPid() ).arg( cellsCopyCounter );
+  }
+}
+
+/*!
+  * \brief Puts the text of the copied cells and the mark of a cell copy on the
+  * clipboard of the system.
+  */
+void NotebookWindow::putCellsOnClipboard( const QString &text )
+{
+  if( application()->pasteboard().size() == 0 )
+    return;
+
+  ++cellsCopyCounter;
+  QMimeData *mime = new QMimeData;
+  mime->setText( text );
+  mime->setData( cellsMimeType, cellsCopyId().toUtf8() );
+  qApp->clipboard()->setMimeData( mime );
+}
+
+/*!
+  * \brief True if the last thing that was copied to the clipboard are the cells
+  * in the pasteboard of the application.
+  */
+bool NotebookWindow::cellsOnClipboard()
+{
+  const QMimeData *mime = qApp->clipboard()->mimeData();
+  return mime && mime->hasFormat( cellsMimeType ) &&
+         QString::fromUtf8( mime->data( cellsMimeType ) ) == cellsCopyId() &&
+         application()->pasteboard().size() > 0;
 }
 
 /*!

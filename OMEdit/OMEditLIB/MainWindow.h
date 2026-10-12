@@ -489,6 +489,7 @@ private:
   QAction *mpNewAnimationWindowAction;
 #endif
   QAction *mpDiagramWindowAction;
+  QAction *mpSaveFigureInModelAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
   // OMSimulator Actions

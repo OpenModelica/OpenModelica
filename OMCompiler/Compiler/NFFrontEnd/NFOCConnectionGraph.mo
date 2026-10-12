@@ -239,7 +239,7 @@ algorithm
     print("Branches: " + intString(listLength(getBranches(graph))) + ", connections: " + intString(listLength(getConnections(graph)))
       + ", potential roots: " + intString(listLength(getPotentialRoots(graph))) + "\n");
   end if;
-  rooted := buildRootedTable(roots, graph);
+  rooted := buildRootedTable(roots, connected, graph);
   flatModel.variables := list(evalConnectionsOperatorsVar(roots, rooted, graph, v) for v in flatModel.variables);
   flatModel.equations := list(Equation.mapExp(eq,
       function evaluateOperators(rooted = rooted, roots = roots, graph = graph, info = Equation.info(eq)))
@@ -565,7 +565,7 @@ algorithm
       print("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", ") + "\n");
     end if;
 
-    rooted := buildRootedTable(roots, graph);
+    rooted := buildRootedTable(roots, connected, graph);
     flatModel.variables := list(evalConnectionsOperatorsVar(roots, rooted, graph, v) for v in flatModel.variables);
     flatModel.equations := evalConnectionsOperatorsEqs(roots, rooted, graph, flatModel.equations);
     flatModel.initialEquations := evalConnectionsOperatorsEqs(roots, rooted, graph, flatModel.initialEquations);
@@ -1057,7 +1057,9 @@ algorithm
 end printPotentialRootTuple;
 
 protected function buildRootedTable
+  "Distances to the roots in the spanning tree, i.e. without the broken connections."
   input list<ComponentRef> roots;
+  input FlatEdges connected;
   input NFOCConnectionGraph graph;
   output CrefIndexTable rooted;
 protected
@@ -1067,7 +1069,7 @@ algorithm
 
   // Add branches and connections to table.
   List.map1_0(getBranches(graph), addBranches, table);
-  List.map1_0(getConnections(graph), addConnectionsRooted, table);
+  List.map1_0(connected, addConnectionsRooted, table);
 
   // Get distance to root.
   rooted := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);

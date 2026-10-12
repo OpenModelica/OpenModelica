@@ -119,6 +119,13 @@ constant Integer uncertaintyExtraction = 41;
 // C names of the records whose members own nothing, so the generated C code
 // neither retains nor releases them. Set by SimCodeFunctionUtil.setTrivialRecords.
 constant Integer trivialRecords = 42;
+// The variables the old backend only computes at initialization, which
+// SimCodeCodegenUtil.timeEventTrigger treats like parameters:
+// SOME(UnorderedSet<DAE.ComponentRef>). Set by SimCodeUtil.createSimCode.
+constant Integer timeIndependentVars = 43;
+// Names of the parameters translateModel makes the frontend evaluate, since a
+// coefficient the backend solved an equation with is zero for their values.
+constant Integer structuralParameters = 44;
 
 // indexes in System.tick
 // ----------------------
@@ -165,6 +172,8 @@ algorithm
   setGlobalRoot(nfDiagramIconCache, NONE());
   setGlobalRoot(uncertaintyExtraction, NONE());
   setGlobalRoot(trivialRecords, {});
+  setGlobalRoot(timeIndependentVars, NONE());
+  setGlobalRoot(structuralParameters, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

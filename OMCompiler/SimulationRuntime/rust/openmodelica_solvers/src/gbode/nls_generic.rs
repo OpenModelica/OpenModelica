@@ -254,8 +254,8 @@ impl GbNlsGeneric {
             size,
             ftol,
             sym_jac,
-            j: vec![0.0; n_states * n_states],
-            jac: vec![0.0; size * size],
+            j: Vec::new(),
+            jac: Vec::new(),
             factored: None,
             fbase: vec![0.0; n_states],
             n_jac_evals: 0,
@@ -270,6 +270,8 @@ impl GbNlsGeneric {
     fn eval_ode_jacobian(&mut self, ode: &mut dyn Ode, time: f64, y: &[f64]) -> Result<()> {
         let n = self.n_states;
         self.n_jac_evals += 1;
+        // Dense, so only the solver without the hook pays for it.
+        self.j.resize(n * n, 0.0);
         let colors: Vec<Vec<u32>> = match ode.jac_colors() {
             [] => (0..n as u32).map(|c| vec![c]).collect(),
             c => c.to_vec(),
@@ -348,6 +350,7 @@ impl GbNlsGeneric {
     ) -> Result<()> {
         self.eval_ode_jacobian(ode, jac_time, jac_y)?;
         let mut jac = core::mem::take(&mut self.jac);
+        jac.resize(self.size * self.size, 0.0);
         res.assemble(&self.j, self.n_states, &mut jac);
         self.jac = jac;
         self.factored = Some(super::linsol::factor(&self.jac, self.size)?);

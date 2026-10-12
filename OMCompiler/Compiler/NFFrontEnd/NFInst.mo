@@ -4408,6 +4408,16 @@ algorithm
   end match;
 end updateImplicitVariability;
 
+function isForcedStructural
+  "Whether translateModel asked to evaluate the parameter, see Global.structuralParameters."
+  input InstNode node;
+  output Boolean res;
+protected
+  list<String> names = getGlobalRoot(Global.structuralParameters);
+algorithm
+  res := not listEmpty(names) and listMember(AbsynUtil.pathString(InstNode.scopePath(node)), names);
+end isForcedStructural;
+
 function updateImplicitVariabilityComp
   input InstNode component;
   input Boolean parentEval;
@@ -4440,7 +4450,8 @@ algorithm
           InstNode.updateComponent(Component.setVariability(Variability.NON_STRUCTURAL_PARAMETER, c), node);
         else
           // Otherwise check if we should mark it as structural.
-          if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval, context) then
+          if Structural.isStructuralComponent(c, c.attributes, binding, node,
+               eval or (c.attributes.variability == Variability.PARAMETER and isForcedStructural(node)), parentEval, context) then
             Structural.markComponent(c, node);
           end if;
         end if;
