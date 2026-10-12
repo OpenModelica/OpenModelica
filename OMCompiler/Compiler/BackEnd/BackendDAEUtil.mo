@@ -6209,6 +6209,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e1, e2, e3;
+      BinaryTree.BinTree bt, bt1, bt2;
       list<BackendDAE.Var> varslst;
       Boolean b, b1, b2, bs, isInitial;
       Integer mark, i;
@@ -6290,12 +6291,19 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, false, _, _, _))
     then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
 
-    // homotopy operator for initialization system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
+    // homotopy operator for initialization system: like an if-expression,
+    // the equation cannot be solved for a variable that is missing in one of
+    // the two expressions (only one of them is left at lambda = 0 and lambda = 1)
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (vars, bs, true, it, at, pa))
       algorithm
-        (_, b1, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
-        (_, b2, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
-    then (inExp, b1 and b2, tpl);
+        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, true, it, at, pa));
+        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, true, it, at, pa));
+        (_, bt1) := Expression.traverseExpTopDown(e1, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+        (_, bt2) := Expression.traverseExpTopDown(e2, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+        bt := BinaryTree.binTreeintersection(bt1, bt2, BinaryTree.emptyBinTree);
+        Expression.traverseExpTopDown(e1, markBranchVars, (it, at, vars, bt));
+        Expression.traverseExpTopDown(e2, markBranchVars, (it, at, vars, bt));
+    then (inExp, false, (vars, bs, true, it, at, pa));
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
