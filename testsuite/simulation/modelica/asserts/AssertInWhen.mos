@@ -1,7 +1,7 @@
 // name:     AssertInWhen
 // keywords: assert when event
 // status:   correct
-// teardown_command: rm -rf AssertInWhen* output.log
+// teardown_command: rm -rf AssertInWhen.Equation* AssertInWhen.Algorithm* AssertInWhen.IntermediateIteration* output.log
 //
 // A when-body runs only at the event that activates it, so a violated assert
 // there ends the simulation (#17213). An assert outside a when that is violated
@@ -57,7 +57,7 @@ simulate(AssertInWhen.IntermediateIteration); getErrorString();
 // LOG_ASSERT        | error   | [<interactive>:7:7-7:70:writable]
 // |                 | |       | The following assertion has been violated at time 0.260000
 // |                 | |       | ((not y)) --> \"Test violation that should interrupt execution\"
-// ",
+// "
 // end SimulationResult;
 // ""
 // record SimulationResult
@@ -68,7 +68,7 @@ simulate(AssertInWhen.IntermediateIteration); getErrorString();
 // LOG_ASSERT        | error   | [<interactive>:16:9-16:77:writable]
 // |                 | |       | The following assertion has been violated at time 0.260000
 // |                 | |       | ((time < 0.2)) --> \"Test violation that should interrupt execution\"
-// ",
+// "
 // end SimulationResult;
 // ""
 // record SimulationResult
@@ -80,7 +80,7 @@ simulate(AssertInWhen.IntermediateIteration); getErrorString();
 // |                 | |       | ((a <= b)) --> \"a is ahead of b\"
 // LOG_ASSERT        | info    | Found event, previous asserts are ignored.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// ",
+// "
 // end SimulationResult;
 // ""
 // endResult
