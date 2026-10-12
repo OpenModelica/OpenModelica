@@ -6,6 +6,7 @@ nestedForConnectRange.mos \
 forNestedElseIf.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
+algorithmForSubscript.mos \
 eachScalarProduct.mos \
 ifBranchSizes.mos \
 recordActualStream.mos \
