@@ -168,6 +168,17 @@ public
     end match;
   end main;
 
+  function fmiDerivativeOfState
+    "Return the time derivative belonging to a state variable."
+    input Pointer<Variable> stateVar;
+    output Pointer<Variable> derivativeVar;
+  protected
+    Option<Pointer<Variable>> derivativeOpt;
+  algorithm
+    (derivativeOpt, _) := BVariable.getVarDer(stateVar);
+    derivativeVar := Util.getOption(derivativeOpt);
+  end fmiDerivativeOfState;
+
   function fmiAdjoint
     "Generate the FMI reverse-mode Jacobian, J^T, for fmi3GetAdjointDerivative.
      Its seed/result axes are deliberately different from the simulation ODE
@@ -180,7 +191,7 @@ public
   protected
     BVariable.VarData varData;
     VariablePointers fmiKnowns, fmiUnknowns, partialCandidates;
-    list<Pointer<Variable>> stateVars, inputVars, outputVars;
+    list<Pointer<Variable>> stateVars, derivativeVars, inputVars, outputVars;
     list<StrongComponent> comps = {};
     list<Partition.Partition> partitions;
     EquationPointers equations;
@@ -191,13 +202,18 @@ public
         /* Match the old-backend FMIDER variable sets: knowns = states + inputs,
          * unknowns = der(states) + outputs. FMI derivatives are Float64-only. */
         stateVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.states));
+        /* Keep FMI derivative unknowns in the same state order used by the
+         * runtime's value-reference mapping. varData.derivatives has its own
+         * backend ordering (e.g. reverse causal order), which is not
+         * necessarily the FMI state/derivative order. */
+        derivativeVars := list(fmiDerivativeOfState(stateVar) for stateVar in stateVars);
         inputVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.top_level_inputs));
         outputVars := list(var for var guard(isFMIOutput(var)) in VariablePointers.toList(varData.variables));
         fmiKnowns := VariablePointers.fromList(stateVars, varData.states.scalarized);
         fmiKnowns := VariablePointers.addList(inputVars, fmiKnowns);
         fmiUnknowns := VariablePointers.fromList(
           listAppend(
-            list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.derivatives)),
+            derivativeVars,
             outputVars),
           fmiKnowns.scalarized);
 
@@ -1647,7 +1663,9 @@ protected
     unknown_vars  := listAppend(res_vars, tmp_vars);
     all_vars      := unknown_vars;  // add other vars later on
 
-    seed_vars     := Pointer.access(seed_vars_ptr);
+    /* makeVarTraverse prepends while creating seed variables, so keep the
+     * reversed list computed above; reading the accumulator directly here
+     * would reverse the FMI unknown/seed axis a second time. */
     aux_vars      := seed_vars;     // add other auxiliaries later on. TODO: Need to add the SSA vars and the lambda vars from algebraic loops as auxiliaries?
     alias_vars    := {};
     depend_vars   := {};
