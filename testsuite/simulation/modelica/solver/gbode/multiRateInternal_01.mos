@@ -18,7 +18,7 @@ equation
 end SlowFastDynamics;");
 getErrorString();
 
-setCommandLineOptions("--generateDynamicJacobian=symbolic");
+setCommandLineOptions("--generateDynamicJacobian=symbolic +simCodeTarget=C.old");
 getErrorString();
 
 buildModel(SlowFastDynamics);

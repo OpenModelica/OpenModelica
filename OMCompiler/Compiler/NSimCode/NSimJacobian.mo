@@ -319,9 +319,7 @@ public
             list(SparsityRow.create(e, i, d, r, s) threaded for e in mat.equation_names, i in mat.equation_iterators, d in mat.dependencies, r in mat.repetitions, s in mat.solved_crefs),
             SimVars.numScalarElems(resVars));
           rows := SparsityRow.mergeScalarRows(rows);
-          if not isAdjoint then
-            rows := SparsityRow.sortByResultVars(rows, resVars);
-          end if;
+          rows := SparsityRow.sortByResultVars(rows, resVars);
         then SPARSITY(rows);
         case Adjacency.EMPTY() then EMPTY();
 
@@ -517,7 +515,7 @@ public
           end if;
 
           // the runtime reads column and row i of the ODE Jacobian as state i
-          if jacobian.jacType == NBJacobian.JacobianType.ODE and not jacobian.isAdjoint then
+          if jacobian.jacType == NBJacobian.JacobianType.ODE then
             seed_lst := sortByStateIndex(seed_lst, simcode_map);
             res_lst  := sortByStateIndex(res_lst, simcode_map);
           end if;
@@ -602,7 +600,7 @@ public
             constantEqns        = {},
             columnVars          = tmpVars,
             seedVars            = seedVars,
-            sparsityMatrix      = Sparsity.create(jacobian.sparsity, resVars, jacobian.isAdjoint),
+            sparsityMatrix      = Sparsity.create(jacobian.sparsity, if jacobian.isAdjoint then seedVars else resVars, jacobian.isAdjoint),
             generic_loop_calls  = generic_loop_calls,
             jac_map             = SOME(jac_map),
             isAdjoint           = jacobian.isAdjoint,
