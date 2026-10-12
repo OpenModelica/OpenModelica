@@ -265,6 +265,13 @@ algorithm
   // Add inputs to the argument map. Inputs are never mutable.
   for i in inputs loop
     arg :: rest_args := rest_args;
+
+    // Clone inputs if using mutable parameters, since they might otherwise be
+    // mutated if they're used in mutable outputs/locals.
+    if mutableParams then
+      arg := Expression.clone(arg);
+    end if;
+
     UnorderedMap.add(i, arg, map);
 
     // If the argument is a function partial application, also add the function
