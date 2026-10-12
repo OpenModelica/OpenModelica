@@ -682,6 +682,7 @@ FuncViaComp4.mo \
 FuncViaComp5.mo \
 FuncViaComp6.mo \
 FuncViaComp7.mo \
+FuncViaComp8.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \

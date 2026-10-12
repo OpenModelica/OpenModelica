@@ -166,6 +166,7 @@ setSourceFileListFile.mos \
 setSourceFileMergeAST.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
+SimulateFlag1.mo \
 StateMachine.mos \
 StoreAST.mos \
 strings.mos  \

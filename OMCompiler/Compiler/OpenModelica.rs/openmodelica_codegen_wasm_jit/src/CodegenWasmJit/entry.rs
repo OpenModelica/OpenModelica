@@ -2,6 +2,7 @@
 //! `finishCompile`, `emitStandalone`, `runSimulationWasmtime`.
 
 use super::*;
+use openmodelica_sim_meta::omclog;
 
 /// Mirror `-n` into the engine, before anything reaches the JIT.
 pub(super) fn sync_engine_threading() -> Result<()> {
@@ -45,11 +46,26 @@ pub fn translateModel(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()
 fn init_success_line() -> String {
     let steps = sim_driver::init_homotopy_steps();
     if steps == 0 {
-        "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.".to_string()
+        success_line("The initialization finished successfully without homotopy method.")
     } else {
         let local = if sim_driver::init_homotopy_local() { "local " } else { "" };
-        format!("LOG_SUCCESS       | info    | The initialization finished successfully with {steps} {local}homotopy steps.")
+        success_line(&format!("The initialization finished successfully with {steps} {local}homotopy steps."))
     }
+}
+
+/// One line of the run's own log in the format the driver's lines use: a
+/// `<message>` element under `-logFormat=xml` (as the native runtime's `success`
+/// writes it), so OMEdit parses the whole log, else `text`, the C text layout.
+fn log_line(stream: omclog::Stream, ty: omclog::LogType, text: &str, msg: &str) -> String {
+    if omclog::is_xml() {
+        omclog::xml_element(ty, stream, false, msg, &[])
+    } else {
+        format!("{text}\n")
+    }
+}
+
+fn success_line(msg: &str) -> String {
+    log_line(omclog::SUCCESS, omclog::INFO, &format!("LOG_SUCCESS       | info    | {msg}"), msg)
 }
 
 /// A run reports itself through `<prefix>.log` alone, which `simulate` returns as
@@ -82,12 +98,12 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
     // A failed run keeps the init line too, as C does.
     let init_done = init_output.is_some();
     let init_out = init_output.unwrap_or_default();
-    let init_seg = if init_done { format!("{init_out}{init_line}\n") } else { init_out };
+    let init_seg = if init_done { format!("{init_out}{init_line}") } else { init_out };
     let log = match &res {
         // Init prints, the init line, then the sim prints and the final success.
         Ok(()) => format!(
-            "{init_seg}{sim_output}\
-             LOG_SUCCESS       | info    | The simulation finished successfully.\n{post_output}"
+            "{init_seg}{sim_output}{}{post_output}",
+            success_line("The simulation finished successfully.")
         ),
         // Chattering abort (`-abortSlowSimulation`): the driver's output carries the
         // chattering + aborting lines.
@@ -101,14 +117,16 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         {
             format!("{init_seg}{sim_output}")
         }
-        Err(e) => format!(
-            "{init_seg}{sim_output}LOG_ERROR         | error   | wasm-jit simulation failed: {}\n",
-            with_engine_detail(e)
-        ),
+        Err(e) => {
+            let msg = format!("wasm-jit simulation failed: {}", with_engine_detail(e));
+            let line = log_line(omclog::STDOUT, omclog::ERROR, &format!("LOG_ERROR         | error   | {msg}"), &msg);
+            format!("{init_seg}{sim_output}{line}")
+        }
     };
     // C's `freeNonlinearSystems`, the last thing a simulation executable logs.
-    let log = if openmodelica_sim_meta::omclog::active(openmodelica_sim_meta::omclog::NLS) {
-        format!("{log}LOG_NLS           | info    | free non-linear system solvers\n")
+    let log = if omclog::active(omclog::NLS) {
+        let msg = "free non-linear system solvers";
+        format!("{log}{}", log_line(omclog::NLS, omclog::INFO, &format!("LOG_NLS           | info    | {msg}"), msg))
     } else {
         log
     };

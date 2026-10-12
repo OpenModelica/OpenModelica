@@ -1670,7 +1670,7 @@ protected
         adjacencyVars := VariablePointers.addList(res_vars, adjacencyVars);
       end if;
       // the inner equations of algebraic loops are needed for their dependencies
-      sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in arrayList(Util.getOption(strongComponents))));
+      sparsity_comps := List.flatten(list(withInnerComps(comp) for comp in Util.getOption(strongComponents)));
       fullLocal := Adjacency.Matrix.createFull(adjacencyVars, EquationPointers.fromList(
         List.flatten(list(StrongComponent.getEquations(comp) for comp in sparsity_comps))));
       sparsity := Adjacency.Matrix.fullToSparsity(fullLocal, sparsity_comps, seed_set, pder_set, diff_map);

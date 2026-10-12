@@ -412,6 +412,14 @@ pub fn info_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_
     }
 }
 
+/// C's `infoStreamPrintWithEquationIndexes`: [`info`] naming the equations
+/// involved, which the XML log lists as `<used index=…>`.
+pub fn info_used(stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    if active(stream) {
+        message_text_used(INFO, stream, indent_next, msg, used);
+    }
+}
+
 /// C's `OMC_ACTIVE_WARNING_STREAM`.
 pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
     if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
@@ -475,6 +483,13 @@ pub fn debug(stream: Stream, indent_next: bool, msg: &str) {
 pub fn debug_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_>) {
     if active(stream) {
         message_text(DEBUG_TYPE, stream, indent_next, &alloc::fmt::format(args));
+    }
+}
+
+/// [`debug`] with the equation indexes, as [`info_used`].
+pub fn debug_used(stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    if active(stream) {
+        message_text_used(DEBUG_TYPE, stream, indent_next, msg, used);
     }
 }
 

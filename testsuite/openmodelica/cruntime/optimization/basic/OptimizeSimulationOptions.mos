@@ -1,0 +1,64 @@
+// name: OptimizeSimulationOptions
+// keywords: optimization, simulation options, #17226
+// status: correct
+//
+// optimize() must use the optimization method by default and must not
+// change the default method of later simulate() calls.
+// regexBool(m, "Optimizer Variables") is true only when Ipopt ran.
+//
+
+loadString("
+model Plant
+  Real x(start=1, fixed=true);
+  input Real u(min=-1, max=1);
+  Real cost = x^2 + u^2 annotation(isLagrange=true);
+equation
+  der(x) = -x + u;
+  annotation(experiment(StopTime=1));
+end Plant;
+"); getErrorString();
+
+echo(false);
+r := simulate(Plant);
+m := r.messages;
+echo(true);
+r.simulationOptions;
+regexBool(m, "Optimizer Variables");
+
+echo(false);
+r := optimize(Plant, numberOfIntervals=20);
+m := r.messages;
+echo(true);
+r.simulationOptions;
+regexBool(m, "Optimizer Variables");
+
+echo(false);
+r := simulate(Plant);
+m := r.messages;
+echo(true);
+r.simulationOptions;
+regexBool(m, "Optimizer Variables");
+
+echo(false);
+r := simulate(Plant, method="euler");
+m := r.messages;
+echo(true);
+r.simulationOptions;
+regexBool(m, "Optimizer Variables");
+
+// Result:
+// true
+// ""
+// true
+// "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Plant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''"
+// false
+// true
+// "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-6, method = 'optimization', fileNamePrefix = 'Plant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''"
+// true
+// true
+// "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Plant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''"
+// false
+// true
+// "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'Plant', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''"
+// false
+// endResult

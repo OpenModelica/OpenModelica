@@ -192,6 +192,7 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
       virtual bool initial();
       virtual void setInitial(bool);
       virtual void initialize();
+      <%if hasResizableVars(modelInfo) then 'void initializeLayout();'%>
       virtual void initializeMemory();
       virtual void initializeFreeVariables();
       virtual void initializeBoundVariables();
@@ -3775,7 +3776,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             , _functions(system->_functions)
             {
               _useSparseFormat=false;
-              <%initAlgloopDimension(eq,varDecls)%>
+              <%initAlgloopDimension(eq, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
 
             >>
           case ("sparse") then
@@ -3786,7 +3787,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             , _functions(system->_functions)
             {
               _useSparseFormat=true;
-              <%initAlgloopDimension(eq,varDecls)%>
+              <%initAlgloopDimension(eq, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
 
             >>
           else "A matrix type is not supported"
@@ -3851,9 +3852,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    {
      _useSparseFormat=false;
-     <%initAlgloopDimension(eq,varDecls)%>
+     <%initAlgloopDimension(eq, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
      _dimZeroFunc = <%zeroCrossLength(simCode)%>;
-     <%initAlgloopVarAttributes(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+     <%if not algloopHasArrayVars(nls.crefs) then initAlgloopVarAttributes(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
    }
 
    <%modelname%>Algloop<%nls.index%>::~<%modelname%>Algloop<%nls.index%>()
@@ -3882,6 +3883,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
    <%updateAlgloopNonLinear(simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
+   <%algloopSparsityPattern(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
 
    <%NonLinearalgloopDefaultImplementationCode(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, stateDerVectorName, useFlatArrayNotation)%>
    <%getAMatrixCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
@@ -4069,11 +4071,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      let prebody = (nls.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
      ;separator="\n")
-     let body = (nls.eqs |> eq2 => match eq2
+     // with iteration variables that are whole arrays (resizable algebraic loop) the positions of
+     // the residuals depend on the sizes at runtime, like in CodegenC.tpl
+     let resizable = algloopHasArrayVars(nls.crefs)
+     let body = (nls.eqs |> eq2 hasindex i0 => match eq2
        case SES_RESIDUAL(__) then
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>_res[<%res_index%>] = <%expPart%>;'
+         let res_off = if resizable then '(<%daeExp(residualOffsetExp(nls.eqs, i0), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)' else res_index
+         '<%preExp%>_res[<%res_off%>] = <%expPart%>;'
        case SES_FOR_RESIDUAL(__) then
          // Mirrors CodegenC.tpl's SES_FOR_RESIDUAL case in generateNonLinearResidualFunction:
          // emit a real for-loop per iterator and flatten them into one residual-slot offset
@@ -4088,7 +4094,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          let indexShift = <<<%(iterators |> iterator => forIteratorBodyCpp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
          let assignment = if isArrayType(typeof(exp))
            then CodegenCppCommon.error(sourceInfo(), 'Template error: array-valued SES_FOR_RESIDUAL is not implemented for the Cpp target.')
-           else '<%preExp%>_res[<%res_index%>+(<%indexShift%>)] = <%expPart%>;'
+           else
+             let res_off = if resizable then '(<%daeExp(residualOffsetExp(nls.eqs, i0), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)' else res_index
+             '<%preExp%>_res[<%res_off%>+(<%indexShift%>)] = <%expPart%>;'
          <<
          <%forPart%>
          <%assignment%>
@@ -4112,6 +4120,269 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
    >>
 end updateAlgloopNonLinear;
+
+template algloopSparsityPattern(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, SimEqSystem eqn, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates getSparsityPattern of a nonlinear algebraic loop from the sparsity rows of the new
+  backend. Like CodegenC.tpl's generateResizableSparseData the entries are computed by loops at
+  runtime, so the pattern holds for sizes that are only known at runtime (resizable arrays).
+  Only for loops with whole array iteration variables, whose residuals evaluate() places at
+  the positions of the residual variables of the Jacobian (residualOffsetExp). Rows and columns
+  that cannot be resolved make it return false, the solver then uses a dense Jacobian."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+  match eqn
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(jacobianMatrix = SOME(JAC_MATRIX(sparsityMatrix = SPARSITY(rows = rows), crefsHT = SOME(jacHT))))) then
+    if not algloopHasArrayVars(nls.crefs) then noSparsityPatternCpp(modelname, nls.index) else
+    let &varDecls = buffer ""
+    let seedOffsets = jacobianOffsetDeclCpp(jacobianOffsetVars(jacHT, "seed"), "seed", context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let resOffsets = jacobianOffsetDeclCpp(jacobianOffsetVars(jacHT, "res"), "res", context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let tmpOffsets = jacobianOffsetDeclCpp(jacobianOffsetVars(jacHT, "tmp"), "tmp", context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let rowsCode = (rows |> row => sparsityRowCpp(row, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+    <<
+    bool <%modelname%>Algloop<%nls.index%>::getSparsityPattern(std::vector<std::pair<int, int> >& entries)
+    {
+      const int nCols = _dimAEq;
+      <%varDecls%>
+      <%seedOffsets%>
+      <%resOffsets%>
+      <%tmpOffsets%>
+      entries.clear();
+      <%rowsCode%>
+      return true;
+    }
+    >>
+  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
+    noSparsityPatternCpp(modelname, nls.index)
+end algloopSparsityPattern;
+
+template noSparsityPatternCpp(String modelname, Integer index)
+::=
+  <<
+  bool <%modelname%>Algloop<%index%>::getSparsityPattern(std::vector<std::pair<int, int> >& entries)
+  {
+    return false;
+  }
+  >>
+end noSparsityPatternCpp;
+
+template jacobianOffsetDeclCpp(list<SimVar> vars, String kind, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                               Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Positions of the Jacobian variables of one kind if sizes are only known at runtime, see
+  CodegenCFunctions.tpl's jacobianOffsetDecl."
+::=
+  match vars
+  case {} then ""
+  else
+    let &preExp = buffer ""
+    let assigns = (vars |> v as SIMVAR(__) =>
+      '_jac_off_<%kind%>[<%index%>] = _jac_acc; _jac_acc += <%daeExp(simVarSizeExp(v), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;'
+      ;separator="\n")
+    <<
+    std::vector<int> _jac_off_<%kind%>(<%jacobianOffsetSize(vars)%>);
+    {
+      int _jac_acc = 0;
+      <%preExp%>
+      <%assigns%>
+    }
+    >>
+end jacobianOffsetDeclCpp;
+
+template jacobianVarOffsetCpp(SimVar var, HashTableCrefSimVar.HashTable jacHT, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                              Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Position of a Jacobian variable in its seed, result or tmp vector, see jacobianOffsetDeclCpp."
+::=
+  match jacobianIndexExp(var, jacHT)
+  case ICONST(__) then integer
+  else match var
+    case SIMVAR(varKind=BackendDAE.SEED_VAR()) then '_jac_off_seed[<%index%>]'
+    case SIMVAR(varKind=BackendDAE.JAC_VAR()) then '_jac_off_res[<%index%>]'
+    case SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then '_jac_off_tmp[<%index%>]'
+    else
+      let &preExp = buffer ""
+      let exp = daeExp(jacobianIndexExp(var, jacHT), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '(<%exp%>)'
+end jacobianVarOffsetCpp;
+
+template sparsityRowCpp(SparsityRow row, HashTableCrefSimVar.HashTable jacHT, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Entries of one sparsity row: loops over the equation iterators, the elements of the solved
+  (residual) crefs are the rows, the elements of their dependencies the columns."
+::=
+match row
+case SPARSITY_ROW(equation_iterators = iters, dependencies = deps, solved_crefs = scs) then
+  let &preExp = buffer ""
+  let forIter = (iters |> it => forIteratorCpp(it, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+  let forTail = (iters |> it => "}" ;separator="\n")
+  let flatIdx = <<<%(iters |> it => forIteratorBodyCpp(it, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="")%>0<%(iters |> it => ")" ;separator="")%>>>
+  let body = (scs |> sc => sparsitySolvedCrefCpp(sc, deps, listEmpty(iters), flatIdx, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+  <<
+  /* <%System.stringReplace(System.stringReplace(CodegenUtil.crefStrNoUnderscore(equation_name), "/*", ""), "*/", "")%> */
+  <%preExp%>
+  <%forIter%>
+    <%body%>
+  <%forTail%>
+  >>
+end sparsityRowCpp;
+
+template sparsitySolvedCrefCpp(ComponentRef sc, list<tuple<ComponentRef, Dependency, Boolean>> deps, Boolean noIters, Text flatIdx, HashTableCrefSimVar.HashTable jacHT,
+                               Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                               Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Rows of one solved cref. Inside a for-equation the whole dimensions of a (residual) cref follow
+  the iterators, otherwise all of its elements are rows. _wr is the position of the row in the
+  cref, regular dependencies use it as the position of their column, like in CodegenC.tpl's
+  resizableSparsityRowFill."
+::=
+  match simVarFromHT(crefStripSubs(sc), jacHT)
+  case v as SIMVAR(__) then
+    let off = jacobianVarOffsetCpp(v, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let followsIters = if noIters then "" else lastSubIsWholeCpp(crefSubs(sc))
+    if followsIters then
+      // exactly two whole dimensions are not regular, like in CodegenC.tpl
+      let regular = match crefSubs(sc) case {WHOLEDIM(), WHOLEDIM()} then "" else "true"
+      let cols = (deps |> (seed, dep, rep) => sparsityColumnCpp(seed, dep, rep, regular, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      <<
+      {
+        const int _wr = <%flatIdx%>;
+        const int _row = <%off%> + _wr;
+        <%cols%>
+      }
+      >>
+    else
+      let regular = match crefSubs(sc) case {WHOLEDIM()} then "true" else ""
+      let cols = (deps |> (seed, dep, rep) => sparsityColumnCpp(seed, dep, rep, regular, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator="\n")
+      let &loops = buffer ""
+      let &tails = buffer ""
+      let &preExp = buffer ""
+      let pos = crefElementsCpp(sc, false, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      if pos then
+        <<
+        {
+          <%preExp%>
+          <%loops%>
+          const int _wr = <%pos%>;
+          const int _row = <%off%> + _wr;
+          <%cols%>
+          <%tails%>
+        }
+        >>
+      else 'return false; /* unsupported subscripts of <%CodegenUtil.crefStrNoUnderscore(sc)%> */'
+  else 'return false; /* <%CodegenUtil.crefStrNoUnderscore(sc)%> not found */'
+end sparsitySolvedCrefCpp;
+
+template sparsityColumnCpp(ComponentRef seed, Dependency dep, Boolean rep, String regular, HashTableCrefSimVar.HashTable jacHT, Context context, Text &varDecls,
+                           SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Columns of one dependency of the row _row. A regular (not reduced, not repeated) dependency on
+  a whole one-dimensional seed is the element at the position _wr of the row, otherwise all
+  elements of the seed cref are columns."
+::=
+  let isRegular = if regular then (if rep then "" else regularDependencyCpp(seed, dep))
+  match simVarFromHT(crefStripSubs(seed), jacHT)
+  case v as SIMVAR(__) then
+    let off = jacobianVarOffsetCpp(v, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    if isRegular then
+      sparsityEntryCpp('<%off%> + _wr')
+    else
+      match crefSubs(seed)
+      case {} then sparsityColumnElementsCpp(seed, off, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      else
+        // elements of a partially covered array have their own seed variable
+        match simVarExactFromHT(seed, jacHT)
+        case SOME(ev as SIMVAR(__)) then
+          sparsityEntryCpp(jacobianVarOffsetCpp(ev, jacHT, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation))
+        else sparsityColumnElementsCpp(seed, off, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else 'return false; /* <%CodegenUtil.crefStrNoUnderscore(seed)%> not found */'
+end sparsityColumnCpp;
+
+template regularDependencyCpp(ComponentRef seed, Dependency dep)
+ "non empty if the first dimension of the dependency is regular and the seed a whole 1-dim array"
+::=
+  match dep
+  case DEPENDENCY(__) then
+    if listEmpty(kinds) then ""
+    else if listHead(kinds) then ""
+    else (match crefSubs(seed) case {WHOLEDIM()} then "true" else "")
+end regularDependencyCpp;
+
+template sparsityColumnElementsCpp(ComponentRef seed, String off, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                                   Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "All elements of the seed cref are columns of the row _row."
+::=
+  let &loops = buffer ""
+  let &tails = buffer ""
+  let &preExp = buffer ""
+  let pos = crefElementsCpp(seed, true, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  if pos then
+    <<
+    {
+      <%preExp%>
+      <%loops%>
+      <%sparsityEntryCpp('<%off%> + <%pos%>')%>
+      <%tails%>
+    }
+    >>
+  else 'return false; /* unsupported subscripts of <%CodegenUtil.crefStrNoUnderscore(seed)%> */'
+end sparsityColumnElementsCpp;
+
+template sparsityEntryCpp(String col)
+::=
+  <<
+  { const int _col = <%col%>; if (_col >= 0 && _col < nCols) entries.push_back(std::make_pair(_row, _col)); }
+  >>
+end sparsityEntryCpp;
+
+template crefElementsCpp(ComponentRef cr, Boolean colMajor, Text &loops, Text &tails, Text &preExp, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Loops over the elements of a subscripted cref (into loops and tails) and returns the
+  expression of the flattened position of an element in the whole variable, empty if a
+  subscript is not supported. A cref without subscripts denotes all of its elements. Iteration
+  variables are in the storage order of the arrays of the C++ runtime (column major), the
+  residuals in the row major order of the iterators of evaluate()."
+::=
+  if listEmpty(crefDims(cr)) then "0"
+  else if listEmpty(crefSubs(cr)) then crefElementsSubsCpp(crefDims(cr), crefSubs(cr), true, colMajor, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else if intEq(listLength(crefDims(cr)), listLength(crefSubs(cr))) then crefElementsSubsCpp(crefDims(cr), crefSubs(cr), false, colMajor, &loops, &tails, &preExp, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else ""
+end crefElementsCpp;
+
+template crefElementsSubsCpp(list<Dimension> dims, list<Subscript> subs, Boolean allWhole, Boolean colMajor, Text &loops, Text &tails, Text &preExp, Context context, Text &varDecls, SimCode simCode,
+                             Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "See crefElementsCpp. The position of the zero based indices ek in the dimensions dk is built in
+  Horner form, row major (((0)*(d1)+(e1))*(d2)+(e2))... or column major (e1)+(d1)*((e2)+(d2)*(...0))."
+::=
+  let id = System.tmpTick()
+  let &unsupported = buffer ""
+  let terms = (dims |> dim hasindex i0 =>
+    let size = daeDimension(dim, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let idx = if allWhole then elementLoopCpp('_e<%id%>_<%i0%>', size, &loops, &tails)
+      else (match listGet(subs, intAdd(i0, 1))
+        case WHOLEDIM() then elementLoopCpp('_e<%id%>_<%i0%>', size, &loops, &tails)
+        case INDEX(__) then '(<%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>) - 1'
+        else
+          let &unsupported += "true"
+          "")
+    if colMajor then '(<%idx%>)+(<%size%>)*(' else ')*(<%size%>)+(<%idx%>)'
+    ;separator="")
+  if unsupported then ""
+  else if colMajor then '<%terms%>0<%(dims |> dim => ")" ;separator="")%>'
+  else '<%(dims |> dim => "(" ;separator="")%>0<%terms%>'
+end crefElementsSubsCpp;
+
+template elementLoopCpp(String name, String size, Text &loops, Text &tails)
+::=
+  let &loops += 'for (int <%name%> = 0; <%name%> < (int)(<%size%>); <%name%>++) {<%\n%>'
+  let &tails += '}<%\n%>'
+  name
+end elementLoopCpp;
+
+template lastSubIsWholeCpp(list<Subscript> subs)
+ "non empty if the last subscript is a whole dimension"
+::=
+  match listReverse(subs)
+  case WHOLEDIM() :: _ then "true"
+  else ""
+end lastSubIsWholeCpp;
 
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -5792,11 +6063,25 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    // convenience function for full initialization
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
+      <%if hasResizableVars(modelInfo) then 'initializeLayout();'%>
       initializeMemory();
       initializeFreeVariables();
       initializeBoundVariables();
       saveAll();
    }
+
+   <%if hasResizableVars(modelInfo) then
+   <<
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeLayout()
+   {
+      // the sizes of the resizable arrays are known when the parameters are read
+      #if !defined(FMU_BUILD)
+        XmlPropertyReader reader(_global_settings, "<%fileNamePrefix%>_init.xml");
+        reader.readInitialValues(*this, getSimVars());
+      #endif
+      resizeVariables();
+   }
+   >>%>
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeMemory()
    {
@@ -6029,6 +6314,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      void <%modelname%>Algloop<%nls.index%>::initialize()
      {
        <%if intGt(clockIndex, 0) then 'const int clockIndex = <%clockIndex%>;'%>
+       <%if algloopHasArrayVars(nls.crefs) then
+       <<
+       // iteration variables that are whole arrays: their sizes and attributes depend on parameters
+       int dim = <%algloopArraySize(nls.crefs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>;
+       if (dim != _dimAEq || _firstcall)
+       {
+         _dimAEq = dim;
+         NonLinearAlgLoopDefaultImplementation::initialize();
+         _firstcall = true;
+       }
+       <%initAlgloopVarAttributes(eq, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>
+       >>%>
 
       if(_firstcall)
       {
@@ -6400,7 +6697,19 @@ template getAlgloopVars(SimEqSystem eq, SimCode simCode, Text& extraFuncs, Text&
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
 case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-  let size = listLength(nls.crefs)
+  if algloopHasArrayVars(nls.crefs) then
+  <<
+  size_t _off = 0;
+  <%nls.crefs |> name =>
+    let &preExpElem = buffer ""
+    let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    if isWholeArrayCref(name) then
+      '{ const BaseArray<double>& _a = <%namestr%>; std::copy(_a.getData(), _a.getData() + _a.getNumElems(), vars + _off); _off += _a.getNumElems(); }'
+    else
+      'vars[_off++] = <%namestr%>;'
+    ;separator="\n"%>
+  >>
+  else
   <<
 
    <%nls.crefs |> name hasindex i0 =>
@@ -6425,10 +6734,37 @@ template initAlgloopVarAttributes(SimEqSystem eq, SimCode simCode, Text& extraFu
   let &varDecls = buffer ""
   let vars = match eq
     case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-      (nls.crefs |> cref hasindex i0 =>
-        let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), cref, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
-        '_vars[<%i0%>] = <%initializer%>;'
-      ;separator="\n")
+      if algloopHasArrayVars(nls.crefs) then
+        let &varDeclsCref = buffer ""
+        let elems = (nls.crefs |> cref =>
+          if isWholeArrayCref(cref) then
+            let &preExpElem = buffer ""
+            let namestr = lhsCref(cref, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+            let initializer = createAlgloopVarAttributesElem(cref2simvar(cref, simCode), preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+            <<
+            for (size_t _i = 0; _i < <%namestr%>.getNumElems(); _i++)
+              _vars[_off++] = <%initializer%>;
+            >>
+          else
+            let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), cref, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+            '_vars[_off++] = <%initializer%>;'
+          ;separator="\n")
+        <<
+        _vars.resize(_dimAEq);
+        {
+          size_t _off = 0;
+          <%elems%>
+        }
+        >>
+      else
+        let elems = (nls.crefs |> cref hasindex i0 =>
+          let initializer = createAlgloopVarAttributes(cref2simvar(cref, simCode), cref, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
+          '_vars[<%i0%>] = <%initializer%>;'
+          ;separator="\n")
+        <<
+        _vars.resize(_dimAEq);
+        <%elems%>
+        >>
     case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
       (ls.vars |> var as SIMVAR(__) hasindex i0 =>
         let initializer = createAlgloopVarAttributes(var, name, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)
@@ -6500,6 +6836,52 @@ template createAlgloopVarAttributes(SimVar var, ComponentRef elemCr, Text &preEx
   'AlgloopVarAttributes("<%nameStr%>", <%nominalStr%>, <%minStr%>, <%maxStr%>)'
 end createAlgloopVarAttributes;
 
+template algloopArraySize(list<ComponentRef> crefs, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
+                          Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "The number of scalar iteration variables of a loop with iteration variables that are whole arrays."
+::=
+  let &varDeclsCref = buffer ""
+  (crefs |> name =>
+    let &preExpElem = buffer ""
+    if isWholeArrayCref(name) then
+      let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%namestr%>.getNumElems()'
+    else '1'
+  ;separator=" + ")
+end algloopArraySize;
+
+template algloopHasArrayVars(list<ComponentRef> crefs)
+ "Non-empty if an iteration variable is a whole array (resizable algebraic loop)."
+::= (crefs |> cr => if isWholeArrayCref(cr) then "1")
+end algloopHasArrayVars;
+
+template algloopVarAttrIdx(Text expPart, Exp exp)
+ "Attribute of the element _i of an iteration variable that is a whole array; an
+  array-valued attribute has one value per element, a scalar one is for all."
+::= if isArrayType(typeof(exp)) then '(<%expPart%>).getData()[_i]' else expPart
+end algloopVarAttrIdx;
+
+template createAlgloopVarAttributesElem(SimVar var, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "The initializer of the AlgLoopVar of the element _i of an iteration variable that is a whole array."
+::=
+  let nameStr = match var case SIMVAR(name=cref) then crefStrForWriteOutput(cref)
+  let nominalStr = match var
+    case SIMVAR(nominalValue=SOME(exp)) then
+      algloopVarAttrIdx(daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation), exp)
+    else '1.0'
+  let minStr = match var
+    case SIMVAR(varKind=STATE_DER()) then '-HUGE_VAL'
+    case SIMVAR(minValue=SOME(exp)) then
+      algloopVarAttrIdx(daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation), exp)
+    else '-HUGE_VAL'
+  let maxStr = match var
+    case SIMVAR(varKind=STATE_DER()) then 'HUGE_VAL'
+    case SIMVAR(maxValue=SOME(exp)) then
+      algloopVarAttrIdx(daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation), exp)
+    else 'HUGE_VAL'
+  'AlgloopVarAttributes("<%nameStr%>", <%nominalStr%>, <%minStr%>, <%maxStr%>)'
+end createAlgloopVarAttributesElem;
+
 template writeAlgloopvars(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations, list<SimEqSystem> parameterEquations,
                           SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -6554,7 +6936,27 @@ template setAlgloopVars(SimEqSystem eq,SimCode simCode ,Text& extraFuncs,Text& e
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
 case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-  let size = listLength(nls.crefs)
+  if algloopHasArrayVars(nls.crefs) then
+  <<
+  size_t _off = 0;
+  <%nls.crefs |> name =>
+    let &preExpElem = buffer ""
+    let namestr = lhsCref(name, context, &preExpElem, &varDeclsCref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    if isWholeArrayCref(name) then
+      '{ BaseArray<double>& _a = <%namestr%>; std::copy(vars + _off, vars + _off + _a.getNumElems(), _a.getData()); _off += _a.getNumElems(); }'
+    else
+      match name
+      case CREF_QUAL(ident = "$PRE") then
+        let varname = '_system-><%cref(componentRef, useFlatArrayNotation)%>'
+        <<
+        <%varname%> = vars[_off++];
+        _discrete_events->save(<%varname%>,<%varname%>);
+        >>
+      else
+        '<%namestr%> = vars[_off++];'
+    ;separator="\n"%>
+  >>
+  else
   <<
 
    <%nls.crefs |> name hasindex i0 =>
@@ -6579,14 +6981,23 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   >>
 end setAlgloopVars;
 
-template initAlgloopDimension(SimEqSystem eq, Text &varDecls /*BUFP*/)
- "Generates a non linear equation system."
+template initAlgloopDimension(SimEqSystem eq, Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                              Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates a non linear equation system. An iteration variable that is a whole
+  array (resizable algebraic loop) contributes all of its elements."
 ::=
 match eq
 case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
-  let size = listLength(nls.crefs)
+  if algloopHasArrayVars(nls.crefs) then
+    // the sizes of the arrays are known after the parameters are read, initialize() sets them again
+    <<
+    _dimAEq = <%algloopArraySize(nls.crefs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>;
+    if (_dimAEq > 0)
+      NonLinearAlgLoopDefaultImplementation::initialize();
+    >>
+  else
   <<
-  _dimAEq = <%size%>;
+  _dimAEq = <%listLength(nls.crefs)%>;
   NonLinearAlgLoopDefaultImplementation::initialize();
   >>
   case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
@@ -7019,6 +7430,13 @@ match modelInfo
       int* _pointerToIntVars;
       bool* _pointerToBoolVars;
       string* _pointerToStringVars;
+      <%if hasResizableVars(modelInfo) then
+      <<
+      // resizable arrays: shift of the derivatives with fixed sizes when the number of states changes
+      int _derShift = 0;
+      void resizeVariables();
+      virtual bool getVariableLayout(char type, int ref, int& pos, std::vector<int>& dims) const;
+      >>%>
 
       int _dimPartitions;
       bool* _partitionActivation;
@@ -7197,13 +7615,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void getRHS(double* vars) const;
     virtual const matrix_t& getSystemMatrix() ;
     virtual sparsematrix_t& getSystemSparseMatrix() ;
+    virtual bool getSparsityPattern(std::vector<std::pair<int, int> >& entries);
 
     bool getUseSparseFormat();
     void setUseSparseFormat(bool value);
     float queryDensity();
     virtual int getDimZeroFunc() const;
   private:
-    AlgloopVarAttributes _vars[<%listLength(nls.crefs)%>];
+    std::vector<AlgloopVarAttributes> _vars;
     Functions* _functions;
     //states
     double* __z;
@@ -7250,6 +7669,8 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       {
         <%getNominalStateValues(states, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       }
+
+      <%if hasResizableVars(modelInfo) then resizeVariablesFunction(modelInfo, varToArrayIndexMapping, useFlatArrayNotation)%>
 
       // Set variables with given index to the system
        void <%lastIdentOfPath(modelInfo.name)%>::setRealStartValue(double& var,double val)
@@ -7360,10 +7781,29 @@ end DefaultImplementationCode;
 */
 template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  let nominalVars = stateVars |> SIMVAR(index = i) =>
-        match nominalValue
-        case SOME(val)
-        then
+  let nominalVars = stateVars |> sv as SIMVAR(index = i) =>
+        match sv
+        // non-scalarized array state (new backend): all of its elements, at its position in the state vector
+        case SIMVAR(type_ = T_ARRAY()) then
+          let &dims = buffer ""
+          let varName = arraycref2(name, dims)
+          let &preExp = buffer "" /*BUFD*/
+          let &varDecls = buffer "" /*BUFD*/
+          let value = match nominalValue
+            case SOME(val) then
+              let v = daeExp(val, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+              if isArrayType(typeof(val)) then '(<%v%>).getData()[_i]' else v
+            else '1.0'
+          <<
+          {
+            <%varDecls%>
+            <%preExp%>
+            double* zv = z + (<%varName%>.getData() - __z);
+            for (size_t _i = 0; _i < <%varName%>.getNumElems(); _i++)
+              zv[_i] = <%value%>;
+          }
+          >>
+        case SIMVAR(nominalValue = SOME(val)) then
           let &preExp = buffer "" /*BUFD*/
           let &varDecls = buffer "" /*BUFD*/
           let value = '<%daeExp(val, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
@@ -7730,70 +8170,71 @@ template memberVariableDefine(ModelInfo modelInfo, HashTableCrIListArray.HashTab
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
+  let derShift = if hasResizableVars(modelInfo) then "_derShift + "
   <<
   /*state vars*/
   <%vars.stateVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true, derShift)
     ;separator="\n"%>
   /*derivative vars*/
   <%vars.derivativeVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true, derShift)
     ;separator="\n"%>
   /*real algvars*/
   <%vars.algVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true, derShift)
     ;separator="\n"%>
   /*discrete algvars*/
   <%vars.discreteAlgVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true, derShift)
     ;separator="\n"%>
   /*int algvars*/
   <%vars.intAlgVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true, derShift)
     ;separator="\n"%>
   /*bool algvars*/
   <%vars.boolAlgVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true, derShift)
     ;separator="\n"%>
   /*string algvars*/
   <%vars.stringAlgVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true, derShift)
     ;separator="\n"%>
   /*parameter real vars*/
   <%vars.paramVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true, derShift)
     ;separator="\n"%>
   /*parameter int vars*/
   <%vars.intParamVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true, derShift)
     ;separator="\n"%>
   /*parameter bool vars*/
   <%vars.boolParamVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true, derShift)
     ;separator="\n"%>
   /*string parameter variables*/
   <%vars.stringParamVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true, derShift)
     ;separator="\n"%>
   /*alias real vars*/
   <%vars.aliasVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", true, derShift)
     ;separator="\n"%>
   /*alias int vars*/
   <%vars.intAliasVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int", true, derShift)
     ;separator="\n"%>
   /*alias bool vars*/
   <%vars.boolAliasVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool", true, derShift)
     ;separator="\n"%>
   /*string alias variables*/
   <%vars.stringAliasVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String", true, derShift)
     ;separator="\n"%>
   /*external variables*/
   <%vars.extObjVars |> var =>
-    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", false)
+    memberVariableDefine2(var, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", false, derShift)
     ;separator="\n"%>
   >>
 end memberVariableDefine;
@@ -7804,6 +8245,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
   match modelInfo
     case MODELINFO(vars=SIMVARS(__),name=name) then
       let classname = lastIdentOfPath(name)
+      let derShift = if hasResizableVars(modelInfo) then "_derShift + "
       let &additionalStateVarFunctionCalls = buffer ""
       let &additionalDerivativeVarFunctionCalls = buffer ""
       let &additionalAlgVarFunctionCalls = buffer ""
@@ -7824,7 +8266,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       <<
       //StateVars
       <%List.partition(vars.stateVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "initStateVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalStateVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+        memberVariableInitializeWithSplit(varPartition, i0, "initStateVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalStateVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions, derShift) ;separator="\n"%>
 
       void <%classname%>::initStateVars()
       {
@@ -7833,7 +8275,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //DerivativeVars
       <%List.partition(vars.derivativeVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "initDerivativeVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalDerivativeVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+        memberVariableInitializeWithSplit(varPartition, i0, "initDerivativeVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalDerivativeVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions, derShift) ;separator="\n"%>
 
       void <%classname%>::initDerivativeVars()
       {
@@ -7843,7 +8285,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AlgVars
       <%List.partition(vars.algVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
-                                          additionalAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
 
       void <%classname%>::initAlgVars()
       {
@@ -7853,7 +8295,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //DiscreteAlgVars
       <%List.partition(vars.discreteAlgVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initDiscreteAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
-                                          additionalDiscreteAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalDiscreteAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
 
       void <%classname%>::initDiscreteAlgVars()
       {
@@ -7863,7 +8305,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //IntAlgVars
       <%List.partition(vars.intAlgVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initIntAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
-                                          additionalIntAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalIntAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initIntAlgVars()
       {
         <%additionalIntAlgVarFunctionCalls%>
@@ -7872,7 +8314,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //BoolAlgVars
       <%List.partition(vars.boolAlgVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initBoolAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
-                                          additionalBoolAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalBoolAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initBoolAlgVars()
       {
         <%additionalBoolAlgVarFunctionCalls%>
@@ -7881,7 +8323,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //StringAlgVars
       <%List.partition(vars.stringAlgVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initStringAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
-                                          additionalStringAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalStringAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initStringAlgVars()
       {
         <%additionalStringAlgVarFunctionCalls%>
@@ -7890,7 +8332,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterRealVars
       <%List.partition(vars.paramVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initParameterRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
-                                          additionalParameterRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalParameterRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initParameterRealVars()
       {
         <%additionalParameterRealVarFunctionCalls%>
@@ -7899,7 +8341,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterIntVars
       <%List.partition(vars.intParamVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initParameterIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
-                                          additionalParameterIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalParameterIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initParameterIntVars()
       {
         <%additionalParameterIntVarFunctionCalls%>
@@ -7908,7 +8350,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterBoolVars
       <%List.partition(vars.boolParamVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initParameterBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
-                                          additionalParameterBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalParameterBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initParameterBoolVars()
       {
         <%additionalParameterBoolVarFunctionCalls%>
@@ -7917,7 +8359,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //ParameterStringVars
       <%List.partition(vars.stringParamVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initParameterStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
-                                          additionalParameterStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalParameterStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initParameterStringVars()
       {
         <%additionalParameterStringVarFunctionCalls%>
@@ -7926,7 +8368,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasRealVars
       <%List.partition(vars.aliasVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initAliasRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
-                                          additionalAliasRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalAliasRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initAliasRealVars()
       {
         <%additionalAliasRealVarFunctionCalls%>
@@ -7935,7 +8377,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasIntVars
       <%List.partition(vars.intAliasVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initAliasIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
-                                          additionalAliasIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalAliasIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initAliasIntVars()
       {
         <%additionalAliasIntVarFunctionCalls%>
@@ -7944,7 +8386,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasBoolVars
       <%List.partition(vars.boolAliasVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initAliasBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
-                                          additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initAliasBoolVars()
       {
         <%additionalAliasBoolVarFunctionCalls%>
@@ -7953,7 +8395,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       //AliasStringVars
       <%List.partition(vars.stringAliasVars, 100) |> varPartition hasindex i0 =>
         memberVariableInitializeWithSplit(varPartition, i0, "initAliasStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
-                                          additionalAliasStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
+                                          additionalAliasStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions, derShift) ;separator="\n"%>
       void <%classname%>::initAliasStringVars()
       {
         <%additionalAliasStringVarFunctionCalls%>
@@ -7962,7 +8404,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 end memberVariableInitialize;
 
 template memberVariableInitializeWithSplit(list<SimVar> simVars, Text idx, Text functionPrefix, Text className, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences, Boolean useFlatArrayNotation,
-                                   Boolean createDebugCode, String type, Text& additionalFunctionCalls, Text& additionalConstructorVariables, Text& additionalFunctionDefinitions)
+                                   Boolean createDebugCode, String type, Text& additionalFunctionCalls, Text& additionalConstructorVariables, Text& additionalFunctionDefinitions, Text derShift)
 ::=
   let &additionalFunctionCalls += '  <%functionPrefix%>_<%idx%>();<%\n%>'
   let &additionalFunctionDefinitions += 'void <%functionPrefix%>_<%idx%>();<%\n%>'
@@ -7970,14 +8412,14 @@ template memberVariableInitializeWithSplit(list<SimVar> simVars, Text idx, Text 
   void <%className%>::<%functionPrefix%>_<%idx%>()
   {
     <%simVars |> var =>
-        memberVariableInitialize2(var, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, createDebugCode, type, additionalConstructorVariables)
+        memberVariableInitialize2(var, varToArrayIndexMapping, indexForUndefinedReferences, useFlatArrayNotation, createDebugCode, type, additionalConstructorVariables, derShift)
         ;separator="\n"%>
   }
   >>
 end memberVariableInitializeWithSplit;
 
 template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences, Boolean useFlatArrayNotation,
-                                   Boolean createDebugCode, String type, Text& additionalConstructorVariables)
+                                   Boolean createDebugCode, String type, Text& additionalConstructorVariables, Text derShift)
 ::=
   match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
@@ -7995,10 +8437,16 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
     case v as SIMVAR(type_ = T_ARRAY()) then
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name, dims)
-      let arrayHeadIdx = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
-       <<
-       <%varName%>.init(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
-       >>
+      if isResizableSimVar(v) then
+        /* resizable array: position and sizes are set by resizeVariables at runtime */
+        <<
+        <%varName%>.init(&_pointerTo<%type%>Vars[_off<%varName%>], <%resizableDims(v, useFlatArrayNotation)%>);
+        >>
+      else
+        let arrayHeadIdx = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+        <<
+        <%varName%>.init(&_pointerTo<%type%>Vars[<%derShiftOf(v, derShift)%><%arrayHeadIdx%>]);
+        >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
@@ -8239,7 +8687,7 @@ end memberVariableDefineReference;
 
 
 template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences,
-                              Boolean useFlatArrayNotation, Boolean createDebugCode, String type, Boolean createRefVar)
+                              Boolean useFlatArrayNotation, Boolean createDebugCode, String type, Boolean createRefVar, Text derShift)
 ::=
   match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
@@ -8254,7 +8702,7 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           if createRefVar then
             let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
             <<
-            #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%index%>]
+            #define <%cref(name,useFlatArrayNotation)%> _pointerTo<%type%>Vars[<%derShiftOf(simVar, derShift)%><%index%>]
             >>
           else
             '<%variableType(type_)%> <%cref(name,useFlatArrayNotation)%>;'
@@ -8264,9 +8712,17 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name, dims)
       let typeString = expTypeShort(type_)
-      <<
-      StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%v.numArrayElement;separator=","%>, <%createRefVar%>> <%varName%>;
-      >>
+      if boolAnd(createRefVar, isResizableSimVar(v)) then
+        /* resizable array: refers to the variable memory at _off<name> with the sizes of its parameters */
+        let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+        <<
+        RefDynArray<<%typeString%>, <%listLength(v.numArrayElement)%>> <%varName%>;
+        size_t _off<%varName%> = <%index%>;
+        >>
+      else
+        <<
+        StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%v.numArrayElement;separator=","%>, <%createRefVar%>> <%varName%>;
+        >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_))
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_)) then
       let &dims = buffer "" /*BUFD*/
@@ -8316,6 +8772,179 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
         else ''
       end match
 end memberVariableDefine2;
+
+template derShiftOf(SimVar var, Text derShift)
+ "The shift of the position of a derivative when resizable states changed the number of states."
+::= match var case SIMVAR(varKind = STATE_DER()) then derShift
+end derShiftOf;
+
+template dimExpCpp(Exp exp, Boolean useFlatArrayNotation)
+ "A dimension of a resizable array, an expression of Integer parameters, in C++."
+::=
+  match exp
+  case ICONST(__) then integer
+  case CREF(__) then cref(componentRef, useFlatArrayNotation)
+  case BINARY(operator = ADD(__)) then '(<%dimExpCpp(exp1, useFlatArrayNotation)%> + <%dimExpCpp(exp2, useFlatArrayNotation)%>)'
+  case BINARY(operator = SUB(__)) then '(<%dimExpCpp(exp1, useFlatArrayNotation)%> - <%dimExpCpp(exp2, useFlatArrayNotation)%>)'
+  case BINARY(operator = MUL(__)) then '(<%dimExpCpp(exp1, useFlatArrayNotation)%> * <%dimExpCpp(exp2, useFlatArrayNotation)%>)'
+  case BINARY(operator = DIV(__)) then '(<%dimExpCpp(exp1, useFlatArrayNotation)%> / <%dimExpCpp(exp2, useFlatArrayNotation)%>)'
+  case UNARY(operator = UMINUS(__)) then '(-<%dimExpCpp(exp, useFlatArrayNotation)%>)'
+  case CAST(__) then dimExpCpp(exp, useFlatArrayNotation)
+  else CodegenCppCommon.error(sourceInfo(), 'dimExpCpp: unsupported dimension <%ExpressionDumpTpl.dumpExp(exp,"\"")%> of a resizable array')
+end dimExpCpp;
+
+template dimSizeCpp(Dimension dim, Boolean useFlatArrayNotation)
+::=
+  match dim
+  case DIM_INTEGER(__) then integer
+  case DIM_BOOLEAN(__) then '2'
+  case DIM_ENUM(__) then size
+  case DIM_EXP(__) then '(size_t)<%dimExpCpp(exp, useFlatArrayNotation)%>'
+  else CodegenCppCommon.error(sourceInfo(), 'dimSizeCpp: unknown dimension of a resizable array')
+end dimSizeCpp;
+
+template resizableDims(SimVar var, Boolean useFlatArrayNotation)
+ "The current sizes of a resizable array, a std::vector<size_t> initializer."
+::= '{<%simVarDims(var) |> d => dimSizeCpp(d, useFlatArrayNotation) ;separator=", "%>}'
+end resizableDims;
+
+template resizableNumElems(SimVar var, Boolean useFlatArrayNotation)
+::= '(<%simVarDims(var) |> d => dimSizeCpp(d, useFlatArrayNotation) ;separator=" * "%>)'
+end resizableNumElems;
+
+template resizableOffsets(list<SimVar> vars, Boolean useFlatArrayNotation)
+ "Positions of the resizable arrays of a list one after the other from off."
+::=
+  (vars |> v as SIMVAR(__) =>
+    if isResizableSimVar(v) then
+      let &dims = buffer ""
+      let varName = arraycref2(name, dims)
+      '_off<%varName%> = off; off += <%resizableNumElems(v, useFlatArrayNotation)%>;'
+  ;separator="\n")
+end resizableOffsets;
+
+template resizableLayoutCases(list<SimVar> vars, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferences)
+ "The current position and sizes of each resizable array of a list, by the value reference of the init xml."
+::=
+  (vars |> v as SIMVAR(__) =>
+    if isResizableSimVar(v) then
+      let &dims = buffer ""
+      let varName = arraycref2(name, dims)
+      let index = SimCodeCodegenUtil.getVarIndexHeadByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences)
+      'case <%index%>: { pos = (int)_off<%varName%>; std::vector<size_t> d = <%varName%>.getDims(); dims.assign(d.begin(), d.end()); return true; }'
+  ;separator="\n")
+end resizableLayoutCases;
+
+template resizeVariablesFunction(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Boolean useFlatArrayNotation)
+ "Sizes and positions of the variables of a model with resizable arrays (--resizableArrays):
+  the variables with fixed sizes keep their positions, the states and derivatives follow,
+  then the other resizable arrays, see SimCodeUtilShared.resizableLayout. Called after the
+  parameters are read, when the sizes are known."
+::=
+match modelInfo
+case MODELINFO(vars = vars as SIMVARS(__), varInfo = VARINFO(__)) then
+  let classname = lastIdentOfPath(name)
+  let fixedReal = resizableFixedSize(modelInfo, 1)
+  let fixedStates = resizableFixedStates(modelInfo)
+  let fixedDerStart = intAdd(resizableFixedSize(modelInfo, 1), varInfo.numStateVars)
+  <<
+  void <%classname%>::resizeVariables()
+  {
+    size_t off;
+    // states, the resizable ones after those with fixed sizes
+    off = <%fixedReal%> + <%fixedStates%>;
+    <%resizableOffsets(vars.stateVars, useFlatArrayNotation)%>
+    size_t dimZ = off - <%fixedReal%>;
+    _derShift = (int)dimZ - <%varInfo.numStateVars%>;
+    // derivatives in the same order
+    off = <%fixedReal%> + dimZ + <%fixedStates%>;
+    <%resizableOffsets(vars.derivativeVars, useFlatArrayNotation)%>
+    // other resizable arrays
+    off = <%fixedReal%> + 2 * dimZ;
+    <%resizableOffsets(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.constVars))), useFlatArrayNotation)%>
+    size_t dimReal = off;
+    off = <%resizableFixedSize(modelInfo, 2)%>;
+    <%resizableOffsets(listAppend(vars.intAlgVars, listAppend(vars.intParamVars, vars.intConstVars)), useFlatArrayNotation)%>
+    size_t dimInt = off;
+    off = <%resizableFixedSize(modelInfo, 3)%>;
+    <%resizableOffsets(listAppend(vars.boolAlgVars, listAppend(vars.boolParamVars, vars.boolConstVars)), useFlatArrayNotation)%>
+    size_t dimBool = off;
+    off = <%resizableFixedSize(modelInfo, 4)%>;
+    <%resizableOffsets(listAppend(vars.stringAlgVars, listAppend(vars.stringParamVars, vars.stringConstVars)), useFlatArrayNotation)%>
+    size_t dimString = off;
+
+    getSimVars()->resize(dimReal, dimInt, dimBool, dimString, dimReal + dimInt + dimBool, dimZ, <%fixedReal%>);
+    _pointerToRealVars = getSimVars()->getRealVarsVector();
+    _pointerToIntVars = getSimVars()->getIntVarsVector();
+    _pointerToBoolVars = getSimVars()->getBoolVarsVector();
+    _pointerToStringVars = getSimVars()->getStringVarsVector();
+    __z = getSimVars()->getStateVector();
+    __zDot = getSimVars()->getDerStateVector();
+    _dimContinuousStates = (int)dimZ;
+    _dimRHS = (int)dimZ;
+    _dimReal = (int)dimReal;
+    _dimInteger = (int)dimInt;
+    _dimBoolean = (int)dimBool;
+    _dimString = (int)dimString;
+    // the start values are stored by address
+    clearStartValues();
+
+    initStateVars();
+    initDerivativeVars();
+    initAlgVars();
+    initDiscreteAlgVars();
+    initIntAlgVars();
+    initBoolAlgVars();
+    initStringAlgVars();
+    initParameterRealVars();
+    initParameterIntVars();
+    initParameterBoolVars();
+    initParameterStringVars();
+    initAliasRealVars();
+    initAliasIntVars();
+    initAliasBoolVars();
+    initAliasStringVars();
+  }
+
+  bool <%classname%>::getVariableLayout(char type, int ref, int& pos, std::vector<int>& dims) const
+  {
+    switch (type)
+    {
+      case 'r':
+        switch (ref)
+        {
+          <%resizableLayoutCases(listAppend(vars.stateVars, listAppend(vars.derivativeVars, listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.paramVars, vars.constVars))))), varToArrayIndexMapping, '-1')%>
+        }
+        // derivatives with fixed sizes move with the number of states, their sizes are those of the init xml
+        if (ref >= <%fixedDerStart%> && ref < <%fixedDerStart%> + <%fixedStates%>)
+        {
+          pos = ref + _derShift;
+          return true;
+        }
+        return false;
+      case 'i':
+        switch (ref)
+        {
+          <%resizableLayoutCases(listAppend(vars.intAlgVars, listAppend(vars.intParamVars, vars.intConstVars)), varToArrayIndexMapping, '-1')%>
+        }
+        return false;
+      case 'b':
+        switch (ref)
+        {
+          <%resizableLayoutCases(listAppend(vars.boolAlgVars, listAppend(vars.boolParamVars, vars.boolConstVars)), varToArrayIndexMapping, '-1')%>
+        }
+        return false;
+      case 's':
+        switch (ref)
+        {
+          <%resizableLayoutCases(listAppend(vars.stringAlgVars, listAppend(vars.stringParamVars, vars.stringConstVars)), varToArrayIndexMapping, '-1')%>
+        }
+        return false;
+    }
+    return false;
+  }
+  >>
+end resizeVariablesFunction;
 
 
 template initAlgloopParam(SimVar simVar, String arrayName,Text& arrayInit, Boolean useFlatArrayNotation)
@@ -8819,9 +9448,8 @@ template numStateVarIndex(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
-<<
-0
->>
+  // with resizable arrays the states follow the variables with fixed sizes
+  if hasResizableVars(modelInfo) then resizableFixedSize(modelInfo, 1) else '0'
 end numStateVarIndex;
 
 
@@ -13969,7 +14597,7 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       void <%lastIdentOfPath(name)%>::getReal(double* z)
       {
         const double* real_vars = getSimVars()->getRealVarsVector();
-        memcpy(z,real_vars,<%numRealvars(modelInfo)%>*sizeof(double));
+        memcpy(z,real_vars,getSimVars()->getDimReal()*sizeof(double));
       }
 
       void <%lastIdentOfPath(name)%>::setReal(const double* z)
@@ -13980,13 +14608,13 @@ template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArray
       void <%lastIdentOfPath(name)%>::getInteger(int* z)
       {
         const int* int_vars = getSimVars()->getIntVarsVector();
-        memcpy(z,int_vars,<%numIntvars(modelInfo)%>*sizeof(int));
+        memcpy(z,int_vars,getSimVars()->getDimInt()*sizeof(int));
       }
 
       void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
       {
         const bool* bool_vars = getSimVars()->getBoolVarsVector();
-        memcpy(z,bool_vars,<%numBoolvars(modelInfo)%>*sizeof(bool));
+        memcpy(z,bool_vars,getSimVars()->getDimBool()*sizeof(bool));
       }
 
       void <%lastIdentOfPath(name)%>::getString(string* z)

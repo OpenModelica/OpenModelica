@@ -28,6 +28,7 @@ LV.mos \
 NP.mos \
 noOCP.mos \
 ocpWithInputs.mos \
+OptimizeSimulationOptions.mos \
 OSP.mos \
 pendel.mos \
 reduce1.mos \

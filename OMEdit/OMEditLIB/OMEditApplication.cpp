@@ -59,9 +59,9 @@
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
 #endif
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 #include <QStyleHints>
-#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
@@ -207,8 +207,21 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
 #endif // #ifdef Q_OS_LINUX
 
+  // The color scheme comes from the Options dialog setting: System (default,
+  // see OptionsDefaults::GeneralSettings::colorSchemeIndex), Light or Dark.
+  // System follows the platform color scheme on Qt 6.5 and later and is
+  // light before that. The --DarkMode command line option overrides the
+  // setting. The testsuite always runs in light mode.
   bool darkMode = false;
-  if (arguments().size() > 1 && !testsuiteRunning) {
+  if (!testsuiteRunning) {
+    const int colorScheme = Utilities::getApplicationSettings()->value("colorScheme", GeneralSettingsPage::SystemColorScheme).toInt();
+    if (colorScheme == GeneralSettingsPage::DarkColorScheme) {
+      darkMode = true;
+    } else if (colorScheme == GeneralSettingsPage::SystemColorScheme) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+      darkMode = styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    }
     for (int i = 1; i < arguments().size(); i++) {
       bool argumentDarkMode = false;
       if (darkModeArgumentValue(arguments().at(i), &argumentDarkMode)) {
@@ -218,9 +231,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   }
   setProperty("omeditDarkMode", darkMode);
 
-/* Qt 6.8 defaults to the system color scheme. Keep OMEdit in light mode unless
- * dark mode is explicitly requested so the built-in stylesheets remain
- * deterministic.
+/* Qt 6.8 defaults to the system color scheme. Pin the scheme to the mode
+ * resolved above so the built-in stylesheets remain deterministic.
  */
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   styleHints()->setColorScheme(darkMode ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light);  // must be before setStyleSheet

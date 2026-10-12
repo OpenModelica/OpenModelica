@@ -1490,6 +1490,37 @@ package SimCodeCodegenUtil
     output Boolean b;
   end isDimensionParameter;
 
+  function isWholeArrayCref
+    input DAE.ComponentRef cref;
+    output Boolean b;
+  end isWholeArrayCref;
+
+  function isResizableSimVar
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  end isResizableSimVar;
+
+  function hasResizableVars
+    input SimCode.ModelInfo modelInfo;
+    output Boolean b;
+  end hasResizableVars;
+
+  function resizableFixedSize
+    input SimCode.ModelInfo modelInfo;
+    input Integer varType;
+    output Integer n;
+  end resizableFixedSize;
+
+  function resizableFixedStates
+    input SimCode.ModelInfo modelInfo;
+    output Integer n;
+  end resizableFixedStates;
+
+  function simVarDims
+    input SimCodeVar.SimVar var;
+    output list<DAE.Dimension> dims;
+  end simVarDims;
+
   function jacobianResultVars
     input SimCode.Sparsity sparsity;
     input Option<HashTableCrefSimVar.HashTable> crefsHT;

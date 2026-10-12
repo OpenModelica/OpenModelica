@@ -2616,6 +2616,12 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
     messageClose(OMC_LOG_NLS_V);
   }
 
+  /* The residual scaling of a failed solve belongs to wherever the iteration
+   * ended up. Don't let the next call test its initial point against it. */
+  if (success != NLS_SOLVED) {
+    memset(homotopyData->resScaling, 0, homotopyData->n*sizeof(double));
+  }
+
   /* write statistics */
   nlsData->numberOfFEval = homotopyData->numberOfFunctionEvaluations;
   nlsData->numberOfIterations = homotopyData->numberOfIterations;

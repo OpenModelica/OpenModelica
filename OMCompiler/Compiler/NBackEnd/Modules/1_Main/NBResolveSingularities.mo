@@ -66,6 +66,7 @@ protected
   import NBVariable.{VarData, VariablePointer, VariablePointers};
 
   // util imports
+  import Array;
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
   import StringUtil;
@@ -564,7 +565,7 @@ protected
         eqn_candidates := eqn :: eqn_candidates;
       end if;
     end for;
-    color_clustering := listArray(list(i for i in 1:listLength(eqn_candidates)));
+    color_clustering := Array.createIntRange(listLength(eqn_candidates));
 
     // use a new color for each uncolored equation
     for eqn in eqn_candidates loop
@@ -586,7 +587,7 @@ protected
     end for;
 
     // remove all empty colors (purely discrete)
-    msss := listArray(list(ms for ms guard(not listEmpty(ms)) in arrayList(msss)));
+    msss := Array.filter(msss, listEmpty);
   end getMSSS;
 
   function fillColorEqn

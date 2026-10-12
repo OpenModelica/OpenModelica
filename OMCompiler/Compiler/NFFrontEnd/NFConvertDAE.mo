@@ -47,6 +47,7 @@ import Restriction = NFRestriction;
 protected
 
 import Algorithm = NFAlgorithm;
+import Array;
 import Attributes = NFAttributes;
 import AbsynUtil;
 import AvlTreePathFunction;
@@ -1031,7 +1032,7 @@ algorithm
   ty := InstNode.getType(iterator);
   sub_iters_dae := list(
     (ComponentRef.toDAE(Util.tuple21(si)),
-     listArray(list(Expression.toDAE(e) for e in arrayList(Util.tuple22(si)))))
+     Array.map(Util.tuple22(si), function Expression.toDAE(allowEmpty = false)))
     for si in sub_iters);
 
   forDAE := match for_type
