@@ -2130,6 +2130,17 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
      The seed/sensitivity value references are mapped with
      mapOutputReference2OutputNumber and mapInputReference2InputNumber functions
   */
+  /* Adjoint equations accumulate into resultVars and may use tmpVars as
+   * accumulators for intermediate adjoints. Clear both on every call,
+   * otherwise successive VJPs can contaminate one another. */
+  for (i=0; i<dependent; i++) {
+    comp->fmiDerJacAdj->resultVars[i]=0;
+  }
+  if (comp->fmiDerJacAdj->sizeTmpVars > 0) {
+    memset(comp->fmiDerJacAdj->tmpVars, 0,
+        comp->fmiDerJacAdj->sizeTmpVars * sizeof(modelica_real));
+  }
+
   /* eval constant part of jacobian */
   if (comp->fmiDerJacAdj->constantEqns != NULL) {
     comp->fmiDerJacAdj->constantEqns(fmudata, td, comp->fmiDerJacAdj, NULL);
