@@ -2720,8 +2720,8 @@ fn solve_initial_system(
         return Ok(());
     }
     if method == H::GlobalEquidistant {
-        run_homotopy_continuation(e, sim_data, layout, model)?;
-        init_report::add_homotopy_steps(homotopy_steps() as u32);
+        let accepted = run_homotopy_continuation(e, sim_data, layout, model)?;
+        init_report::add_homotopy_steps(accepted);
         return Ok(());
     }
     // GLOBAL_ADAPTIVE: the simplified lambda = 0 system first, then the actual one,
@@ -3031,36 +3031,73 @@ fn homotopy_on_first_try() -> bool {
     crate::simflags::with_flags(|f| f.homotopy_on_first_try).unwrap_or(true)
 }
 
+/// The variable regions the initial system writes, saved at a homotopy point.
+struct HomotopyPoint {
+    reals: Vec<f64>,
+    rest: Vec<(u32, Vec<u8>)>,
+}
+
+impl HomotopyPoint {
+    fn save(e: &dyn SimEngine, sim_data: u32, layout: &SimLayout) -> Result<Self> {
+        let mut reals = vec![0.0; layout.real_bytes() / 8];
+        read_f64s(e, sim_data + REAL_OFF, &mut reals)?;
+        let regions = [
+            (layout.pre_real_off, layout.real_bytes()),
+            (layout.int_off, layout.n_int_alg() as usize * 4),
+            (layout.pre_int_off, layout.n_int_alg() as usize * 4),
+            (layout.bool_off, layout.n_bool_alg() as usize * 4),
+            (layout.pre_bool_off, layout.n_bool_alg() as usize * 4),
+        ];
+        let mut rest = Vec::with_capacity(regions.len());
+        for (off, bytes) in regions {
+            let mut buf = vec![0u8; bytes];
+            e.read_bytes(sim_data + off, &mut buf)?;
+            rest.push((off, buf));
+        }
+        Ok(Self { reals, rest })
+    }
+
+    fn restore(&self, e: &mut dyn SimEngine, sim_data: u32) -> Result<()> {
+        write_f64s(e, sim_data + REAL_OFF, &self.reals)?;
+        for (off, buf) in &self.rest {
+            e.write_bytes(sim_data + off, buf)?;
+        }
+        Ok(())
+    }
+}
+
 /// Global equidistant homotopy continuation (C's `solveWithGlobalHomotopy`):
 /// lambda 0 → 1 in `HOMOTOPY_STEPS` steps, step 0 solving the simplified
-/// `functionInitialEquations_lambda0`, each step seeded by the previous solution.
-/// Leaves lambda = 1.
+/// `functionInitialEquations_lambda0`. A step after two converged points with
+/// lambda > 0 starts from their secant extrapolation; a failed step after a
+/// converged point is retried from it with half the step. Leaves lambda = 1 and
+/// returns the number of accepted steps.
 fn run_homotopy_continuation(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
     model: Option<&SimMeta>,
-) -> Result<()> {
+) -> Result<u32> {
     let steps = homotopy_steps();
     omclog::info(omclog::INIT_HOMOTOPY, false, "Global homotopy with equidistant step size started.");
     let mut path = HomotopyPath::open(model, "equidistant_global_homotopy.csv");
     path.header(model);
     omclog::info(omclog::INIT_HOMOTOPY, true, "homotopy process\n---------------------------");
-    // C runs every step unconditionally and checks the systems once at the end
-    // (`check_nonlinear_solutions`), so a system that misses at lambda = 1/3 and
-    // lands at lambda = 1 is not a failure. A model assert or a raised error
-    // still aborts, after the block is closed.
+    // A step whose system misses is not a failure by itself: only lambda = 1 is
+    // checked. A model assert or a raised error aborts.
+    let max_step = 1.0 / steps as f64;
+    let min_step = max_step / 32.0;
+    let mut accepted = 0u32;
     let steps_run = (|| {
-        for step in 0..=steps {
-            let lambda = (step as f64 / steps as f64).min(1.0);
-            write_f64(e, sim_data + layout.lambda_off, lambda)?;
-            omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
-            if step == 0 {
-                call_initial_equations_lambda0(e, sim_data, layout)?;
-            } else {
-                write_i32(e, sim_data + layout.nls_fail_off, 0)?;
-                e.call1("functionInitialEquations", sim_data)?;
-            }
+        let mut lambda = 0.0;
+        write_f64(e, sim_data + layout.lambda_off, lambda)?;
+        omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
+        call_initial_equations_lambda0(e, sim_data, layout)?;
+        let mut ok = read_i32(e, sim_data + layout.nls_fail_off)? == 0;
+        let mut step_size = max_step;
+        let mut prev: Option<(f64, HomotopyPoint)> = None;
+        let mut prev_ok = false;
+        loop {
             omclog::info!(
                 omclog::INIT_HOMOTOPY,
                 false,
@@ -3068,8 +3105,50 @@ fn run_homotopy_continuation(
                 format_g(lambda, 6),
             );
             path.row(e, sim_data, layout, lambda);
+            if lambda >= 1.0 {
+                return Ok(());
+            }
+            let point = HomotopyPoint::save(e, sim_data, layout)?;
+            let prev2 = if ok && prev_ok { prev.take().filter(|(l, _)| *l > 0.0) } else { None };
+            let lambda_prev = lambda;
+            prev = Some((lambda, point));
+            prev_ok = ok;
+            accepted += 1;
+            let (_, point) = prev.as_ref().unwrap();
+            loop {
+                lambda = (lambda_prev + step_size).min(1.0);
+                if let Some((lambda_prev2, point2)) = &prev2 {
+                    let f = (lambda - lambda_prev) / (lambda_prev - lambda_prev2);
+                    let x: Vec<f64> =
+                        point.reals.iter().zip(&point2.reals).map(|(a, b)| a + f * (a - b)).collect();
+                    write_f64s(e, sim_data + REAL_OFF, &x)?;
+                    // Start the systems from the prediction rather than their last solution.
+                    e.clean_nls_history(f64::NEG_INFINITY);
+                }
+                write_f64(e, sim_data + layout.lambda_off, lambda)?;
+                omclog::info!(omclog::INIT_HOMOTOPY, false, "homotopy parameter lambda = {}", format_g(lambda, 6));
+                write_i32(e, sim_data + layout.nls_fail_off, 0)?;
+                e.call1("functionInitialEquations", sim_data)?;
+                ok = read_i32(e, sim_data + layout.nls_fail_off)? == 0;
+                if ok {
+                    break;
+                }
+                if !prev_ok || step_size / 2.0 < min_step {
+                    // Continue from the unconverged point, as a plain equidistant step.
+                    step_size = max_step;
+                    break;
+                }
+                point.restore(e, sim_data)?;
+                step_size /= 2.0;
+                omclog::info!(
+                    omclog::INIT_HOMOTOPY,
+                    false,
+                    "homotopy parameter lambda = {} failed, retrying with step size {}",
+                    format_g(lambda, 6),
+                    format_g(step_size, 6),
+                );
+            }
         }
-        Ok(())
     })();
     omclog::close(omclog::INIT_HOMOTOPY);
     path.finish();
@@ -3089,12 +3168,12 @@ fn run_homotopy_continuation(
             false,
             "Failed to solve the initialization problem with global homotopy with equidistant step size.",
         );
-        init_report::set_failed_step(steps);
+        init_report::set_failed_step(accepted as i32);
         omclog::debug(omclog::ASSERT, false, "Unable to solve initialization problem.");
         log_init_assert_notice();
         return Err(ASSERT_ERR);
     }
-    Ok(())
+    Ok(accepted)
 }
 
 /// C's `log_homotopy_lambda_vars`: with `-lv=LOG_INIT_HOMOTOPY` the real variable
