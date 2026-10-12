@@ -38,7 +38,6 @@
  */
 
 #include <stdlib.h>
-#include <iostream>
 #include <cstring>
 
 #include "OMCProxy.h"
@@ -3054,6 +3053,41 @@ bool OMCProxy::setComponentDimensions(QString className, QString componentName, 
 {
   sendCommand("setComponentDimensions(" + className + "," + componentName + "," + dimensions + ")");
   return StringHandler::unparseBool(getResult());
+}
+
+/*!
+ * \brief OMCProxy::getComponentCondition
+ * Gets the condition of a component in a class.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \return the condition of the component as a string or the string "false" on failure.
+ */
+QString OMCProxy::getComponentCondition(QString className, QString componentName)
+{
+  return mpOMCInterface->getComponentCondition(className, componentName);
+  // sendCommand("getComponentCondition(" + className + "," + componentName + ")");
+  // return StringHandler::unparse(getResult());
+}
+
+/*!
+ * \brief OMCProxy::setComponentCondition
+ * Sets the condition of a component in a class. An empty string removes the condition.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \param condition - the condition of the component.
+ * \return true on success.
+ */
+bool OMCProxy::setComponentCondition(QString className, QString componentName, QString condition)
+{
+  return mpOMCInterface->setComponentCondition(className, componentName, condition);
+  // QString expression;
+  // if (condition.isEmpty()) {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"\")";
+  // } else {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"" + condition + "\")";
+  // }
+  // sendCommand(expression);
+  // return StringHandler::unparseBool(getResult());
 }
 
 /*!

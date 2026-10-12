@@ -3972,6 +3972,15 @@ external "builtin";
 annotation(preferredView="text");
 end getNthComponentCondition;
 
+function getComponentCondition
+  "Returns the condition of the given component in the given class as a string."
+  input TypeName className;
+  input TypeName componentName;
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end getComponentCondition;
+
 function getElementAnnotation
   "Returns the annotation on a component or class element as a string."
   input TypeName elementName;
@@ -4077,6 +4086,16 @@ annotation(
 </html>"),
   preferredView="text");
 end setComponentProperties;
+
+function setComponentCondition
+  "Sets the condition of a component in a class. An empty string removes the condition."
+  input TypeName className;
+  input TypeName componentName;
+  input String condition;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end setComponentCondition;
 
 function getNthConnector
   "Returns the name and type of the n:th public connector in the given class."

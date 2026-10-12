@@ -6341,7 +6341,7 @@ algorithm
   try
     cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     comp := InteractiveUtil.getNthComponentInClass(cls, n);
-    str := getComponentCondition(comp);
+    str := getComponentConditionStr(comp);
     str := System.trim(str, " ");
     result := ValuesMake.makeString(str);
   else
@@ -6349,8 +6349,51 @@ algorithm
   end try;
 end getNthComponentCondition;
 
-protected function getComponentCondition
-" Helper function to getNthComponentCondition."
+public function getComponentCondition
+" Returns the condition of the given component in the given class as a string.
+  An empty string is returned for components without a condition."
+  input Absyn.Path classPath;
+  input Absyn.Path componentName;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Path path;
+  Absyn.Element elem;
+  list<Absyn.ComponentItem> comps;
+  Absyn.ComponentItem comp;
+  String comp_name, str;
+algorithm
+  try
+    path := AbsynUtil.joinPaths(classPath, componentName);
+    comp_name := AbsynUtil.pathLastIdent(componentName);
+    elem := InteractiveUtil.getPathedElementInProgram(path, program);
+    comps := AbsynUtil.getComponentItemsFromElement(elem);
+    comp := List.find(comps, function AbsynUtil.isComponentItemNamed(name = comp_name));
+    str := getComponentitemConditionStr(comp);
+    str := System.trim(str, " ");
+    result := ValuesMake.makeString(str);
+  else
+    result := ValuesMake.makeBoolean(false);
+  end try;
+end getComponentCondition;
+
+protected function getComponentitemConditionStr
+" Helper function to getComponentCondition. Returns the condition expression of
+  a component item without the leading if keyword."
+  input Absyn.ComponentItem item;
+  output String str;
+algorithm
+  str := match item
+    local
+      Absyn.Exp exp;
+    case Absyn.ComponentItem.COMPONENTITEM(condition = SOME(exp))
+      then Dump.printExpStr(exp);
+    else "";
+  end match;
+end getComponentitemConditionStr;
+
+protected function getComponentConditionStr
+" Helper function to getNthComponentCondition and getComponentCondition."
   input Absyn.Element inElement;
   output String outString;
 algorithm
@@ -6366,7 +6409,7 @@ algorithm
         str;
     else "";
   end matchcontinue;
-end getComponentCondition;
+end getComponentConditionStr;
 
 protected function getComponentitemsCondition
 "Helper function to getNthComponentCondition."
@@ -6941,6 +6984,64 @@ algorithm
         ();
   end match;
 end setComponentCommentInElement;
+
+public function setComponentCondition
+" Sets the condition of a component in a class. Pass an empty string to remove
+  the condition."
+  input Absyn.Path classPath;
+  input Absyn.Path componentName;
+  input String condition;
+  input output Absyn.Program program;
+        output Boolean success;
+protected
+  Absyn.Path path;
+  String comp_name;
+  Option<Absyn.Exp> condExp;
+  Absyn.Exp cond;
+algorithm
+  try
+    condExp := NONE();
+    if not stringEmpty(condition) then
+      // parse the condition string to make it an EXP.
+      GlobalScript.ISTMTS({GlobalScript.IEXP(cond, _)}, _) := Parser.parsestringexp(condition);
+      condExp := SOME(cond);
+    end if;
+    path := AbsynUtil.joinPaths(classPath, componentName);
+    comp_name := AbsynUtil.pathLastIdent(componentName);
+    (program, _, success) := InteractiveUtil.transformPathedElementInProgram(path,
+      function setComponentConditionInElement(componentName = comp_name, condExp = condExp), program);
+  else
+    success := false;
+  end try;
+end setComponentCondition;
+
+protected function setComponentConditionInElement
+  input output Absyn.Element element;
+  input String componentName;
+  input Option<Absyn.Exp> condExp;
+protected
+  Absyn.ElementSpec spec;
+  list<Absyn.ComponentItem> comps;
+
+  function set_condition
+    input output Absyn.ComponentItem item;
+    input Option<Absyn.Exp> condExp;
+  algorithm
+    item.condition := condExp;
+  end set_condition;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as Absyn.ElementSpec.COMPONENTS())
+      algorithm
+        (comps, true) := List.findAndMap(spec.components,
+          function AbsynUtil.isComponentItemNamed(name = componentName),
+          function set_condition(condExp = condExp));
+        spec.components := comps;
+        element.specification := spec;
+      then
+        ();
+  end match;
+end setComponentConditionInElement;
 
 public function setConnectionComment
   input Absyn.Path classPath;
