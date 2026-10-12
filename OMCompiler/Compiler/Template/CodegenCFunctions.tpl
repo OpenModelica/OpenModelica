@@ -4100,7 +4100,7 @@ let &sub = buffer ""
             let cond = daeExp(crefExp(e), context, &sub, &varDecls, &varFrees, &auxFunction)
             let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &varFrees, &auxFunction)
             '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
-          let statements = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction);separator="\n")
+          let statements = algStatementsWhenBody(statementLst, context, &varDecls, &varFrees, &auxFunction)
           let else_clause = algStatementWhenElse(elseWhen, context, &varDecls, &varFrees, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
@@ -4116,6 +4116,15 @@ let &sub = buffer ""
   end match
 end algStmtWhen;
 
+template algStatementsWhenBody(list<DAE.Statement> statements, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  match context
+  case SIMULATION_CONTEXT(__) then
+    (statements |> stmt => algStatement(stmt, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction);separator="\n")
+  else
+    (statements |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction);separator="\n")
+end algStatementsWhenBody;
+
 template algStatementWhenElse(Option<DAE.Statement> stmt, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Helper to algStmtWhen."
 ::=
@@ -4126,7 +4135,7 @@ case SOME(when as STMT_WHEN(__)) then
     let cond = daeExp(crefExp(e), context, &sub, &varDecls, &varFrees, &auxFunction)
     let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &varFrees, &auxFunction)
     '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
-  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction);separator="\n")
+  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction);separator="\n")
   let else = algStatementWhenElse(when.elseWhen, context, &varDecls, &varFrees, &auxFunction)
   <<
   else if(<%else_conditions%>)
@@ -4910,10 +4919,19 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   // A violated assert leaves the frame; a warning carries on.
   let assertCheck = match level case ENUM_LITERAL(index=1) then '' else errorCheck(context)
+  // A when-body runs only at its event, which would excuse a held error.
+  let neverHeld = match context case SIMULATION_CONTEXT(whenBody=true) then (match level case ENUM_LITERAL(index=1) then '' else '1')
   let assertCode = match context case FUNCTION_CONTEXT(__) then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
     <%omcAssertFunc%>info, <%msgVar%>);
+    <%assertCheck%>
+    >>
+    else if neverHeld then
+    <<
+    const char* assert_cond = "(<%assertExpStr%>)";
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
     <%assertCheck%>
     >>
     else
