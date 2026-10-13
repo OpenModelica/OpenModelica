@@ -1,0 +1,61 @@
+// name: AlgebraicStepRetry.mos - retry a failed step of a model without states (ticket #13757)
+// keywords: maxStepRetries, algebraic, nonlinear
+// status: correct
+// teardown_command: rm -rf AlgebraicStepRetry AlgebraicStepRetry.c AlgebraicStepRetry.o AlgebraicStepRetry.h AlgebraicStepRetry.libs AlgebraicStepRetry.log AlgebraicStepRetry.makefile AlgebraicStepRetry_*
+//
+// A purely algebraic model can only follow a sharp transition between two
+// output points when a failed step is retried with a small enough step size.
+
+loadString("
+model AlgebraicStepRetry
+  function residual \"Single root at d = 0, but |r| decays towards 0.1 for |d| > 1\"
+    input Real d;
+    output Real r;
+  algorithm
+    r := d/(1 + d^2) + 0.1*tanh(d);
+    annotation(Inline = false);
+  end residual;
+  Real s \"Moving solution, makes a sharp but smooth transition at time = 0.5\";
+  Real x(start = -100) \"Unknown of the implicit equation, exact solution is x = s\";
+equation
+  s = 100*tanh(100*(time - 0.5));
+  // Newton only converges from a guess with |x - s| < 1, further away the
+  // residual is flat and points away from the root.
+  residual(x - s) = 0;
+  annotation(experiment(StartTime = 0, StopTime = 1, Interval = 0.002, Tolerance = 1e-6));
+end AlgebraicStepRetry;
+"); getErrorString();
+
+// Models without states retry a failed step 20 times by default.
+echo(false); res := simulate(AlgebraicStepRetry); resultFile := res.resultFile; echo(true); getErrorString();
+resultFile <> "";
+abs(val(x, 0.4) + 100) < 1e-5; abs(val(x, 0.6) - 100) < 1e-5; getErrorString();
+
+// A few retries are enough.
+echo(false); res := simulate(AlgebraicStepRetry, simflags="-maxStepRetries=3"); resultFile := res.resultFile; echo(true); getErrorString();
+resultFile <> "";
+abs(val(x, 0.4) + 100) < 1e-5; abs(val(x, 0.6) - 100) < 1e-5; getErrorString();
+
+// A single retry is not.
+echo(false); res := simulate(AlgebraicStepRetry, simflags="-maxStepRetries=1"); resultFile := res.resultFile; echo(true); getErrorString();
+resultFile <> "";
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// ""
+// true
+// ""
+// true
+// true
+// true
+// ""
+// true
+// ""
+// false
+// endResult

@@ -103,6 +103,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MAX_EVENT_ITERATIONS */         "mei",
   /* FLAG_MAX_ORDER */                    "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */                "maxStepSize",
+  /* FLAG_MAX_STEP_RETRIES */             "maxStepRetries",
+  /* FLAG_MIN_RETRY_STEP_SIZE */          "minRetryStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "measureTimePlotFormat",
   /* FLAG_MOO_OPTIMIZATION */             "moo",
   /* FLAG_MOO_L2BN_P1_ITERATIONS */       "moo_l2bn_p1_it",
@@ -265,6 +267,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_EVENT_ITERATIONS */         "[int (default 20)] value specifies the maximum number of event iterations",
   /* FLAG_MAX_ORDER */                    "value specifies maximum integration order for supported solver",
   /* FLAG_MAX_STEP_SIZE */                "value specifies maximum absolute step size for supported solver",
+  /* FLAG_MAX_STEP_RETRIES */             "value specifies how often a failed step is retried with half the step size",
+  /* FLAG_MIN_RETRY_STEP_SIZE */          "value specifies the minimum step size for retrying a failed step",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "value specifies the output format of the measure time functionality",
   /* FLAG_MOO_OPTIMIZATION */             "perform dynamic optimization with MOO library",
   /* FLAG_MOO_L2BN_P1_ITERATIONS */       "[int default: 0] value specifies the number of phase I iterations (full bisections) for L2-Boundary-Norm mesh refinement in MOO",
@@ -543,6 +547,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies maximum integration order, used by the methods: dassl, ida.",
   /* FLAG_MAX_STEP_SIZE */
   "  Value specifies maximum absolute step size, used by the methods: dassl, ida, gbode.",
+  /* FLAG_MAX_STEP_RETRIES */
+  "  Value specifies how often a step is retried in a row, when evaluating the model at the end of the step failed,\n"
+  "  e.g. because of an assert or a non-linear system that could not be solved.\n"
+  "  Each retry halves the step size, which grows back to the output interval with the following steps.\n"
+  "  The value is a non-negative Integer with default value 20 for models without states and 1 otherwise.",
+  /* FLAG_MIN_RETRY_STEP_SIZE */
+  "  Value specifies the minimum step size for retrying a failed step, see -maxStepRetries.\n"
+  "  The simulation is terminated instead of retrying a step with a smaller step size.\n"
+  "  The value is a positive Real with default value 1e-12.",
   /* FLAG_MEASURETIMEPLOTFORMAT */
   "  Value specifies the output format of the measure time functionality:\n\n"
   "  * svg\n"
@@ -835,6 +848,8 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_MAX_EVENT_ITERATIONS */         FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_ORDER */                    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_STEP_SIZE */                FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MAX_STEP_RETRIES */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MIN_RETRY_STEP_SIZE */          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MEASURETIMEPLOTFORMAT */        FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MOO_OPTIMIZATION */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MOO_L2BN_P1_ITERATIONS */       FLAG_REPEAT_POLICY_FORBID,
@@ -996,6 +1011,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MAX_EVENT_ITERATIONS */         FLAG_TYPE_OPTION,
   /* FLAG_MAX_ORDER */                    FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */                FLAG_TYPE_OPTION,
+  /* FLAG_MAX_STEP_RETRIES */             FLAG_TYPE_OPTION,
+  /* FLAG_MIN_RETRY_STEP_SIZE */          FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */        FLAG_TYPE_OPTION,
   /* FLAG_MOO_OPTIMIZATION */             FLAG_TYPE_FLAG,
   /* FLAG_MOO_L2BN_P1_ITERATIONS */       FLAG_TYPE_OPTION,
