@@ -1901,7 +1901,12 @@ algorithm
         then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode, context);
 
       case (_, Class.PARTIAL_CLASS())
-        then Class.PARTIAL_CLASS(rdcl_cls.elements, mod, constrainingMod, prefs);
+        algorithm
+          if not InstContext.inInstanceAPI(context) then
+            checkRedeclaredClassType(redeclareNode, originalNode, context);
+          end if;
+        then
+          Class.PARTIAL_CLASS(rdcl_cls.elements, mod, constrainingMod, prefs);
 
       else
         algorithm
@@ -1917,6 +1922,106 @@ algorithm
   node_ty := InstNodeType.REDECLARED_CLASS(InstNode.scopeRef(InstNode.parent(originalNode)), InstNode.nodeType(originalNode), orig_opt, instLevel);
   redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
+
+function checkRedeclaredClassType
+  "Checks that a redeclared class is a subtype of the constraining class of the
+   original class, i.e. the class given by the constrainedby clause or
+   otherwise the original class itself. Only the names of the public
+   components are checked."
+  input InstNode redeclareNode;
+  input InstNode originalNode;
+  input InstContext.Type context;
+protected
+  SCode.Element def = InstNode.definition(originalNode);
+  InstNode cc_node = originalNode, rdcl_node;
+  Absyn.Path path;
+  Class cc_cls, rdcl_cls;
+  Option<String> element = NONE();
+algorithm
+  // The classes are only expanded to check the redeclare here, don't let any
+  // issues with them cause the instantiation to fail.
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    cc_node := match def
+      case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
+          SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(constrainingClass = path)))))
+        algorithm
+          cc_node := Lookup.lookupClassName(path, InstNode.parent(originalNode), context, def.info);
+        then
+          cc_node;
+
+      else
+        algorithm
+          // A redeclare without a constrainedby clause inherits the constraining
+          // class of the element it redeclares, which isn't known here.
+          false := SCodeUtil.isElementRedeclare(def);
+        then
+          InstNode.clone(originalNode);
+    end match;
+
+    // The redeclare is cloned since expanding it here would change the
+    // node, which might be used for more than one element.
+    cc_node := Class.lastBaseClass(expand(cc_node, context));
+    rdcl_node := Class.lastBaseClass(expand(InstNode.clone(redeclareNode), context));
+    cc_cls := InstNode.getClass(cc_node);
+    rdcl_cls := InstNode.getClass(rdcl_node);
+
+    element := match (cc_cls, rdcl_cls)
+      case (Class.EXPANDED_CLASS(), Class.EXPANDED_CLASS())
+        guard isRedeclaredElementCheckable(cc_cls.restriction) and
+              isRedeclaredElementCheckable(rdcl_cls.restriction)
+        then findMissingRedeclaredComponent(cc_cls.elements, rdcl_cls.elements);
+
+      else NONE();
+    end match;
+  else
+    element := NONE();
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+
+  if isSome(element) then
+    Error.addMultiSourceMessage(Error.REDECLARE_CONSTRAINING_TYPE_VIOLATED,
+      {InstNode.typeName(redeclareNode), InstNode.name(redeclareNode),
+       InstNode.name(cc_node), Util.getOption(element)},
+      {InstNode.info(redeclareNode), InstNode.info(originalNode)});
+    fail();
+  end if;
+end checkRedeclaredClassType;
+
+function findMissingRedeclaredComponent
+  "Returns the name of the first public component in the expanded constraining
+   class, including inherited ones, that's not a component in the redeclared
+   class, or NONE() if there's no such component."
+  input ClassTree constrainingTree;
+  input ClassTree rdclTree;
+  output Option<String> element = NONE();
+protected
+  String name;
+algorithm
+  for c in ClassTree.getComponents(constrainingTree) loop
+    if InstNode.isComponent(c) and not InstNode.isProtected(c) then
+      name := InstNode.name(c);
+
+      if not ClassTree.hasComponent(name, rdclTree) then
+        element := SOME(name);
+        return;
+      end if;
+    end if;
+  end for;
+
+  for ext in ClassTree.getExtends(constrainingTree) loop
+    if not InstNode.isProtectedBaseClass(ext) then
+      element := findMissingRedeclaredComponent(
+        Class.classTree(InstNode.getClass(ext)), rdclTree);
+
+      if isSome(element) then
+        return;
+      end if;
+    end if;
+  end for;
+end findMissingRedeclaredComponent;
 
 function redeclareEnum
   input Class redeclareClass;

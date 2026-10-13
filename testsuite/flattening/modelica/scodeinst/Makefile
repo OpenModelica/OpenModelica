@@ -1086,6 +1086,9 @@ RecursiveInst3.mo \
 RedeclareClass1.mo \
 RedeclareClass2.mo \
 RedeclareClassComponent.mo \
+RedeclareClassConstrainingType1.mo \
+RedeclareClassConstrainingType2.mo \
+RedeclareClassConstrainingType3.mo \
 RedeclareComponentClass.mo \
 RedeclareComponentType1.mo \
 RedeclareComponentType2.mo \
