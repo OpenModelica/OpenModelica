@@ -75,7 +75,98 @@ rustup target add wasm32-unknown-unknown
 # one adds the path the clang driver looks in.
 apt install clang lld wasi-libc libclang-rt-21-dev-wasm32 libclang-rt-dev-wasm32
 # Overridable: OMC_WASI_CLANG (default `clang`), OMC_WASI_SYSROOT (default `/usr`).
+# For the pre-commit hook that formats Rust and TOML files (see below).
+cargo install taplo-cli --locked
 ```
+
+## Formatting and style
+
+### Formatting is automatic
+
+Rust files are formatted with **rustfmt** and TOML files with **taplo**. Nobody
+formats by hand, and nobody discusses layout in a review. The Rust project
+explains why this is worth it:
+
+- The Rust Book,
+  [Appendix D: Automatic Formatting with `rustfmt`](https://doc.rust-lang.org/book/appendix-04-useful-development-tools.html#automatic-formatting-with-rustfmt):
+  "Many collaborative projects use `rustfmt` to prevent arguments about which
+  style to use when writing Rust."
+- The Rust Style Guide,
+  [Motivation - why use a formatting tool?](https://doc.rust-lang.org/style-guide/#motivation---why-use-a-formatting-tool):
+  one common layout makes unfamiliar code easier to read, and nobody has to
+  invent or debate style rules.
+
+The rules:
+
+- Rust uses the [default Rust style](https://doc.rust-lang.org/style-guide/)
+  with one change, a line width of 120 ([`rustfmt.toml`](rustfmt.toml)).
+- TOML uses the taplo defaults with the same width and without key reordering
+  ([`.taplo.toml`](../../../.taplo.toml)).
+- The rules apply to both cargo workspaces, and only to the files a commit adds
+  or changes. The existing files are not reformatted in one go; each gets
+  formatted the first time somebody changes it.
+
+How they are applied:
+
+- **Pre-commit hook.** Install `common/pre-commit.sh` as described in
+  [CONTRIBUTING.md](../../../CONTRIBUTING.md#git-hooks). It formats the Rust and
+  TOML files of every commit, so there is nothing to remember. It never blocks a
+  commit: if rustfmt or taplo is missing it prints a warning instead.
+- **CI.** `.github/workflows/rust-format.yml` checks the Rust and TOML files a
+  pull request adds or changes, and nothing else.
+- **By hand.** [`./format.sh FILE...`](format.sh) formats the given files, and
+  `./format.sh --check FILE...` only reports. It works on a clean checkout.
+  `cargo fmt` only works in the build copy, because it needs a loadable
+  workspace.
+- **Editor.** Format-on-save with rust-analyzer and a taplo extension (VS Code:
+  "Even Better TOML") uses the same two configuration files.
+
+The first change to a file that was never formatted reformats the whole file.
+If that makes the diff hard to review, format the file in a commit of its own
+first (`./format.sh FILE`, commit), then make your change.
+
+### Generated code
+
+- Never edit generated files. Your change is lost on the next build, and the
+  files are not in git anyway.
+- Generated code keeps MetaModelica naming (`camelCase` functions, `UPPER`
+  record names) and allows the matching lints (`non_snake_case`, ...). Do not
+  "fix" the names.
+
+### Hand-written code
+
+- **Naming.** Code that replaces a MetaModelica item keeps its MetaModelica
+  name and signature, because generated callers use `Package::item`. Everything
+  else uses normal Rust naming: `snake_case` for functions, variables and
+  modules, `CamelCase` for types, `SCREAMING_SNAKE_CASE` for constants.
+- **Signatures must match the `.mo` declaration**, including whether the
+  function can fail. A replacement that returns `T` where the `.mo` version can
+  fail (or the reverse) does not compile against the generated callers.
+- **Errors.** Report failure that MetaModelica code can observe as
+  `metamodelica::Result<T>` (`Err(&'static str)`) and pass errors on with `?`.
+  Use `panic!`, `unwrap()` and `expect()` only for broken invariants, never for
+  user input or I/O. Report messages for the user through `Error`/`ErrorExt`,
+  the same as in MetaModelica.
+- **Integers.** `Integer` is `i32`, and overflow wraps (the dev profile sets
+  `overflow-checks = false` to match the C runtime and release builds). Use
+  `wrapping_*` explicitly where you depend on wrapping.
+- **Cloning.** MetaModelica values are reference-counted (`Arc`, `ArcStr`,
+  `List`), so `.clone()` copies a pointer, not the data. Cloning is the normal
+  way to deal with ownership errors here. Avoid real deep copies (`Vec` of
+  large data) in hot paths.
+- **Comments.** Explain why, not what. Give public items a `///` doc comment.
+  When porting C code, name the original file
+  (`// mirrors OMCompiler/Compiler/runtime/printimpl.c`), as the existing files
+  do.
+- **`unsafe`** only for FFI and with a `// SAFETY:` comment that explains why
+  it is sound.
+- **Dependencies.** Add new crates to `[workspace.dependencies]` in
+  [`Cargo.toml`](Cargo.toml) with a comment saying what they are for, and refer
+  to them with `foo.workspace = true` in the crate. `check-unused-deps.py` finds
+  dependencies that are no longer used.
+- **Tests.** Unit tests live in `src/unittests/` of the crate (for example
+  `openmodelica_frontend_dump/src/unittests/`). Run them with
+  `cargo test -p <crate>` in the build copy. The testsuite runs through ctest.
 
 ## For development (debug builds compile faster but are much slower)
 
