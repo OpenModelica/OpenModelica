@@ -66,6 +66,7 @@ getClassDiagram3.mos \
 getClassDiagram4.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
+getComponentCondition.mos \
 GetComponents.mos \
 getComponentsTestNF.mos \
 getComponentsTestOF.mos \

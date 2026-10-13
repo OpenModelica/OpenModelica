@@ -3344,6 +3344,9 @@ algorithm
     case ("getNthComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponentCondition(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getComponentCondition(classpath, path, SymbolTable.getAbsyn());
+
     case ("getInheritanceCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
@@ -3430,6 +3433,13 @@ algorithm
     case ("setComponentComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
       algorithm
         (p, b) := Interactive.setComponentComment(classpath, path, str, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesMake.makeBoolean(b);
+
+    case ("setComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      algorithm
+        (p, b) := Interactive.setComponentCondition(classpath, path, str, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         ValuesMake.makeBoolean(b);

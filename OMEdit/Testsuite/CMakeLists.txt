@@ -58,6 +58,10 @@ set(OMEDIT_TEST_CHOICESENUMERATION_SOURCES ChoicesEnumeration/ChoicesEnumeration
                                            ChoicesEnumeration/ChoicesEnumerationTest.h)
 add_omedit_test(ChoicesEnumeration "${OMEDIT_TEST_CHOICESENUMERATION_SOURCES}")
 
+set(OMEDIT_TEST_CONDITIONALCOMPONENT_SOURCES ConditionalComponent/ConditionalComponentTest.cpp
+                                                   ConditionalComponent/ConditionalComponentTest.h)
+add_omedit_test(ConditionalComponent "${OMEDIT_TEST_CONDITIONALCOMPONENT_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")
