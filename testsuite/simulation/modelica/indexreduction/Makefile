@@ -9,7 +9,7 @@ DiscreteTupleOutput.mos \
 TupleConstraintEquation.mos \
 TupleConstraintStateSet.mos \
 TupleAssignInIf.mos \
-SmoothArrayIfExp.mos
+StateSetArrayEq.mos
 
 
 # test that currently fail. Move up when fixed. 
