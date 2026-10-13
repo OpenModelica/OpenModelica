@@ -77,6 +77,7 @@ private:
   PlotPicker *mpPlotPicker;
   QList<PlotCurve*> mPlotCurvesList;
   QList<QColor> mColorsList;
+  bool mZoomingFromAxis = false;
 public:
   Plot(PlotWindow *pParent);
   ~Plot();
@@ -107,6 +108,7 @@ public:
 private:
   void updateMaxMajorSteps();
 protected:
+  bool eventFilter(QObject *object, QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   /* Override the minimum size hint so that the window can be shrunk vertically.
    * QwtPlot::sizeHint() (used by the default minimumSizeHint()) adds extra
