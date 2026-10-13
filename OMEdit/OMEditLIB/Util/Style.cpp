@@ -188,12 +188,48 @@ QColor Style::infoBarTextColor()
 }
 
 /*!
+ * \brief Style::readOnlyViewBackgroundColor
+ * Area around the extent of a system library class, an element mode or a visualization view.
+ */
+QColor Style::readOnlyViewBackgroundColor()
+{
+  return pick(Qt::white, QColor(220, 220, 220));
+}
+
+/*!
+ * \brief Style::iconViewBackgroundColor
+ * Area around the extent in the Icon View.
+ */
+QColor Style::iconViewBackgroundColor()
+{
+  return pick(QColor(229, 244, 255), QColor(194, 207, 217));
+}
+
+/*!
+ * \brief Style::diagramViewBackgroundColor
+ * Area around the extent in the Diagram View.
+ */
+QColor Style::diagramViewBackgroundColor()
+{
+  return pick(QColor(242, 242, 242), QColor(205, 205, 205));
+}
+
+/*!
  * \brief Style::documentationPageBackgroundColor
- * Painted behind the documentation page in dark mode; equals the palette Window color.
+ * Background of the documentation page in dark mode; equals the palette Base color.
  */
 QColor Style::documentationPageBackgroundColor()
 {
-  return QColor(32, 33, 36);
+  return QColor(31, 41, 55);
+}
+
+/*!
+ * \brief Style::documentationPageTextColor
+ * Text of the documentation page in dark mode; equals the palette Text color.
+ */
+QColor Style::documentationPageTextColor()
+{
+  return QColor(243, 244, 246);
 }
 
 /*!

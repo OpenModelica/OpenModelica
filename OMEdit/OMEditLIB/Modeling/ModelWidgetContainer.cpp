@@ -4479,11 +4479,11 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
-    painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
+    painter->setBrush(QBrush(Style::readOnlyViewBackgroundColor(), Qt::SolidPattern));
   } else if (isIconView()) {
-    painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
+    painter->setBrush(QBrush(Style::iconViewBackgroundColor(), Qt::SolidPattern));
   } else {
-    painter->setBrush(QBrush(QColor(242, 242, 242), Qt::SolidPattern));
+    painter->setBrush(QBrush(Style::diagramViewBackgroundColor(), Qt::SolidPattern));
   }
   // draw scene rectangle white background
   painter->setPen(Qt::NoPen);
