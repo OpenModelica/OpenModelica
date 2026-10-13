@@ -69,6 +69,7 @@ protected
   import SymbolicJacobian;
   import System;
   import Types;
+  import UnorderedSet;
   import Util;
   import ExpressionBasics;
 
@@ -99,6 +100,9 @@ algorithm
 
     case syst as BackendDAE.EQSYSTEM(mT=SOME(mt), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) algorithm
       comps_m := Sorting.TarjanTransposed(mt, ass2);
+      if syst.orderedVars.hasStartVars and BackendDAEUtil.isInitializationDAE(inShared) then
+        comps_m := splitStartValueCycles(comps_m, syst, inShared, ass1, ass2);
+      end if;
 
       markarray := arrayCreate(BackendEquation.getNumberOfEquations(inSystem.orderedEqs), -1);
       comps := analyseStrongComponentsScalar(comps_m, inSystem, inShared, ass1, ass2, mapEqnIncRow, mapIncRowEqn, 1, markarray);
@@ -114,6 +118,232 @@ algorithm
     then fail();
   end matchcontinue;
 end strongComponentsScalar;
+
+protected function splitStartValueCycles
+  "During initialization every occurrence of a variable x is also made incident
+   to its start value $START.x, so that a start value that has to be computed
+   is available before x is used as iteration variable. If the start value
+   itself depends on x this ordering edge closes a cycle and turns equations
+   that can be solved in sequence into an algebraic loop, e.g.
+     parameter Real x_start(fixed = false);
+     Real x(start = x_start);
+   initial equation
+     x_start = f(x);
+   equation
+     x = 2*p;
+   Match and sort such strong components again without the ordering edges, so
+   only the algebraic loops that are really there remain."
+  input list<list<Integer>> inComps "scalar eqn indices";
+  input BackendDAE.EqSystem inSystem;
+  input BackendDAE.Shared inShared;
+  input array<Integer> ass1 "eqn := ass1[var], updated for the split components";
+  input array<Integer> ass2 "var := ass2[eqn], updated for the split components";
+  output list<list<Integer>> outComps = inComps;
+protected
+  BackendDAE.EqSystem syst;
+  BackendDAE.Variables vars;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mT;
+  list<list<Integer>> cyclicComps;
+  array<Integer> compOfEqn "index of the split component the eqn belongs to, 0 otherwise";
+  array<Integer> compOfVar "index of the cyclic component the var belongs to, 0 otherwise";
+  array<Integer> newAss1, newAss2, visited;
+  array<list<list<Integer>>> subComps;
+  Integer nEqns = arrayLength(ass2), nVars = arrayLength(ass1), nCyclic = 0, nSplit = 0, c, v;
+  list<DAE.ComponentRef> crefs;
+  list<list<Integer>> splitComps;
+  Boolean matched;
+algorithm
+  cyclicComps := list(comp for comp guard not listEmpty(startValueCycleCrefs(comp, inSystem.orderedVars, ass2)) in inComps);
+  if listEmpty(cyclicComps) then
+    return;
+  end if;
+
+  // adjacency matrix without the ordering edges
+  vars := inSystem.orderedVars;
+  vars.hasStartVars := false;
+  syst := inSystem;
+  syst.orderedVars := vars;
+  (_, m, mT) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(inShared)), true);
+  if arrayLength(m) <> nEqns then
+    return;
+  end if;
+
+  // Match the equations of each component to its variables again. The existing
+  // matching can assign $START.x to an equation it does not occur in.
+  compOfEqn := arrayCreate(nEqns, 0);
+  compOfVar := arrayCreate(nVars, 0);
+  newAss1 := arrayCreate(nVars, -1);
+  newAss2 := arrayCreate(nEqns, -1);
+  visited := arrayCreate(nVars, 0);
+  for comp in cyclicComps loop
+    nCyclic := nCyclic + 1;
+    for e in comp loop
+      v := ass2[e];
+      arrayUpdate(compOfVar, v, nCyclic);
+      // keep the assignments that are still valid
+      if List.contains(m[e], v, intEq) then
+        arrayUpdate(newAss1, v, e);
+        arrayUpdate(newAss2, e, v);
+      end if;
+    end for;
+
+    matched := true;
+    for e in comp loop
+      if newAss2[e] < 0 then
+        matched := matchStartValueCycleEqn(e, m, compOfVar, nCyclic, newAss1, newAss2, visited, e);
+        if not matched then
+          break;
+        end if;
+      end if;
+    end for;
+
+    if matched then
+      nSplit := nSplit + 1;
+      for e in comp loop
+        arrayUpdate(compOfEqn, e, nCyclic);
+      end for;
+    else
+      for e in comp loop
+        arrayUpdate(newAss2, e, -1);
+      end for;
+    end if;
+  end for;
+
+  if nSplit > 0 then
+    subComps := arrayCreate(nCyclic, {});
+    for comp in Sorting.TarjanTransposed(mT, newAss2) loop
+      c := compOfEqn[listHead(comp)];
+      if c > 0 then
+        arrayUpdate(subComps, c, comp :: subComps[c]);
+      end if;
+    end for;
+
+    outComps := {};
+    for comp in inComps loop
+      c := compOfEqn[listHead(comp)];
+      splitComps := {};
+      if c > 0 then
+        // variables that are no longer solved together with their start value
+        crefs := startValueCycleCrefs(comp, vars, ass2);
+        for subComp in subComps[c] loop
+          crefs := List.setDifferenceOnTrue(crefs, startValueCycleCrefs(subComp, vars, newAss2), ComponentReferenceBasics.crefEqual);
+        end for;
+        // They are solved before their start value, which therefore can not be
+        // used to initialize them. Assigning $START.x also assigns x, so the
+        // equations for these start values must not be evaluated at all.
+        for subComp in subComps[c] loop
+          if not isStartValueOf(subComp, crefs, vars, newAss2) then
+            splitComps := subComp :: splitComps;
+          elseif not listEmpty(listRest(subComp)) then
+            crefs := {};
+            break;
+          end if;
+        end for;
+      else
+        crefs := {};
+      end if;
+
+      if not listEmpty(crefs) then
+        for e in comp loop
+          arrayUpdate(ass1, newAss2[e], e);
+          arrayUpdate(ass2, e, newAss2[e]);
+        end for;
+        List.map_0(crefs, BackendDAEUtil.warnStartValueCycle);
+        outComps := List.append_reverse(splitComps, outComps);
+      else
+        outComps := comp :: outComps;
+      end if;
+    end for;
+    outComps := Dangerous.listReverseInPlace(outComps);
+  end if;
+
+  GCExt.free(compOfEqn);
+  GCExt.free(compOfVar);
+  GCExt.free(newAss1);
+  GCExt.free(newAss2);
+  GCExt.free(visited);
+end splitStartValueCycles;
+
+protected function isStartValueOf
+  "Returns true if the strong component solves for the start value $START.x of
+   one of the given variables x."
+  input list<Integer> inComp "scalar eqn indices";
+  input list<DAE.ComponentRef> inCrefs;
+  input BackendDAE.Variables vars;
+  input array<Integer> ass2 "var := ass2[eqn]";
+  output Boolean isStart = false;
+protected
+  DAE.ComponentRef cref;
+algorithm
+  for e in inComp loop
+    cref := BackendVariable.varCref(BackendVariable.getVarAt(vars, ass2[e]));
+    if ComponentReference.isStartCref(cref) and
+       List.isMemberOnTrue(ComponentReference.popCref(cref), inCrefs, ComponentReferenceBasics.crefEqual) then
+      isStart := true;
+      return;
+    end if;
+  end for;
+end isStartValueOf;
+
+protected function matchStartValueCycleEqn
+  "Searches an augmenting path to match the equation to one of the variables of
+   its strong component."
+  input Integer eqn;
+  input BackendDAE.AdjacencyMatrix m;
+  input array<Integer> compOfVar;
+  input Integer comp;
+  input array<Integer> ass1 "eqn := ass1[var]";
+  input array<Integer> ass2 "var := ass2[eqn]";
+  input array<Integer> visited;
+  input Integer mark;
+  output Boolean matched = false;
+algorithm
+  for v in m[eqn] loop
+    if v > 0 and compOfVar[v] == comp and visited[v] <> mark then
+      arrayUpdate(visited, v, mark);
+      if ass1[v] < 0 or matchStartValueCycleEqn(ass1[v], m, compOfVar, comp, ass1, ass2, visited, mark) then
+        arrayUpdate(ass1, v, eqn);
+        arrayUpdate(ass2, eqn, v);
+        matched := true;
+        return;
+      end if;
+    end if;
+  end for;
+end matchStartValueCycleEqn;
+
+protected function startValueCycleCrefs
+  "Returns the variables x that are solved together with their start value
+   $START.x in the strong component."
+  input list<Integer> inComp "scalar eqn indices";
+  input BackendDAE.Variables vars;
+  input array<Integer> ass2 "var := ass2[eqn]";
+  output list<DAE.ComponentRef> outCrefs = {};
+protected
+  UnorderedSet<DAE.ComponentRef> startBaseCrefs;
+  list<DAE.ComponentRef> crefs = {};
+  DAE.ComponentRef cref;
+algorithm
+  if listEmpty(inComp) or listEmpty(listRest(inComp)) then
+    return;
+  end if;
+
+  startBaseCrefs := UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  for e in inComp loop
+    if ass2[e] > 0 then
+      cref := BackendVariable.varCref(BackendVariable.getVarAt(vars, ass2[e]));
+      if ComponentReference.isStartCref(cref) then
+        UnorderedSet.add(ComponentReference.popCref(cref), startBaseCrefs);
+      else
+        crefs := cref :: crefs;
+      end if;
+    end if;
+  end for;
+
+  if not UnorderedSet.isEmpty(startBaseCrefs) then
+    outCrefs := list(cr for cr guard UnorderedSet.contains(cr, startBaseCrefs) in crefs);
+  end if;
+end startValueCycleCrefs;
 
 public function eqnAssignmentNonScalar
   input array<list<Integer>> mapEqnIncRow;

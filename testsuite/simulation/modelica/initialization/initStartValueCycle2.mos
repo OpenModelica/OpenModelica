@@ -1,0 +1,122 @@
+// name: initStartValueCycle2
+// keywords: initialization, start, sorting
+// status: correct
+// teardown_command: rm -rf InitStartValueCycle2* _InitStartValueCycle2* output.log
+//
+// Models from https://github.com/modelica/ModelicaSpecification/issues/3918
+// where the start attribute of x depends on x.
+//
+
+loadString("
+package InitStartValueCycle2
+  model CyclicStartAttribute
+    parameter Real p(fixed = false);
+    Real x(start = p);
+  initial equation
+    1 = p^2 + x^2;
+  equation
+    x = p + time;
+  end CyclicStartAttribute;
+
+  model ReverseStartAttribute
+    parameter Real p(fixed = false);
+    Real x(start = p);
+  initial equation
+    1 = p^2 + x^2;
+  equation
+    x = time;
+  end ReverseStartAttribute;
+
+  model CyclicStartAttribute2
+    parameter Real p(fixed = false);
+    Real x(start = p);
+    parameter Integer n = 3;
+  initial equation
+    x = p;
+  equation
+    2 + time = x^n;
+  end CyclicStartAttribute2;
+
+  model InitFixedStartValueCycle
+    parameter Real p(fixed = false);
+    Real x(start = p, fixed = true);
+  initial equation
+    p = (x*x + 27)/12;
+  equation
+    der(x) = 1;
+  end InitFixedStartValueCycle;
+end InitStartValueCycle2;
+"); getErrorString();
+
+simulate(InitStartValueCycle2.CyclicStartAttribute, stopTime=1.0); getErrorString();
+val(x, 0.0);
+val(p, 0.0);
+val(x, 1.0);
+
+simulate(InitStartValueCycle2.ReverseStartAttribute, stopTime=1.0); getErrorString();
+val(x, 0.0);
+val(p, 0.0);
+val(x, 1.0);
+
+simulate(InitStartValueCycle2.CyclicStartAttribute2, stopTime=1.0); getErrorString();
+val(x, 0.0);
+val(p, 0.0);
+val(x, 1.0);
+
+simulate(InitStartValueCycle2.InitFixedStartValueCycle, stopTime=1.0); getErrorString();
+val(x, 0.0);
+val(p, 0.0);
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InitStartValueCycle2.CyclicStartAttribute_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'InitStartValueCycle2.CyclicStartAttribute', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Initialization start-value cycle: the start attribute of 'x' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'x' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// "
+// 0.7071067811865476
+// 0.7071067811865476
+// 1.7071067811865475
+// record SimulationResult
+//     resultFile = "InitStartValueCycle2.ReverseStartAttribute_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'InitStartValueCycle2.ReverseStartAttribute', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Initialization start-value cycle: the start attribute of 'x' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'x' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// "
+// 0.0
+// 1.0
+// 1.0
+// record SimulationResult
+//     resultFile = "InitStartValueCycle2.CyclicStartAttribute2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'InitStartValueCycle2.CyclicStartAttribute2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Initialization start-value cycle: the start attribute of 'x' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'x' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// "
+// 1.2599210498948732
+// 1.2599210498948732
+// 1.4422495703074083
+// record SimulationResult
+//     resultFile = "InitStartValueCycle2.InitFixedStartValueCycle_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'InitStartValueCycle2.InitFixedStartValueCycle', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Initialization start-value cycle: the start attribute of 'x' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'x' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// "
+// 3.0000000000000004
+// 3.0
+// 4.0
+// endResult
