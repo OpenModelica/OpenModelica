@@ -1090,6 +1090,11 @@ RedeclareComponentClass.mo \
 RedeclareComponentType1.mo \
 RedeclareComponentType2.mo \
 RedeclareComponentType3.mo \
+RedeclareConstrainingType1.mo \
+RedeclareConstrainingType2.mo \
+RedeclareConstrainingType3.mo \
+RedeclareConstrainingType4.mo \
+RedeclareConstrainingType5.mo \
 RedeclareConnectorType1.mo \
 RedeclareConnectorType2.mo \
 RedeclareDim1.mo \

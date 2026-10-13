@@ -930,6 +930,8 @@ public constant ErrorTypes.Message SPATIAL_DISTRIBUTION_IGNORED_OUT1 = ErrorType
   "The second output of spatialDistribution may not be ignored.");
 public constant ErrorTypes.Message ELEMENT_IS_NOT_ALLOWED_IN_CONTEXT = ErrorTypes.MESSAGE(427, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "%s is not allowed in %s.");
+public constant ErrorTypes.Message REDECLARE_CONSTRAINING_TYPE_VIOLATED = ErrorTypes.MESSAGE(428, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Redeclaration of %s '%s' is not a subtype of the constraining type %s, the element '%s' is missing or has an incompatible type.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");
