@@ -12,7 +12,7 @@ jobs:
     env:
       OMVERSION : ''
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -28,6 +28,6 @@ jobs:
           rm -f ${{ github.event.repository.name }}-$OMVERSION
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: '*src-with-submodules.zip'
