@@ -145,22 +145,27 @@ static modelica_real distanceToEvent(double time, RINGBUFFER *delayStruct)
 {
   const int end = ringBufferLength(delayStruct);
   int pos = 0;
-  double curTime, prevTime;
+  double startTime, curTime, prevTime;
   double earlierEvent = DBL_MAX;
-  double eventParity = -1.0;
+  double eventParity = 1.0;
   TIME_AND_VALUE* bufferElem;
 
-  /* Search for time pos and count parity of earlier events */
-  bufferElem = getRingData(delayStruct, pos);
-  curTime = bufferElem->t;
-  for (pos = 0; pos < end - 1; ++pos) {
+  /* look for initial event */
+  bufferElem = getRingData(delayStruct, 0);
+  startTime = curTime = bufferElem->t;
+  if (startTime > time) {
+    return time - startTime;
+  }
+
+  /* count parity of earlier events */
+  for (pos = 1; pos < end; ++pos) {
+    bufferElem = getRingData(delayStruct, pos);
+    prevTime = curTime;
+    curTime = bufferElem->t;
+
     if (curTime > time) {
       break;
     }
-
-    bufferElem = getRingData(delayStruct, pos + 1);
-    prevTime = curTime;
-    curTime = bufferElem->t;
 
     if (curTime - prevTime < 1e-12*fabs(curTime)) {
       earlierEvent = curTime; // take the right border
@@ -169,7 +174,7 @@ static modelica_real distanceToEvent(double time, RINGBUFFER *delayStruct)
   }
 
   /* see if there is a later event closer to `time` */
-  for (pos = pos + 1; pos < end; ++pos) {
+  for (; pos < end; ++pos) {
     if (curTime - time > time - earlierEvent) {
       break;
     }
@@ -188,7 +193,7 @@ static modelica_real distanceToEvent(double time, RINGBUFFER *delayStruct)
     return (time - earlierEvent) * eventParity;
   }
 
-  return -1;
+  return time - startTime;
 }
 
 /**
