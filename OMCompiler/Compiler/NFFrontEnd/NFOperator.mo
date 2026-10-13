@@ -218,6 +218,11 @@ public
     SizeClassification sc;
     Type ty;
   algorithm
+    // the scalar product of two vectors can not be recovered from its classification
+    if operator.op == Op.SCALAR_PRODUCT and typeRestriction(ty1) == TypeRestriction.VECTOR
+       and typeRestriction(ty2) == TypeRestriction.VECTOR then
+      return;
+    end if;
     (sc, ty) := match (typeRestriction(ty1), typeRestriction(ty2))
       local
         TypeRestriction r1, r2;

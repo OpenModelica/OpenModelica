@@ -52,6 +52,14 @@ public:
   int getExponent() const {return mExponent;}
   void invalidateCache() {QwtAbstractScaleDraw::invalidateCache();}
   virtual QwtText label(double value) const override;
+protected:
+  /* Draw the axis backbone/ticks with the coordinates snapped to device pixels
+   * ( qRound( logical * dpr ) / dpr ) so that, even at a fractional device pixel
+   * ratio (e.g. 125% scaling on Windows), the lines sit on a fixed device pixel
+   * row/column. This keeps the backbone/ticks crisp and prevents them from being
+   * intermittently covered by the canvas edge while the plot is resized. */
+  virtual void drawTick(QPainter *painter, double value, double len) const override;
+  virtual void drawBackbone(QPainter *painter) const override;
 private:
   bool mPrefixLabel;
   Plot *mpParentPlot;

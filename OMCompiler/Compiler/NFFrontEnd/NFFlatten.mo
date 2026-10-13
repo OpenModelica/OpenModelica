@@ -2291,6 +2291,7 @@ protected
   DAE.ElementSource src;
   Equation eq;
   NFInstNode.ScopeRef scope;
+  Boolean outer_dep;
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
@@ -2303,8 +2304,11 @@ algorithm
   end if;
 
   if not listEmpty(connects) then
+    // ranges depending on outer iterators are handled when the outer loop is unrolled
+    outer_dep := isSome(opt_range) and Expression.contains(Util.getOption(opt_range), Expression.isIterator);
+
     // with resizable arrays the connections are resolved with symbolic ranges
-    if isSome(opt_range) and not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+    if isSome(opt_range) and not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and not outer_dep then
       SOME(range) := opt_range;
       range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
       Structural.markExp(range);
@@ -2313,7 +2317,7 @@ algorithm
 
     eq := Equation.FOR(iter, opt_range, connects, scope, src);
 
-    if settings.arrayConnect then
+    if settings.arrayConnect or outer_dep then
       equations := eq :: equations;
     else
       equations := unrollForLoop(eq, prefix, equations, settings);
@@ -2874,13 +2878,19 @@ protected
 algorithm
   () := match var
     case Variable.VARIABLE()
-      guard Binding.hasExp(var.binding)
       algorithm
-        exp := Binding.getExp(var.binding);
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
+        if Binding.hasExp(var.binding) then
+          exp := Binding.getExp(var.binding);
+          eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
 
-        if not referenceEq(exp, eval_exp) then
-          var.binding := Binding.setExp(eval_exp, var.binding);
+          if not referenceEq(exp, eval_exp) then
+            var.binding := Binding.setExp(eval_exp, var.binding);
+          end if;
+        end if;
+
+        // record fields that are not flattened keep their own bindings
+        if not listEmpty(var.children) then
+          var.children := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in var.children);
         end if;
       then
         ();

@@ -414,9 +414,57 @@ protected
         end for;
         UnorderedMap.add(target, elem_starts, starts);
       then ();
+
+      // an element of an array aliased to a scalar, e.g. a.h[1] = h_liq
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref1), rhs = Expression.CREF(cref = cref2)) algorithm
+        var1 := BVariable.getVarPointer(cref1, sourceInfo());
+        var2 := BVariable.getVarPointer(cref2, sourceInfo());
+        if BVariable.isParamOrConst(var1) or BVariable.isParamOrConst(var2)
+          or not Type.isReal(Type.arrayElementType(Variable.typeOf(Pointer.access(var1))))
+          or not Type.isReal(Type.arrayElementType(Variable.typeOf(Pointer.access(var2)))) then
+          return;
+        end if;
+        (target, source) := match (BVariable.getStartAttribute(var1), BVariable.getStartAttribute(var2))
+          case (NONE(), SOME(_)) then (cref1, cref2);
+          case (SOME(_), NONE()) then (cref2, cref1);
+          else algorithm return; then (cref1, cref2);
+        end match;
+        // only elements of arrays, scalar aliases are removed
+        if not Type.isArray(Variable.typeOf(Pointer.access(BVariable.getVarPointer(target, sourceInfo())))) then
+          return;
+        end if;
+        SOME(start_exp) := BVariable.getStartAttribute(BVariable.getVarPointer(source, sourceInfo()));
+        elem_exp := SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(source), start_exp, true));
+        if not (Expression.isLiteral(elem_exp) or isParameterExpression(elem_exp)) then return; end if;
+        index := flatIndex(Expression.fromCref(target));
+        if isNone(index) then return; end if;
+        target := ComponentRef.stripSubscriptsAll(target);
+        elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
+        UnorderedMap.add(Util.getOption(index), elem_exp, elem_starts);
+        UnorderedMap.add(target, elem_starts, starts);
+      then ();
+
       else ();
     end match;
   end collectSliceAliasStarts;
+
+  function isParameterExpression
+    "true if the scalar expression only depends on parameters and constants"
+    input Expression exp;
+    output Boolean b = not Type.isArray(Expression.typeOf(exp))
+      and not Expression.contains(exp, isNonParameterCref);
+  end isParameterExpression;
+
+  function isNonParameterCref
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case Expression.CREF() then ComponentRef.isTime(exp.cref)
+        or not BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
+      else false;
+    end match;
+  end isNonParameterCref;
 
   function flatIndex
     "zero based flat index of a cref with literal subscripts in its variable"

@@ -68,9 +68,11 @@ private:
   Plot *mpParentPlot;
   QwtPlotDirectPainter *mpPlotDirectPainter;
   QwtPlotMarker *mpPointMarker;
+  bool mPointMarkerDetached = false;
 public:
   PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &xVariableName, const QString &xUnit, const QString &xDisplayUnit,
             const QString &yVariableName, const QString &yUnit, const QString &yDisplayUnit, Plot *pParent);
+  ~PlotCurve() override;
 
   QwtArray<double> mXAxisVector;
   QwtArray<double> mYAxisVector;
@@ -123,6 +125,8 @@ public:
   void plotData(bool toggleSign = false);
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
   QwtPlotMarker* getPointMarker() const {return mpPointMarker;}
+  // hides QwtPlotItem::detach(): the point marker is detached together with the curve
+  void detach();
 #if QWT_VERSION < 0x060000
   virtual void updateLegend(QwtLegend *legend) const;
 #endif

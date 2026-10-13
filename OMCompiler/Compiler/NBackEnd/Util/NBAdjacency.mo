@@ -894,7 +894,7 @@ public
         crefs := {cref};
         if not (UnorderedMap.contains(cref, diff_map) or UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), diff_map)) then
           ty := ComponentRef.getSubscriptedType(cref);
-          if Type.isArray(ty) and Type.sizeOf(ty) <= 256 then
+          if Type.isArray(ty) and Type.hasKnownSize(ty) and Type.sizeOf(ty) <= 256 then
             crefs := list(c for c guard(UnorderedMap.contains(c, diff_map)) in ComponentRef.scalarizeAll(cref, false));
             if listEmpty(crefs) then
               crefs := {cref};
@@ -966,8 +966,9 @@ public
               // map the dependencies with the inner maps
               local_deps  := {};
               changed     := false;
-              // the variable a single equation solves is no input of it
-              own_vars := if listLength(eqns) == 1 then var_crefs else {};
+              // the variable a single equation solves is no input of it (the residual of a loop
+              // uses the loop variables, they are resolved through the inner equations)
+              own_vars := if listLength(eqns) == 1 and not StrongComponent.isAlgebraicLoop(comp) then var_crefs else {};
               for tpl in list(t for t guard(not List.any(own_vars, function ComponentRef.isEqual(cref2 = Util.tuple21(t))))
                   in UnorderedMap.toList(full.dependencies[eqn_index])) loop
                 (dep_cref, dep) := tpl;
@@ -1119,8 +1120,10 @@ public
                 inner_deps := List.filterOnTrue(List.flatten(list(expandSlice(c, diff_map) for c in inner_deps)), function filterSet(set = seed_set));
                 // with resizable arrays the variables of an algebraic loop depend on whole arrays,
                 // the iterators of its equations do not correspond to the ones of other equations
+                // (dependencies without iterators, e.g. x[2, N], stay exact)
                 if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) and StrongComponent.isAlgebraicLoop(comp) then
-                  inner_deps := UnorderedSet.unique_list(list(ComponentRef.stripSubscriptsAll(c) for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
+                  inner_deps := UnorderedSet.unique_list(list(if sparsityCrefHasIterator(c) then ComponentRef.stripSubscriptsAll(c) else c
+                    for c in inner_deps), ComponentRef.hash, ComponentRef.isEqual);
                 end if;
                 for cref in tmp_crefs loop
                   sparsityAddInner(cref, inner_deps, inner_map);
@@ -1300,6 +1303,12 @@ public
       input Expression exp;
       output Boolean b = UnorderedSet.any(Expression.extractCrefs(exp), ComponentRef.isIterator);
     end sparsityHasIterator;
+
+    function sparsityCrefHasIterator
+      input ComponentRef cref;
+      output Boolean b = List.any(list(sparsityHasIterator(Subscript.toExp(s))
+        for s guard(not Subscript.isWhole(s)) in ComponentRef.subscriptsAllFlat(cref)), Util.id);
+    end sparsityCrefHasIterator;
 
     function sparsitySimplify
       input output Expression exp;
@@ -3347,7 +3356,7 @@ public
     end if;
 
     // a slice (e.g. i[1:2]) of variables whose elements are the unknowns is resolved via its elements as well
-    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
+    if not hasSetSub and Type.isArray(ComponentRef.getSubscriptedType(cref)) and Type.hasKnownSize(ComponentRef.getSubscriptedType(cref)) and Type.sizeOf(ComponentRef.getSubscriptedType(cref)) <= 256 then
       hasSetSub := true;
     end if;
 

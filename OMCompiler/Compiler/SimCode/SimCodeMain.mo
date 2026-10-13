@@ -431,6 +431,7 @@ algorithm
     end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.jacobianOffsets, {});
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       SimCodeUtil.dumpSimCodeDebug(oldSimCode);
@@ -773,13 +774,18 @@ algorithm
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
       // The wasm module carries its own metadata; *_init.xml is only read by
-      // OMEdit's variable browser and *_info.json only for debugging.
+      // OMEdit's variable browser and *_info.json only by its transformational
+      // debugger, so the latter is written only when debugging is asked for
+      // (OMEdit passes -d=infoXmlOperations when Generate Operations is on).
       if Flags.isSet(Flags.OMEDIT) then
         guid := System.getUUIDStr();
         SerializeInitXML.simulationInitFile(simCode, guid);
       end if;
       if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
         SerializeModelInfo.serialize(simCode, true);
+      elseif System.regularFileExists(simCode.fileNamePrefix + "_info.json") then
+        // a previous run's, which would describe another translation
+        System.removeFile(simCode.fileNamePrefix + "_info.json");
       end if;
     then ();
 
@@ -2508,6 +2514,7 @@ algorithm
     end if;
 
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.jacobianOffsets, {});
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {},               // Set by the traversal below...

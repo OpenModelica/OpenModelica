@@ -392,7 +392,16 @@ namespace IAEX
    *
    * \brief returns a std::vector with all content of the pasteboard.
    */
-  std::vector<Cell*> CellApplication::pasteboard() { return pasteboard_; }
+  std::vector<Cell*> CellApplication::pasteboard()
+  {
+    // skip the cells that were deleted (e.g. the document was closed) after they were copied
+    std::vector<Cell*> cells;
+    for (const auto &cell : pasteboard_) {
+      if (cell)
+        cells.push_back(cell.data());
+    }
+    return cells;
+  }
   int CellApplication::exec()                  { return app_->exec(); }
   void CellApplication::add(DocumentView* d)   { views_.push_back(d); }
 

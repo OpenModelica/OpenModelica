@@ -27,7 +27,7 @@ val(angSpeed, {0, 5, 10});
 // ""
 // record SimulationResult
 //     resultFile = "InputOptIssues.Trapezoid_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'InputOptIssues.Trapezoid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-8, method = 'optimization', fileNamePrefix = 'InputOptIssues.Trapezoid', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables

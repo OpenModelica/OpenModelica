@@ -95,6 +95,54 @@ QString NotebookWindow::saveDir_ = QString();
 QString NotebookWindow::imageDir_ = QString();
 QString NotebookWindow::linkDir_ = QString();
 
+namespace
+{
+  constexpr int MaxRecentFiles = 8;
+  const QString RecentFilesKey = QStringLiteral("RecentFiles");
+
+  QSettings recentFilesSettings()
+  {
+    return QSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
+  }
+
+  /*!
+   * \brief Reads the list of recently used files, newest first.
+   *
+   * Older versions stored one entry per key ("Recent" + QChar(i), i.e. a control
+   * character in the key). If the new key does not exist yet, those entries are
+   * migrated once.
+   */
+  QStringList readRecentFiles()
+  {
+    QSettings s = recentFilesSettings();
+    if(s.contains(RecentFilesKey))
+      return s.value(RecentFilesKey).toStringList();
+
+    QStringList list;
+    for(int i = 0; i < MaxRecentFiles; ++i)
+    {
+      const QString key = QStringLiteral("Recent") + QString(QChar(i));
+      const QString value = s.value(key).toString();
+      if(value.isEmpty())
+        break;
+      list << value;
+    }
+    if(!list.isEmpty())
+    {
+      s.setValue(RecentFilesKey, list);
+      for(int i = 0; i < MaxRecentFiles; ++i)
+        s.remove(QStringLiteral("Recent") + QString(QChar(i)));
+    }
+    return list;
+  }
+
+  void writeRecentFiles(const QStringList &list)
+  {
+    QSettings s = recentFilesSettings();
+    s.setValue(RecentFilesKey, list);
+  }
+}
+
 
 /*!
   * \author Ingemar Axelsson and Anders Fernström
@@ -162,6 +210,11 @@ NotebookWindow::NotebookWindow(std::unique_ptr<Document> subject,
 
   // 2006-01-16 AF, Added an icon to the window
   setWindowIcon( QIcon(":/Resources/OMNotebook_icon.svg"));
+
+  // Delete the window (with its document and cells) when it is closed. Without this a closed
+  // window only gets hidden: ~NotebookWindow() never runs, the window stays in the application's
+  // list and in the Window menu, and the document, the cells and the plots are never freed.
+  setAttribute(Qt::WA_DeleteOnClose);
 
   statusBar()->showMessage(tr("Ready"));
   resize(800, 600);
@@ -289,7 +342,7 @@ void NotebookWindow::createFileMenu()
 
   toolBar->addAction(newAction);
 
-  auto recentMenu = new QMenu(tr("Recent &Files"), this);
+  recentMenu_ = new QMenu(tr("Recent &Files"), this);
 
   // OPEN FILE
   auto openFileAction = new QAction( tr("&Open"), this );
@@ -300,7 +353,7 @@ void NotebookWindow::createFileMenu()
 
   QToolButton *b = new QToolButton(this);
   b->setDefaultAction(openFileAction);
-  b->setMenu(recentMenu);
+  b->setMenu(recentMenu_);
   b->setPopupMode(QToolButton::MenuButtonPopup);
   //    toolBar->addAction(openFileAction);
   toolBar->addWidget(b);
@@ -360,19 +413,14 @@ void NotebookWindow::createFileMenu()
   fileMenu->addSeparator();
 
   // RECENT FILES
-  //    recentMenu = fileMenu->addMenu("Recent &Files");
-  fileMenu->addMenu(recentMenu);
+  fileMenu->addMenu(recentMenu_);
 
-  QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
-  QString recentFile;
-  for(int i = 0; i < 8; ++i)
-  {
-    if((recentFile = s.value(QString("Recent")+QString(QChar(i)), QString()).toString()) != QString())
-    {
-      QAction* tmpAction = recentMenu->addAction(recentFile);
-      connect(tmpAction, SIGNAL(triggered()), this, SLOT(recentTriggered()));
-    }
-  }
+  // The list is shared between all windows (and instances) through QSettings,
+  // so rebuild it whenever one of the menus is about to be shown. The toolbar
+  // button shows recentMenu_ without opening the file menu.
+  connect(fileMenu, &QMenu::aboutToShow, this, &NotebookWindow::rebuildRecentMenu);
+  connect(recentMenu_, &QMenu::aboutToShow, this, &NotebookWindow::rebuildRecentMenu);
+  rebuildRecentMenu();
 
   fileMenu->addSeparator();
 
@@ -1935,7 +1983,7 @@ void NotebookWindow::populateExampleMenu(QMenu *menu, const QString &path)
   for (const QFileInfo &fi : files) {
     const QString p = fi.absoluteFilePath();
     QAction *a = menu->addAction(fi.completeBaseName());
-    connect(a, &QAction::triggered, this, [this, p]() { emit openFile(p); });
+    connect(a, &QAction::triggered, this, [this, p]() { openFile(p); });
   }
 }
 #endif
@@ -2624,6 +2672,10 @@ void NotebookWindow::setStatusMenu(QList<QAction*> l)
   else
   {
     stateIndicator->setContextMenuPolicy(Qt::ActionsContextMenu);
+    // the actions are created without parent (GraphCell/InputCell), take ownership
+    // so they are deleted with the label and not leaked when the window closes
+    for(QAction *a : l)
+      a->setParent(stateIndicator);
     stateIndicator->addActions(l);
   }
 }
@@ -2775,32 +2827,60 @@ void NotebookWindow::newFile()
     subject_->executeCommand(std::make_unique<NewFileCommand>());
     subject_->attach(this);
 
+    // the connections of the constructor were to the old document
+    connect( subject_->getCursor(), SIGNAL( changedPosition() ),
+             this, SLOT( updateMenus() ));
+    connect( subject_.get(), SIGNAL( contentChanged() ),
+             this, SLOT( updateWindowTitle() ));
+    connect( subject_.get(), SIGNAL( hoverOverFile(QString) ),
+             this, SLOT( setStatusMessage(QString) ));
+    connect( subject_.get(), SIGNAL( forwardAction(int) ),
+             this, SLOT( forwardedAction(int) ));
+    connect( subject_.get(), SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
+    connect( subject_.get(), SIGNAL(newState(QString)), this, SLOT(setState(QString)));
+    connect( subject_.get(), SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
+
     update();
     updateWindowTitle();
   }
 }
 
-void NotebookWindow::updateRecentFiles(QString filename)
+void NotebookWindow::updateRecentFiles(const QString &filename)
 {
-  QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
-  QStringList tmpLst;
-  QString tmp;
-  for(int i = 0; i < 8; ++i)
+  const QString path = QDir::cleanPath(QFileInfo(filename).absoluteFilePath());
+  QStringList list = readRecentFiles();
+  list.removeAll(path);
+  list.prepend(path);
+  while(list.size() > MaxRecentFiles)
+    list.removeLast();
+  writeRecentFiles(list);
+}
+
+void NotebookWindow::rebuildRecentMenu()
+{
+  recentMenu_->clear();
+  for(const QString &path : readRecentFiles())
   {
-    if((tmp = s.value(QString("Recent") + QString(QChar(i)), QString()).toString()) != QString())
-      tmpLst.push_back(tmp);
-    else
-      break;
+    // '&' would be interpreted as a mnemonic marker
+    QString text = path;
+    text.replace('&', QLatin1String("&&"));
+    QAction *a = recentMenu_->addAction(text, this, [this, path]() { openRecent(path); });
+    // do not let macOS move entries like "About.onb" into the application menu
+    a->setMenuRole(QAction::NoRole);
   }
+}
 
-  if(tmpLst.indexOf(filename) != -1)
-    tmpLst.move(tmpLst.indexOf(filename), 0);
-  else
-    tmpLst.push_front(filename);
-
-  for(int i = 0; i < 8 && i < tmpLst.size(); ++i)
-    s.setValue(QString("Recent") + QString(QChar(i)), tmpLst[i]);
-
+void NotebookWindow::openRecent(const QString &path)
+{
+  if(!QFileInfo::exists(path))
+  {
+    QMessageBox::warning(this, tr("Warning"), tr("The file does not exist anymore:\n%1").arg(path));
+    QStringList list = readRecentFiles();
+    list.removeAll(path);
+    writeRecentFiles(list);  // the menu is rebuilt the next time it is shown
+    return;
+  }
+  openFile(path);
 }
 
 /*!
@@ -4493,13 +4573,6 @@ void NotebookWindow::textCellsAction()
   subject_->executeCommand(std::make_unique<CreateNewCellCommand>("Text"));
   subject_->updateScrollArea();
   updateChapterCounters();
-}
-
-void NotebookWindow::recentTriggered() //Should only be called from the submenu "recent files"
-{
-  QObject* s = QObject::sender();
-  if(s)
-    emit openFile(static_cast<QAction*>(s)->text());
 }
 
 void NotebookWindow::setAutoIndent(bool b)

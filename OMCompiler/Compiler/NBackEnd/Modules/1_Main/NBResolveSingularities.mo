@@ -57,7 +57,7 @@ protected
   import Adjacency = NBAdjacency;
   import NBFunctionAlias.Call_Aux;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, SlicingStatus, Iterator};
+  import NBEquation.{Equation, EqData, EquationAttributes, EquationKind, EquationPointer, EquationPointers, IfEquationBody, SlicingStatus, Iterator};
   import Initialization = NBInitialization;
   import Matching = NBMatching;
   import Variable = NFVariable;
@@ -66,6 +66,7 @@ protected
   import NBVariable.{VarData, VariablePointer, VariablePointers};
 
   // util imports
+  import Array;
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
   import StringUtil;
@@ -419,6 +420,7 @@ public
     list<Pointer<Variable>> start_vars, failed_vars = {};
     list<Pointer<Equation>> sliced_eqns, start_eqns, kept_eqns;
     list<Integer> remaining;
+    Integer row_idx;
     Pointer<Variable> var_ptr;
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
     Pointer<list<Pointer<Equation>>> ptr_start_eqns = Pointer.create({});
@@ -455,6 +457,16 @@ public
             remaining := list(i for i guard(not List.contains(eqn_slice.indices, i, intEq)) in 0:(Equation.size(Slice.getT(eqn_slice)) - 1));
             (sliced_eqns, _) := Equation.slice(Slice.getT(eqn_slice), remaining);
             kept_eqns := listAppend(sliced_eqns, kept_eqns);
+          elseif not listEmpty(eqn_slice.indices) and Equation.isArrayEquation(Slice.getT(eqn_slice)) then
+            // keep the other rows of an array equation as scalar equations
+            row_idx := 0;
+            for row in IfEquationBody.scalarRows(Slice.getT(eqn_slice)) loop
+              if not List.contains(eqn_slice.indices, row_idx, intEq) then
+                Equation.createName(row, EqData.getUniqueIndex(eqData), NBEquation.SIMULATION_STR);
+                kept_eqns := row :: kept_eqns;
+              end if;
+              row_idx := row_idx + 1;
+            end for;
           end if;
         end for;
         // also update adjacency matrices
@@ -553,7 +565,7 @@ protected
         eqn_candidates := eqn :: eqn_candidates;
       end if;
     end for;
-    color_clustering := listArray(list(i for i in 1:listLength(eqn_candidates)));
+    color_clustering := Array.createIntRange(listLength(eqn_candidates));
 
     // use a new color for each uncolored equation
     for eqn in eqn_candidates loop
@@ -575,7 +587,7 @@ protected
     end for;
 
     // remove all empty colors (purely discrete)
-    msss := listArray(list(ms for ms guard(not listEmpty(ms)) in arrayList(msss)));
+    msss := Array.filter(msss, listEmpty);
   end getMSSS;
 
   function fillColorEqn
@@ -711,11 +723,14 @@ protected
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
     Pointer<Variable> var_ptr;
+    Integer start_idx;
   algorithm
     // collect all relevant constraint equations
     for eqn in marked_eqns loop
       UnorderedSet.add(mapping.eqn_StA[eqn], eqn_indices);
-      eqn_slices[mapping.eqn_StA[eqn]] := eqn :: eqn_slices[mapping.eqn_StA[eqn]];
+      // local element index, like the slices of Matching.getMatches
+      (start_idx, _) := mapping.eqn_AtS[mapping.eqn_StA[eqn]];
+      eqn_slices[mapping.eqn_StA[eqn]] := (eqn - start_idx) :: eqn_slices[mapping.eqn_StA[eqn]];
     end for;
 
     // get the constraint equation, add it to the array and add all slices of it to the slice list
@@ -1121,6 +1136,25 @@ protected
 
     rhs := if n == 1 then listHead(elems) else Expression.makeArray(alias_ty, listArray(elems));
     alias_eqn := Equation.makeAssignment(Expression.fromCref(alias_cref), rhs, eq_index, "DUM", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CONTINUOUS, false));
+
+    // the alias starts at the start values of the elements it replaces
+    () := match BVariable.getStartAttribute(Slice.getT(dummy))
+      local
+        Expression start_exp;
+        list<Expression> starts;
+      case SOME(start_exp) guard(Type.isArray(Expression.typeOf(start_exp))) algorithm
+        starts := list(SimplifyExp.simplify(Expression.applySubscripts(list(Subscript.INDEX(Expression.INTEGER(l + 1))
+          for l in Slice.indexToLocation(idx, sizes)), start_exp, true)) for idx in dummy.indices);
+        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+          if n == 1 then listHead(starts) else Expression.makeArray(alias_ty, listArray(starts)), true));
+      then ();
+      case SOME(start_exp) algorithm
+        // a scalar start value applies to all elements
+        Pointer.update(alias_var, BVariable.setStartAttribute(Pointer.access(alias_var),
+          if n == 1 then start_exp else Expression.fillType(alias_ty, start_exp), true));
+      then ();
+      else ();
+    end match;
   end resolveSlicedDummy;
 
   function substituteSlicedDummyEqn

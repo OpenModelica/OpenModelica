@@ -1153,7 +1153,7 @@ protected function evalConnectionsOperatorsEqs
   input NFOCConnectionGraph graph;
   input output list<Equation> equations;
 algorithm
-  equations := list(Equation.mapExpShallow(eq,
+  equations := list(Equation.mapExp(eq,
       function evaluateOperators(rooted = rooted, roots = inRoots, graph = graph, info = Equation.info(eq)))
     for eq in equations);
 end evalConnectionsOperatorsEqs;

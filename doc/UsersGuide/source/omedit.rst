@@ -1429,6 +1429,10 @@ General Options
   -  *Enable CRML Support* - Enables the CRML support.
      The user can create/open .crml files and translate them to Modelica.
 
+  -  *Color Scheme* - *System*, *Light* or *Dark*. *System* follows the operating
+     system color scheme (Qt 6.5 or later; light otherwise).
+     The ``--DarkMode=true`` or ``--DarkMode=false`` command line option overrides this setting.
+
 -  Libraries Browser
 
   -  *Library Icon Size* - Sets the size for library icons.

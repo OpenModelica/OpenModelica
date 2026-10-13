@@ -1,0 +1,33 @@
+// name: arrayRowScalar
+// keywords: NewBackend array equation solve
+// status: correct
+// cflags: --newBackend
+//
+// One row of an array equation solves a scalar, the other rows solve array elements.
+
+loadString("
+model arrayRowScalar
+  Real v[3], x;
+equation
+  v[1] = 2 * time;
+  v = fill(1.0, 3) .* x;
+end arrayRowScalar;
+"); getErrorString();
+
+simulate(arrayRowScalar, stopTime = 1); getErrorString();
+val(x, 1);
+val(v[3], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "arrayRowScalar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayRowScalar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 2.0
+// endResult
