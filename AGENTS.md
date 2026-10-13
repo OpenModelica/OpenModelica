@@ -39,7 +39,8 @@ compiler: `bomc` is built from pre-translated C sources and then translates
 [OMCompiler/README.Linux.md](OMCompiler/README.Linux.md),
 [OMCompiler/README-macOS.md](OMCompiler/README-macOS.md) and
 [OMCompiler/README.Windows.md](OMCompiler/README.Windows.md); the options are in
-[README.cmake.md](README.cmake.md).
+[README.cmake.md](README.cmake.md). By default, assume dependencies are installed;
+if they are not, ask the user how they should be installed (by you or the user).
 
 ```sh
 cmake -S . -B build_cmake -DCMAKE_BUILD_TYPE=Release -DOM_ENABLE_GUI_CLIENTS=OFF
