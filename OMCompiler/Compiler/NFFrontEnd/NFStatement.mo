@@ -256,6 +256,16 @@ public
     end match;
   end isFor;
 
+  function isWhen
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case WHEN() then true;
+      else false;
+    end match;
+  end isWhen;
+
   function isReturn
     input Statement stmt;
     output Boolean res;
