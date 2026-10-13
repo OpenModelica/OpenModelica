@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # One pull request per quarter that collects all GitHub Actions updates.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    ignore:
+      # The releaser action was removed in v7.0.0, v6.7.0 is the last release
+      # that provides it.
+      - dependency-name: "pyTooling/Actions"

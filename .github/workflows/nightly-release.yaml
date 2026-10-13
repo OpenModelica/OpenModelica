@@ -15,7 +15,7 @@ jobs:
     env:
       OMVERSION : ''
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -48,7 +48,7 @@ jobs:
           done
 
       - name: Upload the new assets
-        uses: pyTooling/Actions/releaser@r0
+        uses: pyTooling/Actions/releaser@c2282e4d63fb9f7b3e8f4c672b01d9dab7af22c3 # v6.7.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: nightly
