@@ -368,7 +368,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #ifdef Q_OS_WIN
     _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
 #else
-    freopen(outputFileName.toUtf8().constData(), "w", stderr);
+    freopen(errorFileName.toUtf8().constData(), "w", stderr);
 #endif
     setbuf(stderr, NULL); // used non-buffered stderr
   }
