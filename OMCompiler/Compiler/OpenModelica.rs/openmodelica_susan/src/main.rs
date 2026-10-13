@@ -37,8 +37,12 @@ const INTERFACE_DIR_FLAG: &str = "--tplInterfaceDir=";
 const RUST_INDEX_FLAG: &str = "--tplRustIndex=";
 
 mod rust_backend;
+// The same rustfmt step mmtorust applies to its generated files.
+#[path = "../../mmtorust/src/rustfmt.rs"]
+mod rustfmt;
 
 fn write_if_changed(path: &std::path::Path, content: &str) -> std::io::Result<()> {
+    let content = rustfmt::format(content, path);
     if std::fs::read_to_string(path).is_ok_and(|old| old == content) {
         return Ok(());
     }

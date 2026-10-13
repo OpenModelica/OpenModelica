@@ -20,6 +20,7 @@ mod unused_functions;
 mod const_patterns;
 mod mc_disjoint;
 mod mutable_cycles;
+mod rustfmt;
 mod scripting_api_qt;
 use rayon::prelude::*;
 
