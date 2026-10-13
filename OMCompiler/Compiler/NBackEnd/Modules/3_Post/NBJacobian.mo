@@ -209,8 +209,11 @@ public
         derivativeVars := list(fmiDerivativeOfState(stateVar) for stateVar in stateVars);
         inputVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.top_level_inputs));
         outputVars := list(var for var guard(isFMIOutput(var)) in VariablePointers.toList(varData.variables));
-        fmiKnowns := VariablePointers.fromList(stateVars, varData.states.scalarized);
-        fmiKnowns := VariablePointers.addList(inputVars, fmiKnowns);
+        fmiKnowns := VariablePointers.fromList(
+          listAppend(
+            stateVars,
+            inputVars),
+          varData.states.scalarized);
         fmiUnknowns := VariablePointers.fromList(
           listAppend(
             derivativeVars,
