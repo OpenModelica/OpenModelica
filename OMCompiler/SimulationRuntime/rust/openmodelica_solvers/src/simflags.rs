@@ -335,6 +335,10 @@ pub struct SimFlags {
     pub no_equidistant_time: Option<f64>,
     /// `-maxStepSize=h`: DASKR's `INFO(7)` / `RWORK(2)`.
     pub max_step_size: Option<f64>,
+    /// `-maxStepRetries=n`: how often a failed step is retried in a row.
+    pub max_step_retries: Option<u32>,
+    /// `-minRetryStepSize=h`: no failed step is retried below this step size.
+    pub min_retry_step_size: Option<f64>,
     /// `-noEventEmit`: drop the result rows a step that handled an event produces.
     pub no_event_emit: bool,
     /// One of the four density/size flags was given. The backend decides now.
@@ -636,6 +640,8 @@ const C_FLAGS: &[(&str, bool)] = &[
     ("mei", true),
     ("maxIntegrationOrder", true),
     ("maxStepSize", true),
+    ("maxStepRetries", true),
+    ("minRetryStepSize", true),
     ("measureTimePlotFormat", true),
     ("moo", false),
     ("moo_l2bn_p1_it", true),
@@ -978,6 +984,19 @@ pub fn parse<S: AsRef<str>>(argv: &[S]) -> Result<SimFlags, String> {
                 let _ = value(name)?;
             }
             "maxStepSize" => f.max_step_size = Some(real(name, &value(name)?)?),
+            "maxStepRetries" => {
+                let n = int(name, &value(name)?)?;
+                f.max_step_retries = Some(
+                    u32::try_from(n).map_err(|_| format!("maximum number of step retries {n} is not allowed"))?,
+                );
+            }
+            "minRetryStepSize" => {
+                let h = real(name, &value(name)?)?;
+                if !(h > 0.0) {
+                    return Err(format!("minimum step size for retries {} is not allowed", crate::omclog::g(h, 0, 6)));
+                }
+                f.min_retry_step_size = Some(h);
+            }
             "noEquidistantOutputTime" => {
                 f.no_equidistant_time = Some(
                     value(name)?

@@ -1083,8 +1083,8 @@ unsafe extern "C" {
 /// `enum _FLAG` (util/simulation_options.h), indexing `omc_flag`/`omc_flagValue`.
 /// Only the entries the generated code or this runtime reads are named;
 /// `tests/abi_layout.rs` checks every one against the header.
-pub const FLAG_MAX: usize = 156;
-pub const FLAG_NO_SCALING: usize = 99;
+pub const FLAG_MAX: usize = 158;
+pub const FLAG_NO_SCALING: usize = 101;
 pub const FLAG_EMIT_PROTECTED: usize = 15;
 pub const FLAG_F: usize = 17;
 pub const FLAG_IDAS: usize = 41;
@@ -1093,13 +1093,13 @@ pub const FLAG_IIF: usize = 43;
 pub const FLAG_INPUT_CSV: usize = 48;
 pub const FLAG_INPUT_PATH: usize = 50;
 pub const FLAG_LV: usize = 66;
-pub const FLAG_MOO_OPTIMIZATION: usize = 75;
-pub const FLAG_NOEMIT: usize = 92;
-pub const FLAG_OUTPUT_FORMAT: usize = 105;
-pub const FLAG_OUTPUT_PATH: usize = 106;
-pub const FLAG_OVERRIDE: usize = 107;
-pub const FLAG_OVERRIDE_FILE: usize = 108;
-pub const FLAG_R: usize = 110;
-pub const FLAG_S: usize = 131;
-pub const FLAG_VARIABLE_FILTER: usize = 147;
+pub const FLAG_MOO_OPTIMIZATION: usize = 77;
+pub const FLAG_NOEMIT: usize = 94;
+pub const FLAG_OUTPUT_FORMAT: usize = 107;
+pub const FLAG_OUTPUT_PATH: usize = 108;
+pub const FLAG_OVERRIDE: usize = 109;
+pub const FLAG_OVERRIDE_FILE: usize = 110;
+pub const FLAG_R: usize = 112;
+pub const FLAG_S: usize = 133;
+pub const FLAG_VARIABLE_FILTER: usize = 149;
 

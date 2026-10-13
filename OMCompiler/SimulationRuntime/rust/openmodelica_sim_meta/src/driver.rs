@@ -767,10 +767,15 @@ fn took_error_stage(e: &mut dyn SimEngine, addr: u32, save: StageSave) -> bool {
     hit
 }
 
+/// C's `MAX_STEP_RETRIES`, the default of `-maxStepRetries` for a model without
+/// states: how often a failed step is retried in a row, each time over half the step
+/// size of the failed attempt. Nothing but the output interval controls the step
+/// size there.
+const MAX_STEP_RETRIES: u32 = 20;
 /// C's `performSimulation` step guard: the `MMC_TRY_INTERNAL(simulationJumpBuffer)`
 /// around one step, the `storeOldValues` snapshot it falls back to, and the `retry`
-/// flag. A model error inside the region is recorded by the runtime instead of
-/// trapping.
+/// counter with the step size limit a failed step leaves behind. A model error
+/// inside the region is recorded by the runtime instead of trapping.
 #[derive(Default)]
 struct StepRetry {
     /// C's `simulationInfo->{timeValueOld,realVarsOld,integerVarsOld,booleanVarsOld}`.
@@ -779,8 +784,23 @@ struct StepRetry {
     int: Vec<u8>,
     bools: Vec<u8>,
     stored: bool,
-    /// C's `retry`: a second throw on the same step ends the run.
-    armed: bool,
+    /// C's `retry`: the failed attempts of the current step.
+    attempts: u32,
+    /// C's `retryStepSize`: the step size limit after a failed step, doubled by
+    /// every accepted step until it is back at the output interval.
+    limit: Option<f64>,
+    /// C's `stepShortened`: the limit ends the current step before its output point.
+    short: bool,
+    /// C's `skipOutputPoint`: the step to the current output point failed, so the
+    /// shortened steps go on to the one after it.
+    skip: bool,
+    /// The step just accepted was a shortened one and its output point is still ahead.
+    hold: bool,
+    /// C's `triedStepSize` and the output interval the current attempt belongs to,
+    /// as [`StepRetry::clamp`] saw them. A driver that never calls it gets C's old
+    /// single retry, with the step size its own.
+    tried: Option<f64>,
+    interval: f64,
     /// Output rows as of the step's start, so a step that throws leaves none.
     rows_mark: usize,
     /// The region is open; its close reported a model error absorbed in it.
@@ -837,8 +857,34 @@ impl StepRetry {
         }
         self.time = read_f64(e, sim_data + TIME_OFF)?;
         self.stored = true;
-        self.armed = false;
+        self.attempts = 0;
+        // Let the step size grow back to the output interval.
+        if let Some(limit) = self.limit {
+            self.limit = (2.0 * limit < self.interval).then_some(2.0 * limit);
+        }
+        self.hold = self.short && !self.skip;
+        self.skip = false;
         Ok(())
+    }
+
+    /// C's step size calculation after a failed step: the step from the accepted
+    /// point towards the output point `target` ends at the returned time, short of
+    /// `target` while the limit holds. `interval` is the distance of the output points.
+    fn clamp(&mut self, target: f64, interval: f64) -> f64 {
+        let step = target - self.time;
+        let (short, tried, tout) = match self.limit {
+            Some(limit) if step > limit => (true, limit, self.time + limit),
+            _ => (false, step, target),
+        };
+        self.short = short;
+        self.tried = Some(tried);
+        self.interval = interval;
+        tout
+    }
+
+    /// The accepted step ended short of its output point, which is still ahead.
+    fn holds(&self) -> bool {
+        self.hold
     }
 
     /// C's `retrySimulationStep`: restore the last accepted point and settle the
@@ -850,8 +896,19 @@ impl StepRetry {
         if !caught || THROW_PAST_STEP.load(Ordering::Relaxed) || !self.stored {
             return Ok(None);
         }
-        if self.armed {
-            // C's catch with `retry` already spent: the run ends here.
+        // Halve the step size until the step succeeds.
+        let halved = self.tried.map(|tried| tried / 2.0);
+        let spent = match halved {
+            Some(h) => {
+                let (max_retries, min_step) =
+                    crate::simflags::with_flags(|f| (f.max_step_retries, f.min_retry_step_size));
+                let max_retries = max_retries.unwrap_or(if layout.n_states < 1 { MAX_STEP_RETRIES } else { 1 });
+                self.attempts >= max_retries || (self.attempts > 0 && h < min_step.unwrap_or(MINIMAL_STEP_SIZE))
+            }
+            None => self.attempts >= 1,
+        };
+        if spent {
+            // C's catch with the retries spent: the run ends here.
             let t = read_f64(e, sim_data + TIME_OFF).unwrap_or(f64::NAN);
             omclog::info!(
                 omclog::STDOUT,
@@ -861,7 +918,10 @@ impl StepRetry {
             );
             return Ok(None);
         }
-        self.armed = true;
+        let first = self.attempts == 0;
+        self.attempts += 1;
+        self.limit = halved.or(self.limit);
+        self.skip |= halved.is_some() && !self.short;
         // The throw is being retried, so nothing downstream may report it.
         clear_runtime_error();
         let _ = e.take_pending_assert();
@@ -875,7 +935,12 @@ impl StepRetry {
         }
         save_old_real(e, sim_data, layout)?; // C's `overwriteOldSimulationData`
         iterate_discrete(e, sim_data, layout)?;
-        omclog::warning(omclog::STDOUT, false, "Integrator attempt to handle a problem with a called assert.");
+        if first {
+            omclog::warning(omclog::STDOUT, false, "Integrator attempt to handle a problem with a called assert.");
+        }
+        if let Some(h) = halved {
+            omclog::info!(omclog::SOLVER, false, "step failed, retry {} with step size {}", self.attempts, format_g(h, 6));
+        }
         Ok(Some(self.time))
     }
 }
@@ -5519,9 +5584,12 @@ impl Driver for EulerDriver {
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
             // The last row lands exactly on `stop`: the terminal step.
-            let time =
-                self.pending_time.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
             let t_now = read_f64(e, sim_data + TIME_OFF)?;
+            let target = if self.row == n_steps { stop } else { grid(self.row) };
+            let time = match self.pending_time.take() {
+                Some(time) => time,
+                None => self.retry.clamp(target, model.step_size()),
+            };
             logging_window(e, t_now, time);
             self.retry.open(e, &mut self.rows);
             // Euler locates no events, so a suppressed assert always throws; the
@@ -5543,7 +5611,9 @@ impl Driver for EulerDriver {
                 self.row = n_rows;
                 return Ok(Advance::Terminated);
             }
-            if self.row == n_steps {
+            // A step a failed one shortened leaves its output point still ahead.
+            let next = if self.retry.holds() { self.row } else { self.row + 1 };
+            if next > n_steps {
                 self.row = n_rows;
                 return Ok(Advance::Done);
             }
@@ -5552,14 +5622,17 @@ impl Driver for EulerDriver {
             if self.dss.reselect(e, sim_data, model)? {
                 e.call1("functionODE", sim_data)?;
             }
-            // Forward-Euler update of the states, over this row's own step.
-            let h = grid(self.row + 1) - time;
+            // Forward-Euler update of the states, over the next row's own step.
+            let target = if next == n_steps { stop } else { grid(next) };
+            let next_time = self.retry.clamp(target, model.step_size());
+            let h = if next_time < target || next == self.row { next_time - time } else { grid(next) - time };
             for i in 0..n_states {
                 let s = read_f64(e, states_base + i * 8)?;
                 let d = read_f64(e, ders_base + i * 8)?;
                 write_f64(e, states_base + i * 8, s + h * d)?;
             }
-            self.row += 1;
+            self.pending_time = Some(next_time);
+            self.row = next;
         }
         Ok(Advance::Done)
     }
@@ -5575,8 +5648,9 @@ impl Driver for EulerDriver {
         } else {
             grid_time(self.row, model.start_time, model.stop_time, n_steps)
         };
-        // C's `euler_step` runs before the point is evaluated; redo it over half.
-        let h = (target - t) / 2.0;
+        // C's `euler_step` runs before the point is evaluated; redo it over the
+        // step size the failed one left.
+        let h = self.retry.clamp(target, model.step_size()) - t;
         let states_base = self.sim_data + model.layout.real_off;
         let ders_base = states_base + model.layout.n_states * 8;
         for i in 0..model.layout.n_states {
@@ -6921,7 +6995,9 @@ impl Driver for DasslDriver {
                 did_step = true;
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
-                    self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                    self.pending_tout.take().unwrap_or_else(|| {
+                        self.retry.clamp(if self.row == n_steps { stop } else { grid(self.row) }, model.step_size())
+                    });
                 logging_window(e, self.t, time);
                 self.retry.open(e, &mut self.rows);
                 open_assert_window();
@@ -6935,7 +7011,7 @@ impl Driver for DasslDriver {
                     self.finished = true;
                     return Ok(Advance::Terminated);
                 }
-                self.row += 1;
+                self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
             }
             self.finished = true;
             return Ok(Advance::Done);
@@ -7018,10 +7094,8 @@ impl Driver for DasslDriver {
             // C's guard rather than a path a stiff interval takes.
             // `pending_tout`/`work_retries` persist an interval unfinished at a yield.
             let fresh = self.pending_tout.is_none();
-            let mut tout = self.pending_tout.unwrap_or(if no_grid || self.row == n_steps {
-                stop
-            } else {
-                grid(self.row)
+            let mut tout = self.pending_tout.unwrap_or_else(|| {
+                self.retry.clamp(if no_grid || self.row == n_steps { stop } else { grid(self.row) }, model.step_size())
             });
             logging_window(e, self.t, tout);
             // Zero-length final interval (stop == start): daskr rejects TOUT == T,
@@ -7172,7 +7246,7 @@ impl Driver for DasslDriver {
                 }
                 self.restart();
             }
-            self.row += 1;
+            self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
         };
         self.nfe = ctx.nfe;
         if matches!(outcome, Advance::Done | Advance::Terminated) {
@@ -7187,16 +7261,9 @@ impl Driver for DasslDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
-        // C halves `currentStepSize` without advancing `__currStepNo`: the same output
-        // step is retaken over half the interval and the next one catches up.
-        let n_steps = model.n_output_rows() - 1;
-        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
-            model.stop_time
-        } else {
-            grid_time(self.row, model.start_time, model.stop_time, n_steps)
-        });
         self.t = t;
-        self.pending_tout = Some(t + (target - t) / 2.0);
+        // The step is retaken over the step size limit `undo` left behind.
+        self.pending_tout = None;
         self.work_retries = 0;
         // C's `dassl_step` takes both from what `restoreOldValues` just put back.
         for i in 0..self.n_states {
@@ -10167,7 +10234,8 @@ impl Driver for EventsDriver {
                     return Ok(Advance::Cancelled);
                 }
                 did_step = true;
-                let tout = self.pending_tout.take().unwrap_or_else(|| tout_of(self.row));
+                let tout =
+                    self.pending_tout.take().unwrap_or_else(|| self.retry.clamp(tout_of(self.row), model.step_size()));
                 logging_window(e, self.core.t, tout);
                 let eps = reached_eps(tout, stop - start);
                 let mut grid_covered = false;
@@ -10343,7 +10411,7 @@ impl Driver for EventsDriver {
                 self.retry.store(e, sim_data, layout)?;
                 self.reached = self.core.t;
                 self.did_event_step = event_step;
-                self.row += 1;
+                self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
             }
             self.finished = true;
             return Ok(Advance::Done);
@@ -10369,7 +10437,7 @@ impl Driver for EventsDriver {
             if cancel_requested() {
                 break Advance::Cancelled;
             }
-            let tout = self.pending_tout.unwrap_or_else(|| tout_of(self.row));
+            let tout = self.pending_tout.unwrap_or_else(|| self.retry.clamp(tout_of(self.row), model.step_size()));
             logging_window(e, self.core.t, tout);
             if !self.mid_row {
                 self.grid_covered = false;
@@ -10443,7 +10511,7 @@ impl Driver for EventsDriver {
             self.retry.close(e)?;
             self.retry.store(e, sim_data, layout)?;
             self.pending_tout = None;
-            self.row += 1;
+            self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
         };
         self.core.nfe = ctx.nfe;
         self.retry.end(e); // a `break` out of the region still has to leave it
@@ -10459,18 +10527,13 @@ impl Driver for EventsDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
-        let n_steps = model.n_output_rows() - 1;
-        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
-            model.stop_time
-        } else {
-            grid_time(self.row, model.start_time, model.stop_time, n_steps)
-        });
         self.core.t = t;
         self.reached = t;
         self.mid_row = false;
         self.grid_covered = false;
         self.did_event_step = true; // C's `retrySimulationStep`
-        self.pending_tout = Some(t + (target - t) / 2.0);
+        // The step is retaken over the step size limit `undo` left behind.
+        self.pending_tout = None;
         self.core.read_states(e)?;
         self.core.restart()?;
         Ok(true)
@@ -10840,7 +10903,9 @@ impl Driver for CvodeDriver {
                 did_step = true;
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
-                    self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                    self.pending_tout.take().unwrap_or_else(|| {
+                        self.retry.clamp(if self.row == n_steps { stop } else { grid(self.row) }, model.step_size())
+                    });
                 logging_window(e, self.t, time);
                 self.retry.open(e, &mut self.rows);
                 open_assert_window();
@@ -10854,7 +10919,7 @@ impl Driver for CvodeDriver {
                     self.finished = true;
                     return Ok(Advance::Terminated);
                 }
-                self.row += 1;
+                self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
             }
             self.finished = true;
             return Ok(Advance::Done);
@@ -10915,7 +10980,9 @@ impl Driver for CvodeDriver {
             rotate_old_real(e, sim_data, layout)?;
             self.retry.open(e, &mut self.rows);
             let tout =
-                self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                self.pending_tout.take().unwrap_or_else(|| {
+                    self.retry.clamp(if self.row == n_steps { stop } else { grid(self.row) }, model.step_size())
+                });
             logging_window(e, self.t, tout);
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
@@ -10974,7 +11041,7 @@ impl Driver for CvodeDriver {
                     return Err("##CVODE## CVodeReInit failed");
                 }
             }
-            self.row += 1;
+            self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
         };
         if matches!(outcome, Advance::Done | Advance::Terminated) {
             self.finished = true;
@@ -10987,14 +11054,9 @@ impl Driver for CvodeDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
-        let n_steps = model.n_output_rows() - 1;
-        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
-            model.stop_time
-        } else {
-            grid_time(self.row, model.start_time, model.stop_time, n_steps)
-        });
         self.t = t;
-        self.pending_tout = Some(t + (target - t) / 2.0);
+        // The step is retaken over the step size limit `undo` left behind.
+        self.pending_tout = None;
         self.work_retries = 0;
         if let Some(cv) = self.cv.as_mut() {
             for i in 0..self.n_states {
@@ -11818,7 +11880,9 @@ impl Driver for IdaDriver {
                 did_step = true;
                 rotate_old_real(e, sim_data, layout)?;
                 let time =
-                    self.pending_tout.take().unwrap_or(if self.row == n_steps { stop } else { grid(self.row) });
+                    self.pending_tout.take().unwrap_or_else(|| {
+                        self.retry.clamp(if self.row == n_steps { stop } else { grid(self.row) }, model.step_size())
+                    });
                 logging_window(e, self.t, time);
                 self.retry.open(e, &mut self.rows);
                 open_assert_window();
@@ -11832,7 +11896,7 @@ impl Driver for IdaDriver {
                     self.finished = true;
                     return Ok(Advance::Terminated);
                 }
-                self.row += 1;
+                self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
             }
             self.finished = true;
             return Ok(Advance::Done);
@@ -11892,10 +11956,9 @@ impl Driver for IdaDriver {
             did_step = true;
             rotate_old_real(e, sim_data, layout)?;
             self.retry.open(e, &mut self.rows);
-            let tout = self
-                .pending_tout
-                .take()
-                .unwrap_or(if no_grid || self.row == n_steps { stop } else { grid(self.row) });
+            let tout = self.pending_tout.take().unwrap_or_else(|| {
+                self.retry.clamp(if no_grid || self.row == n_steps { stop } else { grid(self.row) }, model.step_size())
+            });
             logging_window(e, self.t, tout);
             // Zero-length final interval: emit the held state rather than step.
             if tout <= self.t {
@@ -11977,7 +12040,7 @@ impl Driver for IdaDriver {
                     return Err("##IDA## IDAReInit failed");
                 }
             }
-            self.row += 1;
+            self.row += u32::from(!self.retry.holds()); // a shortened step leaves its output point ahead
         };
         if matches!(outcome, Advance::Done | Advance::Terminated) {
             self.finished = true;
@@ -11990,14 +12053,9 @@ impl Driver for IdaDriver {
             return Ok(false);
         };
         self.rows.truncate(self.retry.rows_mark);
-        let n_steps = model.n_output_rows() - 1;
-        let target = self.pending_tout.unwrap_or(if self.row >= n_steps {
-            model.stop_time
-        } else {
-            grid_time(self.row, model.start_time, model.stop_time, n_steps)
-        });
         self.t = t;
-        self.pending_tout = Some(t + (target - t) / 2.0);
+        // The step is retaken over the step size limit `undo` left behind.
+        self.pending_tout = None;
         self.work_retries = 0;
         if let Some(ida) = self.ida.as_mut() {
             for i in 0..self.n_states {
