@@ -550,6 +550,7 @@ Final6.mo \
 Final7.mo \
 ForConnect1.mo \
 ForConnect2.mo \
+ForConnect3.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -758,6 +759,8 @@ IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
 IfConnect4.mo \
+IfConnect5.mo \
+IfConnect6.mo \
 IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \

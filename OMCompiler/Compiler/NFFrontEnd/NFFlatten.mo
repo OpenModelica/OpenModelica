@@ -3602,8 +3602,7 @@ protected
 algorithm
   equations := match eq
     case Equation.IF()
-      guard Equation.contains(eq, Equation.isConnect) or
-            Equation.containsExp(eq, function Expression.contains(func = Expression.isConnectionCall))
+      guard Equation.contains(eq, Equation.isConnection)
       algorithm
         target := Ceval.EvalTarget.new(Equation.info(eq));
 
