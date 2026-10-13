@@ -1,12 +1,16 @@
 within ;
 package ConditionalComponentTest
 
+  model RealComponent
+    Real x;
+  end RealComponent;
+
   model ConditionalComponents
     parameter Boolean useSensor = true;
 
-    Real conditionalComponent if useSensor annotation(
+    RealComponent conditionalComponent if useSensor annotation(
       Placement(transformation(origin = {-10, 10}, extent = {{-10, -10}, {10, 10}})));
-    Real normalComponent annotation(
+    RealComponent normalComponent annotation(
       Placement(transformation(origin = {10, -10}, extent = {{-10, -10}, {10, 10}})));
   end ConditionalComponents;
 

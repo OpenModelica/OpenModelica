@@ -70,6 +70,12 @@ private slots:
    * component into the checkable "Conditional Component" group box.
    */
   void attributesDialogShowsCondition();
+  /*!
+   * \brief attributesDialogSetsAndRemovesCondition
+   * Checks that setting/removing the condition in the element attributes
+   * dialog and accepting it updates the component in the model.
+   */
+  void attributesDialogSetsAndRemovesCondition();
   void cleanupTestCase();
 };
 
