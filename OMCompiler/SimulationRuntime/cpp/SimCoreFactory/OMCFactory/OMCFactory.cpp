@@ -641,6 +641,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      vm.add("ignore-hide-result", 0, CommandLine::FLAG, CommandLine::STRING, "ignore HideResult annotations");
      vm.add("variable-filter", 'B', CommandLine::VALUE, CommandLine::STRING, "only write variables that match filter", ".*");
      vm.add("solver-threads", 0, CommandLine::VALUE, CommandLine::INT, "number of threads that can be used by the solver", "1", true);
+     vm.add("override", 0, CommandLine::VALUES, CommandLine::STRING, "start values of variables that replace those of the init xml: name=value[,name=value]...");
 
      vector<string> unrecognized;
      try {
@@ -788,7 +789,16 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, variableFilter, inputPath, outputPath};
+     string parameterOverrides;
+     if (vm.count("override")) {
+       for (const string& o : vm.values("override")) {
+         if (!parameterOverrides.empty())
+           parameterOverrides += ",";
+         parameterOverrides += o;
+       }
+     }
+
+     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, variableFilter, inputPath, outputPath, parameterOverrides};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -855,6 +865,7 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace.insert(pair<string,string>("-ignoreHideResult", "ignore-hide-result"));
   _argumentsToReplace.insert(pair<string,string>("-inputPath", "input-path"));
   _argumentsToReplace.insert(pair<string,string>("-outputPath", "output-path"));
+  _argumentsToReplace.insert(pair<string,string>("-override", "override"));
 }
 
 pair<shared_ptr<ISimController>,SimSettings>

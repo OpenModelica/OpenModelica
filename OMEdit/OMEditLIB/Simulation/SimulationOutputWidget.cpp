@@ -497,7 +497,9 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   // The runtime flags (-lv logging streams, solver options, …) are not part of
   // simulationParameters; pass them via simflags so the wasm-jit run honours them
   // (e.g. -lv=LOG_STATS), as the native executable would receive on its command line.
-  const QString simflags = mSimulationOptions.getSimulationFlags().join(" ");
+  // -logFormat=xml, as the native run's xmltcp, keeps the equation indexes a message
+  // names; the "Debug more" links come from them. First, so a user's own wins.
+  const QString simflags = (QStringList() << "-logFormat=xml" << mSimulationOptions.getSimulationFlags()).join(" ");
   const QString command = QString("simulate(%1, %2, resimulateExecutable=\"%3\", simflags=\"%4\")")
                               .arg(mSimulationOptions.getClassName(), simulationParameters,
                                    mSimulationOptions.getOutputFileName(), simflags);
@@ -533,12 +535,29 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
                          .match(simulationResult).captured(1);
   messages.replace("\\\"", "\"");
   const bool ok = !resultFile.isEmpty();
+#if defined(__EMSCRIPTEN__)
+  // The transformational debugger ("Debug more") reads <model>_info.json from the
+  // page MEMFS. omc writes it only under -d=infoXmlOperations, and without it the
+  // messages get no link. Staged before they are written, which is when the links are made.
+  extern bool omcWorkerStageFile(const char *path);
+  mDebugInfoAvailable = omcWorkerStageFile(QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()).toUtf8().constData());
+#endif
   // Enable + switch to the Output tab; on the native path this is done when the
   // simulation process starts, but that code is compiled out on wasm (no QProcess),
   // so the wasm-jit path must do it here or the messages land in a disabled tab.
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   mpGeneratedFilesTabWidget->setCurrentIndex(1);
-  if (!messages.trimmed().isEmpty()) {
+  const int xmlStart = messages.indexOf("<message ");
+  if (xmlStart >= 0) {
+    // The XML log, parsed as the native run's socket stream is. omc puts a failed
+    // run's "Simulation execution failed ..." line in front of it as plain text.
+    const QString prefix = messages.left(xmlStart).trimmed();
+    if (!prefix.isEmpty()) {
+      writeSimulationOutput(prefix, ok ? StringHandler::Unknown : StringHandler::Error, true);
+    }
+    writeSimulationOutput(messages.mid(xmlStart), StringHandler::Unknown, false);
+  } else if (!messages.trimmed().isEmpty()) {
+    // A run that failed before the runtime took -logFormat=xml logs plain text.
     // Write each log line as its own message: writeSimulationOutput wraps the text
     // in a <message text="…"/> element, and XML attribute-value normalization would
     // otherwise collapse the embedded newlines of a multi-line blob into spaces.
@@ -554,7 +573,6 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
 #if defined(__EMSCRIPTEN__)
   // omc cd'd into the working directory, so the result lands there in the worker
   // VFS. Stage it into the page MEMFS at the same path for OMPlot's .mat reader.
-  extern bool omcWorkerStageFile(const char *path);
   omcWorkerStageFile(QString("%1/%2").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getFullResultFileName()).toUtf8().constData());
 #endif
   mpProgressBar->setRange(0, 100);
@@ -597,7 +615,7 @@ void SimulationOutputWidget::writeSimulationMessage(StringHandler::SimulationMes
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
   /* write the error link */
-  if (!index.isEmpty()) {
+  if (!index.isEmpty() && mDebugInfoAvailable) {
     mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + index + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");

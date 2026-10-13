@@ -81,7 +81,7 @@ file(GLOB_RECURSE OMEDITLIB_HEADERS ${LIB}/*.h)
 set(WASM_EXCLUDE_DIRS
   "/generatedfiles/"
   "/Animation/" "/Debugger/" "/FMI/" "/Git/" "/MCP/" "/CrashReport/"
-  "/TransformationalDebugger/" "/Traceability/")
+  "/Traceability/")
 foreach(pat ${WASM_EXCLUDE_DIRS})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${pat}")
   list(FILTER OMEDITLIB_HEADERS EXCLUDE REGEX "${pat}")
@@ -145,6 +145,11 @@ list(APPEND OMEDITLIB_SOURCES ${SIMRT}/util/simulation_options.c ${SIMRT}/util/o
 # omc_error.c reaches <gc.h> for threadData_t; declarations only, no collector call.
 set_source_files_properties(${SIMRT}/util/omc_error.c PROPERTIES
   INCLUDE_DIRECTORIES ${OM_ROOT}/OMCompiler/3rdParty/gc/include)
+# The transformational debugger parses <model>_info.json with simdjson (its
+# portable fallback kernel on wasm32).
+list(APPEND OMEDITLIB_SOURCES ${OM_ROOT}/OMCompiler/3rdParty/simdjson/singleheader/simdjson.cpp)
+set_source_files_properties(${OM_ROOT}/OMCompiler/3rdParty/simdjson/singleheader/simdjson.cpp
+  PROPERTIES SKIP_AUTOMOC ON)
 # TimeManager drives the result-replay time slider in VariablesWidget.
 list(APPEND OMEDITLIB_SOURCES ${LIB}/Animation/TimeManager.cpp)
 # 3D animation via Qt Quick 3D. FMU animation (VisualizationFMU/FMUWrapper/
@@ -183,6 +188,7 @@ target_include_directories(OMEditLib PUBLIC ${LIB} ${SCRIPTING_API_QT}
   ${OM_ROOT}/OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
   ${OM_ROOT}/OMParser
   ${OM_ROOT}/OMCompiler/3rdParty/ryu/ryu
+  ${OM_ROOT}/OMCompiler/3rdParty/simdjson/singleheader
   ${OM_ROOT}/OMCompiler/3rdParty/open62541)
 target_link_libraries(OMEditLib PUBLIC
   OMPlotLib Qt6::Widgets Qt6::Xml Qt6::PrintSupport Qt6::Svg Qt6::Concurrent

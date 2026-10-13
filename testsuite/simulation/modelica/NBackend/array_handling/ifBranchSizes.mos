@@ -1,0 +1,43 @@
+// name: ifBranchSizes
+// keywords: NewBackend if-equation split
+// status: correct
+// cflags: --newBackend
+//
+// The branches of the if-equation have equations of different sizes, they are paired by scalar rows.
+
+loadString("
+model ifBranchSizes
+  Boolean b = time < 0.5;
+  Real x[2], y, z;
+equation
+  z = time;
+  if b then
+    y = z;
+    x = {z, 2 * z};
+  else
+    x[1] + y = 3 * z;
+    x[2] = y;
+    y - x[1] = z;
+  end if;
+end ifBranchSizes;
+"); getErrorString();
+
+simulate(ifBranchSizes, stopTime = 1); getErrorString();
+val(x[2], 0.25);
+val(x[1], 1);
+val(y, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ifBranchSizes_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ifBranchSizes', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.5
+// 1.0
+// 2.0
+// endResult

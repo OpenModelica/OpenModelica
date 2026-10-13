@@ -1336,7 +1336,7 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(145, "dumpFlatModel",
     ("translateResidualsDAE", "Show the result of the translateResidualsDAE API.")
   })),
   "Dumps the flat model at the given stages of the frontend.");
-constant ConfigFlag SIMULATION = CONFIG_FLAG(146, "simulation",
+constant ConfigFlag SIMULATION = CONFIG_FLAG(146, "simulate",
   SOME("u"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Simulates the last model in the given Modelica file.");
 constant ConfigFlag OBFUSCATE = CONFIG_FLAG(147, "obfuscate",

@@ -1115,32 +1115,138 @@ public function jacobianIndexExp
   input SimCodeVar.SimVar var;
   input HashTableCrefSimVar.HashTable ht;
   output DAE.Exp exp = DAE.ICONST(var.index);
-protected
-  list<SimCodeVar.SimVar> vars, before = {};
-  UnorderedSet<Integer> seen;
 algorithm
   // only non-scalarized arrays can have a size that is known at runtime
   if var.index <= 0 or Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
     return;
   end if;
-  vars := BaseHashTable.hashTableValueList(ht);
-  if not List.any(vars, isSymbolicArrayVar) then
-    return;
-  end if;
-  seen := UnorderedSet.new(Util.id, intEq);
-  for v in vars loop
-    if v.index >= 0 and v.index < var.index and valueEq(v.varKind, var.varKind) and not UnorderedSet.contains(v.index, seen) then
-      UnorderedSet.add(v.index, seen);
-      before := v :: before;
+  for kindOffsets in jacobianOffsets(ht) loop
+    if valueEq(Util.tuple21(kindOffsets), var.varKind) then
+      exp := UnorderedMap.getOrDefault(var.index, Util.tuple22(kindOffsets), exp);
+      return;
     end if;
   end for;
-  if List.any(before, isSymbolicArrayVar) then
-    exp := DAE.ICONST(0);
-    for v in before loop
-      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
-    end for;
-  end if;
 end jacobianIndexExp;
+
+protected function jacobianOffsets
+  "The positions of all variables of a Jacobian per kind, cached for the last
+   few hash tables since the templates ask for every variable reference. Cache
+   entries are complete when published, so parallel template threads at most
+   compute one twice."
+  input HashTableCrefSimVar.HashTable ht;
+  output list<tuple<BackendDAE.VarKind, UnorderedMap<Integer, DAE.Exp>>> offsets;
+protected
+  list<tuple<HashTableCrefSimVar.HashTable, list<tuple<BackendDAE.VarKind, UnorderedMap<Integer, DAE.Exp>>>>> cache;
+algorithm
+  cache := getGlobalRoot(Global.jacobianOffsets);
+  for entry in cache loop
+    if referenceEq(Util.tuple21(entry), ht) then
+      offsets := Util.tuple22(entry);
+      return;
+    end if;
+  end for;
+  offsets := computeJacobianOffsets(ht);
+  cache := (ht, offsets) :: cache;
+  if listLength(cache) > 8 then
+    cache := List.firstN(cache, 8);
+  end if;
+  setGlobalRoot(Global.jacobianOffsets, cache);
+end jacobianOffsets;
+
+protected function computeJacobianOffsets
+  "Per kind, the position of each variable index that differs from the index:
+   the sum of the sizes of the variables before it, if one of them is symbolic."
+  input HashTableCrefSimVar.HashTable ht;
+  output list<tuple<BackendDAE.VarKind, UnorderedMap<Integer, DAE.Exp>>> offsets = {};
+protected
+  list<SimCodeVar.SimVar> vars, kindVars;
+  list<BackendDAE.VarKind> kinds = {};
+  UnorderedSet<Integer> seen;
+  UnorderedMap<Integer, DAE.Exp> map;
+  DAE.Exp exp;
+  Boolean symbolic;
+algorithm
+  vars := BaseHashTable.hashTableValueList(ht);
+  if not List.any(vars, hasRuntimeSize) then
+    return;
+  end if;
+  for v in vars loop
+    if not listMember(v.varKind, kinds) then
+      kinds := v.varKind :: kinds;
+    end if;
+  end for;
+  for kind in kinds loop
+    seen := UnorderedSet.new(Util.id, intEq);
+    kindVars := {};
+    for v in vars loop
+      if v.index >= 0 and valueEq(v.varKind, kind) and not UnorderedSet.contains(v.index, seen) then
+        UnorderedSet.add(v.index, seen);
+        kindVars := v :: kindVars;
+      end if;
+    end for;
+    map := UnorderedMap.new<DAE.Exp>(Util.id, intEq);
+    exp := DAE.ICONST(0);
+    symbolic := false;
+    for v in List.sort(kindVars, simVarIndexGt) loop
+      if symbolic then
+        UnorderedMap.add(v.index, exp, map);
+      end if;
+      exp := DAE.BINARY(exp, DAE.ADD(DAE.T_INTEGER_DEFAULT), simVarSizeExp(v));
+      symbolic := symbolic or hasRuntimeSize(v);
+    end for;
+    offsets := (kind, map) :: offsets;
+  end for;
+end computeJacobianOffsets;
+
+public function jacobianOffsetVars
+  "The variables of one kind of a Jacobian (\"seed\", \"res\" or \"tmp\"), sorted by
+   index, if one of them has a runtime size; their positions are then sums of the
+   sizes of the variables before them, see jacobianIndexExp. Empty otherwise."
+  input HashTableCrefSimVar.HashTable ht;
+  input String kind;
+  output list<SimCodeVar.SimVar> vars = {};
+protected
+  BackendDAE.VarKind varKind;
+  UnorderedSet<Integer> seen;
+algorithm
+  if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+    return;
+  end if;
+  varKind := match kind
+    case "seed" then BackendDAE.SEED_VAR();
+    case "res" then BackendDAE.JAC_VAR();
+    case "tmp" then BackendDAE.JAC_TMP_VAR();
+    else fail();
+  end match;
+  seen := UnorderedSet.new(Util.id, intEq);
+  for v in BaseHashTable.hashTableValueList(ht) loop
+    if v.index >= 0 and valueEq(v.varKind, varKind) and not UnorderedSet.contains(v.index, seen) then
+      UnorderedSet.add(v.index, seen);
+      vars := v :: vars;
+    end if;
+  end for;
+  if List.any(vars, hasRuntimeSize) then
+    vars := List.sort(vars, simVarIndexGt);
+  else
+    vars := {};
+  end if;
+end jacobianOffsetVars;
+
+protected function simVarIndexGt
+  input SimCodeVar.SimVar v1;
+  input SimCodeVar.SimVar v2;
+  output Boolean b = v1.index > v2.index;
+end simVarIndexGt;
+
+public function jacobianOffsetSize
+  "The length of an offset array for the variables of jacobianOffsetVars."
+  input list<SimCodeVar.SimVar> vars;
+  output Integer n = 0;
+algorithm
+  for v in vars loop
+    n := max(n, v.index + 1);
+  end for;
+end jacobianOffsetSize;
 
 public function simVarSizeExp
   "The number of scalar elements of a SimVar as an expression."
@@ -1247,6 +1353,44 @@ algorithm
   end for;
 end numScalarElemsBeforeExp;
 
+public function isResizableSimVar
+  "true for an array variable with a size that depends on parameters (--resizableArrays)."
+  input SimCodeVar.SimVar var;
+  output Boolean b = SimCodeUtilShared.isResizableSimVar(var);
+end isResizableSimVar;
+
+public function hasResizableVars
+  input SimCode.ModelInfo modelInfo;
+  output Boolean b = SimCodeUtilShared.hasResizableVars(modelInfo);
+end hasResizableVars;
+
+public function resizableFixedSize
+  input SimCode.ModelInfo modelInfo;
+  input Integer varType "1 = real, 2 = int, 3 = bool, 4 = string";
+  output Integer n = SimCodeUtilShared.resizableFixedSize(modelInfo, varType);
+end resizableFixedSize;
+
+public function resizableFixedStates
+  input SimCode.ModelInfo modelInfo;
+  output Integer n = SimCodeUtilShared.resizableFixedStates(modelInfo);
+end resizableFixedStates;
+
+public function simVarDims
+  "The dimensions of the type of a variable, symbolic ones of resizable arrays included."
+  input SimCodeVar.SimVar var;
+  output list<DAE.Dimension> dims = Expression.arrayDimension(var.type_);
+end simVarDims;
+
+public function isWholeArrayCref
+  "true for a cref of an array variable without any subscripts, e.g. an
+   iteration variable of a resizable algebraic loop of the new backend, which
+   is solved for as a whole."
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := not ComponentReference.crefHaveSubs(cref) and Types.isArray(ComponentReference.crefTypeFull(cref));
+end isWholeArrayCref;
+
 public function isDimensionParameter
   "true for a size parameter $DIM_k of a derived dimension of a resizable array,
    see NBResizable.addDimensionParameters. Its start value is the expression of
@@ -1306,6 +1450,26 @@ algorithm
     else false;
   end match;
 end isSymbolicArrayVar;
+
+public function hasRuntimeSize
+  "true if an array SimVar has a size that is only known at runtime. Unlike
+   isSymbolicArrayVar this also holds for the C++ target, whose numArrayElement
+   are the sizes the model is built with (see NSimVar.layoutSizeExp); the
+   symbolic size stays in the type."
+  input SimCodeVar.SimVar var;
+  output Boolean b = isSymbolicArrayVar(var) or List.any(Expression.arrayDimension(var.type_), isRuntimeDimension);
+end hasRuntimeSize;
+
+protected function isRuntimeDimension
+  input DAE.Dimension dim;
+  output Boolean b;
+algorithm
+  b := match dim
+    case DAE.DIM_EXP(exp = DAE.ICONST()) then false;
+    case DAE.DIM_EXP() then true;
+    else false;
+  end match;
+end isRuntimeDimension;
 
 protected function isIntegerString
   input String s;
@@ -2437,6 +2601,13 @@ algorithm
       SimCode.SimCode simCode;
       SimCodeVar.SimVar prev;
       list<DAE.ComponentRef> crf_lst;
+    // The start attributes of a whole array are never contiguous, but
+    // daeExpCrefRhsSimContext gathers them with a loop. Expanding them here
+    // instead generates one term per element, which C compilers choke on for
+    // large arrays and which cannot follow a resized array (issue #16373).
+    case DAE.CREF(ty=DAE.T_ARRAY())
+      guard ComponentReference.isStartCref(e.componentRef) and not ComponentReference.crefHaveSubs(e.componentRef)
+      then e;
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();

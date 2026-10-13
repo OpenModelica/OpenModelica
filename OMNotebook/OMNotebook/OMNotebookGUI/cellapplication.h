@@ -46,12 +46,14 @@
 #include <QMessageBox>
 #include <QImageWriter>
 #include <QTranslator>
+#include <QPointer>
 
 // IAEX Headers
 #include "application.h"
 #include "commandcenter.h"
 #include "documentview.h"
 #include "xmlnodename.h"
+#include "cell.h"
 
 #include <vector>
 #include <memory>
@@ -108,7 +110,9 @@ namespace IAEX
     QWidget* mainWindow;
     std::vector<DocumentView*> views_;
     std::unique_ptr<CommandCenter> cmdCenter_;
-    std::vector<Cell *> pasteboard_;
+    // QPointer: the cells on the pasteboard are cells of open documents (copy) or cut cells, they
+    // are deleted with their document. A plain pointer dangles after the document is closed.
+    std::vector<QPointer<Cell>> pasteboard_;
     QStringList removeList_;
   };
 }

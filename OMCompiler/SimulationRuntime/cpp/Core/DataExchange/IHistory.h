@@ -98,6 +98,20 @@ struct SimulationOutput
 		outputVars.push_back(var);
         negateOutputVars.push_back(negate);
 	}
+	/**
+	 *  \brief removes all parameters and variables, e.g. to register them again
+	 *  after the variable memory changed
+	 */
+	void clear()
+	{
+		parameterNames.clear();
+		parameterDescription.clear();
+		outputVarNames.clear();
+		outputVarDescription.clear();
+		outputVars.clear();
+		outputParams.clear();
+		negateOutputVars.clear();
+	}
 };
 /** typedef for all integer outputs */
 typedef SimulationOutput<int> output_int_vars_t;

@@ -410,6 +410,65 @@ algorithm
   end if;
 end checkConnectorTypeBalance;
 
+function checkBlockConnector
+  "Checks that all variables in a public connector component of a block are
+   input, output, parameter, or constant."
+  input InstNode component;
+protected
+  Component comp;
+  list<String> vars;
+algorithm
+  comp := InstNode.component(component);
+
+  if not ConnectorType.isConnector(Component.connectorType(comp)) or
+     Component.isExpandableConnector(comp) or InstNode.isProtected(component) then
+    return;
+  end if;
+
+  if not Restriction.isBlock(InstNode.restriction(InstNode.instanceParent(component))) then
+    return;
+  end if;
+
+  // Modelica 3.7 section 4.7:
+  // Each public connector component of a block must have prefixes input and/or
+  // output for all connector variables that are neither parameter nor constant.
+  vars := listReverseInPlace(findNonCausalConnectorVars(component, InstNode.name(component), {}));
+
+  if not listEmpty(vars) then
+    Error.addStrictMessage(Error.NON_CAUSAL_BLOCK_CONNECTOR,
+      {InstNode.name(component), stringDelimitList(vars, ", ")}, InstNode.info(component));
+  end if;
+end checkBlockConnector;
+
+function findNonCausalConnectorVars
+  "Returns the names of the variables in a connector that are neither input,
+   output, parameter, nor constant."
+  input InstNode component;
+  input String name;
+  input output list<String> vars;
+protected
+  Component comp;
+  Type ty;
+algorithm
+  comp := InstNode.component(component);
+
+  // The direction applies to all variables in the component.
+  if Component.direction(comp) <> Direction.NONE or
+     Component.variability(comp) < Variability.DISCRETE then
+    return;
+  end if;
+
+  ty := Type.arrayElementType(Component.getType(comp));
+
+  if Type.isComplex(ty) then
+    for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(comp)))) loop
+      vars := findNonCausalConnectorVars(c, name + "." + InstNode.name(c), vars);
+    end for;
+  else
+    vars := name :: vars;
+  end if;
+end findNonCausalConnectorVars;
+
 function makeRecordType
   input NFInstNode.ScopeRef constructor;
   output ComplexType recordTy;
@@ -492,6 +551,7 @@ algorithm
             typeComponents(c.classInst, context);
 
             checkConnectorTypeBalance(node);
+            checkBlockConnector(node);
           end if;
         end if;
       then

@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+AssertInWhen.mos \
 AssertTest.mos \
 AssertTest1.mos \
 AssertTest2.mos \

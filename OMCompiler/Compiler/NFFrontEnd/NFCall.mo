@@ -2933,7 +2933,7 @@ protected
           end if;
         then
           Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize,
-            callPrefix = ComponentRef.stripClassScope(ComponentRef.rest(call.ref)));
+            callPrefix = ComponentRef.stripGeneratedInnerScope(ComponentRef.stripClassScope(ComponentRef.rest(call.ref))));
     end match;
 
     if listEmpty(matchedFunctions) then

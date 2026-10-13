@@ -1157,7 +1157,7 @@ algorithm
     enclosingPreRef := makeSMSPrefix(enclosingInitStateRef);
 
     posOfEnclosing := 1;
-    for sc in arrayList(enclosingComps) loop
+    for sc in enclosingComps loop
       if ComponentRef.isEqual(sc, enclosingStateCref) then break; end if;
       posOfEnclosing := posOfEnclosing + 1;
     end for;
@@ -1478,7 +1478,7 @@ algorithm
   initStateRef := arrayGet(sem.smComps, 1);
   preRef := makeSMSPrefix(initStateRef);
   i := 1;
-  for sc in arrayList(sem.smComps) loop
+  for sc in sem.smComps loop
     if ComponentRef.isEqual(sc, stateCref) then break; end if;
     i := i + 1;
   end for;

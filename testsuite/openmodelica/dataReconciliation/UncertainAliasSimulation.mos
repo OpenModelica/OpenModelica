@@ -1,7 +1,7 @@
 // name:     UncertainAliasSimulation
 // keywords: data reconciliation, uncertain, alias, #14866
 // status:   correct
-// teardown_command: rm -rf UncertainAliasSimulation.Plain UncertainAliasSimulation.Plain.* UncertainAliasSimulation.Plain_* Reconciled_UncertainAliasSimulation_Plain.mo UncertainAliasSimulation.Refine UncertainAliasSimulation.Refine.* UncertainAliasSimulation.Refine_* Reconciled_UncertainAliasSimulation_Refine.mo
+// teardown_command: rm -rf UncertainAliasSimulation.Plain UncertainAliasSimulation.Plain.* UncertainAliasSimulation.Plain_* Reconciled_UncertainAliasSimulation_Plain.mo UncertainAliasSimulation.Refine UncertainAliasSimulation.Refine.* UncertainAliasSimulation.Refine_* Reconciled_UncertainAliasSimulation_Refine.mo UncertainAliasSimulation.html
 //
 // The uncertain attribute is only meant for data reconciliation. Without it
 // enabled, uncertain=Uncertainty.refine must not change which alias variable
