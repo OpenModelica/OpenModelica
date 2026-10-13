@@ -1543,7 +1543,7 @@ Map evaluateBuildFlags() {
 // under Groovy's 64kB method-size limit.
 // ----------------------------------------------------------------------------
 
-// The jammy CMake build of omc. Its install tree is what the testsuite-gcc
+// The noble CMake build of omc. Its install tree is what the testsuite-gcc
 // stages run against (ctestStashed), so keep the flags in sync with what
 // those tests need. Built with -DOM_ENABLE_COVERAGE=ON so those stages'
 // coverage numbers (see coverageReportStage()) come from the same run that
@@ -1773,7 +1773,7 @@ void coverageReportStage(int shardCount) {
   // gcov and gcov-tool have to be the ones that match the compiler the data
   // was produced with, which is this image's; the testsuite caches are of no
   // use here because this stage runs no tests.
-  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', extraMounts) {
+  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04', extraMounts) {
     sh """#!/bin/bash -xe
     # Fails the stage right here if the mount above did not take effect,
     # rather than further down with an empty report.
@@ -1846,7 +1846,7 @@ void testWindowsSmoke() {
 
 // The C omc cross-compiled to Windows (MSVC) with the Rust nightly's win64
 // toolchain. A cross build cannot run bomc, so it compiles the C that
-// 'cmake-jammy-gcc' translated for MSVC.
+// 'noble-gcc' translated for MSVC.
 void crossBuildOMCWindows() {
   Map t = nightlyTarget('win64')
   standardSetup()
@@ -1886,7 +1886,7 @@ void testWindowsSmokeWine(String installDir) {
 }
 
 void crossBuildFMU() {
-  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-22.04')
+  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-24.04')
   deps.pull()
   def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
   deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
