@@ -2946,21 +2946,22 @@ fn call_initial_equations_lambda0(e: &mut dyn SimEngine, sim_data: u32, layout: 
 pub const REMOVED_INIT_INCONSISTENT: &str = "the removed initial equations are inconsistent";
 
 /// C's over-determined check: the removed initial equations are residuals of the
-/// solution just found, and one off zero means the problem has none.
+/// solution just found, and one off zero means the problem has none. The calls
+/// without result among them run here too.
 fn check_removed_initial_equations(
     e: &mut dyn SimEngine,
     sim_data: u32,
     layout: &SimLayout,
     model: Option<&SimMeta>,
 ) -> Result<()> {
-    if layout.n_removed_init == 0 {
-        return Ok(());
-    }
     // A host whose model reports the inconsistency itself says so with this error
     // rather than filling the two slots below.
     match e.call1("functionRemovedInitialEquations", sim_data) {
         Err(REMOVED_INIT_INCONSISTENT) => return Err(report_init_failure()),
         other => other?,
+    }
+    if layout.n_removed_init == 0 {
+        return Ok(());
     }
     let idx = read_i32(e, sim_data + layout.removed_init_idx_off)?;
     if idx == 0 {
