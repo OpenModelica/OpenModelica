@@ -631,6 +631,7 @@ FuncBuiltinSign.mo \
 FuncBuiltinSize.mo \
 FuncBuiltinSkew.mo \
 FuncBuiltinSmooth.mo \
+FuncBuiltinSmoothArray.mo \
 FuncBuiltinSmoothNonParam.mo \
 FuncBuiltinSmoothWrongArgs1.mo \
 FuncBuiltinSmoothWrongType1.mo \
