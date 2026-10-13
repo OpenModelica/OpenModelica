@@ -723,11 +723,14 @@ protected
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
     Pointer<Variable> var_ptr;
+    Integer start_idx;
   algorithm
     // collect all relevant constraint equations
     for eqn in marked_eqns loop
       UnorderedSet.add(mapping.eqn_StA[eqn], eqn_indices);
-      eqn_slices[mapping.eqn_StA[eqn]] := eqn :: eqn_slices[mapping.eqn_StA[eqn]];
+      // local element index, like the slices of Matching.getMatches
+      (start_idx, _) := mapping.eqn_AtS[mapping.eqn_StA[eqn]];
+      eqn_slices[mapping.eqn_StA[eqn]] := (eqn - start_idx) :: eqn_slices[mapping.eqn_StA[eqn]];
     end for;
 
     // get the constraint equation, add it to the array and add all slices of it to the slice list

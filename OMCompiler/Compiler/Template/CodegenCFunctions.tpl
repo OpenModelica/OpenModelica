@@ -7573,9 +7573,9 @@ let &sub = buffer ""
     let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="identity"), expLst={A}) then
+  case CALL(path=IDENT(name="identity"), expLst={A}, attr=CALL_ATTR(ty=ty)) then
     let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let arr_tp_str = expTypeFromExpArray(A)
+    let arr_tp_str = expTypeArray(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls, &varFrees)
     let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar
