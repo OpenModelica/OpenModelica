@@ -181,6 +181,8 @@ Windows and macOS builds are only run when the PR has the
   them in sync) and implemented in `Script/CevalScriptBackend.mo`. OMEdit
   calls many of these functions; changing a signature can break it.
 - Add a regression test for a bug fix and for new behavior.
+- Changes to SimulationRuntime/rust/ should also be mirrored in
+  SimulationRuntime/c/ (--simCodeTarget=C.old).
 
 ### Comments
 
