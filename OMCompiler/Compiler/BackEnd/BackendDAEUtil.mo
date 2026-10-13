@@ -143,6 +143,21 @@ algorithm
   end match;
 end isInitializationDAE;
 
+public function warnStartValueCycle
+  "Warns that the start attribute of the variable depends on the variable itself."
+  input DAE.ComponentRef cref;
+protected
+  String name = ComponentReferenceBasics.printComponentRefStr(cref);
+algorithm
+  Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" + name +
+    "' depends, directly or transitively, on the variable itself. The start attribute defines the " +
+    "initial value of '" + name + "' and therefore " +
+    "cannot be computed from it, so this start value cannot be used to initialize the variable (see " +
+    "Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give '" +
+    name + "' a start value that does not depend on " +
+    "itself. Use the transformational debugger to inspect the dependency chain.");
+end warnStartValueCycle;
+
 public function isSimulationDAE
   input BackendDAE.Shared inShared;
   output Boolean res;

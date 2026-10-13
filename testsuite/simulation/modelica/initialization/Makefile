@@ -44,6 +44,7 @@ homotopy6.mos \
 homotopy7.mos \
 homotopy8.mos \
 initStartTearingDegree1.mos \
+initStartValueCycle.mos \
 OpenIPSL_AC8B_total.mos \
 initial_equation.mos \
 parameters.mos \
