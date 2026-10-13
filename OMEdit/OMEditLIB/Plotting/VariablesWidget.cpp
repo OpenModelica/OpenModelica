@@ -2060,6 +2060,25 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 }
 
 /*!
+ * \brief VariablesWidget::warnProtectedVariableNotFound
+ * Shows a warning when a protected variable is missing from the active result file.
+ * The warning is emitted once per model and variable until the result file is closed.
+ * \param modelName The model containing the protected variable.
+ * \param variable The qualified variable name missing from the result file.
+ */
+void VariablesWidget::warnProtectedVariableNotFound(const QString &modelName, const QString &variable)
+{
+  QSet<QString> &warnedVariables = mWarnedProtectedVariables[modelName];
+  if (warnedVariables.contains(variable)) {
+    return;
+  }
+  warnedVariables.insert(variable);
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+      tr("%1 not found in result file. Protected variables are only stored with <b>Simulation Setup->Output->Protected Variables if not encrypted</b>.")
+          .arg(variable), Helper::simulationKind, Helper::warningLevel));
+}
+
+/*!
  * \brief VariablesWidget::plotVariables
  * Plot/unplot the checked/unchecked index.
  * \param index
@@ -2713,6 +2732,7 @@ void VariablesWidget::closeResultFile()
 {
   mResultFile.close();
   mOpenedResultFileName = "";
+  mWarnedProtectedVariables.clear();
 }
 
 /*!
