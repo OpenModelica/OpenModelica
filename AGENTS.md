@@ -3,7 +3,9 @@
 This file is for AI coding agents (and the humans steering them) working on
 OpenModelica. Read [CONTRIBUTING.md](CONTRIBUTING.md) as well; everything in it
 applies to agent-written changes too. When this file and a more specific README
-disagree, the README closer to the code wins.
+disagree, the README closer to the code wins. Some directories have their own
+AGENTS.md with what applies only there, e.g.
+[OMCompiler/SimulationRuntime/c/AGENTS.md](OMCompiler/SimulationRuntime/c/AGENTS.md).
 
 If you are unsure about a design decision, ask the human you are working with
 instead of guessing. Pull requests are reviewed by people, so a small change
@@ -147,6 +149,10 @@ cd testsuite/flattening/modelica/scodeinst
   A failing test leaves a log file to read. `./runtests.pl -h` lists the
   options. The full testsuite is slow and CI runs it on every PR, so locally
   run the tests related to your change.
+- Check the tests you touched with partest before pushing, even if `rtest`
+  passes: partest, like CI, runs each test in a `<test>_temp<N>` copy one
+  directory deeper and links its dependencies in, so relative paths and extra
+  files a test uses only resolve correctly there.
 - Update expected output (`rtest -b`) only after reading the diff and
   understanding why it changed. Never rebaseline to make a regression pass.
 - Simulation reference files must be small: use `filterSimulationResults` to
@@ -166,6 +172,25 @@ log rather than guessing; the failure is often platform or library specific.
 Windows and macOS builds are only run when the PR has the
 `CI/Build MSYS2-UCRT64` or `CI/Build OSX` label.
 
+Some failures only show up in CI because the default local build does not
+build the Rust port of `omc`:
+
+- `OMCompiler/Compiler/OpenModelica.rs` transpiles each package into the crate
+  named by its `__OpenModelica_Interface` annotation. A new backend file
+  (`"nbackend"`) must not import an old backend package (`"backend"`), as
+  `openmodelica_nbackend` does not depend on `openmodelica_backend`. Code
+  shared by both backends goes in `SimCode/SimCodeUtilShared.mo`.
+- A new root index in `Global/Global.mo` needs its hand-written `thread_local`
+  in `OpenModelica.rs/openmodelica_util/src/Globals.rs`, and its reset in
+  `Global.rs` if `Global.initialize` resets it.
+- The modules listed in `WASM_GATED_TOP_MODULES` in
+  `OpenModelica.rs/mmtorust/src/codegen.rs` are replaced by hand-written
+  `*_wasm.rs` stubs on wasm32. A function added to such a module must also be
+  added to its stub.
+- The wasm-jit stage runs a 32-bit `omc`, where MetaModelica Integers are 32
+  bits (31 when boxed). Keep Integer intermediates below 2^30 when the value
+  is printed, stored or compared, e.g. hashes, checksums and IDs.
+
 ## Making changes
 
 - Fix the cause, not the symptom. A change that only makes one test pass
@@ -182,6 +207,8 @@ Windows and macOS builds are only run when the PR has the
   them in sync) and implemented in `Script/CevalScriptBackend.mo`. OMEdit
   calls many of these functions; changing a signature can break it.
 - Add a regression test for a bug fix and for new behavior.
+- Keep the description of a new flag to one line, and do not put issue
+  numbers in flag text.
 - Changes to SimulationRuntime/rust/ should also be mirrored in
   SimulationRuntime/c/ (--simCodeTarget=C.old).
 
@@ -212,7 +239,9 @@ Agents add far too many comments. Keep them few and brief.
 
 ### Commit messages
 
-- The first line is a summary of at most 50 characters.
+- The first line is a summary of at most 50 characters. Prefix it with the
+  area when the change belongs to one, e.g. `[NF]` frontend, `[OB]` old
+  backend, `[NB]` new backend, `[Runtime]`, `[API]` scripting API, `[OMEdit]`.
 - The second line is blank.
 - The remaining lines are at most 72 characters.
 - The body explains what was wrong and why the change fixes it. GitHub renders
@@ -235,6 +264,10 @@ Agents add far too many comments. Keep them few and brief.
   shows it, and the expected behavior.
 - Fill in the [pull request template](.github/pull_request_template.md).
 - One topic per pull request. Two unrelated fixes are two pull requests.
+- Pull requests are squash-merged. Branch every pull request off `master`,
+  never off another open pull request's branch: once that one is squashed,
+  yours conflicts. If one depends on another, say which goes first and rebase
+  on `master` after it is merged.
 - Disclose in the PR description that an AI agent was used, and which parts
   were tested locally.
 - All contributions are made under the
