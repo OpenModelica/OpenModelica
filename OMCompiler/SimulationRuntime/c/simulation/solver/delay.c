@@ -144,57 +144,51 @@ static modelica_boolean searchEvent(double time, RINGBUFFER *delayStruct)
 static modelica_real distanceToEvent(double time, RINGBUFFER *delayStruct)
 {
   const int end = ringBufferLength(delayStruct);
-  int timePos = 0;
+  int pos = 0;
   double curTime, prevTime;
-  double prevEvent = DBL_MAX, nextEvent = -DBL_MAX;
+  double earlierEvent = DBL_MAX;
+  double eventParity = -1.0;
   TIME_AND_VALUE* bufferElem;
 
-  /* Search for time pos */
-  for (int pos = 0; pos < end; ++pos) {
-    bufferElem = getRingData(delayStruct, pos);
-    curTime = bufferElem->t;
+  /* Search for time pos and count parity of earlier events */
+  bufferElem = getRingData(delayStruct, pos);
+  curTime = bufferElem->t;
+  for (pos = 0; pos < end - 1; ++pos) {
     if (curTime > time) {
-      timePos = pos;
       break;
+    }
+
+    bufferElem = getRingData(delayStruct, pos + 1);
+    prevTime = curTime;
+    curTime = bufferElem->t;
+
+    if (curTime - prevTime < 1e-12*fabs(curTime)) {
+      earlierEvent = curTime; // take the right border
+      eventParity = -eventParity;
     }
   }
 
-  /* find previous event */
-  bufferElem = getRingData(delayStruct, timePos);
-  curTime = bufferElem->t;
-  for (int pos = timePos-1; pos > 0; --pos) {
+  /* see if there is a later event closer to `time` */
+  for (pos = pos + 1; pos < end; ++pos) {
+    if (curTime - time > time - earlierEvent) {
+      break;
+    }
+
     bufferElem = getRingData(delayStruct, pos);
     prevTime = curTime;
     curTime = bufferElem->t;
-    if (fabs(prevTime - curTime) < 1e-12) {
-      prevEvent = (prevTime - curTime)*0.5;
-      break;
+
+    if (curTime - prevTime < 1e-12*fabs(curTime)) {
+      double laterEvent = prevTime; // take the left border
+      return (laterEvent - time) * eventParity;
     }
   }
 
-  /* find next event */
-  bufferElem = getRingData(delayStruct, timePos);
-  curTime = bufferElem->t;
-  for (int pos = timePos+1; pos < end; ++pos) {
-    bufferElem = getRingData(delayStruct, pos);
-    prevTime = curTime;
-    curTime = bufferElem->t;
-    if (fabs(prevTime - curTime) < 1e-12) {
-      prevEvent = (prevTime - curTime)*0.5;
-      break;
-    }
+  if (earlierEvent < time) {
+    return (time - earlierEvent) * eventParity;
   }
 
-  if (prevEvent > time) {
-    if (nextEvent < time) {
-      return -1;
-    } else {
-      return nextEvent - time;
-    }
-  } else if (nextEvent < time) {
-
-  }
-  return (nextEvent - time)*(time - prevEvent);
+  return -1;
 }
 
 /**

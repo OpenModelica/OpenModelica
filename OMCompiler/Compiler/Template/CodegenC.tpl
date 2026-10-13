@@ -5685,7 +5685,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
       case GREATEREQ()  then '<%e1%> - <%e2%>'
       case EQUAL()      then '-(<%e1%> - <%e2%>)*(<%e1%> - <%e2%>)'
       case NEQUAL()     then '(<%e1%> - <%e2%>)*(<%e1%> - <%e2%>)'
-      else error(sourceInfo(), 'INVALID ZERO CROSSING <%daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)%>')
+      else error(sourceInfo(), 'INVALID ZERO CROSSING <%daeExp(exp, contextZeroCross, &preExp, &varDecls, &varFrees, &auxFunction)%>')
     <<
     start_index = current_index;
     <%forHead%>
