@@ -12335,13 +12335,8 @@ else
           initPartSimDer,
           NONE(),
           SimCode.FMIDISCRETESTATES(discreteStates),
-<<<<<<< HEAD
           SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {}),
           fmi3ArrayGroups(inModelInfo)));
-=======
-          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {})
-          ));
->>>>>>> 27dc96cf96e82cf41910018e56ffbee23a5710ab
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();

@@ -4,8 +4,9 @@
 // teardown_command: rm -rf AdjointSmoke.fmu AdjointSmoke.fmutmp/ AdjointSmoke.log AdjointSmoke_info.json index.html AdjointSmoke_FMU.libs AdjointSmoke_FMU.makefile AdjointSmoke_external_functions.json resources
 //
 // FMI 3.0 adjoint derivatives runtime validation. Export with the new backend
-// and no directional derivatives, then verify via FMPy that
+// and directional derivatives, then verify via FMPy that
 // fmi3GetAdjointDerivative returns the expected vector-Jacobian products.
+// DISCLAIMER: Needs the old C runtime.
 
 setCommandLineOptions("--newBackend --simCodeTarget=C.old -d=-disableDirectionalDerivatives"); getErrorString();
 
