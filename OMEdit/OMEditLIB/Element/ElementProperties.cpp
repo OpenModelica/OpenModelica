@@ -197,6 +197,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpFixedFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
                                                        || mpModelInstanceElement->getDimensions().isArray());
   // set the value type based on element type.
+  bool isChoicesType = mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty();
   if (mpModelInstanceElement->getRootType().compare(QStringLiteral("Boolean")) == 0) {
     if (mpModelInstanceElement->getAnnotation()->getChoices()
         && (mpModelInstanceElement->getAnnotation()->getChoices()->isCheckBox() || mpModelInstanceElement->getAnnotation()-> getChoices()->isDymolaCheckBox())) {
@@ -204,10 +205,9 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     } else {
       mValueType = Parameter::Boolean;
     }
+  }
   // Choices take precedence over enumeration so annotated enumeration parameters use their choices (see issue #16620).
-  } else if (mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty()) {
-    mValueType = Parameter::Choices;
-  } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
+  else if (!isChoicesType && mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
   } else if (mpModelInstanceElement->getReplaceable()) {
     // replaceable component or short element definition
@@ -216,6 +216,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     } else {
       mValueType = Parameter::ReplaceableComponent;
     }
+  } else if (isChoicesType) {
+    mValueType = Parameter::Choices;
   } else if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
     mValueType = Parameter::ChoicesAllMatching;
   } else {
@@ -877,7 +879,7 @@ void Parameter::editClassButtonClicked()
   QString type;
   QString value;
   QString defaultValue;
-  if (isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching()) {
+  if (isEnumeration() || isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching() || isChoices()) {
     value = mpValueComboBox->lineEdit()->text();
     defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   } else {
