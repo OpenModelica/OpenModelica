@@ -58,6 +58,10 @@ BindingInvalidType2.mo \
 BindingInvalidType3.mo \
 BindingInvalidType4.mo \
 BindingInvalidType5.mo \
+BlockConnector1.mo \
+BlockConnector2.mo \
+BlockConnector3.mo \
+BlockConnector4.mo \
 bindings1.mo \
 bindings4.mo \
 bindings7.mo \

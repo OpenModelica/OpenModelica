@@ -36,6 +36,7 @@ gaspropreties.mos \
 homotopy1.mos \
 homotopy2.mos \
 homotopy3.mos \
+homotopyDisjoint.mos \
 homotopy4.mos \
 homotopy4_solver.mos \
 homotopy5.mos \

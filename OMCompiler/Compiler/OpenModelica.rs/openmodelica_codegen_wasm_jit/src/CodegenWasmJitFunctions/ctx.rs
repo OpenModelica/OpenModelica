@@ -219,6 +219,9 @@ pub(crate) struct SimCtx {
     /// True while lowering the `functionZeroCrossings` body: an indexed relation is
     /// then evaluated *fresh* (so a sign change is detectable) rather than held.
     pub(crate) zc_context: bool,
+    /// True while lowering a when-body, which runs only at its event: a violated
+    /// `assert()` there is never held (`rt_assert_when`).
+    pub(crate) when_body: bool,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance, written by
     /// the driver at run start from the run's tolerance. Continuous (Real) indexed
     /// relations use a ±`tolZC*(max(|a|,|b|)+max(nom))` band at events and in
@@ -1410,9 +1413,11 @@ impl<'a> FnCtx<'a> {
             }
         }
         self.emit(I::If(we::BlockType::Empty));
+        let outer = self.set_when_body(true);
         for op in &**stmts {
             self.lower_when_op(op)?;
         }
+        self.set_when_body(outer);
         if let Some(ew) = else_when {
             self.emit(I::Else);
             match &**ew {
@@ -1424,6 +1429,11 @@ impl<'a> FnCtx<'a> {
         }
         self.emit(I::End);
         Ok(())
+    }
+
+    /// Enter or leave a when-body; returns the previous state.
+    pub(super) fn set_when_body(&mut self, on: bool) -> bool {
+        self.sim.as_mut().is_some_and(|s| core::mem::replace(&mut s.when_body, on))
     }
 
     fn lower_when_op(&mut self, op: &openmodelica_backend_types::BackendDAE::WhenOperator) -> Result<()> {

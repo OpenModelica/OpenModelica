@@ -58,6 +58,9 @@ pub(super) fn builtin_index(name: &str) -> Option<u32> {
 /// `sim_data` is C's `data` (0 outside a simulation), which an FMU heads the logged
 /// block with the time from.
 ///
+/// `rt_assert_when` is `rt_assert` for a when-body, which runs only at its event:
+/// never suppressed, so it always answers 1.
+///
 /// `rt_assert_warning(cond, msg, file, sline, scol, eline, ecol, isReadOnly, initial)`
 /// records a *non-fatal* (AssertionLevel.warning) violation — the string handles
 /// (dumped condition, message, file) plus source position — for the driver to
@@ -83,6 +86,11 @@ pub(super) fn builtin_index(name: &str) -> Option<u32> {
 pub(crate) const ENV_EXTRA: &[(&str, &[WTy], &[WTy])] = &[
     (
         "rt_assert",
+        &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
+        &[WTy::I32],
+    ),
+    (
+        "rt_assert_when",
         &[WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32, WTy::I32],
         &[WTy::I32],
     ),
