@@ -1,0 +1,48 @@
+// Name:     StateAlgorithm
+// keywords: index reduction, algorithm, state selection, #17060
+// status:   correct
+//
+// Two states assigned in an algorithm section, constrained by the same
+// function of p, so index reduction has to differentiate the algorithm.
+// Each variable is assigned once and not read before, so the section is
+// converted to equations.
+// c1(t) = c2(t) = 1 - 0.5*exp(-t/2), c1(1) = 0.69673467...
+
+loadString("
+model StateAlgorithm
+  function total
+    input Real p;
+    output Real t;
+  algorithm
+    t := 0.03*p + p/(1 + p);
+  end total;
+  Real c1(start=0.5, fixed=true);
+  Real c2(start=0.5);
+  Real p;
+  Real q;
+equation
+  der(c1) = 1 - q;
+  der(c2) = q - c2;
+algorithm
+  c1 := total(p);
+  c2 := total(p);
+end StateAlgorithm;
+"); getErrorString();
+simulate(StateAlgorithm, stopTime=1); getErrorString();
+val(c1, 1);
+val(c2, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StateAlgorithm_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StateAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.6967345814143937
+// 0.6967345814143937
+// endResult
