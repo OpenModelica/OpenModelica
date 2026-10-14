@@ -312,6 +312,9 @@ protected
         (replacements, comps_to_remove, solved_map) := aliasCausalizePost(comps, Partition.Partition.getKind(partition), EqData.getUniqueIndex(eqData));
         replacements := checkReplacements(replacements, eqData, function updateAuxEquationPost(comps = comps, comps_to_remove = comps_to_remove, solved_map = solved_map, auxEquations = auxEquations));
 
+        // apply replacements on comps
+        comps := Replacements.applySimpleStrongComponents(comps, varData, replacements);
+
         // resolve comps to remove
         comps := removeStrongComponents(comps, comps_to_remove);
 
