@@ -625,8 +625,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         checkForSampleEvent(data, solverInfo);
 
         /* if regular output point and last time events are almost equals
-        * skip that step and go further */
-        if (solverInfo->currentStepSize < 1e-15 && syncEventStep){
+        * skip that step and go further, unless the step ends on a time event:
+        * a relation on time can switch a few ulp after the last event */
+        if (solverInfo->currentStepSize < 1e-15 && syncEventStep && !data->simulationInfo->sampleActivated){
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
