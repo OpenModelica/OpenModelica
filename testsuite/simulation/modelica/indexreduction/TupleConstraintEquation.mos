@@ -1,0 +1,53 @@
+// Name:     TupleConstraintEquation
+// keywords: index reduction, state selection, tuple, #17061
+// status:   correct
+//
+// Two states constrained by tuple equations with the same function call.
+// After inlining, the constraint (c1, b1) = (f1(p), f2(p)) has to be split into
+// scalar equations for the static state selection, else every variable in it
+// is unsolvable and the dynamic state set fails on the tuple equation.
+// c1(t) = c2(t) = 1 - 0.5*exp(-t/2), c1(1) = 0.69673467...
+
+loadString("
+model TupleConstraintEquation
+  function content
+    input Real p;
+    output Real total;
+    output Real bound;
+  algorithm
+    bound := p/(1 + p);
+    total := 0.03*p + bound;
+  end content;
+  Real c1(start=0.5, fixed=true);
+  Real c2(start=0.5);
+  Real p;
+  Real q;
+  Real b1;
+  Real b2;
+equation
+  der(c1) = 1 - q;
+  der(c2) = q - c2;
+  (c1, b1) = content(p);
+  (c2, b2) = content(p);
+end TupleConstraintEquation;
+"); getErrorString();
+simulate(TupleConstraintEquation, stopTime=1); getErrorString();
+val(c1, 1);
+val(c2, 1);
+val(b1, 1) - val(b2, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleConstraintEquation_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TupleConstraintEquation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.6967345814143956
+// 0.6967345814143956
+// 0.0
+// endResult
