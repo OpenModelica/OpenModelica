@@ -5135,7 +5135,7 @@ fn is_dassl(method: &str) -> bool {
 /// with a symbolic Jacobian and `""` the dassl default.
 fn check_method(method: &str) -> bool {
     is_dassl(method)
-        || matches!(method, "euler" | "rungekutta" | "gbode" | "qss" | "symSolver" | "symSolverSsc")
+        || matches!(method, "euler" | "rungekutta" | "qss" | "symSolver" | "symSolverSsc")
         || (matches!(method, "cvode" | "ida") && cfg!(sundials))
         // `optimize()`; `drive` handles it before the integrators, and reports
         // C's "Ipopt is needed but not available." when it was not linked.
@@ -5157,6 +5157,9 @@ fn resolve_solver_method<'a>(method: &'a str, dae_mode: bool) -> Result<&'a str>
     } else {
         method
     };
+    if method == "gbode" {
+        return Err(crate::simflags::GBODE_DISABLED);
+    }
     if !check_method(method) {
         return Err(UNSUPPORTED_METHOD);
     }
@@ -5357,11 +5360,10 @@ const NO_SYM_SOLVER: &str = "the model was not translated with \
 /// Listing what `make_driver` accepts; `simflags::check` rejects the rest earlier,
 /// so this is only reached by a `method=` the model was compiled with.
 const UNSUPPORTED_METHOD: &str = if cfg!(sundials) {
-    "unsupported integration method (supported: `dassl`, `cvode`, `ida`, `gbode`, \
-     `euler`, `rungekutta`, `qss`)"
-} else {
-    "unsupported integration method (supported: `dassl`, `gbode`, `euler`, \
+    "unsupported integration method (supported: `dassl`, `cvode`, `ida`, `euler`, \
      `rungekutta`, `qss`)"
+} else {
+    "unsupported integration method (supported: `dassl`, `euler`, `rungekutta`, `qss`)"
 };
 
 /// Free external objects (so repeated runs don't leak) and read back parameter
