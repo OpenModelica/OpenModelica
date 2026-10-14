@@ -2232,11 +2232,15 @@ pub fn realpath(path: ArcStr) -> Result<ArcStr> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         #[cfg(unix)]
-        let canon = canonicalize_in_known_dir(Path::new(path.as_str()));
+        let canon = canonicalize_in_known_dir(Path::new(path.as_str()))
+            .map(|p| p.to_string_lossy().into_owned());
+        // GetFullPathNameW like C: canonicalize would return a \\?\ path,
+        // which does not accept the '/' callers append.
         #[cfg(not(unix))]
-        let canon = fs::canonicalize(path.as_str());
+        let canon = std::path::absolute(path.as_str())
+            .map(|p| p.to_string_lossy().replace('\\', "/"));
         let canon = canon.map_err(|_| "System.realpath: cannot resolve {path}")?;
-        Ok(ArcStr::from(canon.to_string_lossy().as_ref()))
+        Ok(ArcStr::from(canon))
     }
 }
 

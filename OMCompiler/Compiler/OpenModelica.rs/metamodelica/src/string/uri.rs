@@ -90,7 +90,7 @@ fn decode_uri(src: &str) -> String {
 ///   the table.
 /// * `file://path` — strip the prefix and treat as a regular path.
 /// * Other `xxx://` URIs — fail, matching the C runtime's `MMC_THROW`.
-/// * Plain paths — canonicalize through `std::fs::canonicalize` if the path
+/// * Plain paths — canonicalize (`GetFullPathNameW` on Windows) if the path
 ///   exists; otherwise return as-is when absolute, or prepend the current
 ///   working directory when relative.
 pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
@@ -112,7 +112,11 @@ pub fn uriToFilename(uri_om: ArcStr) -> Result<ArcStr> {
     // *original URI* ended with one.
     fn regular_paths(path: &str, orig_uri: &ArcStr) -> ArcStr {
         let p = std::path::Path::new(path);
-        match std::fs::canonicalize(p) {
+        #[cfg(windows)]
+        let canon = std::fs::metadata(p).and_then(|_| std::path::absolute(p));
+        #[cfg(not(windows))]
+        let canon = std::fs::canonicalize(p);
+        match canon {
             Ok(canon) => {
                 let mut s = canon.to_string_lossy().into_owned();
                 if orig_uri.ends_with('/') && !s.ends_with('/') && p.is_dir() {
