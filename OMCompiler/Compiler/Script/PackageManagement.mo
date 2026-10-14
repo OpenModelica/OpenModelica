@@ -618,6 +618,7 @@ function installMissingWasmOfLoaded
 protected
   list<String> dirs;
   JSON index, installed, obj;
+  String pkg, version;
 algorithm
   if abi <= 0 then
     return;
@@ -636,7 +637,12 @@ algorithm
   for dir in dirs loop
     try
       installed := JSON.parseFile(dir + "/" + metaDataFileName);
-      obj := installedIndexEntry(index, listHead(System.strtok(System.basename(dir), " ")), SemanticVersion.parse(JSON.getString(JSON.get(installed, "version"))), getShaOrZipfile(installed));
+      pkg := listHead(System.strtok(System.basename(dir), " "));
+      version := JSON.getString(JSON.get(installed, "version"));
+      obj := installedIndexEntry(index, pkg, SemanticVersion.parse(version), getShaOrZipfile(installed));
+      if listEmpty(wasmExternalsZips(obj, abi)) and hasWasmExternals(index, pkg, version, abi) then
+        Error.addCompilerWarning(pkg + " " + version + " has no prebuilt wasm libraries. Update it with upgradeInstalledPackages().");
+      end if;
       if installMissingWasm(dir, wasmExternalsZips(obj, abi), getCachePath()) then
         wasmDirs := dir :: wasmDirs;
       end if;
@@ -644,6 +650,19 @@ algorithm
     end try;
   end for;
 end installMissingWasmOfLoaded;
+
+function hasWasmExternals
+  input JSON index;
+  input String pkg;
+  input String version;
+  input Integer abi;
+  output Boolean b = false;
+algorithm
+  try
+    b := JSON.hasKey(JSON.get(JSON.get(JSON.get(JSON.get(JSON.get(index, "libs"), pkg), "versions"), version), "wasm"), intString(abi));
+  else
+  end try;
+end hasWasmExternals;
 
 function installWasmToolchain
   "Installs the index's wasm sysroot under ~/.openmodelica/wasm32-wasip1/omc-<generation>,
@@ -781,6 +800,7 @@ algorithm
   index := getPackageIndex(printError=true);
   indexHasPkg := true;
   sha := "";
+  zip := "";
 
   if AvailableLibraries.hasKey(installedLibraries, pkg) then
     installedVersions := AvailableLibraries.get(installedLibraries, pkg);
@@ -831,7 +851,8 @@ algorithm
   end if;
   versionObj := JSON.get(versionsObj, versionToInstall);
 
-  if (not success) or (sha <> "" and sha <> getShaOrZipfile(versionObj)) then
+  // Metadata written from an index without shas only knows its zipfile.
+  if (not success) or (if sha <> "" then sha <> getShaOrZipfile(versionObj) else zip <> "" and System.basename(zip) <> System.basename(JSON.getString(JSON.get(versionObj, "zipfile")))) then
     success := true;
     packageToInstall := SOME(PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj));
   end if;
