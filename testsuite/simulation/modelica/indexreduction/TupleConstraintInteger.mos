@@ -1,0 +1,62 @@
+// Name:     TupleConstraintInteger
+// keywords: index reduction, state selection, tuple, Integer, #17061
+// status:   correct
+//
+// Two states constrained by tuple equations whose second output is an Integer.
+// After state selection (c1, n1) = content(p) is solved for {p, n1}: p has to be
+// found by a non-linear solver, which cannot iterate on the Integer n1, so n1 is
+// computed by the call once p is solved.
+// c1(t) = c2(t) = 1 - 0.5*exp(-t/2), c1(1) = 0.69673467...
+// p > 1.5 when c1 > 0.645, i.e. n1 switches to 1 at t = 0.68...
+
+loadString("
+model TupleConstraintInteger
+  function content
+    input Real p;
+    output Real total;
+    output Integer n;
+  algorithm
+    total := 0.03*p + p/(1 + p);
+    n := if p > 1.5 then 1 else 0;
+  end content;
+  Real c1(start=0.5, fixed=true);
+  Real c2(start=0.5);
+  Real p;
+  Real q;
+  Integer n1;
+  Integer n2;
+equation
+  der(c1) = 1 - q;
+  der(c2) = q - c2;
+  (c1, n1) = content(p);
+  (c2, n2) = content(p);
+end TupleConstraintInteger;
+"); getErrorString();
+simulate(TupleConstraintInteger, stopTime=1); getErrorString();
+val(c1, 1);
+val(c2, 1);
+val(n1, 0);
+val(n1, 0.6);
+val(n1, 0.8);
+val(n1, 1);
+val(n2, 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleConstraintInteger_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TupleConstraintInteger', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.6967345814143956
+// 0.6967345814143956
+// 0.0
+// 0.0
+// 1.0
+// 1.0
+// 1.0
+// endResult

@@ -5608,6 +5608,9 @@ algorithm
       String s, s1, s2, s3;
       Boolean homotopySupport;
       BackendDAE.EquationAttributes eqAttr;
+      list<BackendDAE.Var> realVars, discVars;
+      list<DAE.ComponentRef> discCrefs;
+      list<DAE.Exp> expl, explReal, explDisc;
 
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr) algorithm
       crefs := List.map(inVars, BackendVariable.varCref);
@@ -5651,6 +5654,25 @@ algorithm
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
+    // (x, n) = f(y) solved for {y, n} with n discrete: solve (x, _) = f(y) for y
+    // with a non-linear solver, then assign (_, n) := f(y)
+    case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(PR=expl), right=e2 as DAE.CALL(), source=source, attr=eqAttr) algorithm
+      (realVars, discVars) := List.splitOnTrue(inVars, isRealOrSubTypeRealVar);
+      false := listEmpty(realVars);
+      false := listEmpty(discVars);
+      discCrefs := List.map(discVars, BackendVariable.varCref);
+      // the discrete variables are only whole outputs of the call
+      false := Expression.expHasCrefsNoPreOrStart(e2, discCrefs);
+      explReal := List.map1(expl, wildIfCrefIn, discCrefs);
+      false := Expression.expHasCrefsNoPreOrStart(DAE.TUPLE(explReal), discCrefs);
+      explDisc := List.threadMap(expl, explReal, wildIfNotWild);
+      (equations_, uniqueEqIndex, tempvars) := createSingleComplexEqnCode(
+        BackendDAE.COMPLEX_EQUATION(listLength(realVars), DAE.TUPLE(explReal), e2, source, eqAttr),
+        realVars, iuniqueEqIndex, itempvars, iextra, genDiscrete, funcTree, clockIndex);
+      equations_ := List.appendElt(SimCode.SES_ALGORITHM(uniqueEqIndex,
+        {DAE.STMT_TUPLE_ASSIGN(Expression.typeof(inEquation.left), explDisc, e2, source)}, eqAttr), equations_);
+    then (equations_, uniqueEqIndex+1, tempvars);
+
     // failure
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2) algorithm
       crefs := List.map(inVars, BackendVariable.varCref);
@@ -5682,6 +5704,31 @@ algorithm
     then fail();
   end matchcontinue;
 end createSingleComplexEqnCode;
+
+protected function isRealOrSubTypeRealVar
+  input BackendDAE.Var var;
+  output Boolean b = Types.isRealOrSubTypeReal(ComponentReference.crefLastType(BackendVariable.varCref(var)));
+end isRealOrSubTypeRealVar;
+
+protected function wildIfCrefIn
+  "Replaces a cref expression that is one of the given crefs by a wildcard."
+  input DAE.Exp exp;
+  input list<DAE.ComponentRef> crefs;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match exp
+    case DAE.CREF() guard List.isMemberOnTrue(exp.componentRef, crefs, ComponentReferenceBasics.crefEqual)
+      then DAE.CREF(DAE.WILD(), exp.ty);
+    else exp;
+  end match;
+end wildIfCrefIn;
+
+protected function wildIfNotWild
+  "Returns a wildcard if the second expression is not one, otherwise the first one."
+  input DAE.Exp exp;
+  input DAE.Exp other;
+  output DAE.Exp outExp = if Expression.isWild(other) then exp else DAE.CREF(DAE.WILD(), Expression.typeof(exp));
+end wildIfNotWild;
 
 // TODO: are the cases really correct?
 // mahge: These should be revised or removed!!
