@@ -186,7 +186,7 @@ public
      FMI unknowns are state derivatives plus top-level Real outputs. All other
      continuous partition unknowns remain partial candidates so the reverse
      sweep can propagate through intermediate algebraic variables."
-    input BackendDAE.BackendDAE bdae;
+    input Jacobian bdae;
     output Option<Jacobian> jacobian;
   protected
     BVariable.VarData varData;
