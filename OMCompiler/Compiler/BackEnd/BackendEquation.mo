@@ -3301,7 +3301,15 @@ algorithm
     case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(explst), right=DAE.TUPLE(explst2), source=source, attr=attr)
     algorithm
       true := listLength(explst) == listLength(explst2);
-      eqns := List.threadMap2(explst, explst2, generateEquation, source, attr);
+      // an ignored output, (a, _) = (f(x), g(x)), gives no equation
+      eqns := {};
+      for e in explst loop
+        e2 :: explst2 := explst2;
+        if not Expression.isWild(e) then
+          eqns := generateEquation(e, e2, source, attr) :: eqns;
+        end if;
+      end for;
+      eqns := listReverse(eqns);
     then eqns;
 
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)
