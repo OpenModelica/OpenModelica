@@ -395,6 +395,9 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   struct dataMixedSolver *mixedSolverData;
   JACOBIAN* jacobian;
 
+  if (nonlinsys->updateSize) {
+    nonlinsys->size = nonlinsys->updateSize(data, threadData);
+  }
   size = nonlinsys->size;
   nonlinsys->numberOfFEval = 0;
   nonlinsys->numberOfIterations = 0;
