@@ -152,7 +152,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     PATTERN "*.c.inc"
 )
 
-if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+if(NOT OM_OMC_ENABLE_C_RUNTIME)
   return()
 endif()
 

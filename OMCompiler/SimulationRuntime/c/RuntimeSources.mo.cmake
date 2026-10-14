@@ -1,7 +1,7 @@
 encapsulated package RuntimeSources
   constant String fmu_sources_dir = "/@SOURCE_FMU_SOURCES_DIR@";
 
-  // The Rust crates a --simCodeTarget=C source FMU carries, in the checkout's
+  // The Rust crates a --simCodeTarget=C+Rust source FMU carries, in the checkout's
   // own layout: the manifests reach openmodelica_lapack by a relative path.
   // Installed by SimulationRuntime/rust/CMakeLists.txt.
   constant String fmu_rust_sources_dir = "/@SOURCE_FMU_RUST_SOURCES_DIR@";
@@ -10,7 +10,7 @@ encapsulated package RuntimeSources
   constant list<String> simrt_c_sources={@SOURCE_FMU_COMMON_FILES@};
 
   // The libOpenModelicaRuntimeC half of simrt_c_sources: what a
-  // --simCodeTarget=C FMU still compiles from C, because the Rust runtime
+  // --simCodeTarget=C+Rust FMU still compiles from C, because the Rust runtime
   // replaces only what libSimulationRuntimeC covers.
   constant list<String> simrt_c_runtime_sources={@SOURCE_FMU_RUNTIME_C_FILES@};
 
