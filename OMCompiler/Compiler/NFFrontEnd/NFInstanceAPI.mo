@@ -68,6 +68,7 @@ import NFInstNode.InstNodeType;
 import Equation = NFEquation;
 import NFType.Type;
 import Subscript = NFSubscript;
+import NFComponentRef.Origin;
 import InstContext = NFInstContext;
 
 import Absyn.Path;
@@ -87,6 +88,8 @@ import MetaModelica.Dangerous;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Ceval = NFCeval;
 import NFClassTree.ClassTree;
+import NFClassDiagram;
+import NFClassDiagram.{Box, Edge, Member};
 import NFPrefixes.{Variability, Purity};
 import NFSections.Sections;
 import Parser;
@@ -99,6 +102,7 @@ import Util;
 import SCodeUtil;
 import SCodeDump;
 import ElementSource;
+import System;
 import InstSettings = NFInst.InstSettings;
 
 constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
@@ -199,6 +203,22 @@ end InstanceTree;
 constant InstanceTree ENUM_BASE = InstanceTree.BUILTIN_BASE_CLASS("enumeration");
 
 
+public uniontype InstanceDiagramOptions
+  "The options of getInstanceDiagram."
+  record INSTANCE_DIAGRAM_OPTIONS
+    String format "plantuml, mermaid or drawio.";
+    Integer depth "Levels of components drawn as boxes of their own.";
+    list<String> exclude "Classes and packages whose instances are left out.";
+    Boolean showConnections;
+    Boolean showProtected;
+    Boolean expandArrays "A box per element of an array of components, not one for the array.";
+  end INSTANCE_DIAGRAM_OPTIONS;
+end InstanceDiagramOptions;
+
+protected type ArrayElement = tuple<list<String>, list<Subscript>>
+  "An element of an expanded array of components: the names of the array from the
+   model, e.g. {\"t\", \"arr\"}, and the subscripts of the element.";
+
 public function buildModelInstanceJSON
   "Instantiates the given model and builds the JSON structure describing the
    model instance. Shared by getModelInstance and getModelInstanceReference."
@@ -209,9 +229,45 @@ public function buildModelInstanceJSON
   input String modifier;
   output JSON json;
 protected
-  InstNode top, cls_node;
-  InstContext.Type context;
+  InstNode cls_node;
   InstanceTree inst_tree;
+algorithm
+  (cls_node, inst_tree) := instantiateModelInstance(absynProgram, scodeProgram, classPath, contextPath, modifier);
+  json := dumpJSONInstanceTree(inst_tree, cls_node);
+  execStat("NFInstanceAPI.dumpJSONInstanceTree");
+end buildModelInstanceJSON;
+
+public function buildInstanceDiagram
+  "Instantiates the given model like getModelInstance and returns its UML object
+   diagram, see getInstanceDiagram."
+  input Absyn.Program absynProgram;
+  input Option<SCode.Program> scodeProgram;
+  input Absyn.Path classPath;
+  input InstanceDiagramOptions options;
+  output String diagram;
+protected
+  InstNode cls_node;
+  InstanceTree inst_tree;
+algorithm
+  (cls_node, inst_tree) := instantiateModelInstance(absynProgram, scodeProgram, classPath,
+    Absyn.Path.IDENT("__NoContext"), "");
+  diagram := instanceDiagram(classPath, inst_tree, options);
+  execStat("NFInstanceAPI.instanceDiagram");
+end buildInstanceDiagram;
+
+protected function instantiateModelInstance
+  "Instantiates and types the given model as the instance API needs it, and
+   returns it with its instance tree."
+  input Absyn.Program absynProgram;
+  input Option<SCode.Program> scodeProgram;
+  input Absyn.Path classPath;
+  input Absyn.Path contextPath;
+  input String modifier;
+  output InstNode cls_node;
+  output InstanceTree inst_tree;
+protected
+  InstNode top;
+  InstContext.Type context;
   InstSettings inst_settings;
   Modifier mod;
 algorithm
@@ -245,10 +301,7 @@ algorithm
   execStat("Typing.typeComponents");
   Typing.typeBindings(cls_node, context);
   execStat("Typing.typeBinding");
-
-  json := dumpJSONInstanceTree(inst_tree, cls_node);
-  execStat("NFInstanceAPI.dumpJSONInstanceTree");
-end buildModelInstanceJSON;
+end instantiateModelInstance;
 
 public function buildModelInstanceAnnotationJSON
   "Instantiates the given model and builds the JSON structure describing its
@@ -2248,6 +2301,534 @@ algorithm
     SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), Absyn.dummyInfo);
   json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
 end modifierJSON;
+
+function instanceDiagram
+  "Returns the UML instance diagram of an instance tree: a box for the model and
+   one for each of its components that is an instance of a class, up to depth
+   levels, with the parameters and their values in the box of the instance they
+   are in. The components that aren't drawn as boxes, e.g. connectors, are
+   lines in the box of the instance they are in."
+  input Absyn.Path classPath;
+  input InstanceTree tree;
+  input InstanceDiagramOptions options;
+  output String diagram;
+protected
+  String name = AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(classPath));
+  String id = instanceBoxId(name);
+  list<Box> boxes = {};
+  list<Edge> edges = {};
+  list<Member> members;
+  UnorderedMap<String, String> ids = UnorderedMap.new<String>(stringHashDjb2, stringEq);
+  InstNode node;
+algorithm
+  InstanceTree.CLASS(node = node) := tree;
+  (members, boxes, edges) := instanceMembers(tree, "", {}, {}, id, 0, options, ids, boxes, edges);
+  boxes := NFClassDiagram.BOX(id, name, instanceStereotype(node), false, NFClassDiagram.classLink(name), members) :: boxes;
+  diagram := NFClassDiagram.render(options.format, name, instanceBoxOrder(boxes, ids), listReverse(edges));
+end instanceDiagram;
+
+function instanceMembers
+  "Returns the lines of the box of an instance, with the elements it inherits,
+   and adds the boxes of its components, and the edges to them and between them."
+  input InstanceTree tree;
+  input String path "The path of the instance, empty for the model.";
+  input list<String> names "The names in the path, without subscripts.";
+  input list<ArrayElement> elements "The expanded arrays the instance is an element of, innermost first.";
+  input String id "The id of the box of the instance.";
+  input Integer level;
+  input InstanceDiagramOptions options;
+  input UnorderedMap<String, String> ids "The box ids of the instances drawn as boxes, by path.";
+  output list<Member> members = {};
+  input output list<Box> boxes;
+  input output list<Edge> edges;
+protected
+  list<Member> mems;
+  String cls_path;
+algorithm
+  () := match tree
+    case InstanceTree.CLASS()
+      algorithm
+        // The class the elements are declared in, for their links; a base class for inherited ones.
+        cls_path := AbsynUtil.pathString(InstNode.enclosingScopePath(tree.node));
+
+        for e in tree.elements loop
+          mems := {};
+
+          () := match e
+            case InstanceTree.CLASS(isExtends = true)
+              algorithm
+                (mems, boxes, edges) := instanceMembers(e, path, names, elements, id, level, options, ids, boxes, edges);
+              then
+                ();
+
+            case InstanceTree.COMPONENT()
+              algorithm
+                (mems, boxes, edges) := instanceComponent(e, path, names, elements, id, cls_path, level, options, ids, boxes, edges);
+              then
+                ();
+
+            else ();
+          end match;
+
+          members := List.append_reverse(mems, members);
+        end for;
+
+        members := listReverseInPlace(members);
+
+        if options.showConnections then
+          edges := instanceConnections(tree.node, path, id, ids, edges);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end instanceMembers;
+
+function instanceComponent
+  "Returns the line of a component in the box of the instance it's in, or adds
+   a box of its own if it's an instance of a class and not a connector."
+  input InstanceTree tree;
+  input String path;
+  input list<String> names;
+  input list<ArrayElement> elements;
+  input String parentId;
+  input String clsPath "The class the component is declared in.";
+  input Integer level;
+  input InstanceDiagramOptions options;
+  input UnorderedMap<String, String> ids;
+  output list<Member> members = {};
+  input output list<Box> boxes;
+  input output list<Edge> edges;
+protected
+  InstNode node, cls_node;
+  Component comp;
+  Option<Binding> orig_binding;
+  InstanceTree cls;
+  String name, comp_path, dims, dims_str, vis, link, ty_name, id;
+  list<Member> mems;
+  Type ty;
+  list<String> comp_names;
+  list<list<Integer>> indices;
+  list<Subscript> subs;
+  String idx;
+algorithm
+  InstanceTree.COMPONENT(node = node, binding = orig_binding, cls = cls) := tree;
+  node := InstNode.resolveOuter(node);
+  comp := InstNode.component(node);
+
+  // Only the instantiated ones, not deleted (condition false), outer-only or invalid ones, and
+  // by default only the public ones: the diagram is about the values the user of a class can set.
+  if not (match comp case Component.COMPONENT() then not Component.isDeleted(comp); else false; end match) or
+     (InstNode.isProtected(node) and not options.showProtected) then
+    return;
+  end if;
+
+  name := InstNode.name(node);
+  comp_path := if stringEmpty(path) then name else path + "." + name;
+  comp_names := listAppend(names, {name});
+  ty := Component.getType(comp);
+  dims := if Type.isArray(ty) then stringDelimitList(list(Dimension.toString(d) for d in Type.arrayDims(ty)), ", ") else "";
+  vis := if InstNode.isProtected(node) then "- " else "+ ";
+  link := instanceLink(node, clsPath);
+  dims_str := if stringEmpty(dims) then "" else "[" + dims + "]";
+
+  members := match cls
+    // A connector is a line, whatever its type, and so is a component of a builtin type or a type
+    // derived from one, e.g. SI.Length, if it's a parameter or constant.
+    case _ guard InstNode.isConnector(node)
+      then {NFClassDiagram.MEMBER(vis + name + dims_str + " : " + instanceTypeName(node), link)};
+
+    case InstanceTree.CLASS(node = cls_node) guard Type.isComplex(Type.arrayElementType(ty))
+      algorithm
+        ty_name := AbsynUtil.pathString(InstNode.enclosingScopePath(cls_node));
+
+        if instanceExcluded(ty_name, options.exclude) then
+          // Left out, like in getClassDiagram.
+        elseif level < options.depth and options.expandArrays and not listEmpty(instanceArrayIndices(ty)) then
+          // A box for each element, with the values of that element.
+          for index in instanceArrayIndices(ty) loop
+            idx := stringDelimitList(list(intString(i) for i in index), ",");
+            subs := list(Subscript.makeIndex(Expression.INTEGER(i)) for i in index);
+            id := instanceBoxId(comp_path + "[" + idx + "]");
+            UnorderedMap.add(comp_path + "[" + idx + "]", id, ids);
+            (mems, boxes, edges) := instanceMembers(cls, comp_path + "[" + idx + "]", comp_names,
+              (comp_names, subs) :: elements, id, level + 1, options, ids, boxes, edges);
+            boxes := NFClassDiagram.BOX(id, name + "[" + idx + "] : " + ty_name,
+              instanceStereotype(cls_node), false, link, mems) :: boxes;
+            edges := NFClassDiagram.EDGE(NFClassDiagram.COMPOSITION, parentId, id, name + "[" + idx + "]", "") :: edges;
+          end for;
+        elseif level < options.depth then
+          id := instanceBoxId(comp_path);
+          UnorderedMap.add(comp_path, id, ids);
+          (mems, boxes, edges) := instanceMembers(cls, comp_path, comp_names, elements, id, level + 1, options, ids, boxes, edges);
+          boxes := NFClassDiagram.BOX(id, name + dims_str + " : " + ty_name,
+            instanceStereotype(cls_node), false, link, mems) :: boxes;
+          edges := NFClassDiagram.EDGE(NFClassDiagram.COMPOSITION, parentId, id, name, dims) :: edges;
+        else
+          members := {NFClassDiagram.MEMBER(vis + name + dims_str + " : " + instanceTypeName(node), link)};
+        end if;
+      then
+        members;
+
+    else instanceParameter(node, comp, orig_binding, vis, dims, link, elements);
+  end match;
+end instanceComponent;
+
+function instanceParameter
+  "Returns the line of a parameter or constant with its value, e.g.
+   parameter Real k = 2*p (= 6), or nothing for a variable."
+  input InstNode node;
+  input Component comp;
+  input Option<Binding> originalBinding;
+  input String vis;
+  input String dims;
+  input String link;
+  input list<ArrayElement> elements;
+  output list<Member> members = {};
+protected
+  Variability var = Component.variability(comp);
+  Binding binding = Component.getBinding(comp);
+  String str, exp, value;
+algorithm
+  if var > Variability.NON_STRUCTURAL_PARAMETER then
+    return;
+  end if;
+
+  str := vis + (if var == Variability.CONSTANT then "constant " else "parameter ") +
+    instanceTypeName(node) + " " + InstNode.name(node) +
+    (if stringEmpty(dims) then "" else "[" + dims + "]");
+
+  if Binding.isExplicitlyBound(binding) then
+    (exp, value) := instanceBindingStrings(binding, originalBinding, Binding.purity(binding) == Purity.PURE,
+      elements, Component.getType(comp));
+
+    // A long expression, e.g. a matrix computed from other parameters, would make the box as wide.
+    if stringLength(exp) > 60 then
+      exp := substring(exp, 1, 57) + "...";
+    end if;
+    str := str + " = " + exp + (if stringEmpty(value) or value == exp then "" else " (= " + value + ")");
+  end if;
+
+  members := {NFClassDiagram.MEMBER(str, link)};
+end instanceParameter;
+
+function instanceBindingStrings
+  "Returns a binding as it's written and its value, if it can be evaluated, see
+   dumpJSONBinding."
+  input Binding binding;
+  input Option<Binding> originalBinding;
+  input Boolean evaluate;
+  input list<ArrayElement> elements "The value is the one of this element of the arrays, if any.";
+  input Type ty "The type of the component.";
+  output String exp;
+  output String value = "";
+protected
+  Expression e;
+  Binding bind = binding;
+  InstContext.Type context;
+  Integer extra;
+  list<Subscript> subs;
+  Boolean subscripted = false;
+algorithm
+  // The binding as written, so that it's shown the same for every instance, also once
+  // another instance of it got it evaluated.
+  if isSome(originalBinding) then
+    try
+      context := InstContext.set(NFInstContext.RELAXED, NFInstContext.INSTANCE_API);
+      bind := Inst.instBinding(Util.getOption(originalBinding), context);
+      bind := Typing.typeBinding(bind, context);
+    else
+    end try;
+  end if;
+
+  e := Expression.map(Binding.getExp(bind), Expression.expandSplitIndices);
+
+  if not listEmpty(elements) then
+    // The names of the arrays in it are subscripted with the element, e.g. arr.k is arr[2].k.
+    for el in elements loop
+      e := Expression.map(e, function instanceSubscriptExp(element = el));
+    end for;
+
+    exp := Expression.toString(e);
+
+    // A binding of the whole array, e.g. k = {1, 2} on arr, has the dimensions of the
+    // arrays it's in first; the value of the element is its element.
+    extra := max(Type.dimensionCount(Expression.typeOf(e)), Type.dimensionCount(Binding.getType(bind))) -
+      Type.dimensionCount(ty);
+
+    if extra > 0 then
+      subs := List.flatten(list(Util.tuple22(el) for el in listReverse(elements)));
+      subs := List.lastN(subs, min(extra, listLength(subs)));
+      e := Expression.applySubscripts(subs, e);
+      subscripted := true;
+    end if;
+  else
+    exp := Expression.toString(e);
+  end if;
+
+  // The binding of an array, e.g. k = {1, p} on arr, isn't marked pure; what's in it decides.
+  if (evaluate or not Expression.contains(e, function instanceIsImpure())) and
+     (subscripted or not Expression.isLiteral(e)) then
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      e := Ceval.evalExp(e, Ceval.EvalTarget.new(Absyn.dummyInfo, NFInstContext.INSTANCE_API));
+      value := Expression.toString(Expression.map(e, Expression.expandSplitIndices));
+    else
+    end try;
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+end instanceBindingStrings;
+
+function instanceIsImpure
+  input Expression exp;
+  output Boolean res = not Expression.isPure(exp);
+end instanceIsImpure;
+
+function instanceConnections
+  "Adds the connect equations of an instance as edges between the boxes of the
+   components they connect, or the box of the instance for its own connectors."
+  input InstNode node;
+  input String path;
+  input String id;
+  input UnorderedMap<String, String> ids;
+  input output list<Edge> edges;
+protected
+  list<Equation> connections;
+  Expression lhs, rhs;
+  String lhs_str, rhs_str, lhs_id, rhs_id;
+algorithm
+  (connections, _, _) := sortEquations(Sections.equations(Class.getSections(InstNode.getClass(InstNode.resolveOuter(node)))));
+
+  for eq in connections loop
+    Equation.CONNECT(lhs = lhs, rhs = rhs) := eq;
+    lhs_str := instanceRelativeName(Expression.toString(lhs), path);
+    rhs_str := instanceRelativeName(Expression.toString(rhs), path);
+    lhs_id := instanceConnectorBox(lhs_str, path, id, ids);
+    rhs_id := instanceConnectorBox(rhs_str, path, id, ids);
+
+    if lhs_id <> rhs_id then
+      edges := NFClassDiagram.EDGE(NFClassDiagram.ASSOCIATION, lhs_id, rhs_id, lhs_str + " - " + rhs_str, "") :: edges;
+    end if;
+  end for;
+end instanceConnections;
+
+function instanceRelativeName
+  "Removes the path of the instance from a name in it, e.g. t.r1.n in t is r1.n."
+  input String name;
+  input String path;
+  output String res = name;
+algorithm
+  if not stringEmpty(path) and stringLength(name) > stringLength(path) and
+     substring(name, 1, stringLength(path) + 1) == path + "." then
+    res := substring(name, stringLength(path) + 2, stringLength(name));
+  end if;
+end instanceRelativeName;
+
+function instanceConnectorBox
+  "Returns the id of the box a connector in a connect equation is in: the box of
+   the component it's a connector of, if it has one, else the instance's own."
+  input String conn "The connector relative to the instance, e.g. c.y or c[1].y.";
+  input String path;
+  input String id;
+  input UnorderedMap<String, String> ids;
+  output String boxId;
+protected
+  String first = conn, prefix = if stringEmpty(path) then "" else path + ".";
+  Integer i;
+algorithm
+  i := System.stringFind(first, ".");
+
+  if i >= 0 then
+    first := substring(first, 1, i);
+  end if;
+
+  // The element of an expanded array, e.g. r[2], has a box of its own, else the array.
+  boxId := match UnorderedMap.get(prefix + first, ids)
+    case SOME(boxId) then boxId;
+    else
+      algorithm
+        i := System.stringFind(first, "[");
+
+        if i >= 0 then
+          first := substring(first, 1, i);
+        end if;
+      then
+        Util.getOptionOrDefault(UnorderedMap.get(prefix + first, ids), id);
+  end match;
+end instanceConnectorBox;
+
+function instanceBoxOrder
+  "Returns the boxes in the order the instances are declared, the model first.
+   A box is only made once the instances in it are, so they come before it."
+  input list<Box> boxes "The model's box first.";
+  input UnorderedMap<String, String> ids "In the order the instances are declared.";
+  output list<Box> res;
+protected
+  UnorderedMap<String, Box> by_id = UnorderedMap.new<Box>(stringHashDjb2, stringEq);
+  Box root;
+algorithm
+  root :: _ := boxes;
+
+  for b in boxes loop
+    UnorderedMap.add(b.id, b, by_id);
+  end for;
+
+  res := root :: list(UnorderedMap.getOrFail(id, by_id) for id in UnorderedMap.valueList(ids));
+end instanceBoxOrder;
+
+function instanceTypeName
+  "The type of a component as it's written in its declaration, e.g. SI.Length."
+  input InstNode node;
+  output String name;
+protected
+  Absyn.TypeSpec ts;
+algorithm
+  name := match InstNode.definition(node)
+    case SCode.Element.COMPONENT(typeSpec = ts) then AbsynUtil.typeSpecStringNoQualNoDims(ts);
+    else Type.toString(Type.arrayElementType(InstNode.getType(node)));
+  end match;
+end instanceTypeName;
+
+function instanceArrayIndices
+  "The subscripts of the elements of an array type, e.g. {{1}, {2}}, or none if it
+   isn't an array, its size isn't known or it has more than 100 elements."
+  input Type ty;
+  output list<list<Integer>> indices = {{}};
+protected
+  list<Dimension> dims = Type.arrayDims(ty);
+  Integer n;
+algorithm
+  if listEmpty(dims) then
+    indices := {};
+    return;
+  end if;
+
+  n := 1;
+  for d in dims loop
+    if not Dimension.isKnown(d) then
+      indices := {};
+      return;
+    end if;
+
+    n := n * Dimension.size(d);
+  end for;
+
+  if n > 100 then
+    indices := {};
+    return;
+  end if;
+
+  for d in listReverse(dims) loop
+    n := Dimension.size(d);
+    indices := List.flatten(list(list(i :: index for index in indices) for i in 1:n));
+  end for;
+end instanceArrayIndices;
+
+function instanceSubscriptExp
+  "Subscripts the name of an expanded array in a cref with its element."
+  input Expression exp;
+  input ArrayElement element;
+  output Expression outExp;
+protected
+  ComponentRef cref;
+algorithm
+  outExp := match exp
+    case Expression.CREF()
+      algorithm
+        cref := instanceSubscriptCref(exp.cref, element);
+      then
+        if referenceEq(cref, exp.cref) then exp else Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
+
+    else exp;
+  end match;
+end instanceSubscriptExp;
+
+function instanceSubscriptCref
+  input ComponentRef cref;
+  input ArrayElement element;
+  output ComponentRef outCref = cref;
+protected
+  list<String> names;
+  list<Subscript> subs;
+algorithm
+  (names, subs) := element;
+
+  outCref := match cref
+    case ComponentRef.CREF() guard cref.origin <> Origin.ITERATOR
+      algorithm
+        if listEmpty(cref.subscripts) and List.isEqualOnTrue(instanceCrefNames(cref), names, stringEq) then
+          outCref := ComponentRef.setSubscripts(subs, cref);
+        else
+          outCref := ComponentRef.CREF(cref.node, cref.subscripts, cref.ty, cref.origin,
+            instanceSubscriptCref(cref.restCref, element));
+        end if;
+      then
+        outCref;
+
+    else cref;
+  end match;
+end instanceSubscriptCref;
+
+function instanceCrefNames
+  "The names of the parts of a cref that name components or their scope, outermost first."
+  input ComponentRef cref;
+  output list<String> names;
+algorithm
+  names := match cref
+    // The parts from the scope too, e.g. arr in arr.k when k is used in arr's class.
+    case ComponentRef.CREF() guard cref.origin <> Origin.ITERATOR
+      then listAppend(instanceCrefNames(cref.restCref), {ComponentRef.nodeName(cref)});
+    else {};
+  end match;
+end instanceCrefNames;
+
+function instanceStereotype
+  input InstNode clsNode;
+  output String str = SCodeDump.restrictionStringPP(SCodeUtil.getClassRestriction(InstNode.definition(InstNode.resolveOuter(clsNode))));
+end instanceStereotype;
+
+function instanceLink
+  "Links a component to the line it's declared on in its class, with its name,
+   so that a viewer can select it in a graphical view."
+  input InstNode node;
+  input String clsPath "The class it's declared in.";
+  output String link = "";
+protected
+  SourceInfo info = InstNode.info(node);
+algorithm
+  if info.lineNumberStart > 0 then
+    link := NFClassDiagram.elementLink(clsPath, info.lineNumberStart, InstNode.name(node));
+  end if;
+end instanceLink;
+
+function instanceBoxId
+  "The name of the box of an instance in the diagram text, from its path."
+  input String path;
+  output String id = "I_" + stringAppendList(list(if instanceIsIdChar(c) then c else "_" for c in stringListStringChar(path)));
+end instanceBoxId;
+
+function instanceIsIdChar
+  input String c;
+  output Boolean b;
+protected
+  Integer i = stringCharInt(c);
+algorithm
+  b := (i >= 48 and i <= 57) or (i >= 65 and i <= 90) or (i >= 97 and i <= 122) or i == 95;
+end instanceIsIdChar;
+
+function instanceExcluded
+  input String name;
+  input list<String> exclude;
+  output Boolean excluded = false;
+algorithm
+  for e in exclude loop
+    if name == e or (stringLength(name) > stringLength(e) and substring(name, 1, stringLength(e) + 1) == e + ".") then
+      excluded := true;
+      return;
+    end if;
+  end for;
+end instanceExcluded;
 
 annotation(__OpenModelica_Interface="nf_api");
 end NFInstanceAPI;

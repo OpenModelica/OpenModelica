@@ -1,0 +1,51 @@
+// name: getInstanceDiagram3
+// keywords: UML, instance diagram, #17181
+// status: correct
+//
+// Tests getInstanceDiagram on an MSL model, writing it to a file, and the
+// errors of an unknown format and an unknown class.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("model M
+  Modelica.Blocks.Sources.Constant c(k = 1);
+  Modelica.Blocks.Math.Gain g(k = 2);
+equation
+  connect(c.y, g.u);
+end M;", "M.mo"); getErrorString();
+getInstanceDiagram(M, fileName = "getInstanceDiagram3.puml"); getErrorString();
+readFile("getInstanceDiagram3.puml");
+getInstanceDiagram(M, format = "svg"); getErrorString();
+getInstanceDiagram(NoSuchModel); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "getInstanceDiagram3.puml"
+// ""
+// "@startuml
+// skinparam classAttributeIconSize 0
+// hide empty members
+// class \"M\" as I_M <<model>>
+// class \"c : Modelica.Blocks.Sources.Constant\" as I_c <<block>> {
+//   {field} + parameter Real k = 1.0
+//   {field} + y : RealOutput
+// }
+// class \"g : Modelica.Blocks.Math.Gain\" as I_g <<block>> {
+//   {field} + parameter Real k = 2.0
+//   {field} + u : Interfaces.RealInput
+//   {field} + y : Interfaces.RealOutput
+// }
+// I_M *-- I_c : c
+// I_M *-- I_g : g
+// I_c -- I_g : c.y - g.u
+// @enduml
+// "
+// ""
+// "Error: getInstanceDiagram: unknown format svg, expected plantuml, mermaid or drawio.
+// "
+// ""
+// "Error: Class NoSuchModel not found in scope <top>.
+// "
+// endResult
