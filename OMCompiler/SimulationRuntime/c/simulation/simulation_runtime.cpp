@@ -1228,6 +1228,10 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   /* set log activation from equationIndex and lv_system */
   setLVSystems(data, threadData);
 
+  /* Resizable systems and Jacobians are sized by structural parameters, which
+   * initializeModel only assigns later. */
+  setAllParamsToStart(data->simulationInfo, data->modelData);
+
   /* initialize static data of mixed/linear/non-linear system solvers */
   initializeMixedSystems(data, threadData);
   initializeLinearSystems(data, threadData);
