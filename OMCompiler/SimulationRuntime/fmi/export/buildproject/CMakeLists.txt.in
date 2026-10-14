@@ -54,7 +54,7 @@ else()
     string(APPEND OM_LIBRARY_ARCH "-linux-gnu")
   endif()
 endif()
-# --simCodeTarget=C: the sources under simulation/ and external_solvers/ are
+# --simCodeTarget=C+Rust: the sources under simulation/ and external_solvers/ are
 # not in this FMU. libSimulationRuntimeRust provides what they did, and is either
 # a prebuilt archive the exporting installation pointed at, or built from the
 # crates under rust/ (--fmiSources=slim or full).
@@ -329,7 +329,7 @@ if(OMC_RUST_SIMULATION_RUNTIME)
     set(OM_RUST_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/rust/SimulationRuntime/rust/Cargo.toml")
     if(NOT EXISTS "${OM_RUST_MANIFEST}")
       message(FATAL_ERROR
-              "This FMU was built with --simCodeTarget=C but carries neither a prebuilt "
+              "This FMU was built with --simCodeTarget=C+Rust but carries neither a prebuilt "
               "libSimulationRuntimeRust nor its sources. Re-export it with --fmiSources=slim "
               "or --fmiSources=full, or point -DRUST_SIM_RUNTIME_LIBRARY at an archive.")
     endif()

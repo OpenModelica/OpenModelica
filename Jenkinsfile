@@ -329,9 +329,9 @@ pipeline {
     }
     stage('tests + extras') {
       parallel {
-        // The only shard that runs the coverage-instrumented CMake build: its
-        // counters become the coverage report in 'check-and-upload'. The clang
-        // shard below runs an uninstrumented build and records none.
+        // One testsuite per simulation runtime: gcc (coverage-instrumented) on
+        // --simCodeTarget=C, clang on --simCodeTarget=C+Rust without the C++
+        // runtime tests.
         stage('04 testsuite-gcc 1/2') {
           agent {
             node {
@@ -361,7 +361,36 @@ pipeline {
           }
         }
 
-        stage('05 testsuite-clang 2/2') {
+        stage('05 testsuite-gcc 2/2') {
+          agent {
+            node {
+              label 'linux && !slow'
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script { common.checkoutSCM() }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
+                                     common.testCacheMounts('runtest-gcc-cache')) {
+                common.ctestStashed('omc-gcc', 2, 2)
+              }
+            }
+          }
+        }
+
+        stage('06 testsuite-clang C+Rust 1/2') {
           agent {
             node {
               label 'linux && !slow'
@@ -384,7 +413,36 @@ pipeline {
             script {
               common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                      common.testCacheMounts('runtest-clang-cache')) {
-                common.partestStashed('omc-clang', 2, 2)
+                common.partestStashed('omc-clang', 1, 2, 'C+Rust', common.rustRuntimeTestSuites())
+              }
+            }
+          }
+        }
+
+        stage('07 testsuite-clang C+Rust 2/2') {
+          agent {
+            node {
+              label 'linux && !slow'
+              customWorkspace 'ws/OpenModelica'
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          options {
+            retry(count: 2, conditions: [nonresumable()])
+          }
+          steps {
+            script { common.checkoutSCM() }
+            script {
+              common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
+                                     common.testCacheMounts('runtest-clang-cache')) {
+                common.partestStashed('omc-clang', 2, 2, 'C+Rust', common.rustRuntimeTestSuites())
               }
             }
           }
@@ -766,7 +824,7 @@ pipeline {
             script { common.fmpyLinux() }
           }
         }
-        // Turns the coverage counters of the testsuite-gcc shard into a
+        // Turns the coverage counters of the testsuite-gcc shards into a
         // report. Unlike the uploads it is not gated on !isPR: the point is to
         // get the number on every PR.
         stage('coverage-report') {
@@ -786,7 +844,7 @@ pipeline {
               // Enters the build image itself: which mounts it needs depends
               // on where the instrumented build ran, which it only learns
               // from the stash.
-              common.coverageReportStage(1)
+              common.coverageReportStage(2)
             }
           }
         }
