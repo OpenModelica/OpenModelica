@@ -98,7 +98,7 @@ protected
   import Util;
 
 public
-  type JacobianType = enumeration(ODE, DAE, FMI, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0);
+  type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0, FMI);
 
   function isDynamic
     "is the jacobian used for integration (-> true)
@@ -168,17 +168,6 @@ public
     end match;
   end main;
 
-  function fmiDerivativeOfState
-    "Return the time derivative belonging to a state variable."
-    input Pointer<Variable> stateVar;
-    output Pointer<Variable> derivativeVar;
-  protected
-    Option<Pointer<Variable>> derivativeOpt;
-  algorithm
-    (derivativeOpt, _) := BVariable.getVarDer(stateVar);
-    derivativeVar := Util.getOption(derivativeOpt);
-  end fmiDerivativeOfState;
-
   function fmiAdjoint
     "Generate the FMI reverse-mode Jacobian, J^T, for fmi3GetAdjointDerivative.
      Its seed/result axes are deliberately different from the simulation ODE
@@ -201,14 +190,14 @@ public
       case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM()) algorithm
         /* Match the old-backend FMIDER variable sets: knowns = states + inputs,
          * unknowns = der(states) + outputs. FMI derivatives are Float64-only. */
-        stateVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.states));
+        stateVars := list(var for var guard(BVariable.isReal(var)) in VariablePointers.toList(varData.states));
         /* Keep FMI derivative unknowns in the same state order used by the
          * runtime's value-reference mapping. varData.derivatives has its own
          * backend ordering (e.g. reverse causal order), which is not
          * necessarily the FMI state/derivative order. */
-        derivativeVars := list(fmiDerivativeOfState(stateVar) for stateVar in stateVars);
-        inputVars := list(var for var guard(isFMIReal(var)) in VariablePointers.toList(varData.top_level_inputs));
-        outputVars := list(var for var guard(isFMIOutput(var)) in VariablePointers.toList(varData.variables));
+        derivativeVars := list(BVariable.getDerivativeOfState(stateVar) for stateVar in stateVars);
+        inputVars := list(var for var guard(BVariable.isReal(var)) in VariablePointers.toList(varData.top_level_inputs));
+        outputVars := list(var for var guard(BVariable.isRealOutput(var)) in VariablePointers.toList(varData.variables));
         fmiKnowns := VariablePointers.fromList(
           listAppend(
             stateVars,
@@ -1794,41 +1783,17 @@ protected
     func := match jacType
       case JacobianType.ODE     then BVariable.isStateDerivative;
       case JacobianType.DAE     then BVariable.isResidual;
-      case JacobianType.FMI     then isFMIResult;
       case JacobianType.LS      then BVariable.isResidual;
       case JacobianType.NLS     then BVariable.isResidual;
       case JacobianType.OPT_LFG then BVariable.isLfgFunction;
       case JacobianType.OPT_MRF then BVariable.isMrfFunction;
       case JacobianType.OPT_R0  then BVariable.isInitialConstraint;
+      case JacobianType.FMI     then BVariable.isResult;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
       then fail();
     end match;
   end getTmpFilterFunction;
-
-  function isFMIReal
-    "FMI directional and adjoint derivative APIs operate only on Float64 variables."
-    extends BVariable.checkVar;
-  protected
-    Variable var = Pointer.access(var_ptr);
-  algorithm
-    b := Type.isReal(Type.arrayElementType(var.ty));
-  end isFMIReal;
-
-  function isFMIOutput
-    "Top-level Real output eligible for the FMI derivative unknown axis."
-    extends BVariable.checkVar;
-  algorithm
-    b := BVariable.isOutput(var_ptr) and isFMIReal(var_ptr);
-  end isFMIOutput;
-
-  function isFMIResult
-    "Select only FMI unknowns as reverse-mode seeds; all other continuous
-     partial candidates remain temporary adjoints for reverse propagation."
-    extends BVariable.checkVar;
-  algorithm
-    b := (BVariable.isStateDerivative(var_ptr) or BVariable.isOutput(var_ptr)) and isFMIReal(var_ptr);
-  end isFMIResult;
 
   function makeVarTraverse
     input Pointer<Variable> var_ptr;
