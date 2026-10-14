@@ -129,6 +129,10 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
   if(found && useRootFinding)
   {
     *eventTime = findRoot(data, threadData, eventLst, data->simulationInfo->timeValueOld, data->simulationInfo->realVarsOld, data->localData[0]->timeValue, data->localData[0]->realVars);
+    if (*eventTime < data->simulationInfo->nextSampleEvent)
+    {
+      data->simulationInfo->sampleActivated = 0;
+    }
   }
 
   if(data->simulationInfo->sampleActivated == 1)
