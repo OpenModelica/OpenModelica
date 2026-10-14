@@ -9,7 +9,3 @@ updates:
       github-actions:
         patterns:
           - "*"
-    ignore:
-      # The releaser action was removed in v7.0.0, v6.7.0 is the last release
-      # that provides it.
-      - dependency-name: "pyTooling/Actions"
