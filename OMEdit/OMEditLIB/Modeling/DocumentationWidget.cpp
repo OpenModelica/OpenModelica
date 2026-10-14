@@ -1374,6 +1374,12 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   setPage(mpDocumentationPage);
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
+  // Documentation is loaded from a local file and may reference remote scripts such as MathJax. See issue #17291.
+  if (!mIsContentEditable) {
+    settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+  }
+#endif
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0) && !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
   /* The application palette and stylesheet do not reach the web content. Let
