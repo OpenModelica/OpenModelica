@@ -7,7 +7,8 @@ PantelidesSingular.mos \
 MoveWithInputs.mos \
 DiscreteTupleOutput.mos \
 TupleConstraintEquation.mos \
-TupleConstraintStateSet.mos
+TupleConstraintStateSet.mos \
+TupleAssignInIf.mos
 
 
 # test that currently fail. Move up when fixed. 
