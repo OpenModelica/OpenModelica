@@ -87,8 +87,16 @@ encapsulated package RuntimeSources
                                           "sundials/sundials/sundials_types.h",
                                           "sundials/sundials/sundials_version.h",
                                           "sundials/sunlinsol/sunlinsol_dense.h",
+                                          "sundials/sunlinsol/sunlinsol_klu.h",
+                                          "sundials/sunmatrix/sunmatrix_band.h",
                                           "sundials/sunmatrix/sunmatrix_dense.h",
-                                          "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h"};
+                                          "sundials/sunmatrix/sunmatrix_sparse.h",
+                                          "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h",
+                                          "suitesparse/SuiteSparse_config.h",
+                                          "suitesparse/amd.h",
+                                          "suitesparse/btf.h",
+                                          "suitesparse/colamd.h",
+                                          "suitesparse/klu.h"};
 
   constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 
