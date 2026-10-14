@@ -34,7 +34,6 @@
 #include "epsilon.h"
 #include "../../util/omc_error.h"
 #include "../../util/ringbuffer.h"
-#include "../../openmodelica.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,6 +133,68 @@ static modelica_boolean searchEvent(double time, RINGBUFFER *delayStruct)
   return foundEvent;
 }
 
+/**
+ * @brief find distance to next event
+ *
+ * @param[in] time          Time value to search for.
+ * @param[in] delayStruct   Ringbuffer with stored delay values.
+ *                          Looks like a matrix with columns of type TIME_AND_VALUE.
+ * @return modelica_boolean Boolean indicating if an event was found.
+ */
+static modelica_real distanceToEvent(double time, RINGBUFFER *delayStruct)
+{
+  const int end = ringBufferLength(delayStruct);
+  int pos = 0;
+  double startTime, curTime, prevTime;
+  double earlierEvent = DBL_MAX;
+  double eventParity = 1.0;
+  TIME_AND_VALUE* bufferElem;
+
+  /* look for initial event */
+  bufferElem = getRingData(delayStruct, 0);
+  startTime = curTime = bufferElem->t;
+  if (startTime > time) {
+    return time - startTime;
+  }
+
+  /* count parity of earlier events */
+  for (pos = 1; pos < end; ++pos) {
+    bufferElem = getRingData(delayStruct, pos);
+    prevTime = curTime;
+    curTime = bufferElem->t;
+
+    if (curTime > time) {
+      break;
+    }
+
+    if (curTime - prevTime < 1e-12*fabs(curTime)) {
+      earlierEvent = curTime; // take the right border
+      eventParity = -eventParity;
+    }
+  }
+
+  /* see if there is a later event closer to `time` */
+  for (; pos < end; ++pos) {
+    if (curTime - time > time - earlierEvent) {
+      break;
+    }
+
+    bufferElem = getRingData(delayStruct, pos);
+    prevTime = curTime;
+    curTime = bufferElem->t;
+
+    if (curTime - prevTime < 1e-12*fabs(curTime)) {
+      double laterEvent = prevTime; // take the left border
+      return (laterEvent - time) * eventParity;
+    }
+  }
+
+  if (earlierEvent < time) {
+    return (time - earlierEvent) * eventParity;
+  }
+
+  return time - startTime;
+}
 
 /**
  * @brief Store expression value in delay.
@@ -313,12 +374,7 @@ double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int expr
     return zeroCrossingValue;
   }
 
-  /* Flip sign of ZC if an event was found */
-  if (searchEvent(time - delayTime, delayStruct)) {
-    return -zeroCrossingValue;
-  } else {
-    return zeroCrossingValue;
-  }
+  return distanceToEvent(time - delayTime, delayStruct);
 }
 
 
