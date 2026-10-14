@@ -1529,6 +1529,7 @@ algorithm
       then Function.typePartialApplication(exp, context, info);
 
     case Expression.FILENAME() then (exp, Type.STRING(),  Variability.CONSTANT, Purity.PURE);
+    case Expression.INSTANCE_NAME() then (exp, Type.STRING(), Variability.CONSTANT, Purity.PURE);
 
     case Expression.MULTARY() then typeExp(SimplifyExp.splitMultary(exp), context, info, retype);
 
