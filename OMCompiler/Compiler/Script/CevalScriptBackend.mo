@@ -1529,7 +1529,9 @@ algorithm
             0 := System.removeFile(logFile);
           end if;
           strlinearizeTime := realString(linearizeTime);
-          simflags := "-l=" + strlinearizeTime + " " + simflags;
+          if not List.any(System.strtok(simflags, " "), isLinearizeTimeFlag) then
+            simflags := "-l=" + strlinearizeTime + " " + simflags;
+          end if;
           sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
@@ -4123,6 +4125,11 @@ algorithm
       print(System.readFile(logfile) +"\n");
   end if;
 end runDockerCmd;
+
+protected function isLinearizeTimeFlag
+  input String flag;
+  output Boolean isLinearizeTime = flag == "-l" or StringUtil.startsWith(flag, "-l=");
+end isLinearizeTimeFlag;
 
 protected function isDockerPlatform
   input String platform;
