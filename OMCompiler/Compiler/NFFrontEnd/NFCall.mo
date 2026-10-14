@@ -92,15 +92,12 @@ public
     ComponentRef ref;
     list<Expression> arguments;
     list<NamedArg> named_args;
-    NFInstNode.ScopeRef call_scope "Weakly: the scope owns the class this call
-      sits in.";
   end UNTYPED_CALL;
 
   record ARG_TYPED_CALL
     ComponentRef ref;
     list<TypedArg> positional_args;
     list<TypedArg> named_args;
-    NFInstNode.ScopeRef call_scope "See UNTYPED_CALL.call_scope.";
   end ARG_TYPED_CALL;
 
   record TYPED_CALL
@@ -389,13 +386,11 @@ public
     list<Expression> args;
     list<TypedArg> typed_args;
     MatchedFunction matchedFunc;
-    NFInstNode.ScopeRef scope;
     Variability var, arg_var;
     Purity pur, arg_pur;
     Type ty;
     Expression arg_exp;
   algorithm
-    ARG_TYPED_CALL(call_scope = scope) := call;
     matchedFunc := checkMatchingFunctions(call, context, info, vectorize);
 
     func := matchedFunc.func;
@@ -433,7 +428,7 @@ public
     // using the vectorization dim. This means going through each argument
     // and subscripting it with an iterator for each dim and creating a map call.
     if MatchedFunction.isVectorized(matchedFunc) then
-      call := vectorizeCall(call, matchedFunc.mk, scope, info);
+      call := vectorizeCall(call, matchedFunc.mk, info);
     end if;
 
     if Function.isExternal(func) then
@@ -1904,7 +1899,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          UNTYPED_CALL(call.ref, args, listReverse(nargs));
 
       case ARG_TYPED_CALL()
         algorithm
@@ -1921,7 +1916,7 @@ public
             tnargs := arg :: tnargs;
           end for;
         then
-          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
 
       case TYPED_CALL()
         algorithm
@@ -2014,7 +2009,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          UNTYPED_CALL(call.ref, args, listReverse(nargs));
 
       case ARG_TYPED_CALL()
         algorithm
@@ -2031,7 +2026,7 @@ public
             tnargs := arg :: tnargs;
           end for;
         then
-          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
 
       case TYPED_CALL()
         algorithm
@@ -2127,7 +2122,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          UNTYPED_CALL(call.ref, args, listReverse(nargs));
 
       case ARG_TYPED_CALL()
         algorithm
@@ -2146,7 +2141,7 @@ public
             targs := arg :: targs;
           end for;
         then
-          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
 
       case TYPED_CALL()
         algorithm
@@ -2250,7 +2245,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          UNTYPED_CALL(call.ref, args, listReverse(nargs));
 
       case ARG_TYPED_CALL()
         algorithm
@@ -2269,7 +2264,7 @@ public
             targs := arg :: targs;
           end for;
         then
-          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
 
       case TYPED_CALL()
         algorithm
@@ -2553,12 +2548,16 @@ protected
       // If it had iterators then it will not reach here. The args would have been parsed to
       // Absyn.FOR_ITER_FARG and that is handled in instIteratorCall.
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
+      // getInstanceName is normally derived from the prefix during the flattening,
+      // but sometimes the call is constant evaluated instead (e.g. when it's used
+      // in a package). So we create an expression here that contains the scope.
+      case "getInstanceName" then Expression.INSTANCE_NAME(scope);
 
       else
         algorithm
           fn_ref := Function.instFunction(functionName, scope, context, info);
         then
-          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, InstNode.scopeRef(scope)));
+          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args));
 
     end match;
   end instNormalCall;
@@ -2966,7 +2965,7 @@ protected
 
           typed_nargs := listReverse(typed_nargs);
         then
-          ARG_TYPED_CALL(call.ref, typed_args, typed_nargs, call.call_scope);
+          ARG_TYPED_CALL(call.ref, typed_args, typed_nargs);
     end match;
   end typeArgs;
 
@@ -3067,7 +3066,6 @@ protected
   function vectorizeCall
     input NFCall base_call;
     input FunctionMatchKind mk;
-    input NFInstNode.ScopeRef scope;
     input SourceInfo info;
     output NFCall vectorized_call;
   protected

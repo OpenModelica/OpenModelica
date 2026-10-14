@@ -939,7 +939,7 @@ algorithm
   if mk == MatchKind.EXACT then
     fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}),
       scope, NFInstContext.NO_CONTEXT, paramInfo2);
-    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, InstNode.scopeRef(scope)));
+    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2);
 
