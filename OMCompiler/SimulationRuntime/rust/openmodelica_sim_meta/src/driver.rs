@@ -6313,7 +6313,7 @@ fn set_jacobian_method(jac: Option<&JacAInfo>, log: bool) -> JacobianMethod {
         JacAvail::Available => requested.unwrap_or(M::ColoredSymJac),
     };
     if log {
-        omclog::info!(omclog::JAC, false, "Using Jacobian method: {}", method.desc());
+        omclog::info!(omclog::JAC, false, "Using Jacobian method: {}.", method.name());
     }
     method
 }

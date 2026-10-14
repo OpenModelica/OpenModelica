@@ -767,19 +767,6 @@ impl JacobianMethod {
             .find(|(_, m, _)| *m == self)
             .map_or("", |(n, _, _)| n)
     }
-
-    /// C's `setJacobianMethod` log line, one per enumerator.
-    pub fn desc(self) -> &'static str {
-        match self {
-            JacobianMethod::ColoredNumJac => "Colored numerical Jacobian.",
-            JacobianMethod::InternalNumJac => "Internal numerical Jacobian.",
-            JacobianMethod::ColoredSymJac => "Colored symbolical Jacobian.",
-            JacobianMethod::ColoredSymJacAdj => "Colored symbolical adjoint Jacobian.",
-            JacobianMethod::NumJac => "Numerical Jacobian.",
-            JacobianMethod::SymJac => "Symbolical Jacobian.",
-            JacobianMethod::BicoloredSymJac => "Bicolored symbolical bidirectional Jacobian.",
-        }
-    }
 }
 
 /// C's `JACOBIAN_METHOD_NAME` (`simulation_options.c`).
