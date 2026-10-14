@@ -203,6 +203,7 @@ private:
   void saveTranslationFlagsAnnotation();
   void performSimulation(const SimulationOptions &simulationOptions);
   void runWasmJitSimulation(const SimulationOptions &simulationOptions, const QString &simulationParameters);
+  void plotAnnotatedFigures(const QString &className, const QString &resultFileName);
   void saveDialogGeometry();
 public:
   void stopInteractiveSimulationSampling(SimulationOptions simulationOptions);

@@ -74,6 +74,7 @@ public
   record UNORDERED_MAP
     Vector<list<Integer>> buckets;
     Vector<K> keys;
+    Vector<Integer> hashes "hashFn of each key";
     Vector<V> values;
     Hash hashFn;
     KeyEq eqFn;
@@ -93,6 +94,7 @@ public
     map := UNORDERED_MAP(
       Vector.newFill(bucketCount, {}),
       Vector.new<K>(),
+      Vector.new<Integer>(),
       Vector.new<V>(),
       hash,
       keyEq
@@ -118,6 +120,7 @@ public
     map := UNORDERED_MAP(
       Vector.newFill(bucket_count, {}),
       Vector.new<K>(key_count),
+      Vector.new<Integer>(key_count),
       Vector.new<V>(key_count),
       hash,
       keyEq
@@ -137,6 +140,7 @@ public
     outMap := UNORDERED_MAP(
       Vector.copy(map.buckets),
       Vector.copy(map.keys),
+      Vector.copy(map.hashes),
       Vector.copy(map.values),
       map.hashFn,
       map.eqFn
@@ -156,6 +160,7 @@ public
     outMap := UNORDERED_MAP(
       Vector.copy(map.buckets),
       Vector.copy(map.keys),
+      Vector.copy(map.hashes),
       Vector.deepCopy(map.values, fn),
       map.hashFn,
       map.eqFn
@@ -190,9 +195,8 @@ public
     input UnorderedMap<K, V> map;
   protected
     Hash hashfn = map.hashFn;
-    Integer hash = intMod(hashfn(key), Vector.size(map.buckets));
   algorithm
-    addEntry(key, value, hash, map);
+    addEntry(key, value, hashfn(key), map);
   end addNew;
 
   function addUnique
@@ -372,12 +376,14 @@ public
     end if;
 
     // Remove the index from the bucket.
-    bucket := Vector.get(map.buckets, hash + 1);
+    hash := intMod(hash, Vector.size(map.buckets)) + 1;
+    bucket := Vector.get(map.buckets, hash);
     bucket := List.deleteMemberOnTrue(index, bucket, intEq);
-    Vector.updateNoBounds(map.buckets, hash + 1, bucket);
+    Vector.updateNoBounds(map.buckets, hash, bucket);
 
     // Remove the key/value from the arrays.
     Vector.remove(map.keys, index);
+    Vector.remove(map.hashes, index);
     Vector.remove(map.values, index);
 
     // Update the indices in the buckets.
@@ -390,6 +396,7 @@ public
     Vector.clear(map.buckets);
     Vector.push(map.buckets, {});
     Vector.clear(map.keys);
+    Vector.clear(map.hashes);
     Vector.clear(map.values);
   end clear;
 
@@ -641,6 +648,7 @@ public
     outMap := UNORDERED_MAP(
       Vector.copy(map.buckets),
       Vector.copy(map.keys),
+      Vector.copy(map.hashes),
       new_values,
       map.hashFn,
       map.eqFn
@@ -699,6 +707,7 @@ public
     sub_map := UNORDERED_MAP(
       Vector.newFill(Util.nextPrime(len), {}),
       Vector.new<K>(len),
+      Vector.new<Integer>(len),
       Vector.new<V>(len),
       map.hashFn,
       map.eqFn
@@ -780,24 +789,23 @@ public
 
   function rehash
     "Changes the number of buckets to an appropriate number based on the number
-     of elements in the map and rehashes all the keys."
+     of elements in the map and redistributes the keys by their stored hashes."
     input UnorderedMap<K, V> map;
   protected
-    Vector<K> keys = map.keys;
+    Vector<Integer> hashes = map.hashes;
     Vector<list<Integer>> buckets = map.buckets;
     Integer bucket_count, bucket_id;
-    Hash hashfn = map.hashFn;
   algorithm
     // Clear the buckets.
     Vector.clear(buckets);
 
     // Change the number of buckets for a load factor of about 0.5.
-    bucket_count := Util.nextPrime(Vector.size(keys) * 2);
+    bucket_count := Util.nextPrime(Vector.size(hashes) * 2);
     Vector.resize(buckets, bucket_count, {});
 
-    // Rehash all the keys and refill the buckets.
-    for i in 1:Vector.size(map.keys) loop
-      bucket_id := intMod(hashfn(Vector.get(keys, i)), bucket_count) + 1;
+    // Refill the buckets.
+    for i in 1:Vector.size(hashes) loop
+      bucket_id := intMod(Vector.getNoBounds(hashes, i), bucket_count) + 1;
       Vector.updateNoBounds(buckets, bucket_id, i :: Vector.getNoBounds(buckets, bucket_id));
     end for;
   end rehash;
@@ -870,18 +878,15 @@ protected
     KeyEq eqfn = map.eqFn;
     list<Integer> bucket;
   algorithm
+    hash := hashfn(key);
     if Vector.size(map.buckets) > 0 then
-      hash := intMod(hashfn(key), Vector.size(map.buckets));
-
-      bucket := Vector.get(map.buckets, hash + 1);
+      bucket := Vector.get(map.buckets, intMod(hash, Vector.size(map.buckets)) + 1);
       for i in bucket loop
-        if eqfn(key, Vector.getNoBounds(map.keys, i)) then
+        if Vector.getNoBounds(map.hashes, i) == hash and eqfn(key, Vector.getNoBounds(map.keys, i)) then
           index := i;
           break;
         end if;
       end for;
-    else
-      hash := 0;
     end if;
   end find;
 
@@ -893,9 +898,11 @@ protected
     input UnorderedMap<K, V> map;
   protected
     Vector<list<Integer>> buckets = map.buckets;
+    Integer bucket_id;
   algorithm
     // Add the key/value to the key/value arrays.
     Vector.push(map.keys, key);
+    Vector.push(map.hashes, hash);
     Vector.push(map.values, value);
 
     if loadFactor(map) > 1 then
@@ -904,8 +911,8 @@ protected
       rehash(map);
     else
       // Otherwise add the index of the key/value to the correct bucket.
-      Vector.update(buckets, hash + 1,
-        Vector.size(map.keys) :: Vector.get(buckets, hash + 1));
+      bucket_id := intMod(hash, Vector.size(buckets)) + 1;
+      Vector.update(buckets, bucket_id, Vector.size(map.keys) :: Vector.get(buckets, bucket_id));
     end if;
   end addEntry;
 

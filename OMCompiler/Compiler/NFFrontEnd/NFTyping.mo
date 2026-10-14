@@ -410,6 +410,65 @@ algorithm
   end if;
 end checkConnectorTypeBalance;
 
+function checkBlockConnector
+  "Checks that all variables in a public connector component of a block are
+   input, output, parameter, or constant."
+  input InstNode component;
+protected
+  Component comp;
+  list<String> vars;
+algorithm
+  comp := InstNode.component(component);
+
+  if not ConnectorType.isConnector(Component.connectorType(comp)) or
+     Component.isExpandableConnector(comp) or InstNode.isProtected(component) then
+    return;
+  end if;
+
+  if not Restriction.isBlock(InstNode.restriction(InstNode.instanceParent(component))) then
+    return;
+  end if;
+
+  // Modelica 3.7 section 4.7:
+  // Each public connector component of a block must have prefixes input and/or
+  // output for all connector variables that are neither parameter nor constant.
+  vars := listReverseInPlace(findNonCausalConnectorVars(component, InstNode.name(component), {}));
+
+  if not listEmpty(vars) then
+    Error.addStrictMessage(Error.NON_CAUSAL_BLOCK_CONNECTOR,
+      {InstNode.name(component), stringDelimitList(vars, ", ")}, InstNode.info(component));
+  end if;
+end checkBlockConnector;
+
+function findNonCausalConnectorVars
+  "Returns the names of the variables in a connector that are neither input,
+   output, parameter, nor constant."
+  input InstNode component;
+  input String name;
+  input output list<String> vars;
+protected
+  Component comp;
+  Type ty;
+algorithm
+  comp := InstNode.component(component);
+
+  // The direction applies to all variables in the component.
+  if Component.direction(comp) <> Direction.NONE or
+     Component.variability(comp) < Variability.DISCRETE then
+    return;
+  end if;
+
+  ty := Type.arrayElementType(Component.getType(comp));
+
+  if Type.isComplex(ty) then
+    for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(comp)))) loop
+      vars := findNonCausalConnectorVars(c, name + "." + InstNode.name(c), vars);
+    end for;
+  else
+    vars := name :: vars;
+  end if;
+end findNonCausalConnectorVars;
+
 function makeRecordType
   input NFInstNode.ScopeRef constructor;
   output ComplexType recordTy;
@@ -492,6 +551,7 @@ algorithm
             typeComponents(c.classInst, context);
 
             checkConnectorTypeBalance(node);
+            checkBlockConnector(node);
           end if;
         end if;
       then
@@ -1454,6 +1514,9 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
 
+    case Expression.RECORD_ELEMENT(ty = Type.UNKNOWN())
+      then typeRecordElement(exp, context, info);
+
     case Expression.MUTABLE()
       algorithm
         e1 := Mutable.access(exp.exp);
@@ -1525,6 +1588,44 @@ algorithm
 
   exp := Expression.makeRecord(path, ty, listReverseInPlace(ty_elems));
 end typeRecordExp;
+
+function typeRecordElement
+  input Expression exp;
+  input InstContext.Type context;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type ty;
+  output Variability variability;
+  output Purity purity;
+protected
+  Expression rec_exp;
+  Type rec_ty;
+  String name;
+  Boolean found;
+algorithm
+  Expression.RECORD_ELEMENT(recordExp = rec_exp, fieldName = name) := exp;
+  (rec_exp, rec_ty, variability, purity) :=
+    typeExp(rec_exp, InstContext.set(context, NFInstContext.SUBEXPRESSION), info);
+
+  found := Type.isRecord(Type.arrayElementType(rec_ty));
+  if found then
+    try
+      _ := Class.lookupComponentIndex(name,
+        InstNode.getClass(Type.complexNode(Type.arrayElementType(rec_ty))));
+    else
+      found := false;
+    end try;
+  end if;
+
+  if not found then
+    Error.addSourceMessage(Error.RECORD_ELEMENT_NOT_FOUND,
+      {Expression.toString(rec_exp), Type.toString(rec_ty), name}, info);
+    fail();
+  end if;
+
+  outExp := Expression.recordElement(name, rec_exp);
+  ty := Expression.typeOf(outExp);
+end typeRecordElement;
 
 function typeSubscriptedExp
   input output Expression exp;
@@ -2167,7 +2268,9 @@ algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
 
-        if Type.isArray(ty) and InstContext.inEquation(context) then
+        // A slice over a resizable parameter keeps its size symbolic.
+        if Type.isArray(ty) and InstContext.inEquation(context) and
+           not Expression.contains(e, Expression.isResizableCref) then
           Structural.markExp(e);
           e := Ceval.tryEvalExp(e);
           ty := Expression.typeOf(e);
@@ -3612,7 +3715,9 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, _, var) := typeCondition(cond, cond_context, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if var > Variability.PARAMETER or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
+    // Conditions on resizable parameters (and iterators over them) are resolved with the connections.
+    if (var > Variability.PARAMETER and not (var == Variability.NON_STRUCTURAL_PARAMETER and
+        Flags.getConfigBool(Flags.RESIZABLE_ARRAYS))) or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the context so we can check that when
       // typing the body of the branch.

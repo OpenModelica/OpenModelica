@@ -9,15 +9,15 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource);
 compareVars :=
 {
-   "inertiaLoad.phi",
-   "inertiaLoad.w"
+   "smpm.is[1]",
+   "smpm.is[2]",
+   "inertiaLoad.w",
+   "multiSensor.flange_a.phi"
 };
 
 runScript(modelTesting);getErrorString();
@@ -27,11 +27,10 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_CurrentSource"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource
-// {"inertiaLoad.phi", "inertiaLoad.w"}
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource', options = '', outputFormat = 'mat', variableFilter = 'time|inertiaLoad.phi|inertiaLoad.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"smpm.is[1]", "smpm.is[2]", "inertiaLoad.w", "multiSensor.flange_a.phi"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource', options = '', outputFormat = 'mat', variableFilter = 'time|smpm.is.1.|smpm.is.2.|inertiaLoad.w|multiSensor.flange_a.phi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.SynchronousMachines.SMPM_CurrentSource_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

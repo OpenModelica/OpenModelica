@@ -45,6 +45,7 @@ PolynomialEvaluator2.mos \
 PolynomialEvaluator3.mos \
 PolynomialEvaluatorA.mos \
 PolynomialEvaluatorB.mos \
+StringArrayLiteral.mos \
 ticket_5994.mos \
 ticket_6099.mos \
 ticket2336.mos \

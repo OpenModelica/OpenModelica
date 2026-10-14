@@ -754,6 +754,57 @@ pub struct SpatialState {
 }
 
 impl SpatialState {
+    /// Every operator as flat words, for an FMU state.
+    pub fn to_words(&self, out: &mut Vec<f64>) {
+        out.push(self.ops.len() as f64);
+        for s in &self.ops {
+            out.push(s.profile.len() as f64);
+            for n in &s.profile {
+                out.extend([n.pos, n.val]);
+            }
+            out.push(s.events.len() as f64);
+            for ev in &s.events {
+                out.extend([ev.pos, ev.sign]);
+            }
+            out.extend([
+                s.initialized as u8 as f64,
+                s.start_pos_x.is_some() as u8 as f64,
+                s.start_pos_x.unwrap_or(0.0),
+                s.old_pos_x,
+                s.last_event_sign,
+                s.out1,
+                s.n_warnings_removed_events as f64,
+                s.n_warnings_output_events as f64,
+            ]);
+        }
+    }
+
+    /// [`SpatialState::to_words`]'s inverse.
+    pub fn from_words(w: &mut dyn Iterator<Item = f64>) -> Option<Self> {
+        let n = w.next()? as usize;
+        let mut ops = Vec::with_capacity(n);
+        for _ in 0..n {
+            let mut s = Spatial::new();
+            for _ in 0..w.next()? as usize {
+                s.profile.push_back(Node { pos: w.next()?, val: w.next()? });
+            }
+            for _ in 0..w.next()? as usize {
+                s.events.push_back(Event { pos: w.next()?, sign: w.next()? });
+            }
+            s.initialized = w.next()? != 0.0;
+            let has_start = w.next()? != 0.0;
+            let start = w.next()?;
+            s.start_pos_x = has_start.then_some(start);
+            s.old_pos_x = w.next()?;
+            s.last_event_sign = w.next()?;
+            s.out1 = w.next()?;
+            s.n_warnings_removed_events = w.next()? as u64;
+            s.n_warnings_output_events = w.next()? as u64;
+            ops.push(s);
+        }
+        Some(SpatialState { ops })
+    }
+
     /// C `allocSpatialDistribution`: `n` uninitialized operators for a fresh run.
     pub fn new(n: usize) -> Self {
         omclog::info!(

@@ -295,7 +295,7 @@ public
           loint := SBInterval.lowerBound(idim);
           hiint := SBInterval.upperBound(idim);
 
-          if hiint - loint > off * off then
+          if intReal(hiint - loint) > intReal(off) * intReal(off) then
             new_s := arrayCreateNoInit(off, di);
             new_l := arrayCreateNoInit(off, li);
 
@@ -572,16 +572,13 @@ public
       rmap1 := SBPWLinearMap.combine(rmap1, outMap);
       rmap2 := SBPWLinearMap.combine(rmap2, outMap);
 
-      new_res := minMap(rmap1, rmap2);
+      // Without outMap two vertices can map onto each other.
+      new_res := minMap(minMap(rmap1, rmap2), outMap);
+      outMap := mapInf(new_res);
 
       last_im := new_im;
-      new_im := SBPWLinearMap.image(new_res, vss);
+      new_im := SBPWLinearMap.image(outMap, vss);
       diff_im := SBSet.complement(last_im, new_im);
-
-      if not SBSet.isEmpty(diff_im) then
-        outMap := mapInf(new_res);
-        new_im := SBPWLinearMap.image(outMap, vss);
-      end if;
     end while;
   end connectedComponents;
 

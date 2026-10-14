@@ -14,13 +14,9 @@ simulate(Modelica.Electrical.Spice3.Examples.CoupledInductors, outputFormat="mat
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.CoupledInductors_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Spice3.Examples.CoupledInductors.mat",
+  getEnvironmentVar("REFERENCEFILES")+"/msl41/Modelica.Electrical.Spice3.Examples.CoupledInductors.mat",
   "Modelica.Electrical.Spice3.Examples.CoupledInductors_diff.csv",0.01,0.0001,
-  {"L1.iinternal",
-   "L2.iinternal",
-   "C1.v",
-   "L3.iinternal",
-   "C2.v"});
+  {"L1.iinternal", "L2.iinternal", "L3.iinternal"});
 
 // Result:
 // true

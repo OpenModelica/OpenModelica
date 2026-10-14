@@ -1,0 +1,110 @@
+// name: resizableConnectChain
+// keywords: NewBackend resizable connect override
+// status: correct
+// cflags:
+// suite: cSources
+// teardown_command: rm -f resizableConnectChain_5.mat resizableConnectChain_12.mat resizableConnectChain_5.log resizableConnectChain_12.log resizableConnectChainRef*
+//
+// A chain like ScalableTestSuite OneDHeatTransferTI_Modelica: a connect at the
+// constant index N-1 next to a connect loop over 1:N-2 (connection sets with
+// pieces that depend on N), a fill() binding over N-1 and scalar equations
+// solved for x[N-1]. --resizableArrays implies --simCodeScalarize=false, so one
+// build is simulated for N = 5 and N = 12 (above the binding) and compared to
+// non-resizable builds.
+
+loadString("
+connector Port
+  Real T;
+  flow Real Q;
+end Port;
+
+model Cond
+  parameter Real G = 1;
+  Port a, b;
+equation
+  a.Q = G * (a.T - b.T);
+  a.Q + b.Q = 0;
+end Cond;
+
+model Cap
+  parameter Real C = 1;
+  Port p;
+  Real T(start = 0, fixed = true);
+equation
+  T = p.T;
+  C * der(T) = p.Q;
+end Cap;
+
+model Fixed
+  parameter Real T = 1;
+  Port p;
+equation
+  p.T = T;
+end Fixed;
+
+model resizableConnectChain
+  parameter Integer N = 8;
+  parameter Real Gs[N - 1] = fill(N - 1, N - 1);
+  Fixed fixed;
+  Cond cond[N - 1](G = Gs);
+  Cap cap[N - 1];
+equation
+  connect(fixed.p, cond[N - 1].b);
+  connect(cond[N - 1].a, cap[N - 1].p);
+  for i in 1:N - 2 loop
+    connect(cap[i].p, cond[i].a);
+    connect(cond[i].b, cap[i + 1].p);
+  end for;
+end resizableConnectChain;
+
+model resizableConnectChainRef5 = resizableConnectChain(N = 5);
+model resizableConnectChainRef12 = resizableConnectChain(N = 12);
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --resizableArrays"); getErrorString();
+buildModel(resizableConnectChain, stopTime = 1); getErrorString();
+system("./resizableConnectChain -override=N=5 -r=resizableConnectChain_5.mat", "resizableConnectChain_5.log");
+system("./resizableConnectChain -override=N=12 -r=resizableConnectChain_12.mat", "resizableConnectChain_12.log");
+
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(resizableConnectChainRef5, stopTime = 1); getErrorString();
+simulate(resizableConnectChainRef12, stopTime = 1); getErrorString();
+abs(val(cap.T[1], 1, "resizableConnectChain_5.mat") - val(cap.T[1], 1, "resizableConnectChainRef5_res.mat")) < 1e-6;
+abs(val(cap.T[4], 1, "resizableConnectChain_5.mat") - val(cap.T[4], 1, "resizableConnectChainRef5_res.mat")) < 1e-6;
+abs(val(cap.T[1], 1, "resizableConnectChain_12.mat") - val(cap.T[1], 1, "resizableConnectChainRef12_res.mat")) < 1e-6;
+abs(val(cap.T[11], 1, "resizableConnectChain_12.mat") - val(cap.T[11], 1, "resizableConnectChainRef12_res.mat")) < 1e-6;
+abs(val(fixed.p.Q, 1, "resizableConnectChain_12.mat") - val(fixed.p.Q, 1, "resizableConnectChainRef12_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// true
+// ""
+// {"resizableConnectChain", "resizableConnectChain_init.xml"}
+// ""
+// 0
+// 0
+// true
+// ""
+// record SimulationResult
+//     resultFile = "resizableConnectChainRef5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableConnectChainRef5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "resizableConnectChainRef12_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'resizableConnectChainRef12', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// true
+// true
+// true
+// endResult

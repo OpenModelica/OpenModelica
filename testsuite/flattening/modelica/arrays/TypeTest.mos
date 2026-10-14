@@ -7,8 +7,8 @@
 // type A = Real[2]; A[3] a; a should have [2][3] dimensions!
 // 
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadModel(ModelicaServices, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ModelicaServices, {"4.1.0"}); getErrorString();
 loadFile("TypeTest.mo"); getErrorString();
 
 instantiateModel(TypeTest); getErrorString();
@@ -63,12 +63,12 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real visPoints[1].r_shape[1](quantity = \"Length\", unit = \"m\") \"Position vector from origin of object frame to shape origin, resolved in object frame\";
 //   Real visPoints[1].r_shape[2](quantity = \"Length\", unit = \"m\") \"Position vector from origin of object frame to shape origin, resolved in object frame\";
 //   Real visPoints[1].r_shape[3](quantity = \"Length\", unit = \"m\") \"Position vector from origin of object frame to shape origin, resolved in object frame\";
-//   Real visPoints[1].lengthDirection[1](unit = \"1\") \"Vector in length direction, resolved in object frame\";
-//   Real visPoints[1].lengthDirection[2](unit = \"1\") \"Vector in length direction, resolved in object frame\";
-//   Real visPoints[1].lengthDirection[3](unit = \"1\") \"Vector in length direction, resolved in object frame\";
-//   Real visPoints[1].widthDirection[1](unit = \"1\") \"Vector in width direction, resolved in object frame\";
-//   Real visPoints[1].widthDirection[2](unit = \"1\") \"Vector in width direction, resolved in object frame\";
-//   Real visPoints[1].widthDirection[3](unit = \"1\") \"Vector in width direction, resolved in object frame\";
+//   Real visPoints[1].lengthDirection[1] \"Vector in length direction, resolved in object frame\";
+//   Real visPoints[1].lengthDirection[2] \"Vector in length direction, resolved in object frame\";
+//   Real visPoints[1].lengthDirection[3] \"Vector in length direction, resolved in object frame\";
+//   Real visPoints[1].widthDirection[1] \"Vector in width direction, resolved in object frame\";
+//   Real visPoints[1].widthDirection[2] \"Vector in width direction, resolved in object frame\";
+//   Real visPoints[1].widthDirection[3] \"Vector in width direction, resolved in object frame\";
 //   Real visPoints[1].length(quantity = \"Length\", unit = \"m\") = 0.0 \"Length of visual object\";
 //   Real visPoints[1].width(quantity = \"Length\", unit = \"m\") = 0.0 \"Width of visual object\";
 //   Real visPoints[1].height(quantity = \"Length\", unit = \"m\") = 0.0 \"Height of visual object\";
@@ -96,12 +96,12 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real visPoints[2].r_shape[1](quantity = \"Length\", unit = \"m\") \"Position vector from origin of object frame to shape origin, resolved in object frame\";
 //   Real visPoints[2].r_shape[2](quantity = \"Length\", unit = \"m\") \"Position vector from origin of object frame to shape origin, resolved in object frame\";
 //   Real visPoints[2].r_shape[3](quantity = \"Length\", unit = \"m\") \"Position vector from origin of object frame to shape origin, resolved in object frame\";
-//   Real visPoints[2].lengthDirection[1](unit = \"1\") \"Vector in length direction, resolved in object frame\";
-//   Real visPoints[2].lengthDirection[2](unit = \"1\") \"Vector in length direction, resolved in object frame\";
-//   Real visPoints[2].lengthDirection[3](unit = \"1\") \"Vector in length direction, resolved in object frame\";
-//   Real visPoints[2].widthDirection[1](unit = \"1\") \"Vector in width direction, resolved in object frame\";
-//   Real visPoints[2].widthDirection[2](unit = \"1\") \"Vector in width direction, resolved in object frame\";
-//   Real visPoints[2].widthDirection[3](unit = \"1\") \"Vector in width direction, resolved in object frame\";
+//   Real visPoints[2].lengthDirection[1] \"Vector in length direction, resolved in object frame\";
+//   Real visPoints[2].lengthDirection[2] \"Vector in length direction, resolved in object frame\";
+//   Real visPoints[2].lengthDirection[3] \"Vector in length direction, resolved in object frame\";
+//   Real visPoints[2].widthDirection[1] \"Vector in width direction, resolved in object frame\";
+//   Real visPoints[2].widthDirection[2] \"Vector in width direction, resolved in object frame\";
+//   Real visPoints[2].widthDirection[3] \"Vector in width direction, resolved in object frame\";
 //   Real visPoints[2].length(quantity = \"Length\", unit = \"m\") = 0.0 \"Length of visual object\";
 //   Real visPoints[2].width(quantity = \"Length\", unit = \"m\") = 0.0 \"Width of visual object\";
 //   Real visPoints[2].height(quantity = \"Length\", unit = \"m\") = 0.0 \"Height of visual object\";

@@ -152,7 +152,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let copyright = modelInfo.copyright
   let license = modelInfo.license
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let generationDateAndTime = xsdateTime(Util.getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfEventIndicators = getNumberOfEventIndicators(simCode)
   <<

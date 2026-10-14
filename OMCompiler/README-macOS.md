@@ -29,14 +29,13 @@ Install `MacPorts` by following the instructions on
 OpenModelica:
 
 ```sh
-sudo port install curl libiconv gettext flex cmake ccache boost libomp openjdk11
+sudo port install curl libiconv gettext flex cmake ccache libomp openjdk11
 # Qt6 for the graphical clients, needs macOS 14 or newer for QtWebEngine
 sudo port install qt6-qtbase qt6-qtwebengine qt6-qt5compat qt6-qtsvg qt6-qtquick3d
 ```
 
-MacPorts does not install `boost` and `libomp` where CMake looks for them, so the configure
-command in [2 Compile OpenModelica](#2-compile-openmodelica) points CMake at them
-explicitly.
+MacPorts does not install `libomp` where CMake looks for it, so the configure command in
+[2 Compile OpenModelica](#2-compile-openmodelica) points CMake at it explicitly.
 
 ### 1.2 Homebrew
 
@@ -44,7 +43,7 @@ Install `homebrew` by following the instructions on <https://brew.sh/>, then ins
 dependencies for OpenModelica:
 
 ```sh
-brew install openjdk pkg-config cmake make ccache boost qtwebengine qt5compat qtsvg qthttpserver qtquick3d
+brew install openjdk pkg-config cmake make ccache qtwebengine qt5compat qtsvg qthttpserver qtquick3d
 echo "export PATH=\"$(brew --prefix openjdk)/bin:\$PATH\"" >> ~/.zshrc
 ```
 
@@ -76,15 +75,6 @@ If you cannot (Apple Silicon has no libquadmath) or do not want to use `gfortran
 Fortran support by adding `-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF
 -DOM_OMC_ENABLE_MOO=OFF` to the CMake configuration command.
 
-With MacPorts, Boost is installed into a versioned directory,
-`/opt/local/libexec/boost/<version>`, which `-DCMAKE_PREFIX_PATH=/opt/local` does not cover.
-Find the directory holding `BoostConfig.cmake` and pass it as `Boost_DIR`:
-
-```sh
-ls -d /opt/local/libexec/boost/*/lib/cmake/Boost-*
-# /opt/local/libexec/boost/1.88/lib/cmake/Boost-1.88.0
-```
-
 `libomp` puts its headers in `/opt/local/include/libomp`, so OpenMP needs `OpenMP_ROOT` and
 that include directory as well.
 
@@ -93,7 +83,6 @@ You can now configure OpenModelica:
 ```sh
 # With MacPorts and Fortran NOT available.
 # This assumes MacPorts is installing packages to its default location /opt/local.
-# Adjust Boost_DIR to the output of the ls command above.
 cmake -S . -B build_cmake \
   -DCMAKE_C_COMPILER=clang \
   -DCMAKE_CXX_COMPILER=clang++ \
@@ -101,19 +90,16 @@ cmake -S . -B build_cmake \
   -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
   -DOM_OMC_ENABLE_MOO=OFF \
   -DCMAKE_PREFIX_PATH=/opt/local \
-  -DBoost_DIR=/opt/local/libexec/boost/1.88/lib/cmake/Boost-1.88.0 \
   -DOpenMP_ROOT=/opt/local \
   -DCMAKE_C_FLAGS="-I/opt/local/include/libomp" \
   -DCMAKE_CXX_FLAGS="-I/opt/local/include/libomp"
 
 # With MacPorts and Fortran available.
-# Adjust Boost_DIR to the output of the ls command above.
 cmake -S . -B build_cmake \
   -DCMAKE_C_COMPILER=gcc \
   -DCMAKE_CXX_COMPILER=g++ \
   -DCMAKE_Fortran_COMPILER=gfortran \
   -DCMAKE_PREFIX_PATH=/opt/local \
-  -DBoost_DIR=/opt/local/libexec/boost/1.88/lib/cmake/Boost-1.88.0 \
   -DOpenMP_ROOT=/opt/local \
   -DCMAKE_C_FLAGS="-I/opt/local/include/libomp" \
   -DCMAKE_CXX_FLAGS="-I/opt/local/include/libomp"
@@ -169,12 +155,6 @@ on below.
   cmake ... -DCMAKE_PREFIX_PATH=/opt/local ...
   ```
 
-- If configuration fails with `Could NOT find Boost` even though `CMAKE_PREFIX_PATH`
-  includes `/opt/local`, CMake is not looking in the versioned MacPorts Boost directory.
-  Set `Boost_DIR` as shown in [2 Compile OpenModelica](#2-compile-openmodelica).
-  Alternatively, `-DOM_FETCH_BOOST=ON` downloads and builds Boost as part of OpenModelica.
-  That option is meant for cross builds and has not been tested on macOS.
-
 - If OpenMP is not found, or compilation fails with `'omp.h' file not found`, install
   `libomp` and add `-DOpenMP_ROOT=/opt/local` together with
   `-DCMAKE_C_FLAGS="-I/opt/local/include/libomp" -DCMAKE_CXX_FLAGS="-I/opt/local/include/libomp"`.
@@ -211,7 +191,7 @@ on below.
 - If your compilation fails because of linking issues such as these:
 
   ```text
-  ld: warning: ignoring file /opt/local/lib/libboost_filesystem-mt.dylib, building for macOS-x86_64 but attempting to link with file built for macOS-arm64
+  ld: warning: ignoring file /opt/local/lib/libiconv.dylib, building for macOS-x86_64 but attempting to link with file built for macOS-arm64
   ```
 
   then check your `PATH` and set it to something sane like:

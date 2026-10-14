@@ -350,6 +350,12 @@ fn engine() -> wasmtime::Result<Engine> {
     // A model with external "C" carries the `model_error` tag its call sites catch.
     // The exporter's engine must agree, or the `.cwasm` it precompiled is rejected.
     cfg.wasm_exceptions(true);
+    // The GC heap holds only exception objects; left to default it would reserve
+    // another 4 GiB + guard per instance, like a linear memory.
+    cfg.gc_heap_reservation(16 << 20);
+    cfg.gc_heap_reservation_for_growth(16 << 20);
+    cfg.gc_heap_guard_size(0);
+    cfg.gc_heap_may_move(true);
     Engine::new(&cfg)
 }
 

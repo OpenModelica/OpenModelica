@@ -17,7 +17,7 @@ equation
       points={{-73,-6},{-56,-6},{-56,26},{-38,26}},
       color={0,0,127},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.1")), Diagram(graphics),
+  annotation (uses(Modelica(version="4.1.0")), Diagram(graphics),
     version="1",
     conversion(noneFromVersion=""));
 end arrTest;

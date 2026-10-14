@@ -109,7 +109,6 @@ buildModel(algebraicLoop); getErrorString();
 // Resizable Sparsity Pattern
 // ----------------------------
 // $RES_SIM_0 ... {$pDER_ODE_JAC.$DER.y, $pDER_ODE_JAC.$DER.x} ... {($SEED_ODE_JAC.y, {}, false), ($SEED_ODE_JAC.x, {}, false)}
-// $RES_SIM_1 ... {$pDER_ODE_JAC.$DER.y, $pDER_ODE_JAC.$DER.x} ... {($SEED_ODE_JAC.y, {}, false), ($SEED_ODE_JAC.x, {}, false)}
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian B(idx = 3, partition = 0)

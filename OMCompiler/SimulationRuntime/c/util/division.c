@@ -39,13 +39,37 @@ int valid_number(double a)
   return !isnan(a) && !isinf(a);
 }
 
+modelica_real __OMC_DIV_SIM_SLOW(threadData_t *threadData, const modelica_real a, const modelica_real b, const char *msg, const int *equationIndexes, modelica_boolean noThrowDivZero, const modelica_real time_, const modelica_boolean initial_)
+{
+  modelica_real res;
+  if(b != 0.0)
+    res = a/b;
+  else if(initial_ && a == 0.0)
+    res = 0.0;
+  else {
+    res = a / division_error_equation_time(threadData, a, b, msg, equationIndexes, time_, noThrowDivZero);
+    if(!noThrowDivZero)
+      return res;
+  }
+
+  if(!valid_number(res)){
+    if(noThrowDivZero) {
+      warningStreamPrintWithEquationIndexes(OMC_LOG_DIVISION, omc_dummyFileInfo, 0, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
+    }
+    else {
+      raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
+    }
+  }
+  return res;
+}
+
 
 modelica_real division_error_equation_time(threadData_t *threadData, modelica_real a, modelica_real b, const char *msg, const int *indexes, modelica_real time, modelica_boolean noThrow)
 {
   if(noThrow){
     warningStreamPrintWithEquationIndexes(OMC_LOG_DIVISION, omc_dummyFileInfo, 0, indexes, "solver will try to handle division by zero at time %.16g: %s", time, msg);
   } else {
-    throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "division by zero at time %.16g, (a=%.16g) / (b=%.16g), where divisor b expression is: %s", time, a, b, msg);
+    raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "division by zero at time %.16g, (a=%.16g) / (b=%.16g), where divisor b expression is: %s", time, a, b, msg);
   }
   return b;
 }
@@ -63,7 +87,7 @@ modelica_real division_error_time(threadData_t *threadData, modelica_real b, con
       "at Time=%f\n"
       "[line] %ld | [file] %s", division_str, time, line, file);
 #ifndef __APPLE_CC__
-    throwStreamPrint(threadData,"division by zero");
+    raiseStreamPrint(threadData,"division by zero");
 #endif
   }
   return b;
@@ -74,7 +98,7 @@ modelica_real division_error(threadData_t *threadData, modelica_real b, const ch
   warningStreamPrint(OMC_LOG_STDOUT, 0, "division by zero in partial equation: %s\n"
                                  "[line] %ld | [file] %s", division_str, line, file);
 #ifndef __APPLE_CC__
-  throwStreamPrint(threadData,"division by zero");
+  raiseStreamPrint(threadData,"division by zero");
 #endif
   return b;
 }
@@ -86,7 +110,7 @@ modelica_real isnan_error(threadData_t *threadData,modelica_real b, const char* 
     warningStreamPrint(OMC_LOG_STDOUT, 0, "division result in NAN in partial equation: %s\n"
                                       "[line] %ld | [file] %s", division_str, line, file);
 #ifndef __APPLE_CC__
-    throwStreamPrint(threadData,"division by zero");
+    raiseStreamPrint(threadData,"division by zero");
 #endif
   }
   return b;

@@ -1,0 +1,39 @@
+// name:     ExternalUncaughtException
+// keywords: ffi external wasm-jit exception
+// status:   correct
+// suite:    wasm
+// setup_command: $OMC_CC $OMC_CFLAGS -mexception-handling $OMC_EXTLIB_FLAGS -o ExternalUncaughtExceptionLib$OMC_EXTLIB_EXT ExternalUncaughtException.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -rf ExternalUncaughtException_* ExternalUncaughtException.log ExternalUncaughtException.wasm ExternalUncaughtExceptionLib$OMC_EXTLIB_EXT
+// depends: ExternalUncaughtException.c
+//
+// An exception escaping an external function, as an uncaught C++ one does,
+// ends the simulation with an error instead of a trap.
+
+loadString("
+model ExternalUncaughtException
+  function f
+    input Integer x;
+    output Integer y;
+    external \"C\" y = uncaught_throw(x) annotation(Library = \"ExternalUncaughtExceptionLib\");
+  end f;
+  Integer y = f(if time > 0.5 then 2 else 1);
+end ExternalUncaughtException;
+"); getErrorString();
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+simulate(ExternalUncaughtException); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ExternalUncaughtException', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: ExternalUncaughtException
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_ASSERT        | debug   | external function `uncaught_throw` ended with an exception it did not catch
+// "
+// end SimulationResult;
+// ""
+// endResult

@@ -8,7 +8,7 @@ getErrorString();
 loadString("
 model fmi_attributes_17 \"based on CauerLowPassAnalog\"
   extends Modelica.Icons.Example;
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
 
   parameter SI.Inductance l1 = 1.304 \"filter coefficient I1\";
   parameter SI.Inductance l2 = 0.8586 \"filter coefficient I2\";
@@ -34,7 +34,7 @@ equation
     Line(points = {{40, 30}, {54, 30}, {54, -70}, {0, -70}}, color = {0, 0, 255}));
   connect(R1.n, C4.p) annotation(
     Line(points = {{-80, 30}, {20, 30}}, color = {0, 0, 255}));
-  annotation(uses(Modelica(version = \"3.2.3\")));
+  annotation(uses(Modelica(version = \"4.1.0\")));
 end fmi_attributes_17;
 "); getErrorString();
 
@@ -52,9 +52,9 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 // true
 // ""
 // true
-// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from fmi_attributes_17.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from fmi_attributes_17.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // "fmi_attributes_17.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
@@ -452,7 +452,7 @@ readFile("fmi_attributes_17.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"R1.useHeatPort\"
 //     valueReference=\"0\"
-//     description=\"=true, if heatPort is enabled\"
+//     description=\"= true, if heatPort is enabled\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >

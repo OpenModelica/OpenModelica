@@ -588,6 +588,9 @@ interface package VisualXMLTplTV
   package AbsynUtil
     function pathString
       input Absyn.Path path;
+      input String delimiter;
+      input Boolean usefq;
+      input Boolean reverse;
       output String s;
     end pathString;
   end AbsynUtil;

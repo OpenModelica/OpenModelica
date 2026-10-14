@@ -2130,7 +2130,9 @@ algorithm
             print("-->try to predict the outputs \n");
           end if;
           if not isEval then
-            ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) := predictIfOutput(stmt,FUNCINFO(repl,funcTree,idx),recursionLimit);
+            // Every branch is evaluated, so a speculation doubles what is used of the
+            // limit; nested speculation runs out of it after a few levels.
+            ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) := predictIfOutput(stmt,FUNCINFO(repl,funcTree,idx),max(0, 2*recursionLimit - Flags.getConfigInt(Flags.EVAL_RECURSION_LIMIT) - 1));
           else
             stmtsNew := stmts1;
             addStmts := {};

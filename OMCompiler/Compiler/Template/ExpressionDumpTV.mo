@@ -41,7 +41,7 @@ package Tpl
   end addTemplateError;
 end Tpl;
 
-package Absyn
+protected package Absyn
   type Ident = String;
 
   uniontype CodeNode
@@ -849,7 +849,7 @@ package DAE
   end Constraint;
 end DAE;
 
-package Dump
+protected package Dump
   function printCodeStr
     input Absyn.CodeNode inCode;
     output String outString;

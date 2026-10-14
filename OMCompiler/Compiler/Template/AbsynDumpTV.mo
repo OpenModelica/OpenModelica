@@ -691,6 +691,11 @@ package Absyn
     end SUBSCRIPTED_EXP;
 
     record BREAK end BREAK;
+
+    record UNITFUL_LITERAL
+      Exp value;
+      String unit;
+    end UNITFUL_LITERAL;
   end Exp;
 
   uniontype Case

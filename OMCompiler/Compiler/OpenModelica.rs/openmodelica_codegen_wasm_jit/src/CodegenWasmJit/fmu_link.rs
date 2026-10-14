@@ -48,13 +48,13 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
     let mut out = Vec::new();
     for sv in all {
         let key = sim_cref_key(&sv.name)?;
-        let Some(slot) = map.vars.get(&key).copied() else { continue };
+        let Some(slot) = map.vars.get(&key) else { continue };
         let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(&sv, &sim_code_ref)?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;
         // A real variable's start slot: an init-mode set must go to the `start`
         // attribute, not to the live slot `setAllVarsToStart` is about to rewrite.
-        let start_off = map.start_slots.get(&key).copied().unwrap_or(0);
+        let start_off = map.start_slots.get(&key).unwrap_or(0);
         let der_off = out_der.get(&key).copied().unwrap_or(0);
         out.push(FmiVr {
             vr,
@@ -74,7 +74,7 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
         .chain(lst(&vars.stringAliasVars))
     {
         let key = sim_cref_key(&sv.name)?;
-        let Some(slot) = map.vars.get(&key).copied() else { continue };
+        let Some(slot) = map.vars.get(&key) else { continue };
         let vr: u32 = SimCodeCodegenUtil::getFMI3ValueReference(&sv, &sim_code_ref)?
             .parse()
             .map_err(|_| "CodegenWasmJit: FMI3 value reference is not a number")?;

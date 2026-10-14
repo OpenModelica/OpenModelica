@@ -51,12 +51,14 @@ protected
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Binding = NFBinding;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Dimension = NFDimension;
   import Variable = NFVariable;
 
   // old backend imports
@@ -71,6 +73,7 @@ protected
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import Partitioning = NBPartitioning;
+  import Resizable = NBResizable;
   import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
@@ -82,6 +85,7 @@ protected
   // SimCode imports
   import SimCode = NSimCode;
   import NSimCode.{Identifier, SimCodeIndices};
+  import NSimGenericCall;
   import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
@@ -503,28 +507,43 @@ public
       literals and therefore not part of the init XML, e.g. `Real x(min = p)`.
       The attributes are evaluated in updateBoundVariableAttributes. Only
       creates blocks for variables that are SimVars themselves, i.e. array
-      variables if they are not scalarized."
+      variables if they are not scalarized.
+      The indices are consecutive per attribute in the order of the info file:
+      nominal, min, max."
       input list<VariablePointers> vars;
       output list<Block> min_blcks = {};
       output list<Block> max_blcks = {};
       output list<Block> nominal_blcks = {};
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      input list<StrongComponent> params "primary parameters, solved before the attributes";
     protected
+      list<Variable> sim_vars = {};
       Variable var;
-      BackendExtension.VariableAttributes attributes;
+      UnorderedSet<ComponentRef> bound = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
+      for comp in params loop
+        for v in StrongComponent.getVariables(comp) loop
+          UnorderedSet.add(BVariable.getVarName(v), bound);
+        end for;
+      end for;
       for var_ptrs in vars loop
         for var_ptr in VariablePointers.toList(var_ptrs) loop
           var := Pointer.access(var_ptr);
-          if not UnorderedMap.contains(var.name, simcode_map) then
-            continue;
+          if UnorderedMap.contains(var.name, simcode_map) then
+            sim_vars := var :: sim_vars;
           end if;
-          attributes := var.backendinfo.attributes;
-          (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(attributes), min_blcks, simCodeIndices);
-          (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(attributes), max_blcks, simCodeIndices);
-          (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(attributes), nominal_blcks, simCodeIndices);
         end for;
+      end for;
+      sim_vars := listReverse(sim_vars);
+      for var in sim_vars loop
+        (nominal_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getNominal(var.backendinfo.attributes), nominal_blcks, simCodeIndices, bound);
+      end for;
+      for var in sim_vars loop
+        (min_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMin(var.backendinfo.attributes), min_blcks, simCodeIndices, bound);
+      end for;
+      for var in sim_vars loop
+        (max_blcks, simCodeIndices) := createAttributeBlock(var, BackendExtension.VariableAttributes.getMax(var.backendinfo.attributes), max_blcks, simCodeIndices, bound);
       end for;
       min_blcks := listReverse(min_blcks);
       max_blcks := listReverse(max_blcks);
@@ -536,11 +555,13 @@ public
       input Option<Expression> attribute;
       input output list<Block> blcks;
       input output SimCodeIndices simCodeIndices;
+      input UnorderedSet<ComponentRef> bound;
     algorithm
       _ := match attribute
         local
           Expression exp;
-        case SOME(exp) guard not Expression.isLiteralXML(exp) algorithm
+        // attributes depending on parameters of the initialization are unknown at this point
+        case SOME(exp) guard not Expression.isLiteralXML(exp) and not Expression.contains(exp, function isUnknownBeforeInit(bound = bound)) algorithm
           blcks := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, exp, DAE.emptyElementSource,
             EquationAttributes.default(EquationKind.CONTINUOUS, false)) :: blcks;
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -548,6 +569,36 @@ public
         else ();
       end match;
     end createAttributeBlock;
+
+    function isUnknownBeforeInit
+      "true for variables whose value is not known before the initialization"
+      input Expression exp;
+      input UnorderedSet<ComponentRef> bound;
+      output Boolean b;
+    protected
+      Pointer<Variable> var_ptr;
+      Variable var;
+      Option<Expression> value;
+    algorithm
+      b := match exp
+        case Expression.CREF() guard InstNode.isVar(ComponentRef.node(exp.cref)) algorithm
+          var_ptr := BVariable.getVarPointer(exp.cref, sourceInfo());
+          if BVariable.isConst(var_ptr) or UnorderedSet.contains(BVariable.getVarName(var_ptr), bound) then
+            b := false;
+          elseif BVariable.isParamOrConst(var_ptr) then
+            var := Pointer.access(var_ptr);
+            value := Binding.getExpOpt(var.binding);
+            if isNone(value) then
+              value := BackendExtension.VariableAttributes.getStartAttribute(var.backendinfo.attributes);
+            end if;
+            b := not Util.applyOptionOrDefault(value, Expression.isLiteralXML, false);
+          else
+            b := true;
+          end if;
+        then b;
+        else false;
+      end match;
+    end isUnknownBeforeInit;
 
     function createDAEModeBlocks
       input list<Partition.Partition> partitions;
@@ -728,6 +779,30 @@ public
       end match;
     end blockSource;
 
+    function isNumericJacobian
+      input BackendDAE jac;
+      output Boolean b;
+    algorithm
+      b := match jac
+        case BackendDAE.JACOBIAN() then arrayEmpty(jac.comps);
+        else false;
+      end match;
+    end isNumericJacobian;
+
+    function solvesConstant
+      "true if the strong component solves a constant variable"
+      input StrongComponent comp;
+      output Boolean b;
+    algorithm
+      b := match comp
+        case StrongComponent.SINGLE_COMPONENT() then BVariable.isConst(comp.var);
+        case StrongComponent.SLICED_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        case StrongComponent.RESIZABLE_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        case StrongComponent.GENERIC_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        else false;
+      end match;
+    end solvesConstant;
+
     function jacobianHasGenericLoopCalls
       "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
       input SimJacobian jac;
@@ -758,6 +833,7 @@ public
       input Partition.Kind kind;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
+      input Boolean entwined = false "a slice of an entwined component, which needs its index list";
     algorithm
       (blck, index) := match comp
         local
@@ -769,6 +845,7 @@ public
           list<SimVar> linVars = {};
           Integer sysIndex;
           Boolean allLinVarsFound;
+          Integer resizable_size "the static size of whole resizable iteration arrays beyond 1 each";
           Option<SimVar> osimvar;
           Block tmp;
           Variable var;
@@ -784,6 +861,14 @@ public
           list<Integer> call_order = {};
           Identifier ident;
           list<SimIterator> iters;
+
+        // constants are known, an equation that solves one (e.g. a constant record field
+        // in the initial system) has nothing to compute
+        case _ guard(solvesConstant(comp)) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, {Statement.ASSERT(Expression.BOOLEAN(true), Expression.STRING(""),
+            NFBuiltin.ASSERTIONLEVEL_ERROR, DAE.emptyElementSource)}, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);
@@ -816,6 +901,33 @@ public
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
+        // a slice of a for-equation over a resizable range that contains every
+        // iteration (at the analysis sizes; the call computes the whole body of an
+        // iteration) is the whole loop for every size
+        case StrongComponent.GENERIC_COMPONENT() guard not entwined and coversAllResizableIterations(comp.eqn) algorithm
+          eqn_ptr := Slice.getT(comp.eqn);
+          eqn     := Pointer.access(eqn_ptr);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
+          iters   := SimIterator.fromIterator(Equation.getForIterator(eqn));
+          generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
+          tmp     := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, iters, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
+
+        // a slice of a for-equation over a resizable range that is a box of
+        // iterations is the loop over symbolic sub-ranges for every size
+        case StrongComponent.GENERIC_COMPONENT() guard not entwined and isSome(restrictedResizableIterator(comp.eqn)) algorithm
+          eqn_ptr := Slice.getT(comp.eqn);
+          eqn     := Pointer.access(eqn_ptr);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
+          iters   := SimIterator.fromIterator(Util.getOption(restrictedResizableIterator(comp.eqn)));
+          generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
+          tmp     := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, iters, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
+
         case StrongComponent.GENERIC_COMPONENT() algorithm
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
@@ -831,7 +943,7 @@ public
           // create index list calls for entwined equations (position-based dispatch)
           entwined_index_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           for slice in comp.entwined_slices loop
-            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map);
+            (single_call, simCodeIndices, _) := fromStrongComponent(slice, simCodeIndices, kind, simcode_map, equation_map, entwined = true);
             // position = current list length before prepend (0-based, stable after reversal below)
             UnorderedMap.add(getEntwinedEquationName(slice), listLength(single_calls), entwined_index_map);
             single_calls := single_call :: single_calls;
@@ -857,10 +969,19 @@ public
             eqns := tmp :: eqns;
           end for;
           allLinVarsFound := true;
+          resizable_size := 0;
           for slice in strict.iteration_vars loop
             var := Pointer.access(Slice.getT(slice));
-            if Variable.size(var) > 1 then
-              for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices) loop
+            if listEmpty(slice.indices) and Type.isArray(var.ty) and
+               List.any(Type.arrayDims(var.ty), Dimension.isResizable) then
+              // a whole resizable array: its elements are only known at runtime,
+              // the system is sized at runtime (no linear solver, see below)
+              crefs := var.name :: crefs;
+              allLinVarsFound := false;
+              resizable_size := resizable_size + BVariable.size(Slice.getT(slice), true) - 1;
+            elseif Type.isArray(var.ty) then
+              // the slice indices refer to the resized sizes of resizable dimensions
+              for scal_var in Scalarize.scalarizeBackendVariable(var, slice.indices, resize = true) loop
                 crefs := scal_var.name :: crefs;
                 osimvar := UnorderedMap.get(scal_var.name, simcode_map);
                 if isSome(osimvar) then
@@ -880,7 +1001,8 @@ public
             end if;
           end for;
 
-          if isSome(strict.jac) then
+          // a jacobian without equations is the numeric fallback, the runtime differentiates numerically
+          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
@@ -921,7 +1043,7 @@ public
               blcks         = listReverse(eqns),
               crefs         = listReverse(crefs),
               indexSystem   = simCodeIndices.nonlinearSystemIndex,
-              size          = listLength(crefs),
+              size          = listLength(crefs) + resizable_size,
               jacobian      = Pointer.create(jacobian),
               homotopy      = comp.homotopy,
               mixed         = comp.mixed,
@@ -951,6 +1073,55 @@ public
         then fail();
       end match;
     end fromStrongComponent;
+
+    function restrictedResizableIterator
+      "the iterator of a slice of a for-equation with a scalar body over a
+       resizable range, restricted to the iterations of the slice (whole if empty)"
+      input Slice<EquationPointer> slice;
+      output Option<Iterator> iter = NONE();
+    protected
+      Equation eqn = Pointer.access(Slice.getT(slice));
+      Iterator it;
+    algorithm
+      if not Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) or not Equation.isForEquation(Slice.getT(slice)) then
+        return;
+      end if;
+      it := Equation.getForIterator(eqn);
+      if Iterator.isResizable(it) and Equation.size(Slice.getT(slice), true) == Iterator.size(it, true) then
+        // an empty slice is the whole loop
+        iter := if listEmpty(slice.indices) then SOME(it) else Resizable.restrictIterator(it, slice.indices);
+      end if;
+    end restrictedResizableIterator;
+
+    function coversAllResizableIterations
+      "true if the slice of a for-equation over a resizable range contains every
+       iteration at the analysis sizes. The generated call decodes an index as the
+       position of an iteration and computes the whole body of it."
+      input Slice<EquationPointer> slice;
+      output Boolean b = false;
+    protected
+      Equation eqn = Pointer.access(Slice.getT(slice));
+      Iterator iter;
+      Integer n;
+      array<Boolean> seen;
+    algorithm
+      if not Equation.isForEquation(Slice.getT(slice)) or listEmpty(slice.indices) then
+        return;
+      end if;
+      iter := Equation.getForIterator(eqn);
+      if not Iterator.isResizable(iter) then
+        return;
+      end if;
+      n := Iterator.size(iter, true);
+      if n <= 0 then
+        return;
+      end if;
+      seen := arrayCreate(n, false);
+      for i in slice.indices loop
+        arrayUpdate(seen, mod(i, n) + 1, true);
+      end for;
+      b := Array.all(seen, Util.id);
+    end coversAllResizableIterations;
 
     function createResidual
       input Slice<EquationPointer> slice;
@@ -1061,6 +1232,14 @@ public
 
         case (BEquation.SCALAR_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        // external object arrays have no array representation in C, assign them element-wise
+        case (BEquation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()), NBSolve.Status.EXPLICIT)
+          guard(Type.isExternalObject(Type.arrayElementType(eqn.ty))) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, list(Statement.ASSIGNMENT(Expression.fromCref(l), Expression.fromCref(r), Type.arrayElementType(eqn.ty), eqn.source)
+            threaded for l in ComponentRef.scalarizeAll(Expression.toCref(eqn.lhs), false), r in ComponentRef.scalarizeAll(Expression.toCref(eqn.rhs), false)), eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -1346,7 +1525,7 @@ public
 
         case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)) /* dangerous! */);
 
-        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, ConvertDAE.convertStatements(blck.stmts), EquationAttributes.convert(blck.attr));
+        case ALGORITHM()        then OldSimCode.SES_ALGORITHM(blck.index, NSimGenericCall.setRelationAsubStatements(ConvertDAE.convertStatements(blck.stmts)), EquationAttributes.convert(blck.attr));
 
         case ALIAS() guard(blck.aliasOf > 0) then OldSimCode.SES_ALIAS(blck.index, blck.aliasOf);
 

@@ -1,0 +1,44 @@
+// name: getComponentCondition
+// keywords: Graphical API, component attributes, conditional
+// status: correct
+// cflags: -d=-newInst
+
+loadString("
+model M
+  Real x if useSensor;
+  Real y;
+  Boolean useSensor;
+  Boolean otherSensor;
+end M;
+");
+
+getComponentCondition(M, x);
+getComponentCondition(M, y);
+setComponentCondition(M, x, "otherSensor");
+getComponentCondition(M, x);
+list(M);
+setComponentCondition(M, x, "");
+getComponentCondition(M, x);
+list(M);
+
+// Result:
+// true
+// "useSensor"
+// ""
+// true
+// "otherSensor"
+// "model M
+//   Real x if otherSensor;
+//   Real y;
+//   Boolean useSensor;
+//   Boolean otherSensor;
+// end M;"
+// true
+// ""
+// "model M
+//   Real x;
+//   Real y;
+//   Boolean useSensor;
+//   Boolean otherSensor;
+// end M;"
+// endResult

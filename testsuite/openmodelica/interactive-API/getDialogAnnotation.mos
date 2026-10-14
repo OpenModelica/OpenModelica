@@ -4,7 +4,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("getDialogAnnotation.mo"); getErrorString();
 list(GetDialogAnnotation); getErrorString();
 getComponentAnnotations(GetDialogAnnotation); getErrorString();
@@ -24,8 +24,8 @@ getComponentAnnotations(Modelica.Blocks.Sources.RealExpression); getErrorString(
 // ""
 // {{}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}}
 // ""
-// {{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,true,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {}, {}, {}, {HideResult=true}, {HideResult=true}, {HideResult=true}, {}, {}}
+// {{Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,true,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {Dialog("General","Parameters",true,false,false,-,-,-,-,"",false)}, {}, {}, {}}
 // ""
-// {{Dialog("General","Time varying output signal",true,false,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,0.0,-,-,-,-,-,-,)}}
+// {{Dialog("General","Time varying output signal",true,false,false,-,-,-,-,"",false), Placement(true,-,-,100.0,-10.0,120.0,10.0,-,-,-,-,-,-,-,)}}
 // ""
 // endResult

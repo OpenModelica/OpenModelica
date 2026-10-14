@@ -15,7 +15,7 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase);
 compareVars :=
 {
-   "dcse.lesigma.i",
+   "dcse.la.i",
    "loadInertia.phi",
    "loadInertia.w"
 };
@@ -31,9 +31,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase
-// {"dcse.lesigma.i", "loadInertia.phi", "loadInertia.w"}
+// {"dcse.la.i", "loadInertia.phi", "loadInertia.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.lesigma.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.la.i|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCSE_SinglePhase_res.mat
 // Files Equal!
 // "true

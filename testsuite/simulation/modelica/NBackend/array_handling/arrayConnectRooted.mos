@@ -1,0 +1,95 @@
+// name: arrayConnectRooted
+// keywords: NewBackend array connect overconstrained Connections.rooted
+// status: correct
+// cflags: --newBackend -d=arrayConnect
+//
+// Connections.rooted of an array of components in a for-equation is evaluated
+// for its elements, also for an array of a single element. The connector f has
+// a member f, and N = 1 gives a for-equation with an empty range.
+
+loadString("
+record Ref
+  Real theta;
+  function equalityConstraint
+    input Ref r1;
+    input Ref r2;
+    output Real residue[0];
+  algorithm
+  end equalityConstraint;
+end Ref;
+
+connector Frame
+  Ref R;
+  Real phi;
+  flow Real f;
+end Frame;
+
+model Source
+  Frame f;
+equation
+  Connections.root(f.R);
+  f.R.theta = 0;
+  f.phi = time;
+end Source;
+
+model Link
+  Frame a, b;
+  Real dir;
+equation
+  Connections.branch(a.R, b.R);
+  if Connections.rooted(a.R) then
+    b.R.theta = a.R.theta + 1;
+    dir = 1;
+  else
+    a.R.theta = b.R.theta - 1;
+    dir = -1;
+  end if;
+  b.phi = a.phi;
+  a.f + b.f = 0;
+end Link;
+
+model Chain
+  parameter Integer N;
+  Source s;
+  Link l[N];
+equation
+  connect(s.f, l[1].a);
+  for i in 1:N - 1 loop
+    connect(l[i].b, l[i + 1].a);
+  end for;
+end Chain;
+
+model arrayConnectRooted1 = Chain(N = 1);
+model arrayConnectRooted3 = Chain(N = 3);
+"); getErrorString();
+
+simulate(arrayConnectRooted1, stopTime = 1); getErrorString();
+val(l[1].dir, 1);
+val(s.f.f, 1);
+simulate(arrayConnectRooted3, stopTime = 1); getErrorString();
+val(l[3].dir, 1);
+val(l[3].b.R.theta, 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "arrayConnectRooted1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayConnectRooted1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 0.0
+// record SimulationResult
+//     resultFile = "arrayConnectRooted3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrayConnectRooted3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 3.0
+// endResult

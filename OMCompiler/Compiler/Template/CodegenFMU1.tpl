@@ -115,7 +115,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let modelIdentifier = modelNamePrefix(simCode)
   let description = modelInfo.description
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let generationDateAndTime = xsdateTime(Util.getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else vi.numStateVars
   let numberOfEventIndicators = getNumberOfEventIndicators(simCode)

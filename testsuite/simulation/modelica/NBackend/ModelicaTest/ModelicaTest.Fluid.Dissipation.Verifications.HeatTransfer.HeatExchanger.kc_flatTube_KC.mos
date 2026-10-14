@@ -1,0 +1,23 @@
+// name: ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.HeatExchanger.kc_flatTube_KC
+// keywords: NewBackend, differentiation, record
+// status: correct
+//
+// A record argument with a seed of its own, whose fields are not all seeds, is
+// differentiated fieldwise in the Jacobian. Only checks that the model builds.
+
+loadModel(ModelicaTest, {"4.0.0"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+buildModel(ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.HeatExchanger.kc_flatTube_KC); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.HeatExchanger.kc_flatTube_KC", "ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.HeatExchanger.kc_flatTube_KC_init.xml"}
+// "[Modelica 4.0.0+maint.om/Fluid/Dissipation.mo:1081:9-1082:55:writable] Warning: Variable $fDER_kc of the generated function $fDER0.Modelica.Fluid.Dissipation.HeatTransfer.HeatExchanger.kc_flatTube_KC will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.0.0+maint.om/Fluid/Dissipation.mo:1096:9-1096:34:writable] Warning: Variable j of the generated function $fDER0.Modelica.Fluid.Dissipation.HeatTransfer.HeatExchanger.kc_flatTube_KC will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.0.0+maint.om/Fluid/Dissipation.mo:1096:9-1096:34:writable] Warning: Variable $fDER_j of the generated function $fDER0.Modelica.Fluid.Dissipation.HeatTransfer.HeatExchanger.kc_flatTube_KC will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// [Modelica 4.0.0+maint.om/Fluid/Dissipation.mo:1081:9-1082:55:writable] Warning: Variable kc of the generated function $fDER0.Modelica.Fluid.Dissipation.HeatTransfer.HeatExchanger.kc_flatTube_KC will be initialized to 0.0 because it could not be proven that it is always assigned before it is used.
+// "
+// endResult

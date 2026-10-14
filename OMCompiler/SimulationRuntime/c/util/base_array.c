@@ -663,6 +663,7 @@ size_t calc_base_index_dims_subs(int ndims,...)
     for(i = 0; i < ndims; ++i) {
         if (subs[i] < 0 || subs[i] >= dims[i]) {
           omc_assert(NULL, omc_dummyFileInfo, "Dimension %d has bounds 1..%d, got array subscript %d", i+1, dims[i], subs[i]+1);
+          return 0;
         }
         index = (index * dims[i]) + subs[i];
     }
@@ -698,6 +699,7 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
         int sub_i = va_arg(ap, _index_t) - 1;
         if (sub_i < 0 || sub_i >= source->dim_size[i]) {
           omc_assert(NULL, omc_dummyFileInfo, "Dimension %d has bounds 1..%d, got array subscript %d", i+1, source->dim_size[i], sub_i+1);
+          return 0;
         }
         index = (index * source->dim_size[i]) + sub_i;
     }

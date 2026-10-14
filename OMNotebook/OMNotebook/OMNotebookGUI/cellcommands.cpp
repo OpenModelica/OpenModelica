@@ -50,6 +50,8 @@
 #include <stdexcept>
 #include <typeinfo>
 
+#include <QCoreApplication>
+
 //IAEX Headers
 #include "cellcommands.h"
 #include "graphcell.h"
@@ -317,6 +319,40 @@ namespace IAEX
     }
   }
 
+  /*!
+   * \brief Closes the groups of the pasted cells like the groups of the copied
+   * cells and hides all cells but the first one of the closed groups.
+   *
+   * Is called when the pasted cells are in the document and the layouts have
+   * run: only then the cells have their final width and height.
+   */
+  static void closeGroupsLikeSource( Cell *newCell, Cell *source )
+  {
+    CellGroup *newGroup = dynamic_cast<CellGroup *>( newCell );
+    if( !newGroup )
+      return;
+
+    // the cells of both groups in the same order (the cell cursor is not pasted)
+    Cell *newChild = newGroup->child();
+    Cell *sourceChild = source->child();
+    while( newChild && sourceChild )
+    {
+      if( dynamic_cast<CellCursor *>( sourceChild ) )
+      {
+        sourceChild = sourceChild->next();
+        continue;
+      }
+
+      closeGroupsLikeSource( newChild, sourceChild );
+      newChild = newChild->next();
+      sourceChild = sourceChild->next();
+    }
+
+    // without moving the cell cursor, hide the cells like a double click on the group does
+    newGroup->setClosed( source->isClosed(), false );
+    newGroup->closeChildCells();
+  }
+
   // 2006-01-16 AF, move this code to a seperated function
   // 2006-09-04 AF, redid entire function, so groupcells are created, have there
   // children added and THEN add to the documnet
@@ -344,7 +380,9 @@ namespace IAEX
 
     // create the new cell, if there exists a groupcell add the new cell to
     // that groupcell.
-    Cell* newCell = factory->createCell( style.name() );
+    // groups are created with the style name "cellgroup"
+    const QString styleName = dynamic_cast<CellGroup *>( cell ) ? QString( "cellgroup" ) : style.name();
+    Cell* newCell = factory->createCell( styleName );
 
 //    if( groupcell )
 //      groupcell->addChild( newCell );
@@ -367,14 +405,15 @@ namespace IAEX
     if( typeid(CellGroup) == typeid( *newCell ))
     {
       CellGroup *newCellGroup = dynamic_cast<CellGroup *>( newCell );
-      newCellGroup->setClosed( cell->isClosed() );
 
       if( cell->hasChilds() )
       {
         Cell* child = cell->child();
         while( child )
         {
-          pasteCell( child, newCellGroup );
+          // the cell cursor is part of the cell list, but it is not a cell of the group
+          if( !dynamic_cast<CellCursor *>( child ) )
+            pasteCell( child, newCellGroup );
           child = child->next();
         }
       }
@@ -442,7 +481,8 @@ namespace IAEX
     }
     else
     {
-      // Error
+      // Error, newCell has no parent and is not in the document
+      delete newCell;
       throw std::runtime_error("pasteCell(): Unknown celltype.");
     }
     // *************************************************************************
@@ -453,6 +493,16 @@ namespace IAEX
       cursor->addBefore( newCell );
     else //if there exists a groupcell add the new cell to that groupcell.
       groupcell->addChild( newCell );
+
+    // The groups are closed when all cells are in the document and the layouts
+    // have run (the cells have their width and height then).
+    if( !groupcell && dynamic_cast<CellGroup *>( newCell ) )
+    {
+      for( int i = 0; i < 8; ++i )
+        QCoreApplication::sendPostedEvents( nullptr, QEvent::LayoutRequest );
+
+      closeGroupsLikeSource( newCell, cell );
+    }
 
     // set focus and readonly stuff (from old implementation, IA)
     if(cursor->currentCell()->isClosed())
@@ -596,6 +646,11 @@ namespace IAEX
        Factory *fac = document()->cellFactory();
        CellCursor *cursor = document()->getCursor();
 
+       // Without a cell before the cursor currentCell() is the parent group, which can be
+       // the workspace without a parent: nothing to group.
+       if(!cursor->hasPrevious())
+         return;
+
        Cell *prev = cursor->currentCell();
        cursor->currentCell()->parentCell()->removeChild(prev);
 
@@ -669,13 +724,10 @@ namespace IAEX
                 child->setNext( deletedCellsNext );
                 if( !child->hasNext() )
                 {
-                  // update last value on all cells
-                  Cell* current = child;
-                  while( current != 0 )
-                  {
-                    current->setLast( child );
-                    current = current->previous();
-                  }
+                  // the last child of the parent is now the last cell of the group.
+                  // (The old loop set last on the sibling cells, which is the last child of
+                  // each of them, and left the parent pointing to the deleted groupcell.)
+                  deletedCellsParent->setLast( child );
                 }
                 else
                   deletedCellsNext->setPrevious( child );

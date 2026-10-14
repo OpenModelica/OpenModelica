@@ -330,6 +330,8 @@ public:
   ElementAttributes(Element *pElement, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
+  QGroupBox* getConditionGroupBox() const {return mpConditionGroupBox;}
+  QLineEdit* getConditionTextBox() const {return mpConditionTextBox;}
 private:
   Element *mpElement;
   Label *mpAttributesHeading;
@@ -362,6 +364,9 @@ private:
   QGroupBox *mpInnerOuterGroupBox;
   QCheckBox *mpInnerCheckBox;
   QCheckBox *mpOuterCheckBox;
+  QGroupBox *mpConditionGroupBox;
+  QLineEdit *mpConditionTextBox;
+  QString mOldCondition;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

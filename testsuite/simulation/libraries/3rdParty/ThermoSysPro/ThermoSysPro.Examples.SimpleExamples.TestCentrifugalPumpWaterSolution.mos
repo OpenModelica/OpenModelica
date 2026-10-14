@@ -7,8 +7,8 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadModel(ThermoSysPro); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution, stopTime=1000);  getErrorString();
 
@@ -33,22 +33,22 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefP.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefP.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:46:3-48:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:49:3-50:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo:5:3-7:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo:5:3-7:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefT.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefT.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo:15:3-17:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo:18:3-19:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:5:3-7:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "[ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo:5:3-6:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefP.mo:7:3-8:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:26:3-27:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:28:3-29:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo:4:3-5:80:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo:6:3-7:78:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo:4:3-5:80:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo:6:3-7:78:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo:5:3-6:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefT.mo:7:3-8:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo:9:3-10:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo:11:3-12:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:4:3-5:80:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:6:3-7:78:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:5:3-6:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:7:3-8:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // "
 // {"Files Equal!"}
 // endResult

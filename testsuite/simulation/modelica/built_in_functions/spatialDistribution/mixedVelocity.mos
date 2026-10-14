@@ -58,9 +58,8 @@ simulate(SingleBeltChangingVel, stopTime=2.0, simflags="-lv=LOG_EVENTS"); getErr
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=0.5
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, posV) > 0.0
-// LOG_EVENTS        | info    | state event at time=1.0000000002
-// |                 | |       | | [1] time < 1.0
-// LOG_EVENTS        | info    | state event at time=1.5000000002
+// LOG_EVENTS        | info    | time event at time=1
+// LOG_EVENTS        | info    | state event at time=1.5
 // |                 | |       | | [3] spatialDistributionZeroCrossing(0, 2, x, posV) > 0.0
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

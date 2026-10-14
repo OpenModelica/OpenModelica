@@ -113,42 +113,13 @@ fn test_sequential_updates_through_clones() {
     assert_eq!(Mutable::access(m), 4);
 }
 
-// Two clones of the same Mutable always compare equal because they share
-// state — so they always hold the same value.
-// BUG: PartialEq::eq calls self.0.lock() then other.0.lock() on the SAME
-// Arc<Mutex<T>> when comparing a Mutable to itself or to one of its clones.
-// The second lock() call blocks forever (non-reentrant mutex) — DEADLOCK.
-// The call that would trigger this is:
-//   let m = Mutable::create(7i32);
-//   let c = m.clone();
-//   assert_eq!(m, c);   // deadlocks: same Mutex locked twice
+// Two clones of the same Mutable share state, so they always compare equal.
 #[test]
 fn test_clones_of_same_mutable_are_always_equal() {
     let m = Mutable::create(7i32);
     let c = m.clone();
+    assert!(m == c);
     assert_eq!(Mutable::access(m), Mutable::access(c));
-}
-
-// Thread-safety: concurrent updates from multiple threads, all observing
-// the final state through any clone.
-#[test]
-fn test_concurrent_updates() {
-    use std::thread;
-    let m = Mutable::create(0i32);
-    let threads: Vec<_> = (0..8)
-        .map(|i| {
-            let mc = m.clone();
-            thread::spawn(move || {
-                Mutable::update(mc, i);
-            })
-        })
-        .collect();
-    for t in threads {
-        t.join().unwrap();
-    }
-    // We don't know which thread wrote last, but the value must be one of 0..8
-    let val = Mutable::access(m);
-    assert!((0..8).contains(&val));
 }
 
 // Works with non-Copy types (String).

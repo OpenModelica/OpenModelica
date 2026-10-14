@@ -74,7 +74,7 @@ struct concat_clusters {
         }
 
         adjacency_iterator src_child_iter, src_child_end, curr_src_child_iter;
-        boost::tie(src_child_iter, src_child_end) = adjacent_vertices(src_id, sys_graph);
+        std::tie(src_child_iter, src_child_end) = adjacent_vertices(src_id, sys_graph);
         while (src_child_iter != src_child_end) {
 
             /*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
@@ -85,17 +85,17 @@ struct concat_clusters {
             ++src_child_iter;
 
             if (dest_id != *curr_src_child_iter) {
-                boost::add_edge(dest_id, *curr_src_child_iter, sys_graph);
+                add_edge(dest_id, *curr_src_child_iter, sys_graph);
             }
             else {
                 std::cout << "trying to add edge : " << sys_graph[dest_id].index_list << " -> "
                           << sys_graph[*curr_src_child_iter].index_list << std::endl;
             }
-            boost::remove_edge(src_id, *curr_src_child_iter, sys_graph);
+            remove_edge(src_id, *curr_src_child_iter, sys_graph);
         }
 
         inv_adjacency_iterator src_parent_iter, src_parent_end, curr_src_parent_iter;
-        boost::tie(src_parent_iter, src_parent_end) = inv_adjacent_vertices(src_id, sys_graph);
+        std::tie(src_parent_iter, src_parent_end) = inv_adjacent_vertices(src_id, sys_graph);
         while (src_parent_iter != src_parent_end) {
 
             /*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
@@ -106,17 +106,17 @@ struct concat_clusters {
             ++src_parent_iter;
 
             if (*curr_src_parent_iter != dest_id) {
-                boost::add_edge(*curr_src_parent_iter, dest_id, sys_graph);
+                add_edge(*curr_src_parent_iter, dest_id, sys_graph);
             }
             else {
                 std::cout << "trying to add edge : " << sys_graph[*curr_src_parent_iter].index_list << " -> "
                           << sys_graph[dest_id].index_list << std::endl;
             }
-            boost::remove_edge(*curr_src_parent_iter, src_id, sys_graph);
+            remove_edge(*curr_src_parent_iter, src_id, sys_graph);
         }
 
-        // boost::clear_vertex(src_id, sys_graph);
-        boost::remove_vertex(src_id, sys_graph);
+        // clear_vertex(src_id, sys_graph);
+        remove_vertex(src_id, sys_graph);
     }
 };
 
@@ -143,7 +143,7 @@ struct concat_clusters {
 //        }
 //
 //        adjacency_iterator src_child_iter, src_child_end, curr_src_child_iter;
-//        boost::tie(src_child_iter, src_child_end) = adjacent_vertices(src_id, sys_graph);
+//        std::tie(src_child_iter, src_child_end) = adjacent_vertices(src_id, sys_graph);
 //		while(src_child_iter != src_child_end) {
 //			/*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
 //			  something is going on inside boost that I don't know yet. Or VS is just being VS as ususal.
@@ -152,17 +152,17 @@ struct concat_clusters {
 //			curr_src_child_iter = src_child_iter;
 //			++src_child_iter;
 //
-//			boost::add_edge(dest_id, *curr_src_child_iter, sys_graph);
-//            boost::remove_edge(src_id, *curr_src_child_iter, sys_graph);
+//			add_edge(dest_id, *curr_src_child_iter, sys_graph);
+//            remove_edge(src_id, *curr_src_child_iter, sys_graph);
 //		}
 //
 //        /*for (; src_child_iter != src_child_end; ++src_child_iter) {
-//            boost::add_edge(dest_id, *src_child_iter, sys_graph);
-//            boost::remove_edge(src_id, *src_child_iter, sys_graph);
+//            add_edge(dest_id, *src_child_iter, sys_graph);
+//            remove_edge(src_id, *src_child_iter, sys_graph);
 //        }*/
 //
 //        inv_adjacency_iterator src_parent_iter, src_parent_end, curr_src_parent_iter;
-//        boost::tie(src_parent_iter, src_parent_end) = inv_adjacent_vertices(src_id, sys_graph);
+//        std::tie(src_parent_iter, src_parent_end) = inv_adjacent_vertices(src_id, sys_graph);
 //
 //
 //		while(src_parent_iter != src_parent_end) {
@@ -173,17 +173,17 @@ struct concat_clusters {
 //			curr_src_parent_iter = src_parent_iter;
 //			++src_parent_iter;
 //
-//			boost::add_edge(*curr_src_parent_iter, dest_id, sys_graph);
-//            boost::remove_edge(*curr_src_parent_iter, src_id, sys_graph);
+//			add_edge(*curr_src_parent_iter, dest_id, sys_graph);
+//            remove_edge(*curr_src_parent_iter, src_id, sys_graph);
 //		}
 //
 //
 //        /*for (; src_parent_iter != src_parent_end; ++src_parent_iter) {
-//            boost::add_edge(*src_parent_iter, dest_id, sys_graph);
-//            boost::remove_edge(*src_parent_iter, src_id, sys_graph);
+//            add_edge(*src_parent_iter, dest_id, sys_graph);
+//            remove_edge(*src_parent_iter, src_id, sys_graph);
 //        }*/
 //
-//		boost::remove_vertex(src_id, sys_graph);
+//		remove_vertex(src_id, sys_graph);
 //    }
 //
 //};
@@ -213,7 +213,7 @@ struct concat_clusters {
 //        }
 //
 //        adjacency_iterator grand_child_iter, grand_child_end, curr_grand_child_iter;
-//        boost::tie(grand_child_iter, grand_child_end) = adjacent_vertices(child_id, sys_graph);
+//        std::tie(grand_child_iter, grand_child_end) = adjacent_vertices(child_id, sys_graph);
 //		while(grand_child_iter != grand_child_end) {
 //
 //			/*! Increment before erase. Apparently erasing an edge invalidates the vertex iterators in VS.
@@ -223,15 +223,15 @@ struct concat_clusters {
 //			curr_grand_child_iter = grand_child_iter;
 //			++grand_child_iter;
 //
-//			boost::add_edge(parent_id, *curr_grand_child_iter, sys_graph);
-//            boost::remove_edge(child_id, *curr_grand_child_iter, sys_graph);
+//			add_edge(parent_id, *curr_grand_child_iter, sys_graph);
+//            remove_edge(child_id, *curr_grand_child_iter, sys_graph);
 //
 //		}
 //
 //
-//        boost::remove_edge(parent_id, child_id, sys_graph);
-//		// boost::clear_vertex(child_id, sys_graph);
-//		boost::remove_vertex(child_id, sys_graph);
+//        remove_edge(parent_id, child_id, sys_graph);
+//		// clear_vertex(child_id, sys_graph);
+//		remove_vertex(child_id, sys_graph);
 //
 //    }
 //
@@ -454,7 +454,7 @@ struct cluster_merge_level_for_bins {
     fixpoint where no move helps.
 
     The optimization runs on auxiliary per-node arrays (lane assignment) and only
-    afterwards realizes the chosen lanes on the boost graph via
+    afterwards realizes the chosen lanes on the task graph via
     concat_same_level_clusters. Moving a task between lanes of the same level keeps
     every dependency edge pointing to a strictly higher level, so the cluster graph
     stays acyclic (verified below). */
@@ -488,7 +488,7 @@ struct cluster_fixed_width_min_height {
         const ClusterIdType root_id = task_system.root_node_id;
 
         vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         for (; vert_iter != vert_end; ++vert_iter) {
             const ClusterIdType v = *vert_iter;
             if (v == root_id)
@@ -510,7 +510,7 @@ struct cluster_fixed_width_min_height {
         for (int i = 0; i < N; ++i) {
             max_level = std::max(max_level, level[i]);
             adjacency_iterator c_iter, c_end;
-            boost::tie(c_iter, c_end) = adjacent_vertices(vid[i], sys_graph);
+            std::tie(c_iter, c_end) = adjacent_vertices(vid[i], sys_graph);
             for (; c_iter != c_end; ++c_iter) {
                 typename std::map<ClusterIdType, int>::iterator it = id_to_idx.find(*c_iter);
                 if (it != id_to_idx.end())
@@ -674,7 +674,7 @@ struct cluster_fixed_width_min_height {
                 break; /* fixpoint */
         }
 
-        /* ---- Phase D: realize the lanes on the boost graph ---- */
+        /* ---- Phase D: realize the lanes on the task graph ---- */
         for (int L = 1; L <= max_level; ++L) {
             std::vector<int>& level_nodes = nodes_by_level[L];
             const int         width = std::min((int)level_nodes.size(), K);
@@ -732,7 +732,7 @@ struct cluster_merge_common {
 
         int                nr_of_parents;
         adjacency_iterator child_iter, child_end, next_child_iter;
-        boost::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
+        std::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
 
         std::vector<ClusterIdType> child_ids;
         for (; child_iter != child_end; ++child_iter) {
@@ -776,7 +776,7 @@ struct cluster_merge_common {
         }
 
         adjacency_iterator curr_child_iter;
-        boost::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
+        std::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
         while (child_iter != child_end) {
 
             /*! Increment before concat. Apparently erasing an edge invalidates the vertex iterators in VS.
@@ -811,7 +811,7 @@ struct cluster_merge_common {
         const ClusterIdType& root_node_id = task_system.root_node_id;
 
         adjacency_iterator child_iter, child_end;
-        boost::tie(child_iter, child_end) = adjacent_vertices(root_node_id, sys_graph);
+        std::tie(child_iter, child_end) = adjacent_vertices(root_node_id, sys_graph);
 
         for (; child_iter != child_end; ++child_iter) {
             const ClusterIdType& curr_child_id = *child_iter;
@@ -842,7 +842,7 @@ struct cluster_merge_single_parent {
         GraphType& sys_graph = task_system.sys_graph;
 
         vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
@@ -854,7 +854,7 @@ struct cluster_merge_single_parent {
             }
 
             adjacency_iterator child_iter, child_end, curr_child_iter;
-            boost::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
+            std::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
             while (child_iter != child_end) {
                 /*! Increment before concat. Apparently erasing an edge invalidates the vertex iterators in VS.
                   something is going on inside boost that I don't know yet. Or VS is just being VS as ususal.
@@ -926,7 +926,7 @@ struct cluster_merge_level_parents {
 
                 std::vector<ClusterIdType> parent_ids;
                 inv_adjacency_iterator     parent_iter, parent_end;
-                boost::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+                std::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
                 const ClusterIdType& main_parent_id = *parent_iter;
                 ClusterType&         main_parent = sys_graph[main_parent_id];
 
@@ -977,7 +977,7 @@ struct cluster_merge_connected_for_cost {
             return;
 
         inv_adjacency_iterator parent_iter, parent_end;
-        boost::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+        std::tie(parent_iter, parent_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
 
         for (; parent_iter != parent_end; ++parent_iter) {
             const ClusterIdType& curr_parent_id = *parent_iter;
@@ -995,7 +995,7 @@ struct cluster_merge_connected_for_cost {
         }
 
         adjacency_iterator child_iter, child_end;
-        boost::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
+        std::tie(child_iter, child_end) = adjacent_vertices(curr_clust_id, sys_graph);
 
         for (; child_iter != child_end; ++child_iter) {
             const ClusterIdType& curr_child_id = *child_iter;
@@ -1017,7 +1017,7 @@ struct cluster_merge_connected_for_cost {
         ClusterIdType& root_node_id = task_system.root_node_id;
 
         adjacency_iterator top_iter, top_end;
-        boost::tie(top_iter, top_end) = adjacent_vertices(root_node_id, sys_graph);
+        std::tie(top_iter, top_end) = adjacent_vertices(root_node_id, sys_graph);
         sys_graph[root_node_id].valid = false;
 
         std::vector<std::list<ClusterIdType>> connected_comps_list;
@@ -1041,7 +1041,7 @@ struct cluster_merge_connected_for_cost {
             curr_top.group = nr_of_connected;
 
             adjacency_iterator child_iter, child_end;
-            boost::tie(child_iter, child_end) = adjacent_vertices(curr_top_id, sys_graph);
+            std::tie(child_iter, child_end) = adjacent_vertices(curr_top_id, sys_graph);
 
             for (; child_iter != child_end; ++child_iter) {
                 const ClusterIdType& curr_child_id = *child_iter;

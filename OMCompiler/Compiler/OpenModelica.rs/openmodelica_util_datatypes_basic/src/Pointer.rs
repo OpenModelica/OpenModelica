@@ -1,6 +1,6 @@
 // Manually written
 #![allow(non_snake_case)]
-use std::sync::Arc;
+use std::rc::Rc;
 
 use metamodelica::gc::{MMTrace, MMVisitor, TraceableCell};
 
@@ -12,15 +12,15 @@ use crate::Mutable::{cell_get, cell_set, new_cell, CellInner};
 // The mutable variant shares `CellInner` with `Mutable.Mutable` so both cell
 // kinds register with the same cycle-collector machinery.
 pub enum Pointer<T> {
-    Mutable(Arc<CellInner<T>>),
-    Immutable(Arc<T>),
+    Mutable(Rc<CellInner<T>>),
+    Immutable(Rc<T>),
 }
 
 impl<T> Clone for Pointer<T> {
     fn clone(&self) -> Self {
         match self {
-            Pointer::Mutable(a) => Pointer::Mutable(Arc::clone(a)),
-            Pointer::Immutable(a) => Pointer::Immutable(Arc::clone(a)),
+            Pointer::Mutable(a) => Pointer::Mutable(Rc::clone(a)),
+            Pointer::Immutable(a) => Pointer::Immutable(Rc::clone(a)),
         }
     }
 }
@@ -28,8 +28,8 @@ impl<T> Clone for Pointer<T> {
 impl<T> std::fmt::Debug for Pointer<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Pointer::Mutable(a) => write!(f, "Pointer::Mutable({:p})", Arc::as_ptr(a)),
-            Pointer::Immutable(a) => write!(f, "Pointer::Immutable({:p})", Arc::as_ptr(a)),
+            Pointer::Mutable(a) => write!(f, "Pointer::Mutable({:p})", Rc::as_ptr(a)),
+            Pointer::Immutable(a) => write!(f, "Pointer::Immutable({:p})", Rc::as_ptr(a)),
         }
     }
 }
@@ -37,14 +37,14 @@ impl<T> std::fmt::Debug for Pointer<T> {
 impl<T: PartialEq> PartialEq for Pointer<T> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Pointer::Mutable(a), Pointer::Mutable(b)) => Arc::ptr_eq(a, b),
-            (Pointer::Immutable(a), Pointer::Immutable(b)) => Arc::ptr_eq(a, b),
+            (Pointer::Mutable(a), Pointer::Mutable(b)) => Rc::ptr_eq(a, b),
+            (Pointer::Immutable(a), Pointer::Immutable(b)) => Rc::ptr_eq(a, b),
             _ => false,
         }
     }
 }
 
-/// `Eq` follows trivially from pointer equality — `Arc::ptr_eq` is
+/// `Eq` follows trivially from pointer equality — `Rc::ptr_eq` is
 /// reflexive/symmetric/transitive — but we still gate it on `T: Eq` so
 /// the bound stays in lockstep with `PartialEq` for callers.
 impl<T: Eq> Eq for Pointer<T> {}
@@ -55,11 +55,11 @@ impl<T: Eq> Eq for Pointer<T> {}
 /// for hash-free containers like `BTreeMap` and the generated
 /// `valueCompare` lowering. The ordering is stable across `clone()` of
 /// the same `Pointer` because pointer-equal clones share the same
-/// `Arc::as_ptr` address.
+/// `Rc::as_ptr` address.
 fn pointer_key<T>(p: &Pointer<T>) -> (u8, usize) {
     match p {
-        Pointer::Mutable(a) => (0, Arc::as_ptr(a) as usize),
-        Pointer::Immutable(a) => (1, Arc::as_ptr(a) as usize),
+        Pointer::Mutable(a) => (0, Rc::as_ptr(a) as usize),
+        Pointer::Immutable(a) => (1, Rc::as_ptr(a) as usize),
     }
 }
 
@@ -93,8 +93,8 @@ impl<T: MMTrace> MMTrace for Pointer<T> {
         match self {
             Pointer::Mutable(a) => {
                 if visitor.visit_shared(
-                    Arc::as_ptr(a) as *const (),
-                    Arc::strong_count(a),
+                    Rc::as_ptr(a) as *const (),
+                    Rc::strong_count(a),
                     std::any::type_name::<CellInner<T>>(),
                 ) {
                     let r = a.trace_content(visitor);
@@ -130,7 +130,7 @@ pub fn create<T: Clone + PartialEq + MMTrace + 'static>(data: T) -> Pointer<T> {
 }
 
 pub fn createImmutable<T: Clone + PartialEq>(data: T) -> Pointer<T> {
-    Pointer::Immutable(Arc::new(data))
+    Pointer::Immutable(Rc::new(data))
 }
 
 // The MetaModelica/C runtime treats `update` as infallible: it writes through
@@ -178,13 +178,13 @@ pub fn apply<T: Clone + PartialEq + 'static>(mutable: Pointer<T>, func: std::syn
 /// designate the same allocation. A `Mutable` and an `Immutable` cell are
 /// never the same allocation (they are distinct boxes in the C runtime too).
 /// Contents are irrelevant. Called from generated code (the builtin
-/// `referenceEq` lowering dispatches here because the `Arc` payload is not
+/// `referenceEq` lowering dispatches here because the `Rc` payload is not
 /// reachable through a `Deref`). Takes references: the call site only needs
 /// identity, never ownership.
 pub fn referenceEq<T>(a: &Pointer<T>, b: &Pointer<T>) -> bool {
     match (a, b) {
-        (Pointer::Mutable(x), Pointer::Mutable(y)) => Arc::ptr_eq(x, y),
-        (Pointer::Immutable(x), Pointer::Immutable(y)) => Arc::ptr_eq(x, y),
+        (Pointer::Mutable(x), Pointer::Mutable(y)) => Rc::ptr_eq(x, y),
+        (Pointer::Immutable(x), Pointer::Immutable(y)) => Rc::ptr_eq(x, y),
         _ => false,
     }
 }

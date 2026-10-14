@@ -381,5 +381,5 @@ encapsulated package withFolder "Package per EV con modello QuasiStationary"
     end QSAsma;
   end OLD;
 
-  annotation(uses(Modelica(version = "3.2.1")));
+  annotation(uses(Modelica(version = "4.1.0")));
 end withFolder;

@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 // 
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 setCommandLineOptions("+d=nogen,initialization,backenddaeinfo,discreteinfo,stateselection"); getErrorString();
 buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString();
 
@@ -21,12 +21,12 @@ buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString()
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ()
-//  * Number of discrete variables: 0 ()
+//  * Number of discrete variables: 1 ($whenCondition1)
 //  * Number of discrete states: 0 ()
 //  * Number of clocked states: 0 ()
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (0):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for initialization (1):
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -38,12 +38,12 @@ buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString()
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ()
-//  * Number of discrete variables: 0 ()
+//  * Number of discrete variables: 1 ($whenCondition1)
 //  * Number of discrete states: 0 ()
 //  * Number of clocked states: 0 ()
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (0):
-//  * Single equations (assignments): 0
+// Notification: Strong component statistics for simulation (1):
+//  * Single equations (assignments): 1
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

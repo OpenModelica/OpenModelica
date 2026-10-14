@@ -389,3 +389,95 @@ pub fn derive_mm_ctor(input: TokenStream) -> TokenStream {
         }
     })
 }
+
+/// `#[derive(MMSerial)]` — [`metamodelica::serial::MMSerial`]: fields in
+/// declaration order, enums prefixed by the variant index.
+#[proc_macro_derive(MMSerial)]
+pub fn derive_mm_serial(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+
+    fn encode_fields(fields: &Fields, bind: impl Fn(usize, &syn::Field) -> proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+        let calls = fields.iter().enumerate().map(|(i, f)| {
+            let b = bind(i, f);
+            quote! { metamodelica::serial::MMSerial::mm_encode(#b, __e); }
+        });
+        quote! { #(#calls)* }
+    }
+    fn decode_fields(fields: &Fields) -> proc_macro2::TokenStream {
+        match fields {
+            Fields::Named(named) => {
+                let fs = named.named.iter().map(|f| {
+                    let n = f.ident.as_ref().unwrap();
+                    quote! { #n: metamodelica::serial::MMSerial::mm_decode(__d), }
+                });
+                quote! { { #(#fs)* } }
+            }
+            Fields::Unnamed(unnamed) => {
+                let fs = unnamed.unnamed.iter().map(|_| quote! { metamodelica::serial::MMSerial::mm_decode(__d), });
+                quote! { ( #(#fs)* ) }
+            }
+            Fields::Unit => quote! {},
+        }
+    }
+    fn pattern(fields: &Fields) -> proc_macro2::TokenStream {
+        match fields {
+            Fields::Named(named) => {
+                let ns = named.named.iter().map(|f| f.ident.as_ref().unwrap());
+                quote! { { #(#ns),* } }
+            }
+            Fields::Unnamed(unnamed) => {
+                let ns = (0..unnamed.unnamed.len()).map(|i| quote::format_ident!("__f{}", i));
+                quote! { ( #(#ns),* ) }
+            }
+            Fields::Unit => quote! {},
+        }
+    }
+    fn binding(i: usize, f: &syn::Field) -> proc_macro2::TokenStream {
+        match &f.ident {
+            Some(n) => quote! { #n },
+            None => { let n = quote::format_ident!("__f{}", i); quote! { #n } }
+        }
+    }
+
+    let (encode, decode) = match &input.data {
+        Data::Struct(data) => {
+            let enc = encode_fields(&data.fields, |i, f| match &f.ident {
+                Some(n) => quote! { &self.#n },
+                None => { let idx = Index::from(i); quote! { &self.#idx } }
+            });
+            let dec = decode_fields(&data.fields);
+            (enc, quote! { Self #dec })
+        }
+        Data::Enum(data) => {
+            let enc_arms = data.variants.iter().enumerate().map(|(i, v)| {
+                let vname = &v.ident;
+                let pat = pattern(&v.fields);
+                let tag = i as u64;
+                let fields = encode_fields(&v.fields, binding);
+                quote! { Self::#vname #pat => { __e.varint(#tag); #fields } }
+            });
+            let dec_arms = data.variants.iter().enumerate().map(|(i, v)| {
+                let vname = &v.ident;
+                let tag = i as u64;
+                let fields = decode_fields(&v.fields);
+                quote! { #tag => Self::#vname #fields, }
+            });
+            (quote! { match self { #(#enc_arms)* } },
+             quote! { match __d.varint() { #(#dec_arms)* _ => panic!("invalid variant tag") } })
+        }
+        Data::Union(_) => {
+            return syn::Error::new_spanned(name, "MMSerial cannot be derived for unions")
+                .to_compile_error()
+                .into();
+        }
+    };
+
+    TokenStream::from(quote! {
+        impl #impl_generics metamodelica::serial::MMSerial for #name #ty_generics #where_clause {
+            fn mm_encode(&self, __e: &mut metamodelica::serial::Encoder) { #encode }
+            fn mm_decode(__d: &mut metamodelica::serial::Decoder) -> Self { #decode }
+        }
+    })
+}

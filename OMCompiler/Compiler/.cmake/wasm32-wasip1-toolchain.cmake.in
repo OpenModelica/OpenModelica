@@ -10,13 +10,23 @@ set(CMAKE_SYSTEM_NAME WASI)
 set(CMAKE_SYSTEM_VERSION 1)
 set(CMAKE_SYSTEM_PROCESSOR wasm32)
 
-get_filename_component(_omc_home "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
-
 if(NOT OMC_WASI_SYSROOT AND DEFINED ENV{OMC_WASI_SYSROOT})
   set(OMC_WASI_SYSROOT "$ENV{OMC_WASI_SYSROOT}")
 endif()
+# Else the newest one installWasmToolchain() installed.
 if(NOT OMC_WASI_SYSROOT)
-  set(OMC_WASI_SYSROOT "${_omc_home}/lib/wasm32-wasip1/omc/sysroot")
+  if(DEFINED ENV{APPDATA})
+    set(_omc_user_home "$ENV{APPDATA}")
+  else()
+    set(_omc_user_home "$ENV{HOME}")
+  endif()
+  file(GLOB _omc_sysroots "${_omc_user_home}/.openmodelica/wasm32-wasip1/omc-*/sysroot/lib/wasm32-wasip1/libc.so")
+  list(SORT _omc_sysroots COMPARE NATURAL ORDER DESCENDING)
+  if(NOT _omc_sysroots)
+    message(FATAL_ERROR "No wasm sysroot is installed; installWasmToolchain() in omc installs it.")
+  endif()
+  list(GET _omc_sysroots 0 _omc_libc)
+  get_filename_component(OMC_WASI_SYSROOT "${_omc_libc}/../../.." ABSOLUTE)
 endif()
 set(CMAKE_SYSROOT "${OMC_WASI_SYSROOT}")
 
@@ -44,7 +54,12 @@ if(NOT CMAKE_AR OR NOT CMAKE_RANLIB)
 endif()
 
 set(CMAKE_C_FLAGS_INIT "-fPIC")
-set(CMAKE_CXX_FLAGS_INIT "-fPIC")
+# C++ is compiled against libc++ (installWasmToolchain(cxx=true)), with
+# WebAssembly exceptions; linking its libc++.so puts it in NEEDED.
+set(CMAKE_CXX_FLAGS_INIT "-fPIC -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false")
+if(EXISTS "${CMAKE_SYSROOT}/lib/wasm32-wasip1/libc++.so")
+  set(CMAKE_CXX_STANDARD_LIBRARIES "\"${CMAKE_SYSROOT}/lib/wasm32-wasip1/libc++.so\"")
+endif()
 
 # What a wasm module is named and how it is linked, applied after Platform/WASI.
 set(CMAKE_USER_MAKE_RULES_OVERRIDE "${CMAKE_CURRENT_LIST_DIR}/wasm32-wasip1-rules.cmake")

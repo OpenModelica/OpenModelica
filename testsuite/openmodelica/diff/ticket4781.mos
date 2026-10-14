@@ -10,7 +10,7 @@ getErrorString();
 addComponent(heatCapacitor1 , Modelica.Thermal.HeatTransfer.Components.HeatCapacitor, MM, annotate=Placement(visible=true, transformation=transformation(origin={-10,36}, extent={{-10,-10},{10,10}}, rotation=0)));
 getErrorString();
 
-addClassAnnotation(MM, annotate=$annotation(uses(Modelica(version="3.2.3"))));
+addClassAnnotation(MM, annotate=$annotation(uses(Modelica(version="4.1.0"))));
 getErrorString();
 
 s2 := listFile(MM);
@@ -37,7 +37,7 @@ getErrorString();
 // equation
 //
 //   annotation(
-//     uses(Modelica(version = \"3.2.3\")));
+//     uses(Modelica(version = \"4.1.0\")));
 // end MM;"
 // ""
 // "model MM
@@ -46,7 +46,7 @@ getErrorString();
 // equation
 //
 // annotation(
-//     uses(Modelica(version = \"3.2.3\")));
+//     uses(Modelica(version = \"4.1.0\")));
 // end MM;"
 // ""
 // endResult

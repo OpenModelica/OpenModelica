@@ -65,11 +65,6 @@ public
   record NONE_ITERATOR
   end NONE_ITERATOR;
 
-  record REPEAT_ITERATOR
-    list<Expression> current;
-    list<Expression> all;
-  end REPEAT_ITERATOR;
-
   function toString
     input ExpressionIterator iter;
     output String str;
@@ -85,7 +80,6 @@ public
         inPrintEmpty  = false,
         maxLength     = 0), "[ARRY] array iterator:\n", "", "\n", "");
 
-      case REPEAT_ITERATOR() then "[REAP] repeat iterator:\n" + List.toString(iter.all, Expression.toString);
       case SCALAR_ITERATOR() then "[SCAL] scalar iterator: " + Expression.toString(iter.exp) + "\n";
       case EACH_ITERATOR() then "[EACH] each iterator: " + Expression.toString(iter.exp) + "\n";
       case NONE_ITERATOR() then "[NONE] no iterator.\n";
@@ -209,7 +203,6 @@ public
       case SCALAR_ITERATOR() then true;
       case EACH_ITERATOR() then true;
       case NONE_ITERATOR() then false;
-      case REPEAT_ITERATOR() then true;
     end match;
   end hasNext;
 
@@ -248,17 +241,6 @@ public
         then (NONE_ITERATOR(), iterator.exp);
 
       case EACH_ITERATOR() then (iterator, iterator.exp);
-
-      case REPEAT_ITERATOR(rest, arr)
-        algorithm
-          if not listEmpty(rest) then
-            next :: rest := rest;
-          else
-            next :: rest := arr;
-          end if;
-        then
-          (REPEAT_ITERATOR(rest, arr), next);
-
     end match;
   end next;
 

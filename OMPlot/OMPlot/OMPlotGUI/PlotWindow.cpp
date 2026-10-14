@@ -69,6 +69,7 @@
 #include <QStack>
 #include <QLineEdit>
 #include <QColorDialog>
+#include <QApplication>
 
 using namespace OMPlot;
 
@@ -144,11 +145,14 @@ static QList<double> readArrayAt(const omc::ResultFile &result, const QString &v
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, int toolbarIconSize)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
 {
-  /* set the widget background white. so that the plot is more useable in books and publications. */
-  QPalette p(palette());
-  p.setColor(QPalette::Window, Qt::white);
-  setAutoFillBackground(true);
-  setPalette(p);
+  /* set the widget background white. so that the plot is more useable in books and publications.
+   * In OMEdit's dark mode the application palette already carries the dark color. */
+  if (!OMPlot::isDarkMode()) {
+    QPalette p(palette());
+    p.setColor(QPalette::Window, Qt::white);
+    setAutoFillBackground(true);
+    setPalette(p);
+  }
   // setup the main window widget
   setUpWidget(toolbarIconSize);
   // Keep default legend font since greek-mu for micro is not displayed correctly with monospaced font.
@@ -1330,7 +1334,9 @@ void PlotWindow::setLegendPosition(QString position)
   }
   else if (position.toLower().compare("none") == 0)
   {
+    // insertLegend(0) deletes the old legend, do not keep a dangling pointer to it
     mpPlot->insertLegend(0);
+    mpPlot->setLegend(nullptr);
   }
 }
 
@@ -1400,10 +1406,15 @@ Plot* PlotWindow::getPlot()
 
 void PlotWindow::receiveMessage(QStringList arguments)
 {
-  foreach (PlotCurve *pCurve, mpPlot->getPlotCurvesList())
+  /* detach() does not delete the curve. Delete the curves here (they delete their point markers),
+   * otherwise every message leaks all curves of the previous plot.
+   */
+  const QList<PlotCurve*> curves = mpPlot->getPlotCurvesList();
+  for (PlotCurve *pCurve : curves)
   {
-    pCurve->detach();
     mpPlot->removeCurve(pCurve);
+    pCurve->detach();
+    delete pCurve;
   }
   initializePlot(arguments);
 }
@@ -1539,7 +1550,8 @@ void PlotWindow::exportDocument()
       QwtPlotRenderer plotRenderer;
       plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);  /* removes the gray widget background when OMPlot is used as library. */
       QPixmap pixmap(mpPlot->size());
-      pixmap.fill(Qt::white);
+      /* dark mode draws the axis and legend text in the palette text color, so the export keeps the screen background */
+      pixmap.fill(OMPlot::isDarkMode() ? mpPlot->canvasBackground().color() : QColor(Qt::white));
       QPainter painter(&pixmap);
       QRect rect = mpPlot->geometry();
       painter.setWindow(rect);

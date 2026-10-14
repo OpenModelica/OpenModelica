@@ -3,7 +3,7 @@
 // status: correct
 // suite: disabled
 
-loadModel(Modelica,{"3.2"});
+loadModel(Modelica,{"4.1.0"});
 getErrorString();
 
 setCommandLineOptions("--postOptModules+=reduceDynamicOptimization");

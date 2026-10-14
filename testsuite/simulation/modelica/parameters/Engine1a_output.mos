@@ -3,7 +3,7 @@
 // status: correct
 // cflags: -d=-newInst
 //
-loadModel(Modelica,{"3.2.1"});
+loadModel(Modelica,{"4.1.0"});
 loadFile("Engine1a_output.mo");getErrorString();
 setDebugFlags("evalOutputOnly"); getErrorString();
 simulate(Engine1a_output); getErrorString();

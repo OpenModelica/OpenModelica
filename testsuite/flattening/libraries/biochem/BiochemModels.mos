@@ -27,6 +27,8 @@ instantiateModel(BioChem_Examples_CaOscillations_Cytosol); getErrorString();
 checkModel(BioChem_Examples_CaOscillations_Cytosol); getErrorString();
 clear();
 
+// BioChem 1.1.3 only instantiates with the new frontend.
+setCommandLineOptions("-d=newInst"); getErrorString();
 loadModel(BioChem); getErrorString();
 checkModel(BioChem.Examples.InsulinSignaling_Sedaghat); getErrorString();
 checkModel(BioChem.Examples.Glycolysis); getErrorString();
@@ -48,13 +50,6 @@ checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.U_ii_reactio
 checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.ActivationReaction); getErrorString();
 checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.MM_insulin); getErrorString();
 checkModel(BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptakeReaction); getErrorString();
-checkModel(BioChem.Examples.MassAction.UniUni); getErrorString();
-checkModel(BioChem.Examples.MassAction.UniBi); getErrorString();
-checkModel(BioChem.Examples.MultiCompartments.GlucoseMetabolism); getErrorString();
-checkModel(BioChem.Examples.MultiCompartments.BigCompartmentReversible); getErrorString();
-checkModel(BioChem.Examples.MultiCompartments.BigCompartmentIrreversible); getErrorString();
-checkModel(BioChem.Examples.MultiCompartments.Utilities.TCA); getErrorString();
-checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getErrorString();
 
 // Result:
 // true
@@ -1997,6 +1992,8 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // true
 // true
 // ""
+// true
+// ""
 // "Check of BioChem.Examples.InsulinSignaling_Sedaghat completed successfully.
 // Class BioChem.Examples.InsulinSignaling_Sedaghat has 141 equation(s) and 141 variable(s).
 // 96 of these are trivial equation(s)."
@@ -2013,21 +2010,17 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // Class BioChem.Examples.GMO.cell has 96 equation(s) and 96 variable(s).
 // 65 of these are trivial equation(s)."
 // ""
-// ""
+// "Check of BioChem.Examples.centralMetabolism completed successfully.
+// Class BioChem.Examples.centralMetabolism has 0 equation(s) and 0 variable(s).
+// 0 of these are trivial equation(s)."
 // "Check of BioChem.Examples.centralMetabolism.cytosol completed successfully.
 // Class BioChem.Examples.centralMetabolism.cytosol has 326 equation(s) and 326 variable(s).
-// 229 of these are trivial equation(s)."
-// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:426:3-1027:24:writable] Error: Cannot instantiate BioChem.Examples.centralMetabolism due to class specialization package.
-// Error: Error occurred while flattening model BioChem.Examples.centralMetabolism
-// "
+// 230 of these are trivial equation(s)."
+// ""
 // "Check of BioChem.Examples.CircadianOscillator.Container completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Container has 252 equation(s) and 252 variable(s).
 // 180 of these are trivial equation(s)."
-// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1086:7-1086:129:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1087:7-1087:128:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1088:7-1088:128:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1089:7-1089:129:writable] Warning: Connecting two signal sources while connecting nucleus.y3_node.V to cytoplasm.y3_node.V.
-// "
+// ""
 // "Check of BioChem.Examples.CircadianOscillator.Nucleus completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Nucleus has 99 equation(s) and 101 variable(s).
 // 70 of these are trivial equation(s)."
@@ -2043,31 +2036,22 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem.Examples.CaOscillations.Cytosol completed successfully.
 // Class BioChem.Examples.CaOscillations.Cytosol has 60 equation(s) and 60 variable(s).
 // 44 of these are trivial equation(s)."
-// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2195:7-2195:211:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to endoplasmicReticulum.Ca_Cyt_node.V.
-// "
+// ""
 // "Check of BioChem.Examples.CaOscillations.Endoplasmic_Reticulum completed successfully.
 // Class BioChem.Examples.CaOscillations.Endoplasmic_Reticulum has 37 equation(s) and 38 variable(s).
 // 26 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel has 687 equation(s) and 687 variable(s).
-// 530 of these are trivial equation(s)."
-// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2450:11-2450:101:writable] Warning: Connecting two signal sources while connecting Ra_calc.n1.V to Ra_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2666:11-2666:131:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idm_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2667:11-2667:130:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idf_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2668:11-2668:96:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to G_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2640:11-2640:105:writable] Warning: connect(G_p_connector, G_p_connector) connects the same connector instance! The connect equation will be ignored.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2560:11-2560:127:writable] Warning: Connecting two signal sources while connecting G_p.n1.V to E_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2561:11-2561:95:writable] Warning: Connecting two signal sources while connecting G_p.n1.V to G_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2562:11-2562:120:writable] Warning: Connecting two signal sources while connecting G_p_signal.n1.V to G_p_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2563:11-2563:110:writable] Warning: Connecting two signal sources while connecting G_signal.n1.V to G_signal_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2525:11-2525:109:writable] Warning: Connecting two signal sources while connecting I_signal.n1.V to I_signal_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2526:11-2526:135:writable] Warning: Connecting two signal sources while connecting I_p_signal.n1.V to I_p_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2527:11-2527:96:writable] Warning: Connecting two signal sources while connecting I_p.n1.V to I_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2584:11-2584:138:writable] Warning: Connecting two signal sources while connecting I_connector.V to I_l.n1.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2621:11-2621:103:writable] Warning: Connecting two signal sources while connecting EGP_calc.n1.V to EGP_connector.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2499:11-2499:108:writable] Warning: Connecting two signal sources while connecting I_po_connector.V to I_po_signal.n1.V.
-// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2502:11-2502:132:writable] Warning: Connecting two signal sources while connecting S_calc.n1.V to S_connector.V.
+// 532 of these are trivial equation(s)."
+// "[BioChem 1.1.3/Examples/GlucoseInsulinModel.mo:235:9-235:123:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(BetaCell.i_po) = if der(BetaCell.g_p) > 0.0 and BetaCell.g > 95.0 then (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.K * der(BetaCell.g) + BetaCell.S_b else (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.S_b
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"if der(BetaCell.g_p) > 0.0 and BetaCell.g > 95.0 then (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.K * der(BetaCell.g) + BetaCell.S_b else (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.S_b\" has unit \"mol/l\"
+// - sub-expression \"der(BetaCell.i_po)\" has unit \"kmol.m-3.s-1\"
+// [BioChem 1.1.3/Examples/GlucoseInsulinModel.mo:235:9-235:123:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(BetaCell.i_po) = if der(BetaCell.g_p) > 0.0 and BetaCell.g > 95.0 then (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.K * der(BetaCell.g) + BetaCell.S_b else (-BetaCell.gamma * BetaCell.i_po) + BetaCell.y + BetaCell.S_b
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"(-BetaCell.gamma * BetaCell.i_po) + BetaCell.y\" has unit \"mol/l\"
+// - sub-expression \"BetaCell.K * der(BetaCell.g)\" has unit \"kmol.m-3.s-1\"
 // "
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction has 9 equation(s) and 9 variable(s).
@@ -2096,33 +2080,5 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptakeReaction completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptakeReaction has 12 equation(s) and 12 variable(s).
 // 6 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MassAction.UniUni completed successfully.
-// Class BioChem.Examples.MassAction.UniUni has 745 equation(s) and 745 variable(s).
-// 609 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MassAction.UniBi completed successfully.
-// Class BioChem.Examples.MassAction.UniBi has 945 equation(s) and 945 variable(s).
-// 769 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MultiCompartments.GlucoseMetabolism completed successfully.
-// Class BioChem.Examples.MultiCompartments.GlucoseMetabolism has 385 equation(s) and 385 variable(s).
-// 278 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MultiCompartments.BigCompartmentReversible completed successfully.
-// Class BioChem.Examples.MultiCompartments.BigCompartmentReversible has 26 equation(s) and 26 variable(s).
-// 20 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MultiCompartments.BigCompartmentIrreversible completed successfully.
-// Class BioChem.Examples.MultiCompartments.BigCompartmentIrreversible has 26 equation(s) and 26 variable(s).
-// 20 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MultiCompartments.Utilities.TCA completed successfully.
-// Class BioChem.Examples.MultiCompartments.Utilities.TCA has 206 equation(s) and 206 variable(s).
-// 155 of these are trivial equation(s)."
-// ""
-// "Check of BioChem.Examples.MultiCompartments.Utilities.SmallCompartment completed successfully.
-// Class BioChem.Examples.MultiCompartments.Utilities.SmallCompartment has 10 equation(s) and 10 variable(s).
-// 8 of these are trivial equation(s)."
 // ""
 // endResult

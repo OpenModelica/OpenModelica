@@ -10,6 +10,7 @@ Edit `~/.config/openmodelica/omedit.ini` and add the following section:
 [modelContextProtocol]
 enableAdminTools=true
 enabled=true
+hostAddress=localhost
 port=3000
 ```
 

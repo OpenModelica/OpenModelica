@@ -12,5 +12,5 @@ when c then
     nextInterval = previous(nextInterval) + 1;
     y = previous(y) + 1;
 end when;
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end ClockInterval;

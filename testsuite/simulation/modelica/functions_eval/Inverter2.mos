@@ -5,7 +5,7 @@
 //
 
 
-loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 loadFile("Inverter2.mo"); getErrorString();
 simulate(Inverter2, stopTime=1e-11,numberOfIntervals=2000);getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Inverter2_res.mat",
@@ -23,12 +23,12 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Inverter2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 2000, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Inverter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-11, numberOfIntervals = 2000, tolerance = 1e-7, method = 'dassl', fileNamePrefix = 'Inverter2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1+maint.om/Electrical/Spice3.mo:4630:5-4631:56:writable] Warning: Parameter mn.IC has no value, and is fixed during initialization (fixed=true), using available start value (start=-1e+40) as default value.
+// "[Modelica 4.1.0+maint.om/Electrical/Spice3.mo:4465:5-4466:56:writable] Warning: Parameter mn.IC has no value, and is fixed during initialization (fixed=true), using available start value (start=-1e40) as default value.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

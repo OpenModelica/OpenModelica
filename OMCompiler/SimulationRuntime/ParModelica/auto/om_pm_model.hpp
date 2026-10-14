@@ -85,7 +85,7 @@ std::unique_ptr<TaskGraphScheduler> make_parmod_scheduler(TaskSystem_v2<Equation
 
 
 class OMModel
-  : boost::noncopyable {
+  : utility::noncopyable {
     typedef Equation::FunctionType FunctionType;
 
     // typedef LevelSchedulerThreadAware<Equation> SchedulerT;

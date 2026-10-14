@@ -2,7 +2,7 @@
 // cflags: -d=-newInst
 
 loadFile("TestComplexSum.mo");getErrorString();
-loadModel(Complex,{"3.2.2"});getErrorString();
+loadModel(Complex,{"4.1.0"});getErrorString();
 simulate(TestComplexSum1,simflags="-output sum1.re,sum1.im,sum2.re,sum2.im");getErrorString();
 
 // Result:

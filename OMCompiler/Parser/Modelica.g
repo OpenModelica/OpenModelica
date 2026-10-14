@@ -206,6 +206,16 @@ goto rule ## func ## Ex; }}
     #include "meta/meta_modelica.h"
     #define ADD_METARECORD_DEFINITIONS static
     #include "../Compiler/OpenModelicaBootstrappingHeader.h"
+    #if !defined(Absyn__UNITFUL_5fLITERAL)
+    /* Until the bootstrapping header has Absyn.Exp.UNITFUL_LITERAL */
+    static const char* Absyn_Exp_UNITFUL__LITERAL__desc__fields[2] = {"value","unit"};
+    static struct record_description Absyn_Exp_UNITFUL__LITERAL__desc = {
+      "Absyn_Exp_UNITFUL__LITERAL",
+      "Absyn.Exp.UNITFUL_LITERAL",
+      Absyn_Exp_UNITFUL__LITERAL__desc__fields
+    };
+    #define Absyn__UNITFUL_5fLITERAL(value,unit) (mmc_mk_box3(30,&Absyn_Exp_UNITFUL__LITERAL__desc,value,unit))
+    #endif
     parser_members members;
     void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
   #else /* Julia */
@@ -835,9 +845,13 @@ modification returns [void* ast]
 @init { OM_PUSHZ2(e, cm); eq = 0; } :
   ( cm=class_modification ( eq=EQUALS e=modification_expression )?
   | eq=EQUALS e=modification_expression
-  | eq=ASSIGN e=modification_expression {c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
+  | eq=ASSIGN e=modification_expression
+    {
+      modelicaParserAssert(ModelicaParser_langStd < 37 || !ModelicaParser_strict, ":= in modifiers is not allowed since Modelica 3.7", modification, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
+      c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
-              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);}
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+    }
   )
     {
       $ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,PARSER_INFO($eq)) : Absyn__NOMOD);
@@ -1226,7 +1240,7 @@ assign_clause_a returns [void* ast]
           modelicaParserAssert(eq != 0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
               assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
-          if (looks_like_der_cr && !metamodelica_enabled()) {
+          if (looks_like_der_cr && !metamodelica_enabled() && ModelicaParser_langStd < 37) {
             c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.",
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
@@ -1729,7 +1743,69 @@ factor returns [void* ast]
 
 primary returns [void* ast]
 @declarations { int tupleExpressionIsTuple = 0; }
-@init { v = 0; for_or_el.isFor = 0; OM_PUSHZ4(ptr.ast, el, subs, for_or_el.ast) } :
+@init { v = 0; u = 0; id = 0; for_or_el.isFor = 0; OM_PUSHZ5(ptr.ast, el, subs, for_or_el.ast, n.ast) } :
+  ( n=unsigned_number { $ast = n.ast; }
+    ( {LA(1) == IDENT && LT(1)->getText(LT(1))->chars[0] == '\''}?=> u=IDENT
+      {
+        char *unit = strdup((char*)u->getText(u)->chars + 1);
+        unit[strlen(unit)-1] = '\0';
+        $ast = Absyn__UNITFUL_5fLITERAL($ast, mmc_mk_scon(unit));
+        free(unit);
+      }
+    )?
+  | v=STRING           { $ast = Absyn__STRING(mmc_mk_scon((char*)$v.text->chars)); }
+  | T_FALSE            { $ast = Absyn__BOOL(MMC_FALSE); }
+  | T_TRUE             { $ast = Absyn__BOOL(MMC_TRUE); }
+  | T_TIME             { $ast = Absyn__CREF(Absyn__CREF_5fIDENT(mmc_mk_scon("time"), mmc_mk_nil())); }
+  | ptr=component_reference__function_call { $ast = ptr.ast; }
+  | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el,mmc_mk_nil()); }
+  | PURE el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("pure"), mmc_mk_nil()),el,mmc_mk_nil()); }
+  | LPAR el=output_expression_list[&tupleExpressionIsTuple] ( subs=array_subscripts | DOT id=IDENT )?
+    {
+      if (id) {
+        if (tupleExpressionIsTuple) {
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Tuple expression can not be used with the dot operator.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        } else {
+          $ast = Absyn__DOT(el, Absyn__CREF(Absyn__CREF_5fIDENT(token_to_scon(id), mmc_mk_nil())));
+        }
+      } else if (subs) {
+        if (tupleExpressionIsTuple) {
+          ModelicaParser_lexerError = ANTLR3_TRUE;
+          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Tuple expression can not be subscripted.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
+        } else {
+          $ast = Absyn__SUBSCRIPTED_5fEXP(el, subs);
+        }
+      } else {
+        $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
+        Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
+      }
+    }
+  | LBRACK el=matrix_expression_list RBRACK { $ast = Absyn__MATRIX(el); }
+  | LBRACE for_or_el=for_or_expression_list RBRACE
+    {
+      if (!for_or_el.isFor) {
+        modelicaParserAssert(
+          isNotNil(for_or_el.ast) ||
+          metamodelica_enabled() ||
+          parse_expression_enabled(), /* allow {} in mos scripts */
+          "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        $ast = Absyn__ARRAY(for_or_el.ast);
+      } else {
+        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon(ARRAY_REDUCTION_NAME), mmc_mk_nil()),for_or_el.ast,mmc_mk_nil());
+      }
+    }
+  | T_END { $ast = Absyn__END; }
+  )
+  ;
+  finally{ OM_POP(5); }
+
+unsigned_number returns [void* ast]
+@init { v = 0; } :
   ( v=UNSIGNED_INTEGER
     {
       char* chars = (char*)$v.text->chars;
@@ -1758,7 +1834,7 @@ primary returns [void* ast]
         double d = 0;
         errno = 0;
         d = strtod(chars, &endptr);
-        modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to be represented by a double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
+        modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to be represented by a double on this machine", unsigned_number, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
         c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
@@ -1812,46 +1888,8 @@ primary returns [void* ast]
         $ast = Absyn__REAL(mmc_mk_scon(chars));
       }
     }
-  | v=STRING           { $ast = Absyn__STRING(mmc_mk_scon((char*)$v.text->chars)); }
-  | T_FALSE            { $ast = Absyn__BOOL(MMC_FALSE); }
-  | T_TRUE             { $ast = Absyn__BOOL(MMC_TRUE); }
-  | ptr=component_reference__function_call { $ast = ptr.ast; }
-  | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el,mmc_mk_nil()); }
-  | PURE el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("pure"), mmc_mk_nil()),el,mmc_mk_nil()); }
-  | LPAR el=output_expression_list[&tupleExpressionIsTuple] subs=array_subscripts?
-    {
-      if (subs) {
-        if (tupleExpressionIsTuple) {
-          ModelicaParser_lexerError = ANTLR3_TRUE;
-          c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Tuple expression can not be subscripted.",
-              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
-              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-        } else {
-          $ast = Absyn__SUBSCRIPTED_5fEXP(el, subs);
-        }
-      } else {
-        $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) :
-        Absyn__TUPLE(mmc_mk_cons(el, mmc_mk_nil()));
-      }
-    }
-  | LBRACK el=matrix_expression_list RBRACK { $ast = Absyn__MATRIX(el); }
-  | LBRACE for_or_el=for_or_expression_list RBRACE
-    {
-      if (!for_or_el.isFor) {
-        modelicaParserAssert(
-          isNotNil(for_or_el.ast) ||
-          metamodelica_enabled() ||
-          parse_expression_enabled(), /* allow {} in mos scripts */
-          "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
-        $ast = Absyn__ARRAY(for_or_el.ast);
-      } else {
-        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon(ARRAY_REDUCTION_NAME), mmc_mk_nil()),for_or_el.ast,mmc_mk_nil());
-      }
-    }
-  | T_END { $ast = Absyn__END; }
   )
   ;
-  finally{ OM_POP(4); }
 
 matrix_expression_list returns [void* ast]
 @init{ OM_PUSHZ2(e1, e2); } :

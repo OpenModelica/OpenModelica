@@ -7,8 +7,8 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadModel(ThermoSysPro); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadModel(ThermoSysPro, {"4.2.0"}); getErrorString();
 
 simulate(ThermoSysPro.Examples.SimpleExamples.TestFlueGasesVolumes, stopTime=200); getErrorString();
 
@@ -33,48 +33,48 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:18:3-19:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Sink.mo:15:3-17:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeDTh.mo:54:3-56:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeDTh.mo:57:3-58:83:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeDTh.mo:59:3-61:16:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeDTh.mo:62:3-63:83:writable] Warning: Connector Cs3 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Machines/StaticFan.mo:60:3-62:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Machines/StaticFan.mo:63:3-65:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:18:3-19:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Sink.mo:15:3-17:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeATh.mo:54:3-56:16:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeATh.mo:57:3-59:16:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeATh.mo:60:3-61:83:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeATh.mo:64:3-65:83:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Machines/StaticFan.mo:60:3-62:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Machines/StaticFan.mo:63:3-65:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:18:3-19:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Sink.mo:15:3-17:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeCTh.mo:54:3-56:16:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeCTh.mo:57:3-58:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeCTh.mo:61:3-62:83:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Volumes/VolumeCTh.mo:63:3-65:16:writable] Warning: Connector Ce3 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Machines/StaticFan.mo:60:3-62:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Machines/StaticFan.mo:63:3-65:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// "[ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:15:3-16:78:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/Sink.mo:12:3-13:80:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeDTh.mo:36:3-37:80:writable] Warning: Connector Ce is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeDTh.mo:38:3-39:78:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeDTh.mo:40:3-41:80:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeDTh.mo:42:3-43:78:writable] Warning: Connector Cs3 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Machines/StaticFan.mo:32:3-33:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Machines/StaticFan.mo:34:3-35:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:15:3-16:78:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/Sink.mo:12:3-13:80:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeATh.mo:36:3-37:80:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeATh.mo:38:3-39:80:writable] Warning: Connector Cs2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeATh.mo:40:3-41:78:writable] Warning: Connector Cs1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeATh.mo:44:3-45:78:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Machines/StaticFan.mo:32:3-33:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Machines/StaticFan.mo:34:3-35:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:15:3-16:78:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/BoundaryConditions/Sink.mo:12:3-13:80:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeCTh.mo:36:3-37:80:writable] Warning: Connector Ce1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeCTh.mo:38:3-39:78:writable] Warning: Connector Cs is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeCTh.mo:42:3-43:78:writable] Warning: Connector Ce2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Volumes/VolumeCTh.mo:44:3-45:80:writable] Warning: Connector Ce3 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Machines/StaticFan.mo:32:3-33:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/Machines/StaticFan.mo:34:3-35:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:11:3-12:80:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 4.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:13:3-14:78:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}

@@ -15,23 +15,38 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Digital.Examples.Adder4);
 compareVars :=
 {
-   "a1.y",
-   "b1.y",
-   "a2.y",
-   "b2.y",
-   "a3.y",
-   "b3.y",
-   "a4.y",
-   "b4.y",
-   "Set.y",
-   "Adder1.s",
-   "Adder1.c_out",
-   "Adder2.s",
-   "Adder2.c_out",
-   "Adder3.s",
-   "Adder3.c_out",
-   "Adder4.s",
-   "Adder4.c_out"
+   "Adder1.Adder1.AND.G2.x",
+   "Adder1.Adder1.AND.G2.y",
+   "Adder1.Adder1.XOR.G2.x",
+   "Adder1.Adder1.XOR.G2.y",
+   "Adder1.Adder2.AND.G2.x",
+   "Adder1.Adder2.AND.G2.y",
+   "Adder1.Adder2.XOR.G2.x",
+   "Adder1.Adder2.XOR.G2.y",
+   "Adder2.Adder1.AND.G2.x",
+   "Adder2.Adder1.AND.G2.y",
+   "Adder2.Adder1.XOR.G2.x",
+   "Adder2.Adder1.XOR.G2.y",
+   "Adder2.Adder2.AND.G2.x",
+   "Adder2.Adder2.AND.G2.y",
+   "Adder2.Adder2.XOR.G2.x",
+   "Adder2.Adder2.XOR.G2.y",
+   "Adder3.Adder1.AND.G2.x",
+   "Adder3.Adder1.AND.G2.y",
+   "Adder3.Adder1.XOR.G2.x",
+   "Adder3.Adder1.XOR.G2.y",
+   "Adder3.Adder2.AND.G2.x",
+   "Adder3.Adder2.AND.G2.y",
+   "Adder3.Adder2.XOR.G2.x",
+   "Adder3.Adder2.XOR.G2.y",
+   "Adder4.Adder1.AND.G2.x",
+   "Adder4.Adder1.AND.G2.y",
+   "Adder4.Adder1.XOR.G2.x",
+   "Adder4.Adder1.XOR.G2.y",
+   "Adder4.Adder2.AND.G2.x",
+   "Adder4.Adder2.AND.G2.y",
+   "Adder4.Adder2.XOR.G2.x",
+   "Adder4.Adder2.XOR.G2.y"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -45,9 +60,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Digital.Examples.Adder4
-// {"a1.y", "b1.y", "a2.y", "b2.y", "a3.y", "b3.y", "a4.y", "b4.y", "Set.y", "Adder1.s", "Adder1.c_out", "Adder2.s", "Adder2.c_out", "Adder3.s", "Adder3.c_out", "Adder4.s", "Adder4.c_out"}
+// {"Adder1.Adder1.AND.G2.x", "Adder1.Adder1.AND.G2.y", "Adder1.Adder1.XOR.G2.x", "Adder1.Adder1.XOR.G2.y", "Adder1.Adder2.AND.G2.x", "Adder1.Adder2.AND.G2.y", "Adder1.Adder2.XOR.G2.x", "Adder1.Adder2.XOR.G2.y", "Adder2.Adder1.AND.G2.x", "Adder2.Adder1.AND.G2.y", "Adder2.Adder1.XOR.G2.x", "Adder2.Adder1.XOR.G2.y", "Adder2.Adder2.AND.G2.x", "Adder2.Adder2.AND.G2.y", "Adder2.Adder2.XOR.G2.x", "Adder2.Adder2.XOR.G2.y", "Adder3.Adder1.AND.G2.x", "Adder3.Adder1.AND.G2.y", "Adder3.Adder1.XOR.G2.x", "Adder3.Adder1.XOR.G2.y", "Adder3.Adder2.AND.G2.x", "Adder3.Adder2.AND.G2.y", "Adder3.Adder2.XOR.G2.x", "Adder3.Adder2.XOR.G2.y", "Adder4.Adder1.AND.G2.x", "Adder4.Adder1.AND.G2.y", "Adder4.Adder1.XOR.G2.x", "Adder4.Adder1.XOR.G2.y", "Adder4.Adder2.AND.G2.x", "Adder4.Adder2.AND.G2.y", "Adder4.Adder2.XOR.G2.x", "Adder4.Adder2.XOR.G2.y"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.Adder4', options = '', outputFormat = 'mat', variableFilter = 'time|a1.y|b1.y|a2.y|b2.y|a3.y|b3.y|a4.y|b4.y|Set.y|Adder1.s|Adder1.c_out|Adder2.s|Adder2.c_out|Adder3.s|Adder3.c_out|Adder4.s|Adder4.c_out', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.Adder4', options = '', outputFormat = 'mat', variableFilter = 'time|Adder1.Adder1.AND.G2.x|Adder1.Adder1.AND.G2.y|Adder1.Adder1.XOR.G2.x|Adder1.Adder1.XOR.G2.y|Adder1.Adder2.AND.G2.x|Adder1.Adder2.AND.G2.y|Adder1.Adder2.XOR.G2.x|Adder1.Adder2.XOR.G2.y|Adder2.Adder1.AND.G2.x|Adder2.Adder1.AND.G2.y|Adder2.Adder1.XOR.G2.x|Adder2.Adder1.XOR.G2.y|Adder2.Adder2.AND.G2.x|Adder2.Adder2.AND.G2.y|Adder2.Adder2.XOR.G2.x|Adder2.Adder2.XOR.G2.y|Adder3.Adder1.AND.G2.x|Adder3.Adder1.AND.G2.y|Adder3.Adder1.XOR.G2.x|Adder3.Adder1.XOR.G2.y|Adder3.Adder2.AND.G2.x|Adder3.Adder2.AND.G2.y|Adder3.Adder2.XOR.G2.x|Adder3.Adder2.XOR.G2.y|Adder4.Adder1.AND.G2.x|Adder4.Adder1.AND.G2.y|Adder4.Adder1.XOR.G2.x|Adder4.Adder1.XOR.G2.y|Adder4.Adder2.AND.G2.x|Adder4.Adder2.AND.G2.y|Adder4.Adder2.XOR.G2.x|Adder4.Adder2.XOR.G2.y', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Digital.Examples.Adder4_res.mat
 // Files Equal!
 // "true

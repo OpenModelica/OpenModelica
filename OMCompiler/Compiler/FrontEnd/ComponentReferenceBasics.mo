@@ -778,6 +778,8 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
 
+    case DAE.CREF_IDENT(subscriptLst = {}) then inComponentRef;
+
     case DAE.CREF_IDENT(ident = id,identType = t2)
       then
         makeCrefIdent(id,t2,{});
@@ -786,7 +788,7 @@ algorithm
       algorithm
         cr_1 := crefStripLastSubs(cr);
       then
-        makeCrefQual(id,t2,s,cr_1);
+        if referenceEq(cr, cr_1) then inComponentRef else makeCrefQual(id,t2,s,cr_1);
   end match;
 end crefStripLastSubs;
 
@@ -902,6 +904,19 @@ algorithm
 end printComponentRefListStr;
 
 public constant Integer crefHashSeed = 5381;
+
+public function crefHasNoSubscripts
+  "A chain of qualifiers and an identifier none of which has subscripts, so a
+   traversal of the expressions in it has nothing to visit."
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match cr
+    case DAE.CREF_QUAL(subscriptLst = {}) then crefHasNoSubscripts(cr.componentRef);
+    case DAE.CREF_IDENT(subscriptLst = {}) then true;
+    else false;
+  end match;
+end crefHasNoSubscripts;
 
 public function hashComponentRef
   "djb2 continued over the qualifiers and subscripts in order."

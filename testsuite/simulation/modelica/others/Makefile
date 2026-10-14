@@ -3,7 +3,6 @@ TEST = ../../../rtest -v
 TESTFILES = \
 world.mos \
 noemit.mos \
-EngineV6_evalParams.mos \
 Bug1687.mos \
 Bug1728.mos \
 Bug1987.mos \
@@ -11,6 +10,8 @@ Bug2432.mos \
 Bug2536.mos \
 Bug2633.mos \
 Bug2704.mos \
+FuncViaCompArray.mos \
+FuncViaCompArrayRecord.mos \
 Bug2788.mos \
 Bug2833.mos \
 Bug3023.mos \
@@ -91,6 +92,7 @@ unitConvertTests.mos
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES= \
+EngineV6_evalParams.mos \
 EngineV6_output.mos \
 MoonAndEarth.mos \
 pendulum4.mos \

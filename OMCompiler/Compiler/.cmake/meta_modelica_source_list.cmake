@@ -389,6 +389,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPrefixes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRangeIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRecord.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFResizableConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRestriction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFScalarize.mo
@@ -460,9 +461,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/CodegenESP32.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppCommon.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCpp.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcom.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenCppHpcomOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenCppInit.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMU1.mo
@@ -471,13 +470,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCommon.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUModelDescription.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCpp.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppOMSI.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSI_common.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSIC.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSIC_Equations.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenOMSICpp.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcom.mo
-    ${OMC_GENERATED_MO_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenJS.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenMidToC.mo
     ${OMC_GENERATED_MO_DIR}/Template/CodegenUtilSimulation.mo

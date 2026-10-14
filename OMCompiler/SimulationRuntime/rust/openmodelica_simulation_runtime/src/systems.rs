@@ -31,6 +31,7 @@ struct LapackData {
     /// The previous iterate, for a `method == 1` (torn) system.
     work: Vec<f64>,
     b: Vec<f64>,
+    jac: Vec<f64>,
 }
 
 /// C's `DATA_KLU`: the compressed matrix the generated `setA` fills through
@@ -55,9 +56,33 @@ fn klu_data(ls: &LINEAR_SYSTEM_DATA) -> *mut KluData {
     ls.solverData[0] as *mut KluData
 }
 
+#[cfg(feature = "fmi")]
 /// C's `initializeLinearSystems`: allocate each system's `A`/`b`/attribute
 /// arrays, install the element setters the generated `setA`/`setb` call, and let
 /// the model fill in its static data.
+/// What [`initialize_linear_systems`] allocated per system.
+pub fn free_linear_systems(data: *mut DATA) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    if si.linearSystemData.is_null() {
+        return;
+    }
+    for i in 0..md.nLinearSystems.max(0) as usize {
+        let ls = unsafe { &mut *si.linearSystemData.add(i) };
+        for p in [&mut ls.b, &mut ls.nominal, &mut ls.min, &mut ls.max, &mut ls.A] {
+            unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+        }
+        let scratch = core::mem::replace(&mut ls.solverData[0], core::ptr::null_mut());
+        if !scratch.is_null() {
+            if ls.useSparseSolver != 0 {
+                drop(unsafe { Box::from_raw(scratch as *mut KluData) });
+            } else {
+                drop(unsafe { Box::from_raw(scratch as *mut LapackData) });
+            }
+        }
+    }
+}
+
 pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t) {
     let md = unsafe { &*(*data).modelData };
     let si = unsafe { &mut *(*data).simulationInfo };
@@ -148,6 +173,7 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
                 lu: vec![0.0; (size * size).max(1)],
                 work: vec![0.0; size.max(1)],
                 b: vec![0.0; size.max(1)],
+                jac: vec![0.0; size * size],
             });
             ls.solverData[0] = Box::into_raw(scratch) as *mut c_void;
         }
@@ -156,8 +182,18 @@ pub fn initialize_linear_systems(data: *mut DATA, thread_data: *mut threadData_t
             unsafe { f(data, thread_data, ls, 1) };
         }
     }
+    unsafe {
+        omc_ls_inline = !(omclog::active(omclog::LS)
+            || omclog::active(omclog::LS_V)
+            || openmodelica_solvers::sysstat::enabled()) as c_int;
+    }
     omclog::close(omclog::LS);
 }
+
+/// `solve_linear_system_small` in `linearSystem.h` solves a torn system of size 1
+/// itself unless this is 0: the log and the per-system statistics need this path.
+#[unsafe(no_mangle)]
+pub static mut omc_ls_inline: c_int = 0;
 
 /// `linearSystemData->A[row + col*size] = value`.
 unsafe extern "C" fn set_a_element(
@@ -503,6 +539,29 @@ fn solve_klu(
         residual(data, thread_data, ls, d.work.as_ptr(), b);
     }
     sysstat::mark_assembly_done();
+    if omclog::active(omclog::LS_V) {
+        omclog::info(omclog::LS_V, true, "Old solution x:");
+        log_vars(data, ls, aux_x, 6);
+        omclog::close(omclog::LS_V);
+        omclog::info!(omclog::LS_V, true, "Matrix A n_rows = {size}");
+        for i in 0..size {
+            let (lo, hi) = (d.ap[i], d.ap[i + 1]);
+            omclog::info!(omclog::LS_V, false, "{i}. Ap => {lo} -> {hi}");
+            for k in lo as usize..hi as usize {
+                omclog::info!(
+                    omclog::LS_V,
+                    false,
+                    "A[{i},{}] = {}",
+                    d.ai[k],
+                    omclog::f(d.ax[k], 0, 6)
+                );
+            }
+        }
+        omclog::close(omclog::LS_V);
+        for (i, v) in b.iter().enumerate() {
+            omclog::info!(omclog::LS_V, false, "b[{i}] = {}", omclog::e(*v, 0, 6));
+        }
+    }
 
     if d.fact.is_none() {
         d.fact = klu::Factorization::analyze(size, &mut d.ap, &mut d.ai);
@@ -525,12 +584,15 @@ fn solve_klu(
         return false;
     }
 
+    let mut ok = true;
+    let mut residual_norm = None;
     if ls.method == 1 {
         for i in 0..size {
             unsafe { *aux_x.add(i) += b[i] };
         }
         residual(data, thread_data, ls, aux_x, &mut d.work);
         let norm = d.work.iter().map(|v| v * v).sum::<f64>().sqrt();
+        residual_norm = Some(norm);
         if norm.is_nan() || norm > 1e-4 {
             ls.numberOfFailures += 1;
             omclog::warning_with_limit!(
@@ -539,12 +601,15 @@ fn solve_klu(
                 si.maxWarnDisplays as u64,
                 "Failed to solve linear system of equations (no. {eq}) at time {time:.6}. Residual norm is {norm:.15}.",
             );
-            return false;
+            ok = false;
         }
     } else {
         unsafe { core::ptr::copy_nonoverlapping(b.as_ptr(), aux_x, size) };
     }
-    true
+    if omclog::active(omclog::LS_V) {
+        log_solution(data, ls, residual_norm, aux_x, 6);
+    }
+    ok
 }
 
 /// C's `solveTotalPivot` (`linearSolverTotalPivot.c`): the same `A`/`b`
@@ -568,6 +633,10 @@ fn solve_total_pivot(
             "Start solving Linear System {eq} (size {size}) at time {} with Total Pivot Solver",
             openmodelica_sim_meta::driver::format_g(time, 6),
         );
+    }
+    if omclog::active(omclog::LS_V) {
+        log_vector_tp("SCALING", unsafe { core::slice::from_raw_parts(ls.nominal, size) });
+        log_vector_tp("Old VALUES", unsafe { core::slice::from_raw_parts(aux_x, size) });
     }
     let mut a = vec![0.0f64; (size * size).max(1)];
     let mut b = vec![0.0f64; size.max(1)];
@@ -601,6 +670,17 @@ fn solve_total_pivot(
         }
     }
     sysstat::mark_assembly_done();
+    if omclog::active(omclog::LS_V) {
+        let ab: Vec<f64> =
+            a[..size * size].iter().copied().chain(b[..size].iter().map(|v| -v)).collect();
+        omclog::info!(omclog::LS_V, true, "LGS: matrix Ab [{size}x{}-dim]", size + 1);
+        for i in 0..size {
+            let row: String =
+                (0..=size).map(|j| " ".to_string() + &omclog::g(ab[i + j * size], 12, 4)).collect();
+            omclog::info(omclog::LS_V, false, &row);
+        }
+        omclog::close(omclog::LS_V);
+    }
 
     if !openmodelica_nls::total_pivot_solve(&a, &mut b, size) {
         omclog::warning!(
@@ -610,6 +690,10 @@ fn solve_total_pivot(
         );
         return false;
     }
+    if omclog::active(omclog::LS_V) {
+        log_vector_tp("SOLUTION:", &b[..size]);
+    }
+    let mut residual_norm = None;
     if ls.method == 1 {
         // The step is added to the old solution, then the inner equations run at
         // the new point.
@@ -618,10 +702,14 @@ fn solve_total_pivot(
         }
         let mut res = vec![0.0f64; size.max(1)];
         residual(data, thread_data, ls, aux_x, &mut res);
+        residual_norm = Some(res[..size].iter().map(|v| v * v).sum::<f64>().sqrt());
     } else {
         for i in 0..size {
             unsafe { *aux_x.add(i) = b[i] };
         }
+    }
+    if omclog::active(omclog::LS_V) {
+        log_solution(data, ls, residual_norm, aux_x, 6);
     }
     true
 }
@@ -641,6 +729,78 @@ fn residual(
     let mut user =
         RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
     unsafe { f(&mut user, x, out.as_mut_ptr(), &flag) };
+}
+
+/// C's `_omc_printVector`.
+fn log_vector(stream: omclog::Stream, name: &str, v: &[f64]) {
+    omclog::info(stream, true, name);
+    for (i, x) in v.iter().enumerate() {
+        omclog::info!(stream, false, "[{:2}] {}", i + 1, omclog::g(*x, 20, 12));
+    }
+    omclog::close(stream);
+}
+
+/// C's `debugVectorDoubleLS`.
+fn log_vector_tp(name: &str, v: &[f64]) {
+    omclog::info!(omclog::LS_V, true, "{name} [{}-dim]", v.len());
+    let line: String = v
+        .iter()
+        .map(|x| match *x {
+            x if x < -1e300 => " -INF".to_string(),
+            x if x > 1e300 => " +INF".to_string(),
+            x => " ".to_string() + &omclog::g(x, 16, 8),
+        })
+        .collect();
+    omclog::info(omclog::LS_V, false, &line);
+    omclog::close(omclog::LS_V);
+}
+
+/// C's `_omc_printMatrix` of a column-major `n`x`n` matrix.
+fn log_matrix(stream: omclog::Stream, name: &str, a: &[f64], n: usize) {
+    omclog::info(stream, true, name);
+    for i in 0..n {
+        let row: String = (0..n).map(|j| omclog::g(a[i + j * n], 10, 6) + " ").collect();
+        omclog::info(stream, false, &row);
+    }
+    omclog::close(stream);
+}
+
+/// `[i] name = x[i]` for each iteration variable, at `%.<prec>g`.
+fn log_vars(data: *mut DATA, ls: &LINEAR_SYSTEM_DATA, x: *const f64, prec: i32) {
+    let vars = crate::info_json::equation_vars(data, ls.equationIndex as u32);
+    for i in 0..ls.size.max(0) as usize {
+        let name = vars.get(i).map_or("", String::as_str);
+        omclog::info!(
+            omclog::LS_V,
+            false,
+            "[{}] {name} = {}",
+            i + 1,
+            omclog::g(unsafe { *x.add(i) }, 0, prec)
+        );
+    }
+}
+
+/// The solution block the C solvers end with on LOG_LS_V.
+fn log_solution(
+    data: *mut DATA,
+    ls: &LINEAR_SYSTEM_DATA,
+    residual_norm: Option<f64>,
+    x: *const f64,
+    prec: i32,
+) {
+    match residual_norm {
+        Some(n) => omclog::info!(
+            omclog::LS_V,
+            true,
+            "Residual Norm {} of solution x:",
+            omclog::g(n, 0, 15)
+        ),
+        None => omclog::info(omclog::LS_V, true, "Solution x:"),
+    }
+    let num_var = crate::info_json::equation_vars(data, ls.equationIndex as u32).len();
+    omclog::info!(omclog::LS_V, false, "System {} numVars {num_var}.", ls.equationIndex);
+    log_vars(data, ls, x, prec);
+    omclog::close(omclog::LS_V);
 }
 
 fn solve_lapack(
@@ -670,10 +830,6 @@ fn solve_lapack(
     // C ends `jacobianTime` where the generated `setA`/`setb` are done.
     sysstat::mark_assembly_done();
     let sd: &mut LapackData = unsafe { &mut *solver_data(ls) };
-    sd.b.resize(size.max(1), 0.0);
-    sd.work.resize(size.max(1), 0.0);
-    sd.lu.resize((size * size).max(1), 0.0);
-    sd.ipiv.resize(size.max(1), 0);
 
     if ls.method == 0 {
         if !reuse {
@@ -694,14 +850,13 @@ fn solve_lapack(
             if ls.jacobianIndex == -1 {
                 crate::throw(thread_data, "jacobian function pointer is invalid");
             }
-            let mut jac = vec![0.0f64; size * size];
             if let Err(e) =
-                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut jac, true)
+                eval_jacobian(data, thread_data, ls.jacobian, ls.parentJacobian, &mut sd.jac, true)
             {
                 lapack_err = Some(e);
             }
             // C negates the Jacobian into A (`getAnalyticalJacobianLapack`).
-            for (dst, src) in sd.lu.iter_mut().zip(&jac) {
+            for (dst, src) in sd.lu.iter_mut().zip(&sd.jac) {
                 *dst = -*src;
             }
         }
@@ -721,15 +876,19 @@ fn solve_lapack(
         omclog::warning(omclog::STDOUT, false, e);
         return false;
     }
+    if omclog::active(omclog::LS_V) {
+        log_vector(omclog::LS_V, "Vector old x", unsafe {
+            core::slice::from_raw_parts(aux_x, size)
+        });
+        log_matrix(omclog::LS_V, "Matrix A", &sd.lu, size);
+        log_vector(omclog::LS_V, "Vector b", &sd.b);
+    }
 
     let info = if reuse {
         openmodelica_lapack::lu::dgetrs("N", size, 1, &sd.lu, size, &sd.ipiv, &mut sd.b, size);
         0
     } else {
-        let mut lu = sd.lu.clone();
-        let info = openmodelica_lapack::lu::dgesv(size, 1, &mut lu, size, &mut sd.ipiv, &mut sd.b, size);
-        sd.lu = lu;
-        info
+        openmodelica_lapack::lu::dgesv(size, 1, &mut sd.lu, size, &mut sd.ipiv, &mut sd.b, size)
     };
     if info != 0 {
         ls.numberOfFailures += 1;
@@ -742,24 +901,30 @@ fn solve_lapack(
             info + 1,
             info + 1,
         );
+        if omclog::active(omclog::LS) {
+            log_matrix(omclog::LS, "Matrix U", &sd.lu, size);
+            log_vector(omclog::LS, "Output vector x", &sd.b);
+        }
         return false;
     }
 
+    let mut ok = true;
+    let mut residual_norm = None;
     if ls.method == 1 {
         // x = xold + xnew, then re-run the inner equations at the new point.
         for i in 0..size {
             unsafe { *aux_x.add(i) = sd.work[i] + sd.b[i] };
         }
-        let x = unsafe { core::slice::from_raw_parts(aux_x, size) }.to_vec();
         sd.work.fill(0.0);
         let flag: c_int = 1;
         let mut user =
             RESIDUAL_USERDATA { data, threadData: thread_data, solverData: core::ptr::null_mut() };
         let residual = ls.residualFunc;
         if let Some(f) = residual {
-            unsafe { f(&mut user, x.as_ptr(), sd.work.as_mut_ptr(), &flag) };
+            unsafe { f(&mut user, aux_x as *const f64, sd.work.as_mut_ptr(), &flag) };
         }
         let norm = sd.work.iter().map(|v| v * v).sum::<f64>().sqrt();
+        residual_norm = Some(norm);
         if norm.is_nan() || norm > 1e-4 {
             ls.numberOfFailures += 1;
             omclog::warning_with_limit!(
@@ -769,15 +934,18 @@ fn solve_lapack(
                 "Failed to solve linear system of equations (no. {eq}) at time {}. Residual norm is {norm:.15}.",
                 openmodelica_sim_meta::driver::format_g(time, 6),
             );
-            return false;
+            ok = false;
         }
     } else {
         for i in 0..size {
             unsafe { *aux_x.add(i) = sd.b[i] };
         }
     }
+    if omclog::active(omclog::LS_V) {
+        log_solution(data, ls, residual_norm, aux_x, 15);
+    }
     let _ = sys_number;
-    true
+    ok
 }
 
 /// C's `check_linear_solution` for one system: report and fail the step if it

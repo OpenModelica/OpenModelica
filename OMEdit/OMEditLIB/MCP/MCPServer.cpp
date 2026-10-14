@@ -40,7 +40,7 @@
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 4, 0) || !__has_include(<QtHttpServer>)
 
-MCPServer::MCPServer(OMCProxy *proxy, int port, bool enableAdminTools, QObject *parent) : QObject(parent) {
+MCPServer::MCPServer(OMCProxy *proxy, QString hostAddress, int port, bool enableAdminTools, QObject *parent) : QObject(parent) {
   Q_UNUSED(proxy) Q_UNUSED(port) Q_UNUSED(enableAdminTools)
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "The MCP server required Qt 6.4.0 (or ideally Qt 6.8.0)", Helper::scriptingKind, Helper::warningLevel));
 }
@@ -828,7 +828,7 @@ if (method == "tools/call") {
   * \param port   TCP port the server will listen on (localhost only).
   * \param parent Optional QObject parent.
   */
-  MCPServer::MCPServer(OMCProxy *proxy, int port, bool enableAdminTools, QObject *parent) : QObject(parent), m_proxy(proxy) {
+  MCPServer::MCPServer(OMCProxy *proxy, QString hostAddress, int port, bool enableAdminTools, QObject *parent) : QObject(parent), m_proxy(proxy) {
     {
       QFile file(":Resources/json/MCPTools.json");
       file.open(QIODevice::ReadOnly);
@@ -901,12 +901,12 @@ if (method == "tools/call") {
     });
     #endif
 
-    if (!m_tcpServer.listen(QHostAddress::LocalHost, port)) {
+    if (!m_tcpServer.listen(hostAddress == "localhost" ? QHostAddress::LocalHost : QHostAddress(hostAddress), port)) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Failed to start MCP server", Helper::scriptingKind, Helper::errorLevel));
       return;
     }
     m_server.bind(&m_tcpServer);
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Started MCP server as http://localhost:" + QString::number(port), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Started MCP server as http://" + hostAddress + ":" + QString::number(port), Helper::scriptingKind, Helper::notificationLevel));
     #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "MCP server does not have support for headers (Qt < 6.8.0). AccessControlAllowOrigin can not be set, which means CORS will not work properly (no webbrowser-based MCP clients).", Helper::scriptingKind, Helper::warningLevel));
     #endif

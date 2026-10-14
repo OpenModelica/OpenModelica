@@ -38,7 +38,6 @@
 
 #include <Core/Utils/extension/logger.hpp>
 #include <Core/Math/Functions.h>
-#include <Core/Utils/numeric/bindings/ublas/matrix_sparse.hpp>
 #include <Core/Utils/extension/logger.hpp>
 
 // Cdaskr declaration

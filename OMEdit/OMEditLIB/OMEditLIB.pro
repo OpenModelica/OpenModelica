@@ -89,6 +89,7 @@ INCLUDEPATH += . ../ \
 
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
+  Util/Style.cpp \
   Util/PersistentStorage.cpp \
   Cloud/CloudTypes.cpp \
   Cloud/CloudConfig.cpp \
@@ -243,6 +244,7 @@ HEADERS  += Util/Helper.h \
   Cloud/OAuth2Client.h \
   Cloud/OAuth2Redirect.h \
   Util/Utilities.h \
+  Util/Style.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
@@ -406,6 +408,7 @@ CONFIG(animation) {
 }
 
 OTHER_FILES += Resources/css/stylesheet.qss \
+  Resources/css/stylesheet-dark.qss \
   Debugger/Parser/GDBMIOutput.g \
   Debugger/Parser/GDBMIParser.h \
   Debugger/Parser/GDBMIParser.cpp \

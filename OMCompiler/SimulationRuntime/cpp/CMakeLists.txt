@@ -4,8 +4,8 @@
 # C++ simulation code and the C++ FMUs link against. The subdirectories added at
 # the bottom hold the actual targets; everything here is the shared setup they
 # all inherit through the OMCppConfig interface library
-# (omc::simrt::cpp::config): include directories, Boost, and the compile
-# definitions below.
+# (omc::simrt::cpp::config): include directories and the compile definitions
+# below.
 #
 # Compile definitions applied to every C++ runtime library:
 #     OMC_BUILD    we are building the runtime, not consuming its headers
@@ -35,75 +35,6 @@ if(OM_ENABLE_COVERAGE)
   add_link_options(--coverage)
 endif()
 
-# Boost and a threading library are required for the CPP-runtime.
-if(OM_FETCH_BOOST)
-  # Built into this project by cmake/OMCBoost.cmake.
-  set(Boost_FOUND TRUE)
-else()
-  # FindBoost was removed in CMake 4.0, Boost >= 1.70 ships its own
-  # BoostConfig.cmake. Try CONFIG first (works everywhere when a config
-  # exists, e.g. Homebrew/MacPorts), fall back to the FindBoost module on
-  # older CMake/Boost combos. Do not branch on CMAKE_VERSION or APPLE:
-  # whether CONFIG mode succeeds depends on the Boost installation, not
-  # on the CMake version.
-  find_package(Boost CONFIG COMPONENTS program_options filesystem QUIET)
-  if(NOT Boost_FOUND)
-    find_package(Boost COMPONENTS program_options filesystem REQUIRED)
-  endif()
-  # BoostConfig.cmake (CONFIG mode) does not set Boost_INCLUDE_DIR /
-  # Boost_LIBRARY_DIRS, while the FindBoost module does. Normalize both
-  # cases by extracting the dirs from the imported targets whenever the
-  # variables are still empty, so the generated ModelicaConfig_gcc.inc can
-  # always pass -I/-L to model builds.
-  if(NOT Boost_INCLUDE_DIR)
-    foreach(_t IN ITEMS Boost::headers Boost::boost Boost::filesystem)
-      if(TARGET ${_t})
-        get_target_property(_boost_inc ${_t} INTERFACE_INCLUDE_DIRECTORIES)
-        if(_boost_inc AND NOT _boost_inc STREQUAL "_boost_inc-NOTFOUND")
-          list(GET _boost_inc 0 Boost_INCLUDE_DIR)
-          if(Boost_INCLUDE_DIR)
-            break()
-          endif()
-        endif()
-      endif()
-    endforeach()
-  endif()
-  if(Boost_INCLUDE_DIR AND NOT Boost_INCLUDE_DIRS)
-    set(Boost_INCLUDE_DIRS "${Boost_INCLUDE_DIR}")
-  endif()
-  if(NOT Boost_LIBRARY_DIRS)
-    foreach(_comp IN ITEMS filesystem program_options)
-      if(TARGET Boost::${_comp})
-        foreach(_cfg IN ITEMS RELEASE "" DEBUG RELWITHDEBINFO MINSIZEREL)
-          # On Windows a shared Boost target's IMPORTED_LOCATION is the DLL
-          # in bin/; the link -L dir must come from IMPORTED_IMPLIB (lib/).
-          if(_cfg STREQUAL "")
-            get_target_property(_loc Boost::${_comp} IMPORTED_IMPLIB)
-            if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
-              get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION)
-            endif()
-          else()
-            get_target_property(_loc Boost::${_comp} IMPORTED_IMPLIB_${_cfg})
-            if(NOT _loc OR _loc STREQUAL "_loc-NOTFOUND")
-              get_target_property(_loc Boost::${_comp} IMPORTED_LOCATION_${_cfg})
-            endif()
-          endif()
-          if(_loc AND NOT _loc STREQUAL "_loc-NOTFOUND")
-            get_filename_component(Boost_LIBRARY_DIRS "${_loc}" DIRECTORY)
-            break()
-          endif()
-        endforeach()
-        if(Boost_LIBRARY_DIRS)
-          break()
-        endif()
-      endif()
-    endforeach()
-  endif()
-  if(Boost_LIBRARY_DIRS AND NOT Boost_LIBRARY_DIR)
-    set(Boost_LIBRARY_DIR "${Boost_LIBRARY_DIRS}")
-  endif()
-endif()
-
 find_package(Threads REQUIRED)
 
 # An interface library for providing common include directories and other settings
@@ -116,89 +47,6 @@ add_library(omc::simrt::cpp::config ALIAS OMCppConfig)
 target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/Include)
-
-# Make boost headers transitively available to all CPP-runtime libraries
-# (note that they all link to 'OMCppConfig' a.k.a 'omc::simrt::cpp::config')
-target_link_libraries(OMCppConfig INTERFACE Boost::boost)
-
-function(get_linker_flag_from_library_target TARGET OUT_VAR)
-  # An in-project Boost (OM_FETCH_BOOST) has no IMPORTED_LOCATION.
-  get_target_property(aliased ${TARGET} ALIASED_TARGET)
-  if(aliased)
-    set(TARGET ${aliased})
-  endif()
-  get_target_property(imported ${TARGET} IMPORTED)
-  if(NOT imported)
-    get_target_property(lib_base ${TARGET} OUTPUT_NAME)
-    if(NOT lib_base)
-      set(lib_base ${TARGET})
-    endif()
-    set(${OUT_VAR} "-l${lib_base}" PARENT_SCOPE)
-    return()
-  endif()
-
-  # Get the actual library file path
-  get_target_property(lib_location ${TARGET} IMPORTED_LOCATION)
-
-  if(NOT lib_location)
-    # Try debug/release specific
-    get_target_property(lib_location ${TARGET} IMPORTED_LOCATION_RELEASE)
-    if(NOT lib_location)
-      get_target_property(lib_location ${TARGET} IMPORTED_LOCATION_DEBUG)
-    endif()
-  endif()
-
-  if(lib_location)
-    # Get just the filename
-    get_filename_component(lib_name ${lib_location} NAME)
-
-    # Strip off prefix and suffix to get the library name
-    # Handle Unix libraries (libfoo.so, libfoo.a)
-    if(lib_name MATCHES "^lib(.+)\\.(a|so\\.?[0-9.]*|dylib\\.?[0-9.]*|dll|lib)$")
-      set(lib_base ${CMAKE_MATCH_1})
-    # Handle Windows libraries (foo.lib)
-    elseif(lib_name MATCHES "^(.+)\\.lib$")
-      set(lib_base ${CMAKE_MATCH_1})
-    else()
-      set(lib_base ${lib_name})
-    endif()
-
-    set(${OUT_VAR} "-l${lib_base}" PARENT_SCOPE)
-  else()
-    message(WARNING "Could not find library location for ${TARGET}")
-    set(${OUT_VAR} "" PARENT_SCOPE)
-  endif()
-endfunction()
-
-if(Boost_FOUND)
-  if(OM_FETCH_BOOST)
-    # OMCppOMCFactory is a static library, so the generated model is what resolves
-    # boost::program_options and boost::filesystem. Install them beside the OMCpp*
-    # libraries under stable names; the upstream ones carry a toolset/version tag.
-    set(_omc_boost_po ${CMAKE_STATIC_LIBRARY_PREFIX}omc_boost_program_options${CMAKE_STATIC_LIBRARY_SUFFIX})
-    set(_omc_boost_fs ${CMAKE_STATIC_LIBRARY_PREFIX}omc_boost_filesystem${CMAKE_STATIC_LIBRARY_SUFFIX})
-    install(FILES $<TARGET_FILE:boost_program_options>
-            DESTINATION ${CMAKE_INSTALL_LIBDIR} RENAME ${_omc_boost_po})
-    install(FILES $<TARGET_FILE:boost_filesystem>
-            DESTINATION ${CMAKE_INSTALL_LIBDIR} RENAME ${_omc_boost_fs})
-    if(MSVC)
-      # link.exe takes file names, not -l
-      set(Boost_LIBRARIES_ "${_omc_boost_po} ${_omc_boost_fs}")
-    else()
-      set(Boost_LIBRARIES_ "-lomc_boost_program_options -lomc_boost_filesystem")
-    endif()
-  else()
-    get_linker_flag_from_library_target(Boost::program_options LINK_FLAG)
-    set(Boost_LIBRARIES_ ${LINK_FLAG})
-    get_linker_flag_from_library_target(Boost::filesystem LINK_FLAG)
-    set(Boost_LIBRARIES_ "${Boost_LIBRARIES_} ${LINK_FLAG}")
-  endif()
-
-  message(STATUS "using boost include for OMCompiler/SimulationRuntime/cpp runtime: ${Boost_INCLUDE_DIR}")
-  message(STATUS "Boost Libraries for OMCompiler/SimulationRuntime/cpp runtime implict/explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
-else()
-  message(FATAL_ERROR "Boost Libraries WERE NOT FOUND!")
-endif()
 
 # This should be defined for all CPP-runtime library compilations.
 # Signifies that we are building the source code (instead of consuming, say the headers ...).

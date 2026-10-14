@@ -42,6 +42,6 @@ end FunctionUnitialized2;
 // class FunctionUnitialized2
 //   Real y = FunctionUnitialized2.f(time);
 // end FunctionUnitialized2;
-// [flattening/modelica/scodeinst/FunctionUnitialized2.mo:22:5-22:19:writable] Warning: w was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [flattening/modelica/scodeinst/FunctionUnitialized2.mo:22:5-22:19:writable] Warning: 'w' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 //
 // endResult

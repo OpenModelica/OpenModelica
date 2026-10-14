@@ -5,7 +5,7 @@
 // suite: disabled
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 setCommandLineOptions("+std=3.3"); getErrorString();
 //loadFile("Modelica_Synchronous.Examples.Elementary.RealSignals.UniformNoise.mo"); getErrorString();
 loadFile("Modelica_Synchronous.Examples.Systems.ControlledMixingUnit.mo"); getErrorString();

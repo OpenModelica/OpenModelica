@@ -1,0 +1,63 @@
+// name: array_constructor_if
+// keywords: NewBackend array constructor if-expression
+// status: correct
+// suite: cSources
+//
+// Array equations with an array constructor on one side and an if-expression
+// on the other side are split element-wise, and each element is matched separately.
+
+loadString("
+model ArrayConstructorIf
+  Real v[3], i[3], s[3];
+  Boolean closed = time < 0.5;
+equation
+  {v, i} = if closed then {2*s, 3*s} else {4*s, 5*s};
+  i = {sin(time), cos(time), time};
+end ArrayConstructorIf;
+
+model ArrayConstructorIf2D
+  Real a, b, c, d;
+  Boolean closed = time < 0.5;
+equation
+  {{a, b}, {c, d}} = if closed then {{2*time, 3*b + c}, {4*time, 5*time}} else {{time, 2*b + c}, {time, time}};
+end ArrayConstructorIf2D;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(ArrayConstructorIf); getErrorString();
+val(v[3], 0.2);
+val(s[3], 0.2);
+val(v[3], 0.8);
+
+simulate(ArrayConstructorIf2D); getErrorString();
+val(b, 0.2);
+val(b, 0.8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayConstructorIf_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayConstructorIf', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.13333333333333333
+// 0.06666666666666667
+// 0.64
+// record SimulationResult
+//     resultFile = "ArrayConstructorIf2D_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayConstructorIf2D', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.4
+// -0.8
+// endResult

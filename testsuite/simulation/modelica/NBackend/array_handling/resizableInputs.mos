@@ -1,0 +1,46 @@
+// name: resizableInputs
+// keywords: NewBackend resizable override input
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableInputs_4.mat resizableInputs_4.log resizableInputs_csv.mat resizableInputs_csv.log resizableInputs.csv
+//
+// A model input that is a resizable array: the number of inputs, their
+// positions and names are computed at runtime from the size parameters, after
+// -override. Without values the inputs keep their start values, with
+// -csvInput the inputs of the overridden size are read by name.
+
+loadString("
+model resizableInputs
+  parameter Integer N = 3;
+  input Real u[N](each start = 2);
+  Real x[N](each start = 0, each fixed = true);
+equation
+  for i in 1:N loop
+    der(x[i]) = u[i] - x[i];
+  end for;
+end resizableInputs;
+"); getErrorString();
+
+buildModel(resizableInputs, stopTime = 1); getErrorString();
+system("./resizableInputs -override=N=4 -r=resizableInputs_4.mat", "resizableInputs_4.log");
+// x[i](1) = 2*(1 - exp(-1))
+abs(val(x[4], 1, "resizableInputs_4.mat") - 1.264241) < 1e-4;
+writeFile("resizableInputs.csv", "time,u[1],u[2],u[3],u[4],u[5]\n0,1,2,3,4,5\n1,1,2,3,4,5\n"); getErrorString();
+system("./resizableInputs -override=N=5 -csvInput=resizableInputs.csv -r=resizableInputs_csv.mat", "resizableInputs_csv.log");
+// x[i](1) = i*(1 - exp(-1))
+abs(val(x[5], 1, "resizableInputs_csv.mat") - 3.160603) < 1e-4;
+abs(val(x[2], 1, "resizableInputs_csv.mat") - 1.264241) < 1e-4;
+// Result:
+// true
+// ""
+// {"resizableInputs", "resizableInputs_init.xml"}
+// ""
+// 0
+// true
+// true
+// ""
+// 0
+// true
+// true
+// endResult

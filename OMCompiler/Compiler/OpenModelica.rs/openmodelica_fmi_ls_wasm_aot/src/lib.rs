@@ -66,6 +66,12 @@ fn compile(component: &[u8], triple: &str) -> Result<Vec<u8>, String> {
     cfg.wasm_component_model(true);
     // Must match the loader's engine (see openmodelica_fmi_ls_wasm_to_native).
     cfg.wasm_exceptions(true);
+    // The GC heap holds only exception objects; left to default it would reserve
+    // another 4 GiB + guard per instance, like a linear memory.
+    cfg.gc_heap_reservation(16 << 20);
+    cfg.gc_heap_reservation_for_growth(16 << 20);
+    cfg.gc_heap_guard_size(0);
+    cfg.gc_heap_may_move(true);
     cfg.target(triple).map_err(|e| format!("unknown target `{triple}`: {e}"))?;
     let engine = wasmtime::Engine::new(&cfg).map_err(|e| format!("engine: {e}"))?;
     engine.precompile_component(component).map_err(|e| format!("compiling for {triple}: {e}"))

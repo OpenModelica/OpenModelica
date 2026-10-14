@@ -50,7 +50,7 @@ import AvlTreePathFunction;
 import DAE;
 import HashTableCrIListArray;
 import HashTableCrILst;
-import HashTableExpToIndex;
+import UnorderedMap;
 import Inline;
 import SimCode;
 import SimCodeFunction;
@@ -66,6 +66,7 @@ import ComponentReferenceBasics;
 import Config;
 import DAEUtil;
 import Error;
+import Expression;
 import Flags;
 import List;
 
@@ -75,11 +76,11 @@ protected function simulationFindLiterals
   "Finds all literal expressions in functionsa"
   input list<DAE.Function> fns;
   output list<DAE.Function> ofns;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> literals;
 algorithm
   (ofns, literals) := DAEUtil.traverseDAEFunctions(
     fns, SimCodeFunctionUtil.findLiteralsHelper,
-    (0, HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize), {}));
+    (0, SimCodeFunctionUtil.newExpIndexMap(), {}));
   // Broke things :(
   // ((i, ht, literals)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, findLiteralsHelper, (i, ht, literals));
 end simulationFindLiterals;
@@ -93,7 +94,7 @@ public function createFunctions
   output list<String> outIncludeDirs;
   output list<SimCodeFunction.RecordDeclaration> outRecordDecls;
   output list<SimCodeFunction.Function> outFunctions;
-  output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outLiterals;
+  output tuple<Integer, UnorderedMap<DAE.Exp, Integer>, list<DAE.Exp>> outLiterals;
 protected
   list<DAE.Function> funcelems;
   list<DAE.Exp> lits;
@@ -112,7 +113,7 @@ end createFunctions;
 
 public function createVarToArrayIndexMapping
   "Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content.
-   Only the Cpp/OMSI templates and HpcOm read the mappings, other targets get empty tables."
+   Only the Cpp templates and HpcOm read the mappings, other targets get empty tables."
   input SimCode.ModelInfo iModelInfo;
   output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;
   output HashTableCrILst.HashTable oVarToIndexMapping; //same as oVarToArrayIndexMapping, but does not merge array variables into one list
@@ -124,7 +125,7 @@ protected
   Integer var_type;
   array<Integer> currentVarIndices; //current variable index real,int,bool,string
 algorithm
-  if not (Flags.isSet(Flags.HPCOM) or listMember(Config.simCodeTarget(), {"Cpp", "omsic", "omsicpp"})) then
+  if not (Flags.isSet(Flags.HPCOM) or Config.simCodeTarget() == "Cpp") then
     oVarToArrayIndexMapping := HashTableCrIListArray.emptyHashTableSized(1);
     oVarToIndexMapping := HashTableCrILst.emptyHashTableSized(1);
     return;
@@ -158,6 +159,10 @@ algorithm
     (sim_vars.stringAliasVars, 4)
   };
 
+  if hasResizableVars(iModelInfo) then
+    vars := resizableLayout(sim_vars);
+  end if;
+
   // Count the number of variables to determine an appropriate size for the hash tables.
   for vl in vars loop
     (var_lst, _) := vl;
@@ -176,6 +181,116 @@ algorithm
       addVarToArrayIndexMappings(var_lst, var_type, currentVarIndices, oVarToArrayIndexMapping, oVarToIndexMapping);
   end for;
 end createVarToArrayIndexMapping;
+
+public function isResizableSimVar
+  "true for an array variable with a size that depends on parameters
+   (resizable array of the new backend)."
+  input SimCodeVar.SimVar var;
+  output Boolean b = false;
+algorithm
+  for dim in Expression.arrayDimension(var.type_) loop
+    b := match dim
+      case DAE.DIM_EXP() then not Expression.isConst(dim.exp);
+      else false;
+    end match;
+    if b then
+      break;
+    end if;
+  end for;
+end isResizableSimVar;
+
+public function hasResizableVars
+  input SimCode.ModelInfo modelInfo;
+  output Boolean b;
+protected
+  SimCodeVar.SimVars v = modelInfo.vars;
+algorithm
+  b := List.any(v.stateVars, isResizableSimVar) or List.any(v.algVars, isResizableSimVar)
+    or List.any(v.discreteAlgVars, isResizableSimVar) or List.any(v.intAlgVars, isResizableSimVar)
+    or List.any(v.boolAlgVars, isResizableSimVar) or List.any(v.stringAlgVars, isResizableSimVar)
+    or List.any(v.paramVars, isResizableSimVar) or List.any(v.intParamVars, isResizableSimVar)
+    or List.any(v.boolParamVars, isResizableSimVar) or List.any(v.stringParamVars, isResizableSimVar);
+end hasResizableVars;
+
+protected function resizableNonStateLists
+  "The variable lists of resizableLayout that are neither states, derivatives nor aliases."
+  input SimCodeVar.SimVars sim_vars;
+  output list<tuple<list<SimCodeVar.SimVar>, Integer>> vars = {
+    (sim_vars.algVars, 1),
+    (sim_vars.discreteAlgVars, 1),
+    (sim_vars.intAlgVars, 2),
+    (sim_vars.boolAlgVars, 3),
+    (sim_vars.stringAlgVars, 4),
+    (sim_vars.paramVars, 1),
+    (sim_vars.intParamVars, 2),
+    (sim_vars.boolParamVars, 3),
+    (sim_vars.stringParamVars, 4),
+    (sim_vars.constVars, 1),
+    (sim_vars.intConstVars, 2),
+    (sim_vars.boolConstVars, 3),
+    (sim_vars.stringConstVars, 4),
+    (sim_vars.realOptimizeConstraintsVars, 1),
+    (sim_vars.realOptimizeFinalConstraintsVars, 1)};
+end resizableNonStateLists;
+
+protected function resizableLayout
+  "The order of the variables in the memory of the C++ runtime if the sizes of some
+   arrays depend on parameters (--resizableArrays): the variables with fixed sizes
+   first, so they keep their positions when the arrays get their sizes at runtime,
+   then the states and the derivatives (each vector contiguous, the resizable ones at
+   its end), then the other resizable arrays. Aliases take the positions of the
+   variables they refer to and come last."
+  input SimCodeVar.SimVars sim_vars;
+  output list<tuple<list<SimCodeVar.SimVar>, Integer>> vars;
+protected
+  list<tuple<list<SimCodeVar.SimVar>, Integer>> lists = resizableNonStateLists(sim_vars);
+  list<SimCodeVar.SimVar> l;
+  Integer t;
+algorithm
+  vars := List.flatten({
+    list(match e case (l, t) then (List.filterOnFalse(l, isResizableSimVar), t); end match for e in lists),
+    {(listAppend(List.filterOnFalse(sim_vars.stateVars, isResizableSimVar), List.filterOnTrue(sim_vars.stateVars, isResizableSimVar)), 1),
+     (listAppend(List.filterOnFalse(sim_vars.derivativeVars, isResizableSimVar), List.filterOnTrue(sim_vars.derivativeVars, isResizableSimVar)), 1)},
+    list(match e case (l, t) then (List.filterOnTrue(l, isResizableSimVar), t); end match for e in lists),
+    {(sim_vars.aliasVars, 1),
+     (sim_vars.intAliasVars, 2),
+     (sim_vars.boolAliasVars, 3),
+     (sim_vars.stringAliasVars, 4)}});
+end resizableLayout;
+
+public function resizableFixedSize
+  "The number of scalar variables of a type (1 = real, 2 = int, 3 = bool, 4 = string)
+   with fixed positions in the layout of resizableLayout, without states and derivatives."
+  input SimCode.ModelInfo modelInfo;
+  input Integer varType;
+  output Integer n = 0;
+protected
+  list<SimCodeVar.SimVar> l;
+  Integer t;
+algorithm
+  for e in resizableNonStateLists(modelInfo.vars) loop
+    (l, t) := e;
+    if t == varType then
+      for v in l loop
+        if not isResizableSimVar(v) then
+          n := n + getNumElems(v);
+        end if;
+      end for;
+    end if;
+  end for;
+end resizableFixedSize;
+
+public function resizableFixedStates
+  "The number of scalar states with fixed sizes in the layout of resizableLayout."
+  input SimCode.ModelInfo modelInfo;
+  output Integer n = 0;
+algorithm
+  for v in modelInfo.vars.stateVars loop
+    if not isResizableSimVar(v) then
+      n := n + getNumElems(v);
+    end if;
+  end for;
+end resizableFixedStates;
 
 public function addVarToArrayIndexMappings
   input list<SimCodeVar.SimVar> vars;

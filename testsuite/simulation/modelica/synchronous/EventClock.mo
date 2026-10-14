@@ -7,5 +7,5 @@ equation
     nextInterval = previous(nextInterval) + 1;
     nextTick = previous(nextTick) + nextInterval;
   end when;
-  annotation (uses(Modelica(version="3.2.2")));
+  annotation (uses(Modelica(version="4.1.0")));
 end EventClock;

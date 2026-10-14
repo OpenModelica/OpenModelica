@@ -23,6 +23,6 @@ test2(); getErrorString();
 // true
 // ""
 //
-// "[<interactive>:11:5-11:17:writable] Warning: _ was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// "[<interactive>:11:5-11:17:writable] Warning: '_' is used uninitialized and may cause unexpected behaviour. This is deprecated and will become an error in future releases.
 // "
 // endResult

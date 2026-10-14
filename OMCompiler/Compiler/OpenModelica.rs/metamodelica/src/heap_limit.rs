@@ -20,16 +20,21 @@ pub struct OutOfMemory {
     pub what: &'static str,
 }
 
+impl OutOfMemory {
+    /// What exceeded which limit, without the "Out of memory" heading.
+    pub fn detail(&self) -> String {
+        let how = if self.what == WHAT_MAPPED_STR {
+            "90% of ulimit -v"
+        } else {
+            "raise it with GC_set_max_heap_size or OPENMODELICA_MAX_HEAP_MB; 0 disables it"
+        };
+        format!("{} MB of {} exceeds the {} MB limit, {how}", self.used >> 20, self.what, self.limit >> 20)
+    }
+}
+
 impl std::fmt::Display for OutOfMemory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Out of memory: {} MB of {} exceeds the {} MB limit \
-             (raise it with GC_set_max_heap_size or OPENMODELICA_MAX_HEAP_MB; 0 disables it)",
-            self.used >> 20,
-            self.what,
-            self.limit >> 20
-        )
+        write!(f, "Out of memory: {}", self.detail())
     }
 }
 
@@ -42,6 +47,7 @@ const REGROWTH: usize = 256 << 20;
 
 const WHAT_RESIDENT: u8 = 0;
 const WHAT_MAPPED: u8 = 1;
+const WHAT_MAPPED_STR: &str = "mapped address space";
 
 /// Ceiling on resident memory; 0 when there is none.
 static LIMIT: AtomicUsize = AtomicUsize::new(0);
@@ -149,7 +155,10 @@ pub fn catch<R, F: FnOnce() -> R>(f: F) -> Result<R, OutOfMemory> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
         Ok(r) => Ok(r),
         Err(payload) => match payload.downcast::<OutOfMemory>() {
-            Ok(oom) => Err(*oom),
+            Ok(oom) => {
+                report(&oom);
+                Err(*oom)
+            }
             Err(payload) => std::panic::resume_unwind(payload),
         },
     }
@@ -239,12 +248,97 @@ fn trip() -> ! {
         used: PENDING_USED.load(Relaxed),
         limit: PENDING_LIMIT.load(Relaxed),
         what: match PENDING_WHAT.load(Relaxed) {
-            WHAT_MAPPED => "mapped address space",
+            WHAT_MAPPED => WHAT_MAPPED_STR,
             _ => "resident memory",
         },
     };
-    eprintln!("{oom}");
+    if REPORT.load(Relaxed) == 0 {
+        eprintln!("{oom}");
+    }
+    // Into a preallocated buffer: this runs inside the allocator.
+    if let Ok(mut t) = TRACE.try_lock() {
+        t.record();
+    }
     std::panic::panic_any(oom)
+}
+
+const TRACE_CAP: usize = 256;
+
+/// Return addresses, symbolized only when read.
+struct Trace {
+    ips: [usize; TRACE_CAP],
+    len: usize,
+}
+
+impl Trace {
+    fn record(&mut self) {
+        self.len = 0;
+        backtrace::trace(|f| {
+            if self.len == TRACE_CAP {
+                return false;
+            }
+            self.ips[self.len] = f.ip() as usize;
+            self.len += 1;
+            true
+        });
+    }
+}
+
+/// The stack of the last trip, or of the last [`capture_trace`].
+static TRACE: std::sync::Mutex<Trace> = std::sync::Mutex::new(Trace { ips: [0; TRACE_CAP], len: 0 });
+
+fn trace() -> std::sync::MutexGuard<'static, Trace> {
+    TRACE.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Record the current stack, for `StackOverflow.setStacktraceMessages`.
+pub fn capture_trace() {
+    trace().record();
+}
+
+pub fn has_trace() -> bool {
+    trace().len != 0
+}
+
+pub fn clear_trace() {
+    trace().len = 0;
+}
+
+/// The recorded stack's function names, innermost first.
+pub fn trace_frames() -> Vec<String> {
+    let ips: Vec<usize> = {
+        let t = trace();
+        t.ips[..t.len].to_vec()
+    };
+    let mut names = Vec::with_capacity(ips.len());
+    for ip in ips {
+        let n = names.len();
+        backtrace::resolve(ip as *mut std::ffi::c_void, |s| {
+            if let Some(name) = s.name() {
+                names.push(format!("{name:#}"));
+            }
+        });
+        if names.len() == n {
+            names.push(format!("{ip:#x}"));
+        }
+    }
+    names
+}
+
+static REPORT: AtomicUsize = AtomicUsize::new(0);
+
+/// Where a caught trip is reported, in place of stderr (the Error buffer).
+pub fn set_report_fn(f: fn(&OutOfMemory)) {
+    REPORT.store(f as usize, Relaxed);
+}
+
+fn report(oom: &OutOfMemory) {
+    let p = REPORT.load(Relaxed);
+    if p != 0 {
+        // SAFETY: only ever stored by `set_report_fn` from a `fn(&OutOfMemory)`.
+        let f: fn(&OutOfMemory) = unsafe { std::mem::transmute(p) };
+        f(oom);
+    }
 }
 
 /// Physical memory, as reported by the OS. 0 when it does not say.

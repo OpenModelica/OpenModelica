@@ -14,11 +14,11 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
 compareVars :=
 {
-   "C3.v",
-   "C7.v",
    "C1.v",
+   "C2.v",
+   "C3.v",
    "C4.v",
-   "C8.v"
+   "C7.v"
 };
 
 runScript(modelTesting);getErrorString();
@@ -30,8 +30,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Analog.Examples.CauerLowPassSC
-// {"C3.v", "C7.v", "C1.v", "C4.v", "C8.v"}
-// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|C3.v|C7.v|C1.v|C4.v|C8.v', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"C1.v", "C2.v", "C3.v", "C4.v", "C7.v"}
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|C1.v|C2.v|C3.v|C4.v|C7.v', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

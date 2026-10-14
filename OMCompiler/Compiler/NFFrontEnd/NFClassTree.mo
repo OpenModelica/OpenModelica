@@ -460,6 +460,8 @@ public
       SCode.Element ext_def;
       Boolean is_typish;
       InstNodeType inst_ty;
+      Mutable<InstNode> mut_node;
+      list<Mutable<InstNode>> outers = {};
     algorithm
       // TODO: If we don't have any extends we could probably generate a flat
       // tree directly and skip a lot of this.
@@ -572,22 +574,17 @@ public
                   algorithm
                     // Set the component's parent and create a unique instance for it.
                     node := InstNode.cloneComponentInScope(c, inst_ref);
+                    mut_node := Mutable.create(node);
 
-                    // If the component is outer, link it with the corresponding
-                    // inner component.
+                    // Outer components are saved so they can be linked with their corresponding inner
+                    // further down, to avoid generating missing inners for outer components that have
+                    // been removed with break.
                     if InstNode.isOuter(node) then
-                      try
-                        node := linkInnerOuter(node, inst_scope);
-                      else
-                        // fail if not NF_API
-                        if not Flags.isSet(Flags.NF_API) then
-                          fail();
-                        end if;
-                      end try;
+                      outers := mut_node :: outers;
                     end if;
 
                     // Add the node to the component array.
-                    arrayUpdateNoBoundsChecking(comps, comp_idx, Mutable.create(node));
+                    arrayUpdateNoBoundsChecking(comps, comp_idx, mut_node);
                     local_comps := comp_idx :: local_comps;
                     comp_idx := comp_idx + 1;
                   then
@@ -602,6 +599,7 @@ public
             end for;
 
             breakComponents(instance, comps, ltree, dups);
+            linkInnerOuterComponents(outers, inst_scope);
 
             // Sanity check.
             if comp_idx <> compCount + 1 then
@@ -2397,6 +2395,31 @@ public
       entry.children := list(replaceDuplicates3(c, node) for c in entry.children);
     end replaceDuplicates3;
 
+    function linkInnerOuterComponents
+      "Helper function to instantiate that links a list of outer components
+       with their corresponding inners."
+      input list<Mutable<InstNode>> outerComps;
+      input InstNode scope;
+    protected
+      InstNode node;
+    algorithm
+      for c in outerComps loop
+        node := Mutable.access(c);
+
+        if not InstNode.isEmpty(node) then
+          try
+            node := linkInnerOuter(node, scope);
+            Mutable.update(c, node);
+          else
+            // fail if not NF_API
+            if not Flags.isSet(Flags.NF_API) then
+              fail();
+            end if;
+          end try;
+        end if;
+      end for;
+    end linkInnerOuterComponents;
+
     function linkInnerOuter
       "Looks up the corresponding inner node for the given outer node,
        and returns an INNER_OUTER_NODE containing them both."
@@ -2545,7 +2568,7 @@ public
       SCode.Restriction restriction;
     algorithm
       try
-        ty_path := SCodeUtil.getElementTypePath(InstNode.definition(node));
+        ty_path := SCodeUtil.getElementTypePath(InstNode.definition(InstNode.resolveOuter(node)));
         cls_node := Lookup.lookupName(ty_path, scope, NFInstContext.NO_CONTEXT, false);
         restriction := SCodeUtil.getClassRestriction(InstNode.definition(cls_node));
       else

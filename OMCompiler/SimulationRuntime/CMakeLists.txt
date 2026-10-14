@@ -12,29 +12,10 @@ if(NOT RUST_OMC_PREBUILT_CDYLIB)
 
   omc_add_subdirectory(ModelicaExternalC)
 
-  # OMSI
-  #
-  # Makefiles currently prefer the static version of libOMSI*
-  if(NOT DEFINED PLATFORM AND NOT DEFINED CACHE{PLATFORM})
-    set(PLATFORM "static")
-  endif()
-  # The OMSI runtimes assume a MinGW/MSYS2 toolchain on Windows (OMSICpp hard-
-  # requires $ENV{MSYSTEM_PREFIX} and bundled-under-OMHOME Boost), so they are
-  # not yet buildable in the MSVC cross build — disable for MSVC, like
-  # ParModelica below.
-  if(NOT MSVC)
-    omc_add_subdirectory(OMSI)
-    omc_add_subdirectory(OMSIC)
-    # The C++ OMSI runtime: same OMCpp* libraries and Boost as cpp/ above.
-    if(OM_OMC_ENABLE_CPP_RUNTIME)
-      omc_add_subdirectory(OMSICpp)
-    endif()
-  endif()
-
   # omc_add_subdirectory(opc)
 
   # ParModelica
-  # Disable for MSVC. There are some issues with Boost which need to be fixed.
+  # Not built with MSVC yet.
   if(NOT MSVC AND OM_OMC_ENABLE_PARMODELICA)
     omc_add_subdirectory(ParModelica)
   endif()

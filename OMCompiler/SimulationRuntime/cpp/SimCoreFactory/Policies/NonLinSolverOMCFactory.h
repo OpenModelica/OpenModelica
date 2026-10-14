@@ -72,18 +72,6 @@ public:
             }
             nonlin_solver_key.assign("extension_export_newton");
         }
-        else if(nonlin_solver.compare("broyden")==0)
-        {
-            fs::path broyden_path = ObjectFactory<CreationPolicy>::_library_path;
-            fs::path broyden_name(BROYDEN_LIB);
-            broyden_path/=broyden_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(broyden_path.string(),*_non_linsolver_type_map);
-            if (result != LOADER_SUCCESS)
-            {
-                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Broyden solver library!");
-            }
-            nonlin_solver_key.assign("extension_export_broyden");
-        }
         else if(nonlin_solver.compare("kinsol")==0)
         {
             fs::path kinsol_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -96,19 +84,6 @@ public:
                 throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Kinsol solver library!");
             }
             nonlin_solver_key.assign("extension_export_kinsol");
-        }
-        else if(nonlin_solver.compare("hybrj")==0)
-        {
-            fs::path hybrj_path = ObjectFactory<CreationPolicy>::_library_path;
-            fs::path hybrj_name(HYBRJ_LIB);
-            hybrj_path/=hybrj_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(hybrj_path.string(),*_non_linsolver_type_map);
-            if (result != LOADER_SUCCESS)
-            {
-
-                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Hybrj solver library!");
-            }
-            nonlin_solver_key.assign("extension_export_hybrj");
         }
         else
             throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlinear solver is not available");

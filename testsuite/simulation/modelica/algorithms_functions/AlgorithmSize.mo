@@ -47,5 +47,5 @@ equation
       __Dymola_Algorithm="Euler"),
     __Dymola_experimentSetupOutput,
     Icon(coordinateSystem(extent={{-200,-100},{100,100}})),
-    uses(Modelica(version="3.2.1")));
+    uses(Modelica(version="4.1.0")));
 end AlgorithmSize;

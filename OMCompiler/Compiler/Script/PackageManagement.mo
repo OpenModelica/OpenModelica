@@ -261,6 +261,7 @@ end updateIndex;
 
 function upgradeInstalledPackages
   input Boolean installNewestVersions;
+  input Integer wasmABI = 0;
   output Boolean success;
 protected
   AvailableLibraries.Tree installedLibraries;
@@ -271,10 +272,10 @@ algorithm
   for pkg in AvailableLibraries.listKeys(installedLibraries) loop
     versions := AvailableLibraries.get(installedLibraries, pkg);
     for version in VersionMap.listKeys(versions) loop
-      success := success and installPackage(pkg, SemanticVersion.toString(version), exactMatch=true);
+      success := success and installPackage(pkg, SemanticVersion.toString(version), exactMatch=true, wasmABI=wasmABI);
     end for;
     if installNewestVersions then
-      success := success and installPackage(pkg, "", exactMatch=false);
+      success := success and installPackage(pkg, "", exactMatch=false, wasmABI=wasmABI);
     end if;
   end for;
 end upgradeInstalledPackages;
@@ -441,12 +442,15 @@ function installPackage
   input String version;
   input Boolean exactMatch;
   input Boolean skipDownload = false;
+  input Integer wasmABI = 0 "Also install the prebuilt wasm external \"C\" modules of this ABI, if the index has any";
   output Boolean success;
+  output list<String> wasmDirs = {} "The libraries prebuilt wasm modules were unpacked into";
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<list<String>,String>> urlPathList, urlPathListToDownload;
   String path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation, cachePath=getCachePath(), installCachePath=getInstallationCachePath(), curCachePath;
   list<String> mirrors;
+  list<tuple<String,String>> wasmZips;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
@@ -459,6 +463,15 @@ algorithm
     end if;
   end for;
   packagesToInstall := list(p for p guard p.needsInstall in packageList);
+  if not skipDownload then
+    for p in packageList loop
+      if not p.needsInstall then
+        if installMissingWasm(p.path, wasmExternalsZips(p.json, wasmABI), cachePath) then
+          wasmDirs := p.path :: wasmDirs;
+        end if;
+      end if;
+    end for;
+  end if;
 
   for pack in packagesToInstall loop
     Util.createDirectoryTree(cachePath);
@@ -467,6 +480,7 @@ algorithm
   if not skipDownload then
     mirrors := getMirrors();
     urlPathList := List.sort(list((getAllUrls(p.urlToZipFile, mirrors), if System.regularFileExists(installCachePath + System.basename(p.urlToZipFile)) then installCachePath + System.basename(p.urlToZipFile) else cachePath + System.basename(p.urlToZipFile)) for p in packagesToInstall), compareUrlBool);
+    urlPathList := listAppend(list(({Util.tuple21(z)}, cachePath + System.basename(Util.tuple21(z))) for z in List.flatten(list(wasmExternalsZips(p.json, wasmABI) for p in packagesToInstall))), urlPathList);
     urlPathList := List.unique(urlPathList);
     urlPathListToDownload := list(tpl for tpl guard not System.regularFileExists(Util.tuple22(tpl)) in urlPathList);
     if not Curl.multiDownload(urlPathListToDownload) then
@@ -510,6 +524,11 @@ algorithm
     end if;
 
     if System.regularFileExists(destPathPkgMo) then
+      wasmZips := list(z for z guard System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) in wasmExternalsZips(pack.json, wasmABI));
+      unpackWasm(destPath, wasmZips, cachePath);
+      if not listEmpty(wasmZips) then
+        wasmDirs := destPath :: wasmDirs;
+      end if;
       if oldSha == "" then
         Error.addSourceMessage(Error.NOTIFY_PKG_INSTALL_DONE, {pack.sha}, makeSourceInfo(destPathPkgMo));
       else
@@ -589,7 +608,103 @@ algorithm
   updateIndex();
 end installCachedPackages;
 
+function installMissingWasmOfLoaded
+  "Fetches the prebuilt wasm modules the index has for loaded libraries the
+   package manager installed without them: before the wasm-jit target was used,
+   or before the index had them. `files` are the loaded top-level classes' files."
+  input list<String> files;
+  input Integer abi;
+  output list<String> wasmDirs = {} "The libraries the modules were unpacked into";
 protected
+  list<String> dirs;
+  JSON index, installed, obj;
+algorithm
+  if abi <= 0 then
+    return;
+  end if;
+  dirs := list(d for d guard System.regularFileExists(d + "/" + metaDataFileName) in list(System.dirname(f) for f in files));
+  if listEmpty(dirs) then
+    return;
+  end if;
+  index := getPackageIndex(false);
+  // An index from before any wasm modules were built.
+  if not JSON.hasKey(index, "systemLibraries") and not Testsuite.isRunning() then
+    if updateIndex() then
+      index := getPackageIndex(false);
+    end if;
+  end if;
+  for dir in dirs loop
+    try
+      installed := JSON.parseFile(dir + "/" + metaDataFileName);
+      obj := installedIndexEntry(index, listHead(System.strtok(System.basename(dir), " ")), SemanticVersion.parse(JSON.getString(JSON.get(installed, "version"))), getShaOrZipfile(installed));
+      if installMissingWasm(dir, wasmExternalsZips(obj, abi), getCachePath()) then
+        wasmDirs := dir :: wasmDirs;
+      end if;
+    else
+    end try;
+  end for;
+end installMissingWasmOfLoaded;
+
+function installWasmToolchain
+  "Installs the index's wasm sysroot under ~/.openmodelica/wasm32-wasip1/omc-<generation>,
+   with libc++ for `cxx`, and returns its path, or \"\" if there is none."
+  input Boolean cxx = false;
+  output String sysroot = "";
+protected
+  JSON obj;
+  Integer generation;
+  String dir;
+algorithm
+  try
+    obj := JSON.get(getPackageIndex(true), "wasmToolchain");
+    JSON.INTEGER(generation) := JSON.get(obj, "generation");
+  else
+    Error.addCompilerError("The package index has no wasm toolchain; updatePackageIndex() may fetch a newer index.");
+    return;
+  end try;
+  dir := Settings.getHomeDir(Testsuite.isRunning()) + "/.openmodelica/wasm32-wasip1/omc-" + intString(generation) + "/sysroot";
+  if not unpackToolchainPart(obj, dir, "/lib/wasm32-wasip1/libc.so") then
+    return;
+  end if;
+  if cxx then
+    try
+      obj := JSON.get(obj, "cxx");
+    else
+      Error.addCompilerError("The package index has no libc++ for its wasm toolchain.");
+      return;
+    end try;
+    if not unpackToolchainPart(obj, dir, "/lib/wasm32-wasip1/libc++.so") then
+      return;
+    end if;
+  end if;
+  sysroot := dir;
+end installWasmToolchain;
+
+protected
+
+function unpackToolchainPart
+  "Unpacks the zip-file `obj` names into `dir`, unless `marker` shows it is there."
+  input JSON obj;
+  input String dir;
+  input String marker;
+  output Boolean success = true;
+protected
+  String url, zip, cachePath = getCachePath();
+algorithm
+  if System.regularFileExists(dir + marker) then
+    return;
+  end if;
+  url := JSON.getString(JSON.get(obj, "zipfile"));
+  zip := cachePath + System.basename(url);
+  Util.createDirectoryTree(cachePath);
+  if not System.regularFileExists(zip) then
+    success := Curl.multiDownload({({url}, zip)});
+  end if;
+  if success then
+    Util.createDirectoryTree(dir);
+    Unzip.unzipPath(zip, "", dir);
+  end if;
+end unpackToolchainPart;
 
 function compareUrlBool
   input tuple<list<String>,String> tpl1, tpl2;
@@ -683,7 +798,8 @@ algorithm
       else
         zip := "";
       end if;
-      packageToInstall := SOME(PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject()));
+      packageToInstall := SOME(PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false,
+        installedIndexEntry(index, pkg, semverToInstall, if sha <> "" then sha else zip)));
       indexHasPkg := JSON.hasKey(JSON.get(index, "libs"), pkg);
     end if;
   end if;
@@ -732,6 +848,188 @@ algorithm
     end if;
   end for;
 end installPackageWork;
+
+function installedIndexEntry
+  "The index's entry for an installed package version, if it is still built from
+   the same sources (`shaOrZip`); its prebuilt wasm modules are only good then."
+  input JSON index;
+  input String pkg;
+  input SemanticVersion.Version version;
+  input String shaOrZip;
+  output JSON obj = JSON.emptyObject();
+protected
+  JSON o;
+algorithm
+  try
+    o := JSON.get(JSON.get(JSON.get(JSON.get(index, "libs"), pkg), "versions"), SemanticVersion.toString(version));
+    // A package installed from an index without shas only knows its zipfile.
+    if shaOrZip <> "" and (getShaOrZipfile(o) == shaOrZip or JSON.hasKey(o, "zipfile") and System.basename(JSON.getString(JSON.get(o, "zipfile"))) == shaOrZip) then
+      obj := o;
+    end if;
+  else
+  end try;
+end installedIndexEntry;
+
+function installMissingWasm
+  "Fetches and unpacks the prebuilt wasm modules of an installed package that it
+   does not have yet: those of a newer generation, or a rebuild of one."
+  input String destPath;
+  input list<tuple<String,String>> zips;
+  input String cachePath;
+  output Boolean unpacked = false;
+protected
+  list<tuple<String,String>> missing;
+  String lock = destPath + "/Resources/Library/wasm32-wasip1.lock";
+algorithm
+  missing := list(z for z guard not wasmUnpacked(destPath, z) in zips);
+  if listEmpty(missing) then
+    return;
+  end if;
+  // Another omc is unpacking them; this one goes on with what is there.
+  if not wasmLock(lock) then
+    return;
+  end if;
+  missing := list(z for z guard not wasmUnpacked(destPath, z) in zips);
+  // The library's own zip unpacks into the generation directory that holds the
+  // system libraries' ones, so replacing it replaces them all.
+  if List.any(missing, wasmIsGenerationZip) then
+    missing := zips;
+  end if;
+  try
+    Util.createDirectoryTree(cachePath);
+    if not listEmpty(missing) and Curl.multiDownload(list(({Util.tuple21(z)}, cachePath + System.basename(Util.tuple21(z))) for z guard not System.regularFileExists(cachePath + System.basename(Util.tuple21(z))) in missing)) then
+      unpackWasm(destPath, missing, cachePath);
+      unpacked := true;
+    end if;
+  else
+    System.removeDirectory(lock);
+    fail();
+  end try;
+  System.removeDirectory(lock);
+end installMissingWasm;
+
+function wasmLock
+  "Takes the lock directory `lock`, unless another omc holds it. Renaming a
+   non-empty directory onto an existing one fails, which makes it exclusive. A
+   lock older than ten minutes was left by an omc that died and is taken over."
+  input String lock;
+  output Boolean locked;
+protected
+  String tmp;
+  Option<Real> t;
+algorithm
+  Util.createDirectoryTree(System.dirname(lock));
+  tmp := System.createTemporaryDirectory(lock + ".");
+  System.writeFile(tmp + "/owner", "");
+  locked := System.rename(tmp, lock);
+  if not locked then
+    t := System.getFileModificationTime(lock);
+    if isSome(t) and System.getCurrentTime() - Util.getOption(t) > 600 then
+      System.removeDirectory(lock);
+      locked := System.rename(tmp, lock);
+    end if;
+  end if;
+  if not locked then
+    System.removeDirectory(tmp);
+  end if;
+end wasmLock;
+
+constant String wasmZipMarker = ".omc-zipfile" "Names the zip a directory of wasm modules was unpacked from";
+
+function wasmIsGenerationZip
+  input tuple<String,String> zip;
+  output Boolean b = listLength(System.strtok(Util.tuple22(zip), "/")) == 1;
+end wasmIsGenerationZip;
+
+function wasmUnpacked
+  input String destPath;
+  input tuple<String,String> zip;
+  output Boolean b;
+protected
+  String marker = destPath + "/Resources/Library/wasm32-wasip1/" + Util.tuple22(zip) + "/" + wasmZipMarker;
+algorithm
+  b := System.regularFileExists(marker) and System.readFile(marker) == System.basename(Util.tuple21(zip));
+end wasmUnpacked;
+
+function unpackWasm
+  "Unpacks zips of prebuilt wasm modules into Resources/Library/wasm32-wasip1.
+   A generation's system libraries go into its tree before it is renamed into
+   place, so an omc running at the same time never sees it half written."
+  input String destPath;
+  input list<tuple<String,String>> zips;
+  input String cachePath;
+protected
+  String base = destPath + "/Resources/Library/wasm32-wasip1/";
+  list<tuple<String,String>> gens, libs;
+algorithm
+  (gens, libs) := List.splitOnTrue(zips, wasmIsGenerationZip);
+  for g in gens loop
+    unpackWasmTree(base + Util.tuple22(g), g :: list(z for z guard System.dirname(Util.tuple22(z)) == Util.tuple22(g) in libs), cachePath);
+    libs := list(z for z guard System.dirname(Util.tuple22(z)) <> Util.tuple22(g) in libs);
+  end for;
+  for z in libs loop
+    unpackWasmTree(base + Util.tuple22(z), {z}, cachePath);
+  end for;
+end unpackWasm;
+
+function unpackWasmTree
+  "Replaces `dir` with the first zip's contents and each other's in a
+   subdirectory named after it, built beside `dir` and renamed into place."
+  input String dir;
+  input list<tuple<String,String>> zips;
+  input String cachePath;
+protected
+  String tmp, sub;
+  Boolean first = true;
+algorithm
+  Util.createDirectoryTree(System.dirname(dir));
+  tmp := System.createTemporaryDirectory(dir + ".tmp");
+  for z in zips loop
+    sub := if first then tmp else tmp + "/" + System.basename(Util.tuple22(z));
+    first := false;
+    Util.createDirectoryTree(sub);
+    Unzip.unzipPath(cachePath + System.basename(Util.tuple21(z)), "", sub);
+    System.writeFile(sub + "/" + wasmZipMarker, System.basename(Util.tuple21(z)));
+  end for;
+  System.removeDirectory(dir);
+  if not System.rename(tmp, dir) then
+    // Another omc put its copy in place first.
+    System.removeDirectory(tmp);
+  end if;
+end unpackWasmTree;
+
+function wasmExternalsZips
+  "The zip-files with the prebuilt wasm external \"C\" modules of a package
+   version, each with the directory under Resources/Library/wasm32-wasip1 it
+   unpacks into: the library's own bundle, then the system libraries it needs,
+   all under the generation they were built in. Older generations stay."
+  input JSON versionObj;
+  input Integer abi;
+  output list<tuple<String,String>> zips = {};
+protected
+  JSON obj, systemLibraries;
+  Integer generation;
+algorithm
+  if abi <= 0 then
+    return;
+  end if;
+  try
+    obj := JSON.get(JSON.get(versionObj, "wasm"), intString(abi));
+    JSON.INTEGER(generation) := JSON.get(obj, "generation");
+    zips := {(JSON.getString(JSON.get(obj, "zipfile")), "omc-" + intString(generation))};
+  else
+    return;
+  end try;
+  systemLibraries := JSON.getOrDefault(getPackageIndex(false), "systemLibraries", JSON.emptyObject());
+  for name in JSON.getStringList(JSON.getOrDefault(obj, "systemLibraries", JSON.emptyArray())) loop
+    try
+      zips := (JSON.getString(JSON.get(JSON.get(JSON.get(JSON.get(systemLibraries, name), "wasm"), intString(abi)), "zipfile")), "omc-" + intString(generation) + "/" + name) :: zips;
+    else
+      Error.addCompilerWarning("The package index has no wasm system library " + name + " for ABI " + intString(abi) + ".");
+    end try;
+  end for;
+  zips := listReverse(zips);
+end wasmExternalsZips;
 
 function getShaOrZipfile
   input JSON obj;

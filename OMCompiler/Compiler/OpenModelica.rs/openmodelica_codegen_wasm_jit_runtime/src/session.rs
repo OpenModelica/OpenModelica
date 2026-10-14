@@ -203,6 +203,12 @@ impl SimEngine for InWasmEngine {
     fn clean_nls_history(&mut self, time: f64) {
         crate::nls::rt_nls_clean_history(time);
     }
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        Some(String::from_utf8_lossy(crate::nls::last_suppressed_error()).into_owned())
+    }
+    fn clear_suppressed_error(&mut self) {
+        crate::nls::clear_suppressed_error();
+    }
     fn set_rhs_final(&mut self, final_eval: bool) {
         unsafe { rt_host_rhs_final(final_eval as i32) };
     }
@@ -533,13 +539,13 @@ pub extern "C" fn rt_sim_start(meta_ptr: u32, meta_len: u32, fn_base: u32, prese
 
     let mut engine = InWasmEngine { fn_base, present_mask };
     let sim_data = crate::rt_sim_data_new(model.layout.total);
-    let n_reals = model.layout.n_row_total();
 
     let method = model.method.clone();
     let driver = match driver::make_driver(&mut engine, &model, sim_data, method.as_str()) {
         Ok((d, _label)) => d,
         Err(_) => return -2,
     };
+    let n_reals = driver::row_width(&model.layout);
 
     let rc = open_result_stream(&mut engine, &model, sim_data);
     if rc != 0 {
@@ -618,7 +624,6 @@ fn finish(s: &mut Session) {
         &mut s.rows,
         s.sim_data,
         &s.model.layout,
-        s.n_reals,
         at,
     );
     if let Ok(Some(f)) = openmodelica_sim_meta::linearize::linearize(&mut s.engine, &s.model, s.sim_data) {
@@ -663,7 +668,7 @@ pub extern "C" fn rt_sim_rows_ptr() -> u32 {
 pub extern "C" fn rt_sim_rows_len() -> u32 {
     session().as_ref().map_or(0, |s| s.rows.len() as u32)
 }
-/// Columns per row (`SimLayout::n_row_total`).
+/// Values per row of the rows buffer (`driver::row_width`).
 #[unsafe(no_mangle)]
 pub extern "C" fn rt_sim_n_reals() -> u32 {
     session().as_ref().map_or(0, |s| s.n_reals)

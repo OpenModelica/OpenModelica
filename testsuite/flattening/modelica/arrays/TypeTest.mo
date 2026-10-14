@@ -2,7 +2,7 @@ within ;
 model TypeTest
   import Modelica.Mechanics.MultiBody.Types;
   parameter Integer nPoints = 2;
-  type Pos3D = Modelica.SIunits.Position[3];
+  type Pos3D = Modelica.Units.SI.Position[3];
   Pos3D points[nPoints];
   Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape visPoints[nPoints](r = points);
 equation

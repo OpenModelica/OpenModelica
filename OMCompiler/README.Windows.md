@@ -180,7 +180,7 @@ Windows.
 
 You can compile the OpenModelica compiler (`omc`) and the C and C++ simulation runtimes
 with the Microsoft Visual C++ compiler (MSVC). Some parts are not built with MSVC yet:
-ModelicaExternalC, the OMSI runtimes, ParModelica and PRIMME support. Compiling and
+ModelicaExternalC, ParModelica and PRIMME support. Compiling and
 simulating models with such a build may still need some work.
 
 The MSVC build that CI exercises is a cross-compile from Linux with clang-cl, including the
@@ -189,7 +189,7 @@ GUI clients built against Qt's MSVC kit. See
 The native build described here does not cover the GUI clients.
 
 This build does not use MSYS2. The dependencies (`libcurl`, `libiconv`, `gettext`,
-`pthreads`, `Lapack`, `Boost`, ...) come from the Microsoft
+`pthreads`, `Lapack`, ...) come from the Microsoft
 [vcpkg](https://github.com/microsoft/vcpkg) package manager, and all commands are run in a
 Developer PowerShell for Visual Studio. If you use Rust, select the
 `stable-x86_64-pc-windows-msvc` toolchain (see [1.4 Rust toolchain](#14-rust-toolchain)).
@@ -246,20 +246,10 @@ contents. It tells vcpkg which packages to install in
     "gettext",
     "lapack",
     "pthread",
-    "dirent",
-    "boost-program-options",
-    "boost-filesystem",
-    "boost-ublas",
-    "boost-lambda",
-    "boost-asio",
-    "boost-circular-buffer"
+    "dirent"
   ]
 }
 ```
-
-The Boost packages are for the C++ simulation runtime. Instead of getting Boost from vcpkg,
-`-DOM_FETCH_BOOST=ON` downloads and builds it as part of OpenModelica; that option is meant
-for cross builds and has not been tested with a native MSVC build.
 
 > [!NOTE]
 > This file might eventually become part of the OpenModelica repository. Until the MSVC

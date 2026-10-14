@@ -39,7 +39,7 @@
 //!
 //! Reported in two scopes: `Mutable`-only (the user-facing question) and
 //! `Mutable`+`Pointer` (the honest total — `Pointer` is the same
-//! `Arc<Mutex<..>>` cell pattern and e.g. `InstNode.cls` cycles go through it).
+//! `Rc<RefCell<..>>` cell pattern and e.g. `InstNode.cls` cycles go through it).
 //!
 //! The reported sets contain the *payload* types. Generic container types
 //! (`Mutable`, `Pointer`, `Vector`, `UnorderedMap`, `DoubleEnded`, …) are

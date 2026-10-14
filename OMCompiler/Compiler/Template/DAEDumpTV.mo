@@ -181,7 +181,7 @@ package Config
   end showStartOrigin;
 end Config;
 
-package Absyn
+protected package Absyn
 
   type Ident = String;
 
@@ -208,7 +208,7 @@ package Absyn
   end Direction;
 end Absyn;
 
-package SCode
+protected package SCode
 
    uniontype Visibility
      record PUBLIC end PUBLIC;

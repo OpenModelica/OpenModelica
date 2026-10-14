@@ -81,8 +81,6 @@ testExperimentalFMU.mos \
 FAILING_FMI_IMPORT = \
 BooleanNetwork1.mos \
 BouncingBall.mos \
-FMIExercise.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

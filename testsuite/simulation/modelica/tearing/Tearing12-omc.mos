@@ -12,9 +12,9 @@ simulate(Tearing12); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation from Tearing12.
-// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from Tearing12.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 // "
 // true
 // ""
@@ -30,18 +30,18 @@ simulate(Tearing12); getErrorString();
 // "
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
-//  * Number of equations: 9901
-//  * Number of variables: 9901
+//  * Number of equations: 9904
+//  * Number of variables: 9904
 // Notification: Tearing is skipped for linear strong component 1: solving it torn to 125 iteration variables is estimated at 2762901 flops against 176144 for the untorn system of size 908.
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1968
+//  * Number of independent subsystems: 1971
 //  * Number of states: 0 ('-d=stateselection' for list of states)
-//  * Number of discrete variables: 288 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete variables: 291 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3795):
-//  * Single equations (assignments): 3791
+// Notification: Strong component statistics for initialization (3798):
+//  * Single equations (assignments): 3794
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0

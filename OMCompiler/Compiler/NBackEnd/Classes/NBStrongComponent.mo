@@ -373,6 +373,26 @@ public
     end match;
   end removeAlias;
 
+  function solvesInsideReduction
+    "true if a scalar for-equation is solved for a cref with a whole dimension, e.g. x[i, :] for
+    y[i] = sum(x[i, j] for j in 1:n) matched to x[i, 1]. The cref does not determine the solved
+    elements, they have to be solved one by one. A whole dimension of an array equation inside
+    the for-equation, e.g. a[i, :] = b * i, determines them."
+    input Pointer<Equation> eqn_ptr;
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(eqn_ptr)
+      local
+        Equation body;
+      // a size one array equation, e.g. a[i, :] = b[1:1, i], determines the elements as well
+      case Equation.FOR_EQUATION(body = {body}) then Equation.size(Pointer.create(body)) == 1
+        and not Type.isArray(Equation.getType(body))
+        and List.any(ComponentRef.subscriptsAllFlat(cref), Subscript.isWhole);
+      else false;
+    end match;
+  end solvesInsideReduction;
+
   function createPseudoSlice
     input Integer var_arr_idx;
     input Integer eqn_arr_idx;
@@ -408,9 +428,10 @@ public
       eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in eqn_scal_indices));
     end if;
 
-    // check if it is a resizable component
+    // check if it is a resizable component. a variable inside a reduction can only be solved as a slice
     order := Resizable.detect(Pointer.access(eqn_ptr), cref_to_solve);
-    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size then
+    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size
+       and not solvesInsideReduction(eqn_ptr, cref_to_solve) then
       comp := RESIZABLE_COMPONENT(
         var_cref  = cref_to_solve,
         var       = var_slice,
@@ -455,6 +476,8 @@ public
     // create individual slices (array bucket → slice component, scalar → scalar component)
     for tpl in UnorderedMap.toList(elem_map) loop
       (eqn_arr_idx, scal_indices) := tpl;
+      // the calls of the slice consume its indices in order, see the call order below
+      scal_indices := listReverse(scal_indices);
       if UnorderedMap.contains(eqn_arr_idx, cref_map) then
         var_arr_idx := mapping.var_StA[eqn_to_var[Util.tuple21(mapping.eqn_AtS[eqn_arr_idx])]];
         entwined_slices := createPseudoSlice(var_arr_idx, eqn_arr_idx, UnorderedMap.getSafe(eqn_arr_idx, cref_map, sourceInfo()), scal_indices, eqn_to_var, eqns, mapping) :: entwined_slices;
@@ -696,7 +719,14 @@ public
       comp := match Equation.getLHS(eqn)
         local
           Expression lhs;
-        case SOME(lhs as Expression.CREF()) then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(lhs), sourceInfo()), eqn_ptr, NBSolve.Status.EXPLICIT);
+          Pointer<Variable> var_ptr;
+        case SOME(lhs as Expression.CREF()) algorithm
+          var_ptr := BVariable.getVarPointer(lhs.cref, sourceInfo());
+          // an element of an array variable keeps its subscripts, e.g. p[2] in an if-equation branch
+          comp := if BVariable.isArray(var_ptr) and not Type.isArray(Expression.typeOf(lhs))
+            then SLICED_COMPONENT(lhs.cref, Slice.SLICE(var_ptr, {}), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT)
+            else SINGLE_COMPONENT(var_ptr, eqn_ptr, NBSolve.Status.EXPLICIT);
+        then comp;
         else MULTI_COMPONENT(Equation.getLHSVars(eqn), Slice.SLICE(eqn_ptr, {}), NBSolve.Status.EXPLICIT);
       end match;
     end simpleSolvedEquation;

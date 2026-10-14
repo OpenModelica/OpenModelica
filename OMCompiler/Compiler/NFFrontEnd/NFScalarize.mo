@@ -207,6 +207,7 @@ end scalarizeVariable;
 function scalarizeBackendVariable
   input Variable var;
   input List<Integer> indices = {};
+  input Boolean resize = false "resizable dimensions with their resized size, the indices are positions in it";
   output list<Variable> vars = {};
 protected
   list<ComponentRef> crefs;
@@ -221,7 +222,7 @@ protected
   Integer confidence;
 algorithm
   try
-    crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false));
+    crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), resize));
     elem_ty             := Type.arrayElementType(var.ty);
     backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
     if Binding.isBound(var.binding) then

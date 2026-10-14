@@ -880,11 +880,11 @@ template dumpAnnotationElement(SCode.Annotation annotation, SCodeDumpOptions opt
     '<%\ %><%annstr%>;'
 end dumpAnnotationElement;
 
-template dumpExternalDeclOpt(Option<ExternalDecl> externalDecl, SCodeDumpOptions options)
+template dumpExternalDeclOpt(Option<SCode.ExternalDecl> externalDecl, SCodeDumpOptions options)
 ::= match externalDecl case SOME(extdecl) then dumpExternalDecl(extdecl, options)
 end dumpExternalDeclOpt;
 
-template dumpExternalDecl(ExternalDecl externalDecl, SCodeDumpOptions options)
+template dumpExternalDecl(SCode.ExternalDecl externalDecl, SCodeDumpOptions options)
 ::=
 let res = match externalDecl
   case EXTERNALDECL(__) then

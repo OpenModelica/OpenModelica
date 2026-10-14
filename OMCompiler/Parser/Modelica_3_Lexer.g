@@ -65,3 +65,5 @@ STREAM : 'stream' { if (ModelicaParser_langStd < 31) $type = IDENT; }; /* for Mo
 /* Modelica 3.3 */
 PURE : 'pure' { if (ModelicaParser_langStd < 33 && ModelicaParser_strict) $type = IDENT; }; /* for Modelica 3.3 pure functions */
 IMPURE : 'impure' { if (ModelicaParser_langStd < 33 && ModelicaParser_strict) $type = IDENT; }; /* for Modelica 3.3 impure functions */
+/* Modelica 3.7 */
+T_TIME : 'time' { if (ModelicaParser_langStd < 37 || !ModelicaParser_strict) $type = IDENT; };

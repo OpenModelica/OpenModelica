@@ -385,7 +385,7 @@ template realVarName(SimVar var)
  "One entry of the name table of the real variables."
 ::=
   match var
-  case SIMVAR(__) then '"<%Util.escapeModelicaStringToCString(crefStr(name))%>",<%\n%>'
+  case SIMVAR(__) then '"<%Util.escapeModelicaStringToCString(CodegenUtil.crefStr(name))%>",<%\n%>'
 end realVarName;
 
 template appMainFile(SimCode simCode)

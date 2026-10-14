@@ -7,7 +7,8 @@
 //! reclaim it: the parent owns its children, each child refers back weakly, and
 //! the structure hangs off one strong root. No collector is involved.
 
-use std::sync::{Arc, Weak};
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
 use crate::Mutable::{CellInner, Mutable};
 
@@ -22,39 +23,39 @@ impl<T: Clone> Clone for MutableWeak<T> {
 /// The Rust port has real weak semantics, so a cell needs an owner.
 pub const ownership: bool = true;
 
-type CellSet = std::sync::Mutex<Vec<Arc<dyn metamodelica::gc::TraceableCell>>>;
+type CellSet = RefCell<Vec<Rc<dyn metamodelica::gc::TraceableCell>>>;
 
 /// A set of cells held alive together. A `Mutable` cell is owned by the node
 /// value that carries it, but a node reached weakly can outlive every value
 /// that owned it, so the structure the nodes belong to holds their cells here
 /// and they die with it.
-pub struct Roots(Arc<CellSet>);
+pub struct Roots(Rc<CellSet>);
 
 impl Clone for Roots {
     fn clone(&self) -> Self {
-        Roots(Arc::clone(&self.0))
+        Roots(Rc::clone(&self.0))
     }
 }
 
 thread_local! {
     /// The set `root` adds to.
-    static CURRENT: std::cell::RefCell<Roots> = std::cell::RefCell::new(Roots::new());
+    static CURRENT: RefCell<Roots> = RefCell::new(Roots::new());
 }
 
 impl Roots {
     fn new() -> Self {
-        Roots(Arc::new(std::sync::Mutex::new(Vec::new())))
+        Roots(Rc::new(RefCell::new(Vec::new())))
     }
 
     fn stats(&self) -> (usize, usize, usize, usize) {
-        let cells = self.0.lock().unwrap();
+        let cells = self.0.borrow();
         let (mut sole, mut sole_weak, mut shared) = (0, 0, 0);
         for c in cells.iter() {
             // This set's own reference is in the strong count, so 1 means
             // dropping the set is what frees the cell.
-            if Arc::strong_count(c) == 1 {
+            if Rc::strong_count(c) == 1 {
                 sole += 1;
-                if Arc::weak_count(c) > 0 {
+                if Rc::weak_count(c) > 0 {
                     sole_weak += 1;
                 }
             } else {
@@ -113,7 +114,8 @@ pub fn clearRoots() {
     CURRENT.with(|c| {
         let roots = c.borrow().clone();
         report(&roots, "cleared");
-        roots.0.lock().unwrap().clear();
+        let cells = std::mem::take(&mut *roots.0.borrow_mut());
+        drop(cells);
         *c.borrow_mut() = Roots::new();
     });
 }
@@ -124,15 +126,15 @@ pub fn root<T: Clone + metamodelica::gc::MMTrace + 'static>(mutable: Mutable<T>)
     if crate::Mutable::stats::enabled() {
         crate::Mutable::stats::bump(&crate::Mutable::stats::ROOTED);
     }
-    let cell: Arc<dyn metamodelica::gc::TraceableCell> = mutable.0;
-    CURRENT.with(|c| c.borrow().0.lock().unwrap().push(cell));
+    let cell: Rc<dyn metamodelica::gc::TraceableCell> = mutable.0;
+    CURRENT.with(|c| c.borrow().0.borrow_mut().push(cell));
 }
 
 // Identity, like `Pointer`'s: a set is a place, not a value.
 
 impl PartialEq for Roots {
     fn eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
+        Rc::ptr_eq(&self.0, &other.0)
     }
 }
 
@@ -146,25 +148,25 @@ impl PartialOrd for Roots {
 
 impl Ord for Roots {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        (Arc::as_ptr(&self.0) as *const ()).cmp(&(Arc::as_ptr(&other.0) as *const ()))
+        (Rc::as_ptr(&self.0) as *const ()).cmp(&(Rc::as_ptr(&other.0) as *const ()))
     }
 }
 
 impl std::hash::Hash for Roots {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        std::hash::Hash::hash(&(Arc::as_ptr(&self.0) as *const ()), state);
+        std::hash::Hash::hash(&(Rc::as_ptr(&self.0) as *const ()), state);
     }
 }
 
 impl std::fmt::Debug for Roots {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Roots({})", self.0.lock().map(|c| c.len()).unwrap_or(0))
+        write!(f, "Roots({})", self.0.try_borrow().map(|c| c.len()).unwrap_or(0))
     }
 }
 
 impl metamodelica::ReferenceEq for Roots {
     fn reference_eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
+        Rc::ptr_eq(&self.0, &other.0)
     }
 }
 
@@ -196,7 +198,7 @@ pub fn value<T: Clone>(_weak: MutableWeak<T>) -> T {
 
 /// A reference that does not keep the cell alive. Never fails.
 pub fn downgrade<T: Clone>(mutable: Mutable<T>) -> MutableWeak<T> {
-    MutableWeak(Arc::downgrade(&mutable.0))
+    MutableWeak(Rc::downgrade(&mutable.0))
 }
 
 /// An owning cell again. Fails if the referent is already gone — a weak

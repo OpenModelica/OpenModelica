@@ -250,7 +250,7 @@ fn test_map_no_copy_1() -> Result<()> {
     DoubleEnded::push_back(de.clone(), 3)?;
     DoubleEnded::mapNoCopy_1(
         de.clone(),
-        &|x, _arg: i32| Ok(x * 2),
+        &|x, __b1: &_| { let _arg: i32 = ::std::clone::Clone::clone(__b1); Ok(x * 2) },
         0i32
     )?;
     assert_eq!(DoubleEnded::pop_front(de.clone())?, 2);

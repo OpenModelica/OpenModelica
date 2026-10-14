@@ -262,16 +262,30 @@ case SIMCODE(__) then
   <fmiBuildDescription fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd">
     <BuildConfiguration modelIdentifier="<%modelIdentifier%>">
       <SourceFileSet language="C17">
-        <%sourceFiles |> file => '<SourceFile name="<%file%>"/>' ;separator="\n"%>
+        <%sourceFiles |> file => if boolNot(StringUtil.endsWith(file, ".rs")) then '<SourceFile name="<%file%>"/>' ;separator="\n"%>
         <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
         <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
         <IncludeDirectory name="."/>
         <IncludeDirectory name="fmi"/>
       </SourceFileSet>
+      <%rustSourceFileSet(sourceFiles)%>
     </BuildConfiguration>
   </fmiBuildDescription>
   >>
 end fmiBuildDescription;
+
+template rustSourceFileSet(list<String> sourceFiles)
+ "The Rust half of a --simCodeTarget=C source FMU: the crate roots, built into
+  the libSimulationRuntimeRust archive the C set links (see sources/CMakeLists.txt)."
+::=
+  let files = (sourceFiles |> file => if StringUtil.endsWith(file, ".rs") then '<SourceFile name="<%file%>"/>' ;separator="\n")
+  if files then
+  <<
+  <SourceFileSet language="Rust2024" compiler="cargo" compilerOptions="rustc --release --manifest-path rust/SimulationRuntime/rust/Cargo.toml -p openmodelica_simulation_runtime --lib --crate-type staticlib">
+    <%files%>
+  </SourceFileSet>
+  >>
+end rustSourceFileSet;
 
 template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash)
  "Writes terminalsAndIcons/terminalsAndIcons.xml into the FMU when the model has
@@ -342,7 +356,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let copyright = modelInfo.copyright
   let license = modelInfo.license
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let generationDateAndTime = xsdateTime(Util.getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfEventIndicators = getNumberOfEventIndicators(simCode)
   <<
@@ -459,7 +473,7 @@ template TypeDefinition3(SimVar simVar)
 match simVar
 case SIMVAR(type_ = T_ENUMERATION(path=path, names=names)) then
   <<
-  <EnumerationType name="<%AbsynUtil.pathString(path, ".", false)%>" quantity="<%AbsynUtil.pathString(path, ".", false)%>">
+  <EnumerationType name="<%AbsynUtil.pathString(path, ".", false, false)%>" quantity="<%AbsynUtil.pathString(path, ".", false, false)%>">
     <%names |> name hasindex i0 fromindex 1 => '<Item name="<%name%>" value="<%i0%>"/>' ;separator="\n"%>
   </EnumerationType>
   >>
@@ -617,16 +631,16 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
     case T_STRING(__) then
       '<String <%VariableCommonAttributes3(simVar, simCode)%>><%Dimensions3(simVar)%></String>'
     case T_ENUMERATION(path = path) then
-      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Enumeration>'
-    else '<!-- UNKNOWN_ARRAY_TYPE <%crefStr(name)%> -->'
+      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Enumeration>'
+    else '<!-- UNKNOWN_ARRAY_TYPE <%CodegenUtil.crefStr(name)%> -->'
 case SIMVAR(__) then
   if SimCodeCodegenUtil.isFMI3NestableAlias(simVar) then
   // emitted as an <Alias> child of its canonical variable (shares its
   // valueReference), not as a separate ModelVariables entry
   ''
-  else if stringEq(crefStr(name),"$dummy") then
+  else if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else if boolNot(isSome(exportVar)) then
   ''
@@ -641,8 +655,8 @@ case SIMVAR(__) then
     case T_STRING(__) then
       '<String <%VariableCommonAttributes3(simVar, simCode)%>><%StringStartChild3(simVar)%><%AliasElements3(simVar, simCode)%></String>'
     case T_ENUMERATION(path=path) then
-      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
-    else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
+      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false, false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
+    else '<!-- UNKNOWN_TYPE <%CodegenUtil.crefStr(name)%> -->'
 end Variable3;
 
 template CloseWithAliases3(String tag, SimVar simVar, SimCode simCode)

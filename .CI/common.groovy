@@ -7,6 +7,22 @@ def isMac() {
   return isUnix() && sh(script: 'uname', returnStdout: true).startsWith("Darwin")
 }
 
+// Replaces the declarative default checkout (skipDefaultCheckout), including
+// its export of GIT_BRANCH etc. to env. A nested submodule that turns into
+// plain files (or back) leaves a working tree that `git submodule update`
+// refuses to check out over; deinit clears it.
+void checkoutSCM() {
+  echo "Checking out on ${env.NODE_NAME} in ${env.WORKSPACE}"
+  int attempt = 0
+  retry(2) {
+    if (attempt++ > 0) {
+      String deinit = 'git submodule absorbgitdirs && git submodule deinit --all -f'
+      isUnix() ? sh(script: deinit, returnStatus: true) : bat(script: deinit, returnStatus: true)
+    }
+    checkout(scm).each { k, v -> env.setProperty(k, v) }
+  }
+}
+
 void standardSetup() {
   echo "${env.NODE_NAME}"
 
@@ -629,7 +645,7 @@ void withEmSccache(Closure body) {
 }
 
 // Main web bundle minus the Qt pages (built separately by buildRustWebQt,
-// merged by assembleWeb).
+// merged by uploadWeb).
 void buildRustWeb() {
   standardSetup()
   unstash 'wasm-jit-runtime'
@@ -681,27 +697,6 @@ void buildRustWebQt() {
     sh "cmake --install build_cmake --component web"
   }
   stash name: 'web-qt', includes: 'install_web/share/omc/web/OMShell-qt/**, install_web/share/omc/web/OMNotebook-qt/**, install_web/share/omc/web/OMEdit-qt/**'
-}
-
-// Merge the Qt pages into the main web tree (both unstash to the same path), zip.
-void assembleWeb() {
-  unstash 'web-partial'
-  unstash 'web-qt'
-  def webZip = "OpenModelicaCompiler-web-${tagName()}.zip"
-  sh "rm -f ${webZip} && (cd install_web/share/omc/web && zip -r -9 ${env.WORKSPACE}/${webZip} .)"
-  archiveArtifacts artifacts: webZip, fingerprint: true
-  stash name: 'web', includes: webZip
-
-  // The testsuite-rust shards, merged and archived. Here since the web
-  // deliverable is already assembled.
-  sh 'rm -f testsuite/partest-failed-*.txt partest-rust-failed.txt'
-  if (shouldWeRunRustTests()) {
-    for (p in [1,2]) {
-      unstash "partest-failed-${p}"
-    }
-    sh 'cat testsuite/partest-failed-*.txt | sort -u > partest-rust-failed.txt && wc -l partest-rust-failed.txt'
-    archiveArtifacts artifacts: 'partest-rust-failed.txt', allowEmptyArchive: true, fingerprint: true
-  }
 }
 
 void buildRustGUI() {
@@ -766,6 +761,8 @@ String qtLinuxPrefix() { return '/opt/Qt/6.11.2/gcc_64' }
 //   cdylib    the file name cargo gives libOpenModelicaCompiler for it
 //   multiarch the Linux targets' <triple> under lib/; absent elsewhere
 //   arch      the Linux targets' archive-name architecture
+//   checked   the Linux tarballs are tried on another distribution before they
+//             are uploaded (checkRustNightlyLinux)
 Map nightlyTarget(String name) {
   String rs = 'OMCompiler/Compiler/OpenModelica.rs/.cmake'
   // Fortran is off for both: flang compiles for either target but links for
@@ -780,7 +777,7 @@ Map nightlyTarget(String name) {
     'win64': [
       triple: 'x86_64-pc-windows-msvc',
       toolchain: "${rs}/xwin-toolchain.cmake",
-      // OpenBLAS, Boost and PThreads4W are fetched/built by windows-deps.cmake,
+      // OpenBLAS and PThreads4W are fetched/built by windows-deps.cmake,
       // which the top-level CMakeLists includes when cross-compiling to Windows.
       configure: noFortran + ['-DENABLE_CPACK=OFF', '-DZMQ_BUILD_TESTS=OFF'],
       qt: ['-DCMAKE_PREFIX_PATH=/opt/Qt/6.11.2/msvc2022_64',
@@ -825,6 +822,7 @@ Map nightlyTarget(String name) {
       cdylib: 'libOpenModelicaCompiler.so',
       arch: 'x86_64',
       multiarch: 'x86_64-linux-gnu',
+      checked: true,
     ],
     // Cross-compiled on the same 22.04 floor with the distribution's own GNU
     // cross toolchain (the qt-aarch64-linux add-on), which has a real gfortran,
@@ -929,8 +927,7 @@ List nightlyCommonFlags(Map t) {
                 '-DOM_USE_CCACHE=OFF',
                 // The downloads default under the build tree, which
                 // standardSetup()'s `git clean -ffdx` deletes first, so they
-                // would be re-fetched once per stage per night (Boost alone is
-                // a 108 MB tarball).
+                // would be re-fetched once per stage per night.
                 '-DOM_DOWNLOADS_DIR=/cache/thirdparty',
                 "-DCMAKE_INSTALL_PREFIX=${env.WORKSPACE}/${nightlyInstallDir(t.name)}"]
   // linux64 is native, so it has neither.
@@ -1099,14 +1096,23 @@ void packageRustNightlyLinux(String name, List omcStashes, List guiStashes) {
   // No Qt prefix: the CLI tree has no GUI clients, but it still needs its own
   // libraries bundled -- omc pulls in libgfortran and libcurl-gnutls, neither of
   // which a target is required to have.
-  tarRustNightlyLinux(t, "OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz", '')
-  if (!guiStashes) {
-    return
+  List tgzs = ["OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz"]
+  tarRustNightlyLinux(t, tgzs[0], '')
+  if (guiStashes) {
+    for (s in guiStashes) {
+      unstash s
+    }
+    tgzs << "OpenModelica-${tagName()}-${t.arch}-linux.tar.gz"
+    tarRustNightlyLinux(t, tgzs[1], qtLinuxPrefix())
   }
-  for (s in guiStashes) {
-    unstash s
+  // A checked target is uploaded by checkRustNightlyLinux, once it has passed.
+  if (t.checked) {
+    stash name: "nightly-tarballs-${name}", includes: tgzs.join(',')
+  } else {
+    for (tgz in tgzs) {
+      uploadRustNightly(tgz)
+    }
   }
-  tarRustNightlyLinux(t, "OpenModelica-${tagName()}-${t.arch}-linux.tar.gz", qtLinuxPrefix())
 }
 
 void tarRustNightlyLinux(Map t, String tgz, String qtPrefix) {
@@ -1118,7 +1124,28 @@ void tarRustNightlyLinux(Map t, String tgz, String qtPrefix) {
   nightlyCheckGlibcFloor(tree, nightlyGlibcFloor())
   sh "rm -f ${tgz} && tar -C ${tree} -czf ${tgz} ."
   sh "ls -l ${tgz}"
-  uploadRustNightly(tgz)
+}
+
+// Stage 5: the CLI tarball on a bare distribution newer than the one it was
+// built on, with only the C toolchain a user is told to install. The build
+// agents have every -dev package, so a build-host path on a generated link line
+// only fails here. Runs as root for apt-get, so nothing is written into the
+// workspace. Both tarballs are uploaded only if the check passes.
+void checkRustNightlyLinux(String name) {
+  Map t = nightlyTarget(name)
+  unstash "nightly-tarballs-${name}"
+  sh """#!/bin/bash
+    set -euo pipefail
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y -qq --no-install-recommends clang make cmake ca-certificates >/dev/null
+    tree=\$(mktemp -d)
+    tar -C "\$tree" -xzf OpenModelica-CLI-${tagName()}-${t.arch}-linux.tar.gz
+    .CI/scripts/linux-tarball-check.sh "\$tree"
+  """
+  for (tgz in findFiles(glob: "OpenModelica-*${t.arch}-linux.tar.gz")) {
+    uploadRustNightly(tgz.name)
+  }
 }
 
 // Stage 4, macOS: lipo the two per-architecture install trees into one universal
@@ -1179,9 +1206,8 @@ void uploadRustNightly(String archive) {
 
 // One partest shard against the Rust-built omc (unstashed) for one simCodeTarget.
 // The test libraries are installed with that omc. An empty simCodeTarget leaves
-// the compiler default. Without registerJUnit the results are archived artifacts
-// instead.
-void partestRust(String simCodeTarget, partition, partitionmodulo, boolean registerJUnit) {
+// the compiler default.
+void partestRust(String simCodeTarget, partition, partitionmodulo) {
   standardSetup()
   unstash 'omc-rust'
   // OMSimulator + libomcruntime aren't produced by the Rust omc build; pull the
@@ -1206,26 +1232,21 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
   // works.
   String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
+  // nativeSharedLib links a native shared library, which a wasm target cannot load.
   if (isWasmTarget) {
-    suites += ',-cSources,-fmuCSources'
+    suites += ',-cSources,-fmuCSources,-nativeSharedLib'
   }
   // wasmtime reserves ~4 GiB of address space per wasm memory, and shrinking that
   // reservation to fit an RLIMIT_AS costs the bounds-check-free fast path.
   String asLimit = isWasmTarget
                    ? '# wasm: address space is not limited, only the cgroup is'
                    : 'ulimit -v 6291456 # Max 6GB per process'
-  // The 'Failed tests:' block (the only tab-indented lines); stdout rather than
-  // failed.<branch>, which dies on branch names with '/'.
-  String failureList = registerJUnit ? '' : """
-      grep -E '^[[:space:]]+[^[:space:]].*[.]mo[fs]?\$' runtests-${partition}.log | sed -E 's/^[[:space:]]+//' | sort -u > ../partest-failed-${partition}.txt || true
-      wc -l ../partest-failed-${partition}.txt"""
   try {
     sh """#!/bin/bash
       set -o pipefail
       ulimit -t 1500
       ${asLimit}
       .CI/scripts/cgroup-memory.sh check
-      rm -f testsuite/partest-failed-${partition}.txt
       cd testsuite/partest
       set -x
       ./runtests.pl -j${numPhysicalCPU()} -partition=${partition}/${partitionmodulo} -nocolour -with-xml -suites=${suites}${simCodeTargetArg} 2>&1 | tee runtests-${partition}.log
@@ -1234,19 +1255,11 @@ void partestRust(String simCodeTarget, partition, partitionmodulo, boolean regis
       ../../.CI/scripts/cgroup-memory.sh report
       # 0/7 == the run completed (7 means some tests failed); only fail the step on
       # anything else, so the results below are still published.
-      test \$CODE = 0 -o \$CODE = 7 || exit 1${failureList}
+      test \$CODE = 0 -o \$CODE = 7 || exit 1
     """
-    if (!registerJUnit) {
-      stash name: "partest-failed-${partition}", includes: "testsuite/partest-failed-${partition}.txt"
-    }
   } finally {
     // In finally so a hard shard failure still publishes what ran.
-    if (registerJUnit) {
-      junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
-    } else {
-      sh "cp testsuite/partest/result.xml partest-rust-partest-junit-${partition}.xml || true"
-      archiveArtifacts artifacts: "partest-rust-partest-junit-${partition}.xml", allowEmptyArchive: true, fingerprint: true
-    }
+    junit testResults: 'testsuite/partest/result.xml', allowEmptyResults: true, skipPublishingChecks: true
   }
 }
 
@@ -1467,16 +1480,6 @@ private def shouldWeEnableMacOSCMakeBuild() {
   return params.ENABLE_MACOS_CMAKE_BUILD
 }
 
-// The extra Rust-omc partest; wasm-jit always runs.
-private def shouldWeRunRustTests() {
-  if (isPR()) {
-    if (pullRequest.labels.contains("CI/Enable Rust Tests")) {
-      return true
-    }
-  }
-  return params.ENABLE_RUST_PARTEST
-}
-
 // wasm-opt -Oz on the web bundle is slow and only shrinks the shipped artifact;
 // skip it on PRs, keep it for the release build that publishes to the playground.
 def rustWasmOptCMakeFlag() {
@@ -1531,8 +1534,6 @@ Map evaluateBuildFlags() {
   print "shouldWeBuildWindows: ${flags.shouldWeBuildWindows}"
   flags.shouldWeRunTests = shouldWeRunTests()
   print "shouldWeRunTests: ${flags.shouldWeRunTests}"
-  flags.shouldWeRunRustTests = flags.shouldWeRunTests && shouldWeRunRustTests()
-  print "shouldWeRunRustTests: ${flags.shouldWeRunRustTests}"
   return flags
 }
 
@@ -1542,7 +1543,7 @@ Map evaluateBuildFlags() {
 // under Groovy's 64kB method-size limit.
 // ----------------------------------------------------------------------------
 
-// The jammy CMake build of omc. Its install tree is what the testsuite-gcc
+// The noble CMake build of omc. Its install tree is what the testsuite-gcc
 // stages run against (ctestStashed), so keep the flags in sync with what
 // those tests need. Built with -DOM_ENABLE_COVERAGE=ON so those stages'
 // coverage numbers (see coverageReportStage()) come from the same run that
@@ -1772,7 +1773,7 @@ void coverageReportStage(int shardCount) {
   // gcov and gcov-tool have to be the ones that match the compiler the data
   // was produced with, which is this image's; the testsuite caches are of no
   // use here because this stage runs no tests.
-  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', extraMounts) {
+  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04', extraMounts) {
     sh """#!/bin/bash -xe
     # Fails the stage right here if the mount above did not take effect,
     # rather than further down with an empty report.
@@ -1845,7 +1846,7 @@ void testWindowsSmoke() {
 
 // The C omc cross-compiled to Windows (MSVC) with the Rust nightly's win64
 // toolchain. A cross build cannot run bomc, so it compiles the C that
-// 'cmake-jammy-gcc' translated for MSVC.
+// 'noble-gcc' translated for MSVC.
 void crossBuildOMCWindows() {
   Map t = nightlyTarget('win64')
   standardSetup()
@@ -1885,7 +1886,7 @@ void testWindowsSmokeWine(String installDir) {
 }
 
 void crossBuildFMU() {
-  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-22.04')
+  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-24.04')
   deps.pull()
   def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
   deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
@@ -1984,10 +1985,13 @@ void uploadDoc() {
   sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${tagName()}*,${tagName()}/**")])])
 }
 
+// Merge the Qt pages into the main web tree (both unstash to the same path).
 void uploadWeb() {
-  unstash 'web'
+  unstash 'web-partial'
+  unstash 'web-qt'
   echo "${env.NODE_NAME}"
-  sh "rm -rf ${tagName()} && mkdir -p ${tagName()} && (cd ${tagName()} && unzip -o ../OpenModelicaCompiler-web-${tagName()}.zip)"
+  def webZip = "OpenModelicaCompiler-web-${tagName()}.zip"
+  sh "rm -rf ${webZip} ${tagName()} && cp -r install_web/share/omc/web ${tagName()} && (cd ${tagName()} && zip -r -9 ../${webZip} .)"
   sshPublisher(publishers: [sshPublisherDesc(configName: 'playground', transfers: [sshTransfer(sourceFiles: "OpenModelicaCompiler-web-${tagName()}*,${tagName()}/**")])])
 }
 

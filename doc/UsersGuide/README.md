@@ -59,7 +59,7 @@ Or on its own, against an OpenModelica installed anywhere:
 
 ```bash
 cmake -S doc/UsersGuide -B build-doc -DOM_USERSGUIDE_OMHOME=/usr/local
-cmake --build build-doc
+cmake --build build-doc --target usersguide
 ```
 
 Nothing is generated into the source tree; the guide ends up in

@@ -741,6 +741,34 @@ public
     end for;
   end difference_list;
 
+  function difference_list_set
+    "difference_list(inList1, inList2) with set2 = fromList(inList2) built by
+     the caller, for reducing several lists by the same inList2."
+    input list<T> inList1;
+    input list<T> inList2;
+    input UnorderedSet<T> set2;
+    output list<T> acc = {};
+  protected
+    list<T> lst1 = inList1, lst2 = inList2;
+    KeyEq eqFn = set2.eqFn;
+  algorithm
+    while not (listEmpty(lst1) or listEmpty(lst2)) and eqFn(listHead(lst1), listHead(lst2)) loop
+      lst1 := listRest(lst1);
+      lst2 := listRest(lst2);
+    end while;
+
+    if listEmpty(lst1) or listEmpty(lst2) then
+      acc := lst1;
+      return;
+    end if;
+
+    for k in lst1 loop
+      if not contains(k, set2) then
+        acc := k :: acc;
+      end if;
+    end for;
+  end difference_list_set;
+
   function equal_list
     "Takes two lists and returns true if they contain the same elements.
     Ignores duplicates."

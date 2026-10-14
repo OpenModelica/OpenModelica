@@ -83,7 +83,7 @@ my $osname = $^O;
 # it belongs to are enabled. 'disabled' is such a tag: a test carrying it is not
 # part of the testsuite at all, see %suite_enabled.
 my @category_suites = qw(default cpp cppmsl tearing hpcom);
-my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow smoke disabled);
+my @tag_suites = qw(metamodelica 63bit antlr cSources fmuCSources stackoverflow wasm hdf5 arrow nativeSharedLib smoke disabled);
 my %suite_enabled = (
   default      => 1,  # Everything not claimed by another category.
   cpp          => 1,  # */cppruntime/*
@@ -108,7 +108,9 @@ my %suite_enabled = (
                       # opt-in like wasm rather than off-by-build.
   arrow        => 1,  # Needs the Rust result library libomc_result, which reads
                       # and writes the arrow format.
-  smoke        => 1,  # Also run on their own, where the whole testsuite is too
+  nativeSharedLib => 1, # Links the model against a native shared library the test
+                      # builds; a wasm target only loads prebuilt wasm modules.
+  smoke       => 1,  # Also run on their own, where the whole testsuite is too
                       # slow: testsuite/runWindowsTests.sh.
   # Not part of the testsuite: the tests a makefile lists as failing, not
   # compiling, not simulating or needing a manual setup. They are the tests that

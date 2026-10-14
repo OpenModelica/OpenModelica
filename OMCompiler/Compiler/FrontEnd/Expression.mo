@@ -4951,9 +4951,13 @@ algorithm
     then (e, ext_arg);
 
     case DAE.CREF(cr, tp) algorithm
-      (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
-      e := if referenceEq(cr, cr_1) then inExp else DAE.CREF(cr_1, tp);
-      (e, ext_arg) := inFunc(e, ext_arg);
+      if ComponentReferenceBasics.crefHasNoSubscripts(cr) then
+        (e, ext_arg) := inFunc(inExp, inExtArg);
+      else
+        (cr_1, ext_arg) := traverseExpCref(cr, inFunc, inExtArg);
+        e := if referenceEq(cr, cr_1) then inExp else DAE.CREF(cr_1, tp);
+        (e, ext_arg) := inFunc(e, ext_arg);
+      end if;
     then (e, ext_arg);
 
     // unary
@@ -5547,6 +5551,9 @@ algorithm
         e := if referenceEq(clk1,clk) then inExp else DAE.CLKCONST(clk1);
       then (e, ext_arg);
     case (_,DAE.ENUM_LITERAL(),ext_arg) then (inExp,ext_arg);
+    case (_,DAE.CREF(componentRef = cr),ext_arg)
+      guard ComponentReferenceBasics.crefHasNoSubscripts(cr)
+      then (inExp,ext_arg);
     case (_,DAE.CREF(cr,tp),ext_arg)
       algorithm
         (cr_1,ext_arg_1) := traverseExpTopDownCrefHelper(cr,func,ext_arg);
@@ -5792,18 +5799,33 @@ public function traverseExpListTopDown
   end FuncExpType;
 protected
   DAE.Exp e_1;
-  Boolean same = true;
+  list<DAE.Exp> rest = inExpl, acc;
+  Integer nEq = 0;
 algorithm
-  for e in inExpl loop
-    (e_1,outA) := traverseExpTopDown(e, rel, outA);
-    same := if referenceEq(e,e_1) then same else false;
-    outExpl := e_1::outExpl;
-  end for;
-  if same then
-    outExpl := inExpl;
-  else
-    outExpl := MetaModelica.Dangerous.listReverseInPlace(outExpl);
-  end if;
+  // Allocates only once an element changes, like traverseExpList.
+  outExpl := inExpl;
+  while not listEmpty(rest) loop
+    (e_1, outA) := traverseExpTopDown(listHead(rest), rel, outA);
+    if not referenceEq(listHead(rest), e_1) then
+      acc := {};
+      for e in inExpl loop
+        if nEq < 1 then
+          break;
+        end if;
+        acc := e :: acc;
+        nEq := nEq - 1;
+      end for;
+      acc := e_1 :: acc;
+      for e in listRest(rest) loop
+        (e_1, outA) := traverseExpTopDown(e, rel, outA);
+        acc := e_1 :: acc;
+      end for;
+      outExpl := MetaModelica.Dangerous.listReverseInPlace(acc);
+      return;
+    end if;
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpListTopDown;
 
 public function traverseExpOpt "Calls traverseExpBottomUp for SOME(exp) and does nothing for NONE"
@@ -7238,9 +7260,8 @@ algorithm
       algorithm
         (subs_1, arg) := traverseExpSubs(subs, rel, arg);
         (cr_1, arg) := traverseExpCref(cr, rel, arg);
-        cr := if referenceEq(cr,cr_1) and referenceEq(subs,subs_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1);
       then
-        (cr, arg);
+        (if referenceEq(cr,cr_1) and referenceEq(subs,subs_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), arg);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), arg)
       algorithm
@@ -9082,9 +9103,10 @@ algorithm
       Absyn.Path path;
       DAE.Function func;
     case DAE.CALL(path=path)
-      algorithm
-        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
-         then listEmpty(DAEUtil.getFunctionElements(func));
+      then match AvlTreePathFunction.getOpt(funcsIn,path)
+        case SOME(SOME(func)) then listEmpty(DAEUtil.getFunctionElements(func));
+        else false;
+      end match;
     else false;
   end match;
 end isRecordCall;

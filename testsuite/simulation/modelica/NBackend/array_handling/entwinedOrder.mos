@@ -1,0 +1,39 @@
+// name: entwinedOrder
+// keywords: NewBackend entwined for-equation
+// status: correct
+// cflags: --newBackend
+//
+// The two for-equations have to be evaluated interleaved, one iteration of
+// each at a time (an entwined component), in the order of the iterations.
+
+loadString("
+model entwinedOrder
+  Real a[3], b[3];
+equation
+  a[1] = 0;
+  for i in 1:3 loop
+    b[i] = a[i] + 1;
+  end for;
+  for i in 1:2 loop
+    b[i] = a[i + 1];
+  end for;
+end entwinedOrder;
+"); getErrorString();
+
+simulate(entwinedOrder, stopTime = 1); getErrorString();
+val(a[3], 1);
+val(b[3], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "entwinedOrder_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'entwinedOrder', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 3.0
+// endResult

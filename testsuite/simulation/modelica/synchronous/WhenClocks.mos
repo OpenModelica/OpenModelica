@@ -4,7 +4,7 @@
 // cflags: -d=-newInst --std=3.3
 //
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 
 setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
 
@@ -27,7 +27,7 @@ translateModel(WhenClocks); getErrorString();
 // ""
 // true
 // ""
-// "function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
+// "impure function Modelica.Utilities.Streams.print \"Print string to terminal or file\"
 //   input String string = \"\" \"String to be printed\";
 //   input String fileName = \"\" \"File where to print (empty string is the terminal)\";
 //

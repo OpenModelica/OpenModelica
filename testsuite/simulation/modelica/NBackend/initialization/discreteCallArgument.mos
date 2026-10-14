@@ -1,0 +1,39 @@
+// name: discreteCallArgument
+// keywords: NewBackend, initialization, matching
+// status: correct
+//
+// The time event variable of the table is only an argument of the table call. It must not
+// be matched to that call in the initialization, otherwise the state of der1 is unmatched.
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+loadString("
+model discreteCallArgument
+  Modelica.Blocks.Sources.CombiTimeTable tab(table = [0, 0; 1, 1; 2, 0], extrapolation = Modelica.Blocks.Types.Extrapolation.Periodic);
+  Modelica.Blocks.Continuous.Derivative der1(initType = Modelica.Blocks.Types.Init.InitialOutput, y_start = 0, T = 0.01);
+equation
+  connect(tab.y[1], der1.u);
+end discreteCallArgument;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(discreteCallArgument, stopTime = 2); getErrorString();
+val(der1.y, 0); val(der1.x, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "discreteCallArgument_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'discreteCallArgument', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// endResult

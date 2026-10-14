@@ -35,6 +35,9 @@ type SunErrHandlerFn = unsafe extern "C" fn(
 pub type RhsFn = unsafe extern "C" fn(f64, NVector, NVector, *mut c_void) -> c_int;
 /// `int g(realtype t, N_Vector y, realtype *gout, void *user_data)`.
 pub type RootFn = unsafe extern "C" fn(f64, NVector, *mut f64, *mut c_void) -> c_int;
+/// `CVLsJacFn`: `int jac(t, y, fy, J, user_data, tmp1, tmp2, tmp3)`, `J = ∂f/∂y`.
+pub type CvodeJacFn =
+    unsafe extern "C" fn(f64, NVector, NVector, SunMatrix, *mut c_void, NVector, NVector, NVector) -> c_int;
 
 const CV_ADAMS: c_int = 1;
 const CV_BDF: c_int = 2;
@@ -148,11 +151,12 @@ unsafe extern "C" {
     fn CVodeSVtolerances(mem: *mut c_void, reltol: f64, abstol: NVector) -> c_int;
     fn CVodeSetUserData(mem: *mut c_void, user_data: *mut c_void) -> c_int;
     fn CVodeSetLinearSolver(mem: *mut c_void, ls: SunLinearSolver, a: SunMatrix) -> c_int;
-    fn CVodeSetJacFn(mem: *mut c_void, jac: *const c_void) -> c_int;
+    fn CVodeSetJacFn(mem: *mut c_void, jac: Option<CvodeJacFn>) -> c_int;
     fn CVodeRootInit(mem: *mut c_void, nrtfn: c_int, g: RootFn) -> c_int;
     fn CVodeGetRootInfo(mem: *mut c_void, rootsfound: *mut c_int) -> c_int;
-    fn CVodeSetMinStep(mem: *mut c_void, hmin: f64) -> c_int;
     fn CVodeSetMaxStep(mem: *mut c_void, hmax: f64) -> c_int;
+    fn CVodeSetStopTime(mem: *mut c_void, tstop: f64) -> c_int;
+    fn CVodeClearStopTime(mem: *mut c_void) -> c_int;
     fn CVodeSetInitStep(mem: *mut c_void, hin: f64) -> c_int;
     fn CVodeSetMaxOrd(mem: *mut c_void, maxord: c_int) -> c_int;
     fn CVodeSetMaxConvFails(mem: *mut c_void, maxncf: c_int) -> c_int;
@@ -160,10 +164,10 @@ unsafe extern "C" {
     fn CVodeSetMaxErrTestFails(mem: *mut c_void, maxnef: c_int) -> c_int;
     fn CVodeSetMaxNumSteps(mem: *mut c_void, mxsteps: c_long) -> c_int;
     fn CVodeSetStabLimDet(mem: *mut c_void, stldet: c_int) -> c_int;
-    fn CVodeSetStopTime(mem: *mut c_void, tstop: f64) -> c_int;
     fn CVode(mem: *mut c_void, tout: f64, yout: NVector, tret: *mut f64, itask: c_int) -> c_int;
 
     fn CVodeGetNumSteps(mem: *mut c_void, n: *mut c_long) -> c_int;
+    fn CVodeGetCurrentStep(mem: *mut c_void, hcur: *mut f64) -> c_int;
     fn CVodeGetNumRhsEvals(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn CVodeGetNumJacEvals(mem: *mut c_void, n: *mut c_long) -> c_int;
     fn CVodeGetNumErrTestFails(mem: *mut c_void, n: *mut c_long) -> c_int;
@@ -181,16 +185,17 @@ pub enum Stop {
     Failed(c_int),
 }
 
-/// CVODE state for one model: BDF + Newton over a dense internal numerical
-/// Jacobian, per-state nominal-scaled tolerances, and CVODE's own root finding
-/// on the zero-crossings — the configuration `cvode_solver.c` builds.
+/// CVODE state for one model: BDF + Newton, per-state nominal-scaled tolerances,
+/// and CVODE's own root finding on the zero-crossings. The iteration matrix is KLU
+/// over the caller's sparse Jacobian, or dense over CVODE's own difference quotient
+/// when there is none.
 pub struct Cvode {
     /// Outlives every object below it; freed last.
     ctx: SunContext,
     mem: *mut c_void,
     y: NVector,
     atol: NVector,
-    /// Dense iteration matrix and its solver, owned for the lifetime of `mem`.
+    /// Iteration matrix and its solver, owned for the lifetime of `mem`.
     jac: SunMatrix,
     lin_sol: SunLinearSolver,
     /// `CV_ITER_FIXED_POINT` only: the fixed-point module and its work vector.
@@ -215,8 +220,10 @@ pub struct Counters {
 
 impl Cvode {
     /// Allocate and configure CVODE for `y0.len()` states with `n_roots`
-    /// zero-crossings. The callbacks' `user_data` is bound separately, by
-    /// [`set_user_data`]. `None` if any SUNDIALS allocation or setup call fails.
+    /// zero-crossings. `jac` is the nonzero count and the callback filling a CSC
+    /// `∂f/∂y` for KLU; without it CVODE differences a dense one itself. The
+    /// callbacks' `user_data` is bound separately, by [`set_user_data`]. `None` if
+    /// any SUNDIALS allocation or setup call fails.
     ///
     /// [`set_user_data`]: Cvode::set_user_data
     #[allow(clippy::too_many_arguments)]
@@ -229,6 +236,7 @@ impl Cvode {
         rhs: RhsFn,
         root: Option<RootFn>,
         config: (crate::simflags::CvodeLmm, crate::simflags::CvodeIter),
+        jac: Option<(usize, CvodeJacFn)>,
     ) -> Option<Cvode> {
         use crate::simflags::{CvodeIter, CvodeLmm};
         let (lmm, iter) = config;
@@ -257,11 +265,17 @@ impl Cvode {
         unsafe {
             cv.y = N_VNew_Serial(n as SunIndex, ctx);
             cv.atol = N_VNew_Serial(n as SunIndex, ctx);
-            cv.jac = SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx);
+            cv.jac = match jac {
+                Some((nnz, _)) => SUNSparseMatrix(n as SunIndex, n as SunIndex, nnz as SunIndex, CSC_MAT, ctx),
+                None => SUNDenseMatrix(n as SunIndex, n as SunIndex, ctx),
+            };
             if cv.y.is_null() || cv.atol.is_null() || cv.jac.is_null() {
                 return None;
             }
-            cv.lin_sol = SUNLinSol_Dense(cv.y, cv.jac, ctx);
+            cv.lin_sol = match jac {
+                Some(_) => SUNLinSol_KLU(cv.y, cv.jac, ctx),
+                None => SUNLinSol_Dense(cv.y, cv.jac, ctx),
+            };
             cv.mem = CVodeCreate(
                 match lmm {
                     CvodeLmm::Adams => CV_ADAMS,
@@ -293,8 +307,7 @@ impl Cvode {
             CVodeInit(cv.mem, rhs, t0, cv.y) == CV_SUCCESS
                 && CVodeSVtolerances(cv.mem, rtol, cv.atol) == CV_SUCCESS
                 && CVodeSetLinearSolver(cv.mem, cv.lin_sol, cv.jac) == CV_SUCCESS
-                // NULL: CVODE's internal difference-quotient dense Jacobian, as in C.
-                && CVodeSetJacFn(cv.mem, core::ptr::null()) == CV_SUCCESS
+                && CVodeSetJacFn(cv.mem, jac.map(|(_, f)| f)) == CV_SUCCESS
                 && (cv.nonlin_sol.is_null()
                     || CVodeSetNonlinearSolver(cv.mem, cv.nonlin_sol) == CV_SUCCESS)
                 && match root {
@@ -302,12 +315,13 @@ impl Cvode {
                     None => true,
                 }
                 // The remaining settings are `cvodeGetConfig`'s defaults.
-                && CVodeSetMinStep(cv.mem, 1e-12) == CV_SUCCESS
                 && CVodeSetMaxStep(cv.mem, 0.0) == CV_SUCCESS
-                && CVodeSetInitStep(cv.mem, 0.0) == CV_SUCCESS
-                && CVodeSetMaxOrd(cv.mem, lmm.max_order()) == CV_SUCCESS
+                && CVodeSetInitStep(cv.mem, crate::simflags::with_flags(|f| f.initial_step_size).unwrap_or(0.0))
+                    == CV_SUCCESS
+                && CVodeSetMaxOrd(cv.mem, crate::simflags::with_flags(|f| f.max_order).unwrap_or(lmm.max_order()))
+                    == CV_SUCCESS
                 && CVodeSetMaxConvFails(cv.mem, 10) == CV_SUCCESS
-                && CVodeSetStabLimDet(cv.mem, 0) == CV_SUCCESS
+                && CVodeSetStabLimDet(cv.mem, (lmm == CvodeLmm::Bdf) as c_int) == CV_SUCCESS
                 && CVodeSetMaxNonlinIters(cv.mem, 5) == CV_SUCCESS
                 && CVodeSetMaxErrTestFails(cv.mem, 100) == CV_SUCCESS
                 && CVodeSetMaxNumSteps(cv.mem, 1000) == CV_SUCCESS
@@ -340,19 +354,41 @@ impl Cvode {
         unsafe { CVodeReInit(self.mem, t, self.y) == CV_SUCCESS }
     }
 
+    pub fn mem(&self) -> *mut c_void {
+        self.mem
+    }
+
+    /// The first step after the next (re)start; 0 lets CVODE estimate it.
+    pub fn set_init_step(&mut self, h: f64) -> bool {
+        unsafe { CVodeSetInitStep(self.mem, h) == CV_SUCCESS }
+    }
+
     /// Rebind the pointer handed to the `rhs`/`root` callbacks. The driver's
     /// context lives on the stack of one `advance`, so it is set per chunk.
     pub fn set_user_data(&mut self, user_data: *mut c_void) -> bool {
         unsafe { CVodeSetUserData(self.mem, user_data) == CV_SUCCESS }
     }
 
+    /// `CVodeSetStopTime`, which holds until CVODE reaches it, or for a non-finite
+    /// `tstop` `CVodeClearStopTime`.
+    pub fn set_stop_time(&mut self, tstop: f64) -> bool {
+        let flag = unsafe {
+            if tstop.is_finite() { CVodeSetStopTime(self.mem, tstop) } else { CVodeClearStopTime(self.mem) }
+        };
+        flag == CV_SUCCESS
+    }
+
     /// Integrate to `tout`, stopping early on a root. `t` is updated to where the
-    /// integration actually stopped and `y()` holds the state there.
-    pub fn step(&mut self, t: &mut f64, tout: f64) -> Stop {
+    /// integration actually stopped and `y()` holds the state there. Unless `stop`,
+    /// CVODE may step past `tout` and interpolate back to it, as IDA does; an FMU's
+    /// `doStep` must not, as its inputs change there.
+    pub fn step(&mut self, t: &mut f64, tout: f64, stop: bool) -> Stop {
         unsafe {
-            let flag = CVodeSetStopTime(self.mem, tout);
-            if flag != CV_SUCCESS {
-                return Stop::Failed(flag);
+            if stop {
+                let flag = CVodeSetStopTime(self.mem, tout);
+                if flag != CV_SUCCESS {
+                    return Stop::Failed(flag);
+                }
             }
             match CVode(self.mem, tout, self.y, t, CV_NORMAL) {
                 CV_SUCCESS | CV_TSTOP_RETURN => Stop::Reached,
@@ -477,6 +513,8 @@ unsafe extern "C" {
     fn IDASetNonlinConvCoef(mem: *mut c_void, epcon: f64) -> c_int;
     fn IDASetInitStep(mem: *mut c_void, hin: f64) -> c_int;
     fn IDASetMaxStep(mem: *mut c_void, hmax: f64) -> c_int;
+    fn IDASetStopTime(mem: *mut c_void, tstop: f64) -> c_int;
+    fn IDAClearStopTime(mem: *mut c_void) -> c_int;
     fn IDASolve(mem: *mut c_void, tout: f64, tret: *mut f64, yret: NVector, ypret: NVector, itask: c_int) -> c_int;
     fn IDAGetCurrentStep(mem: *mut c_void, hcur: *mut f64) -> c_int;
 
@@ -914,11 +952,20 @@ impl Ida {
         }
     }
 
+    /// `IDASetStopTime`, which holds until IDA reaches it, or for a non-finite
+    /// `tstop` `IDAClearStopTime`.
+    pub fn set_stop_time(&mut self, tstop: f64) -> bool {
+        let flag = unsafe {
+            if tstop.is_finite() { IDASetStopTime(self.mem, tstop) } else { IDAClearStopTime(self.mem) }
+        };
+        flag == IDA_SUCCESS
+    }
+
     /// Integrate to `tout`, stopping early on a root. `t` is updated to where the
-    /// integration actually stopped and `y()`/`yp()` hold the state there. No
-    /// `IDASetStopTime`, as in `ida_solver.c`: IDA may step past `tout` internally
-    /// and interpolate back to it. `one_step` is `ida_solver.c`'s `idaSmode` under
-    /// `-noEquidistantTimeGrid`: return after each internal step.
+    /// integration actually stopped and `y()`/`yp()` hold the state there. IDA may
+    /// step past `tout` internally and interpolate back to it, as in `ida_solver.c`.
+    /// `one_step` is `ida_solver.c`'s `idaSmode` under `-noEquidistantTimeGrid`:
+    /// return after each internal step.
     pub fn step(&mut self, t: &mut f64, tout: f64, one_step: bool) -> Stop {
         let mode = if one_step { IDA_ONE_STEP } else { IDA_NORMAL };
         unsafe {
@@ -1021,6 +1068,13 @@ impl Drop for Ida {
 pub fn ida_current_step(mem: *mut c_void) -> f64 {
     let mut h = 0.0;
     unsafe { IDAGetCurrentStep(mem, &mut h) };
+    h
+}
+
+/// [`ida_current_step`] for CVODE.
+pub fn cvode_current_step(mem: *mut c_void) -> f64 {
+    let mut h = 0.0;
+    unsafe { CVodeGetCurrentStep(mem, &mut h) };
     h
 }
 

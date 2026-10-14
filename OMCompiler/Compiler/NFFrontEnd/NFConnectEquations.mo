@@ -215,6 +215,23 @@ algorithm
       guard AbsynUtil.isNamedPathIdent(Function.name(call.fn), "actualStream")
       then evaluateActualStreamMul(exp.exp2, listHead(call.arguments), exp.operator, sets, setsArray, variables, ctable, replacements);
 
+    // Only evaluate the branch that is taken if the condition is known, e.g. in an
+    // expanded array constructor {if i <= n then inStream(c[i].h) else ... for i in 1:n+1}
+    // the other branch may refer to connectors that don't exist.
+    case Expression.IF()
+      guard Expression.variability(exp.condition) <= Variability.STRUCTURAL_PARAMETER
+      algorithm
+        // The condition might still contain iterators, e.g. in a for-equation
+        // that hasn't been unrolled yet. Keep both branches then.
+        evalExp := Ceval.tryEvalExp(exp.condition);
+      then
+        if Expression.isTrue(evalExp) then
+          evaluateOperators(exp.trueBranch, sets, setsArray, variables, ctable, replacements)
+        elseif Expression.isFalse(evalExp) then
+          evaluateOperators(exp.falseBranch, sets, setsArray, variables, ctable, replacements)
+        else
+          evaluateOperatorsShallow(exp, sets, setsArray, variables, ctable, replacements);
+
     else evaluateOperatorsShallow(exp, sets, setsArray, variables, ctable, replacements);
   end match;
 end evaluateOperators;

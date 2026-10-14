@@ -56,6 +56,7 @@ public
   import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
+  import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
@@ -1281,7 +1282,7 @@ public
         case SCALAR_EQUATION()            then 1;
         case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty, resize);
         case RECORD_EQUATION()            then Type.sizeOf(eqn.ty, resize);
-        case ALGORITHM()                  then eqn.size;
+        case ALGORITHM()                  then if resize then algorithmSize(eqn.alg, eqn.size) else eqn.size;
         case IF_EQUATION()                then if resize then IfEquationBody.size(eqn.body, resize) else eqn.size;
         case FOR_EQUATION(body = {body})  then if resize then Iterator.size(eqn.iter, resize) * Equation.size(Pointer.create(body), resize) else eqn.size;
         case WHEN_EQUATION()              then if resize then WhenEquationBody.size(eqn.body, resize) else eqn.size;
@@ -1292,6 +1293,15 @@ public
         then fail();
       end match;
     end size;
+
+    function algorithmSize
+      "the size of the outputs of an algorithm with the resized sizes of resizable dimensions"
+      input Algorithm alg;
+      input Integer size "the size without resizing";
+      output Integer s;
+    algorithm
+      s := if listEmpty(alg.outputs) then size else sum(ComponentRef.size(out, false, true) for out in alg.outputs);
+    end algorithmSize;
 
     function sizes
       input Pointer<Equation> eqn_ptr;
@@ -1305,7 +1315,7 @@ public
         case SCALAR_EQUATION() then {1};
         case ARRAY_EQUATION()  then list(Dimension.size(dim, resize) for dim in Type.arrayDims(eqn.ty));
         case RECORD_EQUATION() then {Type.sizeOf(eqn.ty, resize)};
-        case ALGORITHM()       then {eqn.size};
+        case ALGORITHM()       then {if resize then algorithmSize(eqn.alg, eqn.size) else eqn.size};
         case IF_EQUATION()     then {eqn.size};
         case FOR_EQUATION()    then listReverse(Iterator.sizes(eqn.iter, resize)); // does only consider frames and not conditions
         case WHEN_EQUATION()   then {eqn.size};
@@ -3016,7 +3026,12 @@ public
       // the rows are row major w.r.t. the body dimensions followed by the iterator frames
       location  := listReverse(Slice.indexToLocation(idx, sizes));
       Iterator.createLocationReplacements(iter, listArray(List.lastN(location, listLength(location) - n_body)), replacements);
-      residual  := Expression.map(Equation.getResidualExp(body), function Replacements.applySimpleExp(replacements = replacements));
+      // if-equation bodies become an if-expression of the branch residuals
+      residual  := match body
+        case IF_EQUATION() then IfEquationBody.getResidualExp(body.body);
+        else Equation.getResidualExp(body);
+      end match;
+      residual  := Expression.map(residual, function Replacements.applySimpleExp(replacements = replacements));
       residual  := scalarizeElement(residual, list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in List.firstN(location, n_body)));
       residual  := SimplifyExp.simplifyDump(residual, true, getInstanceName());
     end forArrayBodyRowResidual;
@@ -3043,8 +3058,13 @@ public
           location := Slice.indexToLocation(scal_idx, sizes);
           // create the replacement rules for this location
           Iterator.createLocationReplacements(eqn.iter, listArray(location), replacements);
-          // replace iterators
-          sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
+          // replace iterators, on a copy because map updates nested equation pointers in place
+          sliced_eqn := map(copyNested(listHead(eqn.body)), function Replacements.applySimpleExp(replacements = replacements));
+          // remove the branches made unreachable by the iterator value, one nesting level at a time
+          for i in 1:maxIfDepth(sliced_eqn) loop
+            if not isIfEquation(Pointer.create(sliced_eqn)) then break; end if;
+            sliced_eqn := simplify(sliced_eqn);
+          end for;
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
             (sliced_eqn, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcMap);
@@ -3057,6 +3077,48 @@ public
         else (eqn, NBSolve.Status.UNPROCESSED);
       end match;
     end singleSlice;
+
+    function maxIfDepth
+      "upper bound for the nesting of if-equations and their branches"
+      input Equation eqn;
+      output Integer depth = 0;
+    algorithm
+      depth := match eqn
+        case IF_EQUATION() then maxIfBodyDepth(SOME(eqn.body));
+        else 0;
+      end match;
+    end maxIfDepth;
+
+    function maxIfBodyDepth
+      input Option<IfEquationBody> body;
+      output Integer depth = 0;
+    protected
+      IfEquationBody b;
+    algorithm
+      if isSome(body) then
+        SOME(b) := body;
+        depth := 1 + maxIfBodyDepth(b.else_if);
+        for e in b.then_eqns loop
+          depth := max(depth, 1 + maxIfDepth(Pointer.access(e)));
+        end for;
+      end if;
+    end maxIfBodyDepth;
+
+    function copyNested
+      "copies the nested equation pointers of if-equations so that mapping the copy
+      does not change the original equation"
+      input output Equation eqn;
+    algorithm
+      eqn := match eqn
+        case IF_EQUATION() algorithm
+          eqn.body := IfEquationBody.copyNested(eqn.body);
+        then eqn;
+        case FOR_EQUATION() algorithm
+          eqn.body := list(copyNested(e) for e in eqn.body);
+        then eqn;
+        else eqn;
+      end match;
+    end copyNested;
 
     protected function makeInequality
       input tuple<ComponentRef, Expression> tpl;
@@ -3110,7 +3172,9 @@ public
               (lhs, rhs) := tpl;
               lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(lhs_subs, BVariable.getVarName(lhs), true));
               rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(rhs_subs, BVariable.getVarName(rhs), true));
-              if BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
+              if BVariable.isConst(lhs) then
+                // constants have no storage and keep their value
+              elseif BVariable.isRecord(lhs) and BVariable.isRecord(rhs) then
                 // nested record, assign its children
                 stmts := listAppend(toStatement(RECORD_EQUATION(Expression.typeOf(lhs_exp), lhs_exp, rhs_exp, eqn.source, eqn.attr,
                   listLength(BVariable.getRecordChildren(lhs)))), stmts);
@@ -3311,6 +3375,13 @@ public
       ifBody.else_if := Util.applyOption(ifBody.else_if, function mapCondition(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
     end mapCondition;
 
+    function copyNested
+      input output IfEquationBody ifBody;
+    algorithm
+      ifBody.then_eqns := list(Pointer.create(Equation.copyNested(Pointer.access(e))) for e in ifBody.then_eqns);
+      ifBody.else_if := Util.applyOption(ifBody.else_if, copyNested);
+    end copyNested;
+
     function mapEqnExpCref
       input output IfEquationBody ifBody;
       input MapFuncEqnPtr func;
@@ -3428,7 +3499,7 @@ public
       Expression new_exp;
     algorithm
       exp := match body.then_eqns
-        case {eqn_ptr} algorithm
+        case {eqn_ptr} guard(isSome(Equation.getLHS(Pointer.access(eqn_ptr)))) algorithm
           SOME(new_exp) := Equation.getLHS(Pointer.access(eqn_ptr));
           if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
             if isSome(body.else_if) then
@@ -3443,12 +3514,37 @@ public
         then new_exp;
         else algorithm
           if Flags.isSet(Flags.FAILTRACE) then
-            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation:\n" + toString(body));
+            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation or branch without LHS:\n" + toString(body));
           end if;
           success := false;
         then exp;
       end match;
     end getLHS;
+
+    function getResidualExp
+      "if-expression of the branch residuals, needs a single equation per branch"
+      input IfEquationBody body;
+      output Expression exp;
+    protected
+      Pointer<Equation> eqn_ptr;
+    algorithm
+      exp := match body.then_eqns
+        case {eqn_ptr} algorithm
+          exp := match Pointer.access(eqn_ptr)
+            local
+              IfEquationBody nested;
+            case IF_EQUATION(body = nested) then getResidualExp(nested);
+            else Equation.getResidualExp(Pointer.access(eqn_ptr));
+          end match;
+          if isSome(body.else_if) then
+            exp := Expression.IF(Expression.typeOf(exp), body.condition, exp, getResidualExp(Util.getOption(body.else_if)));
+          end if;
+        then exp;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a branch does not have a single equation:\n" + toString(body)});
+        then fail();
+      end match;
+    end getResidualExp;
 
     function getRHS
       "needs the if equation to be split"
@@ -3460,7 +3556,7 @@ public
       Expression new_exp, new_exp2;
     algorithm
       exp := match body.then_eqns
-        case {eqn_ptr} algorithm
+        case {eqn_ptr} guard(isSome(Equation.getRHS(Pointer.access(eqn_ptr)))) algorithm
           SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if isSome(body.else_if) then
             (new_exp2, success) := getRHS(Util.getOption(body.else_if));
@@ -3475,7 +3571,7 @@ public
         then new_exp;
         else algorithm
           if Flags.isSet(Flags.FAILTRACE) then
-            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation:\n" + toString(body));
+            Error.addCompilerWarning(getInstanceName() + " failed because of un-split if-equation or branch without RHS:\n" + toString(body));
           end if;
           success := false;
         then exp;
@@ -3493,10 +3589,23 @@ public
       Expression condition;
       Pointer<Equation> eqn;
       Option<IfEquationBody> tmp;
+      IfEquationBody scalar_body;
     algorithm
       if isSplittable(body, s) then
         then_eqns := arrayCreate(s, {});
         (conditions, then_eqns) := splitCollect(sortForSplit(body), conditions, then_eqns);
+        // equations of different sizes can not be paired across the branches, pair their scalar rows instead
+        if not Array.all(then_eqns, sameSize) then
+          scalar_body := scalarizeBranches(body);
+          s := listLength(scalar_body.then_eqns);
+          if not isSplittable(scalar_body, s) then
+            bodies := {body};
+            return;
+          end if;
+          conditions := {};
+          then_eqns := arrayCreate(s, {});
+          (conditions, then_eqns) := splitCollect(scalar_body, conditions, then_eqns);
+        end if;
         for i in 1:arrayLength(then_eqns) loop
           tmp := NONE();
           for tpl in List.zip(conditions, then_eqns[i]) loop
@@ -3509,6 +3618,58 @@ public
         bodies := {body};
       end if;
     end split;
+
+    function scalarizeBranches
+      "replaces the array equations of all branches by their scalar rows"
+      input output IfEquationBody body;
+    algorithm
+      body.then_eqns := List.flatten(list(scalarRows(e) for e in body.then_eqns));
+      body.else_if := Util.applyOption(body.else_if, scalarizeBranches);
+    end scalarizeBranches;
+
+    function scalarRows
+      input Pointer<Equation> eqn_ptr;
+      output list<Pointer<Equation>> rows;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+      list<Integer> sizes;
+      list<Subscript> subs;
+    algorithm
+      rows := match eqn
+        case ARRAY_EQUATION() guard(Type.hasKnownSize(eqn.ty)) algorithm
+          sizes := Equation.sizes(eqn_ptr);
+          rows := {};
+          for i in Equation.size(eqn_ptr)-1:-1:0 loop
+            subs := list(Subscript.INDEX(Expression.INTEGER(l + 1)) for l in Slice.indexToLocation(i, sizes));
+            rows := Pointer.create(SCALAR_EQUATION(Type.arrayElementType(eqn.ty), rowElement(eqn.lhs, subs),
+              rowElement(eqn.rhs, subs), eqn.source, eqn.attr)) :: rows;
+          end for;
+        then rows;
+        else {eqn_ptr};
+      end match;
+    end scalarRows;
+
+    function rowElement
+      "the element of an array expression, expanded to make it solvable"
+      input Expression exp;
+      input list<Subscript> subs;
+      output Expression element;
+    protected
+      Expression expanded;
+      Boolean success;
+    algorithm
+      (expanded, success) := ExpandExp.expand(exp, true);
+      element := SimplifyExp.simplify(Expression.applySubscripts(subs, if success then expanded else exp));
+    end rowElement;
+
+    function sameSize
+      input list<Pointer<Equation>> eqns;
+      output Boolean b;
+    protected
+      Integer sz = Equation.size(listHead(eqns));
+    algorithm
+      b := List.all(list(Equation.size(e) == sz for e in eqns), Util.id);
+    end sameSize;
 
     function isSplittable
       "an if equation can be split if all branches have the same size"

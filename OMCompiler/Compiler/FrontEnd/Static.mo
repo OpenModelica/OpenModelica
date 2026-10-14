@@ -322,6 +322,7 @@ algorithm
       case Absyn.MATCHEXP() then Patternm.elabMatchExpression;
       case Absyn.DOT() then elabExp_Dot;
       case Absyn.EXPRESSIONCOMMENT() then elabExp_Comment;
+      case Absyn.UNITFUL_LITERAL() then elabExp_UnitfulLiteral;
       else elabExp_BuiltinType;
     end match;
 
@@ -583,6 +584,15 @@ algorithm
   Absyn.EXPRESSIONCOMMENT(exp=exp) := inExp;
   (outCache, outExp, outProperties) := elabExp(inCache,inEnv,exp,inImplicit,inDoVect, inPrefix, inInfo);
 end elabExp_Comment;
+
+protected function elabExp_UnitfulLiteral
+  extends PartialElabExpFunc;
+protected
+  Absyn.Exp exp;
+algorithm
+  Absyn.UNITFUL_LITERAL(value=exp) := inExp;
+  (outCache, outExp, outProperties) := elabExp(inCache,inEnv,exp,inImplicit,inDoVect, inPrefix, inInfo);
+end elabExp_UnitfulLiteral;
 
 protected function elabExp_PartEvalFunction
   "turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"

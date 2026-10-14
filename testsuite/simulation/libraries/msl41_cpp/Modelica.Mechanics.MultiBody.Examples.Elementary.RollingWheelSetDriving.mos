@@ -15,13 +15,13 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving);
 compareVars :=
 {
-   "wheelSet.x",
-   "wheelSet.y",
+   "wheelSet.der_theta1",
+   "wheelSet.der_theta2",
    "wheelSet.phi",
    "wheelSet.theta1",
    "wheelSet.theta2",
-   "wheelSet.der_theta1",
-   "wheelSet.der_theta2"
+   "wheelSet.x",
+   "wheelSet.y"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -35,9 +35,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving
-// {"wheelSet.x", "wheelSet.y", "wheelSet.phi", "wheelSet.theta1", "wheelSet.theta2", "wheelSet.der_theta1", "wheelSet.der_theta2"}
+// {"wheelSet.der_theta1", "wheelSet.der_theta2", "wheelSet.phi", "wheelSet.theta1", "wheelSet.theta2", "wheelSet.x", "wheelSet.y"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving', options = '', outputFormat = 'mat', variableFilter = 'time|wheelSet.x|wheelSet.y|wheelSet.phi|wheelSet.theta1|wheelSet.theta2|wheelSet.der_theta1|wheelSet.der_theta2', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving', options = '', outputFormat = 'mat', variableFilter = 'time|wheelSet.der_theta1|wheelSet.der_theta2|wheelSet.phi|wheelSet.theta1|wheelSet.theta2|wheelSet.x|wheelSet.y', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving_res.mat
 // Files Equal!
 // "true

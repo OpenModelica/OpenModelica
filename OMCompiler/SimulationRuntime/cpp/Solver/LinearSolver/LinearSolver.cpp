@@ -37,8 +37,6 @@
 #include <Core/Utils/extension/logger.hpp>
 #include <Solver/LinearSolver/LinearSolver.h>
 
-#include <Core/Utils/numeric/bindings/ublas.hpp>
-#include <Core/Utils/numeric/utils.h>
 
 LinearSolver::LinearSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
    :AlgLoopSolverDefaultImplementation()
@@ -193,10 +191,10 @@ void LinearSolver::initialize()
         _Ap = new int[(_dimSys + 1)];
         _Ai = new int[_nonzeros];
 
-        int const* Ti= boost::numeric::bindings::begin_compressed_index_major (A);
-        int const* Tj= boost::numeric::bindings::begin_index_minor (A);
+        int const* Ti= A.index1_data().begin();
+        int const* Tj= A.index2_data().begin();
 
-        _Ax= boost::numeric::bindings::begin_value (A);
+        _Ax= A.value_data().begin();
 
         memcpy(_Ap,Ti, sizeof(int)*(_dimSys + 1));
         memcpy(_Ai,Tj, sizeof(int)*(_nonzeros));
@@ -327,7 +325,7 @@ void LinearSolver::solve()
 #if defined(klu)
     //writing entries of A
     sparsematrix_t& A = _algLoop->getSparseAMatrix();
-    _Ax = boost::numeric::bindings::begin_value(A);
+    _Ax = A.value_data().begin();
 
     if (_generateoutput) {
 

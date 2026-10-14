@@ -574,5 +574,5 @@ source2.h=<br>
   end TestModels;
 
   annotation(
-    uses(Modelica(version = "3.2.2")));
+    uses(Modelica(version = "4.1.0")));
 end TestStreamConnectorsNoActualStreamEvaluateParams;

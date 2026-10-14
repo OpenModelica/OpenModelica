@@ -186,17 +186,24 @@ end getKnownUnits;
 
 public function getKnownUnitsInverse
   output UnitToStringTable outKnownUnitsInverse;
+algorithm
+  outKnownUnitsInverse := UnorderedMap.new<String>(hash, isEqual, Util.nextPrime(listLength(LU_COMPLEXUNITS)));
+  addKnownUnitsInverse(outKnownUnitsInverse);
+end getKnownUnitsInverse;
+
+public function addKnownUnitsInverse
+  "Fills a table from UnorderedMap.new<String>(hash, isEqual) the way
+   getKnownUnitsInverse does, so it can be built only when first needed."
+  input UnitToStringTable table;
 protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := UnorderedMap.new<String>(hash, isEqual, Util.nextPrime(listLength(LU_COMPLEXUNITS)));
-
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
-    UnorderedMap.tryAdd(ut, s, outKnownUnitsInverse);
+    UnorderedMap.tryAdd(ut, s, table);
   end for;
-end getKnownUnitsInverse;
+end addKnownUnitsInverse;
 
 public function newCrefUnitTable
   input Integer size;

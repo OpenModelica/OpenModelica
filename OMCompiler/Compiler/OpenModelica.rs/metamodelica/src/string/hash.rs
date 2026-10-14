@@ -52,6 +52,14 @@ pub fn stringHashDjb2Continue(str: impl AsRef<str>, hash: i32) -> i32 {
 /// building the string.
 #[inline]
 pub fn intHashDjb2Continue(i: i32, hash: i32) -> i32 {
+    if (0..100).contains(&i) {
+        let mut h = hash as u32;
+        if i >= 10 {
+            h = h.wrapping_mul(33).wrapping_add(b'0' as u32 + (i / 10) as u32);
+        }
+        h = h.wrapping_mul(33).wrapping_add(b'0' as u32 + (i % 10) as u32);
+        return (h & HASH_MASK) as i32;
+    }
     let mut buf = [0u8; 11];
     let mut n = buf.len();
     let mut v = i.unsigned_abs();
@@ -129,7 +137,7 @@ mod tests {
 
         #[test]
         fn test_int_hash_djb2_continue() {
-            for i in [0, 1, -1, 7, -42, 1234567890, i32::MAX, i32::MIN] {
+            for i in (-120..=120).chain([1234567890, i32::MAX, i32::MIN]) {
                 assert_eq!(
                     intHashDjb2Continue(i, 5381),
                     stringHashDjb2Continue(ArcStr::from(i.to_string()), 5381),

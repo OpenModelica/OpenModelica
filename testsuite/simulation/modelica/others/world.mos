@@ -3,7 +3,7 @@
 // status:    correct
 //
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("world.mo"); getErrorString();
 setDebugFlags("visxml"); getErrorString();
 simulate(world, simflags="-emit_protected -ignoreHideResult"); getErrorString();

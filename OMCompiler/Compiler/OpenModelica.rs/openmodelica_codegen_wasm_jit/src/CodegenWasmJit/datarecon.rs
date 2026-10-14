@@ -116,7 +116,7 @@ pub(crate) fn build_jac_infos(
         for sv in lst(&jm.seedVars) {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
-                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },
+                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 },
             );
             listed.push(cursor);
             cursor += 8;
@@ -125,7 +125,7 @@ pub(crate) fn build_jac_infos(
         for sv in jac_column_vars(jm).iter() {
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
-                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false },
+                SimSlot { off: cursor, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 },
             );
             if matches!(sv.varKind, VarKind::JAC_VAR)
                 && let Some(row) = jac_result_row(sv).filter(|&r| r < rows)

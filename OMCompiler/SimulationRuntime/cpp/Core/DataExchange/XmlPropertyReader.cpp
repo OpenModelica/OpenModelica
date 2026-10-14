@@ -30,14 +30,121 @@
 #include <Core/DataExchange/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 #include <Core/DataExchange/XmlPropertyReader.h>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/lexical_cast.hpp>
+#include <expat.h>
 #include <fstream>
 #include <iostream>
+#include <list>
+#include <locale>
+#include <optional>
 #include <regex>
+#include <set>
 #include <sstream>
+#include <type_traits>
 #include <vector>
+
+namespace {
+
+struct XmlElement
+{
+  std::string name;
+  std::map<std::string, std::string> attributes;
+  std::list<XmlElement> children;
+
+  const std::string* attribute(const std::string& key) const
+  {
+    std::map<std::string, std::string>::const_iterator it = attributes.find(key);
+    return it == attributes.end() ? nullptr : &it->second;
+  }
+
+  const std::string& requiredAttribute(const std::string& key) const
+  {
+    const std::string* value = attribute(key);
+    if (!value)
+      throw std::runtime_error("missing attribute " + key + " of " + name);
+    return *value;
+  }
+
+  const XmlElement& child(const std::string& childName) const
+  {
+    for (const XmlElement& c : children)
+      if (c.name == childName)
+        return c;
+    throw std::runtime_error("missing element " + childName + " in " + name);
+  }
+
+  // The whole attribute has to parse as a T.
+  template <class T>
+  std::optional<T> attributeAs(const std::string& key) const
+  {
+    const std::string* str = attribute(key);
+    if (!str)
+      return std::nullopt;
+    std::istringstream is(*str);
+    is.imbue(std::locale::classic());
+    T value;
+    is >> value;
+    if (is.fail()) {
+      if constexpr (!std::is_same_v<T, bool>)
+        return std::nullopt;
+      is.clear();
+      is.str(*str);
+      is >> std::boolalpha >> value;
+      if (is.fail())
+        return std::nullopt;
+    }
+    is >> std::ws;
+    if (!is.eof())
+      return std::nullopt;
+    return value;
+  }
+};
+
+void XMLCALL startElement(void* userData, const XML_Char* name, const XML_Char** atts)
+{
+  std::vector<XmlElement*>& stack = *static_cast<std::vector<XmlElement*>*>(userData);
+  stack.back()->children.emplace_back();
+  XmlElement& e = stack.back()->children.back();
+  e.name = name;
+  for (int i = 0; atts[i]; i += 2)
+    e.attributes[atts[i]] = atts[i + 1];
+  stack.push_back(&e);
+}
+
+void XMLCALL endElement(void* userData, const XML_Char*)
+{
+  static_cast<std::vector<XmlElement*>*>(userData)->pop_back();
+}
+
+void readXml(std::istream& in, XmlElement& document)
+{
+  std::vector<XmlElement*> stack(1, &document);
+  XML_Parser parser = XML_ParserCreate(NULL);
+  XML_SetUserData(parser, &stack);
+  XML_SetElementHandler(parser, startElement, endElement);
+  std::vector<char> buf(65536);
+  bool done = false;
+  while (!done) {
+    in.read(buf.data(), buf.size());
+    done = in.gcount() < (std::streamsize)buf.size();
+    if (XML_Parse(parser, buf.data(), (int)in.gcount(), done) == XML_STATUS_ERROR) {
+      std::stringstream ss;
+      ss << XML_ErrorString(XML_GetErrorCode(parser)) << " at line " << XML_GetCurrentLineNumber(parser);
+      XML_ParserFree(parser);
+      throw std::runtime_error(ss.str());
+    }
+  }
+  XML_ParserFree(parser);
+}
+
+}
+
+static std::string realToString(double value)
+{
+  std::ostringstream os;
+  os.precision(17);
+  os << value;
+  return os.str();
+}
 
 // Offset in column-major storage of the element at the given row-major offset.
 static int rowMajorToColumnMajor(const std::vector<int>& dims, int rowMajorOffset)
@@ -77,9 +184,108 @@ XmlPropertyReader::~XmlPropertyReader()
 {
 }
 
+// The values of a start attribute: one value, or one per element of an array in
+// row-major order, separated by spaces. Empty if one of them does not parse.
+template <class T>
+static std::vector<T> parseValues(const std::string& str)
+{
+  std::vector<T> values;
+  if constexpr (std::is_same_v<T, std::string>) {
+    values.push_back(str);
+  }
+  else {
+    std::istringstream is(str);
+    is.imbue(std::locale::classic());
+    std::string token;
+    while (is >> token) {
+      T value;
+      if constexpr (std::is_same_v<T, bool>) {
+        if (token == "true" || token == "1")
+          value = true;
+        else if (token == "false" || token == "0")
+          value = false;
+        else
+          return std::vector<T>();
+      }
+      else {
+        std::istringstream ts(token);
+        ts.imbue(std::locale::classic());
+        ts >> value;
+        if (ts.fail() || !(ts >> std::ws).eof())
+          return std::vector<T>();
+      }
+      values.push_back(value);
+    }
+  }
+  return values;
+}
+
+// name=value,name=value as given with -override; commas inside [] belong to a name.
+static std::map<std::string, std::string> parseOverrides(const std::string& str)
+{
+  std::map<std::string, std::string> overrides;
+  std::string item;
+  int depth = 0;
+  for (size_t i = 0; i <= str.size(); i++) {
+    char c = i < str.size() ? str[i] : ',';
+    if (c == '[') depth++;
+    if (c == ']') depth--;
+    if (c == ',' && depth == 0) {
+      size_t eq = item.find('=');
+      if (eq != std::string::npos && eq > 0)
+        overrides[item.substr(0, eq)] = item.substr(eq + 1);
+      else if (!item.empty())
+        throw ModelicaSimulationError(UTILITY, "Invalid -override " + item + ", expected name=value");
+      item.clear();
+    }
+    else
+      item += c;
+  }
+  return overrides;
+}
+
+static void setStartValue(IContinuous& system, double& var, double value) { system.setRealStartValue(var, value); }
+static void setStartValue(IContinuous& system, int& var, int value) { system.setIntStartValue(var, value); }
+static void setStartValue(IContinuous& system, bool& var, bool value) { system.setBoolStartValue(var, value); }
+static void setStartValue(IContinuous& system, std::string& var, const std::string& value) { system.setStringStartValue(var, value); }
+
+// Set the start value(s) of the variable at pos with n elements (an array if dims is not empty).
+template <class T>
+static void readStartValue(IContinuous& system, T* vars, int pos, int n, const std::vector<int>& dims,
+                           const std::string& startStr, const std::string& name)
+{
+  std::vector<T> values = parseValues<T>(startStr);
+  if (values.size() == 1) {
+    for (int off = 0; off < n; off++)
+      setStartValue(system, vars[pos + off], values[0]);
+  }
+  else if (!dims.empty() && (int)values.size() == n) {
+    for (int p = 0; p < n; p++)
+      setStartValue(system, vars[pos + rowMajorToColumnMajor(dims, p)], values[p]);
+  }
+  else if (!values.empty()) {
+    LOGGER_WRITE("XMLPropertyReader: " + to_string(values.size()) + " start values for " + name + " with "
+                 + to_string(n) + " elements, ignored", LC_INIT, LL_WARNING);
+  }
+}
+
+// Register the variable at pos as result signal(s), each element of an array as a[i,j,...].
+template <class T, class OutVars>
+static void addResultVars(OutVars& outVars, const T* vars, int pos, int n, const std::vector<int>& dims,
+                          const std::string& name, const std::string& description, bool isParameter, bool isNegatedAlias)
+{
+  std::string desc = description;
+  for (int off = 0; off < n; off++) {
+    std::string elname = dims.empty() ? name : arrayElementName(name, dims, off);
+    if (isParameter)
+      outVars.addParameter(elname, desc, vars + pos + off);
+    else
+      outVars.addOutputVar(elname, desc, vars + pos + off, isNegatedAlias);
+  }
+}
+
 void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVars> sim_vars)
 {
-  using boost::property_tree::ptree;
   std::ifstream file;
   file.open (_propertyFile.c_str(), std::ifstream::in);
   if (file.good())
@@ -90,38 +296,41 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
     string *stringVars = sim_vars->getStringVarsVector();
     double *derVars= sim_vars-> getDerStateVector();
     int refIdx = -1;
-    boost::optional<int> refIdxOpt;
+    std::optional<int> refIdxOpt;
     std::regex filterRegex(_globalSettings->getVariableFilter());
     EmitResults emitResults = _globalSettings->getEmitResults();
+    std::map<std::string, std::string> overrides = parseOverrides(_globalSettings->getParameterOverrides());
+    std::set<std::string> overridden;
+    _realVars.clear();
+    _intVars.clear();
+    _boolVars.clear();
+    _derVars.clear();
     try
     {
-      ptree tree;
-      read_xml(file, tree);
+      XmlElement document;
+      readXml(file, document);
 
-      ptree modelDescription = tree.get_child("ModelDescription");
+      const XmlElement& modelDescription = document.child("ModelDescription");
 
       LOGGER_WRITE_BEGIN("Initialize start values:", LC_INIT, LL_DEBUG);
-      FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
+      for (const XmlElement& vars : modelDescription.child("ModelVariables").children)
       {
-        if (vars.first == "ScalarVariable" || vars.first == "ArrayVariable")
+        if (vars.name == "ScalarVariable" || vars.name == "ArrayVariable")
         {
-          refIdxOpt = vars.second.get_optional<int>("<xmlattr>.valueReference");
+          refIdxOpt = vars.attributeAs<int>("valueReference");
 
           if (!refIdxOpt)
-          {
-            //boost::property_tree::xml_parser::write_xml(std::cout, vars.second);
             continue;
-          }
 
-          string name = vars.second.get<string>("<xmlattr>.name");
-          boost::optional<string> descriptonOpt = vars.second.get_optional<string>("<xmlattr>.description");
+          string name = vars.requiredAttribute("name");
+          const string* descriptonOpt = vars.attribute("description");
           string descripton;
           if (descriptonOpt)
             descripton  = *descriptonOpt;
 
           refIdx = *refIdxOpt;
-          std::string aliasInfo = vars.second.get<std::string>("<xmlattr>.alias");
-          std::string variabilityInfo = vars.second.get<std::string>("<xmlattr>.variability");
+          std::string aliasInfo = vars.requiredAttribute("alias");
+          std::string variabilityInfo = vars.requiredAttribute("variability");
           bool isParameter = (variabilityInfo.compare("parameter") == 0);
           //If a start value is given for the alias and the referred variable, skip the alias declaration
           bool isAlias = aliasInfo.compare("alias") == 0;
@@ -130,29 +339,27 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
           // For a non-scalarized array (kept un-expanded with simCodeScalarize=false),
           // collect the per-dimension sizes so each scalar element a[i,j,...] can be
           // registered as its own result signal at the contiguous reference refIdx+offset.
-          bool isArray = (vars.first == "ArrayVariable");
-          std::vector<int> arrayDims;
-          int arraySize = 1;
-          if (isArray)
+          std::vector<int> xmlDims;
+          if (vars.name == "ArrayVariable")
           {
-            FOREACH(ptree::value_type const& dimNode, vars.second.get_child(""))
+            for (const XmlElement& dimNode : vars.children)
             {
-              if (dimNode.first == "Dimension")
+              if (dimNode.name == "Dimension")
               {
-                boost::optional<int> d = dimNode.second.get_optional<int>("<xmlattr>.start");
-                if (d) { arrayDims.push_back(*d); arraySize *= *d; }
+                std::optional<int> d = dimNode.attributeAs<int>("start");
+                if (d) xmlDims.push_back(*d);
               }
             }
-            if (arrayDims.empty()) { arrayDims.push_back(1); }
+            if (xmlDims.empty()) { xmlDims.push_back(1); }
           }
 
           bool emitResult = false;
           if (emitResults != EMIT_NONE) {
             emitResult = std::regex_match(name, filterRegex);
             if (emitResults != EMIT_ALL) {
-              boost::optional<string> isProtectedOpt = vars.second.get_optional<string>("<xmlattr>.isProtected");
+              const string* isProtectedOpt = vars.attribute("isProtected");
               bool isProtected = isProtectedOpt && *isProtectedOpt == "true";
-              boost::optional<string> hideResultOpt = vars.second.get_optional<string>("<xmlattr>.hideResult");
+              const string* hideResultOpt = vars.attribute("hideResult");
               bool hideResultIsTrue = hideResultOpt && *hideResultOpt == "true";
               bool hideResultIsFalse = hideResultOpt && *hideResultOpt == "false";
               emitResult &= emitResults == EMIT_HIDDEN || !hideResultIsTrue;
@@ -160,116 +367,51 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
             }
           }
 
-          FOREACH(ptree::value_type const& var, vars.second.get_child(""))
+          for (const XmlElement& var : vars.children)
           {
-            if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
-            {
-               //If a start value is given for the alias and the referred variable, skip the alias declaration
-              if (!(isAlias || isNegatedAlias))
-              {
-                boost::optional<double> v = var.second.get_optional<double>("<xmlattr>.start");
-                if (v) {
-                  double value = *v;
-                  LOGGER_WRITE("XMLPropertyReader: Setting real variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
-                  for (int off = 0; off < (isArray ? arraySize : 1); off++)
-                    system.setRealStartValue(realVars[refIdx + off], value);
-                }
-                else if (isArray)
-                {
-                  // an array start value with one entry per element, in row-major order
-                  boost::optional<string> startStr = var.second.get_optional<string>("<xmlattr>.start");
-                  if (startStr) {
-                    std::vector<double> values;
-                    std::istringstream is(*startStr);
-                    double d;
-                    while (is >> d) values.push_back(d);
-                    if ((int)values.size() == arraySize) {
-                      for (int pos = 0; pos < arraySize; pos++)
-                        system.setRealStartValue(realVars[refIdx + rowMajorToColumnMajor(arrayDims, pos)], values[pos]);
-                    }
-                  }
-                }
-              }
-              if (emitResult)
-              {
-                if (isArray)
-                {
-                  // expose each scalar element a[i,j,...] as its own result signal
-                  for (int off = 0; off < arraySize; off++)
-                  {
-                    const double* p = &sim_vars->getRealVar(refIdx + off);
-                    std::string elname = arrayElementName(name, arrayDims, off);
-                    if (isParameter)
-                      _realVars.addParameter(elname, descripton, p);
-                    else
-                      _realVars.addOutputVar(elname, descripton, p, isNegatedAlias);
-                  }
-                }
-                else
-                {
-                  const double* realVarPtr = &sim_vars->getRealVar(refIdx);
-                  if (isParameter)
-                    _realVars.addParameter(name, descripton, realVarPtr);
-                  else
-                    _realVars.addOutputVar(name, descripton, realVarPtr, isNegatedAlias);
-                }
+            char type;
+            size_t dimVars;
+            if (var.name == "Real") { type = 'r'; dimVars = sim_vars->getDimReal(); }
+            else if (var.name == "Integer") { type = 'i'; dimVars = sim_vars->getDimInt(); }
+            else if (var.name == "Boolean") { type = 'b'; dimVars = sim_vars->getDimBool(); }
+            else if (var.name == "String") { type = 's'; dimVars = sim_vars->getDimString(); }
+            else continue;
+
+            // the model knows the position and the sizes of variables that depend on parameters
+            int pos = refIdx;
+            std::vector<int> dims = xmlDims;
+            std::vector<int> layoutDims;
+            if (system.getVariableLayout(type, refIdx, pos, layoutDims))
+              dims = layoutDims;
+            int n = 1;
+            for (int d : dims)
+              n *= d;
+            if (pos < 0 || (n > 0 && (size_t)(pos + n) > dimVars))
+              throw ModelicaSimulationError(UTILITY, "Variable " + name + " is outside of the variable memory");
+
+            // start value, possibly replaced with -override
+            const string* startStr = var.attribute("start");
+            std::map<std::string, std::string>::const_iterator ov = overrides.find(name);
+            if (ov != overrides.end()) {
+              startStr = &ov->second;
+              overridden.insert(name);
+            }
+            if (startStr && !(isAlias || isNegatedAlias)) {
+              LOGGER_WRITE("XMLPropertyReader: Setting " + var.name + " variable " + name + " with reference " + to_string(refIdx)
+                           + " at " + to_string(pos) + " to " + *startStr, LC_INIT, LL_DEBUG);
+              switch (type) {
+                case 'r': readStartValue(system, realVars, pos, n, dims, *startStr, name); break;
+                case 'i': readStartValue(system, intVars, pos, n, dims, *startStr, name); break;
+                case 'b': readStartValue(system, boolVars, pos, n, dims, *startStr, name); break;
+                case 's': readStartValue(system, stringVars, pos, n, dims, *startStr, name); break;
               }
             }
-            else if (var.first == "Integer")
-            {
-               //If a start value is given for the alias and the referred variable, skip the alias declaration
-              if (!(isAlias || isNegatedAlias))
-              {
-                boost::optional<int> v = var.second.get_optional<int>("<xmlattr>.start");
-                if (v) {
-                  int value = *v;
-                  LOGGER_WRITE("XMLPropertyReader: Setting int variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
-                  system.setIntStartValue(intVars[refIdx], value);
-                }
-              }
-              const int& intVar = sim_vars->getIntVar(refIdx);
-              const int* intVarPtr = &intVar;
-              if (emitResult)
-              {
-                if (isParameter)
-                  _intVars.addParameter(name, descripton, intVarPtr);
-                else
-                  _intVars.addOutputVar(name, descripton, intVarPtr, isNegatedAlias);
-              }
-            }
-            else if (var.first == "Boolean")
-            {
-               //If a start value is given for the alias and the referred variable, skip the alias declaration
-              if (!(isAlias || isNegatedAlias))
-              {
-                boost::optional<bool> v = var.second.get_optional<bool>("<xmlattr>.start");
-                if (v) {
-                  bool value = *v;
-                  LOGGER_WRITE("XMLPropertyReader: Setting bool variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
-                  system.setBoolStartValue(boolVars[refIdx], value);
-                }
-              }
-              const bool& boolVar = sim_vars->getBoolVar(refIdx);
-              const bool* boolVarPtr = &boolVar;
-              if (emitResult)
-              {
-                if (isParameter)
-                  _boolVars.addParameter(name, descripton, boolVarPtr);
-                else
-                  _boolVars.addOutputVar(name, descripton, boolVarPtr, isNegatedAlias);
-              }
-            }
-            else if (var.first == "String")
-            {
-               //If a start value is given for the alias and the referred variable, skip the alias declaration
-              if (!(isAlias || isNegatedAlias))
-              {
-                boost::optional<string> v = var.second.get_optional<string>("<xmlattr>.start");
-                if (v) {
-                  string value = *v;
-                  LOGGER_WRITE("XMLPropertyReader: Setting string variable for " + boost::lexical_cast<std::string>(vars.second.get<std::string>("<xmlattr>.name")) + " with reference " + boost::lexical_cast<std::string>(refIdx) + " to " + boost::lexical_cast<std::string>(value), LC_INIT, LL_DEBUG);
-                  system.setStringStartValue(stringVars[refIdx], value);
-                }
+
+            if (emitResult) {
+              switch (type) {
+                case 'r': addResultVars(_realVars, (const double*)realVars, pos, n, dims, name, descripton, isParameter, isNegatedAlias); break;
+                case 'i': addResultVars(_intVars, (const int*)intVars, pos, n, dims, name, descripton, isParameter, isNegatedAlias); break;
+                case 'b': addResultVars(_boolVars, (const bool*)boolVars, pos, n, dims, name, descripton, isParameter, isNegatedAlias); break;
               }
             }
           }
@@ -286,12 +428,19 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
       LOGGER_WRITE_END(LC_INIT, LL_DEBUG);
     }
+    catch(ModelicaSimulationError &ex)
+    {
+      throw;
+    }
     catch(exception &ex)
     {
       std::stringstream sstream;
       sstream << "Could not read start values. Current variable reference is " << refIdx;
       throw ModelicaSimulationError(UTILITY, sstream.str());
     }
+    for (std::map<std::string, std::string>::const_iterator it = overrides.begin(); it != overrides.end(); ++it)
+      if (overridden.find(it->first) == overridden.end())
+        LOGGER_WRITE("XMLPropertyReader: -override of unknown variable " + it->first + " ignored", LC_INIT, LL_WARNING);
     _isInitialized = true;
     file.close();
 

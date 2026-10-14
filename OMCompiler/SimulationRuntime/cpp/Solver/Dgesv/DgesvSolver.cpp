@@ -39,8 +39,6 @@
 
 #include <iostream>
 
-#include <Core/Utils/numeric/bindings/ublas.hpp>
-#include <Core/Utils/numeric/utils.h>
 
 DgesvSolver::DgesvSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
   :AlgLoopSolverDefaultImplementation()

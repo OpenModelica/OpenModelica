@@ -1,0 +1,68 @@
+// name: UnitfulLiterals
+// keywords: Modelica 3.7 unitful literal
+// status: correct
+//
+// Implicit unit conversion of unitful literals in binding equations and
+// start/min/max/nominal modifiers.
+//
+
+loadString("
+type Length = Real(unit = \"m\");
+type Temp = Real(unit = \"K\") annotation(absoluteValue = true);
+type TempDiff = Temp annotation(absoluteValue = false);
+
+model A
+  Real x(unit = \"m\");
+end A;
+
+model UnitfulLiterals
+  Real x(unit = \"m\") = -5'cm';
+  Real y(unit = \"m\") = 0'cm' - 5'cm';
+  Real w = 5'cm';
+  Length l = 2'km';
+  Real s(unit = \"m\", start = 2'km', min = -1'km', max = 3000'mm', nominal = 1'cm');
+  Real v(unit = \"m/s\") = 36'km/h';
+  Real tC(unit = \"degC\") = 20'degC';
+  Real tKAbs(unit = \"K\") = 20'degC' annotation(absoluteValue = true);
+  Real tKRel(unit = \"K\") = 20'degC' annotation(absoluteValue = false);
+  Temp t = -20'degC';
+  TempDiff dt = 5'degC';
+  A a(x = 3'cm');
+  A as[2](each x = 4'mm');
+  Real f(unit = \"degC\") = 212'degF' annotation(absoluteValue = true);
+  Real tK(unit = \"K\") = 20'degC';
+  Real z(unit = \"m\") = 5's';
+  Real u(unit = \"m\") = 5'foo';
+end UnitfulLiterals;
+"); getErrorString();
+instantiateModel(UnitfulLiterals); getErrorString();
+
+// Result:
+// true
+// ""
+// "class UnitfulLiterals
+//   Real x(unit = \"m\") = -0.05;
+//   Real y(unit = \"m\") = -5.0;
+//   Real w = 5.0;
+//   Real l(unit = \"m\") = 2000.0;
+//   Real s(unit = \"m\", min = -1000.0, max = 3.0, start = 2000.0, nominal = 0.01);
+//   Real v(unit = \"m/s\") = 10.0;
+//   Real tC(unit = \"degC\") = 20.0;
+//   Real tKAbs(unit = \"K\") = 293.15;
+//   Real tKRel(unit = \"K\") = 20.0;
+//   Real t(unit = \"K\") = 253.15;
+//   Real dt(unit = \"K\") = 5.0;
+//   Real a.x(unit = \"m\") = 0.03;
+//   Real as[1].x(unit = \"m\") = 0.004;
+//   Real as[2].x(unit = \"m\") = 0.004;
+//   Real f(unit = \"degC\") = 100.0;
+//   Real tK(unit = \"K\") = 20.0;
+//   Real z(unit = \"m\") = 5.0;
+//   Real u(unit = \"m\") = 5.0;
+// end UnitfulLiterals;
+// "
+// "[<interactive>:25:3-25:33:writable] Warning: The unitful literal 20'degC' can only be converted to the unit \"K\" of tK if it has an absoluteValue annotation.
+// [<interactive>:26:3-26:28:writable] Warning: The unitful literal 5's' can not be converted to the unit \"m\" of z.
+// [<interactive>:27:3-27:30:writable] Warning: The unitful literal 5'foo' can not be converted to the unit \"m\" of u.
+// "
+// endResult

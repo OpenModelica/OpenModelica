@@ -249,7 +249,7 @@ template fmuModelCppFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,T
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVars)), modelStructure=modelStructure) then
-  let modelName = dotPath(modelInfo.name)
+  let modelName = CodegenUtil.dotPath(modelInfo.name)
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
   let algloopfiles = (listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))) |> eqs => algloopMainfile2(eqs, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, modelShortName) ;separator="\n")
@@ -419,9 +419,9 @@ template DefineVariables(SimVar simVar, Boolean useFlatArrayNotation)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else
   <<
@@ -429,12 +429,12 @@ match simVar
   >>
 end DefineVariables;
 
-template defineExternalFunction(Function fn)
+template defineExternalFunction(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
-      let fname = extFunctionName(extName, language)
+      let fname = CodegenUtil.extFunctionName(extName, language)
       <<
       #define $P<%fname%> <%System.tmpTick()%>
       >>
@@ -494,9 +494,9 @@ end setStartValues;
 template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(__) then
-    if stringEq(crefStr(name),"$dummy") then
+    if stringEq(CodegenUtil.crefStr(name),"$dummy") then
     <<>>
-    else if stringEq(crefStr(name),"der($dummy)") then
+    else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
     <<>>
     else
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
@@ -546,7 +546,7 @@ template initVal(Exp initialValue)
   case RCONST(__) then real
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "1" else "0"
-  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%CodegenUtil.dotPath(name)%>*/'
   else "*ERROR* initial value of unknown type"
 end initVal;
 
@@ -572,18 +572,18 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end setExternalFunction;
 
-template setExternalFunctionsSwitch(list<Function> functions)
+template setExternalFunctionsSwitch(list<SimCodeFunction.Function> functions)
  "Generates external function definitions."
 ::=
   (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
 end setExternalFunctionsSwitch;
 
-template setExternalFunctionSwitch(Function fn)
+template setExternalFunctionSwitch(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
-      let fname = extFunctionName(extName, language)
+      let fname = CodegenUtil.extFunctionName(extName, language)
       <<
       case $P<%fname%> : ptr_<%fname%>=(ptrT_<%fname%>)value; break;
       >>
@@ -782,7 +782,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
 
-  CFLAGS=$(SYSTEM_CFLAGS) /w /I"<%makefileParams.omhome%>/include/omc/cpp/" /I"$(BOOST_INCLUDE)" /I"$(SUITESPARSE_INCLUDE)" /I. /TP /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY /DFMU_BUILD /DRUNTIME_STATIC_LINKING
+  CFLAGS=$(SYSTEM_CFLAGS) /w /I"<%makefileParams.omhome%>/include/omc/cpp/" /I"$(SUITESPARSE_INCLUDE)" /I. /TP /DNOMINMAX /DNO_INTERACTIVE_DEPENDENCY /DFMU_BUILD /DRUNTIME_STATIC_LINKING
 
 
   # /MD - link with MSVCRT.LIB
@@ -831,7 +831,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     else
       (match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>')
   let omhome = makefileParams.omhome
-  let platformbins = match platformstr case "win32" case "win64" case "i686-windows" case "x86_64-windows" then '"<%omhome%>/bin/libgcc_s_*.dll" "<%omhome%>/bin/libstdc++-6.dll" "<%omhome%>/bin/libwinpthread-1.dll"' else ''
   let lapackbins = match platformstr case "win32" case "win64" case "i686-windows" case "x86_64-windows" then '"<%omhome%>/bin/libopenblas.dll"' else ''
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
@@ -885,7 +884,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   FMU_CFLAGS=$(subst -DUSE_THREAD,,$(subst -O0,$(SIM_OPT_LEVEL),$(SYSTEM_CFLAGS))) $(ABI_CFLAG)
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DFMU_BUILD -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(FMU_CFLAGS) -DFMU_BUILD -DRUNTIME_STATIC_LINKING -I"$(OMHOME)/include/omc/cpp" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%additionalCFlags_GCC%>
 
   ifeq ($(USE_LOGGER),ON)
     $(eval CFLAGS=$(CFLAGS) -DUSE_LOGGER)
@@ -922,12 +921,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) <%lapackbins%>)
   endif
 
-  # need boost system lib prior to C++11, forcing also dynamic libs
-  ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
-    $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)")
-    $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
-  else ifeq ($(findstring gcc,$(CC)),gcc)
+  ifeq ($(findstring gcc,$(CC)),gcc)
     $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))
   else ifeq ($(findstring clang,$(CC)),clang)
     $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc))

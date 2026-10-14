@@ -1,0 +1,20 @@
+// name: Buildings.Templates.Plants.Controls.Enabling.Validation.Enable
+// keywords: NewBackend, matching, adjacency
+// status: correct
+//
+// Nothing can be solved from a discrete call result, e.g. a function alias inside
+// integer($FUN * 1e-37 + table[i, j]) must not be matched to that equation.
+// Only checks the translation.
+
+loadModel(Buildings, {"12.1.1"}); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+translateModel(Buildings.Templates.Plants.Controls.Enabling.Validation.Enable); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// endResult

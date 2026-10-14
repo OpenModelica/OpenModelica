@@ -35,23 +35,23 @@
 namespace openmodelica { namespace parmodelica {
 
 PMTimer::PMTimer() {
-    total_time = boost::chrono::seconds::zero();
+    total_time = std::chrono::system_clock::duration::zero();
 }
 
 void PMTimer::start_timer() {
-    started_at = boost::chrono::system_clock::now();
+    started_at = std::chrono::system_clock::now();
 }
 
 void PMTimer::stop_timer() {
-    total_time += (boost::chrono::system_clock::now() - started_at);
+    total_time += (std::chrono::system_clock::now() - started_at);
 }
 
 void PMTimer::reset_timer() {
-    total_time = boost::chrono::seconds::zero();
+    total_time = std::chrono::system_clock::duration::zero();
 }
 
 double PMTimer::get_elapsed_time() {
-    return boost::chrono::nanoseconds(total_time).count() / 1000000.0;
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(total_time).count() / 1000000.0;
 }
 
 }} // namespace openmodelica::parmodelica

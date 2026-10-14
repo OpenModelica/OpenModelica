@@ -1,5 +1,5 @@
 model simple_BasicHX_water_gas
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
   parameter SI.AbsolutePressure p_start = 101325 "Initial value of pressure";
   parameter SI.Temperature T_start = 293.15 "Initial value of temperature";
   parameter Modelica.Fluid.Types.ModelStructure pipeModelStructure = Modelica.Fluid.Types.ModelStructure.a_v_b;

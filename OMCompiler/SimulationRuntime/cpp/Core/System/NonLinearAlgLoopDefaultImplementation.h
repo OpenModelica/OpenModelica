@@ -50,8 +50,6 @@ Services for the implementation of an algebraic loop in open modelica.
 //#include <string>
 //#include <vector>
 
-//#include <Core/Utils/numeric/bindings/ublas.hpp>
-//#include <Core/Utils/numeric/utils.h>
 
 //#include <algorithm>
 

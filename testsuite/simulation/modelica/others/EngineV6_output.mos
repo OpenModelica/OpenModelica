@@ -3,7 +3,7 @@
 // status: correct
 // suite: disabled
 //
-loadModel(Modelica,{"3.2.1"});
+loadModel(Modelica,{"4.1.0"});
 loadFile("EngineV6_output.mo");getErrorString();
 setDebugFlags("evalOutputOnly"); getErrorString();
 setCommandLineOptions("--maxSizeLineartearing=4000"); getErrorString();

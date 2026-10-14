@@ -1,0 +1,44 @@
+// name: RecursiveTearingLambda0
+// keywords: initialization, homotopy, recursiveTearing
+// status: correct
+// teardown_command: rm -rf initializationTests.RecursiveTearingLambda0* output.log
+//
+// The linear loop of the lambda = 0 initialization is torn to one variable and
+// solved by --recursiveTearing, whose helper variables exist only in that system.
+//
+
+loadString("
+within ;
+package initializationTests
+  model RecursiveTearingLambda0
+    Real a, b(start = 1), c;
+    parameter Real k = 2;
+  equation
+    a = homotopy(k*b^2 + b, k*b);
+    b + a = 3 + sin(time);
+    c = a + b;
+  end RecursiveTearingLambda0;
+end initializationTests;
+"); getErrorString();
+
+setCommandLineOptions("--recursiveTearing=1"); getErrorString();
+simulate(initializationTests.RecursiveTearingLambda0, stopTime = 1); getErrorString();
+val(b, 0.0, "initializationTests.RecursiveTearingLambda0_res.mat");
+val(c, 1.0, "initializationTests.RecursiveTearingLambda0_res.mat");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.RecursiveTearingLambda0_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.RecursiveTearingLambda0', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.8228756555322952
+// 3.841470984807897
+// endResult

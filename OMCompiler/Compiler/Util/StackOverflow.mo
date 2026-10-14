@@ -160,5 +160,20 @@ function clearStacktraceMessages
 </html>"));
 end clearStacktraceMessages;
 
+function outOfMemoryMessage
+  "What ran out and its limit when the last checkpoint was reached because
+   memory ran out, else empty. Only the Rust runtime tells the two apart."
+  output String msg = "";
+end outOfMemoryMessage;
+
+function errorPrefix
+  "\"Stack overflow\", or what ran out of memory."
+  output String str;
+protected
+  String oom = outOfMemoryMessage();
+algorithm
+  str := if stringEmpty(oom) then "Stack overflow" else "Out of memory (" + oom + ")";
+end errorPrefix;
+
 annotation(__OpenModelica_Interface="util");
 end StackOverflow;

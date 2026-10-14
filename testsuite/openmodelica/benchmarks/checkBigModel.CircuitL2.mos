@@ -1,3 +1,0 @@
-loadModel(Modelica, {"3.2.3"}); getErrorString();
-loadFile("BigModel.mo"); getErrorString();
-checkModel(BigModel.CircuitL2); getErrorString();

@@ -64,6 +64,7 @@ constexpr int CODE = 18;
 constexpr int EXPRESSIONCOMMENT = 24;
 constexpr int SUBSCRIPTED_EXP = 25;
 constexpr int BREAK = 26;
+constexpr int UNITFUL_LITERAL = 27;
 
 extern "C" record_description Absyn_Exp_INTEGER__desc;
 extern "C" record_description Absyn_Exp_REAL__desc;
@@ -113,6 +114,7 @@ std::unique_ptr<Expression::Base> exp_from_mm(MetaModelica::Record value)
     case EXPRESSIONCOMMENT: return exp_from_mm(value[1]);
     case SUBSCRIPTED_EXP:   return std::make_unique<SubscriptedExp>(value);
     case BREAK:             return std::make_unique<Break>();
+    case UNITFUL_LITERAL:   return exp_from_mm(value[0]);
   }
 
   throw std::runtime_error("Unimplemented Expression index " + std::to_string(value.index()));

@@ -33,19 +33,19 @@ fn arr(v: Vec<i32>) -> metamodelica::Array<i32> { arrayFromVec(v) }
 #[test]
 fn test_all_true() {
     let a = arr(vec![1, 2, 3]);
-    assert!(Array::all(a, &is_positive).unwrap());
+    assert!(Array::all(a, &|a0| is_positive(::std::clone::Clone::clone(a0))).unwrap());
 }
 
 #[test]
 fn test_all_false() {
     let a = arr(vec![1, -2, 3]);
-    assert!(!Array::all(a, &is_positive).unwrap());
+    assert!(!Array::all(a, &|a0| is_positive(::std::clone::Clone::clone(a0))).unwrap());
 }
 
 #[test]
 fn test_all_empty() {
     let a: metamodelica::Array<i32> = arrayFromVec(vec![]);
-    assert!(Array::all(a, &is_positive).unwrap());
+    assert!(Array::all(a, &|a0| is_positive(::std::clone::Clone::clone(a0))).unwrap());
 }
 
 // allEqual returns bool, not Result
@@ -71,19 +71,19 @@ fn test_all_equal_empty() {
 #[test]
 fn test_any_found() {
     let a = arr(vec![-1, 2, -3]);
-    assert!(Array::any(a, &is_positive).unwrap());
+    assert!(Array::any(a, &|a0| is_positive(::std::clone::Clone::clone(a0))).unwrap());
 }
 
 #[test]
 fn test_any_none() {
     let a = arr(vec![-1, -2, -3]);
-    assert!(!Array::any(a, &is_positive).unwrap());
+    assert!(!Array::any(a, &|a0| is_positive(::std::clone::Clone::clone(a0))).unwrap());
 }
 
 #[test]
 fn test_any_empty() {
     let a: metamodelica::Array<i32> = arrayFromVec(vec![]);
-    assert!(!Array::any(a, &is_positive).unwrap());
+    assert!(!Array::any(a, &|a0| is_positive(::std::clone::Clone::clone(a0))).unwrap());
 }
 
 #[test]
@@ -235,14 +235,14 @@ fn test_expand_to_size_no_grow() -> Result<()> {
 #[test]
 fn test_filter() {
     let a = arr(vec![1, 2, 3, 4, 5, 6]);
-    let result = Array::filter(a, &is_even).unwrap();
+    let result = Array::filter(a, &|a0| is_even(::std::clone::Clone::clone(a0))).unwrap();
     assert_eq!(*result.borrow(), vec![1, 3, 5]);
 }
 
 #[test]
 fn test_filter_none() {
     let a = arr(vec![1, 3, 5]);
-    let result = Array::filter(a, &is_even).unwrap();
+    let result = Array::filter(a, &|a0| is_even(::std::clone::Clone::clone(a0))).unwrap();
     assert_eq!(*result.borrow(), vec![1, 3, 5]);
 }
 
@@ -250,14 +250,14 @@ fn test_filter_none() {
 #[test]
 fn test_find_first_on_true_found() {
     let a = arr(vec![1, 3, 5, 7, 2]);
-    let result = Array::findFirstOnTrue(a, &is_greater_than_5).unwrap();
+    let result = Array::findFirstOnTrue(a, &|a0| is_greater_than_5(::std::clone::Clone::clone(a0))).unwrap();
     assert_eq!(result, Some(7));
 }
 
 #[test]
 fn test_find_first_on_true_not_found() {
     let a = arr(vec![1, 2, 3]);
-    let result = Array::findFirstOnTrue(a, &is_greater_than_5).unwrap();
+    let result = Array::findFirstOnTrue(a, &|a0| is_greater_than_5(::std::clone::Clone::clone(a0))).unwrap();
     assert_eq!(result, None);
 }
 
@@ -265,7 +265,7 @@ fn test_find_first_on_true_not_found() {
 #[test]
 fn test_find_first_on_true_with_idx_found() {
     let a = arr(vec![1, 3, 5, 7]);
-    let (val, idx) = Array::findFirstOnTrueWithIdx(a, &is_greater_than_5).unwrap();
+    let (val, idx) = Array::findFirstOnTrueWithIdx(a, &|a0| is_greater_than_5(::std::clone::Clone::clone(a0))).unwrap();
     assert_eq!(val, Some(7));
     assert_eq!(idx, 4);
 }
@@ -273,7 +273,7 @@ fn test_find_first_on_true_with_idx_found() {
 #[test]
 fn test_find_first_on_true_with_idx_not_found() {
     let a = arr(vec![1, 2, 3]);
-    let (val, idx) = Array::findFirstOnTrueWithIdx(a, &is_greater_than_5).unwrap();
+    let (val, idx) = Array::findFirstOnTrueWithIdx(a, &|a0| is_greater_than_5(::std::clone::Clone::clone(a0))).unwrap();
     assert_eq!(val, None);
     assert_eq!(idx, -1);
 }
@@ -282,7 +282,7 @@ fn test_find_first_on_true_with_idx_not_found() {
 #[test]
 fn test_fold() {
     let a = arr(vec![1, 2, 3, 4, 5]);
-    let result = Array::fold(a, &fold_add, 0).unwrap();
+    let result = Array::fold(a, &|a0, a1| fold_add(::std::clone::Clone::clone(a0), a1), 0).unwrap();
     assert_eq!(result, 15);
 }
 
@@ -290,7 +290,7 @@ fn test_fold() {
 fn test_fold_index() -> Result<()> {
     let a = arr(vec![10, 20]);
     // fold_index_add(10, 1, 0) = 11, fold_index_add(20, 2, 11) = 33
-    let result = Array::foldIndex(a, &fold_index_add, 0)?;
+    let result = Array::foldIndex(a, &|a0, a1, a2| fold_index_add(::std::clone::Clone::clone(a0), a1, a2), 0)?;
     assert_eq!(result, 33);
     Ok(())
 }
@@ -322,7 +322,7 @@ fn test_get_index_first() -> Result<()> {
 #[test]
 fn test_get_member_on_true() -> Result<()> {
     let a = arr(vec![1, 2, 3]);
-    let (val, idx) = Array::getMemberOnTrue(2, a.clone(), &|v, e| Ok(v == e))?;
+    let (val, idx) = Array::getMemberOnTrue(2, a.clone(), &|v, e| Ok(*v == e))?;
     assert_eq!(val, 2);
     assert_eq!(idx, 2);
     Ok(())
@@ -387,23 +387,23 @@ fn test_is_equal_on_true_custom_pred() {
     // predicate x*2==y: pairs must be (2,4), (3,6), (4,8) — fixed from (2,4,6)/(4,6,8) which fails at 4*2=8≠6
     let a = arr(vec![2, 3, 4]);
     let b = arr(vec![4, 6, 8]);
-    assert!(Array::isEqualOnTrue(a, b, &|x, y| Ok(x * 2 == y)).unwrap());
+    assert!(Array::isEqualOnTrue(a, b, &|x, y| Ok(*x * 2 == *y)).unwrap());
 }
 
 // isLess returns bool, not Result
 #[test]
 fn test_is_less_true() {
-    assert!(Array::isLess(arr(vec![1, 2]), arr(vec![1, 3]), &int_less).unwrap());
+    assert!(Array::isLess(arr(vec![1, 2]), arr(vec![1, 3]), &|a0, a1| int_less(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 #[test]
 fn test_is_less_false() {
-    assert!(!Array::isLess(arr(vec![1, 4]), arr(vec![1, 3]), &int_less).unwrap());
+    assert!(!Array::isLess(arr(vec![1, 4]), arr(vec![1, 3]), &|a0, a1| int_less(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 #[test]
 fn test_is_less_equal() {
-    assert!(!Array::isLess(arr(vec![1, 2, 3]), arr(vec![1, 2, 3]), &int_less).unwrap());
+    assert!(!Array::isLess(arr(vec![1, 2, 3]), arr(vec![1, 2, 3]), &|a0, a1| int_less(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap());
 }
 
 #[test]
@@ -493,7 +493,7 @@ fn test_map_no_copy() {
 #[test]
 fn test_max_element() {
     let a = arr(vec![3, 1, 4, 1, 5, 9]);
-    let result = Array::maxElement(a, &int_less).unwrap();
+    let result = Array::maxElement(a, &|a0, a1| int_less(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap();
     assert_eq!(result, 9);
 }
 
@@ -501,7 +501,7 @@ fn test_max_element() {
 #[test]
 fn test_min_element() {
     let a = arr(vec![3, 1, 4, 1, 5, 9]);
-    let result = Array::minElement(a, &int_less).unwrap();
+    let result = Array::minElement(a, &|a0, a1| int_less(::std::clone::Clone::clone(a0), ::std::clone::Clone::clone(a1))).unwrap();
     assert_eq!(result, 1);
 }
 
@@ -719,7 +719,7 @@ fn test_map_no_copy_1() {
     let a = arr(vec![1, 2, 3]);
     let (result_arr, result_arg) = Array::mapNoCopy_1(
         a,
-        &|(x, acc): (i32, i32)| Ok((x + 1, acc + 1)),
+        &|__b0: &_| { let (x, acc): (i32, i32) = ::std::clone::Clone::clone(__b0); Ok((x + 1, acc + 1)) },
         0i32
     ).unwrap();
     assert_eq!(*result_arr.borrow(), vec![2, 3, 4]);

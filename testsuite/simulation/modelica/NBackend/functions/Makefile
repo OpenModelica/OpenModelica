@@ -1,12 +1,16 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+unknownSizeInputDerivative.mos\
+externalFunctionDerivative.mos\
 builtin_functions.mos\
 inlineAttributes15947.mos\
+ifEquationFunctionCall.mos\
 tupleCallInForLoop.mos\
 function_annotation_der.mos\
 function_diff.mos\
 function_partial_der.mos\
+functionPointerBinding.mos\
 function_inline_retype.mos\
 
 # test that currently fail. Move up when fixed.

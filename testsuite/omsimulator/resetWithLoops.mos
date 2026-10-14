@@ -3,7 +3,7 @@
 // teardown_command: rm -rf model_res.mat resetWithLoops.py resetWithLoops.fmu resetWithLoops.log resetWithLoops_systemCall.log
 // suite: disabled
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 
 system("mkdir -p resetWithLoops-fmu");
 echo(false); cd("resetWithLoops-fmu"); echo(true);

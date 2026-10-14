@@ -1,0 +1,38 @@
+// name: AliasBoundsThree
+// keywords: NewBackend, alias, min, max
+// status: correct
+//
+// The bounds of an alias set with more than two parameter bounds are merged
+// with nested two argument min and max calls.
+
+loadString("
+model AliasBoundsThree
+  parameter Real p1 = 1, p2 = 2, p3 = 3;
+  parameter Real q1 = 10, q2 = 20, q3 = 30;
+  Real x(min = p1, max = q1, start = 5, fixed = true), y(min = p2, max = q2), z(min = p3, max = q3);
+equation
+  x = y;
+  y = z;
+  der(x) = 1;
+end AliasBoundsThree;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(AliasBoundsThree, stopTime = 1); getErrorString();
+val(x, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasBoundsThree_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasBoundsThree', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 6.0
+// endResult

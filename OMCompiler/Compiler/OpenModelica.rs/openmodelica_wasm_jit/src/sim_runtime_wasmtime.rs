@@ -371,8 +371,10 @@ pub fn library_module(
             return Ok(m.clone());
         }
     }
+    // A prebuilt library is named by its path; the key already tells blobs apart.
+    let file = std::path::Path::new(name).file_name().and_then(|f| f.to_str()).unwrap_or(name);
     let m = match fixed {
-        true => aot_module(engine, &format!("lib-{name}"), blob)?,
+        true => aot_module(engine, &format!("lib-{file}"), blob)?,
         false => wts(wasmtime::Module::new(engine, blob))?,
     };
     memo.lock().unwrap_or_else(|e| e.into_inner()).insert(key, (engine.clone(), m.clone()));
@@ -382,8 +384,9 @@ pub fn library_module(
 /// Compile every fixed blob into `dir`, for the build to install beside omc.
 ///
 /// The names are [`aot_cache_path`]'s, so [`aot_module`] finds them; a blob the
-/// build did not produce is skipped.
-pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<String>, String> {
+/// build did not produce is skipped. `prune` removes every other artifact, which
+/// only the install directory may do: the per-user cache also holds libraries'.
+pub fn precompile_fixed_blobs(dir: &std::path::Path, prune: bool) -> std::result::Result<Vec<String>, String> {
     std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let mut blobs: Vec<(String, &[u8])> = vec![
         ("runtime".to_string(), runtime_blob()),
@@ -398,13 +401,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
         blobs.push((format!("lib-{file}"), bytes()));
     }
     blobs.retain(|(_, b)| !b.is_empty());
-    // Every engine a run can land on: the inliner is off for a model with one
-    // enormous function, and `-alarm` picks the epoch-interrupting engine, which
-    // every testsuite and library-testing run asks for.
-    let engines: Vec<&wasmtime::Engine> = [true, false]
-        .iter()
-        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
-        .collect();
+    let engines = all_engines();
     let current: Vec<String> = blobs
         .iter()
         .flat_map(|(tag, blob)| {
@@ -414,7 +411,7 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     // What an earlier build left for a blob that has since changed. Keyed by the
     // blob's hash, so it will never be looked up again; without this every change
     // adds another artifact to the install.
-    if let Ok(rd) = std::fs::read_dir(dir) {
+    if let Some(rd) = prune.then(|| std::fs::read_dir(dir).ok()).flatten() {
         for stale in rd.flatten().map(|e| e.path()).filter(|p| {
             p.extension().is_some_and(|e| e == "cwasm")
                 && p.file_name()
@@ -426,24 +423,81 @@ pub fn precompile_fixed_blobs(dir: &std::path::Path) -> std::result::Result<Vec<
     }
     let mut written = Vec::new();
     for (tag, blob) in blobs {
-        for &engine in &engines {
-            let name = aot_cache_name(&tag, aot_cache_key(engine, blob));
-            // Rebuilt on every build, so skip what is already there: only a blob that
-            // actually changed is worth minutes of Cranelift.
-            if dir.join(&name).is_file() {
-                continue;
-            }
-            let path = dir.join(&name);
-            // Gigabytes of Cranelift each, and what one frees stays mapped, so
-            // drop it and hand the pages back before compiling the next.
-            {
-                let module = wts(wasmtime::Module::new(engine, blob))?;
-                let bytes = wts(module.serialize())?;
-                std::fs::write(&path, &bytes).map_err(|e| format!("{}: {e}", path.display()))?;
-            }
-            metamodelica::heap_limit::release();
-            written.push(name);
+        written.extend(precompile_blob(dir, &tag, blob, &engines)?);
+    }
+    Ok(written)
+}
+
+/// Every engine a run can land on: the inliner is off for a model with one
+/// enormous function, and `-alarm` picks the epoch-interrupting engine, which
+/// every testsuite and library-testing run asks for.
+fn all_engines() -> Vec<&'static wasmtime::Engine> {
+    [true, false]
+        .iter()
+        .flat_map(|&epoch| [true, false].iter().map(move |&inl| engine_for(epoch, inl)))
+        .collect()
+}
+
+/// Compile `blob` into `dir` for each engine that has no artifact yet, here or
+/// beside omc.
+fn precompile_blob(
+    dir: &std::path::Path,
+    tag: &str,
+    blob: &[u8],
+    engines: &[&wasmtime::Engine],
+) -> std::result::Result<Vec<String>, String> {
+    let mut written = Vec::new();
+    for &engine in engines {
+        let key = aot_cache_key(engine, blob);
+        let name = aot_cache_name(tag, key);
+        let path = dir.join(&name);
+        if path.is_file() || aot_installed_path(tag, key).is_some() {
+            continue;
         }
+        // Gigabytes of Cranelift each, and what one frees stays mapped, so
+        // drop it and hand the pages back before compiling the next.
+        {
+            let module = wts(wasmtime::Module::new(engine, blob))?;
+            let bytes = wts(module.serialize())?;
+            let tmp = path.with_extension(format!("cwasm.tmp{}", std::process::id()));
+            std::fs::write(&tmp, &bytes).map_err(|e| format!("{}: {e}", tmp.display()))?;
+            std::fs::rename(&tmp, &path).map_err(|e| format!("{}: {e}", path.display()))?;
+        }
+        metamodelica::heap_limit::release();
+        written.push(name);
+    }
+    Ok(written)
+}
+
+/// Compile these libraries' prebuilt modules into the per-user cache.
+pub fn precompile_libraries(dirs: &[std::path::PathBuf]) -> std::result::Result<Vec<String>, String> {
+    fn collect(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        for p in rd.flatten().map(|e| e.path()) {
+            if p.is_dir() {
+                // Another omc's half-unpacked bundle (PackageManagement.unpackWasmTree).
+                if !p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.contains(".tmp")) {
+                    collect(&p, out);
+                }
+            } else if p.extension().is_some_and(|e| e == "wasm" || e == "so") {
+                out.push(p);
+            }
+        }
+    }
+    let mut files = Vec::new();
+    for d in dirs {
+        collect(&d.join("Resources").join("Library").join("wasm32-wasip1"), &mut files);
+    }
+    let cache = aot_cache_dir();
+    let engines = all_engines();
+    let mut written = Vec::new();
+    for f in files {
+        let Ok(blob) = std::fs::read(&f) else { continue };
+        if !blob.starts_with(b"\0asm") {
+            continue;
+        }
+        let file = f.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        written.extend(precompile_blob(&cache, &format!("lib-{file}"), &blob, &engines)?);
     }
     Ok(written)
 }
@@ -498,6 +552,7 @@ pub fn take_compiled_model(model: &SimModel) -> std::result::Result<wasmtime::Mo
             match handle.join() {
                 Ok(Ok(m)) => Ok(m),
                 Ok(Err(e)) => Err(format!("background model-module compile failed: {e}")),
+                Err(p) if p.is::<metamodelica::heap_limit::OutOfMemory>() => std::panic::resume_unwind(p),
                 Err(_) => Err("CodegenWasmJit: background model-module compile thread panicked".to_string()),
             }
         }
@@ -971,11 +1026,26 @@ pub fn define_native_external(
     let sig = sig.clone();
     let rt = rt.clone();
     let prepared = prepare_cif(&sig);
-    wt(linker.func_new("ext", &name, functype, move |mut caller, args, rets| {
+    let params: Vec<wasmtime::ValType> = functype.params().collect();
+    let results: Vec<wasmtime::ValType> = functype.results().collect();
+    let host = move |mut caller: wasmtime::Caller<'_, HostState>, raw: &mut [std::mem::MaybeUninit<wasmtime::ValRaw>]| {
+        use crate::dylink_engine::{raw_of_val, val_of_raw};
+        // Safety: wasmtime initializes the first `params.len()` slots with this
+        // function type's parameters.
+        let args: Vec<wasmtime::Val> =
+            params.iter().zip(raw.iter()).map(|(ty, r)| val_of_raw(ty, unsafe { r.assume_init() })).collect();
+        let mut rets = vec![wasmtime::Val::I32(0); results.len()];
         // Safety: `addr` resolves `sig.name`; the `Cif` matches the validated sig.
-        unsafe { call_external(addr, &sig, prepared.as_ref(), &mut caller, memory, &rt, args, rets) }
-            .map_err(|e| wasmtime::Error::msg(format!("{e}")))
-    }))?;
+        unsafe { call_external(addr, &sig, prepared.as_ref(), &mut caller, memory, &rt, &args, &mut rets) }
+            .map_err(|e| wasmtime::Error::msg(format!("{e}")))?;
+        for (slot, v) in raw.iter_mut().zip(&rets) {
+            slot.write(raw_of_val(v));
+        }
+        Ok(())
+    };
+    // Safety: `host` reads only the parameters and writes only the results of
+    // `functype`, by their declared types.
+    wt(unsafe { linker.func_new_unchecked("ext", &name, functype, host) })?;
     Ok(())
 }
 
@@ -1533,7 +1603,7 @@ fn run_inwasm(
     // result file the run reports on has been written.
     let prof = sess.take_prof()?;
     if !prof.is_empty() {
-        openmodelica_sim_meta::profiling::adopt(&model.meta, &prof);
+        openmodelica_sim_meta::profiling::adopt(model.meta(), &prof);
     }
     if bench {
         let n = model.n_intervals;
@@ -1593,6 +1663,7 @@ fn instantiate_modules(model: &SimModel, meta: &SimMeta) -> std::result::Result<
 
     // Phase 2: instantiate (sharing the runtime's linear memory).
     let t_inst = Instant::now();
+    openmodelica_wasi::wasi::set_guest_env(model.ext_env.clone());
     let mut store = wasmtime::Store::new(engine, HostState::new(WasiCtx::new("/", Vec::new())));
     if let secs @ 1.. = alarm_secs() {
         ALARM_FIRED.with(|f| f.set(false));
@@ -1710,7 +1781,8 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
     sim_driver::init_host_hooks(); // cancel poll + model-assertion routing (idempotent)
     let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, meta)?;
 
-    let layout = &model.layout;
+    // The run's metadata: a resizable model's sizes are resolved there.
+    let layout = &meta.layout;
     // Allocate the shared SimData block.
     let sim_data_new = wts(rt_inst.get_typed_func::<u32, u32>(&mut store, "rt_sim_data_new"))?;
     let sim_data = wts(sim_data_new.call(&mut store, layout.total))?;
@@ -1733,8 +1805,19 @@ pub fn build_engine(model: &SimModel, meta: &SimMeta) -> std::result::Result<(Bo
         wts(set.call(&mut store, (ptr, blob.len() as u32, sim_data)))?;
     }
 
-    let engine = WasmtimeEngine { store, memory, instance, rt_inst, funcs: HashMap::new(), funcs2: HashMap::new() };
-    Ok((Box::new(engine), sim_data))
+    let engine = WasmtimeEngine {
+        store,
+        memory,
+        instance,
+        rt_inst,
+        funcs: Default::default(),
+        funcs2: Default::default(),
+        absent: Default::default(),
+        addrs: [None; 4],
+    };
+    let mut engine: Box<dyn sim_driver::SimEngine + 'static> = Box::new(engine);
+    sim_driver::write_size_table(&mut *engine, sim_data, meta).map_err(|e| e.to_string())?;
+    Ok((engine, sim_data))
 }
 
 /// Prove the in-wasm-driver call path: append the model's `functionParameters`
@@ -1795,11 +1878,23 @@ struct WasmtimeEngine {
     memory: wasmtime::Memory,
     instance: wasmtime::Instance,
     rt_inst: wasmtime::Instance,
-    funcs: HashMap<String, wasmtime::TypedFunc<u32, ()>>,
+    funcs: foldhash::HashMap<String, wasmtime::TypedFunc<u32, ()>>,
     /// The DAE-mode residual, the one `fn(u32, u32) -> ()` entry point.
     /// Resolved two-argument exports by name (`evaluateDAEResiduals` and the
     /// synchronous dispatchers), so one cached entry cannot answer for another.
-    funcs2: HashMap<String, wasmtime::TypedFunc<(u32, u32), ()>>,
+    funcs2: foldhash::HashMap<String, wasmtime::TypedFunc<(u32, u32), ()>>,
+    /// Optional entry points the model does not export.
+    absent: foldhash::HashSet<String>,
+    /// The runtime's fixed addresses, by [`RtAddr`].
+    addrs: [Option<u32>; 4],
+}
+
+#[derive(Clone, Copy)]
+enum RtAddr {
+    Context,
+    ErrorStage,
+    NoThrowDivZero,
+    SuppressedError,
 }
 
 impl WasmtimeEngine {
@@ -1810,6 +1905,26 @@ impl WasmtimeEngine {
         let f = wt(self.instance.get_typed_func::<u32, ()>(&mut self.store, name))?;
         self.funcs.insert(name.to_string(), f.clone());
         Ok(f)
+    }
+
+    fn rt_addr(&mut self, which: RtAddr) -> u32 {
+        if let Some(a) = self.addrs[which as usize] {
+            return a;
+        }
+        let name = match which {
+            RtAddr::Context => "rt_context_addr",
+            RtAddr::ErrorStage => "rt_error_stage_addr",
+            RtAddr::NoThrowDivZero => "rt_no_throw_div_zero_addr",
+            RtAddr::SuppressedError => "rt_suppressed_error_addr",
+        };
+        let a = self
+            .rt_inst
+            .get_typed_func::<(), u32>(&mut self.store, name)
+            .ok()
+            .and_then(|f| f.call(&mut self.store, ()).ok())
+            .unwrap_or(0);
+        self.addrs[which as usize] = Some(a);
+        a
     }
 }
 
@@ -1826,24 +1941,30 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         self.memory.write(&mut self.store, addr as usize, buf).map_err(|e| "CodegenWasmJit: mem write")
     }
     fn call1_raw(&mut self, name: &str, arg: u32) -> Result<()> {
+        if let Some(f) = self.funcs.get(name) {
+            return wt(f.call(&mut self.store, arg));
+        }
         let f = self.func(name)?;
         wt(f.call(&mut self.store, arg))
     }
     fn call1_if_present_raw(&mut self, name: &str, arg: u32) -> Result<()> {
-        if self.instance.get_func(&mut self.store, name).is_none() {
-            return Ok(());
+        if !self.funcs.contains_key(name) {
+            if self.absent.contains(name) {
+                return Ok(());
+            }
+            if self.instance.get_func(&mut self.store, name).is_none() {
+                self.absent.insert(name.to_string());
+                return Ok(());
+            }
         }
         self.call1_raw(name, arg)
     }
     fn call2_raw(&mut self, name: &str, a: u32, b: u32) -> Result<()> {
-        let f = match self.funcs2.get(name) {
-            Some(f) => f.clone(),
-            None => {
-                let f = wt(self.instance.get_typed_func::<(u32, u32), ()>(&mut self.store, name))?;
-                self.funcs2.insert(name.to_string(), f.clone());
-                f
-            }
-        };
+        if let Some(f) = self.funcs2.get(name) {
+            return wt(f.call(&mut self.store, (a, b)));
+        }
+        let f = wt(self.instance.get_typed_func::<(u32, u32), ()>(&mut self.store, name))?;
+        self.funcs2.insert(name.to_string(), f.clone());
         wt(f.call(&mut self.store, (a, b)))
     }
     fn call_simulate(&mut self, sim_data: u32, start: f64, stop: f64, n_steps: u32) -> Result<u32> {
@@ -1908,25 +2029,30 @@ impl sim_driver::SimEngine for WasmtimeEngine {
         }
     }
     fn context_addr(&mut self) -> u32 {
-        self.rt_inst
-            .get_typed_func::<(), u32>(&mut self.store, "rt_context_addr")
-            .ok()
-            .and_then(|f| f.call(&mut self.store, ()).ok())
-            .unwrap_or(0)
+        self.rt_addr(RtAddr::Context)
     }
     fn error_stage_addr(&mut self) -> u32 {
-        self.rt_inst
-            .get_typed_func::<(), u32>(&mut self.store, "rt_error_stage_addr")
-            .ok()
-            .and_then(|f| f.call(&mut self.store, ()).ok())
-            .unwrap_or(0)
+        self.rt_addr(RtAddr::ErrorStage)
     }
     fn no_throw_div_zero_addr(&mut self) -> u32 {
-        self.rt_inst
-            .get_typed_func::<(), u32>(&mut self.store, "rt_no_throw_div_zero_addr")
-            .ok()
-            .and_then(|f| f.call(&mut self.store, ()).ok())
-            .unwrap_or(0)
+        self.rt_addr(RtAddr::NoThrowDivZero)
+    }
+    fn last_suppressed_error(&mut self) -> Option<String> {
+        let addr = self.rt_addr(RtAddr::SuppressedError);
+        if addr == 0 {
+            return None;
+        }
+        let mut len = [0u8; 4];
+        self.read_bytes(addr, &mut len).ok()?;
+        let mut text = vec![0u8; u32::from_le_bytes(len) as usize];
+        self.read_bytes(addr + 4, &mut text).ok()?;
+        Some(String::from_utf8_lossy(&text).into_owned())
+    }
+    fn clear_suppressed_error(&mut self) {
+        let addr = self.rt_addr(RtAddr::SuppressedError);
+        if addr != 0 {
+            let _ = self.write_bytes(addr, &[0; 4]);
+        }
     }
     fn clean_nls_history(&mut self, time: f64) {
         if let Ok(f) = self.rt_inst.get_typed_func::<f64, ()>(&mut self.store, "rt_nls_clean_history") {
@@ -1988,7 +2114,7 @@ pub fn build_inwasm_session(
     result: Option<&crate::result_sink::ResultTarget>,
 ) -> std::result::Result<InWasmSession, String> {
     sim_driver::init_host_hooks(); // cancel poll + assertion routing (idempotent)
-    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, &model.meta)?;
+    let Instantiated { mut store, rt_inst, instance, memory, rt_alloc } = instantiate_modules(model, model.meta())?;
 
     // Append N contiguous table slots and set each to the model's export funcref
     // (null + cleared mask bit if the model doesn't export it).
@@ -2006,7 +2132,7 @@ pub fn build_inwasm_session(
     }
 
     // Write the metadata blob into linear memory for the runtime to decode.
-    let blob = openmodelica_sim_meta::encode(&model.meta);
+    let blob = openmodelica_sim_meta::encode(&model.meta_compact);
     let meta_ptr = wts(rt_alloc.call(&mut store, blob.len() as u32))?;
     wts(memory.write(&mut store, meta_ptr as usize, &blob))?;
 
@@ -2077,12 +2203,15 @@ pub fn build_inwasm_session(
     match started {
         Ok(rc) if rc >= 0 => Ok(sess),
         Ok(_) => Err("CodegenWasmJit: rt_sim_start failed".to_string()),
-        Err(_) => Err(sim_driver::enrich_trap_init(
-            &mut sess,
-            "CodegenWasmJit: in-wasm initialization failed",
-            model.start_time,
-        )
-        .to_string()),
+        Err(e) => {
+            crate::set_engine_error_detail(format!("{e:?}"));
+            Err(sim_driver::enrich_trap_init(
+                &mut sess,
+                "CodegenWasmJit: in-wasm initialization failed",
+                model.start_time,
+            )
+            .to_string())
+        }
     }
 }
 
@@ -2127,7 +2256,11 @@ impl InWasmSession {
     pub fn advance(&mut self, budget_ms: f64) -> Result<i32> {
         match self.advance.call(&mut self.store, budget_ms) {
             Ok(rc) if rc >= 0 => Ok(rc),
-            _ => Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed")),
+            Ok(_) => Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed")),
+            Err(e) => {
+                crate::set_engine_error_detail(format!("{e:?}"));
+                Err(sim_driver::enrich_trap(self, "CodegenWasmJit: in-wasm simulation failed"))
+            }
         }
     }
 
@@ -2652,6 +2785,7 @@ impl DylinkFmu {
     /// generated code has to change.
     pub fn load_fused(
         model: &[u8],
+        compiled: Option<wasmtime::Module>,
         ext: &[ArtifactLib],
         external_c: bool,
         lapack: bool,
@@ -2690,14 +2824,21 @@ impl DylinkFmu {
             }
             let cell = model_cell.clone();
             let want = name.clone();
+            let target = std::sync::OnceLock::<wasmtime::Func>::new();
             let f = wasmtime::Func::new(&mut store, ty, move |mut caller, args, rets| {
-                let inst = cell
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .ok_or_else(|| wasmtime::Error::msg("the artifact's model is not instantiated"))?;
-                let f = inst.get_func(&mut caller, &want).ok_or_else(|| {
-                    wasmtime::Error::msg(format!("the artifact's model has no `{want}`"))
-                })?;
+                let f = match target.get() {
+                    Some(f) => *f,
+                    None => {
+                        let inst = cell
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .ok_or_else(|| wasmtime::Error::msg("the artifact's model is not instantiated"))?;
+                        let f = inst.get_func(&mut caller, &want).ok_or_else(|| {
+                            wasmtime::Error::msg(format!("the artifact's model has no `{want}`"))
+                        })?;
+                        *target.get_or_init(|| f)
+                    }
+                };
                 f.call(&mut caller, args, rets)
             });
             wts(linker.define(&store, &module, &name, f))?;
@@ -2722,7 +2863,7 @@ impl DylinkFmu {
         // The artifact reports its own assertions: `add_host_builtins` binds these
         // to omc's simulation-path recorder, which only the host driver drains.
         linker.allow_shadowing(true);
-        for name in ["rt_assert", "rt_assert_warning"] {
+        for name in ["rt_assert", "rt_assert_when", "rt_assert_warning"] {
             let f = fused_inst
                 .get_func(&mut store, name)
                 .ok_or_else(|| format!("CodegenWasmJit: the fused runtime has no `{name}` export"))?;
@@ -2744,7 +2885,10 @@ impl DylinkFmu {
         // one the driver runs on, so the run's flags reach both at once.
         push_runtime_flags(&mut store, fused_inst, memory, &alloc)?;
 
-        let model_module = wts(wasmtime::Module::new(engine, model))?;
+        let model_module = match compiled.filter(|m| wasmtime::Engine::same(m.engine(), engine)) {
+            Some(m) => m,
+            None => wts(wasmtime::Module::new(engine, model))?,
+        };
         // The model's `external "C"`: PIC side libraries relocated into this
         // module's memory, the same set and order the dylink path loads.
         if external_c || !ext.is_empty() || (lapack && !crate::LAPACK_DYLINK().is_empty()) {
@@ -2858,6 +3002,57 @@ impl DylinkFmu {
         let mut b = [0u8; 8];
         self.read(addr, &mut b)?;
         Ok(f64::from_le_bytes(b))
+    }
+
+    pub fn read_f64s(&mut self, addr: u32, out: &mut [f64]) -> std::result::Result<(), String> {
+        let data = self.memory.data(&self.store);
+        let src = data
+            .get(addr as usize..addr as usize + out.len() * 8)
+            .ok_or_else(|| format!("artifact: read of {} values at {addr} is out of bounds", out.len()))?;
+        for (o, b) in out.iter_mut().zip(src.chunks_exact(8)) {
+            *o = f64::from_le_bytes(b.try_into().unwrap());
+        }
+        Ok(())
+    }
+
+    pub fn write_f64s(&mut self, addr: u32, values: &[f64]) -> std::result::Result<(), String> {
+        let data = self.memory.data_mut(&mut self.store);
+        let dst = data
+            .get_mut(addr as usize..addr as usize + values.len() * 8)
+            .ok_or_else(|| format!("artifact: write of {} values at {addr} is out of bounds", values.len()))?;
+        for (b, v) in dst.chunks_exact_mut(8).zip(values) {
+            b.copy_from_slice(&v.to_le_bytes());
+        }
+        Ok(())
+    }
+
+    pub fn write_u32s(&mut self, addr: u32, values: &[u32]) -> std::result::Result<(), String> {
+        let data = self.memory.data_mut(&mut self.store);
+        let dst = data
+            .get_mut(addr as usize..addr as usize + values.len() * 4)
+            .ok_or_else(|| format!("artifact: write of {} values at {addr} is out of bounds", values.len()))?;
+        for (b, v) in dst.chunks_exact_mut(4).zip(values) {
+            b.copy_from_slice(&v.to_le_bytes());
+        }
+        Ok(())
+    }
+
+    /// An entry point for the calls a master makes per step: [`call`](Self::call)
+    /// looks the export up and checks its arguments every time.
+    pub fn typed<P: wasmtime::WasmParams, R: wasmtime::WasmResults>(
+        &mut self,
+        name: &str,
+    ) -> std::result::Result<wasmtime::TypedFunc<P, R>, String> {
+        let f = self.entry(name)?;
+        f.typed(&self.store).map_err(|e| format!("{name}: {e:#}"))
+    }
+
+    pub fn call_typed<P: wasmtime::WasmParams, R: wasmtime::WasmResults>(
+        &mut self,
+        f: &wasmtime::TypedFunc<P, R>,
+        args: P,
+    ) -> std::result::Result<R, String> {
+        f.call(&mut self.store, args).map_err(|e| format!("{e:#}"))
     }
 
     /// Call one of the adapter's exports. The FMI 3.0 entry points all take and

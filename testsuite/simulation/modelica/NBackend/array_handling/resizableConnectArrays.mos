@@ -1,0 +1,215 @@
+// name: resizableConnectArrays
+// keywords: NewBackend resizable override connect
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableConnect*.log resizableConnect*.mat resizableConnect*_ref*
+//
+// Connections of arrays of components are resolved with symbolic sizes: the
+// ranges, indices and sums of the connection equations are expressions of the
+// size parameters (r[N], 1:N-1). The model is built once and simulated for
+// other sizes with -override; the results equal those of the model built for
+// that size without resizable arrays.
+
+loadString("
+package resizableConnect
+  connector Pin
+    Real v;
+    flow Real i;
+  end Pin;
+  model Resistor
+    parameter Real R = 1;
+    Pin a, b;
+  equation
+    a.v - b.v = R*a.i;
+    a.i + b.i = 0;
+  end Resistor;
+  model Capacitor
+    parameter Real C = 1;
+    Pin p;
+  equation
+    C*der(p.v) = p.i;
+  end Capacitor;
+  model Source
+    Pin p;
+  equation
+    p.v = 1;
+  end Source;
+  model Ground
+    Pin p;
+  equation
+    p.v = 0;
+  end Ground;
+  model Splitter
+    parameter Integer N = 2;
+    Pin a;
+    Pin b[N];
+  equation
+    for i in 1:N loop
+      connect(a, b[i]);
+    end for;
+  end Splitter;
+
+  model Chain \"N RC segments in a chain, the load at the last one\"
+    parameter Integer N = 4;
+    Source src;
+    Resistor r[N];
+    Capacitor c[N](each p(v(start = 0, fixed = true)));
+    Resistor load;
+    Ground gnd;
+  equation
+    connect(src.p, r[1].a);
+    for i in 1:N loop
+      connect(r[i].b, c[i].p);
+    end for;
+    for i in 1:N-1 loop
+      connect(r[i].b, r[i+1].a);
+    end for;
+    connect(r[N].b, load.a);
+    connect(load.b, gnd.p);
+  end Chain;
+
+  model NestedSplit \"M splitters with K outputs each\"
+    parameter Integer M = 2;
+    parameter Integer K = 3;
+    Source src;
+    Splitter s[M](each N = K);
+    Resistor r[M, K](each R = 2);
+    Capacitor c[M, K](each p(v(start = 0, fixed = true)));
+  equation
+    for i in 1:M loop
+      connect(src.p, s[i].a);
+      for j in 1:K loop
+        connect(s[i].b[j], r[i, j].a);
+        connect(r[i, j].b, c[i, j].p);
+      end for;
+    end for;
+  end NestedSplit;
+
+  model ArrayToArray \"whole arrays connected, the splitter sized by s(N = N)\"
+    parameter Integer N = 2;
+    Source src;
+    Splitter s(N = N);
+    Resistor r[N](R = {i for i in 1:N});
+    Capacitor c[N](each p(v(start = 0, fixed = true)));
+  equation
+    connect(src.p, s.a);
+    connect(s.b, r.a);
+    connect(r.b, c.p);
+  end ArrayToArray;
+
+  model Chain7 = Chain(N = 7);
+  model NestedSplit3x2 = NestedSplit(M = 3, K = 2);
+  model ArrayToArray5 = ArrayToArray(N = 5);
+end resizableConnect;
+"); getErrorString();
+
+// the connection equations of the chain
+instantiateModel(resizableConnect.Chain); getErrorString();
+
+buildModel(resizableConnect.Chain, stopTime = 2, fileNamePrefix = "resizableConnectChain"); getErrorString();
+system("./resizableConnectChain -override=N=7 -r=resizableConnectChain_7.mat", "resizableConnectChain_7.log");
+buildModel(resizableConnect.NestedSplit, stopTime = 2, fileNamePrefix = "resizableConnectNested"); getErrorString();
+system("./resizableConnectNested -override=M=3,K=2 -r=resizableConnectNested_3x2.mat", "resizableConnectNested_3x2.log");
+buildModel(resizableConnect.ArrayToArray, stopTime = 2, fileNamePrefix = "resizableConnectA2A"); getErrorString();
+system("./resizableConnectA2A -override=N=5 -r=resizableConnectA2A_5.mat", "resizableConnectA2A_5.log");
+
+// the references, built for these sizes
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+buildModel(resizableConnect.Chain7, stopTime = 2, fileNamePrefix = "resizableConnectChain_ref"); getErrorString();
+system("./resizableConnectChain_ref", "resizableConnectChain_ref.log");
+buildModel(resizableConnect.NestedSplit3x2, stopTime = 2, fileNamePrefix = "resizableConnectNested_ref"); getErrorString();
+system("./resizableConnectNested_ref", "resizableConnectNested_ref.log");
+buildModel(resizableConnect.ArrayToArray5, stopTime = 2, fileNamePrefix = "resizableConnectA2A_ref"); getErrorString();
+system("./resizableConnectA2A_ref", "resizableConnectA2A_ref.log");
+
+abs(val(c.p.v[1], 2, "resizableConnectChain_7.mat") - val(c.p.v[1], 2, "resizableConnectChain_ref_res.mat")) < 1e-6;
+abs(val(c.p.v[7], 2, "resizableConnectChain_7.mat") - val(c.p.v[7], 2, "resizableConnectChain_ref_res.mat")) < 1e-6;
+abs(val(load.a.i, 2, "resizableConnectChain_7.mat") - val(load.a.i, 2, "resizableConnectChain_ref_res.mat")) < 1e-6;
+abs(val(c.p.v[3,2], 2, "resizableConnectNested_3x2.mat") - val(c.p.v[3,2], 2, "resizableConnectNested_ref_res.mat")) < 1e-6;
+abs(val(src.p.i, 2, "resizableConnectNested_3x2.mat") - val(src.p.i, 2, "resizableConnectNested_ref_res.mat")) < 1e-6;
+abs(val(c.p.v[5], 2, "resizableConnectA2A_5.mat") - val(c.p.v[5], 2, "resizableConnectA2A_ref_res.mat")) < 1e-6;
+abs(val(s.a.i, 2, "resizableConnectA2A_5.mat") - val(s.a.i, 2, "resizableConnectA2A_ref_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// "class resizableConnect.Chain \"N RC segments in a chain, the load at the last one\"
+//   parameter Integer N = 4;
+//   Real src.p.v;
+//   Real src.p.i;
+//   parameter Real[N] r.R = array(1.0 for $f1 in 1:N);
+//   Real[N] r.a.v;
+//   Real[N] r.a.i;
+//   Real[N] r.b.v;
+//   Real[N] r.b.i;
+//   parameter Real[N] c.C = array(1.0 for $f1 in 1:N);
+//   Real[N] c.p.v(start = array(0.0 for $f1 in 1:N), fixed = {true, true, true, true});
+//   Real[N] c.p.i;
+//   parameter Real load.R = 1.0;
+//   Real load.a.v;
+//   Real load.a.i;
+//   Real load.b.v;
+//   Real load.b.i;
+//   Real gnd.p.v;
+//   Real gnd.p.i;
+// equation
+//   src.p.v = 1.0;
+//   for $i1 in 1:N loop
+//     r[$i1].a.v - r[$i1].b.v = r[$i1].R * r[$i1].a.i;
+//   end for;
+//   for $i0 in 1:N loop
+//     r[$i0].a.i + r[$i0].b.i = 0.0;
+//   end for;
+//   for $i2 in 1:N loop
+//     c[$i2].C * der(c[$i2].p.v) = c[$i2].p.i;
+//   end for;
+//   load.a.v - load.b.v = load.R * load.a.i;
+//   load.a.i + load.b.i = 0.0;
+//   gnd.p.v = 0.0;
+//   r[1].a.v = src.p.v;
+//   src.p.i + r[1].a.i = 0.0;
+//   for $i3 in 1:N - 1 loop
+//     c[$i3].p.v = r[$i3 + 1].a.v;
+//   end for;
+//   for $i3 in 1:N - 1 loop
+//     r[$i3].b.v = r[$i3 + 1].a.v;
+//   end for;
+//   for $i3 in 1:N - 1 loop
+//     c[$i3].p.i + r[$i3 + 1].a.i + r[$i3].b.i = 0.0;
+//   end for;
+//   load.a.v = c[N].p.v;
+//   r[N].b.v = c[N].p.v;
+//   load.a.i + c[N].p.i + r[N].b.i = 0.0;
+//   load.b.v = gnd.p.v;
+//   gnd.p.i + load.b.i = 0.0;
+// end resizableConnect.Chain;
+// "
+// ""
+// {"resizableConnectChain", "resizableConnectChain_init.xml"}
+// ""
+// 0
+// {"resizableConnectNested", "resizableConnectNested_init.xml"}
+// ""
+// 0
+// {"resizableConnectA2A", "resizableConnectA2A_init.xml"}
+// ""
+// 0
+// true
+// ""
+// {"resizableConnectChain_ref", "resizableConnectChain_ref_init.xml"}
+// ""
+// 0
+// {"resizableConnectNested_ref", "resizableConnectNested_ref_init.xml"}
+// ""
+// 0
+// {"resizableConnectA2A_ref", "resizableConnectA2A_ref_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// endResult

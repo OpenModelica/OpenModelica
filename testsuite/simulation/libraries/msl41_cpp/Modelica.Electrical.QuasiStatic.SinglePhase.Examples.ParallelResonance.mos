@@ -14,8 +14,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance";
 
 modelTestingType := OpenModelicaModelTesting.Kind.Translation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.SinglePhase.Examples.ParallelResonance);
@@ -39,13 +37,10 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance"
 // OpenModelicaModelTesting.Kind.Translation
 // Modelica.Electrical.QuasiStatic.SinglePhase.Examples.ParallelResonance
 // {"capacitor.i.im", "capacitor.pin_n.reference.gamma", "inductor.pin_p.reference.gamma", "resistor.pin_p.reference.gamma", "voltageSensor.pin_n.reference.gamma", "capacitor.pin_n.reference.gamma", "ground.pin.reference.gamma"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Translation succeeded
-// "true
-// "
-// ""
+// The model now compiles. Please update the test.
 // endResult

@@ -2419,6 +2419,69 @@ public
     end match;
   end isConnectionsOperator;
 
+  function isConnectionGraphDefinition
+    input Call call;
+    output Boolean res;
+  protected
+    String name;
+
+    function is_def
+      input String name;
+      output Boolean res;
+    algorithm
+      res := match name
+        case "branch" then true;
+        case "root" then true;
+        case "potentialRoot" then true;
+        case "uniqueRoot" then true;
+        else false;
+      end match;
+    end is_def;
+  algorithm
+    res := match call
+      case TYPED_CALL()
+        guard Function.isBuiltin(call.fn)
+        then match Function.name(call.fn)
+               case Absyn.Path.QUALIFIED("Connections", Absyn.Path.IDENT(name))
+                 then is_def(name);
+               else false;
+             end match;
+
+      // Also handle untyped calls, because connection operators in invalid
+      // if-branches might not be typed.
+      case UNTYPED_CALL()
+        guard ComponentRef.isQualified(call.ref) and
+              ComponentRef.firstName(ComponentRef.rest(call.ref)) == "Connections"
+        then is_def(ComponentRef.firstName(call.ref));
+
+      else false;
+    end match;
+  end isConnectionGraphDefinition;
+
+  function isConnectionGraphQuery
+    input Call call;
+    output Boolean res;
+  protected
+    String name;
+  algorithm
+    res := match call
+      case TYPED_CALL()
+        guard Function.isBuiltin(call.fn)
+        then match Function.name(call.fn)
+               case Absyn.Path.IDENT("cardinality") then true;
+               case Absyn.Path.QUALIFIED("Connections", Absyn.Path.IDENT(name))
+                 then match name
+                     case "rooted" then true;
+                     case "isRoot" then true;
+                     case "uniqueRootIndices" then true;
+                     else false;
+                 end match;
+               else false;
+             end match;
+      else false;
+    end match;
+  end isConnectionGraphQuery;
+
   function isStreamOperator
     input Call call;
     output Boolean isOp;
@@ -2490,19 +2553,6 @@ protected
       // If it had iterators then it will not reach here. The args would have been parsed to
       // Absyn.FOR_ITER_FARG and that is handled in instIteratorCall.
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
-
-      case _ guard InstContext.inAnnotation(context)
-        algorithm
-          // If we're in a graphic annotation expression, first try to find the
-          // function in the top scope in case there's a user-defined function
-          // with the same name. If it's not found, check the normal scope.
-          try
-            fn_ref := Function.instFunction(functionName, InstNode.topScope(scope), context, info);
-          else
-            fn_ref := Function.instFunction(functionName, scope, context, info);
-          end try;
-        then
-          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, InstNode.scopeRef(scope)));
 
       else
         algorithm
@@ -2677,7 +2727,8 @@ protected
             // Don't try to evaluate the range if it contains an iterator.
             has_iterator := iter_pur == Purity.IMPURE and Expression.contains(range, Expression.isIterator);
 
-            if is_structural and not has_iterator then
+            // ranges over resizable sizes stay symbolic
+            if is_structural and not has_iterator and not Expression.contains(range, Expression.isResizableCref) then
               if InstContext.inRelaxed(context) then
                 range := Ceval.tryEvalExp(range);
               else
@@ -2944,7 +2995,8 @@ protected
             allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
           end if;
         then
-          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize);
+          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, context, info, vectorize,
+            callPrefix = ComponentRef.stripGeneratedInnerScope(ComponentRef.stripClassScope(ComponentRef.rest(call.ref))));
     end match;
 
     if listEmpty(matchedFunctions) then
@@ -3174,25 +3226,56 @@ protected
     dim := match dim
       local
         Expression exp;
+        Dimension new_dim;
 
       case Dimension.EXP()
         algorithm
           ptree := buildParameterTree(fn, args, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
+          // size(x, i) of a resizable dimension is its expression (e.g. N), the
+          // dimension of the output stays resizable instead of being evaluated
+          exp := Expression.map(exp, resizableSizeExp);
 
-          ErrorExt.setCheckpoint(getInstanceName());
-          try
-            Structural.markExp(exp);
-            exp := Ceval.evalExp(exp);
+          if Expression.contains(exp, Expression.isResizableCref) then
+            new_dim := Dimension.fromExp(SimplifyExp.simplify(exp), Variability.NON_STRUCTURAL_PARAMETER);
           else
-          end try;
-          ErrorExt.rollBack(getInstanceName());
+            ErrorExt.setCheckpoint(getInstanceName());
+            try
+              Structural.markExp(exp);
+              exp := Ceval.evalExp(exp);
+            else
+            end try;
+            ErrorExt.rollBack(getInstanceName());
+            new_dim := Dimension.fromExp(exp, Variability.CONSTANT);
+          end if;
         then
-          Dimension.fromExp(exp, Variability.CONSTANT);
+          new_dim;
 
       else dim;
     end match;
   end evaluateCallTypeDim;
+
+  function resizableSizeExp
+    "size(x, i) -> the expression of dimension i of x if it is resizable"
+    input Expression exp;
+    output Expression outExp = exp;
+  protected
+    Integer i;
+    Dimension d;
+  algorithm
+    () := match exp
+      case Expression.SIZE(dimIndex = SOME(Expression.INTEGER(i))) algorithm
+        try
+          d := Type.nthDimension(Expression.typeOf(exp.exp), i);
+          if Dimension.isResizable(d) then
+            outExp := Dimension.sizeExp(d);
+          end if;
+        else
+        end try;
+      then ();
+      else ();
+    end match;
+  end resizableSizeExp;
 
   function buildParameterTree
     input Function fn;

@@ -30,8 +30,6 @@
 #include <Solver/IDA/IDA.h>
 #include <Core/Math/Functions.h>
 
-//#include <Core/Utils/numeric/bindings/traits/ublas_vector.hpp>
-//#include <Core/Utils/numeric/bindings/traits/ublas_sparse.hpp>
 
 Ida::Ida(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings),

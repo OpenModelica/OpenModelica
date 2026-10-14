@@ -185,6 +185,7 @@ fn link_with(
     }
     let mut funcs: HashMap<String, Function> = HashMap::new();
     let mut data: HashMap<String, u32> = HashMap::new();
+    let mut tags: HashMap<String, wasmer::Tag> = HashMap::new();
 
     // `libc.so` asks for the stack bounds by name (weak `GOT.mem` imports a main
     // module would define). An empty initial dlmalloc segment (base == end) sends
@@ -232,7 +233,7 @@ fn link_with(
         let placed = place(
             store, module, lib.name, &dl, &memory, &table, reserve, &stack_pointer, &wasi_env,
             &host, host_imports, &defined, &mut deferred, &mut got_mem, &mut got_func, &mut funcs,
-            &mut data,
+            &mut data, &mut tags,
         )?;
         if let Some(f) = placed.relocs {
             relocs.push((lib.name.to_owned(), f));
@@ -244,7 +245,7 @@ fn link_with(
 
     for (sym, target) in &deferred {
         if let Some(f) = funcs.get(sym) {
-            let _ = target.set(f.clone());
+            target.bind(store, f);
         }
     }
 
@@ -261,7 +262,7 @@ fn link_with(
     }
     let mut func_slots: HashMap<String, u32> = HashMap::new();
     for (sym, g) in &got_func {
-        let idx = match func_slot(store, &table, &funcs, &mut func_slots, sym) {
+        let idx = match func_slot(store, &table, &funcs, host_imports, &mut func_slots, sym) {
             Ok(i) => i,
             Err(_) if weak.contains(sym) => 0,
             Err(e) => return Err(e),
@@ -359,6 +360,7 @@ fn place(
     got_func: &mut HashMap<String, Global>,
     funcs: &mut HashMap<String, Function>,
     data: &mut HashMap<String, u32>,
+    tags: &mut HashMap<String, wasmer::Tag>,
 ) -> Result<Placed> {
     let memory_base = reserve.alloc(store, dl.mem.mem_size, dl.mem.mem_align())?;
     let table_base = if dl.mem.table_size == 0 {
@@ -385,6 +387,10 @@ fn place(
             }
             ("GOT.mem", sym) => got_entry(store, got_mem, sym).into(),
             ("GOT.func", sym) => got_entry(store, got_func, sym).into(),
+            ("env", sym) if matches!(imp.ty(), wasmer::ExternType::Tag(_)) => {
+                let wasmer::ExternType::Tag(ty) = imp.ty() else { unreachable!() };
+                tags.entry(sym.to_string()).or_insert_with(|| wasmer::Tag::new(store, ty.params.clone())).clone().into()
+            }
             ("env", sym) => {
                 let Some(ty) = imp.ty().func().cloned() else {
                     return Err(format!(
@@ -449,21 +455,55 @@ fn func_slot(
     store: &mut Store,
     table: &Table,
     funcs: &HashMap<String, Function>,
+    host_imports: &HashMap<String, Function>,
     slots: &mut HashMap<String, u32>,
     sym: &str,
 ) -> Result<u32> {
     if let Some(idx) = slots.get(sym) {
         return Ok(*idx);
     }
-    let f = funcs
-        .get(sym)
-        .cloned()
-        .ok_or_else(|| format!("external \"C\" library takes the address of undefined function `{sym}`"))?;
+    let f = match (funcs.get(sym), host_imports.get(sym)) {
+        (Some(f), _) => f.clone(),
+        (None, Some(f)) => as_table_function(store, f)?,
+        (None, None) => return Err(format!("external \"C\" library takes the address of undefined function `{sym}`")),
+    };
     let idx = table
         .grow(store, 1, Value::FuncRef(Some(f)))
         .map_err(|e| format!("dylink: cannot grow the indirect function table: {e}"))?;
     slots.insert(sym.to_owned(), idx);
     Ok(idx)
+}
+
+/// A host function as a Wasm one, re-exported by a module importing it: the js
+/// backend's table takes no plain JS function.
+#[cfg(target_arch = "wasm32")]
+fn as_table_function(store: &mut Store, f: &Function) -> Result<Function> {
+    use wasm_encoder as we;
+    let val = |t: &Type| match t {
+        Type::I64 => we::ValType::I64,
+        Type::F32 => we::ValType::F32,
+        Type::F64 => we::ValType::F64,
+        _ => we::ValType::I32,
+    };
+    let ty = f.ty(&*store);
+    let mut types = we::TypeSection::new();
+    types.ty().function(ty.params().iter().map(val), ty.results().iter().map(val));
+    let mut imports = we::ImportSection::new();
+    imports.import("host", "f", we::EntityType::Function(0));
+    let mut exports = we::ExportSection::new();
+    exports.export("f", we::ExportKind::Func, 0);
+    let mut m = we::Module::new();
+    m.section(&types).section(&imports).section(&exports);
+    let module = Module::new(&*store, m.finish()).map_err(|e| format!("dylink: {e}"))?;
+    let mut defs = Imports::new();
+    defs.define("host", "f", f.clone());
+    let instance = Instance::new(store, &module, &defs).map_err(|e| format!("dylink: {e}"))?;
+    instance.exports.get_function("f").cloned().map_err(|e| format!("dylink: {e}"))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn as_table_function(_store: &mut Store, f: &Function) -> Result<Function> {
+    Ok(f.clone())
 }
 
 /// The mutable global backing one GOT entry, created on first reference.
@@ -489,9 +529,27 @@ fn missing_symbol_stub(
 }
 
 /// Where a deferred `env` import ends up, once every library is instantiated.
-type DeferredTarget = Arc<OnceLock<Function>>;
+#[derive(Clone, Default)]
+struct DeferredTarget {
+    func: Arc<OnceLock<Function>>,
+    /// What the js backend's forwarder calls (`f`), see [`deferred_import`].
+    #[cfg(target_arch = "wasm32")]
+    holder: Option<js_sys::Object>,
+}
+
+impl DeferredTarget {
+    fn bind(&self, _store: &mut Store, f: &Function) {
+        let _ = self.func.set(f.clone());
+        #[cfg(target_arch = "wasm32")]
+        if let Some(holder) = &self.holder {
+            use wasmer::js::AsJs;
+            let _ = js_sys::Reflect::set(holder, &"f".into(), &f.as_jsvalue(&*_store));
+        }
+    }
+}
 
 /// A trampoline over the [`DeferredTarget`] `link` fills in; one target per symbol.
+#[cfg(not(target_arch = "wasm32"))]
 fn deferred_import(
     store: &mut Store,
     host: &FunctionEnv<Host>,
@@ -499,7 +557,7 @@ fn deferred_import(
     deferred: &mut HashMap<String, DeferredTarget>,
     sym: &str,
 ) -> Function {
-    let target = deferred.entry(sym.to_owned()).or_default().clone();
+    let target = deferred.entry(sym.to_owned()).or_default().func.clone();
     let sym = sym.to_owned();
     Function::new_with_env(store, host, ty.clone(), move |mut env: FunctionEnvMut<Host>, args: &[Value]| {
         match target.get() {
@@ -507,6 +565,30 @@ fn deferred_import(
             None => Err(RuntimeError::new(format!("external \"C\": `{sym}` was never defined"))),
         }
     })
+}
+
+/// The js backend's trampoline is a JS function: an exception thrown in wasm
+/// (a C++ one) passes through it intact, where a host function turns it into a
+/// string.
+#[cfg(target_arch = "wasm32")]
+fn deferred_import(
+    store: &mut Store,
+    _host: &FunctionEnv<Host>,
+    ty: &FunctionType,
+    deferred: &mut HashMap<String, DeferredTarget>,
+    sym: &str,
+) -> Function {
+    use wasmer::js::AsJs;
+    let target = deferred.entry(sym.to_owned()).or_default();
+    let holder = target.holder.get_or_insert_with(js_sys::Object::new).clone();
+    let _ = js_sys::Reflect::set(&holder, &"missing".into(), &format!("external \"C\": `{sym}` was never defined").into());
+    let forward = js_sys::Function::new_with_args(
+        "h",
+        "return function () { if (!h.f) throw new Error(h.missing); return h.f.apply(null, arguments); };",
+    )
+    .call1(&wasm_bindgen::JsValue::NULL, &holder)
+    .expect("a JS function");
+    Function::from_jsvalue(store, ty, &forward).expect("a JS function")
 }
 
 // ── the ModelicaUtilities a library links against ────────────────────────────
@@ -588,6 +670,18 @@ fn modelica_utilities_imports(
         env.data_mut().temps.push(off);
         Ok(off as i32)
     });
+    let duplicate = Function::new_typed_with_env(store, host, |mut env: FunctionEnvMut<Host>, s: i32| -> std::result::Result<i32, RuntimeError> {
+        let malloc = env.data().malloc.clone()
+            .ok_or_else(|| RuntimeError::new("ModelicaDuplicateString before the libraries are up"))?;
+        let mem = env.data().memory.clone()
+            .ok_or_else(|| RuntimeError::new("ModelicaDuplicateString before the libraries are up"))?;
+        let bytes = crate::sim_runtime::read_cstr_bytes(&mem.view(&env), s as u64);
+        let off = malloc.call(&mut env, bytes.len() as u32 + 1)?;
+        mem.view(&env).write(off as u64, &[bytes, vec![0]].concat())
+            .map_err(|e| RuntimeError::new(format!("{e}")))?;
+        env.data_mut().temps.push(off);
+        Ok(off as i32)
+    });
     // ModelicaRandom's automatic global seed is the only caller: `getTime` leaves
     // its seven int* outputs alone and `getpid` is a constant.
     let get_time = Function::new_typed(store, |_: i32, _: i32, _: i32, _: i32, _: i32, _: i32, _: i32| {});
@@ -607,8 +701,13 @@ fn modelica_utilities_imports(
     m.insert("rt_ext_message".into(), message);
     m.insert("ModelicaAllocateString".into(), allocate.clone());
     m.insert("ModelicaAllocateStringWithErrorReturn".into(), allocate);
+    m.insert("ModelicaDuplicateString".into(), duplicate.clone());
+    m.insert("ModelicaDuplicateStringWithErrorReturn".into(), duplicate);
     m.insert("ModelicaInternal_getTime".into(), get_time);
-    m.insert("ModelicaInternal_getpid".into(), getpid);
+    m.insert("ModelicaInternal_getpid".into(), getpid.clone());
+    // wasi-libc leaves getpid to its emulation library, which the bundles' libc
+    // does not carry; expat seeds its hash salt with it.
+    m.insert("getpid".into(), getpid);
     m
 }
 

@@ -64,16 +64,15 @@ class PMTimer {
 
 #else // if not _WIN32
 
-#define BOOST_CHRONO_HEADER_ONLY
-#include <boost/chrono.hpp>
+#include <chrono>
 
 namespace openmodelica { namespace parmodelica {
 
 class PMTimer {
 
   private:
-    boost::chrono::system_clock::duration   total_time;
-    boost::chrono::system_clock::time_point started_at;
+    std::chrono::system_clock::duration   total_time;
+    std::chrono::system_clock::time_point started_at;
 
   public:
     PMTimer();

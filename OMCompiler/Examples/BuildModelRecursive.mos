@@ -26,7 +26,7 @@ else
 end if;
 
 // May be overridde by CustomCommands.mos
-referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/ReferenceFiles/msl32";
+referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/ReferenceFiles/msl41";
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 

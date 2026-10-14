@@ -8,7 +8,7 @@
 // cflags: -d=-newInst
 // suite: disabled
 // 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 loadFile("TempResistor3.mo");
 simulate(TempResistor3,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

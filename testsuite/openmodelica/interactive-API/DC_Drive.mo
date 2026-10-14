@@ -211,5 +211,5 @@ package DC_Drive "Library of controlled DCPM drives"
       end M48V;
     end MachineDataSets;
   end DriveParameters;
-  annotation (uses(Modelica(version="3.2.3")));
+  annotation (uses(Modelica(version="4.1.0")));
 end DC_Drive;

@@ -43,6 +43,7 @@
 
 #include <QtMath>
 #include <QStringBuilder>
+#include <QApplication>
 
 using namespace OMPlot;
 
@@ -79,6 +80,36 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   mpPointMarker->setSymbol(new QwtSymbol(QwtSymbol::Rect, QColor(Qt::red), QColor(Qt::red), QSize(6, 6)));
 }
 
+PlotCurve::~PlotCurve()
+{
+  // QwtPlotDirectPainter is a QObject without parent that nobody else owns.
+  delete mpPlotDirectPainter;
+  /* As long as the marker is attached, the plot owns it and deletes it together with the other
+   * attached items when it is destroyed. Do not delete it then: QwtPlot::detachItems() iterates
+   * over a copy of its item list while deleting, so an item deleted by another item is a dangling
+   * pointer. Once the curve was detached with PlotCurve::detach() the marker is detached as well
+   * and nobody else owns it.
+   */
+  if (mPointMarkerDetached) {
+    delete mpPointMarker;
+  }
+}
+
+/*!
+ * \brief PlotCurve::detach
+ * Detaches the curve and its point marker from the plot. Like for the curve, neither is deleted
+ * here. A curve that is still attached when the plot is destroyed is deleted by the plot together
+ * with its marker, a detached curve deletes its detached marker in its destructor.
+ */
+void PlotCurve::detach()
+{
+  QwtPlotCurve::detach();
+  if (mpPointMarker) {
+    mpPointMarker->detach();
+    mPointMarkerDetached = true;
+  }
+}
+
 void PlotCurve::setTitleLocal()
 {
   if (mCustomTitle.isEmpty()) {
@@ -108,7 +139,7 @@ void PlotCurve::setTitleLocal()
     // visibility
     QwtText text = title();
     if (isVisible()) {
-      text.setColor(QColor(Qt::black));
+      text.setColor(OMPlot::isDarkMode() ? QApplication::palette().color(QPalette::Text) : QColor(Qt::black));
     } else {
       text.setColor(QColor(Qt::gray));
     }
@@ -152,6 +183,10 @@ void PlotCurve::setCurveWidth(qreal width)
 {
   mWidth = width;
   QPen customPen = pen();
+  /* A cosmetic pen's width is measured in device pixels, so the curve keeps the same
+   * physical thickness at any device pixel ratio (a non-cosmetic pen would be resampled
+   * to a fractional device pixel width at e.g. 125% scaling and look blurry). */
+  customPen.setCosmetic(true);
   customPen.setWidthF(mWidth);
   setPen(customPen);
 }

@@ -111,6 +111,8 @@ pub const NLS_DERIVATIVE_TEST: Stream = 39;
 pub const NLS_SVD: Stream = 40;
 pub const NLS_SVD_V: Stream = 41;
 pub const NLS_RES: Stream = 42;
+pub const GBODE: Stream = 14;
+pub const GBODE_V: Stream = 15;
 pub const GBODE_NLS: Stream = 16;
 pub const NLS_EXTRAPOLATE: Stream = 43;
 pub const RT: Stream = 45;
@@ -188,9 +190,6 @@ pub fn mask_from_streams<S: AsRef<str>>(streams: &[S]) -> Result<Mask, String> {
 /// `setGlobalVerboseLevel`'s "print X if Y is active" implications, in its order
 /// (`LOG_INIT_V` reaches `LOG_INIT_HOMOTOPY` through `LOG_INIT`).
 fn finish(mut m: Mask) -> Mask {
-    const GBODE: Stream = 14;
-    const GBODE_V: Stream = 15;
-    const GBODE_NLS: Stream = 16;
     const GBODE_NLS_V: Stream = 17;
     for (from, to) in [
         (GBODE_V, GBODE),
@@ -316,6 +315,13 @@ pub fn take_capture() -> String {
     capture_store::with(|b| b.take()).unwrap_or_default()
 }
 
+/// What `f` logs, diverted into a string; a capture already open is kept.
+pub fn capture(f: impl FnOnce()) -> String {
+    let outer = capture_store::with(|b| b.replace(String::new()));
+    f();
+    capture_store::with(|b| core::mem::replace(b, outer)).unwrap_or_default()
+}
+
 /// `true` when the line was captured and must not reach the sink.
 pub(crate) fn capture_line(s: &str) -> bool {
     capture_store::with(|b| match b {
@@ -406,6 +412,14 @@ pub fn info_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_
     }
 }
 
+/// C's `infoStreamPrintWithEquationIndexes`: [`info`] naming the equations
+/// involved, which the XML log lists as `<used index=…>`.
+pub fn info_used(stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    if active(stream) {
+        message_text_used(INFO, stream, indent_next, msg, used);
+    }
+}
+
 /// C's `OMC_ACTIVE_WARNING_STREAM`.
 pub fn warning(stream: Stream, indent_next: bool, msg: &str) {
     if active(stream) || store::with(|s| s.use_stream & SHOW_ALL_WARNINGS != 0) {
@@ -469,6 +483,13 @@ pub fn debug(stream: Stream, indent_next: bool, msg: &str) {
 pub fn debug_fmt(stream: Stream, indent_next: bool, args: core::fmt::Arguments<'_>) {
     if active(stream) {
         message_text(DEBUG_TYPE, stream, indent_next, &alloc::fmt::format(args));
+    }
+}
+
+/// [`debug`] with the equation indexes, as [`info_used`].
+pub fn debug_used(stream: Stream, indent_next: bool, msg: &str, used: &[i32]) {
+    if active(stream) {
+        message_text_used(DEBUG_TYPE, stream, indent_next, msg, used);
     }
 }
 

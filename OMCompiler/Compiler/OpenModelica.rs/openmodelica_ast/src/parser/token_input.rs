@@ -50,12 +50,13 @@ pub type TokenInput<'a> = &'a [LexToken];
 // Primitive token consumers
 // ---------------------------------------------------------------------------
 
-/// Consume the next token if its kind equals `kind`; otherwise backtrack.
+/// Consume the next token if its kind equals `kind`, which must not carry a
+/// payload; otherwise backtrack.
 #[inline]
 pub fn t(kind: TK) -> impl Fn(&mut &[LexToken]) -> ModalResult<TK> {
     move |input: &mut &[LexToken]| {
         match input.first() {
-            Some(tok) if tok.kind == kind => { let k = tok.kind.clone(); *input = &input[1..]; Ok(k) }
+            Some(tok) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => { *input = &input[1..]; Ok(kind.clone()) }
             _ => Err(ErrMode::Backtrack(ContextError::default())),
         }
     }
@@ -67,6 +68,25 @@ pub fn t(kind: TK) -> impl Fn(&mut &[LexToken]) -> ModalResult<TK> {
 pub fn next_tok(input: &mut &[LexToken]) -> ModalResult<TK> {
     match input.first() {
         Some(tok) => { let k = tok.kind.clone(); *input = &input[1..]; Ok(k) }
+        None => Err(ErrMode::Backtrack(ContextError::default())),
+    }
+}
+
+/// Consume the next token if its kind equals `kind`, which must not carry a
+/// payload.
+#[inline]
+pub fn eat(input: &mut &[LexToken], kind: TK) -> bool {
+    match input.split_first() {
+        Some((tok, rest)) if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&kind) => { *input = rest; true }
+        _ => false,
+    }
+}
+
+/// Consume the next token unconditionally.  Backtrack on EOF.
+#[inline]
+pub fn skip_tok(input: &mut &[LexToken]) -> ModalResult<()> {
+    match input.split_first() {
+        Some((_, rest)) => { *input = rest; Ok(()) }
         None => Err(ErrMode::Backtrack(ContextError::default())),
     }
 }

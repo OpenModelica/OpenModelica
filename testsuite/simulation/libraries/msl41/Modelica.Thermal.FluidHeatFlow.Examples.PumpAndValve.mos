@@ -14,9 +14,9 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve);
 compareVars :=
 {
-   "speed.phi",
+   "heatCapacitor.T",
    "pipe.T",
-   "heatCapacitor.T"
+   "speed.phi"
 };
 
 runScript(modelTesting);getErrorString();
@@ -28,8 +28,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve
-// {"speed.phi", "pipe.T", "heatCapacitor.T"}
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve', options = '', outputFormat = 'mat', variableFilter = 'time|speed.phi|pipe.T|heatCapacitor.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"heatCapacitor.T", "pipe.T", "speed.phi"}
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|pipe.T|speed.phi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.PumpAndValve_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

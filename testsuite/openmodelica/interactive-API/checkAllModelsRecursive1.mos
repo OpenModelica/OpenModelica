@@ -7,15 +7,15 @@
 loadString("
   package TestCheckAll
     model A
-      parameter Modelica.SIunits.Voltage V = 10;
+      parameter Modelica.Units.SI.Voltage V = 10;
     end A;
     encapsulated model B
-     parameter Modelica.SIunits.Current A = 5;
+     parameter Modelica.Units.SI.Current A = 5;
     end B;
     model C
-      parameter Modelica.SIunits.Voltage V = 10;
+      parameter Modelica.Units.SI.Voltage V = 10;
     end C;
-    annotation(uses(Modelica(version = \"3.2.3\")));
+    annotation(uses(Modelica(version = \"4.1.0\")));
   end TestCheckAll;
 ");
 
@@ -33,9 +33,9 @@ getErrorString();
 // Error String:
 //
 // Error Buffer:
-// Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation from TestCheckAll.
-// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to uses annotation from TestCheckAll.
+// Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
 //
 // #[+], TestCheckAll.A
 // -------------------------------------------------------------------------
@@ -44,7 +44,7 @@ getErrorString();
 // Error String:
 //
 // Error Buffer:
-// [<interactive>:7:6-7:46:writable] Error: Class Modelica.SIunits.Current not found in scope B.
+// [<interactive>:7:6-7:47:writable] Error: Class Modelica.Units.SI.Current not found in scope B.
 //
 // #[-], TestCheckAll.B
 // -------------------------------------------------------------------------

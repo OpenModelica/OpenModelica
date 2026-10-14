@@ -87,6 +87,8 @@ set(OMNOTEBOOKLIB_HEADERS application.h
                           latexcell.h
                           indent.h)
 
+set(XML_FILES stylesheet.xml
+              commands.xml)
 
 
 if(APPLE)
@@ -115,6 +117,8 @@ target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
 omc_install_gui_client(OMNotebook)
+install(FILES ${XML_FILES}
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)
 if(APPLE)
   set_target_properties(OMNotebook PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 endif()
@@ -157,4 +161,3 @@ if(MINGW)
     message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
   ")
 endif()
-

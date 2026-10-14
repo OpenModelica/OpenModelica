@@ -2431,6 +2431,7 @@ algorithm
       // Only the second branch matches, mark it as the correct branch.
       case (_, true)
         algorithm
+          comp_ty1 := Type.setArrayElementType(comp_ty1, Type.arrayElementType(comp_ty2));
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, comp_ty2, NFType.Branch.FALSE);
           condExp := Expression.typeCast(e1_2, cond_ty);
         then
@@ -2446,6 +2447,7 @@ algorithm
     else
       (condExp, otherExp, compatibleType, matchKind) :=
         matchExpressions(condExp, false_ty, otherExp, otherType, options);
+      true_ty := Type.setArrayElementType(true_ty, Type.arrayElementType(compatibleType));
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
     end if;
 
@@ -2535,9 +2537,11 @@ algorithm
         then
           (comp_ty1, mk1);
 
-      // Only the second branch matches, mark it as the correct branch.
+      // Only the second branch matches, mark it as the correct branch. The cast
+      // takes the element type from the true branch, so it gets the matched one.
       case (_, true)
         algorithm
+          true_ty := Type.setArrayElementType(true_ty, Type.arrayElementType(comp_ty2));
           cond_ty := Type.CONDITIONAL_ARRAY(true_ty, comp_ty2, NFType.Branch.FALSE);
           exp := Expression.typeCast(e2, cond_ty);
         then
@@ -2551,6 +2555,7 @@ algorithm
       cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, branch);
     else
       (exp, compatibleType, matchKind) := matchTypes(false_ty, expectedType, exp, options);
+      true_ty := Type.setArrayElementType(true_ty, Type.arrayElementType(compatibleType));
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
     end if;
 

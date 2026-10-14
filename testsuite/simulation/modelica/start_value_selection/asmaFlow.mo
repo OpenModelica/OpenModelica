@@ -1,14 +1,14 @@
 model asmaFlow
   import Modelica.Constants.pi;
-  parameter Modelica.SIunits.AngularVelocity DeltaOmEl = 25 "Controller Delta Omega";
+  parameter Modelica.Units.SI.AngularVelocity DeltaOmEl = 25 "Controller Delta Omega";
   Modelica.Electrical.Machines.Utilities.TerminalBox terminalBox annotation(Placement(transformation(extent = {{30,40},{50,60}})));
-  Modelica.Electrical.Machines.BasicMachines.AsynchronousInductionMachines.AIM_SquirrelCage aimc(p = 2, fsNominal = 50, Rs = 0.435, Lssigma = 0.004, Lrsigma = 0.002, Rr = 0.4, Jr = 2, Lm = 0.06931) annotation(Placement(transformation(extent = {{28,10},{48,30}})));
+  Modelica.Electrical.Machines.BasicMachines.InductionMachines.IM_SquirrelCage aimc(p = 2, fsNominal = 50, Rs = 0.435, Lssigma = 0.004, Lrsigma = 0.002, Rr = 0.4, Jr = 2, Lm = 0.06931) annotation(Placement(transformation(extent = {{28,10},{48,30}})));
   Modelica.Electrical.Analog.Basic.Ground ground annotation(Placement(transformation(extent = {{-96,-6},{-76,14}})));
-  Modelica.Electrical.MultiPhase.Basic.Star star annotation(Placement(transformation(extent = {{-10,-10},{10,10}}, rotation = 270, origin = {-86,38})));
+  Modelica.Electrical.Polyphase.Basic.Star star annotation(Placement(transformation(extent = {{-10,-10},{10,10}}, rotation = 270, origin = {-86,38})));
   Modelica.Mechanics.Rotational.Sources.Torque torque annotation(Placement(transformation(extent = {{-10,-10},{10,10}}, rotation = 180, origin = {70,20})));
   Modelica.Blocks.Sources.Constant const(k = -15) annotation(Placement(transformation(extent = {{-6,-6},{6,6}}, rotation = 90, origin = {84,-10})));
   Modelica.Mechanics.Rotational.Sensors.SpeedSensor speedSensor annotation(Placement(transformation(extent = {{-7,-7},{7,7}}, rotation = 270, origin = {55,-9})));
-  Modelica.Electrical.MultiPhase.Sources.SineVoltage sinevoltage1(V = 230 * sqrt(2) / sqrt(3) * ones(3), freqHz = 50 * ones(3)) annotation(Placement(visible = true, transformation(origin = {-43.6742,70.364}, extent = {{-10,-10},{10,10}}, rotation = 0)));
+  Modelica.Electrical.Polyphase.Sources.SineVoltage sinevoltage1(V = 230 * sqrt(2) / sqrt(3) * ones(3), f = 50 * ones(3)) annotation(Placement(visible = true, transformation(origin = {-43.6742,70.364}, extent = {{-10,-10},{10,10}}, rotation = 0)));
 equation
   connect(sinevoltage1.plug_n,terminalBox.plugSupply) annotation(Line(points = {{-33.6742,70.364},{40.208,70.364},{40.208,42.6343},{40.208,42.6343}}));
   connect(sinevoltage1.plug_p,star.plug_p) annotation(Line(points = {{-53.6742,70.364},{-86.3085,70.364},{-86.3085,48.8735},{-86.3085,48.8735}}));

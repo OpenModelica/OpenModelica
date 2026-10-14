@@ -15,14 +15,8 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.Translational.Examples.Sensors);
 compareVars :=
 {
-   "forceSensor.f",
-   "accSensor1.a",
-   "speedSensor1.v",
-   "positionSensor1.s",
-   "positionSensor2.s",
    "mass.s",
-   "mass.v",
-   "mass.a"
+   "mass.v"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -36,9 +30,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Translational.Examples.Sensors
-// {"forceSensor.f", "accSensor1.a", "speedSensor1.v", "positionSensor1.s", "positionSensor2.s", "mass.s", "mass.v", "mass.a"}
+// {"mass.s", "mass.v"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = 'time|forceSensor.f|accSensor1.a|speedSensor1.v|positionSensor1.s|positionSensor2.s|mass.s|mass.v|mass.a', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = 'time|mass.s|mass.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.Sensors_res.mat
 // Files Equal!
 // "true

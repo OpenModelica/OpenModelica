@@ -1,2 +1,0 @@
-loadModel(Modelica,{"3.2.1"});
-checkModel(Modelica.Fluid.Examples.Explanatory.MeasuringTemperature); getErrorString();

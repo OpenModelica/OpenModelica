@@ -297,6 +297,7 @@ pub(crate) fn variant_wrapper(
         flat: HashMap::default(),
         flat_outs: Vec::new(),
         flat_results: false,
+        size_locals: Default::default(),
     };
     let mut boxed_args = Vec::new();
     let mut idx = 0u32;

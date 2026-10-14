@@ -1,0 +1,132 @@
+// name: GetModelInstanceFigures1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model BouncingBall
+    Real h;
+    annotation(Documentation(figures = {
+      Figure(title = \"Bouncing ball\", identifier = \"height\", preferred = true,
+        plots = {Plot(curves = {Curve(y = h, legend = \"Height of ball\")})})}));
+  end BouncingBall;");
+getErrorString();
+
+getModelInstance(BouncingBall, prettyPrint=true);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "{
+//   \"name\": \"BouncingBall\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Documentation\": {
+//       \"figures\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Figure\",
+//           \"elements\": [
+//             \"Bouncing ball\",
+//             \"height\",
+//             \"\",
+//             true,
+//             [
+//               {
+//                 \"$kind\": \"record\",
+//                 \"name\": \"Plot\",
+//                 \"elements\": [
+//                   \"\",
+//                   \"\",
+//                   [
+//                     {
+//                       \"$kind\": \"record\",
+//                       \"name\": \"Curve\",
+//                       \"elements\": [
+//                         \"time\",
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"h\"
+//                             }
+//                           ]
+//                         },
+//                         \"Height of ball\",
+//                         0
+//                       ]
+//                     }
+//                   ],
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       [
+//
+//                       ],
+//                       [
+//
+//                       ],
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
+//                   },
+//                   {
+//                     \"$kind\": \"record\",
+//                     \"name\": \"Axis\",
+//                     \"elements\": [
+//                       [
+//
+//                       ],
+//                       [
+//
+//                       ],
+//                       \"\",
+//                       \"\",
+//                       {
+//                         \"$kind\": \"record\",
+//                         \"name\": \"AxisScale\",
+//                         \"elements\": [
+//                           \"Linear\",
+//                           10
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 ]
+//               }
+//             ],
+//             \"\"
+//           ]
+//         }
+//       ]
+//     }
+//   },
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"h\",
+//       \"type\": \"Real\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 19
+//   }
+// }"
+// ""
+// endResult

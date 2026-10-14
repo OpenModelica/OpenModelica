@@ -105,22 +105,6 @@ algorithm
   assert(false, getInstanceName());
 end simVarFromHT;
 
-function localCref2SimVar<A,B>
-  input A inCref;
-  input B inCrefToSimVarHT;
-  output SimCodeVar.SimVar outSimVar;
-algorithm
-  assert(false, getInstanceName());
-end localCref2SimVar;
-
-function localCref2Index<A,B>
-  input A inCref;
-  input B inOMSIFunction;
-  output String outIndex;
-algorithm
-  assert(false, getInstanceName());
-end localCref2Index;
-
 function codegenExpSanityCheck
   input output DAE.Exp e;
   input SimCodeFunction.Context context;
@@ -148,16 +132,6 @@ function getValueReference
 algorithm
   /* Do nothing */
 end getValueReference;
-
-function getLocalValueReference<A>
-  input SimCodeVar.SimVar inSimVar;
-  input SimCode.SimCode inSimCode;
-  input A inCrefToSimVarHT;
-  input Boolean inElimNegAliases "=false to keep negative alias references";
-  output String outValueReference;
-algorithm
-  /* Do nothing */
-end getLocalValueReference;
 
 public function hashEqSystemMod
   input SimCode.SimEqSystem eq;

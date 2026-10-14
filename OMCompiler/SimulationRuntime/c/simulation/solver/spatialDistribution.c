@@ -1099,3 +1099,109 @@ void printTransportedQuantity(void* data, int stream, void* nodePointer) {
 
 
 //#endif
+
+/**
+ * @brief The spatialDistribution operators as flat words, for an FMU state.
+ *
+ * Per operator its scalar fields, then the transported quantity and the stored
+ * events, each led by its length.
+ *
+ * @param data    Runtime data struct.
+ * @param out     Receives the words, or NULL to only count them.
+ * @return        Number of words.
+ */
+size_t spatialDistributionStateWords(DATA* data, double* out)
+{
+  size_t k = 0;
+  unsigned int i;
+  DOUBLE_ENDED_LIST_NODE* node;
+
+  if (!data->simulationInfo->spatialDistributionData) {
+    return 0;
+  }
+  for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
+    SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
+    if (out) {
+      out[k] = s->isInitialized;
+      out[k+1] = s->oldPosX;
+      out[k+2] = s->startPosXSet;
+      out[k+3] = s->startPosX;
+      out[k+4] = s->lastStoredEventValue;
+      out[k+5] = (double) s->nWarningsRemovedEvents;
+      out[k+6] = (double) s->nWarningsOutputEvents;
+      out[k+7] = doubleEndedListLen(s->transportedQuantity);
+    }
+    k += 8;
+    for (node = getFirstNodeDoubleEndedList(s->transportedQuantity); node; node = getNextNodeDoubleEndedList(node)) {
+      TRANSPORTED_QUANTITY_DATA* q = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(node);
+      if (out) {
+        out[k] = q->position;
+        out[k+1] = q->value;
+      }
+      k += 2;
+    }
+    if (out) out[k] = doubleEndedListLen(s->storedEvents);
+    k++;
+    for (node = getFirstNodeDoubleEndedList(s->storedEvents); node; node = getNextNodeDoubleEndedList(node)) {
+      TRANSPORTED_EVENT_DATA* e = (TRANSPORTED_EVENT_DATA*) dataDoubleEndedList(node);
+      if (out) {
+        out[k] = e->position;
+        out[k+1] = e->zeroCrossValue;
+      }
+      k += 2;
+    }
+  }
+  return k;
+}
+
+/**
+ * @brief Inverse of spatialDistributionStateWords.
+ *
+ * @param data    Runtime data struct.
+ * @param w       Words spatialDistributionStateWords wrote.
+ * @param len     Number of words available.
+ * @return        Number of words read, or -1 if they are not what it wrote.
+ */
+long setSpatialDistributionStateWords(DATA* data, const double* w, size_t len)
+{
+  size_t k = 0;
+  unsigned int i;
+  int j, n;
+
+  if (!data->simulationInfo->spatialDistributionData) {
+    return 0;
+  }
+  for (i = 0; i < data->modelData->nSpatialDistributions; i++) {
+    SPATIAL_DISTRIBUTION_DATA* s = &data->simulationInfo->spatialDistributionData[i];
+    if (k + 8 > len) return -1;
+    s->isInitialized = w[k] != 0;
+    s->oldPosX = w[k+1];
+    s->startPosXSet = w[k+2] != 0;
+    s->startPosX = w[k+3];
+    s->lastStoredEventValue = (int) w[k+4];
+    s->nWarningsRemovedEvents = (unsigned long) w[k+5];
+    s->nWarningsOutputEvents = (unsigned long) w[k+6];
+    n = (int) w[k+7];
+    k += 8;
+    if (n < 0 || k + 2 * (size_t) n + 1 > len) return -1;
+    clearDoubleEndedList(s->transportedQuantity);
+    for (j = 0; j < n; j++) {
+      TRANSPORTED_QUANTITY_DATA q;
+      q.position = w[k];
+      q.value = w[k+1];
+      k += 2;
+      pushBackDoubleEndedList(s->transportedQuantity, &q);
+    }
+    n = (int) w[k++];
+    if (n < 0 || k + 2 * (size_t) n > len) return -1;
+    clearDoubleEndedList(s->storedEvents);
+    for (j = 0; j < n; j++) {
+      TRANSPORTED_EVENT_DATA e;
+      e.position = w[k];
+      e.zeroCrossValue = w[k+1];
+      k += 2;
+      pushBackDoubleEndedList(s->storedEvents, &e);
+    }
+  }
+  return (long) k;
+}

@@ -267,11 +267,123 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
+    FlatModel flat = FlatModel.mapExp(flatModel, lowerFunctionPointers);
   algorithm
-    variableData := lowerVariableData(flatModel.variables);
-    (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
+    variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
+      listAppend(flat.algorithms, flat.initialAlgorithms)));
+    (equationData, variableData) := lowerEquationData(flat.equations, flat.algorithms, flat.initialEquations, flat.initialAlgorithms, variableData);
     bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
+
+  function lowerFunctionPointers
+    "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
+    the function. Represent it as a function partial application without arguments,
+    so it is not mistaken for a variable anywhere in the backend."
+    input output Expression exp;
+  algorithm
+    exp := Expression.map(exp, lowerFunctionPointer);
+  end lowerFunctionPointers;
+
+  function lowerFunctionPointer
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF(ty = Type.FUNCTION())
+      then Expression.PARTIAL_FUNCTION_APPLICATION(exp.cref, {}, {}, exp.ty);
+      else exp;
+    end match;
+  end lowerFunctionPointer;
+
+  function continuousImplicitDiscretes
+    "Real variables assigned in a when-equation are implicitly discrete. The frontend marks them before
+    if-equations with parameter conditions are resolved, so a variable only assigned in a when-equation
+    of an inactive branch would lose its derivative. Those are continuous."
+    input output list<Variable> variables;
+    input list<FEquation> equations;
+    input list<Algorithm> algorithms;
+  protected
+    UnorderedSet<ComponentRef> assigned = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for eq in equations loop
+      collectWhenAssigned(eq, false, assigned);
+    end for;
+    for alg in algorithms loop
+      collectWhenAssignedStmts(alg.statements, false, assigned);
+    end for;
+    variables := list(continuousIfUnassigned(var, assigned) for var in variables);
+  end continuousImplicitDiscretes;
+
+  function continuousIfUnassigned
+    input output Variable var;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    if Variable.variability(var) == NFPrefixes.Variability.IMPLICITLY_DISCRETE and Type.isReal(Type.arrayElementType(var.ty))
+      and not UnorderedSet.contains(ComponentRef.stripSubscriptsAll(var.name), assigned) then
+      var := Variable.setVariability(var, NFPrefixes.Variability.CONTINUOUS);
+    end if;
+  end continuousIfUnassigned;
+
+  function collectWhenAssigned
+    input FEquation eq;
+    input Boolean inWhen;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    () := match eq
+      case FEquation.EQUALITY() guard(inWhen) algorithm
+        for cref in UnorderedSet.toList(Expression.extractCrefs(eq.lhs)) loop
+          UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), assigned);
+        end for;
+      then ();
+      case FEquation.FOR() algorithm
+        for e in eq.body loop collectWhenAssigned(e, inWhen, assigned); end for;
+      then ();
+      case FEquation.IF() algorithm
+        for branch in eq.branches loop collectWhenAssignedBranch(branch, inWhen, assigned); end for;
+      then ();
+      case FEquation.WHEN() algorithm
+        for branch in eq.branches loop collectWhenAssignedBranch(branch, true, assigned); end for;
+      then ();
+      else ();
+    end match;
+  end collectWhenAssigned;
+
+  function collectWhenAssignedBranch
+    input FEquation.Branch branch;
+    input Boolean inWhen;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    () := match branch
+      case FEquation.Branch.BRANCH() algorithm
+        for e in branch.body loop collectWhenAssigned(e, inWhen, assigned); end for;
+      then ();
+      else ();
+    end match;
+  end collectWhenAssignedBranch;
+
+  function collectWhenAssignedStmts
+    input list<Statement> stmts;
+    input Boolean inWhen;
+    input UnorderedSet<ComponentRef> assigned;
+  algorithm
+    for stmt in stmts loop
+      () := match stmt
+        case Statement.ASSIGNMENT() guard(inWhen) algorithm
+          for cref in UnorderedSet.toList(Expression.extractCrefs(stmt.lhs)) loop
+            UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), assigned);
+          end for;
+        then ();
+        case Statement.FOR() algorithm collectWhenAssignedStmts(stmt.body, inWhen, assigned); then ();
+        case Statement.WHILE() algorithm collectWhenAssignedStmts(stmt.body, inWhen, assigned); then ();
+        case Statement.IF() algorithm
+          for branch in stmt.branches loop collectWhenAssignedStmts(Util.tuple22(branch), inWhen, assigned); end for;
+        then ();
+        case Statement.WHEN() algorithm
+          for branch in stmt.branches loop collectWhenAssignedStmts(Util.tuple22(branch), true, assigned); end for;
+        then ();
+        else ();
+      end match;
+    end for;
+  end collectWhenAssignedStmts;
 
   function main
     input output BackendDAE bdae;
@@ -1087,7 +1199,7 @@ protected
   algorithm
     backend_equations := match frontend_equation
        case FEquation.FOR(range = SOME(range)) algorithm
-        if Expression.rangeSize(range) > 0 then
+        if not Expression.emptyRange(range) then
           // Treat each body equation individually because they can have different equation attributes
           // E.g.: DISCRETE, EvalStages
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
@@ -1307,17 +1419,19 @@ protected
       local
         BEquation.WhenEquationBody whenEqBody;
         list<BEquation.WhenEquationBody> bodies;
+        list<Pointer<Equation>> eqs;
 
       case FEquation.WHEN() algorithm
         // When equation inside initial actually not allowed. Throw error?
         SOME(whenEqBody) := lowerWhenEquationBody(frontend_eq.branches);
         bodies := BEquation.WhenEquationBody.split(whenEqBody);
-      then list(Pointer.create(BEquation.WHEN_EQUATION(
-        size    = BEquation.WhenEquationBody.size(b),
-        body    = b,
-        source  = frontend_eq.source,
-        attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
-      )) for b in bodies);
+        eqs := list(Pointer.create(BEquation.WHEN_EQUATION(
+          size    = BEquation.WhenEquationBody.size(b),
+          body    = b,
+          source  = frontend_eq.source,
+          attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
+        )) for b in bodies);
+      then listAppend(eqs, lowerWhenIfStatements(frontend_eq, init));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_eq)});
@@ -1325,6 +1439,83 @@ protected
 
     end match;
   end lowerWhenEquation;
+
+  function lowerWhenIfStatements
+    "Function calls, asserts, terminate and reinit inside if-equations of a when
+     equation cannot be expressed as when-assignments like the assignments in
+     the same branches (lowerWhenBranchIf), so they are collected into a
+     when-algorithm with the same conditions instead."
+    input FEquation whenEq;
+    input Boolean init;
+    output list<Pointer<Equation>> algs = {};
+  protected
+    list<tuple<Expression, list<Statement>>> branches = {};
+    list<Statement> stmts;
+    Algorithm alg;
+  algorithm
+    () := match whenEq
+      case FEquation.WHEN() algorithm
+        for branch in whenEq.branches loop
+          () := match branch
+            case FEquation.BRANCH() algorithm
+              stmts := List.flatten(list(lowerIfEquationStatements(eq) for eq in branch.body));
+              branches := (branch.condition, stmts) :: branches;
+            then ();
+            else ();
+          end match;
+        end for;
+        if not Statement.branchesEmpty(branches) then
+          alg := Algorithm.ALGORITHM({Statement.WHEN(listReverse(branches), whenEq.source)}, {}, {}, NONE(), NFInstNode.NO_SCOPE, whenEq.source);
+          alg := Algorithm.setInputsOutputs(alg);
+          algs := {lowerAlgorithm(alg, init)};
+        end if;
+      then ();
+      else ();
+    end match;
+  end lowerWhenIfStatements;
+
+  function lowerIfEquationStatements
+    "The if-statement with the function calls, asserts, terminate and reinit of
+     the branches of an if-equation, nothing for other equations. Empty branches
+     are kept so the else branches stay exclusive."
+    input FEquation eq;
+    output list<Statement> stmts = {};
+  protected
+    list<tuple<Expression, list<Statement>>> branches = {};
+    list<Statement> body;
+  algorithm
+    () := match eq
+      case FEquation.IF() algorithm
+        for branch in eq.branches loop
+          () := match branch
+            case FEquation.BRANCH() algorithm
+              body := List.flatten(list(lowerWhenIfStatement(e) for e in branch.body));
+              branches := (branch.condition, body) :: branches;
+            then ();
+            else ();
+          end match;
+        end for;
+        if not Statement.branchesEmpty(branches) then
+          stmts := {Statement.IF(listReverse(branches), eq.source)};
+        end if;
+      then ();
+      else ();
+    end match;
+  end lowerIfEquationStatements;
+
+  function lowerWhenIfStatement
+    input FEquation eq;
+    output list<Statement> stmts;
+  algorithm
+    stmts := match eq
+      case FEquation.NORETCALL() then {Statement.NORETCALL(eq.exp, eq.source)};
+      case FEquation.ASSERT()    then {Statement.ASSERT(eq.condition, eq.message, eq.level, eq.source)};
+      case FEquation.TERMINATE() then {Statement.TERMINATE(eq.message, eq.source)};
+      case FEquation.REINIT()    then {Statement.REINIT(eq.cref, eq.reinitExp, eq.source)};
+      case FEquation.IF()        then lowerIfEquationStatements(eq);
+      else {};
+    end match;
+  end lowerWhenIfStatement;
 
   function lowerWhenEquationBody
     input list<FEquation.Branch> branches;
@@ -1469,6 +1660,12 @@ protected
               // update the cref -> rhs
               UnorderedMap.add(cref, exp, if_map);
             then ();
+
+            // collected into a when-algorithm by lowerWhenIfStatements
+            case FEquation.NORETCALL() then ();
+            case FEquation.ASSERT()    then ();
+            case FEquation.TERMINATE() then ();
+            case FEquation.REINIT()    then ();
 
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for branch equation:\n" + FEquation.toString(eq)});

@@ -40,6 +40,7 @@ system("grep -c \"<SourceFile name=.Mbd.c./>\" Mbd_bd.xml"); getErrorString();
 // <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
 // <IncludeDirectory name="."/>
 // <IncludeDirectory name="fmi"/>
+// <SourceFileSet language="Rust2024" compiler="cargo" compilerOptions="rustc --release --manifest-path rust/SimulationRuntime/rust/Cargo.toml -p openmodelica_simulation_runtime --lib --crate-type staticlib">
 // 0
 // ""
 // 1

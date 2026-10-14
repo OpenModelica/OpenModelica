@@ -39,6 +39,7 @@
  * copying them out. Everything else here is the same on both. */
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -61,6 +62,16 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len) {
     return ModelicaAllocateString(len);
 }
 #endif
+
+char* ModelicaDuplicateString(const char* str) {
+    char* p = ModelicaAllocateString(strlen(str));
+    return p ? strcpy(p, str) : p;
+}
+
+char* ModelicaDuplicateStringWithErrorReturn(const char* str) {
+    char* p = ModelicaAllocateStringWithErrorReturn(strlen(str));
+    return p ? strcpy(p, str) : p;
+}
 
 static void report(void (*to)(const char*), const char* fmt, va_list ap) {
     char buf[LOG_BUFFER];
@@ -114,13 +125,3 @@ void ModelicaFormatWarning(const char* fmt, ...) {
     ModelicaVFormatWarning(fmt, ap);
     va_end(ap);
 }
-
-#if HAVE_HDF5
-/* HDF5's plugin loader calls these on any POSIX target; there is nothing to
- * load here. Not wasi-libc's libdl: its libdl.a is non-PIC, so a `--shared`
- * side module cannot link it, and libdl.so leaves imports behind. */
-void *dlopen(const char *file, int flags) { (void)file; (void)flags; return NULL; }
-void *dlsym(void *__restrict handle, const char *__restrict name) { (void)handle; (void)name; return NULL; }
-int dlclose(void *handle) { (void)handle; return 0; }
-char *dlerror(void) { return (char *)"dynamic loading is not available"; }
-#endif

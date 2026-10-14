@@ -1,0 +1,140 @@
+// name: resizableAlgebraicLoops
+// keywords: NewBackend resizable override algebraic loop
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableLoops*.log resizableLoops*.mat resizableLoops*_ref*
+//
+// Algebraic loops whose size depends on a size parameter: the size of the
+// system, its iteration variables, residuals, Jacobian and sparsity pattern
+// are computed at runtime (whole arrays as iteration variables). Parts of a
+// loop that are whole together are merged, parts of a for-loop that contain
+// every iteration are evaluated for the whole runtime range. The results with
+// -override equal those of the model built for that size, and the analytic
+// Jacobian and sparsity pattern are used (no warning).
+
+loadString("
+package resizableLoops
+  model Tridiagonal
+    parameter Integer N = 4;
+    Real x[N];
+  equation
+    x[1] + 0.1*sin(x[2]) = 1 + time;
+    for i in 2:N-1 loop
+      x[i] + 0.1*sin(x[i-1] + x[i+1]) = i*(1 + time);
+    end for;
+    x[N] + 0.1*sin(x[N-1]) = N*(1 + time);
+  end Tridiagonal;
+
+  model Separate
+    parameter Integer N = 3;
+    Real x[N];
+  equation
+    for i in 1:N loop
+      x[i] + 0.1*sin(x[i]) = i*(1 + time);
+    end for;
+  end Separate;
+
+  connector VPin
+    Real v[3];
+    flow Real i[3];
+  end VPin;
+  model VResistor
+    VPin a, b;
+  equation
+    a.v - b.v = a.i;
+    a.i + b.i = zeros(3);
+  end VResistor;
+  model VSource
+    VPin p;
+  equation
+    p.v = {1, 2, 3}*(1 + time);
+  end VSource;
+  model VGround
+    VPin p;
+  equation
+    p.v = zeros(3);
+  end VGround;
+  model VSplitter
+    parameter Integer N = 2;
+    VPin a;
+    VPin b[N];
+  equation
+    for k in 1:N loop
+      connect(a, b[k]);
+    end for;
+  end VSplitter;
+  model VSplit \"a vector connector split into N, a loop per phase\"
+    parameter Integer N = 3;
+    VSource src;
+    VResistor r0;
+    VSplitter s(N = N);
+    VResistor r[N];
+    VGround g[N];
+  equation
+    connect(src.p, r0.a);
+    connect(r0.b, s.a);
+    for k in 1:N loop
+      connect(s.b[k], r[k].a);
+      connect(r[k].b, g[k].p);
+    end for;
+  end VSplit;
+
+  model Tridiagonal7 = Tridiagonal(N = 7);
+  model Separate6 = Separate(N = 6);
+  model VSplit6 = VSplit(N = 6);
+end resizableLoops;
+"); getErrorString();
+
+buildModel(resizableLoops.Tridiagonal, stopTime = 1, fileNamePrefix = "resizableLoopsTri"); getErrorString();
+system("./resizableLoopsTri -override=N=7 -r=resizableLoopsTri_7.mat > resizableLoopsTri_7.log 2>&1 && ! grep -i warning resizableLoopsTri_7.log");
+buildModel(resizableLoops.Separate, stopTime = 1, fileNamePrefix = "resizableLoopsSep"); getErrorString();
+system("./resizableLoopsSep -override=N=6 -r=resizableLoopsSep_6.mat > resizableLoopsSep_6.log 2>&1 && ! grep -i warning resizableLoopsSep_6.log");
+buildModel(resizableLoops.VSplit, stopTime = 1, fileNamePrefix = "resizableLoopsVSplit"); getErrorString();
+system("./resizableLoopsVSplit -override=N=6 -r=resizableLoopsVSplit_6.mat > resizableLoopsVSplit_6.log 2>&1 && ! grep -i warning resizableLoopsVSplit_6.log");
+
+// the references, built for these sizes
+setCommandLineOptions("--resizableArrays=false"); getErrorString();
+buildModel(resizableLoops.Tridiagonal7, stopTime = 1, fileNamePrefix = "resizableLoopsTri_ref"); getErrorString();
+system("./resizableLoopsTri_ref", "resizableLoopsTri_ref.log");
+buildModel(resizableLoops.Separate6, stopTime = 1, fileNamePrefix = "resizableLoopsSep_ref"); getErrorString();
+system("./resizableLoopsSep_ref", "resizableLoopsSep_ref.log");
+buildModel(resizableLoops.VSplit6, stopTime = 1, fileNamePrefix = "resizableLoopsVSplit_ref"); getErrorString();
+system("./resizableLoopsVSplit_ref", "resizableLoopsVSplit_ref.log");
+
+abs(val(x[1], 1, "resizableLoopsTri_7.mat") - val(x[1], 1, "resizableLoopsTri_ref_res.mat")) < 1e-6;
+abs(val(x[4], 1, "resizableLoopsTri_7.mat") - val(x[4], 1, "resizableLoopsTri_ref_res.mat")) < 1e-6;
+abs(val(x[7], 1, "resizableLoopsTri_7.mat") - val(x[7], 1, "resizableLoopsTri_ref_res.mat")) < 1e-6;
+abs(val(x[6], 1, "resizableLoopsSep_6.mat") - val(x[6], 1, "resizableLoopsSep_ref_res.mat")) < 1e-6;
+abs(val(r.a.i[6,3], 1, "resizableLoopsVSplit_6.mat") - val(r.a.i[6,3], 1, "resizableLoopsVSplit_ref_res.mat")) < 1e-6;
+abs(val(r0.a.i[2], 1, "resizableLoopsVSplit_6.mat") - val(r0.a.i[2], 1, "resizableLoopsVSplit_ref_res.mat")) < 1e-6;
+// Result:
+// true
+// ""
+// {"resizableLoopsTri", "resizableLoopsTri_init.xml"}
+// ""
+// 0
+// {"resizableLoopsSep", "resizableLoopsSep_init.xml"}
+// ""
+// 0
+// {"resizableLoopsVSplit", "resizableLoopsVSplit_init.xml"}
+// ""
+// 0
+// true
+// ""
+// {"resizableLoopsTri_ref", "resizableLoopsTri_ref_init.xml"}
+// ""
+// 0
+// {"resizableLoopsSep_ref", "resizableLoopsSep_ref_init.xml"}
+// ""
+// 0
+// {"resizableLoopsVSplit_ref", "resizableLoopsVSplit_ref_init.xml"}
+// ""
+// 0
+// true
+// true
+// true
+// true
+// true
+// true
+// endResult

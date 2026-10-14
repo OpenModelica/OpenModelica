@@ -7,7 +7,7 @@
 
 setCommandLineOptions("-d=nfAPI"); getErrorString();
 
-loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("RedBoxIssue.mo");
 echo(false); // ignore missing libraries
 ignore := getErrorString();

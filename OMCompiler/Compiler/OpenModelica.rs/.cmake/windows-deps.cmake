@@ -4,7 +4,6 @@
 # CMakeLists before OMCPThreads.cmake (which find_package(pthreads CONFIG)); a
 # no-op unless cross-compiling to Windows. Only the downloaded artifacts are
 # cached (OM_DOWNLOADS_DIR); the build/install trees stay under the build dir.
-# Boost is in cmake/OMCBoost.cmake instead, which covers every cross target.
 
 if(NOT (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows"))
   return()

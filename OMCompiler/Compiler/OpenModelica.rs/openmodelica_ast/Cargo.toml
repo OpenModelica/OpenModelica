@@ -16,4 +16,7 @@ openmodelica_error.workspace = true
 # BaseModelica_Lexer.g converts string literals from package.encoding
 encoding_rs.workspace=true
 
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
 [dev-dependencies]

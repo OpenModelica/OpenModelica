@@ -44,6 +44,7 @@
 
 //QT Headers
 #include <QtCore/QDir>
+#include <QtCore/QUrl>
 
 //IAEX Headers
 #include "updatelinkvisitor.h"
@@ -56,6 +57,17 @@
 
 namespace IAEX
 {
+  /*!
+   * \brief isExternalLink
+   * Returns true if the link has a real URL scheme (http, https, mailto, ftp, ...).
+   * Such links are not relative file paths and must not be rewritten.
+   * One-letter schemes are Windows drive letters (C:/...) and treated as file paths.
+   */
+  static bool isExternalLink(const QString &link)
+  {
+    return QUrl(link).scheme().length() > 1;
+  }
+
   /*!
    * \class UpdateLinkVisitor
    * \date 2005-12-05
@@ -121,6 +133,14 @@ namespace IAEX
         {
           //a link is found, replace it with new link
           QString oldLink = html.mid( startPos, endPos - startPos );
+
+          // web links (http, https, ...) are not file paths, leave them untouched
+          if( isExternalLink( oldLink ) )
+          {
+            pos = endPos;
+            continue;
+          }
+
           QString newLink = newDir_.relativeFilePath( oldDir_.absoluteFilePath( oldLink ));
           html.replace( startPos, endPos - startPos, newLink );
 

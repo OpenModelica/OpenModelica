@@ -4,5 +4,5 @@ model Delta
     parameter Real a=1;
 equation
     x = 2*time*a;
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end Delta;

@@ -4,31 +4,31 @@ package IMCNominalOperation
     extends Modelica.Icons.Example;
     import Modelica.Constants.eps;
     import Modelica.Constants.pi;
-    import Modelica.SIunits.Conversions.from_rpm;
-    import Modelica.SIunits.Conversions.from_degC;
+    import Modelica.Units.Conversions.from_rpm;
+    import Modelica.Units.Conversions.from_degC;
     parameter Integer m(final min=2) = 3 "Number of phases";
-    final parameter Integer mSystems=Modelica.Electrical.MultiPhase.Functions.numberOfSymmetricBaseSystems(m) "Count of basic systems";
-    parameter Modelica.SIunits.Inertia Jr=eps*0.015 "Rotor's moment of inertia";
-    parameter Modelica.SIunits.Inertia Js=Jr "Stator's moment of inertia";
+    final parameter Integer mSystems=Modelica.Electrical.Polyphase.Functions.numberOfSymmetricBaseSystems(m) "Count of basic systems";
+    parameter Modelica.Units.SI.Inertia Jr=eps*0.015 "Rotor's moment of inertia";
+    parameter Modelica.Units.SI.Inertia Js=Jr "Stator's moment of inertia";
     parameter Integer p(min=1) = 2 "Number of pole pairs (Integer)";
-    parameter Modelica.SIunits.Frequency fsNominal=133 "Nominal frequency";
+    parameter Modelica.Units.SI.Frequency fsNominal=133 "Nominal frequency";
     parameter Real effectiveStatorTurns=1 "Effective number of stator turns";
     parameter String terminalConnection="Y" "Choose Y=star/D=delta";
-    parameter Modelica.SIunits.Voltage VsNominal=300/sqrt(3) "Nominal RMS voltage per phase";
-    parameter Modelica.SIunits.Current IsNominal=38 "Nominal RMS current per phase";
-    parameter Modelica.SIunits.AngularVelocity wNominal=from_rpm(3929) "Nominal speed";
-    parameter Modelica.SIunits.Torque tauNominal=36.5 "Nominal torque";
-    parameter Modelica.SIunits.Torque tauBreakDown=165;
-    parameter Modelica.SIunits.Resistance Rs=0.0773 "Stator resistance per phase at TRef";
-    parameter Modelica.SIunits.Temperature TsRef=293.15 "Reference temperature of stator resistance";
+    parameter Modelica.Units.SI.Voltage VsNominal=300/sqrt(3) "Nominal RMS voltage per phase";
+    parameter Modelica.Units.SI.Current IsNominal=38 "Nominal RMS current per phase";
+    parameter Modelica.Units.SI.AngularVelocity wNominal=from_rpm(3929) "Nominal speed";
+    parameter Modelica.Units.SI.Torque tauNominal=36.5 "Nominal torque";
+    parameter Modelica.Units.SI.Torque tauBreakDown=165;
+    parameter Modelica.Units.SI.Resistance Rs=0.0773 "Stator resistance per phase at TRef";
+    parameter Modelica.Units.SI.Temperature TsRef=293.15 "Reference temperature of stator resistance";
     parameter Modelica.Electrical.Machines.Thermal.LinearTemperatureCoefficient20
       alpha20s=Modelica.Electrical.Machines.Thermal.Constants.alpha20Copper "Temperature coefficient of stator resistance at 20 degC";
-    parameter Modelica.SIunits.Inductance Lszero=Lssigma "Stator zero sequence inductance";
-    parameter Modelica.SIunits.Inductance Lssigma=0.000408538 "Stator stray inductance per phase";
-    parameter Modelica.SIunits.Inductance Lm=0.013019592 "Main inductance per phase";
-    parameter Modelica.SIunits.Inductance Lrsigma=0.000610054 "Rotor stray inductance per phase";
-    parameter Modelica.SIunits.Resistance Rr=0.0586 "Rotor resistance per phase at TRef";
-    parameter Modelica.SIunits.Temperature TrRef=293.15 "Reference temperature of rotor resistance";
+    parameter Modelica.Units.SI.Inductance Lszero=Lssigma "Stator zero sequence inductance";
+    parameter Modelica.Units.SI.Inductance Lssigma=0.000408538 "Stator stray inductance per phase";
+    parameter Modelica.Units.SI.Inductance Lm=0.013019592 "Main inductance per phase";
+    parameter Modelica.Units.SI.Inductance Lrsigma=0.000610054 "Rotor stray inductance per phase";
+    parameter Modelica.Units.SI.Resistance Rr=0.0586 "Rotor resistance per phase at TRef";
+    parameter Modelica.Units.SI.Temperature TrRef=293.15 "Reference temperature of rotor resistance";
     parameter Modelica.Electrical.Machines.Thermal.LinearTemperatureCoefficient20
       alpha20r=Modelica.Electrical.Machines.Thermal.Constants.alpha20Aluminium "Temperature coefficient of rotor resistance at 20 degC";
     parameter Modelica.Electrical.Machines.Losses.FrictionParameters
@@ -45,14 +45,14 @@ package IMCNominalOperation
       PRef=75,
       IRef=IsNominal,
       wRef=wNominal) "Stray load loss parameter record";
-    parameter Modelica.SIunits.Temperature TsOperational=from_degC(95);
-    parameter Modelica.SIunits.Temperature TrOperational=from_degC(95);
-    Modelica.SIunits.AngularVelocity wSyn=2*pi*fsNominal/p;
+    parameter Modelica.Units.SI.Temperature TsOperational=from_degC(95);
+    parameter Modelica.Units.SI.Temperature TrOperational=from_degC(95);
+    Modelica.Units.SI.AngularVelocity wSyn=2*pi*fsNominal/p;
     Real s=1 - multiSensor.w/wSyn;
-    Real pf=cos(powerSensor.arg_y);
+    Real pf=cos(powerSensor.arg_apparentPower);
     Real eta=efficiency(imc.powerBalance.powerStator, imc.powerBalance.powerMechanical);
-    parameter Modelica.SIunits.Power PmNominal=tauNominal*wNominal;
-    Modelica.Electrical.QuasiStationary.MultiPhase.Sources.VoltageSource
+    parameter Modelica.Units.SI.Power PmNominal=tauNominal*wNominal;
+    Modelica.Electrical.QuasiStatic.Polyphase.Sources.VoltageSource
       voltageSource(
       gamma(fixed=true, start=0),
       m=m,
@@ -62,9 +62,9 @@ package IMCNominalOperation
           extent={{-10,-10},{10,10}},
           rotation=180,
           origin={-50,50})));
-    Modelica.Electrical.QuasiStationary.SinglePhase.Basic.Ground ground
+    Modelica.Electrical.QuasiStatic.SinglePhase.Basic.Ground ground
       annotation (Placement(transformation(extent={{-80,-50},{-60,-30}})));
-    Modelica.Electrical.QuasiStationary.MultiPhase.Basic.Star star(m=mSystems)
+    Modelica.Electrical.QuasiStatic.Polyphase.Basic.Star star(m=mSystems)
       annotation (Placement(transformation(
           extent={{-10,-10},{10,10}},
           rotation=270,
@@ -72,12 +72,12 @@ package IMCNominalOperation
     Modelica.Magnetic.QuasiStatic.FundamentalWave.Utilities.MultiTerminalBox
       multiTerminalBox(m=m, terminalConnection=terminalConnection)
       annotation (Placement(transformation(extent={{-10,6},{10,26}})));
-    Modelica.Electrical.QuasiStationary.MultiPhase.Basic.MultiStar multiStar(m=m)
+    Modelica.Electrical.QuasiStatic.Polyphase.Basic.MultiStar multiStar(m=m)
                                    annotation (Placement(transformation(
           extent={{-10,-10},{10,10}},
           rotation=270,
           origin={-70,20})));
-    Modelica.Electrical.QuasiStationary.MultiPhase.Sensors.CurrentQuasiRMSSensor
+    Modelica.Electrical.QuasiStatic.Polyphase.Sensors.CurrentQuasiRMSSensor
       currentSensor(m=m)                       annotation (Placement(
           transformation(
           extent={{10,-10},{-10,10}},
@@ -85,7 +85,7 @@ package IMCNominalOperation
           origin={0,30})));
     Modelica.Mechanics.Rotational.Sensors.MultiSensor multiSensor
       annotation (Placement(transformation(extent={{20,-10},{40,10}})));
-    Modelica.Electrical.QuasiStationary.MultiPhase.Sensors.PowerSensor
+    Modelica.Electrical.QuasiStatic.Polyphase.Sensors.PowerSensor
       powerSensor(m=m)
       annotation (Placement(transformation(extent={{-30,40},{-10,60}})));
     Modelica.Mechanics.Rotational.Sources.Torque torque
@@ -177,12 +177,12 @@ package IMCNominalOperation
   function efficiency
     extends Modelica.Icons.Function;
     import Modelica.Constants.eps;
-    input Modelica.SIunits.Power Pel;
-    input Modelica.SIunits.Power Pm;
+    input Modelica.Units.SI.Power Pel;
+    input Modelica.Units.SI.Power Pm;
     output Real eta;
   algorithm
     eta :=if noEvent(Pm > eps) then Pm/Pel else if noEvent(Pel < -eps) then Pel/Pm else 0;
     annotation(Inline=true);
   end efficiency;
-  annotation (uses(Modelica(version="3.2.2")));
+  annotation (uses(Modelica(version="4.1.0")));
 end IMCNominalOperation;

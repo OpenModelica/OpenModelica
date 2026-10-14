@@ -97,5 +97,5 @@ package InputOptIssues
 
   annotation(
     Diagram(coordinateSystem(extent = {{-100, -80}, {100, 80}})),
-  uses(Modelica(version = "3.2.3")));
+  uses(Modelica(version = "4.1.0")));
 end InputOptIssues;

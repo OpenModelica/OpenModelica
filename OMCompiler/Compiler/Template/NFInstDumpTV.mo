@@ -35,7 +35,7 @@
 
 interface package NFInstDump.TV
 
-package Absyn
+protected package Absyn
   uniontype Exp end Exp;
 end Absyn;
 
@@ -99,7 +99,7 @@ end Absyn;
 //  end Connections;
 //end NFConnect2;
 
-package DAE
+protected package DAE
   uniontype ComponentRef end ComponentRef;
   uniontype Exp end Exp;
   uniontype Type end Type;

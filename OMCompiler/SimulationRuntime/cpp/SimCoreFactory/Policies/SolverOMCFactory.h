@@ -35,11 +35,9 @@
 #include <Core/Solver/ISolver.h>
 #include <Core/SimulationSettings//ISettingsFactory.h>
 
-/* use boost filesystem locally */
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /*
 Policy class to create solver object
@@ -93,75 +91,6 @@ public:
             {
                 throw ModelicaSimulationError(MODEL_FACTORY, "Failed loading DASSL solver library!");
             }
-        }
-        else if(solvername.compare("cppdassl")==0)
-        {
-            fs::path cppdassl_path = ObjectFactory<CreationPolicy>::_library_path;
-            fs::path cppdassl_name(CPPDASSL_LIB);
-            cppdassl_path/=cppdassl_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cppdassl_path.string(),*_solver_type_map);
-            if (result != LOADER_SUCCESS)
-            {
-                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading CppDASSL solver library!");
-            }
-
-        }
-        else if(solvername.compare("euler")==0)
-        {
-            fs::path euler_path = ObjectFactory<CreationPolicy>::_library_path;
-            fs::path euler_name(EULER_LIB);
-            euler_path/=euler_name;
-            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(euler_path.string(),*_solver_type_map);
-            if (result != LOADER_SUCCESS)
-            {
-                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Euler solver library!");
-            }
-
-        }
-        else if(solvername.compare("rk12")==0)
-        {
-           fs::path rk12_path = ObjectFactory<CreationPolicy>::_library_path;
-           fs::path rk12_name(RK12_LIB);
-           rk12_path/=rk12_name;
-           std::cerr << rk12_path.string() << std::endl;
-           LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rk12_path.string(),*_solver_type_map);
-           if (result != LOADER_SUCCESS)
-           {
-               throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RK12 solver library!");
-           }
-        }
-        else if(solvername.compare("peer")==0)
-        {
-           fs::path peer_path = ObjectFactory<CreationPolicy>::_library_path;
-           fs::path peer_name(PEER_LIB);
-           peer_path/=peer_name;
-           LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(peer_path.string(),*_solver_type_map);
-           if (result != LOADER_SUCCESS)
-           {
-               throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Peer solver library!");
-           }
-        }
-        else if(solvername.compare("rtrk")==0)
-        {
-           fs::path rtrk_path = ObjectFactory<CreationPolicy>::_library_path;
-           fs::path rtrk_name(RTRK_LIB);
-           rtrk_path/=rtrk_name;
-           LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rtrk_path.string(),*_solver_type_map);
-           if (result != LOADER_SUCCESS)
-           {
-               throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RTRK solver library!");
-           }
-        }
-        else if(solvername.compare("RTEuler")==0)
-        {
-           fs::path RTEuler_path = ObjectFactory<CreationPolicy>::_library_path;
-           fs::path RTEuler_name(RTEULER_LIB);
-           RTEuler_path/= RTEuler_name;
-           LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(RTEuler_path.string(),*_solver_type_map);
-           if (result != LOADER_SUCCESS)
-           {
-               throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RTEuler solver library!");
-           }
         }
         else if(solvername.compare("idas")==0)
         {

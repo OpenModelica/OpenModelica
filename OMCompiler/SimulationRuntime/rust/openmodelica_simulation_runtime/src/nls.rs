@@ -460,6 +460,9 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
     }
     for i in 0..md.nNonLinearSystems as usize {
         let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
+        if let Some(f) = sys.updateSize {
+            sys.size = unsafe { f(data, thread_data) } as _;
+        }
         let size = sys.size.max(0) as usize;
         sys.numberOfFEval = 0;
         sys.numberOfIterations = 0;
@@ -546,6 +549,34 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
         })) as *mut c_void;
     }
     omclog::close(omclog::NLS);
+}
+
+#[cfg(feature = "fmi")]
+/// What [`initialize_nonlinear_systems`] allocated per system.
+pub fn free_nonlinear_systems(data: *mut DATA) {
+    let md = unsafe { &*(*data).modelData };
+    let si = unsafe { &mut *(*data).simulationInfo };
+    if si.nonlinearSystemData.is_null() {
+        return;
+    }
+    for i in 0..md.nNonLinearSystems.max(0) as usize {
+        let sys = unsafe { &mut *si.nonlinearSystemData.add(i) };
+        for p in [
+            &mut sys.nlsx,
+            &mut sys.nlsxExtrapolation,
+            &mut sys.nlsxOld,
+            &mut sys.resValues,
+            &mut sys.nominal,
+            &mut sys.min,
+            &mut sys.max,
+        ] {
+            unsafe { libc::free(core::mem::replace(p, core::ptr::null_mut()) as *mut c_void) };
+        }
+        let scratch = core::mem::replace(&mut sys.solverData, core::ptr::null_mut());
+        if !scratch.is_null() {
+            drop(unsafe { Box::from_raw(scratch as *mut Scratch) });
+        }
+    }
 }
 
 /// The per-system metadata the shared solver's reports need, from
@@ -963,7 +994,7 @@ fn write_state(path: &str) -> Result<(), String> {
     let meta = unsafe { &*meta };
     let engine = ReadOnly(rt);
     let mut rows = Vec::new();
-    driver::capture_row(&engine, &mut rows, 0, &meta.layout).map_err(String::from)?;
+    driver::capture_full_row(&engine, &mut rows, 0, &meta.layout).map_err(String::from)?;
     // Every parameter, in `meta.vars` order: `result::write` is what applies `keep`.
     let mut params = Vec::new();
     for v in &meta.vars {

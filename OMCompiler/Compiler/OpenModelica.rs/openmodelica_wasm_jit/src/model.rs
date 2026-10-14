@@ -19,7 +19,6 @@ pub type ModelCompileJob = Result<crate::sim_runtime::Module, String>;
 pub struct SimModel {
     pub wasm: Vec<u8>,
     pub layout: SimLayout,
-    pub result_vars: Vec<ResultVar>,
     /// The `ext.<extName>` host imports (external "C" functions) with the full
     /// C-call shape, so the host trampoline can marshal strings/arrays/pointers.
     pub ext_imports: Vec<ExtCallSig>,
@@ -53,6 +52,11 @@ pub struct SimModel {
     /// Why a `Library` or an `Include` yielded no wasm library; reported only if a
     /// symbol then turns out to be missing.
     pub ext_lib_notes: Vec<String>,
+    /// `NAME=value` variables the `ext_libs` need in the guest's environment.
+    pub ext_env: Vec<String>,
+    /// The libc the generation of prebuilt modules among `ext_libs` was built
+    /// against, loaded in place of the one omc carries.
+    pub ext_libc: Option<ExtLibrary>,
     pub model_name: String,
     pub start_time: f64,
     pub stop_time: f64,
@@ -75,18 +79,35 @@ pub struct SimModel {
     pub sparse_nls: bool,
     /// User-settable initial conditions (changeable parameters), for `-override`.
     pub editable_params: Vec<EditableParam>,
-    /// Result-variable display name -> unit, for a host to label plotted signals.
-    pub var_units: HashMap<String, String>,
-    /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`).
-    pub meta: SimMeta,
+    /// Driver-facing metadata shared with the in-wasm driver (passed to `sim_driver::drive`),
+    /// as the codegen built it: an array's result variables are one entry
+    /// ([`SimMeta::var_arrays`]). [`SimModel::meta`] has them expanded.
+    pub meta_compact: SimMeta,
+    pub meta_expanded: std::sync::OnceLock<SimMeta>,
 }
 
 impl SimModel {
+    /// The metadata with every result variable its own entry, built at the first use.
+    pub fn meta(&self) -> &SimMeta {
+        if self.meta_compact.var_arrays.is_empty() && self.meta_compact.soti.real_arrays.is_empty() {
+            return &self.meta_compact;
+        }
+        self.meta_expanded.get_or_init(|| {
+            let mut m = self.meta_compact.clone();
+            m.expand_arrays();
+            m
+        })
+    }
+
+    pub fn result_vars(&self) -> &[ResultVar] {
+        &self.meta().vars
+    }
+
     /// C's `read_experiment`: this run's scalars, i.e. the model's metadata with the
     /// flags installed for the run applied. The model is shared between runs, so the
     /// run works off a copy.
     pub fn run_meta(&self) -> SimMeta {
-        openmodelica_sim_meta::simflags::with_flags(|f| self.meta.with_flags(f))
+        openmodelica_sim_meta::simflags::with_flags(|f| self.meta().with_flags(f))
     }
 }
 

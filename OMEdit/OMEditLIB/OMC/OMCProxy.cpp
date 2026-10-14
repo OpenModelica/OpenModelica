@@ -38,7 +38,6 @@
  */
 
 #include <stdlib.h>
-#include <iostream>
 #include <cstring>
 
 #include "OMCProxy.h"
@@ -133,6 +132,13 @@ EM_JS(void, omedit_worker_setup, (const char *ver), {
       const cbuf = new SharedArrayBuffer(16);
       Module.__omcControlView = new Int32Array(cbuf);
       w.postMessage({ cmd: "controlBuf", buf: cbuf });
+      // The FMU native-platform compiler is a sibling worker; see wasm/fmu-aot.js.
+      const aotUrl = new URL("../fmu-aot-worker.js", document.baseURI);
+      aotUrl.search = url.search;
+      const aot = new Worker(aotUrl, { type: "module" });
+      const channel = new MessageChannel();
+      aot.postMessage({ port: channel.port1 }, [channel.port1]);
+      w.postMessage({ cmd: "fmuAotPort", port: channel.port2 }, [channel.port2]);
     }
   } catch (e) { Module.__omcControlView = null; }
   Module.__omcPending = null;
@@ -224,9 +230,36 @@ EM_JS(char *, omedit_take_init_result, (int id), {
   const r = Module.__omcReplies[id] || {};
   delete Module.__omcReplies[id];
   delete Module.__omcCallPromises[id];
+  Module.__omcFmuPlatforms = (r && r.fmuPlatforms) || [];
+  Module.__omcFmuCsSolvers = (r && r.fmuCsSolvers) || [];
   if (r && r.ok) return stringToNewUTF8("");
   return stringToNewUTF8((r && (r.error || r.__bridgeError)) || "omc worker init failed");
 });
+EM_JS(char *, omedit_fmu_platforms, (), {
+  return stringToNewUTF8((Module.__omcFmuPlatforms || []).join("\n"));
+});
+EM_JS(char *, omedit_fmu_cs_solvers, (), {
+  return stringToNewUTF8((Module.__omcFmuCsSolvers || []).join("\n"));
+});
+
+static QStringList takeLines(char *p)
+{
+  QStringList out = QString::fromUtf8(p).split('\n', Qt::SkipEmptyParts);
+  free(p);
+  return out;
+}
+
+// Those with a precompiled driver in the bundle, and none unless the page is
+// cross-origin isolated.
+QStringList omcWorkerFmuPlatforms()
+{
+  return takeLines(omedit_fmu_platforms());
+}
+
+QStringList omcWorkerFmuCsSolvers()
+{
+  return takeLines(omedit_fmu_cs_solvers());
+}
 EM_JS(int, omedit_post_eval, (const char *src), {
   // keepErrors: OMEdit reads diagnostics itself (printMessagesStringInternal),
   // so the worker must not drain omc's Error buffer into the reply.
@@ -3023,6 +3056,41 @@ bool OMCProxy::setComponentDimensions(QString className, QString componentName, 
 }
 
 /*!
+ * \brief OMCProxy::getComponentCondition
+ * Gets the condition of a component in a class.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \return the condition of the component as a string or the string "false" on failure.
+ */
+QString OMCProxy::getComponentCondition(QString className, QString componentName)
+{
+  return mpOMCInterface->getComponentCondition(className, componentName);
+  // sendCommand("getComponentCondition(" + className + "," + componentName + ")");
+  // return StringHandler::unparse(getResult());
+}
+
+/*!
+ * \brief OMCProxy::setComponentCondition
+ * Sets the condition of a component in a class. An empty string removes the condition.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \param condition - the condition of the component.
+ * \return true on success.
+ */
+bool OMCProxy::setComponentCondition(QString className, QString componentName, QString condition)
+{
+  return mpOMCInterface->setComponentCondition(className, componentName, condition);
+  // QString expression;
+  // if (condition.isEmpty()) {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"\")";
+  // } else {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"" + condition + "\")";
+  // }
+  // sendCommand(expression);
+  // return StringHandler::unparseBool(getResult());
+}
+
+/*!
  * \brief OMCProxy::addConnection
  * Adds a connection
  * \param from - the connection start component name.
@@ -4449,7 +4517,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     int handle = 0;
     if (icon) {
       QList<QString> filter;
-      filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
+      filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment" << "Documentation";
       handle = mpOMCInterface->getModelInstanceAnnotationReference(className, filter);
     } else {
       handle = mpOMCInterface->getModelInstanceReference(className, cnt, modifier);
@@ -4483,7 +4551,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   if (icon) {
     QList<QString> filter;
-    filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
+    filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment" << "Documentation";
     modelInstanceJson = mpOMCInterface->getModelInstanceAnnotation(className, filter, prettyPrint);
     if (modelInstanceJson.isEmpty()) {
       if (MainWindow::instance()->isDebug()) {

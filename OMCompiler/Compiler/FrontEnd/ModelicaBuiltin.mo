@@ -2282,6 +2282,23 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end generateCode;
 
+function getExternalFunctions
+  "Describes the external \"C\" functions of a library."
+  input TypeName className;
+  output String json;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns, as JSON, every external \"C\" function in <code>className</code>,
+external object constructors and destructors included: its path, C name, the C
+types of its call in the specification's mapping, its <code>Include</code>
+annotations and the include directories omc resolves for it. A function the
+wasm-jit target cannot call carries the reason instead of its C types.</p>
+<p>The package manager builds the WebAssembly modules that the wasm-jit target
+loads for these functions from this description.</p>
+</html>"),
+  preferredView="text");
+end getExternalFunctions;
+
 function loadModel
   "Loads a Modelica library."
   input TypeName className;
@@ -3955,6 +3972,15 @@ external "builtin";
 annotation(preferredView="text");
 end getNthComponentCondition;
 
+function getComponentCondition
+  "Returns the condition of the given component in the given class as a string."
+  input TypeName className;
+  input TypeName componentName;
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end getComponentCondition;
+
 function getElementAnnotation
   "Returns the annotation on a component or class element as a string."
   input TypeName elementName;
@@ -4060,6 +4086,16 @@ annotation(
 </html>"),
   preferredView="text");
 end setComponentProperties;
+
+function setComponentCondition
+  "Sets the condition of a component in a class. An empty string removes the condition."
+  input TypeName className;
+  input TypeName componentName;
+  input String condition;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end setComponentCondition;
 
 function getNthConnector
   "Returns the name and type of the n:th public connector in the given class."
@@ -5097,6 +5133,24 @@ annotation(
   preferredView="text");
 end updatePackageIndex;
 
+function installWasmToolchain
+  "Installs the sysroot wasm external \"C\" code is compiled against."
+  input Boolean cxx = false "Also libc++, for C++ code";
+  output String sysroot;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Downloads the WebAssembly sysroot (wasi-libc headers, <code>libc.so</code>
+and the compiler-rt builtins) that the package index's prebuilt wasm modules are
+built with, unless it is installed already, and returns its path. The wasm-jit
+target compiles <code>Include</code> sources against it with the system clang.
+With <code>cxx</code>, libc++'s headers and <code>libc++.so</code> are added,
+for C++ code compiled with <code>-fwasm-exceptions</code>.
+Returns the empty string if the index has none or the download fails.</p>
+</html>"),
+  preferredView="text");
+end installWasmToolchain;
+
 function getAvailablePackageVersions
   "Returns the versions that provide the requested version of the library."
   input TypeName pkg;
@@ -5279,7 +5333,7 @@ end GC_expand_hp;
 
 function GC_set_max_heap_size
   "Forces the GC to limit the maximum heap size."
-  input Integer size;
+  input Real size "In bytes; a Real so that sizes past 2^31 fit";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

@@ -247,5 +247,5 @@ The coupling coefficient c_coupl in the coil is set to 1 in this example, since 
 During model-based actuator design, the radii and lengths of the flux tube elements (and hence their cross-sectional areas and flux densities) should be assigned with parametric equations so that common design rules are met (e.g., allowed flux density in ferromagnetic parts, allowed current density and required cross-sectional area of winding). For simplicity, those equations are omitted in the example. Instead, the found values are assigned to the model elements directly.
 </p>
 </html>"),
-    uses(Modelica(version="3.2")));
+    uses(Modelica(version="4.1.0")));
 end SimpleSolenoid2;

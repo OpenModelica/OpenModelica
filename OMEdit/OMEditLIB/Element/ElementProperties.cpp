@@ -197,6 +197,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpFixedFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
                                                        || mpModelInstanceElement->getDimensions().isArray());
   // set the value type based on element type.
+  bool isChoicesType = mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty();
   if (mpModelInstanceElement->getRootType().compare(QStringLiteral("Boolean")) == 0) {
     if (mpModelInstanceElement->getAnnotation()->getChoices()
         && (mpModelInstanceElement->getAnnotation()->getChoices()->isCheckBox() || mpModelInstanceElement->getAnnotation()-> getChoices()->isDymolaCheckBox())) {
@@ -204,7 +205,9 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     } else {
       mValueType = Parameter::Boolean;
     }
-  } else if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
+  }
+  // Choices take precedence over enumeration so annotated enumeration parameters use their choices (see issue #16620).
+  else if (!isChoicesType && mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isEnumeration()) {
     mValueType = Parameter::Enumeration;
   } else if (mpModelInstanceElement->getReplaceable()) {
     // replaceable component or short element definition
@@ -213,7 +216,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     } else {
       mValueType = Parameter::ReplaceableComponent;
     }
-  } else if (mpModelInstanceElement->getAnnotation()->getChoices() && !mpModelInstanceElement->getAnnotation()->getChoices()->getChoices().isEmpty()) {
+  } else if (isChoicesType) {
     mValueType = Parameter::Choices;
   } else if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
     mValueType = Parameter::ChoicesAllMatching;
@@ -876,7 +879,7 @@ void Parameter::editClassButtonClicked()
   QString type;
   QString value;
   QString defaultValue;
-  if (isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching()) {
+  if (isEnumeration() || isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching() || isChoices()) {
     value = mpValueComboBox->lineEdit()->text();
     defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   } else {
@@ -2500,6 +2503,19 @@ void ElementAttributes::setUpDialog()
   pInnerOuterGroupBoxLayout->addWidget(mpInnerCheckBox);
   pInnerOuterGroupBoxLayout->addWidget(mpOuterCheckBox);
   mpInnerOuterGroupBox->setLayout(pInnerOuterGroupBoxLayout);
+  // create Conditional Group Box
+  mpConditionGroupBox = new QGroupBox(tr("Conditional Component"));
+  mpConditionGroupBox->setCheckable(true);
+  mpConditionGroupBox->setChecked(false);
+  mpConditionTextBox = new QLineEdit;
+  mpConditionTextBox->setPlaceholderText(tr("Boolean expression e.g. useSensor"));
+  mpConditionTextBox->setToolTip(tr("Boolean expression e.g. useSensor"));
+  mpConditionTextBox->setEnabled(false);
+  connect(mpConditionGroupBox, &QGroupBox::toggled, mpConditionTextBox, &QLineEdit::setEnabled);
+  QHBoxLayout *pConditionGroupBoxLayout = new QHBoxLayout;
+  pConditionGroupBoxLayout->addWidget(new Label("if"));
+  pConditionGroupBoxLayout->addWidget(mpConditionTextBox);
+  mpConditionGroupBox->setLayout(pConditionGroupBoxLayout);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -2523,7 +2539,8 @@ void ElementAttributes::setUpDialog()
   pMainLayout->addWidget(mpPropertiesGroupBox, 3, 1);
   pMainLayout->addWidget(mpCausalityGroupBox, 4, 0);
   pMainLayout->addWidget(mpInnerOuterGroupBox, 4, 1);
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2);
+  pMainLayout->addWidget(mpConditionGroupBox, 5, 0, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 2);
   setLayout(pMainLayout);
 }
 
@@ -2571,6 +2588,13 @@ void ElementAttributes::initializeDialog()
   // get InnerOuter
   mpInnerCheckBox->setChecked(mpElement->getModelComponent()->isInner());
   mpOuterCheckBox->setChecked(mpElement->getModelComponent()->isOuter());
+  // get Conditional
+  mOldCondition = MainWindow::instance()->getOMCProxy()->getComponentCondition(mpElement->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpElement->getName()).trimmed();
+  if (!mOldCondition.isEmpty()) {
+    mpConditionGroupBox->setChecked(true);
+    mpConditionTextBox->setText(mOldCondition);
+    mpConditionTextBox->setCursorPosition(0);
+  }
 }
 
 /*!
@@ -2604,6 +2628,26 @@ void ElementAttributes::updateElementAttributes()
                           GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), QMessageBox::Ok);
     return;
   }
+  // check the condition expression
+  QString condition;
+  if (mpConditionGroupBox->isChecked()) {
+    condition = mpConditionTextBox->text().trimmed();
+    if (condition.isEmpty()) {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("A conditional component requires a condition expression."), QMessageBox::Ok);
+      mpConditionTextBox->setFocus();
+      return;
+    }
+    MainWindow::instance()->getOMCProxy()->setLoggingEnabled(false);
+    QList<QString> conditionResult = MainWindow::instance()->getOMCProxy()->parseString(QString("model M Boolean b if %1; end M;").arg(condition), "M", false);
+    MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
+    if (conditionResult.isEmpty()) {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Invalid condition expression: %1").arg(condition), QMessageBox::Ok);
+      mpConditionTextBox->setFocus();
+      return;
+    }
+  }
   QString variability;
   if (mpConstantRadio->isChecked()) {
     variability = "constant";
@@ -2633,6 +2677,7 @@ void ElementAttributes::updateElementAttributes()
   attributesChanged |= mpElement->getModelComponent()->isInner() != mpInnerCheckBox->isChecked();
   attributesChanged |= mpElement->getModelComponent()->isOuter() != mpOuterCheckBox->isChecked();
   attributesChanged |= mpElement->getModelComponent()->getDirectionPrefix().compare(causality) != 0;
+  attributesChanged |= mOldCondition.compare(condition) != 0;
 
   QString isFinal = mpFinalCheckBox->isChecked() ? "true" : "false";
   QString flow = (mpElement->getModelComponent()->getConnector().compare(QStringLiteral("flow")) == 0) ? "true" : "false";
@@ -2653,6 +2698,15 @@ void ElementAttributes::updateElementAttributes()
   if (mpElement->getModelComponent()->getComment().compare(mpCommentTextBox->text()) != 0) {
     QString comment = StringHandler::escapeString(mpCommentTextBox->text());
     if (pOMCProxy->setComponentComment(modelName, mpElement->getName(), comment)) {
+      attributesChanged = true;
+    } else {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
+      pOMCProxy->printMessagesStringInternal();
+    }
+  }
+  // update the element condition only if its changed.
+  if (mOldCondition.compare(condition) != 0) {
+    if (pOMCProxy->setComponentCondition(modelName, mpElement->getName(), StringHandler::escapeString(condition))) {
       attributesChanged = true;
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);

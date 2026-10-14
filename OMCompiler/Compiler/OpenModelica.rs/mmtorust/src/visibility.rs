@@ -89,6 +89,12 @@ const HANDWRITTEN_EXPORTS: &[&str] = &[
     "NFInstanceAPI.resolveNamesFromTop",
     "NFInstanceAPI.diagramJSONFromTop",
     "NFInstanceAPI.clearTopScopeCache",
+    // openmodelica_susan/src/main.rs → Susan's Rust backend, and the types it
+    // matches on (reached only through single-record uniontypes, which the
+    // interface fixpoint does not descend into).
+    "TplMain.transformFile",
+    "TplAbsyn.MMDeclaration",
+    "TplAbsyn.TypeInfo",
 ];
 
 /// Result of [`analyze`]: the set of function FQNs that must keep full `pub`

@@ -76,6 +76,10 @@ void omc_set_assert_reporters(void (*err)(threadData_t*, FILE_INFO, const char*,
                               void (*warn)(FILE_INFO, const char*, va_list));
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
+/* threadData, else the calling thread's from mmc_thread_data_key. If there is
+   none, print pendingMessage (or the formatted message) and why, then exit. */
+threadData_t* omc_thread_data(threadData_t *threadData, const char *pendingMessage);
+threadData_t* omc_thread_data_va(threadData_t *threadData, const char *format, va_list args);
 
 enum OMC_LOG_STREAM
 {
@@ -204,9 +208,14 @@ extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_I
    own _return:, so no frame is skipped. */
 extern void raiseStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
 extern void raiseStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+/* The last model error a nonlinear solver swallowed without printing it. */
+extern void omc_note_suppressed_error(threadData_t *threadData, const char *format, va_list args);
+extern const char* omc_last_suppressed_error(void);
+extern void omc_clear_last_suppressed_error(void);
 /* OMC_ERROR_RAISED and OMC_ERROR_CLEAR in one, for a caller that cannot see the
    field: the Rust simulation runtime mirrors threadData_t only as far as
    `parent`, because what follows depends on build options. */
+extern void omc_error_raise(threadData_t *threadData);
 extern int omc_error_take(threadData_t *threadData);
 extern jmp_buf *omc_external_jump_buffer(threadData_t *threadData);
 #ifdef HAVE_VA_MACROS

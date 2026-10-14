@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf Test5114*
 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 loadString("
 model A
   parameter Modelica.Mechanics.MultiBody.Frames.Orientation R_start =

@@ -150,7 +150,7 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
                                       .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
       text = Helper::displayLimitMsg.arg(simulationLogFilePath);
     } else {
-      text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
+      text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() || !mpSimulationOutputWidget->isDebugInfoAvailable() ? "" : debugLink);
     }
     // create tooltip
     toolTip = QString("%1 | %2 | %3")
@@ -271,13 +271,16 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
   mNumberOfBytes = 0;
   mShownDisplayLimitReachedMessage = false;
   mpSimulationMessage = 0;
-  QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                                  .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
+  mpSimulationLogFile = 0;
+  if (!mpSimulationOutputWidget->isLogFileWrittenByOmc()) {
+    QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
+                                    .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
 #ifdef Q_OS_WIN
-  mpSimulationLogFile = _wfopen((wchar_t*)simulationLogFilePath.utf16(), L"w");
+    mpSimulationLogFile = _wfopen((wchar_t*)simulationLogFilePath.utf16(), L"w");
 #else
-  mpSimulationLogFile = fopen(simulationLogFilePath.toUtf8().constData(), "w");
+    mpSimulationLogFile = fopen(simulationLogFilePath.toUtf8().constData(), "w");
 #endif
+  }
   if (mpSimulationOutputWidget->isOutputStructured()) {
     mpSimulationMessageModel = new SimulationMessageModel(mpSimulationOutputWidget);
   } else {

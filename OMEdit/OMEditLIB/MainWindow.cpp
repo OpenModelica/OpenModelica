@@ -368,7 +368,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #ifdef Q_OS_WIN
     _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
 #else
-    freopen(outputFileName.toUtf8().constData(), "w", stderr);
+    freopen(errorFileName.toUtf8().constData(), "w", stderr);
 #endif
     setbuf(stderr, NULL); // used non-buffered stderr
   }
@@ -1138,7 +1138,6 @@ void MainWindow::beforeClosingMainWindow()
   }
 
   QSettings *pSettings = Utilities::getApplicationSettings();
-#if !defined(__EMSCRIPTEN__)
   /* delete the TransformationsWidgets */
   const int size = mTransformationsWidgetHash.size();
   int index = 0;
@@ -1166,6 +1165,7 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mTransformationsWidgetHash.clear();
+#if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
   pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
@@ -1722,14 +1722,16 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   }
 #if defined(__EMSCRIPTEN__)
   // A browser omc has no C code generator, so the model always goes into a wasm
-  // FMU. "static"/"dynamic" name the C link modes and mean nothing here; every
-  // other entry is a native platform the FMU should also serve, which is what an
-  // FMI 2.0 FMU needs to be loadable at all.
-  platforms.removeAll("static");
-  platforms.removeAll("dynamic");
-  if (!platforms.contains("wasm")) {
-    platforms.append("wasm");
+  // FMU, and it can add only the native platforms it has a precompiled driver for.
+  const QStringList fmuPlatforms = omcWorkerFmuPlatforms();
+  QList<QString> nativePlatforms;
+  foreach (QString platform, platforms) {
+    if (fmuPlatforms.contains(platform)) {
+      nativePlatforms.append(platform);
+    }
   }
+  platforms = nativePlatforms;
+  platforms.append("wasm");
 #endif
   if (platforms.empty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
@@ -2103,12 +2105,6 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
  */
 TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
-#if defined(__EMSCRIPTEN__)
-  Q_UNUSED(fileName);
-  Q_UNUSED(profiling);
-  Q_UNUSED(checkProfilingExists);
-  return nullptr;
-#else
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
     pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
@@ -2116,12 +2112,17 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   } else {
     pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
+#if defined(__EMSCRIPTEN__)
+  // The browser is the screen: a window sized for a desktop runs past its right
+  // edge and takes the title bar's close button with it.
+  pTransformationsWidget->showMaximized();
+#else
   pTransformationsWidget->show();
+#endif
   pTransformationsWidget->raise();
   pTransformationsWidget->activateWindow();
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
-#endif
 }
 
 /*!
@@ -5117,6 +5118,10 @@ void MainWindow::createActions()
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
   connect(mpExportVariablesAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(exportVariables()));
+  // save plot figures in their respective model annotations
+  mpSaveFigureInModelAction = new QAction(QIcon(":/Resources/icons/save-figure-in-model.svg"), tr("Save Figure in Model"), this);
+  mpSaveFigureInModelAction->setStatusTip(tr("Saves the current plot as a figure in the model annotation"));
+  connect(mpSaveFigureInModelAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(saveFigureInModel()));
   // clear plot window action
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
@@ -5799,6 +5804,8 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
+  mpPlotToolBar->addSeparator();
+  mpPlotToolBar->addAction(mpSaveFigureInModelAction);
   connect(mpPlotToolBar, SIGNAL(visibilityChanged(bool)), SLOT(plotToolBarVisibilityChanged(bool)));
   // Debugger Toolbar
   mpDebuggerToolBar = addToolBar(tr("Debugger Toolbar"));

@@ -10,20 +10,20 @@ simulate(A); getErrorString();
 
 // Result:
 // true
-// "Notification: Automatically loaded package Complex 3.2.1 due to uses annotation from Modelica.
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
 // "
 // "function Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp \"Temperature dependency of energy gap\"
 //   input Real temp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature\";
 //   output Real ret(quantity = \"ElectricPotential\", unit = \"V\") \"Output voltage\";
 // algorithm
-//   ret := 1.16 + (-0.000702) * temp ^ 2.0 / (1108.0 + temp);
+//   ret := 1.16 + (-7.02e-4) * temp ^ 2.0 / (1108.0 + temp);
 // end Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp;
 //
 // function Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp_old \"Temperature dependency of energy gap\"
 //   input Real temp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature\";
 //   output Real ret(quantity = \"ElectricPotential\", unit = \"V\") \"Output voltage\";
 //   protected Real gap0(quantity = \"ElectricPotential\", unit = \"V\") = 1.16;
-//   protected Real coeff1(unit = \"V/K\") = 0.000702;
+//   protected Real coeff1(unit = \"V/K\") = 7.02e-4;
 //   protected Real coeff2(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 1108.0;
 // algorithm
 //   ret := gap0 - coeff1 * temp ^ 2.0 / (temp + coeff2);
@@ -43,13 +43,13 @@ simulate(A); getErrorString();
 //   protected Real evbd;
 //   protected Real evd;
 //   protected constant Real max_exp = 50.0;
-//   protected constant Real max_current(quantity = \"ElectricCurrent\", unit = \"A\") = 10000.0;
+//   protected constant Real max_current(quantity = \"ElectricCurrent\", unit = \"A\") = 1e4;
 // algorithm
 //   out_current := current;
 //   out_cond := cond;
 //   if satcur > 1e-101 then
-//     vte := 8.61726105451295e-05 * temp * ncoeff;
-//     max_exponent := log(10000.0 / satcur);
+//     vte := 8.61726105451295e-5 * temp * ncoeff;
+//     max_exponent := log(1e4 / satcur);
 //     max_exponent := min(50.0, max_exponent);
 //     if voltage <= 0.0 then
 //       out_cond := satcur / vte;
@@ -140,19 +140,19 @@ simulate(A); getErrorString();
 // algorithm
 //   phibtemp := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(temp);
 //   phibtnom := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(tnom);
-//   vt := 8.61726105451295e-05 * temp;
-//   vtnom := 8.61726105451295e-05 * tnom;
-//   arg := 1.345417051337526e+20 + (-3.621481323477592e+22) * phibtemp / temp;
+//   vt := 8.61726105451295e-5 * temp;
+//   vtnom := 8.61726105451295e-5 * tnom;
+//   arg := 1.345417051337526e20 + (-3.6214813234775923e22) * phibtemp / temp;
 //   fact2 := 0.003331667499583542 * temp;
 //   pbfact := (-2.0) * vt * (1.5 * log(fact2) + 1.6021918e-19 * arg);
-//   arg1 := 1.345417051337526e+20 + (-3.621481323477592e+22) * phibtnom / tnom;
+//   arg1 := 1.345417051337526e20 + (-3.6214813234775923e22) * phibtnom / tnom;
 //   fact1 := 0.003331667499583542 * tnom;
 //   pbfact1 := (-2.0) * vtnom * (1.5 * log(fact1) + 1.6021918e-19 * arg1);
 //   pbo := (phi0 - pbfact1) / fact1;
 //   junctionpot := pbfact + fact2 * pbo;
 //   gmaold := (phi0 - pbo) / pbo;
 //   gmanew := (junctionpot - pbo) / pbo;
-//   jucntioncap := cap0 * (1.0 + mcoeff * (0.0004 * (-300.15 + temp) - gmanew)) / (1.0 + mcoeff * (0.0004 * (-300.15 + tnom) - gmaold));
+//   jucntioncap := cap0 * (1.0 + mcoeff * (4e-4 * (-300.15 + temp) - gmanew)) / (1.0 + mcoeff * (4e-4 * (-300.15 + tnom) - gmaold));
 // end Modelica.Electrical.Spice3.Internal.Functions.junctionParamDepTempSPICE3;
 //
 // function Modelica.Electrical.Spice3.Internal.Functions.junctionPotDepTemp \"Temperature dependency of junction potential\"
@@ -166,7 +166,7 @@ simulate(A); getErrorString();
 // algorithm
 //   phibtemp := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(temp);
 //   phibtnom := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(tnom);
-//   vt := 8.61726105451295e-05 * temp;
+//   vt := 8.61726105451295e-5 * temp;
 //   ret := (phi0 - phibtnom) * temp / tnom + phibtemp + 3.0 * vt * log(tnom / temp);
 // end Modelica.Electrical.Spice3.Internal.Functions.junctionPotDepTemp;
 //
@@ -177,9 +177,9 @@ simulate(A); getErrorString();
 //   output Real ret \"Output value\";
 //   protected Real vte(quantity = \"ElectricPotential\", unit = \"V\");
 // algorithm
-//   vte := 8.61726105451295e-05 * temp * ncoeff;
+//   vte := 8.61726105451295e-5 * temp * ncoeff;
 //   ret := vte * log(0.7071067811865475 * vte / satcur);
-//   ret := if ret > 10000000000.0 then 10000000000.0 else ret;
+//   ret := if ret > 1e10 then 1e10 else ret;
 // end Modelica.Electrical.Spice3.Internal.Functions.junctionVCrit;
 //
 // function Modelica.Electrical.Spice3.Internal.Functions.saturationCurDepTempSPICE3MOSFET \"Temperature dependency of saturation current\"
@@ -192,23 +192,23 @@ simulate(A); getErrorString();
 //   protected Real energygaptnom(quantity = \"ElectricPotential\", unit = \"V\");
 //   protected Real energygaptemp(quantity = \"ElectricPotential\", unit = \"V\");
 // algorithm
-//   vt := 8.61726105451295e-05 * temp;
-//   vtnom := 8.61726105451295e-05 * tnom;
+//   vt := 8.61726105451295e-5 * temp;
+//   vtnom := 8.61726105451295e-5 * tnom;
 //   energygaptnom := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(tnom);
 //   energygaptemp := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(temp);
 //   ret := satcur0 * exp(energygaptnom / vtnom - energygaptemp / vt);
 // end Modelica.Electrical.Spice3.Internal.Functions.saturationCurDepTempSPICE3MOSFET;
 //
 // function Modelica.Electrical.Spice3.Internal.ModelcardMOS \"Automatically generated record constructor for Modelica.Electrical.Spice3.Internal.ModelcardMOS\"
-//   input Real VTO(quantity = \"ElectricPotential\", unit = \"V\") = -1e+40;
-//   input Real KP(quantity = \"Transconductance\", unit = \"A/V2\") = -1e+40;
-//   input Real GAMMA = -1e+40;
-//   input Real PHI(quantity = \"ElectricPotential\", unit = \"V\") = -1e+40;
+//   input Real VTO(quantity = \"ElectricPotential\", unit = \"V\") = -1e40;
+//   input Real KP(quantity = \"Transconductance\", unit = \"A/V2\") = -1e40;
+//   input Real GAMMA = -1e40;
+//   input Real PHI(quantity = \"ElectricPotential\", unit = \"V\") = -1e40;
 //   input Real LAMBDA(quantity = \"InversePotential\", unit = \"1/V\") = 0.0;
-//   input Real RD(quantity = \"Resistance\", unit = \"Ohm\") = -1e+40;
-//   input Real RS(quantity = \"Resistance\", unit = \"Ohm\") = -1e+40;
-//   input Real CBD(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e+40;
-//   input Real CBS(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e+40;
+//   input Real RD(quantity = \"Resistance\", unit = \"Ohm\") = -1e40;
+//   input Real RS(quantity = \"Resistance\", unit = \"Ohm\") = -1e40;
+//   input Real CBD(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e40;
+//   input Real CBS(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e40;
 //   input Real IS(quantity = \"ElectricCurrent\", unit = \"A\") = 1e-14;
 //   input Real PB(quantity = \"ElectricPotential\", unit = \"V\") = 0.8;
 //   input Real CGSO(quantity = \"Permittivity\", unit = \"F/m\", min = 0.0) = 0.0;
@@ -220,8 +220,8 @@ simulate(A); getErrorString();
 //   input Real CJSW(quantity = \"Permittivity\", unit = \"F/m\", min = 0.0) = 0.0;
 //   input Real MJSW = 0.5;
 //   input Real JS(quantity = \"CurrentDensity\", unit = \"A/m2\") = 0.0;
-//   input Real TOX(quantity = \"Length\", unit = \"m\") = -1e+40;
-//   input Real NSUB = -1e+40;
+//   input Real TOX(quantity = \"Length\", unit = \"m\") = -1e40;
+//   input Real NSUB = -1e40;
 //   input Real NSS(quantity = \"PerArea\", unit = \"1/cm2\") = 0.0;
 //   input Real TPG = 1.0;
 //   input Real LD(quantity = \"Length\", unit = \"m\") = 0.0;
@@ -331,7 +331,7 @@ simulate(A); getErrorString();
 //   input Real m_bulkJctPotential(start = 0.8);
 //   input Real m_bulkJctBotGradingCoeff(start = 0.5, quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\");
 //   input Real m_bulkJctSideGradingCoeff(start = 0.5, quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\");
-//   input Real m_oxideThickness(start = 1e-07);
+//   input Real m_oxideThickness(start = 1e-7);
 //   input Real m_oxideThicknessIsGiven;
 //   input Real m_gateSourceOverlapCapFactor(start = 0.0);
 //   input Real m_gateDrainOverlapCapFactor(start = 0.0);
@@ -441,7 +441,7 @@ simulate(A); getErrorString();
 //     out_c.m_tCBSs := out_c.m_tCjsw * in_m.m_sourcePerimeter;
 //   end if;
 //   (out_c.m_f1b, out_c.m_f2b, out_c.m_f3b) := Modelica.Electrical.Spice3.Internal.Functions.junctionCapCoeffs(in_p.m_bulkJctBotGradingCoeff, in_p.m_fwdCapDepCoeff, out_c.m_tBulkPot);
-//   out_c.m_dVt := 8.61726105451295e-05 * in_m.m_dTemp;
+//   out_c.m_dVt := 8.61726105451295e-5 * in_m.m_dTemp;
 // end Modelica.Electrical.Spice3.Internal.Mos.mosCalcCalcTempDependencies;
 //
 // function Modelica.Electrical.Spice3.Internal.Mos.mosCalcDEVqmeyer \"Calculation of Meyer capacities\"
@@ -503,7 +503,7 @@ simulate(A); getErrorString();
 //   out_c.m_sourceResistance := if in_p.m_sourceResistanceIsGiven > 0.5 then in_p.m_sourceResistance else in_p.m_sheetResistance * in_m.m_sourceSquares;
 //   out_c.m_lEff := in_m.m_len + (-2.0) * in_p.m_latDiff;
 //   if abs(out_c.m_lEff) < 1e-18 then
-//     out_c.m_lEff := 1e-06;
+//     out_c.m_lEff := 1e-6;
 //   end if;
 //   out_c.m_capGSovl := in_p.m_gateSourceOverlapCapFactor * in_m.m_width;
 //   out_c.m_capGDovl := in_p.m_gateDrainOverlapCapFactor * in_m.m_width;
@@ -634,9 +634,9 @@ simulate(A); getErrorString();
 //   int_c.m_capgd := 2.0 * qm.qm_capgd + int_c.m_capGDovl;
 //   int_c.m_capgs := 2.0 * qm.qm_capgs + int_c.m_capGSovl;
 //   int_c.m_capgb := 2.0 * qm.qm_capgb + int_c.m_capGBovl;
-//   out_cc.cGB := if in_m_bInit then -1e+40 else int_c.m_capgb;
-//   out_cc.cGD := if in_m_bInit then -1e+40 else int_c.m_capgd;
-//   out_cc.cGS := if in_m_bInit then -1e+40 else int_c.m_capgs;
+//   out_cc.cGB := if in_m_bInit then -1e40 else int_c.m_capgb;
+//   out_cc.cGD := if in_m_bInit then -1e40 else int_c.m_capgd;
+//   out_cc.cGS := if in_m_bInit then -1e40 else int_c.m_capgs;
 // end Modelica.Electrical.Spice3.Internal.Mos.mosCalcNoBypassCode;
 //
 // function Modelica.Electrical.Spice3.Internal.Mos1.Mos1Calc \"Automatically generated record constructor for Modelica.Electrical.Spice3.Internal.Mos1.Mos1Calc\"
@@ -710,7 +710,7 @@ simulate(A); getErrorString();
 //   input Real m_bulkJctPotential(start = 0.8);
 //   input Real m_bulkJctBotGradingCoeff(start = 0.5, quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\");
 //   input Real m_bulkJctSideGradingCoeff(start = 0.5, quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\");
-//   input Real m_oxideThickness(start = 1e-07);
+//   input Real m_oxideThickness(start = 1e-7);
 //   input Real m_oxideThicknessIsGiven;
 //   input Real m_gateSourceOverlapCapFactor(start = 0.0);
 //   input Real m_gateDrainOverlapCapFactor(start = 0.0);
@@ -750,7 +750,7 @@ simulate(A); getErrorString();
 //   input Real m_drainResistanceIsGiven;
 //   input Real m_sourceResistance(start = 0.0, quantity = \"Resistance\", unit = \"Ohm\");
 //   input Real m_sourceResistanceIsGiven;
-//   input Real m_transconductance(start = 2e-05, quantity = \"Transconductance\", unit = \"A/V2\");
+//   input Real m_transconductance(start = 2e-5, quantity = \"Transconductance\", unit = \"A/V2\");
 //   input Real m_transconductanceIsGiven;
 //   input Real m_tnom(start = 300.15, quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 0.0, nominal = 300.0, displayUnit = \"degC\");
 //   output Mos1ModelLineParams res;
@@ -822,8 +822,8 @@ simulate(A); getErrorString();
 //   out_v.m_phi := in_p.m_phi;
 //   out_v.m_gamma := in_p.m_gamma;
 //   out_v.m_vt0 := in_p.m_vt0;
-//   vtnom := 8.61726105451295e-05 * in_p.m_tnom;
-//   egfet1 := 1.16 + (-0.000702) * in_p.m_tnom ^ 2.0 / (1108.0 + in_p.m_tnom);
+//   vtnom := 8.61726105451295e-5 * in_p.m_tnom;
+//   egfet1 := 1.16 + (-7.02e-4) * in_p.m_tnom ^ 2.0 / (1108.0 + in_p.m_tnom);
 //   if not in_p.m_oxideThicknessIsGiven > 0.5 or in_p.m_oxideThickness == 0.0 then
 //     if in_p.m_oxideThickness == 0.0 then
 //       out_v.m_oxideCapFactor := 0.0;
@@ -832,10 +832,10 @@ simulate(A); getErrorString();
 //     out_v.m_oxideCapFactor := 3.45314379969e-11 / in_p.m_oxideThickness;
 //     if out_v.m_oxideCapFactor <> 0.0 then
 //       if not in_p.m_transconductanceIsGiven > 0.5 then
-//         out_v.m_transconductance := 0.0001 * in_p.m_surfaceMobility * out_v.m_oxideCapFactor;
+//         out_v.m_transconductance := 1e-4 * in_p.m_surfaceMobility * out_v.m_oxideCapFactor;
 //       end if;
 //       if in_p.m_substrateDopingIsGiven > 0.5 then
-//         if 1000000.0 * in_p.m_substrateDoping > 1.45e+16 then
+//         if 1e6 * in_p.m_substrateDoping > 1.45e16 then
 //           if not in_p.m_phiIsGiven > 0.5 then
 //             out_v.m_phi := 2.0 * vtnom * log(6.896551724137932e-11 * in_p.m_substrateDoping);
 //             out_v.m_phi := max(0.1, out_v.m_phi);
@@ -851,7 +851,7 @@ simulate(A); getErrorString();
 //             out_v.m_gamma := 5.761561600860045e-12 * sqrt(in_p.m_substrateDoping / out_v.m_oxideCapFactor);
 //           end if;
 //           if not in_p.m_vtOIsGiven > 0.5 then
-//             vfb := wkfngs + (-1.6021918e-15) * in_p.m_surfaceStateDensity / out_v.m_oxideCapFactor;
+//             vfb := wkfngs + (-1.6021918000000002e-15) * in_p.m_surfaceStateDensity / out_v.m_oxideCapFactor;
 //             out_v.m_vt0 := vfb + /*Real*/(in_m_type) * (out_v.m_gamma * sqrt(out_v.m_phi) + out_v.m_phi);
 //           end if;
 //         end if;
@@ -872,42 +872,42 @@ simulate(A); getErrorString();
 //   intern.m_pbIsGiven := 0.0;
 //   intern.m_surfaceStateDensityIsGiven := 0.0;
 //   intern.m_oxideCapFactor := 0.0;
-//   intern.m_vtOIsGiven := if ex.VTO > -1e+40 then 1.0 else 0.0;
-//   intern.m_vt0 := if ex.VTO > -1e+40 then ex.VTO else 0.0;
-//   intern.m_capBDIsGiven := if ex.CBD > -1e+40 then 1.0 else 0.0;
-//   intern.m_capBD := if ex.CBD > -1e+40 then ex.CBD else 0.0;
-//   intern.m_capBSIsGiven := if ex.CBS > -1e+40 then 1.0 else 0.0;
-//   intern.m_capBS := if ex.CBS > -1e+40 then ex.CBS else 0.0;
-//   intern.m_bulkCapFactorIsGiven := if ex.CJ > -1e+40 then 1.0 else 0.0;
-//   intern.m_bulkCapFactor := if ex.CJ > -1e+40 then ex.CJ else 0.0;
+//   intern.m_vtOIsGiven := if ex.VTO > -1e40 then 1.0 else 0.0;
+//   intern.m_vt0 := if ex.VTO > -1e40 then ex.VTO else 0.0;
+//   intern.m_capBDIsGiven := if ex.CBD > -1e40 then 1.0 else 0.0;
+//   intern.m_capBD := if ex.CBD > -1e40 then ex.CBD else 0.0;
+//   intern.m_capBSIsGiven := if ex.CBS > -1e40 then 1.0 else 0.0;
+//   intern.m_capBS := if ex.CBS > -1e40 then ex.CBS else 0.0;
+//   intern.m_bulkCapFactorIsGiven := if ex.CJ > -1e40 then 1.0 else 0.0;
+//   intern.m_bulkCapFactor := if ex.CJ > -1e40 then ex.CJ else 0.0;
 //   intern.m_sideWallCapFactor := ex.CJSW;
 //   intern.m_fwdCapDepCoeff := ex.FC;
-//   intern.m_phiIsGiven := if ex.PHI > -1e+40 then 1.0 else 0.0;
-//   intern.m_phi := if ex.PHI > -1e+40 then ex.PHI else 0.6;
-//   intern.m_gammaIsGiven := if ex.GAMMA > -1e+40 then 1.0 else 0.0;
-//   intern.m_gamma := if ex.GAMMA > -1e+40 then ex.GAMMA else 0.0;
+//   intern.m_phiIsGiven := if ex.PHI > -1e40 then 1.0 else 0.0;
+//   intern.m_phi := if ex.PHI > -1e40 then ex.PHI else 0.6;
+//   intern.m_gammaIsGiven := if ex.GAMMA > -1e40 then 1.0 else 0.0;
+//   intern.m_gamma := if ex.GAMMA > -1e40 then ex.GAMMA else 0.0;
 //   intern.m_lambda := ex.LAMBDA;
-//   intern.m_substrateDopingIsGiven := if ex.NSUB > -1e+40 then 1.0 else 0.0;
-//   intern.m_substrateDoping := if ex.NSUB > -1e+40 then ex.NSUB else 0.0;
+//   intern.m_substrateDopingIsGiven := if ex.NSUB > -1e40 then 1.0 else 0.0;
+//   intern.m_substrateDoping := if ex.NSUB > -1e40 then ex.NSUB else 0.0;
 //   intern.m_gateType := ex.TPG;
 //   intern.m_surfaceStateDensity := ex.NSS;
 //   intern.m_surfaceMobility := ex.UO;
 //   intern.m_latDiff := ex.LD;
 //   intern.m_jctSatCur := ex.IS;
-//   intern.m_drainResistanceIsGiven := if ex.RD > -1e+40 then 1.0 else 0.0;
-//   intern.m_drainResistance := if ex.RD > -1e+40 then ex.RD else 0.0;
-//   intern.m_sourceResistanceIsGiven := if ex.RS > -1e+40 then 1.0 else 0.0;
-//   intern.m_sourceResistance := if ex.RS > -1e+40 then ex.RS else 0.0;
-//   intern.m_transconductanceIsGiven := if ex.KP > -1e+40 then 1.0 else 0.0;
-//   intern.m_transconductance := if ex.KP > -1e+40 then ex.KP else 2e-05;
-//   intern.m_tnom := if ex.TNOM > -1e+40 then 273.15 + ex.TNOM else 300.15;
+//   intern.m_drainResistanceIsGiven := if ex.RD > -1e40 then 1.0 else 0.0;
+//   intern.m_drainResistance := if ex.RD > -1e40 then ex.RD else 0.0;
+//   intern.m_sourceResistanceIsGiven := if ex.RS > -1e40 then 1.0 else 0.0;
+//   intern.m_sourceResistance := if ex.RS > -1e40 then ex.RS else 0.0;
+//   intern.m_transconductanceIsGiven := if ex.KP > -1e40 then 1.0 else 0.0;
+//   intern.m_transconductance := if ex.KP > -1e40 then ex.KP else 2e-5;
+//   intern.m_tnom := if ex.TNOM > -1e40 then 273.15 + ex.TNOM else 300.15;
 //   intern.m_jctSatCurDensity := ex.JS;
 //   intern.m_sheetResistance := ex.RSH;
 //   intern.m_bulkJctPotential := ex.PB;
 //   intern.m_bulkJctBotGradingCoeff := ex.MJ;
 //   intern.m_bulkJctSideGradingCoeff := ex.MJSW;
-//   intern.m_oxideThicknessIsGiven := if ex.TOX > -1e+40 then 1.0 else 0.0;
-//   intern.m_oxideThickness := if ex.TOX > -1e+40 then ex.TOX else 0.0;
+//   intern.m_oxideThicknessIsGiven := if ex.TOX > -1e40 then 1.0 else 0.0;
+//   intern.m_oxideThickness := if ex.TOX > -1e40 then ex.TOX else 0.0;
 //   intern.m_gateSourceOverlapCapFactor := ex.CGSO;
 //   intern.m_gateDrainOverlapCapFactor := ex.CGDO;
 //   intern.m_gateBulkOverlapCapFactor := ex.CGBO;
@@ -939,12 +939,12 @@ simulate(A); getErrorString();
 //   dev.m_sourceSquares := NRS;
 //   dev.m_drainPerimeter := PD;
 //   dev.m_sourcePerimeter := PS;
-//   dev.m_dICVDSIsGiven := if IC > -1e+40 then 1.0 else 0.0;
-//   dev.m_dICVDS := if IC > -1e+40 then IC else 0.0;
-//   dev.m_dICVGSIsGiven := if IC > -1e+40 then 1.0 else 0.0;
-//   dev.m_dICVGS := if IC > -1e+40 then IC else 0.0;
-//   dev.m_dICVBSIsGiven := if IC > -1e+40 then 1.0 else 0.0;
-//   dev.m_dICVBS := if IC > -1e+40 then IC else 0.0;
+//   dev.m_dICVDSIsGiven := if IC > -1e40 then 1.0 else 0.0;
+//   dev.m_dICVDS := if IC > -1e40 then IC else 0.0;
+//   dev.m_dICVGSIsGiven := if IC > -1e40 then 1.0 else 0.0;
+//   dev.m_dICVGS := if IC > -1e40 then IC else 0.0;
+//   dev.m_dICVBSIsGiven := if IC > -1e40 then 1.0 else 0.0;
+//   dev.m_dICVBS := if IC > -1e40 then IC else 0.0;
 //   dev.m_off := OFF;
 //   dev.m_bPMOS := mtype;
 //   dev.m_nLevel := 1;
@@ -956,8 +956,8 @@ simulate(A); getErrorString();
 //
 // function Modelica.Electrical.Spice3.Internal.Mosfet.Mosfet \"Automatically generated record constructor for Modelica.Electrical.Spice3.Internal.Mosfet.Mosfet\"
 //   input Real m_dTemp(start = 300.15, quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 0.0, nominal = 300.0, displayUnit = \"degC\");
-//   input Real m_len(start = 0.0001, quantity = \"Length\", unit = \"m\");
-//   input Real m_width(start = 0.0001, quantity = \"Length\", unit = \"m\");
+//   input Real m_len(start = 1e-4, quantity = \"Length\", unit = \"m\");
+//   input Real m_width(start = 1e-4, quantity = \"Length\", unit = \"m\");
 //   input Real m_drainArea(start = 0.0, quantity = \"Area\", unit = \"m2\");
 //   input Real m_sourceArea(start = 0.0, quantity = \"Area\", unit = \"m2\");
 //   input Real m_drainSquares(start = 1.0);
@@ -980,23 +980,23 @@ simulate(A); getErrorString();
 // end Modelica.Electrical.Spice3.Internal.Mosfet.Mosfet;
 //
 // function Modelica.Electrical.Spice3.Internal.SpiceConstants \"Automatically generated record constructor for Modelica.Electrical.Spice3.Internal.SpiceConstants\"
-//   protected Real EPSSIL = 1.035943139907e-10;
+//   protected Real EPSSIL = 1.0359431399069999e-10;
 //   protected Real EPSOX = 3.453133e-11;
 //   protected Real CHARGE(quantity = \"ElectricCharge\", unit = \"C\") = 1.6021918e-19;
 //   protected Real CONSTCtoK(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 0.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\") = 273.15;
 //   protected Real CONSTboltz(quantity = \"HeatCapacity\", unit = \"J/K\") = 1.3806226e-23;
 //   protected Real REFTEMP(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 0.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\") = 300.15;
-//   protected Real CONSTroot2 = 1.414213562373095;
-//   protected Real CONSTvt0(unit = \"(J/K)/(A.s)\") = 0.02586470905512062;
-//   protected Real CONSTKoverQ(unit = \"(J/K)/(A.s)\") = 8.61726105451295e-05;
+//   protected Real CONSTroot2 = 1.4142135623730951;
+//   protected Real CONSTvt0(unit = \"(J/K)/(A.s)\") = 0.025864709055120616;
+//   protected Real CONSTKoverQ(unit = \"(J/K)/(A.s)\") = 8.61726105451295e-5;
 //   protected Real CONSTe = 2.718281828459045;
 //   protected Real CKTgmin(quantity = \"Conductance\", unit = \"S\") = 1e-12;
 //   protected Real CKTnomTemp(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 0.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\") = 300.15;
 //   protected Real CKTtemp(quantity = \"ThermodynamicTemperature\", unit = \"K\", min = 0.0, start = 288.15, nominal = 300.0, displayUnit = \"degC\") = 300.15;
 //   protected Real CKTdefaultMosAD(quantity = \"Area\", unit = \"m2\") = 0.0;
 //   protected Real CKTdefaultMosAS(quantity = \"Area\", unit = \"m2\") = 0.0;
-//   protected Real CKTdefaultMosL(quantity = \"Length\", unit = \"m\") = 0.0001;
-//   protected Real CKTdefaultMosW(quantity = \"Length\", unit = \"m\") = 0.0001;
+//   protected Real CKTdefaultMosL(quantity = \"Length\", unit = \"m\") = 1e-4;
+//   protected Real CKTdefaultMosW(quantity = \"Length\", unit = \"m\") = 1e-4;
 //   protected Real CKTreltol = 1e-10;
 //   protected Real CKTabstol = 1e-15;
 //   protected Real CKTvolttol = 1e-10;
@@ -1024,8 +1024,8 @@ simulate(A); getErrorString();
 // end Modelica.SIunits.Conversions.from_degC;
 //
 // class A
-//   constant Real L(quantity = \"Length\", unit = \"m\") = 0.0001 \"Length\";
-//   constant Real W(quantity = \"Length\", unit = \"m\") = 0.0001 \"Width\";
+//   constant Real L(quantity = \"Length\", unit = \"m\") = 1e-4 \"Length\";
+//   constant Real W(quantity = \"Length\", unit = \"m\") = 1e-4 \"Width\";
 //   constant Real AD(quantity = \"Area\", unit = \"m2\") = 0.0 \"Area of the drain diffusion\";
 //   constant Real AS(quantity = \"Area\", unit = \"m2\") = 0.0 \"Area of the source diffusion\";
 //   constant Real PD(quantity = \"Length\", unit = \"m\") = 0.0 \"Perimeter of the drain junction\";
@@ -1033,17 +1033,17 @@ simulate(A); getErrorString();
 //   constant Real NRD = 1.0 \"Number of squares of the drain diffusions\";
 //   constant Real NRS = 1.0 \"Number of squares of the source diffusions\";
 //   constant Integer OFF = 0 \"Optional initial condition: 0 - IC not used, 1 - IC used, not implemented yet\";
-//   constant Real IC(quantity = \"ElectricPotential\", unit = \"V\") = -1e+40 \"Initial condition values, not implemented yet\";
+//   constant Real IC(quantity = \"ElectricPotential\", unit = \"V\") = -1e40 \"Initial condition values, not implemented yet\";
 //   constant Real TEMP(quantity = \"ThermodynamicTemperature\", unit = \"degC\") = 27.0 \"Operating temperature of the device\";
-//   constant Real modelcard.VTO(quantity = \"ElectricPotential\", unit = \"V\") = -1e+40 \"Zero-bias threshold voltage, default 0\";
-//   constant Real modelcard.KP(quantity = \"Transconductance\", unit = \"A/V2\") = -1e+40 \"Transconductance parameter, default 2e-5\";
-//   constant Real modelcard.GAMMA = -1e+40 \"Bulk threshold parameter, default 0\";
-//   constant Real modelcard.PHI(quantity = \"ElectricPotential\", unit = \"V\") = -1e+40 \"Surface potential, default 0.6\";
+//   constant Real modelcard.VTO(quantity = \"ElectricPotential\", unit = \"V\") = -1e40 \"Zero-bias threshold voltage, default 0\";
+//   constant Real modelcard.KP(quantity = \"Transconductance\", unit = \"A/V2\") = -1e40 \"Transconductance parameter, default 2e-5\";
+//   constant Real modelcard.GAMMA = -1e40 \"Bulk threshold parameter, default 0\";
+//   constant Real modelcard.PHI(quantity = \"ElectricPotential\", unit = \"V\") = -1e40 \"Surface potential, default 0.6\";
 //   constant Real modelcard.LAMBDA(quantity = \"InversePotential\", unit = \"1/V\") = 0.0 \"Channel-length modulation, default 0\";
-//   constant Real modelcard.RD(quantity = \"Resistance\", unit = \"Ohm\") = -1e+40 \"Drain ohmic resistance, default 0\";
-//   constant Real modelcard.RS(quantity = \"Resistance\", unit = \"Ohm\") = -1e+40 \"Source ohmic resistance, default 0\";
-//   constant Real modelcard.CBD(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e+40 \"Zero-bias B-D junction capacitance, default 0\";
-//   constant Real modelcard.CBS(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e+40 \"Zero-bias B-S junction capacitance, default 0\";
+//   constant Real modelcard.RD(quantity = \"Resistance\", unit = \"Ohm\") = -1e40 \"Drain ohmic resistance, default 0\";
+//   constant Real modelcard.RS(quantity = \"Resistance\", unit = \"Ohm\") = -1e40 \"Source ohmic resistance, default 0\";
+//   constant Real modelcard.CBD(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e40 \"Zero-bias B-D junction capacitance, default 0\";
+//   constant Real modelcard.CBS(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = -1e40 \"Zero-bias B-S junction capacitance, default 0\";
 //   constant Real modelcard.IS(quantity = \"ElectricCurrent\", unit = \"A\") = 1e-14 \"Bulk junction saturation current\";
 //   constant Real modelcard.PB(quantity = \"ElectricPotential\", unit = \"V\") = 0.8 \"Bulk junction potential\";
 //   constant Real modelcard.CGSO(quantity = \"Permittivity\", unit = \"F/m\", min = 0.0) = 0.0 \"Gate-source overlap capacitance per meter channel width\";
@@ -1055,8 +1055,8 @@ simulate(A); getErrorString();
 //   constant Real modelcard.CJSW(quantity = \"Permittivity\", unit = \"F/m\", min = 0.0) = 0.0 \"Zero-bias junction sidewall cap. per meter of junction perimeter\";
 //   constant Real modelcard.MJSW = 0.5 \"Bulk junction sidewall grading coefficient\";
 //   constant Real modelcard.JS(quantity = \"CurrentDensity\", unit = \"A/m2\") = 0.0 \"Bulk junction saturation current per sq-meter of junction area\";
-//   constant Real modelcard.TOX(quantity = \"Length\", unit = \"m\") = -1e+40 \"Oxide thickness, default 1e-7\";
-//   constant Real modelcard.NSUB = -1e+40 \"Substrate doping, default 0\";
+//   constant Real modelcard.TOX(quantity = \"Length\", unit = \"m\") = -1e40 \"Oxide thickness, default 1e-7\";
+//   constant Real modelcard.NSUB = -1e40 \"Substrate doping, default 0\";
 //   constant Real modelcard.NSS(quantity = \"PerArea\", unit = \"1/cm2\") = 0.0 \"Surface state density\";
 //   constant Real modelcard.TPG = 1.0 \"Type of gate material: +1 opp. to substrate, -1 same as substrate, 0 Al gate\";
 //   constant Real modelcard.LD(quantity = \"Length\", unit = \"m\") = 0.0 \"Lateral diffusion\";
@@ -1066,23 +1066,23 @@ simulate(A); getErrorString();
 //   constant Real modelcard.FC = 0.5 \"Coefficient for forward-bias depletion capacitance formula\";
 //   constant Real modelcard.TNOM(quantity = \"ThermodynamicTemperature\", unit = \"degC\") = 27.0 \"Parameter measurement temperature, default 27\";
 //   constant Integer modelcard.LEVEL = 1 \"Model level: Shichman-Hodges\";
-//   constant Real C.EPSSIL = 1.035943139907e-10;
+//   constant Real C.EPSSIL = 1.0359431399069999e-10;
 //   constant Real C.EPSOX = 3.453133e-11;
 //   constant Real C.CHARGE(quantity = \"ElectricCharge\", unit = \"C\") = 1.6021918e-19;
 //   constant Real C.CONSTCtoK(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 273.15;
 //   constant Real C.CONSTboltz(quantity = \"HeatCapacity\", unit = \"J/K\") = 1.3806226e-23;
 //   constant Real C.REFTEMP(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 300.15;
-//   constant Real C.CONSTroot2 = 1.414213562373095;
-//   constant Real C.CONSTvt0(unit = \"(J/K)/(A.s)\") = 0.02586470905512062;
-//   constant Real C.CONSTKoverQ(unit = \"(J/K)/(A.s)\") = 8.61726105451295e-05;
+//   constant Real C.CONSTroot2 = 1.4142135623730951;
+//   constant Real C.CONSTvt0(unit = \"(J/K)/(A.s)\") = 0.025864709055120616;
+//   constant Real C.CONSTKoverQ(unit = \"(J/K)/(A.s)\") = 8.61726105451295e-5;
 //   constant Real C.CONSTe = 2.718281828459045;
 //   constant Real C.CKTgmin(quantity = \"Conductance\", unit = \"S\") = 1e-12;
 //   constant Real C.CKTnomTemp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 300.15;
 //   constant Real C.CKTtemp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) = 300.15;
 //   constant Real C.CKTdefaultMosAD(quantity = \"Area\", unit = \"m2\") = 0.0;
 //   constant Real C.CKTdefaultMosAS(quantity = \"Area\", unit = \"m2\") = 0.0;
-//   constant Real C.CKTdefaultMosL(quantity = \"Length\", unit = \"m\") = 0.0001;
-//   constant Real C.CKTdefaultMosW(quantity = \"Length\", unit = \"m\") = 0.0001;
+//   constant Real C.CKTdefaultMosL(quantity = \"Length\", unit = \"m\") = 1e-4;
+//   constant Real C.CKTdefaultMosW(quantity = \"Length\", unit = \"m\") = 1e-4;
 //   constant Real C.CKTreltol = 1e-10;
 //   constant Real C.CKTabstol = 1e-15;
 //   constant Real C.CKTvolttol = 1e-10;
@@ -1094,7 +1094,7 @@ simulate(A); getErrorString();
 //   constant Real p.m_bulkJctPotential(start = 0.8) = 0.8 \"PB, Bulk junction potential, input - use tBulkPot\";
 //   constant Real p.m_bulkJctBotGradingCoeff(quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\", start = 0.5) = 0.5 \"MJ, Bottom grading coefficient\";
 //   constant Real p.m_bulkJctSideGradingCoeff(quantity = \"LinearTemperatureCoefficient\", unit = \"1/K\", start = 0.5) = 0.5 \"MJSW, Side grading coefficient\";
-//   constant Real p.m_oxideThickness(start = 1e-07) = 0.0 \"TOX, Oxide thickness unit: micron\";
+//   constant Real p.m_oxideThickness(start = 1e-7) = 0.0 \"TOX, Oxide thickness unit: micron\";
 //   constant Real p.m_oxideThicknessIsGiven = 0.0 \"TOX, IsGiven value\";
 //   constant Real p.m_gateSourceOverlapCapFactor(start = 0.0) = 0.0 \"CGS0, Gate-source overlap cap\";
 //   constant Real p.m_gateDrainOverlapCapFactor(start = 0.0) = 0.0 \"CGD0, Gate-drain overlap cap\";
@@ -1134,12 +1134,12 @@ simulate(A); getErrorString();
 //   constant Real p.m_drainResistanceIsGiven = 0.0 \"Drain resistance IsGivenValue\";
 //   constant Real p.m_sourceResistance(quantity = \"Resistance\", unit = \"Ohm\", start = 0.0) = 0.0 \"RS, Source ohmic resistance\";
 //   constant Real p.m_sourceResistanceIsGiven = 0.0 \"Source resistance IsGivenValue\";
-//   constant Real p.m_transconductance(quantity = \"Transconductance\", unit = \"A/V2\", start = 2e-05) = 2e-05 \"input - use tTransconductance\";
+//   constant Real p.m_transconductance(quantity = \"Transconductance\", unit = \"A/V2\", start = 2e-5) = 2e-5 \"input - use tTransconductance\";
 //   constant Real p.m_transconductanceIsGiven = 0.0 \"Transconductance IsGivenValue\";
 //   constant Real p.m_tnom(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 300.15, nominal = 300.0) = 300.15 \"TNOM, Parameter measurement temperature\";
 //   constant Real m.m_dTemp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 300.15, nominal = 300.0) = 300.15 \"TEMP, Device Temperature\";
-//   constant Real m.m_len(quantity = \"Length\", unit = \"m\", start = 0.0001) = 0.0001 \"L, length of channel region\";
-//   constant Real m.m_width(quantity = \"Length\", unit = \"m\", start = 0.0001) = 0.0001 \"W, width of channel region\";
+//   constant Real m.m_len(quantity = \"Length\", unit = \"m\", start = 1e-4) = 1e-4 \"L, length of channel region\";
+//   constant Real m.m_width(quantity = \"Length\", unit = \"m\", start = 1e-4) = 1e-4 \"W, width of channel region\";
 //   constant Real m.m_drainArea(quantity = \"Area\", unit = \"m2\", start = 0.0) = 0.0 \"AD, area of drain diffusion\";
 //   constant Real m.m_sourceArea(quantity = \"Area\", unit = \"m2\", start = 0.0) = 0.0 \"AS, area of source diffusion\";
 //   constant Real m.m_drainSquares(start = 1.0) = 1.0 \"NRD, length of drain in squares\";
@@ -1162,7 +1162,7 @@ simulate(A); getErrorString();
 //   constant Real vp.m_vt0(quantity = \"ElectricPotential\", unit = \"V\") = 0.0;
 //   constant Real vp.m_phi(quantity = \"ElectricPotential\", unit = \"V\") = 0.6;
 //   constant Real vp.m_gamma = 0.0;
-//   constant Real vp.m_transconductance(quantity = \"Transconductance\", unit = \"A/V2\") = 2e-05;
+//   constant Real vp.m_transconductance(quantity = \"Transconductance\", unit = \"A/V2\") = 2e-5;
 //   constant Real c1.m_vds(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Vds, Drain-Source voltage\";
 //   constant Real c1.m_vgs(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Vgs, Gate-Source voltage\";
 //   constant Real c1.m_vbs(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Vbs, Bulk-Source voltage\";
@@ -1190,7 +1190,7 @@ simulate(A); getErrorString();
 //   constant Real c1.m_von(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Von, Turn-on voltage\";
 //   constant Real c1.m_vdsat(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Vdsat\";
 //   constant Integer c1.m_mode(start = 1) = 1 \"Mode\";
-//   constant Real c1.m_lEff(quantity = \"Length\", unit = \"m\") = 0.0001;
+//   constant Real c1.m_lEff(quantity = \"Length\", unit = \"m\") = 1e-4;
 //   constant Real c1.m_sourceResistance(quantity = \"Resistance\", unit = \"Ohm\") = 0.0 \"Rs\";
 //   constant Real c1.m_drainResistance(quantity = \"Resistance\", unit = \"Ohm\") = 0.0 \"Rd\";
 //   constant Real c1.m_tTransconductance(quantity = \"Transconductance\", unit = \"A/V2\", start = 0.0) = 0.0;
@@ -1243,7 +1243,7 @@ simulate(A); getErrorString();
 //   constant Real c2.m_chargebdb(quantity = \"ElectricCharge\", unit = \"C\") = 0.0 \"Qbdb\";
 //   constant Real c2.m_capbds(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = 0.0 \"Cbds\";
 //   constant Real c2.m_chargebds(quantity = \"ElectricCharge\", unit = \"C\") = 0.0 \"Qbds\";
-//   constant Real c2.m_Beta = 2e-05 \"Beta\";
+//   constant Real c2.m_Beta = 2e-5 \"Beta\";
 //   constant Real c2.m_capGSovl(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = 0.0 \"Cgso, Gate-source overlap cap.\";
 //   constant Real c2.m_capGDovl(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = 0.0 \"Cgdo, Gate-drain overlap cap.\";
 //   constant Real c2.m_capGBovl(quantity = \"Capacitance\", unit = \"F\", min = 0.0) = 0.0 \"Cgbo, Gate-bulk overlap cap.\";
@@ -1251,10 +1251,10 @@ simulate(A); getErrorString();
 //   constant Real c2.m_von(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Von, Turn-on voltage\";
 //   constant Real c2.m_vdsat(quantity = \"ElectricPotential\", unit = \"V\") = 0.0 \"Vdsat\";
 //   constant Integer c2.m_mode(start = 1) = 1 \"Mode\";
-//   constant Real c2.m_lEff(quantity = \"Length\", unit = \"m\") = 0.0001;
+//   constant Real c2.m_lEff(quantity = \"Length\", unit = \"m\") = 1e-4;
 //   constant Real c2.m_sourceResistance(quantity = \"Resistance\", unit = \"Ohm\") = 0.0 \"Rs\";
 //   constant Real c2.m_drainResistance(quantity = \"Resistance\", unit = \"Ohm\") = 0.0 \"Rd\";
-//   constant Real c2.m_tTransconductance(quantity = \"Transconductance\", unit = \"A/V2\", start = 0.0) = 2e-05;
+//   constant Real c2.m_tTransconductance(quantity = \"Transconductance\", unit = \"A/V2\", start = 0.0) = 2e-5;
 //   constant Real c2.m_tSurfMob(quantity = \"AreaPerVoltageSecond\", unit = \"cm2/(V.s)\", start = 0.0) = 600.0;
 //   constant Real c2.m_tPhi(quantity = \"ElectricPotential\", unit = \"V\", start = 0.7) = 0.6;
 //   constant Real c2.m_tVto(quantity = \"ElectricPotential\", unit = \"V\", start = 1.0) = 0.0;
@@ -1278,7 +1278,7 @@ simulate(A); getErrorString();
 //   constant Real c2.m_f1s(quantity = \"ElectricPotential\", unit = \"V\", start = 0.0) = 0.4686291501015239;
 //   constant Real c2.m_f2s(start = 0.0) = 0.3535533905932738;
 //   constant Real c2.m_f3s(start = 0.0) = 0.25;
-//   constant Real c2.m_dVt(quantity = \"ElectricPotential\", unit = \"V\", start = 0.0) = 0.02586470905512062;
+//   constant Real c2.m_dVt(quantity = \"ElectricPotential\", unit = \"V\", start = 0.0) = 0.025864709055120616;
 //   constant Real c2.m_capgd(quantity = \"Capacitance\", unit = \"F\", min = 0.0, start = 0.0) = 0.0;
 //   constant Real c2.m_capgs(quantity = \"Capacitance\", unit = \"F\", min = 0.0, start = 0.0) = 0.0;
 //   constant Real c2.m_capgb(quantity = \"Capacitance\", unit = \"F\", min = 0.0, start = 0.0) = 0.0;
@@ -1299,7 +1299,7 @@ simulate(A); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "A_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

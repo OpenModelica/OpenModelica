@@ -1,0 +1,18 @@
+# TOML formatting (taplo) for the Rust parts of OpenModelica: Cargo.toml,
+# rust-toolchain.toml, rustfmt.toml, .cargo/config.toml, ...
+# Applied to files as they are added or changed, by common/pre-commit.sh and
+# .github/workflows/rust-format.yml, both through
+# OMCompiler/Compiler/OpenModelica.rs/format.sh. Editors with taplo support
+# (VS Code: "Even Better TOML") pick this file up from the repository root.
+include = [
+  "OMCompiler/Compiler/OpenModelica.rs/**/*.toml",
+  "OMCompiler/SimulationRuntime/rust/**/*.toml",
+]
+exclude = ["**/target/**"]
+
+[formatting]
+# Same width as rustfmt.toml.
+column_width = 120
+# Keys stay in their hand-picked order: the comments in Cargo.toml explain
+# groups of dependencies, and reordering would separate them.
+reorder_keys = false

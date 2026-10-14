@@ -160,6 +160,7 @@ pub extern "C" fn _main_initRuntimeAndSimulation(
     driver::set_log_sink_is_stdout(true);
     driver::set_init_done_hook(init_done);
     driver::set_teardown_hook(teardown);
+    driver::set_stats_hook(openmodelica_sim_meta::stats::log_stats);
     if let Some(code) = crate::help::serve(&args) {
         std::process::exit(code);
     }
@@ -358,10 +359,8 @@ fn start_non_interactive_simulation(
                 omclog::error(omclog::STDOUT, false, e);
             }
             // C's statistics step runs whatever `performSimulation` returned.
-            if omclog::active(omclog::STATS)
-                && let Some(stats) = driver::take_failed_stats()
-            {
-                print_line(&openmodelica_sim_meta::stats::log_stats_block(&stats));
+            if let Some(stats) = driver::take_failed_stats() {
+                openmodelica_sim_meta::stats::log_stats(&stats);
             }
             unsafe { (*(*data).simulationInfo).simulationSuccess = 1 };
             // C's `_main_SimulationRuntime` leaves `retVal` at -1 when the run
@@ -371,9 +370,6 @@ fn start_non_interactive_simulation(
         }
     };
 
-    if omclog::active(omclog::STATS) {
-        print_line(&openmodelica_sim_meta::stats::log_stats_block(&result.stats));
-    }
     if let Some(file) = &result.lin {
         let path = simflags::with_flags(|f| match &f.output_path {
             Some(dir) => format!("{dir}/{}", file.name),

@@ -659,20 +659,14 @@ pub(super) fn compile_binary(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator,
             }
             return Ok(WTy::F64);
         }
-        let rt = if let Some(n) = real_exp_int_lit(e2) {
+        if let Some(n) = real_exp_int_lit(e2) {
             let a = compile_exp(ctx, e1)?;
             coerce(ctx, a, WTy::F64);
             ctx.emit(we::Instruction::I32Const(n));
-            "rt_real_int_pow"
+            ctx.emit(we::Instruction::Call(rt_index("rt_real_int_pow")?));
         } else {
-            let a = compile_exp(ctx, e1)?;
-            coerce(ctx, a, WTy::F64);
-            let b = compile_exp(ctx, e2)?;
-            coerce(ctx, b, WTy::F64);
-            emit_src_loc(ctx);
-            "rt_real_pow"
-        };
-        ctx.emit(we::Instruction::Call(rt_index(rt)?));
+            emit_real_pow(ctx, e1, e2)?;
+        }
         // Integer power keeps Integer type in Modelica: truncate back.
         if wty == WTy::I32 {
             ctx.emit(we::Instruction::I32TruncF64S);
@@ -797,4 +791,52 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     ctx.emit(I::LocalGet(res));
     ctx.emit(I::End);
     Ok(WTy::F64)
+}
+
+/// `e1 ^ e2` for a run-time exponent: `rt_real_pow`'s ordinary branch (a
+/// non-negative base or a zero exponent, and a finite result) is the plain `pow`
+/// builtin, so the call into the runtime is left to negative bases and errors.
+fn emit_real_pow(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<()> {
+    use we::Instruction as I;
+    let f64_block = we::BlockType::Result(we::ValType::F64);
+    let (base, exp, r) = (ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64));
+    let a = compile_exp(ctx, e1)?;
+    coerce(ctx, a, WTy::F64);
+    ctx.emit(I::LocalSet(base));
+    let b = compile_exp(ctx, e2)?;
+    coerce(ctx, b, WTy::F64);
+    ctx.emit(I::LocalSet(exp));
+    let fallback = |ctx: &mut FnCtx| -> Result<()> {
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(exp));
+        emit_src_loc(ctx);
+        ctx.emit(I::Call(rt_index("rt_real_pow")?));
+        Ok(())
+    };
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::F64Const(0.0.into()));
+    ctx.emit(I::F64Ge);
+    ctx.emit(I::LocalGet(exp));
+    ctx.emit(I::F64Const(0.0.into()));
+    ctx.emit(I::F64Eq);
+    ctx.emit(I::I32Or);
+    ctx.emit(I::If(f64_block));
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(exp));
+    ctx.emit(I::Call(builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?));
+    ctx.emit(I::LocalTee(r));
+    // `r - r` is 0 only for a finite `r`.
+    ctx.emit(I::LocalGet(r));
+    ctx.emit(I::F64Sub);
+    ctx.emit(I::F64Const(0.0.into()));
+    ctx.emit(I::F64Eq);
+    ctx.emit(I::If(f64_block));
+    ctx.emit(I::LocalGet(r));
+    ctx.emit(I::Else);
+    fallback(ctx)?;
+    ctx.emit(I::End);
+    ctx.emit(I::Else);
+    fallback(ctx)?;
+    ctx.emit(I::End);
+    Ok(())
 }

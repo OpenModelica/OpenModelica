@@ -311,7 +311,7 @@ algorithm
 
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       algorithm
-        (_,(_,ilst,_)) := Expression.traverseExpTopDown(e, BackendDAEUtil.traversingadjacencyRowExpFinder, (globalKnownVars,{},isInitial));
+        (_,ilst) := Expression.traverseExpTopDown(e, function BackendDAEUtil.traversingadjacencyRowExpFinder(vars = globalKnownVars, isInitial = isInitial), {});
         ilst := BackendDAEUtil.uniqueRow(ilst);
         cref := BackendVariable.varCref(v);
         select := selectParameter(v) or AvlSetCR.hasKey(ht, cref);
@@ -323,7 +323,7 @@ algorithm
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       algorithm
         e := DAEUtil.getStartAttrFail(attr);
-        (_,(_,ilst,_)) := Expression.traverseExpTopDown(e, BackendDAEUtil.traversingadjacencyRowExpFinder, (globalKnownVars,{},isInitial));
+        (_,ilst) := Expression.traverseExpTopDown(e, function BackendDAEUtil.traversingadjacencyRowExpFinder(vars = globalKnownVars, isInitial = isInitial), {});
         ilst := BackendDAEUtil.uniqueRow(ilst);
         cref := BackendVariable.varCref(v);
         select := selectParameter(v) or AvlSetCR.hasKey(ht, cref);
@@ -697,7 +697,7 @@ protected
 algorithm
    // apply replacements
   (e1,_) := BackendVarTransform.replaceExp(e, repl, NONE());
-  (_,(_,ilst,_)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingadjacencyRowExpFinder, (globalKnownVars,{}, isInitial));
+  (_,ilst) := Expression.traverseExpTopDown(e1, function BackendDAEUtil.traversingadjacencyRowExpFinder(vars = globalKnownVars, isInitial = isInitial), {});
   (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(BackendDAEUtil.uniqueRow(ilst),globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
   (e1,_) := BackendVarTransform.replaceExp(e1, repl, NONE());
   (e1,_) := ExpressionSimplify.simplify(e1);

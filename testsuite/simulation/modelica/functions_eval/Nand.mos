@@ -5,7 +5,7 @@
 //
 
 
-loadModel(Modelica,{"3.2.1"}); getErrorString();
+loadModel(Modelica,{"4.1.0"}); getErrorString();
 simulate(Modelica.Electrical.Spice3.Examples.Nand);getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Electrical.Spice3.Examples.Nand_res.mat",
   "ReferenceFiles/Nand.mat",

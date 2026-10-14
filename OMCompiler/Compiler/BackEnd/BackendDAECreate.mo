@@ -75,7 +75,6 @@ import ExpressionSolve;
 import Flags;
 import Global;
 import HashTableExpToExp;
-import HashTableExpToIndex;
 import HashTable;
 import HashTableCrToExpSourceTpl;
 import Inline;
@@ -145,6 +144,7 @@ algorithm
       (varlst,eqns) := Vectorization.collectForLoops(varlst,eqns);
     end if;
     vars := BackendVariable.listVar(varlst);
+    vars := setReinitStateSelect(reqns, vars);
 
     // handle alias equations
     (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
@@ -182,7 +182,8 @@ algorithm
                                                       BackendDAEUtil.emptyPartitionsInfo(),
                                                       BackendDAE.emptyDAEModeData,
                                                       NONE(),
-                                                      NONE()
+                                                      NONE(),
+                                                      {}
                                                       ));
     BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
     BackendDAEUtil.checkAdjacencyMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));
@@ -197,7 +198,7 @@ algorithm
   else
     setGlobalRoot(Global.stackoverFlowIndex, NONE());
     ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    Error.addInternalError(StackOverflow.errorPrefix() + " in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     /* Do not fail or we can loop too much */
     StackOverflow.clearStacktraceMessages();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
@@ -293,11 +294,13 @@ algorithm
 
     case SOME(binding) guard(is_rec and UnorderedMap.contains(rec_cref, map) and Expression.isConst(binding)) algorithm
 
-      if ComponentReference.isArrayElement(var.varName) then
-        arrayCref := ComponentReference.crefStripSubsExceptModelSubs(var.varName);
+      // model subscripts do not make an array binding, e.g. cell[1].r.n
+      arrayCref := ComponentReference.crefStripSubsExceptModelSubs(var.varName);
+      if not ComponentReferenceBasics.crefEqual(arrayCref, var.varName) then
         arrayBindingExpList := UnorderedMap.getOrDefault(arrayCref, arrayMap, {});
 
-        subscriptLst := ComponentReferenceBasics.crefSubs(var.varName);
+        subscriptLst := List.stripN(ComponentReferenceBasics.crefSubs(var.varName),
+          listLength(ComponentReferenceBasics.crefSubs(arrayCref)));
         intSubLst := list(match subscript
           local
             Integer i;
@@ -893,6 +896,7 @@ algorithm
             outREqns := listAppend(List.map1(reqns, BackendEquation.setEquationAttributes, eq_attrs), outREqns);
           else
             (eqns, reqns, outVars) := lowerWhenEqn(el, inFunctions, {}, {}, outVars);
+            reqns := listAppend(lowerWhenEqnStmts(el), reqns);
             outEqns := listAppend(outEqns, eqns) annotation(__OpenModelica_DisableListAppendWarning=true);
             outREqns := listAppend(outREqns, reqns) annotation(__OpenModelica_DisableListAppendWarning=true);
           end if;
@@ -1027,57 +1031,57 @@ protected function processBuiltinExpressions "author: lochel
   output AvlTreePathFunction.Tree outTree;
   output list<BackendDAE.TimeEvent> outTimeEvents;
 protected
-  HashTableExpToIndex.HashTable ht;
+  UnorderedMap<DAE.Exp, Integer> ht;
 algorithm
-  ht := HashTableExpToIndex.emptyHashTable();
+  ht := UnorderedMap.new<Integer>(ExpressionBasics.hashExp, ExpressionBasics.expEqual);
   (outDAE, outTree, (_, (_, _, _, _, outTimeEvents))) := DAEUtil.traverseDAE(inDAE, functionTree, Expression.traverseSubexpressionsHelper, (transformBuiltinExpression, (ht, 0, 0, 0, {})));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpression "author: lochel
   Helper for transformBuiltinExpressions"
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
+  input tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> inTuple;
   output DAE.Exp outExp;
-  output tuple<HashTableExpToIndex.HashTable, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
+  output tuple<UnorderedMap<DAE.Exp, Integer>, Integer /*iDelay*/, Integer /*iSample*/,  Integer /*iSpatial*/, list<BackendDAE.TimeEvent>> outTuple;
 algorithm
   (outExp,outTuple) := match (inExp, inTuple)
     local
       DAE.Exp start, interval;
       list<DAE.Exp> es;
-      HashTableExpToIndex.HashTable ht;
+      UnorderedMap<DAE.Exp, Integer> ht;
       Integer iDelay, iSample, iSpatial;
       list<BackendDAE.TimeEvent> timeEvents;
       DAE.CallAttributes attr;
 
     // delay [already in ht]
-    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+    case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
+    then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // delay [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      ht := BaseHashTable.add((inExp, iDelay+1), ht);
+      UnorderedMap.add(inExp, iDelay+1, ht);
     then (DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample, iSpatial, timeEvents));
 
     // spatialDistribution [already in ht]
-    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(BaseHashTable.hasKey(inExp, ht))
-    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+    case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, _, _, _, _)) guard(UnorderedMap.contains(inExp, ht))
+    then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // spatialDistribution [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("spatialDistribution"), es, attr), (ht, iDelay, iSample, iSpatial, timeEvents)) algorithm
-      ht := BaseHashTable.add((inExp, iSpatial+1), ht);
+      UnorderedMap.add(inExp, iSpatial+1, ht);
     then (DAE.CALL(Absyn.IDENT("spatialDistribution"), DAE.ICONST(iSpatial)::es, attr), (ht, iDelay, iSample, iSpatial+1, timeEvents));
 
     // sample [already in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {_, interval}, attr), (ht, _, _, _, _))
-      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and BaseHashTable.hasKey(inExp, ht)) algorithm
-    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(BaseHashTable.get(inExp, ht))::es, attr), inTuple);
+      guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval)) and UnorderedMap.contains(inExp, ht)) algorithm
+    then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(UnorderedMap.getOrFail(inExp, ht))::es, attr), inTuple);
 
     // sample [not yet in ht]
     case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
       iSample := iSample+1;
       timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
-      ht := BaseHashTable.add((inExp, iSample), ht);
+      UnorderedMap.add(inExp, iSample, ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents));
 
     else (inExp,inTuple);
@@ -2508,6 +2512,7 @@ protected function lowerWhenEqn
   output list<BackendDAE.Var> outVars = inVars;
 protected
   //Inline.Functiontuple fns = (SOME(functionTree), {DAE.NORM_INLINE()});
+  Integer numErrors = Error.getNumErrorMessages();
 algorithm
   (outEquationLst, outREquationLst):= matchcontinue inElement
     local
@@ -2542,14 +2547,163 @@ algorithm
 
     else
       algorithm
-        source := ElementSource.getElementSource(inElement);
-        str := "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
-              DAEDump.dumpElementsStr({inElement});
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(source));
+        // only report an internal error if nothing more specific was reported
+        if Error.getNumErrorMessages() == numErrors then
+          source := ElementSource.getElementSource(inElement);
+          str := "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
+                DAEDump.dumpElementsStr({inElement});
+          Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(source));
+        end if;
       then
         fail();
   end matchcontinue;
 end lowerWhenEqn;
+
+protected function lowerWhenEqnStmts
+  "Function calls, asserts, terminate and reinit inside if-equations of a when
+   equation cannot be expressed as when-assignments like the assignments in the
+   same branches (lowerWhenIfEqns), so they are collected into a when-algorithm
+   with the same conditions and elsewhen chain instead."
+  input DAE.Element whenEqn;
+  output list<BackendDAE.Equation> algs = {};
+protected
+  Option<DAE.Statement> stmt;
+  DAE.ElementSource source;
+algorithm
+  stmt := lowerWhenEqnStmts2(whenEqn);
+  if isSome(stmt) then
+    source := ElementSource.getElementSource(whenEqn);
+    algs := {BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({Util.getOption(stmt)}),
+      source, DAE.NOT_EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)};
+  end if;
+end lowerWhenEqnStmts;
+
+protected function lowerWhenEqnStmts2
+  input DAE.Element whenEqn;
+  output Option<DAE.Statement> stmt;
+protected
+  list<DAE.Statement> stmts;
+  Option<DAE.Statement> elseWhen;
+algorithm
+  stmt := match whenEqn
+    case DAE.WHEN_EQUATION()
+      algorithm
+        stmts := listReverse(List.fold(whenEqn.equations, lowerWhenIfEqnStmt, {}));
+        elseWhen := if isSome(whenEqn.elsewhen_)
+          then lowerWhenEqnStmts2(Util.getOption(whenEqn.elsewhen_)) else NONE();
+      then
+        if listEmpty(stmts) and isNone(elseWhen) then NONE()
+        else SOME(DAE.STMT_WHEN(whenEqn.condition, {}, false, stmts, elseWhen, whenEqn.source));
+    else NONE();
+  end match;
+end lowerWhenEqnStmts2;
+
+protected function lowerWhenIfEqnStmt
+  "Prepends the statement part of an if-equation inside a when equation, if any.
+   Other elements are handled by lowerWhenEqn2."
+  input DAE.Element el;
+  input output list<DAE.Statement> stmts;
+protected
+  Option<DAE.Statement> stmt;
+algorithm
+  stmts := match el
+    case DAE.IF_EQUATION()
+      algorithm
+        stmt := lowerIfEqnStmts(el.condition1, el.equations2, el.equations3, el.source);
+      then
+        if isSome(stmt) then Util.getOption(stmt) :: stmts else stmts;
+    else stmts;
+  end match;
+end lowerWhenIfEqnStmt;
+
+protected function lowerIfEqnStmts
+  "The if-statement with the function calls, asserts, terminate and reinit of
+   the branches of an if-equation, NONE() if there are none. Empty branches are
+   kept so the else branches stay exclusive."
+  input list<DAE.Exp> conditions;
+  input list<list<DAE.Element>> branches;
+  input list<DAE.Element> elseBranch;
+  input DAE.ElementSource source;
+  output Option<DAE.Statement> stmt = NONE();
+protected
+  list<list<DAE.Statement>> stmtsl;
+  list<DAE.Statement> stmts;
+  list<DAE.Exp> conds;
+  DAE.Exp cond;
+  DAE.Else else_;
+algorithm
+  stmtsl := list(lowerEqnsToStmts(b) for b in branches);
+  stmts := lowerEqnsToStmts(elseBranch);
+  if List.all(stmtsl, listEmpty) and listEmpty(stmts) then
+    return;
+  end if;
+  else_ := if listEmpty(stmts) then DAE.NOELSE() else DAE.ELSE(stmts);
+  cond :: conds := listReverse(conditions);
+  stmts :: stmtsl := listReverse(stmtsl);
+  for c in conds loop
+    else_ := DAE.ELSEIF(cond, stmts, else_);
+    cond := c;
+    stmts :: stmtsl := stmtsl;
+  end for;
+  stmt := SOME(DAE.STMT_IF(cond, stmts, else_, source));
+end lowerIfEqnStmts;
+
+protected function lowerEqnsToStmts
+  "The function calls, asserts, terminate and reinit among the given equations
+   (recursively for if-equations) as statements, in order."
+  input list<DAE.Element> elements;
+  output list<DAE.Statement> stmts = {};
+protected
+  Option<DAE.Statement> stmt;
+algorithm
+  for el in elements loop
+    stmts := match el
+      case DAE.NORETCALL() then DAE.STMT_NORETCALL(el.exp, el.source) :: stmts;
+      case DAE.ASSERT() then DAE.STMT_ASSERT(el.condition, el.message, el.level, el.source) :: stmts;
+      case DAE.TERMINATE() then DAE.STMT_TERMINATE(el.message, el.source) :: stmts;
+      case DAE.REINIT() then DAE.STMT_REINIT(Expression.crefExp(el.componentRef), el.exp, el.source) :: stmts;
+      case DAE.IF_EQUATION() then lowerWhenIfEqnStmt(el, stmts);
+      else stmts;
+    end match;
+  end for;
+  stmts := listReverse(stmts);
+end lowerEqnsToStmts;
+
+protected function setReinitStateSelect
+  "MLS (version 3.6) section 3.7.5: [The first argument of `reinit`] is
+   implicitly defined to have `StateSelect.always`.
+   https://github.com/OpenModelica/OpenModelica/issues/13247"
+  input list<BackendDAE.Equation> eqns;
+  input output BackendDAE.Variables vars;
+protected
+  Option<BackendDAE.WhenEquation> when_eq;
+  list<BackendDAE.WhenOperator> ops;
+  Option<list<BackendDAE.Var>> var_opt;
+algorithm
+  for eq in eqns loop
+    when_eq := match eq
+      case BackendDAE.WHEN_EQUATION() then SOME(eq.whenEquation);
+      else NONE();
+    end match;
+    while isSome(when_eq) loop
+      SOME(BackendDAE.WHEN_STMTS(whenStmtLst = ops, elsewhenPart = when_eq)) := when_eq;
+      for op in ops loop
+        () := match op
+          case BackendDAE.REINIT()
+            algorithm
+              var_opt := BackendVariable.getVarTryHard(op.stateVar, vars);
+              if isSome(var_opt) then
+                for var in Util.getOption(var_opt) loop
+                  vars := BackendVariable.addVar(BackendVariable.setVarStateSelect(var, DAE.StateSelect.ALWAYS()), vars);
+                end for;
+              end if;
+            then ();
+          else ();
+        end match;
+      end for;
+    end while;
+  end for;
+end setReinitStateSelect;
 
 protected function lowerWhenEqn2
 "Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
@@ -2584,8 +2738,6 @@ algorithm
       BackendDAE.Equation eq;
       BackendDAE.WhenEquation whenEq;
       BackendDAE.WhenOperator whenOp;
-      Option<list<BackendDAE.Var>> var_opt;
-      BackendDAE.Variables vars;
 
     case {} then (iEquationLst, iREquationLst);
     case DAE.EQUEQUATION(cr1 = cr, cr2 = cr2, source = source)::xs
@@ -2669,8 +2821,14 @@ algorithm
         // to
         // a=if .. then .. else if .. then else ..;
         ht := HashTableCrToExpSourceTpl.emptyHashTable();
-        ht := lowerWhenIfEqnsElse(eqns, functionTree, ht);
-        ht := lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
+        try
+          ht := lowerWhenIfEqnsElse(eqns, functionTree, ht);
+          ht := lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
+        else
+          // a variable assigned in one branch but not in the others (or no else branch)
+          Error.addSourceMessage(Error.WHEN_IF_VARIABLE_MISMATCH, {}, ElementSource.getElementSourceFileInfo(source));
+          fail();
+        end try;
         crexplst := BaseHashTable.hashTableList(ht);
         eqnl := lowerWhenIfEqns2(crexplst, inCond, source, iEquationLst);
         (eqnl, reqnl, outVar_lst) := lowerWhenEqn2(xs, inCond, functionTree, eqnl, iREquationLst, outVar_lst);
@@ -2710,20 +2868,6 @@ algorithm
         whenOp := BackendDAE.REINIT(cr, e, source);
         whenEq := BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
         eq := BackendDAE.WHEN_EQUATION(0, whenEq, source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-
-        // MLS (version 3.6) section 3.7.5:
-        // [The first argument of `reinit`] is implicitly defined to have `StateSelect.always`.
-        // https://github.com/OpenModelica/OpenModelica/issues/13247
-        vars := BackendVariable.listVar(outVar_lst);
-        var_opt := BackendVariable.getVarTryHard(cr, vars);
-        if isSome(var_opt) then
-          for var in Util.getOption(var_opt) loop
-            var := BackendVariable.setVarStateSelect(var, DAE.StateSelect.ALWAYS());
-            vars := BackendVariable.addVar(var, vars);
-          end for;
-        end if;
-        outVar_lst := BackendVariable.varList(vars);
-
         (eqnl, reqnl, outVar_lst) := lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, eq::iREquationLst, outVar_lst);
       then
         (eqnl, reqnl);
@@ -2932,6 +3076,11 @@ algorithm
         ht := lowerWhenIfEqnsMergeNestedIf(crexplst, condition, source, iHt);
       then
         lowerWhenIfEqns1(condition, rest, functionTree, ht);
+    // collected into a when-algorithm by lowerWhenEqnStmts
+    case DAE.NORETCALL()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
+    case DAE.ASSERT()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
+    case DAE.TERMINATE()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
+    case DAE.REINIT()::rest then lowerWhenIfEqns1(condition, rest, functionTree, iHt);
   end match;
 end lowerWhenIfEqns1;
 
@@ -3022,6 +3171,11 @@ algorithm
         ht := lowerWhenIfEqns(listReverse(expl), listReverse(eqnslst), functionTree, ht);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
+    // collected into a when-algorithm by lowerWhenEqnStmts
+    case DAE.NORETCALL()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
+    case DAE.ASSERT()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
+    case DAE.TERMINATE()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
+    case DAE.REINIT()::rest then lowerWhenIfEqnsElse(rest, functionTree, iHt);
   end match;
 end lowerWhenIfEqnsElse;
 

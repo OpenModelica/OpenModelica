@@ -1,0 +1,51 @@
+// name:     Ticket16960.mos
+// keywords: record array short class protected parameter
+// status:   correct
+// teardown_command: rm -rf Ticket16960.M* output.log
+//
+// The protected parameter a is evaluated and its binding substituted into the
+// call. The array keeps the declared type T[2] while its elements are S
+// records, so the C code needs a declaration for T.
+
+loadString("
+package Ticket16960
+  record R
+    parameter Real x = 1;
+  end R;
+  record S = R(x=2);
+  function f
+    input R r[:];
+    input Real k;
+    output Real y;
+  algorithm
+    y := k*sum(r.x);
+  end f;
+  model M
+    parameter Real k = 1;
+    Real y;
+  protected
+    record T = R;
+    parameter T a[2] = {S(),S()};
+  equation
+    y = f(a,k);
+  end M;
+end Ticket16960;
+"); getErrorString();
+
+simulate(Ticket16960.M, stopTime = 0.0); getErrorString();
+val(y, 0.0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Ticket16960.M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Ticket16960.M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 4.0
+// ""
+// endResult

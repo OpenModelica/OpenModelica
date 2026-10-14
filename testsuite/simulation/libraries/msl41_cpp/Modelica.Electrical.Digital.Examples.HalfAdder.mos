@@ -15,10 +15,10 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Digital.Examples.HalfAdder);
 compareVars :=
 {
-   "Adder.a",
-   "Adder.b",
-   "Adder.s",
-   "Adder.c"
+   "Adder.AND.G2.x",
+   "Adder.AND.G2.y",
+   "Adder.XOR.G2.x",
+   "Adder.XOR.G2.y"
 };
 
 simulationRuntime := OpenModelicaModelTesting.SimulationRuntime.Cpp;
@@ -32,9 +32,9 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Digital.Examples.HalfAdder
-// {"Adder.a", "Adder.b", "Adder.s", "Adder.c"}
+// {"Adder.AND.G2.x", "Adder.AND.G2.y", "Adder.XOR.G2.x", "Adder.XOR.G2.y"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.HalfAdder', options = '', outputFormat = 'mat', variableFilter = 'time|Adder.a|Adder.b|Adder.s|Adder.c', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Digital.Examples.HalfAdder', options = '', outputFormat = 'mat', variableFilter = 'time|Adder.AND.G2.x|Adder.AND.G2.y|Adder.XOR.G2.x|Adder.XOR.G2.y', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Digital.Examples.HalfAdder_res.mat
 // Files Equal!
 // "true

@@ -168,5 +168,5 @@ package DualMassOscillator
       Line(points={{-20, 0}, {-20, 0}, {-10, 0}}, color={0,127,0}));
     annotation(Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100, -20}, {100, 20}})), Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100, -20}, {100, 20}})));
   end ReferenceSystem;
-  annotation(uses(Modelica(version="3.2.2")));
+  annotation(uses(Modelica(version="4.1.0")));
 end DualMassOscillator;

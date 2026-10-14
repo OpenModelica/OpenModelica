@@ -45,6 +45,12 @@
 
 namespace openmodelica { namespace parmodelica { namespace utility {
 
+struct noncopyable {
+    noncopyable() = default;
+    noncopyable(const noncopyable&) = delete;
+    noncopyable& operator=(const noncopyable&) = delete;
+};
+
 extern std::ostringstream log_stream;
 std::ostream&             log(const char* pref);
 std::ostream&             log();

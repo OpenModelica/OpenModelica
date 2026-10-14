@@ -457,6 +457,18 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
             cstr(f(i, &mut idx))
         })
     });
+    // `zeroCrossingDescription`'s out-indexes: a count, then that many equations.
+    let zc_eqs = (0..md.nZeroCrossings.max(0))
+        .map(|i| unsafe {
+            let Some(f) = (*(*data).callback).zeroCrossingDescription else { return Vec::new() };
+            let mut idx: *mut c_int_t = core::ptr::null_mut();
+            f(i as c_int_t, &mut idx);
+            if idx.is_null() {
+                return Vec::new();
+            }
+            (1..=*idx as usize).map(|k| *idx.add(k) as u32).collect()
+        })
+        .collect();
     let rel_desc = descriptions(md.nRelations, |i| unsafe {
         (*(*data).callback).relationDescription.map(|f| cstr(f(i)))
     });
@@ -474,6 +486,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         prefix: prefix.to_string(),
         model_name: cstr(md.modelName),
         vars,
+        var_arrays: Vec::new(),
         // `_init.xml` names each variable's unit but defines none.
         units: Vec::new(),
         jac_a: jac_a_info(data, layout),
@@ -481,6 +494,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         fmi_vrs: Vec::new(),
         fmi_dae_enable_vr: 0,
         zc_desc,
+        zc_eqs,
         rel_desc,
         sample_index: (0..md.nSamples).map(|i| unsafe { (*md.samplesInfo.add(i as usize)).index as i32 }).collect(),
         soti,
@@ -499,6 +513,7 @@ pub fn build(data: *mut DATA, thread_data: *mut threadData_t, xml: &InitXml, lay
         opt: crate::optimization::describe(data, thread_data, layout, real_names),
         recon: crate::datarecon::describe(data, layout, &version),
         prof: crate::info_json::prof_info(data),
+        resize: None,
     }
 }
 

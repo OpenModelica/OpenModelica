@@ -57,6 +57,7 @@
 #include "../simulation/solver/mixedSystem.h"
 #endif
 #include "../simulation/solver/delay.h"
+#include "../simulation/solver/spatialDistribution.h"
 #include "../simulation/solver/discrete_changes.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
@@ -436,12 +437,6 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
       }
     }
 
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
-      if ((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent)) {
-        comp->fmuData->simulationInfo->nextSampleEvent = comp->fmuData->simulationInfo->nextSampleTimes[i];
-      }
-    }
-
     /* Handle clock timers */
     syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
 
@@ -471,6 +466,7 @@ fmi3Status internalEventUpdate(ModelInstance* c, EventInfo* eventInfo)
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
 
+    updateNextSampleEvent(comp->fmuData, comp->threadData);
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
 
     /* Get next event time */
@@ -819,6 +815,9 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
+  if (comp->fmuData->callback->updateStructuralParameters) {
+    comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
+  }
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
@@ -1203,6 +1202,9 @@ fmi3Status omcReset(ModelInstance* c)
      * initialized and filled again, mirroring fmi3Instantiate. */
     allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
     scalarAllocArrayAttributes(comp->fmuData->modelData);
+    if (comp->fmuData->callback->updateStructuralParameters) {
+      comp->fmuData->callback->updateStructuralParameters(comp->fmuData, comp->threadData);
+    }
     calculateAllScalarLength(comp->fmuData->modelData);
   }
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
@@ -1584,6 +1586,10 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
   //printRingBufferSimulationData(fmudata->simulationData, fmudata); // original ringBuffer data
   //printRingBufferSimulationData(internal_state->simulationData, fmudata); // copied ringBuffer data
 
+  internal_state->nHistory = delayStateWords(fmudata, NULL) + spatialDistributionStateWords(fmudata, NULL);
+  internal_state->history = (double*) calloc(internal_state->nHistory ? internal_state->nHistory : 1, sizeof(double));
+  spatialDistributionStateWords(fmudata, internal_state->history + delayStateWords(fmudata, internal_state->history));
+
   /* release previous fmu state if existent */
   /* TODO: ideally, previous state's memory should be re-used instead of re-allocation */
   if (*FMUstate != NULL) omcFreeFMUstate(c, FMUstate);
@@ -1655,39 +1661,21 @@ fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
     omc_string_slots_store(fmudata->localData[i]->stringVars, sdata->stringVars, fmudata->modelData->nVariablesString);
   }
 
-  // Re-apply the preserved parameter values.
-  for (int i = 0; i < fmudata->modelData->nParametersReal; i++)
   {
-    fmudata->simulationInfo->realParameter[i] = savedRealParam[i];
-    fmi3ValueReference vr = fmudata->modelData->realParameterData[i].info.id;
-    if (setReal(comp, vr, savedRealParam[i]) != fmi3OK) {
-      status = fmi3Error; goto cleanup;
+    long k = setDelayStateWords(fmudata, internal_state->history, internal_state->nHistory);
+    if (k < 0 || setSpatialDistributionStateWords(fmudata, internal_state->history + k, internal_state->nHistory - k) < 0) {
+      status = fmi3Error;
+      goto cleanup;
     }
   }
-  for (int i = 0; i < fmudata->modelData->nParametersInteger; i++)
-  {
-    fmudata->simulationInfo->integerParameter[i] = savedIntParam[i];
-    fmi3ValueReference vr = fmudata->modelData->integerParameterData[i].info.id;
-    if (setInteger(comp, vr, savedIntParam[i]) != fmi3OK) {
-      status = fmi3Error; goto cleanup;
-    }
-  }
-  for (int i = 0; i < fmudata->modelData->nParametersBoolean; i++)
-  {
-    fmudata->simulationInfo->booleanParameter[i] = savedBoolParam[i];
-    fmi3ValueReference vr = fmudata->modelData->booleanParameterData[i].info.id;
-    if (setBoolean(comp, vr, savedBoolParam[i]) != fmi3OK) {
-      status = fmi3Error; goto cleanup;
-    }
-  }
-  for (int i = 0; i < fmudata->modelData->nParametersString; i++)
-  {
-    omc_string_store(&fmudata->simulationInfo->stringParameter[i], savedStringParam[i]);
-    fmi3ValueReference vr = fmudata->modelData->stringParameterData[i].info.id;
-    if (setString(comp, vr, omc_string_data(savedStringParam[i])) != fmi3OK) {
-      status = fmi3Error; goto cleanup;
-    }
-  }
+
+  // Put the preserved parameter values back. Only simulationInfo holds them;
+  // the value references setReal and friends take are not info.id.
+  if (savedRealParam) memcpy(fmudata->simulationInfo->realParameter, savedRealParam, fmudata->modelData->nParametersReal * sizeof(modelica_real));
+  if (savedIntParam) memcpy(fmudata->simulationInfo->integerParameter, savedIntParam, fmudata->modelData->nParametersInteger * sizeof(modelica_integer));
+  if (savedBoolParam) memcpy(fmudata->simulationInfo->booleanParameter, savedBoolParam, fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean));
+  if (savedStringParam) omc_string_slots_store(fmudata->simulationInfo->stringParameter, savedStringParam, fmudata->modelData->nParametersString);
+  comp->_need_update = 1;
 
   // After restoring the FMU state, the internal solver (CVODE/Euler) has
   // outdated step history, Jacobians, and time.  Reinitialize it so that the
@@ -1703,7 +1691,10 @@ cleanup:
   free(savedRealParam);
   free(savedIntParam);
   free(savedBoolParam);
-  free(savedStringParam);
+  if (savedStringParam) {
+    omc_string_slots_release(savedStringParam, fmudata->modelData->nParametersString);
+    free(savedStringParam);
+  }
 
   return status;
 }
@@ -1737,6 +1728,7 @@ fmi3Status omcFreeFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
     free(internal_state->booleanParameter);
     omc_string_slots_release(internal_state->stringParameter, c->fmuData->modelData->nParametersString);
     free(internal_state->stringParameter);
+    free(internal_state->history);
     free(*FMUstate);
     *FMUstate = NULL;
   }
@@ -1779,6 +1771,8 @@ fmi3Status omcSerializedFMUstateSize(ModelInstance* c, fmi3FMUState FMUstate, si
   stateSize += fmudata->modelData->nParametersBoolean * sizeof(modelica_boolean);
   stateSize += getStringArraySize(internal_state->stringParameter,
                                   fmudata->modelData->nParametersString);
+
+  stateSize += sizeof(size_t) + internal_state->nHistory * sizeof(double);
 
   *size = stateSize;
   return fmi3OK;
@@ -1829,6 +1823,9 @@ fmi3Status omcSerializeFMUstate(ModelInstance* c, fmi3FMUState FMUstate, fmi3Byt
   currElement += sizeof(modelica_boolean)*fmudata->modelData->nParametersBoolean;
   currElement += copyStringArray((char *)currElement, internal_state->stringParameter,
                                   fmudata->modelData->nParametersString);
+  memcpy(currElement, &internal_state->nHistory, sizeof(size_t));
+  currElement += sizeof(size_t);
+  memcpy(currElement, internal_state->history, internal_state->nHistory * sizeof(double));
 
   return fmi3OK;
 }
@@ -1901,6 +1898,12 @@ fmi3Status omcDeSerializeFMUstate(ModelInstance* c, const fmi3Byte serializedSta
   internal_state->stringParameter = (modelica_string *) calloc(fmudata->modelData->nParametersString, sizeof(modelica_string));
   currElement += readStringArray(internal_state->stringParameter, (const char *)currElement,
                                  fmudata->modelData->nParametersString);
+
+  /* delay() and spatialDistribution() histories */
+  memcpy(&internal_state->nHistory, currElement, sizeof(size_t));
+  currElement += sizeof(size_t);
+  internal_state->history = (double*) calloc(internal_state->nHistory ? internal_state->nHistory : 1, sizeof(double));
+  memcpy(internal_state->history, currElement, internal_state->nHistory * sizeof(double));
 
   *FMUstate = (fmi3FMUState) internal_state;
   return fmi3OK;

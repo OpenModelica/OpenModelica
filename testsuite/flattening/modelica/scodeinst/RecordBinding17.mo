@@ -25,6 +25,6 @@ end RecordBinding17;
 //   final parameter Integer m.y(start = 0) = 0;
 //   final parameter Integer m_type = 1;
 // end RecordBinding17;
-// [flattening/modelica/scodeinst/RecordBinding17.mo:12:3-12:13:writable] Warning: Output parameter r.y was not assigned a value
+// [flattening/modelica/scodeinst/RecordBinding17.mo:12:3-12:13:writable] Warning: Output parameter r.y was not assigned a value. This is deprecated and will become an error in future releases.
 //
 // endResult

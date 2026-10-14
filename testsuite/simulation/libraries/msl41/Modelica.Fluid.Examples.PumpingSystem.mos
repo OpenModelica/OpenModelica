@@ -18,8 +18,11 @@ compareVars :=
 {
    "PT1.y",
    "pumps.medium.T",
+   "pumps.medium.p",
    "reservoir.level",
-   "reservoir.medium.T"
+   "reservoir.medium.T",
+   "PumpRPMGenerator.y",
+   "controller.y"
 };
 
 runScript(modelTesting);getErrorString();
@@ -33,8 +36,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.PumpingSystem
-// {"PT1.y", "pumps.medium.T", "reservoir.level", "reservoir.medium.T"}
-// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|PT1.y|pumps.medium.T|reservoir.level|reservoir.medium.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"PT1.y", "pumps.medium.T", "pumps.medium.p", "reservoir.level", "reservoir.medium.T", "PumpRPMGenerator.y", "controller.y"}
+// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|PT1.y|pumps.medium.T|pumps.medium.p|reservoir.level|reservoir.medium.T|PumpRPMGenerator.y|controller.y', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
 // Messages: LOG_ASSERT        | warning | [Modelica 4.1.0+maint.om/Fluid/Interfaces.mo:1027:9-1032:39:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000

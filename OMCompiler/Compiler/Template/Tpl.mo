@@ -2025,7 +2025,7 @@ algorithm
   end try;
   else
     if StackOverflow.hasStacktraceMessages() then
-       Error.addInternalError("Stack overflow when evaluating function:\n"+ stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+       Error.addInternalError(StackOverflow.errorPrefix() + " when evaluating function:\n"+ stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
     end if;
     addTemplateErrorFunc(inFun);
     fail();

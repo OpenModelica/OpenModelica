@@ -229,6 +229,7 @@ fn dependencies(documented: &[ClassDoc], path: &str, stats: bool) -> Vec<icons::
         let wave: Vec<Option<(String, Vec<(String, String)>, icons::SCodeProgram)>> = frontier
             .par_iter()
             .map(|(name, version)| {
+                let _step = metamodelica::cancel::enter_step(&format!("loading {name}"));
                 let version = (!version.is_empty()).then_some(version.as_str());
                 let program = load_library(name, version, path).ok()?;
                 let uses = program.classes.iter().flat_map(doc::uses_of).collect();
@@ -263,6 +264,16 @@ fn graphics_jobs(options: &Options) -> usize {
         .jobs
         .map(|jobs| jobs.max(1))
         .unwrap_or_else(physical_cores)
+}
+
+/// omc's stack: rayon's 2 MiB default overflows in instantiation.
+const STACK_SIZE: usize = 64 * 1024 * 1024;
+
+fn thread_pool(options: &Options, name: &'static str) -> rayon::ThreadPoolBuilder {
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(graphics_jobs(options))
+        .stack_size(STACK_SIZE)
+        .thread_name(move |i| format!("{name}-{i}"))
 }
 
 fn physical_cores() -> usize {
@@ -310,8 +321,7 @@ fn render_graphics(
 
     let icon_dir = store.dir().to_path_buf();
     let store = std::sync::Mutex::new(store);
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(graphics_jobs(options))
+    let pool = thread_pool(options, "graphics")
         .start_handler(|_| {
             if let Err(e) = init_compiler() {
                 eprintln!("omgendoc: {e}");
@@ -400,6 +410,22 @@ fn render_graphics(
     digests
 }
 
+/// Names the class this thread is about to render, in its marker file and for
+/// a crash report. Before, not after: instantiating some classes exhausts
+/// memory and the process is killed without running any handler, and the
+/// markers are then the only record of what was in flight. One per thread,
+/// since each has a class in hand and any of them could be the one.
+fn rendering(marker: &Path, name: &str) -> metamodelica::cancel::StepGuard {
+    let _ = std::fs::write(
+        marker.with_extension(format!(
+            "{}.current",
+            rayon::current_thread_index().unwrap_or(0)
+        )),
+        name,
+    );
+    metamodelica::cancel::enter_step(&format!("rendering {name}"))
+}
+
 /// One library's icons and diagrams, as `(class index, digests)`.
 ///
 /// The library is cut into chunks and the chunks go out to the pool; each
@@ -472,18 +498,7 @@ fn render_library(
                         continue;
                     }
                     if let Some(path) = icons::path_of(&name) {
-                        // Named before it is rendered, not after: instantiating
-                        // some classes exhausts memory and takes the process
-                        // with it, and these files are then the only record of
-                        // what was in flight. One per thread, since each has a
-                        // class in hand and any of them could be the one.
-                        let _ = std::fs::write(
-                            marker.with_extension(format!(
-                                "{}.current",
-                                rayon::current_thread_index().unwrap_or(0)
-                            )),
-                            &name,
-                        );
+                        let _step = rendering(marker, &name);
                         // The frontend's own lookup for what this class'
                         // type references denote, taken while a scope exists
                         // rather than approximated from the AST afterwards.
@@ -701,10 +716,10 @@ fn load_library(
     if is_builtin(name) {
         return load_builtin(name);
     }
-    let priority: metamodelica::List<ArcStr> = match version {
-        Some(v) => std::iter::once(ArcStr::from(v)).collect(),
-        None => metamodelica::nil(),
-    };
+    // As loadModel does: "default" falls back to any installed version when
+    // the package index does not know the library.
+    let priority: metamodelica::List<ArcStr> =
+        std::iter::once(ArcStr::from(version.unwrap_or("default"))).collect();
     openmodelica_loader::ClassLoader::loadClass(
         &metamodelica::Ref::new(Absyn::Path::IDENT {
             name: ArcStr::from(name),
@@ -810,9 +825,7 @@ fn write_resources(output_dir: &Path, resources: &HashMap<String, PathBuf>) {
 
 fn run() -> Result<(), String> {
     let options = parse_args()?;
-    let _ = rayon::ThreadPoolBuilder::new()
-        .num_threads(graphics_jobs(&options))
-        .build_global();
+    let _ = thread_pool(&options, "omgendoc").build_global();
     init_compiler().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&options.output_dir).map_err(|e| e.to_string())?;
 
@@ -833,8 +846,7 @@ fn run() -> Result<(), String> {
     // between libraries and for the many libraries too small to fill them on
     // their own. `par_iter().collect()` keeps the order, so what lands in the
     // arena does not depend on which thread finished first.
-    let loading = rayon::ThreadPoolBuilder::new()
-        .num_threads(graphics_jobs(&options))
+    let loading = thread_pool(&options, "loading")
         .start_handler(|_| {
             if let Err(e) = init_compiler() {
                 eprintln!("omgendoc: {e}");
@@ -850,6 +862,7 @@ fn run() -> Result<(), String> {
             // left in the splice below it was ten seconds of one core while
             // eleven waited.
             .map(|(name, version)| {
+                let _step = metamodelica::cancel::enter_step(&format!("loading {name}"));
                 load_library(name, version.as_deref(), &path).map(|program| {
                     let docs = doc::collect(&program);
                     // Already in every universe; a second copy of a
@@ -1202,6 +1215,7 @@ fn footer() -> String {
 }
 
 fn main() {
+    metamodelica::cancel::install_fatal_signal_report();
     if let Err(e) = run() {
         eprintln!("omgendoc: {e}");
         eprint!("{USAGE}");

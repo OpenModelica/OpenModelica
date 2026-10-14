@@ -306,7 +306,7 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "unknown-install-component")
 ## (Intel MKL, ACML, ARMPL, Apple, OpenBLAS, BLIS, ATLAS, Goto, Generic, ...), issuing hundreds of
 ## find_library() calls. On a machine without a vendor BLAS this all-vendor sweep dominates the configure
 ## (see issue #15904: ~200s of a ~285s configure). There are 18+ find_package(BLAS|LAPACK) call sites across
-## the tree (SimulationRuntime/c, Compiler/runtime, sundials, primme, CMinpack, Ipopt/MUMPS, OMSI, OMSICpp,
+## the tree (SimulationRuntime/c, Compiler/runtime, sundials, primme, CMinpack, Ipopt/MUMPS,
 ## ...), and each one can re-trigger the full sweep, compounding the cost.
 ##
 ## FindBLAS/FindLAPACK clear the *normal* variables BLAS_LIBRARIES/LAPACK_LIBRARIES at entry, then guard

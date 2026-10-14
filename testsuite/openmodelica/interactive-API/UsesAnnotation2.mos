@@ -2,23 +2,23 @@
 // https://trac.openmodelica.org/OpenModelica/ticket/6027
 // cflags: -d=-newInst --std=3.4
 
-loadModel(Modelica, {"3.2.3"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadString("
-model '3.2.1'
-  annotation(uses(Modelica(version=\"3.2.1\")));
-end '3.2.1';
+model '4.0.0'
+  annotation(uses(Modelica(version=\"4.0.0\")));
+end '4.0.0';
 ");
-instantiateModel('3.2.1');getErrorString();
+instantiateModel('4.0.0');getErrorString();
 clear();
-loadModel(Modelica, {"3.2.3"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadString("
-model '2.2.2'
-  annotation(uses(Modelica(version=\"2.2.2\")));
-end '2.2.2';
+model '3.2.3'
+  annotation(uses(Modelica(version=\"3.2.3\")));
+end '3.2.3';
 ");getErrorString();
-instantiateModel('2.2.2');getErrorString();
+instantiateModel('3.2.3');getErrorString();
 clear();
-loadModel(Modelica, {"3.2.3"});getErrorString();
+loadModel(Modelica, {"4.1.0"});getErrorString();
 loadString("
 model '5.0.0'
   annotation(uses(Modelica(version=\"5.0.0\")));
@@ -38,26 +38,26 @@ instantiateModel('0.8.1');getErrorString();
 // true
 // ""
 // true
-// "class '3.2.1'
-// end '3.2.1';
+// "class '4.0.0'
+// end '4.0.0';
 // "
-// "Notification: '3.2.1' requested package Modelica of version 3.2.1. Modelica 3.2.3 is used instead which states that it is fully compatible without conversion script needed.
+// "Notification: '4.0.0' requested package Modelica of version 4.0.0. Modelica 4.1.0 is used instead which states that it is fully compatible without conversion script needed.
 // "
 // true
 // true
 // ""
 // true
-// "Warning: '2.2.2' requested package Modelica of version 2.2.2. Modelica 3.2.3 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary('2.2.2', Modelica, \"3.2.3\") to run the conversion script or proceed with potential issues as a result.
+// "Warning: '3.2.3' requested package Modelica of version 3.2.3. Modelica 4.1.0 is used instead which states that it is only compatible with a conversion script. Use convertPackageToLibrary('3.2.3', Modelica, \"4.1.0\") to run the conversion script or proceed with potential issues as a result.
 // "
-// "class '2.2.2'
-// end '2.2.2';
+// "class '3.2.3'
+// end '3.2.3';
 // "
 // ""
 // true
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 5.0.0, but this package was already loaded with version 3.2.3. There are no conversion annotations for this version but 5.0.0 is newer than 3.2.3. There is a possibility that 5.0.0 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// "Warning: Requested package Modelica of version 5.0.0, but this package was already loaded with version 4.1.0. There are no conversion annotations for this version but 5.0.0 is newer than 4.1.0. There is a possibility that 5.0.0 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // "
 // "class '5.0.0'
 // end '5.0.0';

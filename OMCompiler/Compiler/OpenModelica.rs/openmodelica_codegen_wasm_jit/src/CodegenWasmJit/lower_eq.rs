@@ -241,9 +241,7 @@ fn lower_linear_system_body(
         // form has none (its `inner` is empty regardless).
         let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
             if torn {
-                for eq in &inner {
-                    lower_equation(c, eq, eq_index)?;
-                }
+                lower_eq_list(c, &inner, eq_index)?;
             }
             Ok(())
         };
@@ -255,12 +253,7 @@ fn lower_linear_system_body(
         return Err("CodegenWasmJit: SES_LINEAR has neither a usable simJac nor residual equations");
     }
     let use_sparse = lin_torn_use_sparse(lsystem, n);
-    let mut lower_inner = |c: &mut FnCtx| -> Result<()> {
-        for eq in &inner {
-            lower_equation(c, eq, eq_index)?;
-        }
-        Ok(())
-    };
+    let mut lower_inner = |c: &mut FnCtx| -> Result<()> { lower_eq_list(c, &inner, eq_index) };
 
     // Prefer analytic-Jacobian assembly (C's method 1); probe only when there is no
     // usable Jacobian (its slots were registered by `build_lin_jac_infos`).
@@ -273,14 +266,8 @@ fn lower_linear_system_body(
         let col = lst(&jm.columns).next().unwrap();
         let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
         let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
-        let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
-            for eq in &constant_eqns { lower_equation(c, eq, eq_index)?; }
-            Ok(())
-        };
-        let mut lower_column = |c: &mut FnCtx| -> Result<()> {
-            for eq in &column_eqns { lower_equation(c, eq, eq_index)?; }
-            Ok(())
-        };
+        let mut lower_constant = |c: &mut FnCtx| -> Result<()> { lower_eq_list(c, &constant_eqns, eq_index) };
+        let mut lower_column = |c: &mut FnCtx| -> Result<()> { lower_eq_list(c, &column_eqns, eq_index) };
         // Sparse: assemble straight into CSC (no dense n² buffer) when the pattern
         // remaps cleanly to res_index rows; otherwise dense A + runtime nonzero scan.
         if use_sparse {
@@ -302,15 +289,40 @@ fn lower_linear_system_body(
     compile_linear_system(ctx, &vars, &residuals, &mut lower_inner, use_sparse, lsystem.jacobianMatrix.is_some(), lsystem.index)
 }
 
-/// Whether a torn linear system uses the sparse solver (C's density/size
-/// threshold), an unknown nonzero count counting as dense.
+/// Lower one of a linear system's equation lists, outlined once it is long enough
+/// to be worth a call: the system is otherwise copied into every entry point
+/// evaluating it.
+fn lower_eq_list(
+    ctx: &mut FnCtx,
+    eqs: &[metamodelica::Ref<SimCode::SimEqSystem>],
+    eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
+) -> Result<()> {
+    if eqs.len() >= crate::CodegenWasmJitFunctions::OUTLINE_MIN_UNITS
+        && ctx.emit_outlined(eqs.len(), None, |c, i| lower_equation(c, &eqs[i], eq_index))?
+    {
+        return Ok(());
+    }
+    for eq in eqs {
+        lower_equation(ctx, eq, eq_index)?;
+    }
+    Ok(())
+}
+
+/// Whether a torn linear system uses the sparse solver: C's
+/// `linearSystemMatrixFormat`, an unknown nonzero count counting as dense.
 fn lin_torn_use_sparse(lsystem: &SimCode::LinearSystem, n: usize) -> bool {
     use crate::CodegenWasmJitFunctions::lin_use_sparse;
     if n == 0 {
         return false;
     }
-    let nnz = lin_system_nnz(lsystem);
-    nnz > 0 && lin_use_sparse(n, nnz)
+    let sim_jac = count(&lsystem.simJac);
+    let nnz = lsystem
+        .jacobianMatrix
+        .as_ref()
+        .and_then(|jm| sparsity_nonzeros(jm))
+        .or((sim_jac > 0).then_some(sim_jac))
+        .unwrap_or(n * n);
+    lin_use_sparse(n, nnz)
 }
 
 /// Total f64 count of the state-set Jacobian scratch region: the seeds plus every

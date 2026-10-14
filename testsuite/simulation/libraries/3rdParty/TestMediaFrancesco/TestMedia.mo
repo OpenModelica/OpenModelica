@@ -261,22 +261,22 @@ package TestMedia
         "Test case using BaseProperties, dynamic equations, state selection and derivative annotations"
       package Medium = Media.WaterIF97;
 
-      parameter Modelica.SIunits.Volume V=1 "Storage Volume";
+      parameter Modelica.Units.SI.Volume V=1 "Storage Volume";
       parameter Real p_atm = 101325 "Atmospheric pressure";
-      parameter Modelica.SIunits.Temperature Tstart=300;
-      parameter Modelica.SIunits.SpecificEnthalpy hstart=1e5;
-      parameter Modelica.SIunits.Pressure pstart=p_atm;
+      parameter Modelica.Units.SI.Temperature Tstart=300;
+      parameter Modelica.Units.SI.SpecificEnthalpy hstart=1e5;
+      parameter Modelica.Units.SI.Pressure pstart=p_atm;
       parameter Real Kv0 = 1.00801e-2 "Valve flow coefficient";
       Medium.BaseProperties medium(preferredMediumStates = true,
                                    h(start=hstart),
                                    p(start = pstart));
-      Modelica.SIunits.Mass M;
-      Modelica.SIunits.Energy U;
-      Modelica.SIunits.MassFlowRate win(start=100);
-      Modelica.SIunits.MassFlowRate wout;
-      Modelica.SIunits.SpecificEnthalpy hin;
-      Modelica.SIunits.SpecificEnthalpy hout;
-      Modelica.SIunits.Power Q;
+      Modelica.Units.SI.Mass M;
+      Modelica.Units.SI.Energy U;
+      Modelica.Units.SI.MassFlowRate win(start=100);
+      Modelica.Units.SI.MassFlowRate wout;
+      Modelica.Units.SI.SpecificEnthalpy hin;
+      Modelica.Units.SI.SpecificEnthalpy hout;
+      Modelica.Units.SI.Power Q;
       Real Kv;
     equation
       // Mass & energy balance equation
@@ -692,7 +692,7 @@ package TestMedia
       Medium.SpecificHeatCapacity cv =           Medium.specificHeatCapacityCv(state);
     // Not yet implemented in FluidProp
       Medium.IsobaricExpansionCoefficient beta = Medium.isobaricExpansionCoefficient(state);
-      Modelica.SIunits.IsothermalCompressibility kappa=
+      Modelica.Units.SI.IsothermalCompressibility kappa=
           Medium.isothermalCompressibility(state);
       Medium.DerDensityByPressure d_d_dp_h =     Medium.density_derp_h(state);
       Medium.DerDensityByEnthalpy d_d_dh_p =     Medium.density_derh_p(state);
@@ -717,7 +717,7 @@ package TestMedia
       Medium.SpecificHeatCapacity cv =           Medium.specificHeatCapacityCv(state);
     // Not yet implemented in FluidProp
       Medium.IsobaricExpansionCoefficient beta = Medium.isobaricExpansionCoefficient(state);
-      Modelica.SIunits.IsothermalCompressibility kappa=
+      Modelica.Units.SI.IsothermalCompressibility kappa=
           Medium.isothermalCompressibility(state);
       Medium.DerDensityByPressure d_d_dp_T =     Medium.density_derp_T(state);
       Medium.DerDensityByTemperature d_d_dT_p =  Medium.density_derT_p(state);
@@ -796,5 +796,5 @@ package TestMedia
         redeclare package Medium = Medium, state=baseProperties.state);
     end CompleteBaseProperties_pTX;
   end CompleteModels;
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation (uses(Modelica(version="4.1.0")));
 end TestMedia;

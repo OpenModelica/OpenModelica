@@ -43,6 +43,10 @@ fmu-lapack = ["openmodelica_lapack/fortran-abi"]
 # `fmi-export/fmu2_model_interface.c`, whose Co-Simulation offers only Euler and
 # CVODE where this one has the whole solver set.
 fmi = ["dep:openmodelica_fmi3_wasm"]
+# The FMU flavour of the archive (`cfg(omc_fmi_runtime)`), as `OMC_SIMRT_FMI=1`
+# does: a source-code FMU's own manifest names it, so its build needs no
+# environment.
+fmu-runtime = ["fmi"]
 # The simulation executable's half: the `_main_*` entry points, the result file,
 # `-variableFilter`, `-iif` and `-saveInitialGuess_system`. An FMU has none of
 # them -- the importer owns the run -- and without it the Arrow, regex and

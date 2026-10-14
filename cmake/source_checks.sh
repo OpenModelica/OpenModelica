@@ -38,11 +38,8 @@ SOURCE_DIRS=(
   OMCompiler/Compiler
   OMCompiler/SimulationRuntime
   testsuite/flattening/libraries/3rdParty/PlanarMechanics
-  testsuite/flattening/libraries/3rdParty/siemens
-  testsuite/flattening/libraries/3rdParty/SiemensPower
   testsuite/flattening/libraries/3rdParty/ThermoSysPro
   testsuite/openmodelica/modelicaML
-  testsuite/AVM
   testsuite/simulation
 )
 

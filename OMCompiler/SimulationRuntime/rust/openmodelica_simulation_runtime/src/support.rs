@@ -90,6 +90,8 @@ mod jump {
     pub const NONE: i32 = 0;
     pub const SIMULATION: i32 = 1;
     pub const GLOBAL: i32 = 2;
+    /// Raise the error for the caller's check instead of jumping.
+    pub const RAISE: i32 = 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,18 +123,25 @@ fn with_position(info: &FILE_INFO, msg: &str) -> String {
     )
 }
 
-/// Run `f` under `threadData`'s simulation jump buffer, at error stage `stage`.
-/// `false` = the model left through the jump.
+/// Run `f` at error stage `stage`; `false` = the model raised an error or left
+/// through the jump.
 ///
-/// Every model callback called from inside a Rust frame goes through this: a
-/// `longjmp` past those frames would skip the solver's own bookkeeping and land at
-/// whatever catch is open further out -- not where C's would land, since C's frames
-/// there are the ones being skipped.
+/// Every model callback called from inside a Rust frame goes through this. A
+/// stage that still jumps gets `threadData`'s simulation jump buffer: a `longjmp`
+/// past Rust frames would skip the solver's own bookkeeping.
 pub(crate) fn protected<F: FnMut()>(
     thread_data: *mut threadData_t,
     stage: c_int,
     mut f: F,
 ) -> bool {
+    if stage_raises(stage) {
+        let td = unsafe { &mut *thread_data };
+        let saved = td.currentErrorStage;
+        td.currentErrorStage = stage;
+        f();
+        td.currentErrorStage = saved;
+        return !error_raised(thread_data);
+    }
     unsafe extern "C" fn trampoline<F: FnMut()>(p: *mut c_void) {
         unsafe { (*(p as *mut F))() }
     }
@@ -152,6 +161,17 @@ pub(crate) fn protected_global<F: FnMut()>(thread_data: *mut threadData_t, mut f
         omr_protected_global(trampoline::<F>, &mut f as *mut F as *mut c_void, thread_data)
     };
     rc != -1 && !error_raised(thread_data)
+}
+
+/// The stages whose model errors are raised, not jumped (`omr_stage_raises`).
+fn stage_raises(stage: c_int) -> bool {
+    matches!(
+        stage,
+        error_stage::SIMULATION
+            | error_stage::INTEGRATOR
+            | error_stage::NONLINEARSOLVER
+            | error_stage::EVENTSEARCH
+    )
 }
 
 /// Generated code returns a raised error (`OMC_ERROR_RAISE`) rather than
@@ -176,6 +196,7 @@ unsafe extern "C" {
     /// `util/omc_error.h`: whether an error was raised, clearing it. The mirror
     /// stops at `parent`, so the field itself is out of reach here.
     fn omc_error_take(threadData: *mut threadData_t) -> c_int;
+    fn omc_error_raise(threadData: *mut threadData_t);
     /// Leave through one of `threadData`'s jump buffers; does not return.
     pub(crate) fn omr_jump(threadData: *mut threadData_t, where_: c_int);
     /// The two entry points the function-pointer globals below are pre-set to.
@@ -189,7 +210,7 @@ unsafe extern "C" {
         indexes: *const c_int,
         msg: *const c_char,
         ...
-    ) -> !;
+    );
     #[cfg_attr(
         shim_trampolines,
         link_name = "omr_shim_assert_warning_simulation_withEquationIndexes"
@@ -202,11 +223,40 @@ unsafe extern "C" {
     );
 }
 
+#[cfg(unix)]
+unsafe extern "C" {
+    static mmc_thread_data_key: libc::pthread_key_t;
+}
+
+/// C's `pthread_getspecific(mmc_thread_data_key)` fallback, for the runtime's own
+/// `omc_assert(NULL, ...)` calls.
+#[unsafe(no_mangle)]
+pub extern "C" fn omr_thread_data() -> *mut threadData_t {
+    let td = crate::parmod::current_thread_data();
+    #[cfg(unix)]
+    if td.is_null() {
+        return unsafe { libc::pthread_getspecific(mmc_thread_data_key) as *mut threadData_t };
+    }
+    td
+}
+
+/// Where an FMU reports `omc_assert` (`error`) and `omc_assert_warning`, as C's
+/// `omc_assert_fmi` does: `passed_thread_data` is whether the caller had one.
+pub type FmuAssertReport = fn(error: bool, info: &FILE_INFO, text: &str, passed_thread_data: bool);
+
+static mut FMU_ASSERT_REPORT: Option<FmuAssertReport> = None;
+
+#[cfg(feature = "fmi")]
+pub fn set_fmu_assert_report(f: FmuAssertReport) {
+    unsafe { FMU_ASSERT_REPORT = Some(f) };
+}
+
 /// C's `va_omc_assert_simulation_withEquationIndexes`, less the formatting the
-/// shim already did: report, and say which jump buffer the error stage takes.
+/// shim already did: report, and say whether the error stage raises or jumps.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_report(
     threadData: *mut threadData_t,
+    passed_thread_data: c_int,
     info: *const FILE_INFO,
     text: *const c_char,
 ) -> c_int {
@@ -221,10 +271,16 @@ pub extern "C" fn omr_assert_report(
         error_stage::INTEGRATOR => !omclog::active(omclog::SOLVER),
         _ => false,
     };
-    if !quiet {
-        omclog::error(omclog::ASSERT, false, &with_position(&info, &text));
+    match unsafe { FMU_ASSERT_REPORT } {
+        Some(report) => report(true, &info, &text, passed_thread_data != 0),
+        None if !quiet => omclog::error(omclog::ASSERT, false, &with_position(&info, &text)),
+        None => {}
     }
     match stage {
+        error_stage::EVENTSEARCH
+        | error_stage::SIMULATION
+        | error_stage::NONLINEARSOLVER
+        | error_stage::INTEGRATOR => jump::RAISE,
         error_stage::EVENTHANDLING | error_stage::OPTIMIZE => jump::GLOBAL,
         _ => jump::SIMULATION,
     }
@@ -233,6 +289,10 @@ pub extern "C" fn omr_assert_report(
 /// C's `va_omc_assert_warning_simulation`, likewise already formatted.
 #[unsafe(no_mangle)]
 pub extern "C" fn omr_assert_warning_report(info: *const FILE_INFO, text: *const c_char) {
+    if let Some(report) = unsafe { FMU_ASSERT_REPORT } {
+        report(false, unsafe { &*info }, &cstr(text), true);
+        return;
+    }
     let text = with_position(unsafe { &*info }, &cstr(text));
     omclog::warning(omclog::ASSERT, false, &text);
 }
@@ -273,7 +333,7 @@ pub static mut omc_assert_withEquationIndexes: unsafe extern "C" fn(
     *const c_int,
     *const c_char,
     ...
-) -> ! = omc_assert_simulation_withEquationIndexes;
+) = omc_assert_simulation_withEquationIndexes;
 
 #[unsafe(no_mangle)]
 pub static mut omc_assert_warning_withEquationIndexes: unsafe extern "C" fn(
@@ -304,6 +364,17 @@ pub(crate) fn throw_stream(threadData: *mut threadData_t, msg: &str) -> ! {
         omclog::debug(omclog::ASSERT, false, msg);
     }
     rethrow(threadData)
+}
+
+/// C's `raiseStreamPrint`: report as [`throw_stream`] does and raise the error
+/// for the caller's check.
+pub(crate) fn raise_stream(threadData: *mut threadData_t, msg: &str) {
+    if throw_prints_message(current_stage(threadData)) {
+        omclog::debug(omclog::ASSERT, false, msg);
+    }
+    if !threadData.is_null() {
+        unsafe { omc_error_raise(threadData) };
+    }
 }
 
 /// [`throw_stream`] for an error that has already been reported.
@@ -363,12 +434,12 @@ fn zc_eps(a: f64, b: f64, a_nominal: f64, b_nominal: f64) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn LessZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {
     let eps = zc_eps(a, b, an, bn);
-    (if direction != 0 { a - b <= eps } else { a - b <= -eps }) as c_int
+    (if direction != 0 { a - b <= eps } else { a - b < -eps }) as c_int
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn GreaterZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {
     let eps = zc_eps(a, b, an, bn);
-    (if direction != 0 { a - b >= -eps } else { a - b >= eps }) as c_int
+    (if direction != 0 { a - b >= -eps } else { a - b > eps }) as c_int
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn LessEqZC(a: f64, b: f64, an: f64, bn: f64, direction: c_int) -> c_int {
@@ -573,6 +644,12 @@ impl Drop for QuietSystem {
             publish_log_streams();
         }
     }
+}
+
+/// C's `omc_useStream[OMC_LOG_ASSERT]`, which the generated code's held-assert
+/// note is printed under.
+pub fn set_c_assert_stream(on: bool) {
+    unsafe { omc_useStream[openmodelica_sim_meta::omclog::ASSERT as usize] = on as c_int };
 }
 
 pub fn publish_log_streams() {
@@ -803,22 +880,138 @@ pub extern "C" fn readSparsePatternColor(
     }
 }
 
-/// C's adaptive evaluation of `functionODE` (`eval_dep.c`). The Rust runtime's
-/// integrators always evaluate the whole right-hand side, as the wasm-jit runtime
-/// does, so no dependency graph is built and nothing selects a subset.
-#[unsafe(no_mangle)]
-pub extern "C" fn buildEvalDAG_ODE(modelData: *mut MODEL_DATA, _nEqns: usize, _ixs: *const usize) {
-    unsafe { (*modelData).dag = ptr::null_mut() };
+/// C's `EVAL_DAG` (`eval_dep.c`): which equation solves each variable, and which
+/// equations each one reads from. Only the runtime looks inside it, so it is a
+/// Rust value behind `modelData->dag` / `JACOBIAN.dag`.
+pub struct EvalDag {
+    map_var_to_eq: Vec<usize>,
+    eq_dep: Vec<Vec<usize>>,
+}
+
+/// C's `EVAL_SELECTION`, which the generated `functionODE` reads `n` and `idx` of.
+#[repr(C)]
+pub struct EVAL_SELECTION {
+    pub n: usize,
+    pub idx: *mut usize,
+    pub dag: *mut c_void,
+}
+
+const NO_INDEX: usize = usize::MAX;
+
+/// `buildVarNameHashTable` + the two passes `buildEvalDAG_ODE`/`_Jac` share.
+fn build_eval_dag(md: *mut MODEL_DATA, n_vars: usize, n_eqns: usize, ixs: *const usize) -> *mut c_void {
+    use std::collections::HashMap;
+    use std::collections::hash_map::Entry;
+    let md = unsafe { &mut *md };
+    // name -> (variable index, solving equation), the first variable of a name.
+    let mut table: HashMap<&core::ffi::CStr, (usize, usize)> = HashMap::new();
+    for i in 0..md.nVariablesReal.max(0) as usize {
+        let info = unsafe { &(*md.realVarsData.add(i)).info };
+        let name = unsafe { core::ffi::CStr::from_ptr(info.name) };
+        let var = if info.id >= 1000 { (info.id - 1000) as usize } else { NO_INDEX };
+        if let Entry::Vacant(v) = table.entry(name) {
+            v.insert((var, NO_INDEX));
+        }
+    }
+    let ixs = unsafe { core::slice::from_raw_parts(ixs, n_eqns) };
+    let cstrs = |p: *const *const c_char, n: c_int| -> Vec<&'static core::ffi::CStr> {
+        (0..n.max(0) as usize).map(|j| unsafe { core::ffi::CStr::from_ptr(*p.add(j)) }).collect()
+    };
+    let mut map_var_to_eq = vec![NO_INDEX; n_vars];
+    for (i, &ix) in ixs.iter().enumerate() {
+        let eq = crate::info_json::modelInfoGetEquation(&mut md.modelDataXml, ix);
+        for name in cstrs(eq.vars, eq.numVar) {
+            let Some(entry) = table.get_mut(name) else { continue };
+            if entry.0 == NO_INDEX {
+                continue;
+            }
+            if entry.1 != NO_INDEX {
+                omclog::error!(
+                    omclog::STDOUT,
+                    true,
+                    "Variable {} is solved in more than one equation.",
+                    name.to_string_lossy(),
+                );
+                omclog::error!(omclog::STDOUT, false, "originally solved in {}, now in {}", entry.1, i);
+                omclog::close(omclog::STDOUT);
+            } else {
+                entry.1 = i;
+            }
+            if entry.0 < n_vars {
+                map_var_to_eq[entry.0] = i;
+            }
+        }
+    }
+    let eq_dep = ixs
+        .iter()
+        .map(|&ix| {
+            let eq = crate::info_json::modelInfoGetEquation(&mut md.modelDataXml, ix);
+            cstrs(eq.varsUsed, eq.numVarUsed).iter().map(|u| table.get(u).map_or(NO_INDEX, |e| e.1)).collect()
+        })
+        .collect();
+    Box::into_raw(Box::new(EvalDag { map_var_to_eq, eq_dep })) as *mut c_void
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn buildEvalDAG_Jac(
-    jacobian: *mut JACOBIAN,
-    _modelData: *mut MODEL_DATA,
-    _nEqns: usize,
-    _ixs: *const usize,
-) {
-    unsafe { (*jacobian).dag = ptr::null_mut() };
+pub extern "C" fn buildEvalDAG_ODE(modelData: *mut MODEL_DATA, nEqns: usize, ixs: *const usize) {
+    let n_vars = unsafe { (*modelData).nVariablesReal.max(0) as usize };
+    let dag = build_eval_dag(modelData, n_vars, nEqns, ixs);
+    unsafe { (*modelData).dag = dag };
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn buildEvalDAG_Jac(jacobian: *mut JACOBIAN, modelData: *mut MODEL_DATA, nEqns: usize, ixs: *const usize) {
+    let n_vars = unsafe { (*jacobian).sizeRows + (*jacobian).sizeTmpVars };
+    let dag = build_eval_dag(modelData, n_vars, nEqns, ixs);
+    unsafe { (*jacobian).dag = dag };
+}
+
+/// A selection over `modelData->dag`: C's `allocEvalSelection` with the DAG's
+/// `select` work array.
+pub struct EvalSelection {
+    pub sel: Box<EVAL_SELECTION>,
+    idx: Vec<usize>,
+    select: Vec<bool>,
+}
+
+impl EvalSelection {
+    pub fn new(dag: *mut c_void) -> Option<Self> {
+        let d = unsafe { (dag as *const EvalDag).as_ref()? };
+        let mut idx = vec![0usize; d.eq_dep.len()];
+        let sel = Box::new(EVAL_SELECTION { n: 0, idx: idx.as_mut_ptr(), dag });
+        Some(EvalSelection { sel, idx, select: vec![false; d.eq_dep.len()] })
+    }
+
+    /// C's `updateEvalSelection`: the equations solving the derivatives of
+    /// `fast` (the state indices), then everything they depend on
+    /// (`activateEvalDependencies`).
+    pub fn select_states(&mut self, fast: &[usize], n_states: usize) {
+        let dag = unsafe { &*(self.sel.dag as *const EvalDag) };
+        self.select.fill(false);
+        for &k in fast {
+            let eq = dag.map_var_to_eq.get(k + n_states).copied().unwrap_or(NO_INDEX);
+            if eq != NO_INDEX {
+                self.select[eq] = true;
+            }
+        }
+        for i in (0..dag.eq_dep.len()).rev() {
+            if self.select[i] {
+                for &dep in &dag.eq_dep[i] {
+                    if dep != NO_INDEX {
+                        self.select[dep] = true;
+                    }
+                }
+            }
+        }
+        let mut n = 0;
+        for (i, &on) in self.select.iter().enumerate() {
+            if on {
+                self.idx[n] = i;
+                n += 1;
+            }
+        }
+        self.sel.n = n;
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -20,6 +20,9 @@ openmodelica_regex = { path = "../../../SimulationRuntime/rust/openmodelica_rege
 # GraphML reader in the hand-written TaskGraphResults.rs; also the
 # modelDescription.xml parser in the hand-written FMIExt.rs.
 roxmltree.workspace=true
+# JSON.parse/parseFile in the hand-written JSONExt.rs.
+serde.workspace=true
+serde_json.workspace=true
 # FMU extraction in the hand-written FMIExt.rs.
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 # The port's FMU reader, which `importFMU` reads an FMI 3.0 model description

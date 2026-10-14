@@ -16,6 +16,16 @@ thread_local! {
     static STDOUT_CAPTURE: RefCell<Option<Vec<u8>>> = const { RefCell::new(None) };
 }
 
+thread_local! {
+    static GUEST_ENV: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// The `NAME=value` environment every guest started from now on sees: what the
+/// external libraries of the simulation about to run ask for.
+pub fn set_guest_env(env: Vec<String>) {
+    GUEST_ENV.with(|e| *e.borrow_mut() = env);
+}
+
 /// Begin capturing fd 1/2 (stdout/stderr) writes into an in-memory buffer instead
 /// of the host's real stdout/stderr. The JIT simulation run enables this so the
 /// model's output (Modelica `Streams.print`, `ModelicaMessage`, …) is folded into
@@ -725,14 +735,30 @@ impl WasiCtx {
         ERRNO_SUCCESS
     }
 
-    /// No environment is exposed.
+    /// Only the [`set_guest_env`] variables are exposed, never the host's.
     pub fn environ_sizes_get<M: GuestMem>(&mut self, mem: &mut M, count: u32, buf_size: u32) -> i32 {
-        if !Self::wr_u32(mem, count, 0) || !Self::wr_u32(mem, buf_size, 0) {
+        let (n, size) = GUEST_ENV.with(|e| {
+            let e = e.borrow();
+            (e.len() as u32, e.iter().map(|v| v.len() as u32 + 1).sum::<u32>())
+        });
+        if !Self::wr_u32(mem, count, n) || !Self::wr_u32(mem, buf_size, size) {
             return ERRNO_FAULT;
         }
         ERRNO_SUCCESS
     }
-    pub fn environ_get<M: GuestMem>(&mut self, _mem: &mut M, _environ: u32, _buf: u32) -> i32 {
+    pub fn environ_get<M: GuestMem>(&mut self, mem: &mut M, environ: u32, buf: u32) -> i32 {
+        let env = GUEST_ENV.with(|e| e.borrow().clone());
+        let mut p = buf;
+        for (i, v) in env.iter().enumerate() {
+            if !Self::wr_u32(mem, environ + i as u32 * 4, p) {
+                return ERRNO_FAULT;
+            }
+            let bytes = v.as_bytes();
+            if !mem.write(p, bytes) || !Self::wr_u8(mem, p + bytes.len() as u32, 0) {
+                return ERRNO_FAULT;
+            }
+            p += bytes.len() as u32 + 1;
+        }
         ERRNO_SUCCESS
     }
 

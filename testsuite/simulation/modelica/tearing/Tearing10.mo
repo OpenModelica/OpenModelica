@@ -2,7 +2,7 @@ within ;
 model Tearing10
   "'Continuous System Simulation', Francois Cellier, Homework Problems [H7.5], p.313"
 
-  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=230, freqHz=50)
+  Modelica.Electrical.Analog.Sources.SineVoltage sineVoltage(V=230, f=50)
     annotation (Placement(transformation(
         extent={{-10,-10},{10,10}},
         rotation=270,
@@ -68,5 +68,5 @@ equation
       points={{12,14},{-12,14},{-12,-6}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.2")), Diagram(graphics));
+  annotation (uses(Modelica(version="4.1.0")), Diagram(graphics));
 end Tearing10;

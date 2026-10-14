@@ -14,11 +14,12 @@ modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Blocks.Examples.Interaction1);
 compareVars :=
 {
-   "integerValue.showNumber",
-   "realValue.showNumber",
-   "booleanValue.showActive",
+   "booleanTable.y",
+   "integerTable.y",
    "start.on",
-   "stop.on"
+   "start.reset[1]",
+   "stop.on",
+   "stop.reset[1]"
 };
 
 runScript(modelTesting);getErrorString();
@@ -30,8 +31,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Blocks.Examples.Interaction1
-// {"integerValue.showNumber", "realValue.showNumber", "booleanValue.showActive", "start.on", "stop.on"}
-// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.Interaction1', options = '', outputFormat = 'mat', variableFilter = 'time|integerValue.showNumber|realValue.showNumber|booleanValue.showActive|start.on|stop.on', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"booleanTable.y", "integerTable.y", "start.on", "start.reset[1]", "stop.on", "stop.reset[1]"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.Interaction1', options = '', outputFormat = 'mat', variableFilter = 'time|booleanTable.y|integerTable.y|start.on|start.reset.1.|stop.on|stop.reset.1.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Blocks.Examples.Interaction1_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

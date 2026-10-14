@@ -104,7 +104,7 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
         GraphType& sys_graph = task_system.sys_graph;
 
         typename GraphType::vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
@@ -125,7 +125,7 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
             GraphType& sys_graph = task_system.sys_graph;
             typename GraphType::vertex_iterator vert_iter, vert_end;
             for (int warmup = 0; warmup < 2; ++warmup) {
-                boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+                std::tie(vert_iter, vert_end) = vertices(sys_graph);
                 ++vert_iter; /*! skip the root node. */
                 for (; vert_iter != vert_end; ++vert_iter)
                     sys_graph[*vert_iter].execute();
@@ -206,7 +206,7 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
             have reordered the vertices so that a parent no longer precedes its
             child in the vertex list; looking it up before it exists would throw
             std::out_of_range. */
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
@@ -222,7 +222,7 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
         }
 
         /*! Second pass: now that every node exists in the map, wire the edges. */
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        std::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
@@ -231,7 +231,7 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
 
             /*! Iterate through all parents of the current node and add edges.*/
             typename GraphType::inv_adjacency_iterator par_iter, par_end;
-            boost::tie(par_iter, par_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+            std::tie(par_iter, par_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
             for (; par_iter != par_end; ++par_iter) {
                 const ClusterIdType& curr_parent_id = *par_iter;
                 // ClusterType& curr_parent = sys_graph[curr_parent_id];

@@ -113,10 +113,13 @@ openmodelica_sim_meta/src/optimization/setup.rs
 openmodelica_sim_meta/src/parmod.rs
 openmodelica_sim_meta/src/profiling.rs
 openmodelica_sim_meta/src/qss.rs
+openmodelica_sim_meta/src/resize.rs
 openmodelica_sim_meta/src/result.rs
 openmodelica_sim_meta/src/rtclock.rs
+openmodelica_sim_meta/src/sizes.rs
 openmodelica_sim_meta/src/stats.rs
 openmodelica_sim_meta/src/strings.rs
+openmodelica_sim_meta/src/sym_sparsity.rs
 openmodelica_sim_meta/src/sync.rs
 openmodelica_simulation_runtime/Cargo.toml
 openmodelica_simulation_runtime/build.rs
@@ -125,7 +128,10 @@ openmodelica_simulation_runtime/src/data.rs
 openmodelica_simulation_runtime/src/datarecon.rs
 openmodelica_simulation_runtime/src/engine.rs
 openmodelica_simulation_runtime/src/fmi.rs
+openmodelica_simulation_runtime/src/fmi2_capi.rs
+openmodelica_simulation_runtime/src/fmi3_capi.rs
 openmodelica_simulation_runtime/src/fmi_host.rs
+openmodelica_simulation_runtime/src/fmi_native.rs
 openmodelica_simulation_runtime/src/fmi_vrs.rs
 openmodelica_simulation_runtime/src/help.rs
 openmodelica_simulation_runtime/src/iif.rs
@@ -185,3 +191,4 @@ openmodelica_solvers/src/sundials_ode.rs
 openmodelica_solvers/src/symsolver.rs
 openmodelica_solvers/src/sysstat.rs
 src/lib.rs
+rustfmt.toml

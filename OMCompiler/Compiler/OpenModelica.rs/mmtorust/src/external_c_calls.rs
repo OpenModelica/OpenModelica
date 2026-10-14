@@ -604,15 +604,14 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("om_unzip", Infallible);
 
         // ── omc_file_ext.h inline file API ─────────────────────────────────
-        // The om_file_* family of helpers are static inline; none of them
-        // call MMC_THROW or report failure beyond their integer status.
+        // open/write* fail through ModelicaFormatError.
         m.insert("om_file_new", Infallible);
         m.insert("om_file_free", Infallible);
-        m.insert("om_file_open", Infallible);
-        m.insert("om_file_write", Infallible);
-        m.insert("om_file_write_int", Infallible);
-        m.insert("om_file_write_real", Infallible);
-        m.insert("om_file_write_escape", Infallible);
+        m.insert("om_file_open", Fallible);
+        m.insert("om_file_write", Fallible);
+        m.insert("om_file_write_int", Fallible);
+        m.insert("om_file_write_real", Fallible);
+        m.insert("om_file_write_escape", Fallible);
         m.insert("om_file_seek", Infallible);
         m.insert("om_file_tell", Infallible);
         m.insert("om_file_get_filename", Infallible);
@@ -658,6 +657,10 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
 
         m.insert("intMaxLit", Infallible);
         m.insert("realMaxLit", Infallible);
+
+        // JSON.rust.mo: serde_json in openmodelica_util/src/JSONExt.rs.
+        m.insert("JSON_parseFile", Fallible);
+        m.insert("JSON_parse", Fallible);
 
         // NFApi.mo
         m.insert("ModelInstanceReference_store", Infallible);
@@ -792,6 +795,8 @@ pub fn external_c_impl_path(c_name: &str) -> Option<&'static str> {
         // `openmodelica_util/src/ModelInstanceReference.rs`.
         "ModelInstanceReference_store" => Some("openmodelica_util::ModelInstanceReference::store"),
         "ModelInstanceReference_release" => Some("openmodelica_util::ModelInstanceReference::release"),
+        "JSON_parseFile" => Some("crate::JSONExt::parseFile"),
+        "JSON_parse" => Some("crate::JSONExt::parse"),
         _ => None,
     }
 }

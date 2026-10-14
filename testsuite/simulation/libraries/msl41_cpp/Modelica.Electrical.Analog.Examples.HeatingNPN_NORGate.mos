@@ -10,8 +10,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate";
 
 modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.HeatingNPN_NORGate);
@@ -29,7 +27,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.Analog.Examples.HeatingNPN_OrGate"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Analog.Examples.HeatingNPN_NORGate
 // {"HeatCapacitor1.T"}

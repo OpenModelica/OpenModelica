@@ -1,0 +1,44 @@
+// name: ModelicaTest.Tables.CombiTable2Ds.OneSidedDerivative2D
+// keywords: NewBackend, slicing, whole dimension
+// status: correct
+// teardown_command: rm -f OneSidedDerivative2D_old*
+//
+// A for-equation with a size one array body, e.g. a[:, i] = b[1:1, i], is solved as a slice.
+// Its whole dimension is not a reduction. The result is compared to the old backend.
+
+loadModel(ModelicaTest, {"4.1.0"}); getErrorString();
+simulate(ModelicaTest.Tables.CombiTable2Ds.OneSidedDerivative2D, fileNamePrefix = "OneSidedDerivative2D_old"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ModelicaTest.Tables.CombiTable2Ds.OneSidedDerivative2D); getErrorString();
+
+abs(val(der1.y, 0.5) - val(der1.y, 0.5, "OneSidedDerivative2D_old_res.mat")) < 1e-6;
+abs(val(der2.y, 0.5) - val(der2.y, 0.5, "OneSidedDerivative2D_old_res.mat")) < 1e-6;
+abs(val(der3.y, 0.5) - val(der3.y, 0.5, "OneSidedDerivative2D_old_res.mat")) < 1e-6;
+abs(val(der4.y, 0.5) - val(der4.y, 0.5, "OneSidedDerivative2D_old_res.mat")) < 1e-6;
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "OneSidedDerivative2D_old_res.mat",
+//     simulationOptions = "startTime = -1.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'OneSidedDerivative2D_old', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaTest.Tables.CombiTable2Ds.OneSidedDerivative2D_res.mat",
+//     simulationOptions = "startTime = -1.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Tables.CombiTable2Ds.OneSidedDerivative2D', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
+// true
+// true
+// true
+// endResult

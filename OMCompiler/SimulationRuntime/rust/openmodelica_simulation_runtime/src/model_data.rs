@@ -315,18 +315,48 @@ unsafe extern "C" {
     pub(crate) fn simple_alloc_1d_integer_array(dest: *mut base_array_t, n: c_int);
     pub(crate) fn simple_alloc_1d_boolean_array(dest: *mut base_array_t, n: c_int);
     pub(crate) fn simple_alloc_1d_string_array(dest: *mut base_array_t, n: c_int);
+    /// Resize a start attribute to `n` elements, repeating its values.
+    pub(crate) fn real_array_ensure_size(a: *mut base_array_t, n: c_int);
+    pub(crate) fn integer_array_ensure_size(a: *mut base_array_t, n: c_int);
+    pub(crate) fn boolean_array_ensure_size(a: *mut base_array_t, n: c_int);
 }
 
 unsafe extern "C" {
     /// `util/omc_string.h`. Immortal, so the attribute slots this fills can be
     /// released by the runtime like any other without freeing anything.
     fn omc_string_new_persist(str: *const c_char) -> *mut c_void;
+    fn omc_string_new(str: *const c_char) -> *mut c_void;
     fn omc_string_slots_store(dst: *mut *mut c_void, src: *const *mut c_void, n: usize);
+    fn omc_string_slots_release(slots: *mut *mut c_void, n: usize);
 }
 
 /// C's `omc_string_store`: the slot takes its own reference and drops the old one.
 pub(crate) unsafe fn string_store(slot: *mut modelica_string, s: modelica_string) {
     unsafe { omc_string_slots_store(slot, &s, 1) };
+}
+
+/// [`string_store`] for `n` slots at once.
+pub(crate) unsafe fn string_slots_store(dst: *mut modelica_string, src: *const modelica_string, n: usize) {
+    if n > 0 && !dst.is_null() && !src.is_null() {
+        unsafe { omc_string_slots_store(dst, src, n) };
+    }
+}
+
+#[cfg(feature = "fmi")]
+pub(crate) unsafe fn string_slots_release(slots: *mut modelica_string, n: usize) {
+    if n > 0 && !slots.is_null() {
+        unsafe { omc_string_slots_release(slots, n) };
+    }
+}
+
+/// C's `omc_string_move` of a fresh `omc_string_new`: the slot owns the only
+/// reference.
+pub(crate) unsafe fn string_set_new(slot: *mut modelica_string, s: &[u8]) {
+    let bytes = &s[..s.iter().position(|&b| b == 0).unwrap_or(s.len())];
+    let c = std::ffi::CString::new(bytes).expect("no interior NUL left");
+    let new = unsafe { omc_string_new(c.as_ptr()) };
+    let old = unsafe { core::ptr::replace(slot, new) };
+    unsafe { omc_string_slots_release(&mut { old }, 1) };
 }
 
 /// The byte offset of an `omc_string`'s data: it points at `struct omc_string_s`,
@@ -348,6 +378,15 @@ pub fn string_value(p: *mut c_void) -> String {
     }
     let data = unsafe { (p as *mut u8).add(OMC_STRING_DATA) };
     unsafe { core::ffi::CStr::from_ptr(data as *const c_char) }.to_string_lossy().into_owned()
+}
+
+#[cfg(feature = "fmi")]
+/// [`string_value`] without the UTF-8 round trip.
+pub fn string_bytes<'a>(p: *mut c_void) -> &'a [u8] {
+    if p.is_null() {
+        return &[];
+    }
+    unsafe { core::ffi::CStr::from_ptr((p as *mut u8).add(OMC_STRING_DATA) as *const c_char) }.to_bytes()
 }
 
 pub fn mk_scon_persist(s: &str) -> *mut c_void {

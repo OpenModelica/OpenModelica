@@ -1,0 +1,49 @@
+// name: mathEvents
+// keywords: NewBackend
+// status: correct
+// integer, floor, ceil, div and mod of continuous arguments trigger events and keep
+// their value between events, like in the old backend. Inside noEvent they do not
+// (IDA DistrictsBenchmark SolarElevation).
+
+loadString("
+  model mathEvents
+    Real x(start = 0, fixed = true);
+    Real h, d, f, t;
+    Integer i;
+  equation
+    der(x) = 1.3e-3;
+    h = mod(time/3600, 24);
+    d = ceil(time/86400);
+    f = floor(x);
+    i = integer(x/2);
+    t = noEvent(mod(time, 2.0));
+  end mathEvents;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(mathEvents, stopTime = 200000, numberOfIntervals = 4); getErrorString();
+// two points per event: the events of mod, ceil, floor and integer, none of noEvent(mod())
+readSimulationResultSize("mathEvents_res.mat");
+val(h, 200000);
+val(d, 200000);
+val(f, 200000);
+val(i, 200000);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "mathEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2e5, numberOfIntervals = 4, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'mathEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 530
+// 7.555555555555557
+// 3.0
+// 260.0
+// 130.0
+// endResult

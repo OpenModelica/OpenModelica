@@ -133,8 +133,6 @@ template equationIndex(SimEqSystem eq)
     then index
   case SES_ALIAS(__)
     then aliasOf
-  case SES_ALGEBRAIC_SYSTEM(__)
-    then index
   else error(sourceInfo(), "equationIndex failed")
 end equationIndex;
 
@@ -288,16 +286,6 @@ template dumpEqsWork(list<SimEqSystem> eqs)
         <%e.discEqs |> eq => '<discrete index="<%equationIndex(eq)%>" />'%>
       </mixed>
       >>
-    case e as SES_ALGEBRAIC_SYSTEM(residual=residual as OMSI_FUNCTION(__)) then
-      let detailedDescription = dumpAlgSystemOps(matrix)
-      <<
-      equation index: <%equationIndex(eq)%>
-      type: ALGEBRAIC_SYSTEM
-      is linear: <%e.linearSystem%>
-      depending functions indices: <%residual.equations |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>
-      dimension: <%listLength(residual.equations)%>
-      <%detailedDescription%>
-      >>
     case e as SES_WHEN(__) then
       let body = dumpWhenOps(whenStmtLst)
       <<
@@ -357,47 +345,6 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       unknown equation
       >>
 end dumpEqsWork;
-
-
-template dumpAlgSystemOps(Option<DerivativeMatrix> derivativeMatrix)
-"dumps description of eqations of algebraic system.
- Helper function for dumpEqs."
-::=
-  let &varsBuffer = buffer ""
-  let &columnBuffer = buffer ""
-
-  match derivativeMatrix
-  case SOME(matrix as DERIVATIVE_MATRIX(__)) then
-    let _ = (matrix.columns |> column =>
-      dumpAlgSystemColumn(column, &columnBuffer, &varsBuffer)
-    )
-
-  <<
-  iteration vars: <%varsBuffer%>
-
-  <%columnBuffer%>
-  >>
-end dumpAlgSystemOps;
-
-template dumpAlgSystemColumn(OMSIFunction column ,Text &columnBuffer, Text &varsBuffer)
-"dumps equation description for one OMSIFunction"
-::=
-
-  match column
-  case OMSI_FUNCTION(__) then
-    let &varsBuffer += (inputVars |> var as SIMVAR(__) =>
-        <<
-        <%dumpCref(name)%>
-        >>
-        ; separator=", "
-    )
-
-    let _ = (equations |> equation as SES_SIMPLE_ASSIGN(__) =>
-        let &columnBuffer += dumpCref(equation.cref) + " = " + escapeCComments(dumpExp(equation.exp,"\"")) + "\n"        // "
-        <<>>
-    )
-    <<>>
-end dumpAlgSystemColumn;
 
 
 template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)

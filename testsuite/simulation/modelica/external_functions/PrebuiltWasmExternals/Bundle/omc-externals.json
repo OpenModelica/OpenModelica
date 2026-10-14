@@ -1,0 +1,36 @@
+{
+  "abi": 2,
+  "functions": {
+    "PrebuiltWasmExternals.Accumulator.constructor": {
+      "includes": "#include \"accumulator.c\"",
+      "module": "pwe.wasm",
+      "name": "pwe_accumulator_new"
+    },
+    "PrebuiltWasmExternals.Accumulator.destructor": {
+      "includes": "#include \"accumulator.c\"",
+      "module": "pwe.wasm",
+      "name": "pwe_accumulator_free"
+    },
+    "PrebuiltWasmExternals.accumulate": {
+      "includes": "#include \"accumulator.c\"",
+      "module": "pwe.wasm",
+      "name": "pwe_accumulate"
+    },
+    "PrebuiltWasmExternals.count": {
+      "includes": "#include \"counter_count.c\"",
+      "module": "pwe.wasm",
+      "name": "pwe_count"
+    },
+    "PrebuiltWasmExternals.increment": {
+      "includes": "#include \"counter_increment.c\"",
+      "module": "pwe.wasm",
+      "name": "pwe_increment"
+    },
+    "PrebuiltWasmExternals.twice": {
+      "includes": "#include \"twice.c\"",
+      "module": "pwe.wasm",
+      "name": "pwe_twice"
+    }
+  },
+  "libraries": {}
+}

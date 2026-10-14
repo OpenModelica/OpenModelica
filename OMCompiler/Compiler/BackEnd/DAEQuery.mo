@@ -52,6 +52,7 @@ protected import ComponentReference;
 protected import ComponentReferenceBasics;
 protected import DAE;
 protected import DAEDump;
+protected import Dump;
 protected import Expression;
 protected import ExpressionBasics;
 protected import ExpressionDump;

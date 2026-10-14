@@ -99,7 +99,7 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
       let author = ''
       let version= ''
       let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-      let generationDateAndTime = CodegenFMUCommon.xsdateTime(getCurrentDateTime())
+      let generationDateAndTime = CodegenFMUCommon.xsdateTime(Util.getCurrentDateTime())
       let variableNamingConvention = 'structured'
       let numberOfContinuousStates = vi.numStateVars
       let numberOfEventIndicators = CodegenFMUCommon.getNumberOfEventIndicators(simCode)

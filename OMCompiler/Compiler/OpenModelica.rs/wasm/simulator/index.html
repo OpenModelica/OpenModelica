@@ -270,13 +270,15 @@ import { bindModal, downloadBlob } from '../ui.js';
 // ready fast, and a second that installs the MSL in the background and takes
 // over once ready (so library examples like PID_Controller can run).
 
-// Selectable examples come from ./config.json (shipped alongside this page), so a
-// host can curate their own set without touching the code. Each entry is either
-// inline (`source` text, or `sourceFile` fetched lazily) run on any worker, or a
-// `library` class inside the MSL (needs the MSL worker) with an optional `figures`
-// annotation that curates the plotted variables. `daeMode: true` selects the DAE
-// backend for it. Populated by loadConfig().
+// Selectable examples come from ./config.json (shipped alongside this page) or
+// the `?config=` URL, so a host can curate their own set without touching the
+// code. Each entry is either inline (`source` text, or `sourceFile` fetched
+// lazily) run on any worker, or a `library` class inside the MSL (needs the MSL
+// worker) with an optional `figures` annotation that curates the plotted
+// variables. `daeMode: true` selects the DAE backend for it. Populated by
+// loadConfig().
 let EXAMPLES = [];
+let configTitle = 'Simulator';
 // Minimal safety net if config.json is missing or invalid — the app still runs.
 const FALLBACK_CONFIG = { title: 'Simulator', defaultExample: 'demo', examples: [
   { id: 'demo', label: 'Demo',
@@ -398,8 +400,8 @@ const DRIVER_MODE = { host: 0, inwasm: 1 }[new URLSearchParams(location.search).
 
 // `?class=Lib.Sub.Model&package=Lib&version=1.2.3&action=simulate|check&embed=1`
 // — what the generated library documentation links to. The package is what
-// gets installed, the class is what runs, and `embed` drops the panels the
-// documentation page around the frame already carries.
+// gets installed (also without a class), the class is what runs, and `embed`
+// drops the panels the documentation page around the frame already carries.
 const PARAMS = new URLSearchParams(location.search);
 const REQUEST = (() => {
   const name = PARAMS.get('class');
@@ -412,6 +414,10 @@ const REQUEST = (() => {
   };
 })();
 const EMBED = PARAMS.get('embed') === '1';
+// `?config=URL` replaces ./config.json, relative to this page; `?id=` picks one
+// of its examples. A config's `sourceFile`s are relative to the config.
+const CONFIG = PARAMS.get('config');
+const CONFIG_URL = new URL(CONFIG || './config.json', location.href);
 
 // `?theme=light|dark`, and `om-theme` afterwards: the embedding page decides.
 function applyTheme(theme) {
@@ -422,7 +428,7 @@ applyTheme(PARAMS.get('theme'));
 // What the MSL worker installs: the requested library, or the MSL by default.
 let LIBRARY = REQUEST
   ? { name: REQUEST.package, version: REQUEST.version }
-  : { name: 'Modelica', version: '' };
+  : { name: PARAMS.get('package') || 'Modelica', version: PARAMS.get('version') || '' };
 // Evaluating the final and protected parameters leaves the panel the ones a
 // reader could actually set, which is all a frame has room for.
 const INIT_FLAGS = EMBED
@@ -851,11 +857,15 @@ const askedExample = (name, action) => action === 'check'
   ? { id: '__asked', label: name, check: name }
   : { id: '__asked', label: name, library: name };
 
-// Say which class the page is showing, wherever its name appears.
-function nameAsked(name) {
+function showTitle(name) {
   document.title = 'OpenModelica — ' + name;
   const title = document.querySelector('header .title');
   if (title) title.textContent = name;
+}
+
+// Say which class the page is showing, wherever its name appears.
+function nameAsked(name) {
+  showTitle(name);
   const option = [...exSel.options].find((o) => o.value === '__asked');
   if (option) { option.textContent = name; exSel.value = '__asked'; }
 }
@@ -892,7 +902,7 @@ async function selectExample(ex) {
   } else {
     mode = 'inline'; copyName = null;
     if (ex.source == null && ex.sourceFile) {
-      try { ex.source = await fetchText(ex.sourceFile); } catch (e) { return fail('Could not load ' + ex.sourceFile + ': ' + e); }
+      try { ex.source = await fetchText(new URL(ex.sourceFile, CONFIG_URL)); } catch (e) { return fail('Could not load ' + ex.sourceFile + ': ' + e); }
     }
     srcEl.value = ex.source || '';
     run('full');
@@ -906,13 +916,13 @@ async function fetchText(path) {
   return await r.text();
 }
 
-// Load ./config.json: title, example list, default example. Falls back to a
+// Load the config: title, example list, default example. Falls back to a
 // minimal built-in config so the page still works if it is missing.
 async function loadConfig() {
   let cfg;
-  try { cfg = await (await fetch('./config.json', { cache: 'no-cache' })).json(); }
-  catch (e) { log('config.json load failed, using fallback', e); cfg = FALLBACK_CONFIG; }
-  if (cfg.title) { document.title = 'OpenModelica — ' + cfg.title; const t = document.querySelector('header .title'); if (t) t.textContent = cfg.title; }
+  try { cfg = JSON.parse(await fetchText(CONFIG_URL)); }
+  catch (e) { log(CONFIG_URL.href + ' load failed, using fallback', e); cfg = FALLBACK_CONFIG; }
+  if (cfg.title) showTitle(configTitle = cfg.title);
   EXAMPLES = Array.isArray(cfg.examples) && cfg.examples.length ? cfg.examples : FALLBACK_CONFIG.examples;
   exSel.replaceChildren();
   for (const ex of EXAMPLES) { const o = document.createElement('option'); o.value = ex.id; o.textContent = ex.label; exSel.appendChild(o); }
@@ -924,13 +934,15 @@ async function loadConfig() {
     exSel.prepend(o);
     nameAsked(REQUEST.name);
   }
-  currentExample = (REQUEST && EXAMPLES[0])
+  const id = PARAMS.get('id');
+  if (id && !REQUEST && !EXAMPLES.some((e) => e.id === id)) log('no example with id', id);
+  currentExample = (REQUEST && EXAMPLES[0]) || EXAMPLES.find((e) => e.id === id)
     || EXAMPLES.find((e) => e.id === cfg.defaultExample) || EXAMPLES[0];
   exSel.value = currentExample.id;
   // Pre-fill the editor with an inline default's source so it shows while the
   // compiler boots; library examples fill in after copyClass.
   if (!currentExample.library) {
-    try { if (currentExample.source == null && currentExample.sourceFile) currentExample.source = await fetchText(currentExample.sourceFile); }
+    try { if (currentExample.source == null && currentExample.sourceFile) currentExample.source = await fetchText(new URL(currentExample.sourceFile, CONFIG_URL)); }
     catch (e) { log('default source load failed', e); }
     if (currentExample.source) srcEl.value = currentExample.source;
   }
@@ -1326,7 +1338,29 @@ toggleBtn.addEventListener('click', () => { viewMode = (viewMode === 'all') ? 'a
 window.addEventListener('resize', () => { autoDocs(); charts.redraw(); });
 autoDocs();
 
-exSel.addEventListener('change', () => { const ex = EXAMPLES.find((e) => e.id === exSel.value); if (ex) selectExample(ex); });
+// The address bar names what is showing, so it can be copied as a link.
+function showPermalink(ex) {
+  const url = new URL(location.href);
+  if (ex.id === '__asked') {
+    url.searchParams.delete('id');
+    url.searchParams.set('class', ex.check || ex.library);
+    url.searchParams.set('action', ex.check ? 'check' : 'simulate');
+    showTitle(ex.check || ex.library);
+  } else {
+    url.searchParams.delete('class');
+    url.searchParams.delete('action');
+    url.searchParams.set('id', ex.id);
+    showTitle(configTitle);
+  }
+  history.replaceState(null, '', url);
+  url.searchParams.delete('embed');
+  el('openTab').href = url.toString();
+}
+
+exSel.addEventListener('change', () => {
+  const ex = EXAMPLES.find((e) => e.id === exSel.value);
+  if (ex) { showPermalink(ex); selectExample(ex); }
+});
 
 // The documentation page keeps one frame and retargets it as the reader moves
 // between classes, so a second class costs no compiler boot. Another library
@@ -1342,6 +1376,7 @@ window.addEventListener('message', (event) => {
       class: m.class, package: pkg, version: m.version || '',
       action: m.action === 'check' ? 'check' : 'simulate', embed: EMBED ? '1' : '0',
       theme: document.documentElement.dataset.theme || '',
+      ...(CONFIG ? { config: CONFIG } : {}),
     }).toString();
     location.replace(url);
     return;
@@ -1349,13 +1384,7 @@ window.addEventListener('message', (event) => {
   const asked = askedExample(m.class, m.action);
   EXAMPLES[0] = asked;
   nameAsked(m.class);
-  if (EMBED) {
-    const full = new URL(location.href);
-    full.searchParams.delete('embed');
-    full.searchParams.set('class', m.class);
-    full.searchParams.set('action', m.action === 'check' ? 'check' : 'simulate');
-    el('openTab').href = full.toString();
-  }
+  showPermalink(asked);
   selectExample(asked);
 });
 

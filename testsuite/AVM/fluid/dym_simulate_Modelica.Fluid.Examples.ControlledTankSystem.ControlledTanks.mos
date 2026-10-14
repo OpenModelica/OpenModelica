@@ -1,2 +1,0 @@
-simulateModel("Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks"); 
-exit();

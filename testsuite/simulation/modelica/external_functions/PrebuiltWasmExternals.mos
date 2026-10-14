@@ -1,0 +1,44 @@
+// name:     PrebuiltWasmExternals
+// keywords: ffi external wasm-jit
+// status:   correct
+// suite:    wasm
+// setup_command: mkdir -p PrebuiltWasmExternals/Resources/Library/wasm32-wasip1/omc-0 PrebuiltWasmExternals/Resources/Library/wasm32-wasip1/omc-1 && cp PrebuiltWasmExternals/Bundle/omc-externals.json PrebuiltWasmExternals/Resources/Library/wasm32-wasip1/omc-0/ && cp PrebuiltWasmExternals/Bundle/omc-externals.json PrebuiltWasmExternals/Resources/Library/wasm32-wasip1/omc-1/ && $OMC_CC $OMC_CFLAGS $OMC_EXTLIB_FLAGS -IPrebuiltWasmExternals/Resources/C-Sources -o PrebuiltWasmExternals/Resources/Library/wasm32-wasip1/omc-1/pwe.wasm PrebuiltWasmExternals/Bundle/pwe.c $OMC_EXTLIB_LIBS
+// teardown_command: rm -rf PrebuiltWasmExternals/Resources/Library PrebuiltWasmExternals.Counter*
+// depends: PrebuiltWasmExternals
+//
+// An omc that may not compile C loads the newest generation of the prebuilt
+// modules installed (generation 0 lacks its module) instead of compiling the
+// Include sources. increment and count include the same static counter, so
+// they share a module and see the same value.
+
+loadFile("PrebuiltWasmExternals/package.mo"); getErrorString();
+
+setEnvironmentVar("OMC_WASM_NATIVE_EXTERNALS", "0");
+setCommandLineOptions("--simCodeTarget=wasm-jit"); getErrorString();
+simulate(PrebuiltWasmExternals.Counter, stopTime=1.0); getErrorString();
+val(incremented, 1.0);
+val(counted, 1.0);
+val(y, 1.0);
+val(total, 1.0);
+setEnvironmentVar("OMC_WASM_NATIVE_EXTERNALS", "");
+
+// Result:
+// true
+// ""
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "PrebuiltWasmExternals.Counter_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'PrebuiltWasmExternals.Counter', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// 5.0
+// 2.0
+// 2.5
+// true
+// endResult

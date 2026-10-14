@@ -7,7 +7,7 @@
 // Tests that < is escaped in Xml dumps
 //
 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 loadFile("MSD.mo");
 
 "StateSpace";
@@ -203,7 +203,7 @@ readFile("stateSpace-MSD.xml");
 // <bindExpression string=\"false\">
 // </bindExpression>
 // </variable>
-// <variable id=\"2\" name=\"damper1.useHeatPort\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"=true, if heatPort is enabled\">
+// <variable id=\"2\" name=\"damper1.useHeatPort\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"= true, if heatPort is enabled\">
 // <bindExpression string=\"false\">
 // </bindExpression>
 // </variable>

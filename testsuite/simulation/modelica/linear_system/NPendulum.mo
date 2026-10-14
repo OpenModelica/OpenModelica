@@ -6,12 +6,12 @@
 package NPendulum
 model pendulum
   constant Integer N = 10;
-  parameter Modelica.SIunits.RotationalDampingConstant d = 1 annotation(Evaluate=true);
-  parameter Modelica.SIunits.Length l = 1
+  parameter Modelica.Units.SI.RotationalDampingConstant d = 1 annotation(Evaluate=true);
+  parameter Modelica.Units.SI.Length l = 1
    annotation(Evaluate=true);
 
-  Modelica.SIunits.Angle phi[N] = revolute.phi;
-  Modelica.SIunits.Angle w[N] = revolute.w;
+  Modelica.Units.SI.Angle phi[N] = revolute.phi;
+  Modelica.Units.SI.Angle w[N] = revolute.w;
 
 protected
   Modelica.Mechanics.MultiBody.Joints.Revolute revolute[N](
@@ -51,7 +51,7 @@ equation
       color={95,95,95},
       thickness=0.5,
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="4.1.0")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
     experiment(StopTime=1));
 end pendulum;
@@ -62,7 +62,7 @@ model pendulum40
     experiment(StopTime=1));
 end pendulum40;
 
-annotation(uses(Modelica(version="3.2.1")));
+annotation(uses(Modelica(version="4.1.0")));
   annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end NPendulum;
 

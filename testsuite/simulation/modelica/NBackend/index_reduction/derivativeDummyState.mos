@@ -1,0 +1,41 @@
+// name: derivativeDummyState
+// keywords: NewBackend, index reduction
+// status: correct
+//
+// v1 = der(x) and v2 = der(x) have to be differentiated again. The derivative $DER.x must stay
+// the derivative of x, an alias takes its place in the dummy state selection. x = cos(t/sqrt(2)).
+
+loadString("
+model derivativeDummyState
+  Real x(stateSelect = StateSelect.prefer, start = 1, fixed = true);
+  Real v1(start = 0, fixed = true);
+  Real v2;
+  Real a1, a2;
+equation
+  v1 = der(x);
+  v2 = der(x);
+  a1 = der(v1);
+  a2 = der(v2);
+  a1 + a2 = -x;
+end derivativeDummyState;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(derivativeDummyState); getErrorString();
+val(x, 1);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "derivativeDummyState_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'derivativeDummyState', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.7602450937156624
+// endResult

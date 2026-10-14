@@ -175,6 +175,15 @@ pub fn dgetrs_ref(
     b: &mut [f64],
     ldb: usize,
 ) -> i32 {
+    if n == 1 {
+        // What the two triangular solves reduce to, zero right-hand sides kept.
+        for j in 0..nrhs {
+            if b[j * ldb] != 0.0 {
+                b[j * ldb] /= a[0];
+            }
+        }
+        return 0;
+    }
     let notran = opt(trans) == b'N';
     if notran {
         apply_pivots(n, nrhs, ipiv, b, ldb, false);

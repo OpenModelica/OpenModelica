@@ -53,6 +53,7 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QDesktopServices>
 
 //IAEX Headers
 #include "celldocument.h"
@@ -164,6 +165,10 @@ namespace IAEX
     {
       application()->removeTempFiles( i_iter.key() );
     }
+
+    // Delete all cells while the document is still complete. Otherwise the cells are deleted
+    // after the other members (selectedCells_, factory_, current_, ...) are already gone.
+    mainFrame_.reset();
   }
 
 
@@ -231,6 +236,19 @@ namespace IAEX
    */
   void CellDocument::setWorkspace(Cell *newWorkspace)
   {
+    // Remove the old workspace (it is owned by the old scroll area, together with its cursor).
+    // Without this every open() and close() leaves another complete scroll area in mainFrame_.
+    // deleteLater(), because this may be called from a slot of a cell of the old workspace.
+    if( scroll_ )
+    {
+      mainLayout_->removeWidget( scroll_ );
+      scroll_->hide();
+      scroll_->deleteLater();
+    }
+    // these point into the old workspace
+    selectedCells_.clear();
+    lastClickedCell_ = nullptr;
+
     scroll_ = new QScrollArea( mainFrame_.get() );
     scroll_->setWidgetResizable( true );
     scroll_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
@@ -624,7 +642,9 @@ namespace IAEX
   QImage CellDocument::getImage(QString name)
   {
     name.remove( "file:///" );
-    return images_[name];
+    // value() does not insert an entry for unknown names. Every key of images_ is handed to
+    // removeTempFiles() in the destructor.
+    return images_.value(name);
   }
 
   /*!
@@ -638,6 +658,17 @@ namespace IAEX
   void CellDocument::textcursorInsertLink( QString filepath, QTextCursor& cursor )
   {
     executeCommand(std::make_unique<TextCursorInsertLink>( filepath, cursor ));
+  }
+
+  /*!
+   * \brief Insert (or change) a link to a web page (http/https)
+   *
+   * \param url The web address
+   * \param text The link text, if empty the selected text (or the url) is used
+   */
+  void CellDocument::textcursorInsertWebLink( QString url, QString text, QTextCursor& cursor )
+  {
+    executeCommand(std::make_unique<TextCursorInsertWebLink>( url, text, cursor ));
   }
 
   /*!
@@ -712,6 +743,10 @@ namespace IAEX
    */
   void CellDocument::updateScrollArea()
   {
+    // blocked while the text zoom sets the scroll position itself
+    if( scrollUpdatesBlocked_ > 0 )
+      return;
+
     if( scroll_->verticalScrollBar()->isVisible() )
     {
       CellCursor *cursor = getCursor();
@@ -813,6 +848,21 @@ namespace IAEX
         }
       }
     }
+  }
+
+  /*!
+   * \brief Blocks (or unblocks) updateScrollArea(). Every cell calls it when its
+   * height changes, and it scrolls the active cell into view. The text zoom
+   * changes the height of all cells and scrolls by itself.
+   *
+   * Calls can be nested, every block(true) needs a block(false).
+   */
+  void CellDocument::blockScrollUpdates( bool block )
+  {
+    if( block )
+      ++scrollUpdatesBlocked_;
+    else if( scrollUpdatesBlocked_ > 0 )
+      --scrollUpdatesBlocked_;
   }
 
   /*!
@@ -996,6 +1046,22 @@ namespace IAEX
     // 2006-02-10 AF, check if path is empty
     //fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
     //fflush(stderr); fflush(stdout);
+
+    // Web links (http/https) are opened in the default browser instead of
+    // being treated as a local notebook file.
+    const QString scheme = link->scheme().toLower();
+    if( scheme == QLatin1String("http") || scheme == QLatin1String("https") )
+    {
+      if( !QDesktopServices::openUrl( *link ) )
+      {
+        // e.g. no default browser configured
+        QMessageBox::warning( QApplication::activeWindow(), tr("Error"),
+          tr("Could not open the link in the default web browser:\n%1")
+            .arg( link->toString() ) );
+      }
+      return;
+    }
+
     if( !link->path().isEmpty() )
     {
       // 2005-12-05 AF, check if filename exists, otherwise use work dir

@@ -59,6 +59,7 @@ protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import Global;
 protected import List;
 protected import Inline;
 protected import BackendDAE;
@@ -75,63 +76,76 @@ protected import Types;
 
 public function solveSimpleEquations
   input output BackendDAE.BackendDAE dae;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
 algorithm
-  dae.eqs := list(
-    match syst
-      local
-        BackendDAE.StrongComponents comps;
-        array<Integer> ass1 "eqn := ass1[var]";
-        array<Integer> ass2 "var := ass2[eqn]";
-
-      case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2))
-        algorithm
-          comps := list(
-            match comp
-              local
-                BackendDAE.Equation eqn;
-                BackendDAE.Var var;
-                Integer eindex, vindx;
-                Boolean solved;
-                BackendDAE.StrongComponent tmpComp;
-
-              case BackendDAE.SINGLEEQUATION() algorithm
-                BackendDAE.SINGLEEQUATION(eqn=eindex, var=vindx) := comp;
-                eqn := BackendEquation.get(syst.orderedEqs, eindex);
-                tmpComp := comp;
-                if BackendEquation.isEquation(eqn) then
-                  var := BackendVariable.getVarAt(syst.orderedVars, vindx);
-                  (eqn, solved) := solveSimpleEquation(eqn, var, dae.shared);
-                  syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, eindex, eqn);
-                  if not solved then
-                    tmpComp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN(), BackendDAE.JAC_NONLINEAR(), false);
-                  end if;
-                end if;
-              then tmpComp;
-
-              else comp;
-            end match
-          for comp in comps);
-          syst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
-        then syst;
-
-      else syst;
-    end match
-  for syst in dae.eqs);
+  (systs, shared) := List.mapFold(dae.eqs, solveSimpleEquationsSyst, dae.shared);
+  dae := BackendDAE.DAE(systs, shared);
 end solveSimpleEquations;
+
+protected function solveSimpleEquationsSyst
+  input output BackendDAE.EqSystem syst;
+  input output BackendDAE.Shared shared;
+protected
+  BackendDAE.StrongComponents comps = {}, oldComps;
+  BackendDAE.StrongComponent tmpComp;
+  array<Integer> ass1, ass2;
+  BackendDAE.Equation eqn;
+  BackendDAE.Var var;
+  Integer eindex, vindx;
+  Boolean solved;
+algorithm
+  () := match syst
+    case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1 = ass1, ass2 = ass2, comps = oldComps))
+      algorithm
+        for comp in oldComps loop
+          tmpComp := comp;
+          if isSingleEquation(comp) then
+            BackendDAE.SINGLEEQUATION(eqn=eindex, var=vindx) := comp;
+            eqn := BackendEquation.get(syst.orderedEqs, eindex);
+            if BackendEquation.isEquation(eqn) then
+              var := BackendVariable.getVarAt(syst.orderedVars, vindx);
+              (eqn, shared, solved) := solveSimpleEquation(eqn, var, shared);
+              syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, eindex, eqn);
+              if not solved then
+                tmpComp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx}, BackendDAE.EMPTY_JACOBIAN(), BackendDAE.JAC_NONLINEAR(), false);
+              end if;
+            end if;
+          end if;
+          comps := tmpComp :: comps;
+        end for;
+        syst.matching := BackendDAE.MATCHING(ass1, ass2, listReverse(comps));
+      then ();
+
+    else ();
+  end match;
+end solveSimpleEquationsSyst;
+
+protected function isSingleEquation
+  input BackendDAE.StrongComponent comp;
+  output Boolean b;
+algorithm
+  b := match comp
+    case BackendDAE.SINGLEEQUATION() then true;
+    else false;
+  end match;
+end isSingleEquation;
 
 protected function solveSimpleEquation
   input output BackendDAE.Equation eqn;
   input BackendDAE.Var var "solve eqn with respect to var";
-  input BackendDAE.Shared shared;
+  input output BackendDAE.Shared shared;
   output Boolean solved;
 protected
   DAE.ComponentRef cr;
-  DAE.Exp e1,e2,varexp,e;
+  DAE.Exp lhs,rhs,e1,e2,varexp,e;
   BackendDAE.EquationAttributes attr;
   DAE.ElementSource source;
   Boolean isContinuousIntegration = BackendDAEUtil.isSimulationDAE(shared);
 algorithm
-  BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr) := eqn;
+  BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source, attr=attr) := eqn;
+  (e1, e2) := (lhs, rhs);
   BackendDAE.VAR(varName = cr) := var;
   varexp := Expression.crefExp(cr);
   if BackendVariable.isStateVar(var) then
@@ -155,7 +169,108 @@ algorithm
     // ToDo: do other preprocessing like multiplying by divisors?
     solved := false;
   end try;
+
+  if solved and not isSolvedFor(lhs, rhs, varexp) then
+    shared := checkSolveCoefficient(lhs, rhs, cr, source, shared);
+  end if;
 end solveSimpleEquation;
+
+protected function isSolvedFor
+  "Whether lhs = rhs already has the form x = f(..) for varexp, up to a sign."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Exp varexp;
+  output Boolean b = true;
+algorithm
+  try
+    solveSimple(lhs, rhs, varexp, 0);
+  else
+    try
+      solveSimple(rhs, lhs, varexp, 0);
+    else
+      b := false;
+    end try;
+  end try;
+end isSolvedFor;
+
+protected function checkSolveCoefficient
+  "Checks the coefficient that solving lhs = rhs for cr divides by. If it only
+   depends on parameters and is zero for their compile-time values, the
+   parameters are added to Global.structuralParameters, so that translateModel
+   evaluates them and translates the model again. Otherwise an assert that the
+   coefficient stays nonzero is added to the parameter asserts."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ComponentRef cr "$DER-prefixed for a state";
+  input DAE.ElementSource source;
+  input output BackendDAE.Shared shared;
+protected
+  DAE.Exp coef, value, cond;
+  list<DAE.ComponentRef> params, zeroParams;
+  list<String> names;
+  BackendDAE.Var v;
+  DAE.Type ty;
+  String msg;
+  DAE.Statement stmt;
+algorithm
+  try
+    coef := Differentiate.differentiateExpSolve(Expression.replaceDerOpInExp(Expression.expSub(lhs, rhs)), cr, SOME(shared.functionTree));
+    (coef, _) := ExpressionSimplify.simplify(coef);
+    false := Types.isArray(Expression.typeof(coef));
+    params := List.uniqueOnTrue(Expression.extractCrefsFromExp(coef), ComponentReferenceBasics.crefEqual);
+    false := listEmpty(params);
+    for p in params loop
+      (v :: _, _) := BackendVariable.getVar(p, shared.globalKnownVars);
+      true := BackendVariable.isParam(v) and BackendVariable.varFixed(v);
+    end for;
+    value := evaluateParameterExp(coef, shared.globalKnownVars);
+    true := Expression.isConst(value);
+  else
+    return;
+  end try;
+
+  if Expression.isZero(value) then
+    zeroParams := list(p for p guard Expression.isZero(evaluateParameterExp(Expression.crefExp(p), shared.globalKnownVars)) in params);
+    if listEmpty(zeroParams) then
+      zeroParams := params;
+    end if;
+    names := getGlobalRoot(Global.structuralParameters);
+    for p in zeroParams loop
+      names := List.unionElt(ComponentReferenceBasics.printComponentRefStr(ComponentReference.crefStripSubs(p)), names);
+    end for;
+    setGlobalRoot(Global.structuralParameters, names);
+  else
+    ty := Expression.typeof(coef);
+    cond := DAE.RELATION(coef, DAE.NEQUAL(ty), Expression.makeConstZero(ty), -1, NONE());
+    msg := if Expression.isCref(coef)
+      then "Parameter " + ExpressionBasics.printExpStr(coef) + " cannot be set to zero at run time, because that causes a structural change in the equations; set " + ExpressionBasics.printExpStr(coef) + " = 0 in the model and recompile it."
+      else "The parameters in " + ExpressionBasics.printExpStr(coef) + " cannot be set so that it is zero at run time, because that causes a structural change in the equations; set their values in the model and recompile it.";
+    stmt := DAE.STMT_ASSERT(cond, DAE.SCONST(msg), DAE.ASSERTIONLEVEL_ERROR, source);
+    if not List.any(shared.parameterAsserts, function assertCondEqual(stmt2 = stmt)) then
+      shared.parameterAsserts := stmt :: shared.parameterAsserts;
+    end if;
+  end if;
+end checkSolveCoefficient;
+
+protected function evaluateParameterExp
+  input DAE.Exp exp;
+  input BackendDAE.Variables globalKnownVars;
+  output DAE.Exp value;
+algorithm
+  (value, _) := Expression.traverseExpBottomUp(exp, BackendDAEUtil.replaceVarWithValue, globalKnownVars);
+  (value, _) := ExpressionSimplify.simplify(value);
+end evaluateParameterExp;
+
+public function assertCondEqual
+  input DAE.Statement stmt1;
+  input DAE.Statement stmt2;
+  output Boolean b;
+algorithm
+  b := match (stmt1, stmt2)
+    case (DAE.STMT_ASSERT(), DAE.STMT_ASSERT()) then ExpressionBasics.expEqual(stmt1.cond, stmt2.cond);
+    else false;
+  end match;
+end assertCondEqual;
 
 protected function printTryToSolve
   "for debugging"

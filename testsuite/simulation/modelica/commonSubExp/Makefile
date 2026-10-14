@@ -40,6 +40,7 @@ wrapFunctionCalls11.mos \
 wrapFunctionCalls12.mos \
 wrapFunctionCalls13.mos \
 wrapFunctionCalls14.mos \
+wrapFunctionCalls15.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

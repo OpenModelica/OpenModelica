@@ -114,7 +114,7 @@ template getGeneralTarget(String str)
   else str
 end getGeneralTarget;
 
-template underscorePath(Path path)
+template underscorePath(Absyn.Path path)
  "Generate paths with components separated by underscores.
   Replaces also the . in identifiers with _.
   The dot might happen for world.gravityAccleration"
@@ -157,7 +157,7 @@ template crefStrNoUnderscore(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrNoUnderscore;
 
-template subscriptsStr(list<Subscript> subscripts)
+template subscriptsStr(list<DAE.Subscript> subscripts)
  "Generares subscript part of the name."
 ::=
   if subscripts then
@@ -176,14 +176,14 @@ template crefStrMatlabSafe(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrMatlabSafe;
 
-template subscriptsStrMatlabSafe(list<Subscript> subscripts)
+template subscriptsStrMatlabSafe(list<DAE.Subscript> subscripts)
  "Generares subscript part of the name for matlab safe variable names."
 ::=
   if subscripts then
     '(<%subscripts |> s => subscriptStr(s) ;separator=","%>)'
 end subscriptsStrMatlabSafe;
 
-template subscriptStr(Subscript subscript)
+template subscriptStr(DAE.Subscript subscript)
  "Generates a single subscript.
   Only works for constant integer and cref indicies."
 
@@ -273,7 +273,7 @@ end initValXml;
  *********************************************************************
  *********************************************************************/
 
-template getVariablity(VarKind varKind)
+template getVariablity(BackendDAE.VarKind varKind)
  "Returns the variablity Attribute of ScalarVariable."
 ::=
   match varKind
@@ -283,7 +283,7 @@ template getVariablity(VarKind varKind)
     else "continuous"
 end getVariablity;
 
-template variabilityString(VarKind varKind)
+template variabilityString(BackendDAE.VarKind varKind)
 ::=
   match varKind
     case VARIABLE()               then "variable"
@@ -332,7 +332,7 @@ end getAliasVar;
  *********************************************************************
  *********************************************************************/
 
-template dotPath(Path path)
+template dotPath(Absyn.Path path)
  "Generates paths with components separated by dots."
 ::=
   match path

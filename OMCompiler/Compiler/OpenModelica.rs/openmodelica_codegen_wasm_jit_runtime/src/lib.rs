@@ -40,7 +40,7 @@
 
 extern crate alloc;
 
-mod delay;
+pub mod delay;
 mod files;
 /// The run's model and `SimData`, for the analyses the nonlinear solver runs from
 /// inside a solve.
@@ -52,7 +52,7 @@ mod omclog;
 pub use nls::{
     rt_context_addr, rt_error_stage_addr, rt_nls_clean_history, rt_no_throw_div_zero_addr, rt_set_step_size,
 };
-mod spatial;
+pub mod spatial;
 // SUNDIALS/KLU. The archives are wasip1-only (they need a libc) and only linked
 // when the build script found them, so `cfg(sundials)` gates the calls; the module
 // itself compiles everywhere for its capability report.
@@ -209,6 +209,15 @@ mod rust_heap {
     #[global_allocator]
     static RUST_HEAP: RustHeap = RustHeap(core::cell::UnsafeCell::new([core::ptr::null_mut(); CLASSES]));
 
+    /// Rust's own handler would print a bare "memory allocation failed".
+    #[inline]
+    fn checked(p: *mut u8, size: usize) -> *mut u8 {
+        if p.is_null() {
+            super::out_of_memory(size);
+        }
+        p
+    }
+
     #[inline]
     fn class(l: Layout) -> Option<usize> {
         (l.size() <= CACHE_MAX && l.align() <= ALIGN).then(|| (l.size().max(1) - 1) / ALIGN)
@@ -217,11 +226,12 @@ mod rust_heap {
     unsafe impl GlobalAlloc for RustHeap {
         #[inline]
         unsafe fn alloc(&self, l: Layout) -> *mut u8 {
-            let Some(c) = class(l) else { return unsafe { GLOBAL.alloc(l) } };
+            let Some(c) = class(l) else { return checked(unsafe { GLOBAL.alloc(l) }, l.size()) };
             let lists = unsafe { &mut *self.0.get() };
             let head = lists[c];
             if head.is_null() {
-                return unsafe { GLOBAL.alloc(Layout::from_size_align_unchecked((c + 1) * ALIGN, ALIGN)) };
+                let p = unsafe { GLOBAL.alloc(Layout::from_size_align_unchecked((c + 1) * ALIGN, ALIGN)) };
+                return checked(p, l.size());
             }
             lists[c] = unsafe { *(head as *mut *mut u8) };
             head
@@ -238,7 +248,7 @@ mod rust_heap {
         unsafe fn realloc(&self, p: *mut u8, l: Layout, new_size: usize) -> *mut u8 {
             let new = unsafe { Layout::from_size_align_unchecked(new_size, l.align()) };
             match (class(l), class(new)) {
-                (None, None) => unsafe { GLOBAL.realloc(p, l, new_size) },
+                (None, None) => checked(unsafe { GLOBAL.realloc(p, l, new_size) }, new_size),
                 (Some(a), Some(b)) if a == b => p,
                 _ => {
                     let q = unsafe { self.alloc(new) };
@@ -691,6 +701,17 @@ fn release_reserve() {
     }
 }
 
+/// `memory.grow` refused. Say so: the bare trap reads as a codegen fault.
+#[cold]
+#[inline(never)]
+fn out_of_memory(size: usize) -> ! {
+    release_reserve();
+    note_runtime_error(&alloc::format!(
+        "wasm-jit: out of memory. The simulation asked for {size} more bytes and its wasm linear memory cannot grow.",
+    ));
+    trap();
+}
+
 /// Recycling free lists in front of `dlmalloc`. Generated code allocates and frees
 /// one array/record per array/record-typed function local on every call (an IF97
 /// property evaluation does hundreds), so a same-size block is nearly always
@@ -746,12 +767,7 @@ fn alloc_fresh(total: usize, size: u32) -> u32 {
     arm_reserve();
     let raw = unsafe { GLOBAL.alloc(layout) } as u32;
     if raw == 0 {
-        // `memory.grow` refused. Say so: the bare trap reads as a codegen fault.
-        release_reserve();
-        note_runtime_error(&alloc::format!(
-            "wasm-jit: out of memory. The simulation asked for {size} more bytes and its wasm linear memory cannot grow.",
-        ));
-        trap();
+        out_of_memory(size as usize);
     }
     unsafe { store_u32(raw, total as u32) };
     #[cfg(feature = "heap_stats")]
@@ -1354,47 +1370,46 @@ pub extern "C" fn rt_array_cat(dim: u32, n: u32, handles: u32) -> u32 {
         rt_array_set_dim(result, a, d);
     }
 
-    let scratch = rt_alloc(ndims * 4); // per-axis source coordinate
+    // Row-major: each input is, per index over the axes before `axis`, one
+    // contiguous block, and the result lays those blocks side by side.
     let stride = elem_stride(kind);
     let heap = matches!(kind, EK_STR | EK_ARRAY | EK_RECORD);
+    let mut outer = 1u32;
+    for a in 0..axis {
+        outer *= rt_array_dim(first, a as i32 + 1);
+    }
     let dst_base = arr_data(result);
-    let mut off = 0u32; // running offset of this input along `axis`
+    // (source data, block bytes) per input.
+    let blocks = rt_alloc(n * 8);
     for c in 0..n {
         let src = unsafe { load_u32(hdata + c * 4) };
-        let src_total = rt_array_total(src);
-        let src_base = arr_data(src);
-        for e in 0..src_total {
-            // Decompose `e` into per-axis source coordinates (row-major).
-            let mut rem = e;
-            let mut a = ndims;
-            while a > 0 {
-                a -= 1;
-                let d = rt_array_dim(src, a as i32 + 1);
-                unsafe { store_u32(scratch + a * 4, rem % d) };
-                rem /= d;
-            }
-            // Shift the concatenation axis by this input's running offset.
-            let shifted = unsafe { load_u32(scratch + axis * 4) } + off;
-            unsafe { store_u32(scratch + axis * 4, shifted) };
-            // Recompose into the result linear index (row-major over result dims).
-            let mut r = 0u32;
-            for a in 0..ndims {
-                let rd = unsafe { load_u32(result + ARR_DIMS_OFF + a * 4) };
-                r = r * rd + unsafe { load_u32(scratch + a * 4) };
-            }
-            let sp = src_base + e * stride;
-            let dp = dst_base + r * stride;
+        unsafe {
+            store_u32(blocks + c * 8, arr_data(src));
+            store_u32(blocks + c * 8 + 4, if outer == 0 { 0 } else { rt_array_total(src) / outer * stride });
+        }
+    }
+    let mut dp = dst_base;
+    for o in 0..outer {
+        for c in 0..n {
+            let (sp, block) = unsafe { (load_u32(blocks + c * 8), load_u32(blocks + c * 8 + 4)) };
+            let sp = sp + o * block;
             unsafe {
-                core::ptr::copy_nonoverlapping(sp as *const u8, dp as *mut u8, stride as usize);
-                if heap {
-                    store_u32(dp, copy_kind(kind, load_u32(dp)));
+                if block == 8 {
+                    store_f64(dp, load_f64(sp));
+                } else {
+                    core::ptr::copy_nonoverlapping(sp as *const u8, dp as *mut u8, block as usize);
                 }
             }
+            dp += block;
         }
-        off += rt_array_dim(src, dim as i32);
     }
-
-    rt_free(scratch);
+    rt_free(blocks);
+    if heap {
+        for e in 0..total {
+            let p = dst_base + e * stride;
+            unsafe { store_u32(p, copy_kind(kind, load_u32(p))) };
+        }
+    }
     result
 }
 

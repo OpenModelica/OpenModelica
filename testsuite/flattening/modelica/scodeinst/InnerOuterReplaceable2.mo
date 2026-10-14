@@ -8,7 +8,7 @@ model A
 end A;
 
 model B
-  inner parameter A a;
+  parameter A a;
   inner replaceable Real x;
 end B;
 
@@ -19,6 +19,6 @@ end InnerOuterReplaceable2;
 
 // Result:
 // class InnerOuterReplaceable2
-//   parameter Real x = 2.0;
+//   Real x = 2.0;
 // end InnerOuterReplaceable2;
 // endResult

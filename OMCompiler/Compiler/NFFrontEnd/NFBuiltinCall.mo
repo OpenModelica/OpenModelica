@@ -963,7 +963,9 @@ protected
                  ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
         end if;
 
-        if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
+        // a resizable size stays symbolic
+        if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) and
+           not Expression.contains(arg, Expression.isResizableCref) then
           Structural.markExp(arg);
           arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.tryEvalExpResizable(arg);
           arg_ty := Expression.typeOf(arg);
@@ -1405,6 +1407,11 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
     args := typeConnectionsArgs(args, arg_context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
@@ -1488,6 +1495,11 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
     arg1 :: args := args;
 
     arg1 := typeConnectionsArg(arg1, arg_context, info, fn_ref, 1);
@@ -1543,6 +1555,11 @@ protected
 
     if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
@@ -1633,6 +1650,11 @@ protected
 
     if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
@@ -2102,8 +2124,10 @@ protected
           end if;
 
           // The argument of actualStream/inStream must have subscripts that can be evaluated.
+          // with resizable arrays the subscripts can be iterators over resizable ranges
           for sub in ComponentRef.subscriptsAllFlat(arg.cref) loop
-            if Subscript.variability(sub) > Variability.PARAMETER then
+            if Subscript.variability(sub) > Variability.PARAMETER and not (Subscript.variability(sub) == Variability.NON_STRUCTURAL_PARAMETER
+               and Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)) then
               Error.addSourceMessageAndFail(Error.CONNECTOR_NON_PARAMETER_SUBSCRIPT,
                 {ComponentRef.toString(arg.cref), Subscript.toString(sub)}, info);
             end if;

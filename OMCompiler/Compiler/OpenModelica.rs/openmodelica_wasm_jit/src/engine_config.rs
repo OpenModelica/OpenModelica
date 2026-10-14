@@ -8,8 +8,16 @@
 const MIB: u64 = 1 << 20;
 const GROWTH_CAP: u64 = 2048 * MIB;
 
+/// The GC heap holds only exception objects; left to default it would reserve
+/// another 4 GiB + guard per store, like a linear memory.
+const GC_HEAP_RESERVATION: u64 = 16 * MIB;
+
 /// A run that sets `OMC_WASM_MEMORY_RESERVATION_MB` compiles its own artifacts.
 pub fn tune_memory(cfg: &mut wasmtime::Config) {
+    cfg.gc_heap_reservation(GC_HEAP_RESERVATION);
+    cfg.gc_heap_reservation_for_growth(GC_HEAP_RESERVATION);
+    cfg.gc_heap_guard_size(0);
+    cfg.gc_heap_may_move(true);
     let Some(mb) = std::env::var("OMC_WASM_MEMORY_RESERVATION_MB")
         .ok()
         .and_then(|s| s.trim().parse::<u64>().ok())

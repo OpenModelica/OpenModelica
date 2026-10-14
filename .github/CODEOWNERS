@@ -1,0 +1,67 @@
+# Code owners are automatically requested for review when a pull request
+# changes files they own. Later rules take precedence over earlier ones.
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# To add yourself, uncomment a placeholder below (or add a new line) and
+# append your GitHub handle, e.g.:
+#   /OMCompiler/Compiler/NFFrontEnd/ @your-handle
+
+# GitHub Actions workflows
+/.github/workflows/ @AnHeuermann
+
+# Build system
+CMakeLists.txt @AnHeuermann
+*.cmake @AnHeuermann
+*.cmake.in @AnHeuermann
+/cmake/ @AnHeuermann
+
+# Compiler: frontend
+# /OMCompiler/Compiler/NFFrontEnd/
+# /OMCompiler/Compiler/FrontEnd/
+
+# Compiler: backend
+# /OMCompiler/Compiler/NBackEnd/
+# /OMCompiler/Compiler/BackEnd/
+
+# Compiler: code generation
+# /OMCompiler/Compiler/NSimCode/
+# /OMCompiler/Compiler/SimCode/
+# /OMCompiler/Compiler/Template/
+
+# Compiler: scripting API
+# /OMCompiler/Compiler/Script/
+
+# Compiler: C API
+/OMCompiler/Compiler/omcCAPI/ @AnHeuermann
+
+# C simulation runtime
+# /OMCompiler/SimulationRuntime/c/
+
+# C simulation runtime: integrators
+/OMCompiler/SimulationRuntime/c/simulation/solver/cvode_solver.* @AnHeuermann
+/OMCompiler/SimulationRuntime/c/simulation/solver/ida_solver.* @AnHeuermann
+# /OMCompiler/SimulationRuntime/c/simulation/solver/gbode*
+
+# C++ simulation runtime
+# /OMCompiler/SimulationRuntime/cpp/
+
+# FMI
+/OMCompiler/SimulationRuntime/fmi/ @AnHeuermann
+
+# OMEdit
+# /OMEdit/
+
+# OMPlot
+# /OMPlot/
+
+# OMNotebook
+# /OMNotebook/
+
+# OMShell
+# /OMShell/
+
+# Documentation
+# /doc/
+
+# Testsuite
+# /testsuite/

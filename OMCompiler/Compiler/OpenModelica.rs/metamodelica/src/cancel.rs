@@ -181,6 +181,154 @@ pub fn progress_message() -> String {
         .unwrap_or_default()
 }
 
+// ── Step in progress, per thread ──────────────────────────────────────────────
+//
+// What each thread is in the middle of, for a crash report rather than a host:
+// Rust's stack-overflow message names a thread only as it was named at spawn.
+// Only a binary that installs no other fault handler should call
+// `install_fatal_signal_report`: wasmtime recovers from SIGSEGV in JIT code, and
+// every such trap would be reported as fatal.
+
+/// Names what this thread is doing until the guard drops; printed if the
+/// process dies of SIGSEGV or SIGBUS on this thread.
+pub use step::{StepGuard, enter_step};
+
+/// Chains in front of the current SIGSEGV/SIGBUS handlers -- in a Rust binary,
+/// std's stack-overflow reporter.
+pub use step::install_fatal_signal_report;
+
+/// [`report_progress`], plus [`enter_step`] for the calling thread.
+pub fn report_progress_step(permille: i32, phase: i32, what: &str) -> StepGuard {
+    report_progress(permille, phase);
+    enter_step(what)
+}
+
+#[cfg(all(unix, not(target_arch = "wasm32")))]
+mod step {
+    use std::cell::{Cell, UnsafeCell};
+    use std::sync::atomic::{Ordering, compiler_fence};
+
+    const CAPACITY: usize = 512;
+
+    struct Context {
+        len: Cell<usize>,
+        bytes: UnsafeCell<[u8; CAPACITY]>,
+    }
+
+    thread_local! {
+        // Const-initialised and without a destructor, so the signal handler
+        // can read it without allocating.
+        static CONTEXT: Context = const {
+            Context { len: Cell::new(0), bytes: UnsafeCell::new([0; CAPACITY]) }
+        };
+    }
+
+    fn store(what: &[u8]) {
+        let len = what.len().min(CAPACITY);
+        CONTEXT.with(|c| {
+            c.len.set(0);
+            compiler_fence(Ordering::SeqCst);
+            // SAFETY: only this thread and its signal handler touch the
+            // buffer, and the handler reads no further than `len`.
+            unsafe { (&mut *c.bytes.get())[..len].copy_from_slice(&what[..len]) };
+            compiler_fence(Ordering::SeqCst);
+            c.len.set(len);
+        });
+    }
+
+    fn current() -> Vec<u8> {
+        CONTEXT.with(|c| unsafe { (&*c.bytes.get())[..c.len.get()].to_vec() })
+    }
+
+    pub struct StepGuard {
+        previous: Vec<u8>,
+    }
+
+    impl Drop for StepGuard {
+        fn drop(&mut self) {
+            store(&self.previous);
+        }
+    }
+
+    pub fn enter_step(what: &str) -> StepGuard {
+        let previous = current();
+        store(what.as_bytes());
+        StepGuard { previous }
+    }
+
+    const SIGNALS: [libc::c_int; 2] = [libc::SIGSEGV, libc::SIGBUS];
+
+    struct Previous(UnsafeCell<[libc::sigaction; 2]>);
+    // SAFETY: written once, before the handler that reads it is installed.
+    unsafe impl Sync for Previous {}
+    static PREVIOUS: Previous = Previous(UnsafeCell::new(unsafe { std::mem::zeroed() }));
+
+    fn write_all(mut bytes: &[u8]) {
+        while !bytes.is_empty() {
+            let n = unsafe { libc::write(2, bytes.as_ptr().cast(), bytes.len()) };
+            if n <= 0 {
+                return;
+            }
+            bytes = &bytes[n as usize..];
+        }
+    }
+
+    extern "C" fn handler(sig: libc::c_int, info: *mut libc::siginfo_t, data: *mut libc::c_void) {
+        let _ = CONTEXT.try_with(|c| {
+            let len = c.len.get();
+            if len > 0 {
+                write_all(b"\nfatal signal while ");
+                write_all(unsafe { &(&*c.bytes.get())[..len] });
+                write_all(b"\n");
+            }
+        });
+        let index = usize::from(sig != libc::SIGSEGV);
+        let previous = unsafe { &(&*PREVIOUS.0.get())[index] };
+        let action = previous.sa_sigaction;
+        unsafe {
+            if action == libc::SIG_DFL || action == libc::SIG_IGN {
+                // Returning re-executes the faulting instruction, which now
+                // takes the default action.
+                let mut default: libc::sigaction = std::mem::zeroed();
+                default.sa_sigaction = libc::SIG_DFL;
+                libc::sigaction(sig, &default, std::ptr::null_mut());
+            } else if previous.sa_flags & libc::SA_SIGINFO != 0 {
+                let f: extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) =
+                    std::mem::transmute(action);
+                f(sig, info, data);
+            } else {
+                let f: extern "C" fn(libc::c_int) = std::mem::transmute(action);
+                f(sig);
+            }
+        }
+    }
+
+    pub fn install_fatal_signal_report() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| unsafe {
+            let previous = &mut *PREVIOUS.0.get();
+            for (sig, previous) in SIGNALS.into_iter().zip(previous.iter_mut()) {
+                let mut action: libc::sigaction = std::mem::zeroed();
+                action.sa_sigaction = handler as *const () as usize;
+                action.sa_flags = libc::SA_SIGINFO | libc::SA_ONSTACK;
+                libc::sigemptyset(&mut action.sa_mask);
+                libc::sigaction(sig, &action, previous);
+            }
+        });
+    }
+}
+
+#[cfg(not(all(unix, not(target_arch = "wasm32"))))]
+mod step {
+    pub struct StepGuard;
+
+    pub fn enter_step(_what: &str) -> StepGuard {
+        StepGuard
+    }
+
+    pub fn install_fatal_signal_report() {}
+}
+
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use super::*;

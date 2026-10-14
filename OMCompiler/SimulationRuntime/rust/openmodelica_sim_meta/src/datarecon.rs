@@ -219,12 +219,22 @@ fn read_file(path: &str) -> Option<String> {
 }
 
 /// C's `copyReferenceFile`: the code generator writes its reference HTML next to
-/// the model, `-outputPath` wants a copy.
+/// the model, `-outputPath` wants a copy. The file is read from `-inputPath` when
+/// it is given (OMEdit passes it, the model is not necessarily run from its build
+/// directory), else from the working directory.
 fn copy_reference_file(ctx: &Ctx, suffix: &str) {
-    if ctx.output_path.is_none() {
+    let Some(out_dir) = ctx.output_path.as_deref() else {
         return;
+    };
+    let in_dir = crate::simflags::with_flags(|f| f.input_path.clone()).unwrap_or_else(|| ".".to_string());
+    // Same directory: the file is already there, and opening it for writing
+    // would truncate it before it is read.
+    if let (Ok(o), Ok(i)) = (std::fs::canonicalize(out_dir), std::fs::canonicalize(&in_dir)) {
+        if o == i {
+            return;
+        }
     }
-    let src = format!("{}{suffix}", ctx.prefix());
+    let src = format!("{in_dir}/{}{suffix}", ctx.prefix());
     if let Some(content) = read_file(&src) {
         write_file(&ctx.model_file(suffix), &content);
     }
@@ -1365,21 +1375,68 @@ fn update_reconciled_mo(ctx: &mut Ctx, headers: &[String], reconciled_x: &[f64])
         }
     }
     write_file(&out_mo, &out);
-    let _ = std::fs::remove_file(&tmp_mo);
+    // C no longer unlinks `_Reconciled_tmp.mo` (`omc_unlink` is commented out).
     ctx.log.push_str(&format!("|  info    |   Reconciled modelica file updated successfully {out_mo}\n"));
 }
 
 // ───────────────────────────── html reports ─────────────────────────────
 
-/// C's `ctime(&now)`, trailing newline included: the reports splice it in raw.
-fn ctime_now() -> String {
-    let secs = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0);
+/// Broken-down time: year, month (0-11), day of month, hour, minute, second and
+/// weekday (0 = Sunday).
+type Fields = (i64, usize, i64, i64, i64, i64, usize);
+
+/// `localtime(secs)`, which is what C's `ctime` prints.
+#[cfg(unix)]
+fn local_fields(secs: i64) -> Option<Fields> {
+    let t = secs as libc::time_t;
+    let mut tm: libc::tm = unsafe { std::mem::zeroed() };
+    if unsafe { libc::localtime_r(&t, &mut tm) }.is_null() {
+        return None;
+    }
+    Some((
+        tm.tm_year as i64 + 1900,
+        tm.tm_mon as usize,
+        tm.tm_mday as i64,
+        tm.tm_hour as i64,
+        tm.tm_min as i64,
+        tm.tm_sec as i64,
+        tm.tm_wday as usize,
+    ))
+}
+
+#[cfg(windows)]
+fn local_fields(secs: i64) -> Option<Fields> {
+    #[repr(C)]
+    struct Tm {
+        sec: i32,
+        min: i32,
+        hour: i32,
+        mday: i32,
+        mon: i32,
+        year: i32,
+        wday: i32,
+        yday: i32,
+        isdst: i32,
+    }
+    unsafe extern "C" {
+        fn _localtime64_s(tm: *mut Tm, time: *const i64) -> i32;
+    }
+    let mut tm = Tm { sec: 0, min: 0, hour: 0, mday: 0, mon: 0, year: 0, wday: 0, yday: 0, isdst: 0 };
+    if unsafe { _localtime64_s(&mut tm, &secs) } != 0 {
+        return None;
+    }
+    Some((tm.year as i64 + 1900, tm.mon as usize, tm.mday as i64, tm.hour as i64, tm.min as i64, tm.sec as i64, tm.wday as usize))
+}
+
+#[cfg(not(any(unix, windows)))]
+fn local_fields(_secs: i64) -> Option<Fields> {
+    None
+}
+
+/// The same fields in UTC, for targets without a local-time source.
+fn utc_fields(secs: i64) -> Fields {
     let days = secs.div_euclid(86400);
     let rem = secs.rem_euclid(86400);
-    let (hour, min, sec) = (rem / 3600, (rem % 3600) / 60, rem % 60);
     // Howard Hinnant's `civil_from_days`.
     let z = days + 719468;
     let era = z.div_euclid(146097);
@@ -1391,9 +1448,20 @@ fn ctime_now() -> String {
     let mday = doy - (153 * mp + 2) / 5 + 1;
     let mon = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = if mon <= 2 { y + 1 } else { y };
-    let mon_name = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        [mon as usize - 1];
-    let dow = ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"][days.rem_euclid(7) as usize];
+    // 1970-01-01 was a Thursday.
+    (year, mon as usize - 1, mday, rem / 3600, (rem % 3600) / 60, rem % 60, (days + 4).rem_euclid(7) as usize)
+}
+
+/// C's `ctime(&now)`, trailing newline included: the reports splice it in raw.
+/// Local time, like C's.
+fn ctime_now() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let (year, mon, mday, hour, min, sec, wday) = local_fields(secs).unwrap_or_else(|| utc_fields(secs));
+    let mon_name = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][mon % 12];
+    let dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][wday % 7];
     format!("{dow} {mon_name} {mday:2} {hour:02}:{min:02}:{sec:02} {year:04}\n")
 }
 
@@ -1563,7 +1631,13 @@ fn create_html_report(
 ) {
     let p = ctx.prefix().to_string();
     // Variables the extraction algorithm could not reconcile.
-    let non_reconciled: Vec<String> = read_file(&format!("{p}_NonReconcilcedVars.txt"))
+    let non_reconciled_file = if ctx.output_path.is_some() {
+        copy_reference_file(ctx, "_NonReconcilcedVars.txt");
+        ctx.model_file("_NonReconcilcedVars.txt")
+    } else {
+        format!("{p}_NonReconcilcedVars.txt")
+    };
+    let non_reconciled: Vec<String> = read_file(&non_reconciled_file)
         .map(|t| t.lines().filter(|l| !l.is_empty()).map(|l| l.to_string()).collect())
         .unwrap_or_default();
 

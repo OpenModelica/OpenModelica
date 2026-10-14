@@ -1,0 +1,40 @@
+// name: constantRecordField
+// keywords: NewBackend record constant
+// status: correct
+// suite: cSources
+//
+// Record bindings must not assign constant fields, they have no storage.
+
+loadString("
+model ConstantRecordField
+  record R
+    Real a;
+    constant Integer n = 2;
+    constant Real c = 1.5;
+  end R;
+  parameter R p(a = 2);
+  parameter R q = p;
+  Real x(start = 1, fixed = true);
+equation
+  der(x) = -q.a * q.c * x / q.n;
+end ConstantRecordField;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(ConstantRecordField); getErrorString();
+val(x, 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ConstantRecordField_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ConstantRecordField', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.22313095300948185
+// endResult

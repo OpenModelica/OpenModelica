@@ -68,6 +68,7 @@ import ExpressionSolve;
 import Flags;
 import HashTable;
 import List;
+import Types;
 
 public function emptyEqns "author: lochel
   Returns an empty expandable equation array."
@@ -2029,6 +2030,61 @@ algorithm
     size := size + equationSizeKeepAlgorithmAsOne(eqn);
   end for;
 end equationLstSizeKeepAlgorithmAsOne;
+
+public function removeDiscreteTupleElements
+  "Removes the discrete elements of a tuple equation together with the matching
+  right-hand side elements."
+  input BackendDAE.Equation eqn;
+  output BackendDAE.Equation outEqn = eqn;
+protected
+  list<DAE.Exp> lhsLst, rhsLst, keptLhs = {}, keptRhs = {};
+  list<Boolean> isDiscrete;
+  Boolean d;
+algorithm
+  (lhsLst, rhsLst) := match eqn
+    case BackendDAE.COMPLEX_EQUATION(left = DAE.TUPLE(PR = lhsLst))
+      then (lhsLst, tupleElements(eqn.right, lhsLst));
+    else ({}, {});
+  end match;
+  isDiscrete := list(isDiscreteTupleElement(e) for e in lhsLst);
+  if not (listMember(true, isDiscrete) and listMember(false, isDiscrete)) then
+    return;
+  end if;
+
+  for r in rhsLst loop
+    d :: isDiscrete := isDiscrete;
+    if not d then
+      keptLhs := listHead(lhsLst) :: keptLhs;
+      keptRhs := r :: keptRhs;
+    end if;
+    lhsLst := listRest(lhsLst);
+  end for;
+
+  outEqn := match eqn
+    case BackendDAE.COMPLEX_EQUATION() guard listLength(keptLhs) == 1
+      then generateEquation(listHead(keptLhs), listHead(keptRhs), eqn.source, eqn.attr);
+    case BackendDAE.COMPLEX_EQUATION()
+      then BackendDAE.COMPLEX_EQUATION(sum(Expression.sizeOf(Expression.typeof(l)) for l in keptLhs),
+        DAE.TUPLE(listReverse(keptLhs)), DAE.TUPLE(listReverse(keptRhs)), eqn.source, eqn.attr);
+  end match;
+end removeDiscreteTupleElements;
+
+public function isDiscreteTupleElement
+  input DAE.Exp exp;
+  output Boolean b = Types.isDiscreteType(Types.arrayElementType(Expression.typeof(exp)));
+end isDiscreteTupleElement;
+
+public function tupleElements
+  "The elements of the right-hand side of a tuple equation."
+  input DAE.Exp rhs;
+  input list<DAE.Exp> lhs;
+  output list<DAE.Exp> elements;
+algorithm
+  elements := match rhs
+    case DAE.TUPLE() then rhs.PR;
+    else list(DAE.TSUB(rhs, i, Expression.typeof(l)) threaded for l in lhs, i in 1:listLength(lhs));
+  end match;
+end tupleElements;
 
 public function generateEquation "author Frenkel TUD 2012-12
   helper to generate an equation from lhs and rhs.

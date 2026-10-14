@@ -54,6 +54,7 @@
 
 #include <QtMath>
 #include <QFontMetrics>
+#include <QMouseEvent>
 #include <QResizeEvent>
 
 namespace OMPlot{
@@ -90,7 +91,7 @@ Plot::Plot(PlotWindow *pParent)
   mpPlotPanner = new PlotPanner(canvas(), this);
   // create an instance of picker
   mpPlotPicker = new PlotPicker(canvas(), this);
-  mpPlotPicker->setTrackerPen(QPen(Qt::black));
+  mpPlotPicker->setTrackerPen(QPen(OMPlot::isDarkMode() ? palette().color(QPalette::Text) : QColor(Qt::black)));
   mpPlotPicker->setTrackerMode(QwtPicker::AlwaysOn);
   // set canvas arrow
   QwtPlotCanvas *pPlotCanvas = static_cast<QwtPlotCanvas*>(canvas());
@@ -101,18 +102,27 @@ Plot::Plot(PlotWindow *pParent)
   pPlotCanvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
   pPlotCanvas->setPaintAttribute(QwtPlotCanvas::ImmediatePaint, true);
 #endif
-  setCanvasBackground(Qt::white);
+  setCanvasBackground(OMPlot::isDarkMode() ? palette().color(QPalette::Base) : QColor(Qt::white));
   setContentsMargins(10, 10, 10, 10);
-#if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
+  // No gap between axis backbone and canvas
+  // Zeroing the margins makes the canvas and scale widgets flush. At a fractional device
+  // pixel ratio (e.g. 125%) Qt rounds every widget's device rect independently, so the
+  // boundary seam can move by one device pixel during a resize and the opaque canvas
+  // intermittently covers the axis backbone. ScaleDraw::drawBackbone() compensates for this
+  // by insetting the backbone one device pixel into the scale widget when dpr != 1.0.
   for (int i = 0; i < QwtPlot::axisCnt; i++) {
     QwtScaleWidget *pScaleWidget = axisWidget(i);
     if (pScaleWidget) {
+      pScaleWidget->installEventFilter(this);
+      pScaleWidget->setContentsMargins(0, 0, 0, 0);
       pScaleWidget->setMargin(0);
+      pScaleWidget->setBorderDist(0, 0);
     }
   }
+  // Remove the plot layout's own margins from all axes
+  plotLayout()->setCanvasMargin(0);
   plotLayout()->setAlignCanvasToScales(true);
-#endif
   // Use monospaced font for better readability.
   QFont monospaceFont("Monospace");
   monospaceFont.setStyleHint(QFont::TypeWriter);
@@ -130,6 +140,61 @@ Plot::Plot(PlotWindow *pParent)
   // fill colors list
   fillColorsList();
   setAutoReplot(true);
+}
+
+/*! Forwards axis-originated left-button drags to the zoomer after they enter the canvas.
+ * \param object Widget receiving the original mouse event.
+ * \param event Original mouse event delivered by Qt.
+ * \return The result from QwtPlot::eventFilter.
+ */
+bool Plot::eventFilter(QObject *object, QEvent *event)
+{
+  if (!qobject_cast<QWidget*>(object) || !canvas()) {
+    return QwtPlot::eventFilter(object, event);
+  }
+
+  QMouseEvent *mouseEvent = nullptr;
+  if (event->type() == QEvent::MouseMove) {
+    mouseEvent = static_cast<QMouseEvent*>(event);
+    if (!mZoomingFromAxis && mouseEvent->buttons().testFlag(Qt::LeftButton)) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      QPoint globalPosition = mouseEvent->globalPosition().toPoint();
+#else
+      QPoint globalPosition = mouseEvent->globalPos();
+#endif
+      QPoint canvasPosition = canvas()->mapFromGlobal(globalPosition);
+      if (canvas()->rect().contains(canvasPosition)) {
+        // Start the zoom at the canvas edge; the axis portion is not part of the selection.
+        QMouseEvent pressEvent(QEvent::MouseButtonPress, canvasPosition, Qt::LeftButton, Qt::LeftButton, mouseEvent->modifiers());
+        mpPlotZoomer->handleMouseEvent(&pressEvent);
+        mZoomingFromAxis = true;
+      }
+    }
+    if (mZoomingFromAxis) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      QPoint canvasPosition = canvas()->mapFromGlobal(mouseEvent->globalPosition().toPoint());
+#else
+      QPoint canvasPosition = canvas()->mapFromGlobal(mouseEvent->globalPos());
+#endif
+      QMouseEvent moveEvent(QEvent::MouseMove, canvasPosition, Qt::NoButton, mouseEvent->buttons(), mouseEvent->modifiers());
+      mpPlotZoomer->handleMouseEvent(&moveEvent);
+    }
+  } else if (event->type() == QEvent::MouseButtonRelease && mZoomingFromAxis) {
+    mouseEvent = static_cast<QMouseEvent*>(event);
+    if (mouseEvent->button() != Qt::LeftButton) {
+      return QwtPlot::eventFilter(object, event);
+    }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QPoint canvasPosition = canvas()->mapFromGlobal(mouseEvent->globalPosition().toPoint());
+#else
+    QPoint canvasPosition = canvas()->mapFromGlobal(mouseEvent->globalPos());
+#endif
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, canvasPosition, Qt::LeftButton, mouseEvent->buttons(), mouseEvent->modifiers());
+    mpPlotZoomer->handleMouseEvent(&releaseEvent);
+    mZoomingFromAxis = false;
+  }
+
+  return QwtPlot::eventFilter(object, event);
 }
 
 Plot::~Plot()
@@ -211,7 +276,9 @@ void Plot::addPlotCurve(PlotCurve *pCurve)
 void Plot::removeCurve(PlotCurve *pCurve)
 {
   mPlotCurvesList.removeOne(pCurve);
-  pCurve->getPointMarker()->setVisible(false);
+  if (pCurve->getPointMarker()) {
+    pCurve->getPointMarker()->setVisible(false);
+  }
 }
 
 QColor Plot::getUniqueColor(int index, int total)
@@ -222,7 +289,7 @@ QColor Plot::getUniqueColor(int index, int total)
     return mColorsList.at(index);
 }
 
-void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, 
+void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
                         double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                         double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize)
 {

@@ -15,6 +15,7 @@ use openmodelica_frontend_types::DAE;
 use wasm_encoder as we;
 
 use super::*;
+use openmodelica_sim_meta::Sz;
 
 /// Emit one residual evaluation for a torn linear system: run the inner
 /// constraint equations (`lower_inner`), then store each residual `r_k` as an f64
@@ -26,40 +27,56 @@ fn emit_residual_eval(
     dest_off: u32,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
-    use we::Instruction as I;
     lower_inner(ctx)?;
     // As in `emit_nls_residual_body`: sequential rows while every residual is a
     // scalar, `res_index` rows once an array-valued one makes the two differ.
     let all_scalar = residuals.iter().all(|r| matches!(r, NlsResidual::Scalar { .. }));
-    for (i, res) in residuals.iter().enumerate() {
-        match res {
-            NlsResidual::Scalar { exp, res_index } => {
-                let row = if all_scalar { i as u32 } else { *res_index as u32 };
-                ctx.emit(I::LocalGet(base));
-                let w = compile_exp(ctx, exp)?;
-                coerce(ctx, w, WTy::F64);
-                ctx.emit(I::F64Store(mem_arg(dest_off + row * 8, 3)));
-            }
-            NlsResidual::Array { exp, res_index, rows } => {
-                let w = compile_exp(ctx, exp)?;
-                if w != WTy::I32 {
-                    return Err("CodegenWasmJit: array residual did not evaluate to an array");
-                }
-                let arr = ctx.alloc_temp(WTy::I32);
-                ctx.emit(I::LocalTee(arr));
-                ctx.emit(I::Call(rt_index("rt_array_data")?));
-                let data = ctx.alloc_temp(WTy::I32);
-                ctx.emit(I::LocalSet(data));
-                for k in 0..*rows as u32 {
-                    ctx.emit(I::LocalGet(base));
-                    ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
-                    ctx.emit(I::F64Store(mem_arg(dest_off + (*res_index as u32 + k) * 8, 3)));
-                }
-                release_temp_array(ctx, arr)?;
-            }
-            _ => return Err("CodegenWasmJit: SES_LINEAR for/generic residual"),
+    let store = |c: &mut FnCtx, base: u32, i: usize| emit_residual_store(c, base, &residuals[i], i, all_scalar, dest_off);
+    if residuals.len() >= OUTLINE_MIN_UNITS && ctx.emit_outlined(residuals.len(), Some(base), |c, i| store(c, 1, i))? {
+        return Ok(());
+    }
+    for i in 0..residuals.len() {
+        store(ctx, base, i)?;
+    }
+    Ok(())
+}
+
+fn emit_residual_store(
+    ctx: &mut FnCtx,
+    base: u32,
+    res: &NlsResidual,
+    i: usize,
+    all_scalar: bool,
+    dest_off: u32,
+) -> Result<()> {
+    use we::Instruction as I;
+    match res {
+        NlsResidual::Scalar { exp, res_index } => {
+            let row = if all_scalar { i as u32 } else { *res_index as u32 };
+            ctx.emit(I::LocalGet(base));
+            let w = compile_exp(ctx, exp)?;
+            coerce(ctx, w, WTy::F64);
+            ctx.emit(I::F64Store(mem_arg(dest_off + row * 8, 3)));
         }
+        NlsResidual::Array { exp, res_index, rows } => {
+            let w = compile_exp(ctx, exp)?;
+            if w != WTy::I32 {
+                return Err("CodegenWasmJit: array residual did not evaluate to an array");
+            }
+            let arr = ctx.alloc_temp(WTy::I32);
+            ctx.emit(I::LocalTee(arr));
+            ctx.emit(I::Call(rt_index("rt_array_data")?));
+            let data = ctx.alloc_temp(WTy::I32);
+            ctx.emit(I::LocalSet(data));
+            for k in 0..*rows as u32 {
+                ctx.emit(I::LocalGet(base));
+                ctx.emit(I::LocalGet(data));
+                ctx.emit(I::F64Load(mem_arg(k * 8, 3)));
+                ctx.emit(I::F64Store(mem_arg(dest_off + (*res_index as u32 + k) * 8, 3)));
+            }
+            release_temp_array(ctx, arr)?;
+        }
+        _ => return Err("CodegenWasmJit: SES_LINEAR for/generic residual"),
     }
     Ok(())
 }
@@ -117,6 +134,43 @@ pub(crate) struct IterSlot {
     pub(crate) wty: WTy,
 }
 
+/// A runtime-sized array among a system's unknowns: `len` f64 slots from `off`.
+/// They follow the scalar unknowns in `x`, in order.
+#[derive(Clone)]
+pub(crate) struct IterBlock {
+    pub(crate) off: u32,
+    pub(crate) len: Sz,
+}
+
+/// Copy the [`IterBlock`]s between `x` (local `x_local`, after `n_scalar` values)
+/// and their slots; `to_x` picks the direction.
+fn emit_blocks(ctx: &mut FnCtx, x_local: u32, n_scalar: usize, blocks: &[IterBlock], to_x: bool) -> Result<()> {
+    use we::Instruction as I;
+    let mut at = Sz::lit(n_scalar as i64);
+    for b in blocks {
+        let x_addr = |ctx: &mut FnCtx, at: &Sz| -> Result<()> {
+            ctx.emit(I::LocalGet(x_local));
+            ctx.emit_size(&(at.clone() * 8))?;
+            ctx.emit(I::I32Add);
+            Ok(())
+        };
+        match to_x {
+            true => {
+                x_addr(ctx, &at)?;
+                ctx.emit_sim_addr(b.off)?;
+            }
+            false => {
+                ctx.emit_sim_addr(b.off)?;
+                x_addr(ctx, &at)?;
+            }
+        }
+        ctx.emit_size(&(b.len.clone() * 8))?;
+        ctx.emit(I::MemoryCopy { src_mem: 0, dst_mem: 0 });
+        at = at + b.len.clone();
+    }
+    Ok(())
+}
+
 /// `slot = x[j]` (wasm locals: 0 = `SimData`, `x_local` = the `x` pointer).
 fn emit_x_to_slot(ctx: &mut FnCtx, x_local: u32, j: usize, slot: IterSlot) {
     use we::Instruction as I;
@@ -152,10 +206,11 @@ pub(crate) fn emit_nls_residual_body(
     ctx: &mut FnCtx,
     eq_index: i32,
     slots: &[IterSlot],
+    blocks: &[IterBlock],
     residuals: &NlsResiduals,
     lower_inner: &mut dyn FnMut(&mut FnCtx) -> Result<()>,
 ) -> Result<()> {
-    emit_nls_residual_prologue(ctx, eq_index, slots)?;
+    emit_nls_residual_prologue(ctx, eq_index, slots, blocks)?;
     let residuals = match residuals {
         NlsResiduals::Explicit(r) => r,
         NlsResiduals::InverseAlgorithm(known) => {
@@ -163,9 +218,60 @@ pub(crate) fn emit_nls_residual_body(
         }
     };
     lower_inner(ctx)?;
+    if !blocks.is_empty() {
+        return emit_counted_residual_stores(ctx, eq_index, residuals);
+    }
     let all_scalar = nls_residuals_all_scalar(residuals);
     for i in 0..residuals.len() {
         emit_nls_residual_store(ctx, residuals, all_scalar, i)?;
+    }
+    emit_nls_residual_epilogue(ctx, eq_index)
+}
+
+/// The residual rows of a system with runtime-sized unknowns, whose `res_index`
+/// were numbered for the sizes at translation: one after another, counted at
+/// runtime.
+fn emit_counted_residual_stores(ctx: &mut FnCtx, eq_index: i32, residuals: &[NlsResidual]) -> Result<()> {
+    use we::Instruction as I;
+    let row = ctx.alloc_temp(WTy::I32);
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(row));
+    let bump = |ctx: &mut FnCtx, n: i32| {
+        ctx.emit(I::LocalGet(row));
+        ctx.emit(I::I32Const(n));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalSet(row));
+    };
+    for res in residuals {
+        match res {
+            NlsResidual::Scalar { exp, .. } => {
+                ctx.emit(I::LocalGet(2));
+                ctx.emit(I::LocalGet(row));
+                ctx.emit(I::I32Const(8));
+                ctx.emit(I::I32Mul);
+                ctx.emit(I::I32Add);
+                let w = compile_exp(ctx, exp)?;
+                coerce(ctx, w, WTy::F64);
+                ctx.emit(I::F64Store(mem_arg(0, 3)));
+                bump(ctx, 1);
+            }
+            NlsResidual::For { iterators, exp, .. } => {
+                emit_for_residual_at(ctx, iterators, exp, RowBase::Local(row), &[])?;
+                ctx.emit(I::LocalGet(row));
+                ctx.emit(I::I32Const(1));
+                for it in iterators {
+                    let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { size, .. } = it else {
+                        return Err("CodegenWasmJit: for-residual over a non-range iterator");
+                    };
+                    let w = compile_exp(ctx, size)?;
+                    coerce(ctx, w, WTy::I32);
+                    ctx.emit(I::I32Mul);
+                }
+                ctx.emit(I::I32Add);
+                ctx.emit(I::LocalSet(row));
+            }
+            _ => return Err("CodegenWasmJit: residual of a runtime-sized system"),
+        }
     }
     emit_nls_residual_epilogue(ctx, eq_index)
 }
@@ -177,6 +283,7 @@ pub(crate) fn emit_nls_residual_prologue(
     ctx: &mut FnCtx,
     eq_index: i32,
     slots: &[IterSlot],
+    blocks: &[IterBlock],
 ) -> Result<()> {
     use we::Instruction as I;
     let prof = ctx.sim.as_ref().and_then(|s| s.prof.clone());
@@ -193,7 +300,7 @@ pub(crate) fn emit_nls_residual_prologue(
     for (j, &slot) in slots.iter().enumerate() {
         emit_x_to_slot(ctx, 1, j, slot);
     }
-    Ok(())
+    emit_blocks(ctx, 1, slots.len(), blocks, false)
 }
 
 /// The `all`-profiling accumulate that closes [`emit_nls_residual_prologue`].
@@ -247,7 +354,7 @@ pub(crate) fn emit_nls_residual_store(
             release_temp_array(ctx, arr)?;
         }
         NlsResidual::For { iterators, exp, res_index } => {
-            emit_for_residual(ctx, iterators, exp, *res_index, &[])?;
+            emit_for_residual_at(ctx, iterators, exp, RowBase::Const(*res_index), &[])?;
         }
         NlsResidual::Generic { iterators, scal_indices, exp, res_index } => {
             emit_generic_residual(ctx, iterators, scal_indices, exp, *res_index)?;
@@ -362,11 +469,18 @@ fn emit_inverse_algorithm_residual(
 /// (i1,i2,...) combinations onto the same `res[]` slot, leaving the rest of the
 /// residual vector uninitialized. Each iterator registers as a wasm local so
 /// `compile_exp` resolves `x[$i]` and bare `$i`.
-fn emit_for_residual(
+/// Where a for-residual's rows start in `r`.
+#[derive(Clone, Copy)]
+enum RowBase {
+    Const(i32),
+    Local(u32),
+}
+
+fn emit_for_residual_at(
     ctx: &mut FnCtx,
     iterators: &[BackendDAE::SimIterator],
     exp: &metamodelica::Ref<DAE::Exp>,
-    res_index: i32,
+    res_index: RowBase,
     outer: &[(u32, u32)],
 ) -> Result<()> {
     use we::Instruction as I;
@@ -374,7 +488,10 @@ fn emit_for_residual(
         // addr = r + (res_index + flatten(outer)) * 8, outer[k] = (offset_k, size_k),
         // flatten = off_0 + size_0*(off_1 + size_1*(... + size_{n-2}*off_{n-1}))
         ctx.emit(I::LocalGet(2)); // r
-        ctx.emit(I::I32Const(res_index));
+        match res_index {
+            RowBase::Const(k) => ctx.emit(I::I32Const(k)),
+            RowBase::Local(l) => ctx.emit(I::LocalGet(l)),
+        }
         if let Some(&(last_off, _)) = outer.last() {
             ctx.emit(I::LocalGet(last_off));
             for &(off_l, size_l) in outer[..outer.len() - 1].iter().rev() {
@@ -436,7 +553,7 @@ fn emit_for_residual(
     ctx.emit(I::LocalSet(off_l));
     let mut inner = outer.to_vec();
     inner.push((off_l, size_l));
-    emit_for_residual(ctx, rest, exp, res_index, &inner)?;
+    emit_for_residual_at(ctx, rest, exp, res_index, &inner)?;
     ctx.emit(I::LocalGet(it));
     ctx.emit(I::LocalGet(step_l));
     ctx.emit(I::I32Add);
@@ -450,7 +567,8 @@ fn emit_for_residual(
 /// Emit the body of a nonlinear system's `load(sim_data, x)` callback (wasm
 /// locals: 0 = `SimData`, 1 = `x` pointer): copy the current unknown `slots` into
 /// `x`, the warm start `rt_solve_nls` reads.
-pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[IterSlot]) -> Result<()> {
+pub(crate) fn emit_nls_load_body(ctx: &mut FnCtx, slots: &[IterSlot], blocks: &[IterBlock]) -> Result<()> {
+    emit_blocks(ctx, 1, slots.len(), blocks, true)?;
     for (j, &slot) in slots.iter().enumerate() {
         emit_slot_to_x(ctx, 1, j, slot);
     }
@@ -930,7 +1048,7 @@ pub(crate) fn compile_linear_system(
 
     // --- solve, scatter, recover the torn variables, free the scratch. `res0` is
     // spent by now, so the step check reuses it. ---
-    let m1 = method1.then_some(Method1 { res_off: res0_off, residuals });
+    let m1 = method1.then_some(Method1 { res_off: res0_off, residuals, slot_tab_off: None });
     emit_lin_solve_scatter(ctx, base, b_off, aux_off, n, &slots, use_sparse, m1, index, lower_inner, None)
 }
 
@@ -1033,10 +1151,9 @@ fn emit_aux_x(ctx: &mut FnCtx, base: u32, aux_off: u32, slots: &[u32]) -> Result
 }
 
 /// The `localData[1]` mirror of the live real slot at `off`.
-fn old_slot(old_real: Option<(u32, u32)>, off: u32) -> Option<u32> {
-    let (real_end, base) = old_real?;
-    (off >= openmodelica_sim_meta::REAL_OFF && off < real_end)
-        .then(|| base + (off - openmodelica_sim_meta::REAL_OFF))
+fn old_slot(old_real: Option<(u32, u32, u32)>, off: u32) -> Option<u32> {
+    let (real_off, real_end, base) = old_real?;
+    (off >= real_off && off < real_end).then(|| base + (off - real_off))
 }
 
 /// Scatter the solve's result (at `base+b_off`) into `slots`, recover the torn
@@ -1069,6 +1186,9 @@ fn emit_scatter_recover_free(
 struct Method1<'a> {
     res_off: u32,
     residuals: &'a [NlsResidual],
+    /// Scratch offset of the unknowns' `SimData` offsets (`n` i32), to step them in
+    /// a loop rather than one store each.
+    slot_tab_off: Option<u32>,
 }
 
 /// Take the step `dx` at `base+b_off`, recover the torn variables there, and hold
@@ -1101,14 +1221,30 @@ fn emit_lin_step(
         l
     });
 
-    for j in 0..n {
-        ctx.emit(I::LocalGet(data));
-        ctx.emit(I::LocalGet(data));
-        ctx.emit(I::F64Load(mem_arg(slots[j], 3)));
-        ctx.emit(I::LocalGet(base));
-        ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
-        ctx.emit(I::F64Add);
-        ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+    match m1.slot_tab_off {
+        Some(tab) => {
+            let (j, addr) = (ctx.alloc_temp(WTy::I32), ctx.alloc_temp(WTy::I32));
+            emit_count_loop(ctx, j, n as i32, |ctx| {
+                emit_slot_addr(ctx, data, base, j, tab, addr);
+                ctx.emit(I::LocalGet(addr));
+                ctx.emit(I::LocalGet(addr));
+                ctx.emit(I::F64Load(mem_arg(0, 3)));
+                emit_scratch_f64(ctx, base, j, b_off);
+                ctx.emit(I::F64Add);
+                ctx.emit(I::F64Store(mem_arg(0, 3)));
+            });
+        }
+        None => {
+            for j in 0..n {
+                ctx.emit(I::LocalGet(data));
+                ctx.emit(I::LocalGet(data));
+                ctx.emit(I::F64Load(mem_arg(slots[j], 3)));
+                ctx.emit(I::LocalGet(base));
+                ctx.emit(I::F64Load(mem_arg(b_off + (j as u32) * 8, 3)));
+                ctx.emit(I::F64Add);
+                ctx.emit(I::F64Store(mem_arg(slots[j], 3)));
+            }
+        }
     }
     emit_residual_eval(ctx, base, m1.residuals, m1.res_off, lower_inner)?;
 
@@ -1234,8 +1370,8 @@ pub(crate) fn compile_linear_system_analytic(
     }
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
-        let key = sim_cref_key(cr)?;
-        let slot = ctx.sim()?.vars.get(&key).copied()
+        let key = sim_var_key(ctx.sim()?, cr)?;
+        let slot = ctx.sim()?.vars.get(&key)
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1290,7 +1426,7 @@ pub(crate) fn compile_linear_system_analytic(
         ctx.emit(I::F64Store(mem_arg(b_off + i * 8, 3)));
     }
 
-    let m1 = Method1 { res_off, residuals };
+    let m1 = Method1 { res_off, residuals, slot_tab_off: None };
     let mut reassemble =
         |c: &mut FnCtx| emit_lin_jac(c, base, n, seed_tab_off, res_tab_off, lower_constant, lower_column);
     // A method-1 system probes at the previous solution, so `xold` is C's `aux_x`.
@@ -1458,6 +1594,56 @@ pub(crate) fn lin_jac_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> (Vec
     (color_ptr, color_cols)
 }
 
+/// `addr = data + i32[base + tab + 4*j]`.
+fn emit_slot_addr(ctx: &mut FnCtx, data: u32, base: u32, j: u32, tab: u32, addr: u32) {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(data));
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(j));
+    ctx.emit(I::I32Const(4));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Load(mem_arg(tab, 2)));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(addr));
+}
+
+fn emit_scratch_f64(ctx: &mut FnCtx, base: u32, j: u32, off: u32) {
+    use we::Instruction as I;
+    emit_scratch_addr(ctx, base, j);
+    ctx.emit(I::F64Load(mem_arg(off, 3)));
+}
+
+fn emit_scratch_addr(ctx: &mut FnCtx, base: u32, j: u32) {
+    use we::Instruction as I;
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::LocalGet(j));
+    ctx.emit(I::I32Const(8));
+    ctx.emit(I::I32Mul);
+    ctx.emit(I::I32Add);
+}
+
+/// `for (i = 0; i < n; i++) body`, `i` in local `i`.
+fn emit_count_loop(ctx: &mut FnCtx, i: u32, n: i32, body: impl FnOnce(&mut FnCtx)) {
+    use we::Instruction as I;
+    ctx.emit(I::I32Const(0));
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Block(we::BlockType::Empty));
+    ctx.emit(I::Loop(we::BlockType::Empty));
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(n));
+    ctx.emit(I::I32GeS);
+    ctx.emit(I::BrIf(1));
+    body(ctx);
+    ctx.emit(I::LocalGet(i));
+    ctx.emit(I::I32Const(1));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::LocalSet(i));
+    ctx.emit(I::Br(0));
+    ctx.emit(I::End);
+    ctx.emit(I::End);
+}
+
 /// Analytic assembly directly into CSC (no dense `n²` buffer) for a sparse torn
 /// linear system: `colptr`/`rowidx` are the compile-time pattern in `res_index` row
 /// order (from `lin_jac_csc_pattern`). Columns are colored, then each color is seeded
@@ -1493,8 +1679,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
     let ncolors = color_ptr.len() - 1;
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in iter_vars {
-        let key = sim_cref_key(cr)?;
-        let slot = ctx.sim()?.vars.get(&key).copied()
+        let key = sim_var_key(ctx.sim()?, cr)?;
+        let slot = ctx.sim()?.vars.get(&key)
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -1502,6 +1688,8 @@ pub(crate) fn compile_linear_system_analytic_csc(
         slots.push(slot.off);
     }
     let data = ctx.sim()?.data_local;
+    let old_real = ctx.sim()?.old_real;
+    let old_offs: Vec<i32> = slots.iter().map(|&o| old_slot(old_real, o).map_or(-1, |o| o as i32)).collect();
 
     // Scratch (f64 regions first for 8-alignment): values (nnz) | b (n) | xold (n)
     // | res (n) | colptr (n+1 i32) | rowidx (nnz i32) | seed_tab (n i32) |
@@ -1516,47 +1704,28 @@ pub(crate) fn compile_linear_system_analytic_csc(
     let res_tab_off: u32 = seed_tab_off + (n * 4) as u32;
     let colorptr_off: u32 = res_tab_off + (n * 4) as u32;
     let colorcols_off: u32 = colorptr_off + ((ncolors + 1) * 4) as u32;
-    let scratch_bytes: u32 = colorcols_off + (n * 4) as u32;
+    let slot_tab_off: u32 = colorcols_off + (n * 4) as u32;
+    let old_tab_off: u32 = slot_tab_off + (n * 4) as u32;
+    let scratch_bytes: u32 = old_tab_off + (n * 4) as u32;
     let base = ctx.alloc_temp(WTy::I32);
     ctx.emit(I::I32Const(scratch_bytes as i32));
     ctx.emit(I::Call(rt_index("rt_alloc")?));
     ctx.emit(I::LocalSet(base));
 
-    let store_i32 = |ctx: &mut FnCtx, off: u32, v: i32| {
-        ctx.emit(I::LocalGet(base));
-        ctx.emit(I::I32Const(v));
-        ctx.emit(I::I32Store(mem_arg(off, 2)));
-    };
-    for (k, &p) in colptr.iter().enumerate() {
-        store_i32(ctx, colptr_off + (k as u32) * 4, p);
-    }
-    for (k, &r) in rowidx.iter().enumerate() {
-        store_i32(ctx, rowidx_off + (k as u32) * 4, r);
-    }
-    for (k, &soff) in seed_offs.iter().enumerate() {
-        store_i32(ctx, seed_tab_off + (k as u32) * 4, soff as i32);
-    }
-    for (i, &roff) in result_offs.iter().enumerate() {
-        store_i32(ctx, res_tab_off + (i as u32) * 4, roff as i32);
-    }
-    for (k, &p) in color_ptr.iter().enumerate() {
-        store_i32(ctx, colorptr_off + (k as u32) * 4, p);
-    }
-    for (k, &j) in color_cols.iter().enumerate() {
-        store_i32(ctx, colorcols_off + (k as u32) * 4, j);
-    }
-
-    let store_slot = |ctx: &mut FnCtx, off: u32, val: f64| {
-        ctx.emit(I::LocalGet(data));
-        ctx.emit(I::F64Const(val.into()));
-        ctx.emit(I::F64Store(mem_arg(off, 3)));
-    };
-    for &soff in seed_offs {
-        store_slot(ctx, soff, 0.0);
-    }
-    // C's `solveKlu` evaluates the Jacobian before it overwrites the unknowns with
-    // `aux_x`, so `A` is taken where the equations left them, not at `xold`.
-    lower_constant(ctx)?;
+    let tables: Vec<u8> = colptr.iter().chain(rowidx).copied()
+        .chain(seed_offs.iter().chain(result_offs).map(|&o| o as i32))
+        .chain(color_ptr.iter().chain(&color_cols).copied())
+        .chain(slots.iter().map(|&o| o as i32))
+        .chain(old_offs.iter().copied())
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    let src = ctx.literals.intern(&tables);
+    ctx.emit(I::LocalGet(base));
+    ctx.emit(I::I32Const(colptr_off as i32));
+    ctx.emit(I::I32Add);
+    ctx.emit(I::I32Const(src as i32));
+    ctx.emit(I::I32Const(tables.len() as i32));
+    ctx.emit(I::MemoryInit { mem: 0, data_index: 0 });
 
     // Address `data + seed_tab[idx]` for run-time index `idx`.
     let push_seed_addr = |ctx: &mut FnCtx, idx: u32| {
@@ -1569,11 +1738,19 @@ pub(crate) fn compile_linear_system_analytic_csc(
         ctx.emit(I::I32Load(mem_arg(seed_tab_off, 2)));
         ctx.emit(I::I32Add);
     };
+    let jloc = ctx.alloc_temp(WTy::I32);
+    emit_count_loop(ctx, jloc, n as i32, |ctx| {
+        push_seed_addr(ctx, jloc);
+        ctx.emit(I::F64Const(0.0f64.into()));
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+    });
+    // C's `solveKlu` evaluates the Jacobian before it overwrites the unknowns with
+    // `aux_x`, so `A` is taken where the equations left them, not at `xold`.
+    lower_constant(ctx)?;
 
     let cloc = ctx.alloc_temp(WTy::I32);
     let mloc = ctx.alloc_temp(WTy::I32);
     let mend = ctx.alloc_temp(WTy::I32);
-    let jloc = ctx.alloc_temp(WTy::I32);
     let kloc = ctx.alloc_temp(WTy::I32);
     let kend = ctx.alloc_temp(WTy::I32);
     // mloc/mend = color_ptr[cloc + addc].
@@ -1711,16 +1888,47 @@ pub(crate) fn compile_linear_system_analytic_csc(
     ctx.emit(I::End); // color loop
     ctx.emit(I::End); // color block
 
-    emit_init_x0(ctx, base, xold_off, &slots, true)?;
+    // C's method-1 probe point: the unknowns at `aux_x`, recorded at `xold`.
+    let addr = ctx.alloc_temp(WTy::I32);
+    let old = ctx.alloc_temp(WTy::I32);
+    emit_count_loop(ctx, kloc, n as i32, |ctx| {
+        emit_slot_addr(ctx, data, base, kloc, slot_tab_off, addr);
+        ctx.emit(I::LocalGet(base));
+        ctx.emit(I::LocalGet(kloc));
+        ctx.emit(I::I32Const(4));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::I32Load(mem_arg(old_tab_off, 2)));
+        ctx.emit(I::LocalTee(old));
+        ctx.emit(I::I32Const(0));
+        ctx.emit(I::I32GeS);
+        ctx.emit(I::If(we::BlockType::Empty));
+        ctx.emit(I::LocalGet(addr));
+        ctx.emit(I::LocalGet(data));
+        ctx.emit(I::LocalGet(old));
+        ctx.emit(I::I32Add);
+        ctx.emit(I::F64Load(mem_arg(0, 3)));
+        ctx.emit(I::F64Store(mem_arg(0, 3)));
+        ctx.emit(I::End);
+        emit_scratch_addr(ctx, base, kloc);
+        ctx.emit(I::LocalGet(addr));
+        ctx.emit(I::F64Load(mem_arg(0, 3)));
+        ctx.emit(I::F64Store(mem_arg(xold_off, 3)));
+    });
     // b = -r(xold).
     emit_residual_eval(ctx, base, residuals, b_off, lower_inner)?;
-    for i in 0..n as u32 {
+    emit_count_loop(ctx, kloc, n as i32, |ctx| {
         ctx.emit(I::LocalGet(base));
-        ctx.emit(I::LocalGet(base));
-        ctx.emit(I::F64Load(mem_arg(b_off + i * 8, 3)));
+        ctx.emit(I::LocalGet(kloc));
+        ctx.emit(I::I32Const(8));
+        ctx.emit(I::I32Mul);
+        ctx.emit(I::I32Add);
+        ctx.emit(I::LocalTee(mloc));
+        ctx.emit(I::LocalGet(mloc));
+        ctx.emit(I::F64Load(mem_arg(b_off, 3)));
         ctx.emit(I::F64Neg);
-        ctx.emit(I::F64Store(mem_arg(b_off + i * 8, 3)));
-    }
+        ctx.emit(I::F64Store(mem_arg(b_off, 3)));
+    });
 
     // rt_solve_lin_sparse_cached(handle, colptr, rowidx, values, b, x, n, nnz, time).
     ctx.emit(I::I32Const(handle));
@@ -1742,7 +1950,7 @@ pub(crate) fn compile_linear_system_analytic_csc(
     emit_sim_time(ctx)?;
     ctx.emit(I::Call(rt_index("rt_solve_lin_sparse_cached")?));
     emit_lin_unsolved(ctx, handle, base)?;
-    let m1 = Method1 { res_off, residuals };
+    let m1 = Method1 { res_off, residuals, slot_tab_off: Some(slot_tab_off) };
     emit_lin_step(ctx, base, b_off, n, &slots, true, handle, &m1, lower_inner, None)
 }
 
@@ -1803,12 +2011,11 @@ pub(crate) fn compile_linear_system_symbolic(
     }
     let mut slots: Vec<u32> = Vec::with_capacity(n);
     for cr in vars {
-        let key = sim_cref_key(cr)?;
+        let key = sim_var_key(ctx.sim()?, cr)?;
         let slot = ctx
             .sim()?
             .vars
             .get(&key)
-            .copied()
             .ok_or_else(|| "CodegenWasmJit: linear-system unknown has no slot")?;
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: linear-system unknown is not a Real variable");
@@ -2000,15 +2207,23 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));
     ctx.emit(I::I32Const((4 * job.k + 1) as i32));
     ctx.emit(I::I32Add); // load table index
-    ctx.emit(I::I32Const(job.n as i32));
+    match job.dyn_n {
+        Some(k) => ctx.emit_size_entry(k),
+        None => ctx.emit(I::I32Const(job.n as i32)),
+    }
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::I32Const(nls_fail_off as i32));
     ctx.emit(I::I32Add); // nls_fail flag address
     // history block address for this system, and the current time (SimData+0),
     // for the extrapolated initial guess.
-    ctx.emit(I::GlobalGet(NLS_HIST_GLOBAL));
-    ctx.emit(I::I32Const(job.hist_off as i32));
-    ctx.emit(I::I32Add);
+    match job.dyn_n {
+        Some(_) => ctx.emit_sim_addr(job.hist_off)?,
+        None => {
+            ctx.emit(I::GlobalGet(NLS_HIST_GLOBAL));
+            ctx.emit(I::I32Const(job.hist_off as i32));
+            ctx.emit(I::I32Add);
+        }
+    }
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // time at SimData offset 0
     // relation-mode flag address: the solver holds relations around the Newton
@@ -2017,12 +2232,20 @@ pub(crate) fn emit_solve_nls_call(ctx: &mut FnCtx, job: NlsJob) -> Result<()> {
     ctx.emit(I::I32Const(rel_fresh_off as i32));
     ctx.emit(I::I32Add);
     // nominal block address (x-scaling), and the matching min/max pairs.
-    ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
-    ctx.emit(I::I32Const(job.nominal_off as i32));
-    ctx.emit(I::I32Add);
-    ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
-    ctx.emit(I::I32Const(2 * job.nominal_off as i32));
-    ctx.emit(I::I32Add);
+    match job.dyn_n {
+        Some(_) => {
+            ctx.emit_sim_addr(job.nominal_off)?;
+            ctx.emit_sim_addr(job.bounds_off)?;
+        }
+        None => {
+            ctx.emit(I::GlobalGet(NLS_NOMINAL_GLOBAL));
+            ctx.emit(I::I32Const(job.nominal_off as i32));
+            ctx.emit(I::I32Add);
+            ctx.emit(I::GlobalGet(NLS_BOUNDS_GLOBAL));
+            ctx.emit(I::I32Const(2 * job.nominal_off as i32));
+            ctx.emit(I::I32Add);
+        }
+    }
     // analytic-Jacobian table index, or `u32::MAX` when the system has none.
     if job.has_jac {
         ctx.emit(I::GlobalGet(NLS_BASE_GLOBAL));

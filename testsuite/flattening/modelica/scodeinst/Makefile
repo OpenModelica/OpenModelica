@@ -58,6 +58,10 @@ BindingInvalidType2.mo \
 BindingInvalidType3.mo \
 BindingInvalidType4.mo \
 BindingInvalidType5.mo \
+BlockConnector1.mo \
+BlockConnector2.mo \
+BlockConnector3.mo \
+BlockConnector4.mo \
 bindings1.mo \
 bindings4.mo \
 bindings7.mo \
@@ -546,6 +550,7 @@ Final6.mo \
 Final7.mo \
 ForConnect1.mo \
 ForConnect2.mo \
+ForConnect3.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -678,6 +683,11 @@ FuncUnknownDim3.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
 FuncViaComp3.mo \
+FuncViaComp4.mo \
+FuncViaComp5.mo \
+FuncViaComp6.mo \
+FuncViaComp7.mo \
+FuncViaComp8.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
@@ -743,10 +753,14 @@ FunctionUnitialized3.mo \
 FunctionUnitialized4.mo \
 FunctionUnitialized5.mo \
 FunctionUnitialized6.mo \
+FunctionUnitialized7.mo \
+FunctionUnitialized8.mo \
 IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
 IfConnect4.mo \
+IfConnect5.mo \
+IfConnect6.mo \
 IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \
@@ -782,6 +796,7 @@ IfExpression19.mo \
 IfExpression20.mo \
 IfExpression21.mo \
 IfExpression22.mo \
+IntegerArithmeticCast1.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -839,6 +854,7 @@ InnerOuter10.mo \
 InnerOuter11.mo \
 InnerOuter12.mo \
 InnerOuter13.mo \
+InnerOuter14.mo \
 InnerOuterClass1.mo \
 InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \

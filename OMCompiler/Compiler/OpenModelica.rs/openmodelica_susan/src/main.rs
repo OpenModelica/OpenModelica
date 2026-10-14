@@ -9,9 +9,11 @@
 //! working directory). `--tplOutputDir=<dir>` writes the `<file>.mo` there —
 //! the same omc config flag, which the build rules use to keep the generated
 //! sources out of the source tree; without it the `.mo` is written next to the
-//! input, as omc did. Other leading `-…` flags (e.g. `-d=failtrace`, passed by
-//! the CMake template rule) are accepted and ignored; the first non-flag
-//! argument is the template file.
+//! input, as omc did. `--tplInterfaceDir=<dir>` is searched before the current
+//! directory for `import interface` files. `--tplRustIndex=<json>` selects the
+//! Rust backend (see `run_rust`). Other leading `-…` flags (e.g.
+//! `-d=failtrace`, passed by the CMake template rule) are accepted and
+//! ignored; the first non-flag argument is the template file.
 //!
 //! This is deliberately a thin wrapper over the single library entry point
 //! `TplMain::main`: the flags global is valid by default (see
@@ -31,6 +33,59 @@ use openmodelica_susan::TplMain;
 const DEFAULT_STACK_SIZE: usize = 64 * 1024 * 1024;
 
 const OUTPUT_DIR_FLAG: &str = "--tplOutputDir=";
+const INTERFACE_DIR_FLAG: &str = "--tplInterfaceDir=";
+const RUST_INDEX_FLAG: &str = "--tplRustIndex=";
+
+mod rust_backend;
+
+fn write_if_changed(path: &std::path::Path, content: &str) -> std::io::Result<()> {
+    if std::fs::read_to_string(path).is_ok_and(|old| old == content) {
+        return Ok(());
+    }
+    std::fs::write(path, content)
+}
+
+/// Translates `file` to `<out_dir>/<crate>/src/<Package>.rs` with Susan's Rust
+/// backend; the crate comes from the template's `__OpenModelica_Interface`.
+fn run_rust(file: ArcStr, out_dir: &str, interface_dir: ArcStr, index: &str) -> i32 {
+    let idx = match std::fs::read_to_string(index)
+        .map_err(|e| e.to_string())
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).map_err(|e| e.to_string()))
+        .and_then(|v| openmodelica_susan_index::Index::from_json(&v))
+    {
+        Ok(i) => i,
+        Err(e) => {
+            eprintln!("susan: {index}: {e}");
+            return 1;
+        }
+    };
+    let (tpl, mm) = match TplMain::transformFile(file.clone(), interface_dir) {
+        Ok(x) => x,
+        Err(_) => {
+            print!("{}", openmodelica_error::ErrorExt::printMessagesStr(false));
+            eprintln!("susan: template translation failed");
+            return 1;
+        }
+    };
+    match rust_backend::print(&tpl, &mm, &idx, std::path::Path::new(".")) {
+        Ok((krate, code)) => {
+            let name = std::path::Path::new(file.as_str()).file_stem().unwrap().to_string_lossy().into_owned();
+            let dir = if out_dir.is_empty() { "." } else { out_dir };
+            let dest = std::path::Path::new(dir).join(krate).join("src").join(format!("{name}.rs"));
+            if let Err(e) = write_if_changed(&dest, &code) {
+                eprintln!("susan: {}: {e}", dest.display());
+                return 1;
+            }
+            0
+        }
+        Err(errs) => {
+            for e in errs {
+                eprintln!("{file}: {e}");
+            }
+            1
+        }
+    }
+}
 
 fn run() -> i32 {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -45,7 +100,16 @@ fn run() -> i32 {
         .next_back()
         .map(ArcStr::from)
         .unwrap_or_default();
-    match TplMain::main(file, &out_dir) {
+    let interface_dir = args
+        .iter()
+        .filter_map(|a| a.strip_prefix(INTERFACE_DIR_FLAG))
+        .next_back()
+        .map(ArcStr::from)
+        .unwrap_or_default();
+    if let Some(index) = args.iter().filter_map(|a| a.strip_prefix(RUST_INDEX_FLAG)).next_back() {
+        return run_rust(file, &out_dir, interface_dir, index);
+    }
+    match TplMain::main(file, &out_dir, interface_dir) {
         Ok(()) => 0,
         Err(_) => {
             // `translateFile` prints the Print-module buffer, which Susan's own

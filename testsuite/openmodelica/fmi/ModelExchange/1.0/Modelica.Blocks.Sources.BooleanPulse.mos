@@ -8,7 +8,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.1"});
+loadModel(Modelica, {"4.1.0"});
 buildModelFMU(Modelica.Blocks.Sources.BooleanPulse, version="1.0");
 getErrorString();
 

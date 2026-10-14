@@ -17,7 +17,13 @@ mod datarecon;
 mod engine;
 mod fmi;
 #[cfg(feature = "fmi")]
+mod fmi2_capi;
+#[cfg(feature = "fmi")]
+mod fmi3_capi;
+#[cfg(feature = "fmi")]
 mod fmi_host;
+#[cfg(feature = "fmi")]
+mod fmi_native;
 mod fmi_vrs;
 #[cfg(feature = "standalone")]
 mod help;

@@ -1,0 +1,65 @@
+// Name:     TupleConstraintStateSet
+// keywords: index reduction, dynamic state selection, tuple, #17061
+// status:   correct
+//
+// A pendulum whose length constraint is a tuple equation, so the states are
+// selected dynamically. The Jacobian of the state set needs the tuple equation
+// split into scalar residuals. Same result as ScalarPendulum below.
+
+loadString("
+model TupleConstraintStateSet
+  function g
+    input Real x;
+    input Real y;
+    output Real r2;
+    output Real a;
+  algorithm
+    r2 := x*x + y*y;
+    a := x + y;
+  end g;
+  Real x(start=1, fixed=true), y(start=0), vx, vy(start=0, fixed=true), F, a;
+  Real r2;
+equation
+  der(x) = vx; der(y) = vy;
+  der(vx) = -F*x; der(vy) = -F*y - 9.81;
+  r2 = 1 + 0.1*sin(time);
+  (r2, a) = g(x, y);
+end TupleConstraintStateSet;
+
+model ScalarPendulum
+  Real x(start=1, fixed=true), y(start=0), vx, vy(start=0, fixed=true), F, a;
+  Real r2;
+equation
+  der(x) = vx; der(y) = vy;
+  der(vx) = -F*x; der(vy) = -F*y - 9.81;
+  r2 = 1 + 0.1*sin(time);
+  r2 = x*x + y*y;
+  a = x + y;
+end ScalarPendulum;
+"); getErrorString();
+simulate(TupleConstraintStateSet, stopTime=1); getErrorString();
+simulate(ScalarPendulum, stopTime=1); getErrorString();
+diffSimulationResults("TupleConstraintStateSet_res.mat", "ScalarPendulum_res.mat", "TupleConstraintStateSet_diff", vars = {"x", "y", "vx", "vy", "a"}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TupleConstraintStateSet_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TupleConstraintStateSet', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "ScalarPendulum_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalarPendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// ""
+// endResult

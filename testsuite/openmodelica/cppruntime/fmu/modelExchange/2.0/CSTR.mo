@@ -2,7 +2,7 @@ model CSTR
   "Continuous stirred reactor with parallel and subsequent reaction.
    See: Engell, Klatt: Nonlinear control of a nonminimum phase CSTR.
    In Americal Control Conference, Los Angeles, 1993."
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
   parameter SI.MolarEnergy[:] H = {4.2e3, -11.0e3, -41.85e3};
   parameter SI.Density rho = 0.9342e3;
   parameter SI.SpecificHeatCapacity Cp = 3.01e3;
@@ -34,7 +34,7 @@ model CSTR
     start = 112.9, fixed = fixedInitial) "Coolant temperature"
     annotation (Placement(transformation(extent={{100,-80},{140,-40}},
           rotation=0), iconTransformation(extent={{100,-80},{140,-40}})));
-  SI.Temp_C T(nominal=100, start=114.2, fixed=fixedInitial);
+  Modelica.Units.NonSI.Temperature_degC T(nominal=100, start=114.2, fixed=fixedInitial);
   parameter Real[:] k0 = {1.287e12, 1.287e12, 9.043e9}/3600;
   parameter Real[:] E = {-9758.3, -9758.3, -8560};
   Real[size(k0, 1)] k;
@@ -53,7 +53,7 @@ equation
     - 1000/rho/Cp*(k[1]*cA*H[1] + k[2]*cB*H[2] + k[3]*cA^2*H[3])
     + kw*AR/rho/Cp/VR*(TK - T);
   der(TK) = 1/mK/CpK * (QK_flow_sampled*1000/3600 + kw*AR*(T - TK));
-  annotation (uses(Modelica(version="3.2.2")), experiment(StopTime=1500),
+  annotation (uses(Modelica(version="4.1.0")), experiment(StopTime=1500),
       Diagram(coordinateSystem(preserveAspectRatio=false, extent={{
             -100,-100},{100,100}})),
       Icon(coordinateSystem(preserveAspectRatio=false,

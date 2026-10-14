@@ -163,12 +163,12 @@ impl ExtInputHook {
     }
 
     /// The same for the optimizer, whose inputs are real `SimData` indices.
-    pub(crate) fn load_reals(indices: &[u32], names: &[&str]) -> Option<alloc::boxed::Box<Self>> {
+    pub(crate) fn load_reals(indices: &[u32], names: &[&str], real_off: u32) -> Option<alloc::boxed::Box<Self>> {
         let file = crate::simflags::with_flags(|f| f.csv_input.clone())?;
         let ext = ExternalInput::load(&file, names)?;
         Some(alloc::boxed::Box::new(ExtInputHook {
             ext,
-            slots: indices.iter().map(|&i| (crate::REAL_OFF + i * 8, crate::WTy::F64)).collect(),
+            slots: indices.iter().map(|&i| (real_off + i * 8, crate::WTy::F64)).collect(),
             inputs: empty(indices.len()),
         }))
     }

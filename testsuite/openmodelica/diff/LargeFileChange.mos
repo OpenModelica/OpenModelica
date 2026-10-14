@@ -1,16 +1,16 @@
 // status: correct
 // cflags: -d=-newInst
 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 getErrorString();
 echo(false);
-fileName := getSourceFile(Modelica.Electrical.PowerConverters.Examples.DCAC.MultiPhaseTwoLevel.MultiPhaseTwoLevel_R);
+fileName := getSourceFile(Modelica.Electrical.Spice3.Examples.Inverter);
 s1 := readFile(fileName);
 echo(true);
-updateComponent(fundamentalWaveCurrent,Modelica.Blocks.Math.Harmonic,Modelica.Electrical.PowerConverters.Examples.DCAC.MultiPhaseTwoLevel.MultiPhaseTwoLevel_R,annotate=Placement(visible=true, transformation=transformation(origin={90,-48}, extent={{-666,-10},{10,10}}, rotation=0)));
+updateComponent(ground,Modelica.Electrical.Spice3.Basic.Ground,Modelica.Electrical.Spice3.Examples.Inverter,annotate=Placement(visible=true, transformation=transformation(origin={-4,-48}, extent={{-666,-10},{10,10}}, rotation=0)));
 getErrorString();
 echo(false);
-s2 := listFile(Modelica.Electrical.PowerConverters);
+s2 := listFile(Modelica.Electrical.Spice3);
 print(getErrorString());
 writeFile("old.mo", readFile(fileName));
 s := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
@@ -36,15 +36,15 @@ system("diff -uZ old.mo merged.mo | egrep -v '^(@@|---|[+][+][+])'")
 // true
 // true
 // ""
-//              each k=1,
-//              each x0Cos=0,
-//              each x0Sin=0,
-// -            each f=f1) annotation (Placement(transformation(
-// -                extent={{-10,-10},{10,10}},
-// -                origin={90,-50})));
-// +            each f=f1) annotation (Placement(visible = true, transformation(origin = {90, -48}, extent = {{-666, -10}, {10, 10}}, rotation = 0)));
-//            Modelica.Blocks.Math.Harmonic fundamentalWaveVoltage[m](
-//              each k=1,
-//              each x0Cos=0,
+//            CBD=0,
+//            CBS=0), IC=-1e40)
+//          annotation (Placement(transformation(extent={{-14,-34},{6,-14}})));
+// -      Basic.Ground ground
+// -        annotation (Placement(transformation(extent={{-14,-60},{6,-40}})));
+// +      Modelica.Electrical.Spice3.Basic.Ground ground
+// +        annotation (Placement(visible = true, transformation(origin = {-4, -48}, extent = {{-666, -10}, {10, 10}}, rotation = 0)));
+//        Sources.V_pulse vin(
+//          V2=5,
+//          TD=4e-12,
 // 0
 // endResult

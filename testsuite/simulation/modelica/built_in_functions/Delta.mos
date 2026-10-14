@@ -4,7 +4,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica, {"3.2.1"}); getErrorString();
+loadModel(Modelica, {"4.1.0"}); getErrorString();
 loadFile("Delta.mo"); getErrorString();
 simulate(Delta, variableFilter = "time|x", numberOfIntervals=10, fileNamePrefix = "Delta_reference");getErrorString();
 

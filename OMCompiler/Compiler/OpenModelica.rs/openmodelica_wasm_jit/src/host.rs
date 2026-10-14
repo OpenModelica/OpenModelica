@@ -202,12 +202,14 @@ pub struct HostState {
     pub ext_error_report: Option<wasmtime::TypedFunc<u32, ()>>,
     /// The libraries' `vsnprintf`, for `ModelicaFormat*` messages.
     pub vsnprintf: Option<wasmtime::TypedFunc<(i32, i32, i32, i32), i32>>,
+    /// The libraries' `strtod`, for what [`crate::dylink_wasmtime`]'s does not parse.
+    pub strtod: Option<wasmtime::TypedFunc<(i32, i32), f64>>,
 }
 
 #[cfg(all(feature = "jit", not(feature = "engine-wasmer"), not(target_arch = "wasm32")))]
 impl HostState {
     pub fn new(wasi: openmodelica_wasi::wasi::WasiCtx) -> Self {
-        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None }
+        HostState { wasi, memory: None, model_error: None, shadow_stack: None, ext_error_report: None, vsnprintf: None, strtod: None }
     }
 }
 
@@ -283,8 +285,9 @@ fn record_warning(rec: [i32; 10]) {
 /// `rt_assert`: a failed `assert()`. Returns 1 when the caller must trap — a model
 /// or runtime error (`cond == 0`) always does, a user assertion is held instead
 /// while the driver has asserts suppressed (and recorded, unless it is probing).
-fn assert_failed(cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) -> i32 {
-    let hold = if cond != 0 { ASSERT_HOLD.with(|n| n.get()) } else { AssertHold::Throw };
+/// `rt_assert_when` passes `holdable` clear: a when-body's assertion always traps.
+fn assert_failed(holdable: bool, cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32) -> i32 {
+    let hold = if cond != 0 && holdable { ASSERT_HOLD.with(|n| n.get()) } else { AssertHold::Throw };
     if hold == AssertHold::Record {
         record_warning([
             openmodelica_sim_meta::driver::ASSERT_SUPPRESSED,
@@ -312,6 +315,12 @@ pub mod array_abi {
     }
 
     /// The dimensions and element-area offset of the array object at `obj`.
+    /// Where the elements start, as [`dims_and_data`] has it.
+    pub fn data_offset(mem: &[u8], obj: usize) -> Option<usize> {
+        let ndims = u32::from_le_bytes(mem.get(obj + 8..obj + 12)?.try_into().ok()?) as usize;
+        Some((16 + ndims * 4 + 7) & !7)
+    }
+
     pub fn dims_and_data(mem: &[u8], obj: usize) -> Option<(Vec<usize>, usize)> {
         let word = |off: usize| -> Option<usize> {
             Some(u32::from_le_bytes(mem.get(off..off + 4)?.try_into().ok()?) as usize)
@@ -324,6 +333,16 @@ pub mod array_abi {
     /// Copy `src` to `dst` converting between row-major and column-major storage
     /// (C's `convert_alloc_*_{to,from}_f77`, without its 2-D-only restriction).
     pub fn reorder(src: &[u8], dst: &mut [u8], dims: &[usize], esz: usize, to_fortran: bool) {
+        if let [d0, d1] = *dims {
+            for i in 0..d0 {
+                for j in 0..d1 {
+                    let (r, c) = (i * d1 + j, i + j * d0);
+                    let (from, to) = if to_fortran { (r, c) } else { (c, r) };
+                    dst[to * esz..(to + 1) * esz].copy_from_slice(&src[from * esz..(from + 1) * esz]);
+                }
+            }
+            return;
+        }
         let total: usize = dims.iter().product();
         let mut idx = vec![0usize; dims.len()];
         for r in 0..total {
@@ -450,7 +469,10 @@ pub mod lin_solve {
 pub fn add_host_builtins(linker: &mut wasmtime::Linker<HostState>) -> Result<()> {
     let wt = |r: std::result::Result<&mut wasmtime::Linker<HostState>, wasmtime::Error>| r.map(|_| ()).map_err(|_| "CodegenWasmJit: wasm engine error");
     wt(linker.func_wrap("rt", "rt_assert", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
-        assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+        assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+    }))?;
+    wt(linker.func_wrap("rt", "rt_assert_when", |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
+        assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
     }))?;
     wt(linker.func_wrap("rt", "rt_ext_stack_save", |mut caller: wasmtime::Caller<'_, HostState>| -> std::result::Result<i32, wasmtime::Error> {
         save_shadow_stack(&mut caller)
@@ -689,7 +711,11 @@ pub fn add_host_builtins(store: &mut wasmer::Store, imports: &mut wasmer::Import
     use wasmer::Function;
     imports.define("rt", "rt_assert", Function::new_typed(store,
         |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
-            assert_failed(cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+            assert_failed(true, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
+        }));
+    imports.define("rt", "rt_assert_when", Function::new_typed(store,
+        |msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, cond: i32, initial: i32, _sim_data: i32| -> i32 {
+            assert_failed(false, cond, msg, file, sline, scol, eline, ecol, read_only, initial)
         }));
     imports.define("rt", "rt_assert_warning", Function::new_typed(store,
         |cond: i32, msg: i32, file: i32, sline: i32, scol: i32, eline: i32, ecol: i32, read_only: i32, initial: i32| {

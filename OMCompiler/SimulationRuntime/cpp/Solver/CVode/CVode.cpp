@@ -33,7 +33,6 @@
 #include <Core/Modelica.h>
 #include <Solver/CVode/CVode.h>
 #include <Core/Math/Functions.h>
-#include <Core/Utils/numeric/bindings/ublas/matrix_sparse.hpp>
 
 
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)

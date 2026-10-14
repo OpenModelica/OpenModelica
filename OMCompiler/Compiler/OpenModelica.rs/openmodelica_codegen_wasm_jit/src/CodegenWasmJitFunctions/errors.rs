@@ -72,6 +72,7 @@ pub(super) fn emit_assert(
     let is_warning = matches!(level, DAE::Exp::ENUM_LITERAL { index: 1, .. });
     // C's `FUNCTION_CONTEXT` arm reports the message alone, with no dumped condition.
     let in_function = ctx.sim().is_err();
+    let when_body = ctx.sim().is_ok_and(|s| s.when_body);
     let warn_flag = is_warning.then(shared_lits::new_flag);
     if let Some(g) = warn_flag {
         ctx.emit(we::Instruction::GlobalGet(g));
@@ -142,7 +143,7 @@ pub(super) fn emit_assert(
     // C's `FUNCTION_CONTEXT` arm has no such check, so a function's assert throws
     // whatever the window says (a domain guard the solver must back off from).
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_recovering")?));
-    if !in_function {
+    if !in_function && !when_body {
         ctx.emit(we::Instruction::Call(rt_index("rt_assert_suppressed")?));
         ctx.emit(we::Instruction::I32Eqz);
         ctx.emit(we::Instruction::I32And);
@@ -159,7 +160,8 @@ pub(super) fn emit_assert(
     report_args(ctx)?;
     emit_initial_flag(ctx);
     emit_sim_data_or_zero(ctx);
-    ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
+    let report = if when_body { "rt_assert_when" } else { "rt_assert" };
+    ctx.emit(we::Instruction::Call(env_extra_index(report)?));
     // Unwind unless the driver took it (suppressed during the event search).
     ctx.emit(we::Instruction::If(we::BlockType::Empty));
     emit_assert_unwind(ctx);
@@ -267,7 +269,7 @@ pub(crate) fn dumped_exp(e: &DAE::Exp) -> Result<String> {
             return Ok(s);
         }
     }
-    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt.clone(), e, arcstr::literal!("\""))?)?.to_string())
+    Ok(Tpl::textString(ExpressionDumpTpl::dumpExp(Tpl::emptyTxt(), &e, &arcstr::literal!("\""))?)?.to_string())
 }
 
 /// `ExpressionDumpTpl.dumpExp` for literals, crefs, scalar arithmetic and calls
@@ -490,14 +492,26 @@ pub(super) fn emit_math_domain_guard(ctx: &mut FnCtx, name: &str, arg: &metamode
     ctx.emit(I::I32Const(0)); // minimum length
     ctx.emit(I::I32Const(0)); // left justified
     ctx.emit(I::Call(rt_index("rt_real_format")?));
-    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_str_literal(ctx, d.tail.as_bytes())?;
-    ctx.emit(I::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_model_error(ctx)?;
     ctx.emit(I::End);
 
     ctx.emit(I::LocalGet(t));
     Ok(())
+}
+
+/// `rt_concat` of the two owned Strings on the stack, releasing both.
+fn emit_concat_owned(ctx: &mut FnCtx) -> Result<()> {
+    let b = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalSet(b));
+    let a = ctx.alloc_temp(WTy::I32);
+    ctx.emit(we::Instruction::LocalTee(a));
+    ctx.emit(we::Instruction::LocalGet(b));
+    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    release_temp(ctx, a)?;
+    release_temp(ctx, b)
 }
 
 /// `nthRoot(v, n) = copysign(pow(|v|, 1/n), v)` — the real n-th root,
@@ -525,7 +539,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     emit_str_literal(ctx, format!("Model error: Second argument of nthRoot({vstr}, {nstr}) must be > 0, got ").as_bytes())?;
     ctx.emit(we::Instruction::LocalGet(nt));
     ctx.emit(we::Instruction::Call(rt_index("rt_int_string")?));
-    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_model_error(ctx)?;
     ctx.emit(we::Instruction::End);
 
@@ -547,7 +561,7 @@ pub(super) fn emit_nth_root(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp
     ctx.emit(we::Instruction::I32Const(0)); // minimum length
     ctx.emit(we::Instruction::I32Const(0)); // left justified
     ctx.emit(we::Instruction::Call(rt_index("rt_real_format")?));
-    ctx.emit(we::Instruction::Call(rt_index("rt_concat")?));
+    emit_concat_owned(ctx)?;
     emit_model_error(ctx)?;
     ctx.emit(we::Instruction::End);
 

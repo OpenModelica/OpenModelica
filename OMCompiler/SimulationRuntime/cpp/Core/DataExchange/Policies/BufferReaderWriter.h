@@ -32,7 +32,39 @@
  */
 #include "TextfileWriter.h"
 
-#include <boost/circular_buffer.hpp>
+#include <deque>
+
+/** Keeps the last capacity() elements pushed, dropping the oldest. */
+template <class T>
+class circular_buffer
+{
+public:
+    circular_buffer() : _capacity(0) {}
+    void set_capacity(size_t n)
+    {
+        _capacity = n;
+        while (_data.size() > _capacity)
+            _data.pop_front();
+    }
+    size_t capacity() const { return _capacity; }
+    void push_back(const T& v)
+    {
+        if (_capacity == 0)
+            return;
+        if (_data.size() == _capacity)
+            _data.pop_front();
+        _data.push_back(v);
+    }
+    void pop_back() { _data.pop_back(); }
+    void clear() { _data.clear(); }
+    size_t size() const { return _data.size(); }
+    T& operator[](size_t i) { return _data[i]; }
+    const T& operator[](size_t i) const { return _data[i]; }
+
+private:
+    size_t _capacity;
+    std::deque<T> _data;
+};
 typedef std::vector<double> real_values_t;
 typedef std::vector<int> int_values_t;
 typedef std::vector<bool> bool_values_t;
@@ -507,11 +539,11 @@ public:
 
 protected:
 
-    typedef boost::circular_buffer<  real_values_t > real_buffer_type;
-     typedef boost::circular_buffer<  int_values_t   > int_buffer_type;
-    typedef boost::circular_buffer<  bool_values_t   > bool_buffer_type;
-    typedef boost::circular_buffer<  der_values_t> der_buffer_type;
-    typedef boost::circular_buffer<  res_values_t> res_buffer_type;
+    typedef circular_buffer<  real_values_t > real_buffer_type;
+     typedef circular_buffer<  int_values_t   > int_buffer_type;
+    typedef circular_buffer<  bool_values_t   > bool_buffer_type;
+    typedef circular_buffer<  der_values_t> der_buffer_type;
+    typedef circular_buffer<  res_values_t> res_buffer_type;
 
     typedef std::map<double,unsigned long> _time_entries_type;
 

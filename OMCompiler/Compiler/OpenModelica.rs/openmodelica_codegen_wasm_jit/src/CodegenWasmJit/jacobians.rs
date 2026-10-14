@@ -148,7 +148,7 @@ pub(super) fn register_jac_slots(
             return Ok(None);
         }
         let off = *cursor;
-        let slot = SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false };
+        let slot = SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 };
         registered.push((key.clone(), slot));
         Arc::make_mut(&mut var_map.vars).insert(key, slot);
         for g in array_element_keys(&sv.name)? {
@@ -159,6 +159,7 @@ pub(super) fn register_jac_slots(
                 wty: WTy::F64,
                 neg: Neg::None,
                 heap: false,
+                pre: 0,
             });
         }
         *cursor += 8;
@@ -465,7 +466,7 @@ pub(super) fn build_lin_jac_infos(
                 continue;
             }
             let off = cursor;
-            Arc::make_mut(&mut var_map.vars).insert(key, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false });
+            Arc::make_mut(&mut var_map.vars).insert(key, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 });
             for g in array_element_keys(&sv.name)? {
                 var_map.array_acc.entry(g.base).or_default().push(AccElem {
                     subs: g.subs,
@@ -474,6 +475,7 @@ pub(super) fn build_lin_jac_infos(
                     wty: WTy::F64,
                     neg: Neg::None,
                     heap: false,
+                    pre: 0,
                 });
             }
             cursor += 8;
@@ -611,10 +613,15 @@ pub(super) fn build_nls_fns(
     ));
     let (inner, residuals, iter_vars) = nls_parts(nlsystem)?;
     let mut slots: Vec<IterSlot> = Vec::with_capacity(iter_vars.len());
+    let mut blocks: Vec<IterBlock> = Vec::new();
     let vars = SlotMap::new(var_map.vars.clone());
     for cr in &iter_vars {
         if is_homotopy_lambda(Some(cr)) {
             slots.push(IterSlot { off: var_map.lambda_off, wty: WTy::F64 });
+            continue;
+        }
+        if let Some((slot, dims)) = sim_cref_key(cr).ok().and_then(|k| var_map.vars.slots.dyn_array(&k).cloned()) {
+            blocks.push(IterBlock { off: slot.off, len: dims.iter().fold(Sz::lit(1), |a, d| a * d.clone()) });
             continue;
         }
         let slot = iteration_var_slot(&vars, &var_map.start_slots, cr)?
@@ -633,18 +640,18 @@ pub(super) fn build_nls_fns(
 
     // residual(sim_data, x, r): 3 params.
     let residual = build_residual_fn(
-        nlsystem.index, &slots, &residuals, &inner, strict.is_some(), var_map, eq_index, by_name,
+        nlsystem.index, &slots, &blocks, &residuals, &inner, strict.is_some(), var_map, eq_index, by_name,
         literals, pool, residual_ty,
     )?;
     // load(sim_data, x): 2 params.
     let load = {
         let mut ctx = FnCtx::new_sim_params(mk_sim(), by_name, literals, 2);
-        emit_nls_load_body(&mut ctx, &slots)?;
+        emit_nls_load_body(&mut ctx, &slots, &blocks)?;
         finish(ctx)
     };
     // jac(sim_data, x, jptr): column-major `n×n` analytic Jacobian, emitted only
     // when the system carries a usable symbolic Jacobian.
-    let jac = match (&nlsystem.jacobianMatrix, jac_info) {
+    let jac = match (&nlsystem.jacobianMatrix, jac_info.filter(|_| blocks.is_empty())) {
         (Some(jm), Some(info)) => {
             let col = lst(&jm.columns)
                 .next()
@@ -723,6 +730,7 @@ pub(super) enum NlsResidualFn {
 fn build_residual_fn(
     index: i32,
     slots: &[IterSlot],
+    blocks: &[IterBlock],
     residuals: &NlsResiduals,
     inner: &[metamodelica::Ref<SimCode::SimEqSystem>],
     strict: bool,
@@ -734,7 +742,7 @@ fn build_residual_fn(
     residual_ty: u32,
 ) -> Result<NlsResidualFn> {
     let explicit = match residuals {
-        NlsResiduals::Explicit(r) if !strict => r,
+        NlsResiduals::Explicit(r) if !strict && blocks.is_empty() => r,
         _ => {
             let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, literals, 3);
             // C's `residualFuncConstraints` for a casual set: each inner equation's
@@ -746,7 +754,7 @@ fn build_residual_fn(
                 }
                 Ok(())
             };
-            emit_nls_residual_body(&mut ctx, index, slots, residuals, &mut lower_inner)?;
+            emit_nls_residual_body(&mut ctx, index, slots, blocks, residuals, &mut lower_inner)?;
             return Ok(NlsResidualFn::Whole(finish_fn(ctx)));
         }
     };
@@ -757,7 +765,7 @@ fn build_residual_fn(
     loop {
         let mut ctx = FnCtx::new_sim_params(sim_ctx(var_map), by_name, &mut *literals, 3);
         if fns.is_empty() {
-            emit_nls_residual_prologue(&mut ctx, index, slots)?;
+            emit_nls_residual_prologue(&mut ctx, index, slots, &[])?;
         }
         while eq < inner.len() {
             lower_equation(&mut ctx, &inner[eq], eq_index)?;

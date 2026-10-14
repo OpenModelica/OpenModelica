@@ -1,3 +1,0 @@
-openModel("HumModOMCTotal.mo")
-checkModel("HumMod_HumMod_GolemEdition");
-exit();

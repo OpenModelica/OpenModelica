@@ -384,6 +384,16 @@ public
     end match;
   end isConnectionCall;
 
+  function isConnectionGraphQuery
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isConnectionGraphQuery(exp.call);
+      else false;
+    end match;
+  end isConnectionGraphQuery;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -1253,6 +1263,15 @@ public
         then
           UNARY(Operator.setType(t, exp.operator), typeCast(exp.exp, ety));
 
+      // Integer arithmetic is cast by casting the operands, so that a result
+      // that does not fit in an Integer is still the exact Real one.
+      case BINARY()
+        guard Type.isReal(ety) and isCastableIntegerArithmetic(exp.operator)
+        algorithm
+          t := Type.setArrayElementType(Operator.typeOf(exp.operator), ety);
+        then
+          BINARY(typeCast(exp.exp1, ety), Operator.setType(t, exp.operator), typeCast(exp.exp2, ety));
+
       // If-expressions are handled by casting each of the branches.
       case IF()
         algorithm
@@ -1281,6 +1300,36 @@ public
       else typeCastGeneric(exp, ety);
     end match;
   end typeCast;
+
+  function isCastableIntegerArithmetic
+    "Whether an Integer operation gives the same value on the operands cast to
+     Real: addition, subtraction and multiplication, but not division or ^."
+    input Operator op;
+    output Boolean res;
+  protected
+    import NFOperator.Op;
+  algorithm
+    res := Type.isInteger(Type.arrayElementType(Operator.typeOf(op))) and
+      (match op.op
+        case Op.ADD then true;
+        case Op.SUB then true;
+        case Op.MUL then true;
+        case Op.ADD_EW then true;
+        case Op.SUB_EW then true;
+        case Op.MUL_EW then true;
+        case Op.ADD_SCALAR_ARRAY then true;
+        case Op.ADD_ARRAY_SCALAR then true;
+        case Op.SUB_SCALAR_ARRAY then true;
+        case Op.SUB_ARRAY_SCALAR then true;
+        case Op.MUL_SCALAR_ARRAY then true;
+        case Op.MUL_ARRAY_SCALAR then true;
+        case Op.MUL_VECTOR_MATRIX then true;
+        case Op.MUL_MATRIX_VECTOR then true;
+        case Op.SCALAR_PRODUCT then true;
+        case Op.MATRIX_PRODUCT then true;
+        else false;
+      end match);
+  end isCastableIntegerArithmetic;
 
   function typeCastGeneric
     input output Expression exp;
@@ -1554,6 +1603,12 @@ public
     end if;
   end makeTuple;
 
+  function emptyRange
+    "returns true if the range is size 0 or less and not resizable"
+    input Expression range "has to be RANGE()!";
+    output Boolean b = (not contains(range, isResizableCref)) and 0 >= Dimension.size(Type.nthDimension(typeOf(range), 1), false);
+  end emptyRange;
+
   function rangeSize
     input Expression range "has to be RANGE()!";
     input Boolean resize = false;
@@ -1603,6 +1658,16 @@ public
         then applySubscriptCall(subscript, exp, restSubscripts, applyToScope);
 
       case IF() then applySubscriptIf(subscript, exp, restSubscripts, applyToScope);
+
+      case BINARY() guard List.all(subscript :: restSubscripts, isCheapSubscript)
+        then applySubscriptBinary(subscript, exp, restSubscripts, applyToScope);
+
+      case UNARY() guard Type.isArray(Operator.typeOf(exp.operator)) and
+                         List.all(subscript :: restSubscripts, isCheapSubscript)
+        algorithm
+          outExp := applySubscript(subscript, exp.exp, restSubscripts, applyToScope);
+        then
+          UNARY(Operator.setType(typeOf(outExp), exp.operator), outExp);
 
       case UNBOX()
         algorithm
@@ -1855,6 +1920,7 @@ public
     Option<Expression> step_exp;
     Type ty;
     list<Subscript> subs;
+    Integer step, offset;
   algorithm
     Subscript.INDEX(index = index_exp) := index;
     RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
@@ -1864,6 +1930,18 @@ public
       outExp := applyIndexSubscriptRange2(start_exp, step_exp, stop_exp, toInteger(index_exp));
     elseif isScalarLiteral(index_exp) and toInteger(index_exp) == 1 then
       outExp := start_exp;
+    elseif Type.isInteger(Type.arrayElementType(ty)) and isScalarLiteral(start_exp) and
+           Util.applyOptionOrDefault(step_exp, isScalarLiteral, true) then
+      // (start:step:stop)[i] = step*i + (start - step), e.g. (1:n)[i] = i
+      step := Util.applyOptionOrDefault(step_exp, toInteger, 1);
+      offset := toInteger(start_exp) - step;
+      outExp := index_exp;
+      if step <> 1 then
+        outExp := BINARY(INTEGER(step), Operator.makeMul(Type.INTEGER()), outExp);
+      end if;
+      if offset <> 0 then
+        outExp := BINARY(outExp, Operator.makeAdd(Type.INTEGER()), INTEGER(offset));
+      end if;
     else
       subs := {index};
       ty := Type.subscript(ty, subs);
@@ -2004,6 +2082,78 @@ public
       outExp := IF(ty, cond, tb, fb);
     end if;
   end applySubscriptIf;
+
+  function isCheapSubscript
+    "Whether the subscript can be duplicated into the operands of an operator."
+    input Subscript subscript;
+    output Boolean cheap;
+  algorithm
+    cheap := match subscript
+      case Subscript.INDEX() then isCref(subscript.index) or isScalarLiteral(subscript.index);
+      case Subscript.WHOLE() then true;
+      else false;
+    end match;
+  end isCheapSubscript;
+
+  function applySubscriptBinary
+    "Moves the subscripts into the operands of an element-wise operator:
+     (a .* b)[i] = a[i] * b[i], (a * s)[i] = a[i] * s."
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    input Boolean applyToScope;
+    output Expression outExp;
+  protected
+    import NFOperator.Op;
+    Expression e1, e2;
+    Operator op;
+    Op scalar_op;
+    Boolean sub1, sub2;
+  algorithm
+    BINARY(e1, op, e2) := exp;
+
+    (sub1, sub2, scalar_op) := match op.op
+      case Op.ADD guard Type.isArray(op.ty) then (true, true, Op.ADD);
+      case Op.SUB guard Type.isArray(op.ty) then (true, true, Op.SUB);
+      case Op.ADD_EW then (true, true, Op.ADD);
+      case Op.SUB_EW then (true, true, Op.SUB);
+      case Op.MUL_EW then (true, true, Op.MUL);
+      case Op.DIV_EW then (true, true, Op.DIV);
+      case Op.POW_EW then (true, true, Op.POW);
+      case Op.ADD_ARRAY_SCALAR then (true, false, Op.ADD);
+      case Op.SUB_ARRAY_SCALAR then (true, false, Op.SUB);
+      case Op.MUL_ARRAY_SCALAR then (true, false, Op.MUL);
+      case Op.DIV_ARRAY_SCALAR then (true, false, Op.DIV);
+      case Op.POW_ARRAY_SCALAR then (true, false, Op.POW);
+      case Op.ADD_SCALAR_ARRAY then (false, true, Op.ADD);
+      case Op.SUB_SCALAR_ARRAY then (false, true, Op.SUB);
+      case Op.MUL_SCALAR_ARRAY then (false, true, Op.MUL);
+      case Op.DIV_SCALAR_ARRAY then (false, true, Op.DIV);
+      case Op.POW_SCALAR_ARRAY then (false, true, Op.POW);
+      else (false, false, op.op);
+    end match;
+
+    if not (sub1 or sub2) then
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
+      return;
+    end if;
+
+    if sub1 then
+      e1 := applySubscript(subscript, e1, restSubscripts, applyToScope);
+    end if;
+
+    if sub2 then
+      e2 := applySubscript(subscript, e2, restSubscripts, applyToScope);
+    end if;
+
+    op.ty := typeOf(if sub1 then e1 else e2);
+
+    if Type.isScalar(op.ty) then
+      op.op := scalar_op;
+    end if;
+
+    outExp := BINARY(e1, op, e2);
+  end applySubscriptBinary;
 
   function makeSubscriptedExp
     input list<Subscript> subscripts;
@@ -2754,6 +2904,10 @@ public
 
       case RECORD_ELEMENT()
         then DAE.RSUB(toDAE(exp.recordExp), -1, exp.fieldName, Type.toDAE(exp.ty));
+
+      // a plain function reference, see NBackendDAE.lowerFunctionPointers
+      case PARTIAL_FUNCTION_APPLICATION(args = {}, ty = Type.FUNCTION(fnType = NFType.FunctionType.FUNCTION_REFERENCE))
+        then toDAE(CREF(exp.ty, exp.fn));
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
@@ -6415,6 +6569,11 @@ public
     list<Subscript> subs;
     list<Expression> sub_exps, dim_sizes;
   algorithm
+    if not containsSplitSubscriptedExp(exp) then
+      outExp := func(exp);
+      return;
+    end if;
+
     (outExp, osub_repls) := mapFold(exp, replaceSplitSubscripts, NONE());
 
     if isNone(osub_repls) then
@@ -6429,6 +6588,23 @@ public
       outExp := applySubscripts(subs, outExp);
     end if;
   end mapSplitExpressions;
+
+  function containsSplitSubscriptedExp
+    "Like contains(exp, isSplitSubscriptedExp), but also looks into iterator
+     ranges like mapFold does. Literal arrays are skipped, like in
+     Ceval.subscriptBinding2."
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case SUBSCRIPTED_EXP(split = true) then true;
+      case ARRAY(literal = true) then false;
+      case CALL()
+        then containsShallow(exp, containsSplitSubscriptedExp) or
+             List.any(list(Util.tuple22(i) for i in Call.iterators(exp.call)), containsSplitSubscriptedExp);
+      else containsShallow(exp, containsSplitSubscriptedExp);
+    end match;
+  end containsSplitSubscriptedExp;
 
   function replaceSplitSubscripts
     input output Expression exp;

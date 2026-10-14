@@ -365,7 +365,9 @@ case SIMCODE(__) then
   <<
   // FMI 1.0 inlines the model interface implementation here, after the forward declarations
   // above (setStartValues, setDefaultStartValues, getReal, ...) that it calls. See #15838.
+  #if !defined(OMC_RUST_SIMULATION_RUNTIME)
   #include "fmi-export/fmu1_model_interface.c.inc"
+  #endif
   >>
   else ""
   %>
@@ -399,6 +401,31 @@ case SIMCODE(__) then
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
+  const size_t omc_fmu_threadDataSize = sizeof(threadData_t);
+  <%if isFMIVersion30(FMUVersion) then
+  <<
+  const int omc_fmu3_nArrays = FMI3_NUMBER_OF_ARRAYS;
+  #if FMI3_NUMBER_OF_ARRAYS > 0
+  const unsigned int omc_fmu3_arrayVrs[] = FMI3_ARRAY_VRS;
+  const unsigned int omc_fmu3_arrayLengths[] = FMI3_ARRAY_LENGTHS;
+  #else
+  const unsigned int omc_fmu3_arrayVrs[1] = {0};
+  const unsigned int omc_fmu3_arrayLengths[1] = {0};
+  #endif
+  >>
+  else
+  <<
+  const int omc_fmu3_nArrays = 0;
+  const unsigned int omc_fmu3_arrayVrs[1] = {0};
+  const unsigned int omc_fmu3_arrayLengths[1] = {0};
+  >>
+  %>
+  void omc_fmu_setupDataStruc(DATA *data, threadData_t *threadData) {
+    <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(data, threadData);
+  }
+  #if defined(OMC_RUST_SIMULATION_RUNTIME)
+  #include "fmi-export/fmu<%if isFMIVersion30(FMUVersion) then "3" else if isFMIVersion20(FMUVersion) then "2" else "1"%>_rust_interface.c.inc"
+  #endif
 
   // implementation of the Model Exchange functions
   <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
@@ -464,8 +491,8 @@ let numberOfRealInputs = varInfo.numRealInputVars
 
   // define initial state vector as vector of value references (arrays expanded to
   // their scalar element value references)
-  #define STATES { <%vars.stateVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> simvar as SIMVAR(__) => if stringEq(CodegenUtil.crefStr(name),"$dummy") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> simvar as SIMVAR(__) => if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then '' else SimCodeCodegenUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
 
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
@@ -476,10 +503,10 @@ template dervativeNameCStyle(ComponentRef cr)
  "Generates the name of a derivative in c style, replaces ( with _"
 ::=
   match cr
-  case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
+  case CREF_QUAL(ident = "$DER") then 'der_<%CodegenUtil.crefStr(componentRef)%>_'
 end dervativeNameCStyle;
 
-template defineExternalFunction(Function fn)
+template defineExternalFunction(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
@@ -499,7 +526,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   <<
   // Set values for all variables that define a start value
   OMC_DISABLE_OPT
-  void setDefaultStartValues(ModelInstance *comp) {
+  void omc_fmu_setDefaultStartValues(DATA *fmuData) {
     <%vars.stateVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
     <%vars.derivativeVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
     <%vars.algVars |> var => initValsDefault(var,"realVars") ;separator="\n"%>
@@ -511,6 +538,10 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
     <%vars.intParamVars |> var => initParamsDefault(var,"integerParameter") ;separator="\n"%>
     <%vars.boolParamVars |> var => initParamsDefault(var,"booleanParameter") ;separator="\n"%>
     <%vars.stringParamVars |> var => initParamsDefault(var,"stringParameter") ;separator="\n"%>
+  }
+
+  void setDefaultStartValues(ModelInstance *comp) {
+    omc_fmu_setDefaultStartValues(comp->fmuData);
   }
   >>
 end setDefaultStartValues;
@@ -568,9 +599,9 @@ end initializeFunction;
 template initVals(SimVar var, String arrayName) ::=
   match var
     case var as SIMVAR(type_=type_) then
-      if stringEq(crefStr(name),"$dummy") then
+      if stringEq(CodegenUtil.crefStr(name),"$dummy") then
         ''
-      else if stringEq(crefStr(name),"der($dummy)") then
+      else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
         ''
       else
         // For a non-scalarized array the start attribute is a single
@@ -594,16 +625,16 @@ template initValsDefault(SimVar var, String arrayName) ::=
     case SIMVAR(index=index, type_=T_REAL())
     case SIMVAR(index=index, type_=T_ARRAY(ty=T_REAL())) then
       <<
-      put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_real_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
     case SIMVAR(index=index, type_=T_STRING())
     case SIMVAR(index=index, type_=T_ARRAY(ty=T_STRING())) then
       <<
-      omc_string_move((modelica_string*) comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
+      omc_string_move((modelica_string*) fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
       >>
     case SIMVAR(index=index, type_=type_) then
       <<
-      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initValsDefault;
 
@@ -611,15 +642,15 @@ template initParamsDefault(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(index=index, type_=T_REAL()) then
       <<
-      put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_real_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
     case SIMVAR(index=index, type_=T_STRING()) then
       <<
-      omc_string_move((modelica_string*) comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
+      omc_string_move((modelica_string*) fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start.data, <%initValDefault(var)%>);
       >>
     case SIMVAR(index=index, type_=type_) then
       <<
-      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      put_<%expTypeShort(type_)%>_element(<%initValDefault(var)%>, 0, &fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
 end initParamsDefault;
 
@@ -1102,13 +1133,13 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end setExternalFunction2;
 
-template setExternalFunctionsSwitch(list<Function> functions)
+template setExternalFunctionsSwitch(list<SimCodeFunction.Function> functions)
  "Generates external function definitions."
 ::=
   (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
 end setExternalFunctionsSwitch;
 
-template setExternalFunctionSwitch(Function fn)
+template setExternalFunctionSwitch(SimCodeFunction.Function fn)
  "Generates external function definitions."
 ::=
   match fn
@@ -1125,9 +1156,9 @@ template SwitchVars(SimCode simCode, SimVar simVar, String arrayName)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else
   if stringEq(arrayName, "stringVars")
@@ -1168,7 +1199,7 @@ match simVar
     let crefName = lookupVR(name,simCode)
       match aliasvar
         case ALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
         >>
@@ -1177,7 +1208,7 @@ match simVar
         case <%crefName%> : return get<%arrayName%>(comp, <%lookupVR(varName,simCode)%>); break;
         >>
         case NEGATEDALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
         >>
@@ -1195,9 +1226,9 @@ template SwitchVarsSet(SimCode simCode, SimVar simVar, String arrayName)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
+  if stringEq(CodegenUtil.crefStr(name),"$dummy") then
   <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
+  else if stringEq(CodegenUtil.crefStr(name),"der($dummy)") then
   <<>>
   else
   if stringEq(arrayName, "stringVars")
@@ -1238,7 +1269,7 @@ match simVar
     let crefName = lookupVR(name,simCode)
       match aliasvar
         case ALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         >>
         else
@@ -1246,7 +1277,7 @@ match simVar
         case <%crefName%> : return set<%arrayName%>(comp, <%lookupVR(varName,simCode)%>, value); break;
         >>
         case NEGATEDALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
+        if stringEq(CodegenUtil.crefStr(varName),"time") then
         <<
         >>
         else
@@ -1405,14 +1436,6 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion, String fileNamePr
   <%\t%>cp -a "<%omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefixHash%>.fmutmp/sources
   <%\t%>cp -a <%prefix%>_FMU.libs <%fileNamePrefixHash%>.fmutmp/sources/
   >>
-  %>
-  <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
-     match  Config.simCodeTarget()
-     case "omsicpp" then
-     <<
-     <%\t%>chmod +x <%dotPath(modelInfo.name)%>.sh
-     >>
-     end match
   %>
   <%\n%>
   >>

@@ -381,7 +381,7 @@ template equation_(SimEqSystem eq)
   else error(sourceInfo(), 'Unsupported equation: ...')
 end equation_;
 
-template statement(Statement stmt)
+template statement(DAE.Statement stmt)
 ::=
   match stmt
   case STMT_ASSIGN(type_=T_ARRAY(__))
@@ -441,11 +441,11 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre)
 ::=
   match cr
   case CREF_QUAL(ident="$PRE", subscriptLst={}) then
-    (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStr(cr)%>')
+    (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%CodegenUtil.crefStr(cr)%>')
     else crefToCStr(componentRef, ix, true))
   else match cref2simvar(cr, getSimCode())
-  case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStr(name)%>')
-  case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre)%>[<%index%>] /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */'
+  case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%CodegenUtil.crefStr(name)%>')
+  case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre)%>[<%index%>] /* <%Util.escapeModelicaStringToCString(CodegenUtil.crefStr(name))%> <%variabilityString(varKind)%> */'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
@@ -586,15 +586,15 @@ end constVal;
 template startValue(SimVar var)
 ::=
   match var
-  case SIMVAR(initialValue=SOME(e), type_=ty) then '<%constVal(e,ty)%> /*<%crefStr(name)%>*/,<%\n%>'
-  case SIMVAR(type_=T_REAL(__)) then '0.0 /*<%crefStr(name)%>*/,<%\n%>'
-  case SIMVAR(type_=T_INTEGER(__)) then '0 /*<%crefStr(name)%>*/,<%\n%>'
-  case SIMVAR(type_=T_BOOL(__)) then 'fmi2False /*<%crefStr(name)%>*/,<%\n%>'
-  case SIMVAR(type_=T_STRING(__)) then '"" /*<%crefStr(name)%>*/,<%\n%>'
-  case SIMVAR(__) then error(sourceInfo(), 'No start value for variable <%crefStr(name)%>.')
+  case SIMVAR(initialValue=SOME(e), type_=ty) then '<%constVal(e,ty)%> /*<%CodegenUtil.crefStr(name)%>*/,<%\n%>'
+  case SIMVAR(type_=T_REAL(__)) then '0.0 /*<%CodegenUtil.crefStr(name)%>*/,<%\n%>'
+  case SIMVAR(type_=T_INTEGER(__)) then '0 /*<%CodegenUtil.crefStr(name)%>*/,<%\n%>'
+  case SIMVAR(type_=T_BOOL(__)) then 'fmi2False /*<%CodegenUtil.crefStr(name)%>*/,<%\n%>'
+  case SIMVAR(type_=T_STRING(__)) then '"" /*<%CodegenUtil.crefStr(name)%>*/,<%\n%>'
+  case SIMVAR(__) then error(sourceInfo(), 'No start value for variable <%CodegenUtil.crefStr(name)%>.')
 end startValue;
 
-template functionsFile(list<Function> functions,
+template functionsFile(list<SimCodeFunction.Function> functions,
                        list<Exp> literals,
                        list<String> externalFunctionIncludes)
  "Generates the contents of the main C file for the function case."
@@ -611,7 +611,7 @@ template functionsFile(list<Function> functions,
   >>
 end functionsFile;
 
-template functionBody(Function fn)
+template functionBody(SimCodeFunction.Function fn)
  "Generates the body for a function."
 ::=
   match fn
@@ -621,7 +621,7 @@ template functionBody(Function fn)
   case fn as KERNEL_FUNCTION(__)             then error(sourceInfo(), "No kernel functions in embedded C")
 end functionBody;
 
-template functionDeclaration(Function fn)
+template functionDeclaration(SimCodeFunction.Function fn)
  "Generates the body for a function."
 ::=
   match fn
@@ -631,7 +631,7 @@ template functionDeclaration(Function fn)
   case fn as KERNEL_FUNCTION(__)             then error(sourceInfo(), "No kernel functions in embedded C")
 end functionDeclaration;
 
-template functionBodyRegularFunction(Function fn)
+template functionBodyRegularFunction(SimCodeFunction.Function fn)
  "Generates the body for a function."
 ::=
   match fn
@@ -657,7 +657,7 @@ template functionBodyRegularFunction(Function fn)
   >>
 end functionBodyRegularFunction;
 
-template functionBodyExternalFunction(Function fn)
+template functionBodyExternalFunction(SimCodeFunction.Function fn)
  "Generates the body for a function."
 ::=
   match fn

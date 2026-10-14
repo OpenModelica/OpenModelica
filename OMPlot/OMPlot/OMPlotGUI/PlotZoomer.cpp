@@ -34,10 +34,13 @@
  */
 
 #include "PlotZoomer.h"
+#include "OMPlot.h"
 
 #include "qwt_plot.h"
 
 #include <QPen>
+#include <QApplication>
+#include <QMouseEvent>
 
 using namespace OMPlot;
 
@@ -55,7 +58,7 @@ PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
 #endif
   setTrackerMode(QwtPicker::AlwaysOff);
   setRubberBand(QwtPicker::RectRubberBand);
-  setRubberBandPen(QPen(Qt::black, 1.0, Qt::DashLine));
+  setRubberBandPen(QPen(OMPlot::isDarkMode() ? QApplication::palette().color(QPalette::Text) : QColor(Qt::black), 1.0, Qt::DashLine));
 
   // RightButton: zoom out by 1
   // Ctrl+RightButton: zoom out to full size
@@ -67,4 +70,25 @@ PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
 PlotZoomer::~PlotZoomer()
 {
 
+}
+
+/*! Forwards press, move, and release events through Qwt's zoomer state machine.
+ * Used when an axis widget captures a drag that later enters the canvas.
+ * \param event Mouse event in canvas coordinates.
+ */
+void PlotZoomer::handleMouseEvent(QMouseEvent *event)
+{
+  switch (event->type()) {
+    case QEvent::MouseButtonPress:
+      widgetMousePressEvent(event);
+      break;
+    case QEvent::MouseMove:
+      widgetMouseMoveEvent(event);
+      break;
+    case QEvent::MouseButtonRelease:
+      widgetMouseReleaseEvent(event);
+      break;
+    default:
+      break;
+  }
 }

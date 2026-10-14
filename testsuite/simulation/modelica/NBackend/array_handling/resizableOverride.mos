@@ -1,0 +1,46 @@
+// name: resizableOverride
+// keywords: NewBackend resizable override
+// status: correct
+// cflags: --newBackend --resizableArrays --simCodeScalarize=false
+// suite: cSources
+// teardown_command: rm -f resizableOverride_20.mat resizableOverride_3.mat resizableOverride_ida.mat resizableOverride_20.log resizableOverride_3.log resizableOverride_ida.log
+//
+// The size N of a resizable array is changed with -override before the
+// simulation, without compiling the model again. The dimensions of x and der(x)
+// refer to N by value reference in the init.xml. The sparsity pattern of the
+// Jacobian has the overridden size, which ida with klu needs.
+
+loadString("
+model resizableOverride
+  parameter Integer N = 10;
+  parameter Real tau = 0.1;
+  Real x[N](each start = 0, each fixed = true);
+equation
+  for i in 1:N loop
+    tau*der(x[i]) = (if i == 1 then 1 else x[i-1]) - x[i];
+  end for;
+end resizableOverride;
+"); getErrorString();
+
+buildModel(resizableOverride, stopTime = 2); getErrorString();
+system("./resizableOverride -override=N=20 -r=resizableOverride_20.mat", "resizableOverride_20.log");
+// x[20](2) = 1 - exp(-20)*sum(20^k/k! for k in 0:19)
+abs(val(x[20], 2, "resizableOverride_20.mat") - 0.529743) < 1e-4;
+system("./resizableOverride -override=N=3 -r=resizableOverride_3.mat", "resizableOverride_3.log");
+abs(val(x[3], 0.2, "resizableOverride_3.mat") - 0.323324) < 1e-4;
+readSimulationResultVars("resizableOverride_3.mat");
+system("./resizableOverride -override=N=20 -s=ida -idaLS=klu -r=resizableOverride_ida.mat", "resizableOverride_ida.log");
+abs(val(x[20], 2, "resizableOverride_ida.mat") - 0.529743) < 1e-4;
+// Result:
+// true
+// ""
+// {"resizableOverride", "resizableOverride_init.xml"}
+// ""
+// 0
+// true
+// 0
+// true
+// {"N", "der(x[1])", "der(x[2])", "der(x[3])", "tau", "time", "x[1]", "x[2]", "x[3]"}
+// 0
+// true
+// endResult

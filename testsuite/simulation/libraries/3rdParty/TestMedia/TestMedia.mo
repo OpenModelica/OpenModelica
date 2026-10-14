@@ -1,6 +1,6 @@
 within ;
 package TestMedia
-  annotation (uses(Modelica(version="3.2.3")));
+  annotation (uses(Modelica(version="4.1.0")));
   package Media
     package Water = Modelica.Media.Water.StandardWater;
     package FlueGas =

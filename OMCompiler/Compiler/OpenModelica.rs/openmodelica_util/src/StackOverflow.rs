@@ -143,19 +143,60 @@ pub fn readableStacktraceMessages() -> Result<metamodelica::List<ArcStr>> {
 }
 
 pub fn getStacktraceMessages() -> metamodelica::List<ArcStr> {
-    let mut symbols: metamodelica::List<ArcStr> = metamodelica::nil();
+    let frames = metamodelica::heap_limit::trace_frames();
+    // Drop the capture machinery: everything up to the trip or the capture call.
+    let start = frames
+        .iter()
+        .take(16)
+        .rposition(|f| f.contains("heap_limit::") || f.contains("setStacktraceMessages") || f.starts_with("__rust") || f.starts_with("backtrace::"))
+        .map_or(0, |i| i + 1);
+    let skip = SKIP.load(std::sync::atomic::Ordering::Relaxed);
+    let take = match FRAMES.load(std::sync::atomic::Ordering::Relaxed) {
+        0 => usize::MAX,
+        n => n,
+    };
+    let mut symbols = metamodelica::nil();
+    for f in frames.into_iter().skip(start + skip).take(take).collect::<Vec<_>>().into_iter().rev() {
+        symbols = metamodelica::cons(ArcStr::from(f), symbols);
+    }
     symbols
 }
 
+static SKIP: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static FRAMES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 pub fn setStacktraceMessages(mut numSkip: i32, mut numFrames: i32) -> () {
-    ()
+    SKIP.store(numSkip.max(0) as usize, std::sync::atomic::Ordering::Relaxed);
+    FRAMES.store(numFrames.max(0) as usize, std::sync::atomic::Ordering::Relaxed);
+    metamodelica::heap_limit::capture_trace();
 }
 
 pub fn hasStacktraceMessages() -> bool {
-    let mut b: bool = false;
-    b
+    metamodelica::heap_limit::has_trace()
 }
 
 pub fn clearStacktraceMessages() -> () {
-    ()
+    *OUT_OF_MEMORY.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    SKIP.store(0, std::sync::atomic::Ordering::Relaxed);
+    FRAMES.store(0, std::sync::atomic::Ordering::Relaxed);
+    metamodelica::heap_limit::clear_trace();
+}
+
+static OUT_OF_MEMORY: std::sync::Mutex<Option<metamodelica::heap_limit::OutOfMemory>> = std::sync::Mutex::new(None);
+
+/// Records a checkpoint's out-of-memory trip for [`outOfMemoryMessage`].
+pub fn reportOutOfMemory(oom: &metamodelica::heap_limit::OutOfMemory) {
+    SKIP.store(0, std::sync::atomic::Ordering::Relaxed);
+    FRAMES.store(0, std::sync::atomic::Ordering::Relaxed);
+    *OUT_OF_MEMORY.lock().unwrap_or_else(|e| e.into_inner()) = Some(*oom);
+}
+
+pub fn outOfMemoryMessage() -> ArcStr {
+    let oom = *OUT_OF_MEMORY.lock().unwrap_or_else(|e| e.into_inner());
+    oom.map_or(literal!(""), |o| ArcStr::from(o.detail()))
+}
+
+pub fn errorPrefix() -> ArcStr {
+    let oom = outOfMemoryMessage();
+    if oom.is_empty() { literal!("Stack overflow") } else { format!("Out of memory ({oom})") }
 }

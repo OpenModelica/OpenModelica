@@ -1,0 +1,41 @@
+// name: StringArrayLiteral
+// keywords: string array literal
+// status: correct
+// teardown_command: rm -rf StringArrayLiteral_* StringArrayLiteral StringArrayLiteral.exe StringArrayLiteral.c StringArrayLiteral.makefile StringArrayLiteral.libs StringArrayLiteral.log output.log
+//
+// A constant string array is a shared literal whose elements are shared
+// literals too, even if each string is used once.
+
+loadString("
+model StringArrayLiteral
+  function f
+    input String s[:];
+    input Real t;
+    output Real y;
+  algorithm
+    y := t;
+    if s[1] == \"water\" then y := y + 1; end if;
+    if s[2] == \"air\" then y := y + 10; end if;
+    annotation(Inline=false);
+  end f;
+  Real y = f({\"water\", \"air\"}, time);
+  annotation(experiment(StopTime = 0));
+end StringArrayLiteral;
+"); getErrorString();
+
+simulate(StringArrayLiteral); getErrorString();
+val(y, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "StringArrayLiteral_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'StringArrayLiteral', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 11.0
+// endResult

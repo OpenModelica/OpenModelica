@@ -173,7 +173,7 @@ end translateModel;
 
     #include "<%fileNamePrefix%>_functions.h"
 
-    <%variableDefinitions(modelInfo, timeEvents)%><%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
+    <%variableDefinitions(modelInfo, timeEvents)%><%functions |> fn hasindex i0 => '#define <%CodegenCFunctions.functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
 
     extern void <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>(DATA *_data, threadData_t *threadData);
     #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -203,6 +203,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalZeroCross);
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
+    extern double <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>(DATA *data, threadData_t *threadData);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
@@ -376,12 +377,12 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   >>
 end functionInitSynchronous;
 
-template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartition> subPartitions, Text &varDecls, Text &varFrees, Text &auxFunction)
+template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SimCode.SubPartition> subPartitions, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
   let &preExp = buffer ""
   let intervalCounter = match baseClock
     case RATIONAL_CLOCK() then
-      if isConst(intervalCounter) then
+      if Expression.isConst(intervalCounter) then
         daeExp(intervalCounter, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
@@ -401,7 +402,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
       '0'
   let interval = match baseClock
     case REAL_CLOCK() then
-      if isConst(interval) then
+      if Expression.isConst(interval) then
         daeExp(interval, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
       else
         '-1 /* Interval set in _updateSynchronous */'
@@ -411,7 +412,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
       '-1'
   let computeInterval = match baseClock
     case RATIONAL_CLOCK() then
-      if isConst(intervalCounter) then
+      if Expression.isConst(intervalCounter) then
         <<
         data->simulationInfo->baseClocks[<%baseClockIdx%>].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[<%baseClockIdx%>].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[<%baseClockIdx%>].resolution, "base-clock[<%baseClockIdx%>].interval = intervalCounter/resolution");
         >>
@@ -442,7 +443,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   >>
 end baseClockInit;
 
-template subPartitionStr(SubPartition subPartition, Integer baseClockIdx, Integer subClockIdx)
+template subPartitionStr(SimCode.SubPartition subPartition, Integer baseClockIdx, Integer subClockIdx)
 ::=
 match subPartition
   case SUBPARTITION(subClock = SUBCLOCK(__), holdEvents=holdEvents) then
@@ -506,7 +507,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
 
   match baseClock
     case RATIONAL_CLOCK() then
-      if isConst(intervalCounter) then
+      if Expression.isConst(intervalCounter) then
         <<
         /* Nothing to do */
         >>
@@ -518,7 +519,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
         data->simulationInfo->baseClocks[base_idx].interval = DIVISION((modelica_real)data->simulationInfo->baseClocks[base_idx].intervalCounter, (modelica_real)data->simulationInfo->baseClocks[base_idx].resolution, "intervalCounter/resolution");
         >>
     case REAL_CLOCK() then
-      if isConst(interval) then
+      if Expression.isConst(interval) then
         <<
         /* Nothing to do */
         >>
@@ -538,7 +539,7 @@ template updatePartition(Integer i, DAE.ClockKind baseClock, Text &varDecls, Tex
 end updatePartition;
 
 
-template functionSystemsSynchronousSubClocks(list<SubPartition> subPartitions, Integer base_idx, String modelNamePrefix)
+template functionSystemsSynchronousSubClocks(list<SimCode.SubPartition> subPartitions, Integer base_idx, String modelNamePrefix)
 ::=
   let subCases = subPartitions |> subPartition hasindex sub_idx =>
     match subPartition
@@ -629,16 +630,19 @@ end functionSystemsSynchronous;
 
 template functionEquationsSynchronous(Integer base_idx, Integer sub_idx, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(equations, modelNamePrefix, contextSimulationDiscrete, '', true, &chunks)
   <<
   <%equations |> eq => equation_impl(base_idx, sub_idx, eq, contextOther, modelNamePrefix, false) ; separator="\n"%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>')%>(DATA *data, threadData_t *threadData)
   {
     int i;
 
     <%addRootsTempArray()%>
 
-    <%equations_call(equations, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -762,6 +766,8 @@ template simulationFile_evt(SimCode simCode)
     <%functionZeroCrossing(zeroCrossings, equationsForZeroCrossings, modelNamePrefix(simCode))%>
 
     <%functionRelations(relations, modelNamePrefix(simCode))%>
+
+    <%functionNextTimeEvent(relations, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -1182,7 +1188,7 @@ template simulationFile_dae(SimCode simCode)
       let initDAEmode =
         match sparsityPattern
         case SOME(JAC_MATRIX(sparsityMatrix=sparsityMatrix as SPARSITY(), matrixName=matrixName, seedVars=seedVars, crefsHT=crefsHT)) then
-          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
+          '<%initializeDAEmodeDataResizable(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparsityMatrix, numScalarElemsExp(seedVars), listLength(residualVars), createJacContext(matrixName, crefsHT), modelNamePrefixStr)%>'
         case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
           '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
         case NONE() then
@@ -1283,7 +1289,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
-    case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), hpcomData=HPCOMDATA(__)) then
+    case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__), vars=vars as SIMVARS(__)), hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
     let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), Flags.isSet(HPCOM)) then
                      <<
@@ -1383,6 +1389,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%fmiAliasIndexTables(simCode, modelInfo, modelNamePrefixStr)%>
 
+    <%functionUpdateStructuralParameters(vars.intParamVars, vars.inputVars, modelNamePrefixStr)%>
+
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
@@ -1470,7 +1478,9 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>,
-      <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>
+      <%fmiAliasIndexTableRefs(simCode, modelInfo, modelNamePrefixStr)%>,
+      <%if hasStructuralUpdate(vars.intParamVars, vars.inputVars) then symbolName(modelNamePrefixStr,"updateStructuralParameters") else "NULL"%>,    /* updateStructuralParameters */
+      <%symbolName(modelNamePrefixStr,"function_nextTimeEvent")%>
     <%\n%>
     };
 
@@ -1778,6 +1788,71 @@ template fmiAliasIndex(SimCode simCode, AliasVariable v)
   case NEGATEDALIAS(__) then intSub(-1, SimCodeCodegenUtil.lookupVR(varName,simCode))
 end fmiAliasIndex;
 
+template hasDimensionParameters(list<SimVar> intParamVars)
+::= (intParamVars |> v => if isDimensionParameter(v) then "1")
+end hasDimensionParameters;
+
+template hasStructuralUpdate(list<SimVar> intParamVars, list<SimVar> inputVars)
+::= if hasDimensionParameters(intParamVars) then "1" else (if hasSymbolicDims(inputVars) then "1")
+end hasStructuralUpdate;
+
+template functionUpdateStructuralParameters(list<SimVar> intParamVars, list<SimVar> inputVars, Text modelNamePrefixStr)
+ "The size parameters $DIM_k of derived dimensions of resizable arrays (N-1),
+  and the number of scalar inputs if an input is a resizable array.
+  The runtime calls it after reading the init.xml, before it computes the sizes
+  of the arrays and allocates them: only the start attributes of the parameters
+  exist, possibly changed with -override, so they are what it reads and writes."
+::=
+  if hasStructuralUpdate(intParamVars, inputVars) then
+  let body = (intParamVars |> v as SIMVAR(initialValue = SOME(e)) =>
+    if isDimensionParameter(v) then
+      '<%structuralParameterStart(v)%> = <%structuralParameterExp(e)%>; /* <%crefStrNoUnderscore(v.name)%> */'
+    ;separator="\n")
+  let inputs = if hasSymbolicDims(inputVars) then
+    'data->modelData->nInputVars = <%structuralParameterExp(numScalarElemsBeforeExp(inputVars, listLength(inputVars)))%>;'
+  <<
+  static void <%symbolName(modelNamePrefixStr,"updateStructuralParameters")%>(DATA *data, threadData_t *threadData)
+  {
+    <%body%>
+    <%inputs%>
+  }
+  >>
+end functionUpdateStructuralParameters;
+
+template structuralParameterStart(SimVar var)
+ "The start attribute of a scalar Integer parameter."
+::=
+  match var
+  case SIMVAR(varKind = PARAM()) then
+    '((modelica_integer*)(data->modelData->integerParameterData[<%index%>].attribute.start.data))[0]'
+  else error(sourceInfo(), 'structuralParameterStart: no parameter')
+end structuralParameterStart;
+
+template structuralParameterExp(Exp exp)
+ "A dimension expression of Integer parameters in terms of their start attributes."
+::=
+  match exp
+  case ICONST(__) then '((modelica_integer) <%integer%>)'
+  case CREF(componentRef = cr) then
+    match cref2simvar(cr, getSimCode())
+    case v as SIMVAR(varKind = PARAM(), type_ = T_INTEGER(__)) then structuralParameterStart(v)
+    else error(sourceInfo(), 'structuralParameterExp: <%CodegenUtil.crefStr(cr)%> is no Integer parameter')
+  case BINARY(operator = ADD(__)) then '(<%structuralParameterExp(exp1)%> + <%structuralParameterExp(exp2)%>)'
+  case BINARY(operator = SUB(__)) then '(<%structuralParameterExp(exp1)%> - <%structuralParameterExp(exp2)%>)'
+  case BINARY(operator = MUL(__)) then '(<%structuralParameterExp(exp1)%> * <%structuralParameterExp(exp2)%>)'
+  case UNARY(operator = UMINUS(__)) then '(-<%structuralParameterExp(exp)%>)'
+  case CALL(path = IDENT(name = "max"), expLst = {e1, e2}) then
+    let a = structuralParameterExp(e1)
+    let b = structuralParameterExp(e2)
+    '(<%a%> > <%b%> ? <%a%> : <%b%>)'
+  case CALL(path = IDENT(name = "min"), expLst = {e1, e2}) then
+    let a = structuralParameterExp(e1)
+    let b = structuralParameterExp(e2)
+    '(<%a%> < <%b%> ? <%a%> : <%b%>)'
+  case CALL(path = IDENT(name = "div"), expLst = {e1, e2}) then '(<%structuralParameterExp(e1)%> / <%structuralParameterExp(e2)%>)'
+  else error(sourceInfo(), 'structuralParameterExp: dimension expression <%ExpressionDumpTpl.dumpExp(exp,"\"")%> is not supported')
+end structuralParameterExp;
+
 template fmiAliasIndexTableRefs(SimCode simCode, ModelInfo modelInfo, Text modelNamePrefixStr)
 ::=
 match modelInfo
@@ -2056,16 +2131,27 @@ let &sub = buffer ""
 end functionCallExternalObjectDestructors;
 
 template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
-  "Generates function in simulation file."
+  "Generates function in simulation file.
+  data->simulationInfo->inputVars holds one value per scalar input, the
+  elements of an array input are stored consecutively."
 ::=
 let &sub = buffer ""
   match modelInfo
-  case MODELINFO(vars=SIMVARS(__)) then
+  case MODELINFO(vars=SIMVARS(inputVars=inputVars)) then
     <<
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
-        '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
+      <%inputVars |> var as SIMVAR(name=name) hasindex i0 =>
+        let offset = inputOffset(inputVars, i0)
+        match cref2simvar(name, simCode)
+        case v as SIMVAR(type_=T_ARRAY()) then
+          <<
+          for (size_t k = 0; k < <%inputCount(v)%>; k++) {
+            <%inputValue(v, 'k')%> = data->simulationInfo->inputVars[<%offset%> + k];
+          }
+          >>
+        else
+          '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%offset%>];'
         ;separator="\n"
       %>
 
@@ -2074,22 +2160,18 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
+      <%inputVars |> SIMVAR(name=name) hasindex i0 =>
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
-        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
-          let kind = match varKind
-            case PARAM() then 'VAR_KIND_PARAMETER'
-            else 'VAR_KIND_VARIABLE'
-          end match
+        case v as SIMVAR(aliasvar=NOALIAS()) then
+          let ty = expTypeShort(type_)
+          let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          data->simulationInfo->inputVars[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%index%>);
+          for (size_t k = 0; k < <%inputCount(v)%>; k++) {
+            data->simulationInfo->inputVars[<%offset%> + k] = <%ty%>_get(<%start%>, base_array_nr_of_elements(<%start%>) == 1 ? 0 : k);
+          }
           >>
-        case SIMVAR(aliasvar=NOALIAS()) then
-          <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
-          data->simulationInfo->inputVars[<%i0%>] = <%expTypeShort(type_)%>_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
-          >>
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2098,21 +2180,20 @@ let &sub = buffer ""
 
     int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
     {
-      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
+      <%inputVars |> SIMVAR(name=name) hasindex i0 =>
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
-
-        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
+        case v as SIMVAR(aliasvar=NOALIAS()) then
+          let ty = expTypeShort(type_)
+          let start = '<%inputData(v)%>[<%index%>].attribute.start'
           <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
-          put_real_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
-          >>
-        case SIMVAR(aliasvar=NOALIAS()) then
-          <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemented.");
-          put_<%expTypeShort(type_)%>_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
+          <%ensureSizeFunction(ty)%>(&<%start%>, <%inputCount(v)%>);
+          for (size_t k = 0; k < <%inputCount(v)%>; k++) {
+            put_<%ty%>_element(data->simulationInfo->inputVars[<%offset%> + k], k, &<%start%>);
+          }
           >>
         else
-          error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+          error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2120,11 +2201,17 @@ let &sub = buffer ""
     }
 
     int <%symbolName(modelNamePrefix,"inputNames")%>(DATA *data, char ** names){
-      <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+      <%inputVars |> simVar as SIMVAR(__) hasindex i0 =>
+        let offset = inputOffset(inputVars, i0)
         match cref2simvar(name, simCode)
+        case v as SIMVAR(aliasvar=NOALIAS(), type_=T_ARRAY()) then
+          if isSymbolicArrayVar(v) then inputNamesResizable(v, offset) else
+          (arrayElementSubscripts(v) |> subscript hasindex k =>
+            'names[<%intAdd(numScalarElemsBefore(inputVars, i0), k)%>] = (char *) "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>[<%subscript%>]";'
+          ;separator="\n")
         case SIMVAR(aliasvar=NOALIAS()) then
-        'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        'names[<%offset%>] = (char *) <%inputData(simVar)%>[<%index%>].info.name;'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2133,6 +2220,74 @@ let &sub = buffer ""
     >>
   end match
 end functionInput;
+
+template inputOffset(list<SimVar> inputVars, Integer i0)
+ "The scalar offset of the i0-th input in data->simulationInfo->inputVars, an
+  expression of the size parameters if an input is a resizable array."
+::= if hasSymbolicDims(inputVars) then structuralParameterExp(numScalarElemsBeforeExp(inputVars, i0)) else numScalarElemsBefore(inputVars, i0)
+end inputOffset;
+
+template inputCount(SimVar var)
+ "The number of scalar elements of an input."
+::= if isSymbolicArrayVar(var) then structuralParameterExp(simVarSizeExp(var)) else numScalarElemsVar(var)
+end inputCount;
+
+template inputNamesResizable(SimVar var, Text offset)
+ "The names of the elements of an input that is a resizable array, built at
+  runtime in row-major order like arrayElementSubscripts, e.g. u[1,2]."
+::=
+  match var
+  case SIMVAR(__) then
+    let dims = (simVarDimExps(var) |> d => structuralParameterExp(d) ;separator=", ")
+    let ndims = listLength(simVarDimExps(var))
+    <<
+    {
+      const modelica_integer dims[<%ndims%>] = {<%dims%>};
+      size_t n = 1, k, rest;
+      int j, pos;
+      long idx[<%ndims%>];
+      char buf[1024];
+      for (j = 0; j < <%ndims%>; j++) n *= (size_t) dims[j];
+      for (k = 0; k < n; k++) {
+        rest = k;
+        for (j = <%ndims%> - 1; j >= 0; j--) { idx[j] = (long) (rest % (size_t) dims[j]) + 1; rest /= (size_t) dims[j]; }
+        pos = snprintf(buf, sizeof(buf), "%s[", "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>");
+        for (j = 0; j < <%ndims%> && pos < (int) sizeof(buf); j++) pos += snprintf(buf + pos, sizeof(buf) - pos, j ? ",%ld" : "%ld", idx[j]);
+        if (pos < (int) sizeof(buf)) snprintf(buf + pos, sizeof(buf) - pos, "]");
+        names[<%offset%> + k] = strdup(buf);
+      }
+    }
+    >>
+end inputNamesResizable;
+
+template inputData(SimVar var)
+  "Static data array of an input variable."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then 'data->modelData-><%expTypeShort(type_)%>ParameterData'
+    case SIMVAR(__) then 'data->modelData-><%expTypeShort(type_)%>VarsData'
+end inputData;
+
+template inputValue(SimVar var, String k)
+  "Value of element k of an array input variable."
+::=
+  match var
+    case SIMVAR(varKind=PARAM()) then
+      let ty = expTypeShort(type_)
+      'data->simulationInfo-><%ty%>Parameter[data->simulationInfo-><%ty%>ParamsIndex[<%index%>] + <%k%>]'
+    case SIMVAR(__) then
+      let ty = expTypeShort(type_)
+      'data->localData[0]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>] + <%k%>]'
+end inputValue;
+
+template ensureSizeFunction(String ty)
+::=
+  match ty
+    case "real"
+    case "integer"
+    case "boolean" then '<%ty%>_array_ensure_size'
+    else error(sourceInfo(), 'Inputs of type <%ty%> are not supported.')
+end ensureSizeFunction;
 
 template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
@@ -2155,7 +2310,7 @@ let &sub = buffer ""
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2168,7 +2323,7 @@ let &sub = buffer ""
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2921,6 +3076,7 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].freeStaticNLSData = freeStaticDataNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].getIterationVars = getIterationVarsNLS<%nls.index%>;
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].checkConstraints = <%constraintsCall%>;
+      nonLinearSystemData[<%nls.indexNonLinearSystem%>].updateSize = <%if nlsResizable(nls.crefs) then 'updateSizeNLS<%nls.index%>' else 'NULL'%>;
 
       const int tmp_eqn_indices_<%nls.indexNonLinearSystem%>[<%listLength(nls.eqs)%>] = {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>};
       nonLinearSystemData[<%nls.indexNonLinearSystem%>].eqn_simcode_indices = malloc(<%listLength(nls.eqs)%> * sizeof(int));
@@ -3104,6 +3260,7 @@ template getNLSPrototypes(Integer index)
   void initializeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern);
   void freeStaticDataNLS<%index%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *inSystemData);
   void getIterationVarsNLS<%index%>(DATA* data, double *array);
+  int updateSizeNLS<%index%>(DATA *data, threadData_t *threadData);
   >>
 end getNLSPrototypes;
 
@@ -3122,7 +3279,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
       let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
-      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, numScalarElemsExp(seedVars), createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, useResizable)
@@ -3162,7 +3319,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       // for strict tearing set
       let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
       let indexName = 'NLS<%nls.index%>'
-      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(jacMatrixName, crefsHT))
+      let newSparsity = generateResizableSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsityMatrix, numScalarElemsExp(seedVars), createJacContext(jacMatrixName, crefsHT))
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let useResizable = match sparsityMatrix case SPARSITY() then 'yes' else ''
@@ -3260,7 +3417,9 @@ match system
         /* restore previously known outputs of the algorithm */
         <%body%>
         >>
-    let xlocs = (nls.crefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = xloc[<%i0%>];' ;separator="\n")
+    let resizable = nlsResizable(nls.crefs)
+    let xlocs = if resizable then nlsSetIterVars(nls.crefs, "xloc") else (nls.crefs |> cr hasindex i0 => '<%cref(cr, &sub)%> = xloc[<%i0%>];' ;separator="\n")
+    let nlsSize = if resizable then 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].size' else listLength(nls.crefs)
     let prebody = (nls.eqs |> eq2 =>
       functionExtraResidualsPreBody(eq2, &innerEqns, modelNamePrefix)
     ;separator="\n")
@@ -3274,10 +3433,13 @@ match system
         >>
       else
         (nls.eqs |> eq2 hasindex i0 => match eq2
-          case SES_RESIDUAL(__) then equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
+          case SES_RESIDUAL(__) then
+            if resizable then equationResidualAt(exp, varDecls, varFrees, innerEqns, index, residualOffset(nls.eqs, i0))
+            else equationResidual(exp, varDecls, varFrees, innerEqns, index, res_index)
           case SES_FOR_RESIDUAL(__) then
             let &preExp = buffer ""
             let &auxFunction = buffer ""
+            let res_off = if resizable then residualOffset(nls.eqs, i0) else res_index
             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &innerEqns)
             let forPart = (iterators |> iterator as SIM_ITERATOR_RANGE() =>
                   let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
@@ -3297,8 +3459,8 @@ match system
             // Flatten properly, matching how array crefs are indexed elsewhere here.
             let indexShift = <<<%(iterators |> iterator => forIteratorBody(iterator, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="")%>0<%(iterators |> iterator => ")" ;separator="")%>>>
             let assignment = (if isArrayType(typeof(exp))
-              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+(<%indexShift%>));'
-              else '<%preExp%>res[<%res_index%>+(<%indexShift%>)] = <%expPart%>;')
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_off%>+(<%indexShift%>));'
+              else '<%preExp%>res[<%res_off%>+(<%indexShift%>)] = <%expPart%>;')
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
@@ -3318,9 +3480,9 @@ match system
                 let step_ = daeExp(step, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
                 let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
                 <<
-                const int <%iter%>_size = <%stop_%> - <%start_%> / <%step_%> + 1;
+                const int <%iter%>_size = ((<%stop_%>) - (<%start_%>)) / (<%step_%>) + 1;
                 int <%iter%>_loc = tmp % <%iter%>_size;
-                int <%iter%> = <%step_%> * <%iter%>_loc + <%start_%>;
+                int <%iter%> = (<%step_%>) * <%iter%>_loc + (<%start_%>);
                 tmp /= <%iter%>_size;
                 <%sub_iter_%>
                 >>;separator="\n")
@@ -3349,6 +3511,15 @@ match system
     /* inner equations */
     <%&innerEqns%>
 
+    <%if resizable then if intEq(whichSet, 0) then
+    <<
+    /* the size of the system for the actual sizes of the resizable arrays */
+    int updateSizeNLS<%nls.index%>(DATA *data, threadData_t *threadData)
+    {
+      return <%(nls.crefs |> cr => nlsCount(cr) ;separator=" + ")%>;
+    }
+    >>%>
+
     <%residualFunctionHeader%>
     {
       DATA *data = userData->data;
@@ -3361,11 +3532,16 @@ match system
       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
       /* iteration variables */
-      for (i=0; i<<%listLength(nls.crefs)%>; i++) {
-        if (isinf(xloc[i]) || isnan(xloc[i])) {
-          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
-            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i]);
-          for (j=0; j<<%listLength(nls.crefs)%>; j++) {
+      for (i=0; i<<%nlsSize%>; i++) {
+        if (!isfinite(xloc[i])) {
+          <%if resizable then
+          'errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable %d is %g.", i, xloc[i]);'
+          else
+          <<
+          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is %g.",
+            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i], xloc[i]);
+          >>%>
+          for (j=0; j<<%nlsSize%>; j++) {
             res[j] = NAN;
           }
           raiseStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
@@ -3417,7 +3593,7 @@ template generateResizableEmptySparseData(String indexName, String systemType)
   >>
 end generateResizableEmptySparseData;
 
-template generateResizableSparseData(String indexName, String systemType, Sparsity sparsity, Integer nCols, Context context)
+template generateResizableSparseData(String indexName, String systemType, Sparsity sparsity, String nCols, Context context)
 "template generateResizableSparseData
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
@@ -3445,22 +3621,23 @@ match sparsity
     void initializeResizableSparsityPattern<%indexName%>(<%systemType%>* inSysData, threadData_t *threadData, DATA* data)
     {
       unsigned int i, nnz;
-      unsigned int col_counts[<%nCols%>];
-      unsigned int col_fill[<%nCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%nCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%nCols%> * sizeof(unsigned int));
+      <%jacobianOffsetDecls(context)%>
       <%varDecls%>
 
       <%preExp%>
       <%auxFunction%>
 
       /* Phase 1: count non-zeros per column */
-      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
       <%countCode%>
 
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%nCols%>; i++) nnz += col_counts[i];
       inSysData->sparsePattern = allocSparsePattern(<%nCols%>, nnz, 0);
-      if (!inSysData->sparsePattern) return;
+      if (!inSysData->sparsePattern) { free(col_counts); free(col_fill); <%jacobianOffsetFrees(context)%> return; }
 
       /* Compute leadindex as prefix sum of col_counts */
       inSysData->sparsePattern->leadindex[0] = 0;
@@ -3470,6 +3647,9 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, inSysData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
+      <%jacobianOffsetFrees(context)%>
       <%varFrees%>
 
       /* Compute coloring at runtime from the actual pattern (see initialResizableAnalyticJacobians).
@@ -3539,7 +3719,7 @@ template generateStaticEmptyNonlinearData(String indexName, String systemType)
   >>
 end generateStaticEmptyNonlinearData;
 
-template generateStaticNonlinearData(String indexName, String systemType, NonlinearPattern nonlinearpattern, NonlinearPattern nonlinearpatternT)
+template generateStaticNonlinearData(String indexName, String systemType, SimCode.NonlinearPattern nonlinearpattern, SimCode.NonlinearPattern nonlinearpatternT)
 "template generateStaticNonlinearData
   This template generates source code for functions that initialize the nonlinear-pattern."
 ::=
@@ -3593,6 +3773,16 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     let cComment = '/* static nls data for <%crefStrNoUnderscore(cr)%> */'
+    if nlsResizableCref(cr) then
+        <<
+        <%cComment%>
+        for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) {
+          sysData->nominal[i] = 1.0;
+          sysData->min[i]     = -DBL_MAX;
+          sysData->max[i++]   = DBL_MAX;
+        }
+        >>
+    else
     match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
       case SIMVAR(type_=T_REAL(__)) then
         let kind = match varKind
@@ -3638,7 +3828,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *sysData, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
   {
-    int i=0;
+    int i=0, k_=0;
     <%bodyStaticData%>
     /* initial sparse pattern */
     if (initSparsePattern) {
@@ -3658,11 +3848,85 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
   >>
 end generateStaticInitialData;
 
+template nlsResizable(list<ComponentRef> crefs)
+ "non-empty if an iteration variable of an algebraic loop is a whole resizable array"
+::= (crefs |> cr => match cref2simvar(cr, getSimCode()) case v as SIMVAR(__) then if isWholeResizableArray(cr, v) then "1" ;separator="")
+end nlsResizable;
+
+template nlsResizableCref(ComponentRef cr)
+::= match cref2simvar(cr, getSimCode()) case v as SIMVAR(__) then if isWholeResizableArray(cr, v) then "1"
+end nlsResizableCref;
+
+template nlsCount(ComponentRef cr)
+ "the number of scalar iteration variables of cr at runtime"
+::=
+  match cref2simvar(cr, getSimCode())
+  case v as SIMVAR(__) then
+    if isWholeResizableArray(cr, v) then
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let &varFrees = buffer ""
+      let &aux = buffer ""
+      '(<%daeExp(simVarSizeExp(v), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+    else "1"
+  else "1"
+end nlsCount;
+
+template nlsSetIterVars(list<ComponentRef> crefs, String src)
+ "the iteration variables from the vector src, whole resizable arrays element by element"
+::=
+  let &sub = buffer ""
+  let body = (crefs |> cr =>
+    match cref2simvar(cr, getSimCode())
+    case v as SIMVAR(__) then
+      if isWholeResizableArray(cr, v) then
+        'for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) <%inputValue(v, 'k_')%> = <%src%>[o_++];'
+      else '<%cref(cr, &sub)%> = <%src%>[o_++];'
+    else '<%cref(cr, &sub)%> = <%src%>[o_++];'
+  ;separator="\n")
+  <<
+  {
+    int o_ = 0, k_ = 0;
+    <%body%>
+  }
+  >>
+end nlsSetIterVars;
+
+template nlsGetIterVars(list<ComponentRef> crefs, String dst)
+ "the iteration variables into the vector dst, whole resizable arrays element by element"
+::=
+  let &sub = buffer ""
+  let body = (crefs |> cr =>
+    match cref2simvar(cr, getSimCode())
+    case v as SIMVAR(__) then
+      if isWholeResizableArray(cr, v) then
+        'for (k_ = 0; k_ < <%nlsCount(cr)%>; k_++) <%dst%>[o_++] = <%inputValue(v, 'k_')%>;'
+      else '<%dst%>[o_++] = <%cref(cr, &sub)%>;'
+    else '<%dst%>[o_++] = <%cref(cr, &sub)%>;'
+  ;separator="\n")
+  <<
+  {
+    int o_ = 0, k_ = 0;
+    <%body%>
+  }
+  >>
+end nlsGetIterVars;
+
+template residualOffset(list<SimEqSystem> eqs, Integer i0)
+ "the position of the i0-th equation of an algebraic loop in its residual vector at runtime"
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let &aux = buffer ""
+  '(<%daeExp(residualOffsetExp(eqs, i0), contextSimulationNonDiscrete, &preExp, &varDecls, &varFrees, &aux)%>)'
+end residualOffset;
+
 template getIterationVars(list<ComponentRef> crefs, String indexName)
   "Generates iteration variables update."
 ::=
   let &sub = buffer ""
-  let vars = (crefs |> cr hasindex i0 =>
+  let vars = if nlsResizable(crefs) then nlsGetIterVars(crefs, "array") else (crefs |> cr hasindex i0 =>
       'array[<%i0%>] = <%cref(cr, &sub)%>;'
   ;separator="\n")
   <<
@@ -3682,7 +3946,7 @@ end getIterationVars;
 //   - void initializeStateSets(int nStateSets, STATE_SET_DATA* statesetData, DATA *data)
 // =============================================================================
 
-template functionInitialStateSets(SimCode simCode, list<StateSet> stateSets, String modelNamePrefix)
+template functionInitialStateSets(SimCode simCode, list<SimCode.StateSet> stateSets, String modelNamePrefix)
   "Generates functions in simulation file to initialize the stateset data."
 ::=
   let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -3900,7 +4164,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
           'data->modelData-><%expTypeShort(type_)%>ParameterData[<%index%>].time_unvarying = 1;'
         case SIMVAR(aliasvar=NOALIAS()) then
           'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].time_unvarying = 1;'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%CodegenUtil.crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
     <%extObjsSub%>
     <%fncalls%>
@@ -3929,14 +4193,17 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   #endif<%\n%>
                   >>)) +
                   (eqs |> eq => equation_impl2(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt, init) ; separator="\n") +
+                  (let &chunks = buffer ""
+                  let calls = equations_call(eqs, modelNamePrefix, contextOther, '', false, &chunks)
                   <<
                   <%\n%>
+                  <%chunks%>
                   OMC_DISABLE_OPT
                   void <%name%>(DATA *data, threadData_t *threadData)
                   {
-                    <%equations_call(eqs, modelNamePrefix, contextOther, '')%>
+                    <%calls%>
                   }
-                  >>
+                  >>)
                   +
                   (if multiFile then
                   (<<
@@ -3993,13 +4260,16 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
     let () = System.tmpTickReset(0)
     let eqfuncs = (initalEquations_lambda0 |> eq =>
       equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, true) ;separator="\n")
+    let &chunks = buffer ""
+    let calls = equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete, '', false, &chunks)
     <<
     <%eqfuncs%>
 
+    <%chunks%>
     int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
     {
       data->simulationInfo->discreteCall = 1;
-      <%equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete, '')%>
+      <%calls%>
       data->simulationInfo->discreteCall = 0;
 
       return 0;
@@ -4785,13 +5055,16 @@ end functionXXX_DAG;
 
 template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, String modelNamePrefix)
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(eqs, modelNamePrefix, contextSimulationNonDiscrete, 'data->simulationInfo->evalSelection', true, &chunks)
   <<
   /* forwarded equations */
   <%eqs |> eq => equationForward_(eq, contextSimulationNonDiscrete, modelNamePrefix); separator="\n"%>
 
+  <%chunks%>
   static void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(eqs, modelNamePrefix, contextSimulationNonDiscrete, 'data->simulationInfo->evalSelection')%>
+    <%calls%>
   }
   >>
 end functionXXX_system;
@@ -5127,7 +5400,7 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   >>
 end initializeDAEmodeData;
 
-template initializeDAEmodeDataResizable(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, Sparsity sparsityMatrix, Integer nCols, Integer nRows, Context context, String modelNamePrefix)
+template initializeDAEmodeDataResizable(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, Sparsity sparsityMatrix, String nCols, Integer nRows, Context context, String modelNamePrefix)
   "Generates initialization function for daeMode using NBackEnd resizable sparsity pattern."
 ::=
 match sparsityMatrix
@@ -5154,8 +5427,10 @@ match sparsityMatrix
     {
       <%algIndexes%>
       unsigned int i, nnz;
-      unsigned int col_counts[<%nCols%>];
-      unsigned int col_fill[<%nCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%nCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%nCols%> * sizeof(unsigned int));
+      <%jacobianOffsetDecls(context)%>
       <%varDeclsC%><%varDeclsF%>
 
       <%preExpC%><%preExpF%>
@@ -5176,7 +5451,6 @@ match sparsityMatrix
       memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
 
       /* initialize sparse pattern: two-pass CSC construction */
-      memset(col_counts, 0, <%nCols%> * sizeof(unsigned int));
       <%countCode%>
 
       nnz = 0;
@@ -5189,6 +5463,9 @@ match sparsityMatrix
 
       memcpy(col_fill, daeModeData->sparsePattern->leadindex, <%nCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
+      <%jacobianOffsetFrees(context)%>
 
       computeColumnColoring(daeModeData->sparsePattern, <%nRows%>, <%nCols%>);
       sortSparseColumns(daeModeData->sparsePattern, <%nCols%>);
@@ -5208,10 +5485,13 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(allEquationsPlusWhen, modelNamePrefix, contextSimulationDiscrete, '', false, &chunks)
   <<
   <%(allEquationsPlusWhen |> eq =>
     equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false); separator="\n")%>
 
+  <%chunks%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data, threadData_t *threadData)
   {
@@ -5224,7 +5504,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
-    <%equations_call(allEquationsPlusWhen, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%calls%>
     data->simulationInfo->discreteCall = 0;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -5239,14 +5519,17 @@ template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNa
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
+  let &chunks = buffer ""
+  let calls = equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete, '', true, &chunks)
   <<
   <%(localKnownVars |> eq =>
                     equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
                     ;separator="\n")%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -5291,17 +5574,20 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
                }
                >>
 
+  let &chunks = buffer ""
+  let calls = equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross, '', true, &chunks)
   <<
   <%desc%>
 
   /* forwarded equations */
   <%forwardEqs%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData)
   {
     data->simulationInfo->callStatistics.functionZeroCrossingsEquations++;
 
-    <%equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -5550,6 +5836,42 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   >>
 end functionRelations;
 
+template functionNextTimeEvent(list<ZeroCrossing> relations, String modelNamePrefix)
+ "The earliest time after the current one at which a relation switches that
+  timeEventTrigger recognizes, or DBL_MAX."
+::=
+  let &auxFunction = buffer ""
+  let &varDecls = buffer ""
+  let &varFrees = buffer ""
+  let triggers = (relations |> ZERO_CROSSING(iter = NONE()) =>
+    match timeEventTrigger(relation_)
+    case SOME(trigger) then
+      let &preExp = buffer ""
+      let e = daeExp(trigger, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)
+      <<
+      <%preExp%>
+      tEvent = <%e%>;
+      if (tEvent > tNow && tEvent < tNext) tNext = tEvent;
+      >>
+    ;separator="\n")
+  <<
+  <%auxFunction%>
+  double <%symbolName(modelNamePrefix,"function_nextTimeEvent")%>(DATA *data, threadData_t *threadData)
+  {
+    <%if triggers then
+    <<
+    <%varDecls%>
+    const double tNow = data->localData[0]->timeValue;
+    double tEvent, tNext = DBL_MAX;
+    <%triggers%>
+    <%varFrees%>
+    return tNext;
+    >>
+    else "return DBL_MAX;"%>
+  }
+  >>
+end functionNextTimeEvent;
+
 template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Generates code for zero crossings."
 ::=
@@ -5607,7 +5929,7 @@ template crefToPrintfArg(ComponentRef cr)
   case "modelica_integer" then "\"OMC_INT_FORMAT\""
   case "modelica_boolean" then "%d"
   case "modelica_string" then "%s"
-  else error(sourceInfo(), 'Do not know what printf argument to give <%crefStr(cr)%>')
+  else error(sourceInfo(), 'Do not know what printf argument to give <%CodegenUtil.crefStr(cr)%>')
   end match
 end crefToPrintfArg;
 
@@ -5658,15 +5980,78 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
     equation_impl(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, false)
     ;separator="\n")%>
   /* function to check assert after a step is done */
-  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(algAndEqAssertsEquations, modelNamePrefix, contextSimulationDiscrete, '')%>
+    <%match algAndEqAssertsEquations
+    case {} then ''
+    else
+    <<
+    static const struct {long var; modelica_real lo, hi; void (*eq)(DATA*, threadData_t*);} asserts[<%listLength(algAndEqAssertsEquations)%>] = {
+      <%algAndEqAssertsEquations |> eq => assertTableEntry(eq, modelNamePrefix); separator=",\n"%>
+    };
+    for (int i = 0; i < <%listLength(algAndEqAssertsEquations)%>; i++) {
+      if (asserts[i].var >= 0) {
+        const modelica_real v = data->localData[0]->realVars[<%simVarIndex("real", "Vars", "asserts[i].var")%>];
+        if (v >= asserts[i].lo && v <= asserts[i].hi) continue;
+      }
+      asserts[i].eq(data, threadData);
+      if (OMC_ERROR_RAISED()) break;
+    }
+    >>%>
 
     return 0;
   }
   >>
 end functionAssertsforCheck;
+
+template assertTableEntry(SimEqSystem eq, String modelNamePrefix)
+  "A checkForAsserts entry; the equation runs whenever the bounds do not hold."
+::=
+  let fn = '<%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndexGeneral(eq)%>'
+  let bounds = match eq
+    case SES_ALGORITHM(statements={STMT_ASSERT(cond=cond)}) then
+      if boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))) then ''
+      else match cond
+        case r as RELATION(exp1=e as CREF(__), operator=GREATEREQ(__)) then
+          if intEq(r.index, -1) then assertTableBounds(e, assertTableLiteral(r.exp2), 'INFINITY')
+        case r as RELATION(exp1=e as CREF(__), operator=LESSEQ(__)) then
+          if intEq(r.index, -1) then assertTableBounds(e, '-INFINITY', assertTableLiteral(r.exp2))
+        case LBINARY(exp1=r1 as RELATION(exp1=e1 as CREF(__), operator=GREATEREQ(__)), operator=AND(__),
+                     exp2=r2 as RELATION(exp1=e2 as CREF(__), operator=LESSEQ(__))) then
+          if boolAnd(intEq(r1.index, -1), boolAnd(intEq(r2.index, -1), stringEq(crefToIndex(e1.componentRef), crefToIndex(e2.componentRef)))) then
+            assertTableBounds(e1, assertTableLiteral(r1.exp2), assertTableLiteral(r2.exp2))
+        else ''
+    else ''
+  if bounds then '{<%bounds%>, <%fn%>}' else '{-1, 0.0, 0.0, <%fn%>}'
+end assertTableEntry;
+
+template assertTableBounds(DAE.Exp e, String lo, String hi)
+  "var, lo, hi if the assert reads the variable as the table does."
+::=
+  if boolAnd(boolNot(stringEq(lo, "")), boolNot(stringEq(hi, ""))) then
+    match e
+    case CREF(ty=T_REAL(__)) then
+      match cref2simvar(componentRef, getSimCode())
+      case SIMVAR(aliasvar=NOALIAS(), index=index) then
+        let &preExp = buffer ""
+        let &varDecls = buffer ""
+        let &varFrees = buffer ""
+        let &auxFunction = buffer ""
+        let &sub = buffer ""
+        let access = contextCref(componentRef, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+        if boolAnd(intGt(index, -1), boolAnd(stringEq(&sub, ""), intEq(System.stringFind(access, '(data->localData[0]->realVars[<%simVarIndex("real", "Vars", '<%index%>')%>]'), 0))) then
+          '<%index%>, <%lo%>, <%hi%>'
+      else ''
+    else ''
+end assertTableBounds;
+
+template assertTableLiteral(DAE.Exp e)
+::=
+  match e
+  case RCONST(__) then real
+  case UNARY(operator=UMINUS(__), exp=RCONST(real=r)) then '(-<%r%>)'
+  else ''
+end assertTableLiteral;
 
 template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "template functionlinearmodel
   Generates function in simulation file."
@@ -6065,7 +6450,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let resizableSparsity = (JacobianMatrices |> JAC_MATRIX() =>
-    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, SimCodeCodegenUtil.numScalarElems(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
+    initialResizableAnalyticJacobians(matrixName, columns, sparsityMatrix, numScalarElemsExp(seedVars), createJacContext(matrixName, crefsHT), isAdjoint, isBidirectional, adjointJacobianIndex, adjointMatrixName, modelNamePrefix) ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
@@ -6082,7 +6467,43 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, Integer nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
+template resizableJacobianRows(list<JacobianColumn> columns, Sparsity sparsity, Context context)
+ "Number of rows of a resizable Jacobian. numberOfResultVars counts a dimension
+  that is only known at runtime as 1, then the rows are the elements of the
+  variables the sparsity rows are solved for."
+::=
+  let nRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
+  match context
+  case JACOBIAN_CONTEXT(jacHT = jacHT as SOME(_)) then
+    if hasSymbolicDims(jacobianResultVars(sparsity, jacHT)) then numScalarElemsExp(jacobianResultVars(sparsity, jacHT)) else nRows
+  else nRows
+end resizableJacobianRows;
+
+template numScalarElemsExp(list<SimVar> vars)
+ "Number of scalar elements of the SimVars. A C expression of the structural
+  parameters if a dimension is only known at runtime (resizable arrays), where the
+  parameters can still be changed with -override before the simulation."
+::=
+  if hasSymbolicDims(vars) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &varFrees = buffer ""
+    let &auxFunction = buffer ""
+    let terms = (vars |> v => numScalarElemsVarExp(v, &preExp, &varDecls, &varFrees, &auxFunction) ;separator=" + ")
+    '((size_t)(<%terms%>))'
+  else SimCodeCodegenUtil.numScalarElems(vars)
+end numScalarElemsExp;
+
+template numScalarElemsVarExp(SimVar var, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "Number of scalar elements of a SimVar as a C expression."
+::=
+  match var
+  case SIMVAR(type_ = T_ARRAY(dims = dims)) then
+    '(<%dims |> d => '(<%dimension(d, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>)' ;separator=" * "%>)'
+  else '1'
+end numScalarElemsVarExp;
+
+template initialResizableAnalyticJacobians(String matrixname, list<JacobianColumn> columns, Sparsity sparsity, String nCols, Context context, Boolean isAdjoint, Boolean isBidirectional, Integer adjointJacobianIndex, String adjointMatrixName, String modelNamePrefix)
 "Two-pass CSC construction: count nonzeros per column, allocate, then fill row indices."
 ::=
 match sparsity
@@ -6099,16 +6520,16 @@ match sparsity
     let &varFrees = buffer ""
     let &auxFunction = buffer ""
     let &sub = buffer ""
-    let countCode = (rows |> row => resizableSparsityRowCount(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n")
-    let fillCode = (rows |> row => resizableSparsityRowFill(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, 'jacobian->sparsePattern') ;separator="\n")
+    let countCode = (rows |> row => resizableSparsityRowCount(row, "_jac_nCols", context, &preExp, &varDecls, &varFrees, &auxFunction, &sub) ;separator="\n")
+    let fillCode = (rows |> row => resizableSparsityRowFill(row, "_jac_nCols", context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, 'jacobian->sparsePattern') ;separator="\n")
     let &varDecls += 'unsigned int local_row_base = 0;<%\n%>'
-    let sizeRows = (columns |> JAC_COLUMN() => numberOfResultVars; separator="\n")
+    let sizeRows = resizableJacobianRows(columns, sparsity, context)
     // Adjoint metadata describes the primal CSC pattern using adjoint variable
     // names. Its outer dimension is the adjoint result count (primal columns),
     // and its inner dimension is the adjoint seed count (primal rows).
     let patternCols = if isAdjoint then '<%sizeRows%>' else '<%nCols%>'
     let patternRows = if isAdjoint then '<%nCols%>' else '<%sizeRows%>'
-    let tmpvarsSize = (columns |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
+    let tmpvarsSize = (columns |> JAC_COLUMN() => numScalarElemsExp(columnVars); separator="\n")
     let constantEqns = (columns |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
@@ -6119,8 +6540,11 @@ match sparsity
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       unsigned int i, nnz;
-      unsigned int col_counts[<%patternCols%>];
-      unsigned int col_fill[<%patternCols%>];
+      /* on the heap, the runtime sizes can exceed the stack */
+      unsigned int* col_counts = (unsigned int*) calloc(<%patternCols%>, sizeof(unsigned int));
+      unsigned int* col_fill = (unsigned int*) malloc(<%patternCols%> * sizeof(unsigned int));
+      const modelica_integer _jac_nCols = <%nCols%>;
+      <%jacobianOffsetDecls(context)%>
       <%varDecls%>
 
       <%preExp%>
@@ -6130,14 +6554,13 @@ match sparsity
       jacobian->isRowEval = <%isRowEval%>;
 
       /* Phase 1: count non-zeros per column */
-      memset(col_counts, 0, <%patternCols%> * sizeof(unsigned int));
       <%countCode%>
 
       /* Compute total nnz and allocate pattern */
       nnz = 0;
       for (i = 0; i < <%patternCols%>; i++) nnz += col_counts[i];
       jacobian->sparsePattern = allocSparsePattern(<%patternCols%>, nnz, 0);
-      if (!jacobian->sparsePattern) return 1;
+      if (!jacobian->sparsePattern) { free(col_counts); free(col_fill); <%jacobianOffsetFrees(context)%> return 1; }
 
       /* Compute leadindex as prefix sum of col_counts */
       jacobian->sparsePattern->leadindex[0] = 0;
@@ -6147,6 +6570,9 @@ match sparsity
       /* Phase 2: fill row indices */
       memcpy(col_fill, jacobian->sparsePattern->leadindex, <%patternCols%> * sizeof(unsigned int));
       <%fillCode%>
+      free(col_counts);
+      free(col_fill);
+      <%jacobianOffsetFrees(context)%>
       <%varFrees%>
 
       <%if isAdjoint then <<
@@ -6186,7 +6612,7 @@ match sparsity
     >>
 end initialResizableAnalyticJacobians;
 
-template resizableSparsityRowCount(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
+template resizableSparsityRowCount(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 "Count phase: for each (row,col) pair in this SparsityRow, increment col_counts[col].
  For REGULAR 1D WHOLEDIM seeds (dep.kinds=[false], not rep) inside WHOLEDIM/multi-dim-WHOLEDIM sc,
  emits a single col_counts[v.index + _wr_k]++ (diagonal). All other cases use REDUCTION (full loop)."
@@ -6354,7 +6780,7 @@ match row
     else ''
 end resizableSparsityRowCount;
 
-template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template resizableColCountRegular(ComponentRef seed, String nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Count phase for a REGULAR 1D whole-array seed: emit col_counts[v.index + _wr<%k%>]++ (one
  column aligned with the outer row-loop variable _wr<%k%>). Only call when dep.kinds=[false]
  and not rep — the caller is responsible for checking those conditions inline."
@@ -6368,13 +6794,28 @@ template resizableColCountRegular(ComponentRef seed, Integer nCols, Integer k, C
       let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
       <<
       <%seedComment%>
-      col_counts[<%v.index%> + _wr<%k%>]++;
+      col_counts[<%jacobianVarOffset(v, context)%> + _wr<%k%>]++;
       >>
     else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
   else resizableColCount(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
 end resizableColCountRegular;
 
-template resizableColCount(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template allWholeSubs(list<Subscript> subs)
+ "non empty if all subscripts are whole dimensions"
+::=
+  match subs
+  case {} then 'true'
+  case WHOLEDIM() :: rest then allWholeSubs(rest)
+  else ''
+end allWholeSubs;
+
+template wholeDimsSize(list<Dimension> dims, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+ "product of the sizes of all dimensions"
+::=
+  (dims |> dim => '(unsigned int)(<%dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)' ;separator=" * ")
+end wholeDimsSize;
+
+template resizableColCount(ComponentRef seed, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6387,13 +6828,13 @@ template resizableColCount(ComponentRef seed, Integer nCols, Context context, Te
       case SOME(ev as SIMVAR()) then
       <<
       <%seedComment%>
-      if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { col_counts[<%ev.index%>]++; }
+      if (<%jacobianVarOffset(ev, context)%> >= 0 && <%jacobianVarOffset(ev, context)%> < (modelica_integer)(<%nCols%>)) { col_counts[<%jacobianVarOffset(ev, context)%>]++; }
       >>
       else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
   else resizableColCountBase(seed, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction)
 end resizableColCount;
 
-template resizableColCountBase(ComponentRef seed, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template resizableColCountBase(ComponentRef seed, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Increment col_counts for one dependency cref."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6414,7 +6855,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           <<
           <%seedComment%>
           <%offsetPreExp%>
-          if ((modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) >= 0) { col_counts[<%v.index%> + (<%offset%>)]++; }
+          if ((modelica_integer)(<%jacobianVarOffset(v, context)%>) + (modelica_integer)(<%offset%>) >= 0) { col_counts[<%jacobianVarOffset(v, context)%> + (<%offset%>)]++; }
           >>
         else ''
       else
@@ -6422,7 +6863,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
         case {} then
           <<
           <%seedComment%>
-          col_counts[<%v.index%>]++;
+          col_counts[<%jacobianVarOffset(v, context)%>]++;
           >>
         case {WHOLEDIM()} then
           let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -6431,7 +6872,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           {
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
-              col_counts[<%v.index%> + _wc<%v.index%>]++;
+              col_counts[<%jacobianVarOffset(v, context)%> + _wc<%v.index%>]++;
             }
           }
           >>
@@ -6444,7 +6885,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
           {
             unsigned int _sc<%v.index%>;
             for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
-              col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
+              col_counts[<%jacobianVarOffset(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
             }
           }
           >>
@@ -6461,7 +6902,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%sz%>); _wo<%v.index%>++) {
-                col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++;
+                col_counts[<%jacobianVarOffset(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++;
               }
             }
           }
@@ -6477,11 +6918,26 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             for (_wo2<%v.index%> = 0; _wo2<%v.index%> < (unsigned int)(<%szOuter%>); _wo2<%v.index%>++) {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%szInner%>); _wc<%v.index%>++) {
-                col_counts[<%v.index%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++;
+                col_counts[<%jacobianVarOffset(v, context)%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++;
               }
             }
           }
           >>
+        case WHOLEDIM() :: WHOLEDIM() :: WHOLEDIM() :: _ then
+          // 3 or more whole dims (e.g. element[:, :, :].T): all elements of the variable
+          match allWholeSubs(crefSubs(seed))
+          case "" then error(sourceInfo(), 'unsupported mix of whole and other subscripts in seed <%crefStrNoUnderscore(seed)%>')
+          else
+            let total = wholeDimsSize(crefDims(seed), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wa<%v.index%>;
+              for (_wa<%v.index%> = 0; _wa<%v.index%> < (unsigned int)(<%total%>); _wa<%v.index%>++) {
+                col_counts[<%jacobianVarOffset(v, context)%> + _wa<%v.index%>]++;
+              }
+            }
+            >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
@@ -6497,7 +6953,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
                 <%outerPreExp%>
-                <%col%> = (modelica_integer)(<%v.index%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
+                <%col%> = (modelica_integer)(<%jacobianVarOffset(v, context)%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
                 if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
                   col_counts[<%col%>]++;
                 }
@@ -6520,7 +6976,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
               unsigned int _sc<%v.index%>;
               for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
                 <%outerPreExp%>
-                col_counts[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
+                col_counts[<%jacobianVarOffset(v, context)%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++;
               }
             }
             >>
@@ -6536,7 +6992,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
                 <%innerPreExp%>
-                col_counts[<%v.index%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
+                col_counts[<%jacobianVarOffset(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
               }
             }
             >>
@@ -6554,7 +7010,7 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
               unsigned int _so<%v.index%>;
               for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
                 <%innerPreExp%>
-                col_counts[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
+                col_counts[<%jacobianVarOffset(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++;
               }
             }
             >>
@@ -6565,14 +7021,14 @@ template resizableColCountBase(ComponentRef seed, Integer nCols, Context context
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            <%col%> = (modelica_integer)(<%v.index%>) + (<%offset%>);
+            <%col%> = (modelica_integer)(<%jacobianVarOffset(v, context)%>) + (<%offset%>);
             if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) { col_counts[<%col%>]++; }
             >>
     else '/* resizableColCount: seed not found in jacHT */'
   else ''
 end resizableColCountBase;
 
-template resizableSparsityRowFill(SparsityRow row, Integer nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
+template resizableSparsityRowFill(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Fill phase: for each (row,col) pair, write spPattern->index[col_fill[col]++] = row.
  Uses resizableFillDepsForRow helper to avoid nested iteration over two record fields."
 ::=
@@ -6594,7 +7050,7 @@ match row
     else ''
 end resizableSparsityRowFill;
 
-template resizableFillDepsForRow(SparsityRow row, Integer nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
+template resizableFillDepsForRow(SparsityRow row, String nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Generate fill code for solved_cref sc (row index k) against all dependencies in row.
  Explicitly binds dependencies and equation_iterators in the SPARSITY_ROW pattern to keep them in scope through nested matches."
 ::=
@@ -6638,7 +7094,7 @@ match row
               <<
               {
                 unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + _wr<%k%>;
                 <%depsWholeDep%>
               }
               >>
@@ -6648,7 +7104,7 @@ match row
               {
                 unsigned int _wr<%k%>;
                 for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%sz%>); _wr<%k%>++) {
-                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
               }
@@ -6667,7 +7123,7 @@ match row
             {
               unsigned int _wr<%k%>;
               for (_wr<%k%> = 0; _wr<%k%> < (unsigned int)(<%nSlice%>); _wr<%k%>++) {
-                unsigned int row_<%k%> = <%v.index%> + (unsigned int)(((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
+                unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + (unsigned int)(((modelica_integer*)<%sliceArr%>.data)[_wr<%k%>] - 1);
                 <%depsWholeReduced%>
               }
             }
@@ -6679,7 +7135,7 @@ match row
         case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
           match simVarFromHT(crefStripSubs(sc), jacHT)
           case v as SIMVAR() then
-            let rowExpr = '<%v.index%>'
+            let rowExpr = '<%jacobianVarOffset(v, context)%>'
             let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
             <<
             <%fillCode%>
@@ -6711,7 +7167,7 @@ match row
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + _wr<%k%>;
                   <%depsWholeReduced%>
                 }
                 >>
@@ -6745,7 +7201,7 @@ match row
                 <<
                 {
                   unsigned int _wr<%k%> = (unsigned int)(<%flatIdx%>);
-                  unsigned int row_<%k%> = <%v.index%> + _wr<%k%>;
+                  unsigned int row_<%k%> = <%jacobianVarOffset(v, context)%> + _wr<%k%>;
                   <%depsWholeDep%>
                 }
                 >>
@@ -6818,7 +7274,7 @@ match row
               // assigned by the same or another equation (see simple_der_for.mos).
               let &offsetPreExp = buffer ""
               let offset = indexSubRecursive(listReverse(List.restOrEmpty(crefDims(sc))), listReverse(crefSubs(sc)), context, &offsetPreExp, &varDecls, &varFrees, &auxFunction)
-              let rowExpr = '<%v.index%> + (unsigned int)(<%offset%>)'
+              let rowExpr = '<%jacobianVarOffset(v, context)%> + (unsigned int)(<%offset%>)'
               let fillCode = (deps |> (seed, _, _) => resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern) ;separator="\n")
               <<
               <%offsetPreExp%>
@@ -6829,7 +7285,7 @@ match row
 end resizableFillDepsForRow;
 
 
-template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
+template resizableColFillRegular(ComponentRef seed, String nCols, String rowExpr, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Fill phase for a REGULAR 1D whole-array seed: emit a single diagonal entry
  spPattern->index[col_fill[v.index + _wr<%k%>]++] = row. Only call when dep.kinds=[false]
  and not rep — the caller is responsible for checking those conditions inline."
@@ -6843,13 +7299,13 @@ template resizableColFillRegular(ComponentRef seed, Integer nCols, String rowExp
       let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
       <<
       <%seedComment%>
-      <%spPattern%>->index[col_fill[<%v.index%> + _wr<%k%>]++] = <%rowExpr%>;
+      <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + _wr<%k%>]++] = <%rowExpr%>;
       >>
     else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
   else resizableColFill(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
 end resizableColFillRegular;
 
-template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
+template resizableColFill(ComponentRef seed, String nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Elements of a partially covered array have their own seed index, use it if the seed is stored exactly."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6862,13 +7318,13 @@ template resizableColFill(ComponentRef seed, Integer nCols, String rowExpr, Cont
       case SOME(ev as SIMVAR()) then
       <<
       <%seedComment%>
-      if (<%ev.index%> >= 0 && <%ev.index%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%ev.index%>]++] = <%rowExpr%>; }
+      if (<%jacobianVarOffset(ev, context)%> >= 0 && <%jacobianVarOffset(ev, context)%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%jacobianVarOffset(ev, context)%>]++] = <%rowExpr%>; }
       >>
       else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
   else resizableColFillBase(seed, nCols, rowExpr, context, &preExp, &varDecls, &varFrees, &auxFunction, spPattern)
 end resizableColFill;
 
-template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
+template resizableColFillBase(ComponentRef seed, String nCols, String rowExpr, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, String spPattern)
 "Write one CSC fill entry: spPattern->index[col_fill[col]++] = row."
 ::=
   let seedComment = '/* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(seed), "/*", ""), "*/", "")%> */'
@@ -6887,7 +7343,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           <<
           <%seedComment%>
           <%offsetPreExp%>
-          if ((modelica_integer)(<%v.index%>) + (modelica_integer)(<%offset%>) >= 0) { <%spPattern%>->index[col_fill[<%v.index%> + (<%offset%>)]++] = <%rowExpr%>; }
+          if ((modelica_integer)(<%jacobianVarOffset(v, context)%>) + (modelica_integer)(<%offset%>) >= 0) { <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + (<%offset%>)]++] = <%rowExpr%>; }
           >>
         else ''
       else
@@ -6895,7 +7351,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
         case {} then
           <<
           <%seedComment%>
-          <%spPattern%>->index[col_fill[<%v.index%>]++] = <%rowExpr%>;
+          <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%>]++] = <%rowExpr%>;
           >>
         case {WHOLEDIM()} then
           let sz = dimension(listHead(crefDims(seed)), context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -6904,7 +7360,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           {
             unsigned int _wc<%v.index%>;
             for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
-              <%spPattern%>->index[col_fill[<%v.index%> + _wc<%v.index%>]++] = <%rowExpr%>;
+              <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + _wc<%v.index%>]++] = <%rowExpr%>;
             }
           }
           >>
@@ -6917,7 +7373,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
           {
             unsigned int _sc<%v.index%>;
             for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
-              <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
+              <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
             }
           }
           >>
@@ -6934,7 +7390,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%sz%>); _wo<%v.index%>++) {
-                <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%sz%>) + _wo<%v.index%>]++] = <%rowExpr%>;
               }
             }
           }
@@ -6950,11 +7406,26 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             for (_wo2<%v.index%> = 0; _wo2<%v.index%> < (unsigned int)(<%szOuter%>); _wo2<%v.index%>++) {
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%szInner%>); _wc<%v.index%>++) {
-                <%spPattern%>->index[col_fill[<%v.index%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + _wo2<%v.index%> * (unsigned int)(<%szInner%>) + _wc<%v.index%>]++] = <%rowExpr%>;
               }
             }
           }
           >>
+        case WHOLEDIM() :: WHOLEDIM() :: WHOLEDIM() :: _ then
+          // 3 or more whole dims (e.g. element[:, :, :].T): all elements of the variable
+          match allWholeSubs(crefSubs(seed))
+          case "" then error(sourceInfo(), 'unsupported mix of whole and other subscripts in seed <%crefStrNoUnderscore(seed)%>')
+          else
+            let total = wholeDimsSize(crefDims(seed), context, &preExp, &varDecls, &varFrees, &auxFunction)
+            <<
+            <%seedComment%>
+            {
+              unsigned int _wa<%v.index%>;
+              for (_wa<%v.index%> = 0; _wa<%v.index%> < (unsigned int)(<%total%>); _wa<%v.index%>++) {
+                <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + _wa<%v.index%>]++] = <%rowExpr%>;
+              }
+            }
+            >>
         else
           match listReverse(crefSubs(seed))
           case WHOLEDIM() :: outer_rev_subs then
@@ -6970,7 +7441,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
               unsigned int _wc<%v.index%>;
               for (_wc<%v.index%> = 0; _wc<%v.index%> < (unsigned int)(<%sz%>); _wc<%v.index%>++) {
                 <%outerPreExp%>
-                <%col%> = (modelica_integer)(<%v.index%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
+                <%col%> = (modelica_integer)(<%jacobianVarOffset(v, context)%>) + (<%outer_off%>) * (modelica_integer)(<%sz%>) + (modelica_integer)_wc<%v.index%>;
                 if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) {
                   <%spPattern%>->index[col_fill[<%col%>]++] = <%rowExpr%>;
                 }
@@ -6993,7 +7464,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
               unsigned int _sc<%v.index%>;
               for (_sc<%v.index%> = 0; _sc<%v.index%> < (unsigned int)(<%nSlice%>); _sc<%v.index%>++) {
                 <%outerPreExp%>
-                <%spPattern%>->index[col_fill[<%v.index%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + (<%outer_off%>) * (unsigned int)(<%sz%>) + (((modelica_integer*)<%sliceArr%>.data)[_sc<%v.index%>] - 1)]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7009,7 +7480,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
               unsigned int _wo<%v.index%>;
               for (_wo<%v.index%> = 0; _wo<%v.index%> < (unsigned int)(<%szOuter%>); _wo<%v.index%>++) {
                 <%innerPreExp%>
-                <%spPattern%>->index[col_fill[<%v.index%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + _wo<%v.index%> * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7027,7 +7498,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
               unsigned int _so<%v.index%>;
               for (_so<%v.index%> = 0; _so<%v.index%> < (unsigned int)(<%nSlice%>); _so<%v.index%>++) {
                 <%innerPreExp%>
-                <%spPattern%>->index[col_fill[<%v.index%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
+                <%spPattern%>->index[col_fill[<%jacobianVarOffset(v, context)%> + (((modelica_integer*)<%sliceArr%>.data)[_so<%v.index%>] - 1) * (unsigned int)(<%szInner%>) + ((<%innerIdx%>) - 1)]++] = <%rowExpr%>;
               }
             }
             >>
@@ -7038,7 +7509,7 @@ template resizableColFillBase(ComponentRef seed, Integer nCols, String rowExpr, 
             <<
             <%seedComment%>
             <%offsetPreExp%>
-            <%col%> = (modelica_integer)(<%v.index%>) + (<%offset%>);
+            <%col%> = (modelica_integer)(<%jacobianVarOffset(v, context)%>) + (<%offset%>);
             if (<%col%> >= 0 && <%col%> < (modelica_integer)(<%nCols%>)) { <%spPattern%>->index[col_fill[<%col%>]++] = <%rowExpr%>; }
             >>
     else '/* resizableColFill: seed not found in jacHT */'
@@ -7061,7 +7532,7 @@ match context
     else 'NOT FOUND'
 end seedSizeAssignments;
 
-template dimensionSizeAssignment(Dimension dim, Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
+template dimensionSizeAssignment(Dimension dim, DAE.Subscript sub, Integer var_index, Integer dim_index, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 ::=
   let tmp_name = 's<%var_index%>_<%dim_index%>'
   let dim_exp = dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -7090,7 +7561,7 @@ match sparsepattern
     let sizeleadindex = listLength(sparsepattern)
     let availability = if SimCodeCodegenUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN() => numberOfResultVars; separator="\n")
-    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => SimCodeCodegenUtil.numScalarElems(columnVars); separator="\n")
+    let tmpvarsSize = (jacobianColumn |> JAC_COLUMN() => numScalarElemsExp(columnVars); separator="\n")
     let constantEqns = (jacobianColumn |> JAC_COLUMN() =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
@@ -7190,13 +7661,16 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String modelNamePr
 ::=
 match context
 case JACOBIAN_CONTEXT() then
+  let &chunks = buffer ""
+  let calls = equations_call(constantEqns, modelNamePrefix, context, '', false, &chunks)
   <<
+  <%chunks%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_constantEqns(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(constantEqns, modelNamePrefix, context, '')%>
+    <%calls%>
 
     return 0;
   }
@@ -7209,6 +7683,8 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 ::=
 match context
 case JACOBIAN_CONTEXT() then
+  let &chunks = buffer ""
+  let calls = equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelection', true, &chunks)
   <<
   /* constant equations */
   <%(constantEqns |> eq hasindex sub_idx =>
@@ -7219,11 +7695,12 @@ case JACOBIAN_CONTEXT() then
 
   <%generateConstantEqns(constantEqns, modelNamePrefix, context)%>
 
+  <%chunks%>
   int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelection')%>
+    <%calls%>
 
     return 0;
   }
@@ -7592,8 +8069,8 @@ template equation_call(SimEqSystem eq, String modelNamePrefix, Context context)
     >>
 end equation_call;
 
-template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context context, String selection)
-  "Generates sequence of equation calls"
+template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context context, String selection, Boolean optimize, Text &chunks)
+  "Generates sequence of equation calls, in chunk functions of at most 500."
 ::=
   match eqs
   case {} then ''
@@ -7606,38 +8083,49 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
     let argsType = match context
       case JACOBIAN_CONTEXT() then 'DATA*, threadData_t*, JACOBIAN*, JACOBIAN*'
       else 'DATA*, threadData_t*'
+    let params = match context
+      case JACOBIAN_CONTEXT() then 'DATA *data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian'
+      else 'DATA *data, threadData_t *threadData'
     // Stop at an equation that raised: the ones after it must not run and
-    // report asserts of their own.
-    let body = match selection
-      case "" then
-        <<
-        for (int id = 0; id < <%nFuncs%>; id++) {
-          eqFunctions[id](<%args%>);
-          if (OMC_ERROR_RAISED()) break;
-        }
-        >>
+    // report asserts of their own. Direct calls, since one indirect call site
+    // with thousands of targets mispredicts; the cap bounds inlining.
+    let calls = (List.partition(eqs, 500) |> part =>
+        let chunk = '<%symbolName(modelNamePrefix, "eqChunk")%>_<%System.tmpTickIndex(2)%>'
+        let &chunks +=
+          <<
+          <%if optimize then "" else "OMC_DISABLE_OPT\n"%>static void <%chunk%>(<%params%>)
+          {
+            do {
+              <%part |> eq => '<%name%>_<%equationIndexGeneral(eq)%>(<%args%>); if (OMC_ERROR_RAISED()) break;'; separator="\n"%>
+            } while (0);
+          }
+
+          >>
+        '<%chunk%>(<%args%>); if (OMC_ERROR_RAISED()) break;'
+      ; separator="\n")
+    let seq =
+      <<
+      do {
+        <%calls%>
+      } while (0);
+      >>
+    match selection
+      case "" then seq
       else
         <<
         if (<%selection%>) {
+          static void (*const eqFunctions[<%nFuncs%>])(<%argsType%>) = {
+            <%eqs |> eq => '<%name%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
+          };
           for (int i = 0; i < <%selection%>->n; i++) {
             int id = <%selection%>->idx[i];
             eqFunctions[id](<%args%>);
             if (OMC_ERROR_RAISED()) break;
           }
         } else {
-          for (int id = 0; id < <%nFuncs%>; id++) {
-            eqFunctions[id](<%args%>);
-            if (OMC_ERROR_RAISED()) break;
-          }
+          <%seq%>
         }
         >>
-    <<
-    static void (*const eqFunctions[<%nFuncs%>])(<%argsType%>) = {
-      <%eqs |> eq => '<%name%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
-    };
-
-    <%body%>
-    >>
 end equations_call;
 
 template equation_withProfile(String index, String body)
@@ -7739,10 +8227,20 @@ template equationSimpleAssignLhs(ComponentRef cref, Context context,
   hand side and variable subscripts are handled in daeExpCref*SimContext."
 ::=
   match context
-  case FUNCTION_CONTEXT(__)
-  case JACOBIAN_CONTEXT(__)
-  case OMSI_CONTEXT(__) then
+  case FUNCTION_CONTEXT(__) then
     contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+  // an element of an array Jacobian variable (e.g. $pDER.$FUN[2]) needs the flattened index too
+  case JACOBIAN_CONTEXT(__) then
+    if boolOr(boolNot(Flags.getConfigBool(Flags.NEW_BACKEND)), Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE)) then
+      contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    else if isJacobianElementVar(cref, context) then
+      contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+    else match crefSubs(crefArrayGetFirstCref(cref))
+      case {} then
+        contextCref(cref, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+      else
+        let &idxSub = buffer '<%indexSubs(crefDims(cref), crefSubs(crefArrayGetFirstCref(cref)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
+        contextCref(crefStripSubs(cref), context, &preExp, &varDecls, &varFrees, &auxFunction, &idxSub)
   else
     // Note: $START crefs address the (array valued) start attribute and must
     // not be flattened here, they keep the regular handling.
@@ -7804,22 +8302,22 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       case "boolean" then
       <<
       <%preExp%>
-      boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "integer" then
       <<
       <%preExp%>
-      integer_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) integer_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "real" then
       <<
       <%preExp%>
-      real_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) real_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     case "string" then
       <<
       <%preExp%>
-      string_array_copy_data(<%expPart%>, <%lhsstr%>);
+      if (!OMC_ERROR_RAISED()) string_array_copy_data(<%expPart%>, <%lhsstr%>);
       >>
     else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
   else
@@ -7832,6 +8330,17 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
 <%endModelicaLine()%>
 >>
 end equationArrayCallAssign;
+
+template equationResidualAt(Exp exp, Text &varDecls, Text &varFrees, Text &auxFunction, Integer eq_index, Text res_index)
+ "like equationResidual with the position in the residual vector as expression"
+::=
+let &preExp = buffer ""
+let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
+let assignment = (if isArrayType(typeof(exp))
+  then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>);'
+  else '<%preExp%>res[<%res_index%>] = <%expPart%>;')
+equation_withProfile(eq_index, assignment)
+end equationResidualAt;
 
 template equationResidual(Exp exp, Text &varDecls, Text &varFrees, Text &auxFunction, Integer eq_index, Integer res_index)
 ::=
@@ -8018,7 +8527,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
      'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parentJacobian = jacobian;'
   %>
 
-  retValue = solve_linear_system(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
+  retValue = <%if intEq(listLength(ls.vars), 1) then "solve_linear_system_small" else "solve_linear_system"%>(data, threadData, <%ls.indexLinearSystem%>, &aux_x[0]);
 
   /* check if solution process was successful */
   if (retValue > 0){
@@ -8102,11 +8611,12 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       >>
       %>
       /* get old value */
-      <%nls.crefs |> name hasindex i0 =>
+      <%if nlsResizable(nls.crefs) then nlsGetIterVars(nls.crefs, 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld') else
+      (nls.crefs |> name hasindex i0 =>
         let &auxFunction = buffer ""
         let START = contextCrefNoPrevExp(name, context, &auxFunction)
         'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
-      ;separator="\n"%>
+      ;separator="\n")%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
       /* check if solution process was successful */
       if (retValue > 0){
@@ -8116,9 +8626,10 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
         <%match at case SOME(__) then 'return 0;'%>
       }
       /* write solution */
-      <%nls.crefs |> name hasindex i0 =>
+      <%if nlsResizable(nls.crefs) then nlsSetIterVars(nls.crefs, 'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx') else
+      (nls.crefs |> name hasindex i0 =>
         let &auxFunction = buffer ""
-        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n")%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);' %>
       <%match at case SOME(__) then 'return 1;'%>
       >>
@@ -8275,11 +8786,11 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
       <<
       <%preExp%>
-      FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
+      FILE_INFO info = {<%infoArgs(ElementSource.getElementSourceFileInfo(source))%>};
       omc_terminate(info, omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
-      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction, info)
+      assertCommon(condition, List.fill(message,1), level, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction, info)
     case NORETCALL(__) then
       let &preExp = buffer ""
       let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)
@@ -8346,7 +8857,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     <<
     <%conditionline%>
     {
-      <%equations_call(eqns, modelNamePrefixStr, context, '')%>
+      <%equations_call(eqns, modelNamePrefixStr, context, '', true, &eqnsDecls)%>
     }
     >>
     ;separator="\n")
@@ -8355,7 +8866,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   <%preExp%>
   <%IfEquation%>else
   {
-    <%equations_call(elsebranch, modelNamePrefixStr, context, '')%>
+    <%equations_call(elsebranch, modelNamePrefixStr, context, '', true, &eqnsDecls)%>
   }
   >>
 end equationIfEquationAssign;
@@ -8381,7 +8892,7 @@ end equationIfEquationAssign;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationLiteralsFile;
 
-/* public */ template simulationFunctionsFile(String filePrefix, list<Function> functions, list<SimGenericCall> genericCalls)
+/* public */ template simulationFunctionsFile(String filePrefix, list<SimCodeFunction.Function> functions, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -8416,7 +8927,7 @@ end simulationLiteralsFile;
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationFunctionsFile;
 
-template simulationParModelicaKernelsFile(String filePrefix, list<Function> functions)
+template simulationParModelicaKernelsFile(String filePrefix, list<SimCodeFunction.Function> functions)
  "Generates the content of the C file for functions in the simulation case."
 ::=
 
@@ -8438,7 +8949,7 @@ template simulationParModelicaKernelsFile(String filePrefix, list<Function> func
 
 end simulationParModelicaKernelsFile;
 
-/* public */ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls, list<SimGenericCall> genericCalls)
+/* public */ template simulationFunctionsHeaderFile(String filePrefix, list<SimCodeFunction.Function> functions, list<RecordDeclaration> recordDecls, list<SimGenericCall> genericCalls)
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
@@ -8549,7 +9060,6 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   # Makefile generated by OpenModelica
   # Platform: <%makefileParams.platform%>
 
-  # Simulations use -O3 by default
   CC=<%if acceptParModelicaGrammar() then 'g++' else '<%makefileParams.ccompiler%>'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
@@ -8557,7 +9067,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
-  OMC_CFLAGS_OPTIMIZATION=-Os
+  OMC_CFLAGS_OPTIMIZATION=-O2
   DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Config.targetTriple()%>/omc/emcc/pre.js<%\n%>'
@@ -8610,7 +9120,7 @@ template crefM(ComponentRef cr)
  "Generates Modelica equivalent name for component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "xloc") then CodegenUtil.crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
   else "P" + crefToMStr(cr)
 end crefM;
@@ -8885,7 +9395,7 @@ template functionXXX_systemPartial(list<SimEqSystem> derivativEquations, String 
 ::=
     let code =  match modelInfo
     case MODELINFO(vars=SIMVARS(derivativeVars=ders)) then
-    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeCodegenUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,crefStr(name)) ; separator="\n")
+    (ders |> SIMVAR(__) hasindex i0 => equationNames_Partial(SimCodeCodegenUtil.computeDependencies(derivativEquations,name),modelNamePrefixStr,i0,CodegenUtil.crefStr(name)) ; separator="\n")
 <<
 static void <%modelNamePrefixStr%>_function<%name%><%n%>(DATA *data, threadData_t *threadData, int i)
 {
@@ -9062,8 +9572,16 @@ template genericBranch(SimBranch branch, Context context, Text &preExp, Text &va
     let condition_ = match condition
       case SOME(cond) then <<if(<%daeExp(cond, context, &preExp, &varDecls, &varFrees, &auxFunction)%>)>>
       else ""
+    // the pre-statements of a body (e.g. a function call and its error check) must run in
+    // the branch, not before the whole if chain where they would run for every branch
     let body_ = (body |> (lhs, rhs) =>
-      <<<%daeExp(lhs, context, &preExp, &varDecls, &varFrees, &auxFunction)%> = <%daeExp(rhs, context, &preExp, &varDecls, &varFrees, &auxFunction)%>;>>
+      let &bodyPre = buffer ""
+      let lhs_ = daeExp(lhs, context, &bodyPre, &varDecls, &varFrees, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &bodyPre, &varDecls, &varFrees, &auxFunction)
+      <<
+      <%bodyPre%>
+      <%lhs_%> = <%rhs_%>;
+      >>
       ; separator="\n")
     <<
     <%condition_%>{
@@ -9091,9 +9609,9 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     let size_ = daeExp(size, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub); separator="\n")
     <<
-    int <%iter_%>_loc = tmp % <%size_%>;
-    int <%iter_%> = <%step_%> * <%iter_%>_loc + <%start_%>;
-    tmp /= <%size_%>;
+    int <%iter_%>_loc = tmp % (<%size_%>);
+    int <%iter_%> = (<%step_%>) * <%iter_%>_loc + (<%start_%>);
+    tmp /= (<%size_%>);
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
@@ -9161,7 +9679,7 @@ template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &
     let step_ = daeExp(step, context, &preExp, &varDecls, &varFrees, &auxFunction)
     let size_ = daeExp(size, context, &preExp, &varDecls, &varFrees, &auxFunction)
     <<
-    (<%iter_%>-<%start_%>)/<%step_%>+<%size_%>*(
+    (<%iter_%>-(<%start_%>))/(<%step_%>)+(<%size_%>)*(
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &varFrees, &auxFunction, &sub)

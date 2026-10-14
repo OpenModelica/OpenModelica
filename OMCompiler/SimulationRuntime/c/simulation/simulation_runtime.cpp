@@ -72,6 +72,7 @@
 #include "options.h"
 #include "simulation_runtime.h"
 #include "simulation_input_xml.h"
+#include "arrayIndex.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/results/simulation_result_rust.h"
 #include "simulation/solver/solver_main.h"
@@ -1088,6 +1089,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
   rt_tick(SIM_TIMER_INIT_XML);
   read_input_xml(data->modelData, data->simulationInfo, threadData);
+  /* derived sizes of resizable arrays from the start values, then the sizes
+   * again with them (read_input_xml computed them already without) */
+  if (data->callback->updateStructuralParameters) {
+    data->callback->updateStructuralParameters(data, threadData);
+    calculateAllScalarLength(data->modelData);
+  }
   rt_accumulate(SIM_TIMER_INIT_XML);
   data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
 

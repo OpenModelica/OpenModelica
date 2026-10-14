@@ -14,6 +14,7 @@ InStreamUnconnected.mo \
 StreamConcept_NoMedium_Total.mo \
 StreamUnbalancedConnector.mo \
 ActualStreamCodeGen.mos \
+ActualStreamIfBranch.mo \
 
 FAILINGTESTFILES=
 

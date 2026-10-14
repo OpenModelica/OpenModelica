@@ -152,14 +152,16 @@ impl SymSolver {
         } else {
             self.plain_step(ode, t_left, y, yp, target)?;
         }
-        let end = self.br.close(ode, t_left, target, &self.y_new)?;
+        let (end, accepted) = self.br.close(ode, t_left, target, &self.y_new, yp)?;
         let reached = end.unwrap_or(target);
         *t = reached;
         y[..self.n].copy_from_slice(self.br.right());
         // C's `updateContinuousSystem` right after the step. Both solvers also
         // difference a derivative into `localData[1]`, but the ring buffer rotates
         // this one over that before anything reads it.
-        ode.eval(reached, &y[..self.n], yp)?;
+        if !accepted {
+            ode.eval(reached, &y[..self.n], yp)?;
+        }
         Ok(match end {
             Some(troot) => StepEnd::Root(troot),
             None => StepEnd::Reached,

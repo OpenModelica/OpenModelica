@@ -14,8 +14,6 @@
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
 packageVersion := "4.1.0";
-// The model was renamed in MSL 4.0.0; the reference file kept its old name
-referenceFileName := "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar";
 
 modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
 modelName := $TypeName(Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar);
@@ -35,7 +33,6 @@ runScript(modelTesting);getErrorString();
 // "
 // ""
 // "4.1.0"
-// "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar"
 // OpenModelicaModelTesting.Kind.Instantiation
 // Modelica.Electrical.QuasiStatic.Polyphase.Examples.BalancingStar
 // {"voltageSource.plug_p.reference.gamma", "voltageSource.voltageSource[2].pin_p.reference.gamma", "voltageSource.voltageSource[3].pin_p.reference.gamma"}

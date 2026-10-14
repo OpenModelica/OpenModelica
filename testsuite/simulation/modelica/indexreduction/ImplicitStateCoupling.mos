@@ -5,7 +5,7 @@
 // suite: disabled
 // 
 
-loadModel(Modelica,{"3.2.1"});
+loadModel(Modelica,{"4.1.0"});
 loadFile("ImplicitStateCoupling.mo");
 
 simulate(ImplicitStateCoupling);

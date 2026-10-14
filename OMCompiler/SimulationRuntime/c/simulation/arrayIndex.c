@@ -34,6 +34,8 @@
 #include "arrayIndex.h"
 #include "../util/omc_error.h"
 
+#include <string.h>
+
 /**
  * @brief Allocate memory for index maps.
  *
@@ -126,28 +128,22 @@ void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
   // Variables
   simulationInfo->realVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerVarsReverseIndex = NULL;
-  // simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanVarsReverseIndex = NULL;
-  // simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringVarsReverseIndex = NULL;
-  // simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
 
   // Parameters
   simulationInfo->realParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerParamsReverseIndex = NULL;
-  // simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanParamsReverseIndex = NULL;
-  // simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringParamsReverseIndex = NULL;
-  // simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
-  // assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
 
   // Alias variables
   simulationInfo->realAliasReverseIndex = NULL;
@@ -435,41 +431,57 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
 }
 
 /**
- * @brief Write the name of one scalar element of a variable into `buffer`.
+ * @brief Write name of an element of an array variable.
  *
- * For an array variable the one-based subscripts of element `linear_address`
- * follow the name in one pair of brackets, e.g. "x[2,3]". A scalar variable
- * keeps its name.
+ * Uses the Modelica structured naming `"<name>[i,j,...]"` with 1-based
+ * indices. For scalar variables `name` is written.
  *
- * @param name           Name of the (array) variable.
- * @param dimension_info Dimensions of the variable.
- * @param linear_address Flattened (row-major) index of the element.
- * @param buffer         Destination buffer.
- * @param buffer_size    Size of `buffer` in bytes.
+ * A state derivative named `"der(<name>)"` gets `"der(<name>[i,j,...])"`, like
+ * in the result files, if `derivativeSubscriptInside` is set, and
+ * `"der(<name>)[i,j,...]"` otherwise.
+ *
+ * @param buffer                     Buffer to write into.
+ * @param buffer_size                Size of `buffer`.
+ * @param name                       Name of array variable.
+ * @param dimension_info             Dimensions of array variable, may be NULL for scalars.
+ * @param linear_address             Flattened (row-major) index of element.
+ * @param derivativeSubscriptInside  Put the subscripts of a state derivative inside `der()`.
+ * @return int                       Number of characters written, like snprintf.
  */
-void printScalarName(const char *name,
-                     DIMENSION_INFO *dimension_info,
-                     size_t linear_address,
-                     char *buffer,
-                     size_t buffer_size)
+int printArrayElementName(char *buffer,
+                          size_t buffer_size,
+                          const char *name,
+                          const DIMENSION_INFO *dimension_info,
+                          size_t linear_address,
+                          modelica_boolean derivativeSubscriptInside)
 {
-  size_t written;
-  size_t dim;
-  size_t *array_index;
+  int written;
+  size_t k, rem, stride, j;
+  size_t name_length = strlen(name);
+  const int isDerivative = derivativeSubscriptInside && name_length > 5 && strncmp(name, "der(", 4) == 0 && name[name_length - 1] == ')';
 
-  written = snprintf(buffer, buffer_size, "%s", name);
-  if (dimension_info->numberOfDimensions == 0) {
-    return;
+  if (dimension_info == NULL || dimension_info->numberOfDimensions == 0)
+  {
+    return snprintf(buffer, buffer_size, "%s", name);
   }
 
-  array_index = linearToMultiDimArrayIndex(dimension_info, linear_address);
-  for (dim = 0; dim < dimension_info->numberOfDimensions && written < buffer_size; dim++) {
-    written += snprintf(buffer + written, buffer_size - written, "%c%zu", dim == 0 ? '[' : ',', array_index[dim] + 1);
+  written = snprintf(buffer, buffer_size, "%.*s", (int)(isDerivative ? name_length - 1 : name_length), name);
+
+  rem = linear_address;
+  for (k = 0; k < dimension_info->numberOfDimensions; k++)
+  {
+    stride = 1;
+    for (j = k + 1; j < dimension_info->numberOfDimensions; j++)
+    {
+      stride *= (size_t)dimension_info->dimensions[j].start;
+    }
+    written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0,
+                        (k == 0) ? "[%zu" : ",%zu", rem / stride + 1);
+    rem = rem % stride;
   }
-  if (written < buffer_size) {
-    snprintf(buffer + written, buffer_size - written, "]");
-  }
-  free(array_index);
+  written += snprintf(buffer + written, written < (int)buffer_size ? buffer_size - written : 0, isDerivative ? "])" : "]");
+
+  return written;
 }
 
 /**
@@ -753,9 +765,15 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 {
   // Variables
   computeVarsReverseIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
+  computeVarsReverseIndex(modelData->integerVarsData, VAR_TYPE_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsReverseIndex);
+  computeVarsReverseIndex(modelData->booleanVarsData, VAR_TYPE_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsReverseIndex);
+  computeVarsReverseIndex(modelData->stringVarsData, VAR_TYPE_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsReverseIndex);
 
   // Parameters
   computeVarsReverseIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsReverseIndex);
+  computeVarsReverseIndex(modelData->integerParameterData, VAR_TYPE_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsReverseIndex);
+  computeVarsReverseIndex(modelData->booleanParameterData, VAR_TYPE_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsReverseIndex);
+  computeVarsReverseIndex(modelData->stringParameterData, VAR_TYPE_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsReverseIndex);
 }
 
 /**

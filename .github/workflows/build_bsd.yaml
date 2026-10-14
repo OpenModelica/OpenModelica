@@ -18,17 +18,17 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
           submodules: recursive
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
-    - uses: vmactions/freebsd-vm@v1
+    - uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
       with:
         usesh: true
         prepare: |
-          pkg install -y cmake git lang/gcc devel/llvm devel/qt6 openjdk21 devel/boost-all
+          pkg install -y cmake git lang/gcc devel/llvm devel/qt6 openjdk21
 
         run: |
           pwd

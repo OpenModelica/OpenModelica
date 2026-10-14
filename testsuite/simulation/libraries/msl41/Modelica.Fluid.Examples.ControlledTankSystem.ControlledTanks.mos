@@ -17,7 +17,26 @@ compareVars :=
    "tank1.level",
    "tank1.medium.T",
    "tank2.level",
-   "tank2.medium.T"
+   "tank2.medium.T",
+   "shut.on",
+   "shut.reset[1]",
+   "shut.reset[2]",
+   "start.on",
+   "start.reset[1]",
+   "start.reset[2]",
+   "stop.on",
+   "stop.reset[1]",
+   "stop.reset[2]",
+   "tankController.T1.enableFire",
+   "tankController.T2.enableFire",
+   "tankController.T3.enableFire",
+   "tankController.T4.enableFire",
+   "tankController.T5.enableFire",
+   "tankController.T6.enableFire",
+   "tankController.normal.T1.enableFire",
+   "tankController.normal.T2.enableFire",
+   "tankController.normal.T3.enableFire",
+   "tankController.normal.T4.enableFire"
 };
 
 runScript(modelTesting);getErrorString();
@@ -29,8 +48,8 @@ runScript(modelTesting);getErrorString();
 // "4.1.0"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
-// {"tank1.level", "tank1.medium.T", "tank2.level", "tank2.medium.T"}
-// Simulation options: startTime = 0.0, stopTime = 900.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks', options = '', outputFormat = 'mat', variableFilter = 'time|tank1.level|tank1.medium.T|tank2.level|tank2.medium.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"tank1.level", "tank1.medium.T", "tank2.level", "tank2.medium.T", "shut.on", "shut.reset[1]", "shut.reset[2]", "start.on", "start.reset[1]", "start.reset[2]", "stop.on", "stop.reset[1]", "stop.reset[2]", "tankController.T1.enableFire", "tankController.T2.enableFire", "tankController.T3.enableFire", "tankController.T4.enableFire", "tankController.T5.enableFire", "tankController.T6.enableFire", "tankController.normal.T1.enableFire", "tankController.normal.T2.enableFire", "tankController.normal.T3.enableFire", "tankController.normal.T4.enableFire"}
+// Simulation options: startTime = 0.0, stopTime = 900.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks', options = '', outputFormat = 'mat', variableFilter = 'time|tank1.level|tank1.medium.T|tank2.level|tank2.medium.T|shut.on|shut.reset.1.|shut.reset.2.|start.on|start.reset.1.|start.reset.2.|stop.on|stop.reset.1.|stop.reset.2.|tankController.T1.enableFire|tankController.T2.enableFire|tankController.T3.enableFire|tankController.T4.enableFire|tankController.T5.enableFire|tankController.T6.enableFire|tankController.normal.T1.enableFire|tankController.normal.T2.enableFire|tankController.normal.T3.enableFire|tankController.normal.T4.enableFire', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

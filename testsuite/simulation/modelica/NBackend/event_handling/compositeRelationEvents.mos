@@ -1,0 +1,40 @@
+// name: compositeRelationEvents
+// keywords: NewBackend
+// status: correct
+// Both relations of (p > 0 or v > 0.5) need their own stored relation with
+// hysteresis. Before, the whole condition was one unknown relation and the
+// inner relations had no hysteresis, which caused chattering (DLR DistrictHeating
+// ControlledHeatingLoop).
+
+loadString("
+  model compositeRelationEvents
+    Real v(start = 0, fixed = true);
+    Real p(start = 0, fixed = true);
+  equation
+    der(v) = 1 - v - 1e-3*p;
+    der(p) = if p > 0 or v > 0.5 then (v - 0.5)*1e3 else 0;
+  end compositeRelationEvents;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+simulate(compositeRelationEvents, stopTime = 5); getErrorString();
+regexBool(readFile("compositeRelationEvents_05evt.c"), "UNKNOWN Relation");
+val(v, 5);
+val(p, 5);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "compositeRelationEvents_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'compositeRelationEvents', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// false
+// 0.4628084575124334
+// 566.8831941073565
+// endResult

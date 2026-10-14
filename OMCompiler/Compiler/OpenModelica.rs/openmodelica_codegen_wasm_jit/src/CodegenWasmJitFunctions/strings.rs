@@ -145,7 +145,7 @@ pub(super) fn emit_str_literal(ctx: &mut FnCtx, bytes: &[u8]) -> Result<()> {
 /// without the log line.
 pub(super) fn emit_reinit_note(ctx: &mut FnCtx, stateVar: &DAE::ComponentRef) -> Result<()> {
     let Ok(key) = sim_cref_key(stateVar) else { return Ok(()) };
-    let Some(slot) = ctx.sim()?.vars.get(&key).copied() else { return Ok(()) };
+    let Some(slot) = ctx.sim()?.vars.get(&key) else { return Ok(()) };
     if slot.wty != WTy::F64 {
         return Ok(());
     }

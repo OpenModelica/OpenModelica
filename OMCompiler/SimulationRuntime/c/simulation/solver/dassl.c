@@ -24,6 +24,8 @@
  * OSMC-PL.
  *
  */
+#include <float.h>
+#include <math.h>
 #include <string.h>
 #include <setjmp.h>
 #include <time.h>
@@ -50,6 +52,7 @@
 #include "dassl.h"
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
+#define DASSL_FIRST_STEP_RESTARTS 3
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,6 +132,7 @@ void  DDASKR(
 );
 
 static int continue_DASSL(int* idid, double* tolarence);
+static int dasslStuck(DASSL_DATA* dasslData, double t);
 
 /* function for calculating state values on residual form */
 static int functionODE_residual(double *t, double *y, double *yd, double* cj,
@@ -163,7 +167,7 @@ void dassl_setNominals(DATA* data, DASSL_DATA *dasslData)
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
       ix = &data->simulationInfo->realVarsReverseIndex[i];
       var = &data->modelData->realVarsData[ix->array_idx];
-      printScalarName(var->info.name, (DIMENSION_INFO*) &var->dimension, ix->dim_idx, name, sizeof(name));
+      printArrayElementName(name, sizeof(name), var->info.name, &var->dimension, ix->dim_idx, FALSE);
       infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, name, dasslData->atol[i]);
     }
   }
@@ -218,6 +222,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   assertStreamPrint(threadData, 0 != dasslData->info,"out of memory");
 
   dasslData->idid = 0;
+  dasslData->tinySteps = 0;
 
   dasslData->ysave = (double*) malloc(N*sizeof(double));
   dasslData->delta_hh = (double*) malloc(N*sizeof(double));
@@ -514,12 +519,14 @@ int printJacobianMatrix(int logLevel, const char* name, double* matrix, DATA* da
 int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
+  double tStepStart = 0;
   int i = 0;
   unsigned int ui = 0;
   int retVal = 0;
   int saveJumpState;
   static unsigned int dasslStepsOutputCounter = 1;
   int return_from_small_step = 0;
+  int firstStepRestarts = 0;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -577,6 +584,19 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     tout = solverInfo->currentTime + solverInfo->currentStepSize;
   }
 
+  /* Never step past the next time event: what the model computes beyond it
+   * continues the left limit and is no part of the solution. */
+  if (data->simulationInfo->nextSampleEvent < DBL_MAX &&
+      (0 == dasslData->info[0] || data->simulationInfo->nextSampleEvent >= dasslData->rwork[3]))
+  {
+    dasslData->info[3] = 1;
+    dasslData->rwork[0] = fmax(data->simulationInfo->nextSampleEvent, tout);
+  }
+  else
+  {
+    dasslData->info[3] = 0;
+  }
+
   /* Check that tout is not less than timeValue
    * else will dassl get in trouble. If that is the case we skip the current step.
      Also check if step size is smaller than DASSL_STEP_EPS or DASSL_STEP_EPS times simulation interval */
@@ -612,12 +632,24 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       data->callback->input_function(data, threadData);
       if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
+      tStepStart = solverInfo->currentTime;
       DDASKR(dasslData->residualFunction, (int*) &dasslData->N,
               &solverInfo->currentTime, states, stateDer, &tout,
               dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
               dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
               (double*) (void*) dasslData->rpar, dasslData->ipar, callJacobian, dummy_precondition,
               dasslData->zeroCrossingFunction, (int*) &dasslData->ng, dasslData->jroot);
+      dasslData->info[7] = omc_flag[FLAG_INITIAL_STEP_SIZE] ? 1 : 0;
+
+      /* A step landing on TSTOP returns there even past TOUT; called again from
+       * the old T, DDASKR interpolates back to TOUT. */
+      if (dasslData->idid == 2 && solverInfo->currentTime > tout)
+      {
+        solverInfo->currentTime = tStepStart;
+        dasslData->idid = 1;
+        messageClose(OMC_LOG_DASSL);
+        continue;
+      }
 
       /* closing new step message */
       messageClose(OMC_LOG_DASSL);
@@ -638,6 +670,18 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         if (solverInfo->currentTime <= data->simulationInfo->stopTime)
           continue;
       }
+      else if(dasslData->idid == -7 && dasslData->iwork[10] == 0 && firstStepRestarts < DASSL_FIRST_STEP_RESTARTS)
+      {
+        /* DASKR gives up after ten corrector failures, each quartering H, so a
+         * first step needing a smaller H is never taken: restart from the H it
+         * reached (RWORK(3)). */
+        firstStepRestarts++;
+        infoStreamPrint(OMC_LOG_DASSL, 0, "The corrector could not converge on the first step. Restarting with initial step size %g.", dasslData->rwork[2]);
+        dasslData->info[0] = 0;
+        dasslData->info[7] = 1;
+        dasslData->idid = 1;
+        continue;
+      }
       else if(dasslData->idid < 0)
       {
         fflush(stderr);
@@ -646,7 +690,12 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         warningStreamPrint(OMC_LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
         break;
       }
-      else if(dasslData->idid == 5)
+      else if(dasslStuck(dasslData, solverInfo->currentTime))
+      {
+        retVal = -1;
+        break;
+      }
+      if(dasslData->idid == 5)
       {
         threadData->currentErrorStage = ERROR_EVENTSEARCH;
       }
@@ -725,6 +774,34 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   return retVal;
+}
+
+#define DASSL_STUCK_STEPS 1000
+
+/* A run of accepted steps that are each only a few hundred ulp of time long.
+ * DASKR accepts them, so without this the simulation never ends. */
+static int dasslStuck(DASSL_DATA* dasslData, double t)
+{
+  const double tiny = 1000 * DBL_EPSILON * fmax(fabs(t), 1.0);
+  const char *suppressed;
+
+  if (dasslData->rwork[6] >= tiny) {
+    dasslData->tinySteps = 0;
+    return 0;
+  }
+  if (0 == dasslData->tinySteps++) {
+    omc_clear_last_suppressed_error();
+  }
+  if (dasslData->tinySteps < DASSL_STUCK_STEPS) {
+    return 0;
+  }
+  errorStreamPrint(OMC_LOG_STDOUT, 1, "The integrator is stuck at time %.15g: its last %d steps were each shorter than %g, too short to move time forward. The model is probably singular or discontinuous here.", t, DASSL_STUCK_STEPS, tiny);
+  suppressed = omc_last_suppressed_error();
+  if (suppressed[0]) {
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "The last error a nonlinear solver recovered from: %s", suppressed);
+  }
+  messageClose(OMC_LOG_STDOUT);
+  return 1;
 }
 
 static int continue_DASSL(int* idid, double* atol)

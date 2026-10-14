@@ -1,2 +1,0 @@
-checkModel("Modelica.Fluid.Examples.Explanatory.MeasuringTemperature"); 
-exit();
