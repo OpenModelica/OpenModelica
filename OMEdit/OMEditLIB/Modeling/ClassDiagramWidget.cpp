@@ -133,7 +133,7 @@ ClassDiagramWidget::ClassDiagramWidget(const QString &className, QWidget *pParen
   connect(mpLayoutComboBox, SIGNAL(currentIndexChanged(int)), SLOT(refresh()));
   connect(mpDepthSpinBox, SIGNAL(valueChanged(int)), SLOT(refresh()));
   connect(mpShowModifiersCheckBox, SIGNAL(toggled(bool)), SLOT(refresh()));
-  mpClassDiagramView = new QWebEngineView;
+  mpClassDiagramView = new QWebEngineView(this);
   ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(mpClassDiagramView);
   mpClassDiagramView->setPage(pClassDiagramPage);
   connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
