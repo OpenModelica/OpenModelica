@@ -42,10 +42,17 @@
 
 #include <QObject>
 
+/*!
+ * \class DocumentationViewerTest
+ * \brief Tests that local documentation can load and execute remote scripts.
+ */
 class DocumentationViewerTest : public QObject
 {
   Q_OBJECT
 private slots:
+  /*!
+   * \brief Verifies that local documentation can load and execute a script served over localhost.
+   */
   void localDocumentationCanLoadRemoteScript();
 };
 
