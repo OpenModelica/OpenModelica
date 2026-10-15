@@ -79,6 +79,7 @@ QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.arrow *.csv *.fmu);;Visualization MAT(*.mat *.arrow);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
+QString Helper::drawioFileTypes = "draw.io Files (*.drawio)";
 int Helper::treeIndentation = 20;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;

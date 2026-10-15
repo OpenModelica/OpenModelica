@@ -291,7 +291,7 @@ void ClassDiagramWidget::saveAs()
   }
   QString name = StringHandler::getLastWordAfterDot(mClassName);
   QString fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveAs), NULL,
-                                                    tr("draw.io Files (*.drawio)"), NULL, "drawio", &name);
+                                                    Helper::drawioFileTypes, NULL, "drawio", &name);
   if (fileName.isEmpty()) {
     return;
   }

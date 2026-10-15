@@ -83,6 +83,7 @@ public:
   static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
+  static QString drawioFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
