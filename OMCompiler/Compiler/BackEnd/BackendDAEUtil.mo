@@ -2748,6 +2748,13 @@ algorithm
         */
         crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
         for cr in crefLst loop
+          /*
+            An algorithm assigns all of its outputs, but the traversal above
+            doesn't find the ones that are only assigned with a subscript it
+            can't evaluate, e.g. a[i+1] in a for loop. Add them the same way
+            as if they occurred on a left hand side.
+          */
+          res := adjacencyRowExp(Expression.crefExp(cr), vars, res, functionTree, inIndexType, isInitial);
           try
             (varslst, p) := BackendVariable.getVar(cr, vars);
             res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);

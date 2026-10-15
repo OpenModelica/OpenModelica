@@ -6,6 +6,7 @@ TESTFILES = \
 AlgorithmCondAssign1.mos \
 AlgorithmCondAssign2.mos \
 AlgorithmForInClass.mos \
+AlgorithmForSubscript.mos \
 algorithms.mos \
 AlgorithmSection.mos \
 AlgorithmSize.mos \
