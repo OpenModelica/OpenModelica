@@ -1039,6 +1039,10 @@ algorithm
       case (e1, e2) guard Expression.isZero(e1)
         then NONE();
 
+      // the time derivative of an output, der(x)
+      case (e1 as DAE.CALL(path=Absyn.IDENT("der")), e2)
+        then SOME(DAE.STMT_ASSIGN(Expression.typeof(e1), e1, e2, source));
+
   end match;
 end makeAssignmentfromTuple;
 

@@ -2087,6 +2087,8 @@ algorithm
       true := isVarExplicitSolvable(enhancedRow(inME, indexEq), indexVar);
       var := BackendVariable.getVarAt(inVars, indexVar);
       eqn := BackendEquation.get(inEqns, indexEq);
+      // an algorithm cannot be solved for one of its variables
+      true := BackendEquation.isNotAlgorithm(eqn);
 
       cref := BackendVariable.varCref(var);
       type_ := BackendVariable.varType(var);
