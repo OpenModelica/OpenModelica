@@ -15,21 +15,32 @@ CMakeLists.txt @AnHeuermann
 *.cmake.in @AnHeuermann
 /cmake/ @AnHeuermann
 
+# Continuous Integration / Continuous Deployment
+# /Jenkinsfile
+# /.CI/
+
 # Compiler: frontend
-# /OMCompiler/Compiler/NFFrontEnd/
-# /OMCompiler/Compiler/FrontEnd/
+/OMCompiler/Compiler/NFFrontEnd/ @perost
+/OMCompiler/Compiler/FrontEndCpp/ @perost
+/OMCompiler/Compiler/FrontEnd/ @perost
 
 # Compiler: backend
-# /OMCompiler/Compiler/NBackEnd/
+/OMCompiler/Compiler/NBackEnd/ @kabdelhak
 # /OMCompiler/Compiler/BackEnd/
 
 # Compiler: code generation
-# /OMCompiler/Compiler/NSimCode/
+/OMCompiler/Compiler/NSimCode/ @kabdelhak
 # /OMCompiler/Compiler/SimCode/
-# /OMCompiler/Compiler/Template/
+/OMCompiler/Compiler/Template/ @sjoelund
+
+# Compiler: Rust
+/OMCompiler/Compiler/OpenModelica.rs/ @sjoelund
+
+# Compiler: bootstrapping
+/OMCompiler/Compiler/boot/ @sjoelund
 
 # Compiler: scripting API
-# /OMCompiler/Compiler/Script/
+/OMCompiler/Compiler/Script/ @perost
 
 # Compiler: C API
 /OMCompiler/Compiler/omcCAPI/ @AnHeuermann
@@ -37,10 +48,17 @@ CMakeLists.txt @AnHeuermann
 # C simulation runtime
 # /OMCompiler/SimulationRuntime/c/
 
-# C simulation runtime: integrators
+# C simulation runtime: MOO (dynamic optimization)
+/OMCompiler/SimulationRuntime/c/moo/ @linuslangenkamp
+
+# C simulation runtime: SUNDIALS integrators
 /OMCompiler/SimulationRuntime/c/simulation/solver/cvode_solver.* @AnHeuermann
 /OMCompiler/SimulationRuntime/c/simulation/solver/ida_solver.* @AnHeuermann
-# /OMCompiler/SimulationRuntime/c/simulation/solver/gbode*
+/OMCompiler/SimulationRuntime/c/simulation/solver/kinsol* @AnHeuermann
+/OMCompiler/SimulationRuntime/c/simulation/solver/sundials_* @AnHeuermann
+
+# C simulation runtime: GBODE integrator
+/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @phannebohm
 
 # C++ simulation runtime
 # /OMCompiler/SimulationRuntime/cpp/
@@ -48,11 +66,14 @@ CMakeLists.txt @AnHeuermann
 # FMI
 /OMCompiler/SimulationRuntime/fmi/ @AnHeuermann
 
+# OMSimulator (submodule; no trailing slash so the submodule pointer itself matches)
+/OMSimulator @arun3688
+
 # OMEdit
-# /OMEdit/
+/OMEdit/ @adeas31
 
 # OMPlot
-# /OMPlot/
+/OMPlot/ @adeas31
 
 # OMNotebook
 # /OMNotebook/
