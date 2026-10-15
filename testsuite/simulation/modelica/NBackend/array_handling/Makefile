@@ -25,6 +25,7 @@ arrayConnectRooted.mos \
 entwinedOrder.mos \
 resizableOverride.mos \
 resizableOverrideDerived.mos \
+resizableAliasStart.mos \
 resizablePartialLoops.mos \
 resizableConnectArrays.mos \
 resizableInputs.mos \
