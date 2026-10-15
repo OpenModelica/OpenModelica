@@ -58,7 +58,7 @@ CMakeLists.txt @AnHeuermann
 /OMCompiler/SimulationRuntime/c/simulation/solver/sundials_* @AnHeuermann
 
 # C simulation runtime: GBODE integrator
-/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp 
 
 # C++ simulation runtime
 # /OMCompiler/SimulationRuntime/cpp/
