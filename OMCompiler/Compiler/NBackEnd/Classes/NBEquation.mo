@@ -3038,7 +3038,7 @@ public
 
     function singleSlice
       input Pointer<Equation> eqn_ptr                             "equation to slice";
-      input Integer scal_idx                                      "zero based scalar index";
+      input Integer scal_idx                                      "zero based scalar index (row major w.r.t. the frames, like the adjacency)";
       input list<Integer> sizes                                   "frame sizes (innermost first)";
       input ComponentRef cref_to_solve                            "the cref to solve the body for (EMPTY() for already solved)";
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
@@ -3054,8 +3054,8 @@ public
 
         // slice the equation
         case FOR_EQUATION() algorithm
-          // get the frame location indices from single index
-          location := Slice.indexToLocation(scal_idx, sizes);
+          // get the frame location indices from single index, outermost frame first like the iterator
+          location := listReverse(Slice.indexToLocation(scal_idx, listReverse(sizes)));
           // create the replacement rules for this location
           Iterator.createLocationReplacements(eqn.iter, listArray(location), replacements);
           // replace iterators, on a copy because map updates nested equation pointers in place

@@ -4,6 +4,7 @@ TESTFILES = \
 reductionSkips.mos \
 nestedForConnectRange.mos \
 forNestedElseIf.mos \
+forSliceRowMajor.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 algorithmForSubscript.mos \
