@@ -254,6 +254,8 @@ public:
   static QString findUsageTip;
   static QString classDiagram;
   static QString classDiagramTip;
+  static QString crmlDiagram;
+  static QString crmlDiagramTip;
   static QString duplicate;
   static QString duplicateTip;
   static QString unloadClass;

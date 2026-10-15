@@ -2814,6 +2814,10 @@ void LibraryTreeView::createActions()
     mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
     mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
     connect(mpTranslateAsCRMLAction, SIGNAL(triggered()), SLOT(translateAsCRML()));
+    // CRML Diagram Action
+    mpCRMLDiagramAction = new QAction(Helper::crmlDiagram, this);
+    mpCRMLDiagramAction->setStatusTip(Helper::crmlDiagramTip);
+    connect(mpCRMLDiagramAction, SIGNAL(triggered()), SLOT(showCRMLDiagram()));
   }
   // run Script Action
   mpRunScriptAction = new QAction(QIcon(":/Resources/icons/runScript.svg"), Helper::runScript, this);
@@ -3188,6 +3192,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isCRMLFile()) {
             menu.addAction(mpTranslateCRMLAction);
             menu.addAction(mpTranslateAsCRMLAction);
+#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
+            // The draw.io viewer needs QtWebEngine, see ClassDiagramWidget.
+            menu.addAction(mpCRMLDiagramAction);
+#endif
             menu.addSeparator();
           } else if (pLibraryTreeItem->isMOSFile()) {
             menu.addAction(mpRunScriptAction);
@@ -3579,6 +3587,18 @@ void LibraryTreeView::showClassDiagram()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->showClassDiagramWidget(pLibraryTreeItem->getNameStructure());
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::showCRMLDiagram
+ * Shows the class-object diagram of the selected CRML file.
+ */
+void LibraryTreeView::showCRMLDiagram()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->showClassDiagramWidget(pLibraryTreeItem->getNameStructure(), true);
   }
 }
 
