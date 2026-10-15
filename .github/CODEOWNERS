@@ -20,18 +20,26 @@ CMakeLists.txt @AnHeuermann
 # /.CI/
 
 # Compiler: frontend
-/OMCompiler/Compiler/NFFrontEnd/ @perost
+# Only the core NF files, smaller changes elsewhere get a manual review request.
+/OMCompiler/Compiler/NFFrontEnd/NFFlatten.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInst.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInstNode.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFLookup.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFTyping.mo @perost
 /OMCompiler/Compiler/FrontEndCpp/ @perost
-/OMCompiler/Compiler/FrontEnd/ @perost
+# /OMCompiler/Compiler/FrontEnd/
 
 # Compiler: backend
 /OMCompiler/Compiler/NBackEnd/ @kabdelhak
+/OMCompiler/Compiler/NBackEnd/Modules/2_Pre/NBEvents.mo @kabdelhak @phannebohm
+/OMCompiler/Compiler/NBackEnd/Modules/3_Post/NBEvaluation.mo @kabdelhak @phannebohm
 # /OMCompiler/Compiler/BackEnd/
 
 # Compiler: code generation
 /OMCompiler/Compiler/NSimCode/ @kabdelhak
 # /OMCompiler/Compiler/SimCode/
 /OMCompiler/Compiler/Template/ @sjoelund
+/OMCompiler/Compiler/Template/CodegenC.tpl @sjoelund @phannebohm
 
 # Compiler: Rust
 /OMCompiler/Compiler/OpenModelica.rs/ @sjoelund
@@ -47,6 +55,9 @@ CMakeLists.txt @AnHeuermann
 
 # C simulation runtime
 # /OMCompiler/SimulationRuntime/c/
+/OMCompiler/SimulationRuntime/c/simulation/eval_dep.* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/jacobian_util.* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/solver/events.* @phannebohm
 
 # C simulation runtime: MOO (dynamic optimization)
 /OMCompiler/SimulationRuntime/c/moo/ @linuslangenkamp
