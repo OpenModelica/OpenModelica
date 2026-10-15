@@ -2446,8 +2446,10 @@ algorithm
     dimensions := Expression.dimensionsSizes(dims);
     outEqsLst := BackendDAE.ARRAY_EQUATION(dimensions, e1, e2, source, inEqAttributes,SOME(recordSize))::iAcc;
   elseif (Expression.isArray(e1) or Expression.isMatrix(e1)) and (Expression.isArray(e2) or Expression.isMatrix(e2)) then
-    ea1 := Expression.flattenArrayExpToList(e1);
-    ea2 := Expression.flattenArrayExpToList(e2);
+    // Expand array elements that aren't array expressions to get the scalar
+    // elements, e.g. the x in {x} = {{1, 2, 3}}.
+    ea1 := Expression.flattenArrayExpToList(Expression.extendArrExp(e1));
+    ea2 := Expression.flattenArrayExpToList(Expression.extendArrExp(e2));
     outEqsLst := generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
   else
     dimensions := Expression.dimensionsSizes(dims);
