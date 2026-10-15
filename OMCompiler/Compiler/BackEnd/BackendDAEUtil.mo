@@ -5674,6 +5674,8 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
+        // constant outputs, (1.0, a) = f(x), solve for nothing
+        explst := List.filterOnFalse(explst, Expression.isConst);
         explst := List.flatten(List.map1(explst, Expression.generateCrefsExpLstFromExp, NONE()));
         crlst := List.map(explst, Expression.expCref);
         crlst := List.flatten(List.map1(crlst, ComponentReference.expandCref, true));
