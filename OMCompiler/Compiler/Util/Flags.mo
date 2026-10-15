@@ -578,6 +578,8 @@ constant DebugFlag TEARING_COST = DEBUG_FLAG(200, "tearingCost", false,
   "Dumps the estimated cost of every torn system against solving it untorn.");
 constant DebugFlag OMEDIT = DEBUG_FLAG(201, "omedit", false,
   "Set by OMEdit, so the compiler can emit output only a GUI consumes.");
+constant DebugFlag FMI_ADJOINT_PARAMETERS = DEBUG_FLAG(202, "fmiAdjointParameters", false,
+  "Includes retained Real parameters among the independent variables of FMI 3.0 adjoint derivatives in the new backend. Evaluated and structural parameters are not included.");
 
 public
 // CONFIGURATION FLAGS

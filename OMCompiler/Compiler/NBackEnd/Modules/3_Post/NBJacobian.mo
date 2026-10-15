@@ -171,7 +171,8 @@ public
   function fmiAdjoint
     "Generate the FMI reverse-mode Jacobian, J^T, for fmi3GetAdjointDerivative.
      Its seed/result axes are deliberately different from the simulation ODE
-     Jacobian: FMI knowns are continuous states plus top-level Real inputs;
+    Jacobian: FMI knowns are continuous states plus top-level Real inputs
+    and, with fmiAdjointParameters, retained Real parameters;
      FMI unknowns are state derivatives plus top-level Real outputs. All other
      continuous partition unknowns remain partial candidates so the reverse
      sweep can propagate through intermediate algebraic variables."
@@ -180,7 +181,8 @@ public
   protected
     BVariable.VarData varData;
     VariablePointers fmiKnowns, fmiUnknowns, partialCandidates;
-    list<Pointer<Variable>> stateVars, derivativeVars, inputVars, outputVars;
+    list<Pointer<Variable>> stateVars, derivativeVars, inputVars, outputVars, parameterVars;
+    Boolean includeParameters = Flags.isSet(Flags.FMI_ADJOINT_PARAMETERS);
     list<StrongComponent> comps = {};
     list<Partition.Partition> partitions;
     EquationPointers equations;
@@ -198,10 +200,12 @@ public
         derivativeVars := list(BVariable.getDerivativeOfState(stateVar) for stateVar in stateVars);
         inputVars := list(var for var guard(BVariable.isReal(var)) in VariablePointers.toList(varData.top_level_inputs));
         outputVars := list(var for var guard(BVariable.isRealOutput(var)) in VariablePointers.toList(varData.variables));
+        parameterVars := if includeParameters then
+          list(var for var guard(BVariable.isReal(var)) in VariablePointers.toList(varData.parameters)) else {};
         fmiKnowns := VariablePointers.fromList(
           listAppend(
             stateVars,
-            inputVars),
+            listAppend(inputVars, parameterVars)),
           varData.states.scalarized);
         fmiUnknowns := VariablePointers.fromList(
           listAppend(
@@ -226,8 +230,9 @@ public
           jacobian := NONE();
         else
           equations := EquationPointers.fromList(List.flatten(list(StrongComponent.getEquations(comp) for comp in comps)));
+          // Parameters are constant in time, but independent for these partial derivatives.
           jacobian := jacobianSymbolicAdjoint("FMIDER", JacobianType.FMI, fmiKnowns,
-            partialCandidates, equations, SOME(listArray(comps)), NONE(), bdae.funcMap, false);
+            partialCandidates, equations, SOME(listArray(comps)), NONE(), bdae.funcMap, includeParameters);
           /* jacobianSymbolicAdjoint uses an internal _ADJ suffix for generated
            * variables. The matrix name must match the FMI callback symbols. */
           fmiJacobian := match Util.getOption(jacobian)

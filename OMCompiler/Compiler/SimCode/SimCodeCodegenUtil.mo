@@ -2476,6 +2476,33 @@ algorithm
   end match;
 end stackArrayLength;
 
+public function fmi3AdjointKnowns
+  "The primal knowns with their actual FMIDERADJ result indices. Use the
+   Jacobian map rather than assuming states/inputs/parameters have the same
+   order or size as the exported variable lists. An absent result is not a
+   supported independent variable (in particular, parameters by default)."
+  input SimCode.SimCode simCode;
+  output list<SimCodeVar.SimVar> knowns = {};
+protected
+  HashTableCrefSimVar.HashTable ht;
+  SimCodeVar.SimVar known;
+algorithm
+  for jac in simCode.jacobianMatrices loop
+    if jac.matrixName == "FMIDERADJ" and isSome(jac.crefsHT) then
+      ht := Util.getOption(jac.crefsHT);
+      for v in BaseHashTable.hashTableValueList(ht) loop
+        if valueEq(v.varKind, BackendDAE.JAC_VAR()) and v.index >= 0 then
+          known := v;
+          known.name := ComponentReference.crefStripFirstIdent(v.name);
+          knowns := known :: knowns;
+        end if;
+      end for;
+      knowns := List.sort(knowns, simVarIndexGt);
+      return;
+    end if;
+  end for;
+end fmi3AdjointKnowns;
+
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
    Jacobian only has the elements that depend on the seeds; the others are zero."

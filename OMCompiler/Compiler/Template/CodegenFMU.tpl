@@ -342,6 +342,7 @@ case SIMCODE(__) then
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
+  int mapAdjointReference2KnownNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr);
@@ -1307,6 +1308,15 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
         switch (vr) {
           <%outputVars |> var hasindex index0 =>  match var case SIMVAR(name=name, type_=T_REAL()) then
           'case <%lookupVR(name, simCode)%>: return <%index0%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    /* The adjoint result axis includes exactly the generated independent variables. */
+    int mapAdjointReference2KnownNumber(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%SimCodeCodegenUtil.fmi3AdjointKnowns(simCode) |> SIMVAR(name=name, index=index) =>
+          'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
           default:
             return -1;
         }

@@ -2100,15 +2100,18 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
    * counterpart of omcGetDirectionalDerivative: the axes are transposed, i.e.
    * the seed is over the "unknowns" (state derivatives + outputs, the
    * `dependent` axis of the forward Jacobian) and the resulting sensitivity is
-   * over the "knowns" (states + inputs, the `independent` axis of the forward
-   * Jacobian). */
-  int independent = modelData->nStates+modelData->nOutputVars;
-  int dependent = modelData->nStates+modelData->nInputVars;
+  * over the "knowns" (states + inputs + optional Real parameters, the
+  * `independent` axis of the forward Jacobian). */
+  int independent;
+  int dependent;
 
   if (invalidState(comp, "omcGetAdjointDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi3Error;
   if (!comp->_has_jacobian_adjoint)
     return unsupportedFunction(comp, "omcGetAdjointDerivative");
+
+  independent = comp->fmiDerJacAdj->sizeCols;
+  dependent = comp->fmiDerJacAdj->sizeRows;
 
   FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "omcGetAdjointDerivative")
 
@@ -2128,7 +2131,7 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
      states first and then derivatives.
      This is true for the actual OMC FMUs.
      The seed/sensitivity value references are mapped with
-     mapOutputReference2OutputNumber and mapInputReference2InputNumber functions
+    mapOutputReference2OutputNumber and mapAdjointReference2KnownNumber functions
   */
   /* Adjoint equations accumulate into resultVars and may use tmpVars as
    * accumulators for intermediate adjoints. Clear both on every call,
@@ -2175,14 +2178,10 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
   fmudata->callback->functionJacFMIDERADJ_column(fmudata, td, comp->fmiDerJacAdj, NULL);
   resetThreadData(comp);
 
-  /* Write the results to dvKnownSensitivity (over "knowns" = states + inputs) */
+  /* Write results over exactly the knowns included in the generated Jacobian.
+   * Do not offset a failed input lookup: -1 + nStates can be a valid state. */
   for (i=0;i<nKnown; i++) {
-    int idx = vKnown_ref[i];
-    /* if idx is > nStates it's an input so we need a mapping */
-    if (idx >= modelData->nStates){
-      idx = mapInputReference2InputNumber(vKnown_ref[i]);
-      idx = modelData->nStates + idx;
-    }
+    int idx = mapAdjointReference2KnownNumber(vKnown_ref[i]);
     if (vrOutOfRange(comp, "omcGetAdjointDerivative sensitivity index", idx, dependent))
       return fmi3Error;
     dvKnownSensitivity[i] = comp->fmiDerJacAdj->resultVars[idx];
