@@ -40,6 +40,7 @@ const NLS_FAILED: c_int = 0;
 const NLS_SOLVED: c_int = 1;
 
 /// C's `enum JACOBIAN_MATRIX_FORMAT` (simulation_data.h).
+const OMC_MATRIX_DENSE: c_int = 0;
 const OMC_MATRIX_SPARSE: c_int = 1;
 
 /// The per-system state C spreads over `oldValueList` and its solver data.
@@ -525,6 +526,15 @@ pub fn initialize_nonlinear_systems(data: *mut DATA, thread_data: *mut threadDat
             sys.sparsePattern = core::ptr::null_mut();
             unsafe { crate::support::omc_flag[crate::abi::FLAG_NO_SCALING] = 1 };
             openmodelica_solvers::solverflags::set_no_scaling();
+        }
+
+        // A system sized at run time (resizable arrays) has its pattern only now;
+        // the codegen could not count its nonzeros and chose dense. Choose as
+        // `SimCodeCodegenUtil.useSparseSolver` does for a known size.
+        if sys.updateSize.is_some() && !sys.sparsePattern.is_null() && size > 0 && !adaptive_homotopy(data, sys) {
+            let nnz = unsafe { (*sys.sparsePattern).nnz } as usize;
+            sys.matrixFormat =
+                if solverflags::nls_use_sparse(size, nnz) { OMC_MATRIX_SPARSE } else { OMC_MATRIX_DENSE };
         }
 
         register_names(data, sys);

@@ -476,6 +476,14 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
     }
   }
 
+  /* A system sized at run time (resizable arrays) has its pattern only now; the
+   * codegen could not count its nonzeros and chose dense. Choose as
+   * SimCodeCodegenUtil.useSparseSolver does for a known size. */
+  if (nonlinsys->updateSize && nonlinsys->sparsePattern && size > 0 && !adaptiveHomotopy(data, nonlinsys)) {
+    double density = (double) nonlinsys->sparsePattern->nnz / ((double) size * (double) size);
+    nonlinsys->matrixFormat = (density < 0.1 || size > 1000) ? OMC_MATRIX_SPARSE : OMC_MATRIX_DENSE;
+  }
+
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* csv data call stats*/
   if (data->simulationInfo->nlsCsvInfomation)
