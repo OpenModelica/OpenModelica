@@ -316,7 +316,8 @@ list(JOIN SOURCE_FMU_MIXED_FILES_LIST_QUOTED ",\n                               
 ######################################################################################################################
 ## CVODE files
 set(SOURCE_FMU_CVODE_RUNTIME_FILES_LIST simulation/solver/cvode_solver.c
-                                        simulation/solver/sundials_error.c)
+                                        simulation/solver/sundials_error.c
+                                        simulation/solver/sundials_util.c)
 
 foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
   list(APPEND SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")

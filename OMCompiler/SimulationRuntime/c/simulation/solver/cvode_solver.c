@@ -47,10 +47,8 @@
 
 #include "dassl.h"
 #include "epsilon.h"
-#ifndef OMC_FMI_RUNTIME
 #include "../jacobian_util.h"
 #include "sundials_util.h"
-#endif
 
 
 #ifdef WITH_SUNDIALS
@@ -222,7 +220,6 @@ int cvodeRightHandSideODEFunction(sunrealtype time, N_Vector y, N_Vector ydot, v
 }
 
 
-#ifndef OMC_FMI_RUNTIME
 /**
  * @brief Colored numerical Jacobian J = df/dy in the sparse matrix Jac.
  *
@@ -373,7 +370,6 @@ static int callSparseJacobian(double t, N_Vector y, N_Vector fy,
 
   return retVal;
 }
-#endif /* OMC_FMI_RUNTIME */
 
 /**
  * @brief Root function for CVODE
@@ -543,12 +539,6 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, sunbooleanty
   infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE use equidistant time grid %s", config->internalSteps ? "NO" : "YES");
 
   /* Set jacobian method, see cvode_solver_initial */
-#ifdef OMC_FMI_RUNTIME
-  if (omc_flag[FLAG_JACOBIAN])
-  {
-    warningStreamPrint(OMC_LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using internal dense Jacobian of CVODE.", omc_flagValue[FLAG_JACOBIAN]);
-  }
-#endif
   config->jacobianMethod = INTERNALNUMJAC;
 
   /* Maximum absolute step size */
@@ -651,11 +641,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   int flag;
   int i;
   double *abstol_tmp;
-#ifndef OMC_FMI_RUNTIME
   const SPARSE_PATTERN *cscPattern;
-#else
-  JACOBIAN *jacobian;
-#endif
 
   /* Log cvode_initial */
   infoStreamPrint(OMC_LOG_SOLVER_V, 0, "### Start initialize of CVODE solver ###");
@@ -715,7 +701,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Set linear solver used by CVODE: KLU over the ODE Jacobian's sparsity pattern,
    * dense with CVODE's internal difference quotient without one. */
   cvodeData->y_linSol = N_VNew_Serial(cvodeData->N, cvodeData->sunctx);
-#ifndef OMC_FMI_RUNTIME
   cvodeData->config.jacobianMethod = getRequestedJacobianMethod(threadData);
   cscPattern = getJacobianCscPattern(initSymbolicOdeJacobian(data, threadData, &cvodeData->config.jacobianMethod, FALSE));
   if (cvodeData->config.jacobianMethod == SYMJAC)
@@ -730,10 +715,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   {
     cvodeData->config.jacobianMethod = INTERNALNUMJAC;
   }
-#else
-  jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-#endif
 
   if (cvodeData->config.jacobianMethod == INTERNALNUMJAC)
   {
@@ -747,7 +728,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
   }
-#ifndef OMC_FMI_RUNTIME
   else
   {
     /* Room for the diagonal CVODE's I - gamma*J adds */
@@ -767,7 +747,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using sparse linear solver SUNLinSol_KLU.");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Use sparse Jacobian method %s", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
   }
-#endif
 
   /* Set optional non-linear solver module */
   switch (cvodeData->config.iter)
@@ -900,17 +879,17 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
   N_VDestroy_Serial(cvodeData->y_linSol);
   SUNMatDestroy(cvodeData->J);
   SUNLinSolFree(cvodeData->linSol);
-#ifndef OMC_FMI_RUNTIME
   if (cvodeData->fProbe)
   {
     N_VDestroy_Serial(cvodeData->fProbe);
   }
   free(cvodeData->ysave);
   free(cvodeData->delta_hh);
+#ifndef OMC_FMI_RUNTIME
   free(cvodeData->yStart);
   free(cvodeData->fStart);
-  freeSymbolicOdeJacobian(cvodeData->simData->data);
 #endif
+  freeSymbolicOdeJacobian(cvodeData->simData->data);
 
   /* Free non-linear solver data */
   N_VDestroy_Serial(cvodeData->y_nonLinSol);
