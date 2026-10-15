@@ -17,6 +17,7 @@ jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 resizableSparsity.mos \
+resizableSparsityArrayEqn.mos \
 resizableConnectChain.mos \
 resizableConnectIf.mos \
 arrayConnectOutside.mos \
