@@ -1087,6 +1087,9 @@ RedeclareClass1.mo \
 RedeclareClass2.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
+RedeclareComponentType1.mo \
+RedeclareComponentType2.mo \
+RedeclareComponentType3.mo \
 RedeclareConnectorType1.mo \
 RedeclareConnectorType2.mo \
 RedeclareDim1.mo \

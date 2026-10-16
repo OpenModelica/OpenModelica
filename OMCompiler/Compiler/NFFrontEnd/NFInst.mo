@@ -2324,6 +2324,10 @@ algorithm
           fail();
         end if;
 
+        if not InstContext.inInstanceAPI(context) then
+          checkRedeclaredComponentType(orig_comp, rdcl_comp, rdcl_node);
+        end if;
+
         // Take the binding from the outer modifier, the redeclare, or the
         // original component, in that order of priority.
         binding := Modifier.binding(outerMod);
@@ -2362,6 +2366,81 @@ algorithm
 
   InstNode.updateComponent(new_comp, InstNode.resolveInner(redeclaredNode));
 end redeclareComponent;
+
+function checkRedeclaredComponentType
+  "Checks that the type of a redeclared component is compatible with the type
+   of the original component with regards to the basic types, i.e. a component
+   of a basic type can only be redeclared with the same basic type and a
+   component of a non-basic type can't be redeclared with a basic type."
+  input Component origComp;
+  input Component rdclComp;
+  input InstNode rdclNode;
+protected
+  Option<Type> orig_ty, rdcl_ty;
+  Boolean compatible;
+algorithm
+  orig_ty := redeclaredComponentBasicType(Component.classInstance(origComp));
+  rdcl_ty := redeclaredComponentBasicType(Component.classInstance(rdclComp));
+
+  compatible := match (orig_ty, rdcl_ty)
+    case (SOME(Type.REAL()), SOME(Type.REAL())) then true;
+    case (SOME(Type.INTEGER()), SOME(Type.INTEGER())) then true;
+    case (SOME(Type.BOOLEAN()), SOME(Type.BOOLEAN())) then true;
+    case (SOME(Type.STRING()), SOME(Type.STRING())) then true;
+    case (SOME(Type.CLOCK()), SOME(Type.CLOCK())) then true;
+    case (SOME(Type.ENUMERATION()), SOME(Type.ENUMERATION())) then true;
+    case (SOME(Type.COMPLEX()), SOME(Type.COMPLEX())) then true;
+    case (SOME(_), SOME(_)) then false;
+    // Only check types that are known to be either basic or non-basic.
+    else true;
+  end match;
+
+  if not compatible then
+    Error.addMultiSourceMessage(Error.REDECLARE_CLASS_NON_SUBTYPE,
+      {InstNode.typeName(rdclNode), InstNode.name(rdclNode)},
+      {InstNode.info(rdclNode), Component.info(origComp)});
+    fail();
+  end if;
+end checkRedeclaredComponentType;
+
+function redeclaredComponentBasicType
+  "Returns the basic type of a class if it's a basic type or derived from one,
+   a complex type if the class is known to not be a basic type, or NONE() if
+   the kind of type can't be determined."
+  input InstNode clsNode;
+  output Option<Type> ty;
+protected
+  Class cls;
+  array<InstNode> exts;
+algorithm
+  if not InstNode.isClass(clsNode) then
+    ty := NONE();
+    return;
+  end if;
+
+  cls := InstNode.getClass(clsNode);
+
+  ty := match cls
+    case Class.PARTIAL_BUILTIN(ty = Type.FUNCTION()) then NONE();
+    case Class.PARTIAL_BUILTIN()
+      then if Type.isScalarBuiltin(cls.ty) or Type.isComplex(cls.ty) then SOME(cls.ty) else NONE();
+    case Class.INSTANCED_BUILTIN(ty = Type.FUNCTION()) then NONE();
+    case Class.INSTANCED_BUILTIN()
+      then if Type.isScalarBuiltin(cls.ty) or Type.isComplex(cls.ty) then SOME(cls.ty) else NONE();
+    case Class.EXPANDED_DERIVED() then redeclaredComponentBasicType(cls.baseClass);
+    case Class.TYPED_DERIVED() then redeclaredComponentBasicType(cls.baseClass);
+
+    // A long class declaration of a type must extend a basic type.
+    case Class.EXPANDED_CLASS(restriction = Restriction.TYPE())
+      algorithm
+        exts := ClassTree.getExtends(cls.elements);
+      then
+        if arrayLength(exts) == 1 then redeclaredComponentBasicType(exts[1]) else NONE();
+
+    case Class.EXPANDED_CLASS() then SOME(Type.COMPLEX(InstNode.identityCell(clsNode), ComplexType.CLASS()));
+    else NONE();
+  end match;
+end redeclaredComponentBasicType;
 
 function checkOuterComponentMod
   "Prints an error message and fails if it gets an outer component with a modifier."
