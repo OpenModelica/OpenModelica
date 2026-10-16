@@ -14357,7 +14357,7 @@ protected function joinDirectoryAndFile
 algorithm
   if stringEmpty(directory) then
     path := file;
-  elseif StringUtil.endsWith(directory, Autoconf.pathDelimiter) or StringUtil.endsWith(directory, "\\") then
+  elseif StringUtil.endsWith(directory, "/") or StringUtil.endsWith(directory, "\\") then
     path := directory + file;
   else
     path := directory + Autoconf.pathDelimiter + file;
