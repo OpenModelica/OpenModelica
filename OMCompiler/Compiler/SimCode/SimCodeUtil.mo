@@ -14350,22 +14350,8 @@ algorithm
   end if;
 end msvcEnvironment;
 
-protected function joinDirectoryAndFile
-  input String directory;
-  input String file;
-  output String path;
-algorithm
-  if stringEmpty(directory) then
-    path := file;
-  elseif StringUtil.endsWith(directory, "/") or StringUtil.endsWith(directory, "\\") then
-    path := directory + file;
-  else
-    path := directory + "/" + file;
-  end if;
-end joinDirectoryAndFile;
-
 public function getCMakeVersion
-  "Get CMake version"
+  "Get CMake version, writing command output to logDirectory (which must end in a path delimiter)."
   input String pathToCMake = Autoconf.cmake;
   input String logDirectory = "./";
   output SemanticVersion.Version cmakeVersion;
@@ -14376,7 +14362,7 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  cmakeVersionLogFile := joinDirectoryAndFile(logDirectory, "systemCall_cmakeVersion.log");
+  cmakeVersionLogFile := logDirectory + "systemCall_cmakeVersion.log";
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     Error.addInternalError("Failed to get version from " + pathToCMake + ": " + System.readFile(cmakeVersionLogFile), sourceInfo());
