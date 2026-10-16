@@ -48,11 +48,13 @@ jobs:
           done
 
       - name: Upload the new assets
-        uses: pyTooling/Actions/releaser@c2282e4d63fb9f7b3e8f4c672b01d9dab7af22c3 # v6.7.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: nightly
-          files: ${{ github.event.repository.name }}-*nightly.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release upload nightly ${{ github.event.repository.name }}-*nightly.zip --clobber
+          # Move the nightly tag to the commit the assets were built from
+          gh api --method PATCH "repos/$GH_REPO/git/refs/tags/nightly" -f sha="$GITHUB_SHA" -F force=true
 
       - name: Check that the release has the new assets
         env:
