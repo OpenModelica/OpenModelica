@@ -14362,9 +14362,7 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  cmakeVersionLogFile := logDirectory +
-    (if stringEmpty(logDirectory) or StringUtil.endsWith(logDirectory, "/") or StringUtil.endsWith(logDirectory, "\\") then "" else Autoconf.pathDelimiter) +
-    "systemCall_cmakeVersion.log";
+  cmakeVersionLogFile := logDirectory + "systemCall_cmakeVersion.log";
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     Error.addInternalError("Failed to get version from " + pathToCMake + ": " + System.readFile(cmakeVersionLogFile), sourceInfo());
