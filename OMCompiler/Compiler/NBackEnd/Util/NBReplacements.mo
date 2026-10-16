@@ -256,6 +256,50 @@ public
     end if;
   end applySimpleCref;
 
+  function applySimpleStrongComponents
+    "Apply simple replacements to strong components"
+    input output array<StrongComponent> comps;
+    input VarData varData;
+    input UnorderedMap<ComponentRef, Expression> replacements;
+  protected
+    VariablePointers variables;
+    ComponentRef varName;
+    Expression replacement;
+    Pointer<Variable> replacement_var;
+  algorithm
+    // do nothing if replacements are empty
+    if UnorderedMap.isEmpty(replacements) then return; end if;
+
+    variables := VarData.getVariables(varData);
+
+    for i in 1:arrayLength(comps) loop
+      comps[i] := match comps[i]
+        local
+          StrongComponent comp;
+
+        case comp as StrongComponent.SINGLE_COMPONENT()
+          algorithm
+            varName := BVariable.getVarName(comp.var);
+
+            if UnorderedMap.contains(varName, replacements) then
+              replacement := UnorderedMap.getOrFail(varName, replacements);
+
+              replacement_var := match replacement
+                case Expression.CREF() then
+                  VariablePointers.getVarSafe(variables, replacement.cref);
+                else
+                  comp.var;
+              end match;
+
+              comp.var := replacement_var;
+            end if;
+        then comp;
+
+        else comps[i];
+      end match;
+    end for;
+  end applySimpleStrongComponents;
+
   function applySimpleVar
     "applys replacement on the variable binding expression"
     input output Variable var;
