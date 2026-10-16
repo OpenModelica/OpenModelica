@@ -15,7 +15,7 @@ equation
 end print_array_var_names;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C.old"); getErrorString();
+setCommandLineOptions("--newBackend --simCodeScalarize=false --simCodeTarget=C"); getErrorString();
 
 buildModel(print_array_var_names, stopTime=0.1, numberOfIntervals=1); getErrorString();
 system("./print_array_var_names -lv=LOG_SOLVER_V | grep -E ' -> |\\(pre: ' > print_array_var_names_solver.log"); getErrorString();

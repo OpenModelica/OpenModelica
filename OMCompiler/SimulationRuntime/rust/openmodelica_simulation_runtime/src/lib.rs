@@ -1,4 +1,4 @@
-//! `libSimulationRuntimeRust`: the simulation runtime behind `--simCodeTarget=C`.
+//! `libSimulationRuntimeRust`: the simulation runtime behind `--simCodeTarget=C+Rust`.
 //!
 //! The C code generator's output is unchanged; this library provides the runtime
 //! half of its ABI. Simulation itself is the same Rust the `wasm-jit` target runs:
@@ -34,20 +34,20 @@ mod linearize;
 mod meta;
 mod mixed;
 mod model_data;
+mod nls;
 mod operators;
-mod parmod;
 mod optimization;
+mod parmod;
 #[cfg(feature = "standalone")]
 mod port;
 #[cfg(feature = "standalone")]
 mod run;
-mod nls;
-mod spatial;
-mod stateset;
-mod sync;
 #[cfg(shim_trampolines)]
 mod shim_export;
+mod spatial;
+mod stateset;
 mod support;
+mod sync;
 mod systems;
 
 /// C's `throwStreamPrint`, which is what an `assertStreamPrint` in the runtime
