@@ -495,6 +495,9 @@ pub struct Capabilities {
     pub qss: bool,
 }
 
+pub const GBODE_DISABLED: &str =
+    "integration method gbode is disabled in the Rust simulation runtime; use --simCodeTarget=C.old instead";
+
 /// Reject flag values this runtime cannot honour.
 pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     // Each solver library is linked on its own, so each is its own question --
@@ -526,6 +529,9 @@ pub fn check(f: &SimFlags, cap: Capabilities) -> Result<(), String> {
     }
     if f.variable_filter.is_some() && !cap.variable_filter {
         return Err("-variableFilter: this runtime has no regex engine".to_string());
+    }
+    if f.solver == Some(Solver::Gbode) {
+        return Err(GBODE_DISABLED.to_string());
     }
     let unsupported = match f.solver {
         Some(Solver::Ida) if !cap.ida => "ida",
@@ -1550,7 +1556,7 @@ const SOLVERS: &[Value<Solver>] = &[
     ("dasslrt", Solver::Dassl, Offer::Never),
     ("euler", Solver::Euler, Offer::Always),
     ("rungekutta", Solver::RungeKutta, Offer::Always),
-    ("gbode", Solver::Gbode, Offer::Always),
+    ("gbode", Solver::Gbode, Offer::Never),
     ("ida", Solver::Ida, Offer::WithIda),
     ("cvode", Solver::Cvode, Offer::WithCvode),
     ("optimization", Solver::Optimization, Offer::WithIpopt),
@@ -1831,6 +1837,7 @@ mod tests {
             ("-nls=experimental-kinsol", "-nls=experimental-kinsol"),
             ("-s=ida", "dassl"),
             ("-s=cvode", "dassl"),
+            ("-s=gbode", "--simCodeTarget=C.old"),
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
             let e = check(&f, NOTHING).expect_err("must reject");
@@ -1906,7 +1913,6 @@ mod tests {
             "-lss=rsparse",
             "-s=euler",
             "-s=dassl",
-            "-s=gbode",
             "-s=rungekutta",
         ] {
             let f = parse(&argv(&[arg])).expect("parses");
