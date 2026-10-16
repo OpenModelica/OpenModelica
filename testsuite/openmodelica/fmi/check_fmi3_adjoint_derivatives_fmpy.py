@@ -23,13 +23,60 @@ def check(actual, expected):
     ), "Expected %s, got %s" % (expected, actual)
 
 
+def check_parameter_optimizer(fmu, md, vr):
+    # Find derivatives through metadata: alias elimination can rename der(x).
+    derivatives = {
+        v.derivative.valueReference: v.valueReference
+        for v in md.modelVariables if v.derivative is not None
+    }
+    dy = derivatives[vr["y"]]
+    dcost = derivatives[vr["cost"]]
+    knowns = [vr[name] for name in ("y", "cost", "p1", "target")]
+
+    def adjoint(unknowns, knowns, seed):
+        return fmu.getAdjointDerivative(
+            unknowns=unknowns, knowns=knowns, seed=seed,
+            nSensitivity=len(knowns),
+        )
+
+    # The reported failure: a state which is also an output. FMI computes
+    # instantaneous partials, not sensitivities integrated along a trajectory.
+    check(adjoint([vr["cost"]], [vr["p1"]], [1.0]), [0.0])
+    for unknown, expected in [
+        (vr["cost"], [0.0, 1.0, 0.0, 0.0]),
+        (vr["y"], [1.0, 0.0, 0.0, 0.0]),
+        (dy, [-2.0, 0.0, 3.0, 0.0]),
+        (dcost, [-10.0, 0.0, 0.0, 10.0]),
+    ]:
+        check(adjoint([unknown], knowns, [1.0]), expected)
+
+    unknowns = [vr["cost"], dy, dcost, vr["y"]]
+    check(adjoint(unknowns, knowns, [2.0, -3.0, 5.0, 7.0]),
+          [-37.0, 2.0, -9.0, 50.0])
+    check(adjoint(unknowns[::-1], knowns[::-1], [7.0, 5.0, -3.0, 2.0]),
+          [50.0, -9.0, 2.0, -37.0])
+    check(adjoint(unknowns, knowns, [0.0] * 4), [0.0] * 4)
+    check(adjoint([dy], [vr["p1"]], [1.0]), [3.0])
+    check(adjoint([dy, dy], [vr["p1"]], [2.0, -1.0]), [3.0])
+    check(adjoint([vr["cost"], vr["cost"]], knowns, [2.0, -1.0]),
+          [0.0, 1.0, 0.0, 0.0])
+
+    # State-output identities and nonlinear partials must use current states.
+    states = sorted(("y", "cost"), key=vr.__getitem__)
+    values = {"y": 2.0, "cost": 7.0}
+    fmu.setContinuousStates((fmi3Float64 * 2)(*(values[s] for s in states)), 2)
+    check(adjoint([dcost], knowns, [1.0]), [-6.0, 0.0, 0.0, 6.0])
+    check(adjoint([vr["cost"]], knowns, [1.0]), [0.0, 1.0, 0.0, 0.0])
+    check(adjoint([vr["cost"]], [vr["p1"]], [1.0]), [0.0])
+
+
 def main(argv):
     if len(argv) not in (2, 3) or (
-        len(argv) == 3 and argv[2] not in ("parameters", "default-parameters")
+        len(argv) == 3 and argv[2] not in ("parameters", "default-parameters", "parameter-optimizer")
     ):
         sys.stderr.write(
             "usage: check_fmi3_adjoint_derivatives_fmpy.py <fmu> "
-            "[parameters|default-parameters]\n"
+            "[parameters|default-parameters|parameter-optimizer]\n"
         )
         return 2
 
@@ -45,8 +92,6 @@ def main(argv):
 
     # Always obtain value references from metadata, never hard-code them.
     vr = {v.name: v.valueReference for v in md.modelVariables}
-    unknowns = [vr["der(x)"], vr["der(z)"], vr["y"]]
-    knowns = [vr["x"], vr["z"], vr["u"]]
 
     with TemporaryDirectory(prefix="adjoint-smoke-") as directory:
         extract(filename, unzipdir=directory)
@@ -69,7 +114,10 @@ def main(argv):
             instantiated = True
 
             fmu.enterInitializationMode(startTime=0.0)
-            fmu.setFloat64([vr["u"]], [0.5])
+            if mode == "parameter-optimizer":
+                fmu.setFloat64([vr["p1"]], [1.0])
+            else:
+                fmu.setFloat64([vr["u"]], [0.5])
             fmu.exitInitializationMode()
 
             # Complete the initial event iteration before continuous-time mode.
@@ -83,6 +131,14 @@ def main(argv):
 
             fmu.enterContinuousTimeMode()
 
+            if mode == "parameter-optimizer":
+                check_parameter_optimizer(fmu, md, vr)
+                fmu.terminate()
+                print("PASS: FMI 3 adjoint parameter derivatives with output states")
+                return 0
+
+            unknowns = [vr["der(x)"], vr["der(z)"], vr["y"]]
+            knowns = [vr["x"], vr["z"], vr["u"]]
             check(fmu.getFloat64([vr["x"], vr["z"]]), [1.0, 2.0])
             check(fmu.getFloat64(unknowns), [6.5, -8.5, 66.5])
 
@@ -119,6 +175,7 @@ def main(argv):
             if mode == "parameters":
                 parameters = [vr[name] for name in ("p", "q", "r", "unused")]
                 all_knowns = knowns + parameters
+                # still set unknowns to the same three variables, but now the knowns include parameters
                 for seed, expected in [
                     ([1.0, 0.0, 0.0], [-2.0, 3.0, 5.0, 1.0, 0.0, 0.0, 0.0]),
                     ([0.0, 1.0, 0.0], [7.0, -11.0, 13.0, 0.0, 0.5, 0.0, 0.0]),

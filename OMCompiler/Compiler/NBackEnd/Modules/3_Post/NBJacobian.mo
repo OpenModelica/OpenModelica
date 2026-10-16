@@ -199,7 +199,15 @@ public
          * necessarily the FMI state/derivative order. */
         derivativeVars := list(BVariable.getDerivativeOfState(stateVar) for stateVar in stateVars);
         inputVars := list(var for var guard(BVariable.isReal(var)) in VariablePointers.toList(varData.top_level_inputs));
-        outputVars := list(var for var guard(BVariable.isRealOutput(var)) in VariablePointers.toList(varData.variables));
+        /* Output states are independent variables: their output rows are
+         * identities, handled by the FMI runtime. Creating seeds for them
+         * would overwrite their result entries in the adjoint diff_map.
+         * Output derivatives are already present in derivativeVars. Synthetic
+         * start variables inherit causality but are not FMI outputs. */
+        outputVars := list(var for var guard(BVariable.isRealOutput(var)
+          and not BVariable.isState(var) and not BVariable.isStateDerivative(var)
+          and not BVariable.isStart(var))
+          in VariablePointers.toList(varData.variables));
         parameterVars := if includeParameters then
           list(var for var guard(BVariable.isReal(var)) in VariablePointers.toList(varData.parameters)) else {};
         fmiKnowns := VariablePointers.fromList(
@@ -225,6 +233,7 @@ public
           end if;
         end for;
         comps := listReverse(comps);
+        partialCandidates := VariablePointers.removeList(VariablePointers.toList(fmiKnowns), partialCandidates);
 
         if VariablePointers.size(fmiKnowns) == 0 or VariablePointers.size(fmiUnknowns) == 0 or listEmpty(comps) then
           jacobian := NONE();

@@ -1459,10 +1459,11 @@ package SimCodeCodegenUtil
     output String defines;
   end fmi3ArrayDefines;
 
-  function fmi3AdjointKnowns
+  function fmi3AdjointVariables
     input SimCode.SimCode simCode;
+    input Boolean seedVars;
     output list<SimCodeVar.SimVar> knowns;
-  end fmi3AdjointKnowns;
+  end fmi3AdjointVariables;
 
   function cacheFMI3ValueReferences
     input SimCode.SimCode simCode;

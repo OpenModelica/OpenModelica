@@ -1315,11 +1315,20 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
     /* The adjoint result axis includes exactly the generated independent variables. */
     int mapAdjointReference2KnownNumber(const fmi2ValueReference vr) {
         switch (vr) {
-          <%SimCodeCodegenUtil.fmi3AdjointKnowns(simCode) |> SIMVAR(name=name, index=index) =>
+          <%SimCodeCodegenUtil.fmi3AdjointVariables(simCode, false) |> SIMVAR(name=name, index=index) =>
           'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
           default:
             return -1;
         }
+    }
+    /* The adjoint seed axis need not match the exported output order. */
+    int mapAdjointReference2UnknownNumber(const fmi2ValueReference vr) {
+      switch (vr) {
+        <%SimCodeCodegenUtil.fmi3AdjointVariables(simCode, true) |> SIMVAR(name=name, index=index) =>
+        'case <%lookupVR(name, simCode)%>: return <%index%>;' ;separator="\n"%>
+        default:
+        return -1;
+      }
     }
     >>
 end match

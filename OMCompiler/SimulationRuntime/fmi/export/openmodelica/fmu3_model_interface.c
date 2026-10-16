@@ -2100,8 +2100,9 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
    * counterpart of omcGetDirectionalDerivative: the axes are transposed, i.e.
    * the seed is over the "unknowns" (state derivatives + outputs, the
    * `dependent` axis of the forward Jacobian) and the resulting sensitivity is
-  * over the "knowns" (states + inputs + optional Real parameters, the
-  * `independent` axis of the forward Jacobian). */
+    * over the "knowns" (states + inputs + optional Real parameters, the
+    * `independent` axis of the forward Jacobian). Output states contribute
+    * identity rows separately, without participating in the reverse sweep. */
   int independent;
   int dependent;
 
@@ -2127,12 +2128,8 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
   }
 
   /***************************************/
-  /* This code assumes that the FMU variables are always sorted,
-     states first and then derivatives.
-     This is true for the actual OMC FMUs.
-     The seed/sensitivity value references are mapped with
-    mapOutputReference2OutputNumber and mapAdjointReference2KnownNumber functions
-  */
+  /* Map both axes using the generated Jacobian indices. Only the state-output
+   * identity rows rely on the FMI convention that states precede derivatives. */
   /* Adjoint equations accumulate into resultVars and may use tmpVars as
    * accumulators for intermediate adjoints. Clear both on every call,
    * otherwise successive VJPs can contaminate one another. */
@@ -2155,17 +2152,18 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
   }
   /* the seed is supplied over the "unknowns" (derivatives/outputs) */
   for (i=0;i<nUnknown; i++) {
-    /* derivatives are behind the states */
-    int idx = vUnknown_ref[i] - modelData->nStates;
-    /* if idx is > nStates it's an output so we need a mapping */
-    if (idx >= modelData->nStates){
-      idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
-      idx = modelData->nStates + idx;
+    int idx;
+    if (vUnknown_ref[i] < modelData->nStates &&
+        (int)mapOutputReference2OutputNumber(vUnknown_ref[i]) >= 0) {
+      /* An output which is itself a state has no defining equation to
+       * differentiate. Its identity contribution is added below. */
+      continue;
     }
+    idx = mapAdjointReference2UnknownNumber(vUnknown_ref[i]);
     if (vrOutOfRange(comp, "omcGetAdjointDerivative seed index", idx, independent))
       return fmi3Error;
     /* Put the supplied value in the seeds */
-    comp->fmiDerJacAdj->seedVars[idx]=dvUnknownSeed[i];
+    comp->fmiDerJacAdj->seedVars[idx]+=dvUnknownSeed[i];
   }
 
   /* Call the adjoint Jacobian evaluation function. This evaluates the whole
@@ -2185,6 +2183,11 @@ fmi3Status omcGetAdjointDerivative(ModelInstance* c,
     if (vrOutOfRange(comp, "omcGetAdjointDerivative sensitivity index", idx, dependent))
       return fmi3Error;
     dvKnownSensitivity[i] = comp->fmiDerJacAdj->resultVars[idx];
+    for (size_t j=0; j<nUnknown; j++) {
+      if (vUnknown_ref[j] < modelData->nStates && vUnknown_ref[j] == vKnown_ref[i]) {
+        dvKnownSensitivity[i] += dvUnknownSeed[j];
+      }
+    }
   }
   /***************************************/
   return fmi3OK;

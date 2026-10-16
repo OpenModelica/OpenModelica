@@ -17,6 +17,7 @@ fmi3_causalize_protected.mos \
 fmi3_clocks.mos \
 fmi3_adjoint_derivatives_eval.mos \
 fmi3_adjoint_parameters_eval.mos \
+fmi3_adjoint_output_states_eval.mos \
 fmi3_directional_derivatives.mos \
 fmi3_adjoint_derivatives.mos \
 fmi3_documentation.mos \
