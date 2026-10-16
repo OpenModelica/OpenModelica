@@ -400,6 +400,64 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
+// pre-optimization module stateAlgorithmsToEquations (simulation)
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (13)
+// ========================================
+// 1: v2:VARIABLE()  type: Real
+// 2: v1:VARIABLE()  type: Real
+// 3: v0:VARIABLE()  type: Real
+// 4: iC:VARIABLE()  type: Real
+// 5: iL:STATE(1)()  type: Real
+// 6: i2:VARIABLE()  type: Real
+// 7: i1:VARIABLE()  type: Real
+// 8: i0:VARIABLE()  type: Real
+// 9: uC:STATE(1)()  type: Real
+// 10: uL:VARIABLE()  type: Real
+// 11: u2:VARIABLE()  type: Real
+// 12: u1:VARIABLE()  type: Real
+// 13: u0:VARIABLE()  type: Real
+//
+//
+// Equations (13, 13)
+// ========================================
+// 1/1 (1): u0 = cos(time)   [dynamic |0|0|0|0|]
+// 2/2 (1): u0 = v1 - v0   [dynamic |0|0|0|0|]
+// 3/3 (1): u1 = R1 * i1   [dynamic |0|0|0|0|]
+// 4/4 (1): u1 = v1 - v2   [dynamic |0|0|0|0|]
+// 5/5 (1): u2 = R2 * i2   [dynamic |0|0|0|0|]
+// 6/6 (1): u2 = v2 - v0   [dynamic |0|0|0|0|]
+// 7/7 (1): uL = L * der(iL)   [dynamic |0|0|0|0|]
+// 8/8 (1): uL = v2 - v0   [dynamic |0|0|0|0|]
+// 9/9 (1): iC = C * der(uC)   [dynamic |0|0|0|0|]
+// 10/10 (1): uC = v1 - v0   [dynamic |0|0|0|0|]
+// 11/11 (1): v0 = 0.0   [dynamic |0|0|0|0|]
+// 12/12 (1): i0 = i1 + iC   [dynamic |0|0|0|0|]
+// 13/13 (1): i1 = i2 + iL   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: C:PARAM()  = 3.0  type: Real
+// 2: L:PARAM()  = 0.5  type: Real
+// 3: R2:PARAM()  = 2.0  type: Real
+// 4: R1:PARAM()  = 1.0  type: Real
+//
+//
+//
+// ########################################
 // pre-optimization module findStateOrder (simulation)
 // ########################################
 //
