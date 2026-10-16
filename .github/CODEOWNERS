@@ -15,32 +15,61 @@ CMakeLists.txt @AnHeuermann
 *.cmake.in @AnHeuermann
 /cmake/ @AnHeuermann
 
+# Continuous Integration / Continuous Deployment
+# /Jenkinsfile
+# /.CI/
+
 # Compiler: frontend
-# /OMCompiler/Compiler/NFFrontEnd/
+# Only the core NF files, smaller changes elsewhere get a manual review request.
+/OMCompiler/Compiler/NFFrontEnd/NFFlatten.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInst.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInstNode.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFLookup.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFTyping.mo @perost
+/OMCompiler/Compiler/FrontEndCpp/ @perost
 # /OMCompiler/Compiler/FrontEnd/
 
 # Compiler: backend
-# /OMCompiler/Compiler/NBackEnd/
+/OMCompiler/Compiler/NBackEnd/ @kabdelhak
+/OMCompiler/Compiler/NBackEnd/Modules/2_Pre/NBEvents.mo @kabdelhak @phannebohm
+/OMCompiler/Compiler/NBackEnd/Modules/3_Post/NBEvaluation.mo @kabdelhak @phannebohm
 # /OMCompiler/Compiler/BackEnd/
 
 # Compiler: code generation
-# /OMCompiler/Compiler/NSimCode/
+/OMCompiler/Compiler/NSimCode/ @kabdelhak
 # /OMCompiler/Compiler/SimCode/
-# /OMCompiler/Compiler/Template/
+/OMCompiler/Compiler/Template/ @sjoelund
+/OMCompiler/Compiler/Template/CodegenC.tpl @sjoelund @phannebohm
+
+# Compiler: Rust
+/OMCompiler/Compiler/OpenModelica.rs/ @sjoelund
+
+# Compiler: bootstrapping
+/OMCompiler/Compiler/boot/ @sjoelund
 
 # Compiler: scripting API
-# /OMCompiler/Compiler/Script/
+/OMCompiler/Compiler/Script/ @perost
 
 # Compiler: C API
 /OMCompiler/Compiler/omcCAPI/ @AnHeuermann
 
 # C simulation runtime
 # /OMCompiler/SimulationRuntime/c/
+/OMCompiler/SimulationRuntime/c/simulation/eval_dep.* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/jacobian_util.* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/solver/events.* @phannebohm
 
-# C simulation runtime: integrators
+# C simulation runtime: MOO (dynamic optimization)
+/OMCompiler/SimulationRuntime/c/moo/ @linuslangenkamp
+
+# C simulation runtime: SUNDIALS integrators
 /OMCompiler/SimulationRuntime/c/simulation/solver/cvode_solver.* @AnHeuermann
 /OMCompiler/SimulationRuntime/c/simulation/solver/ida_solver.* @AnHeuermann
-# /OMCompiler/SimulationRuntime/c/simulation/solver/gbode*
+/OMCompiler/SimulationRuntime/c/simulation/solver/kinsol* @AnHeuermann
+/OMCompiler/SimulationRuntime/c/simulation/solver/sundials_* @AnHeuermann
+
+# C simulation runtime: GBODE integrator
+/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp 
 
 # C++ simulation runtime
 # /OMCompiler/SimulationRuntime/cpp/
@@ -48,11 +77,14 @@ CMakeLists.txt @AnHeuermann
 # FMI
 /OMCompiler/SimulationRuntime/fmi/ @AnHeuermann
 
+# OMSimulator (submodule; no trailing slash so the submodule pointer itself matches)
+/OMSimulator @arun3688
+
 # OMEdit
-# /OMEdit/
+/OMEdit/ @adeas31
 
 # OMPlot
-# /OMPlot/
+/OMPlot/ @adeas31
 
 # OMNotebook
 # /OMNotebook/
