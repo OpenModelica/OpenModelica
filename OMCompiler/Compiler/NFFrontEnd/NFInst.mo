@@ -1901,7 +1901,12 @@ algorithm
         then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode, context);
 
       case (_, Class.PARTIAL_CLASS())
-        then Class.PARTIAL_CLASS(rdcl_cls.elements, mod, constrainingMod, prefs);
+        algorithm
+          if not InstContext.inInstanceAPI(context) then
+            checkRedeclaredClassType(redeclareNode, originalNode, context);
+          end if;
+        then
+          Class.PARTIAL_CLASS(rdcl_cls.elements, mod, constrainingMod, prefs);
 
       else
         algorithm
@@ -1917,6 +1922,106 @@ algorithm
   node_ty := InstNodeType.REDECLARED_CLASS(InstNode.scopeRef(InstNode.parent(originalNode)), InstNode.nodeType(originalNode), orig_opt, instLevel);
   redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
+
+function checkRedeclaredClassType
+  "Checks that a redeclared class is a subtype of the constraining class of the
+   original class, i.e. the class given by the constrainedby clause or
+   otherwise the original class itself. Only the names of the public
+   components are checked."
+  input InstNode redeclareNode;
+  input InstNode originalNode;
+  input InstContext.Type context;
+protected
+  SCode.Element def = InstNode.definition(originalNode);
+  InstNode cc_node = originalNode, rdcl_node;
+  Absyn.Path path;
+  Class cc_cls, rdcl_cls;
+  Option<String> element = NONE();
+algorithm
+  // The classes are only expanded to check the redeclare here, don't let any
+  // issues with them cause the instantiation to fail.
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    cc_node := match def
+      case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
+          SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(constrainingClass = path)))))
+        algorithm
+          cc_node := Lookup.lookupClassName(path, InstNode.parent(originalNode), context, def.info);
+        then
+          cc_node;
+
+      else
+        algorithm
+          // A redeclare without a constrainedby clause inherits the constraining
+          // class of the element it redeclares, which isn't known here.
+          false := SCodeUtil.isElementRedeclare(def);
+        then
+          InstNode.clone(originalNode);
+    end match;
+
+    // The redeclare is cloned since expanding it here would change the
+    // node, which might be used for more than one element.
+    cc_node := Class.lastBaseClass(expand(cc_node, context));
+    rdcl_node := Class.lastBaseClass(expand(InstNode.clone(redeclareNode), context));
+    cc_cls := InstNode.getClass(cc_node);
+    rdcl_cls := InstNode.getClass(rdcl_node);
+
+    element := match (cc_cls, rdcl_cls)
+      case (Class.EXPANDED_CLASS(), Class.EXPANDED_CLASS())
+        guard isRedeclaredElementCheckable(cc_cls.restriction) and
+              isRedeclaredElementCheckable(rdcl_cls.restriction)
+        then findMissingRedeclaredComponent(cc_cls.elements, rdcl_cls.elements);
+
+      else NONE();
+    end match;
+  else
+    element := NONE();
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+
+  if isSome(element) then
+    Error.addMultiSourceMessage(Error.REDECLARE_CONSTRAINING_TYPE_VIOLATED,
+      {InstNode.typeName(redeclareNode), InstNode.name(redeclareNode),
+       InstNode.name(cc_node), Util.getOption(element)},
+      {InstNode.info(redeclareNode), InstNode.info(originalNode)});
+    fail();
+  end if;
+end checkRedeclaredClassType;
+
+function findMissingRedeclaredComponent
+  "Returns the name of the first public component in the expanded constraining
+   class, including inherited ones, that's not a component in the redeclared
+   class, or NONE() if there's no such component."
+  input ClassTree constrainingTree;
+  input ClassTree rdclTree;
+  output Option<String> element = NONE();
+protected
+  String name;
+algorithm
+  for c in ClassTree.getComponents(constrainingTree) loop
+    if InstNode.isComponent(c) and not InstNode.isProtected(c) then
+      name := InstNode.name(c);
+
+      if not ClassTree.hasComponent(name, rdclTree) then
+        element := SOME(name);
+        return;
+      end if;
+    end if;
+  end for;
+
+  for ext in ClassTree.getExtends(constrainingTree) loop
+    if not InstNode.isProtectedBaseClass(ext) then
+      element := findMissingRedeclaredComponent(
+        Class.classTree(InstNode.getClass(ext)), rdclTree);
+
+      if isSome(element) then
+        return;
+      end if;
+    end if;
+  end for;
+end findMissingRedeclaredComponent;
 
 function redeclareEnum
   input Class redeclareClass;
@@ -2292,7 +2397,7 @@ protected
   Attributes attr;
   Type orig_ty, rdcl_ty;
   SCode.Comment cmt;
-  InstNode orig_node, rdcl_node;
+  InstNode orig_node, rdcl_node, cc_node;
   InstNodeType rdcl_type;
 algorithm
   // Check that the redeclare element actually is a component.
@@ -2305,6 +2410,8 @@ algorithm
 
   orig_node := InstNode.resolveInner(originalNode);
   orig_comp := InstNode.component(orig_node);
+  cc_node := if InstContext.inInstanceAPI(context) then InstNode.EMPTY_NODE() else
+    instComponentConstrainingClass(orig_node, orig_comp, instLevel, context);
   rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.scopeRef(InstNode.parent(orig_node)));
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(orig_node, rdcl_node);
@@ -2322,6 +2429,10 @@ algorithm
           Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
               {InstNode.name(orig_node)}, {InstNode.info(orig_node), InstNode.info(rdcl_node)});
           fail();
+        end if;
+
+        if not InstContext.inInstanceAPI(context) then
+          checkRedeclaredComponentType(orig_comp, cc_node, rdcl_comp, rdcl_node);
         end if;
 
         // Take the binding from the outer modifier, the redeclare, or the
@@ -2362,6 +2473,258 @@ algorithm
 
   InstNode.updateComponent(new_comp, InstNode.resolveInner(redeclaredNode));
 end redeclareComponent;
+
+function instComponentConstrainingClass
+  "Returns the instance of the constraining class of a replaceable component,
+   i.e. the class given by the constrainedby clause or otherwise the class of
+   the component itself. Returns an empty node if the constraining class can't
+   be determined."
+  input InstNode node;
+  input Component component;
+  input Integer instLevel;
+  input InstContext.Type context;
+  output InstNode ccNode;
+protected
+  SCode.Element def;
+  Absyn.Path path;
+  InstNode parent;
+  Modifier mod;
+algorithm
+  ccNode := match node
+    case InstNode.COMPONENT_NODE(definition = SOME(def as SCode.Element.COMPONENT(
+        prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix = SCode.Replaceable.REPLACEABLE(
+          cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(constrainingClass = path)))))))
+      algorithm
+        // The constraining class is only instantiated to check the type of
+        // the redeclare, don't let any issues with it cause the instantiation
+        // to fail.
+        ErrorExt.setCheckpoint(getInstanceName());
+
+        try
+          parent := InstNode.parent(node);
+          mod := instConstrainingMod(def, parent, instLevel);
+          ccNode := Lookup.lookupClassName(path, parent, context, def.info);
+          ccNode := expand(ccNode, context);
+          ccNode := instClass(ccNode, mod, NFAttributes.DEFAULT_ATTR, false,
+            instLevel, instLevel, node, context);
+        else
+          ccNode := InstNode.EMPTY_NODE();
+        end try;
+
+        ErrorExt.rollBack(getInstanceName());
+      then
+        ccNode;
+
+    // A redeclare without a constrainedby clause inherits the constraining
+    // class of the element it redeclares, which isn't known here.
+    case InstNode.COMPONENT_NODE(definition = SOME(def))
+      guard SCodeUtil.isElementRedeclare(def)
+      then InstNode.EMPTY_NODE();
+
+    else Component.classInstance(component);
+  end match;
+end instComponentConstrainingClass;
+
+function checkRedeclaredComponentType
+  "Checks that the type of a redeclared component is a subtype of the
+   constraining type of the original component. Only the basic types and the
+   public components of the types are checked."
+  input Component origComp;
+  input InstNode constrainingCls;
+  input Component rdclComp;
+  input InstNode rdclNode;
+protected
+  InstNode rdcl_cls = Component.classInstance(rdclComp);
+  Option<String> element;
+algorithm
+  // The basic type of a component is always the same as the basic type of the
+  // constraining type, so this is checked even when the constraining type
+  // isn't known.
+  if not isRedeclaredBasicTypeCompatible(Component.classInstance(origComp), rdcl_cls) then
+    Error.addMultiSourceMessage(Error.REDECLARE_CLASS_NON_SUBTYPE,
+      {InstNode.typeName(rdclNode), InstNode.name(rdclNode)},
+      {InstNode.info(rdclNode), Component.info(origComp)});
+    fail();
+  end if;
+
+  if InstNode.isEmpty(constrainingCls) then
+    return;
+  end if;
+
+  element := findIncompatibleRedeclaredElement(constrainingCls, rdcl_cls);
+
+  if isSome(element) then
+    Error.addMultiSourceMessage(Error.REDECLARE_CONSTRAINING_TYPE_VIOLATED,
+      {InstNode.typeName(rdclNode), InstNode.name(rdclNode),
+       InstNode.name(constrainingCls), Util.getOption(element)},
+      {InstNode.info(rdclNode), Component.info(origComp)});
+    fail();
+  end if;
+end checkRedeclaredComponentType;
+
+function isRedeclaredBasicTypeCompatible
+  "Returns false if one of the classes is known to be a basic type and the
+   other is known to not be the same basic type, otherwise true."
+  input InstNode constrainingCls;
+  input InstNode rdclCls;
+  output Boolean compatible;
+algorithm
+  compatible := match (redeclaredComponentBasicType(constrainingCls),
+                       redeclaredComponentBasicType(rdclCls))
+    case (SOME(Type.REAL()), SOME(Type.REAL())) then true;
+    case (SOME(Type.INTEGER()), SOME(Type.INTEGER())) then true;
+    case (SOME(Type.BOOLEAN()), SOME(Type.BOOLEAN())) then true;
+    case (SOME(Type.STRING()), SOME(Type.STRING())) then true;
+    case (SOME(Type.CLOCK()), SOME(Type.CLOCK())) then true;
+    case (SOME(Type.ENUMERATION()), SOME(Type.ENUMERATION())) then true;
+    case (SOME(Type.COMPLEX()), SOME(Type.COMPLEX())) then true;
+    case (SOME(_), SOME(_)) then false;
+    // Only check types that are known to be either basic or non-basic.
+    else true;
+  end match;
+end isRedeclaredBasicTypeCompatible;
+
+function findIncompatibleRedeclaredElement
+  "Returns the name of the first public component in the constraining class
+   that's either missing in the redeclared class or has an incompatible type
+   there, or NONE() if no such component is found."
+  input InstNode constrainingCls;
+  input InstNode rdclCls;
+  output Option<String> element;
+protected
+  Class cc_cls, rdcl_cls;
+algorithm
+  if InstNode.isEmpty(constrainingCls) or InstNode.isEmpty(rdclCls) then
+    element := NONE();
+    return;
+  end if;
+
+  cc_cls := InstNode.getClass(Class.lastBaseClass(constrainingCls));
+  rdcl_cls := InstNode.getClass(Class.lastBaseClass(rdclCls));
+
+  element := match (cc_cls, rdcl_cls)
+    case (Class.EXPANDED_CLASS(), Class.EXPANDED_CLASS())
+      guard isRedeclaredElementCheckable(cc_cls.restriction) and
+            isRedeclaredElementCheckable(rdcl_cls.restriction)
+      then ClassTree.foldComponents(cc_cls.elements,
+        function findIncompatibleRedeclaredElement2(rdclCls = rdcl_cls), NONE());
+
+    else NONE();
+  end match;
+end findIncompatibleRedeclaredElement;
+
+function isRedeclaredElementCheckable
+  "Returns true if the elements of a class with the given restriction should
+   be compared when checking a redeclare."
+  input Restriction res;
+  output Boolean checkable;
+algorithm
+  checkable := match res
+    case Restriction.TYPE() then false;
+    case Restriction.FUNCTION() then false;
+    case Restriction.EXTERNAL_OBJECT() then false;
+    // The elements of an expandable connector are not fixed.
+    else not Restriction.isExpandableConnector(res);
+  end match;
+end isRedeclaredElementCheckable;
+
+function findIncompatibleRedeclaredElement2
+  input InstNode component "A component in the constraining class.";
+  input Class rdclCls;
+  input output Option<String> element;
+protected
+  String name;
+  InstNode rdcl_node;
+  Component cc_comp, rdcl_comp;
+  Option<String> sub_element;
+algorithm
+  if isSome(element) or not InstNode.isComponent(component) or InstNode.isProtected(component) then
+    return;
+  end if;
+
+  name := InstNode.name(component);
+
+  try
+    rdcl_node := Class.lookupElement(name, rdclCls);
+  else
+    element := SOME(name);
+    return;
+  end try;
+
+  if not InstNode.isComponent(rdcl_node) or InstNode.isProtected(rdcl_node) then
+    element := SOME(name);
+    return;
+  end if;
+
+  // Don't follow outer components to their inner, it might lead back here.
+  if InstNode.isOuter(component) or InstNode.isOuter(rdcl_node) then
+    return;
+  end if;
+
+  cc_comp := InstNode.component(component);
+  rdcl_comp := InstNode.component(rdcl_node);
+
+  element := match (cc_comp, rdcl_comp)
+    case (Component.COMPONENT(), Component.COMPONENT())
+      algorithm
+        if not isRedeclaredBasicTypeCompatible(cc_comp.classInst, rdcl_comp.classInst) then
+          sub_element := SOME("");
+        elseif InstNode.isReplaceable(component) then
+          // A replaceable component only needs to be compatible with its
+          // constraining type, which isn't known here.
+          sub_element := NONE();
+        else
+          sub_element := findIncompatibleRedeclaredElement(cc_comp.classInst, rdcl_comp.classInst);
+        end if;
+      then
+        match sub_element
+          case SOME("") then SOME(name);
+          case SOME(_) then SOME(name + "." + Util.getOption(sub_element));
+          else NONE();
+        end match;
+
+    else NONE();
+  end match;
+end findIncompatibleRedeclaredElement2;
+
+function redeclaredComponentBasicType
+  "Returns the basic type of a class if it's a basic type or derived from one,
+   a complex type if the class is known to not be a basic type, or NONE() if
+   the kind of type can't be determined."
+  input InstNode clsNode;
+  output Option<Type> ty;
+protected
+  Class cls;
+  array<InstNode> exts;
+algorithm
+  if not InstNode.isClass(clsNode) then
+    ty := NONE();
+    return;
+  end if;
+
+  cls := InstNode.getClass(clsNode);
+
+  ty := match cls
+    case Class.PARTIAL_BUILTIN(ty = Type.FUNCTION()) then NONE();
+    case Class.PARTIAL_BUILTIN()
+      then if Type.isScalarBuiltin(cls.ty) or Type.isComplex(cls.ty) then SOME(cls.ty) else NONE();
+    case Class.INSTANCED_BUILTIN(ty = Type.FUNCTION()) then NONE();
+    case Class.INSTANCED_BUILTIN()
+      then if Type.isScalarBuiltin(cls.ty) or Type.isComplex(cls.ty) then SOME(cls.ty) else NONE();
+    case Class.EXPANDED_DERIVED() then redeclaredComponentBasicType(cls.baseClass);
+    case Class.TYPED_DERIVED() then redeclaredComponentBasicType(cls.baseClass);
+
+    // A long class declaration of a type must extend a basic type.
+    case Class.EXPANDED_CLASS(restriction = Restriction.TYPE())
+      algorithm
+        exts := ClassTree.getExtends(cls.elements);
+      then
+        if arrayLength(exts) == 1 then redeclaredComponentBasicType(exts[1]) else NONE();
+
+    case Class.EXPANDED_CLASS() then SOME(Type.COMPLEX(InstNode.identityCell(clsNode), ComplexType.CLASS()));
+    else NONE();
+  end match;
+end redeclaredComponentBasicType;
 
 function checkOuterComponentMod
   "Prints an error message and fails if it gets an outer component with a modifier."

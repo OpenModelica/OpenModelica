@@ -957,6 +957,20 @@ public
       (element, isImport) := resolveEntry(entry, tree);
     end lookupElement;
 
+    function hasComponent
+      "Returns true if the class tree contains a component with the given name,
+       otherwise false. Unlike lookupElement this also works for inherited
+       components in an expanded tree."
+      input String name;
+      input ClassTree tree;
+      output Boolean hasComponent;
+    algorithm
+      hasComponent := match LookupTree.getOpt(lookupTree(tree), name)
+        case SOME(LookupTree.Entry.COMPONENT()) then true;
+        else false;
+      end match;
+    end hasComponent;
+
     function lookupElementPtr
       input String name;
       input ClassTree tree;
