@@ -4918,7 +4918,7 @@ algorithm
       list<list<String>> aliases;
       DAE.ClockKind clk, clk1;
       list<DAE.Type> typeVars;
-      list<DAE.Subscript> subs;
+      list<DAE.Subscript> subs, subs_1;
 
     case DAE.EMPTY() algorithm
       (e, ext_arg) := inFunc(inExp, inExtArg);
@@ -5065,10 +5065,9 @@ algorithm
     then (e, ext_arg);
 
     case DAE.ASUB(exp=e1, sub=subs) algorithm
-      expl := list(Expression.getSubscriptExp(sub) for sub in subs);
       (e1_1, ext_arg) := traverseExpBottomUp(e1, inFunc, inExtArg);
-      (expl_1, ext_arg) := traverseExpList(expl, inFunc, ext_arg);
-      e := if referenceEq(e1, e1_1) and referenceEq(expl, expl_1) then inExp else makeASUB(e1_1, expl_1);
+      (subs_1, ext_arg) := traverseExpSubs(subs, inFunc, ext_arg);
+      e := if referenceEq(e1, e1_1) and referenceEq(subs, subs_1) then inExp else DAE.ASUB(e1_1, subs_1);
       (e, ext_arg) := inFunc(e, ext_arg);
     then (e, ext_arg);
 
@@ -5651,10 +5650,9 @@ algorithm
 
     case (_,(DAE.ASUB(exp = e1,sub = subs)),ext_arg)
       algorithm
-        expl_1 := list(Expression.getSubscriptExp(sub) for sub in subs);
-        (e1_1,ext_arg_1) := traverseExpTopDown(e1, func, ext_arg);
-        (expl_1,ext_arg_2) := traverseExpListTopDown(expl_1, func, ext_arg_1);
-      then (makeASUB(e1_1,expl_1),ext_arg_2);
+        (e1_1,ext_arg) := traverseExpTopDown(e1, func, ext_arg);
+        (subs, ext_arg) := traverseExpTopDownSubs(subs, func, ext_arg);
+      then (DAE.ASUB(e1_1,subs),ext_arg);
 
     case (_,(DAE.TSUB(e1,i,tp)),ext_arg)
       algorithm
