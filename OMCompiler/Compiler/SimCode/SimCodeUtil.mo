@@ -14357,12 +14357,11 @@ public function getCMakeVersion
   output SemanticVersion.Version cmakeVersion;
 protected
   Integer retVal;
-  String cmakeVersionLogFile;
+  String cmakeVersionLogFile = logDirectory + "systemCall_cmakeVersion.log";
   list<String> regexOut;
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  cmakeVersionLogFile := logDirectory + "systemCall_cmakeVersion.log";
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     Error.addInternalError("Failed to get version from " + pathToCMake + ": " + System.readFile(cmakeVersionLogFile), sourceInfo());
