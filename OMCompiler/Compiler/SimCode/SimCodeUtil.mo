@@ -14350,6 +14350,20 @@ algorithm
   end if;
 end msvcEnvironment;
 
+protected function joinDirectoryAndFile
+  input String directory;
+  input String file;
+  output String path;
+algorithm
+  if stringEmpty(directory) then
+    path := file;
+  elseif StringUtil.endsWith(directory, "/") or StringUtil.endsWith(directory, "\\") then
+    path := directory + file;
+  else
+    path := directory + "/" + file;
+  end if;
+end joinDirectoryAndFile;
+
 public function getCMakeVersion
   "Get CMake version"
   input String pathToCMake = Autoconf.cmake;
@@ -14362,9 +14376,7 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  cmakeVersionLogFile := logDirectory +
-    (if StringUtil.endsWith(logDirectory, "/") or StringUtil.endsWith(logDirectory, "\\") then "" else "/") +
-    "systemCall_cmakeVersion.log";
+  cmakeVersionLogFile := joinDirectoryAndFile(logDirectory, "systemCall_cmakeVersion.log");
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     Error.addInternalError("Failed to get version from " + pathToCMake + ": " + System.readFile(cmakeVersionLogFile), sourceInfo());
