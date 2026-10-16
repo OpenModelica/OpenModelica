@@ -1,0 +1,46 @@
+// name: clampDeclaredBound
+// status: correct
+// teardown_command: rm -f ClampDeclaredBound* _ClampDeclaredBound* output.log
+//
+// inferBoundsFromAsserts also reads the min/max declared on a function's input
+// arguments (the only domain source available for external functions, which have
+// no body to scan). Here the input x declares min = 5.0 and no assert is present;
+// the call argument is still clamped to [5, inf).
+
+setCommandLineOptions("--postOptModules+=inferBoundsFromAsserts"); getErrorString();
+
+loadString("
+function fdecl
+  input Real x(min = 5.0);
+  output Real y;
+algorithm
+  y := x;
+  annotation(Inline = false);
+end fdecl;
+
+model ClampDeclaredBound
+  Real z, a;
+equation
+  z = fdecl(a);
+  a = 6.0 - time;
+end ClampDeclaredBound;
+"); getErrorString();
+
+simulate(ClampDeclaredBound, stopTime = 2.0); getErrorString();
+val(z, 2.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ClampDeclaredBound_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ClampDeclaredBound', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 5.0
+// endResult
