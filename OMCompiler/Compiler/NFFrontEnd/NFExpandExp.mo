@@ -380,9 +380,11 @@ public
       case "der"        then expandBuiltinGeneric(call);
       case "diagonal"   then expandBuiltinDiagonal(listHead(args));
       case "fill"       then expandBuiltinFill(args);
+      case "noEvent"    then expandBuiltinGeneric(call);
       case "pre"        then expandBuiltinGeneric(call);
       case "previous"   then expandBuiltinGeneric(call);
       case "promote"    then expandBuiltinPromote(args);
+      case "smooth"     then expandBuiltinSmooth(call);
       case "transpose"  then expandBuiltinTranspose(listHead(args));
     end match;
   end expandBuiltinCall;
@@ -497,6 +499,52 @@ public
       else Expression.CALL(Call.TYPED_CALL(fn, ty, var, pur, {exp}, attr));
     end match;
   end expandBuiltinGeneric2;
+
+  function expandBuiltinSmooth
+    "Expands smooth(p, {a, b, ...}) to {smooth(p, a), smooth(p, b), ...}."
+    input Call call;
+    output Expression outExp;
+    output Boolean expanded = true;
+  protected
+    Function fn;
+    Type ty;
+    Variability var;
+    Purity pur;
+    NFCallAttributes attr;
+    Expression order, arg;
+  algorithm
+    Call.TYPED_CALL(fn, ty, var, pur, {order, arg}, attr) := call;
+    ty := Type.arrayElementType(ty);
+
+    (arg, true) := expand(arg);
+    outExp := expandBuiltinSmooth2(arg, order, fn, ty, var, pur, attr);
+  end expandBuiltinSmooth;
+
+  function expandBuiltinSmooth2
+    input output Expression exp;
+    input Expression order;
+    input Function fn;
+    input Type ty;
+    input Variability var;
+    input Purity pur;
+    input NFCallAttributes attr;
+  algorithm
+    exp := match exp
+      local
+        array<Expression> arr;
+
+      case Expression.ARRAY(literal = true) then exp;
+
+      case Expression.ARRAY()
+        algorithm
+          arr := Array.map(exp.elements,
+            function expandBuiltinSmooth2(order = order, fn = fn, ty = ty, var = var, pur = pur, attr = attr));
+        then
+          Expression.makeArray(Type.setArrayElementType(exp.ty, ty), arr);
+
+      else Expression.CALL(Call.TYPED_CALL(fn, ty, var, pur, {order, exp}, attr));
+    end match;
+  end expandBuiltinSmooth2;
 
   function expandArrayConstructor
     input Expression exp;

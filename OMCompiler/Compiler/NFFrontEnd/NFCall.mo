@@ -1390,8 +1390,10 @@ public
       case TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = name)))
         then match name
           case "der" then false;
+          case "noEvent" then false;
           case "pre" then false;
           case "previous" then false;
+          case "smooth" then false;
           else true;
         end match;
 
