@@ -1,0 +1,91 @@
+// name: FunctionInverseSolve
+// keywords: NewBackend, function, inverse, solve
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -rf FunctionInverseSolve.Test* _FunctionInverseSolve.Test* output.log
+//
+// An equation y = f(a, x) is solved for x with the inverse annotation of f
+// instead of a nonlinear system.
+
+loadString("
+package FunctionInverseSolve
+  function f \"monotone in x, no closed form for x\"
+    input Real a;
+    input Real x;
+    output Real y;
+  algorithm
+    y := a*x + 0.1*x^3;
+    annotation(Inline=false, inverse(x = FunctionInverseSolve.f_inv(a, y)));
+  end f;
+
+  function f_inv
+    input Real a;
+    input Real y;
+    output Real x;
+  algorithm
+    x := y/a;
+    for i in 1:30 loop
+      x := x - (a*x + 0.1*x^3 - y)/(a + 0.3*x^2);
+    end for;
+    annotation(Inline=false);
+  end f_inv;
+
+  model Test \"y given, equation solved for x with the inverse\"
+    parameter Real a = 2;
+    Real x;
+    Real y = 3 + time;
+  equation
+    y = FunctionInverseSolve.f(a, x);
+  end Test;
+
+  model Test2 \"the call is isolated first\"
+    parameter Real a = 2;
+    Real x;
+    Real z = time;
+  equation
+    2*FunctionInverseSolve.f(a, x) + z = 7;
+  end Test2;
+end FunctionInverseSolve;
+"); getErrorString();
+
+simulate(FunctionInverseSolve.Test, stopTime=1.0); getErrorString();
+val(x, 0.0);
+val(x, 1.0);
+// no nonlinear system in the generated code
+regexBool(readFile("FunctionInverseSolve.Test_info.json"), "non-linear");
+getErrorString();
+
+simulate(FunctionInverseSolve.Test2, stopTime=1.0); getErrorString();
+val(x, 0.0);
+val(x, 1.0);
+regexBool(readFile("FunctionInverseSolve.Test2_info.json"), "non-linear");
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "FunctionInverseSolve.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionInverseSolve.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.3711174827909076
+// 1.7376600406829499
+// false
+// ""
+// record SimulationResult
+//     resultFile = "FunctionInverseSolve.Test2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionInverseSolve.Test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.560131275250044
+// 1.3711174827909076
+// false
+// ""
+// endResult

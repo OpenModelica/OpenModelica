@@ -28,6 +28,7 @@ FuncDer.mos  \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
+FunctionInverseSolve.mos \
 FunctionPointer.mos \
 FunctionPointerArray.mos \
 FunctionPointerArrayOutput.mos \
