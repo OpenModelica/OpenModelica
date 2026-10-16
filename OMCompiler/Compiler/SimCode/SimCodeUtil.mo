@@ -14352,8 +14352,8 @@ end msvcEnvironment;
 
 public function getCMakeVersion
   "Get CMake version"
-  input String logDirectory;
   input String pathToCMake = Autoconf.cmake;
+  input String logDirectory = "./";
   output SemanticVersion.Version cmakeVersion;
 protected
   Integer retVal;
@@ -14362,7 +14362,9 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  cmakeVersionLogFile := logDirectory + "/systemCall_cmakeVersion.log";
+  cmakeVersionLogFile := logDirectory +
+    (if StringUtil.endsWith(logDirectory, "/") or StringUtil.endsWith(logDirectory, "\\") then "" else "/") +
+    "systemCall_cmakeVersion.log";
   retVal := System.systemCallRestrictedEnv(msvcEnvironment() + pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     Error.addInternalError("Failed to get version from " + pathToCMake + ": " + System.readFile(cmakeVersionLogFile), sourceInfo());
