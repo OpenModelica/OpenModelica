@@ -14351,12 +14351,13 @@ algorithm
 end msvcEnvironment;
 
 public function getCMakeVersion
-  "Get CMake version"
+  "Get CMake version, writing intermediate output to logDirectory (defaults to the current directory)."
   input String pathToCMake = Autoconf.cmake;
+  input String logDirectory = "./";
   output SemanticVersion.Version cmakeVersion;
 protected
   Integer retVal;
-  String cmakeVersionLogFile = "systemCall_cmakeVersion.log";
+  String cmakeVersionLogFile = logDirectory + "systemCall_cmakeVersion.log";
   list<String> regexOut;
   Integer numMatches;
   String cmakeVersionString;
