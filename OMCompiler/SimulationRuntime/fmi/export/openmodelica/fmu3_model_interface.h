@@ -132,6 +132,12 @@ typedef struct {
   int _has_jacobian_intialization;
   JACOBIAN* fmiDerJac;
   JACOBIAN* fmiDerJacInitialization;
+  /* Adjoint (transposed) counterpart of fmiDerJac, used by fmi3GetAdjointDerivative.
+   * Only available for models compiled with the new (NB) backend, which is the
+   * only backend that generates the symbolic adjoint (vector-Jacobian product)
+   * code needed here; the old backend never sets initialPartialFMIDERADJ. */
+  int _has_jacobian_adjoint;
+  JACOBIAN* fmiDerJacAdj;
 
   fmi3Float64* states;
   fmi3Float64* states_der;

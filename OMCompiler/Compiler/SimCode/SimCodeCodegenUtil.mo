@@ -657,6 +657,17 @@ algorithm
   end match;
 end providesDirectionalDerivative;
 
+public function providesAdjointDerivative
+  input SimCode.SimCode inSimCode;
+  output Boolean b;
+algorithm
+  b := match inSimCode
+    case SimCode.SIMCODE(modelStructure=SOME(SimCode.FMIMODELSTRUCTURE(adjointPartialDerivatives=SOME(_))))
+    then true;
+    else false;
+  end match;
+end providesAdjointDerivative;
+
 protected function getVarIndexInfosByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
@@ -2464,6 +2475,35 @@ algorithm
     else ();
   end match;
 end stackArrayLength;
+
+public function fmi3AdjointVariables
+  "The primal knowns or unknowns with their actual FMIDERADJ result/seed indices. Use the
+   Jacobian map rather than assuming states/inputs/parameters have the same
+   order or size as the exported variable lists. An absent result is not a
+   supported independent variable (in particular, parameters by default)."
+  input SimCode.SimCode simCode;
+  input Boolean seedVars = false;
+  output list<SimCodeVar.SimVar> knowns = {};
+protected
+  HashTableCrefSimVar.HashTable ht;
+  SimCodeVar.SimVar known;
+algorithm
+  for jac in simCode.jacobianMatrices loop
+    if jac.matrixName == "FMIDERADJ" and isSome(jac.crefsHT) then
+      ht := Util.getOption(jac.crefsHT);
+      for v in BaseHashTable.hashTableValueList(ht) loop
+        if (if seedVars then valueEq(v.varKind, BackendDAE.SEED_VAR())
+          else valueEq(v.varKind, BackendDAE.JAC_VAR())) and v.index >= 0 then
+          known := v;
+          known.name := ComponentReference.crefStripFirstIdent(v.name);
+          knowns := known :: knowns;
+        end if;
+      end for;
+      knowns := List.sort(knowns, simVarIndexGt);
+      return;
+    end if;
+  end for;
+end fmi3AdjointVariables;
 
 public function isJacobianColumnCref
   "Whether cr is x.$pDER<M>.dummyVar<M>, an element of a Jacobian column. The
