@@ -138,6 +138,9 @@ first (`./format.sh FILE`, commit), then make your change.
 
 - Never edit generated files. Your change is lost on the next build, and the
   files are not in git anyway.
+- mmtorust and susan format the code they generate with the same
+  `rustfmt.toml`, so it looks the same as hand-written code.
+  `MMTORUST_RUSTFMT=off` gives the raw generator output.
 - Generated code keeps MetaModelica naming (`camelCase` functions, `UPPER`
   record names) and allows the matching lints (`non_snake_case`, ...). Do not
   "fix" the names.

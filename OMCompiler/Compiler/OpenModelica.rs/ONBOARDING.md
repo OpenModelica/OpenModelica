@@ -175,7 +175,7 @@ MM classes  ──  hierarchy: resolve names, flatten extends, find recursive ty
 codegen (one file per top-level package, in parallel)   (codegen.rs, typedexp.rs)
   │  + `<Package>.handwritten.rs` replacements
   ▼
-<crate>/src/<Package>.rs  and  <crate>/src/lib.rs
+rustfmt (rustfmt.rs)  →  <crate>/src/<Package>.rs  and  <crate>/src/lib.rs
 ```
 
 Files are written only when their content changed, so cargo recompiles only the
@@ -350,6 +350,8 @@ Also visible here:
   are passed as `&` references (borrowed) instead of being moved or cloned.
 - The visibility analysis found no caller outside the crate, hence
   `pub(crate)`.
+- rustfmt does not format inside macro calls such as `match_deref! { ... }`,
+  so those blocks keep mmtorust's own layout.
 
 ### Changing what mmtorust generates
 
@@ -359,7 +361,7 @@ Also visible here:
 | A different declaration for Rust only                   | `X.rust.mo` next to `X.mo` replaces single records/functions before analysis; the C build never reads it ([`mmtorust/src/overrides.rs`](mmtorust/src/overrides.rs)) |
 | A construct the Rust port does not need                 | `annotation(__OpenModelica_Retired = true)` on the class                                                                          |
 | A new `external "C"` function                           | implement it in the hand-written module and register it in `external_c_calls.rs`                                                  |
-| A translation bug                                       | fix `mmtorust/src/codegen.rs` / `typedexp.rs`. Run `cmake --build <build> --target rust_codegen` to regenerate |
+| A translation bug                                       | fix `mmtorust/src/codegen.rs` / `typedexp.rs`. Run `cmake --build <build> --target rust_codegen` to regenerate, and compare with `MMTORUST_RUSTFMT=off` if you want the raw output |
 
 ## 4. A few Rust terms
 
