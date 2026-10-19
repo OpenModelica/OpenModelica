@@ -1236,8 +1236,8 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   // wasm: off everywhere else - these tests select the wasm-jit/wasm target
   // themselves, which only this build has.
   // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
-  // works.
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5'
+  // works. gbode: disabled in the Rust simulation runtime.
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
   if (isWasmTarget) {
@@ -1668,9 +1668,9 @@ String sharedTestSuites() {
 
 // The clang shards run --simCodeTarget=C+Rust, which does not change the C++
 // runtime, so its tests run in the gcc shards only. fmuCSources expects the
-// sources of a C FMU.
+// sources of a C FMU. The Rust runtime has gbode disabled.
 String rustRuntimeTestSuites() {
-  return "${sharedTestSuites()},-cpp,-fmuCSources"
+  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode"
 }
 
 // A partest shard against a stashed CMake install tree (see buildClangOMC).

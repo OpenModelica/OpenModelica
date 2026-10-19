@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f testSolver.problem1* output.log
 // cflags: -d=-newInst
+// suite: gbode
 
 loadFile("testSolverPackage.mo"); getErrorString();
 simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="gbode", simflags="-gbm=trapezoid -gbctrl=const"); getErrorString();
