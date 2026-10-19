@@ -276,6 +276,12 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     """)
+    bat (label: 'Sanity check - C+Rust', script: """
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=C+Rust"
+    """)
     bat (label: 'Sanity check - Cpp', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
@@ -292,6 +298,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
     """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
+    sh label: 'Sanity check - C+Rust', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=C+Rust"
     if (buildCpp) {
       sh label: 'Sanity check - Cpp', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     }
@@ -1652,21 +1659,28 @@ void checks() {
   stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
 }
 
-// The suites the gcc and clang testsuite shards run. Both are CMake builds,
-// which link the system HDF5 (MAT v7.3) and have libomc_result, so they select
-// the same tests. Partitioning is computed over these; see -partition-suites in
-// testsuite/partest/runtests.pl.
+// The suites the gcc testsuite shards run. The CMake build links the system
+// HDF5 (MAT v7.3). Partitioning is computed over these; see -partition-suites
+// in testsuite/partest/runtests.pl.
 String sharedTestSuites() {
   return '+hdf5'
 }
 
+// The clang shards run --simCodeTarget=C+Rust, which does not change the C++
+// runtime, so its tests run in the gcc shards only. fmuCSources expects the
+// sources of a C FMU.
+String rustRuntimeTestSuites() {
+  return "${sharedTestSuites()},-cpp,-fmuCSources"
+}
+
 // A partest shard against a stashed CMake install tree (see buildClangOMC).
-void partestStashed(stashName, partition, partitionmodulo) {
+void partestStashed(stashName, partition, partitionmodulo, String simCodeTarget = '', String suites = sharedTestSuites()) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
+  String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
   partest(partition, partitionmodulo, true,
-          "-suites=${sharedTestSuites()} -partition-suites=${sharedTestSuites()}")
+          "-suites=${suites} -partition-suites=${suites}${simCodeTargetArg}")
 }
 
 // A CTest-driven testsuite shard against a stashed CMake install tree (see

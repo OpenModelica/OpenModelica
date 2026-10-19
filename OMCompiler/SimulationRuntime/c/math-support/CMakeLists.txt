@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-if(NOT OM_OMC_ENABLE_C_OLD_RUNTIME)
+if(NOT OM_OMC_ENABLE_C_RUNTIME)
   return()
 endif()
 

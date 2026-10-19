@@ -403,12 +403,12 @@ algorithm
 end setTearingHeuristic;
 
 public function simCodeTarget "Default is set by +simCodeTarget=C.
-  \"C.old\" generates the same sources as \"C\" and differs only in what the
+  \"C+Rust\" generates the same sources as \"C\" and differs only in what the
   makefile links and defines, so every code generator sees \"C\"."
   output String target;
 algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
-  if target == "C.old" then
+  if target == "C+Rust" then
     target := "C";
   end if;
 end simCodeTarget;
@@ -429,10 +429,10 @@ algorithm
     (if StringUtil.startsWith(target, "msvc") or target == "debugrt" then "-windows-msvc" else "-windows-gnu");
 end targetTriple;
 
-public function simCodeRustRuntime "+simCodeTarget=C links libSimulationRuntimeRust, +simCodeTarget=C.old libSimulationRuntimeC."
+public function simCodeRustRuntime "+simCodeTarget=C+Rust: link libSimulationRuntimeRust instead of libSimulationRuntimeC."
   output Boolean rust;
 algorithm
-  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C";
+  rust := Flags.getConfigString(Flags.SIMCODE_TARGET) == "C+Rust";
 end simCodeRustRuntime;
 
 public function setsimCodeTarget

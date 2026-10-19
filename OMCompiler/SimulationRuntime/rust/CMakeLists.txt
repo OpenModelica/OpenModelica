@@ -1,4 +1,4 @@
-# libSimulationRuntimeRust: the simulation runtime `--simCodeTarget=C` links
+# libSimulationRuntimeRust: the simulation runtime `--simCodeTarget=C+Rust` links
 # generated C against.
 #
 # The crate is a member of the compiler workspace, so an omc build compiles it
@@ -176,7 +176,7 @@ if(TARGET OpenModelicaRuntimeC)
     list(APPEND _simrt_env "OMC_RUNTIME_C_LINK=${_simrt_rtc_link}")
     if(WIN32)
       # Absorbing the archive is not enough on Windows: a cdylib exports only
-      # what Rust marks dllexport, so --simCodeTarget=C found none of the C
+      # what Rust marks dllexport, so --simCodeTarget=C+Rust found none of the C
       # runtime. An ELF .so exports it anyway.
       find_program(OMC_NM_EXECUTABLE NAMES llvm-nm nm)
       if(OMC_NM_EXECUTABLE)
@@ -188,7 +188,7 @@ if(TARGET OpenModelicaRuntimeC)
         list(APPEND _simrt_env "OMC_RUNTIME_C_DEF=${_simrt_def}")
       else()
         message(WARNING "No llvm-nm/nm found: libSimulationRuntimeRust will not "
-                        "re-export the C runtime, so --simCodeTarget=C cannot link.")
+                        "re-export the C runtime, so --simCodeTarget=C+Rust cannot link.")
       endif()
     endif()
   endif()
