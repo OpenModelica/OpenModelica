@@ -193,40 +193,6 @@ void freeJacobianCopy(JACOBIAN *jac)
   }
 }
 
-static void prepareAdjointJacobianForRowEvaluation(JACOBIAN* jacobian)
-{
-  /* In-place ownership move from forward-oriented fields to adjoint-oriented fields. */
-  assert(jacobian != NULL);
-  assert(jacobian->seedVarsAdj == NULL);
-  assert(jacobian->tmpVarsAdj == NULL);
-  assert(jacobian->resultVarsAdj == NULL);
-  assert(jacobian->sparsePatternT == NULL);
-  assert(jacobian->dagT == NULL);
-  assert(jacobian->evalSelectionRow == NULL);
-  assert(jacobian->evalRow == NULL);
-  assert(jacobian->constRowEqns == NULL);
-
-  jacobian->sizeTmpVarsAdj = jacobian->sizeTmpVars;
-  jacobian->sparsePatternT = jacobian->sparsePattern;
-  jacobian->seedVarsAdj = jacobian->seedVars;
-  jacobian->tmpVarsAdj = jacobian->tmpVars;
-  jacobian->resultVarsAdj = jacobian->resultVars;
-  jacobian->dagT = jacobian->dag;
-  jacobian->evalSelectionRow = jacobian->evalSelectionCol;
-  jacobian->evalRow = jacobian->evalColumn;
-  jacobian->constRowEqns = jacobian->constColEqns;
-
-  jacobian->sizeTmpVars = 0;
-  jacobian->sparsePattern = NULL;
-  jacobian->seedVars = NULL;
-  jacobian->tmpVars = NULL;
-  jacobian->resultVars = NULL;
-  jacobian->dag = NULL;
-  jacobian->evalSelectionCol = NULL;
-  jacobian->evalColumn = NULL;
-  jacobian->constColEqns = NULL;
-}
-
 static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, JACOBIAN* adjointJacobian)
 {
   /* Ownership transfer (move semantics): adopt row-side storage in forward,
@@ -266,7 +232,7 @@ static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, J
 }
 
 /**
- * \brief Row-wise Jacobian evaluation.
+ * @brief Row-wise Jacobian evaluation.
  *
  * Assumptions:
  *  - jacobian->evalColumn evaluates a row-direction seed (i.e., is a row evaluator)
@@ -490,26 +456,6 @@ void printSparsePattern(const SPARSE_PATTERN* sp) {
     printf("======================\n");
 }
 
-/**
- * @brief Distance-1 column coloring of a CSC sparse pattern.
- *
- * Two columns may share a color only if they have no non-zero row in common.
- * The rows of every column are sorted and made unique first.
- * Uses ColPack's partial distance-two column coloring when available, with
- * a greedy C-only fallback.
- * The fallback uses the existing cscToCsr helper to build the row→columns map, then
- * assigns the smallest available color to each column in order.
- *
- * Needed for the resizable analytic Jacobian path: the C sparsity pattern
- * is built at runtime from WHOLEDIM loops that over-approximate array
- * equations as dense blocks, so the compile-time coloring (derived from the
- * exact symbolic sparsity) is invalid for the runtime pattern.  Recomputing
- * it here guarantees correctness.
- *
- * @param sp     CSC sparse pattern (leadindex, index, colorCols already allocated).
- * @param nRows  Number of rows in the Jacobian.
- * @param nCols  Number of columns (== size of sp->colorCols).
- */
 static int compareUnsigned(const void* a, const void* b)
 {
   const unsigned int x = *(const unsigned int*) a, y = *(const unsigned int*) b;
@@ -1106,6 +1052,27 @@ void freeSparsePattern(SPARSE_PATTERN *spp)
   }
 }
 
+
+/**
+ * @brief Distance-1 column coloring of a CSC sparse pattern.
+ *
+ * Two columns may share a color only if they have no non-zero row in common.
+ * The rows of every column are sorted and made unique first.
+ * Uses ColPack's partial distance-two column coloring when available, with
+ * a greedy C-only fallback.
+ * The fallback uses the existing cscToCsr helper to build the row→columns map, then
+ * assigns the smallest available color to each column in order.
+ *
+ * Needed for the resizable analytic Jacobian path: the C sparsity pattern
+ * is built at runtime from WHOLEDIM loops that over-approximate array
+ * equations as dense blocks, so the compile-time coloring (derived from the
+ * exact symbolic sparsity) is invalid for the runtime pattern.  Recomputing
+ * it here guarantees correctness.
+ *
+ * @param sp     CSC sparse pattern (leadindex, index, colorCols already allocated).
+ * @param nRows  Number of rows in the Jacobian.
+ * @param nCols  Number of columns (== size of sp->colorCols).
+ */
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols)
 {
   if (!sp || !sp->colorCols) return;
@@ -1355,7 +1322,8 @@ static JACOBIAN_METHOD getFallbackJacobianMethod(threadData_t* threadData, JACOB
     }
     return INTERNALNUMJAC;
   case BICOLOREDSYMJAC:
-    if (hasColumn && hasRow && (hasSparse || hasSparseT)) {
+    if (hasColumn && hasRow &&
+       (hasSparse || hasSparseT)) {
       return BICOLOREDSYMJAC;
     }
     if (hasColumn && hasSparse) {
@@ -1417,7 +1385,7 @@ static JACOBIAN_METHOD getFallbackJacobianMethod(threadData_t* threadData, JACOB
     return jacobianMethod;
   default:
     throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
-    return jacobianMethod;
+    return JAC_UNKNOWN;
   }
 }
 
@@ -1443,6 +1411,7 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian
   const modelica_boolean hasSparseT = jacobian->sparsePatternT != NULL;
 
   jacobianMethod = getFallbackJacobianMethod(threadData, jacobianMethod, hasColumn, hasRow, hasSparse, hasSparseT);
+  assertStreamPrint(threadData, jacobianMethod > JAC_UNKNOWN && jacobianMethod < JAC_MAX, "Unhandled case in setJacobianMethod");
 
   if (requestedJacobianMethod != jacobianMethod && requestedJacobianMethod != JAC_UNKNOWN) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian method %s is not available for this generated Jacobian, switching to %s.",
@@ -1450,7 +1419,6 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian
   }
 
   /* Log Jacobian method */
-  assertStreamPrint(threadData, jacobianMethod > JAC_UNKNOWN && jacobianMethod < JAC_MAX, "Unhandled case in setJacobianMethod");
   infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: %s.", JACOBIAN_METHOD_NAME[jacobianMethod]);
 
   return jacobianMethod;
@@ -1545,7 +1513,6 @@ JACOBIAN* initSymbolicOdeJacobian(DATA* data, threadData_t* threadData, JACOBIAN
         adjointJacobian->seedVarsAdj && adjointJacobian->tmpVarsAdj && adjointJacobian->resultVarsAdj;
 
     if (adjointJacobianAvailable) {
-      // prepareAdjointJacobianForRowEvaluation(adjointJacobian);
       jacobian = adjointJacobian;
     } else {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "No adjoint symbolic Jacobian was generated "

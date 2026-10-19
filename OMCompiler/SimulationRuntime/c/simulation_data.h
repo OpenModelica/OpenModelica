@@ -198,7 +198,7 @@ typedef struct JACOBIAN
   size_t sizeCols;                      /* Number of columns of Jacobian */
   size_t sizeRows;                      /* Number of rows of Jacobian */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
-  size_t sizeTmpVarsAdj;                /* maybe we don't need this, same as sizeTmpVars? */
+  size_t sizeTmpVarsAdj;                /* Length of vector tmpVarsAdj, can contain lambda variables */
 
   SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC format including column coloring */
   SPARSE_PATTERN* sparsePatternT;       /* Contains sparse pattern in CSR format including row coloring */

@@ -219,7 +219,6 @@ pub struct JACOBIAN {
     pub recoverMask: *mut u8,
     pub csrToCscMap: *mut c_uint,
 
-
     pub constantEqns: jacobianColumn_func_ptr,
     pub isRowEval: modelica_boolean,
     pub isBidirectional: modelica_boolean,

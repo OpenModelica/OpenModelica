@@ -283,9 +283,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       else {
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
-      if (jacobian->sparsePattern == NULL) {
-        throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
-      }
 
       gbfData->symJacAvailable = jacobian->evalColumn != NULL;
       // change GBODE specific jacobian method
