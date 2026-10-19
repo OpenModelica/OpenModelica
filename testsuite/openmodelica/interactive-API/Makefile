@@ -45,6 +45,8 @@ DefaultComponentName.mos \
 DeleteConnection.mos \
 deleteEquation1.mos \
 DialogAnnotation.mos \
+evaluateProbe1.mos \
+evaluateProbe2.mos \
 FlagParsing.mos \
 ForStatement1.mos \
 ForStatement2.mos \
@@ -92,6 +94,7 @@ getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
 getNthImport.mos \
+getProbeTree1.mos \
 GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \

@@ -128,6 +128,7 @@ import OMGraphics;
 import PackageManagement;
 import Parser;
 import Print;
+import ProbeTree;
 import Refactor;
 import ReverseLookup;
 import RewriteRules;
@@ -3492,6 +3493,12 @@ algorithm
 
     case ("getDefinitionAt", {Values.STRING(str), Values.INTEGER(x), Values.INTEGER(y), Values.BOOL(b)})
       then ValuesMake.makeString(getDefinitionAt(str, x, y, b));
+
+    case ("getProbeTree", {Values.STRING(str), Values.BOOL(b)})
+      then ValuesMake.makeString(ProbeTree.probeTreeJSON(str, b));
+
+    case ("evaluateProbe", {Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3), Values.BOOL(b)})
+      then ValuesMake.makeString(ProbeTree.evaluateProbeJSON(str, str1, str2, str3, b));
 
     case ("getClassDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
                               Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
@@ -8436,7 +8443,7 @@ algorithm
   end if;
 end scopeClassPaths;
 
-protected function collectDefUse
+public function collectDefUse
   "Walks the given classes and returns the definitions and uses of the names in
    them, see NFUsedElements.collectUses."
   input list<Absyn.Path> paths "In reverse order.";
@@ -9832,7 +9839,7 @@ algorithm
   end if;
 end simulationLogFile;
 
-function instantiateModel
+public function instantiateModel
   input output FCore.Cache cache;
   input FCore.Graph env;
   input Absyn.Path path;

@@ -6033,6 +6033,69 @@ class is redeclared as. The uses of the definition are returned by
 </html>"));
 end getDefinitionAt;
 
+function getProbeTree
+  input String fileName "A file whose classes are loaded.";
+  input Boolean prettyPrint = false;
+  output String tree;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the probe tree of a file as JSON, for property probing tools like
+<a href=\"https://github.com/lu-cs-sde/codeprober\">CodeProber</a>: the nodes of the file
+with their source spans and the names of the properties that <code>evaluateProbe</code>
+can evaluate on them.</p>
+<p>The tree is built from the file as it's parsed: the file (<code>StoredDefinition</code>),
+its classes (<code>ClassDefinition</code>), their elements (<code>ComponentDeclaration</code>,
+<code>ComponentClause</code> for several components declared together,
+<code>ExtendsClause</code>, <code>ImportClause</code>), equations (<code>Equation</code>) and
+statements (<code>Statement</code>), nested like in the source, and the names in them
+(<code>Ident</code>), declared or used, found like in <code>getDefUseChains</code>. A node has
+an <code>id</code>, the indices of the children from the root, e.g. <code>0.1.3</code>, which
+stays the same as long as the file doesn't change, its <code>kind</code>, a <code>label</code>,
+its span, its <code>properties</code> and its <code>children</code>. If the file can't be parsed,
+<code>root</code> is <code>null</code> and <code>errors</code> has the syntax errors.</p>
+</html>"));
+end getProbeTree;
+
+function evaluateProbe
+  input String fileName "A file whose classes are loaded.";
+  input String nodeId "The id of a node of getProbeTree.";
+  input String property "One of the properties of the node.";
+  input String contextModel = "" "The model translated for the simulation properties, the model the node is in if empty.";
+  input Boolean prettyPrint = false;
+  output String result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Evaluates a property of a node of the probe tree of a file, see <code>getProbeTree</code>,
+and returns the result as JSON: a list of items, each a <code>text</code>, a <code>node</code>
+(the id of a node of the tree), a diagnostic with a <code>severity</code> (error, warning or
+info), a span and a <code>message</code>, or an <code>arrow</code> with a color, a span, the
+span it points <code>to</code> and a <code>message</code>.</p>
+<p>The properties are:</p>
+<ul>
+<li><code>text</code>, <code>hover</code>: the source of the node and what an editor shows
+when hovering it.</li>
+<li><code>errors</code>, <code>topClasses</code>, <code>contextModel</code>,
+<code>omcVersion</code> of the file: the names that couldn't be looked up and the messages of
+<code>checkModel</code> of the models in it, and its classes.</li>
+<li><code>definition</code>, <code>uses</code>, <code>useArrows</code>, <code>role</code>: what a
+name refers to and how it's used there, and the uses in the file of a class, component or
+declared name, as nodes or as arrows from the declaration.</li>
+<li><code>dependsOn</code>, <code>checkModel</code>, <code>flatModelica</code> of a class: the
+classes it uses, as in <code>getDependencyGraph</code>, and the results of
+<code>checkModel</code> and of <code>instantiateModel</code> as Base Modelica.</li>
+<li><code>simVariables</code>, <code>simEquations</code>, <code>jacobianEquations</code>,
+<code>cCode</code>, <code>translationMessages</code>, <code>flatDeclarations</code>,
+<code>connectionEquations</code>: what a class, component, equation or connect became in
+the translation of the context model: its simulation variables, the simulation equations
+with the symbolic operations done on them, the generated C functions of the equations, the
+declarations in the flat model and the equations of the flat model a connect generates.</li>
+</ul>
+<p>The translation of the context model is kept in a directory in the temporary directory,
+named by the hash of the name and contents of the file, so it's done once for each version of
+the file.</p>
+</html>"));
+end evaluateProbe;
+
 function getClassDiagram
   input TypeName className;
   input String fileName = "" "The file to write the diagram to, if not empty.";

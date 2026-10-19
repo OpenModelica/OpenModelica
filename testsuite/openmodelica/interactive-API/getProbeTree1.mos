@@ -1,0 +1,777 @@
+// name: getProbeTree1
+// keywords: probe tree, CodeProber
+// status: correct
+//
+// Tests getProbeTree, the nodes of a file with their spans and properties.
+
+writeFile("getProbeTree1.mo", "package PT
+  type Voltage = Real;
+  import PT.Voltage;
+  partial model Base
+    parameter Real k = 2, j = 1;
+  end Base;
+  model M
+    extends Base(k = 3);
+    Voltage v;
+  equation
+    if k > 1 then
+      v = k*time;
+    else
+      v = j;
+    end if;
+  algorithm
+    for i in 1:2 loop
+      assert(v < 10, \"too large\");
+    end for;
+  end M;
+end PT;
+");
+getErrorString();
+loadFile("getProbeTree1.mo"); getErrorString();
+print(getProbeTree("getProbeTree1.mo", prettyPrint = true)); getErrorString();
+
+// A file that doesn't parse has no tree, only its errors.
+writeFile("getProbeTree1b.mo", "model S
+  Real x
+equation
+  x = 1;
+end S;
+");
+getErrorString();
+print(getProbeTree("getProbeTree1b.mo")); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {
+// "file": "getProbeTree1.mo",
+// "root": {
+// "id": "0",
+// "kind": "StoredDefinition",
+// "label": "getProbeTree1.mo",
+// "lineStart": 1,
+// "columnStart": 1,
+// "lineEnd": 21,
+// "columnEnd": 7,
+// "properties": [
+// "errors",
+// "topClasses",
+// "contextModel",
+// "omcVersion",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0",
+// "kind": "ClassDefinition",
+// "label": "PT",
+// "lineStart": 1,
+// "columnStart": 1,
+// "lineEnd": 21,
+// "columnEnd": 7,
+// "properties": [
+// "definition",
+// "uses",
+// "dependsOn",
+// "checkModel",
+// "flatModelica",
+// "simVariables",
+// "simEquations",
+// "translationMessages",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.0",
+// "kind": "Ident",
+// "label": "PT",
+// "lineStart": 1,
+// "columnStart": 9,
+// "lineEnd": 1,
+// "columnEnd": 10,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.1",
+// "kind": "ClassDefinition",
+// "label": "Voltage",
+// "lineStart": 2,
+// "columnStart": 3,
+// "lineEnd": 2,
+// "columnEnd": 22,
+// "properties": [
+// "definition",
+// "uses",
+// "dependsOn",
+// "checkModel",
+// "flatModelica",
+// "simVariables",
+// "simEquations",
+// "translationMessages",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.1.0",
+// "kind": "Ident",
+// "label": "Voltage",
+// "lineStart": 2,
+// "columnStart": 8,
+// "lineEnd": 2,
+// "columnEnd": 14,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.2",
+// "kind": "ImportClause",
+// "label": "",
+// "lineStart": 3,
+// "columnStart": 3,
+// "lineEnd": 3,
+// "columnEnd": 20,
+// "properties": [
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.2.0",
+// "kind": "Ident",
+// "label": "PT",
+// "lineStart": 3,
+// "columnStart": 10,
+// "lineEnd": 3,
+// "columnEnd": 11,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.2.1",
+// "kind": "Ident",
+// "label": "Voltage",
+// "lineStart": 3,
+// "columnStart": 13,
+// "lineEnd": 3,
+// "columnEnd": 19,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.3",
+// "kind": "ClassDefinition",
+// "label": "Base",
+// "lineStart": 4,
+// "columnStart": 3,
+// "lineEnd": 6,
+// "columnEnd": 11,
+// "properties": [
+// "definition",
+// "uses",
+// "dependsOn",
+// "checkModel",
+// "flatModelica",
+// "simVariables",
+// "simEquations",
+// "translationMessages",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.3.0",
+// "kind": "Ident",
+// "label": "Base",
+// "lineStart": 4,
+// "columnStart": 17,
+// "lineEnd": 4,
+// "columnEnd": 20,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.3.1",
+// "kind": "ComponentClause",
+// "label": "",
+// "lineStart": 5,
+// "columnStart": 5,
+// "lineEnd": 5,
+// "columnEnd": 32,
+// "properties": [
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.3.1.0",
+// "kind": "ComponentDeclaration",
+// "label": "k",
+// "lineStart": 5,
+// "columnStart": 20,
+// "lineEnd": 5,
+// "columnEnd": 26,
+// "properties": [
+// "definition",
+// "uses",
+// "useArrows",
+// "simVariables",
+// "flatDeclarations",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.3.1.0.0",
+// "kind": "Ident",
+// "label": "k",
+// "lineStart": 5,
+// "columnStart": 20,
+// "lineEnd": 5,
+// "columnEnd": 20,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.3.1.1",
+// "kind": "ComponentDeclaration",
+// "label": "j",
+// "lineStart": 5,
+// "columnStart": 27,
+// "lineEnd": 5,
+// "columnEnd": 32,
+// "properties": [
+// "definition",
+// "uses",
+// "useArrows",
+// "simVariables",
+// "flatDeclarations",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.3.1.1.0",
+// "kind": "Ident",
+// "label": "j",
+// "lineStart": 5,
+// "columnStart": 27,
+// "lineEnd": 5,
+// "columnEnd": 27,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.3.2",
+// "kind": "Ident",
+// "label": "Base",
+// "lineStart": 6,
+// "columnStart": 7,
+// "lineEnd": 6,
+// "columnEnd": 10,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.4",
+// "kind": "ClassDefinition",
+// "label": "M",
+// "lineStart": 7,
+// "columnStart": 3,
+// "lineEnd": 20,
+// "columnEnd": 8,
+// "properties": [
+// "definition",
+// "uses",
+// "dependsOn",
+// "checkModel",
+// "flatModelica",
+// "simVariables",
+// "simEquations",
+// "translationMessages",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.0",
+// "kind": "Ident",
+// "label": "M",
+// "lineStart": 7,
+// "columnStart": 9,
+// "lineEnd": 7,
+// "columnEnd": 9,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.1",
+// "kind": "ExtendsClause",
+// "label": "Base",
+// "lineStart": 8,
+// "columnStart": 5,
+// "lineEnd": 8,
+// "columnEnd": 24,
+// "properties": [
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.1.0",
+// "kind": "Ident",
+// "label": "Base",
+// "lineStart": 8,
+// "columnStart": 13,
+// "lineEnd": 8,
+// "columnEnd": 16,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.1.1",
+// "kind": "Ident",
+// "label": "k",
+// "lineStart": 8,
+// "columnStart": 18,
+// "lineEnd": 8,
+// "columnEnd": 18,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.4.2",
+// "kind": "ComponentDeclaration",
+// "label": "v",
+// "lineStart": 9,
+// "columnStart": 5,
+// "lineEnd": 9,
+// "columnEnd": 14,
+// "properties": [
+// "definition",
+// "uses",
+// "useArrows",
+// "simVariables",
+// "flatDeclarations",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.2.0",
+// "kind": "Ident",
+// "label": "Voltage",
+// "lineStart": 9,
+// "columnStart": 5,
+// "lineEnd": 9,
+// "columnEnd": 11,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.2.1",
+// "kind": "Ident",
+// "label": "v",
+// "lineStart": 9,
+// "columnStart": 13,
+// "lineEnd": 9,
+// "columnEnd": 13,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.4.3",
+// "kind": "Equation",
+// "label": "if",
+// "lineStart": 11,
+// "columnStart": 5,
+// "lineEnd": 15,
+// "columnEnd": 11,
+// "properties": [
+// "simEquations",
+// "jacobianEquations",
+// "cCode",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.3.0",
+// "kind": "Ident",
+// "label": "k",
+// "lineStart": 11,
+// "columnStart": 8,
+// "lineEnd": 11,
+// "columnEnd": 8,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.3.1",
+// "kind": "Equation",
+// "label": "=",
+// "lineStart": 12,
+// "columnStart": 7,
+// "lineEnd": 12,
+// "columnEnd": 17,
+// "properties": [
+// "simEquations",
+// "jacobianEquations",
+// "cCode",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.3.1.0",
+// "kind": "Ident",
+// "label": "v",
+// "lineStart": 12,
+// "columnStart": 7,
+// "lineEnd": 12,
+// "columnEnd": 7,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.3.1.1",
+// "kind": "Ident",
+// "label": "k",
+// "lineStart": 12,
+// "columnStart": 11,
+// "lineEnd": 12,
+// "columnEnd": 11,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.4.3.2",
+// "kind": "Equation",
+// "label": "=",
+// "lineStart": 14,
+// "columnStart": 7,
+// "lineEnd": 14,
+// "columnEnd": 12,
+// "properties": [
+// "simEquations",
+// "jacobianEquations",
+// "cCode",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.3.2.0",
+// "kind": "Ident",
+// "label": "v",
+// "lineStart": 14,
+// "columnStart": 7,
+// "lineEnd": 14,
+// "columnEnd": 7,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.3.2.1",
+// "kind": "Ident",
+// "label": "j",
+// "lineStart": 14,
+// "columnStart": 11,
+// "lineEnd": 14,
+// "columnEnd": 11,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.4.4",
+// "kind": "Statement",
+// "label": "for",
+// "lineStart": 17,
+// "columnStart": 5,
+// "lineEnd": 19,
+// "columnEnd": 12,
+// "properties": [
+// "simEquations",
+// "jacobianEquations",
+// "cCode",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.4.0",
+// "kind": "Ident",
+// "label": "i",
+// "lineStart": 17,
+// "columnStart": 9,
+// "lineEnd": 17,
+// "columnEnd": 9,
+// "properties": [
+// "definition",
+// "role",
+// "uses",
+// "useArrows",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// },
+// {
+// "id": "0.0.4.4.1",
+// "kind": "Statement",
+// "label": "assert",
+// "lineStart": 18,
+// "columnStart": 7,
+// "lineEnd": 18,
+// "columnEnd": 34,
+// "properties": [
+// "simEquations",
+// "jacobianEquations",
+// "cCode",
+// "text",
+// "hover"
+// ],
+// "children": [
+// {
+// "id": "0.0.4.4.1.0",
+// "kind": "Ident",
+// "label": "v",
+// "lineStart": 18,
+// "columnStart": 14,
+// "lineEnd": 18,
+// "columnEnd": 14,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.4.5",
+// "kind": "Ident",
+// "label": "M",
+// "lineStart": 20,
+// "columnStart": 7,
+// "lineEnd": 20,
+// "columnEnd": 7,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// },
+// {
+// "id": "0.0.5",
+// "kind": "Ident",
+// "label": "PT",
+// "lineStart": 21,
+// "columnStart": 5,
+// "lineEnd": 21,
+// "columnEnd": 6,
+// "properties": [
+// "definition",
+// "role",
+// "text",
+// "hover"
+// ],
+// "children": [
+//
+// ]
+// }
+// ]
+// }
+// ]
+// },
+// "errors": [
+//
+// ]
+// }
+// ""
+// true
+// ""
+// {"file":"getProbeTree1b.mo", "root":null, "errors":[{"severity":"error", "lineStart":3, "columnStart":1, "lineEnd":3, "columnEnd":1, "message":"Missing token: SEMICOLON"}]}
+// ""
+// endResult
