@@ -24,7 +24,10 @@ pub fn translateModel(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()
     let errs_before = openmodelica_util::Error::getNumErrorMessages();
     let outcome = build_sim_model(&simCode, false, ExtHost::SIM, "", "").and_then(|model| {
         write_output(&format!("{prefix}.wasm"), &model.wasm).map_err(|_| "CodegenWasmJit: write failed")?;
-        sim_models().lock().unwrap_or_else(|e| e.into_inner()).insert(prefix.clone(), Arc::new(model));
+        sim_models()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(prefix.clone(), Arc::new(model));
         Ok(())
     });
     if let Err(e) = &outcome {
@@ -48,8 +51,14 @@ fn init_success_line() -> String {
     if steps == 0 {
         success_line("The initialization finished successfully without homotopy method.")
     } else {
-        let local = if sim_driver::init_homotopy_local() { "local " } else { "" };
-        success_line(&format!("The initialization finished successfully with {steps} {local}homotopy steps."))
+        let local = if sim_driver::init_homotopy_local() {
+            "local "
+        } else {
+            ""
+        };
+        success_line(&format!(
+            "The initialization finished successfully with {steps} {local}homotopy steps."
+        ))
     }
 }
 
@@ -65,15 +74,20 @@ fn log_line(stream: omclog::Stream, ty: omclog::LogType, text: &str, msg: &str) 
 }
 
 fn success_line(msg: &str) -> String {
-    log_line(omclog::SUCCESS, omclog::INFO, &format!("LOG_SUCCESS       | info    | {msg}"), msg)
+    log_line(
+        omclog::SUCCESS,
+        omclog::INFO,
+        &format!("LOG_SUCCESS       | info    | {msg}"),
+        msg,
+    )
 }
 
-/// A run reports itself through `<prefix>.log` alone, which `simulate` returns as
+/// A run reports itself through `logFile` alone, which `simulate` returns as
 /// `messages` — as C's separate simulation executable does. Whatever it left in the
 /// Error buffer would also surface from `getErrorString()`, where C returns "".
 const RUN_CHECKPOINT: ArcStr = arcstr::literal!("wasm-jit simulation run");
 
-pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr) -> i32 {
+pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcStr, logFile: ArcStr) -> i32 {
     let (mut prefix, mut result_file) = (fileNamePrefix.to_string(), resultFile.to_string());
     // `resimulateExecutable` may name a wasm artifact: its own simulation is the
     // model this session exported, run the ordinary way, while an FMI face or an
@@ -85,20 +99,24 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
                 prefix = p;
                 result_file = artifact::plain_result_name(&resultFile);
             }
-            None => return run_artifact(&path, &fileNamePrefix, &resultFile, &simflags),
+            None => return run_artifact(&path, &logFile, &resultFile, &simflags),
         }
     }
     openmodelica_error::ErrorExt::setCheckpoint(RUN_CHECKPOINT);
     let (res, init_output, sim_output, post_output) = run_simulation_inner(&prefix, &result_file, &simflags);
     openmodelica_error::ErrorExt::rollBack(RUN_CHECKPOINT);
-    // `simulate` reads `<prefix>.log` after a run; the model's captured stdout
+    // `simulate` reads `logFile` after a run; the model's captured stdout
     // (`print`, LOG_STATS, ...) is folded in so it shows in the log rather than the
     // process console.
     let init_line = init_success_line();
     // A failed run keeps the init line too, as C does.
     let init_done = init_output.is_some();
     let init_out = init_output.unwrap_or_default();
-    let init_seg = if init_done { format!("{init_out}{init_line}") } else { init_out };
+    let init_seg = if init_done {
+        format!("{init_out}{init_line}")
+    } else {
+        init_out
+    };
     let log = match &res {
         // Init prints, the init line, then the sim prints and the final success.
         Ok(()) => format!(
@@ -119,19 +137,32 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
         }
         Err(e) => {
             let msg = format!("wasm-jit simulation failed: {}", with_engine_detail(e));
-            let line = log_line(omclog::STDOUT, omclog::ERROR, &format!("LOG_ERROR         | error   | {msg}"), &msg);
+            let line = log_line(
+                omclog::STDOUT,
+                omclog::ERROR,
+                &format!("LOG_ERROR         | error   | {msg}"),
+                &msg,
+            );
             format!("{init_seg}{sim_output}{line}")
         }
     };
     // C's `freeNonlinearSystems`, the last thing a simulation executable logs.
     let log = if omclog::active(omclog::NLS) {
         let msg = "free non-linear system solvers";
-        format!("{log}{}", log_line(omclog::NLS, omclog::INFO, &format!("LOG_NLS           | info    | {msg}"), msg))
+        format!(
+            "{log}{}",
+            log_line(
+                omclog::NLS,
+                omclog::INFO,
+                &format!("LOG_NLS           | info    | {msg}"),
+                msg
+            )
+        )
     } else {
         log
     };
-    let _ = write_output(&format!("{fileNamePrefix}.log"), log.as_bytes());
-    // Error is in `<prefix>.log` (hence the result `messages`); no stderr.
+    let _ = write_output(&logFile, log.as_bytes());
+    // Error is in `logFile` (hence the result `messages`); no stderr.
     match res {
         Ok(()) => 0,
         Err(_) => 1,
@@ -140,13 +171,13 @@ pub fn runSimulation(fileNamePrefix: ArcStr, resultFile: ArcStr, simflags: ArcSt
 
 /// Simulate an exported wasm artifact. The three faces (`-s fmi3:me[:solver]`,
 /// `-s fmi3:cs`, and the artifact's own simulation runtime otherwise) all report
-/// themselves through `<prefix>.log`, as a run of a translated model does.
+/// themselves through the log file, as a run of a translated model does.
 #[cfg(all(feature = "artifact", not(target_arch = "wasm32")))]
-fn run_artifact(path: &std::path::Path, prefix: &str, result_file: &str, simflags: &str) -> i32 {
+fn run_artifact(path: &std::path::Path, log_file: &str, result_file: &str, simflags: &str) -> i32 {
     let (face, rest) = match artifact::select_face(simflags) {
         Ok(v) => v,
         Err(e) => {
-            let _ = write_output(&format!("{prefix}.log"), format!("LOG_ERROR         | error   | {e}\n").as_bytes());
+            let _ = write_output(log_file, format!("LOG_ERROR         | error   | {e}\n").as_bytes());
             return 1;
         }
     };
@@ -155,7 +186,7 @@ fn run_artifact(path: &std::path::Path, prefix: &str, result_file: &str, simflag
         Ok(()) => log.push_str("LOG_SUCCESS       | info    | The simulation finished successfully.\n"),
         Err(e) => log.push_str(&format!("LOG_ERROR         | error   | {e}\n")),
     }
-    let _ = write_output(&format!("{prefix}.log"), log.as_bytes());
+    let _ = write_output(log_file, log.as_bytes());
     if res.is_ok() { 0 } else { 1 }
 }
 
@@ -169,7 +200,11 @@ fn run_artifact(path: &std::path::Path, prefix: &str, result_file: &str, simflag
 /// recompiles and reports it — but the `external "C"` implementations are resolved
 /// here, so a broken `Include` fails the build rather than the run.
 pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
-    let model = sim_models().lock().unwrap_or_else(|e| e.into_inner()).get(&fileNamePrefix.to_string()).cloned();
+    let model = sim_models()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&fileNamePrefix.to_string())
+        .cloned();
     let Some(model) = model else { return Ok(()) };
     // Force the runtime module (so its compile/cache-load is in `timeCompile`).
     // It has to be the copy on the engine this model's own module goes to.
@@ -202,7 +237,9 @@ pub fn finishCompile(fileNamePrefix: ArcStr) -> Result<()> {
         return Err("CodegenWasmJit: external \"C\" implementation unavailable");
     }
     if let Err(e) = sim_runtime::prepare_native_externals(&model, &missing) {
-        record_error(format!("CodegenWasmJit: the model's `external \"C\"` implementations are unavailable:\n{e}"));
+        record_error(format!(
+            "CodegenWasmJit: the model's `external \"C\"` implementations are unavailable:\n{e}"
+        ));
         return Err("CodegenWasmJit: external \"C\" implementation unavailable");
     }
     Ok(())
@@ -220,7 +257,9 @@ pub fn emitStandalone(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()
     let prefix = simCode.fileNamePrefix.to_string();
     let _ = std::fs::remove_file(format!("{prefix}.wasm"));
     let bytes = emit_standalone_module(&simCode).map_err(|e| {
-        record_error(format!("CodegenWasmJit: cannot build standalone module for `{prefix}`: {e:#}"));
+        record_error(format!(
+            "CodegenWasmJit: cannot build standalone module for `{prefix}`: {e:#}"
+        ));
         e
     })?;
     write_output(&format!("{prefix}.wasm"), &bytes).map_err(|e| {
@@ -237,7 +276,7 @@ pub fn emitStandalone(simCode: metamodelica::Ref<SimCode::SimCode>) -> Result<()
     let _ = simCode;
     let msg = "CodegenWasmJit: simCodeTarget=wasm (standalone export) is unavailable in the wasm omc build";
     record_error(msg.to_string());
-    return Err(msg)
+    return Err(msg);
 }
 
 /// `CodegenWasmJit.runSimulationWasmtime`: run the standalone module emitted by
@@ -292,13 +331,12 @@ fn run_wasmtime_inner(prefix: &str, result_file: &str, simflags: &str) -> Result
     // The module writes `<prefix>_res.mat`; rename if omc selected another name.
     let produced = format!("{prefix}_res.mat");
     if result_file != produced && std::path::Path::new(&produced).exists() {
-        std::fs::rename(&produced, result_file)
-            .map_err(|e| "cannot rename ->")?;
+        std::fs::rename(&produced, result_file).map_err(|e| "cannot rename ->")?;
     }
     Ok(())
 }
 
 #[cfg(target_arch = "wasm32")]
 fn run_wasmtime_inner(_prefix: &str, _result_file: &str, _simflags: &str) -> Result<()> {
-    return Err("CodegenWasmJit: simCodeTarget=wasm is unavailable in the wasm omc build")
+    return Err("CodegenWasmJit: simCodeTarget=wasm is unavailable in the wasm omc build");
 }
