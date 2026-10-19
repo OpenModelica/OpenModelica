@@ -1524,7 +1524,7 @@ algorithm
         if b then
           Values.REAL(linearizeTime) := getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           if System.regularFileExists(logFile) then
             0 := System.removeFile(logFile);
           end if;
@@ -1539,7 +1539,7 @@ algorithm
           // The wasm-jit target runs the JIT-compiled model in-process, as `simulate` does.
           if Config.simCodeTarget() == "wasm-jit" then
             result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           else
             resI := System.systemCallRestrictedEnv(sim_call, logFile);
           end if;
@@ -1602,7 +1602,7 @@ algorithm
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
           // as the buildModel log file will be deleted here and that gives less information to the user!
@@ -1615,7 +1615,7 @@ algorithm
           // As in the simulate() case: the wasm-jit target runs the JIT-compiled
           // model in-process instead of spawning an executable.
           if Config.simCodeTarget() == "wasm-jit" then
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           elseif Config.simCodeTarget() == "wasm" then
             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
           else
@@ -9808,6 +9808,30 @@ algorithm
   end try;
 end selectResultFile;
 
+function simulationLogFile
+  "A wasm-jit run has omc's cwd, which OMEdit keeps in the user's working
+   directory as for an executable, so its log follows -outputPath."
+  input String executable;
+  input String simflags;
+  output String logFile = executable + ".log";
+protected
+  Integer nm;
+  String dir = "";
+algorithm
+  if Config.simCodeTarget() <> "wasm-jit" then
+    return;
+  end if;
+  try
+    (nm, {_, dir}) := System.regex(simflags, "-outputPath[= ]+(\"[^\"]*\"|'[^']*'|[^ ]*)", 2, true);
+  else
+    nm := 0;
+  end try;
+  dir := System.trim(dir, "\"'");
+  if nm == 2 and dir <> "" then
+    logFile := dir + "/" + logFile;
+  end if;
+end simulationLogFile;
+
 function instantiateModel
   input output FCore.Cache cache;
   input FCore.Graph env;
@@ -10194,7 +10218,7 @@ algorithm
        result_file := selectResultFile(result_file, simflags);
 
        executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-       logFile := stringAppend(executable,".log");
+       logFile := simulationLogFile(executable, simflags);
        // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
        // we should really have different log files for simulation/compilation!
        // as the buildModel log file will be deleted here and that gives less information to the user!
@@ -10209,7 +10233,7 @@ algorithm
        // writes the result file directly, instead of spawning an executable;
        // the wasm target runs the standalone module in a wasmtime subprocess.
        if Config.simCodeTarget() == "wasm-jit" then
-         resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+         resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
        elseif Config.simCodeTarget() == "wasm" then
          resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
        else

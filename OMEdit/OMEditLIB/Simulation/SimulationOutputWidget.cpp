@@ -492,8 +492,8 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
   mpProgressLabel->setText(tr("Running simulation of %1.").arg(mSimulationOptions.getClassName()));
   writeCompilationOutput(tr("Model translated to the wasm-jit target; running in-process (no external compilation)."), Qt::black);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  // the in-process run writes its result into omc's cwd; read it back from there.
-  pOMCProxy->changeDirectory(mSimulationOptions.getWorkingDirectory());
+  // Run where the executable would (Ticket:4583), so the model finds its input files.
+  pOMCProxy->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   // The runtime flags (-lv logging streams, solver options, …) are not part of
   // simulationParameters; pass them via simflags so the wasm-jit run honours them
   // (e.g. -lv=LOG_STATS), as the native executable would receive on its command line.
@@ -571,8 +571,8 @@ void SimulationOutputWidget::runWasmJitSimulation(const QString &simulationParam
     writeSimulationOutput(tr("Simulation of %1 failed.").arg(mSimulationOptions.getClassName()), StringHandler::Error, true);
   }
 #if defined(__EMSCRIPTEN__)
-  // omc cd'd into the working directory, so the result lands there in the worker
-  // VFS. Stage it into the page MEMFS at the same path for OMPlot's .mat reader.
+  // -r puts the result in the model's directory in the worker VFS. Stage it into
+  // the page MEMFS at the same path for OMPlot's .mat reader.
   omcWorkerStageFile(QString("%1/%2").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getFullResultFileName()).toUtf8().constData());
 #endif
   mpProgressBar->setRange(0, 100);
