@@ -1605,6 +1605,11 @@ package SimCodeCodegenUtil
     output String out;
   end getFMI3ArrayStart;
 
+  function hasFMI3StartValue
+    input SimCodeVar.SimVar var;
+    output Boolean out;
+  end hasFMI3StartValue;
+
   function getFMI3Terminals
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;

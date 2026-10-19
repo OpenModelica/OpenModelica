@@ -1536,6 +1536,40 @@ algorithm
   end match;
 end getFMI3ArrayStart;
 
+public function hasFMI3StartValue
+  "Whether the FMI 3.0 export emits a start attribute for the variable.
+   Must mirror StartString2/ArrayStartString3; FmiInitialAttribute3 needs
+   it to satisfy the FMI 3.0 rule that initial exact/approx requires start."
+  input SimCodeVar.SimVar var;
+  output Boolean out;
+protected
+  Boolean isConstStart;
+  Boolean qualifies;
+algorithm
+  isConstStart := match var.initialValue
+    case SOME(DAE.ICONST()) then true;
+    case SOME(DAE.RCONST()) then true;
+    case SOME(DAE.SCONST()) then true;
+    case SOME(DAE.BCONST()) then true;
+    case SOME(DAE.ENUM_LITERAL()) then true;
+    else false;
+  end match;
+  qualifies := match var
+    case SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.INPUT())) then true;
+    case SimCodeVar.SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then true;
+    case SimCodeVar.SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then true;
+    else false;
+  end match;
+  out := match var
+    case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS()) then false;
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY(), varKind = BackendDAE.STATE())
+      then not stringEq(getFMI3ArrayStart(var), "");
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY())
+      then qualifies and not stringEq(getFMI3ArrayStart(var), "");
+    else isConstStart and qualifies;
+  end match;
+end hasFMI3StartValue;
+
 public function getFMIArrayStartValues
   "Flattened list of the scalar start values of a (possibly array) start
    expression, in row major order. A scalar start expression yields a single
