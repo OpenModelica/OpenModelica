@@ -25,6 +25,7 @@ DoubleWhenSequential.mos \
 ForIterator1.mos \
 ForIterator2.mos \
 FuncDer.mos  \
+FunctionDerivativeZeroInput.mos \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \
