@@ -742,11 +742,13 @@ template FmiInitialAttribute3(SimVar simVar)
   the non-scalarized array backend does not populate their initial_ field, so we
   derive it from the variable's fixed attribute here. A fixed start is an exact
   initial value (initial=\"exact\"), an unfixed start is a guess (initial=\"approx\").
+  Since FMI 3.0 requires a start attribute whenever initial is exact or approx,
+  a state without an emitted start value gets initial=\"calculated\" instead.
   All other variables fall back to the generic SimCode-derived attribute."
 ::=
 match simVar
-case SIMVAR(varKind = STATE(__), isFixed = true) then "exact"
-case SIMVAR(varKind = STATE(__)) then "approx"
+case SIMVAR(varKind = STATE(__), isFixed = true) then if SimCodeCodegenUtil.hasFMI3StartValue(simVar) then "exact" else "calculated"
+case SIMVAR(varKind = STATE(__)) then if SimCodeCodegenUtil.hasFMI3StartValue(simVar) then "approx" else "calculated"
 else getFmiInitialAttributeStr(simVar)
 end FmiInitialAttribute3;
 
