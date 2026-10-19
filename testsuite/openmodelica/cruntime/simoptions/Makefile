@@ -4,6 +4,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 nlssMaxDensity.mos \
 nlssMinSize.mos \
+testIDAnoEquidistantTimeEvent.mos \
 testOutputIntervalDASSL.mos \
 testOutputIntervalDASSLsteps.mos \
 testOutputIntervalDASSLstepsnoEquidistant.mos \
