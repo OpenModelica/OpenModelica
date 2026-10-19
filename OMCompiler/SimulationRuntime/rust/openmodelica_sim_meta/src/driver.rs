@@ -8161,10 +8161,12 @@ impl IdaState {
         if !ida.set_user_data(ctx as *mut core::ffi::c_void) {
             return Err("##IDA## In function IDASetUserData: The ida_mem argument was NULL.");
         }
-        ida.set_stop_time(tstop.max(target));
+        // C's `internalSteps`: a step of its own never passes `target`.
+        let one_step = no_equidistant_grid();
+        ida.set_stop_time(if one_step { target } else { tstop.max(target) });
         let stop = {
             let _clock = rtclock::Span::new(rtclock::SOLVER);
-            ida.step(t, target, no_equidistant_grid())
+            ida.step(t, target, one_step)
         };
         y.copy_from_slice(ida.y());
         yp.copy_from_slice(ida.yp());
@@ -8211,6 +8213,7 @@ impl IdaState {
                 self.restarted = false;
                 match other {
                     crate::sundials::Stop::Root => Progress::Root,
+                    crate::sundials::Stop::Stepped => Progress::Stepped,
                     _ => Progress::Reached,
                 }
             }
@@ -8683,6 +8686,12 @@ enum Step {
     /// Out of budget mid-target; call again with the same `tout`.
     Yielded,
     Cancelled,
+    /// A `-noEquidistantTimeGrid` step short of `tout` was accepted. It is a step
+    /// of its own, as in C: the caller ends it and calls again with the same `tout`.
+    Accepted {
+        grid_covered: bool,
+        event_step: bool,
+    },
 }
 
 /// Resumable driver with event handling (time + state events). Like
@@ -9684,6 +9693,12 @@ impl SolverCore {
                         }
                     }
                     check_asserts(e, sim_data, layout, omclog::INFO)?;
+                    if rows.is_some() {
+                        return Ok(Step::Accepted {
+                            grid_covered,
+                            event_step,
+                        });
+                    }
                     continue;
                 }
                 // A zero-crossing root at `t` (< target): the integrator stopped
@@ -10333,7 +10348,9 @@ impl CsDriver {
             Step::Terminated => return Ok(CsStep::Terminated),
             Step::Event { time } => return Ok(CsStep::Event { time }),
             // `deadline` is +inf and CS does not cancel.
-            Step::Yielded | Step::Cancelled => return Err("CS step yielded unexpectedly"),
+            Step::Yielded | Step::Cancelled | Step::Accepted { .. } => {
+                return Err("CS step yielded unexpectedly");
+            }
             Step::Reached { .. } => {}
         }
         // Refresh the outputs at the communication point, and re-select states there
@@ -10944,6 +10961,18 @@ impl Driver for EventsDriver {
                 Step::Cancelled => {
                     self.retry.close(e)?;
                     return Ok(Advance::Cancelled);
+                }
+                // Ending the step hands its rows to the sink.
+                Step::Accepted {
+                    grid_covered,
+                    event_step,
+                } => {
+                    self.grid_covered |= grid_covered;
+                    self.did_event_step |= event_step;
+                    self.mid_row = true;
+                    self.retry.close(e)?;
+                    self.retry.store(e, sim_data, layout)?;
+                    continue;
                 }
                 Step::Terminated => break Advance::Terminated,
                 // Nothing is deferred here, so `Event` never arises.
