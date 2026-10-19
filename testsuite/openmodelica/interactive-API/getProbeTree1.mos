@@ -78,8 +78,11 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "dependsOn",
 // "checkModel",
 // "flatModelica",
+// "modelInstance",
 // "simVariables",
 // "simEquations",
+// "blt",
+// "stateSelection",
 // "translationMessages",
 // "text",
 // "hover"
@@ -119,8 +122,11 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "dependsOn",
 // "checkModel",
 // "flatModelica",
+// "modelInstance",
 // "simVariables",
 // "simEquations",
+// "blt",
+// "stateSelection",
 // "translationMessages",
 // "text",
 // "hover"
@@ -213,8 +219,11 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "dependsOn",
 // "checkModel",
 // "flatModelica",
+// "modelInstance",
 // "simVariables",
 // "simEquations",
+// "blt",
+// "stateSelection",
 // "translationMessages",
 // "text",
 // "hover"
@@ -266,6 +275,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "uses",
 // "useArrows",
 // "simVariables",
+// "stateSelection",
 // "flatDeclarations",
 // "text",
 // "hover"
@@ -306,6 +316,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "uses",
 // "useArrows",
 // "simVariables",
+// "stateSelection",
 // "flatDeclarations",
 // "text",
 // "hover"
@@ -369,8 +380,11 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "dependsOn",
 // "checkModel",
 // "flatModelica",
+// "modelInstance",
 // "simVariables",
 // "simEquations",
+// "blt",
+// "stateSelection",
 // "translationMessages",
 // "text",
 // "hover"
@@ -460,6 +474,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "uses",
 // "useArrows",
 // "simVariables",
+// "stateSelection",
 // "flatDeclarations",
 // "text",
 // "hover"
@@ -516,6 +531,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "properties": [
 // "simEquations",
 // "jacobianEquations",
+// "bltBlock",
 // "cCode",
 // "text",
 // "hover"
@@ -550,6 +566,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "properties": [
 // "simEquations",
 // "jacobianEquations",
+// "bltBlock",
 // "cCode",
 // "text",
 // "hover"
@@ -604,6 +621,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "properties": [
 // "simEquations",
 // "jacobianEquations",
+// "bltBlock",
 // "cCode",
 // "text",
 // "hover"
@@ -660,6 +678,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "properties": [
 // "simEquations",
 // "jacobianEquations",
+// "bltBlock",
 // "cCode",
 // "text",
 // "hover"
@@ -696,6 +715,7 @@ print(getProbeTree("getProbeTree1b.mo")); getErrorString();
 // "properties": [
 // "simEquations",
 // "jacobianEquations",
+// "bltBlock",
 // "cCode",
 // "text",
 // "hover"

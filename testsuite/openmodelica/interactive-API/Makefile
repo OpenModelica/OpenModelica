@@ -47,6 +47,7 @@ deleteEquation1.mos \
 DialogAnnotation.mos \
 evaluateProbe1.mos \
 evaluateProbe2.mos \
+evaluateProbe3.mos \
 FlagParsing.mos \
 ForStatement1.mos \
 ForStatement2.mos \

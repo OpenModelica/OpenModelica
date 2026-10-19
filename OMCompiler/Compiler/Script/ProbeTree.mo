@@ -63,6 +63,7 @@ protected
   import Flags;
   import FlagsUtil;
   import List;
+  import NFApi;
   import NFDefUseChains;
   import NFDefUseChains.Position;
   import NFUsedElements;
@@ -722,12 +723,12 @@ protected
   algorithm
     specific := match node.data
       case FILE_DATA() then {"errors", "topClasses", "contextModel", "omcVersion"};
-      case CLASS_DATA() then {"definition", "uses", "dependsOn", "checkModel", "flatModelica",
-        "simVariables", "simEquations", "translationMessages"};
-      case COMPONENT_DATA() then {"definition", "uses", "useArrows", "simVariables", "flatDeclarations"};
-      case EQUATION_DATA(eq = Absyn.EQ_CONNECT()) then {"simEquations", "jacobianEquations", "cCode", "connectionEquations"};
-      case EQUATION_DATA() then {"simEquations", "jacobianEquations", "cCode"};
-      case STATEMENT_DATA() then {"simEquations", "jacobianEquations", "cCode"};
+      case CLASS_DATA() then {"definition", "uses", "dependsOn", "checkModel", "flatModelica", "modelInstance",
+        "simVariables", "simEquations", "blt", "stateSelection", "translationMessages"};
+      case COMPONENT_DATA() then {"definition", "uses", "useArrows", "simVariables", "stateSelection", "flatDeclarations"};
+      case EQUATION_DATA(eq = Absyn.EQ_CONNECT()) then {"simEquations", "jacobianEquations", "bltBlock", "cCode", "connectionEquations"};
+      case EQUATION_DATA() then {"simEquations", "jacobianEquations", "bltBlock", "cCode"};
+      case STATEMENT_DATA() then {"simEquations", "jacobianEquations", "bltBlock", "cCode"};
       case NAME_DATA(declares = SOME(_)) then {"definition", "role", "uses", "useArrows"};
       case NAME_DATA() then {"definition", "role"};
       else {};
@@ -766,6 +767,10 @@ protected
       case "flatDeclarations" then flatDeclarations(path, tree, contextModel);
       case "cCode" then cCode(path, tree, contextModel);
       case "connectionEquations" then connectionEquations(path, tree, contextModel);
+      case "modelInstance" then modelInstance(node, tree);
+      case "blt" then blt(path, tree, contextModel);
+      case "bltBlock" then bltBlock(path, tree, contextModel);
+      case "stateSelection" then stateSelection(path, tree, contextModel);
       else {textItem("unknown property " + property)};
     end match;
   end evaluate;
@@ -1742,6 +1747,307 @@ protected
       end while;
     end for;
   end equationFunctions;
+
+  // ---- model instance ------------------------------------------------------
+
+  function modelInstance
+    "The JSON of getModelInstance of a class."
+    input ProbeNode node;
+    input Tree tree;
+    output Items items;
+  protected
+    Values.Value v;
+    String str = "";
+    list<Message> messages;
+  algorithm
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      v := NFApi.getModelInstance(classPathOf(node), Absyn.IDENT("__NoContext"), "", true);
+      str := match v
+        case Values.STRING() then v.string;
+        else "";
+      end match;
+    else
+    end try;
+    messages := list(toMessage(m) for m in ErrorExt.getCheckpointMessages());
+    ErrorExt.delCheckpoint(getInstanceName());
+    items := listAppend(list(textItem(l) for l in splitLines(str)),
+      list(messageItemAt(m, tree, nameInfo(node, tree)) for m in messages));
+  end modelInstance;
+
+  // ---- BLT -----------------------------------------------------------------
+
+  function sourceNodeOf
+    "The innermost equation or statement of the file a simulation equation comes from, or an empty string."
+    input JSON eq;
+    input Tree tree;
+    output String id = "";
+  protected
+    JSON info = jget(jget(eq, "source"), "info");
+  algorithm
+    if not JSON.isNull(info) and isFile(jstring(jget(info, "file")), tree) then
+      id := innermostEquation(tree.root, jint(jget(info, "lineStart")), jint(jget(info, "colStart")));
+    end if;
+  end sourceNodeOf;
+
+  function innermostEquation
+    input ProbeNode node;
+    input Integer line;
+    input Integer column;
+    output String id = "";
+  algorithm
+    if not containsPosition(node.info, line, column) then
+      return;
+    end if;
+    for c in node.children loop
+      id := innermostEquation(c, line, column);
+      if not stringEmpty(id) then
+        return;
+      end if;
+    end for;
+    if node.kind == "Equation" or node.kind == "Statement" then
+      id := node.id;
+    end if;
+  end innermostEquation;
+
+  function blockLine
+    "One line for a block of the BLT: an equation solved for its variables or a system of equations."
+    input JSON eq;
+    output String str;
+  protected
+    String tag = jstring(jget(eq, "tag"));
+    list<String> defines = list(jstring(d) for d in jsonList(jget(eq, "defines")));
+  algorithm
+    str := if tag == "tornsystem" or tag == "system" then
+      "eq " + intString(jint(jget(eq, "eqIndex"))) + " [" + jstring(jget(eq, "section")) + ", " +
+        jstring(jget(eq, "display")) + (if tag == "tornsystem" then " torn" else "") + " system of " +
+        intString(jint(jget(eq, "unknowns"))) + " unknowns] " +
+        (if listEmpty(defines) then "" else (if tag == "tornsystem" then "iteration variables " else "solved for ") +
+          stringDelimitList(defines, ", "))
+      elseif tag == "alias" then
+        "eq " + intString(jint(jget(eq, "eqIndex"))) + " [" + jstring(jget(eq, "section")) + ", alias] the same as eq " +
+          stringDelimitList(list(jstring(e) for e in jsonList(jget(eq, "equation"))), ", ")
+      else equationLine(eq);
+  end blockLine;
+
+  function blockMembers
+    "The simulation equations of a system of equations, without the ones of its Jacobian."
+    input JSON blk;
+    input Translation t;
+    output list<JSON> members = {};
+  protected
+    Integer index = jint(jget(blk, "eqIndex"));
+  algorithm
+    for eq in jsonList(jget(t.info, "equations")) loop
+      if jint(jget(eq, "parent")) == index and index > 0 and jstring(jget(eq, "tag")) <> "jacobian" then
+        members := eq :: members;
+      end if;
+    end for;
+    members := listReverse(members);
+  end blockMembers;
+
+  function blockItems
+    "A block and its equations, each with a link to the equation of the file it comes from."
+    input JSON blk;
+    input Translation t;
+    input Tree tree;
+    input String prefix;
+    output Items items = {};
+  protected
+    String id;
+  algorithm
+    items := textItem(prefix + blockLine(blk)) :: items;
+    id := sourceNodeOf(blk, tree);
+    if not stringEmpty(id) then
+      items := nodeItem(id) :: items;
+    end if;
+    for m in blockMembers(blk, t) loop
+      items := textItem(stringAppendList(List.fill(" ", stringLength(prefix))) + "    " + equationLine(m)) :: items;
+      id := sourceNodeOf(m, tree);
+      if not stringEmpty(id) then
+        items := nodeItem(id) :: items;
+      end if;
+    end for;
+    items := listReverse(items);
+  end blockItems;
+
+  function isBlock
+    "Whether a simulation equation is a block of the BLT of its section."
+    input JSON eq;
+    output Boolean res;
+  protected
+    String tag = jstring(jget(eq, "tag"));
+  algorithm
+    res := JSON.isNull(jget(eq, "parent")) and tag <> "dummy" and tag <> "jacobian" and
+      not stringEmpty(jstring(jget(eq, "section")));
+  end isBlock;
+
+  function blt
+    "The blocks of the initial and the regular equations of the translation, in the order they're solved."
+    input list<ProbeNode> path;
+    input Tree tree;
+    input String contextModel;
+    output Items items = {};
+  protected
+    Option<Translation> ot = translation(path, tree, contextModel);
+    Translation t;
+    list<JSON> blocks;
+    Integer n;
+  algorithm
+    if not translated(ot) then
+      items := failedTranslation(ot, path, tree, contextModel);
+      return;
+    end if;
+
+    SOME(t) := ot;
+    for section in {"initial", "regular"} loop
+      blocks := list(eq for eq guard isBlock(eq) and jstring(jget(eq, "section")) == section in jsonList(jget(t.info, "equations")));
+      items := textItem(section + " equations of " + t.modelName + ": " + intString(listLength(blocks)) + " blocks") :: items;
+      n := 0;
+      for b in blocks loop
+        n := n + 1;
+        items := listAppend(listReverse(blockItems(b, t, tree, "  " + intString(n) + ". ")), items);
+      end for;
+    end for;
+    items := listReverse(items);
+  end blt;
+
+  function bltBlock
+    "The blocks of the BLT the simulation equations of an equation are in, with the
+     equations of the file the other equations of the block come from."
+    input list<ProbeNode> path;
+    input Tree tree;
+    input String contextModel;
+    output Items items = {};
+  protected
+    Option<Translation> ot = translation(path, tree, contextModel);
+    Translation t;
+    list<Integer> seen = {};
+    list<JSON> equations;
+    Integer parent, index, n, count;
+    JSON blk;
+    String section;
+  algorithm
+    if not translated(ot) then
+      items := failedTranslation(ot, path, tree, contextModel);
+      return;
+    end if;
+
+    SOME(t) := ot;
+    equations := jsonList(jget(t.info, "equations"));
+    for eq in matchingEquations(listHead(path), tree, t, false) loop
+      parent := jint(jget(eq, "parent"));
+      index := if parent > 0 then parent else jint(jget(eq, "eqIndex"));
+      if not listMember(index, seen) then
+        seen := index :: seen;
+        blk := listHead(list(e for e guard jint(jget(e, "eqIndex")) == index in equations));
+        section := jstring(jget(blk, "section"));
+        // The position of the block among the blocks of its section.
+        n := 0;
+        count := 0;
+        for e in equations loop
+          if isBlock(e) and jstring(jget(e, "section")) == section then
+            count := count + 1;
+            if jint(jget(e, "eqIndex")) == index then
+              n := count;
+            end if;
+          end if;
+        end for;
+        items := textItem("block " + intString(n) + " of " + intString(count) + " of the " + section +
+          " equations of " + t.modelName + ":") :: items;
+        items := listAppend(listReverse(blockItems(blk, t, tree, "  ")), items);
+      end if;
+    end for;
+
+    items := if listEmpty(items) then {textItem(contextNote(path, tree, contextModel, "no simulation equations from this equation"))}
+             else listReverse(items);
+  end bltBlock;
+
+  // ---- state selection -----------------------------------------------------
+
+  function stateSelectOf
+    "The stateSelect attribute of a variable in the flat model, or an empty string."
+    input String name;
+    input list<String> flatLines;
+    output String attr = "";
+  protected
+    Integer i;
+    String rest;
+  algorithm
+    for l in flatLines loop
+      if stringContains(l, "'" + name + "'(") and stringContains(l, "stateSelect = ") then
+        i := System.stringFind(l, "stateSelect = ") + 15;
+        rest := substring(l, i, stringLength(l));
+        attr := listHead(Util.stringSplitAtChar(Util.stringReplaceChar(Util.stringReplaceChar(rest, ")", ","), ";", ","), ","));
+        return;
+      end if;
+    end for;
+  end stateSelectOf;
+
+  function stateKind
+    input String kind;
+    output Boolean res = kind == "state" or kind == "derivative" or kind == "dummy state" or kind == "dummy derivative";
+  end stateKind;
+
+  function stateSelection
+    "The states of the translation, the variables index reduction didn't choose as
+     states (dummy states) and the stateSelect attributes; for a component, the
+     variables it became."
+    input list<ProbeNode> path;
+    input Tree tree;
+    input String contextModel;
+    output Items items = {};
+  protected
+    Option<Translation> ot = translation(path, tree, contextModel);
+    Translation t;
+    JSON vars, v;
+    String kind, attr, alias;
+    list<String> flat_lines;
+    ProbeNode node = listHead(path);
+    Boolean all = nodeKind(node) == "ClassDefinition";
+    Integer states = 0, dummies = 0;
+  algorithm
+    if not translated(ot) then
+      items := failedTranslation(ot, path, tree, contextModel);
+      return;
+    end if;
+
+    SOME(t) := ot;
+    vars := jget(t.info, "variables");
+    flat_lines := splitLines(Util.tuple21(flatModel(AbsynUtil.stringPath(t.modelName))));
+
+    for name in jkeys(vars) loop
+      v := jget(vars, name);
+      kind := jstring(jget(v, "kind"));
+      if all and not stateKind(kind) then
+        continue;
+      end if;
+      if not all and (StringUtil.startsWith(kind, "jacobian") or not instantiates(name, v, node, tree)) then
+        continue;
+      end if;
+
+      attr := stateSelectOf(name, flat_lines);
+      alias := jstring(jget(v, "alias"));
+      if kind == "state" then
+        states := states + 1;
+      elseif kind == "dummy state" then
+        dummies := dummies + 1;
+      end if;
+
+      items := textItem(name + ": " + (if kind == "dummy state" then "dummy state, not chosen as a state by index reduction" else kind) +
+        (if stringEmpty(alias) then "" else ", = " + alias) +
+        (if stringEmpty(attr) then "" else ", stateSelect = " + attr)) :: items;
+      if kind == "dummy state" then
+        items := listAppend(listReverse(operations(jget(v, "source"))), items);
+      end if;
+    end for;
+
+    if all then
+      items := textItem(t.modelName + ": " + intString(states) + " states, " + intString(dummies) + " dummy states") :: listReverse(items);
+    else
+      items := if listEmpty(items) then {textItem(contextNote(path, tree, contextModel, "no variables"))} else listReverse(items);
+    end if;
+  end stateSelection;
 
   // ---- connections ---------------------------------------------------------
 

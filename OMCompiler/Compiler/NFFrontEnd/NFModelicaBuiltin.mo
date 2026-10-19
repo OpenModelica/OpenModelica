@@ -6080,15 +6080,24 @@ when hovering it.</li>
 <li><code>definition</code>, <code>uses</code>, <code>useArrows</code>, <code>role</code>: what a
 name refers to and how it's used there, and the uses in the file of a class, component or
 declared name, as nodes or as arrows from the declaration.</li>
-<li><code>dependsOn</code>, <code>checkModel</code>, <code>flatModelica</code> of a class: the
-classes it uses, as in <code>getDependencyGraph</code>, and the results of
-<code>checkModel</code> and of <code>instantiateModel</code> as Base Modelica.</li>
+<li><code>dependsOn</code>, <code>checkModel</code>, <code>flatModelica</code>,
+<code>modelInstance</code> of a class: the classes it uses, as in <code>getDependencyGraph</code>,
+and the results of <code>checkModel</code>, of <code>instantiateModel</code> as Base Modelica and
+of <code>getModelInstance</code>.</li>
 <li><code>simVariables</code>, <code>simEquations</code>, <code>jacobianEquations</code>,
 <code>cCode</code>, <code>translationMessages</code>, <code>flatDeclarations</code>,
 <code>connectionEquations</code>: what a class, component, equation or connect became in
 the translation of the context model: its simulation variables, the simulation equations
 with the symbolic operations done on them, the generated C functions of the equations, the
 declarations in the flat model and the equations of the flat model a connect generates.</li>
+<li><code>blt</code> of a class and <code>bltBlock</code> of an equation or statement: the blocks
+of the initial and regular equations of the translation in the order they're solved, with the
+systems of equations and their iteration variables, and the block the simulation equations of an
+equation are in, each with links to the equations of the file the equations of the block come
+from.</li>
+<li><code>stateSelection</code> of a class or component: the states of the translation, the
+variables index reduction didn't choose as states (dummy states) with the variable they're equal
+to and how, and the <code>stateSelect</code> attributes.</li>
 </ul>
 <p>The translation of the context model is kept in a directory in the temporary directory,
 named by the hash of the name and contents of the file, so it's done once for each version of
