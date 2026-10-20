@@ -136,19 +136,27 @@ pub(super) fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: 
     f.instruction(&I::LocalGet(N_STEPS));
     f.instruction(&I::I32Eq);
     f.instruction(&I::I32Or);
-    f.instruction(&I::Call(crate::CodegenWasmJitFunctions::env_extra_index("rt_row_asserts")?));
+    f.instruction(&I::Call(crate::CodegenWasmJitFunctions::env_extra_index(
+        "rt_row_asserts",
+    )?));
     f.instruction(&I::BrIf(1)); // a suppressed assert ends the run; `run_wasm` throws
 
     // if terminate() fired this step (functionAlgebraics raised the flag): break,
     // keeping the row just stored as the last one.
     f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(layout.terminate_off, 2)));
+    f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(
+        layout.terminate_off,
+        2,
+    )));
     f.instruction(&I::BrIf(1)); // branch out of the loop to the block end
 
     // if a nonlinear system failed to converge: break too (the host `run_wasm`
     // reads the flag afterward and reports it — Euler cannot back off the step).
     f.instruction(&I::LocalGet(SIM_DATA));
-    f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(layout.nls_fail_off, 2)));
+    f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(
+        layout.nls_fail_off,
+        2,
+    )));
     f.instruction(&I::BrIf(1));
 
     // if row >= n_steps: break (exit the block)
@@ -179,7 +187,10 @@ pub(super) fn build_simulate(layout: &SimLayout, eqfn: &EqFnIdx, check_asserts: 
     f.instruction(&I::LocalGet(ROW));
     f.instruction(&I::I32Const(1));
     f.instruction(&I::I32Add);
-    f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg(layout.n_out_off, 2)));
+    f.instruction(&I::I32Store(crate::CodegenWasmJitFunctions::mem_arg(
+        layout.n_out_off,
+        2,
+    )));
 
     // return buf
     f.instruction(&I::LocalGet(BUF));

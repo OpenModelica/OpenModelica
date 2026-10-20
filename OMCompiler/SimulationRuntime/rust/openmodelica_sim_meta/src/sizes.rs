@@ -39,7 +39,10 @@ impl Sz {
     }
 
     fn atom(a: Atom) -> Sz {
-        Sz { c: 0, terms: alloc::vec![(alloc::vec![a], 1)] }
+        Sz {
+            c: 0,
+            terms: alloc::vec![(alloc::vec![a], 1)],
+        }
     }
 
     pub fn as_const(&self) -> Option<i64> {
@@ -52,12 +55,21 @@ impl Sz {
 
     /// The constant term and the rest.
     pub fn split_const(&self) -> (Sz, i64) {
-        (Sz { c: 0, terms: self.terms.clone() }, self.c)
+        (
+            Sz {
+                c: 0,
+                terms: self.terms.clone(),
+            },
+            self.c,
+        )
     }
 
     pub fn align8(self) -> Sz {
         if self.terms.iter().all(|(_, k)| k % 8 == 0) {
-            return Sz { c: (self.c + 7).div_euclid(8) * 8, terms: self.terms };
+            return Sz {
+                c: (self.c + 7).div_euclid(8) * 8,
+                terms: self.terms,
+            };
         }
         Sz::atom(Atom::Align8(Box::new(self)))
     }

@@ -114,7 +114,11 @@ impl FnCtx<'_> {
         }
         let l = self.alloc_temp(WTy::I32);
         let e = self.size_locals.by_entry.entry(k).or_default();
-        if ptr { e.0 = Some(l) } else { e.1 = Some(l) }
+        if ptr {
+            e.0 = Some(l)
+        } else {
+            e.1 = Some(l)
+        }
         l
     }
 
@@ -168,7 +172,9 @@ impl FnCtx<'_> {
         if self.size_locals.by_entry.is_empty() {
             return Vec::new();
         }
-        let Some(data) = self.sim.as_ref().map(|s| s.data_local) else { return Vec::new() };
+        let Some(data) = self.sim.as_ref().map(|s| s.data_local) else {
+            return Vec::new();
+        };
         let t = match self.size_locals.table {
             Some(t) => t,
             None => {
@@ -191,7 +197,13 @@ impl FnCtx<'_> {
                 out.extend([I::LocalGet(t), I::I32Load(mem_arg(4 * k, 2)), I::LocalSet(v)]);
             }
             if let Some(p) = ptr {
-                out.extend([I::LocalGet(data), I::LocalGet(t), I::I32Load(mem_arg(4 * k, 2)), I::I32Add, I::LocalSet(p)]);
+                out.extend([
+                    I::LocalGet(data),
+                    I::LocalGet(t),
+                    I::I32Load(mem_arg(4 * k, 2)),
+                    I::I32Add,
+                    I::LocalSet(p),
+                ]);
             }
         }
         out

@@ -86,17 +86,26 @@ pub fn classify_slot(off: u32, wty: WTy, negate: crate::Neg, layout: &Layout) ->
         return Some(MetaKind::Column { col: 0, negate });
     }
     if off >= layout.real_off && off < layout.rparam_off {
-        return Some(MetaKind::Column { col: 1 + (off - layout.real_off) / 8, negate });
+        return Some(MetaKind::Column {
+            col: 1 + (off - layout.real_off) / 8,
+            negate,
+        });
     }
     if off >= layout.int_off && off < layout.iparam_off {
-        return Some(MetaKind::Column { col: layout.n_reals_row() + (off - layout.int_off) / 4, negate });
+        return Some(MetaKind::Column {
+            col: layout.n_reals_row() + (off - layout.int_off) / 4,
+            negate,
+        });
     }
     if off >= layout.bool_off && off < layout.bparam_off {
         let col = layout.n_reals_row() + layout.n_int_alg() + (off - layout.bool_off) / 4;
         return Some(MetaKind::Column { col, negate });
     }
     if off >= layout.str_off && off < layout.sparam_off {
-        return Some(MetaKind::Column { col: layout.str_col0() + (off - layout.str_off) / 4, negate });
+        return Some(MetaKind::Column {
+            col: layout.str_col0() + (off - layout.str_off) / 4,
+            negate,
+        });
     }
     let is_param = (off >= layout.rparam_off && off < layout.int_off)
         || (off >= layout.iparam_off && off < layout.bool_off)
@@ -117,7 +126,9 @@ impl SimMeta {
     /// Fix the sizes of a model with resizable arrays from its size parameters,
     /// `overrides` (`-override`) applied. A no-op for any other model.
     pub fn resolve_sizes(&mut self, overrides: &[(String, String)]) -> Result<(), String> {
-        let Some(params) = self.resize.as_ref().map(|r| &r.params) else { return Ok(()) };
+        let Some(params) = self.resize.as_ref().map(|r| &r.params) else {
+            return Ok(());
+        };
         let mut values: Vec<i64> = Vec::with_capacity(params.len());
         for p in params {
             let given = overrides.iter().rev().find(|(n, _)| *n == p.name);
@@ -128,7 +139,10 @@ impl SimMeta {
                 _ => p.start.eval(&values),
             };
             if v < 0 {
-                return Err(alloc::format!("The size parameter {} is {v}, an array size must not be negative", p.name));
+                return Err(alloc::format!(
+                    "The size parameter {} is {v}, an array size must not be negative",
+                    p.name
+                ));
             }
             values.push(v);
         }
@@ -172,12 +186,15 @@ impl SimMeta {
             }
         }
         if let Some(p) = &r.jac_a {
-            self.jac_a = p.expand(&r.values).filter(|c| !c.is_empty()).map(|rows_by_col| crate::JacAInfo {
-                n: rows_by_col.len() as u32,
-                colors: crate::sym_sparsity::color_columns(&rows_by_col),
-                rows_by_col,
-                sym: None,
-            });
+            self.jac_a = p
+                .expand(&r.values)
+                .filter(|c| !c.is_empty())
+                .map(|rows_by_col| crate::JacAInfo {
+                    n: rows_by_col.len() as u32,
+                    colors: crate::sym_sparsity::color_columns(&rows_by_col),
+                    rows_by_col,
+                    sym: None,
+                });
         }
         self.layout = layout;
         self.resize = Some(r);
@@ -201,7 +218,11 @@ impl SimMeta {
     /// before `functionParameters`, whose loops they bound.
     pub fn size_param_writes(&self) -> Vec<(u32, i32)> {
         let Some(r) = &self.resize else { return Vec::new() };
-        r.params.iter().zip(&r.values).map(|(p, v)| (p.off, *v as i32)).collect()
+        r.params
+            .iter()
+            .zip(&r.values)
+            .map(|(p, v)| (p.off, *v as i32))
+            .collect()
     }
 }
 
@@ -293,29 +314,108 @@ pub(crate) fn get_resize(b: &[u8], p: &mut usize) -> Result<Option<Resize>, &'st
         .to_string();
     *p += len;
     let scratch = Sz::decode(b, p)?;
-    Ok(Some(Resize { params, counts, table, var_dims, soti_dims, jac_a, var_filter, scratch, values: Vec::new(), table_values: Vec::new() }))
+    Ok(Some(Resize {
+        params,
+        counts,
+        table,
+        var_dims,
+        soti_dims,
+        jac_a,
+        var_filter,
+        scratch,
+        values: Vec::new(),
+        table_values: Vec::new(),
+    }))
 }
 
 const N_COUNTS: usize = 26;
 
 fn counts_fields(c: &LayoutCounts<Sz>) -> [&Sz; N_COUNTS] {
     [
-        &c.n_states, &c.n_real_alg, &c.n_real_param, &c.n_int_alg, &c.n_int_param, &c.n_bool_alg, &c.n_bool_param,
-        &c.n_str_alg, &c.n_str_param, &c.n_eobj, &c.n_samples, &c.n_zc, &c.n_rel, &c.n_stateset_f64,
-        &c.n_nlsjac_f64, &c.n_math, &c.n_sens, &c.n_dae_res, &c.n_dae_aux, &c.n_dae_alg, &c.n_base_clocks,
-        &c.n_sub_clocks, &c.n_linz, &c.n_opt_attr, &c.n_attr_log, &c.n_removed_init,
+        &c.n_states,
+        &c.n_real_alg,
+        &c.n_real_param,
+        &c.n_int_alg,
+        &c.n_int_param,
+        &c.n_bool_alg,
+        &c.n_bool_param,
+        &c.n_str_alg,
+        &c.n_str_param,
+        &c.n_eobj,
+        &c.n_samples,
+        &c.n_zc,
+        &c.n_rel,
+        &c.n_stateset_f64,
+        &c.n_nlsjac_f64,
+        &c.n_math,
+        &c.n_sens,
+        &c.n_dae_res,
+        &c.n_dae_aux,
+        &c.n_dae_alg,
+        &c.n_base_clocks,
+        &c.n_sub_clocks,
+        &c.n_linz,
+        &c.n_opt_attr,
+        &c.n_attr_log,
+        &c.n_removed_init,
     ]
 }
 
 fn counts_from(c: [Sz; N_COUNTS]) -> LayoutCounts<Sz> {
     let [
-        n_states, n_real_alg, n_real_param, n_int_alg, n_int_param, n_bool_alg, n_bool_param, n_str_alg,
-        n_str_param, n_eobj, n_samples, n_zc, n_rel, n_stateset_f64, n_nlsjac_f64, n_math, n_sens, n_dae_res,
-        n_dae_aux, n_dae_alg, n_base_clocks, n_sub_clocks, n_linz, n_opt_attr, n_attr_log, n_removed_init,
+        n_states,
+        n_real_alg,
+        n_real_param,
+        n_int_alg,
+        n_int_param,
+        n_bool_alg,
+        n_bool_param,
+        n_str_alg,
+        n_str_param,
+        n_eobj,
+        n_samples,
+        n_zc,
+        n_rel,
+        n_stateset_f64,
+        n_nlsjac_f64,
+        n_math,
+        n_sens,
+        n_dae_res,
+        n_dae_aux,
+        n_dae_alg,
+        n_base_clocks,
+        n_sub_clocks,
+        n_linz,
+        n_opt_attr,
+        n_attr_log,
+        n_removed_init,
     ] = c;
     LayoutCounts {
-        n_states, n_real_alg, n_real_param, n_int_alg, n_int_param, n_bool_alg, n_bool_param, n_str_alg,
-        n_str_param, n_eobj, n_samples, n_zc, n_rel, n_stateset_f64, n_nlsjac_f64, n_math, n_sens, n_dae_res,
-        n_dae_aux, n_dae_alg, n_base_clocks, n_sub_clocks, n_linz, n_opt_attr, n_attr_log, n_removed_init,
+        n_states,
+        n_real_alg,
+        n_real_param,
+        n_int_alg,
+        n_int_param,
+        n_bool_alg,
+        n_bool_param,
+        n_str_alg,
+        n_str_param,
+        n_eobj,
+        n_samples,
+        n_zc,
+        n_rel,
+        n_stateset_f64,
+        n_nlsjac_f64,
+        n_math,
+        n_sens,
+        n_dae_res,
+        n_dae_aux,
+        n_dae_alg,
+        n_base_clocks,
+        n_sub_clocks,
+        n_linz,
+        n_opt_attr,
+        n_attr_log,
+        n_removed_init,
     }
 }

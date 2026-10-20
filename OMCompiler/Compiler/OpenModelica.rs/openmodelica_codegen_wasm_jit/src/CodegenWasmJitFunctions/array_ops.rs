@@ -55,9 +55,19 @@ fn is_array_exp(e: &DAE::Exp) -> bool {
 
 /// Element-wise `a op b` over two same-shape arrays: produces a fresh array; the
 /// operand arrays are released after.
-pub(super) fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, ty: &DAE::Type) -> Result<WTy> {
+pub(super) fn compile_array_ew(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    e2: &DAE::Exp,
+    op_code: i32,
+    ty: &DAE::Type,
+) -> Result<WTy> {
     let elem = array_op_elem(ty, [e1, e2])?;
-    let rt = if elem.wty() == WTy::F64 { "rt_array_ew_f64" } else { "rt_array_ew_i32" };
+    let rt = if elem.wty() == WTy::F64 {
+        "rt_array_ew_f64"
+    } else {
+        "rt_array_ew_i32"
+    };
     compile_exp(ctx, e1)?;
     let at = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(at));
@@ -78,7 +88,11 @@ pub(super) fn compile_array_ew(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op
 pub(super) fn compile_dot(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
     let elem = array_elem(e1)?.ok_or_else(|| "CodegenWasmJit: scalar-product operand is not an array")?;
     let f64mode = elem.wty() == WTy::F64;
-    let rt = if f64mode { "rt_array_dot_f64" } else { "rt_array_dot_i32" };
+    let rt = if f64mode {
+        "rt_array_dot_f64"
+    } else {
+        "rt_array_dot_i32"
+    };
     compile_exp(ctx, e1)?;
     let at = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(at));
@@ -98,7 +112,11 @@ pub(super) fn compile_dot(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Resu
 /// released and the fresh result array handle is left on the stack.
 pub(super) fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<WTy> {
     let elem = array_elem(e1)?.ok_or_else(|| "CodegenWasmJit: matrix-product operand is not an array")?;
-    let rt = if elem.wty() == WTy::F64 { "rt_array_matmul_f64" } else { "rt_array_matmul_i32" };
+    let rt = if elem.wty() == WTy::F64 {
+        "rt_array_matmul_f64"
+    } else {
+        "rt_array_matmul_i32"
+    };
     compile_exp(ctx, e1)?;
     let at = ctx.alloc_temp(WTy::I32);
     ctx.emit(we::Instruction::LocalSet(at));
@@ -119,10 +137,21 @@ pub(super) fn compile_matmul(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> R
 /// Scalar broadcast over an array: `rev ? (s op a[i]) : (a[i] op s)`. The array
 /// and scalar operands are found by type (so commutative forms accept either
 /// order); the array operand is released after.
-pub(super) fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp, op_code: i32, rev: bool, ty: &DAE::Type) -> Result<WTy> {
+pub(super) fn compile_array_scalar(
+    ctx: &mut FnCtx,
+    e1: &DAE::Exp,
+    e2: &DAE::Exp,
+    op_code: i32,
+    rev: bool,
+    ty: &DAE::Type,
+) -> Result<WTy> {
     let elem = array_op_elem(ty, [e1, e2])?;
     let elem_wty = elem.wty();
-    let rt = if elem_wty == WTy::F64 { "rt_array_scalar_f64" } else { "rt_array_scalar_i32" };
+    let rt = if elem_wty == WTy::F64 {
+        "rt_array_scalar_f64"
+    } else {
+        "rt_array_scalar_i32"
+    };
     // By type where the frontend typed one, else by the operator's own convention:
     // `rev` marks the scalar-first forms.
     let arr_first = match (is_array_exp(e1), is_array_exp(e2)) {
@@ -160,7 +189,11 @@ pub(super) fn compile_array_scalar(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp
 /// Lower `a[i, j, ...]`: one `INDEX` per dimension reads a scalar element,
 /// anything else slices to a lower-rank sub-array. `base` produces the owned
 /// array handle. Returns the result's wasm type.
-pub(super) fn compile_index(ctx: &mut FnCtx, base: &DAE::Exp, subs: &List<metamodelica::Ref<DAE::Subscript>>) -> Result<WTy> {
+pub(super) fn compile_index(
+    ctx: &mut FnCtx,
+    base: &DAE::Exp,
+    subs: &List<metamodelica::Ref<DAE::Subscript>>,
+) -> Result<WTy> {
     let SigTy::Array { elem, rank } = exp_sigty(base)? else {
         return Err("CodegenWasmJit: subscripting a non-array expression");
     };
@@ -191,7 +224,10 @@ pub(super) fn is_scalar_index(subs: &List<metamodelica::Ref<DAE::Subscript>>, ra
 
 /// Extract one `INDEX` expression per dimension from a subscript list. Callers
 /// gate on [`is_scalar_index`] first, so anything else is a codegen bug.
-pub(super) fn index_subscripts(subs: &List<metamodelica::Ref<DAE::Subscript>>, rank: u32) -> Result<Vec<metamodelica::Ref<DAE::Exp>>> {
+pub(super) fn index_subscripts(
+    subs: &List<metamodelica::Ref<DAE::Subscript>>,
+    rank: u32,
+) -> Result<Vec<metamodelica::Ref<DAE::Exp>>> {
     let subs: Vec<&metamodelica::Ref<DAE::Subscript>> = (&**subs).into_iter().collect();
     if subs.len() as u32 != rank {
         return Err("CodegenWasmJit: partial indexing on the scalar-index path");
@@ -405,8 +441,15 @@ fn array_local(ctx: &FnCtx, e: &DAE::Exp) -> Option<(u32, u32)> {
     if ctx.sim.is_some() {
         return None;
     }
-    let DAE::Exp::CREF { componentRef, .. } = e else { return None };
-    let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef else { return None };
+    let DAE::Exp::CREF { componentRef, .. } = e else {
+        return None;
+    };
+    let DAE::ComponentRef::CREF_IDENT {
+        ident, subscriptLst, ..
+    } = &**componentRef
+    else {
+        return None;
+    };
     if !subscriptLst.is_empty() {
         return None;
     }
@@ -446,7 +489,10 @@ pub(super) fn compile_size(ctx: &mut FnCtx, exp: &DAE::Exp, sz: Option<&DAE::Exp
         ctx.emit(we::Instruction::LocalGet(arr_t));
         match (local, const_index_value(d)) {
             (Some((_, rank)), Some(axis)) if axis >= 1 && axis as u32 <= rank => {
-                ctx.emit(we::Instruction::I32Load(mem_arg(ARR_DIMS_OFF + 4 * (axis as u32 - 1), 2)));
+                ctx.emit(we::Instruction::I32Load(mem_arg(
+                    ARR_DIMS_OFF + 4 * (axis as u32 - 1),
+                    2,
+                )));
             }
             _ => {
                 let w = compile_exp(ctx, d)?;
@@ -556,7 +602,11 @@ pub(super) fn compile_array_builtin(
         "min" | "max" if argv.len() == 1 => match array_elem(argv[0])? {
             None => Ok(None),
             Some(elem) => {
-                let rt = if elem.wty() == WTy::F64 { "rt_array_extreme_f64" } else { "rt_array_extreme_i32" };
+                let rt = if elem.wty() == WTy::F64 {
+                    "rt_array_extreme_f64"
+                } else {
+                    "rt_array_extreme_i32"
+                };
                 emit_array_reduce(ctx, argv[0], rt, Some(if name == "max" { 1 } else { 0 }))?;
                 Ok(Some((*elem).clone()))
             }
@@ -658,8 +708,7 @@ pub(super) fn compile_array_builtin(
         }
         // scalar(a): the single element of an array whose dimensions are all 1.
         "scalar" if argv.len() == 1 => {
-            let elem = array_elem(argv[0])?
-                .ok_or_else(|| "CodegenWasmJit: scalar() of a non-array expression")?;
+            let elem = array_elem(argv[0])?.ok_or_else(|| "CodegenWasmJit: scalar() of a non-array expression")?;
             compile_exp(ctx, argv[0])?; // owned array
             let arr_t = ctx.alloc_temp(WTy::I32);
             ctx.emit(we::Instruction::LocalSet(arr_t));
@@ -843,7 +892,11 @@ fn emit_array_reduce(ctx: &mut FnCtx, arr: &DAE::Exp, rt_fn: &str, extra: Option
     Ok(())
 }
 
-pub(super) fn unary_f64(ctx: &mut FnCtx, argv: &[&metamodelica::Ref<DAE::Exp>], instr: we::Instruction<'static>) -> Result<()> {
+pub(super) fn unary_f64(
+    ctx: &mut FnCtx,
+    argv: &[&metamodelica::Ref<DAE::Exp>],
+    instr: we::Instruction<'static>,
+) -> Result<()> {
     need_args(argv, 1, "<f64 builtin>")?;
     let w = compile_exp(ctx, argv[0])?;
     coerce(ctx, w, WTy::F64);

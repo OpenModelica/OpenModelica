@@ -21,10 +21,10 @@
 
 extern crate alloc;
 
-use openmodelica_solvers::fmath;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
+use openmodelica_solvers::fmath;
 
 pub mod driver;
 pub mod sizes;
@@ -36,32 +36,32 @@ pub mod linearize;
 // The solvers and the flags/logging they read live in `openmodelica_solvers`,
 // which knows nothing about `SimData`; re-exported here so `sim_meta::gbode`
 // (and the paths the codegen already uses) still name them.
-pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
-pub use openmodelica_arrow_writer::units::{BaseUnit, DisplayUnit, UnitDef};
 pub use openmodelica_arrow_writer::VarTy;
-/// `-csvInput`, which needs a filesystem: host builds only.
-#[cfg(feature = "std")]
-pub(crate) mod extinput;
+pub use openmodelica_arrow_writer::units::{BaseUnit, DisplayUnit, UnitDef};
+pub use openmodelica_solvers::{delay, fixedstep, gbode, omclog, simflags, spatial, sysstat};
 /// `-reconcile*`, which needs a filesystem too.
 #[cfg(feature = "std")]
 pub mod datarecon;
+/// `-csvInput`, which needs a filesystem: host builds only.
+#[cfg(feature = "std")]
+pub(crate) mod extinput;
+/// The writer every file a run leaves beside its result goes through.
+pub mod files;
+#[cfg(all(feature = "std", unix, ipopt))]
+pub mod lapack_dyn;
+pub mod optimization;
+pub mod parmod;
 /// `+profiling`, whose files go out through [`files`] like every other side file,
 /// so an artifact's in-wasm driver reports as the host does.
 pub mod profiling;
+pub(crate) mod qss;
 #[cfg(feature = "result-files")]
 pub mod result;
-pub mod strings;
-/// The writer every file a run leaves beside its result goes through.
-pub mod files;
-pub mod optimization;
-pub mod parmod;
-pub(crate) mod qss;
 pub mod rtclock;
 /// The `LOG_STATS` block a finished run prints.
 pub mod stats;
+pub mod strings;
 pub mod sync;
-#[cfg(all(feature = "std", unix, ipopt))]
-pub mod lapack_dyn;
 #[cfg(not(all(feature = "std", unix, ipopt)))]
 pub mod lapack_dyn {}
 #[cfg(sundials)]
@@ -408,12 +408,41 @@ impl Layout {
         has_old_real: bool,
     ) -> Self {
         let counts = LayoutCounts {
-            n_states, n_real_alg, n_real_param, n_int_alg, n_int_param, n_bool_alg, n_bool_param, n_str_alg,
-            n_str_param, n_eobj, n_samples, n_zc, n_rel, n_stateset_f64, n_nlsjac_f64, n_math, n_sens, n_dae_res,
-            n_dae_aux, n_dae_alg, n_base_clocks, n_sub_clocks, n_linz, n_opt_attr, n_attr_log, n_removed_init,
+            n_states,
+            n_real_alg,
+            n_real_param,
+            n_int_alg,
+            n_int_param,
+            n_bool_alg,
+            n_bool_param,
+            n_str_alg,
+            n_str_param,
+            n_eobj,
+            n_samples,
+            n_zc,
+            n_rel,
+            n_stateset_f64,
+            n_nlsjac_f64,
+            n_math,
+            n_sens,
+            n_dae_res,
+            n_dae_aux,
+            n_dae_alg,
+            n_base_clocks,
+            n_sub_clocks,
+            n_linz,
+            n_opt_attr,
+            n_attr_log,
+            n_removed_init,
         };
         let flags = LayoutFlags {
-            sym_solver, has_when, has_homotopy, homotopy_method, has_init_lambda0, has_history_ops, has_old_real,
+            sym_solver,
+            has_when,
+            has_homotopy,
+            homotopy_method,
+            has_init_lambda0,
+            has_history_ops,
+            has_old_real,
             resizable: false,
         };
         Layout::build(counts, flags)
@@ -561,26 +590,88 @@ impl<T: sizes::LayoutNum> Layout<T> {
     fn zero() -> Self {
         let z = T::lit(0);
         Layout {
-            n_states: z.clone(), n_real_alg: z.clone(), has_when: false, has_homotopy: false,
-            homotopy_method: HomotopyMethod::default(), has_init_lambda0: false, has_history_ops: false,
-            has_old_real: false, lambda_off: z.clone(), rparam_off: z.clone(), int_off: z.clone(), iparam_off: z.clone(),
-            bool_off: z.clone(), bparam_off: z.clone(), str_off: z.clone(), sparam_off: z.clone(), eobj_off: z.clone(),
-            pre_real_off: z.clone(), pre_int_off: z.clone(), pre_bool_off: z.clone(), old_real_off: z.clone(),
-            terminate_off: z.clone(), terminal_off: z.clone(), initial_off: z.clone(), term_info_off: z.clone(),
-            n_out_off: z.clone(), nls_fail_off: z.clone(), n_samples: z.clone(), sample_off: z.clone(),
-            sample_active_off: z.clone(), n_zc: z.clone(), zc_off: z.clone(), zc_pre_off: z.clone(),
-            zc_probe_off: z.clone(), n_rel: z.clone(), relations_off: z.clone(), rel_fresh_off: z.clone(),
-            stored_rel_off: z.clone(), relations_pre_off: z.clone(), stateset_off: z.clone(), nls_jac_off: z.clone(),
-            n_math: z.clone(), mathevents_off: z.clone(), zctol_off: z.clone(), start_off: z.clone(),
-            real_nom_off: z.clone(), state_nom_off: z.clone(), state_max_off: z.clone(), state_min_off: z.clone(),
-            n_sens: z.clone(), sens_off: z.clone(), n_dae_res: z.clone(), dae_res_off: z.clone(), n_dae_aux: z.clone(),
-            dae_aux_off: z.clone(), n_dae_alg: z.clone(), dae_alg_nom_off: z.clone(), n_base_clocks: z.clone(),
-            clock_off: z.clone(), n_sub_clocks: z.clone(), subclock_off: z.clone(), clock_fire_off: z.clone(),
-            linz_off: z.clone(), n_linz: z.clone(), n_opt_attr: z.clone(), opt_min_off: z.clone(), opt_max_off: z.clone(),
-            opt_nom_off: z.clone(), opt_use_nom_off: z.clone(), n_attr_log: z.clone(), attr_log_off: z.clone(),
-            n_removed_init: z.clone(), removed_init_res_off: z.clone(), removed_init_idx_off: z.clone(), sym_solver: 0,
-            inline_dt_off: z.clone(), alg_old_off: z.clone(), total: z.clone(), real_off: z.clone(), table_off: z,
-            n_table: 0, extra_cols: 0,
+            n_states: z.clone(),
+            n_real_alg: z.clone(),
+            has_when: false,
+            has_homotopy: false,
+            homotopy_method: HomotopyMethod::default(),
+            has_init_lambda0: false,
+            has_history_ops: false,
+            has_old_real: false,
+            lambda_off: z.clone(),
+            rparam_off: z.clone(),
+            int_off: z.clone(),
+            iparam_off: z.clone(),
+            bool_off: z.clone(),
+            bparam_off: z.clone(),
+            str_off: z.clone(),
+            sparam_off: z.clone(),
+            eobj_off: z.clone(),
+            pre_real_off: z.clone(),
+            pre_int_off: z.clone(),
+            pre_bool_off: z.clone(),
+            old_real_off: z.clone(),
+            terminate_off: z.clone(),
+            terminal_off: z.clone(),
+            initial_off: z.clone(),
+            term_info_off: z.clone(),
+            n_out_off: z.clone(),
+            nls_fail_off: z.clone(),
+            n_samples: z.clone(),
+            sample_off: z.clone(),
+            sample_active_off: z.clone(),
+            n_zc: z.clone(),
+            zc_off: z.clone(),
+            zc_pre_off: z.clone(),
+            zc_probe_off: z.clone(),
+            n_rel: z.clone(),
+            relations_off: z.clone(),
+            rel_fresh_off: z.clone(),
+            stored_rel_off: z.clone(),
+            relations_pre_off: z.clone(),
+            stateset_off: z.clone(),
+            nls_jac_off: z.clone(),
+            n_math: z.clone(),
+            mathevents_off: z.clone(),
+            zctol_off: z.clone(),
+            start_off: z.clone(),
+            real_nom_off: z.clone(),
+            state_nom_off: z.clone(),
+            state_max_off: z.clone(),
+            state_min_off: z.clone(),
+            n_sens: z.clone(),
+            sens_off: z.clone(),
+            n_dae_res: z.clone(),
+            dae_res_off: z.clone(),
+            n_dae_aux: z.clone(),
+            dae_aux_off: z.clone(),
+            n_dae_alg: z.clone(),
+            dae_alg_nom_off: z.clone(),
+            n_base_clocks: z.clone(),
+            clock_off: z.clone(),
+            n_sub_clocks: z.clone(),
+            subclock_off: z.clone(),
+            clock_fire_off: z.clone(),
+            linz_off: z.clone(),
+            n_linz: z.clone(),
+            n_opt_attr: z.clone(),
+            opt_min_off: z.clone(),
+            opt_max_off: z.clone(),
+            opt_nom_off: z.clone(),
+            opt_use_nom_off: z.clone(),
+            n_attr_log: z.clone(),
+            attr_log_off: z.clone(),
+            n_removed_init: z.clone(),
+            removed_init_res_off: z.clone(),
+            removed_init_idx_off: z.clone(),
+            sym_solver: 0,
+            inline_dt_off: z.clone(),
+            alg_old_off: z.clone(),
+            total: z.clone(),
+            real_off: z.clone(),
+            table_off: z,
+            n_table: 0,
+            extra_cols: 0,
         }
     }
 
@@ -677,7 +768,11 @@ impl<T: sizes::LayoutNum> Layout<T> {
 
     fn inline_old(&mut self, at: T, c: &LayoutCounts<T>, f: &LayoutFlags) -> T {
         self.alg_old_off = at.clone();
-        at + if f.sym_solver > 0 { c.n_states.clone().times(8) } else { T::lit(0) }
+        at + if f.sym_solver > 0 {
+            c.n_states.clone().times(8)
+        } else {
+            T::lit(0)
+        }
     }
 }
 
@@ -843,7 +938,10 @@ impl MetaKind {
         };
         match self {
             MetaKind::Time => MatKind::Time,
-            MetaKind::Column { col, negate } => MatKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Column { col, negate } => MatKind::Column {
+                col: *col,
+                negate: neg(negate),
+            },
             MetaKind::Param { negate, .. } => MatKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => MatKind::Const { value: *value },
         }
@@ -859,7 +957,10 @@ impl MetaKind {
         };
         match self {
             MetaKind::Time => ArrowKind::Time,
-            MetaKind::Column { col, negate } => ArrowKind::Column { col: *col, affine: affine(negate) },
+            MetaKind::Column { col, negate } => ArrowKind::Column {
+                col: *col,
+                affine: affine(negate),
+            },
             MetaKind::Param { negate, .. } => ArrowKind::Param { affine: affine(negate) },
             MetaKind::Const { value } => ArrowKind::Const { value: *value },
         }
@@ -876,7 +977,10 @@ impl MetaKind {
         };
         match self {
             MetaKind::Time => PltKind::Time,
-            MetaKind::Column { col, negate } => PltKind::Column { col: *col, negate: neg(negate) },
+            MetaKind::Column { col, negate } => PltKind::Column {
+                col: *col,
+                negate: neg(negate),
+            },
             MetaKind::Param { negate, .. } => PltKind::Param { negate: neg(negate) },
             MetaKind::Const { value } => PltKind::Const { value: *value },
         }
@@ -953,14 +1057,25 @@ impl VarArray {
         self.names(&v.name).enumerate().map(move |(k, name)| {
             let k = k as u32;
             let kind = match &v.kind {
-                MetaKind::Column { col, negate } => MetaKind::Column { col: col + k, negate: *negate },
+                MetaKind::Column { col, negate } => MetaKind::Column {
+                    col: col + k,
+                    negate: *negate,
+                },
                 MetaKind::Param { off, wty, negate } => {
                     let stride = if matches!(wty, WTy::F64) { 8 } else { 4 };
-                    MetaKind::Param { off: off + k * stride, wty: *wty, negate: *negate }
+                    MetaKind::Param {
+                        off: off + k * stride,
+                        wty: *wty,
+                        negate: *negate,
+                    }
                 }
                 other => other.clone(),
             };
-            MetaVar { name, kind, ..v.clone() }
+            MetaVar {
+                name,
+                kind,
+                ..v.clone()
+            }
         })
     }
 }
@@ -1590,7 +1705,11 @@ pub struct NlsVars {
 
 impl SimMeta {
     pub fn cs_method(&self) -> &str {
-        if self.cs_method.is_empty() { &self.method } else { &self.cs_method }
+        if self.cs_method.is_empty() {
+            &self.method
+        } else {
+            &self.cs_method
+        }
     }
 
     /// [`ImportRoster`] for this model: the codegen resolves the `-iif` file against
@@ -1653,8 +1772,7 @@ impl SimMeta {
     /// *replaces* [`var_filter::FILTERED`]; `None` keeps it. A plain parameter is
     /// exempt either way — `initializeOutputFilter` never touches one.
     pub fn output_keep(&self, matcher: Option<&dyn Fn(&str) -> bool>) -> Vec<bool> {
-        let (emit_protected, ignore_hide) =
-            crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
+        let (emit_protected, ignore_hide) = crate::simflags::with_flags(|f| (f.emit_protected, f.ignore_hide_result));
         let mut keep: Vec<bool> = self
             .vars
             .iter()
@@ -1680,8 +1798,7 @@ impl SimMeta {
                 if filtered {
                     return false;
                 }
-                let is_param =
-                    matches!(v.kind, MetaKind::Param { .. }) && v.filter & var_filter::ALIAS == 0;
+                let is_param = matches!(v.kind, MetaKind::Param { .. }) && v.filter & var_filter::ALIAS == 0;
                 match matcher {
                     Some(m) if !is_param => m(&v.name),
                     _ => v.filter & var_filter::FILTERED == 0,
@@ -1758,18 +1875,26 @@ impl SimMeta {
     /// Called once per run by whichever entry point owns the driver.
     /// C's `$cpuTime` / `$solverSteps` result signals, right after `time`.
     fn add_extra_columns(&mut self, f: &crate::simflags::SimFlags) {
-        let want = if f.cpu_time { EXTRA_CPU_TIME } else { 0 }
-            | if f.solver_steps { EXTRA_SOLVER_STEPS } else { 0 };
+        let want = if f.cpu_time { EXTRA_CPU_TIME } else { 0 } | if f.solver_steps { EXTRA_SOLVER_STEPS } else { 0 };
         if want == 0 || self.layout.extra_cols != 0 {
             return;
         }
         self.layout.extra_cols = want;
         let mut col = self.layout.extra_col0();
-        let at = self.vars.iter().position(|v| matches!(v.kind, MetaKind::Time)).map_or(0, |i| i + 1);
+        let at = self
+            .vars
+            .iter()
+            .position(|v| matches!(v.kind, MetaKind::Time))
+            .map_or(0, |i| i + 1);
         let mut added = Vec::new();
         for (bit, name, comment, unit) in [
             (EXTRA_CPU_TIME, "$cpuTime", "cpu time", "s"),
-            (EXTRA_SOLVER_STEPS, "$solverSteps", "number of steps taken by the integrator", ""),
+            (
+                EXTRA_SOLVER_STEPS,
+                "$solverSteps",
+                "number of steps taken by the integrator",
+                "",
+            ),
         ] {
             if want & bit == 0 {
                 continue;
@@ -1801,7 +1926,9 @@ impl SimMeta {
         let arrays = core::mem::take(&mut self.var_arrays);
         self.vars = expand_var_arrays(core::mem::take(&mut self.vars), &arrays);
         let arrays = core::mem::take(&mut self.soti.real_arrays);
-        self.soti.reals = expand_entries(core::mem::take(&mut self.soti.reals), &arrays, |a, n, out| out.extend(a.names(n)));
+        self.soti.reals = expand_entries(core::mem::take(&mut self.soti.reals), &arrays, |a, n, out| {
+            out.extend(a.names(n))
+        });
     }
 
     pub fn apply_flags(&mut self, f: &crate::simflags::SimFlags) {
@@ -1880,7 +2007,11 @@ impl SimMeta {
         // C's `startNonInteractiveSimulation`, after `read_experiment`.
         if let Some(t) = f.linearize {
             self.stop_time = t;
-            omclog::info!(STDOUT, false, "Linearization will be performed at point of time: {t:.6}");
+            omclog::info!(
+                STDOUT,
+                false,
+                "Linearization will be performed at point of time: {t:.6}"
+            );
         }
     }
 
@@ -1927,20 +2058,80 @@ fn put_u32s2(o: &mut Vec<u8>, v: &[Vec<u32>]) {
 }
 fn put_layout(o: &mut Vec<u8>, l: &Layout) {
     for v in [
-        l.n_states, l.n_real_alg, l.lambda_off, l.rparam_off, l.int_off, l.iparam_off, l.bool_off,
-        l.bparam_off, l.str_off, l.sparam_off, l.eobj_off, l.pre_real_off, l.pre_int_off, l.pre_bool_off, l.old_real_off,
-        l.terminate_off, l.terminal_off, l.initial_off, l.term_info_off, l.n_out_off, l.nls_fail_off, l.n_samples, l.sample_off, l.sample_active_off,
-        l.n_zc, l.zc_off, l.zc_pre_off, l.zc_probe_off, l.n_rel, l.relations_off, l.rel_fresh_off, l.stored_rel_off, l.relations_pre_off,
-        l.stateset_off, l.nls_jac_off, l.n_math, l.mathevents_off, l.zctol_off, l.start_off,
-        l.real_nom_off, l.state_nom_off, l.state_max_off, l.state_min_off, l.n_sens, l.sens_off,
-        l.n_dae_res, l.dae_res_off, l.n_dae_aux, l.dae_aux_off, l.n_dae_alg, l.dae_alg_nom_off,
-        l.n_base_clocks, l.clock_off, l.n_sub_clocks, l.subclock_off, l.clock_fire_off,
-        l.linz_off, l.n_linz,
-        l.n_opt_attr, l.opt_min_off, l.opt_max_off, l.opt_nom_off, l.opt_use_nom_off,
-        l.n_attr_log, l.attr_log_off,
-        l.n_removed_init, l.removed_init_res_off, l.removed_init_idx_off,
-        l.inline_dt_off, l.alg_old_off,
-        l.total, l.real_off, l.table_off, l.n_table,
+        l.n_states,
+        l.n_real_alg,
+        l.lambda_off,
+        l.rparam_off,
+        l.int_off,
+        l.iparam_off,
+        l.bool_off,
+        l.bparam_off,
+        l.str_off,
+        l.sparam_off,
+        l.eobj_off,
+        l.pre_real_off,
+        l.pre_int_off,
+        l.pre_bool_off,
+        l.old_real_off,
+        l.terminate_off,
+        l.terminal_off,
+        l.initial_off,
+        l.term_info_off,
+        l.n_out_off,
+        l.nls_fail_off,
+        l.n_samples,
+        l.sample_off,
+        l.sample_active_off,
+        l.n_zc,
+        l.zc_off,
+        l.zc_pre_off,
+        l.zc_probe_off,
+        l.n_rel,
+        l.relations_off,
+        l.rel_fresh_off,
+        l.stored_rel_off,
+        l.relations_pre_off,
+        l.stateset_off,
+        l.nls_jac_off,
+        l.n_math,
+        l.mathevents_off,
+        l.zctol_off,
+        l.start_off,
+        l.real_nom_off,
+        l.state_nom_off,
+        l.state_max_off,
+        l.state_min_off,
+        l.n_sens,
+        l.sens_off,
+        l.n_dae_res,
+        l.dae_res_off,
+        l.n_dae_aux,
+        l.dae_aux_off,
+        l.n_dae_alg,
+        l.dae_alg_nom_off,
+        l.n_base_clocks,
+        l.clock_off,
+        l.n_sub_clocks,
+        l.subclock_off,
+        l.clock_fire_off,
+        l.linz_off,
+        l.n_linz,
+        l.n_opt_attr,
+        l.opt_min_off,
+        l.opt_max_off,
+        l.opt_nom_off,
+        l.opt_use_nom_off,
+        l.n_attr_log,
+        l.attr_log_off,
+        l.n_removed_init,
+        l.removed_init_res_off,
+        l.removed_init_idx_off,
+        l.inline_dt_off,
+        l.alg_old_off,
+        l.total,
+        l.real_off,
+        l.table_off,
+        l.n_table,
     ] {
         put_u32(o, v);
     }
@@ -2540,12 +2731,18 @@ impl<'a> Reader<'a> {
         if self.u8()? == 0 {
             return Ok(None);
         }
-        (0..self.u32()?).map(|_| self.string()).collect::<Result<Vec<_>, _>>().map(Some)
+        (0..self.u32()?)
+            .map(|_| self.string())
+            .collect::<Result<Vec<_>, _>>()
+            .map(Some)
     }
     fn kind(&mut self) -> Result<MetaKind, &'static str> {
         Ok(match self.u8()? {
             0 => MetaKind::Time,
-            1 => MetaKind::Column { col: self.u32()?, negate: Neg::from_code(self.u8()?) },
+            1 => MetaKind::Column {
+                col: self.u32()?,
+                negate: Neg::from_code(self.u8()?),
+            },
             2 => MetaKind::Param {
                 off: self.u32()?,
                 wty: if self.u8()? != 0 { WTy::F64 } else { WTy::I32 },
@@ -2598,7 +2795,12 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     let narrays = r.u32()? as usize;
     let mut var_arrays = Vec::with_capacity(narrays);
     for _ in 0..narrays {
-        var_arrays.push(VarArray { var: r.u32()?, dims: r.u32s()?, at: r.u32()?, brackets: r.u8()? != 0 });
+        var_arrays.push(VarArray {
+            var: r.u32()?,
+            dims: r.u32s()?,
+            at: r.u32()?,
+            brackets: r.u8()? != 0,
+        });
     }
     let jac_a = r.jac()?;
     let nsets = r.u32()? as usize;
@@ -2630,7 +2832,16 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let is_string = r.u8()? != 0;
         let der_off = r.u32()?;
         let len = r.u32()?;
-        fmi_vrs.push(FmiVr { vr, off, wty, negate, start_off, is_string, der_off, len });
+        fmi_vrs.push(FmiVr {
+            vr,
+            off,
+            wty,
+            negate,
+            start_off,
+            is_string,
+            der_off,
+            len,
+        });
     }
     let fmi_dae_enable_vr = r.u32()?;
     let ndesc = r.u32()? as usize;
@@ -2658,7 +2869,10 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
     }
     let mut attr_log = Vec::new();
     for _ in 0..r.u32()? {
-        attr_log.push(AttrLog { kind: r.u8()?, name: r.string()? });
+        attr_log.push(AttrLog {
+            kind: r.u8()?,
+            name: r.string()?,
+        });
     }
     let nridesc = r.u32()? as usize;
     let mut removed_init_desc = Vec::with_capacity(nridesc);
@@ -2676,7 +2890,12 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         soti.reals.push(r.string()?);
     }
     for _ in 0..r.u32()? {
-        soti.real_arrays.push(VarArray { var: r.u32()?, dims: r.u32s()?, at: r.u32()?, brackets: r.u8()? != 0 });
+        soti.real_arrays.push(VarArray {
+            var: r.u32()?,
+            dims: r.u32s()?,
+            at: r.u32()?,
+            brackets: r.u8()? != 0,
+        });
     }
     for _ in 0..r.u32()? {
         soti.ints.push((r.string()?, r.u32()? as i32));
@@ -2701,12 +2920,21 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let eqns = r.u32s()?.into_iter().map(|v| v as i32).collect();
         let pattern = [r.u32()?, r.u32()?, r.u32()?];
         let init_diag = r.u8()? != 0;
-        nls_vars.push(NlsVars { eq_index, names, eqns, pattern, init_diag });
+        nls_vars.push(NlsVars {
+            eq_index,
+            names,
+            eqns,
+            pattern,
+            init_diag,
+        });
     }
     let n_lin_systems = r.u32()?;
     let dae = match r.u8()? {
         0 => None,
-        _ => Some(DaeInfo { alg_offs: r.u32s()?, sparsity: r.jac()? }),
+        _ => Some(DaeInfo {
+            alg_offs: r.u32s()?,
+            sparsity: r.jac()?,
+        }),
     };
     let nclocks = r.u32()? as usize;
     let mut clocks = Vec::with_capacity(nclocks);
@@ -2726,7 +2954,12 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 external_solver: r.u8()? != 0,
             });
         }
-        clocks.push(BaseClockMeta { is_event_clock, inferred, sub_base, sub });
+        clocks.push(BaseClockMeta {
+            is_event_clock,
+            inferred,
+            sub_base,
+            sub,
+        });
     }
     let lin = match r.u8()? {
         0 => None,
@@ -2735,7 +2968,10 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 let n = r.u32()? as usize;
                 let mut out = Vec::with_capacity(n);
                 for _ in 0..n {
-                    out.push(LinVar { off: r.u32()?, negate: Neg::from_code(r.u8()?) });
+                    out.push(LinVar {
+                        off: r.u32()?,
+                        negate: Neg::from_code(r.u8()?),
+                    });
                 }
                 Ok(out)
             };
@@ -2789,7 +3025,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                     _ => {
                         let index = r.u32()?;
                         let mut row = || r.u32().map(|v| (v != u32::MAX).then_some(v));
-                        Some(OptTerm { index, row_b: row()?, row_c: row()? })
+                        Some(OptTerm {
+                            index,
+                            row_b: row()?,
+                            row_c: row()?,
+                        })
                     }
                 })
             };
@@ -2801,7 +3041,10 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 real_names.push(r.string()?);
             }
             let tgrid = r.u32s()?;
-            let start_time_opt = { let v = r.u32()?; (v != u32::MAX).then_some(v) };
+            let start_time_opt = {
+                let v = r.u32()?;
+                (v != u32::MAX).then_some(v)
+            };
             let mut jac = || -> Result<Option<OptJac>, &'static str> {
                 Ok(match r.u8()? {
                     0 => None,
@@ -2825,8 +3068,19 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 _ => Some(r.string()?),
             };
             Some(OptInfo {
-                n_con, n_final_con, inputs, loop_inputs, mayer, lagrange, real_names, tgrid,
-                start_time_opt, jac_b, jac_c, jac_d, setup_error,
+                n_con,
+                n_final_con,
+                inputs,
+                loop_inputs,
+                mayer,
+                lagrange,
+                real_names,
+                tgrid,
+                start_time_opt,
+                jac_b,
+                jac_c,
+                jac_d,
+                setup_error,
             })
         }
     };
@@ -2835,7 +3089,12 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         let off = r.u32()?;
         let start_off = r.u32()?;
         let wty = if r.u8()? != 0 { WTy::F64 } else { WTy::I32 };
-        inputs.push(InputVar { off, start_off, wty, name: r.string()? });
+        inputs.push(InputVar {
+            off,
+            start_off,
+            wty,
+            name: r.string()?,
+        });
     }
     let recon = match r.u8()? {
         0 => None,
@@ -2857,7 +3116,11 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
             let mut jac = |r: &mut Reader| -> core::result::Result<Option<ReconJac>, &'static str> {
                 Ok(match r.u8()? {
                     0 => None,
-                    _ => Some(ReconJac { rows: r.u32()?, cols: r.u32()?, off: r.u32()? }),
+                    _ => Some(ReconJac {
+                        rows: r.u32()?,
+                        cols: r.u32()?,
+                        off: r.u32()?,
+                    }),
                 })
             };
             let (jac_f, jac_h) = (jac(&mut r)?, jac(&mut r)?);
@@ -2890,11 +3153,19 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         level => {
             let mut functions = Vec::new();
             for _ in 0..r.u32()? {
-                functions.push(ProfFn { name: r.string()?, info: info(&mut r)? });
+                functions.push(ProfFn {
+                    name: r.string()?,
+                    info: info(&mut r)?,
+                });
             }
             let mut vars = Vec::new();
             for _ in 0..r.u32()? {
-                vars.push(ProfVar { id: r.u32()?, name: r.string()?, comment: r.string()?, info: info(&mut r)? });
+                vars.push(ProfVar {
+                    id: r.u32()?,
+                    name: r.string()?,
+                    comment: r.string()?,
+                    info: info(&mut r)?,
+                });
             }
             let mut equations = Vec::new();
             for _ in 0..r.u32()? {
@@ -2905,7 +3176,13 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 }
                 equations.push(ProfEq { id, defines });
             }
-            Some(ProfInfo { level, functions, vars, equations, blocks: r.u32s()? })
+            Some(ProfInfo {
+                level,
+                functions,
+                vars,
+                equations,
+                blocks: r.u32s()?,
+            })
         }
     };
     let parmod = match r.u8()? {
@@ -2913,7 +3190,10 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
         _ => {
             let mut tasks = Vec::new();
             for _ in 0..r.u32()? {
-                tasks.push(ParmodTask { eq_index: r.u32()? as i32, parents: r.u32s()? });
+                tasks.push(ParmodTask {
+                    eq_index: r.u32()? as i32,
+                    parents: r.u32s()?,
+                });
             }
             Some(ParmodInfo { tasks })
         }
@@ -2928,22 +3208,69 @@ pub fn decode(bytes: &[u8]) -> Result<SimMeta, &'static str> {
                 for e in &mut exponents {
                     *e = r.u32()? as i32;
                 }
-                Some(BaseUnit { exponents, factor: r.f64()?, offset: r.f64()? })
+                Some(BaseUnit {
+                    exponents,
+                    factor: r.f64()?,
+                    offset: r.f64()?,
+                })
             }
         };
         let mut display_units = Vec::new();
         for _ in 0..r.u32()? {
-            display_units.push(DisplayUnit { name: r.string()?, factor: r.f64()?, offset: r.f64()?, inverse: r.u8()? != 0 });
+            display_units.push(DisplayUnit {
+                name: r.string()?,
+                factor: r.f64()?,
+                offset: r.f64()?,
+                inverse: r.u8()? != 0,
+            });
         }
-        units.push(UnitDef { name, base, display_units });
+        units.push(UnitDef {
+            name,
+            base,
+            display_units,
+        });
     }
     let resize = resize::get_resize(r.b, &mut r.p)?;
     let mut meta = SimMeta {
-        layout, start_time, stop_time, n_intervals, method, cs_method, fmi_solver_flags, tolerance,
-        output_format, prefix,
-        model_name, vars, var_arrays, units, jac_a, state_sets, fmi_vrs, fmi_dae_enable_vr, zc_desc, zc_eqs, rel_desc, params, attr_log,
-        removed_init_desc, nls_warnings, sample_index, soti, sens_params, nls_vars, n_lin_systems, dae, clocks, lin, opt, inputs, recon, prof,
-        parmod, resize,
+        layout,
+        start_time,
+        stop_time,
+        n_intervals,
+        method,
+        cs_method,
+        fmi_solver_flags,
+        tolerance,
+        output_format,
+        prefix,
+        model_name,
+        vars,
+        var_arrays,
+        units,
+        jac_a,
+        state_sets,
+        fmi_vrs,
+        fmi_dae_enable_vr,
+        zc_desc,
+        zc_eqs,
+        rel_desc,
+        params,
+        attr_log,
+        removed_init_desc,
+        nls_warnings,
+        sample_index,
+        soti,
+        sens_params,
+        nls_vars,
+        n_lin_systems,
+        dae,
+        clocks,
+        lin,
+        opt,
+        inputs,
+        recon,
+        prof,
+        parmod,
+        resize,
     };
     meta.expand_arrays();
     Ok(meta)
@@ -2959,8 +3286,39 @@ mod tests {
         SimMeta {
             // Every flag non-default, so the round-trip covers the flag block.
             layout: Layout::new(
-                2, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 1, 2, 1, 2, 6, 5, 2, 1, 2, true, true,
-                HomotopyMethod::LocalAdaptive, true, true, true,
+                2,
+                1,
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                2,
+                4,
+                1,
+                2,
+                1,
+                2,
+                6,
+                5,
+                2,
+                1,
+                2,
+                true,
+                true,
+                HomotopyMethod::LocalAdaptive,
+                true,
+                true,
+                true,
             ),
             start_time: 0.0,
             stop_time: 1.0,
@@ -2974,17 +3332,112 @@ mod tests {
             model_name: "MyModel".to_string(),
             units: vec![UnitDef {
                 name: "K".to_string(),
-                base: Some(BaseUnit { exponents: [0, 0, 0, 0, 1, 0, 0, 0], factor: 1.0, offset: 0.0 }),
-                display_units: vec![DisplayUnit { name: "degC".to_string(), factor: 1.0, offset: -273.15, inverse: false }],
+                base: Some(BaseUnit {
+                    exponents: [0, 0, 0, 0, 1, 0, 0, 0],
+                    factor: 1.0,
+                    offset: 0.0,
+                }),
+                display_units: vec![DisplayUnit {
+                    name: "degC".to_string(),
+                    factor: 1.0,
+                    offset: -273.15,
+                    inverse: false,
+                }],
             }],
             var_arrays: Vec::new(),
             vars: vec![
-                MetaVar { name: "time".to_string(), comment: "Time in s".to_string(), kind: MetaKind::Time, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
-                MetaVar { name: "x".to_string(), comment: "".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::PROTECTED, unvarying: false, enumeration: None },
-                MetaVar { name: "y".to_string(), comment: "neg alias".to_string(), kind: MetaKind::Column { col: 1, negate: Neg::Not }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::ALIAS, unvarying: false, enumeration: None },
-                MetaVar { name: "p".to_string(), comment: "a param".to_string(), kind: MetaKind::Param { off: 88, wty: WTy::F64, negate: Neg::Arith }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: 0, unvarying: false, enumeration: None },
-                MetaVar { name: "n".to_string(), comment: "".to_string(), kind: MetaKind::Param { off: 92, wty: WTy::I32, negate: Neg::None }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::HIDE_RESULT, unvarying: false, enumeration: None },
-                MetaVar { name: "k".to_string(), comment: "".to_string(), kind: MetaKind::Const { value: 9.5 }, unit: String::new(), display_unit: String::new(), relative_quantity: false, ty: VarTy::Real, discrete: false, filter: var_filter::FILTERED, unvarying: false, enumeration: None },
+                MetaVar {
+                    name: "time".to_string(),
+                    comment: "Time in s".to_string(),
+                    kind: MetaKind::Time,
+                    unit: String::new(),
+                    display_unit: String::new(),
+                    relative_quantity: false,
+                    ty: VarTy::Real,
+                    discrete: false,
+                    filter: 0,
+                    unvarying: false,
+                    enumeration: None,
+                },
+                MetaVar {
+                    name: "x".to_string(),
+                    comment: "".to_string(),
+                    kind: MetaKind::Column {
+                        col: 1,
+                        negate: Neg::None,
+                    },
+                    unit: String::new(),
+                    display_unit: String::new(),
+                    relative_quantity: false,
+                    ty: VarTy::Real,
+                    discrete: false,
+                    filter: var_filter::PROTECTED,
+                    unvarying: false,
+                    enumeration: None,
+                },
+                MetaVar {
+                    name: "y".to_string(),
+                    comment: "neg alias".to_string(),
+                    kind: MetaKind::Column {
+                        col: 1,
+                        negate: Neg::Not,
+                    },
+                    unit: String::new(),
+                    display_unit: String::new(),
+                    relative_quantity: false,
+                    ty: VarTy::Real,
+                    discrete: false,
+                    filter: var_filter::ALIAS,
+                    unvarying: false,
+                    enumeration: None,
+                },
+                MetaVar {
+                    name: "p".to_string(),
+                    comment: "a param".to_string(),
+                    kind: MetaKind::Param {
+                        off: 88,
+                        wty: WTy::F64,
+                        negate: Neg::Arith,
+                    },
+                    unit: String::new(),
+                    display_unit: String::new(),
+                    relative_quantity: false,
+                    ty: VarTy::Real,
+                    discrete: false,
+                    filter: 0,
+                    unvarying: false,
+                    enumeration: None,
+                },
+                MetaVar {
+                    name: "n".to_string(),
+                    comment: "".to_string(),
+                    kind: MetaKind::Param {
+                        off: 92,
+                        wty: WTy::I32,
+                        negate: Neg::None,
+                    },
+                    unit: String::new(),
+                    display_unit: String::new(),
+                    relative_quantity: false,
+                    ty: VarTy::Real,
+                    discrete: false,
+                    filter: var_filter::HIDE_RESULT,
+                    unvarying: false,
+                    enumeration: None,
+                },
+                MetaVar {
+                    name: "k".to_string(),
+                    comment: "".to_string(),
+                    kind: MetaKind::Const { value: 9.5 },
+                    unit: String::new(),
+                    display_unit: String::new(),
+                    relative_quantity: false,
+                    ty: VarTy::Real,
+                    discrete: false,
+                    filter: var_filter::FILTERED,
+                    unvarying: false,
+                    enumeration: None,
+                },
             ],
             jac_a: Some(JacAInfo {
                 n: 2,
@@ -3009,8 +3462,26 @@ mod tests {
                 candidate_names: vec!["a.w".to_string(), "b.w".to_string(), "c.w".to_string()],
             }],
             fmi_vrs: vec![
-                FmiVr { vr: 0, off: 8, wty: WTy::F64, negate: Neg::None, start_off: 96, is_string: false, der_off: 0, len: 1 },
-                FmiVr { vr: 7, off: 64, wty: WTy::I32, negate: Neg::Arith, start_off: 0, is_string: true, der_off: 0, len: 1 },
+                FmiVr {
+                    vr: 0,
+                    off: 8,
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    start_off: 96,
+                    is_string: false,
+                    der_off: 0,
+                    len: 1,
+                },
+                FmiVr {
+                    vr: 7,
+                    off: 64,
+                    wty: WTy::I32,
+                    negate: Neg::Arith,
+                    start_off: 0,
+                    is_string: true,
+                    der_off: 0,
+                    len: 1,
+                },
             ],
             fmi_dae_enable_vr: 9,
             zc_desc: vec!["x > 0.0".to_string(), "y < 1.0".to_string()],
@@ -3023,8 +3494,14 @@ mod tests {
                 strings: vec![("s".to_string(), "two".to_string())],
             },
             attr_log: vec![
-                AttrLog { kind: 0, name: "x".to_string() },
-                AttrLog { kind: 3, name: "y".to_string() },
+                AttrLog {
+                    kind: 0,
+                    name: "x".to_string(),
+                },
+                AttrLog {
+                    kind: 3,
+                    name: "y".to_string(),
+                },
             ],
             removed_init_desc: vec!["4.0 - z".to_string()],
             nls_warnings: Vec::new(),
@@ -3053,13 +3530,33 @@ mod tests {
                 inferred: false,
                 sub_base: 0,
                 sub: vec![
-                    SubClockMeta { shift_num: 0, shift_den: 1, factor_num: 1, factor_den: 1, hold_events: false, external_solver: false },
-                    SubClockMeta { shift_num: 1, shift_den: 3, factor_num: 4, factor_den: 1, hold_events: true, external_solver: false },
+                    SubClockMeta {
+                        shift_num: 0,
+                        shift_den: 1,
+                        factor_num: 1,
+                        factor_den: 1,
+                        hold_events: false,
+                        external_solver: false,
+                    },
+                    SubClockMeta {
+                        shift_num: 1,
+                        shift_den: 3,
+                        factor_num: 4,
+                        factor_den: 1,
+                        hold_events: true,
+                        external_solver: false,
+                    },
                 ],
             }],
             lin: Some(LinInfo {
-                input_vars: vec![LinVar { off: 40, negate: Neg::None }],
-                output_vars: vec![LinVar { off: 48, negate: Neg::Arith }],
+                input_vars: vec![LinVar {
+                    off: 40,
+                    negate: Neg::None,
+                }],
+                output_vars: vec![LinVar {
+                    off: 48,
+                    negate: Neg::Arith,
+                }],
                 language: LinLanguage::Julia,
                 frame: "function linearized_model()\n%s%s%s%s%s%s\nend".to_string(),
                 frame_datarec: String::new(),
@@ -3074,8 +3571,16 @@ mod tests {
                 n_final_con: 1,
                 inputs: vec![4],
                 loop_inputs: vec![(0, 3)],
-                mayer: Some(OptTerm { index: 5, row_b: None, row_c: Some(2) }),
-                lagrange: Some(OptTerm { index: 6, row_b: Some(2), row_c: Some(3) }),
+                mayer: Some(OptTerm {
+                    index: 5,
+                    row_b: None,
+                    row_c: Some(2),
+                }),
+                lagrange: Some(OptTerm {
+                    index: 6,
+                    row_b: Some(2),
+                    row_c: Some(3),
+                }),
                 real_names: vec!["x".to_string(), "der(x)".to_string()],
                 tgrid: vec![120, 128],
                 start_time_opt: Some(136),
@@ -3093,7 +3598,12 @@ mod tests {
                 jac_d: None,
                 setup_error: Some("x is an array".to_string()),
             }),
-            inputs: vec![InputVar { off: 96, start_off: 104, wty: WTy::F64, name: "u".to_string() }],
+            inputs: vec![InputVar {
+                off: 96,
+                start_off: 104,
+                wty: WTy::F64,
+                name: "u".to_string(),
+            }],
             recon: Some(ReconInfo {
                 input_vars: vec![ReconVar {
                     off: 16,
@@ -3116,7 +3626,11 @@ mod tests {
                     unit: "1".to_string(),
                     comment: "unmeasured".to_string(),
                 }],
-                jac_f: Some(ReconJac { rows: 1, cols: 2, off: 200 }),
+                jac_f: Some(ReconJac {
+                    rows: 1,
+                    cols: 2,
+                    off: 200,
+                }),
                 jac_h: None,
                 n_related_boundary: 1,
                 model_file: "MyModel.mo".to_string(),
@@ -3124,13 +3638,43 @@ mod tests {
                 version: "v1.25.0".to_string(),
             }),
             parmod: Some(ParmodInfo {
-                tasks: vec![ParmodTask { eq_index: 3, parents: vec![] }, ParmodTask { eq_index: 5, parents: vec![0] }],
+                tasks: vec![
+                    ParmodTask {
+                        eq_index: 3,
+                        parents: vec![],
+                    },
+                    ParmodTask {
+                        eq_index: 5,
+                        parents: vec![0],
+                    },
+                ],
             }),
             prof: Some(ProfInfo {
                 level: 5,
-                functions: vec![ProfFn { name: "f".to_string(), info: SrcInfo { file: "a.mo".to_string(), line_start: 1, col_start: 2, line_end: 3, col_end: 4, read_only: true } }],
-                vars: vec![ProfVar { id: 7, name: "x".to_string(), comment: "c".to_string(), info: SrcInfo::default() }],
-                equations: vec![ProfEq { id: 0, defines: vec![] }, ProfEq { id: 1, defines: vec!["x".to_string()] }],
+                functions: vec![ProfFn {
+                    name: "f".to_string(),
+                    info: SrcInfo {
+                        file: "a.mo".to_string(),
+                        line_start: 1,
+                        col_start: 2,
+                        line_end: 3,
+                        col_end: 4,
+                        read_only: true,
+                    },
+                }],
+                vars: vec![ProfVar {
+                    id: 7,
+                    name: "x".to_string(),
+                    comment: "c".to_string(),
+                    info: SrcInfo::default(),
+                }],
+                equations: vec![
+                    ProfEq { id: 0, defines: vec![] },
+                    ProfEq {
+                        id: 1,
+                        defines: vec!["x".to_string()],
+                    },
+                ],
                 blocks: vec![1],
             }),
             resize: None,
@@ -3149,15 +3693,28 @@ mod tests {
             relative_quantity: false,
             ty: VarTy::Real,
             discrete: false,
-            kind: MetaKind::Column { col: 7, negate: Neg::None },
+            kind: MetaKind::Column {
+                col: 7,
+                negate: Neg::None,
+            },
             filter: 0,
             unvarying: false,
             enumeration: None,
         });
-        m.var_arrays.push(VarArray { var: at, dims: vec![2, 3], at: 5, brackets: true });
+        m.var_arrays.push(VarArray {
+            var: at,
+            dims: vec![2, 3],
+            at: 5,
+            brackets: true,
+        });
         let soti_at = m.soti.reals.len();
         m.soti.reals.push("y".to_string());
-        m.soti.real_arrays.push(VarArray { var: soti_at as u32, dims: vec![2], at: 1, brackets: false });
+        m.soti.real_arrays.push(VarArray {
+            var: soti_at as u32,
+            dims: vec![2],
+            at: 1,
+            brackets: false,
+        });
         let d = decode(&encode(&m)).unwrap();
         assert_eq!(d.soti.reals[soti_at..], ["y_L1_R".to_string(), "y_L2_R".to_string()]);
         assert!(d.var_arrays.is_empty());
@@ -3165,7 +3722,13 @@ mod tests {
         assert_eq!(els.len(), 6);
         assert_eq!(els[0].name, "der(x[1,1])");
         assert_eq!(els[5].name, "der(x[2,3])");
-        assert_eq!(els[4].kind, MetaKind::Column { col: 11, negate: Neg::None });
+        assert_eq!(
+            els[4].kind,
+            MetaKind::Column {
+                col: 11,
+                negate: Neg::None
+            }
+        );
         assert_eq!(els[4].unit, "m");
     }
 
@@ -3195,12 +3758,20 @@ mod tests {
     fn output_keep_follows_the_flags() {
         let m = sample();
         let names = |keep: Vec<bool>| -> Vec<&str> {
-            m.vars.iter().zip(keep).filter(|(_, k)| *k).map(|(v, _)| v.name.as_str()).collect()
+            m.vars
+                .iter()
+                .zip(keep)
+                .filter(|(_, k)| *k)
+                .map(|(v, _)| v.name.as_str())
+                .collect()
         };
         simflags::set_flags(simflags::SimFlags::default());
         assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p"]);
 
-        let mut f = simflags::SimFlags { ignore_hide_result: true, ..Default::default() };
+        let mut f = simflags::SimFlags {
+            ignore_hide_result: true,
+            ..Default::default()
+        };
         simflags::set_flags(f.clone());
         assert_eq!(names(m.output_keep(None)), ["time", "x", "y", "p", "n"]);
 
@@ -3217,8 +3788,9 @@ mod tests {
     #[test]
     fn apply_flags_is_cs_read_experiment() {
         let flags = |args: &[&str]| {
-            let argv: Vec<String> =
-                core::iter::once("model".into()).chain(args.iter().map(|a| a.to_string())).collect();
+            let argv: Vec<String> = core::iter::once("model".into())
+                .chain(args.iter().map(|a| a.to_string()))
+                .collect();
             simflags::parse(&argv).expect("parses")
         };
         // Untouched by an empty command line.
@@ -3230,7 +3802,12 @@ mod tests {
         assert_eq!((m.start_time, m.stop_time, m.n_intervals), (1.0, 3.0, 500));
 
         // `-stepSize` is what `numSteps` is derived from.
-        let f = flags(&["-stopTime=2", "-stepSize=0.01", "-tolerance=1e-9", "-outputFormat=empty"]);
+        let f = flags(&[
+            "-stopTime=2",
+            "-stepSize=0.01",
+            "-tolerance=1e-9",
+            "-outputFormat=empty",
+        ]);
         let m = sample().with_flags(&f);
         assert_eq!((m.stop_time, m.n_intervals, m.tolerance), (2.0, 200, 1e-9));
         assert_eq!(m.output_format, "empty");

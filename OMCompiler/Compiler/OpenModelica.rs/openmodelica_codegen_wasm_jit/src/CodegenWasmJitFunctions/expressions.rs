@@ -59,7 +59,12 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 return compile_cref_read_qual(ctx, componentRef);
             }
             // A scalar/whole-value reference, or a subscripted array element.
-            let DAE::ComponentRef::CREF_IDENT { ident, identType, subscriptLst } = &**componentRef else {
+            let DAE::ComponentRef::CREF_IDENT {
+                ident,
+                identType,
+                subscriptLst,
+            } = &**componentRef
+            else {
                 return Err("CodegenWasmJit: unsupported component reference");
             };
             let name = ident.to_string();
@@ -67,11 +72,7 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 box_flat(ctx, &v.fields, &v.locals)?;
                 return Ok(WTy::I32);
             }
-            let (idx, sty) = ctx
-                .locals
-                .get(&name)
-                .ok_or_else(|| unknown_variable(&name))?
-                .clone();
+            let (idx, sty) = ctx.locals.get(&name).ok_or_else(|| unknown_variable(&name))?.clone();
             if subscriptLst.is_empty() {
                 ctx.emit(we::Instruction::LocalGet(idx));
                 // Reading a heap local yields an *owned* value: retain so the
@@ -169,10 +170,18 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             }
             Ok(WTy::I32)
         }
-        E::RELATION { exp1, operator, exp2, index, optionExpisASUB } => {
-            compile_relation(ctx, exp1, operator, exp2, *index, optionExpisASUB)
-        }
-        E::IFEXP { expCond, expThen, expElse } => {
+        E::RELATION {
+            exp1,
+            operator,
+            exp2,
+            index,
+            optionExpisASUB,
+        } => compile_relation(ctx, exp1, operator, exp2, *index, optionExpisASUB),
+        E::IFEXP {
+            expCond,
+            expThen,
+            expElse,
+        } => {
             let c = compile_exp(ctx, expCond)?;
             coerce(ctx, c, WTy::I32);
             // Determine the result type from the then-branch; both branches are
@@ -217,15 +226,19 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
             compile_record(ctx, ty, exps, comp)?;
             Ok(WTy::I32)
         }
-        E::METARECORDCALL { path, args, fieldNames, .. } => {
+        E::METARECORDCALL {
+            path, args, fieldNames, ..
+        } => {
             compile_metarecord(ctx, path, args, fieldNames)?;
             Ok(WTy::I32)
         }
         // Record field access on an expression result: `f().field`.
         E::RSUB { exp, fieldName, .. } => compile_rsub(ctx, exp, fieldName),
-        E::REDUCTION { reductionInfo, expr, iterators } => {
-            compile_reduction(ctx, reductionInfo, expr, iterators)
-        }
+        E::REDUCTION {
+            reductionInfo,
+            expr,
+            iterators,
+        } => compile_reduction(ctx, reductionInfo, expr, iterators),
         // `f(...)[ix]` — pick one value out of a multi-output call's result
         // tuple.
         E::TSUB { exp, ix, .. } => {
@@ -233,7 +246,8 @@ pub(super) fn compile_exp(ctx: &mut FnCtx, exp: &DAE::Exp) -> Result<WTy> {
                 return Err("CodegenWasmJit: tuple subscript of a non-call expression");
             };
             let results = compile_call(ctx, path, expLst, attr)?;
-            let want = (*ix as usize).checked_sub(1)
+            let want = (*ix as usize)
+                .checked_sub(1)
                 .filter(|&i| i < results.len())
                 .ok_or("CodegenWasmJit: tuple subscript index out of range")?;
             keep_call_result(ctx, &results, want)
@@ -315,7 +329,13 @@ fn exp_wty_hint(ctx: &FnCtx, exp: &DAE::Exp) -> Result<WTy> {
     use DAE::Exp as E;
     Ok(match exp {
         E::RCONST { .. } => WTy::F64,
-        E::ICONST { .. } | E::BCONST { .. } | E::ENUM_LITERAL { .. } | E::SCONST { .. } | E::RELATION { .. } | E::LBINARY { .. } | E::LUNARY { .. } => WTy::I32,
+        E::ICONST { .. }
+        | E::BCONST { .. }
+        | E::ENUM_LITERAL { .. }
+        | E::SCONST { .. }
+        | E::RELATION { .. }
+        | E::LBINARY { .. }
+        | E::LUNARY { .. } => WTy::I32,
         E::CAST { ty, .. } => sig_ty(ty)?.wty(),
         // The CREF carries its (possibly field) type directly — handles a plain
         // local and a `r.field` reference alike.
@@ -400,7 +420,9 @@ fn operator_sigty(op: &DAE::Operator) -> Result<SigTy> {
 /// operand's own type annotation is just the element type.
 fn logical_operator_sigty(op: &DAE::Operator) -> Option<SigTy> {
     use DAE::Operator as O;
-    let (O::AND { ty } | O::OR { ty } | O::NOT { ty }) = op else { return None };
+    let (O::AND { ty } | O::OR { ty } | O::NOT { ty }) = op else {
+        return None;
+    };
     sig_ty_quiet(ty).ok()
 }
 
@@ -420,7 +442,9 @@ pub(super) fn operand_sigty(e1: &DAE::Exp, e2: &DAE::Exp) -> Result<SigTy> {
 /// argument's own expression for these, so the call's type *is* the argument's --
 /// which matters where the frontend left the call itself untyped.
 fn identity_builtin_arg(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Exp>> {
-    let DAE::Exp::CALL { path, expLst, .. } = exp else { return None };
+    let DAE::Exp::CALL { path, expLst, .. } = exp else {
+        return None;
+    };
     let name = AbsynUtil::pathLastIdent(&path);
     let args: Vec<&metamodelica::Ref<DAE::Exp>> = (&**expLst).into_iter().collect();
     match (name.as_str(), args.len()) {
@@ -433,9 +457,7 @@ fn identity_builtin_arg(exp: &DAE::Exp) -> Option<metamodelica::Ref<DAE::Exp>> {
 /// The type of a call *as a value*: its first output (`daeExpCall`).
 fn call_value_ty(ty: &metamodelica::Ref<DAE::Type>) -> metamodelica::Ref<DAE::Type> {
     match &**ty {
-        DAE::Type::T_TUPLE { types, .. } => {
-            (&**types).into_iter().next().cloned().unwrap_or_else(|| ty.clone())
-        }
+        DAE::Type::T_TUPLE { types, .. } => (&**types).into_iter().next().cloned().unwrap_or_else(|| ty.clone()),
         _ => ty.clone(),
     }
 }
@@ -495,7 +517,10 @@ pub(super) fn exp_sigty(exp: &DAE::Exp) -> Result<SigTy> {
         }
         // `size(a, d)` is a scalar Integer; `size(a)` is the dimension vector.
         E::SIZE { sz: Some(_), .. } => SigTy::Int,
-        E::SIZE { sz: None, .. } => SigTy::Array { elem: Arc::new(SigTy::Int), rank: 1 },
+        E::SIZE { sz: None, .. } => SigTy::Array {
+            elem: Arc::new(SigTy::Int),
+            rank: 1,
+        },
         // A record constructor / field access carry their type directly.
         E::RECORD { ty, .. } | E::RSUB { ty, .. } => sig_ty_quiet(ty)?,
         E::METARECORDCALL { path, .. } => metarecord_sigty(path)?,
@@ -514,7 +539,11 @@ fn compile_unary(ctx: &mut FnCtx, op: &DAE::Operator, exp: &DAE::Exp) -> Result<
         let SigTy::Array { elem, .. } = sig_ty_quiet(ty)? else {
             return Err("CodegenWasmJit: UMINUS_ARR with non-array type");
         };
-        let rt = if elem.wty() == WTy::F64 { "rt_array_neg_f64" } else { "rt_array_neg_i32" };
+        let rt = if elem.wty() == WTy::F64 {
+            "rt_array_neg_f64"
+        } else {
+            "rt_array_neg_i32"
+        };
         compile_exp(ctx, exp)?; // owned array
         let at = ctx.alloc_temp(WTy::I32);
         ctx.emit(we::Instruction::LocalSet(at));
@@ -712,7 +741,8 @@ pub(super) fn emit_shared_str(ctx: &mut FnCtx, s: &str) {
 pub(super) fn emit_src_loc(ctx: &mut FnCtx) {
     let s = match &ctx.src_loc {
         Some(i) if i.lineNumberStart > 0 && !i.fileName.is_empty() => {
-            let file = openmodelica_util::Testsuite::friendly(i.fileName.clone()).unwrap_or_else(|_| i.fileName.clone());
+            let file =
+                openmodelica_util::Testsuite::friendly(i.fileName.clone()).unwrap_or_else(|_| i.fileName.clone());
             format!("{file}:{}: ", i.lineNumberStart)
         }
         _ => String::new(),
@@ -724,13 +754,7 @@ pub(super) fn emit_src_loc(ctx: &mut FnCtx) {
 /// C's generated `if (tvar == 0) {throwStreamPrint(…)}` does. The throw returns
 /// inside a nonlinear-solver residual, so the function leaves its outputs where
 /// they were, as [`emit_nls_recoverable_return`].
-fn emit_div_zero_guard(
-    ctx: &mut FnCtx,
-    e1: &DAE::Exp,
-    op: &DAE::Operator,
-    e2: &DAE::Exp,
-    wty: WTy,
-) -> Result<()> {
+fn emit_div_zero_guard(ctx: &mut FnCtx, e1: &DAE::Exp, op: &DAE::Operator, e2: &DAE::Exp, wty: WTy) -> Result<()> {
     use we::Instruction as I;
     let t = ctx.alloc_temp(wty);
     ctx.emit(I::LocalTee(t));
@@ -747,7 +771,10 @@ fn emit_div_zero_guard(
         operator: op.clone(),
         exp2: metamodelica::Ref::new(e2.clone()),
     });
-    emit_shared_str(ctx, &format!("Division by zero {} in function context", dumped_exp(&exp)?));
+    emit_shared_str(
+        ctx,
+        &format!("Division by zero {} in function context", dumped_exp(&exp)?),
+    );
     ctx.emit(I::Call(rt_index("rt_throw_stream")?));
     release_heap_locals(ctx)?;
     push_outputs(ctx)?;
@@ -762,7 +789,11 @@ fn emit_div_zero_guard(
 /// has what C does with those.
 fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     use we::Instruction as I;
-    let (ta, tb, res) = (ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64));
+    let (ta, tb, res) = (
+        ctx.alloc_temp(WTy::F64),
+        ctx.alloc_temp(WTy::F64),
+        ctx.alloc_temp(WTy::F64),
+    );
     ctx.emit(I::LocalSet(tb));
     ctx.emit(I::LocalSet(ta));
     ctx.emit(I::LocalGet(ta));
@@ -799,7 +830,11 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
 fn emit_real_pow(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<()> {
     use we::Instruction as I;
     let f64_block = we::BlockType::Result(we::ValType::F64);
-    let (base, exp, r) = (ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64), ctx.alloc_temp(WTy::F64));
+    let (base, exp, r) = (
+        ctx.alloc_temp(WTy::F64),
+        ctx.alloc_temp(WTy::F64),
+        ctx.alloc_temp(WTy::F64),
+    );
     let a = compile_exp(ctx, e1)?;
     coerce(ctx, a, WTy::F64);
     ctx.emit(I::LocalSet(base));
@@ -823,7 +858,9 @@ fn emit_real_pow(ctx: &mut FnCtx, e1: &DAE::Exp, e2: &DAE::Exp) -> Result<()> {
     ctx.emit(I::If(f64_block));
     ctx.emit(I::LocalGet(base));
     ctx.emit(I::LocalGet(exp));
-    ctx.emit(I::Call(builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?));
+    ctx.emit(I::Call(
+        builtin_index("pow").ok_or("CodegenWasmJit: pow builtin missing")?,
+    ));
     ctx.emit(I::LocalTee(r));
     // `r - r` is 0 only for a finite `r`.
     ctx.emit(I::LocalGet(r));

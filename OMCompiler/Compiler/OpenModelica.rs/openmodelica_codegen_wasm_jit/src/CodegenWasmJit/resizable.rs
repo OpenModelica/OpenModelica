@@ -34,7 +34,9 @@ impl SizeParams {
             return Ok(Sz::param(i));
         }
         let Some(sv) = self.int_params.get(key).cloned() else {
-            record_error(format!("CodegenWasmJit: the array size `{key}` is not an Integer parameter"));
+            record_error(format!(
+                "CodegenWasmJit: the array size `{key}` is not an Integer parameter"
+            ));
             return Err("CodegenWasmJit: unsupported resizable array size");
         };
         if !self.visiting.insert(key.to_string()) {
@@ -46,7 +48,11 @@ impl SizeParams {
         };
         self.visiting.remove(key);
         let i = self.params.len() as u32;
-        self.params.push(SizeParam { name: cref_display(&sv.name)?, start, off: 0 });
+        self.params.push(SizeParam {
+            name: cref_display(&sv.name)?,
+            start,
+            off: 0,
+        });
         self.keys.push(key.to_string());
         self.by_key.insert(key.to_string(), i);
         Ok(Sz::param(i))
@@ -61,7 +67,10 @@ impl SizeParams {
             E::ENUM_LITERAL { index, .. } => Sz::lit(*index as i64),
             E::CREF { componentRef, .. } => self.param(&sim_cref_key(componentRef)?)?,
             E::CAST { exp, .. } => self.sz_of_exp(exp)?,
-            E::UNARY { operator: O::UMINUS { .. }, exp } => -self.sz_of_exp(exp)?,
+            E::UNARY {
+                operator: O::UMINUS { .. },
+                exp,
+            } => -self.sz_of_exp(exp)?,
             E::BINARY { exp1, operator, exp2 } => {
                 let (a, b) = (self.sz_of_exp(exp1)?, self.sz_of_exp(exp2)?);
                 match operator {
@@ -73,7 +82,12 @@ impl SizeParams {
                 }
             }
             E::CALL { path, expLst, .. } => {
-                let name = openmodelica_frontend_dump::AbsynUtil::pathString(path.clone(), arcstr::literal!("."), true, false)?;
+                let name = openmodelica_frontend_dump::AbsynUtil::pathString(
+                    path.clone(),
+                    arcstr::literal!("."),
+                    true,
+                    false,
+                )?;
                 let args: Vec<Sz> = lst(expLst).map(|a| self.sz_of_exp(a)).collect::<Result<_>>()?;
                 match (name.as_str(), &args[..]) {
                     ("max", [a, b]) => a.clone().max(b.clone()),
@@ -118,8 +132,11 @@ impl SizeParams {
 }
 
 fn unsupported(e: &DAE::Exp) -> Result<Sz> {
-    let s = openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(e.clone())).unwrap_or_default();
-    record_error(format!("CodegenWasmJit: the array size `{s}` is not supported for resizable arrays"));
+    let s = openmodelica_frontend_dump::ExpressionBasics::printExpStr(metamodelica::Ref::new(e.clone()))
+        .unwrap_or_default();
+    record_error(format!(
+        "CodegenWasmJit: the array size `{s}` is not supported for resizable arrays"
+    ));
     Err("CodegenWasmJit: unsupported resizable array size")
 }
 
@@ -143,12 +160,30 @@ pub(crate) fn has_symbolic_dims(vars: &SimCodeVar::SimVars) -> bool {
 
 pub(crate) fn all_var_lists(vars: &SimCodeVar::SimVars) -> [&List<metamodelica::Ref<SimCodeVar::SimVar>>; 24] {
     [
-        &vars.stateVars, &vars.derivativeVars, &vars.algVars, &vars.discreteAlgVars,
-        &vars.realOptimizeConstraintsVars, &vars.realOptimizeFinalConstraintsVars, &vars.intAlgVars,
-        &vars.boolAlgVars, &vars.inputVars, &vars.outputVars, &vars.aliasVars, &vars.intAliasVars,
-        &vars.boolAliasVars, &vars.paramVars, &vars.intParamVars, &vars.boolParamVars, &vars.stringAlgVars,
-        &vars.stringParamVars, &vars.stringAliasVars, &vars.extObjVars, &vars.constVars, &vars.intConstVars,
-        &vars.boolConstVars, &vars.stringConstVars,
+        &vars.stateVars,
+        &vars.derivativeVars,
+        &vars.algVars,
+        &vars.discreteAlgVars,
+        &vars.realOptimizeConstraintsVars,
+        &vars.realOptimizeFinalConstraintsVars,
+        &vars.intAlgVars,
+        &vars.boolAlgVars,
+        &vars.inputVars,
+        &vars.outputVars,
+        &vars.aliasVars,
+        &vars.intAliasVars,
+        &vars.boolAliasVars,
+        &vars.paramVars,
+        &vars.intParamVars,
+        &vars.boolParamVars,
+        &vars.stringAlgVars,
+        &vars.stringParamVars,
+        &vars.stringAliasVars,
+        &vars.extObjVars,
+        &vars.constVars,
+        &vars.intConstVars,
+        &vars.boolConstVars,
+        &vars.stringConstVars,
     ]
 }
 
@@ -195,7 +230,10 @@ impl DynVars {
 }
 
 /// `counts` with the runtime-sized arrays added.
-pub(crate) fn resizable_counts(c: &openmodelica_sim_meta::LayoutCounts, d: &DynVars) -> openmodelica_sim_meta::LayoutCounts<Sz> {
+pub(crate) fn resizable_counts(
+    c: &openmodelica_sim_meta::LayoutCounts,
+    d: &DynVars,
+) -> openmodelica_sim_meta::LayoutCounts<Sz> {
     let l = |v: u32| Sz::lit(v as i64);
     openmodelica_sim_meta::LayoutCounts {
         n_states: l(c.n_states) + total(&d.states),
@@ -347,7 +385,11 @@ impl RealPositions {
                 idx = idx + len;
             }
         }
-        RealPositions { n_fixed, n_states, dyn_reals }
+        RealPositions {
+            n_fixed,
+            n_states,
+            dyn_reals,
+        }
     }
 
     /// The index of the `i`-th constant-size real (`all_reals` order).

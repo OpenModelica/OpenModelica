@@ -32,7 +32,16 @@ pub(super) fn build_state_set_infos(
         let register = |var_map: &mut SimVarMap, sv: &SimCodeVar::SimVar, cursor: &mut u32| -> Result<u32> {
             let off = *cursor;
             *cursor += 8;
-            Arc::make_mut(&mut var_map.vars).insert(sim_cref_key(&sv.name)?, SimSlot { off, wty: WTy::F64, negate: Neg::None, heap: false, pre: 0 });
+            Arc::make_mut(&mut var_map.vars).insert(
+                sim_cref_key(&sv.name)?,
+                SimSlot {
+                    off,
+                    wty: WTy::F64,
+                    negate: Neg::None,
+                    heap: false,
+                    pre: 0,
+                },
+            );
             Ok(off)
         };
 
@@ -60,8 +69,9 @@ pub(super) fn build_state_set_infos(
         let candidate_offs: Vec<u32> = lst(&set.statescandidates)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
-        let candidate_names: Vec<String> =
-            lst(&set.statescandidates).map(|cr| cref_display(cr)).collect::<Result<_>>()?;
+        let candidate_names: Vec<String> = lst(&set.statescandidates)
+            .map(|cr| cref_display(cr))
+            .collect::<Result<_>>()?;
         let state_offs: Vec<u32> = lst(&set.states)
             .map(|cr| real_slot(var_map, cr))
             .collect::<Result<_>>()?;
@@ -118,13 +128,7 @@ pub(super) fn build_stateset_jac_fn(
 /// Slot of the state-set selection-matrix entry `A[row,col]` (1-based). The backend
 /// scalarizes `$STATESET{n}.A` either 2D (key `A[row][col]`) or flat row-major (key
 /// `A[k]`, `k = (row-1)*nCandidates + col`); try the 2D key first, then the flat one.
-fn stateset_a_slot(
-    var_map: &SimVarMap,
-    a_base: &str,
-    row: u32,
-    col: u32,
-    n_candidates: u32,
-) -> Option<SimSlot> {
+fn stateset_a_slot(var_map: &SimVarMap, a_base: &str, row: u32, col: u32, n_candidates: u32) -> Option<SimSlot> {
     var_map.vars.get(&format!("{a_base}[{row}][{col}]")).or_else(|| {
         let k = (row - 1) * n_candidates + col;
         var_map.vars.get(&format!("{a_base}[{k}]"))
@@ -140,10 +144,7 @@ fn stateset_a_slot(
 /// `nStates` candidates) is a valid selection whenever those candidates stay
 /// independent (true for the models in scope; a candidate going singular
 /// mid-run would need the runtime `pivot`/`stateSelection` port).
-pub(super) fn stateset_diag_offsets(
-    state_sets: &List<SimCode::StateSet>,
-    var_map: &SimVarMap,
-) -> Result<Vec<u32>> {
+pub(super) fn stateset_diag_offsets(state_sets: &List<SimCode::StateSet>, var_map: &SimVarMap) -> Result<Vec<u32>> {
     let mut offs = Vec::new();
     for set in lst(state_sets) {
         // `crA` names the first `A` element; strip its subscripts to the base `A`.

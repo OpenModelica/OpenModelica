@@ -31,7 +31,10 @@ pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamode
     let DAE::Exp::ICONST { integer: index } = &**argv[0] else {
         return Err("CodegenWasmJit: `spatialDistribution` index must be an integer literal");
     };
-    let (data, rel_fresh_off) = { let s = ctx.sim()?; (s.data_local, s.rel_fresh_off) };
+    let (data, rel_fresh_off) = {
+        let s = ctx.sim()?;
+        (s.data_local, s.rel_fresh_off)
+    };
     ctx.emit(I::I32Const(*index));
     ctx.emit(I::LocalGet(data)); // time (TIME_OFF = 0)
     ctx.emit(I::F64Load(mem_arg(0, 3)));
@@ -71,7 +74,11 @@ pub(super) fn emit_math_test_fresh(
         K::Floor | K::Ceil => {
             let w = compile_exp(ctx, &ops[0])?;
             coerce(ctx, w, WTy::F64);
-            ctx.emit(if kind == K::Ceil { we::Instruction::F64Ceil } else { we::Instruction::F64Floor });
+            ctx.emit(if kind == K::Ceil {
+                we::Instruction::F64Ceil
+            } else {
+                we::Instruction::F64Floor
+            });
         }
         K::Div | K::Mod => {
             let a = compile_exp(ctx, &ops[0])?;
@@ -79,20 +86,23 @@ pub(super) fn emit_math_test_fresh(
             let b = compile_exp(ctx, &ops[1])?;
             coerce(ctx, b, WTy::F64);
             ctx.emit(we::Instruction::F64Div);
-            ctx.emit(if kind == K::Div { we::Instruction::F64Trunc } else { we::Instruction::F64Floor });
+            ctx.emit(if kind == K::Div {
+                we::Instruction::F64Trunc
+            } else {
+                we::Instruction::F64Floor
+            });
         }
     }
     Ok(())
 }
 
 /// Emit `test(mathEventsValuePre[idx])` as an f64 (held-value counterpart).
-pub(super) fn emit_math_test_pre(
-    ctx: &mut FnCtx,
-    kind: crate::CodegenWasmJit::MathEventKind,
-    idx: u32,
-) -> Result<()> {
+pub(super) fn emit_math_test_pre(ctx: &mut FnCtx, kind: crate::CodegenWasmJit::MathEventKind, idx: u32) -> Result<()> {
     use crate::CodegenWasmJit::MathEventKind as K;
-    let (data, base) = { let s = ctx.sim()?; (s.data_local, s.mathevents_off + idx * 8) };
+    let (data, base) = {
+        let s = ctx.sim()?;
+        (s.data_local, s.mathevents_off + idx * 8)
+    };
     ctx.emit(we::Instruction::LocalGet(data));
     ctx.emit(we::Instruction::F64Load(mem_arg(base, 3)));
     match kind {
@@ -102,7 +112,11 @@ pub(super) fn emit_math_test_pre(
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::F64Load(mem_arg(base + 8, 3)));
             ctx.emit(we::Instruction::F64Div);
-            ctx.emit(if kind == K::Div { we::Instruction::F64Trunc } else { we::Instruction::F64Floor });
+            ctx.emit(if kind == K::Div {
+                we::Instruction::F64Trunc
+            } else {
+                we::Instruction::F64Floor
+            });
         }
     }
     Ok(())
@@ -139,15 +153,26 @@ fn compile_math_event(
             ctx.emit(I::If(we::BlockType::Empty));
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::LocalGet(xt));
-            if name == "integer" { ctx.emit(I::F64Floor); }
+            if name == "integer" {
+                ctx.emit(I::F64Floor);
+            }
             ctx.emit(I::F64Store(mem_arg(base, 3)));
             ctx.emit(I::End);
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::F64Load(mem_arg(base, 3)));
             match name {
-                "integer" => { ctx.emit(I::I32TruncSatF64S); Ok(SigTy::Int) }
-                "ceil" => { ctx.emit(I::F64Ceil); Ok(SigTy::Real) }
-                _ => { ctx.emit(I::F64Floor); Ok(SigTy::Real) }
+                "integer" => {
+                    ctx.emit(I::I32TruncSatF64S);
+                    Ok(SigTy::Int)
+                }
+                "ceil" => {
+                    ctx.emit(I::F64Ceil);
+                    Ok(SigTy::Real)
+                }
+                _ => {
+                    ctx.emit(I::F64Floor);
+                    Ok(SigTy::Real)
+                }
             }
         }
         // div(a,b)/mod(a,b): store the operands, return the held quotient/modulo.
@@ -168,11 +193,15 @@ fn compile_math_event(
             ctx.emit(I::If(we::BlockType::Empty));
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::LocalGet(at));
-            if is_int { ctx.emit(I::F64ConvertI32S); }
+            if is_int {
+                ctx.emit(I::F64ConvertI32S);
+            }
             ctx.emit(I::F64Store(mem_arg(base, 3)));
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::LocalGet(bt));
-            if is_int { ctx.emit(I::F64ConvertI32S); }
+            if is_int {
+                ctx.emit(I::F64ConvertI32S);
+            }
             ctx.emit(I::F64Store(mem_arg(base + 8, 3)));
             // mod on Reals uses a third slot for the held floor of the ratio
             // (C's _event_mod_real calls _event_floor(x1/x2, index+2)).
@@ -371,7 +400,11 @@ pub(super) fn compile_math_builtin(
                 coerce(ctx, a, WTy::F64);
                 let b = compile_exp(ctx, argv[1])?;
                 coerce(ctx, b, WTy::F64);
-                ctx.emit(if name == "max" { we::Instruction::F64Max } else { we::Instruction::F64Min });
+                ctx.emit(if name == "max" {
+                    we::Instruction::F64Max
+                } else {
+                    we::Instruction::F64Min
+                });
                 Ok(SigTy::Real)
             } else {
                 let a = compile_exp(ctx, argv[0])?;
@@ -386,7 +419,11 @@ pub(super) fn compile_math_builtin(
                 ctx.emit(we::Instruction::LocalGet(tb));
                 ctx.emit(we::Instruction::LocalGet(ta));
                 ctx.emit(we::Instruction::LocalGet(tb));
-                ctx.emit(if name == "max" { we::Instruction::I32GtS } else { we::Instruction::I32LtS });
+                ctx.emit(if name == "max" {
+                    we::Instruction::I32GtS
+                } else {
+                    we::Instruction::I32LtS
+                });
                 ctx.emit(we::Instruction::Select);
                 Ok(result_sig)
             }
@@ -579,7 +616,10 @@ pub(super) fn compile_math_builtin(
         // quantizing a residual whose simplified branch is much bigger than itself.
         "homotopy" => {
             need_args(&argv, 2, name)?;
-            let (data, lambda_off) = { let s = ctx.sim()?; (s.data_local, s.lambda_off) };
+            let (data, lambda_off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.lambda_off)
+            };
             let a = compile_exp(ctx, argv[0])?;
             coerce(ctx, a, WTy::F64);
             let at = ctx.alloc_temp(WTy::F64);
@@ -653,7 +693,10 @@ pub(super) fn compile_math_builtin(
             let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
                 return Err("CodegenWasmJit: `delayZeroCrossing` relation index must be an integer literal");
             };
-            let (data, zc_pre_off) = { let s = ctx.sim()?; (s.data_local, s.zc_pre_off) };
+            let (data, zc_pre_off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.zc_pre_off)
+            };
             ctx.emit(we::Instruction::I32Const(*index));
             ctx.emit(we::Instruction::LocalGet(data)); // time (TIME_OFF = 0)
             ctx.emit(we::Instruction::F64Load(mem_arg(0, 3)));
@@ -676,9 +719,14 @@ pub(super) fn compile_math_builtin(
                 return Err("CodegenWasmJit: `spatialDistributionZeroCrossing` index must be an integer literal");
             };
             let DAE::Exp::ICONST { integer: rindex } = &**argv[1] else {
-                return Err("CodegenWasmJit: `spatialDistributionZeroCrossing` relation index must be an integer literal");
+                return Err(
+                    "CodegenWasmJit: `spatialDistributionZeroCrossing` relation index must be an integer literal",
+                );
             };
-            let (data, zc_pre_off) = { let s = ctx.sim()?; (s.data_local, s.zc_pre_off) };
+            let (data, zc_pre_off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.zc_pre_off)
+            };
             ctx.emit(we::Instruction::I32Const(*index));
             let w = compile_exp(ctx, argv[2])?; // x
             coerce(ctx, w, WTy::F64);
@@ -693,7 +741,10 @@ pub(super) fn compile_math_builtin(
         // run's final discrete update.
         "terminal" => {
             need_args(&argv, 0, name)?;
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.terminal_off) };
+            let (data, off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.terminal_off)
+            };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
             Ok(SigTy::Bool)
@@ -702,7 +753,10 @@ pub(super) fn compile_math_builtin(
         // initialization phase.
         "initial" => {
             need_args(&argv, 0, name)?;
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.initial_off) };
+            let (data, off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.initial_off)
+            };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
             Ok(SigTy::Bool)
@@ -728,13 +782,22 @@ pub(super) fn compile_math_builtin(
         // `interval()` and `interval(clk)` alike read the active sub-clock, as C's
         // `daeExpCall` does: the backend already put the reference in that partition.
         "interval" if argv.len() <= 1 => {
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s, "interval")?) };
+            let (data, off) = {
+                let s = ctx.sim()?;
+                (s.data_local, sub_clock_off(s, "interval")?)
+            };
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::F64Load(mem_arg(off + clock_field::SUB_PREV_INTERVAL, 3)));
+            ctx.emit(we::Instruction::F64Load(mem_arg(
+                off + clock_field::SUB_PREV_INTERVAL,
+                3,
+            )));
             Ok(SigTy::Real)
         }
         "firstTick" if argv.len() <= 1 => {
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, sub_clock_off(s, "firstTick")?) };
+            let (data, off) = {
+                let s = ctx.sim()?;
+                (s.data_local, sub_clock_off(s, "firstTick")?)
+            };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Load(mem_arg(off + clock_field::SUB_COUNT, 2)));
             ctx.emit(we::Instruction::I32Const(1));
@@ -763,7 +826,10 @@ pub(super) fn compile_math_builtin(
                 return Err("CodegenWasmJit: `$_clkfire` index must be an integer literal");
             };
             let base = (*integer - 1).max(0) as u32;
-            let (data, off) = { let s = ctx.sim()?; (s.data_local, s.clock_fire_off) };
+            let (data, off) = {
+                let s = ctx.sim()?;
+                (s.data_local, s.clock_fire_off)
+            };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Const(1));
             ctx.emit(we::Instruction::I32Store(mem_arg(off + base * 4, 2)));
@@ -775,8 +841,7 @@ pub(super) fn compile_math_builtin(
         "$getPart" => {
             need_args(&argv, 1, name)?;
             let w = compile_exp(ctx, argv[0])?;
-            Ok(exp_sigty(argv[0])
-                .unwrap_or(if w == WTy::F64 { SigTy::Real } else { SigTy::Int }))
+            Ok(exp_sigty(argv[0]).unwrap_or(if w == WTy::F64 { SigTy::Real } else { SigTy::Int }))
         }
         // The frontend folds a literal URI, so the argument here is computed.
         "OpenModelica_uriToFilename" | "OpenModelica_fmuLoadResource" => {
@@ -785,7 +850,9 @@ pub(super) fn compile_math_builtin(
             let t = ctx.alloc_temp(WTy::I32);
             ctx.emit(we::Instruction::LocalSet(t));
             ctx.emit(we::Instruction::LocalGet(t));
-            ctx.emit(we::Instruction::I32Const(i32::from(name == "OpenModelica_fmuLoadResource")));
+            ctx.emit(we::Instruction::I32Const(i32::from(
+                name == "OpenModelica_fmuLoadResource",
+            )));
             ctx.emit(we::Instruction::Call(env_extra_index("rt_uri_to_filename")?));
             release_temp(ctx, t)?;
             Ok(SigTy::Str)
