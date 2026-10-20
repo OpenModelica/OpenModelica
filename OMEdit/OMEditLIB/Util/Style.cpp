@@ -188,6 +188,17 @@ QColor Style::infoBarTextColor()
 }
 
 /*!
+ * \brief Style::messagesCommandColor
+ * Color of an echoed command in a messages/output window.\n
+ * The other message colors are user configurable via the Messages options page.
+ * \return
+ */
+QColor Style::messagesCommandColor()
+{
+  return pick(Qt::blue, QColor(96, 165, 250));
+}
+
+/*!
  * \brief Style::readOnlyViewBackgroundColor
  * Area around the extent of a system library class, an element mode or a visualization view.
  */

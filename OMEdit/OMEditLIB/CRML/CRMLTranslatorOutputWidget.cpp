@@ -43,6 +43,7 @@
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
+#include "Util/Style.h"
 #include "Editors/TextEditor.h"
 
 #include <QDesktopServices>
@@ -144,7 +145,7 @@ void CRMLTranslatorOutputWidget::translateModel()
     qDebug() << "Unknown CRML mode type.";
   }
   args.removeAll(QString(""));
-  writeTranslationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Qt::blue);
+  writeTranslationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Style::messagesCommandColor());
   mpTranslationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
 #endif // QT_CONFIG(process)
 }
@@ -307,7 +308,7 @@ void CRMLTranslatorOutputWidget::translationProcessStarted()
  */
 void CRMLTranslatorOutputWidget::readTranslationStandardOutput()
 {
-  writeTranslationOutput(QString(mpTranslationProcess->readAllStandardOutput()), Qt::black);
+  writeTranslationOutput(QString(mpTranslationProcess->readAllStandardOutput()), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -316,7 +317,7 @@ void CRMLTranslatorOutputWidget::readTranslationStandardOutput()
  */
 void CRMLTranslatorOutputWidget::readTranslationStandardError()
 {
-  writeTranslationOutput(QString(mpTranslationProcess->readAllStandardError()), Qt::red);
+  writeTranslationOutput(QString(mpTranslationProcess->readAllStandardError()), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -332,7 +333,7 @@ void CRMLTranslatorOutputWidget::translationProcessError(QProcess::ProcessError 
   if (isTranslationProcessKilled()) {
     return;
   }
-  writeTranslationOutput(mpTranslationProcess->errorString(), Qt::red);
+  writeTranslationOutput(mpTranslationProcess->errorString(), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -382,16 +383,16 @@ void CRMLTranslatorOutputWidget::translationProcessFinished(int exitCode, QProce
   }
 
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeTranslationOutput(messageSuccess, Qt::blue);
+    writeTranslationOutput(messageSuccess, Style::messagesCommandColor());
     translationProcessFinishedHelper();
     mpProgressLabel->setText(messageSuccess);
     updateMessageTab(messageSuccess);
   } else if (mpTranslationProcess->error() == QProcess::UnknownError) {
-    writeTranslationOutput(messageFailed, Qt::red);
+    writeTranslationOutput(messageFailed, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     mpProgressLabel->setText(messageFailed);
     updateMessageTab(messageFailed);
   } else {
-    writeTranslationOutput(mpTranslationProcess->errorString() + "\n" + messageFailed, Qt::red);
+    writeTranslationOutput(mpTranslationProcess->errorString() + "\n" + messageFailed, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     mpProgressLabel->setText(messageFailed);
     updateMessageTab(messageFailed);
   }
