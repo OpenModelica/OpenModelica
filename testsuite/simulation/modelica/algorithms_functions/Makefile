@@ -6,6 +6,7 @@ TESTFILES = \
 AlgorithmCondAssign1.mos \
 AlgorithmCondAssign2.mos \
 AlgorithmForInClass.mos \
+AlgorithmForSubscript.mos \
 algorithms.mos \
 AlgorithmSection.mos \
 AlgorithmSize.mos \
@@ -24,6 +25,7 @@ DoubleWhenSequential.mos \
 ForIterator1.mos \
 ForIterator2.mos \
 FuncDer.mos  \
+FunctionDerivativeZeroInput.mos \
 FunctionIndirectRecursion.mos \
 FunctionIndirectRecursion2.mos \
 FunctionInReinit.mos \

@@ -15,7 +15,11 @@ pub(super) fn link_err(e: impl core::fmt::Debug) -> &'static str {
 /// Also the fmi-ls-dae `EnableDAEParameter` value reference, 0 for a model without a DAE
 /// formulation. The synthetic variables follow `CodegenFMU3`: time, then the event
 /// indicators, then (`--daeMode`) the DAE-mode switch and the residuals.
-pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout: &SimLayout) -> Result<(Vec<FmiVr>, u32)> {
+pub(super) fn build_fmi_vrs(
+    sim_code: &SimCode::SimCode,
+    map: &SimVarMap,
+    layout: &SimLayout,
+) -> Result<(Vec<FmiVr>, u32)> {
     let sim_code_ref = metamodelica::Ref::new(sim_code.clone());
     use openmodelica_codegen_util::SimCodeCodegenUtil;
     let vars = &sim_code.modelInfo.vars;
@@ -135,16 +139,4 @@ pub(super) fn build_fmi_vrs(sim_code: &SimCode::SimCode, map: &SimVarMap, layout
     out.sort_by_key(|e| e.vr);
     out.dedup_by_key(|e| e.vr);
     Ok((out, dae_enable_vr))
-}
-
-/// CRC-32 (IEEE) for the ZIP entries.
-pub(super) fn crc32(data: &[u8]) -> u32 {
-    let mut crc: u32 = 0xffff_ffff;
-    for &b in data {
-        crc ^= b as u32;
-        for _ in 0..8 {
-            crc = (crc >> 1) ^ (0xedb8_8320 & (0u32.wrapping_sub(crc & 1)));
-        }
-    }
-    !crc
 }

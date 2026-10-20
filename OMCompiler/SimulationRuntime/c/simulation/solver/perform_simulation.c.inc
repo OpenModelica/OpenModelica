@@ -27,6 +27,7 @@
 
 #include "solver_main.h"
 #include "events.h"
+#include "epsilon.h"
 #include "dassl.h"
 #include "sym_solver_ssc.h"
 
@@ -54,7 +55,7 @@
 #include "real_time_sync.h"
 #endif
 
-/* The Rust simulation runtime (`--simCodeTarget=C`) drives the model from
+/* The Rust simulation runtime (`--simCodeTarget=C+Rust`) drives the model from
  * its own loop, so nothing below is ever entered -- and every runtime function
  * it names would otherwise have to exist twice. Compile it away instead; the
  * two callbacks stay valid function pointers that report if anything calls them.
@@ -385,7 +386,29 @@ static void clear_rt_step(DATA* data)
   }
 }
 
-static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+/*! \def MAX_STEP_RETRIES
+ *
+ *  Default of -maxStepRetries for a model without states: the number of times a
+ *  failed step is retried in a row, each over half the step size of the failed
+ *  attempt. Nothing but the output interval controls the step size there. A
+ *  model with states defaults to a single retry.
+ */
+#define MAX_STEP_RETRIES 20
+
+/*! \fn retrySimulationStep
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [solverInfo]
+ *  \param [in]  [retry]       number of retries the failed step already had
+ *
+ *  This function undoes a step that failed with an error, e.g. an assert or a
+ *  non-linear system that could not be solved: It restores the last accepted
+ *  point and settles the discrete system over it, so performSimulation can take
+ *  the step again with a smaller step size. The integrator restarts on it like
+ *  after an event. Only the first retry of a step is reported with a warning.
+ */
+static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int retry)
 {
   /* reduce step size by a half and try again */
   solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
@@ -395,7 +418,9 @@ static void retrySimulationStep(DATA* data, threadData_t *threadData, SOLVER_INF
   solverInfo->currentTime = data->localData[0]->timeValue;
   overwriteOldSimulationData(data);
   updateDiscreteSystem(data, threadData);
-  warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
+  if (0 == retry) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
+  }
   solverInfo->didEventStep = 1;
 }
 
@@ -416,12 +441,27 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
  *  \param [ref] [solverInfo]
  *
  *  This function performs the simulation controlled by solverInfo.
+ *
+ *  A step that fails with an error is taken again with half its step size, up
+ *  to -maxStepRetries times in a row and not below -minRetryStepSize, before
+ *  the simulation is terminated. The step size limit a failed step leaves
+ *  behind is doubled by every accepted step until it is back at the output
+ *  interval. The output point a failed step was heading for is left out, the
+ *  shortened steps go on to the next one.
  */
 int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int retValIntegrator=0;
   int retValue=0;
-  int i, retry=0, steadStateReached=0;
+  int i, steadStateReached=0;
+  /* Changed in the try block and read in its catch, so they must not live in a register. */
+  volatile int retry = 0;                  /* failed attempts of the current step */
+  volatile int stepShortened = 0;          /* the current step ends before its output point */
+  volatile double retryStepSize = DBL_MAX; /* upper limit of the step size after a failed step */
+  volatile double triedStepSize = 0;       /* step size of the current attempt */
+  volatile int skipOutputPoint = 0;        /* the step to the current output point failed */
+  int maxStepRetries = data->modelData->nStates < 1 ? MAX_STEP_RETRIES : 1;
+  double minRetryStepSize = MINIMAL_STEP_SIZE;
 
   unsigned int __currStepNo = 0;
 
@@ -430,6 +470,19 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   MEASURE_TIME fmt;
   fmtInit(data, &fmt);
+
+  if (omc_flag[FLAG_MAX_STEP_RETRIES]) {
+    maxStepRetries = atoi(omc_flagValue[FLAG_MAX_STEP_RETRIES]);
+    if (maxStepRetries < 0) {
+      throwStreamPrint(threadData, "maximum number of step retries %d is not allowed", maxStepRetries);
+    }
+  }
+  if (omc_flag[FLAG_MIN_RETRY_STEP_SIZE]) {
+    minRetryStepSize = atof(omc_flagValue[FLAG_MIN_RETRY_STEP_SIZE]);
+    if (!(minRetryStepSize > 0)) {
+      throwStreamPrint(threadData, "minimum step size for retries %g is not allowed", minRetryStepSize);
+    }
+  }
 
   if (!compiledInDAEMode)
   {
@@ -521,7 +574,12 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         /***** Calculation next step size *****/
         if(syncEventStep) {
           infoStreamPrint(OMC_LOG_SOLVER, 0, "offset value for the next step: %.16g", (solverInfo->currentTime - solverInfo->laststep));
+        } else if (stepShortened && !skipOutputPoint) {
+          /* the last step was a shortened one, its output point is still ahead */
         } else {
+          /* An output point that can't be evaluated is left out, the shortened
+           * steps go on to the one after it. */
+          skipOutputPoint = 0;
           if (solverInfo->solverNoEquidistantGrid)
           {
             if (solverInfo->currentTime >= solverInfo->lastdesiredStep)
@@ -554,10 +612,12 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
         solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
-        /* if retry reduce stepsize */
-        if (0 != retry) {
-          solverInfo->currentStepSize /= 2;
+        /* after a failed step the step size is limited, see the catch below */
+        stepShortened = solverInfo->currentStepSize > retryStepSize;
+        if (stepShortened) {
+          solverInfo->currentStepSize = retryStepSize;
         }
+        triedStepSize = solverInfo->currentStepSize;
         /***** End calculation next step size *****/
 
         checkForSynchronous(data, solverInfo);
@@ -565,8 +625,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         checkForSampleEvent(data, solverInfo);
 
         /* if regular output point and last time events are almost equals
-        * skip that step and go further */
-        if (solverInfo->currentStepSize < 1e-15 && syncEventStep){
+        * skip that step and go further, unless the step ends on a time event:
+        * a relation on time can switch a few ulp after the last event */
+        if (solverInfo->currentStepSize < 1e-15 && syncEventStep && !data->simulationInfo->sampleActivated){
           __currStepNo++;
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
@@ -594,6 +655,10 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         /* The step is only over if it came back clean. */
         if (!OMC_ERROR_RAISED()) {
         retry = 0; /* reset retry */
+        /* let the step size grow back to the output interval */
+        if (retryStepSize < DBL_MAX) {
+          retryStepSize = 2*retryStepSize < simInfo->stepSize ? 2*retryStepSize : DBL_MAX;
+        }
 
         fmtEmitStep(data, threadData, &fmt, solverInfo);
         saveIntegratorStats(solverInfo);
@@ -628,9 +693,14 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       OMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (!success) { /* catch */
-        if(0 == retry) {
-          retrySimulationStep(data, threadData, solverInfo);
-          retry = 1;
+        /* halve the step size until the step succeeds, there is no step size to
+         * halve for the optimization though */
+        if(S_OPTIMIZATION == solverInfo->solverMethod ? 0 == retry : retry < maxStepRetries && (0 == retry || triedStepSize/2 >= minRetryStepSize)) {
+          retryStepSize = triedStepSize/2;
+          skipOutputPoint = skipOutputPoint || !stepShortened;
+          retrySimulationStep(data, threadData, solverInfo, retry);
+          retry++;
+          infoStreamPrint(OMC_LOG_SOLVER, 0, "step failed, retry %d with step size %g", (int)retry, (double)retryStepSize);
         } else {
           retValue =  -1;
           infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);

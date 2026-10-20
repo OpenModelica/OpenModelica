@@ -44,10 +44,8 @@
 #include <cvode/cvode.h>                            /* prototypes for CVODE fcts., consts. */
 #include <nvector/nvector_serial.h>                 /* serial N_Vector types, fcts., macros */
 #include <sunlinsol/sunlinsol_dense.h>              /* Default dense linear solver */
-#ifndef OMC_FMI_RUNTIME
 #include <sunlinsol/sunlinsol_klu.h>                /* Sparse linear solver over the ODE Jacobian */
 #include <sunmatrix/sunmatrix_sparse.h>
-#endif
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>   /* Default dense linear solver */
 
 /**
@@ -120,12 +118,12 @@ typedef struct CVODE_SOLVER
   N_Vector y_linSol;          /* Template for cloning vectors needed inside linear solver */
   SUNMatrix J;                /* Sparse matrix template for cloning matrices needed within
                                  linear solver */
-#ifndef OMC_FMI_RUNTIME
   /* colored numerical Jacobian */
   N_Vector fProbe;            /* f at the perturbed states */
   double *ysave;
   double *delta_hh;
   double jacNominalFactor;
+#ifndef OMC_FMI_RUNTIME
   /* where CVODE starts, with initialization's derivatives there */
   double startTime;
   double *yStart;

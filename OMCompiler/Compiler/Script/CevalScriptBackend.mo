@@ -156,6 +156,7 @@ import Uncertainties;
 import UnitAbsynBuilder;
 import UnitParserExt;
 import UnorderedSet;
+import Unzip;
 import Util;
 import ValuesDump;
 import ValuesMake;
@@ -211,20 +212,21 @@ protected constant list<tuple<String,Values.Value>> zeroBuildPhaseResultValues =
     ("timeFrontend",   Values.REAL(0.0))
   };
 
-protected constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
-protected constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
-protected constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
-protected constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
-protected constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
-protected constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
-protected constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
-protected constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
-protected constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
-protected constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
-protected constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
-protected constant DAE.Exp defaultSimflags          = DAE.SCONST("")      "default simulation flags";
+protected
+constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)      "default startTime";
+constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)       "default stopTime";
+constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)       "default numberOfIntervals";
+constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)       "default stepSize";
+constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)       "default tolerance";
+constant DAE.Exp defaultMethod            = DAE.SCONST("dassl")          "default method";
+constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("") "default fileNamePrefix";
+constant DAE.Exp defaultOptions           = DAE.SCONST("")         "default options";
+constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
+constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*") "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
+constant DAE.Exp defaultCflags            = DAE.SCONST("")         "default compiler flags";
+constant DAE.Exp defaultSimflags          = DAE.SCONST("")       "default simulation flags";
 
-protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
+constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
   InteractiveTypes.SIMULATION_OPTIONS(
     defaultStartTime,
     defaultStopTime,
@@ -240,7 +242,7 @@ protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
     defaultSimflags
     ) "default simulation options";
 
-protected constant list<String> simulationOptionsNames =
+constant list<String> simulationOptionsNames =
   {
     "startTime",
     "stopTime",
@@ -701,7 +703,7 @@ algorithm
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description, resimulateExecutable;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, description, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
@@ -1454,89 +1456,11 @@ algorithm
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+    case ("simulate", vals)
       algorithm
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-
-        // resimulateExecutable is the last (new) argument; pull it off so the rest
-        // of the pipeline sees the original simulate() argument list.
-        resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
-        vals := List.stripLast(vals);
-
-        if resimulateExecutable <> "" then
-          // Skip translation and build; simulate the already-built model directly.
-          b := true;
-          executable := resimulateExecutable;
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
-          resultValues := zeroBuildPhaseResultValues;
-        else
-          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
-        end if;
-
-        if b then
-           exeDir := compileDir;
-           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
-           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
-           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            // result file might have been set by simflags (-r ...)
-
-           result_file := selectResultFile(result_file, simflags);
-
-           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-           logFile := stringAppend(executable,".log");
-           // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
-           // we should really have different log files for simulation/compilation!
-           // as the buildModel log file will be deleted here and that gives less information to the user!
-           if System.regularFileExists(logFile) then
-             0 := System.removeFile(logFile);
-           end if;
-           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-
-           // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable;
-           // the wasm target runs the standalone module in a wasmtime subprocess.
-           if Config.simCodeTarget() == "wasm-jit" then
-             resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
-           elseif Config.simCodeTarget() == "wasm" then
-             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
-           else
-             resI := System.systemCallRestrictedEnv(sim_call, logFile);
-           end if;
-
-           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-
-         else
-           result_file := "";
-           resI := 1;
-           timeSimulation := 0.0;
-           logFile := "";
-         end if;
-
-        timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-
-        (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+        (outCache, outValue) := simulate(vals, inCache, inEnv, msg);
       then
-        simValue;
-
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      algorithm
-        Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        str := AbsynUtil.pathString(className);
-        res := "Failed to build model: " + str;
-      then
-        createSimulationResultFailure(res, simOptionsAsString(List.stripLast(vals)));
-
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      algorithm
-        str := AbsynUtil.pathString(className);
-      then
-        createSimulationResultFailure(
-          "Simulation failed for model: " + str +
-          "\nEnvironment variable OPENMODELICAHOME not set.",
-          simOptionsAsString(List.stripLast(vals)));
+        outValue;
 
     case ("moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
                         Values.INTEGER(direction)})
@@ -1601,12 +1525,14 @@ algorithm
         if b then
           Values.REAL(linearizeTime) := getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           if System.regularFileExists(logFile) then
             0 := System.removeFile(logFile);
           end if;
           strlinearizeTime := realString(linearizeTime);
-          simflags := "-l=" + strlinearizeTime + " " + simflags;
+          if not List.any(System.strtok(simflags, " "), isLinearizeTimeFlag) then
+            simflags := "-l=" + strlinearizeTime + " " + simflags;
+          end if;
           sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
@@ -1614,7 +1540,7 @@ algorithm
           // The wasm-jit target runs the JIT-compiled model in-process, as `simulate` does.
           if Config.simCodeTarget() == "wasm-jit" then
             result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           else
             resI := System.systemCallRestrictedEnv(sim_call, logFile);
           end if;
@@ -1677,7 +1603,7 @@ algorithm
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
           // as the buildModel log file will be deleted here and that gives less information to the user!
@@ -1690,7 +1616,7 @@ algorithm
           // As in the simulate() case: the wasm-jit target runs the JIT-compiled
           // model in-process instead of spawning an executable.
           if Config.simCodeTarget() == "wasm-jit" then
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           elseif Config.simCodeTarget() == "wasm" then
             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
           else
@@ -1817,11 +1743,8 @@ algorithm
         workdir := if System.directoryExists(workdir) then workdir else System.pwd();
         // create a temporary directory
         tmpDir := System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/" + "fmuTmp" + intString(System.intRand(1000)));
-        tmpFile := tmpDir + "/" + "modelDescription.xml";
-        System.systemCall("cp -f " + filename + " " + tmpFile);
         modeldescriptionfilename := tmpDir + "/modelDescription.fmu";
-        System.systemCall("zip -j " +  modeldescriptionfilename + " " + tmpFile);
-        true := System.regularFileExists(modeldescriptionfilename);
+        true := Unzip.zipPath(modeldescriptionfilename, filename, "modelDescription.xml");
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
@@ -3421,6 +3344,9 @@ algorithm
     case ("getNthComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponentCondition(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getComponentCondition(classpath, path, SymbolTable.getAbsyn());
+
     case ("getInheritanceCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
@@ -3511,6 +3437,13 @@ algorithm
       then
         ValuesMake.makeBoolean(b);
 
+    case ("setComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      algorithm
+        (p, b) := Interactive.setComponentCondition(classpath, path, str, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesMake.makeBoolean(b);
+
     case ("renameClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         (p, v) := Interactive.renameClass(classpath, path, SymbolTable.getAbsyn());
@@ -3561,6 +3494,10 @@ algorithm
     case ("getClassDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
                               Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b)})
       then ValuesMake.makeString(getClassDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b));
+
+    case ("getInstanceDiagram", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.STRING(str1),
+                                 Values.INTEGER(i), v as Values.ARRAY(), Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      then NFApi.getInstanceDiagram(classpath, str, str1, i, ValuesUtil.arrayValueStrings(v), b1, b2, b3);
 
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
@@ -4191,6 +4128,11 @@ algorithm
   end if;
 end runDockerCmd;
 
+protected function isLinearizeTimeFlag
+  input String flag;
+  output Boolean isLinearizeTime = flag == "-l" or StringUtil.startsWith(flag, "-l=");
+end isLinearizeTimeFlag;
+
 protected function isDockerPlatform
   input String platform;
   output Boolean isDocker;
@@ -4706,7 +4648,7 @@ public function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean success;
-  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd, msvcEnv;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
@@ -4835,13 +4777,21 @@ algorithm
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then
-        CevalScript.compileModel(filenameprefix + "_FMU", libs);
+        CevalScript.compileModel(filenameprefix + "_FMU", libs, makeVars={"ZIP_FMU=NO"});
       else
         CevalScript.compileModel(filenameprefix + "_FMU", libs,
-                                 makeVars={"TARGET_TRIPLET=" + platform});
+                                 makeVars={"TARGET_TRIPLET=" + platform, "ZIP_FMU=NO"});
       end if;
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
+    System.removeFile(fmuTargetName + ".fmu");
+    if not Unzip.zipPaths(fmuTargetName + ".fmu", System.pwd(),
+        list(f for f guard System.regularFileExists(f) or System.directoryExists(f)
+               in {"modelDescription.xml", "binaries", "sources", "documentation", "extra"})) then
+      ExecStat.execStat("buildModelFMU failed");
+      fail();
+    end if;
+    System.removeDirectory("documentation");
     if 0 <> System.systemCallRestrictedEnv(Autoconf.make + " -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
       // do nothing
     end if;
@@ -4893,20 +4843,10 @@ algorithm
     end if;
   end if;
 
-  msvcEnv := SimCodeUtil.msvcEnvironment();
-  if msvcEnv <> "" then
-    cmd := msvcEnv + Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && " +
-           Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
-  else
-    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
-  end if;
-  if 0 <> System.systemCall(cmd, outFile=logfile) then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
+  System.removeFile(fmutmp + "/.external_include_dirs");
+  System.removeFile(fmuTargetName + ".fmu");
+  if not Unzip.zipPath(fmuTargetName + ".fmu", fmutmp, "") then
     ExecStat.execStat("buildModelFMU failed");
-  end if;
-
-  if not System.regularFileExists(fmuTargetName + ".fmu") then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Build commands returned success, but " + fmuTargetName + ".fmu does not exist"});
     fail();
   end if;
 
@@ -4944,7 +4884,7 @@ protected
   Absyn.Class cls;
   String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
   Boolean runCommand;
-  String molName, dirPath, rmCommand, cdCommand, mvCommand, dirOrFileName, zipCommand;
+  String molName, dirPath;
 algorithm
   cls := ProgramUtil.getPathedClassInProgram(className, inProgram);
   fileName := AbsynUtil.classFilename(cls);
@@ -4968,22 +4908,16 @@ algorithm
         command := "";
       end if;
     else
-      molName := AbsynUtil.pathString(className) + ".mol";
-      dirPath := System.dirname(fileName);
-      // commands
-      rmCommand := "rm -f \"" + molName + "\"";
-      cdCommand := "cd \"" +  dirPath + "\"";
-      mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
-
-      if (StringUtil.endsWith(fileName, "package.mo")) then
-        dirOrFileName := System.basename(dirPath);
-        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
-        command := stringAppendList({rmCommand, " && ", cdCommand, " && cd .. && ", zipCommand});
+      molName := System.pwd() + pd + AbsynUtil.pathString(className) + ".mol";
+      System.removeFile(molName);
+      if StringUtil.endsWith(fileName, "package.mo") then
+        dirPath := System.dirname(fileName);
+        success := Unzip.zipPath(molName, dirPath, System.basename(dirPath));
       else
-        dirOrFileName := System.basename(fileName);
-        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
-        command := stringAppendList({rmCommand, " && ", cdCommand, " && ", zipCommand});
+        success := Unzip.zipPath(molName, fileName, System.basename(fileName));
       end if;
+      runCommand := false;
+      command := "";
     end if;
 
     if runCommand then
@@ -5082,7 +5016,7 @@ algorithm
         (cache, outSimSettings);
     else
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScriptBackend.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
       then
         fail();
   end match;
@@ -9868,6 +9802,30 @@ algorithm
   end try;
 end selectResultFile;
 
+function simulationLogFile
+  "A wasm-jit run has omc's cwd, which OMEdit keeps in the user's working
+   directory as for an executable, so its log follows -outputPath."
+  input String executable;
+  input String simflags;
+  output String logFile = executable + ".log";
+protected
+  Integer nm;
+  String dir = "";
+algorithm
+  if Config.simCodeTarget() <> "wasm-jit" then
+    return;
+  end if;
+  try
+    (nm, {_, dir}) := System.regex(simflags, "-outputPath[= ]+(\"[^\"]*\"|'[^']*'|[^ ]*)", 2, true);
+  else
+    nm := 0;
+  end try;
+  dir := System.trim(dir, "\"'");
+  if nm == 2 and dir <> "" then
+    logFile := dir + "/" + logFile;
+  end if;
+end simulationLogFile;
+
 function instantiateModel
   input output FCore.Cache cache;
   input FCore.Graph env;
@@ -10175,6 +10133,136 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
   end if;
 end isProtectedContentAccess;
+
+function simulateModel
+  input Absyn.Path path;
+  output String result;
+protected
+  InteractiveTypes.SimulationOptions sim_opts;
+  list<Values.Value> vals;
+  Values.Value res;
+algorithm
+  sim_opts := buildSimulationOptionsFromModelExperimentAnnotation(path, AbsynUtil.pathString(path), NONE());
+
+  vals := {
+    ValuesMake.makeCodeTypeName(path),
+    ValuesUtil.expValue(sim_opts.startTime),
+    ValuesUtil.expValue(sim_opts.stopTime),
+    ValuesUtil.expValue(sim_opts.numberOfIntervals),
+    ValuesUtil.expValue(sim_opts.tolerance),
+    ValuesUtil.expValue(sim_opts.method),
+    ValuesUtil.expValue(sim_opts.fileNamePrefix),
+    ValuesUtil.expValue(sim_opts.options),
+    ValuesUtil.expValue(sim_opts.outputFormat),
+    ValuesUtil.expValue(sim_opts.variableFilter),
+    ValuesUtil.expValue(sim_opts.cflags),
+    ValuesUtil.expValue(sim_opts.simflags),
+    ValuesMake.makeString("")
+  };
+
+  (_, res) := simulate(vals, FCore.emptyCache(), FGraph.empty(), Absyn.NO_MSG());
+  result := ValuesDump.printValStr(res) + "\n";
+end simulateModel;
+
+function simulate
+  input list<Values.Value> values;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Msg msg;
+        output Values.Value outValue;
+protected
+  Absyn.Path className;
+  list<Values.Value> vals = values;
+  String str, executable, compileDir, simflags, outputFormat_str, exeDir;
+  String resimulateExecutable, result_file, executableSuffixedExe, logFile, sim_call;
+  list<tuple<String,Values.Value>> resultValues;
+  Boolean b;
+  SimCode.SimulationSettings simSettings;
+  Integer resI;
+  Real timeSimulation, timeTotal;
+algorithm
+  Values.CODE(Absyn.C_TYPENAME(className)) :: _ := vals;
+
+  try
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+    // resimulateExecutable is the last (new) argument; pull it off so the rest
+    // of the pipeline sees the original simulate() argument list.
+    resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+    vals := List.stripLast(vals);
+
+    if resimulateExecutable <> "" then
+      // Skip translation and build; simulate the already-built model directly.
+      b := true;
+      executable := resimulateExecutable;
+      compileDir := System.pwd() + Autoconf.pathDelimiter;
+      simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+      resultValues := zeroBuildPhaseResultValues;
+    else
+      (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(cache,env,vals,msg);
+    end if;
+
+    if b then
+       exeDir := compileDir;
+       (cache,simSettings) := calculateSimulationSettings(cache, vals);
+       SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+       result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+        // result file might have been set by simflags (-r ...)
+
+       result_file := selectResultFile(result_file, simflags);
+
+       executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+       logFile := simulationLogFile(executable, simflags);
+       // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
+       // we should really have different log files for simulation/compilation!
+       // as the buildModel log file will be deleted here and that gives less information to the user!
+       if System.regularFileExists(logFile) then
+         0 := System.removeFile(logFile);
+       end if;
+       sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+       System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+       SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+
+       // The wasm-jit target runs the JIT-compiled model in-process and
+       // writes the result file directly, instead of spawning an executable;
+       // the wasm target runs the standalone module in a wasmtime subprocess.
+       if Config.simCodeTarget() == "wasm-jit" then
+         resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
+       elseif Config.simCodeTarget() == "wasm" then
+         resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
+       else
+         resI := System.systemCallRestrictedEnv(sim_call, logFile);
+       end if;
+
+       timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+
+     else
+       result_file := "";
+       resI := 1;
+       timeSimulation := 0.0;
+       logFile := "";
+     end if;
+
+    timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+    (cache,outValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,result_file,logFile);
+  else
+    str := AbsynUtil.pathString(className);
+
+    try
+      // Simulation failed for some other reason than OPENMODELICAHOME not being set.
+      Settings.getInstallationDirectoryPath();
+      str := "Failed to build model: " + str;
+      outValue := createSimulationResultFailure(str, simOptionsAsString(List.stripLast(values)));
+    else
+      outValue := createSimulationResultFailure(
+          "Simulation failed for model: " + str +
+          "\nEnvironment variable OPENMODELICAHOME not set.",
+          simOptionsAsString(List.stripLast(values))
+        );
+    end try;
+  end try;
+end simulate;
 
 annotation(__OpenModelica_Interface="backend_main");
 

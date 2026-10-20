@@ -889,7 +889,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       end for;
 
       args := listReverseInPlace(args);
-      exp := Expression.CALL(Call.UNTYPED_CALL(ComponentRef.fromNode(ty_node, ty), args, {}, InstNode.scopeRef(scope)));
+      exp := Expression.CALL(Call.UNTYPED_CALL(ComponentRef.fromNode(ty_node, ty), args, {}));
     end if;
   end makeRecordExp;
 

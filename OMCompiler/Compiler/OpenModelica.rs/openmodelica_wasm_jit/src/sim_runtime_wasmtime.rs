@@ -2863,7 +2863,7 @@ impl DylinkFmu {
         // The artifact reports its own assertions: `add_host_builtins` binds these
         // to omc's simulation-path recorder, which only the host driver drains.
         linker.allow_shadowing(true);
-        for name in ["rt_assert", "rt_assert_warning"] {
+        for name in ["rt_assert", "rt_assert_when", "rt_assert_warning"] {
             let f = fused_inst
                 .get_func(&mut store, name)
                 .ok_or_else(|| format!("CodegenWasmJit: the fused runtime has no `{name}` export"))?;

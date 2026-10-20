@@ -6613,6 +6613,34 @@ match sparsity
 end initialResizableAnalyticJacobians;
 
 template resizableSparsityRowCount(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
+"Count phase of one sparsity row: as tables for rows of scalars (resizableScalarRowCount),
+ else resizableSparsityRowCountGeneral."
+::=
+  let compact = resizableScalarRowCount(row, context)
+  if compact then compact else resizableSparsityRowCountGeneral(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
+end resizableSparsityRowCount;
+
+template resizableScalarRowCount(SparsityRow row, Context context)
+"A row of scalars at constant positions (SimCodeCodegenUtil.scalarSparsityRow): the columns
+ as a table, every solved cref (row) has each of them once. One statement per entry makes
+ the code of large scalar systems too big to compile."
+::=
+match context
+case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+  match row
+  case SPARSITY_ROW(equation_name=eqn_name) then
+    match SimCodeCodegenUtil.scalarSparsityRow(row, jacHT)
+    case SOME((rows as _ :: _, cols as _ :: _)) then
+      <<
+      { /* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(eqn_name), "/*", ""), "*/", "")%> count */
+        static const unsigned int _sc[] = {<%(cols |> c => c ;separator=", ")%>};
+        unsigned int _c;
+        for (_c = 0; _c < <%listLength(cols)%>; _c++) col_counts[_sc[_c]] += <%listLength(rows)%>;
+      }
+      >>
+end resizableScalarRowCount;
+
+template resizableSparsityRowCountGeneral(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub)
 "Count phase: for each (row,col) pair in this SparsityRow, increment col_counts[col].
  For REGULAR 1D WHOLEDIM seeds (dep.kinds=[false], not rep) inside WHOLEDIM/multi-dim-WHOLEDIM sc,
  emits a single col_counts[v.index + _wr_k]++ (diagonal). All other cases use REDUCTION (full loop)."
@@ -6778,7 +6806,7 @@ match row
       <%forTail%>
       >>
     else ''
-end resizableSparsityRowCount;
+end resizableSparsityRowCountGeneral;
 
 template resizableColCountRegular(ComponentRef seed, String nCols, Integer k, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction)
 "Count phase for a REGULAR 1D whole-array seed: emit col_counts[v.index + _wr<%k%>]++ (one
@@ -7029,6 +7057,36 @@ template resizableColCountBase(ComponentRef seed, String nCols, Context context,
 end resizableColCountBase;
 
 template resizableSparsityRowFill(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
+"Fill phase of one sparsity row: as tables for rows of scalars (resizableScalarRowFill),
+ else resizableSparsityRowFillGeneral."
+::=
+  let compact = resizableScalarRowFill(row, context, spPattern)
+  if compact then compact else resizableSparsityRowFillGeneral(row, nCols, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub, spPattern)
+end resizableSparsityRowFill;
+
+template resizableScalarRowFill(SparsityRow row, Context context, String spPattern)
+"Fill phase of resizableScalarRowCount: the entries of every row (solved cref) and column in
+ the order of the general code."
+::=
+match context
+case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+  match row
+  case SPARSITY_ROW(equation_name=eqn_name) then
+    match SimCodeCodegenUtil.scalarSparsityRow(row, jacHT)
+    case SOME((rows as _ :: _, cols as _ :: _)) then
+      <<
+      { /* <%System.stringReplace(System.stringReplace(crefStrNoUnderscore(eqn_name), "/*", ""), "*/", "")%> fill */
+        static const unsigned int _sr[] = {<%(rows |> r => r ;separator=", ")%>};
+        static const unsigned int _sc[] = {<%(cols |> c => c ;separator=", ")%>};
+        unsigned int _r, _c;
+        for (_r = 0; _r < <%listLength(rows)%>; _r++)
+          for (_c = 0; _c < <%listLength(cols)%>; _c++)
+            <%spPattern%>->index[col_fill[_sc[_c]]++] = _sr[_r];
+      }
+      >>
+end resizableScalarRowFill;
+
+template resizableSparsityRowFillGeneral(SparsityRow row, String nCols, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Fill phase: for each (row,col) pair, write spPattern->index[col_fill[col]++] = row.
  Uses resizableFillDepsForRow helper to avoid nested iteration over two record fields."
 ::=
@@ -7048,7 +7106,7 @@ match row
       <%forTail%>
       >>
     else ''
-end resizableSparsityRowFill;
+end resizableSparsityRowFillGeneral;
 
 template resizableFillDepsForRow(SparsityRow row, String nCols, Integer k, ComponentRef sc, Context context, Text &preExp, Text &varDecls, Text &varFrees, Text &auxFunction, Text &sub, String spPattern)
 "Generate fill code for solved_cref sc (row index k) against all dependencies in row.
@@ -8790,7 +8848,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       omc_terminate(info, omc_string_data(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
-      assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction, info)
+      assertCommon(condition, List.fill(message,1), level, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction, info)
     case NORETCALL(__) then
       let &preExp = buffer ""
       let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &varFrees, &auxFunction)

@@ -5,7 +5,10 @@ ASSC.mos \
 SingularPlanarLoop.mos \
 PantelidesSingular.mos \
 MoveWithInputs.mos \
-DiscreteTupleOutput.mos
+DiscreteTupleOutput.mos \
+TupleConstraintEquation.mos \
+TupleConstraintStateSet.mos \
+TupleAssignInIf.mos
 
 
 # test that currently fail. Move up when fixed. 

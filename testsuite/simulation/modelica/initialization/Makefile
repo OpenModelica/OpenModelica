@@ -36,6 +36,7 @@ gaspropreties.mos \
 homotopy1.mos \
 homotopy2.mos \
 homotopy3.mos \
+homotopyDisjoint.mos \
 homotopy4.mos \
 homotopy4_solver.mos \
 homotopy5.mos \
@@ -43,6 +44,8 @@ homotopy6.mos \
 homotopy7.mos \
 homotopy8.mos \
 initStartTearingDegree1.mos \
+initStartValueCycle.mos \
+initStartValueCycle2.mos \
 OpenIPSL_AC8B_total.mos \
 initial_equation.mos \
 parameters.mos \
@@ -95,6 +98,7 @@ conflictingStartValues.mos \
 conflictingStartValues2.mos \
 startAttributePriority.mos \
 Ticket5340.mos \
+Issue17162.mos \
 
 
 # test that currently fail. Move up when fixed.

@@ -44,7 +44,7 @@ omc_option(OM_OMC_ENABLE_COLPACK "Should we enable graph coloring with ColPack."
 
 omc_option(OM_OMC_ENABLE_CPP_RUNTIME "Enable, build, and install the C++ simulation runtime libraries." ON)
 
-omc_option(OM_OMC_ENABLE_C_OLD_RUNTIME "Build libSimulationRuntimeC, the C simulation runtime --simCodeTarget=C.old links." ON)
+omc_option(OM_OMC_ENABLE_C_RUNTIME "Build libSimulationRuntimeC, the C simulation runtime --simCodeTarget=C links." ON)
 
 # Its own switch because it is the last thing in the C runtime tree needing
 # oneTBB, which a cross build has no reason to acquire.
@@ -242,7 +242,7 @@ else()
   # The runtime angle-includes omc_config.unix.h, generated under Compiler/.
   include(${CMAKE_CURRENT_SOURCE_DIR}/Compiler/runtime/omc_config_unix.cmake)
 endif()
-# libSimulationRuntimeRust, what `--simCodeTarget=C` links. After Compiler,
+# libSimulationRuntimeRust, what `--simCodeTarget=C+Rust` links. After Compiler,
 # which is where the Rust working copy and cargo target directory are set up
 # (rust_omc.cmake) when omc is the Rust port.
 # Skipped where the rest of the simulation runtime is: the wasm bundle does not

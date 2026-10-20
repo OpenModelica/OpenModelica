@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f testSolver.problem2* output.log
 // cflags: -d=-newInst
+// suite: gbode
 
 stopTime := 321.8122;
 loadFile("testSolverPackage.mo"); getErrorString();

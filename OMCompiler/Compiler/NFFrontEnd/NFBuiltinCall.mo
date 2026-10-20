@@ -129,7 +129,6 @@ public
       case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, context, info);
       case "edge" then typeEdgeCall(call, context, info);
       case "fill" then typeFillCall(call, context, info);
-      case "getInstanceName" then typeGetInstanceName(call, context, info);
       //case "initialState" then typeInitialStateCall(call, context, info);
       case "initial" then typeDiscreteCall(call, context, info);
       case "inStream" then typeActualInStreamCall("inStream", call, context, info);
@@ -1407,6 +1406,11 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
     args := typeConnectionsArgs(args, arg_context, info, fn_ref);
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
@@ -1490,6 +1494,11 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
     arg1 :: args := args;
 
     arg1 := typeConnectionsArg(arg1, arg_context, info, fn_ref, 1);
@@ -1545,6 +1554,11 @@ protected
 
     if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
@@ -1635,6 +1649,11 @@ protected
 
     if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    if InstContext.inNonexpandable(context) then
+      Error.addSourceMessageAndFail(Error.IN_NON_EVALUABLE_IF_OR_FOR,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
@@ -1885,25 +1904,6 @@ protected
       fail();
     end if;
   end typeNthRootCall;
-
-  function typeGetInstanceName
-    input Call call;
-    input InstContext.Type context;
-    input SourceInfo info;
-    output Expression result;
-    output Type ty = Type.STRING();
-    output Variability var = Variability.CONSTANT;
-    output Purity purity = Purity.PURE;
-  protected
-    NFInstNode.ScopeRef scope;
-  algorithm
-    Call.UNTYPED_CALL(call_scope = scope) := call;
-    Call.typeMatchNormalCall(call, context, info);
-    // getInstanceName is normally derived from the prefix during the flattening,
-    // but sometimes the call is constant evaluated instead (e.g. when it's used
-    // in a package). So we create an expression here that contains the scope.
-    result := Expression.INSTANCE_NAME(InstNode.fromCell(scope));
-  end typeGetInstanceName;
 
   function typeClockCall
     input Call call;

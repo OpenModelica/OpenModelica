@@ -384,6 +384,16 @@ public
     end match;
   end isConnectionCall;
 
+  function isConnectionGraphQuery
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isConnectionGraphQuery(exp.call);
+      else false;
+    end match;
+  end isConnectionGraphQuery;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -1514,21 +1524,15 @@ public
     input Integer stop;
     output Expression rangeExp;
   protected
-    Expression start_exp, stop_exp;
     Option<Expression> step_exp;
   algorithm
-    start_exp := INTEGER(start);
-    stop_exp := INTEGER(stop);
-
-    if start == stop or
-       step == 1 and start <= stop or
-       step == -1 and start >= stop then
+    if step == 1 or start == stop then
       step_exp := NONE();
     else
       step_exp := SOME(INTEGER(step));
     end if;
 
-    rangeExp := makeRange(start_exp, step_exp, stop_exp);
+    rangeExp := makeRange(INTEGER(start), step_exp, INTEGER(stop));
   end makeIntegerRange;
 
   function getIntegerRange
@@ -2895,7 +2899,7 @@ public
       case RECORD_ELEMENT()
         then DAE.RSUB(toDAE(exp.recordExp), -1, exp.fieldName, Type.toDAE(exp.ty));
 
-      // a plain function reference, see NBackendDAE.lowerFunctionPointers
+      // a plain function reference, see NBackendDAE.lowerFunctionPointer
       case PARTIAL_FUNCTION_APPLICATION(args = {}, ty = Type.FUNCTION(fnType = NFType.FunctionType.FUNCTION_REFERENCE))
         then toDAE(CREF(exp.ty, exp.fn));
 

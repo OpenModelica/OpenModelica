@@ -1,6 +1,7 @@
 // name: RK_01
 // status: correct
 // teardown_command: rm -rf SlowFastDynamics_* *.log SlowFastDynamics.bat
+// suite: gbode
 //
 // Test all available generic Runge-Kutta solvers with all available non-linear solver methods.
 

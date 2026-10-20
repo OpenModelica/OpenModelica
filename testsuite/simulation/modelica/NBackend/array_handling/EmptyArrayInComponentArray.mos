@@ -1,0 +1,95 @@
+// name: EmptyArrayInComponentArray
+// keywords: NewBackend, array, empty, component array
+// status: correct
+// cflags: --newBackend
+// teardown_command: rm -rf EmptyBind.Test* _EmptyBind.Test* output.log
+//
+// Zero-length arrays inside an array of components. The crefs are replaced by
+// empty array literals in the flat model, which must not keep the subscripts
+// of the component array.
+
+loadString("
+package EmptyBind
+  model Fluid \"property object with a zero-length composition input for a pure fluid\"
+    parameter Integer nc = 1;
+    input Real p;
+    input Real xi[nc - 1];
+    Real d;
+    Real drhodxi[nc - 1];
+  equation
+    d = p*(1 + sum(xi));
+    drhodxi = fill(1, nc - 1);
+  end Fluid;
+
+  model Cell
+    Real p(start = 1, fixed = true);
+    Real xi[0] = fill(0, 0);
+    Fluid fluid(p = p, xi = xi);
+    Real drhodt;
+  equation
+    der(p) = -p;
+    drhodt = fluid.d*der(p) + fluid.drhodxi*der(xi);
+  end Cell;
+
+  model Test \"array of cells\"
+    Cell cell[3];
+  end Test;
+
+  model Test2 \"single cell\"
+    Cell cell;
+  end Test2;
+
+  model Cell3 \"composition input bound from outside\"
+    input Real xi[0];
+    Real p(start = 1, fixed = true);
+    Fluid fluid(p = p, xi = xi);
+    Real drhodt;
+  equation
+    der(p) = -p;
+    drhodt = fluid.d*der(p) + fluid.drhodxi*xi;
+  end Cell3;
+
+  model Test3
+    Cell3 cell[3](each xi = fill(0, 0));
+  end Test3;
+end EmptyBind;
+"); getErrorString();
+
+simulate(EmptyBind.Test, stopTime=1.0); getErrorString();
+val(cell[2].drhodt, 1.0);
+simulate(EmptyBind.Test2, stopTime=1.0); getErrorString();
+val(cell.drhodt, 1.0);
+simulate(EmptyBind.Test3, stopTime=1.0); getErrorString();
+val(cell[3].drhodt, 1.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EmptyBind.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EmptyBind.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.13533529086093962
+// record SimulationResult
+//     resultFile = "EmptyBind.Test2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EmptyBind.Test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.13533529086093962
+// record SimulationResult
+//     resultFile = "EmptyBind.Test3_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EmptyBind.Test3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// -0.13533529086093962
+// endResult

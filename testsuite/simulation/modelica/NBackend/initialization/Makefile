@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 attributeInitParameter.mos \
+whenAlgorithmPre.mos \
 experimental_initialSimplified.mos \
 discreteCallArgument.mos \
 functionOutputStart.mos \
@@ -15,6 +16,7 @@ homotopy_indirect.mos \
 homotopy_no_loop.mos \
 init_if_eq.mos \
 init_if_exp.mos \
+initialNoReturnCall.mos \
 TestInversePlant.mos \
 
 # test that currently fail. Move up when fixed.

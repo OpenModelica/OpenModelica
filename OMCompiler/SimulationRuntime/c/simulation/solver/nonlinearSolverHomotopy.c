@@ -1776,6 +1776,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   int maxTries = homMaxTries;
   int numSteps = 0;
   int stepAccept = 0;
+  int correctorFailed;
   int correctorStrategy = homBacktraceStrategy; /* 1: go back to the path by fixing one coordinate, 2: go back to the path in an orthogonal direction to the tangent vector */
   double bend = 0;
   double tau = homTauStart, tauMax = homTauMax, tauMin = homTauMin, hEps = homHEps, adaptBend = homAdaptBend;
@@ -2019,6 +2020,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       debugString(OMC_LOG_NLS_HOMOTOPY, "Using backtrace strategy orthogonal to the tangent vector! To change this use: '-homBacktraceStrategy=fix'");
 
 
+    correctorFailed = 0;
     for(j=0;j<maxiter;j++)
     {
       debugInt(OMC_LOG_NLS_HOMOTOPY, "Iteration: ", j+1);
@@ -2051,6 +2053,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because hJac_dh could not be calculated!");
         stepAccept = 0;
+        correctorFailed = 1;
         break;
       }
       matVecMultAbs(solverData->n, solverData->m, solverData->hJac, solverData->ones, solverData->resScaling);
@@ -2066,6 +2069,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         {
           debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
           stepAccept = 0;
+          correctorFailed = 1;
           break;
         }
         solverData->dy1[pos] = 0.0;
@@ -2078,6 +2082,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         {
           debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
           stepAccept = 0;
+          correctorFailed = 1;
           break;
         }
       }
@@ -2103,6 +2108,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because h_function could not be calculated!");
         stepAccept = 0;
+        correctorFailed = 1;
         break;
       }
       /* Calculate different error measurements */
@@ -2140,7 +2146,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     }
     if ((bend > adaptBend) || !stepAccept)
     {
-      if (bend<DBL_EPSILON)
+      if (bend<DBL_EPSILON && !correctorFailed)
       {
         /* debug information */
         if (solverData->initHomotopy)
@@ -2614,6 +2620,12 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
   if (!homotopyData->initHomotopy) {
     messageClose(OMC_LOG_NLS_V);
+  }
+
+  /* The residual scaling of a failed solve belongs to wherever the iteration
+   * ended up. Don't let the next call test its initial point against it. */
+  if (success != NLS_SOLVED) {
+    memset(homotopyData->resScaling, 0, homotopyData->n*sizeof(double));
   }
 
   /* write statistics */

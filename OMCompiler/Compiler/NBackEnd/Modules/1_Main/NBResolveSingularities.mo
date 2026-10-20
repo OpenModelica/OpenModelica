@@ -604,11 +604,14 @@ protected
     input Adjacency.Mapping mapping;
   protected
     array<Integer> data = Adjacency.IntMatrix.entries(m);
-    Integer first = m.start[eqn];
+    array<Integer> pstart = Adjacency.IntMatrix.pieceStarts(m);
+    array<Integer> plen = Adjacency.IntMatrix.pieceLengths(m);
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
-    for k in first:first + m.len[eqn] - 1 loop
-      fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+    for p in m.first[eqn]:m.first[eqn] + m.pieces[eqn] - 1 loop
+      for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+        fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+      end for;
     end for;
   end fillColorEqn;
 
@@ -723,11 +726,14 @@ protected
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
     Pointer<Variable> var_ptr;
+    Integer start_idx;
   algorithm
     // collect all relevant constraint equations
     for eqn in marked_eqns loop
       UnorderedSet.add(mapping.eqn_StA[eqn], eqn_indices);
-      eqn_slices[mapping.eqn_StA[eqn]] := eqn :: eqn_slices[mapping.eqn_StA[eqn]];
+      // local element index, like the slices of Matching.getMatches
+      (start_idx, _) := mapping.eqn_AtS[mapping.eqn_StA[eqn]];
+      eqn_slices[mapping.eqn_StA[eqn]] := (eqn - start_idx) :: eqn_slices[mapping.eqn_StA[eqn]];
     end for;
 
     // get the constraint equation, add it to the array and add all slices of it to the slice list

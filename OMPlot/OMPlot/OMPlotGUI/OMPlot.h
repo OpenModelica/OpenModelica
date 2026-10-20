@@ -41,6 +41,9 @@
 #include <QList>
 #include <QColor>
 #include <QApplication>
+#include <QStyleHints>
+
+class QRubberBand;
 
 #include "PlotWindow.h"
 #include "Legend.h"
@@ -55,13 +58,22 @@ namespace OMPlot
 {
 /*!
  * \brief isDarkMode
- * True when the hosting application (OMEdit) runs in dark mode. Standalone
- * OMPlot has no such property and keeps its light, print-friendly colors.
+ * True when the hosting application runs in dark mode. OMEdit sets the
+ * "omeditDarkMode" application property (also when it forces light mode).
+ * Standalone OMPlot has no such property and follows the system color scheme.
  */
 inline bool isDarkMode()
 {
-  return qApp && qApp->property("omeditDarkMode").toBool();
+  if (qApp && qApp->property("omeditDarkMode").isValid()) {
+    return qApp->property("omeditDarkMode").toBool();
+  }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+  return qApp && QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#else
+  return false;
+#endif
 }
+
 class Plot : public QwtPlot
 {
   Q_OBJECT
@@ -75,8 +87,11 @@ private:
   PlotZoomer *mpPlotZoomer;
   PlotPanner *mpPlotPanner;
   PlotPicker *mpPlotPicker;
+  QRubberBand *mpZoomRubberBand;
   QList<PlotCurve*> mPlotCurvesList;
   QList<QColor> mColorsList;
+  QPoint mZoomStartPosition;
+  bool mZoomingFromOutsideCanvas = false;
 public:
   Plot(PlotWindow *pParent);
   ~Plot();
@@ -105,8 +120,13 @@ public:
   static QString convertSymbolToUnit(const QString &symbol);
   static void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent);
 private:
+  void installZoomEventFilters(QWidget *widget);
+  void startZoomFromGlobalPosition(const QPoint &globalPosition, Qt::KeyboardModifiers modifiers);
+  void updateZoomFromGlobalPosition(const QPoint &globalPosition, Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers);
+  void finishZoomFromGlobalPosition(const QPoint &globalPosition, Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers);
   void updateMaxMajorSteps();
 protected:
+  bool eventFilter(QObject *object, QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   /* Override the minimum size hint so that the window can be shrunk vertically.
    * QwtPlot::sizeHint() (used by the default minimumSizeHint()) adds extra

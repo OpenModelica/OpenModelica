@@ -1,0 +1,48 @@
+// name: sliceRangeSparsity
+// keywords: NewBackend array slice range jacobian sparsity
+// status: correct
+// suite: cSources
+// cflags: --newBackend --simCodeScalarize=false
+// teardown_command: rm -f sliceRangeSparsity_res.mat
+//
+// The frontend evaluates slices of known size (T[1:n-1]) to literal index
+// arrays (T[{1, 2, ..., 9}]). The backend turns them back into ranges, so the
+// Jacobian rows depend on the neighbouring elements and not on whole slices.
+// Values of the old backend.
+
+loadString("
+model sliceRangeSparsity
+  parameter Integer n = 10;
+  parameter Real k = 2;
+  Real T[n](start = {i for i in 1:n}, each fixed = true);
+  Real Q[n + 1];
+equation
+  Q[1] = 1 - T[1];
+  Q[2:n] = k * (T[1:n - 1] - T[2:n]);
+  Q[n + 1] = 0;
+  der(T) = Q[1:n] - Q[2:n + 1];
+end sliceRangeSparsity;
+"); getErrorString();
+
+simulate(sliceRangeSparsity, stopTime = 1); getErrorString();
+// no literal index array as dependency of a row
+system("grep -q 'SEED_ODE_JAC.T\\[UNKNOWN_SUBSCRIPT  {' sliceRangeSparsity_12jac.c");
+abs(val(T[1], 1, "sliceRangeSparsity_res.mat") - 1.8156793796707307) < 1e-5;
+abs(val(T[5], 1, "sliceRangeSparsity_res.mat") - 5.013258775209612) < 1e-5;
+abs(val(T[10], 1, "sliceRangeSparsity_res.mat") - 8.853502368876951) < 1e-5;
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "sliceRangeSparsity_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'sliceRangeSparsity', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1
+// true
+// true
+// true
+// endResult

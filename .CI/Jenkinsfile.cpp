@@ -59,7 +59,7 @@ pipeline {
       steps {
         script { common.checkoutSCM() }
         script {
-          common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04',
+          common.insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04',
                                  "--mount type=volume,source=runtest-cpp-test-cache,target=/cache/runtest " +
                                  "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
             common.buildOMC([

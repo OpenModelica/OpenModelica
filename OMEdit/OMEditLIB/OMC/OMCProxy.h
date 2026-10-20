@@ -207,6 +207,8 @@ public:
                               QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality);
   bool setComponentComment(QString className, QString componentName, QString comment);
   bool setComponentDimensions(QString className, QString componentName, QString dimensions);
+  QString getComponentCondition(QString className, QString componentName);
+  bool setComponentCondition(QString className, QString componentName, QString condition);
   void addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
   bool addTransition(QString className, QString from, QString to, QString condition, bool immediate, bool reset, bool synchronize, int priority, QString annotation);
@@ -221,6 +223,7 @@ public:
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
+  QString getClassDiagram(QString className, int depth, bool showModifiers);
   bool ngspicetoModelica(QString fileName);
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);

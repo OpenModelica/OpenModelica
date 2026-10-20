@@ -408,6 +408,9 @@ protected
 algorithm
   outDAE.eqs := List.map(inDAE.eqs, inlineWhenForInitializationSystem);
   (eqnlst, _) := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, inlineWhenForInitializationEquation, ({}, leftCrs));
+  for syst in inDAE.eqs loop
+    (eqnlst, _) := BackendEquation.traverseEquationArray(syst.removedEqs, inlineWhenForInitializationRemovedEquation, (eqnlst, leftCrs));
+  end for;
   clockEqnsLst := BackendEquation.traverseEquationArray(inDAE.shared.removedEqs, SynchronousFeatures.getBoolClockWhenClauses, {});
   eqnlst := listAppend(clockEqnsLst, eqnlst);
   outDAE.shared := BackendDAEUtil.setSharedRemovedEqns(outDAE.shared, BackendEquation.listEquation(eqnlst));
@@ -464,6 +467,37 @@ algorithm
     else (inEq::accEq, leftCrs);
   end match;
 end inlineWhenForInitializationEquation;
+
+protected function inlineWhenForInitializationRemovedEquation
+  "Collects the active when-bodies of a removed equation of an EqSystem.
+   The rest of it is already evaluated by the simulation system."
+  input BackendDAE.Equation inEq;
+  input tuple<list<BackendDAE.Equation>, HashSet.HashSet> inTpl;
+  output BackendDAE.Equation outEq = inEq;
+  output tuple<list<BackendDAE.Equation>, HashSet.HashSet> outTpl;
+protected
+  list<BackendDAE.Equation> eqns;
+  HashSet.HashSet leftCrs;
+  list<DAE.Statement> stmts;
+algorithm
+  (eqns, leftCrs) := inTpl;
+  () := match inEq
+    case BackendDAE.WHEN_EQUATION() algorithm
+      (leftCrs, eqns) := inlineWhenForInitializationWhenEquation(inEq.whenEquation, inEq.source, inEq.attr, eqns, leftCrs);
+    then ();
+
+    case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(statementLst = stmts)) algorithm
+      stmts := list(s for s guard (match s case DAE.STMT_WHEN() then true; else false; end match) in stmts);
+      (stmts, leftCrs) := inlineWhenForInitializationWhenAlgorithm(stmts, {}, leftCrs);
+      if not listEmpty(stmts) then
+        eqns := BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS(stmts), inEq.source, inEq.expand, BackendDAE.EQ_ATTR_DEFAULT_INITIAL) :: eqns;
+      end if;
+    then ();
+
+    else ();
+  end match;
+  outTpl := (eqns, leftCrs);
+end inlineWhenForInitializationRemovedEquation;
 
 protected function inlineWhenForInitializationWhenEquation "author: lochel"
   input BackendDAE.WhenEquation inWEqn;
@@ -2053,6 +2087,8 @@ algorithm
       true := isVarExplicitSolvable(enhancedRow(inME, indexEq), indexVar);
       var := BackendVariable.getVarAt(inVars, indexVar);
       eqn := BackendEquation.get(inEqns, indexEq);
+      // an algorithm cannot be solved for one of its variables
+      true := BackendEquation.isNotAlgorithm(eqn);
 
       cref := BackendVariable.varCref(var);
       type_ := BackendVariable.varType(var);

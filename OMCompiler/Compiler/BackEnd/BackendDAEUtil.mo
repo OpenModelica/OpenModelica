@@ -143,6 +143,21 @@ algorithm
   end match;
 end isInitializationDAE;
 
+public function warnStartValueCycle
+  "Warns that the start attribute of the variable depends on the variable itself."
+  input DAE.ComponentRef cref;
+protected
+  String name = ComponentReferenceBasics.printComponentRefStr(cref);
+algorithm
+  Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" + name +
+    "' depends, directly or transitively, on the variable itself. The start attribute defines the " +
+    "initial value of '" + name + "' and therefore " +
+    "cannot be computed from it, so this start value cannot be used to initialize the variable (see " +
+    "Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give '" +
+    name + "' a start value that does not depend on " +
+    "itself. Use the transformational debugger to inspect the dependency chain.");
+end warnStartValueCycle;
+
 public function isSimulationDAE
   input BackendDAE.Shared inShared;
   output Boolean res;
@@ -2733,6 +2748,13 @@ algorithm
         */
         crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
         for cr in crefLst loop
+          /*
+            An algorithm assigns all of its outputs, but the traversal above
+            doesn't find the ones that are only assigned with a subscript it
+            can't evaluate, e.g. a[i+1] in a for loop. Add them the same way
+            as if they occurred on a left hand side.
+          */
+          res := adjacencyRowExp(Expression.crefExp(cr), vars, res, functionTree, inIndexType, isInitial);
           try
             (varslst, p) := BackendVariable.getVar(cr, vars);
             res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
@@ -6209,6 +6231,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e1, e2, e3;
+      BinaryTree.BinTree bt, bt1, bt2;
       list<BackendDAE.Var> varslst;
       Boolean b, b1, b2, bs, isInitial;
       Integer mark, i;
@@ -6290,12 +6313,19 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, false, _, _, _))
     then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
 
-    // homotopy operator for initialization system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
+    // homotopy operator for initialization system: like an if-expression,
+    // the equation cannot be solved for a variable that is missing in one of
+    // the two expressions (only one of them is left at lambda = 0 and lambda = 1)
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (vars, bs, true, it, at, pa))
       algorithm
-        (_, b1, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
-        (_, b2, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
-    then (inExp, b1 and b2, tpl);
+        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, true, it, at, pa));
+        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, true, it, at, pa));
+        (_, bt1) := Expression.traverseExpTopDown(e1, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+        (_, bt2) := Expression.traverseExpTopDown(e2, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+        bt := BinaryTree.binTreeintersection(bt1, bt2, BinaryTree.emptyBinTree);
+        Expression.traverseExpTopDown(e1, markBranchVars, (it, at, vars, bt));
+        Expression.traverseExpTopDown(e2, markBranchVars, (it, at, vars, bt));
+    then (inExp, false, (vars, bs, true, it, at, pa));
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)

@@ -64,8 +64,13 @@ getClassDiagram1.mos \
 getClassDiagram2.mos \
 getClassDiagram3.mos \
 getClassDiagram4.mos \
+getInstanceDiagram1.mos \
+getInstanceDiagram2.mos \
+getInstanceDiagram3.mos \
+getInstanceDiagram4.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
+getComponentCondition.mos \
 GetComponents.mos \
 getComponentsTestNF.mos \
 getComponentsTestOF.mos \
@@ -166,6 +171,7 @@ setSourceFileListFile.mos \
 setSourceFileMergeAST.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
+SimulateFlag1.mo \
 StateMachine.mos \
 StoreAST.mos \
 strings.mos  \

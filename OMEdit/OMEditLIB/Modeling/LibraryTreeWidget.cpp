@@ -51,6 +51,9 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#if !defined(__EMSCRIPTEN__)
+#include "OMS/OMSCalibrationDialog.h"
+#endif
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
@@ -2845,6 +2848,10 @@ void LibraryTreeView::createActions()
   mpFindUsageAction = new QAction(Helper::findUsage, this);
   mpFindUsageAction->setStatusTip(Helper::findUsageTip);
   connect(mpFindUsageAction, SIGNAL(triggered()), SLOT(findUsageOfClass()));
+  // class diagram action
+  mpClassDiagramAction = new QAction(Helper::classDiagram, this);
+  mpClassDiagramAction->setStatusTip(Helper::classDiagramTip);
+  connect(mpClassDiagramAction, SIGNAL(triggered()), SLOT(showClassDiagram()));
   // Duplicate action
   /* Ticket #3265
    * Changed the name from Copy to Duplicate.
@@ -2931,6 +2938,12 @@ void LibraryTreeView::createActions()
   mpUnloadOMSModelAction->setShortcut(QKeySequence::Delete);
   mpUnloadOMSModelAction->setStatusTip(Helper::unloadOMSModelTip);
   connect(mpUnloadOMSModelAction, SIGNAL(triggered()), SLOT(unloadOMSModel()));
+#if !defined(__EMSCRIPTEN__)
+  // calibrate OMSimulator model action
+  mpOMSCalibrateAction = new QAction(tr("Calibrate..."), this);
+  mpOMSCalibrateAction->setStatusTip(tr("Calibrates the parameters of the model against reference data"));
+  connect(mpOMSCalibrateAction, &QAction::triggered, this, &LibraryTreeView::OMSCalibrate);
+#endif
 }
 
 /*!
@@ -3122,6 +3135,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpFindUsageAction);
+#if !defined(__EMSCRIPTEN__) && !defined(OM_OMEDIT_NO_WEBENGINE)
+          // The draw.io viewer needs QtWebEngine, see ClassDiagramWidget.
+          menu.addAction(mpClassDiagramAction);
+#endif
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
@@ -3211,6 +3228,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpSaveAction);
             menu.addAction(mpSaveAsAction);
+#if !defined(__EMSCRIPTEN__)
+            menu.addSeparator();
+            menu.addAction(mpOMSCalibrateAction);
+#endif
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
           }
@@ -3563,6 +3584,18 @@ void LibraryTreeView::findUsageOfClass()
 }
 
 /*!
+ * \brief LibraryTreeView::showClassDiagram
+ * Shows the class diagram of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::showClassDiagram()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->showClassDiagramWidget(pLibraryTreeItem->getNameStructure());
+  }
+}
+
+/*!
  * \brief LibraryTreeView::duplicateClass
  * Opens the DuplicateClassDialog.
  */
@@ -3808,6 +3841,21 @@ void LibraryTreeView::unloadOMSModel()
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief LibraryTreeView::OMSCalibrate
+ * Opens the calibration dialog for the selected OMSimulator model.
+ */
+void LibraryTreeView::OMSCalibrate()
+{
+#if !defined(__EMSCRIPTEN__)
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    OMSCalibrationDialog *pOMSCalibrationDialog = new OMSCalibrationDialog(pLibraryTreeItem, MainWindow::instance());
+    pOMSCalibrationDialog->show();
+  }
+#endif
 }
 
 /*!

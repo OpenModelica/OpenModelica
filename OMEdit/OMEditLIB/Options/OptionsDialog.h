@@ -295,6 +295,11 @@ public:
     Loading = 1,
     Never = 2
   };
+  enum ColorScheme {
+    SystemColorScheme = 0,
+    LightColorScheme = 1,
+    DarkColorScheme = 2
+  };
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   ComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
@@ -311,6 +316,7 @@ public:
   QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
   QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
   QCheckBox* getEnableInstanceApiNoJsonCheckBox() {return mpEnableInstanceApiNoJsonCheckBox;}
+  ComboBox* getColorSchemeComboBox() {return mpColorSchemeComboBox;}
   SpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   SpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
@@ -350,6 +356,8 @@ private:
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QCheckBox *mpEnableInstanceApiNoJsonCheckBox;
   QCheckBox *mpEnableCRMLSupportCheckBox;
+  Label *mpColorSchemeLabel;
+  ComboBox *mpColorSchemeComboBox;
   QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   SpinBox *mpLibraryIconSizeSpinBox;

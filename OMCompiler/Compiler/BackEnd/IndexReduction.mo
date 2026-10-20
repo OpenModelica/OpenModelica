@@ -1865,7 +1865,9 @@ algorithm
         // force inline
         funcs := BackendDAEUtil.getFunctions(inShared);
         (eqnslst,_) := BackendEquation.traverseExpsOfEquationList(eqnslst, forceInlinEqn,funcs);
-        // try to make scalar
+        // try to make scalar, also the tuple equations (a, b) = (f(x), g(x)) the
+        // inlining produced, else no variable is solvable in them
+        eqnslst := List.flatten(list(BackendEquation.scalarComplexEquations(eq, funcs) for eq in eqnslst));
         (eqnslst,_) := InlineArrayEquations.getScalarArrayEqns(eqnslst);
         // convert x:STATE(n) if n>1 to DER.DER....x
         (hov,ht) := List.map1Fold(iHov,getLevelStates,level,HashTableCrIntToExp.emptyHashTable());

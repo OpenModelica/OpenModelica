@@ -38,9 +38,11 @@
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
+#include "Util/Style.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
 #include "Git/CommitChangesDialog.h"
+#include "omcruntime_rust.h"
 #ifdef OMC_RUST_ABI
 #include "omc_rust_embedding.h" // Rust omc port: box-based mmc_mk_scon + stringHashDjb2 (no MMC runtime)
 #else
@@ -117,9 +119,6 @@ FmuExportOutputWidget::FmuExportOutputWidget(LibraryTreeItem* pLibraryTreeItem, 
   mpPostCompilationProcess = 0;
   setPostCompilationProcessKilled(false);
   mIsPostCompilationProcessRunning = false;
-  mpZipCompilationProcess = 0;
-  setZipCompilationProcessKilled(false);
-  mIsZipCompilationProcessRunning = false;
 }
 
 /*!
@@ -136,11 +135,6 @@ FmuExportOutputWidget::~FmuExportOutputWidget()
   if (mpPostCompilationProcess && isPostCompilationProcessRunning()) {
     mpPostCompilationProcess->kill();
     mpPostCompilationProcess->deleteLater();
-  }
-  // Zip compilation process
-  if (mpZipCompilationProcess && isZipCompilationProcessRunning()) {
-    mpZipCompilationProcess->kill();
-    mpZipCompilationProcess->deleteLater();
   }
 }
 
@@ -165,14 +159,6 @@ void FmuExportOutputWidget::cancelCompilation()
     mpPostCompilationProcess->kill();
     mIsPostCompilationProcessRunning = false;
     progressStr = tr("Building of %1 is cancelled.").arg(mpLibraryTreeItem->getName());
-    mpCancelButton->setEnabled(false);
-  } else if (isZipCompilationProcessRunning()) {
-    setZipCompilationProcessKilled(true);
-    mpZipCompilationProcess->kill();
-    mIsZipCompilationProcessRunning = false;
-    progressStr = tr("Zipping of FMU %1 is cancelled.").arg(mpLibraryTreeItem->getName());
-    mpProgressBar->setRange(0, 1);
-    mpProgressBar->setValue(0);
     mpCancelButton->setEnabled(false);
   }
   mpProgressLabel->setText(progressStr);
@@ -230,7 +216,7 @@ void FmuExportOutputWidget::compileModelCRuntime()
   arguments << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "-DCMAKE_COLOR_MAKEFILE=OFF" << "..";
 #endif
 
-  writeCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writeCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpCompilationProcess->start(program, arguments);
 }
 
@@ -266,7 +252,7 @@ void FmuExportOutputWidget::writePostCompilationOutput(QString output, QColor co
  */
 void FmuExportOutputWidget::readCompilationStandardOutput()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), Qt::black);
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -275,7 +261,7 @@ void FmuExportOutputWidget::readCompilationStandardOutput()
  */
 void FmuExportOutputWidget::readCompilationStandardError()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -307,14 +293,14 @@ void FmuExportOutputWidget::compilationProcessFinished(int exitCode, QProcess::E
   mIsCompilationProcessRunning = false;
   QString exitCodeStr = tr("Generated cmake target files failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeCompilationOutput(tr("Generated cmake target files successfully.\n"), Qt::blue);
+    writeCompilationOutput(tr("Generated cmake target files successfully.\n"), Style::messagesCommandColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
     runPostCompilation();
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writeCompilationOutput(exitCodeStr, Qt::red);
+    writeCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
   } else {
-    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }
@@ -354,7 +340,7 @@ void FmuExportOutputWidget::compilationProcessError(QProcess::ProcessError error
   if (isCompilationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+  writeCompilationOutput(mpCompilationProcess->errorString(), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -376,7 +362,7 @@ void FmuExportOutputWidget::runPostCompilation()
              << "--parallel"
              << "--target" << "install";
 
-  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpPostCompilationProcess->start(program, arguments);
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   mpGeneratedFilesTabWidget->setCurrentIndex(1);
@@ -402,7 +388,7 @@ void FmuExportOutputWidget::compileModelCppRuntime()
   QStringList arguments;
   arguments << "-f" << mFMUName + "_FMU.makefile" << "ZIP_FMU=OFF";
 
-  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpPostCompilationProcess->start(program, arguments);
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   mpGeneratedFilesTabWidget->setTabEnabled(0, false);
@@ -448,7 +434,7 @@ void FmuExportOutputWidget::readPostCompilationStandardOutput()
       mpProgressBar->setValue(currentStep);
     }
   }
-  writePostCompilationOutput(output, Qt::black);
+  writePostCompilationOutput(output, OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -457,7 +443,7 @@ void FmuExportOutputWidget::readPostCompilationStandardOutput()
  */
 void FmuExportOutputWidget::readPostCompilationStandardError()
 {
-  writePostCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), Qt::red);
+  writePostCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -473,7 +459,7 @@ void FmuExportOutputWidget::postCompilationProcessError(QProcess::ProcessError e
   if (isPostCompilationProcessKilled()) {
    return;
   }
-  writePostCompilationOutput(mpPostCompilationProcess->errorString(), Qt::red);
+  writePostCompilationOutput(mpPostCompilationProcess->errorString(), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -489,7 +475,7 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
   QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
 
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writePostCompilationOutput(tr("Build finished successfully.\n"), Qt::blue);
+    writePostCompilationOutput(tr("Build finished successfully.\n"), Style::messagesCommandColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     zipFMU();
     return;
@@ -497,16 +483,16 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
 
   // Null pointer safety
   if (!mpCompilationProcess) {
-    writePostCompilationOutput(exitCodeStr, Qt::red);
+    writePostCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     return;
   }
 
   // Error handling
   if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writePostCompilationOutput(exitCodeStr, Qt::red);
+    writePostCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
   } else {
-    writePostCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writePostCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
   }
 
   postCompilationProcessFinishedHelper(exitCode, exitStatus);
@@ -535,45 +521,18 @@ void FmuExportOutputWidget::postCompilationProcessFinishedHelper(int exitCode, Q
 
 /*!
  * \brief FmuExportOutputWidget::zipFMU
- * Runs the Zip compilation command after the post compilation of the model.
+ * Packs the FMU after the post compilation of the model.
  */
 void FmuExportOutputWidget::zipFMU()
 {
-  mpZipCompilationProcess = new QProcess;
-  connect(mpZipCompilationProcess, SIGNAL(started()), SLOT(ZipCompilationProcessStarted()));
-  connect(mpZipCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readZipCompilationStandardOutput()));
-  connect(mpZipCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readZipCompilationStandardError()));
-  connect(mpZipCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(ZipCompilationProcessError(QProcess::ProcessError)));
-  connect(mpZipCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(ZipCompilationProcessFinished(int, QProcess::ExitStatus)));
   // check if FMU path is provided by user, otherwise generate the fmu in OMEDit working directory
   if (!mpLibraryTreeItem->getWhereToMoveFMU().isEmpty()){
     mFmuLocationPath = mpLibraryTreeItem->getWhereToMoveFMU() + "/" + mFMUName + ".fmu";
   } else {
     mFmuLocationPath = OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory() + "/" + mFMUName + ".fmu";
   }
-
-  // change the directory to fmuTmpPath
-  MainWindow::instance()->getOMCProxy()->changeDirectory(mFmuTmpPath);
-
-  QString program = "zip";
-  QStringList arguments;
-  arguments << "-r" << mFmuLocationPath << ".";
-
-  // check for fmiSources=false and do not export the source folder
-  if (!OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked()) {
-#ifdef Q_OS_WIN
-    arguments << "-x" << "'sources/*'";
-#else
-    arguments << "-x" << "sources/*";
-#endif
-  } else {
-    // ignore the build_cmake directory
-#ifdef Q_OS_WIN
-    arguments << "-x" << "'sources/build_cmake/*'";
-#else
-    arguments << "-x" << "sources/build_cmake/*";
-#endif
-  }
+  // check for fmiSources=false and do not export the source folder, otherwise ignore the build_cmake directory
+  const QByteArray exclude = OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked() ? "sources/build_cmake" : "sources";
   // remove the fmu if already exists.
   if (QFile::exists(mFmuLocationPath)) {
     if (!QFile::remove(mFmuLocationPath)) {
@@ -583,111 +542,32 @@ void FmuExportOutputWidget::zipFMU()
     }
   }
 
-  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
-  mpZipCompilationProcess->start(program, arguments);
-}
-
-/*!
- * \brief FmuExportOutputWidget::ZipCompilationProcessStarted
-* Slot activated when mpZipCompilationProcess started signal is raised.\n
- * Updates the progress label, bar and button controls.
- */
-void FmuExportOutputWidget::ZipCompilationProcessStarted()
-{
-  mIsZipCompilationProcessRunning = true;
   const QString progressStr = tr("Zipping of %1").arg(mpLibraryTreeItem->getName());
   mpProgressLabel->setText(progressStr);
-  mpProgressBar->setRange(0, 0);
-  mpProgressBar->setTextVisible(false);
   updateMessageTab(progressStr);
-  mpCancelButton->setText(tr("Cancel Compilation"));
-  mpCancelButton->setEnabled(true);
-}
+  const QByteArray fmu = mFmuLocationPath.toUtf8(), dir = mFmuTmpPath.toUtf8();
+  const char *path = dir.constData(), *entryName = "", *excludes = exclude.constData();
+  char *error = omcrs_zip_paths(fmu.constData(), &path, &entryName, 1, &excludes, 1);
 
-/*!
- * \brief FmuExportOutputWidget::readZipCompilationStandardOutput
- * Slot activated when mpZipCompilationProcess readyReadStandardOutput signal is raised.\n
- */
-void FmuExportOutputWidget::readZipCompilationStandardOutput()
-{
-  writePostCompilationOutput(QString(mpZipCompilationProcess->readAllStandardOutput()), Qt::black);
-}
-
-/*!
- * \brief FmuExportOutputWidget::readZipCompilationStandardError
- * Slot activated when mpZipCompilationProcess readyReadStandardError signal is raised.\n
- */
-void FmuExportOutputWidget::readZipCompilationStandardError()
-{
-  writePostCompilationOutput(QString(mpZipCompilationProcess->readAllStandardError()), Qt::red);
-}
-
-/*!
- * \brief FmuExportOutputWidget::ZipCompilationProcessError
- * Slot activated when mpZipCompilationProcess errorOccurred signal is raised.\n
- * \param error
- */
-void FmuExportOutputWidget::ZipCompilationProcessError(QProcess::ProcessError error)
-{
-  Q_UNUSED(error);
-  mIsZipCompilationProcessRunning = false;
-  /* this signal is raised when we kill the compilation process forcefully. */
-  if (isZipCompilationProcessKilled()) {
-    return;
-  }
-  writePostCompilationOutput(mpZipCompilationProcess->errorString(), Qt::red);
-}
-
-/*!
- * \brief FmuExportOutputWidget::ZipCompilationProcessFinished
- * Slot activated when mpZipCompilationProcess finished signal is raised.\n
- * \param exitCode
- * \param exitStatus
- */
-void FmuExportOutputWidget::ZipCompilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-  mIsZipCompilationProcessRunning = false;
-  QString exitCodeStr = tr("Zip compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-      writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mFmuLocationPath), Qt::blue);
+  mpProgressBar->setRange(0, 1);
+  mpCancelButton->setEnabled(false);
+  if (!error) {
+    writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mFmuLocationPath), Style::messagesCommandColor());
     //trace export FMU
     if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked()) {
       //Push traceability information automaticaly to Daemon
       MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", mpLibraryTreeItem->getFileName(), mpLibraryTreeItem->getNameStructure(), mFmuLocationPath);
     }
-    ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
-    setDefaults();
-  } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writePostCompilationOutput(exitCodeStr, Qt::red);
-    ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
-    setDefaults();
-  } else {
-    writePostCompilationOutput(mpZipCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
-    ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
-  }
-}
-
-/*!
- * \brief FmuExportOutputWidget::ZipCompilationProcessFinishedHelper
- * Slot activated when mpZipCompilationProcess finished signal is raised.\n
- * If the mpZipCompilationProcess finished normally then run the simulation executable.\n
- * \param exitCode
- * \param exitStatus
- */
-void FmuExportOutputWidget::ZipCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
-{
-  QString progressStr;
-  mpProgressBar->setRange(0, 1);
-  mpCancelButton->setEnabled(false);
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     mpProgressBar->setValue(1);
-    progressStr = tr("Export of FMU %1 finished.").arg(mpLibraryTreeItem->getName());
+    mpProgressLabel->setText(tr("Export of FMU %1 finished.").arg(mpLibraryTreeItem->getName()));
   } else {
+    writePostCompilationOutput(QString::fromUtf8(error), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
+    omcrs_free_string(error);
     mpProgressBar->setValue(0);
-    progressStr = tr("Export of FMU %1 failed.").arg(mpLibraryTreeItem->getName());
+    mpProgressLabel->setText(tr("Export of FMU %1 failed.").arg(mpLibraryTreeItem->getName()));
   }
-  mpProgressLabel->setText(progressStr);
-  updateMessageTab(progressStr);
+  updateMessageTab(mpProgressLabel->text());
+  setDefaults();
 }
 
 /*!

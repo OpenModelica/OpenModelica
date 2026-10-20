@@ -98,6 +98,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
+                      Modeling/ClassDiagramWidget.cpp
                       Simulation/TranslationFlagsWidget.cpp
                       Simulation/SimulationDialog.cpp
                       Simulation/SimulationOutputWidget.cpp
@@ -142,6 +143,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       OMS/ModelDialog.cpp
                       OMS/ElementPropertiesDialog.cpp
                       OMS/SystemSimulationInformationDialog.cpp
+                      OMS/OMSCalibrationDialog.cpp
                       OMS/OMSSimulationDialog.cpp
                       OMS/OMSSimulationOutputWidget.cpp
                       Animation/TimeManager.cpp
@@ -255,6 +257,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       Element/ElementProperties.h
                       Element/Transformation.h
                       Modeling/DocumentationWidget.h
+                      Modeling/ClassDiagramWidget.h
                       Modeling/qtwebengine_compat.h
                       Simulation/SimulationOptions.h
                       Simulation/TranslationFlagsWidget.h
@@ -302,6 +305,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       OMS/ModelDialog.h
                       OMS/ElementPropertiesDialog.h
                       OMS/SystemSimulationInformationDialog.h
+                      OMS/OMSCalibrationDialog.h
                       OMS/OMSSimulationDialog.h
                       OMS/OMSSimulationOutputWidget.h
                       Animation/TimeManager.h
@@ -445,6 +449,8 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::fmilib)
 if(TARGET omc::result)
   target_link_libraries(OMEditLib PUBLIC omc::result)
 endif()
+# FMU zipping (omcruntime_rust.h).
+target_link_libraries(OMEditLib PUBLIC omc::runtime_rust)
 if(OM_OMEDIT_ENABLE_ANIMATION)
   target_link_libraries(OMEditLib PUBLIC
     Qt6::Quick Qt6::Quick3D

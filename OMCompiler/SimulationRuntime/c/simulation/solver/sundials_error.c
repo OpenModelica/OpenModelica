@@ -800,6 +800,8 @@ static void checkReturnFlag_SUNMatrix(SUNErrCode flag, const char *functionName)
                    functionName, SUNGetErrMsg(flag), flag);
 }
 
+#endif /* #ifndef OMC_FMI_RUNTIME */
+
 /**
  * @brief Debug print function for CSC SunMatrix
  *
@@ -880,6 +882,7 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
   }
 }
 
+#ifndef OMC_FMI_RUNTIME
 /**
  * @brief Error handler function given to KINSOL.
  *

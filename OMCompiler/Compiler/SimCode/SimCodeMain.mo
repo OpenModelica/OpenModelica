@@ -1204,7 +1204,7 @@ algorithm
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
 
-        // --simCodeTarget=C: libSimulationRuntimeRust replaces everything
+        // --simCodeTarget=C+Rust: libSimulationRuntimeRust replaces everything
         // libSimulationRuntimeC provided, the solvers included, so the FMU only
         // compiles the libOpenModelicaRuntimeC half from C. The headers are the
         // same either way -- the generated code and the FMI interface include
@@ -1447,7 +1447,7 @@ algorithm
         end if;
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
-        // --simCodeTarget=C: name the installed archive, which is what this
+        // --simCodeTarget=C+Rust: name the installed archive, which is what this
         // installation builds the FMU against. Rebuilding the FMU elsewhere finds
         // no such file and falls back to the crates under sources/rust.
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@OMC_RUST_SIMULATION_RUNTIME@", if rustRuntime then "ON" else "OFF");
@@ -1464,7 +1464,7 @@ algorithm
 
         // Note the external include directories of the model. Cross compiling in a
         // container needs them next to the external libraries inside the container.
-        // Written as a dot file so it doesn't end up in the FMU archive.
+        // buildModelFMU removes it before packing the FMU.
         // See https://github.com/OpenModelica/OpenModelica/issues/9509
         System.writeFile(fmutmp + "/.external_include_dirs",
                          stringDelimitList(list(SimCodeUtil.stripIncludeFlag(i) for i in simCode.makefileParams.includes), "\n"));
@@ -2618,7 +2618,7 @@ algorithm
 end copyFiles;
 
 public function copyFmuRustSources
-  "The Rust half of a `--simCodeTarget=C` source FMU: the crates
+  "The Rust half of a `--simCodeTarget=C+Rust` source FMU: the crates
    libSimulationRuntimeRust is built from, so the FMU rebuilds where OpenModelica
    is not installed.
 
@@ -2632,7 +2632,7 @@ protected
 algorithm
   rust_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_rust_sources_dir;
   if not System.directoryExists(rust_sources_dir) then
-    Error.addCompilerWarning("--fmiSources asked for the sources of a --simCodeTarget=C FMU, but "
+    Error.addCompilerWarning("--fmiSources asked for the sources of a --simCodeTarget=C+Rust FMU, but "
       + rust_sources_dir + " does not exist. The FMU carries its C sources only and cannot be rebuilt.");
     return;
   end if;

@@ -572,7 +572,9 @@ public
     ComponentRef stripped = ComponentRef.stripSubscriptsAll(cref), target = ComponentRef.simplifySubscripts(cref);
     Expression e;
   algorithm
-    Iterator.createLocationReplacements(Equation.getForIterator(Pointer.access(eqn_ptr)), listArray(Slice.indexToLocation(index, Equation.sizes(eqn_ptr, true))), replacements);
+    // the index is row major w.r.t. the frames, the location outermost frame first like the iterator
+    Iterator.createLocationReplacements(Equation.getForIterator(Pointer.access(eqn_ptr)),
+      listArray(listReverse(Slice.indexToLocation(index, listReverse(Equation.sizes(eqn_ptr, true))))), replacements);
     for c in Equation.collectCrefs(Pointer.access(eqn_ptr), function sameVariable(stripped = stripped)) loop
       e := SimplifyExp.simplify(Expression.map(Expression.fromCref(c), function Replacements.applySimpleExp(replacements = replacements)));
       if Expression.isCref(e) and ComponentRef.isEqual(ComponentRef.simplifySubscripts(Expression.toCref(e)), target) then

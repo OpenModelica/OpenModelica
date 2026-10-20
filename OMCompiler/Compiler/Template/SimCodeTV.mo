@@ -1266,6 +1266,7 @@ package SimCodeFunction
   uniontype Context
     record SIMULATION_CONTEXT
       Boolean genDiscrete;
+      Boolean whenBody;
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
       String cref_prefix;
@@ -1294,6 +1295,7 @@ package SimCodeFunction
 
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
+  constant Context contextSimulationWhenBody;
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloopJacobian;
@@ -1484,6 +1486,12 @@ package SimCodeCodegenUtil
     input HashTableCrefSimVar.HashTable ht;
     output DAE.Exp exp;
   end jacobianIndexExp;
+
+  function scalarSparsityRow
+    input SimCode.SparsityRow row;
+    input HashTableCrefSimVar.HashTable ht;
+    output Option<tuple<list<Integer>, list<Integer>>> result;
+  end scalarSparsityRow;
 
   function isDimensionParameter
     input SimCodeVar.SimVar var;

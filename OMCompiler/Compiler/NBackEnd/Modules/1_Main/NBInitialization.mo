@@ -199,6 +199,16 @@ public
     end try;
   end main;
 
+  function getNoReturnEquations
+    "Returns the initial equations without return value. Calls without
+    return value of the simulation equations are left to the simulation system."
+    input EquationPointers initialEqs;
+    output EquationPointers noReturnEqs;
+  algorithm
+    noReturnEqs := EquationPointers.fromList(list(eqn for eqn guard(Equation.isInitial(eqn) and Equation.size(eqn) == 0)
+      in EquationPointers.toList(initialEqs)));
+  end getNoReturnEquations;
+
   function createStartEquations
     "Creates start equations from (fixed) start values."
     input VariablePointers states;
@@ -1249,6 +1259,7 @@ public
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
         Algorithm alg;
+        UnorderedSet<ComponentRef> kept;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -1275,19 +1286,35 @@ public
         eqn.size := IfEquationBody.size(eqn.body);
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
 
+      // without outputs only the active when-bodies are needed, the simulation system evaluates the rest
+      case Equation.ALGORITHM(alg = alg) guard(eqn.size == 0 and List.any(alg.statements, Statement.isWhen)) algorithm
+        stmts := removeWhenEquationAlgorithmBody(list(stmt for stmt guard(Statement.isWhen(stmt)) in alg.statements));
+        if not listEmpty(stmts) then
+          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
+          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+        else
+          new_eqn := Equation.DUMMY_EQUATION();
+        end if;
+      then new_eqn;
+
       // reduce the body of algorithms
       case Equation.ALGORITHM(alg = alg) algorithm
         stmts := removeWhenEquationAlgorithmBody(alg.statements);
+        lhs_crefs := alg.outputs;
         if not listEmpty(stmts) then
           // update alg in-place to preserve original equation kind: re-evaluating via
           // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
           alg.statements := stmts;
           eqn.alg := Algorithm.setInputsOutputs(alg);
           eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+          kept := UnorderedSet.fromList(eqn.alg.outputs, ComponentRef.hash, ComponentRef.isEqual);
+          lhs_crefs := list(cref for cref guard(not UnorderedSet.contains(cref, kept)) in lhs_crefs);
           new_eqn := eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;
+        // outputs only assigned in removed when-statements keep their pre value (MLS 11.1.2): cref = pre.cref
+        for cref in lhs_crefs loop UnorderedMap.add(cref, iter, cref_map); end for;
       then new_eqn;
 
       else eqn;

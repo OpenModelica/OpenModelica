@@ -1,0 +1,56 @@
+// name: initialNoReturnCall
+// keywords: NewBackend initialization when
+// status: correct
+// cflags: --newBackend
+//
+// Calls without result run at the initialization: in initial equations and
+// algorithms and in active when-bodies, also when the call refers to a
+// variable (#17162).
+
+loadString("
+model initialNoReturnCall
+  discrete Integer v(start = 0, fixed = true);
+  discrete Integer a(start = 0, fixed = true);
+initial equation
+  print(\"initial equation\\n\");
+initial algorithm
+  print(\"initial algorithm\\n\");
+equation
+  when initial() then
+    v = 1;
+  elsewhen time > 0.5 then
+    v = 2;
+  end when;
+  when {initial(), change(v)} then
+    a = v;
+    print(\"equation: t=\" + String(time) + \", v=\" + String(v) + \"\\n\");
+  end when;
+algorithm
+  when {initial(), change(v)} then
+    print(\"algorithm: t=\" + String(time) + \", v=\" + String(v) + \"\\n\");
+  end when;
+end initialNoReturnCall;
+"); getErrorString();
+
+simulate(initialNoReturnCall, stopTime = 1); getErrorString();
+val(a, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initialNoReturnCall_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initialNoReturnCall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "equation: t=0, v=1
+// algorithm: t=0, v=1
+// initial equation
+// initial algorithm
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// equation: t=0.5, v=2
+// algorithm: t=0.5, v=2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult

@@ -307,6 +307,7 @@ protected
   end aliasDefault;
 
   type ElementStarts = UnorderedMap<Integer, Expression> "start values of array elements by flat index";
+  type SymbolicStarts = list<tuple<list<Expression>, Expression>> "start values of array elements by parameter subscripts (e.g. x[n] of a resizable array)";
 
   function propagateSliceAliasStarts
     "Alias for-equations between slices of arrays (e.g. a[i].x = b[i].y[1]) can not be
@@ -316,14 +317,36 @@ protected
     input EquationPointers equations;
   protected
     UnorderedMap<ComponentRef, UnorderedMap<Integer, Expression>> starts;
+    UnorderedMap<ComponentRef, SymbolicStarts> sym_starts;
     Pointer<Variable> var_ptr;
     Variable var;
     Type ty;
     list<Integer> sizes;
     array<Expression> elements;
+    SymbolicStarts entries;
   algorithm
     starts := UnorderedMap.new<ElementStarts>(ComponentRef.hash, ComponentRef.isEqual);
-    EquationPointers.map(equations, function collectSliceAliasStarts(starts = starts));
+    sym_starts := UnorderedMap.new<SymbolicStarts>(ComponentRef.hash, ComponentRef.isEqual);
+    EquationPointers.map(equations, function collectSliceAliasStarts(starts = starts, sym_starts = sym_starts));
+    // variables with elements at parameter subscripts get a conditional array constructor
+    for tpl in UnorderedMap.toList(sym_starts) loop
+      var_ptr := BVariable.getVarPointer(Util.tuple21(tpl), sourceInfo());
+      var := Pointer.access(var_ptr);
+      ty := Variable.typeOf(var);
+      entries := Util.tuple22(tpl);
+      if UnorderedMap.contains(Util.tuple21(tpl), starts) then
+        sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
+        for elem in UnorderedMap.toList(UnorderedMap.getSafe(Util.tuple21(tpl), starts, sourceInfo())) loop
+          entries := (list(Expression.INTEGER(l + 1) for l in listReverse(Slice.indexToLocation(Util.tuple21(elem), sizes))), Util.tuple22(elem)) :: entries;
+        end for;
+        UnorderedMap.remove(Util.tuple21(tpl), starts);
+      end if;
+      Pointer.update(var_ptr, BVariable.setStartAttribute(var, conditionalStart(entries, Type.arrayDims(ty), Type.arrayElementType(ty)), true));
+      if Flags.isSet(Flags.DUMP_REPL) then
+        print("[propagateSliceAliasStarts] start of " + ComponentRef.toString(Util.tuple21(tpl)) + ": "
+          + Expression.toString(Util.getOption(BVariable.getStartAttribute(var_ptr))) + "\n");
+      end if;
+    end for;
     for tpl in UnorderedMap.toList(starts) loop
       var_ptr := BVariable.getVarPointer(Util.tuple21(tpl), sourceInfo());
       var := Pointer.access(var_ptr);
@@ -341,9 +364,60 @@ protected
     end for;
   end propagateSliceAliasStarts;
 
+  function conditionalStart
+    "{if i1 == s1 and ... then v elseif ... else 0 for ...} of the elements (subscripts, value),
+    the first entry for an element is taken"
+    input SymbolicStarts entries;
+    input list<Dimension> dims;
+    input Type elemTy;
+    output Expression exp = Expression.makeZero(elemTy);
+  protected
+    list<InstNode> nodes = list(InstNode.newUniqueIterator(sourceInfo()) for d in dims);
+    list<Expression> iter_exps = list(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(n, Type.INTEGER())) for n in nodes);
+    list<tuple<InstNode, Expression>> iters = {};
+    Expression cond;
+    list<Expression> conds;
+  algorithm
+    for entry in listReverse(entries) loop
+      conds := list(Expression.RELATION(i, Operator.makeEqual(Type.INTEGER()), sub, -1) threaded for i in iter_exps, sub in Util.tuple21(entry));
+      cond :: conds := conds;
+      for c in conds loop
+        cond := Expression.LBINARY(cond, Operator.makeAnd(Type.BOOLEAN()), c);
+      end for;
+      exp := Expression.IF(elemTy, cond, Util.tuple22(entry), exp);
+    end for;
+    // like makeBoundCall: the iterators in reverse order of the dimensions
+    for tpl in List.zip(nodes, dims) loop
+      iters := (Util.tuple21(tpl), Expression.RANGE(Type.ARRAY(Type.INTEGER(), {Util.tuple22(tpl)}), Expression.INTEGER(1), NONE(), Dimension.sizeExp(Util.tuple22(tpl)))) :: iters;
+    end for;
+    exp := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.liftArrayLeftList(elemTy, dims),
+      Variability.PARAMETER, NFPrefixes.Purity.PURE, exp, iters));
+  end conditionalStart;
+
+  function parameterSubscripts
+    "the subscripts of an element cref if they are all parameter expressions, one per dimension"
+    input Expression elem;
+    input Type ty "type of the variable";
+    output Option<list<Expression>> subs = NONE();
+  protected
+    list<Expression> exps;
+  algorithm
+    () := match elem
+      case Expression.CREF() algorithm
+        exps := list(Subscript.toExp(sub) for sub in ComponentRef.subscriptsAllFlat(elem.cref));
+        if listLength(exps) == Type.dimensionCount(ty) and List.all(list(Subscript.isIndex(sub) for sub in ComponentRef.subscriptsAllFlat(elem.cref)), Util.id)
+           and List.all(exps, isParameterExpression) then
+          subs := SOME(exps);
+        end if;
+      then ();
+      else ();
+    end match;
+  end parameterSubscripts;
+
   function collectSliceAliasStarts
     input output Equation eqn;
     input UnorderedMap<ComponentRef, UnorderedMap<Integer, Expression>> starts;
+    input UnorderedMap<ComponentRef, SymbolicStarts> sym_starts;
   protected
     constant Integer max_size = 100000;
     ComponentRef cref1, cref2, target, source;
@@ -358,6 +432,10 @@ protected
     Expression start_exp, elem_exp;
     Option<Integer> index;
     list<tuple<Integer, Expression>> elems = {};
+    SymbolicStarts sym_elems = {};
+    Option<list<Expression>> sym_subs;
+    Expression target_elem;
+    Type target_ty;
   algorithm
     () := match eqn
       case Equation.FOR_EQUATION(body = {Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref1), rhs = Expression.CREF(cref = cref2))}) algorithm
@@ -401,18 +479,29 @@ protected
             else Expression.EMPTY(Type.UNKNOWN());
           end match;
           if not Expression.isLiteral(elem_exp) then return; end if;
-          // flat index of the target element
-          index := flatIndex(SimplifyExp.simplify(Expression.map(Expression.fromCref(target), function Replacements.applySimpleExp(replacements = repl))));
-          if isNone(index) then return; end if;
-          elems := (Util.getOption(index), elem_exp) :: elems;
+          // flat index of the target element, or its parameter subscripts (e.g. x[n] of a resizable array)
+          target_elem := SimplifyExp.simplify(Expression.map(Expression.fromCref(target), function Replacements.applySimpleExp(replacements = repl)));
+          index := flatIndex(target_elem);
+          if isSome(index) then
+            elems := (Util.getOption(index), elem_exp) :: elems;
+          else
+            sym_subs := parameterSubscripts(target_elem, Variable.typeOf(Pointer.access(BVariable.getVarPointer(target, sourceInfo()))));
+            if isNone(sym_subs) then return; end if;
+            sym_elems := (Util.getOption(sym_subs), elem_exp) :: sym_elems;
+          end if;
         end for;
 
         target := ComponentRef.stripSubscriptsAll(target);
-        elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
-        for elem in elems loop
-          UnorderedMap.add(Util.tuple21(elem), Util.tuple22(elem), elem_starts);
-        end for;
-        UnorderedMap.add(target, elem_starts, starts);
+        if not listEmpty(elems) then
+          elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
+          for elem in elems loop
+            UnorderedMap.add(Util.tuple21(elem), Util.tuple22(elem), elem_starts);
+          end for;
+          UnorderedMap.add(target, elem_starts, starts);
+        end if;
+        if not listEmpty(sym_elems) then
+          UnorderedMap.add(target, listAppend(UnorderedMap.getOrDefault(target, sym_starts, {}), listReverse(sym_elems)), sym_starts);
+        end if;
       then ();
 
       // an element of an array aliased to a scalar, e.g. a.h[1] = h_liq
@@ -437,11 +526,18 @@ protected
         elem_exp := SimplifyExp.simplify(Expression.applySubscripts(ComponentRef.subscriptsAllFlat(source), start_exp, true));
         if not (Expression.isLiteral(elem_exp) or isParameterExpression(elem_exp)) then return; end if;
         index := flatIndex(Expression.fromCref(target));
-        if isNone(index) then return; end if;
-        target := ComponentRef.stripSubscriptsAll(target);
-        elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
-        UnorderedMap.add(Util.getOption(index), elem_exp, elem_starts);
-        UnorderedMap.add(target, elem_starts, starts);
+        if isSome(index) then
+          target := ComponentRef.stripSubscriptsAll(target);
+          elem_starts := UnorderedMap.getOrDefault(target, starts, UnorderedMap.new<Expression>(Util.id, intEq));
+          UnorderedMap.add(Util.getOption(index), elem_exp, elem_starts);
+          UnorderedMap.add(target, elem_starts, starts);
+        else
+          // an element at parameter subscripts (e.g. x[n] of a resizable array)
+          sym_subs := parameterSubscripts(Expression.fromCref(target), Variable.typeOf(Pointer.access(BVariable.getVarPointer(target, sourceInfo()))));
+          if isNone(sym_subs) then return; end if;
+          target := ComponentRef.stripSubscriptsAll(target);
+          UnorderedMap.add(target, listAppend(UnorderedMap.getOrDefault(target, sym_starts, {}), {(Util.getOption(sym_subs), elem_exp)}), sym_starts);
+        end if;
       then ();
 
       else ();

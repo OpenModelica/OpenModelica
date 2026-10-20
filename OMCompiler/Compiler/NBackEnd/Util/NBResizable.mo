@@ -961,15 +961,18 @@ protected
   algorithm
     for tpl in List.zip(dims, subs) loop
       (dim, sub) := tpl;
-      sub_exp := Subscript.toExp(sub);
-      const   := Expression.MULTARY({sub_exp}, {Dimension.sizeExp(dim)}, op);
-      try
-        addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
-      else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= " + Subscript.toString(sub)
-          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
-        fail();
-      end try;
+      // a whole dimension (x[:]) is within the dimension by definition
+      if not Subscript.isWhole(sub) then
+        sub_exp := Subscript.toExp(sub);
+        const   := Expression.MULTARY({sub_exp}, {Dimension.sizeExp(dim)}, op);
+        try
+          addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= " + Subscript.toString(sub)
+            + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
+          fail();
+        end try;
+      end if;
       const   := Expression.MULTARY({Expression.INTEGER(1)}, {Dimension.sizeExp(dim)}, op);
       try
         addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
