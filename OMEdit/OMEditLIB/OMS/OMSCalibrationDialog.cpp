@@ -38,6 +38,7 @@
  */
 
 #include "OMSCalibrationDialog.h"
+#include "omedit_config.h"
 #include "MainWindow.h"
 #include "OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
