@@ -62,6 +62,7 @@ set(OMC_RUNTIME_SOURCES
     is_utf8.c
     om_curl.c
     om_unzip.c
+    om_zip.c
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp

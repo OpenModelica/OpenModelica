@@ -128,6 +128,7 @@ import Tpl;
 import Types;
 import UnorderedMap;
 import Unparsing;
+import Unzip;
 import Util;
 import ValuesUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -3453,19 +3454,14 @@ protected function unZipEncryptedPackageAndCheckFile
   output Boolean success;
   output String outFilename;
 protected
-  String workdir, s1, s2, s3, filename_1, filename1, filename2, filename3, filename4, str, str1, str2, str3, str4, cmd, cmdPrefix;
-  Boolean isWindows = Autoconf.os == "Windows_NT";
+  String workdir, s1, s2, s3, filename_1, filename1, filename2, filename3, filename4, str, str1, str2, str3, str4;
 algorithm
   success := false;
   outFilename := "";
   if (System.regularFileExists(filename)) then
     if (StringUtil.endsWith(filename, ".mol")) then
       workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
-      // use ripunzip (https://github.com/google/ripunzip) on Windows as is twice as fast
-      // TODO on Linux we should check if it is in the path
-      cmdPrefix := if isWindows then "ripunzip.exe -q unzip-file -d " else "unzip -q -o -d ";
-      cmd := cmdPrefix + "\"" + workdir + "\" \"" + filename + "\"";
-      if (skipUnzip or 0 == System.systemCall(cmd)) then
+      if skipUnzip or Unzip.unzipAll(filename, workdir) then
         s1 := System.basename(filename);
         s2 := Util.removeLast4Char(s1);
         s3 := listGet(Util.stringSplitAtChar(s2," "),1);

@@ -1,10 +1,10 @@
 // Manually written file.
 //
-// Rust port of `OMCompiler/Compiler/Util/Unzip.mo`, whose single function
-// is an `external "C"` shim into `OMCompiler/Compiler/runtime/om_unzip.c`
-// (minizip). We use the pure-Rust `zip` crate instead.
+// Rust port of `OMCompiler/Compiler/Util/Unzip.mo`, whose functions are
+// `external "C"` shims into `OMCompiler/Compiler/runtime/om_unzip.c` and
+// `om_zip.c` (minizip). We use the pure-Rust `zip` crate instead.
 //
-// Semantics mirrored from `om_unzip`:
+// Semantics of `unzipPath` mirrored from `om_unzip`:
 //
 //   * The longest common `/`-terminated prefix of *all* entry names is
 //     stripped (GitHub-style archives wrap everything in a top-level
@@ -25,8 +25,8 @@ use std::io::Read;
 
 use arcstr::ArcStr;
 use metamodelica::List;
-use openmodelica_util::Error;
 use openmodelica_error::ErrorTypes;
+use openmodelica_util::Error;
 
 /// `c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, ...)`
 /// equivalent: an ad-hoc runtime error with no source location. Failures
@@ -49,10 +49,20 @@ fn add_error(template: &str, tokens: &[&str]) {
 }
 
 pub fn unzipPath(fileName: ArcStr, pathToExtract: ArcStr, destinationPath: ArcStr) -> bool {
-    unzip_impl(&fileName, &pathToExtract, &destinationPath).is_ok()
+    unzip_impl(&fileName, &pathToExtract, &destinationPath, true).is_ok()
 }
 
-fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Result<(), ()> {
+/// `om_unzip_all`: every entry under its stored name, no prefix stripped.
+pub fn unzipAll(fileName: ArcStr, destinationPath: ArcStr) -> bool {
+    unzip_impl(&fileName, "", &destinationPath, false).is_ok()
+}
+
+fn unzip_impl(
+    zip_file_name: &str,
+    path_to_extract: &str,
+    dest_path: &str,
+    strip_common_prefix: bool,
+) -> Result<(), ()> {
     // The archive is read through the fs facade: off disk natively, from the
     // in-memory store on the web target (entry writes route the same way).
     let reader = match openmodelica_wasi::fs::open_read(zip_file_name) {
@@ -75,7 +85,7 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
 
     // Longest common prefix of all entry names, cut back to a '/' boundary.
     let first_name = archive.name_for_index(0).unwrap_or("").to_string();
-    let mut common_len = first_name.len();
+    let mut common_len = if strip_common_prefix { first_name.len() } else { 0 };
     for i in 1..archive.len() {
         let name = archive.name_for_index(i).unwrap_or("");
         common_len = name
@@ -189,8 +199,7 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
             {
                 use std::os::unix::fs::PermissionsExt;
                 let mode = (entry.unix_mode().unwrap_or(0) & 0o177) | 0o644;
-                if std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode)).is_err()
-                {
+                if std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode)).is_err() {
                     add_error("fchmod failed for %s: %s", &[&out_path, "set_permissions failed"]);
                     return Err(());
                 }
@@ -207,6 +216,120 @@ fn unzip_impl(zip_file_name: &str, path_to_extract: &str, dest_path: &str) -> Re
         }
     }
     Ok(())
+}
+
+/// `om_zip` in `runtime/om_zip.c`. The archive is assembled in memory on the
+/// web target and written to disk natively.
+pub fn zipPath(zipFileName: ArcStr, path: ArcStr, entryName: ArcStr) -> bool {
+    let ok = zip_impl(&zipFileName, &path, &entryName).is_ok();
+    if !ok {
+        let _ = openmodelica_wasi::fs::remove_file(&zipFileName);
+    }
+    ok
+}
+
+fn zip_impl(zip_file_name: &str, path: &str, entry_name: &str) -> Result<(), ()> {
+    use std::io::Write;
+    let write_failed = || add_error("minizip failed to write to %s", &[zip_file_name]);
+    if openmodelica_wasi::fs::IN_MEMORY {
+        let mut w = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+        add_path(&mut w, zip_file_name, path, entry_name)?;
+        let bytes = w.finish().map_err(|_| write_failed())?.into_inner();
+        openmodelica_wasi::fs::write(zip_file_name, &bytes).map_err(|_| write_failed())
+    } else {
+        let Ok(f) = std::fs::File::create(zip_file_name) else {
+            add_error("Failed to open file for writing %s", &[zip_file_name]);
+            return Err(());
+        };
+        let mut w = zip::ZipWriter::new(std::io::BufWriter::new(f));
+        add_path(&mut w, zip_file_name, path, entry_name)?;
+        w.finish()
+            .map_err(|_| write_failed())?
+            .flush()
+            .map_err(|_| write_failed())
+    }
+}
+
+fn add_path<W: std::io::Write + std::io::Seek>(
+    w: &mut zip::ZipWriter<W>,
+    zip_file_name: &str,
+    path: &str,
+    name: &str,
+) -> Result<(), ()> {
+    use openmodelica_wasi::fs;
+    let options = entry_options(path);
+    if !fs::is_dir(path) {
+        let Ok(mut reader) = fs::open_read(path) else {
+            add_error("Failed to open file: %s", &[path]);
+            return Err(());
+        };
+        let large = fs::len(path).is_ok_and(|n| n >= u32::MAX as u64);
+        if w.start_file(name, options.large_file(large)).is_err() {
+            add_error("minizip failed to add %s to %s", &[name, zip_file_name]);
+            return Err(());
+        }
+        if std::io::copy(&mut reader, w).is_err() {
+            add_error("minizip failed to write to %s", &[zip_file_name]);
+            return Err(());
+        }
+        return Ok(());
+    }
+    if !name.is_empty() && w.add_directory(name, options).is_err() {
+        add_error("minizip failed to add %s to %s", &[name, zip_file_name]);
+        return Err(());
+    }
+    let Ok(mut entries) = fs::read_dir(path) else {
+        add_error("Failed to open directory: %s", &[path]);
+        return Err(());
+    };
+    entries.sort_by(|a, b| a.name.cmp(&b.name));
+    for e in entries {
+        let child_name = if name.is_empty() {
+            e.name.clone()
+        } else {
+            format!("{name}/{}", e.name)
+        };
+        add_path(w, zip_file_name, &format!("{path}/{}", e.name), &child_name)?;
+    }
+    Ok(())
+}
+
+fn entry_options(path: &str) -> zip::write::SimpleFileOptions {
+    let mut options = zip::write::SimpleFileOptions::default();
+    if let Some(t) = openmodelica_wasi::fs::modified(path).ok().and_then(dos_date_time) {
+        options = options.last_modified_time(t);
+    }
+    #[cfg(unix)]
+    if let Ok(m) = std::fs::metadata(path) {
+        use std::os::unix::fs::PermissionsExt;
+        options = options.unix_permissions(m.permissions().mode());
+    }
+    options
+}
+
+/// UTC, as there is no time zone database on every target.
+fn dos_date_time(t: std::time::SystemTime) -> Option<zip::DateTime> {
+    let secs = t.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+    let (days, s) = ((secs / 86400) as i64, secs % 86400);
+    // civil_from_days, http://howardhinnant.github.io/date_algorithms.html
+    let z = days + 719468;
+    let era = z.div_euclid(146097);
+    let doe = z - era * 146097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    zip::DateTime::from_date_and_time(
+        u16::try_from(year).ok()?,
+        month as u8,
+        day as u8,
+        (s / 3600) as u8,
+        (s / 60 % 60) as u8,
+        (s % 60) as u8,
+    )
+    .ok()
 }
 
 #[cfg(test)]
@@ -276,7 +399,8 @@ mod tests {
             let mut w = zip::ZipWriter::new(f);
             let opts: zip::write::SimpleFileOptions = Default::default();
             w.start_file("SDF/Examples/InterpolationMethods.mo", opts).unwrap();
-            w.write_all(b"model InterpolationMethods end InterpolationMethods;").unwrap();
+            w.write_all(b"model InterpolationMethods end InterpolationMethods;")
+                .unwrap();
             w.start_file("SDF/package.mo", opts).unwrap();
             w.write_all(b"package SDF end SDF;").unwrap();
             w.start_file("LICENSE.txt", opts).unwrap();
@@ -297,6 +421,46 @@ mod tests {
             "model InterpolationMethods end InterpolationMethods;"
         );
         assert!(!dest.join("LICENSE.txt").exists(), "filtered path must be skipped");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn zip_path_round_trip() {
+        let dir = std::env::temp_dir().join(format!("zip_rs_test_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("P/sub")).unwrap();
+        std::fs::write(dir.join("P/package.mo"), "package P end P;").unwrap();
+        std::fs::write(dir.join("P/sub/a.txt"), "a").unwrap();
+        let s = |p: &std::path::Path| ArcStr::from(p.display().to_string());
+
+        let mol = dir.join("P.mol");
+        assert!(zipPath(s(&mol), s(&dir.join("P")), ArcStr::from("P")));
+        let archive = zip::ZipArchive::new(std::fs::File::open(&mol).unwrap()).unwrap();
+        let names: Vec<&str> = archive.file_names().collect();
+        let mut sorted = names.clone();
+        sorted.sort();
+        assert_eq!(sorted, ["P/", "P/package.mo", "P/sub/", "P/sub/a.txt"]);
+
+        let fmu = dir.join("P.fmu");
+        assert!(zipPath(s(&fmu), s(&dir.join("P")), ArcStr::from("")));
+        let out = dir.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        assert!(unzipPath(s(&fmu), ArcStr::from(""), s(&out)));
+        assert_eq!(std::fs::read_to_string(out.join("sub/a.txt")).unwrap(), "a");
+        assert_eq!(
+            std::fs::read_to_string(out.join("package.mo")).unwrap(),
+            "package P end P;"
+        );
+        assert!(unzipAll(s(&mol), s(&out)));
+        assert_eq!(std::fs::read_to_string(out.join("P/sub/a.txt")).unwrap(), "a");
+
+        assert!(!zipPath(
+            s(&dir.join("x.zip")),
+            s(&dir.join("missing")),
+            ArcStr::from("")
+        ));
+        assert!(!dir.join("x.zip").exists());
 
         let _ = std::fs::remove_dir_all(&dir);
     }
