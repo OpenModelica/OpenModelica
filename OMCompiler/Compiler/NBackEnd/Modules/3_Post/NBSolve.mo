@@ -1822,7 +1822,7 @@ protected
     Function fn;
     list<Expression> args;
     Integer i = 0, found = 0;
-    Expression arg = arg, inv;
+    Expression arg, inv;
     Option<Expression> oinv = NONE();
     String name;
     UnorderedMap<InstNode, Expression> replacements;
@@ -1830,6 +1830,7 @@ protected
     Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
 
     // the cref has to occur in exactly one argument
+    arg := listHead(args); // HACK makes the Rust compiler happy
     for a in args loop
       i := i + 1;
       if Expression.containsCref(a, cref) then
