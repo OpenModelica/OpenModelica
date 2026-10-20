@@ -239,6 +239,23 @@ public
     end match;
   end applySimpleExp;
 
+  function applySimpleExpViaInstNode
+    "Needs to be mapped with Expression.map() to replace crefs that appear as
+     arguments in function calls."
+    input output Expression exp                               "Replacement happens inside this expression";
+    input UnorderedMap<InstNode, Expression> replacements     "rules for replacements are stored inside here";
+  algorithm
+    exp := match exp
+      local
+        InstNode node;
+
+      case Expression.CREF(cref = ComponentRef.CREF(node = node, subscripts = {}))
+      then UnorderedMap.getOrDefault(node, replacements, exp);
+
+      else exp;
+    end match;
+  end applySimpleExpViaInstNode;
+
   function applySimpleCref
     "Needs to be used as funcCref in Equation.map() to replace crefs that appear
     as direct ComponentRef arguments (e.g. the state variable of a reinit statement)."

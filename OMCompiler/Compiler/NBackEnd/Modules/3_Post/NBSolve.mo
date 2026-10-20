@@ -1818,15 +1818,15 @@ protected
     output Status status = Status.EXPLICIT;
   protected
     Function fn;
-    list<Expression> args, rest;
+    list<Expression> args;
     Integer i = 0, found = 0;
-    Boolean crefFoundInRecursion;
-    Expression arg, inv;
+    Expression arg = arg, inv;
     Option<Expression> oinv = NONE();
     String name;
-    list<tuple<String, Expression>> repl;
+    UnorderedMap<InstNode, Expression> replacements;
   algorithm
     Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
+
     // the cref has to occur in exactly one argument
     for a in args loop
       i := i + 1;
@@ -1836,6 +1836,7 @@ protected
           return;
         end if;
         found := i;
+        arg := a;
       end if;
     end for;
     if found == 0 or listLength(fn.inputs) <> listLength(args) or listLength(fn.outputs) <> 1 then
@@ -1857,47 +1858,23 @@ protected
       return;
     end if;
 
-    (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(listGet(args, found), cref, crefFound, inverseInstructions);
+    (true, inverseInstructions, status) := solveUniqueFindInstructions(arg, cref, crefFound, inverseInstructions);
     if status == Status.IMPLICIT then
       return;
     end if;
     crefFound := true;
 
-    // substitute simultaneously, the arguments may use the same names as the function variables
-    repl := {(InstNode.name(InstNode.fromHandle(listHead(fn.outputs))), substExp)};
-    rest := args;
+    replacements := UnorderedMap.new<Expression>(InstNode.hash, InstNode.nameEqual);
+    // replace the output by $SUBST_CREF
+    UnorderedMap.add(InstNode.fromHandle(listHead(fn.outputs)), substExp, replacements);
+    // replace the inputs by the corresponding arguments
     for node in fn.inputs loop
-      arg :: rest := rest;
-      repl := (InstNode.name(node), arg) :: repl;
+      arg :: args := args;
+      UnorderedMap.add(node, arg, replacements);
     end for;
-    inv := Expression.map(Util.getOption(oinv), function replaceFunctionVariables(repl = repl));
+    inv := Expression.map(Util.getOption(oinv), function Replacements.applySimpleExpViaInstNode(replacements = replacements));
     inverseInstructions := inv :: inverseInstructions;
   end solveUniqueFindInstructionsCallInverse;
-
-  function replaceFunctionVariables
-    "replaces the simple crefs of a function body expression by the given expressions"
-    input output Expression exp;
-    input list<tuple<String, Expression>> repl;
-  algorithm
-    exp := match exp
-      case Expression.CREF() guard(ComponentRef.isSimple(exp.cref))
-      then lookupFunctionVariable(ComponentRef.firstName(exp.cref), repl, exp);
-      else exp;
-    end match;
-  end replaceFunctionVariables;
-
-  function lookupFunctionVariable
-    input String name;
-    input list<tuple<String, Expression>> repl;
-    input output Expression exp;
-  algorithm
-    for r in repl loop
-      if name == Util.tuple21(r) then
-        exp := Util.tuple22(r);
-        return;
-      end if;
-    end for;
-  end lookupFunctionVariable;
 
   function solveUniqueCreateSubstCall
     "helper to create call with substitute cref and to the instructions"
