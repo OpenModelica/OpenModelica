@@ -1259,6 +1259,7 @@ public
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
         Algorithm alg;
+        UnorderedSet<ComponentRef> kept;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -1299,16 +1300,21 @@ public
       // reduce the body of algorithms
       case Equation.ALGORITHM(alg = alg) algorithm
         stmts := removeWhenEquationAlgorithmBody(alg.statements);
+        lhs_crefs := alg.outputs;
         if not listEmpty(stmts) then
           // update alg in-place to preserve original equation kind: re-evaluating via
           // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
           alg.statements := stmts;
           eqn.alg := Algorithm.setInputsOutputs(alg);
           eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
+          kept := UnorderedSet.fromList(eqn.alg.outputs, ComponentRef.hash, ComponentRef.isEqual);
+          lhs_crefs := list(cref for cref guard(not UnorderedSet.contains(cref, kept)) in lhs_crefs);
           new_eqn := eqn;
         else
           new_eqn := Equation.DUMMY_EQUATION();
         end if;
+        // outputs only assigned in removed when-statements keep their pre value (MLS 11.1.2): cref = pre.cref
+        for cref in lhs_crefs loop UnorderedMap.add(cref, iter, cref_map); end for;
       then new_eqn;
 
       else eqn;

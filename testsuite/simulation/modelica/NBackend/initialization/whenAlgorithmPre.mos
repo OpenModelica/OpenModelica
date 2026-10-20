@@ -1,0 +1,49 @@
+// name: whenAlgorithmPre
+// keywords: NewBackend, initialization, algorithm, when
+// status: correct
+// suite: cSources
+// teardown_command: rm -f whenAlgorithmPre_res.mat
+//
+// Variables assigned only in when-statements of an algorithm keep their pre
+// value during initialization (MLS 11.1.2), also if pre() is never used for
+// them (buf): they are discrete states with a pre variable. Values of the old
+// backend (Modelica.Blocks.Math.RealFFT, #13604).
+
+loadString("
+model whenAlgorithmPre
+  Integer n(start = 0, fixed = true);
+  Real buf[3](start = {1, 2, 3}, each fixed = true);
+algorithm
+  when sample(0.05, 0.1) then
+    n := pre(n) + 1;
+    buf[mod(n - 1, 3) + 1] := time;
+  end when;
+end whenAlgorithmPre;
+"); getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+simulate(whenAlgorithmPre, stopTime = 1); getErrorString();
+val(n, 1, "whenAlgorithmPre_res.mat");
+// the start values until the first assignment
+val(buf[3], 0.2, "whenAlgorithmPre_res.mat");
+abs(val(buf[1], 1, "whenAlgorithmPre_res.mat") - 0.95) < 1e-10;
+abs(val(buf[2], 1, "whenAlgorithmPre_res.mat") - 0.75) < 1e-10;
+abs(val(buf[3], 1, "whenAlgorithmPre_res.mat") - 0.85) < 1e-10;
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "whenAlgorithmPre_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'whenAlgorithmPre', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 10.0
+// 3.0
+// true
+// true
+// true
+// endResult

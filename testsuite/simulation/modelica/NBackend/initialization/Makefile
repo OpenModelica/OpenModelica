@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 attributeInitParameter.mos \
+whenAlgorithmPre.mos \
 experimental_initialSimplified.mos \
 discreteCallArgument.mos \
 functionOutputStart.mos \
