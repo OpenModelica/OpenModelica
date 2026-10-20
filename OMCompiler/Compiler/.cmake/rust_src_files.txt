@@ -517,6 +517,8 @@ openmodelica_wasm_jit/src/sim_runtime_stub.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmer.rs
 openmodelica_wasm_jit/src/sim_runtime_wasmtime.rs
 openmodelica_wasm_jit/src/wasi_shim.rs
+openmodelica_zip/Cargo.toml
+openmodelica_zip/src/lib.rs
 rust-toolchain.toml
 rustfmt.toml
 susanSources.txt

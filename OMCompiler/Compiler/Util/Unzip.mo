@@ -62,5 +62,15 @@ function zipPath
   external "C" success = om_zip(zipFileName, path, entryName);
 end zipPath;
 
+function zipPaths
+  "Creates zipFileName with each of names below directory (a file, or a
+   directory recursively) stored under its name."
+  input String zipFileName;
+  input String directory;
+  input list<String> names;
+  output Boolean success;
+  external "C" success = om_zip_paths(zipFileName, directory, names);
+end zipPaths;
+
 annotation(__OpenModelica_Interface="script_util");
 end Unzip;

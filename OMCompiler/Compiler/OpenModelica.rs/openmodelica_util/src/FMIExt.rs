@@ -38,16 +38,14 @@
 
 #![allow(non_snake_case)]
 
-use std::io::Read;
-
-use metamodelica::Result;
 use arcstr::ArcStr;
 use metamodelica::List;
+use metamodelica::Result;
 
 use crate::Error;
-use openmodelica_error::ErrorTypes;
 use crate::FMI;
 use crate::System;
+use openmodelica_error::ErrorTypes;
 
 // Error templates from FMIImpl.c (gettext'd there; untranslated here).
 const VERSION_ERR: &str = "The FMU version is %s. Unknown/Unsupported FMU version.";
@@ -100,22 +98,34 @@ fn jm_log(level: i32, level_name: ArcStr, severity: ErrorTypes::Severity, module
 }
 
 fn jm_log_warning(module: &str, message: &str) {
-    jm_log(JM_LOG_LEVEL_WARNING, arcstr::literal!("WARNING"), ErrorTypes::Severity::WARNING, module, message);
+    jm_log(
+        JM_LOG_LEVEL_WARNING,
+        arcstr::literal!("WARNING"),
+        ErrorTypes::Severity::WARNING,
+        module,
+        message,
+    );
 }
 
 fn jm_log_error(module: &str, message: &str) {
-    jm_log(JM_LOG_LEVEL_ERROR, arcstr::literal!("ERROR"), ErrorTypes::Severity::ERROR, module, message);
+    jm_log(
+        JM_LOG_LEVEL_ERROR,
+        arcstr::literal!("ERROR"),
+        ErrorTypes::Severity::ERROR,
+        module,
+        message,
+    );
 }
 
 type InitializeFMIImportResult = (
-    bool,                                   // result
-    Option<i32>,                            // outFMIContext
-    Option<i32>,                            // outFMIInstance
-    FMI::Info,                              // outFMIInfo
-    List<FMI::TypeDefinitions>,        // outTypeDefinitionsList
-    FMI::ExperimentAnnotation,              // outExperimentAnnotation
-    Option<i32>,                            // outModelVariablesInstance
-    List<FMI::ModelVariables>,         // outModelVariablesList
+    bool,                       // result
+    Option<i32>,                // outFMIContext
+    Option<i32>,                // outFMIInstance
+    FMI::Info,                  // outFMIInfo
+    List<FMI::TypeDefinitions>, // outTypeDefinitionsList
+    FMI::ExperimentAnnotation,  // outExperimentAnnotation
+    Option<i32>,                // outModelVariablesInstance
+    List<FMI::ModelVariables>,  // outModelVariablesList
 );
 
 /// The all-defaults failure tuple: `result = false`, everything else empty.
@@ -176,7 +186,11 @@ pub fn initializeFMIImport(
         }
     };
     let root = doc.root_element();
-    let version = if root.has_tag_name("fmiModelDescription") { root.attribute("fmiVersion") } else { None };
+    let version = if root.has_tag_name("fmiModelDescription") {
+        root.attribute("fmiVersion")
+    } else {
+        None
+    };
     match version {
         Some("1.0") => match parse_fmi1(&root, inInputConnectors, inOutputConnectors) {
             Some((info, typedefs, experiment, vars)) => {
@@ -238,38 +252,9 @@ pub fn releaseFMIImport(
 
 // ───────────────────────────── FMU extraction ────────────────────────────
 
-/// `fmi_zip_unzip`: extract the whole archive into `dest_dir`, preserving
-/// entry paths. Unix permissions are restored like in `Unzip.unzipPath`
-/// (rw-r--r-- base for files, rwxr-xr-x for directories).
+/// `fmi_zip_unzip`: extract the whole archive into `dest_dir`.
 fn extract_fmu(zip_path: &str, dest_dir: &str) -> Result<(), ()> {
-    let bytes = openmodelica_wasi::fs::read(zip_path).map_err(|_| ())?;
-    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|_| ())?;
-    for i in 0..archive.len() {
-        let mut entry = archive.by_index(i).map_err(|_| ())?;
-        // Skip entries that would escape the destination (zip-slip). The C
-        // miniunz-based code would happily write them; refusing is strictly
-        // safer and never triggers for well-formed FMUs.
-        let Some(rel) = entry.enclosed_name() else { continue };
-        let out_path = std::path::Path::new(dest_dir).join(rel);
-        let out_str = out_path.to_string_lossy();
-        if entry.is_dir() {
-            openmodelica_wasi::fs::create_dir_all(&out_str).map_err(|_| ())?;
-            continue;
-        }
-        if let Some(parent) = out_path.parent() {
-            openmodelica_wasi::fs::create_dir_all(&parent.to_string_lossy()).map_err(|_| ())?;
-        }
-        let mut contents = Vec::new();
-        entry.read_to_end(&mut contents).map_err(|_| ())?;
-        openmodelica_wasi::fs::write(&out_str, &contents).map_err(|_| ())?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mode = entry.unix_mode().unwrap_or(0) | 0o644;
-            let _ = std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(mode));
-        }
-    }
-    Ok(())
+    openmodelica_zip::unzip_all(zip_path, dest_dir).map_err(|_| ())
 }
 
 // ───────────────────────────── shared helpers ────────────────────────────
@@ -314,7 +299,10 @@ fn element_children<'a, 'input>(
     node.children().filter(move |c| c.is_element() && c.has_tag_name(tag))
 }
 
-fn child_element<'a, 'input>(node: &roxmltree::Node<'a, 'input>, tag: &'static str) -> Option<roxmltree::Node<'a, 'input>> {
+fn child_element<'a, 'input>(
+    node: &roxmltree::Node<'a, 'input>,
+    tag: &'static str,
+) -> Option<roxmltree::Node<'a, 'input>> {
     element_children(node, tag).next()
 }
 
@@ -343,7 +331,11 @@ fn variable_type<'a>(sv: &roxmltree::Node<'a, 'a>) -> Option<VariableType<'a>> {
     for child in sv.children().filter(|c| c.is_element()) {
         for tag in VARIABLE_TYPE_TAGS {
             if child.has_tag_name(tag) {
-                return Some(VariableType { tag, start: child.attribute("start"), node: child });
+                return Some(VariableType {
+                    tag,
+                    start: child.attribute("start"),
+                    node: child,
+                });
             }
         }
     }
@@ -455,9 +447,10 @@ fn parse_default_experiment(root: &roxmltree::Node<'_, '_>, version: u32) -> Opt
     // Each fmilib getter warns when its attribute was absent; FMIImpl.c reads
     // them in this order.
     let mut values = [0.0, 1.0, 1e-4];
-    for (value, (getter, attribute)) in values
-        .iter_mut()
-        .zip([("start", "startTime"), ("stop", "stopTime"), ("tolerance", "tolerance")])
+    for (value, (getter, attribute)) in
+        values
+            .iter_mut()
+            .zip([("start", "startTime"), ("stop", "stopTime"), ("tolerance", "tolerance")])
     {
         match de.as_ref().and_then(|de| de.attribute(attribute)) {
             Some(v) => *value = v.trim().parse().ok()?,
@@ -600,8 +593,14 @@ fn parse_fmi2(
             // FMI2 isFixed: variability attribute equals "fixed".
             let is_fixed = variability_attr == "fixed";
             variables.push(build_variable(
-                &sv, &vt, variability, causality, is_fixed,
-                input_connectors, output_connectors, &mut placements,
+                &sv,
+                &vt,
+                variability,
+                causality,
+                is_fixed,
+                input_connectors,
+                output_connectors,
+                &mut placements,
             )?);
         }
     }
@@ -699,8 +698,14 @@ fn parse_fmi1(
                 }
             };
             variables.push(build_variable(
-                &sv, &vt, variability, causality, is_fixed,
-                input_connectors, output_connectors, &mut placements,
+                &sv,
+                &vt,
+                variability,
+                causality,
+                is_fixed,
+                input_connectors,
+                output_connectors,
+                &mut placements,
             )?);
         }
     }
@@ -727,8 +732,14 @@ fn parse_type_definitions(
         for ty in element_children(&td, type_tag) {
             let name = ty.attribute("name")?;
             // Only enumeration types are imported (C `continue`s otherwise).
-            let enum_tag = if explicit_values { "Enumeration" } else { "EnumerationType" };
-            let Some(enum_node) = child_element(&ty, enum_tag) else { continue };
+            let enum_tag = if explicit_values {
+                "Enumeration"
+            } else {
+                "EnumerationType"
+            };
+            let Some(enum_node) = child_element(&ty, enum_tag) else {
+                continue;
+            };
             let items = enumeration_items(&enum_node, explicit_values)?;
             // min/max: FMI2 takes the smallest/largest item value (items
             // are value-sorted); FMI1 reads the EnumerationType min/max
@@ -777,43 +788,161 @@ const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
 /// `FMI3_XML_ELMLIST_MODEL_DESCR`.
 const FMI3_MD_ELEMENTS: &[&str] = &[
-    "fmiModelDescription", "ModelExchange", "CoSimulation", "ScheduledExecution", "SourceFiles",
-    "File", "UnitDefinitions", "Unit", "BaseUnit", "DisplayUnit", "TypeDefinitions", "SimpleType",
-    "Item", "DefaultExperiment", "VendorAnnotations", "Tool", "ModelVariables", "Dimension",
-    "Start", "Alias", "Annotations", "LogCategories", "Category", "Float64Type", "Float32Type",
-    "Int64Type", "Int32Type", "Int16Type", "Int8Type", "UInt64Type", "UInt32Type", "UInt16Type",
-    "UInt8Type", "BooleanType", "BinaryType", "ClockType", "StringType", "EnumerationType",
-    "ModelStructure", "Output", "ContinuousStateDerivative", "ClockedState", "InitialUnknown",
-    "EventIndicator", "Float64", "Float32", "Int64", "Int32", "Int16", "Int8", "UInt64", "UInt32",
-    "UInt16", "UInt8", "Boolean", "Binary", "Clock", "String", "Enumeration",
+    "fmiModelDescription",
+    "ModelExchange",
+    "CoSimulation",
+    "ScheduledExecution",
+    "SourceFiles",
+    "File",
+    "UnitDefinitions",
+    "Unit",
+    "BaseUnit",
+    "DisplayUnit",
+    "TypeDefinitions",
+    "SimpleType",
+    "Item",
+    "DefaultExperiment",
+    "VendorAnnotations",
+    "Tool",
+    "ModelVariables",
+    "Dimension",
+    "Start",
+    "Alias",
+    "Annotations",
+    "LogCategories",
+    "Category",
+    "Float64Type",
+    "Float32Type",
+    "Int64Type",
+    "Int32Type",
+    "Int16Type",
+    "Int8Type",
+    "UInt64Type",
+    "UInt32Type",
+    "UInt16Type",
+    "UInt8Type",
+    "BooleanType",
+    "BinaryType",
+    "ClockType",
+    "StringType",
+    "EnumerationType",
+    "ModelStructure",
+    "Output",
+    "ContinuousStateDerivative",
+    "ClockedState",
+    "InitialUnknown",
+    "EventIndicator",
+    "Float64",
+    "Float32",
+    "Int64",
+    "Int32",
+    "Int16",
+    "Int8",
+    "UInt64",
+    "UInt32",
+    "UInt16",
+    "UInt8",
+    "Boolean",
+    "Binary",
+    "Clock",
+    "String",
+    "Enumeration",
 ];
 
 /// `FMI3_XML_ATTRLIST_MODEL_DESCR`, with `FMI3_SI_BASE_UNITS` spelled out.
 const FMI3_MD_ATTRIBUTES: &[&str] = &[
-    "fmiVersion", "name", "description", "factor", "offset", "inverse",
-    "kg", "m", "s", "A", "K", "mol", "cd", "rad",
-    "quantity", "unit", "displayUnit", "relativeQuantity", "unbounded", "min", "max", "nominal",
-    "declaredType", "start", "derivative", "reinit", "startTime", "stopTime", "tolerance",
-    "stepSize", "value", "valueReference", "variability", "causality", "initial", "previous",
-    "clocks", "canHandleMultipleSetPerTimeInstant", "intermediateUpdate", "mimeType", "maxSize",
-    "intervalVariability", "canBeDeactivated", "priority", "intervalDecimal", "shiftDecimal",
-    "supportsFraction", "resolution", "intervalCounter", "shiftCounter", "dependencies",
-    "dependenciesKind", "modelName", "modelIdentifier", "instantiationToken", "author",
-    "copyright", "license", "version", "generationTool", "generationDateAndTime",
-    "variableNamingConvention", "numberOfEventIndicators", "input", "needsExecutionTool",
-    "canBeInstantiatedOnlyOncePerProcess", "canGetAndSetFMUState", "canSerializeFMUState",
-    "providesDirectionalDerivatives", "providesDirectionalDerivative", "providesAdjointDerivatives",
-    "providesPerElementDependencies", "providesEvaluateDiscreteStates",
-    "needsCompletedIntegratorStep", "canHandleVariableCommunicationStepSize",
-    "fixedInternalStepSize", "maxOutputDerivativeOrder", "recommendedIntermediateInputSmoothness",
-    "providesIntermediateUpdate", "mightReturnEarlyFromDoStep",
-    "canReturnEarlyAfterIntermediateUpdate", "hasEventMode",
+    "fmiVersion",
+    "name",
+    "description",
+    "factor",
+    "offset",
+    "inverse",
+    "kg",
+    "m",
+    "s",
+    "A",
+    "K",
+    "mol",
+    "cd",
+    "rad",
+    "quantity",
+    "unit",
+    "displayUnit",
+    "relativeQuantity",
+    "unbounded",
+    "min",
+    "max",
+    "nominal",
+    "declaredType",
+    "start",
+    "derivative",
+    "reinit",
+    "startTime",
+    "stopTime",
+    "tolerance",
+    "stepSize",
+    "value",
+    "valueReference",
+    "variability",
+    "causality",
+    "initial",
+    "previous",
+    "clocks",
+    "canHandleMultipleSetPerTimeInstant",
+    "intermediateUpdate",
+    "mimeType",
+    "maxSize",
+    "intervalVariability",
+    "canBeDeactivated",
+    "priority",
+    "intervalDecimal",
+    "shiftDecimal",
+    "supportsFraction",
+    "resolution",
+    "intervalCounter",
+    "shiftCounter",
+    "dependencies",
+    "dependenciesKind",
+    "modelName",
+    "modelIdentifier",
+    "instantiationToken",
+    "author",
+    "copyright",
+    "license",
+    "version",
+    "generationTool",
+    "generationDateAndTime",
+    "variableNamingConvention",
+    "numberOfEventIndicators",
+    "input",
+    "needsExecutionTool",
+    "canBeInstantiatedOnlyOncePerProcess",
+    "canGetAndSetFMUState",
+    "canSerializeFMUState",
+    "providesDirectionalDerivatives",
+    "providesDirectionalDerivative",
+    "providesAdjointDerivatives",
+    "providesPerElementDependencies",
+    "providesEvaluateDiscreteStates",
+    "needsCompletedIntegratorStep",
+    "canHandleVariableCommunicationStepSize",
+    "fixedInternalStepSize",
+    "maxOutputDerivativeOrder",
+    "recommendedIntermediateInputSmoothness",
+    "providesIntermediateUpdate",
+    "mightReturnEarlyFromDoStep",
+    "canReturnEarlyAfterIntermediateUpdate",
+    "hasEventMode",
 ];
 
 /// `FMI_XML_ELMLIST_TERM_ICON` / `FMI_XML_ATTRLIST_TERM_ICON`: the whole scheme.
 const TERM_ICON_ELEMENTS: &[&str] = &[
-    "fmiTerminalsAndIcons", "Terminals", "Terminal", "TerminalMemberVariable",
-    "TerminalStreamMemberVariable", "TerminalGraphicalRepresentation",
+    "fmiTerminalsAndIcons",
+    "Terminals",
+    "Terminal",
+    "TerminalMemberVariable",
+    "TerminalStreamMemberVariable",
+    "TerminalGraphicalRepresentation",
 ];
 const TERM_ICON_ATTRIBUTES: &[&str] = &["fmiVersion", "name", "description"];
 
@@ -853,7 +982,10 @@ fn fmi3_scheme_diagnostics(node: &roxmltree::Node<'_, '_>, elements: &[&str], at
                     a.name()
                 ),
             ),
-            _ => jm_log_error(FMI3XML, &format!("Unknown attribute '{}={}' in XML", a.name(), a.value())),
+            _ => jm_log_error(
+                FMI3XML,
+                &format!("Unknown attribute '{}={}' in XML", a.name(), a.value()),
+            ),
         }
     }
     for child in node.children().filter(|c| c.is_element()) {
@@ -865,9 +997,13 @@ fn fmi3_scheme_diagnostics(node: &roxmltree::Node<'_, '_>, elements: &[&str], at
 /// or unreadable file is not an error (fmilib logs it at info level, which is dropped).
 fn terminals_and_icons_diagnostics(working_directory: &str) {
     let path = format!("{working_directory}/terminalsAndIcons/terminalsAndIcons.xml");
-    let Ok(bytes) = openmodelica_wasi::fs::read(&path) else { return };
+    let Ok(bytes) = openmodelica_wasi::fs::read(&path) else {
+        return;
+    };
     let Ok(text) = String::from_utf8(bytes) else { return };
-    let Ok(doc) = roxmltree::Document::parse(&text) else { return };
+    let Ok(doc) = roxmltree::Document::parse(&text) else {
+        return;
+    };
     fmi3_scheme_diagnostics(&doc.root_element(), TERM_ICON_ELEMENTS, TERM_ICON_ATTRIBUTES);
 }
 
@@ -878,20 +1014,20 @@ fn terminals_and_icons_diagnostics(working_directory: &str) {
 ///
 /// FMI 1.0 and 2.0 keep their own readers below — they must reproduce fmilib's
 /// quirks, which the shared reader deliberately does not have.
-fn parse_fmi3(
-    xml: &str,
-    input_connectors: bool,
-    output_connectors: bool,
-) -> Option<ParsedModelDescription> {
+fn parse_fmi3(xml: &str, input_connectors: bool, output_connectors: bool) -> Option<ParsedModelDescription> {
     use openmodelica_fmi::{Causality, Dimension, Start, VarType, Variability};
 
     let md = openmodelica_fmi::model_description(xml).ok()?;
 
     // FMIImpl takes the model identifier of the interface it imports, Model Exchange
     // first (fmi3_fmu_kind_enu_t: me = 2, cs = 4, se = 8).
-    let (fmi_type, interface) = [(2, &md.model_exchange), (4, &md.co_simulation), (8, &md.scheduled_execution)]
-        .into_iter()
-        .find_map(|(kind, i)| Some((kind, i.as_ref()?)))?;
+    let (fmi_type, interface) = [
+        (2, &md.model_exchange),
+        (4, &md.co_simulation),
+        (8, &md.scheduled_execution),
+    ]
+    .into_iter()
+    .find_map(|(kind, i)| Some((kind, i.as_ref()?)))?;
 
     let info = FMI::Info {
         fmiVersion: arcstr::literal!("3.0"),
@@ -953,8 +1089,14 @@ fn parse_fmi3(
         let declared = ArcStr::from(make_string_fmi_safe(v.declared_type.as_deref().unwrap_or("")));
         let base_type = match v.ty {
             VarType::Float32 | VarType::Float64 => arcstr::literal!("Real"),
-            VarType::Int8 | VarType::UInt8 | VarType::Int16 | VarType::UInt16
-            | VarType::Int32 | VarType::UInt32 | VarType::Int64 | VarType::UInt64 => arcstr::literal!("Integer"),
+            VarType::Int8
+            | VarType::UInt8
+            | VarType::Int16
+            | VarType::UInt16
+            | VarType::Int32
+            | VarType::UInt32
+            | VarType::Int64
+            | VarType::UInt64 => arcstr::literal!("Integer"),
             VarType::Boolean => arcstr::literal!("Boolean"),
             VarType::String => arcstr::literal!("String"),
             VarType::Enumeration => declared.clone(),
@@ -974,7 +1116,11 @@ fn parse_fmi3(
         }));
         // The records take a list because a variable can be an array; C reads only the
         // scalar start.
-        let start = if v.dimensions.is_empty() { v.start.as_ref() } else { None };
+        let start = if v.dimensions.is_empty() {
+            v.start.as_ref()
+        } else {
+            None
+        };
 
         let (mut x1, mut x2, mut y1, mut y2) = (0, 0, 0, 0);
         if causality == "input" && input_connectors {
@@ -1056,7 +1202,10 @@ fn parse_fmi3(
                 valueReference: v.value_reference as i32,
                 dimensions,
                 intervalVariability: ArcStr::from(
-                    v.clock.as_ref().map(|c| interval_variability_string(c.interval_variability)).unwrap_or(""),
+                    v.clock
+                        .as_ref()
+                        .map(|c| interval_variability_string(c.interval_variability))
+                        .unwrap_or(""),
                 ),
                 intervalDecimal: metamodelica::Real::from(
                     v.clock.as_ref().and_then(|c| c.interval_decimal).unwrap_or(0.0),

@@ -447,6 +447,8 @@ target_link_libraries(OMEditLib PUBLIC omc::3rd::fmilib)
 if(TARGET omc::result)
   target_link_libraries(OMEditLib PUBLIC omc::result)
 endif()
+# FMU zipping (omcruntime_rust.h).
+target_link_libraries(OMEditLib PUBLIC omc::runtime_rust)
 if(OM_OMEDIT_ENABLE_ANIMATION)
   target_link_libraries(OMEditLib PUBLIC
     Qt6::Quick Qt6::Quick3D

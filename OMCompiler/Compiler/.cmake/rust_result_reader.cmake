@@ -3,6 +3,8 @@
 # runtime. Built from the runtime workspace root like libSimulationRuntimeRust,
 # so a stable cargo suffices.
 # Defines the IMPORTED target omc::result and the rust_omc_result target.
+include(${CMAKE_CURRENT_LIST_DIR}/rust_cargo.cmake)
+
 function(omc_result_reader_library)
   find_program(CARGO_EXECUTABLE cargo)
   if(NOT CARGO_EXECUTABLE)
@@ -13,35 +15,7 @@ function(omc_result_reader_library)
   set(_workspace ${CMAKE_CURRENT_SOURCE_DIR}/OMCompiler/SimulationRuntime/rust)
   set(_crate ${_workspace}/openmodelica_result_capi)
   set(_target_dir ${CMAKE_CURRENT_BINARY_DIR}/rust-result-target)
-  # Cross-compiling (RUST_OMC_TARGET): the same drivers as
-  # SimulationRuntime/rust/CMakeLists.txt uses for libSimulationRuntimeRust.
-  set(_cargo_cmd build)
-  set(_target_flag "")
-  set(_out ${_target_dir}/release)
-  set(_env ${CMAKE_COMMAND} -E env)
-  if(RUST_OMC_TARGET)
-    set(_target_flag --target ${RUST_OMC_TARGET})
-    set(_out ${_target_dir}/${RUST_OMC_TARGET}/release)
-    if(RUST_OMC_TARGET MATCHES "windows-msvc$")
-      set(_cargo_cmd xwin build)
-    elseif(RUST_OMC_TARGET MATCHES "apple-darwin$")
-      set(_cargo_cmd zigbuild)
-      # zig ships no Apple frameworks, so the link needs the SDK (CoreFoundation,
-      # via chrono's iana-time-zone). ld64 would otherwise name the dylib by its
-      # path in this build tree; @rpath defers that to whoever loads it.
-      list(APPEND _env "SDKROOT=${CMAKE_OSX_SYSROOT}"
-           "RUSTFLAGS=-Clink-arg=-Wl,-install_name,@rpath/libomc_result.dylib")
-    elseif(RUST_OMC_TARGET MATCHES "linux-gnu$")
-      # Plain `cargo build` is right for another Linux architecture, but the
-      # linker has to be named or rustc calls the host `cc` -- which rejects the
-      # AArch64-only --fix-cortex-a53-843419 that rustc passes for the target.
-      string(TOUPPER ${RUST_OMC_TARGET} _res_target_env)
-      string(REPLACE "-" "_" _res_target_env ${_res_target_env})
-      list(APPEND _env "CARGO_TARGET_${_res_target_env}_LINKER=${CMAKE_C_COMPILER}"
-           "PKG_CONFIG_ALLOW_CROSS=1"
-           "PKG_CONFIG_LIBDIR=/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig:/usr/share/pkgconfig")
-    endif()
-  endif()
+  omc_rust_cargo_command(${_target_dir} omc_result)
   if(WIN32 OR RUST_OMC_TARGET MATCHES "windows")
     set(_lib ${_out}/omc_result.dll)
     if(MSVC OR RUST_OMC_TARGET MATCHES "msvc$")

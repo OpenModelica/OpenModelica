@@ -1,0 +1,19 @@
+# libomcruntime_rust: the parts of the C omc's compiler runtime (omcruntime)
+# written in Rust, linked statically. A workspace of its own, so the C build
+# needs neither the transpiled compiler workspace nor a nightly cargo.
+[package]
+name = "openmodelica_omcruntime"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "omcruntime_rust"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+openmodelica_zip = { path = "../../OpenModelica.rs/openmodelica_zip" }
+
+[workspace]
+
+[profile.release]
+panic = "abort"

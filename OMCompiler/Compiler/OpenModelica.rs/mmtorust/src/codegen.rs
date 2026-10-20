@@ -152,9 +152,8 @@ pub(crate) const HANDWRITTEN_TOP_PACKAGES: &[&str] = &[
     // Single `external "C"` wrapper over `runtime/om_curl.c`; hand-written
     // (using the `curl` crate) in `openmodelica_script_util/src/Curl.rs`.
     "Curl",
-    // `external "C"` wrappers over `runtime/om_unzip.c` and `om_zip.c`
-    // (minizip); hand-written (using the `zip` crate) in
-    // `openmodelica_script_util/src/Unzip.rs`.
+    // `external "C"` wrappers over `runtime/om_zip.c`; hand-written over
+    // `openmodelica_zip` in `openmodelica_script_util/src/Unzip.rs`.
     "Unzip",
     // All bodies but `statusToString` are `external "C"` wrappers over
     // `runtime/OMSimulator_omc.c`, which `dlopen`s libOMSimulator and
