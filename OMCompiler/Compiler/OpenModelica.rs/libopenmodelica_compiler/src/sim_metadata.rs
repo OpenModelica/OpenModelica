@@ -16,7 +16,7 @@ pub struct CStrTable<const N: usize>(pub [*const c_char; N]);
 unsafe impl<const N: usize> Sync for CStrTable<N> {}
 
 #[unsafe(no_mangle)]
-pub static FLAG_NAME: CStrTable<157> = CStrTable([
+pub static FLAG_NAME: CStrTable<159> = CStrTable([
     c"FLAG_UNKNOWN".as_ptr(),
     c"abortSlowSimulation".as_ptr(),
     c"alarm".as_ptr(),
@@ -91,6 +91,8 @@ pub static FLAG_NAME: CStrTable<157> = CStrTable([
     c"mei".as_ptr(),
     c"maxIntegrationOrder".as_ptr(),
     c"maxStepSize".as_ptr(),
+    c"maxStepRetries".as_ptr(),
+    c"minRetryStepSize".as_ptr(),
     c"measureTimePlotFormat".as_ptr(),
     c"moo".as_ptr(),
     c"moo_l2bn_p1_it".as_ptr(),
@@ -177,7 +179,7 @@ pub static FLAG_NAME: CStrTable<157> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
+pub static FLAG_DETAILED_DESC: CStrTable<159> = CStrTable([
     c"unknown".as_ptr(),
     c"  Aborts if the simulation chatters: 1000 state events in a row within 1e-6 times\x0a  the simulation interval, or 100 within 1e-9 times it, and within the step size.".as_ptr(),
     c"  Aborts after the given number of seconds (default=0 disables the alarm).".as_ptr(),
@@ -235,7 +237,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
     c"  Value specifies the max number of iteration for ipopt.".as_ptr(),
     c"  Value specifies lvl for a warm start in ipopt: 1,2,3,...".as_ptr(),
     c"  Select the calculation method for Jacobian used by the integration method:\x0a".as_ptr(),
-    c"  The numerical Jacobian differences column i over\x0a    delta_h * max(|x[i]|, |h*x'[i]|)\x0a  and, where that is inside the variable's own absolute tolerance and so is\x0a  no scale of its own, over delta_h*factor*nominal[i] instead.\x0a  Lower the factor for a model that is non-smooth at that wider step;\x0a  the value is a Double with default value 1.0.".as_ptr(),
+    c"  The numerical Jacobian differences column i over\x0a\x0a    ``delta_h * max(|x[i]|, |h*x'[i]|)``\x0a\x0a  and, where that is inside the variable's own absolute tolerance and so is\x0a  no scale of its own, over delta_h*factor*nominal[i] instead.\x0a  Lower the factor for a model that is non-smooth at that wider step;\x0a  the value is a Double with default value 1.0.".as_ptr(),
     c"  Value specifies a time where the linearization of the model should be performed.".as_ptr(),
     c"  Emit data recovery matrices with model linearization.".as_ptr(),
     c"  Value specifies the log format of the executable:\x0a\x0a  * text (default)\x0a  * xml\x0a  * xmltcp (required -port flag)".as_ptr(),
@@ -252,6 +254,8 @@ pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
     c"  Value specifies the maximum number of event iterations.\x0a  The value is an Integer with default value 20.".as_ptr(),
     c"  Value specifies maximum integration order, used by the methods: dassl, ida.".as_ptr(),
     c"  Value specifies maximum absolute step size, used by the methods: dassl, ida, gbode.".as_ptr(),
+    c"  Value specifies how often a step is retried in a row, when evaluating the model at the end of the step failed,\x0a  e.g. because of an assert or a non-linear system that could not be solved.\x0a  Each retry halves the step size, which grows back to the output interval with the following steps.\x0a  The value is a non-negative Integer with default value 20 for models without states and 1 otherwise.".as_ptr(),
+    c"  Value specifies the minimum step size for retrying a failed step, see -maxStepRetries.\x0a  The simulation is terminated instead of retrying a step with a smaller step size.\x0a  The value is a positive Real with default value 1e-12.".as_ptr(),
     c"  Value specifies the output format of the measure time functionality:\x0a\x0a  * svg\x0a  * jpg\x0a  * ps\x0a  * gif\x0a  * ...".as_ptr(),
     c"  Perform dynamic optimization with MOO library".as_ptr(),
     c"  Value specifies the number of phase I iterations (full bisections) for L2-Boundary-Norm mesh refinement in MOO".as_ptr(),
@@ -296,7 +300,7 @@ pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
     c"  Step size control of solver gbode (single-rate, slow states integrator).".as_ptr(),
     c"  Reset step size using standard inital step size selection after an event (default false)".as_ptr(),
     c"  Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.".as_ptr(),
-    c"  Applies adaptive damping to the step size factor using F\xc3\xbchrer\xe2\x80\x99s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.".as_ptr(),
+    c"  Applies adaptive damping to the step size factor using F\xc3\xbchrer\xe2\x80\x99s approach, scaling it by ``h_fac *= (h_n / h_n1)^gamma`` to penalize repeated rejections or reward successful step acceptance.".as_ptr(),
     c"  Error estimation method for solver gbode (single-rate, slow states integrator)\x0a  Possible values:\x0a\x0a    * default - depending on the Runge-Kutta method\x0a    * richardson - Richardson extrapolation\x0a    * embedded   - Embedded scheme\x0a    * two_step           - Two-step estimator, if available\x0a    * contractive_defect - Contractive defect estimator, if available\x0a    * contractive_filter - Contractive filter applied to the embedded estimator, if available\x0a".as_ptr(),
     c"  Interpolation method of solver gbode (single-rate, slow states integrator).".as_ptr(),
     c"  Non-linear solver method of solver gbode (single-rate, slow states integrator).".as_ptr(),
@@ -315,13 +319,13 @@ pub static FLAG_DETAILED_DESC: CStrTable<157> = CStrTable([
     c"  Dumps the number of integration steps into the result file.".as_ptr(),
     c"  Sets startTime for the simulation.".as_ptr(),
     c"  Aborts the simulation if steady state is reached.".as_ptr(),
-    c"  This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol".as_ptr(),
+    c"  This relative tolerance is used to detect steady state: ``max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol``".as_ptr(),
     c"  Sets stepSize for the simulation.".as_ptr(),
     c"  Performs standard initialization until the specified system is reached, then aborts the simulation.".as_ptr(),
     c"  Sets stopTime for the simulation.".as_ptr(),
     c"  Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).".as_ptr(),
     c"  Estimated smallest singular value for the preconditioner in SVD analysis.".as_ptr(),
-    c"  Convergence tolerance of the sparse SVD analysis: PRIMME stops at\n  ||r|| <= svdTol*||A||. The normal equations it uses resolve no singular value\n  below sqrt(DBL_EPSILON)*||A||, so tightening it past that buys nothing.".as_ptr(),
+    c"  Convergence tolerance of the sparse SVD analysis: PRIMME stops at\x0a  ||r|| <= svdTol*||A||. The normal equations it uses resolve no singular value\x0a  below sqrt(DBL_EPSILON)*||A||, so tightening it past that buys nothing.".as_ptr(),
     c"  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation".as_ptr(),
     c"  Specifies solver tolerance.".as_ptr(),
     c"  Value specifies the number of steps, which keep Hessian matrix constant.".as_ptr(),
@@ -368,11 +372,7 @@ pub static SOLVER_METHOD_DESC: CStrTable<11> = CStrTable([
 ]);
 
 #[unsafe(no_mangle)]
-pub static INIT_METHOD_NAME: CStrTable<3> = CStrTable([
-    c"unknown".as_ptr(),
-    c"none".as_ptr(),
-    c"symbolic".as_ptr(),
-]);
+pub static INIT_METHOD_NAME: CStrTable<3> = CStrTable([c"unknown".as_ptr(), c"none".as_ptr(), c"symbolic".as_ptr()]);
 
 #[unsafe(no_mangle)]
 pub static INIT_METHOD_DESC: CStrTable<3> = CStrTable([

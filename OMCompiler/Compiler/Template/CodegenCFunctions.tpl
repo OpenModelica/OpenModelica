@@ -3577,7 +3577,7 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
         let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
         let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
         <<
-        <%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>
+        <%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>
         indexed_assign_<%arrayType%>(<%exp%>, &<%wrapperArray%>, &<%ispec%>);
         >>
   else
@@ -4100,7 +4100,7 @@ let &sub = buffer ""
             let cond = daeExp(crefExp(e), context, &sub, &varDecls, &varFrees, &auxFunction)
             let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &varFrees, &auxFunction)
             '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
-          let statements = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction);separator="\n")
+          let statements = algStatementsWhenBody(statementLst, context, &varDecls, &varFrees, &auxFunction)
           let else_clause = algStatementWhenElse(elseWhen, context, &varDecls, &varFrees, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
@@ -4116,6 +4116,15 @@ let &sub = buffer ""
   end match
 end algStmtWhen;
 
+template algStatementsWhenBody(list<DAE.Statement> statements, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
+::=
+  match context
+  case SIMULATION_CONTEXT(__) then
+    (statements |> stmt => algStatement(stmt, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction);separator="\n")
+  else
+    (statements |> stmt => algStatement(stmt, context, &varDecls, &varFrees, &auxFunction);separator="\n")
+end algStatementsWhenBody;
+
 template algStatementWhenElse(Option<DAE.Statement> stmt, Context context, Text &varDecls, Text &varFrees, Text &auxFunction)
  "Helper to algStmtWhen."
 ::=
@@ -4126,7 +4135,7 @@ case SOME(when as STMT_WHEN(__)) then
     let cond = daeExp(crefExp(e), context, &sub, &varDecls, &varFrees, &auxFunction)
     let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &varFrees, &auxFunction)
     '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
-  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationDiscrete, &varDecls, &varFrees, &auxFunction);separator="\n")
+  let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationWhenBody, &varDecls, &varFrees, &auxFunction);separator="\n")
   let else = algStatementWhenElse(when.elseWhen, context, &varDecls, &varFrees, &auxFunction)
   <<
   else if(<%else_conditions%>)
@@ -4910,10 +4919,19 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let rethrow = match level case ENUM_LITERAL(index=1) then '' else '<%\n%>data->simulationInfo->needToReThrow = 1;'
   // A violated assert leaves the frame; a warning carries on.
   let assertCheck = match level case ENUM_LITERAL(index=1) then '' else errorCheck(context)
+  // A when-body runs only at its event, which would excuse a held error.
+  let neverHeld = match context case SIMULATION_CONTEXT(whenBody=true) then (match level case ENUM_LITERAL(index=1) then '' else '1')
   let assertCode = match context case FUNCTION_CONTEXT(__) then
     <<
     FILE_INFO info = {<%infoArgs(info)%>};
     <%omcAssertFunc%>info, <%msgVar%>);
+    <%assertCheck%>
+    >>
+    else if neverHeld then
+    <<
+    const char* assert_cond = "(<%assertExpStr%>)";
+    FILE_INFO info = {<%infoArgs(info)%>};
+    <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
     <%assertCheck%>
     >>
     else
@@ -5178,6 +5196,71 @@ template jacobianVarIndex(SimVar var, Context context)
       '(<%daeExp(e, contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>)'
   else match var case SIMVAR(__) then index
 end jacobianVarIndex;
+
+template jacobianVarOffset(SimVar var, Context context)
+  "jacobianVarIndex for the resizable sparsity pattern functions: runtime
+   positions are read from the arrays of jacobianOffsetDecls, spelling out the
+   sum for every entry makes the code quadratic in the number of arrays."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    match jacobianIndexExp(var, jacHT)
+    case ICONST(__) then integer
+    else match var
+      case SIMVAR(varKind=BackendDAE.SEED_VAR()) then '_jac_off_seed[<%index%>]'
+      case SIMVAR(varKind=BackendDAE.JAC_VAR()) then '_jac_off_res[<%index%>]'
+      case SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then '_jac_off_tmp[<%index%>]'
+      else jacobianVarIndex(var, context)
+  else jacobianVarIndex(var, context)
+end jacobianVarOffset;
+
+template jacobianOffsetDecls(Context context)
+  "Allocates and fills the offset arrays used by jacobianVarOffset."
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    <<
+    <%jacobianOffsetDecl(jacobianOffsetVars(jacHT, "seed"), "seed")%>
+    <%jacobianOffsetDecl(jacobianOffsetVars(jacHT, "res"), "res")%>
+    <%jacobianOffsetDecl(jacobianOffsetVars(jacHT, "tmp"), "tmp")%>
+    >>
+end jacobianOffsetDecls;
+
+template jacobianOffsetDecl(list<SimVar> vars, String kind)
+::=
+  match vars
+  case {} then ""
+  else
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &varFrees = buffer ""
+    let &auxFunction = buffer ""
+    let assigns = (vars |> v as SIMVAR(__) =>
+      '_jac_off_<%kind%>[<%index%>] = _jac_acc; _jac_acc += <%daeExp(simVarSizeExp(v), contextOther, &preExp, &varDecls, &varFrees, &auxFunction)%>;'
+      ;separator="
+")
+    <<
+    modelica_integer* _jac_off_<%kind%> = (modelica_integer*) malloc(<%jacobianOffsetSize(vars)%> * sizeof(modelica_integer));
+    {
+      modelica_integer _jac_acc = 0;
+      <%assigns%>
+    }
+    >>
+end jacobianOffsetDecl;
+
+template jacobianOffsetFrees(Context context)
+::=
+  match context
+  case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+    let seed = match jacobianOffsetVars(jacHT, "seed") case {} then "" else 'free(_jac_off_seed);'
+    let res = match jacobianOffsetVars(jacHT, "res") case {} then "" else 'free(_jac_off_res);'
+    let tmp = match jacobianOffsetVars(jacHT, "tmp") case {} then "" else 'free(_jac_off_tmp);'
+    <<
+    <%seed%>
+    <%res%>
+    <%tmp%>
+    >>
+end jacobianOffsetFrees;
 
 template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
   "Generates code for jacobian variables."
@@ -6059,8 +6142,13 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
 ::=
   match ecr
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = EXTERNAL_OBJ(__))) then
-    let &sub = buffer ""
-    '<%contextCref(cr, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
+    // an element of a scalarized external object array addressed by an iterator
+    if boolAnd(crefIsScalarWithVariableSubs(cr), isContiguousArrayCref(crefStripSubs(cr), context)) then
+      let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &varFrees, &auxFunction)%>'
+      '<%contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
+    else
+      let &sub = buffer ""
+      '<%contextCref(cr, context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
 
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
     let vars = var_lst |> v => (", " + constVarOrDaeExp(v, cr, context, &preExp, &varDecls, &varFrees, &auxFunction))
@@ -6092,12 +6180,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
               '((modelica_<%type%>*)&(<%nosubname%>))'
             else
               '((modelica_<%type%>*)<%daeExpCrefRhsArrayElems(cr, type, context, &preExp, &varDecls, &varFrees, &auxFunction)%>.data)'
-          '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+          '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
     else if contiguousSlice(cr, type, context) then
       let data = contiguousSliceData(cr, type, context, &preExp, &varDecls, &varFrees, &auxFunction)
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, <%data%>, <%listLength(contiguousSliceDims(crefSubs(cr), crefDims(cr)))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => '(_index_t)<%d%>' ;separator=", "%>);<%\n%>'
+      let &preExp += '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, <%data%>, <%listLength(contiguousSliceDims(crefSubs(cr), crefDims(cr)))%>, <%contiguousSliceDims(crefSubs(cr), crefDims(cr)) |> d => '(_index_t)<%d%>' ;separator=", "%>);<%\n%>'
       wrapperArray
     else
       let &sub = buffer ""
@@ -6107,7 +6195,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
           '&<%contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)%>'
         else
           '<%daeExpCrefRhsArrayElems(crefStripSubs(cr), type, context, &preExp, &varDecls, &varFrees, &auxFunction)%>.data'
-      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)<%arrData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let &preExp += '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)<%arrData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let slicedArray = tempDecl(arrayType, &varDecls, &varFrees)
       let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &varFrees, &auxFunction)
       let &preExp += '<%rcReleaseBefore(arrayType, slicedArray)%>index_alloc_<%type%>_array(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
@@ -6314,7 +6402,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
             else
               contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &varFrees, &auxFunction, &sub)
           '((modelica_<%type%>*)&(<%nosubname%>))'
-      let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let t = '<%rcReleaseBefore(arrayType, wrapperArray)%><%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
   else
@@ -7488,9 +7576,9 @@ let &sub = buffer ""
     let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
     tvar
 
-  case CALL(path=IDENT(name="identity"), expLst={A}) then
+  case CALL(path=IDENT(name="identity"), expLst={A}, attr=CALL_ATTR(ty=ty)) then
     let var1 = daeExpAsLValue(A, context, &preExp, &varDecls, &varFrees, &auxFunction)
-    let arr_tp_str = expTypeFromExpArray(A)
+    let arr_tp_str = expTypeArray(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls, &varFrees)
     let &preExp += '<%rcReleaseBefore(arr_tp_str, tvar)%>identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar

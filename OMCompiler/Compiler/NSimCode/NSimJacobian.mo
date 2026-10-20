@@ -514,7 +514,8 @@ public
             tmp_lst  := VariablePointers.toList(varData.tmpVars);
           end if;
 
-          // the runtime reads column and row i of the ODE Jacobian as state i
+          // the runtime reads column and row i of the ODE Jacobian as state i, also for the
+          // adjoint one (seeds der(x), results x) whose pattern is mapped onto the forward one
           if jacobian.jacType == NBJacobian.JacobianType.ODE then
             seed_lst := sortByStateIndex(seed_lst, simcode_map);
             res_lst  := sortByStateIndex(res_lst, simcode_map);

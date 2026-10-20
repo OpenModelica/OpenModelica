@@ -234,20 +234,50 @@ protected
     if affNonNeg(a) then
       return;
     end if;
+    // a fact without a common parameter can not help: a - f >= 0 then implies a >= 0
     while not listEmpty(rest) loop
       f :: rest := rest;
-      d := affSub(a, f);
-      if affNonNeg(d) then
-        return;
-      end if;
-      for h in rest loop
-        if affNonNeg(affSub(d, h)) then
+      if affSharesParam(a, f) then
+        d := affSub(a, f);
+        if affNonNeg(d) then
           return;
         end if;
-      end for;
+        for h in rest loop
+          if affSharesParam(d, h) and affNonNeg(affSub(d, h)) then
+            return;
+          end if;
+        end for;
+      end if;
     end while;
     b := false;
   end affProvable;
+
+  function affSharesParam
+    input Aff a1;
+    input Aff a2;
+    output Boolean b = false;
+  protected
+    list<tuple<String, Integer>> k1, k2;
+    String n1, n2;
+    Integer c;
+  algorithm
+    AFF(k = k1) := a1;
+    AFF(k = k2) := a2;
+    // both sorted by name
+    while not (listEmpty(k1) or listEmpty(k2)) loop
+      (n1, _) := listHead(k1);
+      (n2, _) := listHead(k2);
+      c := stringCompare(n1, n2);
+      if c == 0 then
+        b := true;
+        return;
+      elseif c < 0 then
+        k1 := listRest(k1);
+      else
+        k2 := listRest(k2);
+      end if;
+    end while;
+  end affSharesParam;
 
   function affLe
     "a <= b: YES, NO or MAYBE"
@@ -2337,12 +2367,13 @@ protected
   end crefNames;
 
   function connectorVariables
-    "the potential and flow variables of every connector array"
+    "the potential, flow and stream variables of every connector array"
     input list<Variable> variables;
     input Vector<Vertex> vertices;
     input UnorderedMap<String, Integer> vertexIndex;
     output array<list<ConnVar>> potentials;
     output array<list<ConnVar>> flows;
+    output array<list<ConnVar>> streams;
   protected
     ComponentRef c;
     Option<Integer> ov;
@@ -2352,8 +2383,9 @@ protected
   algorithm
     potentials := arrayCreate(Vector.size(vertices), {});
     flows := arrayCreate(Vector.size(vertices), {});
+    streams := arrayCreate(Vector.size(vertices), {});
     for var in listReverse(variables) loop
-      if Variable.isPotential(var) or Variable.isFlow(var) then
+      if Variable.isPotential(var) or Variable.isFlow(var) or Variable.isStream(var) then
         // the connectors containing the variable, or the variable itself
         // (connector RealInput = input Real)
         c := var.name;
@@ -2365,6 +2397,8 @@ protected
               VERTEX(conn = SOME(conn), box = box) := Vector.get(vertices, v);
               if Variable.isFlow(var) then
                 flows[v] := CONN_VAR(var.name, listLength(box), memberName(var.name, Connector.name(conn))) :: flows[v];
+              elseif Variable.isStream(var) then
+                streams[v] := CONN_VAR(var.name, listLength(box), memberName(var.name, Connector.name(conn))) :: streams[v];
               else
                 potentials[v] := CONN_VAR(var.name, listLength(box), memberName(var.name, Connector.name(conn))) :: potentials[v];
               end if;
@@ -2450,8 +2484,10 @@ protected
     input Vector<Vertex> vertices;
     input array<list<ConnVar>> potentials;
     input array<list<ConnVar>> flows;
+    input array<list<ConnVar>> streams;
     input UnorderedMap<String, Expression> params;
     input list<Aff> facts;
+    input UnorderedSet<String> fixed "size parameters that keep their values";
     output list<Equation> equations = {};
   protected
     Integer n = Vector.size(sets.pieceVertex);
@@ -2463,8 +2499,9 @@ protected
       groups[r] := p :: groups[r];
     end for;
     for p in 1:n loop
-      if not listEmpty(groups[p]) then
-        equations := setEquations(groups[p], sets, vertices, potentials, flows, params, facts, equations);
+      // sets of pieces that are always empty with the fixed sizes have no equations
+      if not listEmpty(groups[p]) and not List.any(groups[p], function fixedEmpty(sets = sets, fixed = fixed, params = params)) then
+        equations := setEquations(groups[p], sets, vertices, potentials, flows, streams, params, facts, equations);
       end if;
     end for;
     equations := listReverseInPlace(equations);
@@ -2476,11 +2513,15 @@ protected
     input Vector<Vertex> vertices;
     input array<list<ConnVar>> potentials;
     input array<list<ConnVar>> flows;
+    input array<list<ConnVar>> streams;
     input UnorderedMap<String, Expression> params;
     input list<Aff> facts;
     input output list<Equation> equations;
   protected
     UnorderedMap<Integer, ClassNodes> cls "class -> (piece, dim, off)";
+    Boolean stream_eqs "one inside and one outside connector: their stream variables are equal";
+    Integer n_outside;
+    Connector conn;
     list<Integer> cls_order = {}, free = {}, real = {}, refs, nonempty;
     UnorderedSet<Integer> nonempty_set;
     Boolean collapsed, elementwise;
@@ -2583,6 +2624,20 @@ protected
     ref := listHead(refs);
     box := Vector.get(sets.pieceBox, ref);
     ridx := UnorderedMap.getOrFail(ref, idx);
+
+    // stream variables of outside connectors
+    n_outside := 0;
+    for p in real loop
+      SOME(conn) := vertexConn(vertices, Vector.get(sets.pieceVertex, p));
+      if Connector.isOutside(conn) then
+        n_outside := n_outside + 1;
+      end if;
+    end for;
+    stream_eqs := n_outside == 1 and listLength(real) == 2;
+    if n_outside > 0 and listLength(real) > 1 and not stream_eqs and List.any(list(not listEmpty(streams[Vector.get(sets.pieceVertex, p)]) for p in real), Util.id) then
+      unsupported("stream variables in the connection set " + setString(nonempty, sets, vertices) +
+        " (only one inside and one outside connector)", DAE.emptyElementSource);
+    end if;
     rexps := list(Subscript.INDEX(idxValue(i, box, NONE(), params)) for i in ridx);
 
     // potential equations: every member equal to the reference
@@ -2607,6 +2662,9 @@ protected
       end if;
       pexps := list(Subscript.INDEX(idxValue(i, box, SOME(loop_iters), params)) for i in pidx);
       body := potentialEquations(potentials[v], potentials[Vector.get(sets.pieceVertex, ref)], pexps, rexps);
+      if stream_eqs then
+        body := listAppend(potentialEquations(streams[v], streams[Vector.get(sets.pieceVertex, ref)], pexps, rexps), body);
+      end if;
       equations := List.append_reverse(wrapLoops(wrapLoops(body, ploops), loops), equations);
     end for;
 
@@ -3730,6 +3788,403 @@ public
     end try;
   end resolveOverconstrained;
 
+  // ---------------------------------------------------------------------------
+  // structural sizes
+  // ---------------------------------------------------------------------------
+
+  function fixStructuralSizes
+    "Size parameters bounding an unconnected flow piece that is empty at their values are not
+     resizable: other values would add unconnected elements (e.g. npipes for connects to p[1], p[2])."
+    input Sets sets;
+    input Context ctx;
+    input array<list<ConnVar>> flows;
+    input list<Aff> facts;
+    output UnorderedSet<String> fixed = UnorderedSet.new(stringHashDjb2, stringEq);
+  protected
+    Integer n = Vector.size(sets.pieceVertex), v;
+    array<Integer> count = arrayCreate(n, 0);
+    list<String> names;
+  algorithm
+    for p in 1:n loop
+      count[pieceFind(sets, p)] := count[pieceFind(sets, p)] + 1;
+    end for;
+    for p in 1:n loop
+      v := Vector.get(sets.pieceVertex, p);
+      if count[pieceFind(sets, p)] == 1 and not listEmpty(flows[v]) then
+        for iv in Vector.get(sets.pieceBox, p) loop
+          if ivEmpty(iv, facts) == MAYBE and actuallyEmpty(iv, ctx.params) then
+            for t in symParams(iv.lo, symParams(iv.hi, {})) loop
+              UnorderedSet.add(t, fixed);
+            end for;
+          end if;
+        end for;
+      end if;
+    end for;
+
+    names := List.sort(UnorderedSet.toList(fixed), stringGreater);
+    if not listEmpty(names) and Flags.isSet(Flags.DUMP_RESIZABLE) then
+      Error.addCompilerWarning("--resizableArrays: the parameters " + stringDelimitList(names, ", ") +
+        " cannot be used to resize the model, other values would leave connectors unconnected. They keep their values.");
+    end if;
+  end fixStructuralSizes;
+
+  function evaluateFixedSizes
+    "replaces the fixed size parameters by their values in all expressions and dimensions"
+    input output FlatModel flatModel;
+    input UnorderedSet<String> fixed;
+  protected
+    UnorderedMap<String, Expression> values = UnorderedMap.new<Expression>(stringHashDjb2, stringEq);
+  algorithm
+    if UnorderedSet.isEmpty(fixed) then
+      return;
+    end if;
+    for var in flatModel.variables loop
+      if UnorderedSet.contains(ComponentRef.toString(var.name), fixed) then
+        UnorderedMap.add(ComponentRef.toString(var.name),
+          SimplifyExp.simplify(Expression.map(Expression.fromCref(var.name), Expression.replaceResizableParameter)), values);
+      end if;
+    end for;
+    flatModel.variables := list(Variable.applyToType(v, function Type.applyToDims(func =
+      function fixedDimension(values = values))) for v in flatModel.variables);
+    flatModel := FlatModel.mapExp(flatModel, function Expression.map(func = function fixedExp(values = values)));
+    flatModel.equations := list(Equation.map(eq, function fixedEquationType(values = values)) for eq in flatModel.equations);
+    flatModel.initialEquations := list(Equation.map(eq, function fixedEquationType(values = values)) for eq in flatModel.initialEquations);
+  end evaluateFixedSizes;
+
+  function fixedExp
+    input output Expression exp;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard UnorderedMap.contains(ComponentRef.toString(exp.cref), values)
+        then UnorderedMap.getOrFail(ComponentRef.toString(exp.cref), values);
+      else Expression.applyToType(exp, function Type.applyToDims(func = function fixedDimension(values = values)));
+    end match;
+  end fixedExp;
+
+  function fixedDimension
+    input output Dimension dim;
+    input UnorderedMap<String, Expression> values;
+  protected
+    Expression e;
+  algorithm
+    dim := match dim
+      case Dimension.RESIZABLE() algorithm
+        e := Expression.map(dim.exp, function fixedExp(values = values));
+      then if referenceEq(e, dim.exp) then dim else Dimension.fromExp(SimplifyExp.simplify(e), dim.var);
+      else dim;
+    end match;
+  end fixedDimension;
+
+  function fixedEquationType
+    input output Equation eq;
+    input UnorderedMap<String, Expression> values;
+  algorithm
+    eq := match eq
+      case Equation.EQUALITY() algorithm
+        eq.ty := Type.applyToDims(eq.ty, function fixedDimension(values = values));
+      then eq;
+      else eq;
+    end match;
+  end fixedEquationType;
+
+  function fixedEmpty
+    "the piece is empty for the actual values of its sizes, which are all fixed"
+    input Integer p;
+    input Sets sets;
+    input UnorderedSet<String> fixed;
+    input UnorderedMap<String, Expression> params;
+    output Boolean empty = false;
+  algorithm
+    for iv in Vector.get(sets.pieceBox, p) loop
+      if List.all(symParams(iv.lo, symParams(iv.hi, {})), function UnorderedSet.contains(set = fixed)) and actuallyEmpty(iv, params) then
+        empty := true;
+        return;
+      end if;
+    end for;
+  end fixedEmpty;
+
+  function actuallyEmpty
+    "the interval is empty with the actual values of the size parameters"
+    input Iv iv;
+    input UnorderedMap<String, Expression> params;
+    output Boolean empty;
+  protected
+    Expression lo, hi;
+  algorithm
+    lo := SimplifyExp.simplify(Expression.map(symToExp(iv.lo, params), Expression.replaceResizableParameter));
+    hi := SimplifyExp.simplify(Expression.map(symToExp(iv.hi, params), Expression.replaceResizableParameter));
+    empty := match (lo, hi)
+      local
+        Integer l, h;
+      case (Expression.INTEGER(value = l), Expression.INTEGER(value = h)) then h < l;
+      else false;
+    end match;
+  end actuallyEmpty;
+
+  function symParams
+    "the size parameters of a bound"
+    input Sym s;
+    input output list<String> names;
+  protected
+    String n;
+  algorithm
+    for t in s.terms loop
+      for a in t loop
+        for k in a.k loop
+          (n, _) := k;
+          names := n :: names;
+        end for;
+      end for;
+    end for;
+  end symParams;
+
+  // ---------------------------------------------------------------------------
+  // stream connectors
+  // ---------------------------------------------------------------------------
+
+  type Pieces = list<Integer>;
+
+  function resolveStreams
+    "replaces inStream(c[i].s) of connectors in the symbolic sets: the connector
+     itself if it is not connected, the other connector of a set of two"
+    input output FlatModel flatModel;
+    input Sets sets;
+    input Context ctx;
+    input array<list<ConnVar>> streams;
+    input list<Aff> facts;
+    input UnorderedSet<String> fixed;
+  protected
+    UnorderedMap<Integer, Pieces> groups = UnorderedMap.new<Pieces>(Util.id, intEq) "set root -> pieces";
+    Integer r;
+  algorithm
+    for p in Vector.size(sets.pieceVertex):-1:1 loop
+      r := pieceFind(sets, p);
+      UnorderedMap.add(r, p :: UnorderedMap.getOrDefault(r, groups, {}), groups);
+    end for;
+    flatModel := FlatModel.mapExp(flatModel, function Expression.map(func =
+      function evalInStream(sets = sets, ctx = ctx, streams = streams, facts = facts, groups = groups, fixed = fixed)));
+  end resolveStreams;
+
+  function evalInStream
+    input output Expression exp;
+    input Sets sets;
+    input Context ctx;
+    input array<list<ConnVar>> streams;
+    input list<Aff> facts;
+    input UnorderedMap<Integer, Pieces> groups;
+    input UnorderedSet<String> fixed;
+  algorithm
+    exp := match exp
+      local
+        Expression arg;
+      case Expression.CALL() guard Call.isNamed(exp.call, "inStream") algorithm
+        {arg} := Call.arguments(exp.call);
+      then match arg
+        case Expression.CREF() then inStreamExp(arg.cref, sets, ctx, streams, facts, groups, fixed);
+        else exp;
+      end match;
+      case Expression.CALL() guard Call.isNamed(exp.call, "actualStream") algorithm
+        unsupported("actualStream", DAE.emptyElementSource);
+      then fail();
+      else exp;
+    end match;
+  end evalInStream;
+
+  function inStreamExp
+    "inStream of a connector element, piecewise over the pieces of its connector array"
+    input ComponentRef cref;
+    input Sets sets;
+    input Context ctx;
+    input array<list<ConnVar>> streams;
+    input list<Aff> facts;
+    input UnorderedMap<Integer, Pieces> groups;
+    input UnorderedSet<String> fixed;
+    output Expression exp;
+  protected
+    ComponentRef cr, c;
+    Option<Integer> ov = NONE();
+    Integer v;
+    list<Expression> idx;
+    list<ConnVar> cvs;
+    ConnVar cv;
+    Box vbox, box;
+    list<tuple<Expression, Expression>> branches = {};
+    Expression cond, val;
+    Option<Expression> ocond;
+  algorithm
+    cr := ComponentRef.fillSubscripts(cref);
+    // the connector: the longest prefix that is a connector array of the sets
+    c := cr;
+    while not ComponentRef.isEmpty(c) loop
+      ov := UnorderedMap.get(vertexKey(ComponentRef.toString(ComponentRef.stripSubscriptsAll(c)), false), ctx.vertexIndex);
+      if isSome(ov) then
+        break;
+      end if;
+      c := ComponentRef.rest(c);
+    end while;
+    if isNone(ov) then
+      // not connected: inStream(c.s) = c.s
+      exp := Expression.fromCref(cref);
+      return;
+    end if;
+    SOME(v) := ov;
+    cvs := list(s for s guard ComponentRef.isEqual(ComponentRef.stripSubscriptsAll(s.cref), ComponentRef.stripSubscriptsAll(cref)) in streams[v]);
+    if listEmpty(cvs) then
+      unsupported("inStream of " + ComponentRef.toString(cref) + " (no stream variable of a connector)", DAE.emptyElementSource);
+    end if;
+    cv := listHead(cvs);
+    idx := list(match s
+        case Subscript.INDEX() then s.index;
+        else algorithm
+          unsupported("inStream of " + ComponentRef.toString(cref) + " (not a single connector)", DAE.emptyElementSource);
+        then fail();
+      end match for s in ComponentRef.subscriptsAllFlat(c));
+    vbox := vertexBox(ctx.vertices, v);
+
+    for p in sets.vertexPieces[v] loop
+      box := Vector.get(sets.pieceBox, p);
+      if boxEmpty(box, facts) <> YES and not fixedEmpty(p, sets, fixed, ctx.params) then
+        val := pieceInStream(p, idx, cref, cv, sets, ctx, streams, facts, groups, fixed);
+        ocond := pieceCondition(idx, box, vbox, ctx.params);
+        branches := (Util.getOptionOrDefault(ocond, Expression.BOOLEAN(true)), val) :: branches;
+      end if;
+    end for;
+    if listEmpty(branches) then
+      exp := Expression.fromCref(cref);
+      return;
+    end if;
+    // the last piece without condition, the others as if-expression in front
+    (_, exp) :: branches := branches;
+    for b in branches loop
+      (cond, val) := b;
+      exp := Expression.IF(Expression.typeOf(val), cond, val, exp);
+    end for;
+  end inStreamExp;
+
+  function pieceCondition
+    "the indices are in the box of the piece, NONE if it holds for the whole connector array"
+    input list<Expression> idx;
+    input Box box;
+    input Box vbox;
+    input UnorderedMap<String, Expression> params;
+    output Option<Expression> cond = NONE();
+  protected
+    Expression c, prev;
+    Iv iv, viv;
+    list<Iv> ivs = box, vivs = vbox;
+  algorithm
+    for i in idx loop
+      iv :: ivs := ivs;
+      viv :: vivs := vivs;
+      // no condition for a dimension the piece covers completely
+      if not (symEq(iv.lo, viv.lo) and symEq(iv.hi, viv.hi)) then
+        if symEq(iv.lo, iv.hi) then
+          c := Expression.RELATION(i, Operator.makeEqual(Type.INTEGER()), symToExp(iv.lo, params), -1);
+        else
+          c := Expression.LBINARY(
+            Expression.RELATION(symToExp(iv.lo, params), Operator.makeLessEq(Type.INTEGER()), i, -1),
+            Operator.makeAnd(Type.BOOLEAN()),
+            Expression.RELATION(i, Operator.makeLessEq(Type.INTEGER()), symToExp(iv.hi, params), -1));
+        end if;
+        if isSome(cond) then
+          SOME(prev) := cond;
+          c := Expression.LBINARY(prev, Operator.makeAnd(Type.BOOLEAN()), c);
+        end if;
+        cond := SOME(c);
+      end if;
+    end for;
+  end pieceCondition;
+
+  function pieceInStream
+    "inStream of an element of a piece: the element itself if it is the only
+     connector of its set, the other connector of a set of two (element-wise)"
+    input Integer p;
+    input list<Expression> idx;
+    input ComponentRef cref;
+    input ConnVar cv;
+    input Sets sets;
+    input Context ctx;
+    input array<list<ConnVar>> streams;
+    input list<Aff> facts;
+    input UnorderedMap<Integer, Pieces> groups;
+    input UnorderedSet<String> fixed;
+    output Expression exp;
+  protected
+    list<Integer> members, real, free;
+    Integer q, c, cq, qv;
+    Sym off, offq;
+    list<Subscript> qsubs = {};
+    Boolean found, elementwise;
+    Iv iv;
+    Connector conn;
+    list<ConnVar> qcvs;
+    ConnVar qcv;
+  algorithm
+    members := UnorderedMap.getOrFail(pieceFind(sets, p), groups);
+    real := list(m for m guard isSome(vertexConn(ctx.vertices, Vector.get(sets.pieceVertex, m))) in members);
+    (_, free) := setFreeClasses(members, sets, facts);
+    if listLength(real) == 1 then
+      exp := Expression.fromCref(cref);
+      return;
+    end if;
+    // element-wise: every dimension of a single element or in a free class
+    elementwise := true;
+    for m in real loop
+      for d in 1:listLength(Vector.get(sets.pieceBox, m)) loop
+        (c, _) := dimFind(sets, dimNode(sets, m, d), facts);
+        iv := listGet(Vector.get(sets.pieceBox, m), d);
+        if not (List.contains(free, c, intEq) or symEq(iv.lo, iv.hi)) then
+          elementwise := false;
+        end if;
+      end for;
+    end for;
+    if listLength(real) <> 2 or not elementwise then
+      unsupported("inStream of " + ComponentRef.toString(cref) + " (a connection set of more than two connectors)", DAE.emptyElementSource);
+    end if;
+
+    q := listHead(list(m for m guard m <> p in real));
+    qv := Vector.get(sets.pieceVertex, q);
+    SOME(conn) := vertexConn(ctx.vertices, qv);
+
+    // the coordinate of a class is index + offset of the node: map p to q
+    for dq in 1:listLength(Vector.get(sets.pieceBox, q)) loop
+      (cq, offq) := dimFind(sets, dimNode(sets, q, dq), facts);
+      iv := listGet(Vector.get(sets.pieceBox, q), dq);
+      found := symEq(iv.lo, iv.hi);
+      if found then
+        qsubs := Subscript.INDEX(symToExp(iv.lo, ctx.params)) :: qsubs;
+      end if;
+      for d in 1:listLength(idx) loop
+        if found then
+          break;
+        end if;
+        (c, off) := dimFind(sets, dimNode(sets, p, d), facts);
+        if c == cq then
+          qsubs := Subscript.INDEX(SimplifyExp.simplify(Expression.MULTARY({listGet(idx, d), symToExp(off, ctx.params)},
+            {symToExp(offq, ctx.params)}, Operator.makeAdd(Type.INTEGER())))) :: qsubs;
+          found := true;
+          break;
+        end if;
+      end for;
+      if not found then
+        unsupported("inStream of " + ComponentRef.toString(cref) + " (a connection with different dimensions)", DAE.emptyElementSource);
+      end if;
+    end for;
+    qsubs := listReverseInPlace(qsubs);
+
+    qcvs := list(s for s guard s.member == cv.member in streams[qv]);
+    if listEmpty(qcvs) then
+      unsupported("inStream of " + ComponentRef.toString(cref) + " (no stream variable " + cv.member + " in the connected connector)", DAE.emptyElementSource);
+    end if;
+    qcv := listHead(qcvs);
+    exp := applyConnSubs(qcv.cref, qcv.connDims, qsubs);
+    // one inside and one outside connector: inStream(c1.s) = inStream(c2.s)
+    if Connector.isOutside(conn) then
+      exp := inStreamExp(Expression.toCref(exp), sets, ctx, streams, facts, groups, fixed);
+    end if;
+  end pieceInStream;
+
   function resolve
     "Generates the connection equations of the connect equations of the model
      with symbolic sizes and adds them to the equations."
@@ -3740,8 +4195,9 @@ public
     list<Edge> edges = {};
     Sets sets;
     list<Aff> facts;
-    array<list<ConnVar>> potentials, flows;
+    array<list<ConnVar>> potentials, flows, streams;
     ComponentRef c;
+    UnorderedSet<String> fixed;
   algorithm
     (conns, eql) := List.splitOnTrue(flatModel.equations, isConnection);
     ctx := CONTEXT(Vector.new<Vertex>(), UnorderedMap.new<Integer>(stringHashDjb2, stringEq),
@@ -3770,8 +4226,11 @@ public
       dumpSets(sets, ctx.vertices, facts);
     end if;
 
-    (potentials, flows) := connectorVariables(flatModel.variables, ctx.vertices, ctx.vertexIndex);
-    flatModel.equations := listAppend(eql, generateEquations(sets, ctx.vertices, potentials, flows, ctx.params, facts));
+    (potentials, flows, streams) := connectorVariables(flatModel.variables, ctx.vertices, ctx.vertexIndex);
+    fixed := fixStructuralSizes(sets, ctx, flows, facts);
+    flatModel.equations := listAppend(eql, generateEquations(sets, ctx.vertices, potentials, flows, streams, ctx.params, facts, fixed));
+    flatModel := resolveStreams(flatModel, sets, ctx, streams, facts, fixed);
+    flatModel := evaluateFixedSizes(flatModel, fixed);
   end resolve;
 
   annotation(__OpenModelica_Interface="nf_frontend");

@@ -13,3 +13,6 @@
 [submodule "OMCompiler/Compiler/boot/bomc"]
 	path = OMCompiler/Compiler/boot/bomc
 	url = ../OMBootstrapping.git
+[submodule "OMCompiler/Examples/ModelicaTutorial"]
+	path = OMCompiler/Examples/ModelicaTutorial
+	url = ../ModelicaTutorial.git

@@ -38,7 +38,6 @@
  */
 
 #include <stdlib.h>
-#include <iostream>
 #include <cstring>
 
 #include "OMCProxy.h"
@@ -3057,6 +3056,41 @@ bool OMCProxy::setComponentDimensions(QString className, QString componentName, 
 }
 
 /*!
+ * \brief OMCProxy::getComponentCondition
+ * Gets the condition of a component in a class.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \return the condition of the component as a string or the string "false" on failure.
+ */
+QString OMCProxy::getComponentCondition(QString className, QString componentName)
+{
+  return mpOMCInterface->getComponentCondition(className, componentName);
+  // sendCommand("getComponentCondition(" + className + "," + componentName + ")");
+  // return StringHandler::unparse(getResult());
+}
+
+/*!
+ * \brief OMCProxy::setComponentCondition
+ * Sets the condition of a component in a class. An empty string removes the condition.
+ * \param className - the name of the class.
+ * \param componentName - the name of the component.
+ * \param condition - the condition of the component.
+ * \return true on success.
+ */
+bool OMCProxy::setComponentCondition(QString className, QString componentName, QString condition)
+{
+  return mpOMCInterface->setComponentCondition(className, componentName, condition);
+  // QString expression;
+  // if (condition.isEmpty()) {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"\")";
+  // } else {
+  //   expression = "setComponentCondition(" + className + "," + componentName + ",\"" + condition + "\")";
+  // }
+  // sendCommand(expression);
+  // return StringHandler::unparseBool(getResult());
+}
+
+/*!
  * \brief OMCProxy::addConnection
  * Adds a connection
  * \param from - the connection start component name.
@@ -3305,6 +3339,21 @@ bool OMCProxy::closeSimulationResultFile()
 QString OMCProxy::checkModel(QString className)
 {
   QString result = mpOMCInterface->checkModel(className);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getClassDiagram
+ * Returns the UML class diagram of a class as a draw.io file, see getClassDiagram.
+ * \param className
+ * \param depth - how many levels of used classes to include.
+ * \param showModifiers
+ * \return the diagram, or an empty string if there is none.
+ */
+QString OMCProxy::getClassDiagram(QString className, int depth, bool showModifiers)
+{
+  QString result = mpOMCInterface->getClassDiagram(className, "", "drawio", depth, QList<QString>() << "Modelica.Icons", showModifiers);
   printMessagesStringInternal();
   return result;
 }

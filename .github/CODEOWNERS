@@ -1,0 +1,99 @@
+# Code owners are automatically requested for review when a pull request
+# changes files they own. Later rules take precedence over earlier ones.
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# To add yourself, uncomment a placeholder below (or add a new line) and
+# append your GitHub handle, e.g.:
+#   /OMCompiler/Compiler/NFFrontEnd/ @your-handle
+
+# GitHub Actions workflows
+/.github/workflows/ @AnHeuermann
+
+# Build system
+CMakeLists.txt @AnHeuermann
+*.cmake @AnHeuermann
+*.cmake.in @AnHeuermann
+/cmake/ @AnHeuermann
+
+# Continuous Integration / Continuous Deployment
+# /Jenkinsfile
+# /.CI/
+
+# Compiler: frontend
+# Only the core NF files, smaller changes elsewhere get a manual review request.
+/OMCompiler/Compiler/NFFrontEnd/NFFlatten.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInst.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFInstNode.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFLookup.mo @perost
+/OMCompiler/Compiler/NFFrontEnd/NFTyping.mo @perost
+/OMCompiler/Compiler/FrontEndCpp/ @perost
+# /OMCompiler/Compiler/FrontEnd/
+
+# Compiler: backend
+/OMCompiler/Compiler/NBackEnd/ @kabdelhak
+/OMCompiler/Compiler/NBackEnd/Modules/2_Pre/NBEvents.mo @kabdelhak @phannebohm
+/OMCompiler/Compiler/NBackEnd/Modules/3_Post/NBEvaluation.mo @kabdelhak @phannebohm
+# /OMCompiler/Compiler/BackEnd/
+
+# Compiler: code generation
+/OMCompiler/Compiler/NSimCode/ @kabdelhak
+# /OMCompiler/Compiler/SimCode/
+/OMCompiler/Compiler/Template/ @sjoelund
+/OMCompiler/Compiler/Template/CodegenC.tpl @sjoelund @phannebohm
+
+# Compiler: Rust
+/OMCompiler/Compiler/OpenModelica.rs/ @sjoelund
+
+# Compiler: bootstrapping
+/OMCompiler/Compiler/boot/ @sjoelund
+
+# Compiler: scripting API
+/OMCompiler/Compiler/Script/ @perost
+
+# Compiler: C API
+/OMCompiler/Compiler/omcCAPI/ @AnHeuermann
+
+# C simulation runtime
+# /OMCompiler/SimulationRuntime/c/
+/OMCompiler/SimulationRuntime/c/simulation/eval_dep.* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/jacobian_util.* @phannebohm
+/OMCompiler/SimulationRuntime/c/simulation/solver/events.* @phannebohm
+
+# C simulation runtime: MOO (dynamic optimization)
+/OMCompiler/SimulationRuntime/c/moo/ @linuslangenkamp
+
+# C simulation runtime: SUNDIALS integrators
+/OMCompiler/SimulationRuntime/c/simulation/solver/cvode_solver.* @AnHeuermann
+/OMCompiler/SimulationRuntime/c/simulation/solver/ida_solver.* @AnHeuermann
+/OMCompiler/SimulationRuntime/c/simulation/solver/kinsol* @AnHeuermann
+/OMCompiler/SimulationRuntime/c/simulation/solver/sundials_* @AnHeuermann
+
+# C simulation runtime: GBODE integrator
+/OMCompiler/SimulationRuntime/c/simulation/solver/gbode* @bernhardbachmann @phannebohm @linuslangenkamp 
+
+# C++ simulation runtime
+# /OMCompiler/SimulationRuntime/cpp/
+
+# FMI
+/OMCompiler/SimulationRuntime/fmi/ @AnHeuermann
+
+# OMSimulator (submodule; no trailing slash so the submodule pointer itself matches)
+/OMSimulator @arun3688
+
+# OMEdit
+/OMEdit/ @adeas31
+
+# OMPlot
+/OMPlot/ @adeas31
+
+# OMNotebook
+# /OMNotebook/
+
+# OMShell
+# /OMShell/
+
+# Documentation
+# /doc/
+
+# Testsuite
+# /testsuite/

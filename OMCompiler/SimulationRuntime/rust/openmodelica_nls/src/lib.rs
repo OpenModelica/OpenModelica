@@ -4731,7 +4731,13 @@ pub fn solve_nls(
     // `solve_nonlinear_system` — after the last evaluation, so the torn variables
     // keep the values the solve left them at, not their values at the old lambda.
     state.borrow_mut().set_lambda(original_lambda);
-    mem.res_scaling.copy_from_slice(&res_scaling);
+    // The residual scaling of a failed solve belongs to wherever the iteration
+    // ended up. Don't let the next call test its start point against it.
+    if converged {
+        mem.res_scaling.copy_from_slice(&res_scaling);
+    } else {
+        mem.res_scaling.fill(0.0);
+    }
 
     let ret = if strict_used {
         // C's `solveNLS` reports the component solved and `getIterationVars` re-reads

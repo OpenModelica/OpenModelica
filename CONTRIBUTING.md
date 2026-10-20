@@ -115,6 +115,14 @@ ln -s "$PWD/common/commit-msg.sh" "$(git rev-parse --git-dir)/hooks/commit-msg"
 `commit-msg.sh` enforces the 50/72 commit-message layout. Bypass either with
 `git commit --no-verify`.
 
+`pre-commit.sh` also formats the Rust and TOML files of the Rust omc
+(`OMCompiler/Compiler/OpenModelica.rs` and `OMCompiler/SimulationRuntime/rust`)
+that you are committing, with rustfmt and taplo. Other files are not touched,
+and without the two tools the hook only prints a warning. A GitHub workflow
+checks the same files in every pull request. The rules, the reasons for them and
+the tool setup are in the
+[Rust omc README](OMCompiler/Compiler/OpenModelica.rs/README.md#formatting-and-style).
+
 ## Working with the OpenModelica/OMCompiler/3rdParty submodule
 
 If you need to make changes to OMCompiler-3rdParty the procedure is as follows:

@@ -1,0 +1,35 @@
+// name: scalarDivArray
+// keywords: NewBackend simplification multary
+// status: correct
+// cflags: --newBackend
+//
+// An inverse-only multary 1 ./ (a .* b) is split with a scalar one.
+
+loadString("
+model scalarDivArray
+  parameter Real alpha[2] = {2, 4};
+  parameter Real A[3] = {1, 2, 3};
+  parameter Integer k = 1;
+  Real HR[2];
+  Real x(start = 1, fixed = true);
+equation
+  HR = 1 ./ (alpha .* A[k]);
+  der(x) = -x * HR[1];
+end scalarDivArray;
+"); getErrorString();
+
+simulate(scalarDivArray, stopTime = 1); getErrorString();
+val(HR[2], 1);
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "scalarDivArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'scalarDivArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.25
+// endResult

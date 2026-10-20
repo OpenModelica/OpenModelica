@@ -275,7 +275,7 @@ case SIMCODE(__) then
 end fmiBuildDescription;
 
 template rustSourceFileSet(list<String> sourceFiles)
- "The Rust half of a --simCodeTarget=C source FMU: the crate roots, built into
+ "The Rust half of a --simCodeTarget=C+Rust source FMU: the crate roots, built into
   the libSimulationRuntimeRust archive the C set links (see sources/CMakeLists.txt)."
 ::=
   let files = (sourceFiles |> file => if StringUtil.endsWith(file, ".rs") then '<SourceFile name="<%file%>"/>' ;separator="\n")

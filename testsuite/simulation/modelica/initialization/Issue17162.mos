@@ -1,0 +1,48 @@
+// name: Issue17162
+// keywords: initialization, when, initial
+// status: correct
+//
+// A call without result in an active when-body is executed at the
+// initialization also when the call refers to a variable.
+
+loadString("
+model Issue17162
+  discrete Integer v(start = 0, fixed = true);
+  discrete Integer a(start = 0, fixed = true);
+equation
+  when initial() then
+    v = 1;
+  elsewhen time > 0.5 then
+    v = 2;
+  end when;
+  when {initial(), change(v)} then
+    a = v;
+    print(\"equation: t=\" + String(time) + \", v=\" + String(v) + \"\\n\");
+  end when;
+algorithm
+  when {initial(), change(v)} then
+    print(\"algorithm: t=\" + String(time) + \", v=\" + String(v) + \"\\n\");
+  end when;
+end Issue17162;
+"); getErrorString();
+
+simulate(Issue17162, stopTime = 1); getErrorString();
+val(a, 0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Issue17162_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Issue17162', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "algorithm: t=0, v=1
+// equation: t=0, v=1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// equation: t=0.5, v=2
+// algorithm: t=0.5, v=2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// endResult

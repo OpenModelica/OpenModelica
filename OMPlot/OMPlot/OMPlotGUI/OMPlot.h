@@ -42,6 +42,8 @@
 #include <QColor>
 #include <QApplication>
 
+class QRubberBand;
+
 #include "PlotWindow.h"
 #include "Legend.h"
 #include "PlotGrid.h"
@@ -75,8 +77,11 @@ private:
   PlotZoomer *mpPlotZoomer;
   PlotPanner *mpPlotPanner;
   PlotPicker *mpPlotPicker;
+  QRubberBand *mpZoomRubberBand;
   QList<PlotCurve*> mPlotCurvesList;
   QList<QColor> mColorsList;
+  QPoint mZoomStartPosition;
+  bool mZoomingFromOutsideCanvas = false;
 public:
   Plot(PlotWindow *pParent);
   ~Plot();
@@ -105,8 +110,13 @@ public:
   static QString convertSymbolToUnit(const QString &symbol);
   static void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent);
 private:
+  void installZoomEventFilters(QWidget *widget);
+  void startZoomFromGlobalPosition(const QPoint &globalPosition, Qt::KeyboardModifiers modifiers);
+  void updateZoomFromGlobalPosition(const QPoint &globalPosition, Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers);
+  void finishZoomFromGlobalPosition(const QPoint &globalPosition, Qt::MouseButtons buttons, Qt::KeyboardModifiers modifiers);
   void updateMaxMajorSteps();
 protected:
+  bool eventFilter(QObject *object, QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   /* Override the minimum size hint so that the window can be shrunk vertically.
    * QwtPlot::sizeHint() (used by the default minimumSizeHint()) adds extra

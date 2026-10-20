@@ -63,6 +63,7 @@ class MatFileWriter : public ContainerManager
               _file_name(file_name),
               _doubleMatrixData1(NULL),
               _doubleMatrixData2(NULL),
+              _doubleMatrixData2Size(0),
               _stringMatrix(NULL),
               _intMatrix(NULL)
     {
@@ -287,6 +288,7 @@ class MatFileWriter : public ContainerManager
         // allocate temp buffer for simulation data:
         // dim_1 (number of variables) + dim_2 (number of der. variables) + 1 (time)
         _doubleMatrixData2 = new double[dim + 1];
+        _doubleMatrixData2Size = dim + 1;
     }
 
     /*=={function}===================================================================================*/
@@ -694,6 +696,14 @@ class MatFileWriter : public ContainerManager
 
         _uiValueCount++;
 
+        // the number of variables can exceed dim, e.g. if resizable arrays got larger sizes at runtime
+        if (uiVarCount > _doubleMatrixData2Size)
+        {
+            delete[] _doubleMatrixData2;
+            _doubleMatrixData2 = new double[uiVarCount];
+            _doubleMatrixData2Size = uiVarCount;
+        }
+
         // reset tempbuffer to zero
         memset(_doubleMatrixData2, 0, sizeof(double) * uiVarCount);
         doubleHelpMatrix = _doubleMatrixData2;
@@ -796,6 +806,7 @@ class MatFileWriter : public ContainerManager
     std::string _file_name;
     double *_doubleMatrixData1;
     double *_doubleMatrixData2;
+    size_t _doubleMatrixData2Size;
     char *_stringMatrix;
     int *_intMatrix;
     vector<string> _var_outputs;

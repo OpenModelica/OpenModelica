@@ -1,0 +1,42 @@
+// name:     AlgorithmForSubscript
+// keywords: algorithm, for, array, adjacency
+// status:   correct
+// teardown_command: rm -rf AlgorithmForSubscript AlgorithmForSubscript.exe AlgorithmForSubscript.c AlgorithmForSubscript_* AlgorithmForSubscript.makefile AlgorithmForSubscript.libs AlgorithmForSubscript.log output.log
+//
+// An array assigned with a computed subscript in a for loop. a[4] only occurs
+// as a[i+1] on a left hand side, but is still an output of the algorithm.
+
+loadString("
+model AlgorithmForSubscript
+  parameter Integer N = 4;
+  Real a[N];
+algorithm
+  a[1] := 1.0;
+  for i in 1:N-1 loop
+    a[i+1] := a[i] + 1.0;
+  end for;
+end AlgorithmForSubscript;
+"); getErrorString();
+
+simulate(AlgorithmForSubscript, stopTime = 1); getErrorString();
+val(a[1], 1);
+val(a[2], 1);
+val(a[3], 1);
+val(a[4], 1);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AlgorithmForSubscript_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AlgorithmForSubscript', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// endResult

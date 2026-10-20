@@ -199,6 +199,16 @@ public
     end try;
   end main;
 
+  function getNoReturnEquations
+    "Returns the initial equations without return value. Calls without
+    return value of the simulation equations are left to the simulation system."
+    input EquationPointers initialEqs;
+    output EquationPointers noReturnEqs;
+  algorithm
+    noReturnEqs := EquationPointers.fromList(list(eqn for eqn guard(Equation.isInitial(eqn) and Equation.size(eqn) == 0)
+      in EquationPointers.toList(initialEqs)));
+  end getNoReturnEquations;
+
   function createStartEquations
     "Creates start equations from (fixed) start values."
     input VariablePointers states;
@@ -1274,6 +1284,17 @@ public
         eqn.body := removeWhenEquationIfBody(eqn.body, iter, cref_map);
         eqn.size := IfEquationBody.size(eqn.body);
       then if eqn.size > 0 then eqn else Equation.DUMMY_EQUATION();
+
+      // without outputs only the active when-bodies are needed, the simulation system evaluates the rest
+      case Equation.ALGORITHM(alg = alg) guard(eqn.size == 0 and List.any(alg.statements, Statement.isWhen)) algorithm
+        stmts := removeWhenEquationAlgorithmBody(list(stmt for stmt guard(Statement.isWhen(stmt)) in alg.statements));
+        if not listEmpty(stmts) then
+          new_eqn := Pointer.access(Equation.makeAlgorithm(stmts, true));
+          new_eqn := Equation.setResidualVar(new_eqn, Equation.getResidualVar(Pointer.create(eqn)));
+        else
+          new_eqn := Equation.DUMMY_EQUATION();
+        end if;
+      then new_eqn;
 
       // reduce the body of algorithms
       case Equation.ALGORITHM(alg = alg) algorithm

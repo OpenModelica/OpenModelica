@@ -384,6 +384,16 @@ public
     end match;
   end isConnectionCall;
 
+  function isConnectionGraphQuery
+    input Expression exp;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isConnectionGraphQuery(exp.call);
+      else false;
+    end match;
+  end isConnectionGraphQuery;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -2894,6 +2904,10 @@ public
 
       case RECORD_ELEMENT()
         then DAE.RSUB(toDAE(exp.recordExp), -1, exp.fieldName, Type.toDAE(exp.ty));
+
+      // a plain function reference, see NBackendDAE.lowerFunctionPointers
+      case PARTIAL_FUNCTION_APPLICATION(args = {}, ty = Type.FUNCTION(fnType = NFType.FunctionType.FUNCTION_REFERENCE))
+        then toDAE(CREF(exp.ty, exp.fn));
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm

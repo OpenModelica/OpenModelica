@@ -2,6 +2,7 @@
 // status: correct
 // teardown_command: rm -f testSolver.problem6* output.log
 // cflags: -d=-newInst
+// suite: gbode
 
 loadFile("./testSolverPackage.mo");
 getErrorString();

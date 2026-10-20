@@ -51,6 +51,7 @@ ticket_6099.mos \
 ticket2336.mos \
 ticket5114.mos \
 VariableRangeSubscript.mos \
+VectorizedCallArrayLhs.mos \
 VectorizeOneReturnValue.mos \
 Xpowers1.mos \
 Xpowers2.mos \

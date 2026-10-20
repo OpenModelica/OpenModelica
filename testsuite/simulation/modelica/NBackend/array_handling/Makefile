@@ -2,6 +2,15 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 reductionSkips.mos \
+nestedForConnectRange.mos \
+forNestedElseIf.mos \
+forSliceRowMajor.mos \
+scalarDivArray.mos \
+arrayRowScalar.mos \
+algorithmForSubscript.mos \
+eachScalarProduct.mos \
+ifBranchSizes.mos \
+recordActualStream.mos \
 arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \
@@ -9,6 +18,7 @@ jacobianArrayIndices.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 resizableSparsity.mos \
+resizableSparsityArrayEqn.mos \
 resizableConnectChain.mos \
 resizableConnectIf.mos \
 arrayConnectOutside.mos \
@@ -17,11 +27,14 @@ arrayConnectRooted.mos \
 entwinedOrder.mos \
 resizableOverride.mos \
 resizableOverrideDerived.mos \
+resizableAliasStart.mos \
 resizablePartialLoops.mos \
+resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
+resizableStreams.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\

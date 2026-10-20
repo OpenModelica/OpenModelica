@@ -150,7 +150,7 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
                                       .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
       text = Helper::displayLimitMsg.arg(simulationLogFilePath);
     } else {
-      text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
+      text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() || !mpSimulationOutputWidget->isDebugInfoAvailable() ? "" : debugLink);
     }
     // create tooltip
     toolTip = QString("%1 | %2 | %3")

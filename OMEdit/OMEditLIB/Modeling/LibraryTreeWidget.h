@@ -358,6 +358,7 @@ private:
 #endif
   QAction *mpSimulationSetupAction;
   QAction *mpFindUsageAction;
+  QAction *mpClassDiagramAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
@@ -410,6 +411,7 @@ public slots:
   void translateAsCRML();
   void runScript();
   void findUsageOfClass();
+  void showClassDiagram();
   void duplicateClass();
   void unloadClass();
   void reloadClass();

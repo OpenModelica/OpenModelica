@@ -61,6 +61,7 @@
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Modeling/DocumentationWidget.h"
+#include "Modeling/ClassDiagramWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #include "Util/Helper.h"
@@ -368,7 +369,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
 #ifdef Q_OS_WIN
     _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
 #else
-    freopen(outputFileName.toUtf8().constData(), "w", stderr);
+    freopen(errorFileName.toUtf8().constData(), "w", stderr);
 #endif
     setbuf(stderr, NULL); // used non-buffered stderr
   }
@@ -1138,7 +1139,6 @@ void MainWindow::beforeClosingMainWindow()
   }
 
   QSettings *pSettings = Utilities::getApplicationSettings();
-#if !defined(__EMSCRIPTEN__)
   /* delete the TransformationsWidgets */
   const int size = mTransformationsWidgetHash.size();
   int index = 0;
@@ -1166,6 +1166,10 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mTransformationsWidgetHash.clear();
+  /* delete the ClassDiagramWindow, its web pages must go before the web engine profile does, at exit. */
+  delete mpClassDiagramWindow;
+  mpClassDiagramWindow = nullptr;
+#if !defined(__EMSCRIPTEN__)
   /* save stackframes list and locals columns width */
   pSettings->beginGroup("algorithmicDebugger");
   pSettings->setValue("stackFramesTreeState", mpStackFramesWidget->getStackFramesTreeWidget()->header()->saveState());
@@ -2105,12 +2109,6 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
  */
 TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
-#if defined(__EMSCRIPTEN__)
-  Q_UNUSED(fileName);
-  Q_UNUSED(profiling);
-  Q_UNUSED(checkProfilingExists);
-  return nullptr;
-#else
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
     pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
@@ -2118,12 +2116,31 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
   } else {
     pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
+#if defined(__EMSCRIPTEN__)
+  // The browser is the screen: a window sized for a desktop runs past its right
+  // edge and takes the title bar's close button with it.
+  pTransformationsWidget->showMaximized();
+#else
   pTransformationsWidget->show();
+#endif
   pTransformationsWidget->raise();
   pTransformationsWidget->activateWindow();
   pTransformationsWidget->setWindowState(pTransformationsWidget->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
   return pTransformationsWidget;
-#endif
+}
+
+/*!
+ * \brief MainWindow::showClassDiagramWidget
+ * Shows the class diagram of a class in a tab of the Class Diagram window.
+ * \param className
+ * \return
+ */
+ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className)
+{
+  if (!mpClassDiagramWindow) {
+    mpClassDiagramWindow = new ClassDiagramWindow;
+  }
+  return mpClassDiagramWindow->showClassDiagram(className);
 }
 
 /*!

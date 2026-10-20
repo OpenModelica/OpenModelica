@@ -462,8 +462,11 @@ algorithm
             fmuVersion, fmuType, fileNamePrefix, true, fmuPlatforms, NONE());
           showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
           System.fflush();
+        elseif Config.simulation() then
+          print(CevalScriptBackend.simulateModel(cname));
+          showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
         else
-          runBackend := Config.simulationCg() or Config.simulation();
+          runBackend := Config.simulationCg();
           runSilent := Config.silent();
 
           CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,

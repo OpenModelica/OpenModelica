@@ -58,6 +58,10 @@ BindingInvalidType2.mo \
 BindingInvalidType3.mo \
 BindingInvalidType4.mo \
 BindingInvalidType5.mo \
+BlockConnector1.mo \
+BlockConnector2.mo \
+BlockConnector3.mo \
+BlockConnector4.mo \
 bindings1.mo \
 bindings4.mo \
 bindings7.mo \
@@ -546,6 +550,7 @@ Final6.mo \
 Final7.mo \
 ForConnect1.mo \
 ForConnect2.mo \
+ForConnect3.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -682,6 +687,7 @@ FuncViaComp4.mo \
 FuncViaComp5.mo \
 FuncViaComp6.mo \
 FuncViaComp7.mo \
+FuncViaComp8.mo \
 FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
@@ -753,6 +759,8 @@ IfConnect1.mo \
 IfConnect2.mo \
 IfConnect3.mo \
 IfConnect4.mo \
+IfConnect5.mo \
+IfConnect6.mo \
 IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \

@@ -326,6 +326,16 @@ void OptionsDialog::readGeneralSettings()
     mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
   }
   MainWindow::instance()->setCRMLEnabled(mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->isChecked());
+  // read color scheme. The key must not be named "darkMode": that is the group themeKey() uses.
+  if (mpSettings->contains("colorScheme")) {
+    bool ok;
+    int currentIndex = mpGeneralSettingsPage->getColorSchemeComboBox()->findData(mpSettings->value("colorScheme").toInt(&ok));
+    if (currentIndex > -1 && ok) {
+      mpGeneralSettingsPage->getColorSchemeComboBox()->setCurrentIndex(currentIndex);
+    }
+  } else {
+    mpGeneralSettingsPage->getColorSchemeComboBox()->setCurrentIndex(OptionsDefaults::GeneralSettings::colorSchemeIndex);
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -1689,6 +1699,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->remove("enableCRMLSupport");
   } else {
     mpSettings->setValue("enableCRMLSupport", enableCRMLSupport);
+  }
+  // save color scheme. It is applied at startup, see OMEditApplication.
+  int colorSchemeIndex = mpGeneralSettingsPage->getColorSchemeComboBox()->itemData(mpGeneralSettingsPage->getColorSchemeComboBox()->currentIndex()).toInt();
+  if (colorSchemeIndex == OptionsDefaults::GeneralSettings::colorSchemeIndex) {
+    mpSettings->remove("colorScheme");
+  } else {
+    mpSettings->setValue("colorScheme", colorSchemeIndex);
   }
   // save library icon size
   int libraryIconSize = mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value();
@@ -3718,6 +3735,14 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // Enable CRML support
   mpEnableCRMLSupportCheckBox = new QCheckBox(tr("Enable CRML Support *"));
   mpEnableCRMLSupportCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
+  // color scheme
+  mpColorSchemeLabel = new Label(tr("Color Scheme: *"));
+  mpColorSchemeComboBox = new ComboBox;
+  mpColorSchemeComboBox->addItem(tr("System"), GeneralSettingsPage::SystemColorScheme);
+  mpColorSchemeComboBox->addItem(tr("Light"), GeneralSettingsPage::LightColorScheme);
+  mpColorSchemeComboBox->addItem(tr("Dark"), GeneralSettingsPage::DarkColorScheme);
+  mpColorSchemeComboBox->setCurrentIndex(OptionsDefaults::GeneralSettings::colorSchemeIndex);
+  mpColorSchemeComboBox->setToolTip(tr("System follows the operating system color scheme. The --DarkMode command line option overrides this setting."));
   // set the layout of general settings group
   QGridLayout *pGeneralSettingsLayout = new QGridLayout;
   pGeneralSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3741,6 +3766,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpEnableInstanceApiNoJsonCheckBox, 10, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 11, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpColorSchemeLabel, 12, 0);
+  pGeneralSettingsLayout->addWidget(mpColorSchemeComboBox, 12, 1, 1, 2);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Library Browser group box
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));

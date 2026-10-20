@@ -424,6 +424,7 @@ algorithm
     end if;
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.jacobianOffsets, {});
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       SimCodeUtil.dumpSimCodeDebug(oldSimCode);
@@ -760,13 +761,18 @@ algorithm
       // surfaces (getErrorString / OMEdit) instead of a later "no prepared model".
       CodegenWasmJit.translateModel(simCode);
       // The wasm module carries its own metadata; *_init.xml is only read by
-      // OMEdit's variable browser and *_info.json only for debugging.
+      // OMEdit's variable browser and *_info.json only by its transformational
+      // debugger, so the latter is written only when debugging is asked for
+      // (OMEdit passes -d=infoXmlOperations when Generate Operations is on).
       if Flags.isSet(Flags.OMEDIT) then
         guid := System.getUUIDStr();
         SerializeInitXML.simulationInitFile(simCode, guid);
       end if;
       if Flags.isSet(Flags.INFO_XML_OPERATIONS) then
         SerializeModelInfo.serialize(simCode, true);
+      elseif System.regularFileExists(simCode.fileNamePrefix + "_info.json") then
+        // a previous run's, which would describe another translation
+        System.removeFile(simCode.fileNamePrefix + "_info.json");
       end if;
     then ();
 
@@ -1198,7 +1204,7 @@ algorithm
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
 
-        // --simCodeTarget=C: libSimulationRuntimeRust replaces everything
+        // --simCodeTarget=C+Rust: libSimulationRuntimeRust replaces everything
         // libSimulationRuntimeC provided, the solvers included, so the FMU only
         // compiles the libOpenModelicaRuntimeC half from C. The headers are the
         // same either way -- the generated code and the FMI interface include
@@ -1441,7 +1447,7 @@ algorithm
         end if;
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
-        // --simCodeTarget=C: name the installed archive, which is what this
+        // --simCodeTarget=C+Rust: name the installed archive, which is what this
         // installation builds the FMU against. Rebuilding the FMU elsewhere finds
         // no such file and falls back to the crates under sources/rust.
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@OMC_RUST_SIMULATION_RUNTIME@", if rustRuntime then "ON" else "OFF");
@@ -2495,6 +2501,7 @@ algorithm
     end if;
 
     setGlobalRoot(Global.timeIndependentVars, NONE());
+    setGlobalRoot(Global.jacobianOffsets, {});
     simCode := SimCode.SIMCODE(
       modelInfo                   = modelInfo,
       literals                    = {},               // Set by the traversal below...
@@ -2611,7 +2618,7 @@ algorithm
 end copyFiles;
 
 public function copyFmuRustSources
-  "The Rust half of a `--simCodeTarget=C` source FMU: the crates
+  "The Rust half of a `--simCodeTarget=C+Rust` source FMU: the crates
    libSimulationRuntimeRust is built from, so the FMU rebuilds where OpenModelica
    is not installed.
 
@@ -2625,7 +2632,7 @@ protected
 algorithm
   rust_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_rust_sources_dir;
   if not System.directoryExists(rust_sources_dir) then
-    Error.addCompilerWarning("--fmiSources asked for the sources of a --simCodeTarget=C FMU, but "
+    Error.addCompilerWarning("--fmiSources asked for the sources of a --simCodeTarget=C+Rust FMU, but "
       + rust_sources_dir + " does not exist. The FMU carries its C sources only and cannot be rebuilt.");
     return;
   end if;

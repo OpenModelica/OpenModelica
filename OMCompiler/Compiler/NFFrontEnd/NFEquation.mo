@@ -77,7 +77,7 @@ public
       list<Equation> eql;
     algorithm
       branch := match branch
-        case Branch.BRANCH()
+        case BRANCH()
           algorithm
             cond := func(branch.condition);
 
@@ -87,9 +87,9 @@ public
               eql := branch.body;
             end if;
           then
-            Branch.BRANCH(cond, branch.conditionVar, eql);
+            BRANCH(cond, branch.conditionVar, eql);
 
-        case Branch.INVALID_BRANCH()
+        case INVALID_BRANCH()
           algorithm
             // The body of an invalid branch might not be safe to traverse, but
             // the condition still needs to be valid and should be traversed.
@@ -100,6 +100,22 @@ public
         else branch;
       end match;
     end mapExp;
+
+    function contains
+      input Branch branch;
+      input PredFn func;
+      output Boolean res;
+
+      partial function PredFn
+        input Equation eq;
+        output Boolean res;
+      end PredFn;
+    algorithm
+      res := match branch
+        case BRANCH() then containsList(branch.body, func);
+        case INVALID_BRANCH() then contains(branch.branch, func);
+      end match;
+    end contains;
 
     function isEmpty
       input Branch branch;
@@ -1006,18 +1022,10 @@ public
       case IF()
         algorithm
           for b in eq.branches loop
-            () := match b
-              case Branch.BRANCH()
-                algorithm
-                  if containsList(b.body, func) then
-                    res := true;
-                    return;
-                  end if;
-                then
-                  ();
-
-              else ();
-            end match;
+            if Branch.contains(b, func) then
+              res := true;
+              return;
+            end if;
           end for;
         then
           false;
@@ -1025,18 +1033,10 @@ public
       case WHEN()
         algorithm
           for b in eq.branches loop
-            () := match b
-              case Branch.BRANCH()
-                algorithm
-                  if containsList(b.body, func) then
-                    res := true;
-                    return;
-                  end if;
-                then
-                  ();
-
-              else ();
-            end match;
+            if Branch.contains(b, func) then
+              res := true;
+              return;
+            end if;
           end for;
         then
           false;
@@ -1198,7 +1198,8 @@ public
   end isConnect;
 
   function isConnection
-    "Checks if an equation is a connect equation or a Connections.* call."
+    "Checks if an equation is a connect equation or one of the Connections.*
+     calls that define the connection graph."
     input Equation eq;
     output Boolean res;
   protected
@@ -1207,7 +1208,7 @@ public
     res := match eq
       case Equation.CONNECT() then true;
       case Equation.NORETCALL(exp = Expression.CALL(call = call))
-        then Call.isConnectionsOperator(call);
+        then Call.isConnectionGraphDefinition(call);
       else false;
     end match;
   end isConnection;

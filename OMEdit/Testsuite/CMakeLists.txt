@@ -58,6 +58,10 @@ set(OMEDIT_TEST_CHOICESENUMERATION_SOURCES ChoicesEnumeration/ChoicesEnumeration
                                            ChoicesEnumeration/ChoicesEnumerationTest.h)
 add_omedit_test(ChoicesEnumeration "${OMEDIT_TEST_CHOICESENUMERATION_SOURCES}")
 
+set(OMEDIT_TEST_CONDITIONALCOMPONENT_SOURCES ConditionalComponent/ConditionalComponentTest.cpp
+                                                   ConditionalComponent/ConditionalComponentTest.h)
+add_omedit_test(ConditionalComponent "${OMEDIT_TEST_CONDITIONALCOMPONENT_SOURCES}")
+
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")
@@ -116,6 +120,10 @@ add_omedit_test(PlotAnnotation "${OMEDIT_TEST_PLOTANNOTATION_SOURCES}")
 set(OMEDIT_TEST_RECENTMODELS_SOURCES RecentModels/RecentModelsTest.cpp
                                      RecentModels/RecentModelsTest.h)
 add_omedit_test(RecentModels "${OMEDIT_TEST_RECENTMODELS_SOURCES}")
+
+set(OMEDIT_TEST_DOCUMENTATION_SOURCES Documentation/DocumentationViewerTest.cpp
+                                       Documentation/DocumentationViewerTest.h)
+add_omedit_test(DocumentationViewer "${OMEDIT_TEST_DOCUMENTATION_SOURCES}")
 
 set(OMEDIT_TEST_OUTERPARAMETERDIALOG_SOURCES OuterParameterDialog/OuterParameterDialogTest.cpp
                                             OuterParameterDialog/OuterParameterDialogTest.h)

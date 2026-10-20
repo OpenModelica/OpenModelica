@@ -276,6 +276,12 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     """)
+    bat (label: 'Sanity check - C+Rust', script: """
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      set PATH=%PATH%;${WORKSPACE}\\${installDir}\\bin
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=C+Rust"
+    """)
     bat (label: 'Sanity check - Cpp', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
@@ -292,6 +298,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
     """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
+    sh label: 'Sanity check - C+Rust', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=C+Rust"
     if (buildCpp) {
       sh label: 'Sanity check - Cpp', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     }
@@ -1229,8 +1236,8 @@ void partestRust(String simCodeTarget, partition, partitionmodulo) {
   // wasm: off everywhere else - these tests select the wasm-jit/wasm target
   // themselves, which only this build has.
   // hdf5: the CMake build this stage uses links the system HDF5, so MAT v7.3
-  // works.
-  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5'
+  // works. gbode: disabled in the Rust simulation runtime.
+  String suites = '-cpp,-hpcom,-metamodelica,-63bit,-antlr,-stackoverflow,+wasm,+hdf5,-gbode'
   // cSources/fmuCSources inspect generated C, which a wasm target does not write.
   // nativeSharedLib links a native shared library, which a wasm target cannot load.
   if (isWasmTarget) {
@@ -1543,7 +1550,7 @@ Map evaluateBuildFlags() {
 // under Groovy's 64kB method-size limit.
 // ----------------------------------------------------------------------------
 
-// The jammy CMake build of omc. Its install tree is what the testsuite-gcc
+// The noble CMake build of omc. Its install tree is what the testsuite-gcc
 // stages run against (ctestStashed), so keep the flags in sync with what
 // those tests need. Built with -DOM_ENABLE_COVERAGE=ON so those stages'
 // coverage numbers (see coverageReportStage()) come from the same run that
@@ -1652,21 +1659,28 @@ void checks() {
   stash name: 'bibliography', includes: 'doc/bibliography/openmodelica.org-bibgen/*.md'
 }
 
-// The suites the gcc and clang testsuite shards run. Both are CMake builds,
-// which link the system HDF5 (MAT v7.3) and have libomc_result, so they select
-// the same tests. Partitioning is computed over these; see -partition-suites in
-// testsuite/partest/runtests.pl.
+// The suites the gcc testsuite shards run. The CMake build links the system
+// HDF5 (MAT v7.3). Partitioning is computed over these; see -partition-suites
+// in testsuite/partest/runtests.pl.
 String sharedTestSuites() {
   return '+hdf5'
 }
 
+// The clang shards run --simCodeTarget=C+Rust, which does not change the C++
+// runtime, so its tests run in the gcc shards only. fmuCSources expects the
+// sources of a C FMU. The Rust runtime has gbode disabled.
+String rustRuntimeTestSuites() {
+  return "${sharedTestSuites()},-cpp,-fmuCSources,-gbode"
+}
+
 // A partest shard against a stashed CMake install tree (see buildClangOMC).
-void partestStashed(stashName, partition, partitionmodulo) {
+void partestStashed(stashName, partition, partitionmodulo, String simCodeTarget = '', String suites = sharedTestSuites()) {
   standardSetup()
   unstash stashName
   makeLibsAndCache()
+  String simCodeTargetArg = simCodeTarget ? " -simCodeTarget=${simCodeTarget}" : ''
   partest(partition, partitionmodulo, true,
-          "-suites=${sharedTestSuites()} -partition-suites=${sharedTestSuites()}")
+          "-suites=${suites} -partition-suites=${suites}${simCodeTargetArg}")
 }
 
 // A CTest-driven testsuite shard against a stashed CMake install tree (see
@@ -1773,7 +1787,7 @@ void coverageReportStage(int shardCount) {
   // gcov and gcov-tool have to be the ones that match the compiler the data
   // was produced with, which is this image's; the testsuite caches are of no
   // use here because this stage runs no tests.
-  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-22.04', extraMounts) {
+  insideTestImage('docker.openmodelica.org/build-deps:ubuntu-24.04', extraMounts) {
     sh """#!/bin/bash -xe
     # Fails the stage right here if the mount above did not take effect,
     # rather than further down with an empty report.
@@ -1846,7 +1860,7 @@ void testWindowsSmoke() {
 
 // The C omc cross-compiled to Windows (MSVC) with the Rust nightly's win64
 // toolchain. A cross build cannot run bomc, so it compiles the C that
-// 'cmake-jammy-gcc' translated for MSVC.
+// 'noble-gcc' translated for MSVC.
 void crossBuildOMCWindows() {
   Map t = nightlyTarget('win64')
   standardSetup()
@@ -1886,7 +1900,7 @@ void testWindowsSmokeWine(String installDir) {
 }
 
 void crossBuildFMU() {
-  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-22.04')
+  def deps = docker.image('docker.openmodelica.org/build-deps:ubuntu-24.04')
   deps.pull()
   def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
   deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +

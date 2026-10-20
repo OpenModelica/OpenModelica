@@ -93,8 +93,8 @@ void sundialsErrorHandlerFunction(int line, const char *func, const char *file,
 void kinsolErrorHandlerFunction(int line, const char *func, const char *file,
                                 const char *msg, SUNErrCode err_code,
                                 void *err_user_data, SUNContext sunctx);
-void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel);
 #endif /* OMC_FMI_RUNTIME */
+void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel);
 #endif /* WITH_SUNDIALS */
 
 #ifdef __cplusplus

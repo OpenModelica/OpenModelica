@@ -54,9 +54,42 @@
 
 #include <QtMath>
 #include <QFontMetrics>
+#include <QMouseEvent>
 #include <QResizeEvent>
+#include <QChildEvent>
+#include <QRubberBand>
 
 namespace OMPlot{
+
+/*! Returns a mouse event's global position across supported Qt versions.
+ * Qt 6 replaced QMouseEvent::globalPos() with globalPosition().
+ * \param event Mouse event to read.
+ * \return Event position in global coordinates.
+ */
+static QPoint mouseGlobalPosition(const QMouseEvent *event)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  return event->globalPosition().toPoint();
+#else
+  return event->globalPos();
+#endif
+}
+
+/*! Maps a global position into the canvas and bounds it to valid canvas pixels.
+ * Axis-originated events can lie outside the canvas, but Qwt's zoomer maps its
+ * input positions through the canvas coordinate system.
+ * \param canvas Plot canvas receiving the zoom selection.
+ * \param globalPosition Position to map.
+ * \return Clamped position in canvas coordinates.
+ */
+static QPoint clampedCanvasPosition(QWidget *canvas, const QPoint &globalPosition)
+{
+  QPoint position = canvas->mapFromGlobal(globalPosition);
+  const QRect rect = canvas->rect();
+  position.setX(qBound(rect.left(), position.x(), qMax(rect.left(), rect.right())));
+  position.setY(qBound(rect.top(), position.y(), qMax(rect.top(), rect.bottom())));
+  return position;
+}
 
 Plot::Plot(PlotWindow *pParent)
   : QwtPlot(pParent)
@@ -86,6 +119,12 @@ Plot::Plot(PlotWindow *pParent)
   setAxisScaleDraw(QwtPlot::yRight, mpYRightScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
+  // Qwt's rubber band is confined to the canvas; this transparent overlay also
+  // shows the drag preview over axes and other plot areas outside the canvas.
+  mpZoomRubberBand = new QRubberBand(QRubberBand::Rectangle, this);
+  mpZoomRubberBand->setAttribute(Qt::WA_TransparentForMouseEvents);
+  mpZoomRubberBand->setAttribute(Qt::WA_NoSystemBackground);
+  mpZoomRubberBand->hide();
   // create an instance of panner
   mpPlotPanner = new PlotPanner(canvas(), this);
   // create an instance of picker
@@ -103,16 +142,24 @@ Plot::Plot(PlotWindow *pParent)
 #endif
   setCanvasBackground(OMPlot::isDarkMode() ? palette().color(QPalette::Base) : QColor(Qt::white));
   setContentsMargins(10, 10, 10, 10);
-#if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
+  // No gap between axis backbone and canvas
+  // Zeroing the margins makes the canvas and scale widgets flush. At a fractional device
+  // pixel ratio (e.g. 125%) Qt rounds every widget's device rect independently, so the
+  // boundary seam can move by one device pixel during a resize and the opaque canvas
+  // intermittently covers the axis backbone. ScaleDraw::drawBackbone() compensates for this
+  // by insetting the backbone one device pixel into the scale widget when dpr != 1.0.
   for (int i = 0; i < QwtPlot::axisCnt; i++) {
     QwtScaleWidget *pScaleWidget = axisWidget(i);
     if (pScaleWidget) {
+      pScaleWidget->setContentsMargins(0, 0, 0, 0);
       pScaleWidget->setMargin(0);
+      pScaleWidget->setBorderDist(0, 0);
     }
   }
+  // Remove the plot layout's own margins from all axes
+  plotLayout()->setCanvasMargin(0);
   plotLayout()->setAlignCanvasToScales(true);
-#endif
   // Use monospaced font for better readability.
   QFont monospaceFont("Monospace");
   monospaceFont.setStyleHint(QFont::TypeWriter);
@@ -127,9 +174,126 @@ Plot::Plot(PlotWindow *pParent)
   QwtText rightTitle = axisTitle(QwtPlot::yRight);
   rightTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::yRight, rightTitle);
+  // Observe the plot itself and its non-canvas children so a drag can start anywhere.
+  installEventFilter(this);
+  installZoomEventFilters(this);
   // fill colors list
   fillColorsList();
   setAutoReplot(true);
+}
+
+/*! Captures zoom gestures begun outside the canvas and forwards them to Qwt.
+ * The visible selection is drawn in plot coordinates; synthetic events sent to
+ * Qwt are clamped to canvas coordinates so axis labels do not enter the zoom range.
+ * Newly added child widgets are also watched, while native canvas gestures remain
+ * under Qwt's own event handling.
+ * \param object Object receiving the original event.
+ * \param event Event delivered by Qt.
+ * \return The result from QwtPlot::eventFilter.
+ */
+bool Plot::eventFilter(QObject *object, QEvent *event)
+{
+  if (!canvas()) {
+    return QwtPlot::eventFilter(object, event);
+  }
+
+  if (event->type() == QEvent::ChildAdded) {
+    QObject *child = static_cast<QChildEvent*>(event)->child();
+    if (QWidget *childWidget = qobject_cast<QWidget*>(child)) {
+      if (childWidget != canvas()) {
+        // Plot layout widgets may be created after construction; include their
+        // descendants so drags begun on them are handled consistently.
+        childWidget->installEventFilter(this);
+        installZoomEventFilters(childWidget);
+      }
+    }
+  } else if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    if (mouseEvent->button() == Qt::LeftButton) {
+      startZoomFromGlobalPosition(mouseGlobalPosition(mouseEvent), mouseEvent->modifiers());
+    }
+  } else if (event->type() == QEvent::MouseMove && mZoomingFromOutsideCanvas) {
+    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    updateZoomFromGlobalPosition(mouseGlobalPosition(mouseEvent), mouseEvent->buttons(), mouseEvent->modifiers());
+  } else if (event->type() == QEvent::MouseButtonRelease && mZoomingFromOutsideCanvas) {
+    QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+    if (mouseEvent->button() == Qt::LeftButton) {
+      finishZoomFromGlobalPosition(mouseGlobalPosition(mouseEvent), mouseEvent->buttons(), mouseEvent->modifiers());
+    }
+  }
+
+  return QwtPlot::eventFilter(object, event);
+}
+
+/*! Installs this plot's event filter on existing non-canvas descendants.
+ * The canvas is deliberately excluded because Qwt already handles gestures there.
+ * \param widget Parent whose direct child widgets should be watched recursively.
+ */
+void Plot::installZoomEventFilters(QWidget *widget)
+{
+  const QList<QWidget*> children = widget->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+  for (QWidget *child : children) {
+    if (child == canvas()) {
+      continue;
+    }
+    child->installEventFilter(this);
+    installZoomEventFilters(child);
+  }
+}
+
+/*! Starts a zoom drag from a position outside the canvas.
+ * \param globalPosition Mouse press position in global coordinates.
+ * \param modifiers Keyboard modifiers held during the press.
+ */
+void Plot::startZoomFromGlobalPosition(const QPoint &globalPosition, Qt::KeyboardModifiers modifiers)
+{
+  if (mZoomingFromOutsideCanvas || !mpPlotZoomer->isEnabled()) {
+    return;
+  }
+
+  mZoomStartPosition = mapFromGlobal(globalPosition);
+  // Draw our plot-wide preview instead of Qwt's canvas-only rubber band.
+  mpPlotZoomer->setRubberBand(QwtPicker::NoRubberBand);
+  QMouseEvent pressEvent(QEvent::MouseButtonPress, clampedCanvasPosition(canvas(), globalPosition),
+                         Qt::LeftButton, Qt::LeftButton, modifiers);
+  mpPlotZoomer->handleMouseEvent(&pressEvent);
+  mZoomingFromOutsideCanvas = true;
+  mpZoomRubberBand->setGeometry(QRect(mZoomStartPosition, QSize(1, 1)));
+  mpZoomRubberBand->raise();
+  mpZoomRubberBand->show();
+}
+
+/*! Updates the plot-wide preview and forwards a bounded move to Qwt.
+ * \param globalPosition Current mouse position in global coordinates.
+ * \param buttons Mouse buttons currently held.
+ * \param modifiers Keyboard modifiers currently held.
+ */
+void Plot::updateZoomFromGlobalPosition(const QPoint &globalPosition, Qt::MouseButtons buttons,
+                                       Qt::KeyboardModifiers modifiers)
+{
+  const QPoint position = mapFromGlobal(globalPosition);
+  mpZoomRubberBand->setGeometry(QRect(mZoomStartPosition, position).normalized());
+  mpZoomRubberBand->raise();
+  QMouseEvent moveEvent(QEvent::MouseMove, clampedCanvasPosition(canvas(), globalPosition),
+                        Qt::NoButton, buttons, modifiers);
+  mpPlotZoomer->handleMouseEvent(&moveEvent);
+}
+
+/*! Completes the Qwt zoom selection and removes the temporary preview.
+ * \param globalPosition Mouse release position in global coordinates.
+ * \param buttons Mouse buttons still held at release.
+ * \param modifiers Keyboard modifiers held at release.
+ */
+void Plot::finishZoomFromGlobalPosition(const QPoint &globalPosition, Qt::MouseButtons buttons,
+                                        Qt::KeyboardModifiers modifiers)
+{
+  QMouseEvent releaseEvent(QEvent::MouseButtonRelease, clampedCanvasPosition(canvas(), globalPosition),
+                           Qt::LeftButton, buttons, modifiers);
+  mpPlotZoomer->handleMouseEvent(&releaseEvent);
+  // Restore Qwt's normal rubber band for subsequent drags that start on the canvas.
+  mpPlotZoomer->setRubberBand(QwtPicker::RectRubberBand);
+  mpZoomRubberBand->hide();
+  mZoomingFromOutsideCanvas = false;
 }
 
 Plot::~Plot()
@@ -211,7 +375,9 @@ void Plot::addPlotCurve(PlotCurve *pCurve)
 void Plot::removeCurve(PlotCurve *pCurve)
 {
   mPlotCurvesList.removeOne(pCurve);
-  pCurve->getPointMarker()->setVisible(false);
+  if (pCurve->getPointMarker()) {
+    pCurve->getPointMarker()->setVisible(false);
+  }
 }
 
 QColor Plot::getUniqueColor(int index, int total)
@@ -222,7 +388,7 @@ QColor Plot::getUniqueColor(int index, int total)
     return mColorsList.at(index);
 }
 
-void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, 
+void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
                         double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                         double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize)
 {

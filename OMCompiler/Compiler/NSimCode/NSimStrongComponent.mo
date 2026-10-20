@@ -779,6 +779,30 @@ public
       end match;
     end blockSource;
 
+    function isNumericJacobian
+      input BackendDAE jac;
+      output Boolean b;
+    algorithm
+      b := match jac
+        case BackendDAE.JACOBIAN() then arrayEmpty(jac.comps);
+        else false;
+      end match;
+    end isNumericJacobian;
+
+    function solvesConstant
+      "true if the strong component solves a constant variable"
+      input StrongComponent comp;
+      output Boolean b;
+    algorithm
+      b := match comp
+        case StrongComponent.SINGLE_COMPONENT() then BVariable.isConst(comp.var);
+        case StrongComponent.SLICED_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        case StrongComponent.RESIZABLE_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        case StrongComponent.GENERIC_COMPONENT() then BVariable.isConst(Slice.getT(comp.var));
+        else false;
+      end match;
+    end solvesConstant;
+
     function jacobianHasGenericLoopCalls
       "True if this Jacobian's per-column evaluation uses generic for-loop/array calls."
       input SimJacobian jac;
@@ -837,6 +861,14 @@ public
           list<Integer> call_order = {};
           Identifier ident;
           list<SimIterator> iters;
+
+        // constants are known, an equation that solves one (e.g. a constant record field
+        // in the initial system) has nothing to compute
+        case _ guard(solvesConstant(comp)) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, {Statement.ASSERT(Expression.BOOLEAN(true), Expression.STRING(""),
+            NFBuiltin.ASSERTIONLEVEL_ERROR, DAE.emptyElementSource)}, EquationAttributes.default(EquationKind.CONTINUOUS, false));
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then (tmp, getIndex(tmp));
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);
@@ -969,7 +1001,8 @@ public
             end if;
           end for;
 
-          if isSome(strict.jac) then
+          // a jacobian without equations is the numeric fallback, the runtime differentiates numerically
+          if isSome(strict.jac) and not isNumericJacobian(Util.getOption(strict.jac)) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
@@ -1199,6 +1232,14 @@ public
 
         case (BEquation.SCALAR_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
           tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, eqn.rhs, eqn.source, eqn.attr);
+          simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        // external object arrays have no array representation in C, assign them element-wise
+        case (BEquation.ARRAY_EQUATION(lhs = Expression.CREF(), rhs = Expression.CREF()), NBSolve.Status.EXPLICIT)
+          guard(Type.isExternalObject(Type.arrayElementType(eqn.ty))) algorithm
+          tmp := ALGORITHM(simCodeIndices.equationIndex, list(Statement.ASSIGNMENT(Expression.fromCref(l), Expression.fromCref(r), Type.arrayElementType(eqn.ty), eqn.source)
+            threaded for l in ComponentRef.scalarizeAll(Expression.toCref(eqn.lhs), false), r in ComponentRef.scalarizeAll(Expression.toCref(eqn.rhs), false)), eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 

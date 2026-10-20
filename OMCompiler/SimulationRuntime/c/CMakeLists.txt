@@ -117,8 +117,8 @@ install(TARGETS OpenModelicaRuntimeC
 
 
 # ######################################################################################################################
-# Library: SimulationRuntimeC (--simCodeTarget=C.old). The subdirectories install
-# their headers either way; the code --simCodeTarget=C generates includes them too.
+# Library: SimulationRuntimeC (--simCodeTarget=C). The subdirectories install
+# their headers either way; the code --simCodeTarget=C+Rust generates includes them too.
 
 add_subdirectory(dataReconciliation)
 add_subdirectory(linearization)
@@ -131,7 +131,7 @@ if(OM_OMC_ENABLE_OPTIMIZATION)
 endif()
 add_subdirectory(simulation)
 
-if(OM_OMC_ENABLE_C_OLD_RUNTIME)
+if(OM_OMC_ENABLE_C_RUNTIME)
   add_library(SimulationRuntimeC SHARED)
   add_library(omc::simrt::simruntime ALIAS SimulationRuntimeC)
 
@@ -196,7 +196,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRE
 # Build with target "ctestsuite-depends"
 # Run test with ctest
 # They live in testsuite/, so they follow OM_ENABLE_TESTSUITE (see the top-level CMakeLists.txt).
-if(OM_ENABLE_TESTSUITE AND OM_OMC_ENABLE_C_OLD_RUNTIME)
+if(OM_ENABLE_TESTSUITE AND OM_OMC_ENABLE_C_RUNTIME)
   add_subdirectory(
     ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
     ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c

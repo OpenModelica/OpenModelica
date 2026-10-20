@@ -211,20 +211,21 @@ protected constant list<tuple<String,Values.Value>> zeroBuildPhaseResultValues =
     ("timeFrontend",   Values.REAL(0.0))
   };
 
-protected constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
-protected constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
-protected constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
-protected constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
-protected constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
-protected constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
-protected constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
-protected constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
-protected constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
-protected constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
-protected constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
-protected constant DAE.Exp defaultSimflags          = DAE.SCONST("")      "default simulation flags";
+protected
+constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)      "default startTime";
+constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)       "default stopTime";
+constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)       "default numberOfIntervals";
+constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)       "default stepSize";
+constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)       "default tolerance";
+constant DAE.Exp defaultMethod            = DAE.SCONST("dassl")          "default method";
+constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("") "default fileNamePrefix";
+constant DAE.Exp defaultOptions           = DAE.SCONST("")         "default options";
+constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
+constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*") "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
+constant DAE.Exp defaultCflags            = DAE.SCONST("")         "default compiler flags";
+constant DAE.Exp defaultSimflags          = DAE.SCONST("")       "default simulation flags";
 
-protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
+constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
   InteractiveTypes.SIMULATION_OPTIONS(
     defaultStartTime,
     defaultStopTime,
@@ -240,7 +241,7 @@ protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
     defaultSimflags
     ) "default simulation options";
 
-protected constant list<String> simulationOptionsNames =
+constant list<String> simulationOptionsNames =
   {
     "startTime",
     "stopTime",
@@ -427,6 +428,7 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
   input Option<InteractiveTypes.SimulationOptions> defaultOption;
+  input Boolean optimization = false "true for optimize(), which defaults to the optimization method";
   output InteractiveTypes.SimulationOptions outSimOpt;
 algorithm
   outSimOpt := matchcontinue defaultOption
@@ -440,7 +442,7 @@ algorithm
     case _
       algorithm
         loadProgram(inModelPath);
-        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
+        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix, optimization));
 
         experiment_ann := InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
 
@@ -465,20 +467,43 @@ algorithm
     // if we fail, just use the defaults
     else
       algorithm
-        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix, optimization);
       then defaults;
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
+protected function setOptimizationFlags
+  "Sets the flags needed to build a dynamic optimization problem (optimize, moo)
+   and returns their previous values, to be given to restoreOptimizationFlags."
+  output Boolean symbolicLinearization = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
+  output Integer grammar = Flags.getConfigEnum(Flags.GRAMMAR);
+  output Boolean dynOptimization = Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+algorithm
+  FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
+  FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+  FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, true);
+end setOptimizationFlags;
+
+protected function restoreOptimizationFlags
+  input Boolean symbolicLinearization;
+  input Integer grammar;
+  input Boolean dynOptimization;
+algorithm
+  FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicLinearization);
+  FlagsUtil.setConfigEnum(Flags.GRAMMAR, grammar);
+  FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM, dynOptimization);
+end restoreOptimizationFlags;
+
 protected function setFileNamePrefixInSimulationOptions
   input  InteractiveTypes.SimulationOptions inSimOpt;
   input  String inFileNamePrefix;
+  input  Boolean optimization = false;
   output InteractiveTypes.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, options, outputFormat, variableFilter, cflags, simflags;
   Boolean UseOtimica;
 algorithm
-  UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
+  UseOtimica := optimization or Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
   InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
@@ -705,6 +730,8 @@ algorithm
       list<String> strs,strs1,strs2;
       Real timeTotal,timeSimulation,linearizeTime,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, lineEndingIsCRLF;
+      Boolean symLinFlag, dynOptFlag;
+      Integer grammarFlag;
       list<tuple<String,Values.Value>> resultValues;
       list<Values.Value> cvars;
       list<Absyn.Path> paths;
@@ -1428,89 +1455,11 @@ algorithm
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+    case ("simulate", vals)
       algorithm
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-
-        // resimulateExecutable is the last (new) argument; pull it off so the rest
-        // of the pipeline sees the original simulate() argument list.
-        resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
-        vals := List.stripLast(vals);
-
-        if resimulateExecutable <> "" then
-          // Skip translation and build; simulate the already-built model directly.
-          b := true;
-          executable := resimulateExecutable;
-          compileDir := System.pwd() + Autoconf.pathDelimiter;
-          simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
-          resultValues := zeroBuildPhaseResultValues;
-        else
-          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
-        end if;
-
-        if b then
-           exeDir := compileDir;
-           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
-           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
-           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            // result file might have been set by simflags (-r ...)
-
-           result_file := selectResultFile(result_file, simflags);
-
-           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-           logFile := stringAppend(executable,".log");
-           // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
-           // we should really have different log files for simulation/compilation!
-           // as the buildModel log file will be deleted here and that gives less information to the user!
-           if System.regularFileExists(logFile) then
-             0 := System.removeFile(logFile);
-           end if;
-           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-
-           // The wasm-jit target runs the JIT-compiled model in-process and
-           // writes the result file directly, instead of spawning an executable;
-           // the wasm target runs the standalone module in a wasmtime subprocess.
-           if Config.simCodeTarget() == "wasm-jit" then
-             resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
-           elseif Config.simCodeTarget() == "wasm" then
-             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
-           else
-             resI := System.systemCallRestrictedEnv(sim_call, logFile);
-           end if;
-
-           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-
-         else
-           result_file := "";
-           resI := 1;
-           timeSimulation := 0.0;
-           logFile := "";
-         end if;
-
-        timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-
-        (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+        (outCache, outValue) := simulate(vals, inCache, inEnv, msg);
       then
-        simValue;
-
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      algorithm
-        Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        str := AbsynUtil.pathString(className);
-        res := "Failed to build model: " + str;
-      then
-        createSimulationResultFailure(res, simOptionsAsString(List.stripLast(vals)));
-
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      algorithm
-        str := AbsynUtil.pathString(className);
-      then
-        createSimulationResultFailure(
-          "Simulation failed for model: " + str +
-          "\nEnvironment variable OPENMODELICAHOME not set.",
-          simOptionsAsString(List.stripLast(vals)));
+        outValue;
 
     case ("moveClass", {Values.CODE(Absyn.C_TYPENAME(className)),
                         Values.INTEGER(direction)})
@@ -1575,12 +1524,14 @@ algorithm
         if b then
           Values.REAL(linearizeTime) := getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           if System.regularFileExists(logFile) then
             0 := System.removeFile(logFile);
           end if;
           strlinearizeTime := realString(linearizeTime);
-          simflags := "-l=" + strlinearizeTime + " " + simflags;
+          if not List.any(System.strtok(simflags, " "), isLinearizeTimeFlag) then
+            simflags := "-l=" + strlinearizeTime + " " + simflags;
+          end if;
           sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
@@ -1588,7 +1539,7 @@ algorithm
           // The wasm-jit target runs the JIT-compiled model in-process, as `simulate` does.
           if Config.simCodeTarget() == "wasm-jit" then
             result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           else
             resI := System.systemCallRestrictedEnv(sim_call, logFile);
           end if;
@@ -1635,18 +1586,23 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
-
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        // the optimization flags are only needed to build the model, restore them so that
+        // they do not leak into later simulate() calls
+        (symLinFlag, grammarFlag, dynOptFlag) := setOptimizationFlags();
+        try
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        else
+          restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
+          fail();
+        end try;
+        restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
         if b then
           exeDir:=compileDir;
           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
           result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile := stringAppend(executable,".log");
+          logFile := simulationLogFile(executable, simflags);
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
           // as the buildModel log file will be deleted here and that gives less information to the user!
@@ -1659,7 +1615,7 @@ algorithm
           // As in the simulate() case: the wasm-jit target runs the JIT-compiled
           // model in-process instead of spawning an executable.
           if Config.simCodeTarget() == "wasm-jit" then
-            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+            resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
           elseif Config.simCodeTarget() == "wasm" then
             resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
           else
@@ -1694,11 +1650,16 @@ algorithm
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
-
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        // the optimization flags are only needed to build the model, restore them so that
+        // they do not leak into later simulate() calls
+        (symLinFlag, grammarFlag, dynOptFlag) := setOptimizationFlags();
+        try
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
+        else
+          restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
+          fail();
+        end try;
+        restoreOptimizationFlags(symLinFlag, grammarFlag, dynOptFlag);
         simflags := stringAppend(simflags, " -moo");
         if b then
           exeDir:=compileDir;
@@ -3385,6 +3346,9 @@ algorithm
     case ("getNthComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponentCondition(classpath, n, SymbolTable.getAbsyn());
 
+    case ("getComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getComponentCondition(classpath, path, SymbolTable.getAbsyn());
+
     case ("getInheritanceCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
@@ -3471,6 +3435,13 @@ algorithm
     case ("setComponentComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
       algorithm
         (p, b) := Interactive.setComponentComment(classpath, path, str, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesMake.makeBoolean(b);
+
+    case ("setComponentCondition", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      algorithm
+        (p, b) := Interactive.setComponentCondition(classpath, path, str, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         ValuesMake.makeBoolean(b);
@@ -4154,6 +4125,11 @@ algorithm
       print(System.readFile(logfile) +"\n");
   end if;
 end runDockerCmd;
+
+protected function isLinearizeTimeFlag
+  input String flag;
+  output Boolean isLinearizeTime = flag == "-l" or StringUtil.startsWith(flag, "-l=");
+end isLinearizeTimeFlag;
 
 protected function isDockerPlatform
   input String platform;
@@ -5046,7 +5022,7 @@ algorithm
         (cache, outSimSettings);
     else
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScriptBackend.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
       then
         fail();
   end match;
@@ -9832,6 +9808,30 @@ algorithm
   end try;
 end selectResultFile;
 
+function simulationLogFile
+  "A wasm-jit run has omc's cwd, which OMEdit keeps in the user's working
+   directory as for an executable, so its log follows -outputPath."
+  input String executable;
+  input String simflags;
+  output String logFile = executable + ".log";
+protected
+  Integer nm;
+  String dir = "";
+algorithm
+  if Config.simCodeTarget() <> "wasm-jit" then
+    return;
+  end if;
+  try
+    (nm, {_, dir}) := System.regex(simflags, "-outputPath[= ]+(\"[^\"]*\"|'[^']*'|[^ ]*)", 2, true);
+  else
+    nm := 0;
+  end try;
+  dir := System.trim(dir, "\"'");
+  if nm == 2 and dir <> "" then
+    logFile := dir + "/" + logFile;
+  end if;
+end simulationLogFile;
+
 function instantiateModel
   input output FCore.Cache cache;
   input FCore.Graph env;
@@ -10139,6 +10139,136 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
   end if;
 end isProtectedContentAccess;
+
+function simulateModel
+  input Absyn.Path path;
+  output String result;
+protected
+  InteractiveTypes.SimulationOptions sim_opts;
+  list<Values.Value> vals;
+  Values.Value res;
+algorithm
+  sim_opts := buildSimulationOptionsFromModelExperimentAnnotation(path, AbsynUtil.pathString(path), NONE());
+
+  vals := {
+    ValuesMake.makeCodeTypeName(path),
+    ValuesUtil.expValue(sim_opts.startTime),
+    ValuesUtil.expValue(sim_opts.stopTime),
+    ValuesUtil.expValue(sim_opts.numberOfIntervals),
+    ValuesUtil.expValue(sim_opts.tolerance),
+    ValuesUtil.expValue(sim_opts.method),
+    ValuesUtil.expValue(sim_opts.fileNamePrefix),
+    ValuesUtil.expValue(sim_opts.options),
+    ValuesUtil.expValue(sim_opts.outputFormat),
+    ValuesUtil.expValue(sim_opts.variableFilter),
+    ValuesUtil.expValue(sim_opts.cflags),
+    ValuesUtil.expValue(sim_opts.simflags),
+    ValuesMake.makeString("")
+  };
+
+  (_, res) := simulate(vals, FCore.emptyCache(), FGraph.empty(), Absyn.NO_MSG());
+  result := ValuesDump.printValStr(res) + "\n";
+end simulateModel;
+
+function simulate
+  input list<Values.Value> values;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Msg msg;
+        output Values.Value outValue;
+protected
+  Absyn.Path className;
+  list<Values.Value> vals = values;
+  String str, executable, compileDir, simflags, outputFormat_str, exeDir;
+  String resimulateExecutable, result_file, executableSuffixedExe, logFile, sim_call;
+  list<tuple<String,Values.Value>> resultValues;
+  Boolean b;
+  SimCode.SimulationSettings simSettings;
+  Integer resI;
+  Real timeSimulation, timeTotal;
+algorithm
+  Values.CODE(Absyn.C_TYPENAME(className)) :: _ := vals;
+
+  try
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+    // resimulateExecutable is the last (new) argument; pull it off so the rest
+    // of the pipeline sees the original simulate() argument list.
+    resimulateExecutable := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+    vals := List.stripLast(vals);
+
+    if resimulateExecutable <> "" then
+      // Skip translation and build; simulate the already-built model directly.
+      b := true;
+      executable := resimulateExecutable;
+      compileDir := System.pwd() + Autoconf.pathDelimiter;
+      simflags := match List.last(vals) case Values.STRING(str) then str; else ""; end match;
+      resultValues := zeroBuildPhaseResultValues;
+    else
+      (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(cache,env,vals,msg);
+    end if;
+
+    if b then
+       exeDir := compileDir;
+       (cache,simSettings) := calculateSimulationSettings(cache, vals);
+       SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+       result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+        // result file might have been set by simflags (-r ...)
+
+       result_file := selectResultFile(result_file, simflags);
+
+       executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+       logFile := simulationLogFile(executable, simflags);
+       // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
+       // we should really have different log files for simulation/compilation!
+       // as the buildModel log file will be deleted here and that gives less information to the user!
+       if System.regularFileExists(logFile) then
+         0 := System.removeFile(logFile);
+       end if;
+       sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+       System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+       SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+
+       // The wasm-jit target runs the JIT-compiled model in-process and
+       // writes the result file directly, instead of spawning an executable;
+       // the wasm target runs the standalone module in a wasmtime subprocess.
+       if Config.simCodeTarget() == "wasm-jit" then
+         resI := CodegenWasmJit.runSimulation(executable, result_file, simflags, logFile);
+       elseif Config.simCodeTarget() == "wasm" then
+         resI := CodegenWasmJit.runSimulationWasmtime(executable, result_file, simflags);
+       else
+         resI := System.systemCallRestrictedEnv(sim_call, logFile);
+       end if;
+
+       timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+
+     else
+       result_file := "";
+       resI := 1;
+       timeSimulation := 0.0;
+       logFile := "";
+     end if;
+
+    timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+    (cache,outValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,result_file,logFile);
+  else
+    str := AbsynUtil.pathString(className);
+
+    try
+      // Simulation failed for some other reason than OPENMODELICAHOME not being set.
+      Settings.getInstallationDirectoryPath();
+      str := "Failed to build model: " + str;
+      outValue := createSimulationResultFailure(str, simOptionsAsString(List.stripLast(values)));
+    else
+      outValue := createSimulationResultFailure(
+          "Simulation failed for model: " + str +
+          "\nEnvironment variable OPENMODELICAHOME not set.",
+          simOptionsAsString(List.stripLast(values))
+        );
+    end try;
+  end try;
+end simulate;
 
 annotation(__OpenModelica_Interface="backend_main");
 

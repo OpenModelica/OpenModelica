@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # One pull request per quarter that collects all GitHub Actions updates.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
