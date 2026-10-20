@@ -1323,7 +1323,7 @@ static JACOBIAN_METHOD getFallbackJacobianMethod(threadData_t* threadData, JACOB
     return INTERNALNUMJAC;
   case BICOLOREDSYMJAC:
     if (hasColumn && hasRow &&
-       (hasSparse || hasSparseT)) {
+        hasSparse && hasSparseT) {
       return BICOLOREDSYMJAC;
     }
     if (hasColumn && hasSparse) {
@@ -1364,22 +1364,12 @@ static JACOBIAN_METHOD getFallbackJacobianMethod(threadData_t* threadData, JACOB
     if (hasSparse) {
       return COLOREDNUMJAC;
     }
-    if (hasColumn) {
-      return SYMJAC;
-    } else if (hasRow && hasSparseT) {
-      return COLOREDSYMJACADJ;
-    }
     return NUMJAC;
   case SYMJAC:
     if (hasColumn) {
       return SYMJAC;
     }
-    if (hasRow && hasSparseT) {
-      return COLOREDSYMJACADJ;
-    } else if (hasSparse) {
-      return COLOREDNUMJAC;
-    }
-    return INTERNALNUMJAC;
+    return NUMJAC;
   case NUMJAC:
   case INTERNALNUMJAC:
     return jacobianMethod;
