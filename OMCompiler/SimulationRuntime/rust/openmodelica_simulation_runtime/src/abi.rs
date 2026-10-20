@@ -220,7 +220,6 @@ pub struct JACOBIAN {
     pub csrToCscMap: *mut c_uint,
 
     pub constantEqns: jacobianColumn_func_ptr,
-    pub isRowEval: modelica_boolean,
     pub isBidirectional: modelica_boolean,
     pub availability: c_int,
     pub adjointJacobian: *mut JACOBIAN,

@@ -13,7 +13,7 @@ model burgerEq
 end burgerEq;
 "); getErrorString();
 
-setCommandLineOptions("--generateDynamicJacobian=symbolic +simCodeTarget=C.old"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(burgerEq); getErrorString();
