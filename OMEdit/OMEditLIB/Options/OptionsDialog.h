@@ -764,6 +764,7 @@ public:
   QCheckBox* getClearMessagesBrowserBeforeSimulationCheckBox() {return mpClearMessagesBrowserBeforeSimulationCheckBox;}
   QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
+  QString getDefaultFontFamily() const {return mDefaultFontFamily;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
   QColor getNotificationColor() const {return mNotificaitonColor;}
@@ -786,6 +787,7 @@ private:
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;
+  QString mDefaultFontFamily;
   Label *mpFontSizeLabel;
   DoubleSpinBox *mpFontSizeSpinBox;
   Label *mpNotificationColorLabel;
