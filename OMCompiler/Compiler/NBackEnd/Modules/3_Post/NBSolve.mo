@@ -1848,6 +1848,7 @@ protected
     for fnInv in fn.inverses loop
       if ComponentRef.firstName(fnInv.inputParam) == name then
         oinv := SOME(fnInv.inverseCall);
+        break;
       end if;
     end for;
     if isNone(oinv) then
