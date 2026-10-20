@@ -81,7 +81,7 @@ OMSCalibrationDialog::OMSCalibrationDialog(LibraryTreeItem *pLibraryTreeItem, QW
                                                                          mpLibraryTreeItem->getNameStructure()));
   mpBrowseOutputFileButton = new QPushButton(Helper::browse);
   mpBrowseOutputFileButton->setAutoDefault(false);
-  connect(mpBrowseOutputFileButton, SIGNAL(clicked()), SLOT(browseOutputFile()));
+  connect(mpBrowseOutputFileButton, &QPushButton::clicked, this, &OMSCalibrationDialog::browseOutputFile);
   // calibration output
   mpOutputPlainTextEdit = new OutputPlainTextEdit;
   mpOutputPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
@@ -89,10 +89,10 @@ OMSCalibrationDialog::OMSCalibrationDialog(LibraryTreeItem *pLibraryTreeItem, QW
   mpCalibrateButton = new QPushButton(tr("Calibrate"));
   mpCalibrateButton->setAutoDefault(true);
   mpCalibrateButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
-  connect(mpCalibrateButton, SIGNAL(clicked()), SLOT(calibrate()));
+  connect(mpCalibrateButton, &QPushButton::clicked, this, &OMSCalibrationDialog::calibrate);
   mpCloseButton = new QPushButton(Helper::close);
   mpCloseButton->setAutoDefault(false);
-  connect(mpCloseButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCloseButton, &QPushButton::clicked, this, &OMSCalibrationDialog::reject);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpCalibrateButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCloseButton, QDialogButtonBox::ActionRole);
@@ -167,10 +167,10 @@ void OMSCalibrationDialog::calibrate()
   delete mpCalibrationProcess;
   mpCalibrationProcess = new QProcess(this);
   mpCalibrationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-  connect(mpCalibrationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readStandardOutput()));
-  connect(mpCalibrationProcess, SIGNAL(readyReadStandardError()), SLOT(readStandardError()));
-  connect(mpCalibrationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(calibrationProcessError(QProcess::ProcessError)));
-  connect(mpCalibrationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(calibrationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpCalibrationProcess, &QProcess::readyReadStandardOutput, this, &OMSCalibrationDialog::readStandardOutput);
+  connect(mpCalibrationProcess, &QProcess::readyReadStandardError, this, &OMSCalibrationDialog::readStandardError);
+  connect(mpCalibrationProcess, &QProcess::errorOccurred, this, &OMSCalibrationDialog::calibrationProcessError);
+  connect(mpCalibrationProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &OMSCalibrationDialog::calibrationProcessFinished);
   QStringList args;
   args << QString("--calibrate=%1").arg(mpActivityTextBox->text().trimmed());
   if (!mpUQFileTextBox->text().trimmed().isEmpty()) {

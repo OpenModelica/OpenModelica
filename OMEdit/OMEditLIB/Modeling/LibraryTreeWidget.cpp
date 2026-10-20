@@ -2942,7 +2942,7 @@ void LibraryTreeView::createActions()
   // calibrate OMSimulator model action
   mpOMSCalibrateAction = new QAction(tr("Calibrate..."), this);
   mpOMSCalibrateAction->setStatusTip(tr("Calibrates the parameters of the model against reference data"));
-  connect(mpOMSCalibrateAction, SIGNAL(triggered()), SLOT(OMSCalibrate()));
+  connect(mpOMSCalibrateAction, &QAction::triggered, this, &LibraryTreeView::OMSCalibrate);
 #endif
 }
 
