@@ -52,8 +52,8 @@
  */
 void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, unsigned int isAdjoint)
 {
-  /* isRowEval is only known after this call, so make both vectors large enough for
-   * either orientation. For square Jacobians (the common case) this is exact. */
+  /* Make both vectors large enough for either evaluation direction.
+     For square Jacobians (the common case) this is exact. */
   const unsigned int sizeDirection = sizeCols > sizeRows ? sizeCols : sizeRows;
 
   /* Deterministic baseline for all constructor paths. */
@@ -88,7 +88,6 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
 
   // remove
   jacobian->constantEqns = NULL;
-  jacobian->isRowEval = 0;
   jacobian->isBidirectional = 0;
   jacobian->availability = JACOBIAN_UNKNOWN;
   jacobian->adjointJacobian = NULL;
