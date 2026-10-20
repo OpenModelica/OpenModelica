@@ -2131,16 +2131,17 @@ TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, b
 
 /*!
  * \brief MainWindow::showClassDiagramWidget
- * Shows the class diagram of a class in a tab of the Class Diagram window.
- * \param className
+ * Shows the class diagram of a class, or the diagram of a CRML file, in a tab of the Class Diagram window.
+ * \param className - the class, or the file name of the CRML file.
+ * \param crml
  * \return
  */
-ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className)
+ClassDiagramWidget *MainWindow::showClassDiagramWidget(const QString &className, bool crml)
 {
   if (!mpClassDiagramWindow) {
     mpClassDiagramWindow = new ClassDiagramWindow;
   }
-  return mpClassDiagramWindow->showClassDiagram(className);
+  return mpClassDiagramWindow->showClassDiagram(className, crml);
 }
 
 /*!

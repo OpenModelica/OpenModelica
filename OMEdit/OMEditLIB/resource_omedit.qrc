@@ -223,5 +223,6 @@
         <file>Resources/icons/settings.svg</file>
         <file>Resources/icons/save-figure-in-model.svg</file>
         <file>Resources/drawio/viewer-static.min.js</file>
+        <file>Resources/crml-diagram/dist/crml-diagram.min.js</file>
     </qresource>
 </RCC>
