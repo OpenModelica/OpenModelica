@@ -73,13 +73,16 @@ class ClassDiagramWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ClassDiagramWidget(const QString &className, QWidget *pParent = nullptr);
+  ClassDiagramWidget(const QString &className, bool crml = false, QWidget *pParent = nullptr);
   ~ClassDiagramWidget();
   const QString &getClassName() const {return mClassName;}
+  bool isCRML() const {return mCRML;}
 private:
   QString mClassName;
+  bool mCRML;
   QString mDiagram;
   Label *mpClassNameLabel;
+  Label *mpDepthLabel;
   QSpinBox *mpDepthSpinBox;
   QCheckBox *mpShowModifiersCheckBox;
   QComboBox *mpLayoutComboBox;
@@ -88,10 +91,14 @@ private:
   QWebEngineView *mpClassDiagramView;
   QString pageFileName() const;
   QString htmlPage(const QString &diagram) const;
+  QString crmlText() const;
+  void copyScript(const QString &resource, const QString &fileName) const;
 public slots:
   void refresh();
   void saveAs();
   void openLink(const QUrl &url);
+private slots:
+  void showCRMLErrors(bool ok);
 };
 
 /*!
@@ -103,7 +110,7 @@ class ClassDiagramWindow : public QWidget
 public:
   ClassDiagramWindow();
   ~ClassDiagramWindow();
-  ClassDiagramWidget* showClassDiagram(const QString &className);
+  ClassDiagramWidget* showClassDiagram(const QString &className, bool crml = false);
 protected:
   virtual void closeEvent(QCloseEvent *pEvent) override;
 private:
