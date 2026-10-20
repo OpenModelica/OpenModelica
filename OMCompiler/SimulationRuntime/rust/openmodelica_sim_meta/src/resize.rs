@@ -4,9 +4,9 @@
 //!
 //! The generated code addresses what lies past the first resizable region through
 //! a table of i32s at [`Layout::table_off`] (its address in the header word at
-//! [`TABLE_PTR_OFF`]): entry `k` is [`Resize::table`]`[k]`. The codegen hands
-//! such addresses on as *tagged* offsets ([`dyn_off`]), which resolving turns
-//! into plain ones.
+//! [`TABLE_PTR_OFF`]): entry `k` is [`Resize::table`]`[k]`. An offset the meta
+//! holds for such an address is *tagged* ([`dyn_off`]): it names an
+//! [`Resize::offs`] pair, which resolving turns into a plain offset.
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -19,7 +19,7 @@ use crate::{Layout, LayoutCounts, LayoutFlags, MetaKind, SimMeta, Sz, TABLE_PTR_
 pub struct SizeParam {
     pub name: String,
     pub start: Sz,
-    /// Its Integer parameter slot, tagged.
+    /// Its Integer parameter slot, maybe tagged.
     pub off: u32,
 }
 
@@ -28,6 +28,8 @@ pub struct Resize {
     pub params: Vec<SizeParam>,
     pub counts: LayoutCounts<Sz>,
     pub table: Vec<Sz>,
+    /// What a tagged offset names: the table entry it is past, and by how much.
+    pub offs: Vec<(u32, u32)>,
     /// [`SimMeta::var_arrays`]`[i].dims`.
     pub var_dims: Vec<Vec<Sz>>,
     /// [`SotiVars::real_arrays`](crate::SotiVars)`[i].dims`.
@@ -44,37 +46,29 @@ pub struct Resize {
 }
 
 const DYN_BIT: u32 = 1 << 31;
-const REL_BITS: u32 = 20;
-const REL_MASK: u32 = (1 << REL_BITS) - 1;
-/// Table entries a tagged offset can name.
-pub const MAX_TABLE: u32 = 1 << (31 - REL_BITS);
-/// Bytes past a table entry a tagged offset can reach.
-pub const MAX_REL: u32 = REL_MASK;
 
-/// `rel` bytes past the offset table entry `entry` holds.
-pub fn dyn_off(entry: u32, rel: u32) -> u32 {
-    debug_assert!(entry < MAX_TABLE && rel <= MAX_REL);
-    DYN_BIT | (entry << REL_BITS) | rel
+/// The offset [`Resize::offs`]`[k]` describes.
+pub fn dyn_off(k: u32) -> u32 {
+    debug_assert!(k < DYN_BIT);
+    DYN_BIT | k
 }
 
-/// `(entry, rel)` of a tagged offset, `None` for a plain one.
-pub fn split_dyn(off: u32) -> Option<(u32, u32)> {
-    (off & DYN_BIT != 0).then(|| ((off & !DYN_BIT) >> REL_BITS, off & REL_MASK))
-}
-
-pub fn is_dyn(off: u32) -> bool {
-    off & DYN_BIT != 0
+fn split_dyn(off: u32) -> Option<u32> {
+    (off & DYN_BIT != 0).then_some(off & !DYN_BIT)
 }
 
 impl Resize {
     pub fn resolve_off(&self, off: u32) -> u32 {
-        resolve_off(&self.table_values, off)
+        resolve_off(&self.table_values, &self.offs, off)
     }
 }
 
-fn resolve_off(table: &[i32], off: u32) -> u32 {
+fn resolve_off(table: &[i32], offs: &[(u32, u32)], off: u32) -> u32 {
     match split_dyn(off) {
-        Some((k, rel)) => table[k as usize] as u32 + rel,
+        Some(k) => {
+            let (entry, rel) = offs[k as usize];
+            table[entry as usize] as u32 + rel
+        }
         None => off,
     }
 }
@@ -166,11 +160,11 @@ impl SimMeta {
         r.table_values = r.table.iter().map(|s| s.eval(&values) as i32).collect();
         r.values = values;
         for p in &mut r.params {
-            p.off = resolve_off(&r.table_values, p.off);
+            p.off = resolve_off(&r.table_values, &r.offs, p.off);
         }
         for v in &mut self.vars {
             if let MetaKind::Param { off, wty, negate } = v.kind {
-                let abs = resolve_off(&r.table_values, off);
+                let abs = resolve_off(&r.table_values, &r.offs, off);
                 v.kind = classify_slot(abs, wty, negate, &layout).unwrap_or(MetaKind::Param { off: abs, wty, negate });
             }
         }
@@ -251,6 +245,11 @@ pub(crate) fn put_resize(o: &mut Vec<u8>, r: &Option<Resize>) {
         s.encode(o);
     }
     put_szs(o, &r.table);
+    put_u32(o, r.offs.len() as u32);
+    for &(entry, rel) in &r.offs {
+        put_u32(o, entry);
+        put_u32(o, rel);
+    }
     for list in [&r.var_dims, &r.soti_dims] {
         put_u32(o, list.len() as u32);
         for d in list {
@@ -299,6 +298,10 @@ pub(crate) fn get_resize(b: &[u8], p: &mut usize) -> Result<Option<Resize>, &'st
     }
     let counts = counts_from(c);
     let table = szs(b, p)?;
+    let n = u32_(b, p)?;
+    let offs = (0..n)
+        .map(|_| Ok((u32_(b, p)?, u32_(b, p)?)))
+        .collect::<Result<Vec<_>, &'static str>>()?;
     let mut lists: [Vec<Vec<Sz>>; 2] = Default::default();
     for l in lists.iter_mut() {
         let n = u32_(b, p)?;
@@ -318,6 +321,7 @@ pub(crate) fn get_resize(b: &[u8], p: &mut usize) -> Result<Option<Resize>, &'st
         params,
         counts,
         table,
+        offs,
         var_dims,
         soti_dims,
         jac_a,

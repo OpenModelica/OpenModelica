@@ -15,7 +15,7 @@ use openmodelica_sim_meta::{Neg, ReconInfo, ReconJac, ReconVar};
 use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
 use crate::CodegenWasmJit::{SimVarMap, count, jac_column_vars, jac_result_row, lst};
-use crate::CodegenWasmJitFunctions::{FnCtx, FnInfo, Literals, SimSlot, WTy, sim_cref_key};
+use crate::CodegenWasmJitFunctions::{FnCtx, FnInfo, Literals, SimOff, SimSlot, WTy, plain_off, sim_cref_key};
 
 /// The two matrices, in the order they occupy the scratch region.
 pub(crate) const JAC_FNS: [&str; 2] = ["reconJacF", "reconJacH"];
@@ -124,7 +124,7 @@ pub(crate) fn build_jac_infos(
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
                 SimSlot {
-                    off: cursor,
+                    off: SimOff::from(cursor),
                     wty: WTy::F64,
                     negate: Neg::None,
                     heap: false,
@@ -139,7 +139,7 @@ pub(crate) fn build_jac_infos(
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
                 SimSlot {
-                    off: cursor,
+                    off: SimOff::from(cursor),
                     wty: WTy::F64,
                     negate: Neg::None,
                     heap: false,
@@ -262,7 +262,7 @@ pub(crate) fn build_recon_info(
                 .get(&key)
                 .ok_or("CodegenWasmJit: data-reconciliation variable has no SimData slot")?;
             out.push(ReconVar {
-                off: slot.off,
+                off: plain_off(slot.off)?,
                 negate: slot.negate,
                 name: crate::CodegenWasmJit::cref_display(&sv.name)?,
                 unit: sv.displayUnit.to_string(),

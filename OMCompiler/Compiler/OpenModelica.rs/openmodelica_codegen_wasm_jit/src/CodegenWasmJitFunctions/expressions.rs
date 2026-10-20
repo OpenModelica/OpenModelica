@@ -816,7 +816,7 @@ fn emit_div_sim(ctx: &mut FnCtx, e2: &DAE::Exp) -> Result<WTy> {
     let data = ctx.sim()?.data_local;
     ctx.emit(I::LocalGet(data));
     ctx.emit(I::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     ctx.emit(I::Call(rt_index("rt_div_sim")?));
     ctx.emit(I::Else);
     ctx.emit(I::LocalGet(res));

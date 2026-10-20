@@ -78,7 +78,7 @@ fn compile_relation_indexed(
     // `base + k*4`.
     let relations_off = ctx.sim()?.relations_off;
     let pre_off = ctx.sim()?.relations_pre_off;
-    let dir_off = ctx.sim()?.stored_rel_off;
+    let dir_off = plain_off(ctx.sim()?.stored_rel_off)?;
     let fresh_off = ctx.sim()?.rel_fresh_off;
     // The slot address `data + eff_index*4`. A relation inside a `for`-loop shares
     // one AST node across iterations, so its effective index is
@@ -116,13 +116,13 @@ fn compile_relation_indexed(
     }
     // Equation context: held / init-fresh / event-fresh selected on `rel_fresh`.
     ctx.emit(we::Instruction::LocalGet(data));
-    ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+    ctx.emit(we::Instruction::I32Load(sim_mem(fresh_off, 2)?));
     ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
     let v = ctx.alloc_temp(WTy::I32);
     if real_ineq {
         // rel_fresh == 2 (init): exact; else (event): hysteretic.
         ctx.emit(we::Instruction::LocalGet(data));
-        ctx.emit(we::Instruction::I32Load(mem_arg(fresh_off, 2)));
+        ctx.emit(we::Instruction::I32Load(sim_mem(fresh_off, 2)?));
         ctx.emit(we::Instruction::I32Const(2));
         ctx.emit(we::Instruction::I32Eq);
         ctx.emit(we::Instruction::If(we::BlockType::Result(we::ValType::I32)));
@@ -136,11 +136,11 @@ fn compile_relation_indexed(
     ctx.emit(we::Instruction::LocalSet(v));
     ctx.emit(we::Instruction::LocalGet(slot)); // store relations[eff] = v
     ctx.emit(we::Instruction::LocalGet(v));
-    ctx.emit(we::Instruction::I32Store(mem_arg(relations_off, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(relations_off, 2)?));
     ctx.emit(we::Instruction::LocalGet(v));
     ctx.emit(we::Instruction::Else);
     ctx.emit(we::Instruction::LocalGet(slot)); // held: relationsPre[eff]
-    ctx.emit(we::Instruction::I32Load(mem_arg(pre_off, 2)));
+    ctx.emit(we::Instruction::I32Load(sim_mem(pre_off, 2)?));
     ctx.emit(we::Instruction::End);
     Ok(WTy::I32)
 }
@@ -187,7 +187,7 @@ fn compile_relation_hyst(
     ctx.emit(I::LocalGet(nom));
     ctx.emit(I::F64Add);
     ctx.emit(I::LocalGet(data));
-    ctx.emit(I::F64Load(mem_arg(zctol_off, 3)));
+    ctx.emit(I::F64Load(sim_mem(zctol_off, 3)?));
     ctx.emit(I::F64Mul);
     ctx.emit(I::LocalSet(eps));
 

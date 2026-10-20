@@ -47,7 +47,7 @@ pub(super) fn compile_spatial_distribution(ctx: &mut FnCtx, args: &List<metamode
     // C's `simulationInfo->discreteCall`: the relation mode is nonzero for an event
     // update and for the initial system, zero during continuous integration.
     ctx.emit(I::LocalGet(data));
-    ctx.emit(I::I32Load(mem_arg(rel_fresh_off, 2)));
+    ctx.emit(I::I32Load(sim_mem(rel_fresh_off, 2)?));
     ctx.emit(I::Call(rt_index("rt_spatial_eval")?));
     ctx.emit(I::I32Const(*index));
     ctx.emit(I::Call(rt_index("rt_spatial_out1")?));
@@ -101,16 +101,16 @@ pub(super) fn emit_math_test_pre(ctx: &mut FnCtx, kind: crate::CodegenWasmJit::M
     use crate::CodegenWasmJit::MathEventKind as K;
     let (data, base) = {
         let s = ctx.sim()?;
-        (s.data_local, s.mathevents_off + idx * 8)
+        (s.data_local, s.mathevents_off + SimOff::from(idx * 8))
     };
     ctx.emit(we::Instruction::LocalGet(data));
-    ctx.emit(we::Instruction::F64Load(mem_arg(base, 3)));
+    ctx.emit(we::Instruction::F64Load(sim_mem(base, 3)?));
     match kind {
         K::Floor => ctx.emit(we::Instruction::F64Floor),
         K::Ceil => ctx.emit(we::Instruction::F64Ceil),
         K::Div | K::Mod => {
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::F64Load(mem_arg(base + 8, 3)));
+            ctx.emit(we::Instruction::F64Load(sim_mem(base + 8, 3)?));
             ctx.emit(we::Instruction::F64Div);
             ctx.emit(if kind == K::Div {
                 we::Instruction::F64Trunc
@@ -138,7 +138,7 @@ fn compile_math_event(
         if idx >= s.n_mathevents {
             return Err("CodegenWasmJit: math-event index out of range");
         }
-        (s.data_local, s.mathevents_off + idx * 8, s.rel_fresh_off)
+        (s.data_local, s.mathevents_off + SimOff::from(idx * 8), s.rel_fresh_off)
     };
     match name {
         // integer(x): store floor(x), return (int)pre. floor/ceil: store x, return
@@ -149,17 +149,17 @@ fn compile_math_event(
             let xt = ctx.alloc_temp(WTy::F64);
             ctx.emit(I::LocalSet(xt));
             ctx.emit(I::LocalGet(data));
-            ctx.emit(I::I32Load(mem_arg(fresh_off, 2)));
+            ctx.emit(I::I32Load(sim_mem(fresh_off, 2)?));
             ctx.emit(I::If(we::BlockType::Empty));
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::LocalGet(xt));
             if name == "integer" {
                 ctx.emit(I::F64Floor);
             }
-            ctx.emit(I::F64Store(mem_arg(base, 3)));
+            ctx.emit(I::F64Store(sim_mem(base, 3)?));
             ctx.emit(I::End);
             ctx.emit(I::LocalGet(data));
-            ctx.emit(I::F64Load(mem_arg(base, 3)));
+            ctx.emit(I::F64Load(sim_mem(base, 3)?));
             match name {
                 "integer" => {
                     ctx.emit(I::I32TruncSatF64S);
@@ -189,20 +189,20 @@ fn compile_math_event(
             let bt = ctx.alloc_temp(wt);
             ctx.emit(I::LocalSet(bt));
             ctx.emit(I::LocalGet(data));
-            ctx.emit(I::I32Load(mem_arg(fresh_off, 2)));
+            ctx.emit(I::I32Load(sim_mem(fresh_off, 2)?));
             ctx.emit(I::If(we::BlockType::Empty));
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::LocalGet(at));
             if is_int {
                 ctx.emit(I::F64ConvertI32S);
             }
-            ctx.emit(I::F64Store(mem_arg(base, 3)));
+            ctx.emit(I::F64Store(sim_mem(base, 3)?));
             ctx.emit(I::LocalGet(data));
             ctx.emit(I::LocalGet(bt));
             if is_int {
                 ctx.emit(I::F64ConvertI32S);
             }
-            ctx.emit(I::F64Store(mem_arg(base + 8, 3)));
+            ctx.emit(I::F64Store(sim_mem(base + 8, 3)?));
             // mod on Reals uses a third slot for the held floor of the ratio
             // (C's _event_mod_real calls _event_floor(x1/x2, index+2)).
             if name == "mod" && !is_int {
@@ -210,25 +210,25 @@ fn compile_math_event(
                 ctx.emit(I::LocalGet(at));
                 ctx.emit(I::LocalGet(bt));
                 ctx.emit(I::F64Div);
-                ctx.emit(I::F64Store(mem_arg(base + 16, 3)));
+                ctx.emit(I::F64Store(sim_mem(base + 16, 3)?));
             }
             ctx.emit(I::End);
             match (name, is_int) {
                 ("div", true) => {
                     ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(base, 3)));
+                    ctx.emit(I::F64Load(sim_mem(base, 3)?));
                     ctx.emit(I::I32TruncF64S);
                     ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(base + 8, 3)));
+                    ctx.emit(I::F64Load(sim_mem(base + 8, 3)?));
                     ctx.emit(I::I32TruncF64S);
                     ctx.emit(I::I32DivS);
                     Ok(SigTy::Int)
                 }
                 ("div", false) => {
                     ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(base, 3)));
+                    ctx.emit(I::F64Load(sim_mem(base, 3)?));
                     ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(base + 8, 3)));
+                    ctx.emit(I::F64Load(sim_mem(base + 8, 3)?));
                     ctx.emit(I::F64Div);
                     ctx.emit(I::F64Trunc);
                     Ok(SigTy::Real)
@@ -245,7 +245,7 @@ fn compile_math_event(
                 _ => {
                     ctx.emit(I::LocalGet(at));
                     ctx.emit(I::LocalGet(data));
-                    ctx.emit(I::F64Load(mem_arg(base + 16, 3)));
+                    ctx.emit(I::F64Load(sim_mem(base + 16, 3)?));
                     ctx.emit(I::F64Floor);
                     ctx.emit(I::LocalGet(bt));
                     ctx.emit(I::F64Mul);
@@ -630,7 +630,7 @@ pub(super) fn compile_math_builtin(
             ctx.emit(we::Instruction::LocalSet(st));
             let lam = ctx.alloc_temp(WTy::F64);
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
+            ctx.emit(we::Instruction::F64Load(sim_mem(lambda_off, 3)?));
             ctx.emit(we::Instruction::LocalSet(lam));
             ctx.emit(we::Instruction::LocalGet(st));
             ctx.emit(we::Instruction::F64Const(1.0.into()));
@@ -703,7 +703,10 @@ pub(super) fn compile_math_builtin(
             let w = compile_exp(ctx, argv[2])?; // delay time
             coerce(ctx, w, WTy::F64);
             ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
-            ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
+            ctx.emit(we::Instruction::F64Load(sim_mem(
+                zc_pre_off + SimOff::from(*rindex as u32 * 8),
+                3,
+            )?));
             ctx.emit(we::Instruction::Call(rt_index("rt_delay_zc")?));
             Ok(SigTy::Real)
         }
@@ -733,7 +736,10 @@ pub(super) fn compile_math_builtin(
             let w = compile_exp(ctx, argv[3])?; // positiveVelocity
             coerce(ctx, w, WTy::I32);
             ctx.emit(we::Instruction::LocalGet(data)); // zeroCrossingsPre[rindex]
-            ctx.emit(we::Instruction::F64Load(mem_arg(zc_pre_off + *rindex as u32 * 8, 3)));
+            ctx.emit(we::Instruction::F64Load(sim_mem(
+                zc_pre_off + SimOff::from(*rindex as u32 * 8),
+                3,
+            )?));
             ctx.emit(we::Instruction::Call(rt_index("rt_spatial_zc")?));
             Ok(SigTy::Real)
         }
@@ -746,7 +752,7 @@ pub(super) fn compile_math_builtin(
                 (s.data_local, s.terminal_off)
             };
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            ctx.emit(we::Instruction::I32Load(sim_mem(off, 2)?));
             Ok(SigTy::Bool)
         }
         // `initial()` — C's `simulationInfo->initial`, true for the whole
@@ -758,7 +764,7 @@ pub(super) fn compile_math_builtin(
                 (s.data_local, s.initial_off)
             };
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            ctx.emit(we::Instruction::I32Load(sim_mem(off, 2)?));
             Ok(SigTy::Bool)
         }
         "sample" => {
@@ -774,9 +780,9 @@ pub(super) fn compile_math_builtin(
                 .filter(|k| *k < n_samples)
                 .ok_or_else(|| "CodegenWasmJit: `sample` index out of range")?;
             let data = ctx.sim()?.data_local;
-            let off = ctx.sim()?.sample_active_off + k * 4;
+            let off = ctx.sim()?.sample_active_off + SimOff::from(k * 4);
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            ctx.emit(we::Instruction::I32Load(sim_mem(off, 2)?));
             Ok(SigTy::Bool)
         }
         // `interval()` and `interval(clk)` alike read the active sub-clock, as C's
@@ -787,10 +793,10 @@ pub(super) fn compile_math_builtin(
                 (s.data_local, sub_clock_off(s, "interval")?)
             };
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::F64Load(mem_arg(
-                off + clock_field::SUB_PREV_INTERVAL,
+            ctx.emit(we::Instruction::F64Load(sim_mem(
+                off + SimOff::from(clock_field::SUB_PREV_INTERVAL),
                 3,
-            )));
+            )?));
             Ok(SigTy::Real)
         }
         "firstTick" if argv.len() <= 1 => {
@@ -799,7 +805,10 @@ pub(super) fn compile_math_builtin(
                 (s.data_local, sub_clock_off(s, "firstTick")?)
             };
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::I32Load(mem_arg(off + clock_field::SUB_COUNT, 2)));
+            ctx.emit(we::Instruction::I32Load(sim_mem(
+                off + SimOff::from(clock_field::SUB_COUNT),
+                2,
+            )?));
             ctx.emit(we::Instruction::I32Const(1));
             ctx.emit(we::Instruction::I32Eq);
             Ok(SigTy::Bool)
@@ -832,7 +841,7 @@ pub(super) fn compile_math_builtin(
             };
             ctx.emit(we::Instruction::LocalGet(data));
             ctx.emit(we::Instruction::I32Const(1));
-            ctx.emit(we::Instruction::I32Store(mem_arg(off + base * 4, 2)));
+            ctx.emit(we::Instruction::I32Store(sim_mem(off + SimOff::from(base * 4), 2)?));
             // Only ever reached through `noReturnCall`, which drops one result.
             ctx.emit(we::Instruction::I32Const(0));
             Ok(SigTy::Bool)

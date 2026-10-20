@@ -149,6 +149,7 @@ pub(crate) use ctx::*;
 
 #[path = "CodegenWasmJitFunctions/sizes.rs"]
 pub(crate) mod sizes;
+pub(crate) use sizes::{SimOff, is_dyn, plain_off, sim_mem};
 
 // Compiling one function: body, locals, outputs, heap release.
 #[path = "CodegenWasmJitFunctions/function.rs"]

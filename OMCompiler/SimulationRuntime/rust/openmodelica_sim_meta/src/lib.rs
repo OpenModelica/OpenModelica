@@ -776,35 +776,130 @@ impl<T: sizes::LayoutNum> Layout<T> {
     }
 }
 
-impl Layout {
+impl<T> Layout<T> {
+    /// The layout over another number type, `count` taking each count and `off`
+    /// each offset.
+    pub fn try_map<U, E>(
+        &self,
+        count: impl Fn(&T) -> Result<U, E>,
+        off: impl Fn(&T) -> Result<U, E>,
+    ) -> Result<Layout<U>, E> {
+        Ok(Layout {
+            n_states: count(&self.n_states)?,
+            n_real_alg: count(&self.n_real_alg)?,
+            has_when: self.has_when,
+            has_homotopy: self.has_homotopy,
+            homotopy_method: self.homotopy_method,
+            has_init_lambda0: self.has_init_lambda0,
+            has_history_ops: self.has_history_ops,
+            has_old_real: self.has_old_real,
+            lambda_off: off(&self.lambda_off)?,
+            rparam_off: off(&self.rparam_off)?,
+            int_off: off(&self.int_off)?,
+            iparam_off: off(&self.iparam_off)?,
+            bool_off: off(&self.bool_off)?,
+            bparam_off: off(&self.bparam_off)?,
+            str_off: off(&self.str_off)?,
+            sparam_off: off(&self.sparam_off)?,
+            eobj_off: off(&self.eobj_off)?,
+            pre_real_off: off(&self.pre_real_off)?,
+            pre_int_off: off(&self.pre_int_off)?,
+            pre_bool_off: off(&self.pre_bool_off)?,
+            old_real_off: off(&self.old_real_off)?,
+            terminate_off: off(&self.terminate_off)?,
+            terminal_off: off(&self.terminal_off)?,
+            initial_off: off(&self.initial_off)?,
+            term_info_off: off(&self.term_info_off)?,
+            n_out_off: off(&self.n_out_off)?,
+            nls_fail_off: off(&self.nls_fail_off)?,
+            n_samples: count(&self.n_samples)?,
+            sample_off: off(&self.sample_off)?,
+            sample_active_off: off(&self.sample_active_off)?,
+            n_zc: count(&self.n_zc)?,
+            zc_off: off(&self.zc_off)?,
+            zc_pre_off: off(&self.zc_pre_off)?,
+            zc_probe_off: off(&self.zc_probe_off)?,
+            n_rel: count(&self.n_rel)?,
+            relations_off: off(&self.relations_off)?,
+            rel_fresh_off: off(&self.rel_fresh_off)?,
+            stored_rel_off: off(&self.stored_rel_off)?,
+            relations_pre_off: off(&self.relations_pre_off)?,
+            stateset_off: off(&self.stateset_off)?,
+            nls_jac_off: off(&self.nls_jac_off)?,
+            n_math: count(&self.n_math)?,
+            mathevents_off: off(&self.mathevents_off)?,
+            zctol_off: off(&self.zctol_off)?,
+            start_off: off(&self.start_off)?,
+            real_nom_off: off(&self.real_nom_off)?,
+            state_nom_off: off(&self.state_nom_off)?,
+            state_max_off: off(&self.state_max_off)?,
+            state_min_off: off(&self.state_min_off)?,
+            n_sens: count(&self.n_sens)?,
+            sens_off: off(&self.sens_off)?,
+            n_dae_res: count(&self.n_dae_res)?,
+            dae_res_off: off(&self.dae_res_off)?,
+            n_dae_aux: count(&self.n_dae_aux)?,
+            dae_aux_off: off(&self.dae_aux_off)?,
+            n_dae_alg: count(&self.n_dae_alg)?,
+            dae_alg_nom_off: off(&self.dae_alg_nom_off)?,
+            n_base_clocks: count(&self.n_base_clocks)?,
+            clock_off: off(&self.clock_off)?,
+            n_sub_clocks: count(&self.n_sub_clocks)?,
+            subclock_off: off(&self.subclock_off)?,
+            clock_fire_off: off(&self.clock_fire_off)?,
+            linz_off: off(&self.linz_off)?,
+            n_linz: count(&self.n_linz)?,
+            n_opt_attr: count(&self.n_opt_attr)?,
+            opt_min_off: off(&self.opt_min_off)?,
+            opt_max_off: off(&self.opt_max_off)?,
+            opt_nom_off: off(&self.opt_nom_off)?,
+            opt_use_nom_off: off(&self.opt_use_nom_off)?,
+            n_attr_log: count(&self.n_attr_log)?,
+            attr_log_off: off(&self.attr_log_off)?,
+            n_removed_init: count(&self.n_removed_init)?,
+            removed_init_res_off: off(&self.removed_init_res_off)?,
+            removed_init_idx_off: off(&self.removed_init_idx_off)?,
+            sym_solver: self.sym_solver,
+            inline_dt_off: off(&self.inline_dt_off)?,
+            alg_old_off: off(&self.alg_old_off)?,
+            total: off(&self.total)?,
+            real_off: off(&self.real_off)?,
+            table_off: off(&self.table_off)?,
+            n_table: self.n_table,
+            extra_cols: self.extra_cols,
+        })
+    }
+}
+
+impl<T: sizes::LayoutOff> Layout<T> {
     /// Byte offset of base clock `i`'s state block.
-    pub fn base_clock_off(&self, i: u32) -> u32 {
-        self.clock_off + i * BASECLOCK_BYTES
+    pub fn base_clock_off(&self, i: u32) -> T {
+        self.clock_off + T::from(i * BASECLOCK_BYTES)
     }
     /// Byte offset of the sub-clock at flat index `k`.
-    pub fn sub_clock_off(&self, k: u32) -> u32 {
-        self.subclock_off + k * SUBCLOCK_BYTES
+    pub fn sub_clock_off(&self, k: u32) -> T {
+        self.subclock_off + T::from(k * SUBCLOCK_BYTES)
     }
 
     /// Byte offset of real variable `i`'s `start` attribute slot.
-    pub fn real_start_off(&self, i: u32) -> u32 {
-        self.start_off + i * 8
+    pub fn real_start_off(&self, i: u32) -> T {
+        self.start_off + T::from(i * 8)
     }
 
     /// Byte offset of real variable `i`'s `nominal` attribute slot.
-    pub fn real_nominal_off(&self, i: u32) -> u32 {
-        self.real_nom_off + i * 8
+    pub fn real_nominal_off(&self, i: u32) -> T {
+        self.real_nom_off + T::from(i * 8)
     }
 
     /// C's `compiledInDAEMode`: the integrator solves `F(t, y, y') = 0` over states
     /// *and* algebraic unknowns through `evaluateDAEResiduals`, not `functionODE`.
     pub fn dae_mode(&self) -> bool {
-        self.n_dae_res > 0
+        self.n_dae_res > T::from(0)
     }
 
     /// Offset of the `pre()` slot mirroring a live variable slot at byte offset
     /// `off`, if `off` is in a variable region that carries pre-values.
-    pub fn pre_slot_off(&self, off: u32) -> Option<u32> {
+    pub fn pre_slot_off(&self, off: T) -> Option<T> {
         if off >= self.real_off && off < self.rparam_off {
             Some(self.pre_real_off + (off - self.real_off))
         } else if off >= self.int_off && off < self.iparam_off {
@@ -818,25 +913,25 @@ impl Layout {
 
     /// Bytes the live real region (states | derivatives | algebraics) spans.
     pub fn real_bytes(&self) -> usize {
-        ((2 * self.n_states + self.n_real_alg) * 8) as usize
+        ((self.n_states.to_u32() * 2 + self.n_real_alg.to_u32()) * 8) as usize
     }
 
     /// f64 in the real part of a result row: `time` + states + derivatives + real
     /// algebraics.
     pub fn n_reals_row(&self) -> u32 {
-        1 + 2 * self.n_states + self.n_real_alg
+        1 + 2 * self.n_states.to_u32() + self.n_real_alg.to_u32()
     }
     /// Integer algebraic variables (between `int_off` and `iparam_off`).
     pub fn n_int_alg(&self) -> u32 {
-        (self.iparam_off - self.int_off) / 4
+        (self.iparam_off - self.int_off).to_u32() / 4
     }
     /// Boolean algebraic variables (between `bool_off` and `bparam_off`).
     pub fn n_bool_alg(&self) -> u32 {
-        (self.bparam_off - self.bool_off) / 4
+        (self.bparam_off - self.bool_off).to_u32() / 4
     }
     /// String algebraic variables (between `str_off` and `sparam_off`).
     pub fn n_str_alg(&self) -> u32 {
-        (self.sparam_off - self.str_off) / 4
+        (self.sparam_off - self.str_off).to_u32() / 4
     }
     /// Total f64 columns in a result row: the real part, the integer and boolean
     /// algebraics (captured per row as f64), the sensitivities, the String
@@ -850,7 +945,7 @@ impl Layout {
     }
     /// First result-row column of the String block.
     pub fn str_col0(&self) -> u32 {
-        self.sens_col0() + self.n_sens
+        self.sens_col0() + self.n_sens.to_u32()
     }
     /// First result-row column of the sensitivity block.
     pub fn sens_col0(&self) -> u32 {
@@ -2032,7 +2127,7 @@ impl SimMeta {
 // the crate dependency-free and trivially buildable for every target.
 
 const MAGIC: &[u8; 4] = b"OMSM";
-const VERSION: u32 = 24;
+const VERSION: u32 = 25;
 
 fn put_u32(o: &mut Vec<u8>, v: u32) {
     o.extend_from_slice(&v.to_le_bytes());

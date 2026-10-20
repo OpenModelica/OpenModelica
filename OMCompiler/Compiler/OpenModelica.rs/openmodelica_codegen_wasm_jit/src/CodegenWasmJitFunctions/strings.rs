@@ -149,10 +149,9 @@ pub(super) fn emit_reinit_note(ctx: &mut FnCtx, stateVar: &DAE::ComponentRef) ->
     if slot.wty != WTy::F64 {
         return Ok(());
     }
-    let data = ctx.sim()?.data_local;
-    ctx.emit(we::Instruction::I32Const(slot.off as i32));
-    ctx.emit(we::Instruction::LocalGet(data));
-    ctx.emit(we::Instruction::F64Load(mem_arg(slot.off, 3)));
+    ctx.emit_sim_rel(slot.off)?;
+    let rel = ctx.emit_sim_base(slot.off)?;
+    ctx.emit(we::Instruction::F64Load(mem_arg(rel, 3)));
     ctx.emit(we::Instruction::Call(env_extra_index("rt_reinit_note")?));
     Ok(())
 }
@@ -171,7 +170,7 @@ pub(super) fn emit_runtime_error(ctx: &mut FnCtx, msg: &str) -> Result<()> {
         ctx.emit(we::Instruction::I32Const(0)); // file handle (null) + zeroed line/col
     }
     ctx.emit(we::Instruction::I32Const(0)); // no condition: never suppressed
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(env_extra_index("rt_assert")?));
     ctx.emit(we::Instruction::Drop);

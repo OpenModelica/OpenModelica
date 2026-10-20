@@ -12,7 +12,7 @@ pub(super) fn build_state_set_infos(
 ) -> Result<Vec<StateSetInfo>> {
     use openmodelica_backend_types::BackendDAE::VarKind;
     let mut infos = Vec::new();
-    let mut cursor = layout.stateset_off;
+    let mut cursor = plain_off(layout.stateset_off)?;
     let real_slot = |var_map: &SimVarMap, cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
         let slot = var_map
@@ -22,7 +22,7 @@ pub(super) fn build_state_set_infos(
         if slot.wty != WTy::F64 {
             return Err("CodegenWasmJit: state-set variable is not a Real variable");
         }
-        Ok(slot.off)
+        plain_off(slot.off)
     };
     for set in lst(state_sets) {
         let n_candidates = set.nCandidates.max(0) as u32;
@@ -35,7 +35,7 @@ pub(super) fn build_state_set_infos(
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&sv.name)?,
                 SimSlot {
-                    off,
+                    off: SimOff::from(off),
                     wty: WTy::F64,
                     negate: Neg::None,
                     heap: false,
@@ -85,7 +85,7 @@ pub(super) fn build_state_set_infos(
             for c in 1..=n_candidates {
                 let slot = stateset_a_slot(var_map, &a_base, row, c, n_candidates)
                     .ok_or_else(|| "CodegenWasmJit: state-set matrix entry has no slot")?;
-                a_offs.push(slot.off);
+                a_offs.push(plain_off(slot.off)?);
             }
         }
 
@@ -157,7 +157,7 @@ pub(super) fn stateset_diag_offsets(state_sets: &List<SimCode::StateSet>, var_ma
             if slot.wty != WTy::I32 {
                 return Err("CodegenWasmJit: state-set matrix entry is not an Integer variable");
             }
-            offs.push(slot.off);
+            offs.push(plain_off(slot.off)?);
         }
     }
     Ok(offs)

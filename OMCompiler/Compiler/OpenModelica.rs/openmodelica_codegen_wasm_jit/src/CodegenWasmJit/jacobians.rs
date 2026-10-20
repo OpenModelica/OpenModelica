@@ -97,7 +97,7 @@ pub(super) fn build_linz_jac_infos(
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<(Vec<Option<LinzJacInfo>>, Option<AdjJacInfo>)> {
-    let mut cursor = layout.linz_off + plan.n_matrix_f64() * 8;
+    let mut cursor = plain_off(layout.linz_off)? + plan.n_matrix_f64() * 8;
     let mut infos = Vec::with_capacity(4);
     for (k, jm) in plan.jacs.iter().enumerate() {
         let Some(jm) = jm else {
@@ -162,7 +162,7 @@ pub(super) fn register_jac_slots(
         }
         let off = *cursor;
         let slot = SimSlot {
-            off,
+            off: SimOff::from(off),
             wty: WTy::F64,
             negate: Neg::None,
             heap: false,
@@ -174,7 +174,7 @@ pub(super) fn register_jac_slots(
             var_map.array_acc.entry(g.base).or_default().push(AccElem {
                 subs: g.subs,
                 pieces: g.pieces,
-                off,
+                off: SimOff::from(off),
                 wty: WTy::F64,
                 neg: Neg::None,
                 heap: false,
@@ -230,7 +230,7 @@ pub(super) fn build_lin_info(
                 return Ok(None);
             };
             out.push(LinVar {
-                off: slot.off,
+                off: plain_off(slot.off)?,
                 negate: slot.negate,
             });
         }
@@ -281,7 +281,7 @@ pub(super) fn build_jac_fns(
     [we::Function; 2],
 )> {
     let (mut linz_fns, mut jac_a_fns, mut opt_fns) = (Vec::new(), None, Vec::new());
-    let mut out_off = layout.linz_off;
+    let mut out_off = plain_off(layout.linz_off)?;
     for k in 0..4 {
         let mut built = None;
         if let (Some(jm), Some(info)) = (plan.jacs[k].clone(), infos.get(k).and_then(Option::as_ref)) {
@@ -493,7 +493,7 @@ pub(super) fn build_lin_jac_infos(
     layout: &SimLayout,
     var_map: &mut SimVarMap,
 ) -> Result<()> {
-    let mut cursor = layout.nls_jac_off + nls_jac_scratch_f64(sim_code) * 8;
+    let mut cursor = plain_off(layout.nls_jac_off)? + nls_jac_scratch_f64(sim_code) * 8;
     for sys in lin_jac_systems(sim_code) {
         let jm = sys.jacobianMatrix.as_ref().unwrap();
         let column_vars = jac_column_vars(jm);
@@ -514,7 +514,7 @@ pub(super) fn build_lin_jac_infos(
             Arc::make_mut(&mut var_map.vars).insert(
                 key,
                 SimSlot {
-                    off,
+                    off: SimOff::from(off),
                     wty: WTy::F64,
                     negate: Neg::None,
                     heap: false,
@@ -525,7 +525,7 @@ pub(super) fn build_lin_jac_infos(
                 var_map.array_acc.entry(g.base).or_default().push(AccElem {
                     subs: g.subs,
                     pieces: g.pieces,
-                    off,
+                    off: SimOff::from(off),
                     wty: WTy::F64,
                     neg: Neg::None,
                     heap: false,
@@ -553,10 +553,11 @@ pub(super) fn lin_jac_offsets(
         .ok_or("CodegenWasmJit: torn-linear system has no Jacobian")?;
     let lookup = |cr: &metamodelica::Ref<DAE::ComponentRef>| -> Result<u32> {
         let key = sim_cref_key(cr)?;
-        Ok(vars
-            .get(&key)
-            .ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?
-            .off)
+        plain_off(
+            vars.get(&key)
+                .ok_or("CodegenWasmJit: torn-linear Jacobian slot not registered")?
+                .off,
+        )
     };
     let listed: Vec<u32> = lst(&jm.seedVars).map(|sv| lookup(&sv.name)).collect::<Result<_>>()?;
     let seed_offs = jac_seed_offs_by_column(jm, &listed, n)

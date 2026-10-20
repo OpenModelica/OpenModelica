@@ -2,7 +2,7 @@
 //! array/const groups, and the result-variable list.
 
 use super::*;
-use crate::CodegenWasmJitFunctions::sizes::sim_offset;
+use crate::CodegenWasmJitFunctions::sizes::{meta_off, sim_offset};
 use openmodelica_sim_meta::Sz;
 
 /// Byte offset of `time` within `SimData`.
@@ -42,13 +42,13 @@ pub(crate) struct SimVarMap {
     /// [`build_var_map`].
     pub(super) array_acc: HashMap<String, Vec<AccElem>>,
     /// `SimData` byte offset of the `terminate` flag (see [`SimLayout`]).
-    pub(super) terminate_off: u32,
-    pub(super) terminal_off: u32,
-    pub(super) initial_off: u32,
+    pub(super) terminate_off: SimOff,
+    pub(super) terminal_off: SimOff,
+    pub(super) initial_off: SimOff,
     /// `SimData` byte offset of the fired `terminate`'s message + source position.
-    pub(super) term_info_off: u32,
+    pub(super) term_info_off: SimOff,
     /// `SimData` byte offset of the nonlinear-solver failure flag (see [`SimLayout`]).
-    pub(super) nls_fail_off: u32,
+    pub(super) nls_fail_off: SimOff,
     /// `SES_NONLINEAR` system index -> its `rt_solve_nls` job. Filled by
     /// [`collect_nls_jobs`] before the equation functions are lowered.
     pub(super) nls_jobs: Arc<HashMap<i32, NlsJob>>,
@@ -57,33 +57,33 @@ pub(crate) struct SimVarMap {
     /// Number of `sample(...)` time events (see [`SampleInfo`]).
     pub(super) n_samples: u32,
     /// `SimData` byte offset of the per-sample `active` flags (`SimLayout`).
-    pub(super) sample_active_off: u32,
+    pub(super) sample_active_off: SimOff,
     /// `SimData` byte offset of the held relation values (`SimLayout::relations_off`).
-    pub(super) relations_off: u32,
+    pub(super) relations_off: SimOff,
     /// `SimData` byte offset of the relation-evaluation-mode flag.
-    pub(super) rel_fresh_off: u32,
+    pub(super) rel_fresh_off: SimOff,
     /// `SimData` byte offset of the held relation snapshot (`SimLayout::stored_rel_off`).
-    pub(super) stored_rel_off: u32,
+    pub(super) stored_rel_off: SimOff,
     /// `SimData` byte offset of `relationsPre` (`SimLayout::relations_pre_off`).
-    pub(super) relations_pre_off: u32,
+    pub(super) relations_pre_off: SimOff,
     /// Number of indexed relations (bounds the `relations[]` region).
     pub(super) n_relations: u32,
     /// `SimData` byte offset of the held math-event values (`mathEventsValuePre`).
-    pub(super) mathevents_off: u32,
+    pub(super) mathevents_off: SimOff,
     /// Number of math-event slots (bounds the `mathEventsValuePre` region).
     pub(super) n_mathevents: u32,
     /// `SimData` byte offset of the homotopy parameter lambda (`SimLayout`).
-    pub(super) lambda_off: u32,
+    pub(super) lambda_off: SimOff,
     /// C's `homotopyMethod` code (`SimLayout::homotopy_method`).
     pub(super) homotopy_method: u8,
     /// `SimCtx::old_real`.
-    pub(super) old_real: Option<(u32, u32, u32)>,
+    pub(super) old_real: Option<(SimOff, SimOff, SimOff)>,
     /// `SimData` byte offset of the zero-crossing hysteresis tolerance (`SimCtx::zctol_off`).
-    pub(super) zctol_off: u32,
+    pub(super) zctol_off: SimOff,
     /// `SimData` byte offset of `zeroCrossingsPre` (`SimLayout::zc_pre_off`).
-    pub(super) zc_pre_off: u32,
+    pub(super) zc_pre_off: SimOff,
     /// `SimData` byte offset of the `$_clkfire` flags (`SimLayout::clock_fire_off`).
-    pub(super) clock_fire_off: u32,
+    pub(super) clock_fire_off: SimOff,
     /// Number of `delay(...)` expression buffers (`delayedExps.maxDelayedIndex + 1`).
     pub(super) n_delays: u32,
     /// Number of `spatialDistribution(...)` operators (`spatialInfo.maxIndex + 1`).
@@ -145,7 +145,7 @@ impl ResultList {
             name,
             comment: sv.comment.to_string(),
             kind: ResultKind::Param {
-                off: slot.off,
+                off: meta_off(slot.off)?,
                 wty: slot.wty,
                 negate: slot.negate,
             },
@@ -491,49 +491,57 @@ pub(crate) fn const_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option<f
 /// file: a time-variant real reads a result-buffer column; a real/integer/
 /// boolean parameter reads `data_1`. Integer/boolean *algebraic* variables (not
 /// captured per row) and string variables have no numeric result column.
-fn kind_from_slot(off: u32, wty: WTy, negate: Neg, heap: bool, layout: &SimLayout) -> Option<ResultKind> {
+fn kind_from_slot(off: SimOff, wty: WTy, negate: Neg, heap: bool, layout: &SimLayout) -> Result<Option<ResultKind>> {
     if heap {
         // Strings: the row carries the interned text (`sim_meta::strings`) for an
         // algebraic one; a parameter is read at result-file open.
         if off >= layout.str_off && off < layout.sparam_off {
-            return Some(ResultKind::Column {
-                col: layout.str_col0() + (off - layout.str_off) / 4,
+            return Ok(Some(ResultKind::Column {
+                col: layout.str_col0() + ((off - layout.str_off) / 4) as u32,
                 negate,
-            });
+            }));
         }
         if off >= layout.sparam_off && off < layout.eobj_off {
-            return Some(ResultKind::Param { off, wty, negate });
+            return Ok(Some(ResultKind::Param {
+                off: meta_off(off)?,
+                wty,
+                negate,
+            }));
         }
-        return None;
+        return Ok(None);
     }
-    if off == TIME_OFF {
-        return Some(ResultKind::Column { col: 0, negate });
+    if off == SimOff::from(TIME_OFF) {
+        return Ok(Some(ResultKind::Column { col: 0, negate }));
     }
     if off >= layout.real_off && off < layout.rparam_off {
         // realVars region (states | derivatives | algebraics) -> data_2 column.
-        return Some(ResultKind::Column {
-            col: 1 + (off - layout.real_off) / 8,
+        return Ok(Some(ResultKind::Column {
+            col: 1 + ((off - layout.real_off) / 8) as u32,
             negate,
-        });
+        }));
     }
     // Integer / boolean *algebraic* variables are captured per row (as f64) in
     // the columns after the real part, so a varying one is recorded over time.
     if off >= layout.int_off && off < layout.iparam_off {
-        let col = layout.n_reals_row() + (off - layout.int_off) / 4;
-        return Some(ResultKind::Column { col, negate });
+        let col = layout.n_reals_row() + ((off - layout.int_off) / 4) as u32;
+        return Ok(Some(ResultKind::Column { col, negate }));
     }
     if off >= layout.bool_off && off < layout.bparam_off {
-        let col = layout.n_reals_row() + layout.n_int_alg() + (off - layout.bool_off) / 4;
-        return Some(ResultKind::Column { col, negate });
+        let col = layout.n_reals_row() + layout.n_int_alg() + ((off - layout.bool_off) / 4) as u32;
+        return Ok(Some(ResultKind::Column { col, negate }));
     }
     // Real / integer / boolean *parameters* are time-invariant -> data_1.
     let is_param = (off >= layout.rparam_off && off < layout.int_off)
         || (off >= layout.iparam_off && off < layout.bool_off)
         || (off >= layout.bparam_off && off < layout.str_off);
     if is_param {
-        return Some(ResultKind::Param { off, wty, negate });
+        return Ok(Some(ResultKind::Param {
+            off: meta_off(off)?,
+            wty,
+            negate,
+        }));
     }
-    None // string slots
+    Ok(None) // string slots
 }
 
 /// An array variable scalarized into `len` consecutive elements spelled
@@ -952,9 +960,14 @@ pub(super) fn push_sensitivity_vars(
     if sens_vars.is_empty() {
         return Ok(Vec::new());
     }
-    let params: HashMap<String, u32> = lst(&vars.paramVars)
+    let params: HashMap<String, SimOff> = lst(&vars.paramVars)
         .enumerate()
-        .map(|(k, sv)| Ok((cref_display(&sv.name)?, layout.rparam_off + (k as u32) * 8)))
+        .map(|(k, sv)| {
+            Ok((
+                cref_display(&sv.name)?,
+                layout.rparam_off + SimOff::from((k as u32) * 8),
+            ))
+        })
         .collect::<Result<_>>()?;
     let mut offs = Vec::with_capacity(n_sens_par);
     for sv in &sens_vars[..n_sens_par] {
@@ -962,7 +975,7 @@ pub(super) fn push_sensitivity_vars(
         let off = *params
             .get(&name)
             .ok_or("CodegenWasmJit: a sensitivity parameter is not a real parameter of the model")?;
-        offs.push(off);
+        offs.push(plain_off(off)?);
     }
     for (i, sv) in sens_vars[n_sens_par..].iter().enumerate() {
         result_vars.push(ResultVar {
@@ -1027,9 +1040,9 @@ pub(super) fn build_var_map(
         rel_fresh_off: layout.rel_fresh_off,
         stored_rel_off: layout.stored_rel_off,
         relations_pre_off: layout.relations_pre_off,
-        n_relations: layout.n_rel,
+        n_relations: layout.n_rel as u32,
         mathevents_off: layout.mathevents_off,
-        n_mathevents: layout.n_math,
+        n_mathevents: layout.n_math as u32,
         lambda_off: layout.lambda_off,
         homotopy_method: layout.homotopy_method.code(),
         old_real: layout
@@ -1048,7 +1061,7 @@ pub(super) fn build_var_map(
     // Collected separately: the `push_editable` closure borrows `editable`. Merged below.
     let mut start_editable: Vec<EditableParam> = Vec::new();
     let mut string_editable: Vec<EditableParam> = Vec::new();
-    let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: u32, wty: WTy| {
+    let mut push_editable = |sv: &SimCodeVar::SimVar, name: &str, off: SimOff, wty: WTy| -> Result<()> {
         if sv.isValueChangeable && is_result_output(sv) {
             if let Some(disp) = result_name(name) {
                 editable.push(EditableParam {
@@ -1057,7 +1070,7 @@ pub(super) fn build_var_map(
                     unit: sv.unit.to_string(),
                     display_unit: sv.displayUnit.to_string(),
                     relative_quantity: sv.relativeQuantity,
-                    off,
+                    off: meta_off(off)?,
                     wty,
                     is_start: false,
                     is_bool: is_boolean_type(&sv.type_),
@@ -1066,6 +1079,7 @@ pub(super) fn build_var_map(
                 });
             }
         }
+        Ok(())
     };
 
     // time — result signal 0.
@@ -1089,17 +1103,22 @@ pub(super) fn build_var_map(
     // A primary (non-alias) variable's result signal, carrying why a run would
     // filter it — the overriding flags are not known here.
     let make_result =
-        |sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool, raw_name: String| -> Option<ResultVar> {
-            let name = result_name(&raw_name)?;
+        |sv: &SimCodeVar::SimVar, off: SimOff, wty: WTy, heap: bool, raw_name: String| -> Result<Option<ResultVar>> {
+            let Some(name) = result_name(&raw_name) else {
+                return Ok(None);
+            };
             let kind = match resizing {
                 true => ResultKind::Param {
-                    off,
+                    off: meta_off(off)?,
                     wty,
                     negate: Neg::None,
                 },
-                false => kind_from_slot(off, wty, Neg::None, heap, layout)?,
+                false => match kind_from_slot(off, wty, Neg::None, heap, layout)? {
+                    Some(kind) => kind,
+                    None => return Ok(None),
+                },
             };
-            Some(ResultVar {
+            Ok(Some(ResultVar {
                 name,
                 comment: sv.comment.to_string(),
                 kind,
@@ -1111,7 +1130,7 @@ pub(super) fn build_var_map(
                 filter: filter_bits(sv),
                 unvarying: false,
                 enumeration: enumeration_names(&sv.type_),
-            })
+            }))
         };
     // The elements of an array variable resolve through one entry per table,
     // registered at the first element: is `elems[0]` one of those elements?
@@ -1119,11 +1138,11 @@ pub(super) fn build_var_map(
     let mut current: Option<&ArrayRun> = None;
     let mut in_run = |map: &mut SimVarMap,
                       elems: &[&SimCodeVar::SimVar],
-                      off: u32,
+                      off: SimOff,
                       wty: WTy,
                       heap: bool,
-                      start_off: Option<u32>,
-                      pre: u32|
+                      start_off: Option<SimOff>,
+                      pre: SimOff|
      -> RunPos {
         if covered > 0 {
             covered -= 1;
@@ -1143,7 +1162,7 @@ pub(super) fn build_var_map(
 
     // States | derivatives | real algebraics -> the realVars region (data_2). Each
     // also owns a `start` attribute slot (C's `realVarsData[i].attribute.start`).
-    let mut push_start_editable = |sv: &SimCodeVar::SimVar, start_off: u32, name: &str| {
+    let mut push_start_editable = |sv: &SimCodeVar::SimVar, start_off: SimOff, name: &str| -> Result<()> {
         if let Some(disp) = result_name(name) {
             start_editable.push(EditableParam {
                 name: disp,
@@ -1151,7 +1170,7 @@ pub(super) fn build_var_map(
                 unit: sv.unit.to_string(),
                 display_unit: sv.displayUnit.to_string(),
                 relative_quantity: sv.relativeQuantity,
-                off: start_off,
+                off: meta_off(start_off)?,
                 wty: WTy::F64,
                 is_start: true,
                 is_bool: is_boolean_type(&sv.type_),
@@ -1159,6 +1178,7 @@ pub(super) fn build_var_map(
                 enum_names: enumeration_names(&sv.type_).unwrap_or_default(),
             });
         }
+        Ok(())
     };
     let real_algs = real_alg_vars(vars);
     // Each list: its variables of constant size, then the runtime-sized arrays.
@@ -1179,11 +1199,11 @@ pub(super) fn build_var_map(
                 Arc::make_mut(&mut map.start_slots).insert(sim_cref_key(&sv.name)?, start_off);
             }
             if sv.isValueChangeable && is_result_output(sv) {
-                push_start_editable(sv, start_off, &cref_display(&sv.name)?);
+                push_start_editable(sv, start_off, &cref_display(&sv.name)?)?;
             }
             results.push_at(
                 pos,
-                || Ok(make_result(sv, off, WTy::F64, false, cref_display(&sv.name)?)),
+                || make_result(sv, off, WTy::F64, false, cref_display(&sv.name)?),
                 &mut compact,
                 brackets,
             )?;
@@ -1270,7 +1290,7 @@ pub(super) fn build_var_map(
                 insert_var_pre(&mut map, sv, off, wty, heap, pre)?;
             }
             if editable_param && sv.isValueChangeable && is_result_output(sv) {
-                push_editable(sv, &cref_display(&sv.name)?, off, wty);
+                push_editable(sv, &cref_display(&sv.name)?, off, wty)?;
             }
             // Not a result signal, but `_init.xml` lists it and C's `-override` reaches it.
             if heap
@@ -1285,7 +1305,7 @@ pub(super) fn build_var_map(
                     unit: sv.unit.to_string(),
                     display_unit: String::new(),
                     relative_quantity: false,
-                    off,
+                    off: meta_off(off)?,
                     wty: WTy::I32,
                     is_start: false,
                     is_bool: false,
@@ -1295,7 +1315,7 @@ pub(super) fn build_var_map(
             }
             results.push_at(
                 pos,
-                || Ok(make_result(sv, off, wty, heap, cref_display(&sv.name)?)),
+                || make_result(sv, off, wty, heap, cref_display(&sv.name)?),
                 &mut compact,
                 brackets,
             )?;
@@ -1322,7 +1342,13 @@ pub(super) fn build_var_map(
     // the constructor (a parameter equation) writes the handle, the destructor
     // frees the native object. No result column.
     for (i, sv) in lst(&vars.extObjVars).enumerate() {
-        insert_var(&mut map, sv, layout.eobj_off + (i as u32) * 4, WTy::I32, false)?;
+        insert_var(
+            &mut map,
+            sv,
+            layout.eobj_off + SimOff::from(i as u32 * 4),
+            WTy::I32,
+            false,
+        )?;
         Arc::make_mut(&mut map.extobj_dtors).insert(sim_cref_key(&sv.name)?, extobj_destructor_key(sv)?);
     }
 
@@ -1390,7 +1416,7 @@ pub(super) fn build_var_map(
             DAE::ComponentRef::CREF_IDENT {
                 ident, subscriptLst, ..
             } if ident.as_str() == "time" && subscriptLst.is_empty() => Some(SimSlot {
-                off: TIME_OFF,
+                off: SimOff::from(TIME_OFF),
                 wty: WTy::F64,
                 negate: Neg::None,
                 heap: false,
@@ -1467,7 +1493,7 @@ pub(super) fn build_var_map(
         let make = || -> Result<Option<ResultVar>> {
             let (Some(name), Some(kind)) = (
                 result_name(&cref_display(&av.name)?),
-                kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout),
+                kind_from_slot(slot.off, slot.wty, slot.negate, slot.heap, layout)?,
             ) else {
                 return Ok(None);
             };
@@ -1569,7 +1595,13 @@ pub(super) fn build_var_map(
 /// Register one variable's slot (by canonical cref key) and its start value. If
 /// the variable is a scalarized array element (`base[c1,…,cn]`), also record it
 /// under its array base name so a whole-array reference can later be marshalled.
-pub(super) fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32, wty: WTy, heap: bool) -> Result<()> {
+pub(super) fn insert_var(
+    map: &mut SimVarMap,
+    sv: &SimCodeVar::SimVar,
+    off: SimOff,
+    wty: WTy,
+    heap: bool,
+) -> Result<()> {
     insert_var_pre(map, sv, off, wty, heap, 0)
 }
 
@@ -1577,20 +1609,20 @@ pub(super) fn insert_var(map: &mut SimVarMap, sv: &SimCodeVar::SimVar, off: u32,
 pub(super) fn insert_var_pre(
     map: &mut SimVarMap,
     sv: &SimCodeVar::SimVar,
-    off: u32,
+    off: SimOff,
     wty: WTy,
     heap: bool,
-    pre: u32,
+    pre: SimOff,
 ) -> Result<()> {
     let key = sim_cref_key(&sv.name)?;
     Arc::make_mut(&mut map.vars).insert(
         key.clone(),
         SimSlot {
-            off,
+            off: off,
             wty,
             negate: Neg::None,
             heap,
-            pre,
+            pre: pre,
         },
     );
     Arc::make_mut(&mut map.starts).insert(key, sv.initialValue.clone());
@@ -1609,7 +1641,7 @@ pub(super) fn insert_var_pre(
 }
 
 /// Register a runtime-sized array variable whose element `[1,…]` is at `slot`.
-fn register_dyn(map: &mut SimVarMap, dv: &DynVar, slot: SimSlot, start_off: Option<u32>) -> Result<()> {
+fn register_dyn(map: &mut SimVarMap, dv: &DynVar, slot: SimSlot, start_off: Option<SimOff>) -> Result<()> {
     let key = sim_cref_key(&dv.sv.name)?;
     let dims = dv.dims.clone();
     Arc::make_mut(&mut map.vars)
@@ -1632,11 +1664,11 @@ fn register_run(
     layout: &SimLayout,
     run: &ArrayRun,
     elems: &[&SimCodeVar::SimVar],
-    off: u32,
+    off: SimOff,
     wty: WTy,
     heap: bool,
-    start_off: Option<u32>,
-    pre: u32,
+    start_off: Option<SimOff>,
+    pre: SimOff,
 ) {
     let slot = SimSlot {
         off,
@@ -1697,10 +1729,10 @@ fn add_run_groups(map: &mut SimVarMap, layout: &SimLayout, base: &str, dims: &[u
     let _ = add_groups(map, base, dims, first, pre);
 }
 
-fn add_groups(map: &mut SimVarMap, base: &str, dims: Vec<Sz>, first: SimSlot, pre: Option<u32>) -> Result<()> {
+fn add_groups(map: &mut SimVarMap, base: &str, dims: Vec<Sz>, first: SimSlot, pre: Option<SimOff>) -> Result<()> {
     let total = dims.iter().fold(Sz::lit(1), |a, d| a * d.clone());
     let stride = first.wty.bytes();
-    let mut add = |key: String, off: u32| -> Result<()> {
+    let mut add = |key: String, off: SimOff| -> Result<()> {
         let (wty, heap, dims) = (first.wty, first.heap, dims.clone());
         if first.negate == Neg::None {
             let mut key_pieces = vec![key.clone()];
@@ -1719,7 +1751,7 @@ fn add_groups(map: &mut SimVarMap, base: &str, dims: Vec<Sz>, first: SimSlot, pr
                 .as_const()
                 .ok_or("CodegenWasmJit: negated alias of a resizable array")? as u32;
             let dims = dims.iter().map(|d| d.as_const().unwrap_or(0) as u32).collect();
-            let elems = (0..n).map(|k| (off + k * stride, first.negate)).collect();
+            let elems = (0..n).map(|k| (off + SimOff::from(k * stride), first.negate)).collect();
             Arc::make_mut(&mut map.scatter_groups).insert(key, ScatterGroup { wty, heap, dims, elems });
         }
         Ok(())
@@ -1798,12 +1830,12 @@ pub(super) struct GroupEntry {
 pub(super) struct AccElem {
     pub(super) subs: Vec<i32>,
     pub(super) pieces: Vec<String>,
-    pub(super) off: u32,
+    pub(super) off: SimOff,
     pub(super) wty: WTy,
     pub(super) neg: Neg,
     pub(super) heap: bool,
     /// See [`SimSlot::pre`].
-    pub(super) pre: u32,
+    pub(super) pre: SimOff,
 }
 
 /// The name with every subscript stripped, the subscripts outermost-first, and
@@ -1942,7 +1974,7 @@ pub(super) fn finalize_array_groups(map: &mut SimVarMap) -> Result<()> {
         let contiguous = table
             .iter()
             .enumerate()
-            .all(|(lin, &(off, neg))| neg == Neg::None && off == base_off + lin as u32 * stride);
+            .all(|(lin, &(off, neg))| neg == Neg::None && off == base_off + SimOff::from(lin as u32 * stride));
         if !contiguous {
             Arc::make_mut(&mut map.scatter_groups).insert(
                 base,

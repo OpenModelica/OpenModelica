@@ -53,6 +53,16 @@ impl Sz {
         self.terms.is_empty()
     }
 
+    /// The sign once the sizes are large enough to outweigh the constant term;
+    /// `None` when the terms disagree.
+    pub fn sign_for_large_sizes(&self) -> Option<i64> {
+        let mut signs = self.terms.iter().map(|(_, k)| k.signum());
+        match signs.next() {
+            None => Some(self.c.signum()),
+            Some(s) => signs.all(|t| t == s).then_some(s),
+        }
+    }
+
     /// The constant term and the rest.
     pub fn split_const(&self) -> (Sz, i64) {
         (
@@ -335,6 +345,24 @@ impl LayoutNum for u32 {
     }
     fn plus_if_positive(self, k: u32) -> u32 {
         if self > 0 { self + k } else { 0 }
+    }
+}
+
+/// A concrete [`Layout`](crate::Layout)'s number type: `u32` for a model, `u64`
+/// in the codegen, whose offsets can be tagged.
+pub trait LayoutOff: Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + From<u32> {
+    fn to_u32(self) -> u32;
+}
+
+impl LayoutOff for u32 {
+    fn to_u32(self) -> u32 {
+        self
+    }
+}
+
+impl LayoutOff for u64 {
+    fn to_u32(self) -> u32 {
+        self as u32
     }
 }
 

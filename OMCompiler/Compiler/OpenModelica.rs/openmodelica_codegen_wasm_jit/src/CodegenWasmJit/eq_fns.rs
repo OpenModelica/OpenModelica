@@ -46,7 +46,7 @@ pub(super) fn lower_unit(
     ctx: &mut FnCtx,
     unit: &EqUnit,
     eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
-    pending: &mut BTreeMap<u32, Vec<u8>>,
+    pending: &mut BTreeMap<SimOff, Vec<u8>>,
 ) -> Result<()> {
     if let Some((cref, exp)) = unit.assign_operands() {
         if let Some((off, bytes)) = sim_const_store(ctx, cref, exp)? {
@@ -179,7 +179,7 @@ pub(super) fn build_split_fn(
     n_params: u32,
     ty: u32,
     stateset_diag: &[u32],
-    save_pre: &[(u32, u32, Sz)],
+    save_pre: &[(SimOff, SimOff, Sz)],
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
@@ -220,7 +220,7 @@ pub(super) fn build_chunks(
     n_params: u32,
     ty: u32,
     stateset_diag: &[u32],
-    save_pre: &[(u32, u32, Sz)],
+    save_pre: &[(SimOff, SimOff, Sz)],
     var_map: &SimVarMap,
     eq_index: &HashMap<i32, metamodelica::Ref<SimCode::SimEqSystem>>,
     by_name: &HashMap<String, FnInfo>,
@@ -236,7 +236,7 @@ pub(super) fn build_chunks(
         if pool.len() == first {
             ctx.emit_stateset_diag_init(stateset_diag)?;
         }
-        let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+        let mut pending: BTreeMap<SimOff, Vec<u8>> = BTreeMap::new();
         while i < units.len() {
             // Cancellation poll, throttled: the equation functions are the bulk of
             // the emit for models with no user functions to poll between.
@@ -416,7 +416,7 @@ pub(super) fn build_eq_fn_single(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+    let mut pending: BTreeMap<SimOff, Vec<u8>> = BTreeMap::new();
     for (i, unit) in units.iter().enumerate() {
         if i & 63 == 0 {
             metamodelica::cancel::bail_if_cancelled()?;

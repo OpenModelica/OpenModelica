@@ -245,8 +245,8 @@ pub(super) fn collect_nls_jobs(
                         k: systems.len() as u32,
                         n,
                         eq_index: nlSystem.index as u32,
-                        hist_off,
-                        nominal_off,
+                        hist_off: SimOff::from(hist_off),
+                        nominal_off: SimOff::from(nominal_off),
                         has_jac,
                         mixed,
                         nnz,
@@ -484,7 +484,7 @@ pub(crate) struct DynScratch {
     pub(crate) lens: HashMap<String, Sz>,
     pub(crate) base: Sz,
     pub(crate) size: Sz,
-    pub(crate) fills: Vec<(u32, Sz, ConstSlot, u32)>,
+    pub(crate) fills: Vec<(SimOff, Sz, ConstSlot, u32)>,
 }
 
 impl DynScratch {
@@ -501,7 +501,7 @@ impl DynScratch {
         })
     }
 
-    fn take(&mut self, bytes: Sz) -> Option<u32> {
+    fn take(&mut self, bytes: Sz) -> Option<SimOff> {
         let off = crate::CodegenWasmJitFunctions::sizes::sim_offset(&(self.base.clone() + self.size.clone())).ok()?;
         self.size = self.size.clone() + bytes;
         Some(off)

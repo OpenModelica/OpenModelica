@@ -73,7 +73,7 @@ pub(super) fn collect_unit_defs(mi: &SimCode::ModelInfo, result_vars: &[ResultVa
 /// direct copy — no conversion, hence no drift.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn build_sim_meta(
-    layout: &SimLayout,
+    layout: &openmodelica_sim_meta::Layout,
     results: &ResultList,
     units: Vec<UnitDef>,
     settings: &SimCode::SimulationSettings,

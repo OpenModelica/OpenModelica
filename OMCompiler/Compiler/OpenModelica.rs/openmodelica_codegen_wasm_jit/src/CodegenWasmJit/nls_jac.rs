@@ -338,7 +338,10 @@ pub(crate) fn iteration_var_slot(
 ) -> Result<Option<IterSlot>> {
     let key = resolve_sim_key(cr, |k| vars.contains_key(k))?;
     if let Some(off) = key.strip_prefix("$START.").and_then(|k| start_slots.get(k)) {
-        return Ok(Some(IterSlot { off, wty: WTy::F64 }));
+        return Ok(Some(IterSlot {
+            off: off,
+            wty: WTy::F64,
+        }));
     }
     match vars.get(&key) {
         None => Ok(None),
@@ -520,7 +523,7 @@ pub(super) fn build_nls_jac_infos(
     var_map: &mut SimVarMap,
 ) -> Result<HashMap<i32, NlsJacInfo>> {
     let mut infos = HashMap::default();
-    let mut cursor = layout.nls_jac_off;
+    let mut cursor = plain_off(layout.nls_jac_off)?;
     for sys in nls_systems {
         if !nls_jac_usable(sys) {
             continue;

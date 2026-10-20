@@ -33,10 +33,10 @@ pub(super) fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::
     if mw != WTy::I32 {
         return Err("CodegenWasmJit: terminate message is not a String");
     }
-    ctx.emit(we::Instruction::I32Store(mem_arg(info_off, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(info_off, 2)?));
     ctx.emit(we::Instruction::LocalGet(data));
     emit_str_literal(ctx, file.as_bytes())?;
-    ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 4, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(info_off + 4, 2)?));
     let pos = [
         info.lineNumberStart,
         info.columnNumberStart,
@@ -47,11 +47,14 @@ pub(super) fn emit_terminate(ctx: &mut FnCtx, message: &DAE::Exp, source: &DAE::
     for (i, v) in pos.iter().enumerate() {
         ctx.emit(we::Instruction::LocalGet(data));
         ctx.emit(we::Instruction::I32Const(*v));
-        ctx.emit(we::Instruction::I32Store(mem_arg(info_off + 8 + i as u32 * 4, 2)));
+        ctx.emit(we::Instruction::I32Store(sim_mem(
+            info_off + 8 + SimOff::from(i as u32 * 4),
+            2,
+        )?));
     }
     ctx.emit(we::Instruction::LocalGet(data));
     ctx.emit(we::Instruction::I32Const(1));
-    ctx.emit(we::Instruction::I32Store(mem_arg(off, 2)));
+    ctx.emit(we::Instruction::I32Store(sim_mem(off, 2)?));
     Ok(())
 }
 
@@ -101,7 +104,7 @@ pub(super) fn emit_assert(
         ctx.emit(we::Instruction::I32Const(info.lineNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.columnNumberEnd));
         ctx.emit(we::Instruction::I32Const(info.isReadOnly as i32));
-        emit_initial_flag(ctx);
+        emit_initial_flag(ctx)?;
         ctx.emit(we::Instruction::Call(env_extra_index("rt_assert_warning")?));
         ctx.emit(we::Instruction::I32Const(1));
         ctx.emit(we::Instruction::GlobalSet(g));
@@ -150,7 +153,7 @@ pub(super) fn emit_assert(
     }
     emit_unlikely_if(ctx, we::BlockType::Empty);
     report_args(ctx)?;
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
     ctx.emit(we::Instruction::Call(rt_index("rt_nls_assert_failed")?));
     release_heap_locals(ctx)?;
@@ -158,7 +161,7 @@ pub(super) fn emit_assert(
     ctx.emit(we::Instruction::Return);
     ctx.emit(we::Instruction::End);
     report_args(ctx)?;
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     emit_sim_data_or_zero(ctx);
     let report = if when_body { "rt_assert_when" } else { "rt_assert" };
     ctx.emit(we::Instruction::Call(env_extra_index(report)?));
@@ -209,7 +212,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
                 ctx.emit(I::I32Const(0)); // line/col start+end, isReadOnly
             }
             ctx.emit(I::I32Const(0)); // no condition: never suppressed
-            emit_initial_flag(ctx);
+            emit_initial_flag(ctx)?;
             emit_sim_data_or_zero(ctx);
             Ok(())
         };
@@ -228,7 +231,7 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
         return Ok(());
     }
     emit_sim_data_or_zero(ctx);
-    emit_initial_flag(ctx);
+    emit_initial_flag(ctx)?;
     ctx.emit(I::Call(rt_index("rt_assert_common")?));
     let taken = ctx.alloc_temp(WTy::I32);
     ctx.emit(I::LocalSet(taken));
@@ -250,14 +253,15 @@ fn emit_model_error(ctx: &mut FnCtx) -> Result<()> {
 }
 
 /// 0 outside a simulation: C's `FUNCTION_CONTEXT` arm prints no header at all.
-pub(super) fn emit_initial_flag(ctx: &mut FnCtx) {
+pub(super) fn emit_initial_flag(ctx: &mut FnCtx) -> Result<()> {
     match ctx.sim.as_ref().map(|s| (s.data_local, s.initial_off)) {
         Some((data, off)) => {
             ctx.emit(we::Instruction::LocalGet(data));
-            ctx.emit(we::Instruction::I32Load(mem_arg(off, 2)));
+            ctx.emit(we::Instruction::I32Load(sim_mem(off, 2)?));
         }
         None => ctx.emit(we::Instruction::I32Const(0)),
     }
+    Ok(())
 }
 
 /// The dumped source form of `e`, for embedding in an assertion message.

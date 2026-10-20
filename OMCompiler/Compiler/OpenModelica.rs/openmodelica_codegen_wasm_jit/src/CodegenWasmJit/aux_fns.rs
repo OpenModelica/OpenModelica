@@ -27,7 +27,7 @@ pub(super) fn build_removed_init_eqs_fn(
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
     ctx.emit_removed_init_reset(layout.removed_init_idx_off)?;
-    let mut pending: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+    let mut pending: BTreeMap<SimOff, Vec<u8>> = BTreeMap::new();
     let mut index = 0u32;
     for eq in lst(&sim_code.removedInitialEquations) {
         match &**eq {
@@ -161,7 +161,7 @@ pub(super) fn build_init_start_values_fn(
     literals: &mut Literals,
 ) -> Result<we::Function> {
     let mut ctx = FnCtx::new_sim(sim_ctx(var_map), by_name, literals);
-    let starts: Vec<(f64, u32)> = reals
+    let starts: Vec<(f64, SimOff)> = reals
         .iter()
         .enumerate()
         .map(|(i, sv)| {
@@ -171,7 +171,7 @@ pub(super) fn build_init_start_values_fn(
             ))
         })
         .collect::<Result<_>>()?;
-    let fills: Vec<(u32, Sz, f64)> = pos
+    let fills: Vec<(SimOff, Sz, f64)> = pos
         .dyn_reals
         .iter()
         .map(|(dv, idx)| {
@@ -240,14 +240,14 @@ pub(super) fn literal_value(exp: &Option<metamodelica::Ref<DAE::Exp>>) -> Option
 pub(super) fn build_update_bound_attrs_fn(
     sim_code: &SimCode::SimCode,
     layout: &SimLayout,
-    defaults: &[(u32, ConstSlot)],
-    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
     attr_targets: &AttrTargetMap,
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,
 ) -> Result<we::Function> {
-    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, u32, Option<SimSlot>)> = Vec::new();
+    let mut attrs: Vec<(Attr, metamodelica::Ref<DAE::Exp>, AttrTargets, SimOff, Option<SimSlot>)> = Vec::new();
     for (i, (attr, cref, exp)) in bound_attr_equations(sim_code).into_iter().enumerate() {
         let key = sim_cref_key(cref)
             .ok()
@@ -261,7 +261,13 @@ pub(super) fn build_update_bound_attrs_fn(
             Attr::Start => key.as_deref().and_then(|k| var_map.vars.get(k)),
             _ => None,
         };
-        attrs.push((attr, exp.clone(), targets, layout.attr_log_off + i as u32 * 8, var));
+        attrs.push((
+            attr,
+            exp.clone(),
+            targets,
+            layout.attr_log_off + SimOff::from(i as u32 * 8),
+            var,
+        ));
     }
     let sim = sim_ctx(var_map);
     let mut ctx = FnCtx::new_sim(sim, by_name, literals);
@@ -277,8 +283,8 @@ pub(super) fn build_update_bound_attrs_fn(
 /// Build `functionAttrDefaults(SimData*)`: the constant attribute defaults only, for
 /// a solver built before initialization.
 pub(super) fn build_attr_defaults_fn(
-    defaults: &[(u32, ConstSlot)],
-    dyn_defaults: &[(u32, Sz, ConstSlot, u32)],
+    defaults: &[(SimOff, ConstSlot)],
+    dyn_defaults: &[(SimOff, Sz, ConstSlot, u32)],
     var_map: &SimVarMap,
     by_name: &HashMap<String, FnInfo>,
     literals: &mut Literals,

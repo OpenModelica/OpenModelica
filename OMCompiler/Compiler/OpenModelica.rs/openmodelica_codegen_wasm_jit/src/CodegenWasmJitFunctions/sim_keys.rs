@@ -40,7 +40,7 @@ pub(super) fn clkpre_cref(cr: &DAE::ComponentRef) -> metamodelica::Ref<DAE::Comp
 }
 
 /// Address of the sub-clock block `interval()`/`firstTick()` read.
-pub(super) fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<u32> {
+pub(super) fn sub_clock_off(sim: &SimCtx, name: &str) -> Result<SimOff> {
     sim.sub_clock_off.ok_or_else(|| {
         crate::CodegenWasmJit::record_error(format!(
             "CodegenWasmJit: `{name}()` reads the active sub-clock, but the equation is not in a \

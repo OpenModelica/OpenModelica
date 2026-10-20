@@ -200,7 +200,8 @@ pub(super) fn build_sim_model(
     let lz = openmodelica_sim_meta::Layout::<Sz>::build(counts_sz.clone(), flags);
     let layout = match resizable {
         true => tagged_layout(&lz)?,
-        false => SimLayout::build(counts, flags),
+        false => openmodelica_sim_meta::Layout::<u32>::build(counts, flags)
+            .try_map(|v| Ok::<_, &str>(SimOff::from(*v)), |v| Ok(SimOff::from(*v)))?,
     };
 
     let (mut var_map, mut result_vars, editable_params) = build_var_map(vars, &array_runs, &layout, &lz, &dyn_vars)?;
@@ -211,7 +212,7 @@ pub(super) fn build_sim_model(
     for (svs, base) in [(&dae_res_vars, layout.dae_res_off), (&dae_aux_vars, layout.dae_aux_off)] {
         for sv in svs.iter() {
             let i = u32::try_from(sv.index).map_err(|_| "CodegenWasmJit: DAE mode variable has no index")?;
-            insert_var(&mut var_map, sv, base + i * 8, WTy::F64, false)?;
+            insert_var(&mut var_map, sv, base + SimOff::from(i * 8), WTy::F64, false)?;
         }
     }
     // An auxiliary variable can be a whole array (`$AUX.w = f(…)`), so its element
@@ -241,7 +242,7 @@ pub(super) fn build_sim_model(
             Arc::make_mut(&mut var_map.vars).insert(
                 sim_cref_key(&old)?,
                 SimSlot {
-                    off: layout.alg_old_off + (i as u32) * 8,
+                    off: layout.alg_old_off + SimOff::from((i as u32) * 8),
                     wty: WTy::F64,
                     negate: Neg::None,
                     heap: false,
@@ -540,7 +541,7 @@ pub(super) fn build_sim_model(
     let algebraic_eqs = with_local_known(alg_eqs_raw.clone());
     // C's `storePreValues` at the end of `updateContinuousSystem`, which here tails
     // `functionAlgebraics` (see `sim_save_pre_values`).
-    let save_pre: Vec<(u32, u32, Sz)> = if has_when {
+    let save_pre: Vec<(SimOff, SimOff, Sz)> = if has_when {
         vec![
             (
                 layout.pre_real_off,
@@ -608,7 +609,7 @@ pub(super) fn build_sim_model(
     let nls_strict_of = nls_strict_map(&nls_scan.iter().map(|l| l.as_slice()).collect::<Vec<_>>());
     // The integrator's per-unknown atol and the Jacobian's FD step floor: the states,
     // then in DAE mode the algebraic unknowns (C's `getAlgebraicDAEVarNominals`).
-    let mut nominal_defaults: Vec<(u32, f64)> = Vec::new();
+    let mut nominal_defaults: Vec<(SimOff, f64)> = Vec::new();
     for (list, base) in [
         (
             svs(&vars.stateVars).take(n_states as usize).collect::<Vec<_>>(),
@@ -617,7 +618,7 @@ pub(super) fn build_sim_model(
         (dae_alg_vars.clone(), layout.dae_alg_nom_off),
     ] {
         for (i, sv) in list.iter().enumerate() {
-            let off = base + (i as u32) * 8;
+            let off = base + SimOff::from((i as u32) * 8);
             nominal_defaults.push((off, const_value(&sv.nominalValue).unwrap_or(1.0).abs().max(1e-32)));
             if let Some(t) = attr_targets.of(&sv.name) {
                 t.nom_offs.push(off);
@@ -625,13 +626,13 @@ pub(super) fn build_sim_model(
         }
     }
     // C's `functionJacAC_num` reads each state's `max` to sign its step.
-    let mut max_defaults: Vec<(u32, f64)> = Vec::new();
+    let mut max_defaults: Vec<(SimOff, f64)> = Vec::new();
     // gbode's KINSOL keeps the sign a state's `min` asks for.
-    let mut min_defaults: Vec<(u32, f64)> = Vec::new();
+    let mut min_defaults: Vec<(SimOff, f64)> = Vec::new();
     for (i, sv) in lst(&vars.stateVars).take(n_states as usize).enumerate() {
         let (max_off, min_off) = (
-            layout.state_max_off + (i as u32) * 8,
-            layout.state_min_off + (i as u32) * 8,
+            layout.state_max_off + SimOff::from((i as u32) * 8),
+            layout.state_min_off + SimOff::from((i as u32) * 8),
         );
         max_defaults.push((max_off, const_value(&sv.maxValue).unwrap_or(f64::MAX)));
         min_defaults.push((min_off, const_value(&sv.minValue).unwrap_or(-f64::MAX)));
@@ -649,8 +650,8 @@ pub(super) fn build_sim_model(
     // Same, for the `-l` matrices; "A" there is the ODE state Jacobian, so these
     // are also the slots the integrators seed and read.
     let (linz_jac_infos, adj_jac_info) = build_linz_jac_infos(&linz, &layout, &mut var_map)?;
-    let recon_base = layout.linz_off + linz.n_scratch_f64() * 8;
-    let mut recon_jac_infos = datarecon::build_jac_infos(&recon, recon_base, &mut var_map)?;
+    let recon_base = layout.linz_off + SimOff::from(linz.n_scratch_f64() * 8);
+    let mut recon_jac_infos = datarecon::build_jac_infos(&recon, plain_off(recon_base)?, &mut var_map)?;
     var_map.nls_jobs = Arc::new(nls_jobs);
     var_map.generic_calls = Arc::new(
         lst(&sim_code.generic_loop_calls)
@@ -865,7 +866,7 @@ pub(super) fn build_sim_model(
     )?);
     // Seed `relationsPre := relations` at the end of init (the in-wasm `simulate`
     // path skips the host `run_initialization`).
-    let init_save: Vec<(u32, u32, Sz)> = if layout.n_rel > 0 {
+    let init_save: Vec<(SimOff, SimOff, Sz)> = if layout.n_rel > 0 {
         vec![(
             layout.relations_pre_off,
             layout.relations_off,
@@ -1033,7 +1034,7 @@ pub(super) fn build_sim_model(
         }
     }
     // The attribute defaults of the runtime-sized arrays.
-    let mut dyn_defaults: Vec<(u32, Sz, ConstSlot, u32)> = dyn_scratch.fills.clone();
+    let mut dyn_defaults: Vec<(SimOff, Sz, ConstSlot, u32)> = dyn_scratch.fills.clone();
     let mut sidx = Sz::lit(states.len() as i64);
     for dv in &dyn_vars.states {
         let nom = const_value(&dv.sv.nominalValue).unwrap_or(1.0).abs().max(1e-32);
@@ -1150,8 +1151,8 @@ pub(super) fn build_sim_model(
                     var_map
                         .vars
                         .get(&key)
-                        .map(|s| s.off)
                         .ok_or("CodegenWasmJit: DAE mode algebraic unknown has no SimData slot")
+                        .and_then(|s| plain_off(s.off))
                 })
                 .collect::<Result<Vec<u32>>>()?;
             Ok(openmodelica_sim_meta::DaeInfo {
@@ -1260,16 +1261,16 @@ pub(super) fn build_sim_model(
             .position(|r| sim_cref_key(&r.name).ok().as_deref() == Some(key.as_str()))
         {
             Some(i) => input_vars.push(openmodelica_sim_meta::InputVar {
-                off: layout.real_off + i as u32 * 8,
-                start_off: layout.real_start_off(i as u32),
+                off: plain_off(layout.real_off + SimOff::from(i as u32 * 8))?,
+                start_off: plain_off(layout.real_start_off(i as u32))?,
                 wty: WTy::F64,
                 name,
             }),
             None => {
                 if let Some(slot) = var_map.vars.get(&key) {
                     input_vars.push(openmodelica_sim_meta::InputVar {
-                        off: slot.off,
-                        start_off: slot.off,
+                        off: plain_off(slot.off)?,
+                        start_off: plain_off(slot.off)?,
                         wty: slot.wty,
                         name,
                     });
@@ -1278,8 +1279,9 @@ pub(super) fn build_sim_model(
         }
     }
     let (soti, soti_dims) = soti_vars(vars, &array_runs, &dyn_vars)?;
+    let meta_lay = meta_layout(&layout)?;
     let mut meta = build_sim_meta(
-        &layout,
+        &meta_lay,
         &result_vars,
         collect_unit_defs(mi, &result_vars.vars),
         settings,
@@ -1331,10 +1333,10 @@ pub(super) fn build_sim_model(
     // `callExternalObjectDestructors` does — the causalized construction order,
     // a different permutation from the `extObjVars` slot order. ---
     let extobj_vars: Vec<&SimCodeVar::SimVar> = svs(&vars.extObjVars).collect();
-    let extobj_slot: HashMap<String, u32> = extobj_vars
+    let extobj_slot: HashMap<String, SimOff> = extobj_vars
         .iter()
         .enumerate()
-        .map(|(i, sv)| Ok((sim_cref_key(&sv.name)?, layout.eobj_off + (i as u32) * 4)))
+        .map(|(i, sv)| Ok((sim_cref_key(&sv.name)?, layout.eobj_off + SimOff::from((i as u32) * 4))))
         .collect::<Result<_>>()?;
     // An alias shares its target's handle (`extObjInfo.aliases`), so only the
     // target is destructed.
@@ -1357,7 +1359,7 @@ pub(super) fn build_sim_model(
     }
     destruct_order.reverse();
     // `(destructor index, SimData slot)` per object, in that order.
-    let destruct_calls: Vec<(u32, u32)> = destruct_order
+    let destruct_calls: Vec<(u32, SimOff)> = destruct_order
         .iter()
         .map(|sv| {
             let key = extobj_destructor_key(sv)?;
@@ -1376,13 +1378,17 @@ pub(super) fn build_sim_model(
     // the first body after the fixed base functions, so its index stays `eq_base+8`.
     let destructors_idx = {
         use we::Instruction as I;
-        let mut f = we::Function::new([]);
+        let mut ctx = FnCtx::new_sim_params(sim_ctx(&var_map), &by_name, &mut literals, 1);
         for &(didx, slot) in &destruct_calls {
-            f.instruction(&I::LocalGet(0)); // SimData*
-            f.instruction(&I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(slot, 2))); // handle
-            f.instruction(&I::Call(didx));
+            let rel = ctx.emit_sim_base(slot)?;
+            ctx.emit(I::I32Load(crate::CodegenWasmJitFunctions::mem_arg(rel, 2))); // handle
+            ctx.emit(I::Call(didx));
         }
-        f.instruction(&I::End);
+        let (locals, instrs) = ctx.finish_sim();
+        let mut f = we::Function::new(locals.into_iter().map(|t| (1u32, t)));
+        for i in &instrs {
+            f.instruction(i);
+        }
         bodies.push(f);
         eq_base + 8
     };
@@ -1693,7 +1699,7 @@ pub(super) fn build_sim_model(
             optimization::attr_defaults(&reals, &layout, &mut attr_targets)
         }
     };
-    let mut attr_slots: Vec<(u32, ConstSlot)> = nominal_defaults
+    let mut attr_slots: Vec<(SimOff, ConstSlot)> = nominal_defaults
         .iter()
         .chain(max_defaults.iter())
         .map(|&(off, v)| (off, ConstSlot::f64(v)))
@@ -1701,7 +1707,7 @@ pub(super) fn build_sim_model(
     attr_slots.sort_by_key(|&(off, _)| off);
     let update_bound_attrs_idx = {
         let idx = import_base + bodies.len() as u32;
-        let mut with_opt: Vec<(u32, ConstSlot)> = Vec::new();
+        let mut with_opt: Vec<(SimOff, ConstSlot)> = Vec::new();
         let slots = if opt_attrs.reals.is_empty() && opt_attrs.ints.is_empty() {
             &attr_slots
         } else {
@@ -2146,16 +2152,19 @@ pub(super) fn build_sim_model(
         let jac_a_sym = size_params.as_mut().and_then(|sp| sym_jac_a(sim_code, sp));
         let mut params = size_params.take().map(|p| (p.params, p.keys)).unwrap_or_default();
         for (p, key) in params.0.iter_mut().zip(&params.1) {
-            p.off = var_map
-                .vars
-                .get(key)
-                .ok_or("CodegenWasmJit: an array size parameter has no slot")?
-                .off;
+            p.off = crate::CodegenWasmJitFunctions::sizes::meta_off(
+                var_map
+                    .vars
+                    .get(key)
+                    .ok_or("CodegenWasmJit: an array size parameter has no slot")?
+                    .off,
+            )?;
         }
         meta.resize = Some(openmodelica_sim_meta::Resize {
             params: params.0,
             counts: counts_sz.clone(),
             table: scope.entries(),
+            offs: scope.meta_offs(),
             var_dims: result_vars.sz_dims.clone(),
             soti_dims: soti_dims.clone(),
             jac_a: jac_a_sym,
@@ -2504,7 +2513,7 @@ pub(super) fn build_sim_model(
         wasm,
         compiled,
         prepared: Mutex::new(None),
-        layout,
+        layout: meta_lay,
         ext_libs: ext_libs.wasm,
         ext_native,
         ext_builtin,

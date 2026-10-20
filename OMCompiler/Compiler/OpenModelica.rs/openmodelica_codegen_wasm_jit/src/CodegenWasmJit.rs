@@ -40,6 +40,7 @@
 #![allow(non_snake_case)]
 
 use crate::CodegenWasmJitFunctions::{HashMap, HashSet};
+use crate::CodegenWasmJitFunctions::{SimOff, plain_off};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::{Mutex, OnceLock};
@@ -77,10 +78,11 @@ use crate::CodegenWasmJitFunctions::{
 use openmodelica_sim_meta::omclog;
 use openmodelica_sim_meta::simflags;
 use openmodelica_sim_meta::{
-    BaseClockMeta, BaseUnit, DisplayUnit, FmiVr, JacAInfo, Layout as SimLayout, MetaKind as ResultKind,
-    MetaVar as ResultVar, Neg, SimMeta, StateSetInfo, SubClockMeta, UnitDef, VarArray, VarTy, expand_var_arrays,
-    var_filter,
+    BaseClockMeta, BaseUnit, DisplayUnit, FmiVr, JacAInfo, MetaKind as ResultKind, MetaVar as ResultVar, Neg, SimMeta,
+    StateSetInfo, SubClockMeta, UnitDef, VarArray, VarTy, expand_var_arrays, var_filter,
 };
+/// The codegen's layout: its offsets may be tagged (`CodegenWasmJitFunctions::sizes`).
+pub(crate) type SimLayout = openmodelica_sim_meta::Layout<SimOff>;
 
 // Engine selected at compile time; same module interface across all three
 // (mirrors the block in CodegenWasmJitFunctions.rs, including the misconfig

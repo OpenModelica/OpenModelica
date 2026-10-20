@@ -206,10 +206,7 @@ fn emit_sim_scatter_elem(
         return Err("CodegenWasmJit: assignment to negated alias");
     }
     let data = ctx.sim()?.data_local;
-    let tagged = group
-        .elems
-        .iter()
-        .any(|(off, _)| openmodelica_sim_meta::resize::is_dyn(*off));
+    let tagged = group.elems.iter().any(|(off, _)| sizes::is_dyn(*off));
     let dims: Vec<Sz> = group.dims.iter().map(|&d| Sz::lit(d as i64)).collect();
     emit_sim_flat_index(ctx, &dims, sub_exps)?;
     let flat = ctx.alloc_temp(WTy::I32);
@@ -226,7 +223,7 @@ fn emit_sim_scatter_elem(
         } else if tagged {
             ctx.emit_sim_addr(off)?;
         } else {
-            ctx.emit(I::I32Const(off as i32));
+            ctx.emit(I::I32Const(plain_off(off)? as i32));
         }
         if k > 0 {
             ctx.emit(I::LocalGet(flat));
@@ -278,7 +275,7 @@ pub(super) fn compile_sim_cref_read(ctx: &mut FnCtx, cref: &DAE::ComponentRef) -
                     (s.data_local, s.lambda_off)
                 };
                 ctx.emit(we::Instruction::LocalGet(data));
-                ctx.emit(we::Instruction::F64Load(mem_arg(lambda_off, 3)));
+                ctx.emit(we::Instruction::F64Load(sim_mem(lambda_off, 3)?));
                 return Ok(Some(WTy::F64));
             }
             // A real wasm local (e.g. a `for` iterator) shadows model lookup.
@@ -713,7 +710,7 @@ pub(super) fn compile_sim_cref_assign(ctx: &mut FnCtx, cref: &DAE::ComponentRef,
 /// cannot compare at all forces reconstruction.
 fn emit_extobj_construct(
     ctx: &mut FnCtx,
-    off: u32,
+    off: SimOff,
     dtor: &str,
     args: &List<metamodelica::Ref<DAE::Exp>>,
     rhs: RhsSource,
@@ -744,7 +741,7 @@ fn emit_extobj_construct(
             }
         };
         ctx.emit(I::LocalGet(same));
-        ctx.emit(I::I32Const(off as i32));
+        ctx.emit_sim_rel(off)?;
         ctx.emit(I::I32Const(pos as i32));
         let w = compile_exp(ctx, arg)?;
         coerce(ctx, w, wty);
@@ -776,7 +773,11 @@ fn emit_extobj_construct(
 /// to a single plain store — `None` when either side needs its general path.
 /// Resolving the slot without emitting anything is what lets
 /// [`emit_sim_const_stores`] group runs of them into data segments.
-pub(crate) fn sim_const_store(ctx: &FnCtx, cref: &DAE::ComponentRef, exp: &DAE::Exp) -> Result<Option<(u32, Vec<u8>)>> {
+pub(crate) fn sim_const_store(
+    ctx: &FnCtx,
+    cref: &DAE::ComponentRef,
+    exp: &DAE::Exp,
+) -> Result<Option<(SimOff, Vec<u8>)>> {
     let Some(sim) = &ctx.sim else { return Ok(None) };
     // Mirror the LHS redirections of `compile_sim_cref_assign`.
     if let DAE::ComponentRef::CREF_QUAL {
@@ -830,8 +831,11 @@ pub(crate) fn sim_const_store(ctx: &FnCtx, cref: &DAE::ComponentRef, exp: &DAE::
 
 /// Store the constant values collected by [`sim_const_store`] into their
 /// `SimData` slots ([`emit_const_slots`]).
-pub(crate) fn emit_sim_const_stores(ctx: &mut FnCtx, stores: &std::collections::BTreeMap<u32, Vec<u8>>) -> Result<()> {
-    let sorted: Vec<(u32, ConstSlot)> = stores
+pub(crate) fn emit_sim_const_stores(
+    ctx: &mut FnCtx,
+    stores: &std::collections::BTreeMap<SimOff, Vec<u8>>,
+) -> Result<()> {
+    let sorted: Vec<(SimOff, ConstSlot)> = stores
         .iter()
         .map(|(&off, bytes)| Ok((off, ConstSlot::from_le_bytes(bytes)?)))
         .collect::<Result<_>>()?;
@@ -893,10 +897,10 @@ impl ConstSlot {
 /// copied from a passive data segment with `memory.init`, a run of one repeated
 /// value is filled by a loop, and short groups stay individual stores. All copies
 /// of one call share a single segment.
-pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> Result<()> {
+pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(SimOff, ConstSlot)]) -> Result<()> {
     use we::Instruction as I;
     const FILL_MIN: usize = 16;
-    let mut deduped: Vec<(u32, ConstSlot)> = Vec::new();
+    let mut deduped: Vec<(SimOff, ConstSlot)> = Vec::new();
     let slots = if stores.windows(2).all(|w| w[0].0 < w[1].0) {
         stores
     } else {
@@ -909,13 +913,13 @@ pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> 
         &deduped[..]
     };
     let mut blob: Vec<u8> = Vec::new();
-    let mut copies: Vec<(u32, u32, u32)> = Vec::new();
+    let mut copies: Vec<(SimOff, u32, u32)> = Vec::new();
     let mut counter = None;
     let mut i = 0;
     while i < slots.len() {
         // Maximal adjacent group from `i`.
         let mut end = i + 1;
-        while end < slots.len() && slots[end - 1].0 + slots[end - 1].1.width() == slots[end].0 {
+        while end < slots.len() && slots[end - 1].0 + SimOff::from(slots[end - 1].1.width()) == slots[end].0 {
             end += 1;
         }
         // Fewer than four values cost less as stores than as a segment copy.
@@ -995,7 +999,7 @@ pub(crate) fn emit_const_slots(ctx: &mut FnCtx, stores: &[(u32, ConstSlot)]) -> 
 }
 
 /// Store `v` into `count` slots `stride` bytes apart from `off` (a runtime-sized array's).
-pub(crate) fn emit_fill_slots(ctx: &mut FnCtx, off: u32, count: &Sz, v: ConstSlot, stride: u32) -> Result<()> {
+pub(crate) fn emit_fill_slots(ctx: &mut FnCtx, off: SimOff, count: &Sz, v: ConstSlot, stride: u32) -> Result<()> {
     use we::Instruction as I;
     let k = ctx.alloc_temp(WTy::I32);
     let end = ctx.alloc_temp(WTy::I32);

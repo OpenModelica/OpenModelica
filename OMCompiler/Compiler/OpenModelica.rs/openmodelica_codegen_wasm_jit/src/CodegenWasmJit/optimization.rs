@@ -6,14 +6,14 @@
 //! uses (`LinzPlan`); this module adds the per-column entry point the optimizer
 //! drives them through, and assembles [`OptInfo`].
 
-use crate::CodegenWasmJitFunctions::HashMap;
+use crate::CodegenWasmJitFunctions::{SimOff, plain_off};
 use std::string::String;
 
 use openmodelica_backend_types::BackendDAE;
 use openmodelica_sim_meta::{OptInfo, OptJac, OptTerm};
 use openmodelica_simcode_types::{SimCode, SimCodeVar};
 
-use crate::CodegenWasmJit::{count, lst, svs};
+use crate::CodegenWasmJit::{SimLayout, count, lst, svs};
 
 /// C's `BackendDAE.optimizationMayerTermName` / `optimizationLagrangeTermName`.
 const MAYER_TERM: &str = "$OMC$objectMayerTerm";
@@ -40,9 +40,9 @@ pub(crate) fn constraint_vars(vars: &SimCodeVar::SimVars) -> Vec<&SimCodeVar::Si
 /// literals (and C's fallbacks for an attribute the model never gives).
 pub(crate) struct AttrDefaults {
     /// `(offset, value)` for the three f64 regions.
-    pub reals: Vec<(u32, f64)>,
+    pub reals: Vec<(SimOff, f64)>,
     /// `(offset, value)` for the `useNominal` i32 region.
-    pub ints: Vec<(u32, i32)>,
+    pub ints: Vec<(SimOff, i32)>,
 }
 
 /// Collect them for `reals` in real-variable index order (states, derivatives,
@@ -50,7 +50,7 @@ pub(crate) struct AttrDefaults {
 /// `attr_targets` so they are updated after `functionParameters`.
 pub(crate) fn attr_defaults(
     reals: &[&SimCodeVar::SimVar],
-    layout: &openmodelica_sim_meta::Layout,
+    layout: &SimLayout,
     attr_targets: &mut crate::CodegenWasmJitFunctions::AttrTargetMap,
 ) -> AttrDefaults {
     let mut out = AttrDefaults {
@@ -65,7 +65,7 @@ pub(crate) fn attr_defaults(
             (layout.opt_max_off, &sv.maxValue, f64::MAX),
             (layout.opt_nom_off, &sv.nominalValue, 1.0),
         ] {
-            let off = base + i * 8;
+            let off = base + SimOff::from(i * 8);
             out.reals
                 .push((off, crate::CodegenWasmJit::const_value(exp).unwrap_or(fallback)));
             if let Some(t) = attr_targets.of(&sv.name) {
@@ -78,7 +78,8 @@ pub(crate) fn attr_defaults(
                 }
             }
         }
-        out.ints.push((layout.opt_use_nom_off + i * 4, use_nominal(sv) as i32));
+        out.ints
+            .push((layout.opt_use_nom_off + SimOff::from(i * 4), use_nominal(sv) as i32));
     }
     out
 }
@@ -156,9 +157,9 @@ pub(crate) fn build_opt_info(
         .filter_map(|sv| {
             crate::CodegenWasmJit::sim_cref_key(&sv.name)
                 .ok()
-                .and_then(|k| var_map.vars.get(&k).map(|s| s.off))
+                .and_then(|k| var_map.vars.get(&k).map(|s| plain_off(s.off)))
         })
-        .collect();
+        .collect::<metamodelica::Result<_>>()?;
     // C's `realVarsData[i].info.name`, which the optimizer's messages quote.
     let real_names: Vec<String> = reals
         .iter()

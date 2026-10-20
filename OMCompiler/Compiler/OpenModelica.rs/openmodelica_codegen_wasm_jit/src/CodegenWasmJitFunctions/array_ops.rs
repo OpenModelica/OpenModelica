@@ -174,7 +174,7 @@ pub(super) fn compile_array_scalar(
         let data = ctx.sim()?.data_local;
         ctx.emit(we::Instruction::LocalGet(data));
         ctx.emit(we::Instruction::F64Load(mem_arg(0, 3))); // `time` — `SimData` offset 0
-        emit_initial_flag(ctx);
+        emit_initial_flag(ctx)?;
         ctx.emit(we::Instruction::Call(rt_index("rt_array_div_sim_f64")?));
         release_temp_array(ctx, at)?;
         return Ok(WTy::I32);
