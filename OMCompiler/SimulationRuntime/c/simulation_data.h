@@ -236,7 +236,6 @@ typedef struct JACOBIAN
    * unified forward/adjoint fields above instead.
    */
   jacobianColumn_func_ptr constantEqns;
-  modelica_boolean isRowEval;
   modelica_boolean isBidirectional;
   JACOBIAN_AVAILABILITY availability;
   JACOBIAN* adjointJacobian;

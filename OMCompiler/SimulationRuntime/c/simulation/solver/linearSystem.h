@@ -72,7 +72,7 @@ static inline int solve_linear_system_small(DATA *data, threadData_t *threadData
   if (omc_ls_inline && (lsMethod == LS_DEFAULT || lsMethod == LS_LAPACK) &&
       ls->method == 1 && ls->size == 1 && !ls->useSparseSolver && ls->jacobianIndex != -1 &&
       sp && sp->maxColors == 1 && sp->colorCols[0] == 1 && sp->leadindex[1] == 1 &&
-      !jac->isRowEval && !(jac->isBidirectional && jac->adjointJacobian) && jac->evalColumn &&
+      !jac->evalRow && !(jac->isBidirectional && jac->adjointJacobian) && jac->evalColumn &&
       data->simulationInfo->currentContext != CONTEXT_SYM_JACOBIAN) {
     const int flag = 1;
     RESIDUAL_USERDATA user = {data, threadData, NULL};

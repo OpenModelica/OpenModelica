@@ -516,7 +516,6 @@ pub extern "C" fn initJacobian(
     j.constantEqns = None;
     j.availability = JACOBIAN_UNKNOWN;
     j.dae_cj = 0.0;
-    j.isRowEval = 0;
     j.isBidirectional = 0;
     j.adjointJacobian = ptr::null_mut();
     j.recoverMask = ptr::null_mut();
