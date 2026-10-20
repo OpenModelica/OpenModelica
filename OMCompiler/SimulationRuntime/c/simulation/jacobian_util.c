@@ -52,10 +52,6 @@
  */
 void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, unsigned int isAdjoint)
 {
-  /* Make both vectors large enough for either evaluation direction.
-     For square Jacobians (the common case) this is exact. */
-  const unsigned int sizeDirection = sizeCols > sizeRows ? sizeCols : sizeRows;
-
   /* Deterministic baseline for all constructor paths. */
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
@@ -86,24 +82,18 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->recoverMask = NULL;
   jacobian->csrToCscMap = NULL;
 
-  // remove
-  jacobian->constantEqns = NULL;
-  jacobian->isBidirectional = 0;
-  jacobian->availability = JACOBIAN_UNKNOWN;
-  jacobian->adjointJacobian = NULL;
-
   if (isAdjoint == 1) {
-    jacobian->seedVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-    jacobian->resultVarsAdj = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->seedVarsAdj = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
+    jacobian->resultVarsAdj = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
     jacobian->sizeTmpVarsAdj = sizeTmpVars;
     jacobian->tmpVarsAdj = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
-    // no dagT is computed
+    // no dagT is computed yet
     jacobian->evalRow = evalColumn;
     jacobian->constRowEqns = constantEqns;
     jacobian->sparsePatternT = sparsePattern;
   } else {
-    jacobian->seedVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
-    jacobian->resultVars = (modelica_real*) calloc(sizeDirection, sizeof(modelica_real));
+    jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
+    jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
     jacobian->sizeTmpVars = sizeTmpVars;
     jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
     jacobian->dag = dag;
@@ -549,18 +539,18 @@ static int computeStarBicoloring(SPARSE_PATTERN* fwdSp, SPARSE_PATTERN* rowSp, u
  * Also computes CSR-to-CSC index mapping for sparse output.
  *
  * Must be called after both jacobians are fully initialized (patterns + colors)
- * and linked (fwd->adjointJacobian != NULL).
+ * and linked.
  *
- * @param fwd   Forward jacobian with CSC pattern + column coloring.
+ * @param jacobian    Jacobian with CSC pattern + column coloring.
  * @param threadData  Thread data for error reporting.
  * @return int  0 on success, 1 on failure (e.g., star bicoloring failed).
  */
-static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
+static int initBidirectionalRecovery(JACOBIAN* jacobian, threadData_t *threadData)
 {
-  SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
-  SPARSE_PATTERN* adjsp = fwd->sparsePatternT;
-  unsigned int nCols = fwd->sizeCols;
-  unsigned int nRows = fwd->sizeRows;
+  SPARSE_PATTERN* fwdsp = jacobian->sparsePattern;
+  SPARSE_PATTERN* adjsp = jacobian->sparsePatternT;
+  unsigned int nCols = jacobian->sizeCols;
+  unsigned int nRows = jacobian->sizeRows;
   const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
@@ -574,8 +564,8 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
   }
 
   // FIXME why do we need two recoverMasks here? Can we merge them (values 0b00,0b01,0b10,0b11)?
-  fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
-  fwd->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
+  jacobian->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
+  jacobian->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
    * column with its column color among all columns having a nonzero in row i. */
@@ -598,7 +588,7 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
       // mark as unique (column-recoverable) or not
       // if unique, this nonzero can be recovered from forward evaluation when column j is seeded, otherwise it cannot and must be recovered from adjoint evaluation
       // if not unique, it gives a wrong value when recovered from forward evaluation and thus can not be written into result vector
-      fwd->recoverMask[nz] = (unsigned char)unique;
+      jacobian->recoverMask[nz] = (unsigned char)unique;
     }
   }
 
@@ -617,7 +607,7 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
           break;
         }
       }
-      fwd->recoverMask[nz] |= (unsigned char)unique << 1;
+      jacobian->recoverMask[nz] |= (unsigned char)unique << 1;
     }
   }
 
@@ -627,13 +617,13 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
     // iterate over all nonzeros in this row via adjoint CSR pattern
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
       j = adjsp->index[nz]; // get column index of current nonzero
-      fwd->csrToCscMap[nz] = 0;
+      jacobian->csrToCscMap[nz] = 0;
       // iterate over all nonzeros in this column via forward CSC pattern, so the nonzero rows
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
         // if row index matches, we found the same nonzero in forward pattern
         // and can record its position k for later indexing into forward result vector when recovering this nonzero from adjoint evaluation
         if (fwdsp->index[k] == i) {
-          fwd->csrToCscMap[nz] = k;
+          jacobian->csrToCscMap[nz] = k;
           break;
         }
       }
@@ -653,7 +643,7 @@ static int initBidirectionalRecovery(JACOBIAN* fwd, threadData_t *threadData)
  *
  * @param data            Runtime data struct.
  * @param threadData      Thread data for error handling.
- * @param fwd             Forward jacobian (isBidirectional=TRUE, adjointJacobian set).
+ * @param jacobian        Jacobian.
  * @param parentJacobian  Parent Jacobian for nested use (can be NULL).
  * @param jac             Output buffer.
  * @param isDense         TRUE for dense, FALSE for sparse CSC.
@@ -1364,8 +1354,8 @@ static JACOBIAN_METHOD getFallbackJacobianMethod(threadData_t* threadData, JACOB
  * @brief Check that the requested Jacobian method can be used and log it.
  *
  * @param threadData              Used for error handling.
- * @param availability            Is the symbolic Jacobian available, only the sparsity pattern available or nothing available.
- * @param jacobianMethod          Requested method, JAC_UNKNOWN selects the default for `availability`.
+ * @param jacobian                The symbolic Jacobian.
+ * @param jacobianMethod          Requested method, JAC_UNKNOWN selects the best available.
  * @return JACOBIAN_METHOD        Jacobian method that will be used.
  */
 JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian, JACOBIAN_METHOD jacobianMethod)
@@ -1399,7 +1389,7 @@ JACOBIAN_METHOD checkJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian
  * @brief Set Jacobian method from user flag and available Jacobian.
  *
  * @param threadData              Used for error handling.
- * @param availability            Is the Jacobian available, only the sparsity pattern available or nothing available.
+ * @param jacobian                The symbolic Jacobian.
  * @return JACOBIAN_METHOD        Returns jacobian method that is availble.
  */
 JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN* jacobian)

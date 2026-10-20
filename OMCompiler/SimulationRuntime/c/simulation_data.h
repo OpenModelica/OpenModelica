@@ -181,14 +181,6 @@ typedef struct NONLINEAR_PATTERN
   unsigned int* rows;                  // size: numberOfNonlinear - all rows appended in one vector
 } NONLINEAR_PATTERN;
 
-typedef enum
-{
-  JACOBIAN_UNKNOWN = 0,       /* availability of jacobian unknown (not initialized) */
-  JACOBIAN_NOT_AVAILABLE,     /* no symbolic jacobian and no sparsity pattern available */
-  JACOBIAN_ONLY_SPARSITY,     /* only sparsity pattern available */
-  JACOBIAN_AVAILABLE          /* symbolic jacobian and sparsity pattern available */
-} JACOBIAN_AVAILABILITY;
-
 /**
  * @brief Analytic jacobian struct
  *
@@ -227,18 +219,6 @@ typedef struct JACOBIAN
   unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
   unsigned int* csrToCscMap;            /* Maps CSR (row oriented) nz positions of an adjoint Jacobian to the
                                            corresponding CSC (column oriented) nz positions of J. Size nnz. */
-
-  /*
-   * Legacy ABI compatibility fields.
-   *
-   * These members are kept for Rust/ABI compatibility only and are deprecated in
-   * the C runtime. New C code must not read or write them and must use the
-   * unified forward/adjoint fields above instead.
-   */
-  jacobianColumn_func_ptr constantEqns;
-  modelica_boolean isBidirectional;
-  JACOBIAN_AVAILABILITY availability;
-  JACOBIAN* adjointJacobian;
 } JACOBIAN;
 
 /* EXTERNAL_INPUT

@@ -282,8 +282,7 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
 }
 
 /**
- * @brief Calculate ODE Jacobian (numerical or analytic) depending on availability of
- *        analytic Jacobian.
+ * @brief Calculate ODE Jacobian (numeric or analytic).
  *
  * Fills the nls->jacobian_callback callback buffer with the ODE Jacobian.
  * It requires the sparsity pattern and a work array of size 3 * #states in nls.

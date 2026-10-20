@@ -254,7 +254,7 @@ pub fn eval_jacobian(
         return Err("a row-evaluated Jacobian is not served by this runtime yet");
     }
     let stage = crate::support::error_stage::NONLINEARSOLVER;
-    if let Some(f) = j.constantEqns
+    if let Some(f) = j.constColEqns
         && !crate::support::protected(thread_data, stage, || {
             unsafe { f(data, thread_data, jacobian, parent) };
         })

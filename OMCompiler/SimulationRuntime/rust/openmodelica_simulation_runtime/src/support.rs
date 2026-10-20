@@ -458,14 +458,13 @@ pub extern "C" fn initJacobian(
     isAdjoint: c_uint,
 ) {
     let j = unsafe { &mut *jacobian };
-    let size_direction = (sizeCols.max(sizeRows)) as usize;
     j.sizeCols = sizeCols as usize;
     j.sizeRows = sizeRows as usize;
     if isAdjoint == 1 {
-        j.seedVarsAdj = calloc_bytes(size_direction * 8) as *mut f64;
+        j.seedVarsAdj = calloc_bytes(sizeRows as usize * 8) as *mut f64;
         j.seedVars = ptr::null_mut();
 
-        j.resultVarsAdj = calloc_bytes(size_direction * 8) as *mut f64;
+        j.resultVarsAdj = calloc_bytes(sizeCols as usize * 8) as *mut f64;
         j.resultVars = ptr::null_mut();
 
         j.sizeTmpVars = 0;
@@ -486,10 +485,10 @@ pub extern "C" fn initJacobian(
         j.sparsePattern = ptr::null_mut();
         j.sparsePatternT = sparsePattern;
     } else {
-        j.seedVars = calloc_bytes(size_direction * 8) as *mut f64;
+        j.seedVars = calloc_bytes(sizeCols as usize * 8) as *mut f64;
         j.seedVarsAdj = ptr::null_mut();
 
-        j.resultVars = calloc_bytes(size_direction * 8) as *mut f64;
+        j.resultVars = calloc_bytes(sizeRows as usize * 8) as *mut f64;
         j.resultVarsAdj = ptr::null_mut();
 
         j.sizeTmpVars = sizeTmpVars as usize;
@@ -513,11 +512,7 @@ pub extern "C" fn initJacobian(
 
     j.evalSelectionCol = ptr::null_mut();
     j.evalSelectionRow = ptr::null_mut();
-    j.constantEqns = None;
-    j.availability = JACOBIAN_UNKNOWN;
     j.dae_cj = 0.0;
-    j.isBidirectional = 0;
-    j.adjointJacobian = ptr::null_mut();
     j.recoverMask = ptr::null_mut();
     j.csrToCscMap = ptr::null_mut();
 }
@@ -527,18 +522,14 @@ pub extern "C" fn initJacobian(
 #[unsafe(no_mangle)]
 pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
     let fwd = unsafe { &mut *fwd };
-    let Some(adj) = (unsafe { fwd.adjointJacobian.as_mut() }) else {
-        return;
-    };
     let (Some(f), Some(a)) = (unsafe { fwd.sparsePattern.as_ref() }, unsafe {
-        adj.sparsePattern.as_ref()
+        fwd.sparsePatternT.as_ref()
     }) else {
         return;
     };
     let nnz = f.nnz as usize;
     fwd.recoverMask = calloc_bytes(nnz) as *mut u8;
-    adj.recoverMask = calloc_bytes(nnz) as *mut u8;
-    adj.csrToCscMap = calloc_bytes(nnz * 4) as *mut c_uint;
+    fwd.csrToCscMap = calloc_bytes(nnz * 4) as *mut c_uint;
     let at = |p: *mut c_uint, k: usize| unsafe { *p.add(k) as usize };
     // The nonzeros of one lead index, and the leads they point at.
     let span = |sp: &SPARSE_PATTERN, k: usize| at(sp.leadindex, k)..at(sp.leadindex, k + 1);
@@ -561,9 +552,9 @@ pub extern "C" fn initBidirectionalRecovery(fwd: *mut JACOBIAN) {
                 let i2 = at(f.index, k);
                 i2 == i || at(a.colorCols, i2) != ri
             });
-            unsafe { *adj.recoverMask.add(nz) = unique as u8 };
+            unsafe { *fwd.recoverMask.add(nz) = 2 * unique as u8 };
             let csc = span(f, j).find(|&k| at(f.index, k) == i).unwrap_or(0);
-            unsafe { *adj.csrToCscMap.add(nz) = csc as c_uint };
+            unsafe { *fwd.csrToCscMap.add(nz) = csc as c_uint };
         }
     }
 }

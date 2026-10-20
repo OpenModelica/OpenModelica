@@ -32,11 +32,6 @@ pub const ERROR_NONLINEARSOLVER: i32 = 3;
 pub const ERROR_EVENTSEARCH: i32 = 4;
 pub const ERROR_EVENTHANDLING: i32 = 5;
 pub const ERROR_OPTIMIZE: i32 = 6;
-/// `simulation_data.h`'s `JACOBIAN_AVAILABILITY` enum.
-pub const JACOBIAN_UNKNOWN: c_int = 0;
-pub const JACOBIAN_NOT_AVAILABLE: c_int = 1;
-pub const JACOBIAN_ONLY_SPARSITY: c_int = 2;
-pub const JACOBIAN_AVAILABLE: c_int = 3;
 
 /// `util/rtclock.h`: a 16-byte union, `LARGE_INTEGER` on Windows, `uint64_t` on
 /// macOS, and a `typedef int` under an FMU's `OMC_MINIMAL_RUNTIME`. It is the last
@@ -220,11 +215,6 @@ pub struct JACOBIAN {
 
     pub recoverMask: *mut u8,
     pub csrToCscMap: *mut c_uint,
-
-    pub constantEqns: jacobianColumn_func_ptr,
-    pub isBidirectional: modelica_boolean,
-    pub availability: c_int,
-    pub adjointJacobian: *mut JACOBIAN,
 }
 
 #[repr(C)]
