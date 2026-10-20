@@ -38,6 +38,7 @@
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
+#include "Util/Style.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
 #include "Git/CommitChangesDialog.h"
@@ -230,7 +231,7 @@ void FmuExportOutputWidget::compileModelCRuntime()
   arguments << CMAKE_BUILD_TYPE << "-DCMAKE_C_COMPILER=clang" << "-DCMAKE_COLOR_MAKEFILE=OFF" << "..";
 #endif
 
-  writeCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writeCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpCompilationProcess->start(program, arguments);
 }
 
@@ -266,7 +267,7 @@ void FmuExportOutputWidget::writePostCompilationOutput(QString output, QColor co
  */
 void FmuExportOutputWidget::readCompilationStandardOutput()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), Qt::black);
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -275,7 +276,7 @@ void FmuExportOutputWidget::readCompilationStandardOutput()
  */
 void FmuExportOutputWidget::readCompilationStandardError()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -307,14 +308,14 @@ void FmuExportOutputWidget::compilationProcessFinished(int exitCode, QProcess::E
   mIsCompilationProcessRunning = false;
   QString exitCodeStr = tr("Generated cmake target files failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeCompilationOutput(tr("Generated cmake target files successfully.\n"), Qt::blue);
+    writeCompilationOutput(tr("Generated cmake target files successfully.\n"), Style::messagesCommandColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
     runPostCompilation();
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writeCompilationOutput(exitCodeStr, Qt::red);
+    writeCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
   } else {
-    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     compilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }
@@ -354,7 +355,7 @@ void FmuExportOutputWidget::compilationProcessError(QProcess::ProcessError error
   if (isCompilationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+  writeCompilationOutput(mpCompilationProcess->errorString(), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -376,7 +377,7 @@ void FmuExportOutputWidget::runPostCompilation()
              << "--parallel"
              << "--target" << "install";
 
-  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpPostCompilationProcess->start(program, arguments);
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   mpGeneratedFilesTabWidget->setCurrentIndex(1);
@@ -402,7 +403,7 @@ void FmuExportOutputWidget::compileModelCppRuntime()
   QStringList arguments;
   arguments << "-f" << mFMUName + "_FMU.makefile" << "ZIP_FMU=OFF";
 
-  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpPostCompilationProcess->start(program, arguments);
   mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   mpGeneratedFilesTabWidget->setTabEnabled(0, false);
@@ -448,7 +449,7 @@ void FmuExportOutputWidget::readPostCompilationStandardOutput()
       mpProgressBar->setValue(currentStep);
     }
   }
-  writePostCompilationOutput(output, Qt::black);
+  writePostCompilationOutput(output, OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -457,7 +458,7 @@ void FmuExportOutputWidget::readPostCompilationStandardOutput()
  */
 void FmuExportOutputWidget::readPostCompilationStandardError()
 {
-  writePostCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), Qt::red);
+  writePostCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -473,7 +474,7 @@ void FmuExportOutputWidget::postCompilationProcessError(QProcess::ProcessError e
   if (isPostCompilationProcessKilled()) {
    return;
   }
-  writePostCompilationOutput(mpPostCompilationProcess->errorString(), Qt::red);
+  writePostCompilationOutput(mpPostCompilationProcess->errorString(), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -489,7 +490,7 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
   QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
 
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writePostCompilationOutput(tr("Build finished successfully.\n"), Qt::blue);
+    writePostCompilationOutput(tr("Build finished successfully.\n"), Style::messagesCommandColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     zipFMU();
     return;
@@ -497,16 +498,16 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
 
   // Null pointer safety
   if (!mpCompilationProcess) {
-    writePostCompilationOutput(exitCodeStr, Qt::red);
+    writePostCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     return;
   }
 
   // Error handling
   if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writePostCompilationOutput(exitCodeStr, Qt::red);
+    writePostCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
   } else {
-    writePostCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writePostCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
   }
 
   postCompilationProcessFinishedHelper(exitCode, exitStatus);
@@ -583,7 +584,7 @@ void FmuExportOutputWidget::zipFMU()
     }
   }
 
-  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Qt::blue);
+  writePostCompilationOutput(QString("%1 %2\n").arg(program, arguments.join(" ")), Style::messagesCommandColor());
   mpZipCompilationProcess->start(program, arguments);
 }
 
@@ -610,7 +611,7 @@ void FmuExportOutputWidget::ZipCompilationProcessStarted()
  */
 void FmuExportOutputWidget::readZipCompilationStandardOutput()
 {
-  writePostCompilationOutput(QString(mpZipCompilationProcess->readAllStandardOutput()), Qt::black);
+  writePostCompilationOutput(QString(mpZipCompilationProcess->readAllStandardOutput()), OptionsDialog::instance()->getMessagesPage()->getNotificationColor());
 }
 
 /*!
@@ -619,7 +620,7 @@ void FmuExportOutputWidget::readZipCompilationStandardOutput()
  */
 void FmuExportOutputWidget::readZipCompilationStandardError()
 {
-  writePostCompilationOutput(QString(mpZipCompilationProcess->readAllStandardError()), Qt::red);
+  writePostCompilationOutput(QString(mpZipCompilationProcess->readAllStandardError()), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -635,7 +636,7 @@ void FmuExportOutputWidget::ZipCompilationProcessError(QProcess::ProcessError er
   if (isZipCompilationProcessKilled()) {
     return;
   }
-  writePostCompilationOutput(mpZipCompilationProcess->errorString(), Qt::red);
+  writePostCompilationOutput(mpZipCompilationProcess->errorString(), OptionsDialog::instance()->getMessagesPage()->getErrorColor());
 }
 
 /*!
@@ -649,7 +650,7 @@ void FmuExportOutputWidget::ZipCompilationProcessFinished(int exitCode, QProcess
   mIsZipCompilationProcessRunning = false;
   QString exitCodeStr = tr("Zip compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-      writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mFmuLocationPath), Qt::blue);
+      writePostCompilationOutput(tr("The FMU is generated at: %1").arg(mFmuLocationPath), Style::messagesCommandColor());
     //trace export FMU
     if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked()) {
       //Push traceability information automaticaly to Daemon
@@ -658,11 +659,11 @@ void FmuExportOutputWidget::ZipCompilationProcessFinished(int exitCode, QProcess
     ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
     setDefaults();
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writePostCompilationOutput(exitCodeStr, Qt::red);
+    writePostCompilationOutput(exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
     setDefaults();
   } else {
-    writePostCompilationOutput(mpZipCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    writePostCompilationOutput(mpZipCompilationProcess->errorString() + "\n" + exitCodeStr, OptionsDialog::instance()->getMessagesPage()->getErrorColor());
     ZipCompilationProcessFinishedHelper(exitCode, exitStatus);
   }
 }

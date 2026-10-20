@@ -5694,7 +5694,7 @@ QColor MessagesPage::getColor(const StringHandler::SimulationMessageType type) c
 {
   switch (type) {
     case StringHandler::OMEditInfo:
-      return Qt::blue;
+      return Style::messagesCommandColor();
     case StringHandler::SMWarning:
       return getWarningColor();
     case StringHandler::Error:
