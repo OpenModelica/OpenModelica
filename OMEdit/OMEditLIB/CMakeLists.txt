@@ -143,6 +143,7 @@ set(OMEDITLIB_SOURCES LSP/LSPClient.cpp
                       OMS/ModelDialog.cpp
                       OMS/ElementPropertiesDialog.cpp
                       OMS/SystemSimulationInformationDialog.cpp
+                      OMS/OMSCalibrationDialog.cpp
                       OMS/OMSSimulationDialog.cpp
                       OMS/OMSSimulationOutputWidget.cpp
                       Animation/TimeManager.cpp
@@ -304,6 +305,7 @@ set(OMEDITLIB_HEADERS LSP/LSPClient.h
                       OMS/ModelDialog.h
                       OMS/ElementPropertiesDialog.h
                       OMS/SystemSimulationInformationDialog.h
+                      OMS/OMSCalibrationDialog.h
                       OMS/OMSSimulationDialog.h
                       OMS/OMSSimulationOutputWidget.h
                       Animation/TimeManager.h
