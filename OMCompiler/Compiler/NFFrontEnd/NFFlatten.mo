@@ -392,7 +392,7 @@ algorithm
       flatModel.equations := evaluateIfWithConnects(flatModel.equations);
     end if;
 
-    if settings.arrayConnect then
+    if settings.arrayConnect and hasArrayConnections(flatModel.equations) then
       flatModel := resolveArrayConnections(flatModel, deleted_vars);
     else
       flatModel := resolveConnections(flatModel, deleted_vars, settings);
@@ -2989,6 +2989,62 @@ algorithm
   end if;
   execStat(getInstanceName());
 end resolveArrayConnections;
+
+function hasArrayConnections
+  "Whether the connections need the array connection handler: connections in
+   for loops or if equations, of arrays or slices, with subscripts that are not
+   literal indices or into resizable arrays. Otherwise all connections are
+   scalar (e.g. -d=mergeComponents collects components into arrays but keeps
+   their connections), the scalar connection handler gives the same equations
+   and the array handlers would split every connector array into one piece per
+   connected element."
+  input list<Equation> equations;
+  output Boolean res = false;
+algorithm
+  for eq in equations loop
+    res := match eq
+      case Equation.CONNECT() then isArrayConnectorExp(eq.lhs) or isArrayConnectorExp(eq.rhs);
+      case Equation.FOR() then Equation.containsList(eq.body, Equation.isConnect);
+      case Equation.IF() then Equation.contains(eq, Equation.isConnect);
+      else false;
+    end match;
+    if res then
+      break;
+    end if;
+  end for;
+end hasArrayConnections;
+
+function isArrayConnectorExp
+  "a connector that is not a scalar element with literal indices of fixed size arrays"
+  input Expression exp;
+  output Boolean res;
+protected
+  ComponentRef cr;
+algorithm
+  res := match exp
+    case Expression.CREF()
+      algorithm
+        res := Type.isArray(exp.ty) or not List.all(ComponentRef.subscriptsAllFlat(exp.cref), isLiteralIndex);
+        cr := exp.cref;
+        while not res and ComponentRef.isCref(cr) loop
+          res := Type.isResizable(ComponentRef.nodeType(cr));
+          cr := ComponentRef.rest(cr);
+        end while;
+      then
+        res;
+    else true;
+  end match;
+end isArrayConnectorExp;
+
+function isLiteralIndex
+  input Subscript sub;
+  output Boolean res;
+algorithm
+  res := match sub
+    case Subscript.INDEX() then Expression.isLiteral(sub.index);
+    else false;
+  end match;
+end isLiteralIndex;
 
 function removeDeletedConnects
   "Removes the connect equations with a deleted conditional connector, also

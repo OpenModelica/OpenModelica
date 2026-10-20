@@ -1346,7 +1346,8 @@ protected
     end for;
     res := uniq;
     if listLength(res) > MAX_PIECES then
-      Error.addInternalError(getInstanceName() + ": --resizableArrays: the connection sets do not converge (shifted connections around a cycle?).", sourceInfo());
+      Error.addInternalError(getInstanceName() + ": --resizableArrays: a connector array is split into more than " + intString(MAX_PIECES)
+        + " pieces (connections of many single elements, or shifted connections around a cycle).", sourceInfo());
       fail();
     end if;
   end splitPieces;
