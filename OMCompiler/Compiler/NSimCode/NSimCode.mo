@@ -387,10 +387,10 @@ public
             else
               init_0 := {};
             end if;
+            (init_no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(NBInitialization.getNoReturnEquations(eqData.initials), simCodeIndices, NBPartition.Kind.INI, simcode_map, equation_map);
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
-            (init_no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(NBInitialization.getNoReturnEquations(eqData.initials), simCodeIndices, NBPartition.Kind.INI, simcode_map, equation_map);
             start := {};
             discreteVars := {};
             jacobians := {};

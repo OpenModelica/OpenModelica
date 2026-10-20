@@ -5,6 +5,7 @@ reductionSkips.mos \
 nestedForConnectRange.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
+sliceRangeSparsity.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 algorithmForSubscript.mos \
@@ -15,6 +16,7 @@ arrayZeroDivisionInitial.mos \
 arrayPreValues.mos \
 jacobianElementSeed.mos \
 jacobianArrayIndices.mos \
+scalarSparsityTables.mos \
 array_constructor_if.mos \
 resizableConnectFor.mos \
 resizableSparsity.mos \
@@ -35,6 +37,7 @@ resizableInputs.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
 resizableStreams.mos \
+resizableWholeSubscript.mos \
 array_start_vector.mos\
 array_start_int_bool_string.mos\
 array_inputs.mos\
@@ -88,6 +91,7 @@ BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
 arrayStartSlice.mos \
 resizableConnectDeleted.mos \
+EmptyArrayInComponentArray.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

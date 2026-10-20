@@ -1487,6 +1487,12 @@ package SimCodeCodegenUtil
     output DAE.Exp exp;
   end jacobianIndexExp;
 
+  function scalarSparsityRow
+    input SimCode.SparsityRow row;
+    input HashTableCrefSimVar.HashTable ht;
+    output Option<tuple<list<Integer>, list<Integer>>> result;
+  end scalarSparsityRow;
+
   function isDimensionParameter
     input SimCodeVar.SimVar var;
     output Boolean b;

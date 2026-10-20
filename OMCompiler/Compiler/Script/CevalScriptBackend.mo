@@ -156,6 +156,7 @@ import Uncertainties;
 import UnitAbsynBuilder;
 import UnitParserExt;
 import UnorderedSet;
+import Unzip;
 import Util;
 import ValuesDump;
 import ValuesMake;
@@ -702,7 +703,7 @@ algorithm
       String simflags,s1,s2,s3,s4,s5,str,str1,str2,str3,str4,executable,
              outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              name,errMsg, res,workdir,filenameprefix,compileDir,exeDir, logFile, outputFile,
-             strlinearizeTime, modeldescriptionfilename, tmpDir, tmpFile, bom, description, resimulateExecutable;
+             strlinearizeTime, modeldescriptionfilename, tmpDir, bom, description, resimulateExecutable;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program sp;
@@ -1742,11 +1743,8 @@ algorithm
         workdir := if System.directoryExists(workdir) then workdir else System.pwd();
         // create a temporary directory
         tmpDir := System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/" + "fmuTmp" + intString(System.intRand(1000)));
-        tmpFile := tmpDir + "/" + "modelDescription.xml";
-        System.systemCall("cp -f " + filename + " " + tmpFile);
         modeldescriptionfilename := tmpDir + "/modelDescription.fmu";
-        System.systemCall("zip -j " +  modeldescriptionfilename + " " + tmpFile);
-        true := System.regularFileExists(modeldescriptionfilename);
+        true := Unzip.zipPath(modeldescriptionfilename, filename, "modelDescription.xml");
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
@@ -4646,7 +4644,7 @@ public function callBuildModelFMU
   output Values.Value outValue;
 protected
   Boolean success;
-  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd, msvcEnv;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir;
   String fmuTargetName;
   SimCode.SimulationSettings simSettings;
   list<String> libs = {} "the reuse path translates nothing, so nothing reports libraries";
@@ -4833,20 +4831,10 @@ algorithm
     end if;
   end if;
 
-  msvcEnv := SimCodeUtil.msvcEnvironment();
-  if msvcEnv <> "" then
-    cmd := msvcEnv + Autoconf.cmake + " -E rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && " +
-           Autoconf.cmake + " -E tar cf \"../" + fmuTargetName + ".fmu\" --format=zip .";
-  else
-    cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" + fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
-  end if;
-  if 0 <> System.systemCall(cmd, outFile=logfile) then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
+  System.removeFile(fmutmp + "/.external_include_dirs");
+  System.removeFile(fmuTargetName + ".fmu");
+  if not Unzip.zipPath(fmuTargetName + ".fmu", fmutmp, "") then
     ExecStat.execStat("buildModelFMU failed");
-  end if;
-
-  if not System.regularFileExists(fmuTargetName + ".fmu") then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Build commands returned success, but " + fmuTargetName + ".fmu does not exist"});
     fail();
   end if;
 
@@ -4884,7 +4872,7 @@ protected
   Absyn.Class cls;
   String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
   Boolean runCommand;
-  String molName, dirPath, rmCommand, cdCommand, mvCommand, dirOrFileName, zipCommand;
+  String molName, dirPath;
 algorithm
   cls := ProgramUtil.getPathedClassInProgram(className, inProgram);
   fileName := AbsynUtil.classFilename(cls);
@@ -4908,22 +4896,16 @@ algorithm
         command := "";
       end if;
     else
-      molName := AbsynUtil.pathString(className) + ".mol";
-      dirPath := System.dirname(fileName);
-      // commands
-      rmCommand := "rm -f \"" + molName + "\"";
-      cdCommand := "cd \"" +  dirPath + "\"";
-      mvCommand := "mv \"" + molName +"\" \"" + System.pwd() + "\"";
-
-      if (StringUtil.endsWith(fileName, "package.mo")) then
-        dirOrFileName := System.basename(dirPath);
-        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
-        command := stringAppendList({rmCommand, " && ", cdCommand, " && cd .. && ", zipCommand});
+      molName := System.pwd() + pd + AbsynUtil.pathString(className) + ".mol";
+      System.removeFile(molName);
+      if StringUtil.endsWith(fileName, "package.mo") then
+        dirPath := System.dirname(fileName);
+        success := Unzip.zipPath(molName, dirPath, System.basename(dirPath));
       else
-        dirOrFileName := System.basename(fileName);
-        zipCommand := "zip -r \"" + System.pwd() + pd + molName + "\" \"" + dirOrFileName + "\"";
-        command := stringAppendList({rmCommand, " && ", cdCommand, " && ", zipCommand});
+        success := Unzip.zipPath(molName, fileName, System.basename(fileName));
       end if;
+      runCommand := false;
+      command := "";
     end if;
 
     if runCommand then

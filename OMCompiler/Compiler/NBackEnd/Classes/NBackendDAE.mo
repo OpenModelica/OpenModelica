@@ -267,7 +267,7 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
-    FlatModel flat = FlatModel.mapExp(flatModel, lowerFunctionPointers);
+    FlatModel flat = FlatModel.mapExp(flatModel, lowerExp);
   algorithm
     variableData := lowerVariableData(continuousImplicitDiscretes(flat.variables, listAppend(flat.equations, flat.initialEquations),
       listAppend(flat.algorithms, flat.initialAlgorithms)));
@@ -275,16 +275,62 @@ public
     bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), {}, variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
-  function lowerFunctionPointers
-    "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
-    the function. Represent it as a function partial application without arguments,
-    so it is not mistaken for a variable anywhere in the backend."
+  function lowerExp
+    "Expressions of the flat model for the backend: function pointers become partial
+    applications (lowerFunctionPointer), literal index slices become ranges
+    (lowerSliceRanges)."
     input output Expression exp;
   algorithm
     exp := Expression.map(exp, lowerFunctionPointer);
-  end lowerFunctionPointers;
+    exp := Expression.map(exp, lowerSliceRanges);
+  end lowerExp;
+
+  function lowerSliceRanges
+    "The frontend evaluates slices of known size such as T[2:n-1] to literal index
+    arrays T[{2, 3, ..., 19}]. Turn them back into ranges, so the slice stays an
+    iteration (elementwise Jacobian sparsity, size of the generated code)."
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF() then Expression.CREF(exp.ty, ComponentRef.mapSubscripts(exp.cref, sliceToRange));
+      else exp;
+    end match;
+  end lowerSliceRanges;
+
+  function sliceToRange
+    input output Subscript sub;
+  protected
+    array<Expression> elems;
+    Integer first, step, n;
+    Boolean is_range;
+  algorithm
+    sub := match sub
+      case Subscript.SLICE(slice = Expression.ARRAY(elements = elems)) guard arrayLength(elems) > 2 algorithm
+        is_range := true;
+        for i in 1:arrayLength(elems) loop
+          is_range := is_range and Expression.isInteger(elems[i]);
+        end for;
+        if is_range then
+          first := Expression.integerValue(elems[1]);
+          step := Expression.integerValue(elems[2]) - first;
+          n := arrayLength(elems);
+          is_range := step <> 0;
+          for i in 3:n loop
+            is_range := is_range and Expression.integerValue(elems[i]) == first + (i - 1) * step;
+          end for;
+          if is_range then
+            sub := Subscript.SLICE(Expression.makeIntegerRange(first, step, first + (n - 1) * step));
+          end if;
+        end if;
+      then sub;
+      else sub;
+    end match;
+  end sliceToRange;
 
   function lowerFunctionPointer
+    "A function pointer such as f in solveOneNonlinearEquation(f, ...) is a cref to
+    the function. Represent it as a function partial application without arguments,
+    so it is not mistaken for a variable anywhere in the backend."
     input output Expression exp;
   algorithm
     exp := match exp

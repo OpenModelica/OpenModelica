@@ -64,7 +64,7 @@ static void createParentDirectories(const char *path, size_t skip)
   }
 }
 
-int om_unzip(const char *zipFileName, const char *pathToExtract, const char *destPath)
+static int unzipImpl(const char *zipFileName, const char *pathToExtract, const char *destPath, int stripCommonPrefix)
 {
   unz_file_info file_info;
   char filename[MAX_FILENAME], commonPrefix[MAX_FILENAME];
@@ -106,6 +106,9 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
       unzClose(zipfile);
       return 0;
     }
+  }
+  if (!stripCommonPrefix) {
+    commonLength = 0;
   }
   while (commonLength >= 1 && commonPrefix[commonLength-1] != '/') {
     commonLength--;
@@ -218,4 +221,14 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
 
   unzClose(zipfile);
   return 1;
+}
+
+int om_unzip(const char *zipFileName, const char *pathToExtract, const char *destPath)
+{
+  return unzipImpl(zipFileName, pathToExtract, destPath, 1);
+}
+
+int om_unzip_all(const char *zipFileName, const char *destPath)
+{
+  return unzipImpl(zipFileName, "", destPath, 0);
 }

@@ -43,5 +43,24 @@ function unzipPath
   external "C" success = om_unzip(fileName, pathToExtract, destinationPath);
 end unzipPath;
 
+function unzipAll
+  "Extracts every entry of fileName below destinationPath under its stored name."
+  input String fileName;
+  input String destinationPath;
+  output Boolean success;
+  external "C" success = om_unzip_all(fileName, destinationPath);
+end unzipAll;
+
+function zipPath
+  "Creates zipFileName with path stored under entryName: a file as that entry,
+   a directory recursively below it. An empty entryName puts the contents of a
+   directory at the root of the archive."
+  input String zipFileName;
+  input String path;
+  input String entryName;
+  output Boolean success;
+  external "C" success = om_zip(zipFileName, path, entryName);
+end zipPath;
+
 annotation(__OpenModelica_Interface="script_util");
 end Unzip;
