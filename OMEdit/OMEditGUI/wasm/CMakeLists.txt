@@ -94,10 +94,13 @@ set(WASM_EXCLUDE_FILES
   # Desktop OAuth redirect (QTcpServer loopback); the browser uses a popup instead.
   "Cloud/OAuth2RedirectLoopback.cpp"
   "Simulation/OpcUaClient.cpp"
-  "OMS/OMSSimulationOutputWidget.cpp")
+  "OMS/OMSSimulationOutputWidget.cpp"
+  "OMS/OMSCalibrationDialog.cpp")
 foreach(f ${WASM_EXCLUDE_FILES})
   list(FILTER OMEDITLIB_SOURCES EXCLUDE REGEX "${f}")
 endforeach()
+# Runs OMSimulator as a subprocess and is never used on wasm, so it is not moc'd either.
+list(FILTER OMEDITLIB_HEADERS EXCLUDE REGEX "OMS/OMSCalibrationDialog.h")
 
 # Generated OMCInterface + its worker bridge (gen_bridge.py turns the ABI header
 # into JSON forwarders that define the omc_scripting_*/omc_seq_*/omc_abi_* symbols).

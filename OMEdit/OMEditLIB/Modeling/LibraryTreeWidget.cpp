@@ -51,6 +51,9 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#if !defined(__EMSCRIPTEN__)
+#include "OMS/OMSCalibrationDialog.h"
+#endif
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
@@ -2935,6 +2938,12 @@ void LibraryTreeView::createActions()
   mpUnloadOMSModelAction->setShortcut(QKeySequence::Delete);
   mpUnloadOMSModelAction->setStatusTip(Helper::unloadOMSModelTip);
   connect(mpUnloadOMSModelAction, SIGNAL(triggered()), SLOT(unloadOMSModel()));
+#if !defined(__EMSCRIPTEN__)
+  // calibrate OMSimulator model action
+  mpOMSCalibrateAction = new QAction(tr("Calibrate..."), this);
+  mpOMSCalibrateAction->setStatusTip(tr("Calibrates the parameters of the model against reference data"));
+  connect(mpOMSCalibrateAction, SIGNAL(triggered()), SLOT(OMSCalibrate()));
+#endif
 }
 
 /*!
@@ -3219,6 +3228,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpSaveAction);
             menu.addAction(mpSaveAsAction);
+#if !defined(__EMSCRIPTEN__)
+            menu.addSeparator();
+            menu.addAction(mpOMSCalibrateAction);
+#endif
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
           }
@@ -3828,6 +3841,21 @@ void LibraryTreeView::unloadOMSModel()
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief LibraryTreeView::OMSCalibrate
+ * Opens the calibration dialog for the selected OMSimulator model.
+ */
+void LibraryTreeView::OMSCalibrate()
+{
+#if !defined(__EMSCRIPTEN__)
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    OMSCalibrationDialog *pOMSCalibrationDialog = new OMSCalibrationDialog(pLibraryTreeItem, MainWindow::instance());
+    pOMSCalibrationDialog->show();
+  }
+#endif
 }
 
 /*!
