@@ -1869,6 +1869,44 @@ function(omc_rust_omedit_qt_web_page)
     endif()
   endif()
 
+  # CRML translation in the page (there is no Java on the web): crml.js, the CRML
+  # translator compiled to JavaScript, from the release OMEDIT_CRML_WEB_RELEASE of
+  # OpenModelica/CRML (its submodules/web), checked against its SHA-256 sum and
+  # staged next to the page, which imports it. crml.js is reproducible, so a
+  # release can be pinned by its sum. Without it the page builds anyway and
+  # reports that the CRML translator could not be loaded.
+  set(OMEDIT_CRML_WEB_RELEASE "web-1.0.0")
+  set(OMEDIT_CRML_WEB_SHA256 "108cab1ebd958e3f37fe61daf5181cc5973fab4dcbfb563f24ae7ecdf10265e1")
+  set(OMEDIT_CRML_WEB_BASE_URL "https://github.com/OpenModelica/CRML/releases/download" CACHE STRING
+      "Where the OMEdit web page gets <release>/crml.js, the CRML translator, from; empty to leave it out.")
+  set(_crml_web_copy "")
+  if(OMEDIT_CRML_WEB_BASE_URL)
+    set(_crml_js ${CMAKE_CURRENT_BINARY_DIR}/crml-web/${OMEDIT_CRML_WEB_RELEASE}/crml.js)
+    set(_crml_sum "")
+    if(EXISTS ${_crml_js})
+      file(SHA256 ${_crml_js} _crml_sum)
+    endif()
+    if(NOT _crml_sum STREQUAL OMEDIT_CRML_WEB_SHA256)
+      # Checked here, not with EXPECTED_HASH, which makes any failure a configure error.
+      file(DOWNLOAD ${OMEDIT_CRML_WEB_BASE_URL}/${OMEDIT_CRML_WEB_RELEASE}/crml.js ${_crml_js}
+           STATUS _crml_status)
+      list(GET _crml_status 0 _crml_code)
+      if(_crml_code EQUAL 0)
+        file(SHA256 ${_crml_js} _crml_sum)
+        if(NOT _crml_sum STREQUAL OMEDIT_CRML_WEB_SHA256)
+          set(_crml_status "its SHA-256 sum is ${_crml_sum}, not ${OMEDIT_CRML_WEB_SHA256}")
+        endif()
+      endif()
+    endif()
+    if(_crml_sum STREQUAL OMEDIT_CRML_WEB_SHA256)
+      set(_crml_web_copy COMMAND ${CMAKE_COMMAND} -E copy ${_crml_js} ${_qt_pkgdir}/)
+    else()
+      file(REMOVE ${_crml_js})
+      message(WARNING "Could not get crml.js from ${OMEDIT_CRML_WEB_BASE_URL}/${OMEDIT_CRML_WEB_RELEASE}: "
+                      "${_crml_status}. The OMEdit web page will not translate CRML files.")
+    endif()
+  endif()
+
   add_custom_target(rust_omedit_qt_web ${_qt_web_all}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${_qt_bld}
     COMMAND ${_em_cache_env} ${CMAKE_COMMAND} -G "Unix Makefiles" -S ${_qt_src} -B ${_qt_bld}
@@ -1891,6 +1929,7 @@ function(omc_rust_omedit_qt_web_page)
             ${_qt_src}/oauth-callback.html ${_web_dir}/oauth-callback.html
     COMMAND ${CMAKE_COMMAND} -E copy
             ${CMAKE_SOURCE_DIR}/OMEdit/OMEditLIB/Resources/icons/omedit_splashscreen.png ${_qt_pkgdir}/
+    ${_crml_web_copy}
     COMMENT "Qt: building OMEdit-qt web page -> ${_qt_pkgdir}"
     VERBATIM)
   # Cloud storage OAuth client registrations. Kept out of the source tree so that one
