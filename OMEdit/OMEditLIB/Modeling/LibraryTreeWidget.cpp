@@ -2817,7 +2817,7 @@ void LibraryTreeView::createActions()
     // CRML Diagram Action
     mpCRMLDiagramAction = new QAction(Helper::crmlDiagram, this);
     mpCRMLDiagramAction->setStatusTip(Helper::crmlDiagramTip);
-    connect(mpCRMLDiagramAction, SIGNAL(triggered()), SLOT(showCRMLDiagram()));
+    connect(mpCRMLDiagramAction, &QAction::triggered, this, &LibraryTreeView::showCRMLDiagram);
   }
   // run Script Action
   mpRunScriptAction = new QAction(QIcon(":/Resources/icons/runScript.svg"), Helper::runScript, this);

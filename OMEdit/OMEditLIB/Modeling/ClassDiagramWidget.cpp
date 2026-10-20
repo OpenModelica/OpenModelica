@@ -154,7 +154,7 @@ ClassDiagramWidget::ClassDiagramWidget(const QString &className, bool crml, QWid
   mpClassDiagramView->setPage(pClassDiagramPage);
   connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
   if (mCRML) {
-    connect(mpClassDiagramView, SIGNAL(loadFinished(bool)), SLOT(showCRMLErrors(bool)));
+    connect(mpClassDiagramView, &QWebEngineView::loadFinished, this, &ClassDiagramWidget::showCRMLErrors);
   }
   // layout
   QHBoxLayout *pToolsLayout = new QHBoxLayout;
