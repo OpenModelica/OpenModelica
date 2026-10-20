@@ -419,8 +419,17 @@ algorithm
   outEqual := 0==compare(inExp1, inExp2);
 end expEqual;
 
+function expEqualValues
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output Boolean outEqual;
+algorithm
+  outEqual := 0 == compare(inExp1, inExp2, true);
+end expEqualValues;
+
 function compare
   input DAE.Exp inExp1, inExp2;
+  input Boolean compareValues = false "Compare the numerical values of expressions if true, e.g. 3.0 = 3.";
   output Integer comp;
 algorithm
   // Return true if the references are the same.
@@ -432,6 +441,14 @@ algorithm
   comp := Util.intCompare(valueConstructor(inExp1), valueConstructor(inExp2));
   // Return false if the expressions are not of the same type.
   if comp <> 0 then
+    if compareValues then
+      comp := match (inExp1, inExp2)
+        case (DAE.ICONST(), DAE.RCONST()) then Util.realCompare(intReal(inExp1.integer), inExp2.real);
+        case (DAE.RCONST(), DAE.ICONST()) then Util.realCompare(inExp1.real, intReal(inExp2.integer));
+        else comp;
+      end match;
+    end if;
+
     return;
   end if;
 
@@ -490,94 +507,94 @@ algorithm
       algorithm
         DAE.ARRAY(ty = ty, array = expl) := inExp2;
         comp := valueCompare(inExp1.ty, ty);
-      then if 0==comp then compareList(inExp1.array, expl) else comp;
+      then if 0==comp then compareList(inExp1.array, expl, compareValues) else comp;
 
     case DAE.MATRIX()
       algorithm
         DAE.MATRIX(ty = ty, matrix = mexpl) := inExp2;
         comp := valueCompare(inExp1.ty, ty);
-      then if 0==comp then compareListList(inExp1.matrix, mexpl) else comp;
+      then if 0==comp then compareListList(inExp1.matrix, mexpl, compareValues) else comp;
 
     case DAE.BINARY()
       algorithm
         DAE.BINARY(exp1 = e1, operator = op, exp2 = e2) := inExp2;
         comp := operatorCompare(inExp1.operator, op);
-        comp := if 0==comp then compare(inExp1.exp1, e1) else comp;
-      then if 0==comp then compare(inExp1.exp2, e2) else comp;
+        comp := if 0==comp then compare(inExp1.exp1, e1, compareValues) else comp;
+      then if 0==comp then compare(inExp1.exp2, e2, compareValues) else comp;
 
     case DAE.LBINARY()
       algorithm
         DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2) := inExp2;
         comp := operatorCompare(inExp1.operator, op);
-        comp := if 0==comp then compare(inExp1.exp1, e1) else comp;
-      then if 0==comp then compare(inExp1.exp2, e2) else comp;
+        comp := if 0==comp then compare(inExp1.exp1, e1, compareValues) else comp;
+      then if 0==comp then compare(inExp1.exp2, e2, compareValues) else comp;
 
     case DAE.UNARY()
       algorithm
         DAE.UNARY(exp = e, operator = op) := inExp2;
         comp := operatorCompare(inExp1.operator, op);
-      then if 0==comp then compare(inExp1.exp, e) else comp;
+      then if 0==comp then compare(inExp1.exp, e, compareValues) else comp;
 
     case DAE.LUNARY()
       algorithm
         DAE.LUNARY(exp = e, operator = op) := inExp2;
         comp := operatorCompare(inExp1.operator, op);
-      then if 0==comp then compare(inExp1.exp, e) else comp;
+      then if 0==comp then compare(inExp1.exp, e, compareValues) else comp;
 
     case DAE.RELATION()
       algorithm
         DAE.RELATION(exp1 = e1, operator = op, exp2 = e2) := inExp2;
         comp := operatorCompare(inExp1.operator, op);
-        comp := if 0==comp then compare(inExp1.exp1, e1) else comp;
-      then if 0==comp then compare(inExp1.exp2, e2) else comp;
+        comp := if 0==comp then compare(inExp1.exp1, e1, compareValues) else comp;
+      then if 0==comp then compare(inExp1.exp2, e2, compareValues) else comp;
 
     case DAE.IFEXP()
       algorithm
         DAE.IFEXP(expCond = e, expThen = e1, expElse = e2) := inExp2;
-        comp := compare(inExp1.expCond, e);
-        comp := if 0==comp then compare(inExp1.expThen, e1) else comp;
-      then if 0==comp then compare(inExp1.expElse, e2) else comp;
+        comp := compare(inExp1.expCond, e, compareValues);
+        comp := if 0==comp then compare(inExp1.expThen, e1, compareValues) else comp;
+      then if 0==comp then compare(inExp1.expElse, e2, compareValues) else comp;
 
     case DAE.CALL()
       algorithm
         DAE.CALL(path = p, expLst = expl) := inExp2;
         comp := AbsynUtil.pathCompare(inExp1.path, p);
-      then if 0==comp then compareList(inExp1.expLst, expl) else comp;
+      then if 0==comp then compareList(inExp1.expLst, expl, compareValues) else comp;
 
     case DAE.RECORD()
       algorithm
         DAE.RECORD(path = p, exps = expl) := inExp2;
         comp := AbsynUtil.pathCompare(inExp1.path, p);
-      then if 0==comp then compareList(inExp1.exps, expl) else comp;
+      then if 0==comp then compareList(inExp1.exps, expl, compareValues) else comp;
 
     case DAE.PARTEVALFUNCTION()
       algorithm
         DAE.PARTEVALFUNCTION(path = p, expList = expl) := inExp2;
         comp := AbsynUtil.pathCompare(inExp1.path, p);
-      then if 0==comp then compareList(inExp1.expList, expl) else comp;
+      then if 0==comp then compareList(inExp1.expList, expl, compareValues) else comp;
 
     case DAE.RANGE()
       algorithm
         DAE.RANGE(start = e1, step = oe, stop = e2) := inExp2;
-        comp := compare(inExp1.start, e1);
-        comp := if 0==comp then compare(inExp1.stop, e2) else comp;
+        comp := compare(inExp1.start, e1, compareValues);
+        comp := if 0==comp then compare(inExp1.stop, e2, compareValues) else comp;
       then if 0==comp then compareOpt(inExp1.step, oe) else comp;
 
     case DAE.TUPLE()
       algorithm
         DAE.TUPLE(PR = expl) := inExp2;
-      then compareList(inExp1.PR, expl);
+      then compareList(inExp1.PR, expl, compareValues);
 
     case DAE.CAST()
       algorithm
         DAE.CAST(ty = ty, exp = e) := inExp2;
         comp := valueCompare(inExp1.ty, ty);
-      then if 0==comp then compare(inExp1.exp, e) else comp;
+      then if 0==comp then compare(inExp1.exp, e, compareValues) else comp;
 
     case DAE.ASUB()
       algorithm
         DAE.ASUB(exp = e, sub = subs) := inExp2;
-        comp := compare(inExp1.exp, e);
+        comp := compare(inExp1.exp, e, compareValues);
       then if comp==0 then compareSubscriptList(inExp1.sub, subs) else comp;
 
     case DAE.RSUB()
@@ -586,19 +603,19 @@ algorithm
         comp := Util.intCompare(inExp1.ix, i);
         comp := if comp==0 then valueCompare(inExp1.ty, ty) else comp;
         comp := if comp==0 then stringCompare(inExp1.fieldName, s) else comp;
-      then if comp==0 then compare(inExp1.exp, e) else comp;
+      then if comp==0 then compare(inExp1.exp, e, compareValues) else comp;
 
     case DAE.TSUB()
       algorithm
         DAE.TSUB(exp = e, ix=i, ty = ty) := inExp2;
         comp := Util.intCompare(inExp1.ix, i);
         comp := if 0==comp then valueCompare(inExp1.ty, ty) else comp;
-      then if 0==comp then compare(inExp1.exp, e) else comp;
+      then if 0==comp then compare(inExp1.exp, e, compareValues) else comp;
 
     case DAE.SIZE()
       algorithm
         DAE.SIZE(exp = e, sz = oe) := inExp2;
-        comp := compare(inExp1.exp, e);
+        comp := compare(inExp1.exp, e, compareValues);
       then if comp==0 then compareOpt(inExp1.sz, oe) else comp;
 
     case DAE.REDUCTION()
@@ -609,19 +626,19 @@ algorithm
       algorithm
         DAE.LIST(valList = expl) := inExp2;
       then
-        compareList(inExp1.valList, expl);
+        compareList(inExp1.valList, expl, compareValues);
 
     case DAE.CONS()
       algorithm
         DAE.CONS(car = e1, cdr = e2) := inExp2;
-        comp := compare(inExp1.car, e1);
-      then if 0==comp then compare(inExp1.cdr, e2) else comp;
+        comp := compare(inExp1.car, e1, compareValues);
+      then if 0==comp then compare(inExp1.cdr, e2, compareValues) else comp;
 
     case DAE.META_TUPLE()
       algorithm
         DAE.META_TUPLE(listExp = expl) := inExp2;
       then
-        compareList(inExp1.listExp, expl);
+        compareList(inExp1.listExp, expl, compareValues);
 
     case DAE.META_OPTION()
       algorithm
@@ -633,7 +650,7 @@ algorithm
       algorithm
         DAE.METARECORDCALL(path = p, args = expl) := inExp2;
         comp := AbsynUtil.pathCompare(inExp1.path, p);
-      then if comp==0 then compareList(inExp1.args, expl) else comp;
+      then if comp==0 then compareList(inExp1.args, expl, compareValues) else comp;
 
     case DAE.MATCHEXPRESSION()
       then valueCompare(inExp1, inExp2);
@@ -642,13 +659,13 @@ algorithm
       algorithm
         DAE.BOX(exp = e) := inExp2;
       then
-        compare(inExp1.exp, e);
+        compare(inExp1.exp, e, compareValues);
 
     case DAE.UNBOX()
       algorithm
         DAE.UNBOX(exp = e) := inExp2;
       then
-        compare(inExp1.exp, e);
+        compare(inExp1.exp, e, compareValues);
 
     case DAE.SHARED_LITERAL()
       algorithm
@@ -673,6 +690,7 @@ end compare;
 protected function compareList
   input list<DAE.Exp> inExpl1;
   input list<DAE.Exp> inExpl2;
+  input Boolean compareValues;
   output Integer comp;
 protected
   Integer len1, len2;
@@ -703,6 +721,7 @@ end compareList;
 protected function compareListList
   input list<list<DAE.Exp>> inExpl1;
   input list<list<DAE.Exp>> inExpl2;
+  input Boolean compareValues;
   output Integer comp;
 protected
   list<DAE.Exp> expl2;
@@ -721,7 +740,7 @@ algorithm
     expl2 :: rest_expl2 := rest_expl2;
 
     // Return false if the expression lists are not equal.
-    comp := compareList(expl1, expl2);
+    comp := compareList(expl1, expl2, compareValues);
     if 0 <> comp then
       return;
     end if;

@@ -1394,6 +1394,11 @@ algorithm
        1.0 := realMod(r1,2.0);
        e3 := Expression.makePureBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
      then  Expression.expMul(DAE.RCONST(r1), e3);
+   case DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL()), DAE.ICONST(i1))})
+     algorithm
+       1 := intMod(i1, 2);
+       e3 := Expression.makePureBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
+     then  Expression.expMul(DAE.RCONST(intReal(i1)), e3);
    // log(1/x) = -log(x)
    case DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(ty = DAE.T_REAL()), e2)})
      algorithm
@@ -3868,6 +3873,11 @@ algorithm
         re3 := re1 ^ re2;
       then DAE.RCONST(re3);
 
+    case (DAE.POW(),DAE.RCONST(real = re1),DAE.ICONST(integer = ie2))
+      algorithm
+        re3 := re1 ^ ie2;
+      then DAE.RCONST(re3);
+
   end match;
 end simplifyBinaryConst;
 
@@ -4022,9 +4032,9 @@ algorithm
       then DAE.BINARY(DAE.RCONST(0.5),op1,e);
 
       /* sin^2(x)+cos^2(x) = 1 */
-    case (DAE.ADD(_),DAE.BINARY(DAE.CALL(path=Absyn.IDENT("sin"),expLst={e1}),DAE.POW(DAE.T_REAL()),DAE.RCONST(real = 2.0)),
-                     DAE.BINARY(DAE.CALL(path=Absyn.IDENT("cos"),expLst={e2}),DAE.POW(DAE.T_REAL()),DAE.RCONST(real = 2.0)))
-      guard ExpressionBasics.expEqual(e1,e2)
+    case (DAE.ADD(_),DAE.BINARY(exp1 = DAE.CALL(path=Absyn.IDENT("sin"),expLst={e1}), operator = DAE.POW(DAE.T_REAL())),
+                     DAE.BINARY(exp1 = DAE.CALL(path=Absyn.IDENT("cos"),expLst={e2}), operator = DAE.POW(DAE.T_REAL())))
+      guard Expression.isTwo(lhs.exp2) and Expression.isTwo(rhs.exp2) and ExpressionBasics.expEqual(e1,e2)
       then DAE.RCONST(1.0);
 
     // tan(e)*cos(e) = sin(e)
@@ -4033,9 +4043,9 @@ algorithm
       then Expression.makePureBuiltinCall("sin",{e1},tp);
 
       /* cosh^2(x)-sinh^2(x) = 1 */
-    case (DAE.ADD(_),DAE.BINARY(DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e1}),DAE.POW(DAE.T_REAL()),DAE.RCONST(real = 2.0)),
-                     DAE.UNARY(operator = DAE.UMINUS(),exp=DAE.BINARY(DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e2}),DAE.POW(DAE.T_REAL()),DAE.RCONST(real = 2.0))))
-      guard ExpressionBasics.expEqual(e1,e2)
+    case (DAE.ADD(_),DAE.BINARY(exp1 = DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e1}), operator = DAE.POW(DAE.T_REAL())),
+                     DAE.UNARY(operator = DAE.UMINUS(),exp=e as DAE.BINARY(exp1 = DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e2}), operator = DAE.POW(DAE.T_REAL()))))
+      guard Expression.isTwo(lhs.exp2) and Expression.isTwo(e.exp2) and ExpressionBasics.expEqual(e1,e2)
       then DAE.RCONST(1.0);
 
     // tanh(e)*cosh(e) = sinh(e)
@@ -4159,7 +4169,7 @@ algorithm
     // sqrt(e) * e^r => e^(r+0.5)
     case (DAE.MUL(),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),DAE.BINARY(e2,DAE.POW(),e))
       guard ExpressionBasics.expEqual(e1,e2)
-      then DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.ADD(DAE.T_REAL_DEFAULT),DAE.RCONST(0.5)));
+      then DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(Expression.typeCast(e,DAE.T_REAL_DEFAULT),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.RCONST(0.5)));
     // x*x^y => x^(y+1)
     case (DAE.MUL(),e1,DAE.BINARY(e3, op1 as DAE.POW(tp),e4))
       guard ExpressionBasics.expEqual(e1,e3)
@@ -4274,6 +4284,7 @@ algorithm
       Boolean b,b2;
       Real r, r1;
       Option<DAE.Exp> oexp;
+      Integer i;
 
     // a*(b^(-e)) => a/(b^e)
     case (DAE.MUL(), e1, DAE.BINARY(exp1 = e2,operator = op1 as DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS())), _, _)
@@ -4283,11 +4294,12 @@ algorithm
 
     // a*(b^(-r)) => a/(b^r)
     case (DAE.MUL(), e1, DAE.BINARY(exp1 = e2,operator = op1 as DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)), _, _)
-      algorithm
-        true := realLt(r,0.0);
-        r := realNeg(r);
-        res := DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,op1,DAE.RCONST(r)));
-      then res;
+      guard r < 0.0
+      then DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,op1,DAE.RCONST(-r)));
+
+    case (DAE.MUL(), e1, DAE.BINARY(exp1 = e2,operator = op1 as DAE.POW(ty = ty2),exp2 = DAE.ICONST(i)), _, _)
+      guard i < 0
+      then DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,op1,DAE.ICONST(-i)));
 
     // |e1| op2 |e2| => |e1 op2 e2|
     case(op2, DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}), DAE.CALL(path=Absyn.IDENT("abs"),expLst={e2}), _, _)
@@ -4421,6 +4433,7 @@ algorithm
       Boolean b,b2;
       Real r, r1;
       Option<DAE.Exp> oexp;
+      Integer i;
 
     // a/(b^(-e)) => a*(b^e)
     case (DAE.DIV(), e1, DAE.BINARY(exp1 = e2,operator = op1 as DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS())), _, _)
@@ -4430,11 +4443,12 @@ algorithm
 
     // a/(b^(-r)) => a*(b^r)
     case (DAE.DIV(), e1, DAE.BINARY(exp1 = e2,operator = op1 as DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)), _, _)
-      algorithm
-        true := realLt(r,0.0);
-        r := realNeg(r);
-        res := DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,op1,DAE.RCONST(r)));
-      then res;
+      guard r < 0.0
+      then DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,op1,DAE.RCONST(-r)));
+
+    case (DAE.DIV(), e1, DAE.BINARY(exp1 = e2,operator = op1 as DAE.POW(ty = ty2),exp2 = DAE.ICONST(i)), _, _)
+      guard i < 0
+      then DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,op1,DAE.ICONST(-i)));
 
     // (a*b op1 c)/b => a op1 c/b
     case (DAE.DIV(_), DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3), e4, _, _)
@@ -4638,32 +4652,36 @@ algorithm
         true := ExpressionBasics.expEqual(e1,e2);
       then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
     // x^y/x => x^(y-1)
-    case (DAE.DIV(), DAE.BINARY(e1,op1 as DAE.POW(ty), e2), e3, _, _)
+    case (DAE.DIV(), DAE.BINARY(e1,op1 as DAE.POW(), e2), e3, _, _)
        algorithm
          true := ExpressionBasics.expEqual(e1,e3);
+         ty := Expression.typeof(e2);
          e4 := Expression.makeConstOne(ty);
          e4 := DAE.BINARY(e2,DAE.SUB(ty), e4);
        then DAE.BINARY(e1,op1, e4);
     // x^y*z/x = x^(y-1)*z
-    case (DAE.DIV(), DAE.BINARY(DAE.BINARY(e1,op1 as DAE.POW(ty), e2),op2 as DAE.MUL(_),e5), e3, _, _)
+    case (DAE.DIV(), DAE.BINARY(DAE.BINARY(e1,op1 as DAE.POW(), e2),op2 as DAE.MUL(_),e5), e3, _, _)
       algorithm
         true := ExpressionBasics.expEqual(e1,e3);
+        ty := Expression.typeof(e2);
         e4 := Expression.makeConstOne(ty);
         e4 := DAE.BINARY(e2,DAE.SUB(ty), e4);
       then DAE.BINARY(DAE.BINARY(e1,op1, e4),op2,e5);
     //x/x^y => x^(1-y)
-    case (DAE.DIV(), e3, DAE.BINARY(e1,op1 as DAE.POW(ty), e2), _, _)
+    case (DAE.DIV(), e3, DAE.BINARY(e1,op1 as DAE.POW(), e2), _, _)
        algorithm
          true := ExpressionBasics.expEqual(e1,e3);
+         ty := Expression.typeof(e2);
          e4 := Expression.makeConstOne(ty);
          e4 := DAE.BINARY(e4,DAE.SUB(ty), e2);
        then DAE.BINARY(e1,op1, e4);
    //(x/y)^(-r) => (y/x)^r
    case (op2 as DAE.POW(), DAE.BINARY(e1, op1 as DAE.DIV(_), e2), DAE.RCONST(r), _, _)
-     algorithm
-       true := realLt(r,0.0);
-       r := realNeg(r);
-     then DAE.BINARY(DAE.BINARY(e2,op1,e1),op2,DAE.RCONST(r));
+     guard r < 0.0
+     then DAE.BINARY(DAE.BINARY(e2,op1,e1),op2,DAE.RCONST(-r));
+   case (op2 as DAE.POW(), DAE.BINARY(e1, op1 as DAE.DIV(_), e2), DAE.ICONST(i), _, _)
+     guard i < 0
+     then DAE.BINARY(DAE.BINARY(e2,op1,e1),op2,DAE.ICONST(-i));
 
     // (if b then x1 else y1) op  (if b then x2 else y2)
     // => (if b then x1 op x2 else y1 op y2)
@@ -5101,6 +5119,8 @@ algorithm
     // (-x)^2 = x^2
     case (op2 as DAE.POW(), DAE.UNARY(operator = DAE.UMINUS(),exp = e1), e2 as DAE.RCONST(2.0), _, _)
     then DAE.BINARY(e1, op2, e2);
+    case (op2 as DAE.POW(), DAE.UNARY(operator = DAE.UMINUS(),exp = e1), e2 as DAE.ICONST(2), _, _)
+    then DAE.BINARY(e1, op2, e2);
 
     // e ^ 1 => e
     case (DAE.POW(), e1, e, _, true)
@@ -5129,7 +5149,7 @@ algorithm
 
     // sqrt(e) ^ r => e ^ 0.5*r
     case (oper as DAE.POW(), DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}), e, _, _)
-     then DAE.BINARY(e1,oper,DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.T_REAL_DEFAULT),e));
+     then DAE.BINARY(e1,oper,DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.T_REAL_DEFAULT),Expression.typeCast(e,DAE.T_REAL_DEFAULT)));
 
 
     // 1 ^ e => 1

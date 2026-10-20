@@ -56,7 +56,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   input Real ddx;
 //   output Real dy \"Derivative of smooth max operator\";
 // algorithm
-//   dy := (if x1 > x2 then dx1 else dx2) + 0.25 * (((4.0 * (dx1 - (if x1 > x2 then dx1 else dx2)) / dx - 4.0 * (x1 - max(x1, x2)) * ddx / dx ^ 2.0) * exp(4.0 * (x1 - max(x1, x2)) / dx) + (4.0 * (dx2 - (if x1 > x2 then dx1 else dx2)) / dx - 4.0 * (x2 - max(x1, x2)) * ddx / dx ^ 2.0) * exp(4.0 * (x2 - max(x1, x2)) / dx)) * dx / (exp(4.0 * (x1 - max(x1, x2)) / dx) + exp(4.0 * (x2 - max(x1, x2)) / dx)) + log(exp(4.0 * (x1 - max(x1, x2)) / dx) + exp(4.0 * (x2 - max(x1, x2)) / dx)) * ddx);
+//   dy := (if x1 > x2 then dx1 else dx2) + 0.25 * (((4.0 * (dx1 - (if x1 > x2 then dx1 else dx2)) / dx - 4.0 * (x1 - max(x1, x2)) * ddx / dx ^ 2) * exp(4.0 * (x1 - max(x1, x2)) / dx) + (4.0 * (dx2 - (if x1 > x2 then dx1 else dx2)) / dx - 4.0 * (x2 - max(x1, x2)) * ddx / dx ^ 2) * exp(4.0 * (x2 - max(x1, x2)) / dx)) * dx / (exp(4.0 * (x1 - max(x1, x2)) / dx) + exp(4.0 * (x2 - max(x1, x2)) / dx)) + log(exp(4.0 * (x1 - max(x1, x2)) / dx) + exp(4.0 * (x2 - max(x1, x2)) / dx)) * ddx);
 // end Modelica.Fluid.Examples.BranchingDynamicPipes.Medium.Utilities.smoothMax_der;
 //
 // function Modelica.Fluid.Examples.BranchingDynamicPipes.Medium.Utilities.spliceFunction \"Spline interpolation of two functions\"
@@ -108,7 +108,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   end if;
 //   out := dpos * y + (1.0 - y) * dneg;
 //   if abs(scaledX1) < 1.0 then
-//     out := out + (pos - neg) * dscaledX1 * 1.5707963267948966 / 2.0 / (cosh(tan(scaledX)) * cos(scaledX)) ^ 2.0;
+//     out := out + (pos - neg) * dscaledX1 * 1.5707963267948966 / 2.0 / (cosh(tan(scaledX)) * cos(scaledX)) ^ 2;
 //   end if;
 // end Modelica.Fluid.Examples.BranchingDynamicPipes.Medium.Utilities.spliceFunction_der;
 //
@@ -218,7 +218,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real r1_der = -1.0 / Tcritical * dTsat \"Derivative of common subexpression 1\";
 //   protected Real r2 = a[1] * r1 ^ n[1] + a[2] * r1 ^ n[2] + a[3] * r1 ^ n[3] + a[4] * r1 ^ n[4] + a[5] * r1 ^ n[5] + a[6] * r1 ^ n[6] \"Common subexpression 2\";
 // algorithm
-//   psat_der := exp(r2 * Tcritical / Tsat) * pcritical * ((a[1] * r1 ^ (n[1] - 1.0) * n[1] * r1_der + a[2] * r1 ^ (n[2] - 1.0) * n[2] * r1_der + a[3] * r1 ^ (n[3] - 1.0) * n[3] * r1_der + a[4] * r1 ^ (n[4] - 1.0) * n[4] * r1_der + a[5] * r1 ^ (n[5] - 1.0) * n[5] * r1_der + a[6] * r1 ^ (n[6] - 1.0) * n[6] * r1_der) * Tcritical / Tsat - r2 * Tcritical * dTsat / Tsat ^ 2.0);
+//   psat_der := exp(r2 * Tcritical / Tsat) * pcritical * ((a[1] * r1 ^ (n[1] - 1.0) * n[1] * r1_der + a[2] * r1 ^ (n[2] - 1.0) * n[2] * r1_der + a[3] * r1 ^ (n[3] - 1.0) * n[3] * r1_der + a[4] * r1 ^ (n[4] - 1.0) * n[4] * r1_der + a[5] * r1 ^ (n[5] - 1.0) * n[5] * r1_der + a[6] * r1 ^ (n[6] - 1.0) * n[6] * r1_der) * Tcritical / Tsat - r2 * Tcritical * dTsat / Tsat ^ 2);
 // end Modelica.Fluid.Examples.BranchingDynamicPipes.Medium.saturationPressureLiquid_der;
 //
 // function Modelica.Fluid.Examples.BranchingDynamicPipes.Medium.saturationPressure_der \"Derivative function for 'saturationPressure'\"
@@ -343,7 +343,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   input Real length(quantity = \"Length\", unit = \"m\") \"Length of pipe\";
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
 //   input Real g_times_height_ab(unit = \"m2/s2\") \"Gravity times (Height(port_b) - Height(port_a))\";
-//   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
+//   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2 / 4.0 \"Inner cross section area\";
 //   input Real roughness(quantity = \"Length\", unit = \"m\", displayUnit = \"mm\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //   input Real dp_small(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = 0.0, nominal = 1e5) = 1.0 \"Regularization of zero flow if |dp| < dp_small (dummy if use_dp_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
@@ -390,7 +390,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   input Real mu_b(quantity = \"DynamicViscosity\", unit = \"Pa.s\", min = 0.0) \"Dynamic viscosity at port_b (dummy if use_mu = false)\";
 //   input Real length(quantity = \"Length\", unit = \"m\") \"Length of pipe\";
 //   input Real diameter(quantity = \"Length\", unit = \"m\", min = 0.0) \"Inner (hydraulic) diameter of pipe\";
-//   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2.0 / 4.0 \"Inner cross section area\";
+//   input Real crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * diameter ^ 2 / 4.0 \"Inner cross section area\";
 //   input Real roughness(quantity = \"Length\", unit = \"m\", displayUnit = \"mm\", min = 0.0) = 2.5e-5 \"Absolute roughness of pipe, with a default for a smooth steel pipe (dummy if use_roughness = false)\";
 //   input Real m_flow_small(quantity = \"MassFlowRate\", unit = \"kg/s\") = 0.01 \"Regularization of zero flow if |m_flow| < m_flow_small (dummy if use_m_flow_small = false)\";
 //   input Real Re_turbulent(quantity = \"ReynoldsNumber\", unit = \"1\") = 4000.0 \"Turbulent flow if Re >= Re_turbulent (dummy if use_Re_turbulent = false)\";
@@ -406,7 +406,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   rho := if m_flow >= 0.0 then rho_a else rho_b;
 //   mu := if m_flow >= 0.0 then mu_a else mu_b;
 //   Re := diameter * abs(m_flow) / (crossArea * mu);
-//   lambda2 := if Re <= Re1 then 64.0 * Re else if Re >= Re2 then 0.25 * (Re / log10(Delta / 3.7 + 5.74 / Re ^ 0.9)) ^ 2.0 else Modelica.Fluid.Pipes.BaseClasses.WallFriction.Detailed.pressureLoss_m_flow.interpolateInRegion2(Re, Re1, Re2, Delta);
+//   lambda2 := if Re <= Re1 then 64.0 * Re else if Re >= Re2 then 0.25 * (Re / log10(Delta / 3.7 + 5.74 / Re ^ 0.9)) ^ 2 else Modelica.Fluid.Pipes.BaseClasses.WallFriction.Detailed.pressureLoss_m_flow.interpolateInRegion2(Re, Re1, Re2, Delta);
 //   dp := length * mu * mu / (2.0 * rho * diameter * diameter * diameter) * (if m_flow >= 0.0 then lambda2 else -lambda2);
 // end Modelica.Fluid.Examples.BranchingDynamicPipes.pipe1.flowModel.WallFriction.pressureLoss_m_flow;
 //
@@ -472,8 +472,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //     rho := rho_b;
 //     mu := mu_b;
 //   end if;
-//   lambda2 := abs(dp_fric) * 2.0 * diameter ^ 3.0 * rho / (length * mu * mu) \"Known as lambda2=f(dp)\";
-//   aux1 := 2.0 * diameter ^ 3.0 * rho / (length * mu ^ 2.0);
+//   lambda2 := abs(dp_fric) * 2.0 * diameter ^ 3 * rho / (length * mu * mu) \"Known as lambda2=f(dp)\";
+//   aux1 := 2.0 * diameter ^ 3 * rho / (length * mu ^ 2);
 //   Re := lambda2 / 64.0 \"Hagen-Poiseuille\";
 //   dRe_ddp := aux1 / 64.0 \"Hagen-Poiseuille\";
 //   if Re > Re1 then
@@ -504,7 +504,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real y;
 //   protected Real dy_dx \"Derivative in transformed space\";
 //   protected Real aux3 = log10(aux2);
-//   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2.0;
+//   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2;
 //   protected Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
 //   protected Real x2 = log10(L2);
 //   protected Real aux5 = -2.0 * sqrt(L2) * log10(aux4);
@@ -531,7 +531,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected Real dx = log10(Re / Re1);
 //   protected Real aux3 = log10(aux2);
 //   protected Real diff_x = x2 - x1 \"Interval length\";
-//   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2.0;
+//   protected Real L2 = 0.25 * (Re2 / aux3) ^ 2;
 //   protected Real yd2 = 2.0 + 4.0 * aux1 / (aux2 * aux3 * Re2 ^ 0.9) \"Right boundary slope\";
 //   protected Real aux4 = 2.51 / sqrt(L2) + 0.27 * Delta;
 //   protected Real y2 = log10(L2) \"Upper ordinate value\";
@@ -604,8 +604,8 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   h := x2 - x1;
 //   if abs(h) > 0.0 then
 //     t := (x - x1) / h;
-//     aux3 := t ^ 3.0;
-//     aux2 := t ^ 2.0;
+//     aux3 := t ^ 3;
+//     aux2 := t ^ 2;
 //     h00 := 2.0 * aux3 - 3.0 * aux2 + 1.0;
 //     h10 := aux3 - 2.0 * aux2 + t;
 //     h01 := 3.0 * aux2 - 2.0 * aux3;
@@ -665,12 +665,12 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   elseif abs(y1d + y0d - 2.0 * Delta0) < 1e-13 then
 //     y := y0 + (x - x0) * (y0d + (x - x0) / h0 * (3.0 * Delta0 - (2.0 * y0d + y1d) + (x - x0) * (y0d + y1d - 2.0 * Delta0) / h0));
 //     aux01 := (x0 + x1) / 2.0;
-//     c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (aux01 - x0) / h0 + y0d;
+//     c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2 / h0 ^ 2 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (aux01 - x0) / h0 + y0d;
 //   else
 //     xstar := 0.3333333333333333 * (6.0 * x0 * Delta0 - (3.0 * x0 * y0d + 3.0 * x0 * y1d) - 2.0 * h0 * y0d - h0 * y1d + 3.0 * h0 * Delta0) / (2.0 * Delta0 - (y0d + y1d));
 //     mu := xstar - x0;
 //     eta := x1 - xstar;
-//     omega := 3.0 * (y0d + y1d - 2.0 * Delta0) * (xstar - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (xstar - x0) / h0 + y0d;
+//     omega := 3.0 * (y0d + y1d - 2.0 * Delta0) * (xstar - x0) ^ 2 / h0 ^ 2 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (xstar - x0) / h0 + y0d;
 //     aux01 := 0.25 * /*Real*/(sign(Delta0)) * min(abs(omega), abs(Delta0)) \"Slope c if not using plain cubic S0\";
 //     if abs(y0d - y1d) <= 1e-13 then
 //       aux02 := y0d;
@@ -678,9 +678,9 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //         useSingleCubicPolynomial := true;
 //       end if;
 //     elseif abs(y1d + y0d - 2.0 * Delta0) < 1e-13 then
-//       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2.0 - y0d ^ 2.0) * (if y1d + y0d - 2.0 * Delta0 >= 0.0 then 1.0 else -1.0) * 1e60;
+//       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2 - y0d ^ 2) * (if y1d + y0d - 2.0 * Delta0 >= 0.0 then 1.0 else -1.0) * 1e60;
 //     else
-//       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2.0 - y0d ^ 2.0) / (3.0 * (y1d + y0d - 2.0 * Delta0));
+//       aux02 := (6.0 * Delta0 * (y1d + y0d - 1.5 * Delta0) - y1d * y0d - y1d ^ 2 - y0d ^ 2) / (3.0 * (y1d + y0d - 2.0 * Delta0));
 //     end if;
 //     if (mu > 0.0 and eta < h0 and Delta0 * omega <= 0.0 or abs(aux01) < abs(aux02) and aux02 * Delta0 >= 0.0 or abs(aux01) < abs(0.1 * Delta0)) and not useSingleCubicPolynomial then
 //       c := aux01;
@@ -699,21 +699,21 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //       eta_tilde := rho * eta;
 //       xi1 := x0 + mu_tilde;
 //       xi2 := x1 - eta_tilde;
-//       a1 := (y0d - c) / max(mu_tilde ^ 2.0, 1e-13);
-//       a2 := (y1d - c) / max(eta_tilde ^ 2.0, 1e-13);
-//       const12 := y0 - a1 / 3.0 * (x0 - xi1) ^ 3.0 - c * x0;
-//       const3 := y1 - a2 / 3.0 * (x1 - xi2) ^ 3.0 - c * x1;
+//       a1 := (y0d - c) / max(mu_tilde ^ 2, 1e-13);
+//       a2 := (y1d - c) / max(eta_tilde ^ 2, 1e-13);
+//       const12 := y0 - a1 / 3.0 * (x0 - xi1) ^ 3 - c * x0;
+//       const3 := y1 - a2 / 3.0 * (x1 - xi2) ^ 3 - c * x1;
 //       if x < xi1 then
-//         y := a1 / 3.0 * (x - xi1) ^ 3.0 + c * x + const12;
+//         y := a1 / 3.0 * (x - xi1) ^ 3 + c * x + const12;
 //       elseif x < xi2 then
 //         y := c * x + const12;
 //       else
-//         y := a2 / 3.0 * (x - xi2) ^ 3.0 + c * x + const3;
+//         y := a2 / 3.0 * (x - xi2) ^ 3 + c * x + const3;
 //       end if;
 //     else
 //       y := y0 + (x - x0) * (y0d + (x - x0) / h0 * (3.0 * Delta0 - (2.0 * y0d + y1d) + (x - x0) * (y0d + y1d - 2.0 * Delta0) / h0));
 //       aux01 := (x0 + x1) / 2.0;
-//       c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2.0 / h0 ^ 2.0 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (aux01 - x0) / h0 + y0d;
+//       c := 3.0 * (y0d + y1d - 2.0 * Delta0) * (aux01 - x0) ^ 2 / h0 ^ 2 + 2.0 * (3.0 * Delta0 - (2.0 * y0d + y1d)) * (aux01 - x0) / h0 + y0d;
 //     end if;
 //   end if;
 // end Modelica.Fluid.Utilities.regFun3;
@@ -922,7 +922,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   end if;
 //   out := dpos * y + (1.0 - y) * dneg;
 //   if abs(scaledX1) < 1.0 then
-//     out := out + (pos - neg) * dscaledX1 * 1.5707963267948966 / 2.0 / (cosh(tan(scaledX)) * cos(scaledX)) ^ 2.0;
+//     out := out + (pos - neg) * dscaledX1 * 1.5707963267948966 / 2.0 / (cosh(tan(scaledX)) * cos(scaledX)) ^ 2;
 //   end if;
 // end Modelica.Media.Air.MoistAir.Utilities.spliceFunction_der;
 //
@@ -4241,28 +4241,28 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   pipe2.heatTransfer.diameters = pipe2.heatTransfer.dimensions;
 //   pipe2.heatTransfer.n63 = 3.66;
 //   pipe2.heatTransfer.n61[1] = smooth(0, pipe2.heatTransfer.n65[1] / 8.0 * abs(pipe2.heatTransfer.Res[1]) * pipe2.heatTransfer.Prs[1] / (1.0 + 12.7 * (pipe2.heatTransfer.n65[1] / 8.0) ^ 0.5 * (pipe2.heatTransfer.Prs[1] ^ 0.6666666666666666 - 1.0)) * (1.0 + 0.3333333333333333 * (pipe2.heatTransfer.diameters[1] / pipe2.heatTransfer.lengths[1] / (if pipe2.heatTransfer.vs[1] >= 0.0 then 0.5 else 4.5)) ^ 0.6666666666666666));
-//   pipe2.heatTransfer.n65[1] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[1])) - 1.5) ^ (-2.0);
-//   pipe2.heatTransfer.n62[1] = (pipe2.heatTransfer.n63 ^ 3.0 + 0.3429999999999999 + (pipe2.heatTransfer.n64[1] - 0.7) ^ 3.0) ^ 0.3333333333333333;
+//   pipe2.heatTransfer.n65[1] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[1])) - 1.5) ^ -2;
+//   pipe2.heatTransfer.n62[1] = (pipe2.heatTransfer.n63 ^ 3 + 0.3429999999999999 + (pipe2.heatTransfer.n64[1] - 0.7) ^ 3) ^ 0.3333333333333333;
 //   pipe2.heatTransfer.n64[1] = smooth(0, 1.077 * (abs(pipe2.heatTransfer.Res[1]) * pipe2.heatTransfer.Prs[1] * pipe2.heatTransfer.diameters[1] / pipe2.heatTransfer.lengths[1] / (if pipe2.heatTransfer.vs[1] >= 0.0 then 0.5 else 4.5)) ^ 0.3333333333333333);
 //   pipe2.heatTransfer.Nus[1] = Modelica.Media.Air.MoistAir.Utilities.spliceFunction(pipe2.heatTransfer.n61[1], pipe2.heatTransfer.n62[1], pipe2.heatTransfer.Res[1] - 6150.0, 3850.0);
 //   pipe2.heatTransfer.n61[2] = smooth(0, pipe2.heatTransfer.n65[2] / 8.0 * abs(pipe2.heatTransfer.Res[2]) * pipe2.heatTransfer.Prs[2] / (1.0 + 12.7 * (pipe2.heatTransfer.n65[2] / 8.0) ^ 0.5 * (pipe2.heatTransfer.Prs[2] ^ 0.6666666666666666 - 1.0)) * (1.0 + 0.3333333333333333 * (pipe2.heatTransfer.diameters[2] / pipe2.heatTransfer.lengths[2] / (if pipe2.heatTransfer.vs[2] >= 0.0 then 1.5 else 3.5)) ^ 0.6666666666666666));
-//   pipe2.heatTransfer.n65[2] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[2])) - 1.5) ^ (-2.0);
-//   pipe2.heatTransfer.n62[2] = (pipe2.heatTransfer.n63 ^ 3.0 + 0.3429999999999999 + (pipe2.heatTransfer.n64[2] - 0.7) ^ 3.0) ^ 0.3333333333333333;
+//   pipe2.heatTransfer.n65[2] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[2])) - 1.5) ^ -2;
+//   pipe2.heatTransfer.n62[2] = (pipe2.heatTransfer.n63 ^ 3 + 0.3429999999999999 + (pipe2.heatTransfer.n64[2] - 0.7) ^ 3) ^ 0.3333333333333333;
 //   pipe2.heatTransfer.n64[2] = smooth(0, 1.077 * (abs(pipe2.heatTransfer.Res[2]) * pipe2.heatTransfer.Prs[2] * pipe2.heatTransfer.diameters[2] / pipe2.heatTransfer.lengths[2] / (if pipe2.heatTransfer.vs[2] >= 0.0 then 1.5 else 3.5)) ^ 0.3333333333333333);
 //   pipe2.heatTransfer.Nus[2] = Modelica.Media.Air.MoistAir.Utilities.spliceFunction(pipe2.heatTransfer.n61[2], pipe2.heatTransfer.n62[2], pipe2.heatTransfer.Res[2] - 6150.0, 3850.0);
 //   pipe2.heatTransfer.n61[3] = smooth(0, pipe2.heatTransfer.n65[3] / 8.0 * abs(pipe2.heatTransfer.Res[3]) * pipe2.heatTransfer.Prs[3] / (1.0 + 12.7 * (pipe2.heatTransfer.n65[3] / 8.0) ^ 0.5 * (pipe2.heatTransfer.Prs[3] ^ 0.6666666666666666 - 1.0)) * (1.0 + 0.3333333333333333 * (pipe2.heatTransfer.diameters[3] / pipe2.heatTransfer.lengths[3] / 2.5) ^ 0.6666666666666666));
-//   pipe2.heatTransfer.n65[3] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[3])) - 1.5) ^ (-2.0);
-//   pipe2.heatTransfer.n62[3] = (pipe2.heatTransfer.n63 ^ 3.0 + 0.3429999999999999 + (pipe2.heatTransfer.n64[3] - 0.7) ^ 3.0) ^ 0.3333333333333333;
+//   pipe2.heatTransfer.n65[3] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[3])) - 1.5) ^ -2;
+//   pipe2.heatTransfer.n62[3] = (pipe2.heatTransfer.n63 ^ 3 + 0.3429999999999999 + (pipe2.heatTransfer.n64[3] - 0.7) ^ 3) ^ 0.3333333333333333;
 //   pipe2.heatTransfer.n64[3] = smooth(0, 1.077 * (abs(pipe2.heatTransfer.Res[3]) * pipe2.heatTransfer.Prs[3] * pipe2.heatTransfer.diameters[3] / pipe2.heatTransfer.lengths[3] / 2.5) ^ 0.3333333333333333);
 //   pipe2.heatTransfer.Nus[3] = Modelica.Media.Air.MoistAir.Utilities.spliceFunction(pipe2.heatTransfer.n61[3], pipe2.heatTransfer.n62[3], pipe2.heatTransfer.Res[3] - 6150.0, 3850.0);
 //   pipe2.heatTransfer.n61[4] = smooth(0, pipe2.heatTransfer.n65[4] / 8.0 * abs(pipe2.heatTransfer.Res[4]) * pipe2.heatTransfer.Prs[4] / (1.0 + 12.7 * (pipe2.heatTransfer.n65[4] / 8.0) ^ 0.5 * (pipe2.heatTransfer.Prs[4] ^ 0.6666666666666666 - 1.0)) * (1.0 + 0.3333333333333333 * (pipe2.heatTransfer.diameters[4] / pipe2.heatTransfer.lengths[4] / (if pipe2.heatTransfer.vs[4] >= 0.0 then 3.5 else 1.5)) ^ 0.6666666666666666));
-//   pipe2.heatTransfer.n65[4] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[4])) - 1.5) ^ (-2.0);
-//   pipe2.heatTransfer.n62[4] = (pipe2.heatTransfer.n63 ^ 3.0 + 0.3429999999999999 + (pipe2.heatTransfer.n64[4] - 0.7) ^ 3.0) ^ 0.3333333333333333;
+//   pipe2.heatTransfer.n65[4] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[4])) - 1.5) ^ -2;
+//   pipe2.heatTransfer.n62[4] = (pipe2.heatTransfer.n63 ^ 3 + 0.3429999999999999 + (pipe2.heatTransfer.n64[4] - 0.7) ^ 3) ^ 0.3333333333333333;
 //   pipe2.heatTransfer.n64[4] = smooth(0, 1.077 * (abs(pipe2.heatTransfer.Res[4]) * pipe2.heatTransfer.Prs[4] * pipe2.heatTransfer.diameters[4] / pipe2.heatTransfer.lengths[4] / (if pipe2.heatTransfer.vs[4] >= 0.0 then 3.5 else 1.5)) ^ 0.3333333333333333);
 //   pipe2.heatTransfer.Nus[4] = Modelica.Media.Air.MoistAir.Utilities.spliceFunction(pipe2.heatTransfer.n61[4], pipe2.heatTransfer.n62[4], pipe2.heatTransfer.Res[4] - 6150.0, 3850.0);
 //   pipe2.heatTransfer.n61[5] = smooth(0, pipe2.heatTransfer.n65[5] / 8.0 * abs(pipe2.heatTransfer.Res[5]) * pipe2.heatTransfer.Prs[5] / (1.0 + 12.7 * (pipe2.heatTransfer.n65[5] / 8.0) ^ 0.5 * (pipe2.heatTransfer.Prs[5] ^ 0.6666666666666666 - 1.0)) * (1.0 + 0.3333333333333333 * (pipe2.heatTransfer.diameters[5] / pipe2.heatTransfer.lengths[5] / (if pipe2.heatTransfer.vs[5] >= 0.0 then 4.5 else 0.5)) ^ 0.6666666666666666));
-//   pipe2.heatTransfer.n65[5] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[5])) - 1.5) ^ (-2.0);
-//   pipe2.heatTransfer.n62[5] = (pipe2.heatTransfer.n63 ^ 3.0 + 0.3429999999999999 + (pipe2.heatTransfer.n64[5] - 0.7) ^ 3.0) ^ 0.3333333333333333;
+//   pipe2.heatTransfer.n65[5] = (1.8 * log10(max(1e-10, pipe2.heatTransfer.Res[5])) - 1.5) ^ -2;
+//   pipe2.heatTransfer.n62[5] = (pipe2.heatTransfer.n63 ^ 3 + 0.3429999999999999 + (pipe2.heatTransfer.n64[5] - 0.7) ^ 3) ^ 0.3333333333333333;
 //   pipe2.heatTransfer.n64[5] = smooth(0, 1.077 * (abs(pipe2.heatTransfer.Res[5]) * pipe2.heatTransfer.Prs[5] * pipe2.heatTransfer.diameters[5] / pipe2.heatTransfer.lengths[5] / (if pipe2.heatTransfer.vs[5] >= 0.0 then 4.5 else 0.5)) ^ 0.3333333333333333);
 //   pipe2.heatTransfer.Nus[5] = Modelica.Media.Air.MoistAir.Utilities.spliceFunction(pipe2.heatTransfer.n61[5], pipe2.heatTransfer.n62[5], pipe2.heatTransfer.Res[5] - 6150.0, 3850.0);
 //   pipe2.heatTransfer.ds = array(Modelica.Fluid.Examples.BranchingDynamicPipes.pipe1.flowModel.Medium.density(pipe2.heatTransfer.states[$i44]) for $i44 in 1:5);

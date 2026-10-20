@@ -186,7 +186,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   sat.h := f.R_s * f.T * (f.tau * f.ftau + f.delta * f.fdelta);
 //   sat.s := f.R_s * (f.tau * f.ftau - f.f);
 //   sat.u := f.R_s * f.T * f.tau * f.ftau;
-//   sat.cp := f.R_s * ((f.delta * f.fdelta - f.delta * f.tau * f.fdeltatau) ^ 2.0 / (2.0 * f.delta * f.fdelta + f.delta * f.delta * f.fdeltadelta) - f.tau * f.tau * f.ftautau);
+//   sat.cp := f.R_s * ((f.delta * f.fdelta - f.delta * f.tau * f.fdeltatau) ^ 2 / (2.0 * f.delta * f.fdelta + f.delta * f.delta * f.fdeltadelta) - f.tau * f.tau * f.ftautau);
 //   sat.cv := f.R_s * (-f.tau * f.tau * f.ftautau);
 //   sat.pt := f.R_s * f.d * f.delta * (f.fdelta - f.tau * f.fdeltatau);
 //   sat.pd := f.R_s * f.T * f.delta * (2.0 * f.fdelta + f.delta * f.fdeltadelta);
@@ -321,7 +321,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   o[47] := 1295.95640782102 * o[46];
 //   o[48] := 2862.09212505088 + o[40] + o[41] + o[42] + o[43] + o[44] + o[45] + o[47];
 //   o[49] := 1.0 / (o[35] * o[35]);
-//   dtsat := 5e-7 * (2.0 * o[15] / o[35] - 2.0 * o[11] * (-(3005.2061756175 * o[2] + 0.5 * o[26] * o[31] + 583.52607263835 * o[5])) * o[49] - 20953.46356643991 * (o[39] * (1295.95640782102 + 5398.05138359071 * o[2] + 0.25 * o[2] * o[30] - 0.861036696828853 * o[26] * o[31] - 0.255316477279829 * o[26] * o[31] * o[4] - 4096.43557421473 * o[5] - 0.255316477279829 * o[30] * o[5] - 2325.01894614276 / o[8] + 0.5 * o[26] * o[31] * o[8]) - 2.0 * (o[19] + o[20] + 0.5 * o[26] * o[31]) * o[48] * o[37] ^ (-3.0)) / sqrt(o[39] * o[48]));
+//   dtsat := 5e-7 * (2.0 * o[15] / o[35] - 2.0 * o[11] * (-(3005.2061756175 * o[2] + 0.5 * o[26] * o[31] + 583.52607263835 * o[5])) * o[49] - 20953.46356643991 * (o[39] * (1295.95640782102 + 5398.05138359071 * o[2] + 0.25 * o[2] * o[30] - 0.861036696828853 * o[26] * o[31] - 0.255316477279829 * o[26] * o[31] * o[4] - 4096.43557421473 * o[5] - 0.255316477279829 * o[30] * o[5] - 2325.01894614276 / o[8] + 0.5 * o[26] * o[31] * o[8]) - 2.0 * (o[19] + o[20] + 0.5 * o[26] * o[31]) * o[48] * o[37] ^ -3) / sqrt(o[39] * o[48]));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.dtsatofp;
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.f3 \"Helmholtz function for region 3: f(d,T)\"
@@ -583,7 +583,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected constant Real pstar(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\") = 1e6 \"Normalization pressure\";
 //   protected Real pi = p / pstar \"Normalized specific pressure\";
 // algorithm
-//   h := (n[1] + n[2] * pi + n[3] * pi ^ 2.0 + n[4] * pi ^ 3.0) * hstar;
+//   h := (n[1] + n[2] * pi + n[3] * pi ^ 2 + n[4] * pi ^ 3) * hstar;
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.h3ab_p;
 //
 // function Modelica.Media.Water.IF97_Utilities.BaseIF97.Basic.psat \"Region 4 saturation pressure as a function of temperature\"

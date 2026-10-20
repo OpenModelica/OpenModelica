@@ -18,6 +18,6 @@ end OperationPow1;
 //   Integer i1;
 // equation
 //   r1 = r1 ^ r2;
-//   r1 = r1 ^ /*Real*/(i1);
+//   r1 = r1 ^ i1;
 // end OperationPow1;
 // endResult

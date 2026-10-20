@@ -1175,6 +1175,10 @@ algorithm
     valid := valid and not Expression.isNegative(exp2); // invalid if we know it's negative, valid if we don't know.
     op := Operator.OPERATOR(resultType, Op.POW_MATRIX);
     e2 := exp2;
+  elseif Type.isInteger(type2) then
+    // Real|Integer ^ Integer
+    op := Operator.OPERATOR(resultType, Op.POW);
+    e2 := exp2;
   else
     // Real ^ Real
     (e2, _, mk) := matchTypes(type2, Type.REAL(), exp2, ALLOW_UNKNOWN);

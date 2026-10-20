@@ -1284,7 +1284,7 @@ function evalBinaryPow
 algorithm
   exp := match (exp1, exp2)
     case (Expression.REAL(), Expression.REAL())
-      guard exp1.value < 0 and realInt(exp2.value) <> exp2.value
+      guard exp1.value < 0
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
@@ -1293,6 +1293,9 @@ algorithm
         end if;
       then
         Expression.BINARY(exp1, Operator.makePow(Type.REAL()), exp2);
+
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value ^ exp2.value);
 
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value ^ exp2.value);

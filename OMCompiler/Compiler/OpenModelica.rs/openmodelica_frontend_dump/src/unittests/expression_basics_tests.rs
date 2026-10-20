@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use metamodelica::Result;
+use crate::ExpressionBasics;
 use arcstr::literal;
+use metamodelica::Result;
 use metamodelica::*;
 use openmodelica_frontend_types::DAE;
-use crate::ExpressionBasics;
-use openmodelica_util::{FlagsUtil, Flags};
+use openmodelica_util::{Flags, FlagsUtil};
+use std::sync::Arc;
 
 // Initialize flags with default values for the current thread.
 // Required by print functions that call Config::modelicaOutput() etc.
@@ -32,7 +32,9 @@ fn iconst(i: i32) -> metamodelica::Ref<DAE::Exp> {
 }
 
 fn rconst(r: f64) -> metamodelica::Ref<DAE::Exp> {
-    metamodelica::Ref::new(DAE::Exp::RCONST { real: metamodelica::OrderedFloat(r) })
+    metamodelica::Ref::new(DAE::Exp::RCONST {
+        real: metamodelica::OrderedFloat(r),
+    })
 }
 
 fn bconst(b: bool) -> metamodelica::Ref<DAE::Exp> {
@@ -40,7 +42,9 @@ fn bconst(b: bool) -> metamodelica::Ref<DAE::Exp> {
 }
 
 fn sconst(s: &str) -> metamodelica::Ref<DAE::Exp> {
-    metamodelica::Ref::new(DAE::Exp::SCONST { string: arcstr::format!("{}", s) })
+    metamodelica::Ref::new(DAE::Exp::SCONST {
+        string: arcstr::format!("{}", s),
+    })
 }
 
 fn index_sub(exp: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Subscript> {
@@ -52,15 +56,27 @@ fn wholedim() -> metamodelica::Ref<DAE::Subscript> {
 }
 
 fn add_op() -> DAE::Operator {
-    DAE::Operator::ADD { ty: DAE::T_REAL_DEFAULT().clone() }
+    DAE::Operator::ADD {
+        ty: DAE::T_REAL_DEFAULT().clone(),
+    }
 }
 
 fn sub_op() -> DAE::Operator {
-    DAE::Operator::SUB { ty: DAE::T_REAL_DEFAULT().clone() }
+    DAE::Operator::SUB {
+        ty: DAE::T_REAL_DEFAULT().clone(),
+    }
 }
 
-fn make_binary(e1: metamodelica::Ref<DAE::Exp>, op: DAE::Operator, e2: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
-    metamodelica::Ref::new(DAE::Exp::BINARY { exp1: e1, operator: op, exp2: e2 })
+fn make_binary(
+    e1: metamodelica::Ref<DAE::Exp>,
+    op: DAE::Operator,
+    e2: metamodelica::Ref<DAE::Exp>,
+) -> metamodelica::Ref<DAE::Exp> {
+    metamodelica::Ref::new(DAE::Exp::BINARY {
+        exp1: e1,
+        operator: op,
+        exp2: e2,
+    })
 }
 
 fn make_unary(op: DAE::Operator, e: metamodelica::Ref<DAE::Exp>) -> metamodelica::Ref<DAE::Exp> {
@@ -73,21 +89,21 @@ fn make_unary(op: DAE::Operator, e: metamodelica::Ref<DAE::Exp>) -> metamodelica
 
 #[test]
 fn compare_same_iconst_returns_zero() -> Result<()> {
-    let result = ExpressionBasics::compare(&iconst(5), iconst(5))?;
+    let result = ExpressionBasics::compare(&iconst(5), iconst(5), false)?;
     assert_eq!(result, 0);
     Ok(())
 }
 
 #[test]
 fn compare_iconst_less_than() -> Result<()> {
-    let result = ExpressionBasics::compare(&iconst(3), iconst(7))?;
+    let result = ExpressionBasics::compare(&iconst(3), iconst(7), false)?;
     assert!(result < 0, "expected negative, got {}", result);
     Ok(())
 }
 
 #[test]
 fn compare_iconst_greater_than() -> Result<()> {
-    let result = ExpressionBasics::compare(&iconst(7), iconst(3))?;
+    let result = ExpressionBasics::compare(&iconst(7), iconst(3), false)?;
     assert!(result > 0, "expected positive, got {}", result);
     Ok(())
 }
@@ -99,7 +115,7 @@ fn compare_iconst_greater_than() -> Result<()> {
 /// and the code falls into the ICONST match arm while inExp2 is RCONST.
 #[test]
 fn compare_different_constructors_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(&iconst(1), rconst(1.0))?;
+    let result = ExpressionBasics::compare(&iconst(1), rconst(1.0), false)?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -107,7 +123,7 @@ fn compare_different_constructors_should_return_nonzero_not_error() -> Result<()
 /// Same bug, different direction.
 #[test]
 fn compare_rconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(&rconst(1.0), iconst(1))?;
+    let result = ExpressionBasics::compare(&rconst(1.0), iconst(1), false)?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -115,7 +131,7 @@ fn compare_rconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
 /// compare(BCONST, ICONST) — different constructors should give non-zero.
 #[test]
 fn compare_bconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(&bconst(true), iconst(0))?;
+    let result = ExpressionBasics::compare(&bconst(true), iconst(0), false)?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -123,7 +139,7 @@ fn compare_bconst_vs_iconst_should_return_nonzero_not_error() -> Result<()> {
 /// compare(SCONST, RCONST) — different constructors should give non-zero.
 #[test]
 fn compare_sconst_vs_rconst_should_return_nonzero_not_error() -> Result<()> {
-    let result = ExpressionBasics::compare(&sconst("hello"), rconst(1.0))?;
+    let result = ExpressionBasics::compare(&sconst("hello"), rconst(1.0), false)?;
     assert_ne!(result, 0, "expected non-zero for different constructors, got 0");
     Ok(())
 }
@@ -177,7 +193,7 @@ fn operator_compare_add_vs_sub_should_return_nonzero() -> Result<()> {
 fn compare_binary_add_vs_binary_sub_should_return_nonzero() -> Result<()> {
     let lhs = make_binary(iconst(1), add_op(), iconst(2));
     let rhs = make_binary(iconst(1), sub_op(), iconst(2));
-    let result = ExpressionBasics::compare(&lhs, rhs)?;
+    let result = ExpressionBasics::compare(&lhs, rhs, false)?;
     assert_ne!(result, 0, "BINARY(ADD) and BINARY(SUB) should compare as unequal");
     Ok(())
 }
@@ -255,7 +271,9 @@ fn priority_binary_add_rhs() -> Result<()> {
 
 #[test]
 fn priority_unary_is_four() -> Result<()> {
-    let uminus = DAE::Operator::UMINUS { ty: DAE::T_REAL_DEFAULT().clone() };
+    let uminus = DAE::Operator::UMINUS {
+        ty: DAE::T_REAL_DEFAULT().clone(),
+    };
     let e = make_unary(uminus, iconst(1));
     assert_eq!(ExpressionBasics::priority(&e, true)?, 4);
     Ok(())
@@ -274,8 +292,7 @@ fn subscript_int_from_index() -> Result<()> {
 
 #[test]
 fn subscripts_int_list() -> Result<()> {
-    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> =
-        list![index_sub(iconst(2)), index_sub(iconst(7))];
+    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> = list![index_sub(iconst(2)), index_sub(iconst(7))];
     let result = ExpressionBasics::subscriptsInt(subs)?;
     let v: Vec<i32> = result.into_iter().cloned().collect();
     assert_eq!(v, vec![2, 7]);
@@ -288,7 +305,10 @@ fn subscripts_int_list() -> Result<()> {
 
 #[test]
 fn subscript_equal_empty_lists() -> Result<()> {
-    assert_eq!(ExpressionBasics::subscriptEqual(&metamodelica::nil(), &metamodelica::nil())?, true);
+    assert_eq!(
+        ExpressionBasics::subscriptEqual(&metamodelica::nil(), &metamodelica::nil())?,
+        true
+    );
     Ok(())
 }
 
@@ -359,13 +379,8 @@ fn print_list_str_empty() -> Result<()> {
 #[test]
 fn print_list_str_multiple() -> Result<()> {
     init_flags();
-    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> =
-        list![index_sub(iconst(3)), index_sub(iconst(5))];
-    let result = ExpressionBasics::printListStr(
-        subs,
-        &|s| ExpressionBasics::printSubscriptStr(&s),
-        literal!(","),
-    )?;
+    let subs: metamodelica::List<metamodelica::Ref<DAE::Subscript>> = list![index_sub(iconst(3)), index_sub(iconst(5))];
+    let result = ExpressionBasics::printListStr(subs, &|s| ExpressionBasics::printSubscriptStr(&s), literal!(","))?;
     assert_eq!(result, "3,5");
     Ok(())
 }

@@ -740,11 +740,10 @@ algorithm
 
       // f(a)^n = c => f(a) = c^(1/n)
       // where n is odd
-      case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), _)
-        guard (not expHasCref(inExp2, inExp3)) and expHasCref(e1, inExp3) and (1.0 == realMod(r,2.0))
+      case (DAE.BINARY(e1,DAE.POW(_),e2), _)
+        guard Expression.isOdd(e2) and (not expHasCref(inExp2, inExp3)) and expHasCref(e1, inExp3)
         algorithm
-          res := Expression.makeDiv(DAE.RCONST(1.0),e2);
-          res := Expression.expPow(inExp2,res);
+          res := Expression.expPow(inExp2, Expression.inverseFactors(e2));
        then
          (e1, res, true);
 
@@ -867,7 +866,7 @@ algorithm
 
           // f(x)^n - g(x)^n = 0 -> (f(x)/g(x))^n = 1
           case(DAE.BINARY(DAE.BINARY(e1, DAE.POW(), e2), DAE.SUB(tp), DAE.BINARY(e3, DAE.POW(), e4)), DAE.RCONST(0.0))
-            guard ExpressionBasics.expEqual(e2,e4) and expHasCref(e1,inExp3) and expHasCref(e3,inExp3)
+            guard ExpressionBasics.expEqualValues(e2,e4) and expHasCref(e1,inExp3) and expHasCref(e3,inExp3)
           algorithm
             e := Expression.expPow(Expression.makeDiv(e1,e3),e2);
             (e_1, e_2, _) := preprocessingSolve3(e, Expression.makeConstOne(tp), inExp3);
@@ -967,7 +966,7 @@ algorithm
   //print("\nf1 =");print(ExpressionDump.printExpListStr(f1));
   //print("\nf2 =");print(ExpressionDump.printExpListStr(f2));
 
-  if ExpressionBasics.expEqual(pWithX2,pWithX1) then
+  if ExpressionBasics.expEqualValues(pWithX2,pWithX1) then
     // e0 + a*x + b*x -> e0 + (a+b)*x
     if not neg then
       ores := Expression.expAdd(pWithoutX1, pWithoutX2);
@@ -976,7 +975,7 @@ algorithm
       ores := Expression.expSub(pWithoutX2, pWithoutX1);
     end if;
     ores := Expression.expMul(ores, pWithX2);
-  elseif ExpressionBasics.expEqual(pWithX2, Expression.negate(pWithX1)) then
+  elseif ExpressionBasics.expEqualValues(pWithX2, Expression.negate(pWithX1)) then
     // e0 + a*(-x) + b*x -> e0 + (b-a)*x
     if not neg then
       ores := Expression.expSub(pWithoutX2, pWithoutX1);
@@ -1436,7 +1435,6 @@ algorithm
         // exP := makeInitialGuess(tp, inExp3, inExp2);
         (exP, eqnForNewVars_, newVarsCrefs_) := makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
         e_1 := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp); // sign
-
         lhs := Expression.expPow(inExp2, Expression.inverseFactors(e2)); // y^(1/n)
         lhs := Expression.makePureBuiltinCall("abs", {lhs}, tp); // abs(y^(1/n))
         //lhs := Expression.makePureBuiltinCall("abs", {inExp2}, tp); // abs(y)
@@ -1759,14 +1757,14 @@ author: Vitalij Ruge
 
 protected
   DAE.Exp e7, con, invExp, x1, x2, x, exP;
-  DAE.Exp a,b,c, n, sgnb, b2, ac, sExp1, sExp2;
+  DAE.Exp a,b,c, n, m, sgnb, b2, ac, sExp1, sExp2;
   DAE.Type tp;
   Boolean b1, b3;
 algorithm
     false := Expression.isZero(e1) and Expression.isZero(e2);
     true := ExpressionBasics.expEqual(e2,e5);
-    b1 := ExpressionBasics.expEqual(e3, Expression.expMul(DAE.RCONST(2.0),e6));
-    b3 := ExpressionBasics.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
+    b1 := ExpressionBasics.expEqualValues(e3, Expression.expMul(DAE.RCONST(2.0), e6));
+    b3 := ExpressionBasics.expEqualValues(e6, Expression.expMul(DAE.RCONST(2.0), e3));
 
     true := b1 or b3;
     false := expHasCref(e1, inExp3);

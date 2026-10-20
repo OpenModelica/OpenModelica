@@ -58,6 +58,7 @@ protected
   import Util;
   import Type = NFType;
   import NFPrefixes.Variability;
+  import Operator = NFOperator;
 
 public
   function verify
@@ -113,7 +114,7 @@ protected
     input Boolean isPartial;
   algorithm
     if Binding.isBound(binding) then
-      checkSubscriptBounds(Binding.getTypedExp(binding), isPartial, Binding.getInfo(binding));
+      verifyExp(Binding.getTypedExp(binding), isPartial, Binding.getInfo(binding));
     end if;
   end verifyBinding;
 
@@ -132,7 +133,7 @@ protected
       else ();
     end match;
 
-    Equation.applyExpShallow(eq, function checkSubscriptBounds(isPartial = isPartial, info = Equation.info(eq)));
+    Equation.applyExpShallow(eq, function verifyExp(isPartial = isPartial, info = Equation.info(eq)));
   end verifyEquation;
 
   function verifyWhenEquation
@@ -270,18 +271,18 @@ protected
     input Statement stmt;
     input Boolean isPartial;
   algorithm
-    Statement.applyExp(stmt, function checkSubscriptBounds(isPartial = isPartial, info = Statement.info(stmt)));
+    Statement.applyExp(stmt, function verifyExp(isPartial = isPartial, info = Statement.info(stmt)));
   end verifyStatement;
 
-  function checkSubscriptBounds
+  function verifyExp
     input Expression exp;
     input Boolean isPartial;
     input SourceInfo info;
   algorithm
-    Expression.apply(exp, function checkSubscriptBounds_traverser(isPartial = isPartial, info = info));
-  end checkSubscriptBounds;
+    Expression.apply(exp, function verifyExp_traverser(isPartial = isPartial, info = info));
+  end verifyExp;
 
-  function checkSubscriptBounds_traverser
+  function verifyExp_traverser
     input Expression exp;
     input Boolean isPartial;
     input SourceInfo info;
@@ -293,9 +294,21 @@ protected
         then
           ();
 
+      case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.POW))
+        guard Expression.isNegative(exp.exp1) and Expression.isReal(exp.exp2)
+        algorithm
+          Error.addSourceMessage(Error.INVALID_NEGATIVE_POW,
+            {Expression.toString(exp.exp1), Expression.toString(exp.exp2)}, info);
+
+          if not isPartial then
+            fail();
+          end if;
+        then
+          ();
+
       else ();
     end match;
-  end checkSubscriptBounds_traverser;
+  end verifyExp_traverser;
 
   function checkSubscriptBoundsCref
     input ComponentRef cref;

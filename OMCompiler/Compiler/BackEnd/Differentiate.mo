@@ -2151,9 +2151,9 @@ algorithm
   case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.ICONST(integer = i)))
       algorithm
         (de1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-        i := i - 1;
-        e := DAE.BINARY(DAE.BINARY(e2,DAE.MUL(tp),
-                       DAE.BINARY(e1,DAE.POW(tp),DAE.ICONST(i))),
+        r := i - 1;
+        e := DAE.BINARY(DAE.BINARY(DAE.RCONST(intReal(i)),DAE.MUL(tp),
+                       DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r))),
                        DAE.MUL(tp),de1);
       then
         (e, funcs);

@@ -612,6 +612,30 @@ algorithm
       then
         (Unit.MASTER({}), icu1);
 
+    case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.POW), exp2 as Expression.INTEGER())
+      algorithm
+        (unit1 as Unit.UNIT(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        op_unit := Unit.unitPow(unit1, exp2.value);
+        insertUnitString(op_unit, htS2U, htU2S);
+      then
+        (op_unit, icu1);
+
+    case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.POW), exp2 as Expression.INTEGER())
+      guard Unit.isUnit(unit)
+      algorithm
+        (Unit.MASTER(varList = vars), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        op_unit := Unit.unitRoot(unit, intReal(exp2.value));
+        List.map2_0(vars, updateHtCr2U, op_unit, htCr2U);
+        insertUnitString(op_unit, htS2U, htU2S);
+      then
+        (unit, icu1);
+
+    case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.POW), Expression.INTEGER())
+      algorithm
+        (_, icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+      then
+        (Unit.MASTER({}), icu1);
+
     // Call
     case Expression.CALL()
       algorithm

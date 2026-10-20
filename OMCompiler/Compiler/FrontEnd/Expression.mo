@@ -1492,6 +1492,7 @@ algorithm
         i := realInt(r);
         op := if realEq(r,intReal(i)) then SOME(i) else NONE();
       then op;
+    case DAE.ICONST() then SOME(exp.integer);
     else NONE();
   end match;
 end realExpIntLit;
@@ -7607,6 +7608,16 @@ algorithm
   end match;
 end isZero;
 
+function isTwo
+  input DAE.Exp inExp;
+  output Boolean res;
+algorithm
+  res := match inExp
+    case DAE.ICONST() then inExp.integer == 2;
+    case DAE.RCONST() then inExp.real == 2.0;
+    else false;
+  end match;
+end isTwo;
 
 public function isZeroOrAlmostZero
 "Returns true if an expression is constant
