@@ -90,6 +90,7 @@ void match_bfs(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
 void match_mc21(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m);
 void match_pf(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m);
 void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m);
+
 void match_hk(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m);
 void match_hk_dw(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m);
 void match_abmp(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m);
@@ -102,5 +103,19 @@ void cheap_matching(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, in
 
 void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int cheap_id, int clear_match);
 void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int match_id, int cheap_id, double relabel_period, int clear_match);
+
+/* A matrix whose rows (columns here) are lists of pieces, every piece is a
+ * range of ids. Pieces of different rows can point to the same range, so rows
+ * can share sections without storing them twice. */
+typedef struct {
+  int* row_first;   /* row -> index of its first piece */
+  int* row_count;   /* row -> number of pieces */
+  int* piece_start; /* piece -> index of its first entry in ids */
+  int* piece_len;   /* piece -> number of entries */
+  int* ids;         /* entries, 0-based */
+} piece_matrix;
+
+void match_pf_fair_pieces(const piece_matrix* pm, int* match, int* row_match, int n, int m);
+void matching_pieces(const piece_matrix* pm, int* match, int* row_match, int n, int m, int match_id, int cheap_id, double relabel_period, int clear_match);
 
 #endif /* MATCHMAKER_H_ */

@@ -74,6 +74,15 @@ struct State {
     row_match: Vec<i32>,
     col_ptrs: Vec<i32>,
     col_ids: Vec<i32>,
+
+    // Set by setAdjacencyMatrixPieces and used instead of `col_ptrs`/`col_ids`
+    // if `use_pieces` (rows as lists of pieces of `p_ids`, see matchmaker::Pieces).
+    use_pieces: bool,
+    p_row_first: Vec<i32>,
+    p_row_count: Vec<i32>,
+    p_piece_start: Vec<i32>,
+    p_piece_len: Vec<i32>,
+    p_ids: Vec<i32>,
 }
 
 thread_local! {
@@ -187,6 +196,7 @@ pub fn getNumber(inInteger: i32) -> i32 {
 
 pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<metamodelica::List<i32>>) {
     with_state(|s| {
+        s.use_pieces = false;
         s.col_ptrs = vec![0i32; (ne + 1) as usize];
         s.col_ptrs[ne as usize] = nz;
         s.col_ids = vec![0i32; nz.max(0) as usize];
@@ -209,6 +219,7 @@ pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<metamodelica::Lis
 
 pub fn setAdjacencyMatrixFlat(_nv: i32, ne: i32, nz: i32, start: Array<i32>, len: Array<i32>, data: Array<i32>) {
     with_state(|s| {
+        s.use_pieces = false;
         s.col_ptrs = vec![0i32; (ne + 1) as usize];
         s.col_ptrs[ne as usize] = nz;
         s.col_ids = vec![0i32; nz.max(0) as usize];
@@ -230,6 +241,69 @@ pub fn setAdjacencyMatrixFlat(_nv: i32, ne: i32, nz: i32, start: Array<i32>, len
                 }
             }
         }
+    });
+}
+
+/// The adjacency matrix with each row stored as pieces of one flat buffer (all
+/// 1-based), pieces of different rows can share a range. A shared range is
+/// copied once, without its non-positive entries, like the C.
+pub fn setAdjacencyMatrixPieces(
+    _nv: i32,
+    ne: i32,
+    first: Array<i32>,
+    count: Array<i32>,
+    pstart: Array<i32>,
+    plen: Array<i32>,
+    data: Array<i32>,
+) {
+    with_state(|s| {
+        let first = first.borrow();
+        let count = count.borrow();
+        let pstart = pstart.borrow();
+        let plen = plen.borrow();
+        let data = data.borrow();
+        let ndata = data.len();
+        // source range start -> (copied start, copied length, source length)
+        let mut target: Vec<(i32, i32, i32)> = vec![(-1, 0, 0); ndata + 1];
+
+        s.col_ptrs.clear();
+        s.col_ids.clear();
+        s.p_row_first = vec![0i32; ne.max(0) as usize];
+        s.p_row_count = vec![0i32; ne.max(0) as usize];
+        s.p_piece_start.clear();
+        s.p_piece_len.clear();
+        s.p_ids.clear();
+
+        for i in 0..ne as usize {
+            s.p_row_first[i] = s.p_piece_start.len() as i32;
+            let p0 = first[i] as usize;
+            for p in p0..p0 + count[i] as usize {
+                let ps = pstart[p - 1] as usize;
+                let pl = plen[p - 1];
+                let (cstart, clen) = if target[ps].0 >= 0 && target[ps].2 == pl {
+                    (target[ps].0, target[ps].1)
+                } else {
+                    let cstart = s.p_ids.len() as i32;
+                    for k in ps..ps + pl as usize {
+                        let i1 = data[k - 1];
+                        if i1 > 0 {
+                            s.p_ids.push(i1 - 1);
+                        }
+                    }
+                    let clen = s.p_ids.len() as i32 - cstart;
+                    if target[ps].0 < 0 {
+                        target[ps] = (cstart, clen, pl);
+                    }
+                    (cstart, clen)
+                };
+                if clen > 0 {
+                    s.p_piece_start.push(cstart);
+                    s.p_piece_len.push(clen);
+                }
+            }
+            s.p_row_count[i] = s.p_piece_start.len() as i32 - s.p_row_first[i];
+        }
+        s.use_pieces = true;
     });
 }
 
@@ -293,18 +367,39 @@ pub fn matching(nv: i32, ne: i32, matchingID: i32, cheapID: i32, relabel_period:
         }
 
         let (n, m) = (s.n, s.m);
-        matchmaker::matching(
-            &s.col_ptrs,
-            &s.col_ids,
-            &mut s.r#match,
-            &mut s.row_match,
-            n,
-            m,
-            matchingID,
-            cheapID,
-            relabel_period,
-            0,
-        );
+        if s.use_pieces {
+            let pm = matchmaker::Pieces {
+                row_first: &s.p_row_first,
+                row_count: &s.p_row_count,
+                piece_start: &s.p_piece_start,
+                piece_len: &s.p_piece_len,
+                ids: &s.p_ids,
+            };
+            matchmaker::matching_pieces(
+                &pm,
+                &mut s.r#match,
+                &mut s.row_match,
+                neqns,
+                nvars,
+                matchingID,
+                cheapID,
+                relabel_period,
+                0,
+            );
+        } else {
+            matchmaker::matching(
+                &s.col_ptrs,
+                &s.col_ids,
+                &mut s.r#match,
+                &mut s.row_match,
+                n,
+                m,
+                matchingID,
+                cheapID,
+                relabel_period,
+                0,
+            );
+        }
     });
 }
 
@@ -1442,12 +1537,63 @@ mod matchmaker {
         let _ = m;
     }
 
+    /// A matrix whose rows (columns in the terms of the matchmaker) are lists of
+    /// pieces, every piece a range of `ids`. Pieces of different rows can point
+    /// to the same range, so rows share sections without storing them twice.
+    pub struct Pieces<'a> {
+        pub row_first: &'a [i32],
+        pub row_count: &'a [i32],
+        pub piece_start: &'a [i32],
+        pub piece_len: &'a [i32],
+        pub ids: &'a [i32],
+    }
+
+    impl Pieces<'_> {
+        fn row_len(&self, c: i32) -> i32 {
+            let first = self.row_first[c as usize] as usize;
+            let count = self.row_count[c as usize] as usize;
+            self.piece_len[first..first + count].iter().sum()
+        }
+
+        /// the entry at position `k` (0-based) of row `c`
+        fn entry(&self, c: i32, k: i32) -> i32 {
+            let first = self.row_first[c as usize] as usize;
+            let count = self.row_count[c as usize] as usize;
+            let mut k = k;
+            for p in first..first + count {
+                if k < self.piece_len[p] {
+                    return self.ids[(self.piece_start[p] + k) as usize];
+                }
+                k -= self.piece_len[p];
+            }
+            -1
+        }
+    }
+
+    /// PF+ (fair) on a compressed column matrix: every column is one piece.
     fn match_pf_fair(col_ptrs: &[i32], col_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+        let row_first: Vec<i32> = (0..n).collect();
+        let row_count = vec![1i32; n as usize];
+        let piece_len: Vec<i32> = (0..n as usize).map(|i| col_ptrs[i + 1] - col_ptrs[i]).collect();
+        let pm = Pieces {
+            row_first: &row_first,
+            row_count: &row_count,
+            piece_start: col_ptrs,
+            piece_len: &piece_len,
+            ids: col_ids,
+        };
+        match_pf_fair_pieces(&pm, r#match, row_match, n, m);
+    }
+
+    /// PF+ (fair) on a piece matrix: the pointers of the original algorithm are
+    /// positions inside the rows, so rows can share their sections.
+    pub fn match_pf_fair_pieces(pm: &Pieces, r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
         let mut visited = vec![0i32; m as usize];
         let mut stack = vec![0i32; n as usize];
         let mut colptrs = vec![0i32; n as usize];
-        let mut lookahead = col_ptrs[..n as usize].to_vec();
+        let mut lookahead = vec![0i32; n as usize];
         let mut unmatched = vec![0i32; n as usize];
+        let lens: Vec<i32> = (0..n).map(|i| pm.row_len(i)).collect();
 
         let mut stop = false;
         let mut pcount = 1i32;
@@ -1455,7 +1601,7 @@ mod matchmaker {
         let mut inc = true;
 
         for i in 0..n {
-            if r#match[i as usize] == -1 && col_ptrs[i as usize] != col_ptrs[i as usize + 1] {
+            if r#match[i as usize] == -1 && lens[i as usize] != 0 {
                 unmatched[nunmatched as usize] = i;
                 nunmatched += 1;
             }
@@ -1470,13 +1616,13 @@ mod matchmaker {
                     let current_col = unmatched[ii as usize];
                     stack[0] = current_col;
                     let mut stack_last = 0i32;
-                    colptrs[current_col as usize] = col_ptrs[current_col as usize];
+                    colptrs[current_col as usize] = 0;
 
                     while stack_last > -1 {
                         let stack_col = stack[stack_last as usize];
-                        let eptr = col_ptrs[stack_col as usize + 1];
+                        let eptr = lens[stack_col as usize];
                         let mut ptr = lookahead[stack_col as usize];
-                        while ptr < eptr && row_match[col_ids[ptr as usize] as usize] != -1 {
+                        while ptr < eptr && row_match[pm.entry(stack_col, ptr) as usize] != -1 {
                             ptr += 1;
                         }
                         lookahead[stack_col as usize] = ptr + 1;
@@ -1484,7 +1630,7 @@ mod matchmaker {
                         if ptr >= eptr {
                             let mut ptr = colptrs[stack_col as usize];
                             while ptr < eptr {
-                                let temp = visited[col_ids[ptr as usize] as usize];
+                                let temp = visited[pm.entry(stack_col, ptr) as usize];
                                 if temp != pcount && temp != -1 {
                                     break;
                                 }
@@ -1501,7 +1647,7 @@ mod matchmaker {
                                 continue;
                             }
 
-                            let row = col_ids[ptr as usize];
+                            let row = pm.entry(stack_col, ptr);
                             visited[row as usize] = pcount;
                             let col = row_match[row as usize];
                             stack_last += 1;
@@ -1510,9 +1656,9 @@ mod matchmaker {
                                 stack.resize(nl, 0);
                             }
                             stack[stack_last as usize] = col;
-                            colptrs[col as usize] = col_ptrs[col as usize];
+                            colptrs[col as usize] = 0;
                         } else {
-                            let mut row = col_ids[ptr as usize];
+                            let mut row = pm.entry(stack_col, ptr);
                             visited[row as usize] = pcount;
                             while row != -1 {
                                 let col = stack[stack_last as usize];
@@ -1544,22 +1690,22 @@ mod matchmaker {
                     let current_col = unmatched[ii as usize];
                     stack[0] = current_col;
                     let mut stack_last = 0i32;
-                    colptrs[current_col as usize] = col_ptrs[current_col as usize + 1] - 1;
+                    colptrs[current_col as usize] = lens[current_col as usize] - 1;
 
                     while stack_last > -1 {
                         let stack_col = stack[stack_last as usize];
-                        let eptr = col_ptrs[stack_col as usize + 1];
+                        let eptr = lens[stack_col as usize];
                         let mut ptr = lookahead[stack_col as usize];
-                        while ptr < eptr && row_match[col_ids[ptr as usize] as usize] != -1 {
+                        while ptr < eptr && row_match[pm.entry(stack_col, ptr) as usize] != -1 {
                             ptr += 1;
                         }
                         lookahead[stack_col as usize] = ptr + 1;
 
                         if ptr >= eptr {
-                            let eptr = col_ptrs[stack_col as usize] - 1;
+                            let eptr = -1;
                             let mut ptr = colptrs[stack_col as usize];
                             while ptr > eptr {
-                                let temp = visited[col_ids[ptr as usize] as usize];
+                                let temp = visited[pm.entry(stack_col, ptr) as usize];
                                 if temp != pcount && temp != -1 {
                                     break;
                                 }
@@ -1576,7 +1722,7 @@ mod matchmaker {
                                 continue;
                             }
 
-                            let row = col_ids[ptr as usize];
+                            let row = pm.entry(stack_col, ptr);
                             visited[row as usize] = pcount;
                             let col = row_match[row as usize];
                             stack_last += 1;
@@ -1585,9 +1731,9 @@ mod matchmaker {
                                 stack.resize(nl, 0);
                             }
                             stack[stack_last as usize] = col;
-                            colptrs[col as usize] = col_ptrs[col as usize + 1] - 1;
+                            colptrs[col as usize] = lens[col as usize] - 1;
                         } else {
-                            let mut row = col_ids[ptr as usize];
+                            let mut row = pm.entry(stack_col, ptr);
                             visited[row as usize] = pcount;
                             while row != -1 {
                                 let col = stack[stack_last as usize];
@@ -1619,6 +1765,55 @@ mod matchmaker {
             nunmatched = nextunmatched;
             inc = !inc;
         }
+    }
+
+    /// matching on a piece matrix: PF+ (fair) without cheap matching runs on the
+    /// pieces, every other algorithm on the expanded compressed column matrix
+    #[allow(clippy::too_many_arguments)]
+    pub fn matching_pieces(
+        pm: &Pieces,
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+        matching_id: i32,
+        cheap_id: i32,
+        relabel_period: f64,
+        clear_match: i32,
+    ) {
+        if matching_id == DO_PF_FAIR && cheap_id == 0 {
+            if clear_match == 1 {
+                for i in 0..n as usize {
+                    r#match[i] = -1;
+                }
+                for i in 0..m as usize {
+                    row_match[i] = -1;
+                }
+            }
+            match_pf_fair_pieces(pm, r#match, row_match, n, m);
+            return;
+        }
+        let mut col_ptrs = vec![0i32; (n + 1) as usize];
+        let mut col_ids: Vec<i32> = Vec::new();
+        for i in 0..n {
+            col_ptrs[i as usize] = col_ids.len() as i32;
+            for k in 0..pm.row_len(i) {
+                col_ids.push(pm.entry(i, k));
+            }
+        }
+        col_ptrs[n as usize] = col_ids.len() as i32;
+        matching(
+            &col_ptrs,
+            &col_ids,
+            r#match,
+            row_match,
+            n,
+            m,
+            matching_id,
+            cheap_id,
+            relabel_period,
+            clear_match,
+        );
     }
 
     #[allow(clippy::too_many_arguments)]

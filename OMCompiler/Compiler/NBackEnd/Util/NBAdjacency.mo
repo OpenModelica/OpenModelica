@@ -372,62 +372,123 @@ public
       input Integer var;
       output Option<Mode> res = NONE();
     protected
-      Integer first = m.start[eqn];
+      array<Integer> pstart = IntMatrix.pieceStarts(m);
+      array<Integer> plen = IntMatrix.pieceLengths(m);
       Mode mode;
     algorithm
-      for k in first:first + m.len[eqn] - 1 loop
-        if data[k] == var and ids[k] > 0 then
-          mode := Vector.getNoBounds(modes, ids[k]);
-          res := match res
-            local Mode acc;
-            case SOME(acc) then SOME(Mode.merge(acc, mode));
-            else SOME(mode);
-          end match;
-        end if;
+      for p in m.first[eqn]:m.first[eqn] + m.pieces[eqn] - 1 loop
+        for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+          if data[k] == var and ids[k] > 0 then
+            mode := Vector.getNoBounds(modes, ids[k]);
+            res := match res
+              local Mode acc;
+              case SOME(acc) then SOME(Mode.merge(acc, mode));
+              else SOME(mode);
+            end match;
+          end if;
+        end for;
       end for;
     end get;
   end Modes;
 
   uniontype IntMatrix
-    "Adjacency rows stored flat: every row is a slice of one append-only integer
-    buffer. Nothing in here is a pointer, so the collector does not have to walk
-    the nonzeros. aux carries one extra integer per entry (the causalization
-    mode id of the normal matrix), and is empty where it is not used."
+    "Adjacency rows stored flat in one append-only integer buffer. A row is a
+    list of pieces, every piece is a range of the buffer. Rows can share
+    sections: pieces of different rows that point to the same range (e.g. all
+    rows of an algorithm depend on the same variables, which are stored once).
+    Nothing in here is a pointer, so the collector does not have to walk the
+    nonzeros. aux carries one extra integer per entry (the causalization mode id
+    of the normal matrix), and is empty where it is not used.
+
+    The entries of a row are numbered 1 .. rowLength(m, row) over its pieces in
+    order (position), see get/dataIndex."
 
     record INT_MATRIX
-      array<Integer> start  "row -> 1-based index of its first entry in data";
-      array<Integer> len    "row -> number of entries";
-      Vector<Integer> data  "entry buffer, only appended to";
-      Vector<Integer> aux   "payload parallel to data, empty if unused";
+      array<Integer> first    "row -> index of its first piece";
+      array<Integer> pieces   "row -> number of pieces";
+      Vector<Integer> pstart  "piece -> 1-based index of its first entry in data";
+      Vector<Integer> plen    "piece -> number of entries";
+      Vector<Integer> data    "entry buffer, only appended to";
+      Vector<Integer> aux     "payload parallel to data, empty if unused";
     end INT_MATRIX;
 
     uniontype Builder
-      "The matrix is filled by collecting (row, entry) pairs in any order;
-      fromBuilder() then groups them by row in one counting sort."
+      "The matrix is filled by collecting (row, entry) pairs in any order and
+      references from rows to sections that are stored once; fromBuilder() then
+      groups them by row in one counting sort. Every row gets its own entries as
+      first piece, followed by its sections, the latest added first."
       record BUILDER
-        Vector<Integer> pairs;
-        Vector<Integer> aux;
+        Vector<Integer> pairs     "(row, entry) pairs";
+        Vector<Integer> aux       "payload of the pairs";
         Boolean hasAux;
+        Vector<Integer> refs      "(row, section) pairs";
+        Vector<Integer> sec_start "section -> 1-based index of its first entry in sec_data";
+        Vector<Integer> sec_len   "section -> number of entries";
+        Vector<Integer> sec_data  "entries of all sections";
+        Vector<Integer> sec_aux   "payload of the section entries";
       end BUILDER;
     end Builder;
 
+    uniontype CopyMap
+      "the ranges of one matrix already copied into another one, so that rows
+      that share a section in the source share it in the target as well"
+      record COPY_MAP
+        array<Integer> target "source range start -> target range start, 0 if not copied";
+        array<Integer> length "source range start -> length of the copied range";
+      end COPY_MAP;
+    end CopyMap;
+
     function new
       input Integer rows;
-      output IntMatrix m = INT_MATRIX(arrayCreate(rows, 1), arrayCreate(rows, 0), Vector.new<Integer>(0), Vector.new<Integer>(0));
+      output IntMatrix m = INT_MATRIX(arrayCreate(rows, 1), arrayCreate(rows, 0),
+        Vector.new<Integer>(0), Vector.new<Integer>(0), Vector.new<Integer>(0), Vector.new<Integer>(0));
     end new;
 
     function rows
       input IntMatrix m;
-      output Integer n = arrayLength(m.start);
+      output Integer n = arrayLength(m.first);
     end rows;
 
-    function nonZeroCount
+    function rowLength
+      "number of entries of the row over all its pieces"
       input IntMatrix m;
-      output Integer count = sum(l for l in m.len);
+      input Integer row;
+      output Integer n = 0;
+    protected
+      array<Integer> plen = Vector.rawArray(m.plen);
+    algorithm
+      for p in m.first[row]:m.first[row] + m.pieces[row] - 1 loop
+        n := n + plen[p];
+      end for;
+    end rowLength;
+
+    function nonZeroCount
+      "number of entries, shared sections counted once per row"
+      input IntMatrix m;
+      output Integer count = 0;
+    protected
+      array<Integer> plen = Vector.rawArray(m.plen);
+    algorithm
+      for r in 1:arrayLength(m.first) loop
+        for p in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+          count := count + plen[p];
+        end for;
+      end for;
     end nonZeroCount;
 
+    function storedCount
+      "number of entries actually stored, shared sections counted once"
+      input IntMatrix m;
+      output Integer count = Vector.size(m.data);
+    end storedCount;
+
+    function pieceCount
+      input IntMatrix m;
+      output Integer count = Vector.size(m.pstart);
+    end pieceCount;
+
     function entries
-      "the raw entry buffer, indexed by start[row] .. start[row]+len[row]-1.
+      "the raw entry buffer, indexed by the pieces (see pieceStarts/pieceLengths).
       invalidated by anything that adds entries"
       input IntMatrix m;
       output array<Integer> data = Vector.rawArray(m.data);
@@ -438,16 +499,95 @@ public
       output array<Integer> aux = Vector.rawArray(m.aux);
     end payload;
 
+    function pieceStarts
+      "piece -> first entry in the raw entry buffer. invalidated by anything
+      that adds pieces"
+      input IntMatrix m;
+      output array<Integer> pstart = Vector.rawArray(m.pstart);
+    end pieceStarts;
+
+    function pieceLengths
+      input IntMatrix m;
+      output array<Integer> plen = Vector.rawArray(m.plen);
+    end pieceLengths;
+
+    function pieceBegin
+      "index of the first entry of the piece in the entry buffer"
+      input IntMatrix m;
+      input Integer piece;
+      output Integer k = Vector.getNoBounds(m.pstart, piece);
+    end pieceBegin;
+
+    function pieceEnd
+      "index of the last entry of the piece in the entry buffer"
+      input IntMatrix m;
+      input Integer piece;
+      output Integer k = Vector.getNoBounds(m.pstart, piece) + Vector.getNoBounds(m.plen, piece) - 1;
+    end pieceEnd;
+
+    function dataIndex
+      "the index in the entry buffer of the entry at position pos (1-based) of
+      the row, -1 if the row has less entries"
+      input IntMatrix m;
+      input Integer row;
+      input Integer pos;
+      output Integer index = -1;
+    protected
+      array<Integer> pstart = Vector.rawArray(m.pstart);
+      array<Integer> plen = Vector.rawArray(m.plen);
+      Integer k = pos;
+    algorithm
+      for p in m.first[row]:m.first[row] + m.pieces[row] - 1 loop
+        if k <= plen[p] then
+          index := pstart[p] + k - 1;
+          break;
+        end if;
+        k := k - plen[p];
+      end for;
+    end dataIndex;
+
+    function get
+      "the entry at position pos (1-based) of the row"
+      input IntMatrix m;
+      input Integer row;
+      input Integer pos;
+      output Integer value = Vector.getNoBounds(m.data, dataIndex(m, row, pos));
+    end get;
+
+    function rowContains
+      "the row has the entry value"
+      input IntMatrix m;
+      input Integer row;
+      input Integer value;
+      output Boolean b = false;
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      array<Integer> pstart = Vector.rawArray(m.pstart);
+      array<Integer> plen = Vector.rawArray(m.plen);
+    algorithm
+      for p in m.first[row]:m.first[row] + m.pieces[row] - 1 loop
+        for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+          if data[k] == value then
+            b := true;
+            return;
+          end if;
+        end for;
+      end for;
+    end rowContains;
+
     function toList
       input IntMatrix m;
       input Integer row;
       output list<Integer> lst = {};
     protected
       array<Integer> data = Vector.rawArray(m.data);
-      Integer first = m.start[row];
+      array<Integer> pstart = Vector.rawArray(m.pstart);
+      array<Integer> plen = Vector.rawArray(m.plen);
     algorithm
-      for k in first + m.len[row] - 1:-1:first loop
-        lst := data[k] :: lst;
+      for p in m.first[row] + m.pieces[row] - 1:-1:m.first[row] loop
+        for k in pstart[p] + plen[p] - 1:-1:pstart[p] loop
+          lst := data[k] :: lst;
+        end for;
       end for;
     end toList;
 
@@ -457,12 +597,17 @@ public
       input IntMatrix m;
       input Integer row;
       input list<Integer> values;
+    protected
+      Integer n = listLength(values);
     algorithm
-      arrayUpdate(m.start, row, Vector.size(m.data) + 1);
-      arrayUpdate(m.len, row, listLength(values));
-      for v in values loop
-        Vector.push(m.data, v);
-      end for;
+      if n > 0 then
+        addPiece(m, row, Vector.size(m.data) + 1, n);
+        for v in values loop
+          Vector.push(m.data, v);
+        end for;
+      else
+        arrayUpdate(m.pieces, row, 0);
+      end if;
     end setRow;
 
     function setRowFromArray
@@ -472,11 +617,14 @@ public
       input array<Integer> values;
       input Integer n;
     algorithm
-      arrayUpdate(m.start, row, Vector.size(m.data) + 1);
-      arrayUpdate(m.len, row, n);
-      for i in 1:n loop
-        Vector.push(m.data, values[i]);
-      end for;
+      if n > 0 then
+        addPiece(m, row, Vector.size(m.data) + 1, n);
+        for i in 1:n loop
+          Vector.push(m.data, values[i]);
+        end for;
+      else
+        arrayUpdate(m.pieces, row, 0);
+      end if;
     end setRowFromArray;
 
     function reserveData
@@ -495,29 +643,57 @@ public
       input IntMatrix m;
       input Integer row;
     algorithm
-      arrayUpdate(m.len, row, 0);
+      arrayUpdate(m.pieces, row, 0);
     end clearRow;
 
+    function newCopyMap
+      "a copy map for copying rows out of from"
+      input IntMatrix from;
+      output CopyMap map = COPY_MAP(arrayCreate(Vector.size(from.data) + 1, 0), arrayCreate(Vector.size(from.data) + 1, 0));
+    end newCopyMap;
+
     function copyRow
-      "appends row src of `from` (whose buffer must be given) as row dst of m"
+      "appends row src of `from` (whose buffer must be given) as row dst of m.
+      Ranges that were copied before with the same map are shared, not copied again."
       input IntMatrix from;
       input Integer src;
       input array<Integer> from_data;
       input array<Integer> from_aux;
       input IntMatrix m;
       input Integer dst;
+      input CopyMap map;
     protected
-      Integer first = from.start[src], n = from.len[src];
+      array<Integer> pstart = Vector.rawArray(from.pstart);
+      array<Integer> plen = Vector.rawArray(from.plen);
       Boolean aux = arrayLength(from_aux) > 0;
+      Integer ps, pl, target, n = 0;
     algorithm
-      arrayUpdate(m.start, dst, Vector.size(m.data) + 1);
-      arrayUpdate(m.len, dst, n);
-      for k in first:first + n - 1 loop
-        Vector.push(m.data, from_data[k]);
-        if aux then
-          Vector.push(m.aux, from_aux[k]);
+      arrayUpdate(m.first, dst, Vector.size(m.pstart) + 1);
+      for p in from.first[src]:from.first[src] + from.pieces[src] - 1 loop
+        ps := pstart[p];
+        pl := plen[p];
+        if pl > 0 then
+          if map.target[ps] > 0 and map.length[ps] == pl then
+            target := map.target[ps];
+          else
+            target := Vector.size(m.data) + 1;
+            for k in ps:ps + pl - 1 loop
+              Vector.push(m.data, from_data[k]);
+              if aux then
+                Vector.push(m.aux, from_aux[k]);
+              end if;
+            end for;
+            if map.target[ps] == 0 then
+              arrayUpdate(map.target, ps, target);
+              arrayUpdate(map.length, ps, pl);
+            end if;
+          end if;
+          Vector.push(m.pstart, target);
+          Vector.push(m.plen, pl);
+          n := n + 1;
         end if;
       end for;
+      arrayUpdate(m.pieces, dst, n);
     end copyRow;
 
     function expandRows
@@ -525,15 +701,18 @@ public
       input Integer shift;
     algorithm
       if shift > 0 then
-        m := INT_MATRIX(Array.expandToSize(arrayLength(m.start) + shift, m.start, 1),
-                        Array.expandToSize(arrayLength(m.len) + shift, m.len, 0), m.data, m.aux);
+        m := INT_MATRIX(Array.expandToSize(arrayLength(m.first) + shift, m.first, 1),
+                        Array.expandToSize(arrayLength(m.pieces) + shift, m.pieces, 0),
+                        m.pstart, m.plen, m.data, m.aux);
       end if;
     end expandRows;
 
     function transpose
       "transposes the matrix, dropping any payload. a negative entry -v means
-      that row occurs negated in column v. each result row comes out descending,
-      matching what List.sort(.., intLt) produced before.
+      that row occurs negated in column v. the own entries of each result row come
+      out descending, matching what List.sort(.., intLt) produced before.
+      A section shared by the rows R becomes a section R shared by the result
+      rows of its entries (-R for its negated entries), so sharing survives.
       slack reserves buffer space for rows that are merged in afterwards."
       input IntMatrix m;
       input Integer size "number of rows of the result (does not have to be square!)";
@@ -541,75 +720,197 @@ public
       output IntMatrix mT;
     protected
       array<Integer> data = Vector.rawArray(m.data);
-      array<Integer> start, len, out;
-      Integer n = arrayLength(m.start), nnz = 0, idx, pos, first;
+      array<Integer> pstart = Vector.rawArray(m.pstart);
+      array<Integer> plen = Vector.rawArray(m.plen);
+      Integer n = arrayLength(m.first), stored = Vector.size(m.data);
+      // shared ranges: length of the first piece seen at a start, and how many rows use it
+      array<Integer> key_len = arrayCreate(stored + 1, -1);
+      array<Integer> key_cnt = arrayCreate(stored + 1, 0);
+      array<list<Integer>> key_rows;
+      array<Integer> start, len, own_start, out, tfirst, tpieces, tps, tpl, sec_pos, sec_neg;
+      list<Integer> shared = {};
+      Integer nnz = 0, idx, pos, ps, pl, total, npieces = 0, sec_total = 0, r2, cur;
       Boolean negated = false;
     algorithm
+      // 1. find the ranges shared by more than one row
+      for r in 1:n loop
+        for p in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+          ps := pstart[p];
+          pl := plen[p];
+          if pl > 0 then
+            if key_len[ps] == -1 then
+              arrayUpdate(key_len, ps, pl);
+            end if;
+            if key_len[ps] == pl then
+              arrayUpdate(key_cnt, ps, key_cnt[ps] + 1);
+              if key_cnt[ps] == 2 then
+                shared := ps :: shared;
+              end if;
+            end if;
+          end if;
+        end for;
+      end for;
+      shared := List.sort(shared, intGt);
+
+      // 2. count the own entries per result row
       start := arrayCreate(size, 1);
       len   := arrayCreate(size, 0);
-
       for r in 1:n loop
-        first := m.start[r];
-        for k in first:first + m.len[r] - 1 loop
+        for p in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+          if not isShared(pstart[p], plen[p], key_len, key_cnt) then
+            for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+              idx := intAbs(data[k]);
+              if idx > 0 and idx <= size then
+                arrayUpdate(len, idx, len[idx] + 1);
+                nnz := nnz + 1;
+                negated := negated or data[k] < 0;
+              else
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(data[k]) + ".
+                  The variables have to be dense (without empty spaces) for this to work!"});
+              end if;
+            end for;
+          end if;
+        end for;
+      end for;
+
+      // 3. the rows of every shared range and the number of result pieces
+      key_rows := arrayCreate(if listEmpty(shared) then 0 else stored + 1, {});
+      if not listEmpty(shared) then
+        for r in n:-1:1 loop
+          for p in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+            if isShared(pstart[p], plen[p], key_len, key_cnt) then
+              arrayUpdate(key_rows, pstart[p], r :: key_rows[pstart[p]]);
+            end if;
+          end for;
+        end for;
+      end if;
+      tpieces := arrayCreate(size, 0);
+      for c in 1:size loop
+        if len[c] > 0 then
+          arrayUpdate(tpieces, c, 1);
+        end if;
+      end for;
+      sec_pos := arrayCreate(if listEmpty(shared) then 0 else stored + 1, 0);
+      sec_neg := arrayCreate(if listEmpty(shared) then 0 else stored + 1, 0);
+      for s in shared loop
+        for k in s:s + key_len[s] - 1 loop
           idx := intAbs(data[k]);
           if idx > 0 and idx <= size then
-            arrayUpdate(len, idx, len[idx] + 1);
-            nnz := nnz + 1;
-            negated := negated or data[k] < 0;
+            arrayUpdate(tpieces, idx, tpieces[idx] + 1);
+            if data[k] > 0 then
+              arrayUpdate(sec_pos, s, 1);
+            else
+              arrayUpdate(sec_neg, s, 1);
+            end if;
           else
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable index " + intString(data[k]) + ".
               The variables have to be dense (without empty spaces) for this to work!"});
           end if;
         end for;
+        sec_total := sec_total + (sec_pos[s] + sec_neg[s]) * listLength(key_rows[s]);
       end for;
 
+      // 4. scatter the own entries, using start as the cursor and winding it back afterwards
       pos := 1;
       for c in 1:size loop
         arrayUpdate(start, c, pos);
         pos := pos + len[c];
       end for;
-
-      out := arrayCreate(nnz + slack, 0);
-
-      // scatter, using start as the cursor and winding it back afterwards.
+      total := nnz + sec_total;
+      out := arrayCreate(total + slack, 0);
       // positive entries first, rows descending
       for r in n:-1:1 loop
-        first := m.start[r];
-        for k in first:first + m.len[r] - 1 loop
-          idx := data[k];
-          if idx > 0 and idx <= size then
-            arrayUpdate(out, start[idx], r);
-            arrayUpdate(start, idx, start[idx] + 1);
+        for p in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+          if not isShared(pstart[p], plen[p], key_len, key_cnt) then
+            for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+              idx := data[k];
+              if idx > 0 and idx <= size then
+                arrayUpdate(out, start[idx], r);
+                arrayUpdate(start, idx, start[idx] + 1);
+              end if;
+            end for;
           end if;
         end for;
       end for;
-
       // then the negated ones, rows ascending so that -row descends
       if negated then
         for r in 1:n loop
-          first := m.start[r];
-          for k in first:first + m.len[r] - 1 loop
-            idx := data[k];
-            if idx < 0 and -idx <= size then
-              arrayUpdate(out, start[-idx], -r);
-              arrayUpdate(start, -idx, start[-idx] + 1);
+          for p in m.first[r]:m.first[r] + m.pieces[r] - 1 loop
+            if not isShared(pstart[p], plen[p], key_len, key_cnt) then
+              for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+                idx := data[k];
+                if idx < 0 and -idx <= size then
+                  arrayUpdate(out, start[-idx], -r);
+                  arrayUpdate(start, -idx, start[-idx] + 1);
+                end if;
+              end for;
             end if;
           end for;
         end for;
       end if;
-
       for c in 1:size loop
         arrayUpdate(start, c, start[c] - len[c]);
       end for;
 
-      mT := INT_MATRIX(start, len, Vector.fromArrayNoCopy(out, nnz), Vector.new<Integer>(0));
+      // 5. the transposed sections: rows descending, negated rows ascending so that -row descends
+      cur := nnz + 1;
+      for s in shared loop
+        if sec_pos[s] > 0 then
+          arrayUpdate(sec_pos, s, cur);
+          for r in listReverse(key_rows[s]) loop
+            arrayUpdate(out, cur, r);
+            cur := cur + 1;
+          end for;
+        end if;
+        if sec_neg[s] > 0 then
+          arrayUpdate(sec_neg, s, cur);
+          for r in key_rows[s] loop
+            arrayUpdate(out, cur, -r);
+            cur := cur + 1;
+          end for;
+        end if;
+      end for;
+
+      // 6. the pieces: own entries first, then the sections in order of their start
+      tfirst := arrayCreate(size, 1);
+      for c in 1:size loop
+        arrayUpdate(tfirst, c, npieces + 1);
+        npieces := npieces + tpieces[c];
+      end for;
+      tps := arrayCreate(npieces, 0);
+      tpl := arrayCreate(npieces, 0);
+      for c in 1:size loop
+        arrayUpdate(tpieces, c, 0);
+        if len[c] > 0 then
+          arrayUpdate(tps, tfirst[c], start[c]);
+          arrayUpdate(tpl, tfirst[c], len[c]);
+          arrayUpdate(tpieces, c, 1);
+        end if;
+      end for;
+      for s in shared loop
+        r2 := listLength(key_rows[s]);
+        for k in s:s + key_len[s] - 1 loop
+          idx := intAbs(data[k]);
+          if idx > 0 and idx <= size then
+            pos := tfirst[idx] + tpieces[idx];
+            arrayUpdate(tps, pos, if data[k] > 0 then sec_pos[s] else sec_neg[s]);
+            arrayUpdate(tpl, pos, r2);
+            arrayUpdate(tpieces, idx, tpieces[idx] + 1);
+          end if;
+        end for;
+      end for;
+
+      mT := INT_MATRIX(tfirst, tpieces, Vector.fromArrayNoCopy(tps, npieces), Vector.fromArrayNoCopy(tpl, npieces),
+                       Vector.fromArrayNoCopy(out, total), Vector.new<Integer>(0));
     end transpose;
 
     function newBuilder
       input Integer capacity = 0;
       input Boolean withAux = false;
       output Builder b = Builder.BUILDER(Vector.new<Integer>(2 * capacity),
-                                         Vector.new<Integer>(if withAux then capacity else 0), withAux);
+                                         Vector.new<Integer>(if withAux then capacity else 0), withAux,
+                                         Vector.new<Integer>(0), Vector.new<Integer>(0), Vector.new<Integer>(0),
+                                         Vector.new<Integer>(0), Vector.new<Integer>(0));
     end newBuilder;
 
     function builderAdd
@@ -648,45 +949,113 @@ public
       end for;
     end builderAddList;
 
+    function builderSection
+      "stores a section once, rows refer to it with builderAddSection"
+      input Builder b;
+      input list<Integer> values;
+      input Integer aux = 0;
+      output Integer section;
+    algorithm
+      Vector.push(b.sec_start, Vector.size(b.sec_data) + 1);
+      Vector.push(b.sec_len, listLength(values));
+      for v in values loop
+        Vector.push(b.sec_data, v);
+        if b.hasAux then
+          Vector.push(b.sec_aux, aux);
+        end if;
+      end for;
+      section := Vector.size(b.sec_start);
+    end builderSection;
+
+    function builderAddSection
+      "adds the section to the row"
+      input Builder b;
+      input Integer row;
+      input Integer section;
+    algorithm
+      Vector.push(b.refs, row);
+      Vector.push(b.refs, section);
+    end builderAddSection;
+
+    function builderAddRowOf
+      "adds the pieces of row src of m to row dst as sections, ranges that were
+      added before (see seen, indexed by the start of the range) are shared"
+      input Builder b;
+      input Integer dst;
+      input IntMatrix m;
+      input Integer src;
+      input array<Integer> seen "range start -> section, 0 if not added";
+    protected
+      array<Integer> data = Vector.rawArray(m.data);
+      array<Integer> aux = Vector.rawArray(m.aux);
+      array<Integer> pstart = Vector.rawArray(m.pstart);
+      array<Integer> plen = Vector.rawArray(m.plen);
+      Boolean has_aux = arrayLength(aux) > 0;
+      Integer ps, pl, sec;
+    algorithm
+      // latest added first: add the pieces back to front
+      for p in m.first[src] + m.pieces[src] - 1:-1:m.first[src] loop
+        ps := pstart[p];
+        pl := plen[p];
+        if pl > 0 then
+          sec := seen[ps];
+          if sec == 0 or Vector.getNoBounds(b.sec_len, sec) <> pl then
+            Vector.push(b.sec_start, Vector.size(b.sec_data) + 1);
+            Vector.push(b.sec_len, pl);
+            for k in ps:ps + pl - 1 loop
+              Vector.push(b.sec_data, data[k]);
+              if b.hasAux then
+                Vector.push(b.sec_aux, if has_aux then aux[k] else 0);
+              end if;
+            end for;
+            sec := Vector.size(b.sec_start);
+            if seen[ps] == 0 then
+              arrayUpdate(seen, ps, sec);
+            end if;
+          end if;
+          builderAddSection(b, dst, sec);
+        end if;
+      end for;
+    end builderAddRowOf;
+
     function toBuilder
-      "seeds a builder with the entries of an existing matrix, oldest first, so that
-      fromBuilder puts them back in the same order"
+      "seeds a builder with the rows of an existing matrix as sections, so that
+      fromBuilder puts them back in the same order and keeps shared sections shared"
       input IntMatrix m;
       input Integer capacity = 0;
       input Boolean withAux = false;
       output Builder b;
     protected
-      array<Integer> data = Vector.rawArray(m.data);
-      array<Integer> aux = Vector.rawArray(m.aux);
-      Integer nnz = nonZeroCount(m), first;
+      array<Integer> seen = arrayCreate(Vector.size(m.data) + 1, 0);
     algorithm
-      b := newBuilder(intMax(nnz, capacity), withAux);
-      for r in 1:arrayLength(m.start) loop
-        first := m.start[r];
-        for k in first + m.len[r] - 1:-1:first loop
-          Vector.push(b.pairs, r);
-          Vector.push(b.pairs, data[k]);
-          if withAux then
-            Vector.push(b.aux, aux[k]);
-          end if;
-        end for;
+      b := newBuilder(capacity, withAux);
+      for r in 1:arrayLength(m.first) loop
+        builderAddRowOf(b, r, m, r, seen);
       end for;
     end toBuilder;
 
     function fromBuilder
       "groups the collected pairs by row. entries were prepended to their row
-      before, so the pairs are distributed back to front."
+      before, so the pairs are distributed back to front. The own entries of a
+      row are its first piece, its sections follow, the latest added first."
       input Builder b;
       input Integer rows;
       output IntMatrix m;
     protected
       array<Integer> raw = Vector.rawArray(b.pairs);
       array<Integer> raux = Vector.rawArray(b.aux);
-      array<Integer> start, len, out, aout;
-      Integer n = intDiv(Vector.size(b.pairs), 2), r, pos = 1, p;
+      array<Integer> refs = Vector.rawArray(b.refs);
+      array<Integer> sec_start = Vector.rawArray(b.sec_start);
+      array<Integer> sec_len = Vector.rawArray(b.sec_len);
+      array<Integer> sec_data = Vector.rawArray(b.sec_data);
+      array<Integer> sec_aux = Vector.rawArray(b.sec_aux);
+      array<Integer> start, len, out, aout, first, pieces, ps, pl;
+      Integer n = intDiv(Vector.size(b.pairs), 2), nref = intDiv(Vector.size(b.refs), 2);
+      Integer nsec = Vector.size(b.sec_data), r, pos = 1, p, npieces = 0;
     algorithm
-      start := arrayCreate(rows, 1);
-      len   := arrayCreate(rows, 0);
+      start  := arrayCreate(rows, 1);
+      len    := arrayCreate(rows, 0);
+      pieces := arrayCreate(rows, 0);
 
       for i in 1:n loop
         r := raw[2*i - 1];
@@ -698,8 +1067,9 @@ public
         pos := pos + len[i];
       end for;
 
-      out  := arrayCreate(n, 0);
-      aout := arrayCreate(if b.hasAux then n else 0, 0);
+      // own entries, then the sections behind them
+      out  := arrayCreate(n + nsec, 0);
+      aout := arrayCreate(if b.hasAux then n + nsec else 0, 0);
 
       // scatter, using start as the cursor and winding it back afterwards
       for i in n:-1:1 loop
@@ -716,21 +1086,84 @@ public
         arrayUpdate(start, i, start[i] - len[i]);
       end for;
 
-      m := INT_MATRIX(start, len, Vector.fromArrayNoCopy(out, n), Vector.fromArrayNoCopy(aout, arrayLength(aout)));
+      for k in 1:nsec loop
+        arrayUpdate(out, n + k, sec_data[k]);
+        if b.hasAux then
+          arrayUpdate(aout, n + k, sec_aux[k]);
+        end if;
+      end for;
+
+      // pieces: the own entries, then the sections, the latest added first
+      for i in 1:rows loop
+        if len[i] > 0 then
+          arrayUpdate(pieces, i, 1);
+        end if;
+      end for;
+      for i in 1:nref loop
+        r := refs[2*i - 1];
+        arrayUpdate(pieces, r, pieces[r] + 1);
+      end for;
+      first := arrayCreate(rows, 1);
+      for i in 1:rows loop
+        arrayUpdate(first, i, npieces + 1);
+        npieces := npieces + pieces[i];
+      end for;
+      ps := arrayCreate(npieces, 0);
+      pl := arrayCreate(npieces, 0);
+      for i in 1:rows loop
+        arrayUpdate(pieces, i, 0);
+        if len[i] > 0 then
+          arrayUpdate(ps, first[i], start[i]);
+          arrayUpdate(pl, first[i], len[i]);
+          arrayUpdate(pieces, i, 1);
+        end if;
+      end for;
+      for i in nref:-1:1 loop
+        r := refs[2*i - 1];
+        p := first[r] + pieces[r];
+        arrayUpdate(ps, p, n + sec_start[refs[2*i]]);
+        arrayUpdate(pl, p, sec_len[refs[2*i]]);
+        arrayUpdate(pieces, r, pieces[r] + 1);
+      end for;
+
+      m := INT_MATRIX(first, pieces, Vector.fromArrayNoCopy(ps, npieces), Vector.fromArrayNoCopy(pl, npieces),
+                      Vector.fromArrayNoCopy(out, n + nsec), Vector.fromArrayNoCopy(aout, arrayLength(aout)));
     end fromBuilder;
 
     function toString
       input IntMatrix m;
       output String str = "";
     protected
-      Integer skip = stringLength(intString(arrayLength(m.start))) + 1;
+      Integer skip = stringLength(intString(arrayLength(m.first))) + 1;
       String tmp;
     algorithm
-      for row in 1:arrayLength(m.start) loop
+      for row in 1:arrayLength(m.first) loop
         tmp := intString(row);
         str := str + "\t(" + tmp + ")" + StringUtil.repeat(" ", skip - stringLength(tmp)) + List.toString(toList(m, row), intString) + "\n";
       end for;
     end toString;
+
+  protected
+    function addPiece
+      "appends a piece to the pieces buffer and makes it the only piece of the row"
+      input IntMatrix m;
+      input Integer row;
+      input Integer ps;
+      input Integer pl;
+    algorithm
+      arrayUpdate(m.first, row, Vector.size(m.pstart) + 1);
+      arrayUpdate(m.pieces, row, 1);
+      Vector.push(m.pstart, ps);
+      Vector.push(m.plen, pl);
+    end addPiece;
+
+    function isShared
+      input Integer ps;
+      input Integer pl;
+      input array<Integer> key_len;
+      input array<Integer> key_cnt;
+      output Boolean b = pl > 0 and key_len[ps] == pl and key_cnt[ps] > 1;
+    end isShared;
   end IntMatrix;
 
   uniontype Matrix
@@ -2199,7 +2632,7 @@ public
               elseif max > min then
                 (occ, dep, sol, rep) := (full.occurrences, full.dependencies, full.solvabilities, full.repetitions);
                 indices := UnorderedMap.valueList(eqns_map);
-                builder := IntMatrix.toBuilder(adj.m, estimateEntries(occ, adj.mapping, indices), true);
+                builder := IntMatrix.toBuilder(adj.m, estimateEntries(occ, adj.mapping, indices, eqns), true);
                 for index in indices loop
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min + 1, max);
                   // upgrade the row and all meta data
@@ -2288,7 +2721,8 @@ public
       IntMatrix.Builder builder;
       list<Integer> own = {};
       list<ComponentRef> filtered;
-      array<Integer> data, aux, seed_data, seed_aux;
+      array<Integer> data, aux, seed_data, seed_aux, seen;
+      IntMatrix.CopyMap seed_map, own_map;
     algorithm
       max := Solvability.rank(Solvability.fromStrictness(st));
       min := if fresh then -1 else Solvability.rank(Solvability.fromStrictness(getStrictness(adj)));
@@ -2308,28 +2742,22 @@ public
                 if seed_index[index] > 0 then
                   (seed_start, _) := seed.mapping.eqn_AtS[seed_index[index]];
                   for k in 0:eqn_size - 1 loop
-                    shared_entries := shared_entries + seed.m.len[seed_start + k];
+                    shared_entries := shared_entries + IntMatrix.rowLength(seed.m, seed_start + k);
                   end for;
                 else
                   own := index :: own;
-                  for k in 0:eqn_size - 1 loop
-                    own_entries := own_entries + adj.m.len[eqn_start + k];
-                  end for;
-                  own_entries := own_entries + UnorderedSet.size(full.occurrences[index]) * eqn_size;
+                  own_entries := own_entries + estimateEntries(full.occurrences, adj.mapping, {index}, eqns);
                 end if;
               end for;
               own := listReverse(own);
 
               // the own rows are built the way upgrade builds all rows
               builder := IntMatrix.newBuilder(own_entries, true);
-              data := IntMatrix.entries(adj.m);
-              aux := IntMatrix.payload(adj.m);
+              seen := arrayCreate(IntMatrix.storedCount(adj.m) + 1, 0);
               for index in own loop
                 (eqn_start, eqn_size) := adj.mapping.eqn_AtS[index];
                 for k in eqn_size - 1:-1:0 loop
-                  for p in adj.m.start[eqn_start + k] + adj.m.len[eqn_start + k] - 1:-1:adj.m.start[eqn_start + k] loop
-                    IntMatrix.builderAddAux(builder, eqn_start + k, data[p], if arrayLength(aux) > 0 then aux[p] else 0);
-                  end for;
+                  IntMatrix.builderAddRowOf(builder, eqn_start + k, adj.m, eqn_start + k, seen);
                 end for;
               end for;
               for index in own loop
@@ -2339,7 +2767,9 @@ public
               own_m := IntMatrix.fromBuilder(builder, rows);
 
               m := IntMatrix.new(rows);
-              IntMatrix.reserveData(m, shared_entries + IntMatrix.nonZeroCount(own_m), true);
+              IntMatrix.reserveData(m, intMin(shared_entries, IntMatrix.storedCount(seed.m)) + IntMatrix.storedCount(own_m), true);
+              seed_map := IntMatrix.newCopyMap(seed.m);
+              own_map := IntMatrix.newCopyMap(own_m);
               data := IntMatrix.entries(own_m);
               aux := IntMatrix.payload(own_m);
               seed_data := IntMatrix.entries(seed.m);
@@ -2352,11 +2782,11 @@ public
                 if seed_index[index] > 0 then
                   (seed_start, _) := seed.mapping.eqn_AtS[seed_index[index]];
                   for k in 0:eqn_size - 1 loop
-                    IntMatrix.copyRow(seed.m, seed_start + k, seed_data, seed_aux, m, eqn_start + k);
+                    IntMatrix.copyRow(seed.m, seed_start + k, seed_data, seed_aux, m, eqn_start + k, seed_map);
                   end for;
                 else
                   for k in 0:eqn_size - 1 loop
-                    IntMatrix.copyRow(own_m, eqn_start + k, data, aux, m, eqn_start + k);
+                    IntMatrix.copyRow(own_m, eqn_start + k, data, aux, m, eqn_start + k, own_map);
                   end for;
                 end if;
               end for;
@@ -2423,7 +2853,7 @@ public
           eo_lst := UnorderedMap.valueList(eo);
           en_lst := UnorderedMap.valueList(en);
           builder := IntMatrix.toBuilder(adj.m,
-            estimateEntries(full.occurrences, adj.mapping, eo_lst) + estimateEntries(full.occurrences, adj.mapping, en_lst), true);
+            estimateEntries(full.occurrences, adj.mapping, eo_lst, eqns) + estimateEntries(full.occurrences, adj.mapping, en_lst, eqns), true);
 
 
           // get the strictness ranking
@@ -2679,6 +3109,7 @@ public
       Mapping mapping;
       IntMatrix m;
       array<Integer> m_data, m_aux;
+      IntMatrix.CopyMap copy_map;
       Integer old_start, old_size, new_start, new_size;
     algorithm
       (adj, full) := match (adj, full)
@@ -2692,6 +3123,7 @@ public
           m               := IntMatrix.new(arrayLength(mapping.eqn_StA));
           m_data          := IntMatrix.entries(adj.m);
           m_aux           := IntMatrix.payload(adj.m);
+          copy_map        := IntMatrix.newCopyMap(adj.m);
           equation_names  := arrayCreate(size, ComponentRef.EMPTY());
           occurrences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
           dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
@@ -2707,7 +3139,7 @@ public
             (new_start, new_size)     := mapping.eqn_AtS[index_new];
             if old_size == new_size then
               for i in 0:old_size-1 loop
-                IntMatrix.copyRow(adj.m, old_start+i, m_data, m_aux, m, new_start+i);
+                IntMatrix.copyRow(adj.m, old_start+i, m_data, m_aux, m, new_start+i, copy_map);
               end for;
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " sizes (old: " + intString(old_size) + ", new: "
@@ -3059,19 +3491,31 @@ public
     end initialize;
 
     function estimateEntries
-      "estimates how many entries the given equations contribute, to size the builder"
+      "estimates how many entries the given equations contribute, to size the builder.
+      equations with full dependency (see upgradeRow) add one shared section instead."
       input array<UnorderedSet<ComponentRef>> occ;
       input Mapping mapping;
       input list<Integer> indices;
+      input EquationPointers eqns;
       output Integer n = 0;
     protected
       Integer sz;
+      Pointer<Equation> eqn_ptr;
     algorithm
       for i in indices loop
-        (_, sz) := mapping.eqn_AtS[i];
-        n := n + UnorderedSet.size(occ[i]) * sz;
+        eqn_ptr := EquationPointers.getEqnAt(eqns, i);
+        if not isFullDependency(eqn_ptr) then
+          (_, sz) := mapping.eqn_AtS[i];
+          n := n + UnorderedSet.size(occ[i]) * sz;
+        end if;
       end for;
     end estimateEntries;
+
+    function isFullDependency
+      "every scalar row of the equation depends on all its variables (algorithms, if-equations)"
+      input Pointer<Equation> eqn_ptr;
+      output Boolean b = Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr);
+    end isFullDependency;
 
     function upgradeRow
       input Pointer<Equation> eqn_ptr;
@@ -3086,7 +3530,7 @@ public
       input ModeTable modes;
       input Iterator iter_ = Iterator.EMPTY();
     protected
-      Integer eqn_scal_idx, eqn_size;
+      Integer eqn_scal_idx, eqn_size, section;
       list<Integer> row;
       Equation eqn = Pointer.access(eqn_ptr);
       Iterator iter = Equation.getForIterator(eqn);
@@ -3097,13 +3541,16 @@ public
     algorithm
       try
         // don't do this for if equations as soon as we properly split them
-        if Equation.isAlgorithm(eqn_ptr) or Equation.isIfEquation(eqn_ptr) then
-          // algorithm full dependency
+        if isFullDependency(eqn_ptr) then
+          // algorithm full dependency: all scalar rows share one section
           (eqn_scal_idx, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
           row := Slice.upgradeRowFull(dependencies, map, mapping);
-          for i in 0:eqn_size-1 loop
-            IntMatrix.builderAddList(m, eqn_scal_idx+i, row);
-          end for;
+          if not listEmpty(row) then
+            section := IntMatrix.builderSection(m, row);
+            for i in 0:eqn_size-1 loop
+              IntMatrix.builderAddSection(m, eqn_scal_idx+i, section);
+            end for;
+          end if;
         else
           // todo: if, when single equation (needs to be updated for if)
 
