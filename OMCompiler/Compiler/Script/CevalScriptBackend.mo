@@ -4773,13 +4773,21 @@ algorithm
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then
-        CevalScript.compileModel(filenameprefix + "_FMU", libs);
+        CevalScript.compileModel(filenameprefix + "_FMU", libs, makeVars={"ZIP_FMU=NO"});
       else
         CevalScript.compileModel(filenameprefix + "_FMU", libs,
-                                 makeVars={"TARGET_TRIPLET=" + platform});
+                                 makeVars={"TARGET_TRIPLET=" + platform, "ZIP_FMU=NO"});
       end if;
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
+    System.removeFile(fmuTargetName + ".fmu");
+    if not Unzip.zipPaths(fmuTargetName + ".fmu", System.pwd(),
+        list(f for f guard System.regularFileExists(f) or System.directoryExists(f)
+               in {"modelDescription.xml", "binaries", "sources", "documentation", "extra"})) then
+      ExecStat.execStat("buildModelFMU failed");
+      fail();
+    end if;
+    System.removeDirectory("documentation");
     if 0 <> System.systemCallRestrictedEnv(Autoconf.make + " -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
       // do nothing
     end if;
