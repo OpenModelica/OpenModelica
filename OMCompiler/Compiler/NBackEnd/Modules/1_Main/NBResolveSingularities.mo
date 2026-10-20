@@ -604,11 +604,14 @@ protected
     input Adjacency.Mapping mapping;
   protected
     array<Integer> data = Adjacency.IntMatrix.entries(m);
-    Integer first = m.start[eqn];
+    array<Integer> pstart = Adjacency.IntMatrix.pieceStarts(m);
+    array<Integer> plen = Adjacency.IntMatrix.pieceLengths(m);
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
-    for k in first:first + m.len[eqn] - 1 loop
-      fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+    for p in m.first[eqn]:m.first[eqn] + m.pieces[eqn] - 1 loop
+      for k in pstart[p]:pstart[p] + plen[p] - 1 loop
+        fillColorVar(data[k], color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+      end for;
     end for;
   end fillColorEqn;
 

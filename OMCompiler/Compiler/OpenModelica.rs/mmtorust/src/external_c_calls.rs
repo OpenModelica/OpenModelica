@@ -109,6 +109,7 @@ fn registry() -> &'static BTreeMap<&'static str, Fallibility> {
         m.insert("BackendDAEEXT_getF", Infallible);
         m.insert("BackendDAEEXT_setAdjacencyMatrix", Infallible);
         m.insert("BackendDAEEXT_setAdjacencyMatrixFlat", Infallible);
+        m.insert("BackendDAEEXT_setAdjacencyMatrixPieces", Infallible);
         m.insert("BackendDAEEXT_cheapmatching", Infallible);
         m.insert("BackendDAEEXT_matching", Infallible);
         m.insert("BackendDAEEXT_setAssignment", Infallible);
