@@ -1831,7 +1831,10 @@ protected
     for a in args loop
       i := i + 1;
       if Expression.containsCref(a, cref) then
-        if found > 0 then
+        if found <> 0 then
+          if Flags.isSet(Flags.DUMP_SOLVE) then
+            solveUniquePrintImplicitFallback(exp);
+          end if;
           status := Status.IMPLICIT;
           return;
         end if;
@@ -1839,11 +1842,17 @@ protected
         arg := a;
       end if;
     end for;
-    if found == 0 or listLength(fn.inputs) <> listLength(args) or listLength(fn.outputs) <> 1 then
+    if found == 0 then
       return;
     end if;
 
-    // the inverse for the input that contains the cref
+    if listLength(fn.inputs) <> listLength(args) or listLength(fn.outputs) <> 1 then
+      // FIXME not sure if these can occur or what should happen in these cases
+      // probably some error or Status.IMPLICIT
+      return;
+    end if;
+
+    // search the inverse for the input that contains the cref
     name := InstNode.name(listGet(fn.inputs, found));
     for fnInv in fn.inverses loop
       if ComponentRef.firstName(fnInv.inputParam) == name then
@@ -1852,6 +1861,8 @@ protected
       end if;
     end for;
     if isNone(oinv) then
+      // there is no inverse
+      // TODO try to invert the function symbolically
       if Flags.isSet(Flags.DUMP_SOLVE) then
         solveUniquePrintImplicitFallback(exp);
       end if;
