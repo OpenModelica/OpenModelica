@@ -5,6 +5,7 @@ reductionSkips.mos \
 nestedForConnectRange.mos \
 forNestedElseIf.mos \
 forSliceRowMajor.mos \
+sliceRangeSparsity.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
 algorithmForSubscript.mos \
