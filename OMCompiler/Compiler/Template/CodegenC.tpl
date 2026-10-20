@@ -6570,7 +6570,7 @@ match sparsity
       <%if isAdjoint then <<
       /* Adjoint evaluation traverses rows of the primal Jacobian. Convert the
        * generated primal CSC structure to CSR before computing row colors. */
-      jacobian->sparsePatternT = cscToCsr(jacobian->sparsePattern, <%patternRows%>, <%patternCols%>);
+      jacobian->sparsePatternT = cscToCsr(jacobian->sparsePattern, <%patternRows%>);
       if (!jacobian->sparsePatternT) return 1;
       >> %>
 

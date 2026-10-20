@@ -254,7 +254,6 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
   const SPARSE_PATTERN* sp = jacobian->sparsePatternT;
   const unsigned int nRows = jacobian->sizeRows;
   const unsigned int nCols = jacobian->sizeCols;
-  const modelica_boolean writeSparseCSC = !isDense;
 
   if (!sp || !jacobian->seedVarsAdj || !jacobian->tmpVarsAdj || !jacobian->resultVarsAdj) {
     errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform row-wise evaluation without fully initialized adjoint storage.\n");
@@ -279,8 +278,9 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
   /* Ensure seeds are zeroed before use (row seeds) */
   memset(jacobian->seedVarsAdj, 0, nRows * sizeof(modelica_real));
 
-  if (writeSparseCSC) {
-    (void) getJacobianCscPattern(jacobian);
+  if (!isDense && !getJacobianCscPattern(jacobian)) {
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cannot perform sparse row-wise evaluation without a CSC pattern.\n");
+    return;
   }
 
   /* evaluate Jacobian row-wise using row-coloring */
@@ -300,10 +300,8 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
       if ((int)sp->colorCols[row] - 1 == color) {
         for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
           col = sp->index[nz];
-          if (writeSparseCSC && jacobian->csrToCscMap != NULL) {
+          if (!isDense) {
             jac[jacobian->csrToCscMap[nz]] = jacobian->resultVarsAdj[col];
-          } else if (writeSparseCSC) {
-            jac[nz] = jacobian->resultVarsAdj[col];
           } else {
             /* dense case */
             jac[col * nRows + row] = jacobian->resultVarsAdj[col];
@@ -861,11 +859,11 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
  * @brief Transpose a compressed sparse pattern.
  *
  * Works in both directions, since CSC of A is CSR of A^T:
- *   - CSC -> CSR: transposeSparsePattern(csc, nRows, nCols, ...)
- *   - CSR -> CSC: transposeSparsePattern(csr, nCols, nRows, ...)
+ *   - CSC -> CSR: transposeSparsePattern(csc, nRows)
+ *   - CSR -> CSC: transposeSparsePattern(csr, nCols)
  *
  * Input (A):
- *   - Ap = in->leadindex (size nLeadIn+1), lead pointers
+ *   - Ap = in->leadindex (size in->sizeCols+1), lead pointers
  *   - Ai = in->index     (size nnz),       secondary indices in [0, nLeadOut)
  *
  * Output (B):
@@ -874,17 +872,13 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, u
  *
  * @param in        Input pattern.
  * @param nLeadOut  Number of lead slots of the result (== range of in->index). For CSC its nRows, for CSR its nCols
- * @param nLeadIn   Number of lead slots of the input. For CSC its nCols, for CSR its nRows
- * @param nzMap     If non-NULL, receives a newly allocated array of size nnz mapping
- *                  each nonzero position of `in` to its position in the result.
+ * The input lead dimension is stored in in->sizeCols (columns for CSC, rows for CSR).
  * @return SPARSE_PATTERN*  Transposed pattern without coloring, or NULL on error.
  *
- * Complexity: O(nnz + max(nLeadIn, nLeadOut))
+ * Complexity: O(nnz + in->sizeCols + nLeadOut)
  */
 SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in,
-                                       unsigned int nLeadOut,
-                                       unsigned int nLeadIn,
-                                       unsigned int** nzMap)
+                                       unsigned int nLeadOut)
 {
   if (!in) return NULL;
 
@@ -893,16 +887,6 @@ SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in,
   /* Allocate result pattern: leadindex size = nLeadOut+1, index size = nnz */
   SPARSE_PATTERN* out = allocSparsePattern(nLeadOut, nnz, /*maxColors*/ 0);
   if (!out) return NULL;
-
-  // only fill map if nzMap is not NULL
-  unsigned int* map = NULL;
-  if (nzMap) {
-    map = (unsigned int*) malloc((nnz ? nnz : 1) * sizeof(unsigned int));
-    if (!map) {
-      freeSparsePattern(out);
-      return NULL;
-    }
-  }
 
   /* Aliases for conciseness */
   const unsigned int* Ap = in->leadindex;
@@ -916,7 +900,6 @@ SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in,
     if (Ai[k] >= nLeadOut) {
       /* Out of bounds. Clean up and abort. */
       freeSparsePattern(out);
-      free(map);
       return NULL;
     }
     Bp[Ai[k]]++;
@@ -936,19 +919,17 @@ SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in,
   /* 3) Fill result indices using running heads in Bp.
    *    Iterating the input lead slots in ascending order yields ascending
    *    secondary indices in the result, which KLU and printSparseStructure require. */
-  for (unsigned int lead = 0; lead < nLeadIn; lead++) {
+  for (unsigned int lead = 0; lead < in->sizeCols; lead++) {
     const unsigned int start = Ap[lead];
     const unsigned int stop  = Ap[lead + 1];
     if (stop < start || stop > nnz) {
       /* Corrupt pointers. Clean up and abort. */
       freeSparsePattern(out);
-      free(map);
       return NULL;
     }
     for (unsigned int jj = start; jj < stop; jj++) {
       const unsigned int dest = Bp[Ai[jj]]; /* next free slot */
       Bj[dest] = lead;
-      if (map) map[jj] = dest;
       Bp[Ai[jj]]++; /* advance head */
     }
   }
@@ -967,7 +948,6 @@ SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in,
   out->maxColors = 0;
   memset(out->colorCols, 0, nLeadOut * sizeof(unsigned int));
 
-  if (nzMap) *nzMap = map;
   return out;
 }
 
@@ -976,22 +956,20 @@ SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in,
  *
  * @param csc     Pattern with column pointers and row indices.
  * @param nRows   Number of rows of the matrix.
- * @param nCols   Number of columns of the matrix.
  * @return SPARSE_PATTERN*   CSR pattern with row pointers and column indices.
  */
-SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc,
-                           unsigned int nRows,
-                           unsigned int nCols)
+SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows)
 {
-  return transposeSparsePattern(csc, nRows, nCols, NULL);
+  return transposeSparsePattern(csc, nRows);
 }
 
 /**
  * @brief Get the column oriented (CSC of J) sparsity pattern of a Jacobian.
  *
- * Forward Jacobians already store their pattern in CSC, so the pattern is returned
- * as is. Row evaluated (adjoint) Jacobians store CSR of J; for those the transposed
- * pattern and the CSR->CSC nonzero mapping are built once and cached, so that
+ * Forward Jacobians already store their pattern in CSC. Row evaluated (adjoint)
+ * Jacobians store CSR of J; their CSC pattern is built only if missing. The
+ * CSR->CSC nonzero mapping is cached separately, including when resizable adjoint
+ * initialization already supplied the CSC pattern, so that
  * evalJacobian() can emit sparse values directly in the CSC order expected by the
  * solvers (KLU / SUNDIALS / GBODE).
  *
@@ -1003,35 +981,39 @@ SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac)
   if (jac == NULL) {
     return NULL;
   }
-
-  const modelica_boolean hasDirectCscPattern = jac->sparsePattern != NULL;
-  const modelica_boolean canReuseExistingCscPattern = !jac->evalRow || (jac->evalColumn && jac->evalRow);
-
-  // forward mode Jacobians and bidirectional Jacobians already have a CSC pattern; return it directly
-  if (hasDirectCscPattern && canReuseExistingCscPattern) {
+  if (jac->sparsePattern) {
     return jac->sparsePattern;
   }
-
-  // Nothing to build a CSC pattern from (no CSR pattern for the adjoint case either).
-  if (jac->sparsePatternT == NULL) {
+  if (!jac->sparsePattern && jac->sparsePatternT) {
+    jac->sparsePattern = transposeSparsePattern(jac->sparsePatternT, jac->sizeCols);
+  }
+  if (!jac->sparsePattern) {
     return NULL;
   }
 
-  // in the adjoint case transpose the CSR pattern to get CSC, and build the CSR->CSC mapping for sparse output
-  unsigned int* map = NULL;
-  SPARSE_PATTERN* csc = transposeSparsePattern(jac->sparsePatternT,
-                                                (unsigned int) jac->sizeCols,
-                                                (unsigned int) jac->sizeRows,
-                                                &map);
-  if (csc == NULL) {
-    free(map);
-    return jac->sparsePattern;
-  }
+  /* Bidirectional initialization builds its own recovery map. Only standalone
+   * row evaluation needs one here. */
+  if (jac->evalRow && !jac->evalColumn && !jac->csrToCscMap) {
+    const SPARSE_PATTERN* csr = jac->sparsePatternT;
+    if (!csr) return NULL;
 
-  if (jac->csrToCscMap == NULL) {
+    unsigned int* map = (unsigned int*) malloc((csr->nnz ? csr->nnz : 1) * sizeof(unsigned int));
+    if (!map) return NULL;
+
+    /* Reuse CSC lead pointers as running heads instead of allocating scratch
+     * space or another transposed pattern. Ascending CSR rows match the sorted
+     * row indices in each CSC column. Restore all pointers before returning. */
+    unsigned int* leadindex = jac->sparsePattern->leadindex;
+    for (unsigned int row = 0; row < csr->sizeCols; row++) {
+      for (unsigned int nz = csr->leadindex[row]; nz < csr->leadindex[row + 1]; nz++) {
+        map[nz] = leadindex[csr->index[nz]]++;
+      }
+    }
+    for (unsigned int col = jac->sparsePattern->sizeCols; col > 0; col--) {
+      leadindex[col] = leadindex[col - 1];
+    }
+    leadindex[0] = 0;
     jac->csrToCscMap = map;
-  } else {
-    free(map);
   }
   return jac->sparsePattern;
 }
@@ -1089,7 +1071,7 @@ void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int 
   }
 #endif
 
-  SPARSE_PATTERN* csr = cscToCsr(sp, nRows, nCols);
+  SPARSE_PATTERN* csr = cscToCsr(sp, nRows);
   if (!csr) {
     /* Fallback: trivial one-column-per-color coloring. */
     for (unsigned int c = 0; c < nCols; c++) sp->colorCols[c] = c + 1;

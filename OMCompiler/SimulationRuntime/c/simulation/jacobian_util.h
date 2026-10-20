@@ -46,8 +46,8 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
 void evalJacobianBidirectional(DATA* data, threadData_t *threadData, JACOBIAN* fwd, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int nnz, unsigned int maxColors);
-SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows, unsigned int nCols);
-SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in, unsigned int nLeadOut, unsigned int nLeadIn, unsigned int** nzMap);
+SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows);
+SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in, unsigned int nLeadOut);
 SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac);
 void freeSparsePattern(SPARSE_PATTERN *spp);
 void printSparsePattern(const SPARSE_PATTERN* sp);
