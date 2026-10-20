@@ -45,10 +45,10 @@
  */
 #![allow(non_snake_case, non_upper_case_globals, dead_code)]
 
+use metamodelica::Array;
+use metamodelica::Result;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
-use metamodelica::Result;
-use metamodelica::Array;
 
 // ── Per-task state ────────────────────────────────────────────────────────────
 
@@ -106,11 +106,15 @@ pub fn initMarks(_inInteger1: i32, _inInteger2: i32) {
 }
 
 pub fn eMark(inInteger: i32) {
-    with_state(|s| { s.e_mark.insert(inInteger); });
+    with_state(|s| {
+        s.e_mark.insert(inInteger);
+    });
 }
 
 pub fn vMark(inInteger: i32) {
-    with_state(|s| { s.v_mark.insert(inInteger); });
+    with_state(|s| {
+        s.v_mark.insert(inInteger);
+    });
 }
 
 pub fn getVMark(inInteger: i32) -> bool {
@@ -130,7 +134,9 @@ pub fn clearDifferentiated() {
 }
 
 pub fn markDifferentiated(inInteger: i32) {
-    with_state(|s| { s.differentiated_mark.insert(inInteger); });
+    with_state(|s| {
+        s.differentiated_mark.insert(inInteger);
+    });
 }
 
 pub fn getMarkedVariables() -> metamodelica::List<i32> {
@@ -201,14 +207,7 @@ pub fn setAdjacencyMatrix(_nv: i32, ne: i32, nz: i32, m: Array<metamodelica::Lis
     });
 }
 
-pub fn setAdjacencyMatrixFlat(
-    _nv: i32,
-    ne: i32,
-    nz: i32,
-    start: Array<i32>,
-    len: Array<i32>,
-    data: Array<i32>,
-) {
+pub fn setAdjacencyMatrixFlat(_nv: i32, ne: i32, nz: i32, start: Array<i32>, len: Array<i32>, data: Array<i32>) {
     with_state(|s| {
         s.col_ptrs = vec![0i32; (ne + 1) as usize];
         s.col_ptrs[ne as usize] = nz;
@@ -234,14 +233,7 @@ pub fn setAdjacencyMatrixFlat(
     });
 }
 
-pub fn matching(
-    nv: i32,
-    ne: i32,
-    matchingID: i32,
-    cheapID: i32,
-    relabel_period: metamodelica::Real,
-    clear_match: i32,
-) {
+pub fn matching(nv: i32, ne: i32, matchingID: i32, cheapID: i32, relabel_period: metamodelica::Real, clear_match: i32) {
     let relabel_period = relabel_period.into_inner();
     with_state(|s| {
         let neqns = ne;
@@ -254,28 +246,48 @@ pub fn matching(
         // here, as in the C wrapper).
         if clear_match == 0 {
             if neqns > s.n {
-                if (s.r#match.len() as i32) < neqns { s.r#match.resize(neqns as usize, -1); }
-                for i in s.n..neqns { s.r#match[i as usize] = -1; }
+                if (s.r#match.len() as i32) < neqns {
+                    s.r#match.resize(neqns as usize, -1);
+                }
+                for i in s.n..neqns {
+                    s.r#match[i as usize] = -1;
+                }
                 s.n = neqns;
             }
             if nvars > s.m {
-                if (s.row_match.len() as i32) < nvars { s.row_match.resize(nvars as usize, -1); }
-                for i in s.m..nvars { s.row_match[i as usize] = -1; }
+                if (s.row_match.len() as i32) < nvars {
+                    s.row_match.resize(nvars as usize, -1);
+                }
+                for i in s.m..nvars {
+                    s.row_match[i as usize] = -1;
+                }
                 s.m = nvars;
             }
         } else {
             if neqns > s.n {
-                if (s.r#match.len() as i32) < neqns { s.r#match.resize(neqns as usize, -1); }
-                for i in 0..neqns { s.r#match[i as usize] = -1; }
+                if (s.r#match.len() as i32) < neqns {
+                    s.r#match.resize(neqns as usize, -1);
+                }
+                for i in 0..neqns {
+                    s.r#match[i as usize] = -1;
+                }
             } else {
-                for i in 0..s.n { s.r#match[i as usize] = -1; }
+                for i in 0..s.n {
+                    s.r#match[i as usize] = -1;
+                }
             }
             s.n = neqns;
             if nvars > s.m {
-                if (s.row_match.len() as i32) < nvars { s.row_match.resize(nvars as usize, -1); }
-                for i in 0..nvars { s.row_match[i as usize] = -1; }
+                if (s.row_match.len() as i32) < nvars {
+                    s.row_match.resize(nvars as usize, -1);
+                }
+                for i in 0..nvars {
+                    s.row_match[i as usize] = -1;
+                }
             } else {
-                for i in 0..s.m { s.row_match[i as usize] = -1; }
+                for i in 0..s.m {
+                    s.row_match[i as usize] = -1;
+                }
             }
             s.m = nvars;
         }
@@ -382,7 +394,12 @@ mod matchmaker {
             /// Construct with the fixed parameter set used by the C
             /// `sk_cheap_rand` and seed it.
             pub fn new_seeded(mat1: u32, mat2: u32, tmat: u64, seed: u64) -> Self {
-                let mut r = Tinymt64 { status: [0, 0], mat1, mat2, tmat };
+                let mut r = Tinymt64 {
+                    status: [0, 0],
+                    mat1,
+                    mat2,
+                    tmat,
+                };
                 r.init(seed);
                 r
             }
@@ -399,9 +416,8 @@ mod matchmaker {
                 self.status[1] = (self.mat2 as u64) ^ self.tmat;
                 for i in 1..MIN_LOOP {
                     let prev = self.status[((i - 1) & 1) as usize];
-                    self.status[(i & 1) as usize] ^= (i as u64).wrapping_add(
-                        6364136223846793005u64.wrapping_mul(prev ^ (prev >> 62)),
-                    );
+                    self.status[(i & 1) as usize] ^=
+                        (i as u64).wrapping_add(6364136223846793005u64.wrapping_mul(prev ^ (prev >> 62)));
                 }
                 self.period_certification();
             }
@@ -469,8 +485,12 @@ mod matchmaker {
         clear_match: i32,
     ) {
         if clear_match == 1 {
-            for i in 0..n as usize { r#match[i] = -1; }
-            for i in 0..m as usize { row_match[i] = -1; }
+            for i in 0..n as usize {
+                r#match[i] = -1;
+            }
+            for i in 0..m as usize {
+                row_match[i] = -1;
+            }
         }
 
         // The transpose (CSR) adjacency is needed by the HK/ABMP/PR algorithms
@@ -499,7 +519,9 @@ mod matchmaker {
             }
         }
 
-        cheap_matching(col_ptrs, col_ids, &row_ptrs, &row_ids, r#match, row_match, n, m, cheap_id);
+        cheap_matching(
+            col_ptrs, col_ids, &row_ptrs, &row_ids, r#match, row_match, n, m, cheap_id,
+        );
 
         match matching_id {
             DO_DFS => match_dfs(col_ptrs, col_ids, r#match, row_match, n, m),
@@ -511,7 +533,17 @@ mod matchmaker {
             DO_HK_DW => match_hk_dw(col_ptrs, col_ids, &row_ptrs, &row_ids, r#match, row_match, n, m),
             DO_ABMP => match_abmp(col_ptrs, col_ids, &row_ptrs, &row_ids, r#match, row_match, n, m),
             DO_ABMP_BFS => match_abmp_bfs(col_ptrs, col_ids, &row_ptrs, &row_ids, r#match, row_match, n, m),
-            DO_PR_FIFO_FAIR => match_pr_fifo_fair(col_ptrs, col_ids, &row_ptrs, &row_ids, r#match, row_match, n, m, relabel_period),
+            DO_PR_FIFO_FAIR => match_pr_fifo_fair(
+                col_ptrs,
+                col_ids,
+                &row_ptrs,
+                &row_ids,
+                r#match,
+                row_match,
+                n,
+                m,
+                relabel_period,
+            ),
             _ => {}
         }
     }
@@ -555,7 +587,16 @@ mod matchmaker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn sk_cheap(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn sk_cheap(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let mut col_stack = vec![0i32; n as usize];
         let mut col_degrees = vec![0i32; n as usize];
         let mut no_of_d1_cols = 0i32;
@@ -722,7 +763,16 @@ mod matchmaker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn sk_cheap_rand(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn sk_cheap_rand(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let mut rng = Tinymt64::new_seeded(0x8f7011ee, 0xfc78ff1f, 0x3793fdff, 1);
 
         let mut col_stack = vec![0i32; n as usize];
@@ -748,7 +798,9 @@ mod matchmaker {
         }
 
         let mut randarr = vec![0i32; n as usize];
-        for i in 0..n as usize { randarr[i] = i as i32; }
+        for i in 0..n as usize {
+            randarr[i] = i as i32;
+        }
         for i in (0..n).rev() {
             let z = (rng.generate_double() * ((i + 1) as f64)) as i32;
             randarr.swap(i as usize, z as usize);
@@ -913,7 +965,16 @@ mod matchmaker {
     // raw pointers. Pool layout: columns `0..n`, rows `n..n+m`, then per-degree
     // sentinel heads and tails.
     #[allow(clippy::too_many_arguments)]
-    fn mind_cheap(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn mind_cheap(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let n_us = n as usize;
         let m_us = m as usize;
 
@@ -926,13 +987,17 @@ mod matchmaker {
             let deg = col_ptrs[i + 1] - col_ptrs[i];
             degree[i] = deg;
             id[i] = i as i32;
-            if deg > maxdeg { maxdeg = deg; }
+            if deg > maxdeg {
+                maxdeg = deg;
+            }
         }
         for i in 0..m_us {
             let deg = row_ptrs[i + 1] - row_ptrs[i];
             degree[n_us + i] = deg;
             id[n_us + i] = (i + n_us) as i32;
-            if deg > maxdeg { maxdeg = deg; }
+            if deg > maxdeg {
+                maxdeg = deg;
+            }
         }
 
         // Sentinel indices: head[d] and tail[d] for d in 0..=maxdeg.
@@ -981,11 +1046,15 @@ mod matchmaker {
 
         for i in 0..n_us {
             let deg = degree[i];
-            if deg > 0 { insert_front!(i, deg); }
+            if deg > 0 {
+                insert_front!(i, deg);
+            }
         }
         for i in 0..m_us {
             let deg = degree[n_us + i];
-            if deg > 0 { insert_front!(n_us + i, deg); }
+            if deg > 0 {
+                insert_front!(n_us + i, deg);
+            }
         }
 
         let mut cdeg: i32 = 1;
@@ -1015,9 +1084,7 @@ mod matchmaker {
                 ptr += 1;
                 while ptr < col_ptrs[vtx as usize + 1] {
                     let row = col_ids[ptr as usize];
-                    if row_match[row as usize] == -1
-                        && degree[n_us + row as usize] < degree[n_us + minnbr as usize]
-                    {
+                    if row_match[row as usize] == -1 && degree[n_us + row as usize] < degree[n_us + minnbr as usize] {
                         minnbr = col_ids[ptr as usize];
                     }
                     ptr += 1;
@@ -1063,7 +1130,9 @@ mod matchmaker {
                     degree[n_us + row as usize] -= 1;
                     let deg = degree[n_us + row as usize];
                     unlink!(n_us + row as usize);
-                    if deg > 0 { insert_front!(n_us + row as usize, deg); }
+                    if deg > 0 {
+                        insert_front!(n_us + row as usize, deg);
+                    }
                 }
                 ptr += 1;
             }
@@ -1074,7 +1143,9 @@ mod matchmaker {
                     degree[col as usize] -= 1;
                     let deg = degree[col as usize];
                     unlink!(col as usize);
-                    if deg > 0 { insert_front!(col as usize, deg); }
+                    if deg > 0 {
+                        insert_front!(col as usize, deg);
+                    }
                 }
                 ptr += 1;
             }
@@ -1103,7 +1174,9 @@ mod matchmaker {
                     let mut ptr = colptrs[stack_col as usize];
                     while ptr < eptr {
                         let temp = visited[col_ids[ptr as usize] as usize];
-                        if temp != next_augment_no && temp != -1 { break; }
+                        if temp != next_augment_no && temp != -1 {
+                            break;
+                        }
                         ptr += 1;
                     }
                     colptrs[stack_col as usize] = ptr + 1;
@@ -1227,7 +1300,9 @@ mod matchmaker {
                         let mut ptr = colptrs[stack_col as usize];
                         while ptr < eptr {
                             let temp = visited[col_ids[ptr as usize] as usize];
-                            if temp != next_augment_no && temp != -1 { break; }
+                            if temp != next_augment_no && temp != -1 {
+                                break;
+                            }
                             ptr += 1;
                         }
                         colptrs[stack_col as usize] = ptr + 1;
@@ -1311,7 +1386,9 @@ mod matchmaker {
                         let mut ptr = colptrs[stack_col as usize];
                         while ptr < eptr {
                             let temp = visited[col_ids[ptr as usize] as usize];
-                            if temp != pcount && temp != -1 { break; }
+                            if temp != pcount && temp != -1 {
+                                break;
+                            }
                             ptr += 1;
                         }
                         colptrs[stack_col as usize] = ptr + 1;
@@ -1408,7 +1485,9 @@ mod matchmaker {
                             let mut ptr = colptrs[stack_col as usize];
                             while ptr < eptr {
                                 let temp = visited[col_ids[ptr as usize] as usize];
-                                if temp != pcount && temp != -1 { break; }
+                                if temp != pcount && temp != -1 {
+                                    break;
+                                }
                                 ptr += 1;
                             }
                             colptrs[stack_col as usize] = ptr + 1;
@@ -1481,7 +1560,9 @@ mod matchmaker {
                             let mut ptr = colptrs[stack_col as usize];
                             while ptr > eptr {
                                 let temp = visited[col_ids[ptr as usize] as usize];
-                                if temp != pcount && temp != -1 { break; }
+                                if temp != pcount && temp != -1 {
+                                    break;
+                                }
                                 ptr -= 1;
                             }
                             colptrs[stack_col as usize] = ptr - 1;
@@ -1541,7 +1622,16 @@ mod matchmaker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn match_hk(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn match_hk(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let mut queue = vec![0i32; n as usize];
         let mut stack = vec![0i32; m as usize];
         let mut rowptrs = vec![0i32; m as usize];
@@ -1594,7 +1684,9 @@ mod matchmaker {
             let ppcount = pcount;
             pcount += 1;
 
-            if stack_last == -1 { break; }
+            if stack_last == -1 {
+                break;
+            }
 
             while stack_last > -1 {
                 let stack_row = stack[stack_last as usize];
@@ -1649,7 +1741,16 @@ mod matchmaker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn match_hk_dw(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn match_hk_dw(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let mut queue = vec![0i32; n as usize];
         let mut stack = vec![0i32; m as usize];
         let mut rowptrs = vec![0i32; m as usize];
@@ -1711,7 +1812,9 @@ mod matchmaker {
             }
             let ppcount = pcount;
             pcount += 1;
-            if stack_last == -1 { break; }
+            if stack_last == -1 {
+                break;
+            }
 
             while stack_last > -1 {
                 let stack_row = stack[stack_last as usize];
@@ -1830,7 +1933,16 @@ mod matchmaker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn match_abmp(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn match_abmp(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let v = m.max(n);
         let mut queue = vec![0i32; v as usize];
         let mut clevels = vec![0i32; n as usize];
@@ -1859,7 +1971,9 @@ mod matchmaker {
         }
 
         for i in 0..n as usize {
-            if r#match[i] == -1 { tunmatched += 1; }
+            if r#match[i] == -1 {
+                tunmatched += 1;
+            }
             clevels[i] = n + m;
         }
 
@@ -1893,11 +2007,15 @@ mod matchmaker {
                         }
                     }
                     l += 2;
-                    if l > lim || 50 * l > tunmatched { break; }
+                    if l > lim || 50 * l > tunmatched {
+                        break;
+                    }
                 }
             }
 
-            if nunmatched == 0 { break; }
+            if nunmatched == 0 {
+                break;
+            }
             let mut start_col_i = 0i32;
             let mut next_col_i = 0i32;
             let mut l = clevels[unmatched[0] as usize];
@@ -1919,7 +2037,9 @@ mod matchmaker {
                     while ptr < eptr {
                         row = col_ids[ptr as usize];
                         col = row_match[row as usize];
-                        if col == -1 || clevels[col as usize] == desired_level { break; }
+                        if col == -1 || clevels[col as usize] == desired_level {
+                            break;
+                        }
                         ptr += 1;
                     }
                     colptrs[stack_col as usize] = ptr + 1;
@@ -1955,7 +2075,9 @@ mod matchmaker {
 
                 if r#match[current_col as usize] != -1 {
                     tunmatched -= 1;
-                    if 50 * l > tunmatched { break; }
+                    if 50 * l > tunmatched {
+                        break;
+                    }
                     unmatched[next_col_i as usize] = unmatched[start_col_i as usize];
                     start_col_i += 1;
                 }
@@ -1965,14 +2087,22 @@ mod matchmaker {
                     l = clevels[unmatched[start_col_i as usize] as usize];
                     next_col_i = start_col_i;
                 }
-                if update_counter >= counter_limit { break; }
+                if update_counter >= counter_limit {
+                    break;
+                }
             }
-            if next_col_i == nunmatched || 50 * l > tunmatched { break; }
+            if next_col_i == nunmatched || 50 * l > tunmatched {
+                break;
+            }
         }
         pcount += 1;
 
-        for i in 0..m as usize { rvisited[i] = 0; }
-        for i in 0..n as usize { cvisited[i] = 0; }
+        for i in 0..m as usize {
+            rvisited[i] = 0;
+        }
+        for i in 0..n as usize {
+            cvisited[i] = 0;
+        }
         loop {
             let mut stack_last = -1i32;
             let mut queue_size = level_0;
@@ -2007,7 +2137,9 @@ mod matchmaker {
             let ppcount = pcount;
             pcount += 1;
 
-            if stack_last == -1 { break; }
+            if stack_last == -1 {
+                break;
+            }
             while stack_last > -1 {
                 let stack_col = stack[stack_last as usize];
                 let row0 = r#match[stack_col as usize];
@@ -2067,7 +2199,16 @@ mod matchmaker {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn match_abmp_bfs(col_ptrs: &[i32], col_ids: &[i32], row_ptrs: &[i32], row_ids: &[i32], r#match: &mut [i32], row_match: &mut [i32], n: i32, m: i32) {
+    fn match_abmp_bfs(
+        col_ptrs: &[i32],
+        col_ids: &[i32],
+        row_ptrs: &[i32],
+        row_ids: &[i32],
+        r#match: &mut [i32],
+        row_match: &mut [i32],
+        n: i32,
+        m: i32,
+    ) {
         let v = m.max(n);
         let mut queue = vec![0i32; v as usize];
         let mut visited = vec![0i32; v as usize];
@@ -2095,7 +2236,9 @@ mod matchmaker {
         }
 
         for i in 0..n as usize {
-            if r#match[i] == -1 { tunmatched += 1; }
+            if r#match[i] == -1 {
+                tunmatched += 1;
+            }
             clevels[i] = n + m;
         }
 
@@ -2129,11 +2272,15 @@ mod matchmaker {
                         }
                     }
                     l += 2;
-                    if l > lim || 50 * l > tunmatched { break; }
+                    if l > lim || 50 * l > tunmatched {
+                        break;
+                    }
                 }
             }
 
-            if nunmatched == 0 { break; }
+            if nunmatched == 0 {
+                break;
+            }
             let mut start_col_i = 0i32;
             let mut next_col_i = 0i32;
             let mut l = clevels[unmatched[0] as usize];
@@ -2159,7 +2306,9 @@ mod matchmaker {
                     while ptr < eptr {
                         row = col_ids[ptr as usize];
                         col = row_match[row as usize];
-                        if col == -1 || clevels[col as usize] == desired_level { break; }
+                        if col == -1 || clevels[col as usize] == desired_level {
+                            break;
+                        }
                         ptr += 1;
                     }
                     colptrs[stack_col as usize] = ptr + 1;
@@ -2195,7 +2344,9 @@ mod matchmaker {
 
                 if r#match[current_col as usize] != -1 {
                     tunmatched -= 1;
-                    if 50 * l > tunmatched { break; }
+                    if 50 * l > tunmatched {
+                        break;
+                    }
                     unmatched[next_col_i as usize] = unmatched[start_col_i as usize];
                     start_col_i += 1;
                 }
@@ -2205,13 +2356,19 @@ mod matchmaker {
                     l = clevels[unmatched[start_col_i as usize] as usize];
                     next_col_i = start_col_i;
                 }
-                if update_counter >= counter_limit { break; }
+                if update_counter >= counter_limit {
+                    break;
+                }
             }
-            if next_col_i == nunmatched || 50 * l > tunmatched { break; }
+            if next_col_i == nunmatched || 50 * l > tunmatched {
+                break;
+            }
             pcount += 1;
         }
 
-        for i in 0..n as usize { visited[i] = 0; }
+        for i in 0..n as usize {
+            visited[i] = 0;
+        }
         while level_0 > 0 {
             let mut queue_size = level_0;
             let mut queue_ptr = level_0 - 1;
@@ -2270,7 +2427,9 @@ mod matchmaker {
         let mut queue_start = 0i32;
         let max = n + m;
 
-        for i in 0..n as usize { l_label[i] = max; }
+        for i in 0..n as usize {
+            l_label[i] = max;
+        }
         for i in 0..m as usize {
             if row_match[i] == -1 {
                 queue_end += 1;
@@ -2323,8 +2482,12 @@ mod matchmaker {
 
         let max = m + n;
         let mut limit = (max as f64 * relabel_period) as i32;
-        if relabel_period == -1.0 { limit = m; }
-        if relabel_period == -2.0 { limit = n; }
+        if relabel_period == -1.0 {
+            limit = m;
+        }
+        if relabel_period == -2.0 {
+            limit = n;
+        }
 
         for i in 0..n {
             if r#match[i as usize] == -1 {
