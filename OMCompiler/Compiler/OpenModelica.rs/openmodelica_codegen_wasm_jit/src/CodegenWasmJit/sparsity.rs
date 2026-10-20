@@ -77,21 +77,24 @@ fn sparsity_sanity_check(colptr: &[i32], rowidx: &[i32], size_cols: usize, n: us
 /// C's `generateStaticSparseData`: one `sparsity` entry per column holding its
 /// nonzero rows, coloring precomputed in `coloredCols`.
 fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJacPattern> {
-    let mut cols: Vec<Vec<i32>> =
-        lst(&jm.sparsity).map(|(_, rows)| lst(rows).copied().collect()).collect();
+    let mut cols: Vec<Vec<i32>> = lst(&jm.sparsity)
+        .map(|(_, rows)| lst(rows).copied().collect())
+        .collect();
     if cols.iter().flatten().any(|&r| r < 0) {
         return None;
     }
     let (colptr, rowidx) = csc_from_columns(&mut cols)?;
     // A coloring that is not a partition of the columns would drop or double-count
     // entries, so recompute instead of trusting it.
-    let colors: Vec<Vec<u32>> =
-        lst(&jm.coloredCols).map(|grp| lst(grp).map(|&c| c as u32).collect()).collect();
+    let colors: Vec<Vec<u32>> = lst(&jm.coloredCols)
+        .map(|grp| lst(grp).map(|&c| c as u32).collect())
+        .collect();
     let mut seen = vec![false; n];
     let partition = cols.len() == n
-        && colors.iter().flatten().all(|&c| {
-            (c as usize) < n && !core::mem::replace(&mut seen[c as usize], true)
-        })
+        && colors
+            .iter()
+            .flatten()
+            .all(|&c| (c as usize) < n && !core::mem::replace(&mut seen[c as usize], true))
         && seen.iter().all(|&s| s);
     let colors = match (partition, rowidx.iter().all(|&r| (r as usize) < cols.len())) {
         (true, _) => colors,
@@ -105,7 +108,9 @@ fn nls_jac_pattern_static(jm: &SimCode::JacobianMatrix, n: usize) -> Option<NlsJ
 /// at build time. A regular whole-array dependency of a whole-array unknown pairs
 /// element-wise (`resizableColCountRegular`); everything else is the cross product.
 fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: usize) -> Option<Vec<Vec<i32>>> {
-    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
+    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
+        return None;
+    };
     let slots = JacArraySlots::of(jm)?;
     let mut cols: Vec<Vec<i32>> = vec![Vec::new(); n_cols];
     let mut add = |r: usize, c: usize| {
@@ -116,8 +121,9 @@ fn resizable_rows_by_col(jm: &SimCode::JacobianMatrix, n_cols: usize, n_rows: us
     for row in lst(rows) {
         let iters: Vec<&BackendDAE::SimIterator> = lst(&row.equation_iterators).collect();
         let solved: Vec<CrefShape> = lst(&row.solved_crefs).map(CrefShape::new).collect::<Option<_>>()?;
-        let deps: Vec<(CrefShape, _, _)> =
-            lst(&row.dependencies).map(|(seed, dep, rep)| Some((CrefShape::new(seed)?, dep, rep))).collect::<Option<_>>()?;
+        let deps: Vec<(CrefShape, _, _)> = lst(&row.dependencies)
+            .map(|(seed, dep, rep)| Some((CrefShape::new(seed)?, dep, rep)))
+            .collect::<Option<_>>()?;
         for_each_iteration(&iters, |flat, bindings| {
             for sc in &solved {
                 let sc = sc.bind(bindings)?;
@@ -173,11 +179,19 @@ impl JacArraySlots {
             let stripped = openmodelica_frontend_base::ComponentReference::crefStripSubs(&sv.name).ok()?;
             let key = sim_cref_key(&stripped).ok()?;
             if let Some(positions) = BoundCref::new(&sv.name, &[]).and_then(|b| b.single_positions()) {
-                exact.entry(key.clone()).or_insert_with(HashMap::default).entry(positions).or_insert(index);
+                exact
+                    .entry(key.clone())
+                    .or_insert_with(HashMap::default)
+                    .entry(positions)
+                    .or_insert(index);
             }
             base.entry(key).or_insert(index);
         }
-        Some(JacArraySlots { base, exact, keys: Default::default() })
+        Some(JacArraySlots {
+            base,
+            exact,
+            keys: Default::default(),
+        })
     }
 
     fn with_key<R>(&self, cr: &metamodelica::Ref<DAE::ComponentRef>, f: impl FnOnce(&str) -> Option<R>) -> Option<R> {
@@ -256,11 +270,14 @@ impl BoundCref {
         if self.dims.is_empty() {
             return None;
         }
-        self.dims.iter().map(|(_, p)| match p {
-            Positions::One(p) => Some(*p),
-            Positions::Many(ps) if ps.len() == 1 => Some(ps[0]),
-            _ => None,
-        }).collect()
+        self.dims
+            .iter()
+            .map(|(_, p)| match p {
+                Positions::One(p) => Some(*p),
+                Positions::Many(ps) if ps.len() == 1 => Some(ps[0]),
+                _ => None,
+            })
+            .collect()
     }
 
     /// C's `crefSubs(cr) == {WHOLEDIM()}`.
@@ -286,10 +303,17 @@ impl<'a> CrefShape<'a> {
         let mut part = cr;
         loop {
             let (ty, subs, next) = match &**part {
-                DAE::ComponentRef::CREF_IDENT { identType, subscriptLst, .. } => (identType, subscriptLst, None),
-                DAE::ComponentRef::CREF_QUAL { identType, subscriptLst, componentRef, .. } => {
-                    (identType, subscriptLst, Some(componentRef))
-                }
+                DAE::ComponentRef::CREF_IDENT {
+                    identType,
+                    subscriptLst,
+                    ..
+                } => (identType, subscriptLst, None),
+                DAE::ComponentRef::CREF_QUAL {
+                    identType,
+                    subscriptLst,
+                    componentRef,
+                    ..
+                } => (identType, subscriptLst, Some(componentRef)),
                 _ => return None,
             };
             let part_dims = type_dims(ty)?;
@@ -309,7 +333,10 @@ impl<'a> CrefShape<'a> {
                 None => break,
             }
         }
-        Some(CrefShape { cref: cr, subs: subs_out })
+        Some(CrefShape {
+            cref: cr,
+            subs: subs_out,
+        })
     }
 
     fn bind(&self, bindings: &Bindings) -> Option<BoundCref> {
@@ -322,13 +349,19 @@ impl<'a> CrefShape<'a> {
                     Err(_) => Positions::Many(Vec::new()),
                 },
                 Some(DAE::Subscript::SLICE { exp }) => Positions::Many(
-                    bound_ints(exp, bindings)?.into_iter().filter_map(|v| usize::try_from(v - 1).ok()).collect(),
+                    bound_ints(exp, bindings)?
+                        .into_iter()
+                        .filter_map(|v| usize::try_from(v - 1).ok())
+                        .collect(),
                 ),
                 Some(_) => Positions::All,
             };
             dims.push((dim, positions));
         }
-        Some(BoundCref { cref: self.cref.clone(), dims })
+        Some(BoundCref {
+            cref: self.cref.clone(),
+            dims,
+        })
     }
 }
 
@@ -358,9 +391,9 @@ fn affine_int(exp: &DAE::Exp, bindings: &Bindings) -> Option<i32> {
     match exp {
         DAE::Exp::ICONST { integer } => Some(*integer),
         DAE::Exp::CREF { componentRef, .. } => match &**componentRef {
-            DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } if subscriptLst.is_empty() => {
-                const_int_exp(&bindings.iter().find(|(n, _)| *n == ident.as_str())?.1)
-            }
+            DAE::ComponentRef::CREF_IDENT {
+                ident, subscriptLst, ..
+            } if subscriptLst.is_empty() => const_int_exp(&bindings.iter().find(|(n, _)| *n == ident.as_str())?.1),
             _ => None,
         },
         DAE::Exp::BINARY { exp1, operator, exp2 } => {
@@ -405,7 +438,9 @@ fn bound_exp(exp: &metamodelica::Ref<DAE::Exp>, bindings: &Bindings) -> Option<m
     for (name, value) in bindings {
         e = subst_iterator(&e, name, value).ok()?;
     }
-    openmodelica_frontend_base::ExpressionSimplify::simplify1(e).ok().map(|(e, _)| e)
+    openmodelica_frontend_base::ExpressionSimplify::simplify1(e)
+        .ok()
+        .map(|(e, _)| e)
 }
 
 /// Iterator name -> value.
@@ -413,7 +448,10 @@ type Bindings<'a> = [(&'a str, metamodelica::Ref<DAE::Exp>)];
 
 /// `f` for every iterator combination with its flat index, first iterator least
 /// significant (C's `forIteratorBody`).
-fn for_each_iteration(iters: &[&BackendDAE::SimIterator], mut f: impl FnMut(usize, &Bindings) -> Option<()>) -> Option<()> {
+fn for_each_iteration(
+    iters: &[&BackendDAE::SimIterator],
+    mut f: impl FnMut(usize, &Bindings) -> Option<()>,
+) -> Option<()> {
     let tables: Vec<_> = iters.iter().map(|i| iterator_bindings(i)).collect::<Result<_>>().ok()?;
     let total: usize = tables.iter().map(|(_, values, _)| values.len()).product();
     let mut pos = vec![0usize; tables.len()];
@@ -468,11 +506,13 @@ fn csc_from_columns(cols: &mut [Vec<i32>]) -> Option<(Vec<i32>, Vec<i32>)> {
 /// C's `computeColumnColoring`: one column-equation pass per group of columns
 /// sharing no row.
 fn computed_coloring(colptr: &[i32], rowidx: &[i32], n: usize) -> Vec<Vec<u32>> {
-    let (color_ptr, color_cols) =
-        crate::CodegenWasmJitFunctions::lin_jac_coloring(colptr, rowidx, n);
+    let (color_ptr, color_cols) = crate::CodegenWasmJitFunctions::lin_jac_coloring(colptr, rowidx, n);
     (0..color_ptr.len() - 1)
         .map(|c| {
-            color_cols[color_ptr[c] as usize..color_ptr[c + 1] as usize].iter().map(|&j| j as u32).collect()
+            color_cols[color_ptr[c] as usize..color_ptr[c + 1] as usize]
+                .iter()
+                .map(|&j| j as u32)
+                .collect()
         })
         .collect()
 }
@@ -492,7 +532,9 @@ pub(super) fn sparsity_nonzeros(jm: &SimCode::JacobianMatrix) -> Option<usize> {
 /// The nonzero count of a nonlinear system's Jacobian, matching C's
 /// `initializeNonlinearSystemData` (`sparsePattern->nnz`).
 pub(super) fn nls_system_nnz(nlsystem: &SimCode::NonlinearSystem) -> usize {
-    let Some(jm) = nlsystem.jacobianMatrix.as_ref() else { return 0 };
+    let Some(jm) = nlsystem.jacobianMatrix.as_ref() else {
+        return 0;
+    };
     let n = lst(&nlsystem.crefs).count();
     nls_jac_pattern(jm, n).map_or(0, |p| p.rowidx.len())
 }
@@ -513,7 +555,9 @@ pub(super) fn row_coloring(rows_by_col: &[Vec<u32>], n: usize) -> Vec<Vec<u32>> 
 
 /// The ODE state Jacobian "A", if the backend emitted one at all.
 fn jac_a_matrix(sim_code: &SimCode::SimCode) -> Option<&SimCode::JacobianMatrix> {
-    lst(&sim_code.jacobianMatrices).find(|j| &*j.matrixName == "A").map(|j| &**j)
+    lst(&sim_code.jacobianMatrices)
+        .find(|j| &*j.matrixName == "A")
+        .map(|j| &**j)
 }
 
 pub(super) fn build_jac_a_info(sim_code: &SimCode::SimCode, n_states: u32) -> Option<JacAInfo> {
@@ -544,7 +588,10 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
             let mut cols = resizable_rows_by_col(jac, n, n)?;
             let (colptr, rowidx) = csc_from_columns(&mut cols)?;
             let colors = computed_coloring(&colptr, &rowidx, n);
-            (cols.iter().map(|c| c.iter().map(|&r| r as u32).collect()).collect(), colors)
+            (
+                cols.iter().map(|c| c.iter().map(|&r| r as u32).collect()).collect(),
+                colors,
+            )
         }
         _ => {
             // sparsity: positional per column → 0-based nonzero rows (CSC), one entry per
@@ -566,7 +613,12 @@ pub(super) fn jac_pattern_info(jac: &SimCode::JacobianMatrix, n: usize) -> Optio
     {
         return None;
     }
-    Some(JacAInfo { n: n as u32, colors, rows_by_col, sym: None })
+    Some(JacAInfo {
+        n: n as u32,
+        colors,
+        rows_by_col,
+        sym: None,
+    })
 }
 
 /// The ODE Jacobian's sparsity of a resizable model, for the runtime to expand
@@ -578,7 +630,9 @@ pub(super) fn sym_jac_a(
 ) -> Option<openmodelica_sim_meta::sym_sparsity::SymPattern> {
     use openmodelica_sim_meta::sym_sparsity::{SymIter, SymPattern, SymRow, SymVar};
     let jm = jac_a_matrix(sim_code)?;
-    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else { return None };
+    let SimCode::Sparsity::SPARSITY { rows } = &jm.sparsityMatrix else {
+        return None;
+    };
     let mut fixed: Vec<(String, Vec<Sz>)> = Vec::new();
     let mut dynamic: Vec<(String, Vec<Sz>)> = Vec::new();
     for sv in lst(&sim_code.modelInfo.vars.stateVars) {
@@ -597,21 +651,41 @@ pub(super) fn sym_jac_a(
         states.insert(key, SymVar { base: at.clone(), dims });
         at = at + len;
     }
-    let mut pat = SymPattern { n: at, ..Default::default() };
+    let mut pat = SymPattern {
+        n: at,
+        ..Default::default()
+    };
     let mut row_ids: HashMap<String, u32> = HashMap::default();
     let mut col_ids: HashMap<String, u32> = HashMap::default();
     for row in lst(rows) {
         let mut names = Vec::new();
         let mut iters = Vec::new();
         for it in lst(&row.equation_iterators) {
-            let BackendDAE::SimIterator::SIM_ITERATOR_RANGE { name, start, step, size, sub_iter, .. } = it else { return None };
+            let BackendDAE::SimIterator::SIM_ITERATOR_RANGE {
+                name,
+                start,
+                step,
+                size,
+                sub_iter,
+                ..
+            } = it
+            else {
+                return None;
+            };
             if lst(sub_iter).next().is_some() {
                 return None;
             }
             names.push(cref_display(name).ok()?);
-            iters.push(SymIter { start: sizes.sz_of_exp(start).ok()?, step: const_int_exp(step)? as i64, size: sizes.sz_of_exp(size).ok()? });
+            iters.push(SymIter {
+                start: sizes.sz_of_exp(start).ok()?,
+                step: const_int_exp(step)? as i64,
+                size: sizes.sz_of_exp(size).ok()?,
+            });
         }
-        let mut sym_ref = |cr: &metamodelica::Ref<DAE::ComponentRef>, strip: usize, ids: &mut HashMap<String, u32>, vars: &mut Vec<SymVar>| {
+        let mut sym_ref = |cr: &metamodelica::Ref<DAE::ComponentRef>,
+                           strip: usize,
+                           ids: &mut HashMap<String, u32>,
+                           vars: &mut Vec<SymVar>| {
             let state = strip_quals(cr, strip)?;
             let stripped = strip_all_subs(&state)?;
             let key = sim_cref_key(&stripped).ok()?;
@@ -620,12 +694,22 @@ pub(super) fn sym_jac_a(
                 vars.push(var.clone());
                 vars.len() as u32 - 1
             });
-            let subs = all_subs(&state).into_iter().map(|s| sym_sub(&s, &names, sizes)).collect::<Option<_>>()?;
+            let subs = all_subs(&state)
+                .into_iter()
+                .map(|s| sym_sub(&s, &names, sizes))
+                .collect::<Option<_>>()?;
             Some(openmodelica_sim_meta::sym_sparsity::SymRef { var: id, subs })
         };
-        let solved = lst(&row.solved_crefs).map(|c| sym_ref(c, 2, &mut row_ids, &mut pat.rows_vars)).collect::<Option<_>>()?;
+        let solved = lst(&row.solved_crefs)
+            .map(|c| sym_ref(c, 2, &mut row_ids, &mut pat.rows_vars))
+            .collect::<Option<_>>()?;
         let deps = lst(&row.dependencies)
-            .map(|(seed, dep, rep)| Some((sym_ref(seed, 1, &mut col_ids, &mut pat.cols_vars)?, !*rep && lst(&dep.kinds).next() == Some(&false))))
+            .map(|(seed, dep, rep)| {
+                Some((
+                    sym_ref(seed, 1, &mut col_ids, &mut pat.cols_vars)?,
+                    !*rep && lst(&dep.kinds).next() == Some(&false),
+                ))
+            })
             .collect::<Option<_>>()?;
         pat.rows.push(SymRow { iters, solved, deps });
     }
@@ -658,7 +742,11 @@ fn all_subs(cr: &metamodelica::Ref<DAE::ComponentRef>) -> Vec<metamodelica::Ref<
                 out.extend(lst(subscriptLst).cloned());
                 return out;
             }
-            DAE::ComponentRef::CREF_QUAL { subscriptLst, componentRef, .. } => {
+            DAE::ComponentRef::CREF_QUAL {
+                subscriptLst,
+                componentRef,
+                ..
+            } => {
                 out.extend(lst(subscriptLst).cloned());
                 node = componentRef;
             }
@@ -688,13 +776,22 @@ fn sym_sub(
 }
 
 /// `exp` as a constant plus integer multiples of the loop iterators.
-fn affine(exp: &DAE::Exp, iters: &[String], sizes: &mut SizeParams) -> Option<openmodelica_sim_meta::sym_sparsity::Affine> {
-    use openmodelica_sim_meta::sym_sparsity::Affine;
+fn affine(
+    exp: &DAE::Exp,
+    iters: &[String],
+    sizes: &mut SizeParams,
+) -> Option<openmodelica_sim_meta::sym_sparsity::Affine> {
     use DAE::Operator as O;
-    let konst = |c: Sz| Affine { c, k: vec![0; iters.len()] };
+    use openmodelica_sim_meta::sym_sparsity::Affine;
+    let konst = |c: Sz| Affine {
+        c,
+        k: vec![0; iters.len()],
+    };
     Some(match exp {
         DAE::Exp::CREF { componentRef, .. } => {
-            if let DAE::ComponentRef::CREF_IDENT { ident, subscriptLst, .. } = &**componentRef
+            if let DAE::ComponentRef::CREF_IDENT {
+                ident, subscriptLst, ..
+            } = &**componentRef
                 && subscriptLst.is_empty()
                 && let Some(i) = iters.iter().position(|n| n == ident.as_str())
             {
@@ -704,24 +801,42 @@ fn affine(exp: &DAE::Exp, iters: &[String], sizes: &mut SizeParams) -> Option<op
             }
             konst(sizes.sz_of_exp(exp).ok()?)
         }
-        DAE::Exp::UNARY { operator: O::UMINUS { .. }, exp } => {
+        DAE::Exp::UNARY {
+            operator: O::UMINUS { .. },
+            exp,
+        } => {
             let a = affine(exp, iters, sizes)?;
-            Affine { c: -a.c, k: a.k.iter().map(|k| -k).collect() }
+            Affine {
+                c: -a.c,
+                k: a.k.iter().map(|k| -k).collect(),
+            }
         }
         DAE::Exp::CAST { exp, .. } => affine(exp, iters, sizes)?,
         DAE::Exp::BINARY { exp1, operator, exp2 } => {
             let (a, b) = (affine(exp1, iters, sizes)?, affine(exp2, iters, sizes)?);
             let is_const = |x: &Affine| x.k.iter().all(|&k| k == 0);
             match operator {
-                O::ADD { .. } => Affine { c: a.c + b.c, k: a.k.iter().zip(&b.k).map(|(x, y)| x + y).collect() },
-                O::SUB { .. } => Affine { c: a.c - b.c, k: a.k.iter().zip(&b.k).map(|(x, y)| x - y).collect() },
+                O::ADD { .. } => Affine {
+                    c: a.c + b.c,
+                    k: a.k.iter().zip(&b.k).map(|(x, y)| x + y).collect(),
+                },
+                O::SUB { .. } => Affine {
+                    c: a.c - b.c,
+                    k: a.k.iter().zip(&b.k).map(|(x, y)| x - y).collect(),
+                },
                 O::MUL { .. } if is_const(&a) => {
                     let f = a.c.as_const()?;
-                    Affine { c: b.c * f, k: b.k.iter().map(|k| k * f).collect() }
+                    Affine {
+                        c: b.c * f,
+                        k: b.k.iter().map(|k| k * f).collect(),
+                    }
                 }
                 O::MUL { .. } if is_const(&b) => {
                     let f = b.c.as_const()?;
-                    Affine { c: a.c * f, k: a.k.iter().map(|k| k * f).collect() }
+                    Affine {
+                        c: a.c * f,
+                        k: a.k.iter().map(|k| k * f).collect(),
+                    }
                 }
                 _ if is_const(&a) && is_const(&b) => konst(sizes.sz_of_exp(exp).ok()?),
                 _ => return None,
