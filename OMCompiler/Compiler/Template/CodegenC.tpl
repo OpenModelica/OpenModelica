@@ -6534,7 +6534,6 @@ match sparsity
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
-    let isAdjointInt = if isAdjoint then 1 else 0
     <<
     int <%symbolName(modelNamePrefix,"initialResizableAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
@@ -6549,7 +6548,7 @@ match sparsity
       <%preExp%>
       <%auxFunction%>
 
-      initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%isAdjointInt%>);
+      initJacobian(jacobian, <%nCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%if isAdjoint then 'TRUE' else 'FALSE'%>);
 
       /* Phase 1: count non-zeros per column */
       <%countCode%>
@@ -7590,7 +7589,22 @@ match sparsepattern
     <<
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
-      /* TODO set all relevant pointers to NULL? */
+      jacobian->sparsePattern = NULL;
+      jacobian->sparsePatternT = NULL;
+
+      jacobian->dag = NULL;
+      jacobian->evalSelectionCol = NULL;
+      jacobian->evalColumn = NULL;
+      jacobian->constColEqns = NULL;
+
+      jacobian->dagT = NULL;
+      jacobian->evalSelectionRow = NULL;
+      jacobian->evalRow = NULL;
+      jacobian->constRowEqns = NULL;
+
+      jacobian->recoverMask = NULL;
+      jacobian->csrToCscMap = NULL;
+
       return 1;
     }
     >>
@@ -7604,7 +7618,6 @@ match sparsepattern
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
-    let isAdjointInt = if isAdjoint then 1 else 0
     <<
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -7613,7 +7626,7 @@ match sparsepattern
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileNamePrefix%>_Jac<%matrixname%>.bin");
 
-      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%isAdjointInt%>);
+      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL, <%if isAdjoint then 'TRUE' else 'FALSE'%>);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
 
       /* read lead index of compressed sparse column */

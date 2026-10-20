@@ -355,8 +355,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
       break;
     case BICOLOREDSYMJAC: {
       JACOBIAN* jac_A = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-      data->simulationInfo->jacobianEvals = (jac_A->sparsePattern ? jac_A->sparsePattern->maxColors : jac_A->sizeCols) +
-                                            (jac_A->sparsePatternT ? jac_A->sparsePatternT->maxColors : jac_A->sizeRows);
+      data->simulationInfo->jacobianEvals = jac_A->sparsePattern->maxColors + jac_A->sparsePatternT->maxColors;
       dasslData->jacobianFunction = jacA_symColored;
       break;
     }

@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, unsigned int isAdjoint);
+void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, modelica_boolean isAdjoint);
 JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
 void freeJacobianCopy(JACOBIAN* jac);
@@ -50,7 +50,7 @@ SPARSE_PATTERN* cscToCsr(const SPARSE_PATTERN* csc, unsigned int nRows);
 SPARSE_PATTERN* transposeSparsePattern(const SPARSE_PATTERN* in, unsigned int nLeadOut);
 SPARSE_PATTERN* getJacobianCscPattern(JACOBIAN* jac);
 void freeSparsePattern(SPARSE_PATTERN *spp);
-void printSparsePattern(const SPARSE_PATTERN* sp);
+void debugPrintSparsePattern(const SPARSE_PATTERN* sp);
 void computeColumnColoring(SPARSE_PATTERN* sp, unsigned int nRows, unsigned int nCols);
 void sortSparseColumns(SPARSE_PATTERN* sp, unsigned int nCols);
 FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename);

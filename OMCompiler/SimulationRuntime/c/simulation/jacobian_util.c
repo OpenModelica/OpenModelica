@@ -33,7 +33,6 @@
 #include "../util/omc_file.h"
 #include "eval_dep.h"
 #include "jacobian_colpack.h"
-#include <assert.h>
 
 
 /**
@@ -50,7 +49,7 @@
  *                                  NULL if not available.
  * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
  */
-void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, unsigned int isAdjoint)
+void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern, modelica_boolean isAdjoint)
 {
   /* Deterministic baseline for all constructor paths. */
   jacobian->sizeCols = sizeCols;
@@ -82,7 +81,7 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->recoverMask = NULL;
   jacobian->csrToCscMap = NULL;
 
-  if (isAdjoint == 1) {
+  if (isAdjoint) {
     jacobian->seedVarsAdj = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
     jacobian->resultVarsAdj = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
     jacobian->sizeTmpVarsAdj = sizeTmpVars;
@@ -115,7 +114,7 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
 JACOBIAN* copyJacobian(JACOBIAN* source)
 {
   // what if its bidirectional?
-  const unsigned int isAdjoint = (source->evalColumn == NULL && source->evalRow != NULL);
+  const modelica_boolean isAdjoint = (source->evalColumn == NULL && source->evalRow != NULL);
   JACOBIAN* jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
   initJacobian(jacobian,
     source->sizeCols,
@@ -186,16 +185,16 @@ static void transferAdjointJacobianToUnifiedStorage(JACOBIAN* forwardJacobian, J
 {
   /* Ownership transfer (move semantics): adopt row-side storage in forward,
    * then detach source ownership before freeing source container. */
-  assert(forwardJacobian != NULL);
-  assert(adjointJacobian != NULL);
-  assert(forwardJacobian->seedVarsAdj == NULL);
-  assert(forwardJacobian->tmpVarsAdj == NULL);
-  assert(forwardJacobian->resultVarsAdj == NULL);
-  assert(forwardJacobian->sparsePatternT == NULL);
-  assert(forwardJacobian->dagT == NULL);
-  assert(forwardJacobian->evalSelectionRow == NULL);
-  assert(forwardJacobian->evalRow == NULL);
-  assert(forwardJacobian->constRowEqns == NULL);
+  assertStreamPrint(NULL, forwardJacobian, "forwardJacobian is NULL");
+  assertStreamPrint(NULL, adjointJacobian, "adjointJacobian is NULL");
+  assertStreamPrint(NULL, forwardJacobian->seedVarsAdj == NULL, "forwardJacobian->seedVarsAdj is already set");
+  assertStreamPrint(NULL, forwardJacobian->tmpVarsAdj == NULL, "forwardJacobian->tmpVarsAdj is already set");
+  assertStreamPrint(NULL, forwardJacobian->resultVarsAdj == NULL, "forwardJacobian->resultVarsAdj is already set");
+  assertStreamPrint(NULL, forwardJacobian->sparsePatternT == NULL, "forwardJacobian->sparsePatternT is already set");
+  assertStreamPrint(NULL, forwardJacobian->dagT == NULL, "forwardJacobian->dagT is already set");
+  assertStreamPrint(NULL, forwardJacobian->evalSelectionRow == NULL, "forwardJacobian->evalSelectionRow is already set");
+  assertStreamPrint(NULL, forwardJacobian->evalRow == NULL, "forwardJacobian->evalRow is already set");
+  assertStreamPrint(NULL, forwardJacobian->constRowEqns == NULL, "forwardJacobian->constRowEqns is already set");
 
   forwardJacobian->sizeTmpVarsAdj = adjointJacobian->sizeTmpVarsAdj;
   forwardJacobian->sparsePatternT = adjointJacobian->sparsePatternT;
@@ -394,53 +393,53 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   }
 }
 
-void printSparsePattern(const SPARSE_PATTERN* sp) {
-    if (!sp) {
-        printf("SPARSE_PATTERN: (NULL)\n");
-        return;
-    }
+void debugPrintSparsePattern(const SPARSE_PATTERN* sp) {
+  if (!sp) {
+    printf("SPARSE_PATTERN: (NULL)\n");
+    return;
+  }
 
-    printf("=== SPARSE_PATTERN ===\n");
-    printf("nnz:       %u\n", sp->nnz);
-    printf("sizeCols:  %u\n", sp->sizeCols);
-    printf("maxColors: %u\n", sp->maxColors);
+  printf("=== SPARSE_PATTERN ===\n");
+  printf("nnz:       %u\n", sp->nnz);
+  printf("sizeCols:  %u\n", sp->sizeCols);
+  printf("maxColors: %u\n", sp->maxColors);
 
-    /* Print leadindex array (Length: sizeCols + 1) */
-    printf("leadindex: ");
-    if (sp->leadindex) {
-        printf("[");
-        for (unsigned int i = 0; i <= sp->sizeCols; i++) {
-            printf("%u%s", sp->leadindex[i], (i < sp->sizeCols) ? ", " : "");
-        }
-        printf("]\n");
-    } else {
-        printf("(NULL)\n");
+  /* Print leadindex array (Length: sizeCols + 1) */
+  printf("leadindex: ");
+  if (sp->leadindex) {
+    printf("[");
+    for (unsigned int i = 0; i <= sp->sizeCols; i++) {
+      printf("%u%s", sp->leadindex[i], (i < sp->sizeCols) ? ", " : "");
     }
+    printf("]\n");
+} else {
+    printf("(NULL)\n");
+  }
 
-    /* Print index array (Length: nnz) */
-    printf("index:     ");
-    if (sp->index) {
-        printf("[");
-        for (unsigned int i = 0; i < sp->nnz; i++) {
-            printf("%u%s", sp->index[i], (i < sp->nnz - 1) ? ", " : "");
-        }
-        printf("]\n");
-    } else {
-        printf("(NULL)\n");
+  /* Print index array (Length: nnz) */
+  printf("index:     ");
+  if (sp->index) {
+    printf("[");
+    for (unsigned int i = 0; i < sp->nnz; i++) {
+      printf("%u%s", sp->index[i], (i < sp->nnz - 1) ? ", " : "");
     }
+    printf("]\n");
+  } else {
+    printf("(NULL)\n");
+  }
 
-    /* Print colorCols array (Length: sizeCols) */
-    printf("colorCols: ");
-    if (sp->colorCols) {
-        printf("[");
-        for (unsigned int i = 0; i < sp->sizeCols; i++) {
-            printf("%u%s", sp->colorCols[i], (i < sp->sizeCols - 1) ? ", " : "");
-        }
-        printf("]\n");
-    } else {
-        printf("(NULL)\n");
+  /* Print colorCols array (Length: sizeCols) */
+  printf("colorCols: ");
+  if (sp->colorCols) {
+    printf("[");
+    for (unsigned int i = 0; i < sp->sizeCols; i++) {
+      printf("%u%s", sp->colorCols[i], (i < sp->sizeCols - 1) ? ", " : "");
     }
-    printf("======================\n");
+    printf("]\n");
+  } else {
+    printf("(NULL)\n");
+  }
+  printf("======================\n");
 }
 
 static int compareUnsigned(const void* a, const void* b)
