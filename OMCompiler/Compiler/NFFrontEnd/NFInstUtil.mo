@@ -184,7 +184,7 @@ public
               cref := ComponentRef.replaceWholeSubscripts(cref);
               subs := ComponentRef.subscriptsAllFlat(cref);
               cref := ComponentRef.stripSubscriptsAll(cref);
-              ty := ComponentRef.getSubscriptedType(cref);
+              ty := ComponentRef.getSubscriptedType(cref, includeScope = true);
             else
               subs := {};
               ty := exp.ty;
