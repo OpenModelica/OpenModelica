@@ -45,6 +45,13 @@ package FunctionInverseSolve
   equation
     2*FunctionInverseSolve.f(a, x) + z = 7;
   end Test2;
+
+  model TestImplicit \"cannot solve for x\"
+    Real x;
+    Real y = 3 + time;
+  equation
+    y = FunctionInverseSolve.f(x, x);
+  end TestImplicit;
 end FunctionInverseSolve;
 "); getErrorString();
 
@@ -59,6 +66,11 @@ simulate(FunctionInverseSolve.Test2, stopTime=1.0); getErrorString();
 val(x, 0.0);
 val(x, 1.0);
 regexBool(readFile("FunctionInverseSolve.Test2_info.json"), "non-linear");
+getErrorString();
+
+simulate(FunctionInverseSolve.TestImplicit, stopTime=1.0); getErrorString();
+// nonlinear system in the generated code
+regexBool(readFile("FunctionInverseSolve.TestImplicit_info.json"), "non-linear");
 getErrorString();
 
 // Result:
@@ -87,5 +99,15 @@ getErrorString();
 // 1.560131275250044
 // 1.3711174827909076
 // false
+// ""
+// record SimulationResult
+//     resultFile = "FunctionInverseSolve.TestImplicit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'FunctionInverseSolve.TestImplicit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// true
 // ""
 // endResult
