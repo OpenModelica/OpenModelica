@@ -1117,6 +1117,66 @@ algorithm
   end for;
 end jacobianIndexExp;
 
+public function scalarSparsityRow
+  "The rows and columns of a sparsity row that consists of scalars at constant
+   positions only (no iterators, no subscripts), so the templates can write the
+   pattern as tables instead of one statement per entry. Dependencies without a
+   seed variable or with a negative index are left out, as in the general code.
+   NONE() for any other row."
+  input SimCode.SparsityRow row;
+  input HashTableCrefSimVar.HashTable ht;
+  output Option<tuple<list<Integer>, list<Integer>>> result = NONE();
+protected
+  list<Integer> rows = {}, cols = {};
+  SimCodeVar.SimVar var;
+  DAE.ComponentRef cref;
+  Option<Integer> pos;
+algorithm
+  if not listEmpty(row.equation_iterators) then
+    return;
+  end if;
+  for sc in row.solved_crefs loop
+    if not listEmpty(ComponentReferenceBasics.crefSubs(sc)) or not BaseHashTable.hasKey(sc, ht) then
+      return;
+    end if;
+    pos := constantJacobianIndex(BaseHashTable.get(sc, ht), ht);
+    if isNone(pos) then
+      return;
+    end if;
+    rows := Util.getOption(pos) :: rows;
+  end for;
+  for dep in row.dependencies loop
+    (cref, _, _) := dep;
+    if not listEmpty(ComponentReferenceBasics.crefSubs(cref)) then
+      return;
+    end if;
+    if BaseHashTable.hasKey(cref, ht) then
+      var := BaseHashTable.get(cref, ht);
+      if var.index >= 0 then
+        pos := constantJacobianIndex(var, ht);
+        if isNone(pos) then
+          return;
+        end if;
+        cols := Util.getOption(pos) :: cols;
+      end if;
+    end if;
+  end for;
+  result := SOME((listReverse(rows), listReverse(cols)));
+end scalarSparsityRow;
+
+protected function constantJacobianIndex
+  input SimCodeVar.SimVar var;
+  input HashTableCrefSimVar.HashTable ht;
+  output Option<Integer> index;
+algorithm
+  index := match jacobianIndexExp(var, ht)
+    local
+      Integer i;
+    case DAE.ICONST(integer = i) then SOME(i);
+    else NONE();
+  end match;
+end constantJacobianIndex;
+
 protected function jacobianOffsets
   "The positions of all variables of a Jacobian per kind, cached for the last
    few hash tables since the templates ask for every variable reference. Cache
