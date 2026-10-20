@@ -29,6 +29,7 @@ resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
 resizablePartialLoops.mos \
+resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
