@@ -131,7 +131,8 @@ pub(super) fn prof_plan(
                 .map(|v| cref_display(&v.name))
                 .collect::<Result<Vec<_>>>()
                 .map(|d| (true, d)),
-            E::SES_NONLINEAR { nlSystem, .. } => lst(&nlSystem.crefs)
+            E::SES_NONLINEAR { nlSystem, .. } => nls_crefs(nlSystem)
+                .iter()
                 .map(cref_display)
                 .collect::<Result<Vec<_>>>()
                 .map(|d| (true, d)),
@@ -321,7 +322,7 @@ pub(super) fn assigned_cref_keys(eqs: &[metamodelica::Ref<SimCode::SimEqSystem>]
                 ..
             } => {
                 for s in std::iter::once(nlSystem).chain(alternativeTearing.iter()) {
-                    for c in lst(&s.crefs) {
+                    for c in &nls_crefs(s) {
                         add(c);
                     }
                 }
@@ -688,7 +689,7 @@ pub(super) fn parmod_info(
                 alternativeTearing: None,
                 ..
             } => {
-                for c in lst(&nlSystem.crefs) {
+                for c in &nls_crefs(nlSystem) {
                     lhs.insert(name(c)?);
                 }
                 for e in sorted(&nlSystem.eqs) {

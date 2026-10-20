@@ -300,8 +300,11 @@ fn lower_linear_system_body(
         let col = lst(&jm.columns).next().unwrap();
         let constant_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.constantEqns).cloned().collect();
         let column_eqns: Vec<metamodelica::Ref<SimCode::SimEqSystem>> = lst(&col.columnEqns).cloned().collect();
-        let mut lower_constant = |c: &mut FnCtx| -> Result<()> { lower_eq_list(c, &constant_eqns, eq_index) };
-        let mut lower_column = |c: &mut FnCtx| -> Result<()> { lower_eq_list(c, &column_eqns, eq_index) };
+        let mut lower_constant = |c: &mut FnCtx| -> Result<()> {
+            lower_with_jac_calls(c, jm, |c| lower_eq_list(c, &constant_eqns, eq_index))
+        };
+        let mut lower_column =
+            |c: &mut FnCtx| -> Result<()> { lower_with_jac_calls(c, jm, |c| lower_eq_list(c, &column_eqns, eq_index)) };
         // Sparse: assemble straight into CSC (no dense n² buffer) when the pattern
         // remaps cleanly to res_index rows; otherwise dense A + runtime nonzero scan.
         if use_sparse {

@@ -31,6 +31,8 @@ resizableOverride.mos \
 resizableOverrideDerived.mos \
 resizableAliasStart.mos \
 resizablePartialLoops.mos \
+resizableArrayJacobian.mos \
+resizableMergedJacobian.mos \
 resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
 resizableManySizes.mos \

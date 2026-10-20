@@ -78,7 +78,9 @@ fn compute_jac_column_vars(jm: &SimCode::JacobianMatrix) -> Vec<metamodelica::Re
         }
     };
     for sv in jac_listed_vars(jm) {
-        push(&sv);
+        for e in jac_var_elements(&sv) {
+            push(&e);
+        }
     }
     out
 }
@@ -320,7 +322,7 @@ pub(super) fn nls_jac_usable(nlsystem: &SimCode::NonlinearSystem) -> bool {
     {
         return false;
     }
-    let n = lst(&nlsystem.crefs).count();
+    let n = nls_crefs(nlsystem).len();
     let rows = n - nls_lambda_extra(nlsystem) as usize;
     n > 0 && count(&jm.seedVars) as usize == n && nls_jac_result_rows(jm, rows).is_some()
 }
@@ -387,7 +389,7 @@ pub(super) fn jac_seed_scalar_count(jm: &SimCode::JacobianMatrix) -> Option<usiz
 }
 
 pub(super) fn nls_lambda_extra(nlsystem: &SimCode::NonlinearSystem) -> u32 {
-    u32::from(is_homotopy_lambda(lst(&nlsystem.crefs).last()))
+    u32::from(is_homotopy_lambda(nls_crefs(nlsystem).last()))
 }
 
 /// `nls_parts` for a linear system: the residuals, which may be array-valued and so

@@ -535,7 +535,7 @@ pub(super) fn nls_system_nnz(nlsystem: &SimCode::NonlinearSystem) -> usize {
     let Some(jm) = nlsystem.jacobianMatrix.as_ref() else {
         return 0;
     };
-    let n = lst(&nlsystem.crefs).count();
+    let n = nls_crefs(nlsystem).len();
     nls_jac_pattern(jm, n).map_or(0, |p| p.rowidx.len())
 }
 
