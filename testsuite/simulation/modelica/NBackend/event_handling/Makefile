@@ -19,6 +19,7 @@ mathEventsFor.mos\
 relationSlotsFor.mos\
 compositeRelationEvents.mos\
 noEventReduction.mos\
+infoJsonEquationOrder.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
