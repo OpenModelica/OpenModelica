@@ -1464,7 +1464,7 @@ algorithm
 
         // Note the external include directories of the model. Cross compiling in a
         // container needs them next to the external libraries inside the container.
-        // Written as a dot file so it doesn't end up in the FMU archive.
+        // buildModelFMU removes it before packing the FMU.
         // See https://github.com/OpenModelica/OpenModelica/issues/9509
         System.writeFile(fmutmp + "/.external_include_dirs",
                          stringDelimitList(list(SimCodeUtil.stripIncludeFlag(i) for i in simCode.makefileParams.includes), "\n"));
