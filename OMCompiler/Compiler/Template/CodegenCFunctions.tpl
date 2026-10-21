@@ -7934,10 +7934,20 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
       ;separator="\n")
   let &preExp += '<%params%><%\n%>'
   arrayVar
-case ARRAY(array={}) then
-  let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
-  let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
-  arrayVar
+case ARRAY(array={}, ty=arrTy) then
+  match Expression.expDimensions(exp)
+  case dims then
+    if boolOr(listEmpty(dims), Expression.hasUnknownDims(dims)) then
+      let arrayVar = tempDecl("base_array_t", &varDecls, &varFrees)
+      let &preExp += '<%rcReleaseBefore("base_array_t", arrayVar)%>simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
+      arrayVar
+    else
+      let arrayTypeStr = expTypeArray(arrTy)
+      let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)
+      let dimsStr = (dims |> d => '(_index_t)<%dimension(d, context, &preExp, &varDecls, &varFrees, &auxFunction)%>' ;separator=", ")
+      let &preExp += '<%rcReleaseBefore(arrayTypeStr, arrayVar)%>alloc_<%arrayTypeStr%>(&<%arrayVar%>, <%listLength(dims)%>, <%dimsStr%>);<%\n%>'
+      arrayVar
+  end match
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls, &varFrees)

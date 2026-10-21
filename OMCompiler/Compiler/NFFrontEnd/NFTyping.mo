@@ -2394,7 +2394,7 @@ algorithm
     // If the array is empty it probably already has a type, since empty arrays
     // can't be created in Modelica without evaluating some expression. So use
     // that type instead of an unknown type so we don't lose it.
-    ty1 := Type.arrayElementType(ty);
+    ty1 := if Type.isArray(ty) then Type.unliftArray(ty) else Type.arrayElementType(ty);
   end if;
 
   // Give the actual error-messages here after we got the super-type of the array
