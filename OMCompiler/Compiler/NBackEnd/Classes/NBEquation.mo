@@ -1538,9 +1538,20 @@ public
       Algorithm alg;
     algorithm
       alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), NFInstNode.NO_SCOPE, DAE.emptyElementSource);
-      alg := Algorithm.setInputsOutputs(alg);
+      alg := setAlgorithmInputsOutputs(alg);
       eqn := BackendDAE.lowerAlgorithm(alg, init);
     end makeAlgorithm;
+
+    function setAlgorithmInputsOutputs
+      "sets the inputs and outputs of an algorithm from its statements. variables
+      that only this algorithm uses (VariableKind.ALGORITHM_LOCAL) are neither,
+      they are not part of the system, like protected variables of a function."
+      input output Algorithm alg;
+    algorithm
+      alg := Algorithm.setInputsOutputs(alg);
+      alg.inputs  := list(cref for cref guard(not BVariable.isAlgorithmLocalCref(cref)) in alg.inputs);
+      alg.outputs := list(cref for cref guard(not BVariable.isAlgorithmLocalCref(cref)) in alg.outputs);
+    end setAlgorithmInputsOutputs;
 
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
@@ -1701,7 +1712,7 @@ public
           // pass mapFunc because the function itself does not map
           alg := Algorithm.mapExp(eq.alg, function mapFunc(func = funcExp));
           if not referenceEq(alg, eq.alg) then
-            eq.alg := Algorithm.setInputsOutputs(alg);
+            eq.alg := setAlgorithmInputsOutputs(alg);
           end if;
         then eq;
 
@@ -3262,7 +3273,7 @@ public
       // convert to algorithm if the body is an algorithm. mainly used for asserts in if-equations
       if isAlgorithm then
         alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), NFInstNode.NO_SCOPE, source);
-        alg   := Algorithm.setInputsOutputs(alg);
+        alg   := Equation.setAlgorithmInputsOutputs(alg);
         size  := sum(ComponentRef.size(out, false) for out in alg.outputs);
         eqn   := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
       else

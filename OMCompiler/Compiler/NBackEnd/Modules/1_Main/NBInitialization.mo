@@ -250,7 +250,8 @@ public
     input UnorderedSet<ComponentRef> algorithm_outputs;
     input VariablePointers aliasVars;
   algorithm
-    if not UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) then
+    // variables only one algorithm uses are not part of the system, the init xml sets their start values
+    if not (UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) or BVariable.isAlgorithmLocal(var)) then
       () := match Pointer.access(var)
         local
           ComponentRef name, start_name;
@@ -1305,7 +1306,7 @@ public
           // update alg in-place to preserve original equation kind: re-evaluating via
           // makeAlgorithm would set DISCRETE if event auxiliaries (e.g. $SEV_0) are in outputs
           alg.statements := stmts;
-          eqn.alg := Algorithm.setInputsOutputs(alg);
+          eqn.alg := Equation.setAlgorithmInputsOutputs(alg);
           eqn.size := sum(ComponentRef.size(out, true) for out in eqn.alg.outputs);
           kept := UnorderedSet.fromList(eqn.alg.outputs, ComponentRef.hash, ComponentRef.isEqual);
           lhs_crefs := list(cref for cref guard(not UnorderedSet.contains(cref, kept)) in lhs_crefs);

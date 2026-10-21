@@ -1,0 +1,84 @@
+// name: algorithmLocalBuffer
+// keywords: NewBackend, algorithm, protected, #13604
+// status: correct
+//
+// The protected buffer buf is only used by one algorithm. It is not part of the
+// system, like a protected variable of a function, but keeps its values between
+// the invocations of the algorithm (MLS 11.1.2). k uses pre() and stays in the system.
+
+loadString("
+model algorithmLocalBuffer
+  parameter Integer n = 5;
+  output Real s(start = 0, fixed = true);
+protected
+  Real buf[n](start = zeros(n), each fixed = true);
+  Integer k(start = 0, fixed = true);
+algorithm
+  when sample(0.1, 0.1) then
+    k := pre(k) + 1;
+    if k <= n then
+      buf[k] := time;
+    end if;
+    s := sum(buf);
+  end when;
+end algorithmLocalBuffer;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=backenddaeinfo,discreteinfo"); getErrorString();
+
+simulate(algorithmLocalBuffer, stopTime = 1, simflags="-emit_protected"); getErrorString();
+val(s, 0.35); val(s, 1.0); val(k, 1.0); val(buf[3], 1.0); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// [discreteinfo] pre() and previous() variables from discrete equations:
+// ************************************************************************
+// 	[PRE-] (1) output Real $PRE.s
+// 	[PRE-] (1) Integer $PRE.k
+//
+// record SimulationResult
+//     resultFile = "algorithmLocalBuffer_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'algorithmLocalBuffer', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+//  * Number of equations: 7 (1)
+//  * Number of variables: 7 (3)
+// Notification: Partition statistics after passing the back-end:
+//  * Number of ODE partitions: ..................... 0
+//  * Number of algebraic partitions: ............... 0
+//  * Number of ODE event partitions: ............... 0
+//  * Number of algebraic event partitions: ......... 1
+//  * Number of clocked partitions: ................. 0
+//  * Number of initial partitions: ................. 1
+//  * Number of initial(lambda=0) partitions: ....... 0
+// Notification: Variable statistics after passing the back-end:
+//  * Number of states: ............................. 0 (0) ('-d=stateselection' for the list of states)
+//  * Number of discrete states: .................... 2 (2) {s, k}
+//  * Number of clocked states: ..................... 0 (0) {}
+//  * Number of discrete variables: ................. 7 (3) {buf, $TEV_1, $TEV_0}
+//  * Number of algorithm local variables: .......... 5 (1) {buf}
+//  * Number of clocks: ............................. 0 (0) {}
+//  * Number of top-level inputs: ................... 0 (0) {}
+// Notification: [Simulation] Strong Component statistics after passing the back-end:
+//  * Number of single strong components: ........... 0 (scalar:0, array:0, record:0)
+//  * Number of multi strong components: ............ 1 (algorithm:1, when:0, if:0, tuple:0)
+//  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
+//  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
+// Notification: [Initialization] Strong Component statistics after passing the back-end:
+//  * Number of single strong components: ........... 4 (scalar:4, array:0, record:0)
+//  * Number of multi strong components: ............ 1 (algorithm:1, when:0, if:0, tuple:0)
+//  * Number of for-loop strong components: ......... 0 (resizable: 0, generic: 0, entwined:0)
+//  * Number of algebraic-loop strong components: ... 0 (linear: 0, nonlinear:0)
+// "
+// 0.6000000000000001
+// 1.5
+// 10.0
+// 0.30000000000000004
+// ""
+// endResult
