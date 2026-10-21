@@ -247,13 +247,10 @@ public
   protected
     Expression replacement;
   algorithm
-    if UnorderedMap.contains(cref, replacements) then
-      replacement := UnorderedMap.getOrFail(cref, replacements);
-      cref := match replacement
-        case Expression.CREF() then replacement.cref;
-        else cref;
-      end match;
-    end if;
+    cref := match UnorderedMap.get(cref, replacements)
+      case SOME(Expression.CREF(cref = cref)) then cref;
+      else cref;
+    end match;
   end applySimpleCref;
 
   function applySimpleVar

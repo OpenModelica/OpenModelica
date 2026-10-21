@@ -1683,7 +1683,6 @@ protected
   algorithm
     () := match exp
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
-        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
         argExp := listHead(Call.arguments(call));
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
@@ -1692,6 +1691,7 @@ protected
         if crefFoundInRecursion then
           // case for call(f(cref)) -> call^{-1}($SUBST_CREF)
           crefFound := true;
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           inverseInstructions := match name
             case "sqrt" then // sqrt(f(cref)) -> $SUBST_CREF^2
               Expression.BINARY(substExp, Operator.OPERATOR(ty, NFOperator.Op.POW), Expression.REAL(2)) :: inverseInstructions;
@@ -1981,25 +1981,10 @@ protected
     input Expression instruction;
   algorithm
     insertExp := match instruction
-      local
-        list<Expression> argList = {}, invargList = {};
-        Expression exp;
       case Expression.MULTARY() algorithm
-        for arg in instruction.arguments loop
-          if not Expression.isSubstitute(arg) then
-            argList := arg :: argList;
-          else
-            argList := insertExp :: argList;
-          end if;
-        end for;
-        for invarg in instruction.inv_arguments loop
-          if not Expression.isSubstitute(invarg) then
-            invargList := invarg :: invargList;
-          else
-            invargList := insertExp :: invargList;
-          end if;
-        end for;
-      then Expression.MULTARY(argList, invargList, instruction.operator);
+        instruction.arguments     := list(replaceSubstitute(arg, insertExp) for arg in instruction.arguments);
+        instruction.inv_arguments := list(replaceSubstitute(arg, insertExp) for arg in instruction.inv_arguments);
+      then instruction;
       case Expression.BINARY() algorithm
         if Expression.isSubstitute(instruction.exp1) then
           instruction.exp1 := insertExp;
