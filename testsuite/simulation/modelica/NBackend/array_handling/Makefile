@@ -37,6 +37,7 @@ resizableLoopBlocks.mos \
 resizableConnectArrays.mos \
 resizableManySizes.mos \
 literalConnects.mos \
+resizableSparseLoop.mos \
 resizableInputs.mos \
 resizableAlgebraicLoops.mos \
 resizableFill.mos \
