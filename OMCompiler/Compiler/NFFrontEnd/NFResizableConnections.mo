@@ -89,7 +89,6 @@ protected
   constant Integer MAYBE = 2;
   constant Integer PARAM_MIN = 1 "size parameters are at least this";
   constant Integer MIN_SIZE = 2 "resizable dimensions and connect loops have at least this many elements";
-  constant Integer MAX_PIECES = 300 "pieces of one connector array before giving up";
   constant Integer MAX_ROUNDS = 50;
 
   // ---------------------------------------------------------------------------
@@ -1345,8 +1344,8 @@ protected
       end if;
     end for;
     res := uniq;
-    if listLength(res) > MAX_PIECES then
-      Error.addInternalError(getInstanceName() + ": --resizableArrays: a connector array is split into more than " + intString(MAX_PIECES)
+    if listLength(res) > Flags.getConfigInt(Flags.RESIZABLE_MAX_PIECES) then
+      Error.addInternalError(getInstanceName() + ": --resizableArrays: a connector array is split into more than " + intString(Flags.getConfigInt(Flags.RESIZABLE_MAX_PIECES))
         + " pieces (connections of many single elements, or shifted connections around a cycle).", sourceInfo());
       fail();
     end if;
