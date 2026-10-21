@@ -242,15 +242,18 @@ public
   function applySimpleExpViaInstNode
     "Needs to be mapped with Expression.map() to replace crefs that appear as
      arguments in function calls."
-    input output Expression exp                                       "Replacement happens inside this expression";
-    input UnorderedMap<NFInstNode.InstNode, Expression> replacements  "rules for replacements are stored inside here";
+    input output Expression exp                               "Replacement happens inside this expression";
+    input UnorderedMap<InstNode, Expression> replacements     "rules for replacements are stored inside here";
   algorithm
     exp := match exp
       local
         InstNode node;
+        Expression e;
 
       case Expression.CREF(cref = ComponentRef.CREF(node = node, subscripts = {}))
-      then UnorderedMap.getOrDefault(node, replacements, exp);
+      // Rust has problems with getOrDefault
+      // then UnorderedMap.getOrDefault(node, replacements, exp);
+      then match UnorderedMap.get(node, replacements) case SOME(e) then e; else exp; end match;
 
       else exp;
     end match;
