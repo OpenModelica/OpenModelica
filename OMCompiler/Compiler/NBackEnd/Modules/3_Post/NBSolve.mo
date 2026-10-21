@@ -1825,7 +1825,8 @@ protected
     Expression arg, inv;
     Option<Expression> oinv = NONE();
     String name;
-    UnorderedMap<InstNode, Expression> replacements;
+    InstNode output_node;
+    UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
     Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := exp;
 
@@ -1879,15 +1880,16 @@ protected
     end if;
     crefFound := true;
 
-    replacements := UnorderedMap.new<Expression>(InstNode.hash, InstNode.nameEqual);
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     // replace the output by $SUBST_CREF
-    UnorderedMap.add(InstNode.fromHandle(listHead(fn.outputs)), substExp, replacements);
+    output_node := InstNode.fromHandle(listHead(fn.outputs));
+    UnorderedMap.add(ComponentRef.fromNode(output_node, InstNode.getType(output_node)), substExp, replacements);
     // replace the inputs by the corresponding arguments
     for node in fn.inputs loop
       arg :: args := args;
-      UnorderedMap.add(node, arg, replacements);
+      UnorderedMap.add(ComponentRef.fromNode(node, InstNode.getType(node)), arg, replacements);
     end for;
-    inv := Expression.map(Util.getOption(oinv), function Replacements.applySimpleExpViaInstNode(replacements = replacements));
+    inv := Expression.map(Util.getOption(oinv), function Replacements.applySimpleExp(replacements = replacements));
     inverseInstructions := inv :: inverseInstructions;
   end solveUniqueFindInstructionsCallInverse;
 
