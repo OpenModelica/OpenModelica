@@ -44,9 +44,7 @@ pub fn run(alarm: Option<u32>, f: impl FnOnce() -> Vec<u8>) -> Option<Outcome> {
     }
     let (rd, wr) = (fds[0], fds[1]);
     // Anything still buffered would be written twice, once by each process.
-    use std::io::Write;
-    let _ = std::io::stdout().flush();
-    let _ = std::io::stderr().flush();
+    metamodelica::host_flush();
     let pid = unsafe { libc::fork() };
     if pid < 0 {
         unsafe { libc::close(rd) };
@@ -64,6 +62,7 @@ pub fn run(alarm: Option<u32>, f: impl FnOnce() -> Vec<u8>) -> Option<Outcome> {
         framed.extend_from_slice(&payload);
         write_all(wr, &framed);
         unsafe { libc::close(wr) };
+        openmodelica_wasi::stdio::flush_std();
         unsafe { libc::_exit(0) };
     }
     unsafe { libc::close(wr) };

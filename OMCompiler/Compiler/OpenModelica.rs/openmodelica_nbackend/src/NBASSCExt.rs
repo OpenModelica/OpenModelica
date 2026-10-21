@@ -117,20 +117,22 @@ pub fn ASSC_printMatrix() {
     ASSC_MATRIX.with(|s| {
         let borrow = s.borrow();
         let Some(m) = borrow.as_ref() else { return };
-        println!("Sparse Matrix:\n================");
+        use std::fmt::Write;
+        let mut out = String::from("Sparse Matrix:\n================\n");
         for i in 0..m.ne as usize {
-            print!("{i}: ");
+            let _ = write!(out, "{i}: ");
             for j in m.col_ptrs[i]..m.col_ptrs[i + 1] {
-                print!("({},{})", m.col_ids[j as usize], m.col_val[j as usize]);
+                let _ = write!(out, "({},{})", m.col_ids[j as usize], m.col_val[j as usize]);
             }
-            println!();
+            out.push('\n');
         }
         for row in &m.rows {
             for (index, value) in row {
-                print!("({index}: {value}) ");
+                let _ = write!(out, "({index}: {value}) ");
             }
-            println!();
+            out.push('\n');
         }
+        metamodelica::host_print(&out);
     });
 }
 

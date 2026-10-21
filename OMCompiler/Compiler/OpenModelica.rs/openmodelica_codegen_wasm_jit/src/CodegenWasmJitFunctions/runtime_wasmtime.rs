@@ -395,9 +395,9 @@ pub(super) fn load_and_execute(
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
     openmodelica_wasm_jit::host::clear_pending_assert();
-    openmodelica_wasm_jit::host::flush_stdio();
+    metamodelica::host_flush();
     let call_res = func.call(&mut store, &params, &mut results);
-    openmodelica_wasm_jit::host::flush_stdio();
+    metamodelica::host_flush();
     if call_res.is_err() {
         // A failed `assert` records its message + source info via the `rt_assert`
         // host import, then traps. Route it to the error buffer (matching the C

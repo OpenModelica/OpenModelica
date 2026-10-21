@@ -54,7 +54,12 @@ static OMSIMULATOR_DLL: Mutex<Option<usize>> = Mutex::new(None);
 /// Mirrors the C wrappers' behavior for a NULL function pointer: print the
 /// message (compared verbatim by scripts) and exit with status 0.
 fn missing_function(name: &str) -> ! {
-    println!("could not locate the function {name}");
+    exit_with(&format!("could not locate the function {name}"));
+}
+
+fn exit_with(msg: &str) -> ! {
+    metamodelica::host_print(&format!("{msg}\n"));
+    metamodelica::host_flush();
     std::process::exit(0);
 }
 
@@ -126,8 +131,9 @@ pub fn loadOMSimulator() -> i32 {
         let handle = dl::open(&full_file_name).unwrap_or(0);
         if handle == 0 {
             // Message and exit status mirror OMSimulator_loadDLL.
-            println!("Could not load the dynamic library {full_file_name} Exiting the program");
-            std::process::exit(0);
+            exit_with(&format!(
+                "Could not load the dynamic library {full_file_name} Exiting the program"
+            ));
         }
         *dll = Some(handle);
     }
@@ -143,8 +149,9 @@ pub fn unloadOMSimulator() -> i32 {
         }
         None => {
             // Message and exit status mirror OMSimulator_unloadDLL.
-            println!("OMSimulator instance is not found, Please load the OMSimulator instance using loadOMSimulator()");
-            std::process::exit(0);
+            exit_with(
+                "OMSimulator instance is not found, Please load the OMSimulator instance using loadOMSimulator()",
+            );
         }
     }
 }

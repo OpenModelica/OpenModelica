@@ -27,6 +27,8 @@ use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 pub mod fs;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod stdio;
 pub mod wasi;
 
 // ─────────────────────────── embedded builtins ───────────────────────────────

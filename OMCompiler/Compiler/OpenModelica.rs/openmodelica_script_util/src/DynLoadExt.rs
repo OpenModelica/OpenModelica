@@ -543,14 +543,6 @@ pub fn executeFunction(
     let mut out = TypeDesc::none();
     out.retval = 1; // request owned (malloc'd) array/string results we can free
 
-    // The generated function prints side effects through the C runtime's
-    // `stdout`, a different buffer from the port's own output. Flush ours first
-    // so anything already produced precedes the function's output.
-    {
-        use std::io::Write;
-        let _ = std::io::stdout().flush();
-    }
-
     // SAFETY: `addr` is the resolved `in_<name>` entry; its ABI is fixed by the
     // code generator. `args` outlives the call; `in_*` reads at most one element
     // per declared input.

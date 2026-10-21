@@ -1258,17 +1258,6 @@ pub fn define_uri_import(
     imports.define("rt", "rt_uri_to_filename", f);
 }
 
-/// libc's `stdout`, where a host `external "C"` prints, is a different buffer
-/// from ours; flush both around a call so the two stay in order.
-pub fn flush_stdio() {
-    use std::io::Write;
-    let _ = std::io::stdout().flush();
-    #[cfg(not(target_arch = "wasm32"))]
-    unsafe {
-        libc::fflush(std::ptr::null_mut());
-    }
-}
-
 /// Redirect the process's stdout/stderr into the run's log for one capture phase
 /// (`openmodelica_wasi::wasi::set_native_capture`). A temp file, not a pipe, which
 /// would deadlock on its buffer with nothing draining it; `fflush(NULL)` empties

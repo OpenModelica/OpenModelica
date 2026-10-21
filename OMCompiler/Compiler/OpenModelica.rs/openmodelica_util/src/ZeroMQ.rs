@@ -107,7 +107,7 @@ mod imp {
         };
         if let Err(e) = socket.bind(&bindstr) {
             // C prints the errno string and returns the failure sentinel.
-            println!("Error creating ZeroMQ Server. zmq_bind failed: {e}");
+            metamodelica::host_print(&format!("Error creating ZeroMQ Server. zmq_bind failed: {e}\n"));
             return Some(0);
         }
 
@@ -130,9 +130,10 @@ mod imp {
             // as an initialization failure instead.
             return Some(0);
         }
-        use std::io::Write;
-        print!("Created ZeroMQ Server.\nDumped server port in file: {file_path}");
-        let _ = std::io::stdout().flush();
+        metamodelica::host_print(&format!(
+            "Created ZeroMQ Server.\nDumped server port in file: {file_path}"
+        ));
+        metamodelica::host_flush();
 
         // Register and return a small non-zero handle.
         let mut reg = REGISTRY.lock().unwrap();
@@ -210,9 +211,9 @@ mod imp {
     use super::*;
 
     pub fn initialize(_fileSuffix: ArcStr, _listenToAll: bool, _port: i32) -> Option<i32> {
-        println!(
+        metamodelica::host_print(
             "ZeroMQ support is disabled in this build (the `zeromq` feature of \
-             openmodelica_util was turned off)."
+             openmodelica_util was turned off).\n",
         );
         Some(0)
     }

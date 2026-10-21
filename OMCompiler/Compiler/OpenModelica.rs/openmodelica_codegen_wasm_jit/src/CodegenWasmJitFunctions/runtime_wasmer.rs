@@ -194,10 +194,10 @@ pub(super) fn load_and_execute(
     // Clear any stale pending assertion before the call (defensive — each call
     // consumes its own).
     openmodelica_wasm_jit::host::clear_pending_assert();
-    openmodelica_wasm_jit::host::flush_stdio();
+    metamodelica::host_flush();
     // wasmer returns the result values directly (no out-parameter buffer).
     let call_res = func.call(&mut store, &params);
-    openmodelica_wasm_jit::host::flush_stdio();
+    metamodelica::host_flush();
     let results = match call_res {
         Ok(r) => r,
         Err(e) => {

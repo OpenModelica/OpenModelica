@@ -223,6 +223,7 @@ fn precompile_installed_libraries() -> Result<Vec<String>, String> {
 #[cfg(not(target_arch = "wasm32"))]
 fn prepare_exit() {
     openmodelica_util::File::flush_all_registered();
+    metamodelica::host_flush();
     openmodelica_backend_main::Globals::leak_program_for_exit();
 }
 
@@ -243,7 +244,6 @@ fn prepare_exit() {
 #[cfg(not(target_arch = "wasm32"))]
 #[unsafe(no_mangle)]
 pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int {
-    use std::io::Write;
     set_revision();
     // `OMC_WASM_PRECOMPILE_CACHE=<dir>`: compile the fixed wasm blobs into <dir>
     // and stop; empty means the per-user cache, which an installer or a test run
@@ -270,7 +270,12 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
             });
         return match precompiled {
             Ok(names) => {
-                println!("precompiled {} wasm artifacts into {}", names.len(), dir.display());
+                metamodelica::host_print(&format!(
+                    "precompiled {} wasm artifacts into {}\n",
+                    names.len(),
+                    dir.display()
+                ));
+                metamodelica::host_flush();
                 0
             }
             Err(e) => {
@@ -303,16 +308,14 @@ pub extern "C" fn omc_cli_run(argc: c_int, argv: *const *const c_char) -> c_int 
     prepare_exit();
     match status {
         Ok(Ok(())) => 0,
-        // Mirror the launcher's old inline `run()`: flush stdout, report on
-        // stderr and exit 1. The MetaModelica exception carries no payload worth
-        // printing — diagnostics were already emitted via the Error buffer.
+        // Mirror the launcher's old inline `run()`: report on stderr and exit
+        // 1. The MetaModelica exception carries no payload worth printing —
+        // diagnostics were already emitted via the Error buffer.
         Ok(Err(_)) => {
-            let _ = std::io::stdout().flush();
             eprintln!("Execution failed!");
             1
         }
         Err(p) => {
-            let _ = std::io::stdout().flush();
             match metamodelica::heap_limit::oom_from_panic(&*p) {
                 Some(oom) => eprintln!("{oom}"),
                 None => eprintln!("Execution failed!"),
