@@ -24,7 +24,7 @@ compareVars :=
    "transformer2.l2sigma.inductor[3].i"
 };
 
-// Although it is not correct to do it by default, evaluate final parameters, 
+// Although it is not correct to do it by default, evaluate final parameters,
 // otherwise the different system structure leads to wrong simulation results.
 // This has to be fixed since it breaks the coverage test.
 setCommandLineOptions("--evaluateFinalParameters");getErrorString();
