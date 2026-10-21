@@ -43,6 +43,10 @@
 #include <QMessageBox>
 #include <QDir>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 using namespace OMPlot;
 
 #define CONSUME_BOOL_ARG(i,n,var) { \
@@ -91,6 +95,13 @@ void printUsage(bool shortDescription)
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_WIN
+  /// Re-attach to the parent console (the cmd.exe that launched us)
+  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
+#endif // #ifdef Q_OS_WIN
   // read the arguments
   QStringList arguments;
   bool newApplication = false;
