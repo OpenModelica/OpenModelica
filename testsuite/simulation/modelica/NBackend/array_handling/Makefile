@@ -8,6 +8,7 @@ forSliceRowMajor.mos \
 sliceRangeSparsity.mos \
 scalarDivArray.mos \
 arrayRowScalar.mos \
+emptyArrayTupleArgument.mos \
 algorithmForSubscript.mos \
 eachScalarProduct.mos \
 ifBranchSizes.mos \
