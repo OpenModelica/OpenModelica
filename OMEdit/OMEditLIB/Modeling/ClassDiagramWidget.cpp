@@ -43,6 +43,9 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
+#if defined(__EMSCRIPTEN__)
+#include "OMEditGUI/wasm/WasmLocalFiles.h"
+#endif
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -74,7 +77,7 @@
 ClassDiagramPage::ClassDiagramPage(QObject *pParent)
   : QWebEnginePage(pParent)
 {
-  connect(this, SIGNAL(newWindowRequested(QWebEngineNewWindowRequest&)), SLOT(newWindowRequested(QWebEngineNewWindowRequest&)));
+  connect(this, &QWebEnginePage::newWindowRequested, this, &ClassDiagramPage::newWindowRequested);
 }
 
 bool ClassDiagramPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
@@ -126,12 +129,12 @@ ClassDiagramWidget::ClassDiagramWidget(const QString &className, bool crml, QWid
   mpRefreshToolButton->setIcon(QIcon(":/Resources/icons/refresh.svg"));
   mpRefreshToolButton->setToolTip(Helper::refresh);
   mpRefreshToolButton->setAutoRaise(true);
-  connect(mpRefreshToolButton, SIGNAL(clicked()), SLOT(refresh()));
+  connect(mpRefreshToolButton, &QToolButton::clicked, this, &ClassDiagramWidget::refresh);
   mpSaveAsToolButton = new QToolButton;
   mpSaveAsToolButton->setIcon(QIcon(":/Resources/icons/save.svg"));
   mpSaveAsToolButton->setToolTip(tr("Save the diagram as a draw.io file"));
   mpSaveAsToolButton->setAutoRaise(true);
-  connect(mpSaveAsToolButton, SIGNAL(clicked()), SLOT(saveAs()));
+  connect(mpSaveAsToolButton, &QToolButton::clicked, this, &ClassDiagramWidget::saveAs);
   mpLayoutComboBox = new QComboBox;
   if (mCRML) {
     mpLayoutComboBox->addItem(tr("Instances below classes"), "");
@@ -146,16 +149,24 @@ ClassDiagramWidget::ClassDiagramWidget(const QString &className, bool crml, QWid
     mpLayoutComboBox->addItem(tr("Rows by inheritance"), "");
   }
   mpLayoutComboBox->setToolTip(tr("How the classes are laid out"));
-  connect(mpLayoutComboBox, SIGNAL(currentIndexChanged(int)), SLOT(refresh()));
-  connect(mpDepthSpinBox, SIGNAL(valueChanged(int)), SLOT(refresh()));
-  connect(mpShowModifiersCheckBox, SIGNAL(toggled(bool)), SLOT(refresh()));
+  connect(mpLayoutComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ClassDiagramWidget::refresh);
+  connect(mpDepthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &ClassDiagramWidget::refresh);
+  connect(mpShowModifiersCheckBox, &QCheckBox::toggled, this, &ClassDiagramWidget::refresh);
+#if defined(__EMSCRIPTEN__)
+  mpClassDiagramView = new WasmHtmlView(this);
+  connect(mpClassDiagramView, &WasmHtmlView::linkClicked, this, &ClassDiagramWidget::openLink);
+  if (mCRML) {
+    connect(mpClassDiagramView, &WasmHtmlView::loadFinished, this, &ClassDiagramWidget::showCRMLErrors);
+  }
+#else
   mpClassDiagramView = new QWebEngineView(this);
   ClassDiagramPage *pClassDiagramPage = new ClassDiagramPage(mpClassDiagramView);
   mpClassDiagramView->setPage(pClassDiagramPage);
-  connect(pClassDiagramPage, SIGNAL(linkClicked(QUrl)), SLOT(openLink(QUrl)));
+  connect(pClassDiagramPage, &ClassDiagramPage::linkClicked, this, &ClassDiagramWidget::openLink);
   if (mCRML) {
     connect(mpClassDiagramView, &QWebEngineView::loadFinished, this, &ClassDiagramWidget::showCRMLErrors);
   }
+#endif
   // layout
   QHBoxLayout *pToolsLayout = new QHBoxLayout;
   pToolsLayout->setContentsMargins(0, 0, 0, 0);
@@ -209,6 +220,9 @@ void ClassDiagramWidget::refresh()
     mDiagram = MainWindow::instance()->getOMCProxy()->getClassDiagram(mClassName, mpDepthSpinBox->value(), mpShowModifiersCheckBox->isChecked());
   }
   mpSaveAsToolButton->setEnabled(!mDiagram.isEmpty());
+#if defined(__EMSCRIPTEN__)
+  mpClassDiagramView->setHtml(htmlPage(mDiagram));
+#else
   /* Loaded from a file, not with setHtml, which is limited to 2 MB. A page loaded from a file
    * can't load scripts from qrc:, so the scripts are copied next to it.
    */
@@ -223,6 +237,7 @@ void ClassDiagramWidget::refresh()
     file.close();
     mpClassDiagramView->setUrl(QUrl::fromLocalFile(fileName));
   }
+#endif
 }
 
 /*!
@@ -241,6 +256,21 @@ void ClassDiagramWidget::copyScript(const QString &resource, const QString &file
     QFile::remove(scriptFileName);
     scriptFile.copy(scriptFileName);
   }
+}
+
+/*!
+ * \brief ClassDiagramWidget::runJavaScript
+ * Runs a script in the page of the diagram and calls the callback with its result.
+ * \param script
+ * \param callback
+ */
+void ClassDiagramWidget::runJavaScript(const QString &script, const std::function<void(const QVariant&)> &callback)
+{
+#if defined(__EMSCRIPTEN__)
+  mpClassDiagramView->runJavaScript(script, callback);
+#else
+  mpClassDiagramView->page()->runJavaScript(script, callback);
+#endif
 }
 
 /*!
@@ -276,6 +306,14 @@ QString ClassDiagramWidget::htmlPage(const QString &diagram) const
     }
     return QString("<html><body><p>%1</p></body></html>").arg(tr("No class diagram of <b>%1</b>, see the Messages Browser.").arg(mClassName.toHtmlEscaped()));
   }
+#if defined(__EMSCRIPTEN__)
+  // The page is in the browser, which has no access to the files of OMEdit.
+  const QString viewerScript = WasmHtmlView::scriptUrl(":/Resources/drawio/viewer-static.min.js");
+  const QString crmlScript = WasmHtmlView::scriptUrl(":/Resources/crml-diagram/dist/crml-diagram.min.js");
+#else
+  const QString viewerScript = "drawio-viewer-static.min.js";
+  const QString crmlScript = "crml-diagram.min.js";
+#endif
   QJsonObject config;
   QString crml;
   if (mCRML) {
@@ -353,10 +391,10 @@ if (!direction) {
                  "<div id=\"classdiagram\"></div>\n"
                  // The viewer loads MathJax from viewer.diagrams.net unless it is there; the diagrams have no math.
                  "<script type=\"text/javascript\">window.MathJax = {};</script>\n"
-                 "<script type=\"text/javascript\" src=\"drawio-viewer-static.min.js\"></script>\n"
-                 "%1"
-                 "<script type=\"text/javascript\">%2</script>\n"
-                 "</body></html>\n").arg(mCRML ? "<script type=\"text/javascript\" src=\"crml-diagram.min.js\"></script>\n" : "", script);
+                 "<script type=\"text/javascript\" src=\"%1\"></script>\n"
+                 "%2"
+                 "<script type=\"text/javascript\">%3</script>\n"
+                 "</body></html>\n").arg(viewerScript, mCRML ? QString("<script type=\"text/javascript\" src=\"%1\"></script>\n").arg(crmlScript) : "", script);
 }
 
 /*!
@@ -375,7 +413,7 @@ void ClassDiagramWidget::saveAs()
     return;
   }
   // The diagram as it is laid out in the view, if it is; the diagram of a CRML file is made in the page.
-  mpClassDiagramView->page()->runJavaScript("[window.classDiagramModel || '', window.crmlDiagramFile || '']", [this, fileName](const QVariant &result) {
+  runJavaScript("[window.classDiagramModel || '', window.crmlDiagramFile || '']", [this, fileName](const QVariant &result) {
     const QVariantList results = result.toList();
     QString model = results.value(0).toString();
     QString diagram = mCRML ? results.value(1).toString() : mDiagram;
@@ -393,6 +431,9 @@ void ClassDiagramWidget::saveAs()
     if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
       file.write(diagram.toUtf8());
       file.close();
+#if defined(__EMSCRIPTEN__)
+      WasmLocalFiles::download(fileName);
+#endif
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::UNABLE_TO_SAVE_FILE).arg(fileName, file.errorString()), QMessageBox::Ok);
@@ -491,7 +532,7 @@ void ClassDiagramWidget::showCRMLErrors(bool ok)
   if (!ok) {
     return;
   }
-  mpClassDiagramView->page()->runJavaScript("window.crmlDiagramErrors || []", [this](const QVariant &result) {
+  runJavaScript("window.crmlDiagramErrors || []", [this](const QVariant &result) {
     const QVariantList errors = result.toList();
     for (const QVariant &error : errors) {
       const QVariantMap map = error.toMap();
@@ -520,8 +561,8 @@ ClassDiagramWindow::ClassDiagramWindow()
   mpTabWidget->setTabsClosable(true);
   mpTabWidget->setMovable(true);
   mpTabWidget->setDocumentMode(true);
-  connect(mpTabWidget, SIGNAL(tabCloseRequested(int)), SLOT(closeTab(int)));
-  connect(mpTabWidget, SIGNAL(currentChanged(int)), SLOT(currentTabChanged(int)));
+  connect(mpTabWidget, &QTabWidget::tabCloseRequested, this, &ClassDiagramWindow::closeTab);
+  connect(mpTabWidget, &QTabWidget::currentChanged, this, &ClassDiagramWindow::currentTabChanged);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpTabWidget);
