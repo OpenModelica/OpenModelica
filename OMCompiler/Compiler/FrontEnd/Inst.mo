@@ -624,10 +624,6 @@ algorithm
 
         dae1_1 := DAEUtil.addComponentType(dae1, fq_class);
 
-        // phi: very old unit checking
-        /*
-        InstUtil.reportUnitConsistency(callscope_1,store);
-        */
         (csets, _, graph) := InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets,callscope_1, graph);
 
         //System.startTimer();
@@ -2292,16 +2288,6 @@ algorithm
         //fprintln(Flags.INNER_OUTER, " INST_CLASS: (" + realString(ti) + ") -> " + PrefixUtil.printPrefixStr(pre) + "." +  className + " mods: " + Mod.printModStr(mods) + " in env: " + FGraph.printGraphPathStr(env7));
 
         csets5 := InnerOuter.changeInnerOuterInOuterConnect(csets5);
-
-        // phi: very old unit checking
-        /*
-        // adrpo: moved bunch of a lot of expensive unit checking operations to this function
-        (cache,env5,store) = InstUtil.handleUnitChecking(cache,env5,store,pre,dae1,{dae2,dae3,dae4,dae5},className);
-
-        if Flags.getConfigBool(Flags.UNIT_CHECKING) then
-          UnitParserExt.rollback(); // print("rollback for "+className+"\n");
-        end if;
-        */
 
         // Search for equalityConstraint
         eqConstraint := InstUtil.equalityConstraint(env5, els, info);
