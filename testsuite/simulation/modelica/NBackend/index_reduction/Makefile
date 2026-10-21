@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+tupleIntegerOutputDerivative.mos \
 derivativeDummyState.mos \
 basic_IR.mos\
 overdeterminedIndexReduction.mos\
