@@ -991,7 +991,8 @@ with the reference data. How the fit works and the options it reads from the UQ
 file are described in :ref:`oms3-calibration`.
 
 To calibrate an SSP model that is open in OMEdit, right-click it in the
-Libraries Browser and choose *Calibrate...*. The dialog asks for:
+Libraries Browser and choose *Calibrate...*, see
+:numref:`omedit-calibrate-menu`. The dialog asks for:
 
 -  *Calibration Activity* - the id of the Calibration activity. Empty means the
    only Calibration activity of the UQ file.
@@ -1008,6 +1009,18 @@ dialog while it runs, and closing the dialog stops the calibration. The
 calibrated SSP contains the fitted parameter values, as
 ``<activity>_calibrated.ssv`` next to the UQ file, and the ``ResultSet`` of the
 activity with the RMSE of each observed variable.
+
+.. figure :: media/omedit-calibrate-menu.png
+  :name: omedit-calibrate-menu
+
+  The Calibrate entry of the Libraries Browser menu of an SSP model.
+
+.. figure :: media/omedit-calibrate-dialog.png
+  :name: omedit-calibrate-dialog
+
+  The calibration of a DC motor model, an SSP with three FMUs, against noisy
+  measurements of its current and speed: the fitted parameters, the RMSE of
+  the observed variables and the calibrated SSP.
 
 The same calibration can be run from the command line:
 
