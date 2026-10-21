@@ -4,6 +4,7 @@ TESTFILES = \
 unknownSizeInputDerivative.mos\
 externalFunctionDerivative.mos\
 builtin_functions.mos\
+EmptyFunctionAliasStart.mos\
 inlineAttributes15947.mos\
 ifEquationFunctionCall.mos\
 tupleCallInForLoop.mos\
